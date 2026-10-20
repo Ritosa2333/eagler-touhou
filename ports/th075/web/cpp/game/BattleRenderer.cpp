@@ -25,7 +25,8 @@ public:
     void owned_objects(u8 side,u8 layer)override{Objects draw(*this,side);scene.simulation.objects[side].render(layer,draw);}
     void trails(u8 side)override{sprites[side].trails(scene.simulation.characters[side]->actor.trails,camera.x,camera.y);}
     void shared_effects(u8 layer)override{scene.simulation.effects.render(layer,[&](SharedEffect& effect){if(!effect.image)return;const auto pose=effect.drawing_pose();if(effect.alternateDraw)sharedSprites.screen(*effect.image,effect.motion,pose);else sharedSprites.object(*effect.image,effect.motion,pose,camera.x,camera.y);});}
-    void fighter(u8 side)override{auto& a=scene.simulation.characters[side]->actor;const auto* frame=a.collision.frame?a.collision.frame:a.animation.frame;if(frame)sprites[side].fighter(*frame,a.motion,a.pose,a.animation.cursor.action,a.combat.freeze,a.combat.flashTimer,a.combat.noticeTimer,a.trails,{renderer.disableTrails,renderer.displayStage},camera.x,camera.y);}
+    // Contact snapshots can remain unchanged throughout story and round recovery.
+    void fighter(u8 side)override{auto& a=scene.simulation.characters[side]->actor;const auto* frame=a.animation.frame;if(frame)sprites[side].fighter(*frame,a.motion,a.pose,a.animation.cursor.action,a.combat.freeze,a.combat.flashTimer,a.combat.noticeTimer,a.trails,{renderer.disableTrails,renderer.displayStage},camera.x,camera.y);}
     void character_special(u8 side)override{scene.simulation.characters[side]->render_special(camera,renderer.graphics,renderer.art.fighterTextures[side]);}
     void recovery_markers()override{render_recovery_markers(hud,view,camera);}
     void status()override{renderer.hud.render_status(hud,images[0],images[1],view);}
