@@ -10,14 +10,15 @@ const output=resolve(root,'artifacts/th12-purple-ui');await mkdir(output,{recurs
 const font=resolve(process.env.TH12_TEST_FONT??resolve(root,'dependencies/unifont-15.1.05/unifont-15.1.05.otf'));
 const html=`<!doctype html><meta charset="utf-8"><style>body{margin:20px;background:#181820;color:white}canvas#game{width:640px;height:480px;background:linear-gradient(30deg,#1c2434,#3a2c40);display:block}</style><canvas id="game" width="640" height="480"></canvas><script type="module">
 import createCore from '/core.mjs';import {PracticeBridge} from '/bridge.mjs';import {PracticeMenu} from '/menu.mjs';import {PracticeOverlay} from '/overlay.mjs';
+import {TouchInput} from '/touch-input.mjs';window.touch=new TouchInput();touch.configure({touchEnabled:true});const touchState=()=>({key:'menu',kind:'menu',instance:'',ready:true});
 window.core=await createCore();window.actions=[];window.context={scene:'playing',replay:false,menuReady:true};
 window.ui=new PracticeOverlay({bridge:new PracticeBridge(core),canvas:document.getElementById('game'),onMenuAction:action=>actions.push(action)});
 ui.configure({enabled:true,locale:'zh-CN'});await ui.initialize(new Map([['/unifont.otf',await (await fetch('/unifont.otf')).blob()]]));
 window.openPractice=()=>{window.context={scene:'practice',menu:new PracticeMenu({locale:'zh-CN'}),menuReady:true};};
 window.routed=[];for(const name of ['keydown','keyup'])addEventListener(name,event=>{routed.push({code:event.code,down:name==='keydown',consumed:ui.key(event.code,name==='keydown')});event.preventDefault();});
-for(const name of ['pointerdown','pointermove','pointerup','pointercancel'])addEventListener(name,event=>{ui.pointer({id:event.pointerId,type:name==='pointercancel'?'cancel':name.slice(7),x:event.clientX,y:event.clientY,pointerType:event.pointerType,button:event.button});});
+for(const name of ['pointerdown','pointermove','pointerup','pointercancel'])addEventListener(name,event=>{const pointer={id:event.pointerId,type:name==='pointercancel'?'cancel':name.slice(7),x:event.clientX,y:event.clientY,pointerType:event.pointerType,button:event.button};if(!ui.pointer(pointer)&&event.pointerType==='touch')touch.pointer(pointer,touchState());});
 addEventListener('wheel',event=>{if(ui.wheel(event))event.preventDefault();},{passive:false});
-window.ticks=0;let last=0;function frame(now){if(now-last>=1000/60-.5){ui.update(context);ui.tick(0);last=now;window.ticks++;}ui.render();requestAnimationFrame(frame);}requestAnimationFrame(frame);window.ready=true;
+window.ticks=0;let last=0;function frame(now){if(now-last>=1000/60-.5){ui.update(context);const touched=touch.sample(touchState());ui.tick(touched.held);last=now;window.ticks++;}ui.render();requestAnimationFrame(frame);}requestAnimationFrame(frame);window.ready=true;
 </script>`;
 const server=createServer(async(request,response)=>{
   try{
@@ -29,7 +30,7 @@ const server=createServer(async(request,response)=>{
   }catch(error){response.statusCode=404;response.end(error.message);}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-const browser=await launchBrowser();const page=await browser.newPage({viewport:{width:900,height:650}}),errors=[];
+const browser=await launchBrowser();const page=await browser.newPage({viewport:{width:900,height:650},hasTouch:true}),errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>window.ready,undefined,{timeout:120000});
@@ -106,8 +107,25 @@ try{
   assert.equal(await page.evaluate(()=>new Int32Array(core.HEAPU8.buffer,core._th12_practice_ui_parameters(),20)[8]),6,'native temporary numeric input');
   assert.equal(await page.evaluate(()=>actions.length),0,'Enter commits the numeric field before starting Practice');
   await page.keyboard.press('Escape');await page.waitForFunction(()=>actions.length>0);assert.equal(await page.evaluate(()=>actions.at(-1).type),'cancel');
+  const cdp=await page.context().newCDPSession(page);
+  const fingers=async(points,type='touchStart')=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y}))});
+  const openTouchPractice=async()=>{await page.evaluate(()=>{ui.cancel();touch.cancel();actions.length=0;context.scene='title';});await settle();await page.evaluate(()=>openPractice());await settle();};
+  await openTouchPractice();
+  await fingers([[1,100,250]]);await fingers([],'touchEnd');await settle();
+  assert.equal(await page.evaluate(()=>actions.length),1,'single outside tap issues one start');assert.equal(await page.evaluate(()=>actions[0].type),'start');
+  await openTouchPractice();
+  await fingers([[1,100,250],[2,150,250]]);await fingers([],'touchEnd');await settle();
+  assert.equal(await page.evaluate(()=>actions.length),1,'two-finger outside tap issues one cancel');assert.equal(await page.evaluate(()=>actions[0].type),'cancel');
+  await openTouchPractice();
+  await fingers([[1,400,113]]);await settle();await fingers([],'touchEnd');await settle();
+  assert.equal(await page.evaluate(()=>actions.length),0,'native combo tap does not start practice');
+  await fingers([[1,100,250]]);await fingers([],'touchEnd');await settle();
+  assert.equal(await page.evaluate(()=>actions.length),0,'popup dismissal does not start practice');
+  await openTouchPractice();
+  await fingers([[1,100,250]]);await fingers([],'touchCancel');await settle();
+  assert.equal(await page.evaluate(()=>actions.length),0,'cancelled outside contact emits no action');
   assert.deepEqual(errors,[]);
-  const report={status:'PASS',runtime:'actual TH12 Wasm + common ImGui + shared Unifont',checks:['native checkbox mutation','original hotkey gating','enemy invincibility','paused tracker geometry','pause-confirm tracker geometry','paused F1-F7/U mutation and routing','paused checkbox mutation','held shortcut edge detection','paused replay read only','title manual routing','title HUD isolation','replay cheat isolation','mobile folded reopen','pointer-only headers','game drag ownership','combo cancel isolation','numeric keyboard editing','native practice cancel'],retailAssets:false,screenshots:6};
+  const report={status:'PASS',runtime:'actual TH12 Wasm + common ImGui + shared Unifont',checks:['native checkbox mutation','original hotkey gating','enemy invincibility','paused tracker geometry','pause-confirm tracker geometry','paused F1-F7/U mutation and routing','paused checkbox mutation','held shortcut edge detection','paused replay read only','title manual routing','title HUD isolation','replay cheat isolation','mobile folded reopen','pointer-only headers','game drag ownership','combo cancel isolation','numeric keyboard editing','native practice cancel','touch outside single tap starts','touch outside two fingers cancel','touch widget and popup isolation','touch cancellation isolation'],retailAssets:false,screenshots:6};
   await writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }catch(error){
   console.error({errors,state:await page.evaluate(()=>({ready:window.ready,flags:window.core?._th12_practice_ui_flags(),enabled:window.ui?.enabled,initialized:window.ui?.initialized})).catch(()=>null)});
