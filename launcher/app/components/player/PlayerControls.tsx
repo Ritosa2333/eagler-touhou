@@ -10,6 +10,7 @@ import {
 } from '../../services/player-input';
 import type { PlayerTouch } from '../../services/player-touch';
 import type { SettingsSnapshot } from '../../models/game-settings';
+import {playerUsesGameInput} from '../../models/player-mode';
 import { TouchHelp } from './TouchHelp';
 import { TitleNetworkOverlay } from './TitleNetworkOverlay';
 import { NetplayConnectionWindow } from '../NetplayConnectionWindow';
@@ -69,7 +70,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
   );
   const spectatorTimeline =
     state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
-  const spectating = state.spectatorViewer || state.runtime?.spectator === true;
+  const mode = session.getPlayerMode(), spectating = mode === 'spectator';
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
   const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
   const cooperativeSpectator = state.runtime?.launched === true && state.runtime.spectator === true &&
@@ -139,7 +140,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && !spectating && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>
@@ -218,8 +219,8 @@ function GameplayControls({ session }: { session: BrowserSession }) {
     input?.getSnapshot ?? initialTouch,
     initialTouch,
   );
-  const spectator = state.runtime?.spectator === true,
-    enabled = settings.options.touchEnabled && !spectator;
+  const spectator = session.getPlayerMode() === 'spectator',
+    enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   const hostDirect =
     /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
@@ -281,7 +282,7 @@ function PlayerUtilities({
     navigation = useSurfaceNavigation(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const [, updateOrientation] = useState(0);
-  const spectating = state.spectatorViewer || state.runtime?.spectator === true;
+  const spectating = session.getPlayerMode() === 'spectator';
   const portrait =
     (window.visualViewport?.height || window.innerHeight) >
     (window.visualViewport?.width || window.innerWidth);
