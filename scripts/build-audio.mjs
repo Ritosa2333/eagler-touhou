@@ -2,15 +2,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {emscripten} from './toolchain.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
-const candidates = [process.env.EMSDK, path.resolve(root, '../tools/emsdk'), path.resolve(root, '../../tools/emsdk')].filter(Boolean);
-const sdk = candidates.find(value => fs.existsSync(path.join(value, 'upstream/emscripten/emcc.py')));
-const compiler = process.env.EMCC_PYTHON_SCRIPT || (sdk && path.join(sdk, 'upstream/emscripten/emcc.py'));
-if (!compiler || !fs.existsSync(compiler)) throw Error('Activate Emscripten 4.0.22 and set EMSDK; see docs/BUILD.md.');
-const bundledPython = sdk && path.join(sdk, 'python/3.13.3_64bit/python.exe');
-const python = process.env.EMSDK_PYTHON || process.env.PYTHON ||
-  (bundledPython && fs.existsSync(bundledPython) ? bundledPython : 'python');
+const {sdk,compiler,python} = emscripten(root);
 const output = path.join(root, 'site/runtime/audio');
 const cache = path.join(root, 'artifacts/emscripten-cache');
 const temporary = path.join(root, 'artifacts/emscripten-temp/audio');

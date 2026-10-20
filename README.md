@@ -1,5 +1,9 @@
 # 东方星莲船网页版与行为还原
 
+[monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
+
+本作源码位于 `ports/th12`，在 monorepo 根目录运行 `npm run build:runtime -- --game=th12 --emsdk=工具链目录` 构建普通版。浏览器代码包输出至 `ports/th12/build-eagler/`；内容准备与站点组装见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
+
 TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为的反编译资料。
 原作游戏、角色、贴图、文字和音乐版权属于上海爱丽丝幻乐团。
 

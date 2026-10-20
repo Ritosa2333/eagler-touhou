@@ -16,7 +16,7 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ASSETS = pathlib.Path(os.environ.get('TH12_ASSETS', ROOT / 'site/assets')).expanduser().resolve()
 ARTWORK = pathlib.Path(os.environ.get('TH12_ARTWORK', ROOT / 'artifacts/eagler-content/artwork')).expanduser().resolve()
-PINNED_EXE_SHA256 = '99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
+from retail_version import VERSIONS
 # The ordering follows the retail layers: sky21, right title tile21, left
 # title tile22, then logo24. The two tiles in each pair do not overlap.
 TITLE_LAYERS = [(102, 68), (103, 69), (101, 67), (100, 66), (108, 70)]
@@ -60,7 +60,8 @@ def settled_art_pose(atlas, script_id, sprite_id):
 
 def main():
     atlas = json.loads((ASSETS / 'atlases.json').read_text('utf-8'))['title']
-    if atlas['provenance']['originalExeSha256'] != PINNED_EXE_SHA256:
+    executable_sha256 = atlas['provenance']['originalExeSha256']
+    if executable_sha256 not in VERSIONS['executables']:
         raise ValueError('Host artwork requires the TH12 1.00b title metadata')
     canvas = Image.new('RGBA', (640, 480), (0, 0, 0, 0))
     poses = [settled_art_pose(atlas, script, sprite) for script, sprite in TITLE_LAYERS]
@@ -92,7 +93,7 @@ def main():
     canvas.convert('RGB').save(target, format='WEBP', quality=55, method=6)
     metadata = {'schema': 'th12-host-artwork-source/1', 'game': 'th12', 'file': target.name,
                 'width': 640, 'height': 480, 'source': 'title.anm',
-                'sourceSha256': atlas['provenance']['sha256'], 'originalExeSha256': PINNED_EXE_SHA256,
+                'sourceSha256': atlas['provenance']['sha256'], 'originalExeSha256': executable_sha256,
                 'composition': 'settled-initial-title-artwork', 'layers': layers,
                 'excluded': ['menu rows', 'version', 'copyright', 'transition gradients'],
                 'webp': {'quality': 55, 'method': 6},

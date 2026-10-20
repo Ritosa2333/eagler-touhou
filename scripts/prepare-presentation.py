@@ -8,8 +8,9 @@ dest=pathlib.Path(os.environ.get('TH12_ASSETS',ROOT/'site/assets')).expanduser()
 dest.mkdir(parents=True,exist_ok=True)
 exe=original/'th12.exe'
 identity=json.loads((ROOT/'local/content-identity.json').read_text())
-PINNED_EXE_SHA256='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
-if hashlib.sha256(exe.read_bytes()).hexdigest()!=PINNED_EXE_SHA256 or identity['files']['th12.exe']['sha256']!=PINNED_EXE_SHA256:
+from retail_version import validate_executable
+PINNED_EXE_SHA256=validate_executable(exe)
+if identity['files']['th12.exe']['sha256']!=PINNED_EXE_SHA256:
     raise ValueError('presentation table addresses require the pinned retail executable')
 pe=pefile.PE(str(exe));table=pe.get_data(0x4af280-pe.OPTIONAL_HEADER.ImageBase,31*0xd0)
 atlases=json.loads((dest/'atlases.json').read_text(encoding='utf-8'))

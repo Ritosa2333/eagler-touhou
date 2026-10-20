@@ -1,0 +1,19 @@
+{
+  "schema": "th12-purple-ui-source/1",
+  "version": "2.2.2.7",
+  "sources": {
+    "thprac/src/thprac/thprac_games_def.json": "748ad3affe12d6f30913c6c6401a92885a89afcfb1be665406238e18d0369359",
+    "thprac/src/thprac/thprac_th12.cpp": "e51f6defca074f188e6e02a0200a1108904c0b7413a9c8dfa7b420dcaf378a3d",
+    "thprac/src/thprac/thprac_version.h": "71269d793bfdb3df32c22b6d5cfc1074e7bbacea33cbdd2c0237dc1878d7c4bd",
+    "LICENCE": "a7bab1bff60ef24bdae2eefe674a149370e686e80185696c23c305f3d242203c"
+  },
+  "shared": [
+    "include/eagler/thprac/PracticeSpeed.inc",
+    "include/eagler/thprac/PracticeReaction.inc",
+    "include/eagler/thprac/PracticeKeyHud.inc"
+  ],
+  "platformReferences": [
+    "ports/th10/web/cpp/sdl/ThpracUi.cpp",
+    "ports/th11/web/cpp/sdl/ThpracUi.cpp"
+  ]
+}

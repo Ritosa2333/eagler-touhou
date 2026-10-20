@@ -10,9 +10,9 @@ function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve
 function audio(decode=async bytes=>({encoded:[...new Uint8Array(bytes)]})){
   const context={destination:{},sources:[],gains:[],decoded:0};
   context.decodeAudioData=bytes=>{context.decoded++;return decode(bytes);};
-  context.createGain=()=>{const gain={gain:{value:1},connect(target){this.target=target;}};context.gains.push(gain);return gain;};
+  context.createGain=()=>{const gain={gain:{value:1},connect(target){this.target=target;},disconnect(){this.target=null;}};context.gains.push(gain);return gain;};
   context.createBufferSource=()=>{
-    const source={started:0,stopped:0,connect(target){this.target=target;},start(...args){this.started++;this.startArgs=args;},stop(){this.stopped++;}};
+    const source={started:0,stopped:0,connect(target){this.target=target;},disconnect(){this.target=null;},start(...args){this.started++;this.startArgs=args;},stop(){this.stopped++;}};
     context.sources.push(source);return source;
   };
   return context;
@@ -22,13 +22,14 @@ test('road to Boss stops the previous source and retains original loop points',a
   const context=audio(),player=new MusicPlayer({context,readBytes:async()=>new Uint8Array([1]),volume:.2});
   assert.equal(await player.play(road),true);
   const first=player.source;
+  const firstEnded=first.onended;
   assert.equal(first.loop,true);assert.equal(first.loopStart,road.loopStart);assert.equal(first.loopEnd,road.loopEnd);
   assert.equal(first.target.gain.value,.2);
   assert.equal(await player.play(boss),true);
   assert.equal(first.stopped,1);assert.notEqual(player.source,first);
   assert.equal(player.source.loopStart,boss.loopStart);assert.equal(player.source.loopEnd,boss.loopEnd);
   // An old source's asynchronous ended event cannot clear the new track.
-  first.onended();assert.equal(player.source,context.sources[1]);
+  firstEnded();assert.equal(player.source,context.sources[1]);
   player.stop();assert.equal(context.sources[1].stopped,1);assert.equal(player.source,null);
 });
 

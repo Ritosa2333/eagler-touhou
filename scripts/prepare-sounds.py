@@ -17,13 +17,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 ORIGINAL = pathlib.Path(os.environ.get('TH12_ORIGINAL', ROOT / 'local/original')).expanduser().resolve()
 RETAIL = pathlib.Path(os.environ.get('TH12_RETAIL', ROOT / 'local/retail')).expanduser().resolve()
 ASSETS = pathlib.Path(os.environ.get('TH12_ASSETS', ROOT / 'site/assets')).expanduser().resolve()
-PINNED_EXE_SHA256 = '99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
+from retail_version import validate_executable
 
 
 def main():
     executable = ORIGINAL / 'th12.exe'
-    if hashlib.sha256(executable.read_bytes()).hexdigest() != PINNED_EXE_SHA256:
-        raise ValueError('Sound table addresses require the unmodified TH12 1.00b executable')
+    validate_executable(executable)
     pe = pefile.PE(str(executable))
     image = pe.get_memory_mapped_image()
     image_base = pe.OPTIONAL_HEADER.ImageBase

@@ -2,13 +2,13 @@
 import {sections, chapterCounts, source} from './sections.mjs';
 export {sections, chapterCounts, source};
 export const DEFAULT_PARAMS=Object.freeze({mode:1,stage:0,section:0,phase:0,dlg:false,score:0,
-  life:8,life_fragment:0,bomb:8,bomb_fragment:0,power:400,value:10000,graze:0,ufo_side:0,
+  life:9,life_fragment:0,bomb:9,bomb_fragment:0,power:400,value:10000,graze:0,ufo_side:0,
   ventra_1:0,ventra_2:0,ventra_3:0});
 export const TOOL=Object.freeze({invulnerable:1,infiniteLives:2,infiniteBombs:4,infinitePower:8,
-  timeLock:16,autoBomb:32,everlastingBgm:64,allClearBonus:128});
+  timeLock:16,autoBomb:32,everlastingBgm:64,allClearBonus:128,enemyInvulnerable:256});
 export const PRACTICE_SCHEMA='eagler-touhou/th12-practice/1';
-const bounds={mode:[0,1],stage:[0,6],phase:[0,4],score:[0,9999999990],life:[0,8],life_fragment:[0,3],
-  bomb:[0,8],bomb_fragment:[0,2],power:[0,400],value:[0,999990],graze:[0,999999],ufo_side:[0,1],
+const bounds={mode:[0,1],stage:[0,6],phase:[0,4],score:[0,9999999990],life:[0,9],life_fragment:[0,3],
+  bomb:[0,9],bomb_fragment:[0,2],power:[0,400],value:[0,999990],graze:[0,999999],ufo_side:[0,1],
   ventra_1:[0,3],ventra_2:[0,3],ventra_3:[0,3]};
 const integer=(value,min,max)=>Number.isSafeInteger(value)&&value>=min&&value<=max;
 export function validateParams(input,difficulty=null) {
@@ -61,7 +61,7 @@ export class PracticeBridge {
   setEnabled(enabled){this.call('_th12_practice_enabled',enabled?1:0);}
   setReplay(replay){this.call('_th12_practice_replay',replay?1:0);this.replay=!!replay;}
   reset(clearTools=false){this.call('_th12_practice_reset',clearTools?1:0);this.replay=false;this.params={...DEFAULT_PARAMS};}
-  setTools(mask){if(this.replay)return false;this.call('_th12_practice_tools',mask&255);return true;}
+  setTools(mask){if(this.replay)return false;this.call('_th12_practice_tools',mask&511);return true;}
   setSpeed({fps=60,slow=15,fast=60,debug=false}){this.call('_th12_practice_speed',fps,slow,fast,debug?1:0);}
   interval({replay=this.replay,fast=false,slow=false,debug=false}={}){return this.call('_th12_practice_interval',replay?1:0,fast?1:0,slow?1:0,debug?1:0);}
   snapshot(){

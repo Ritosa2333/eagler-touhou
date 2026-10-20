@@ -8,6 +8,7 @@
 #include "LaserWorld.hpp"
 #include "PresentationTracking.hpp"
 #include "SpellHistory.hpp"
+#include "PracticeTools.hpp"
 
 namespace th12 {
 void referenceFault(const Context& c, int operand, bool floating, i32 value) {
@@ -652,6 +653,8 @@ void command(Enemy& e, Context& c, int op) {
     e.clampY = F(1);
     e.clampWidth = F(2);
     e.clampHeight = F(3);
+    // Purple417562 runs after ECL404 writes the movement range.
+    practice::bossMoveRange(e.clampY,e.clampHeight);
     e.flags |= 0x10000u;
     break;
   case 402:
@@ -709,6 +712,7 @@ void command(Enemy& e, Context& c, int op) {
     }
     break;
   case 412: {
+    practice::resetLockTimer();
     const int slot = I(0);
     if (slot >= 0 && slot < 8) {
       for (auto& other : enemies)
@@ -732,6 +736,7 @@ void command(Enemy& e, Context& c, int op) {
     e.phaseAgeTime = e.ageTime = 0;
     break;
   case 414: {
+    practice::resetLockTimer();
     const int timeout = I(2), health = I(1), slot = I(0);
     if (slot >= 0 && slot < 8) {
       auto& interrupt = e.interrupts[slot];
@@ -813,6 +818,7 @@ void command(Enemy& e, Context& c, int op) {
     if (length >= 0 && length <= int(rd<u16>(c.pc + 6)) - 32)
       start.title = spell_system::decryptTitle(c.pc + 32, length);
     restoreSpellHistory(start);
+    practice::resetLockTimer();
     if (!spellState.start(start))
       ++unsupported[op];
     else {

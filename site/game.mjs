@@ -47,7 +47,7 @@ function notice(text=''){$('notice').textContent=text;}
 function fail(error){if(fatalError)return;fatalError=true;busy=true;audio.musicPaused=true;audio.pendingTrack=null;++audio.request;audio.music?.stop();audio.effects?.stop();clearKeys();notice('运行中断：'+error.message);console.error(error);emit({event:'error',message:error.message});}
 function clearKeys({touchToo=true,practiceToo=true}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel();if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);resetGamePresentation();}
 function resetGamePresentation(){previousPresentation=currentPresentation=null;renderer?.resetPresentation();}
-function gamePresentationOptions(){return {currentFps:meter.value,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
+function gamePresentationOptions(){return {currentFps:meter.value,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
 function captureGamePresentation(){if(!session||!ready)return;previousPresentation=currentPresentation;currentPresentation=renderer.capturePresentation(core,gamePresentationOptions());}
 function drawGamePresentation(interpolate=false){if(!currentPresentation)captureGamePresentation();if(currentPresentation)renderer.renderPresentation(previousPresentation,currentPresentation,interpolate&&!runtimeOptions.limitPresentationTo60?Math.min(1,accumulator/logicalStep):1);}
 function updatePracticeUI(){
@@ -282,9 +282,11 @@ function gameTick(input){
     const recorded=session.replay.input(session.stage,session.cursor);
     if(replayInputEnded(recorded)){if(session.mode==='demo')model.returnTitle();else nextStage().catch(fail);return;}
     ({held,pressed}=recorded);const delta=session.replay.motion?.(session.stage,session.cursor);motion=delta?{mode:4,x:delta[0],y:delta[1]}:null;session.cursor++;
-  }else session.recorder?.pushInput({held,pressed,released:session.previous&~held},meter.value||60);
+  }
   core._th12_motion(motion?.mode??0,motion?.x??0,motion?.y??0);
-  session.previous=held;core._th12_tick(held,pressed);session.clock++;
+  core._th12_tick(held,pressed);session.clock++;
+  if(!session.replay){const resolved=new Int32Array(core.HEAPU8.buffer,core._th12_practice_input(),2);held=resolved[0];pressed=resolved[1];session.recorder?.pushInput({held,pressed,released:session.previous&~held},meter.value||60);}
+  session.previous=held;
   if(runtimeOptions.replayViewer)viewerMusic.ticks++;
   if(!session.replay){
     const resolved=new Int32Array(core.HEAPU8.buffer,core._th12_motion_result(),4);
@@ -394,14 +396,16 @@ function present(){
     if(session&&(['pause','pause-confirm','continue','result-menu','result','name'].includes(scene)||scene==='replay-save'&&model.state.nameContext==='pause'))drawGamePresentation();
     presentation.render(model.state,meter.value);
   }
-  if(session&&!session.replay)core._th12_set_wall_time(performance.now());choices();
+  if(session&&!session.replay)core._th12_set_wall_time(performance.now());choices();practiceUI?.render();
 }
 function tick(){
   updatePracticeUI();
   const sampled=input(),controller=padInput(),pad=controller.value;
+  if(practiceUI?.tick(pad|sampled.ui)){presentation.tick(model.state);updatePracticeUI();return;}
+  updatePracticeUI();
   if(controller.capturing){previousPadUI=0;model.tick({held:0,pressed:0});presentation.tick(model.state);return;}
   const touched=touch.sample(touchState(),{arrows:!!((sampled.held|pad)&0xf0)});
-  if(practiceCaptured){if(['playing','demo'].includes(model.state.scene)){gameTick({held:0});if(captureThisTick)captureGamePresentation();}updatePracticeUI();return;}
+  if(practiceCaptured){if(['playing','demo'].includes(model.state.scene)){gameTick({held:0});if(captureThisTick)captureGamePresentation();}else{model.tick({held:0,pressed:0});presentation.tick(model.state);}updatePracticeUI();return;}
   const ui=sampled.ui|pad|touched.held,pressed=sampled.pressed|(pad&~previousPadUI)|touched.pressed;previousPadUI=pad;
   if(ending){ending.tick({held:ui,pressed});if(ending.finished){profile.recordEndingSeen(ending.message.id);profile.save().catch(fail);ending=null;model.finish({kind:'clear',...pendingResult});}return;}
   if(model.state.scene==='playing'&&(pressed&(256|0x200000))){model.openPause(resultData(false));clearKeys();if(pressed&0x200000)model.tick({held:0x200000,pressed:0x200000});presentation.tick(model.state);return;}
@@ -458,13 +462,15 @@ function eventKey(code,down,source='local'){
 window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;if(assets.managed&&managedInput.key(e,true,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code==='F1'||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Escape','Tab','Backspace','F12'].includes(code))e.preventDefault();if(code)eventKey(code,true);});
 window.addEventListener('keyup',e=>{if(assets.managed&&managedInput.key(e,false,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code)eventKey(code,false);});
 for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])window.addEventListener(type,event=>{
-  if(event.pointerType==='mouse'||!touch.options.touchEnabled||!ready||busy||runtimeOptions.replayViewer)return;
+  if(!ready||busy||runtimeOptions.replayViewer)return;
   if(type==='pointerdown')try{canvas.setPointerCapture(event.pointerId);}catch{}
-  if(practicePointer({id:'local:'+event.pointerId,type:type==='pointercancel'?'cancel':type.slice(7),x:event.clientX,y:event.clientY,button:event.button})){event.preventDefault();return;}
+  if(practicePointer({id:'local:'+event.pointerId,type:type==='pointercancel'?'cancel':type.slice(7),x:event.clientX,y:event.clientY,button:event.button,pointerType:event.pointerType})){event.preventDefault();return;}
+  if(event.pointerType==='mouse'||!touch.options.touchEnabled)return;
   event.preventDefault();if(type==='pointerdown')audioReady().catch(fail);
   const point=pointerPosition(event.clientX,event.clientY);touch.pointer({id:'local:'+event.pointerId,type:type==='pointercancel'?'cancel':type.slice(7),...point},touchState());
 },{passive:false});
 canvas.addEventListener('lostpointercapture',event=>{const id='local:'+event.pointerId;if(touch.points.has(id))touch.release(id,true);practiceUI?.pointer({type:'cancel',id});});
+window.addEventListener('wheel',event=>{if(practiceUI?.wheel(event))event.preventDefault();},{passive:false});
 window.addEventListener('blur',()=>{clearKeys();if(assets.managed)syncRuntime().catch(fail);});
 document.addEventListener('visibilitychange',()=>{backgrounded=document.hidden;clearKeys();if(backgrounded){if(runtimeOptions.replayViewer)replayWorkspace?.background();else if(ready&&model.state.scene==='playing'){model.openPause(resultData(false));pauseAudio();}suspendBrowserAudio();syncRuntime().catch(fail);}else restoreBrowserAudio().catch(fail);});
 window.addEventListener('pagehide',()=>{backgrounded=true;clearKeys();replayWorkspace?.background();suspendBrowserAudio();syncRuntime().catch(console.error);});
@@ -496,8 +502,9 @@ async function initialize(){
     catch(error){console.warn('录像信息读取失败 '+fixture.id+': '+error.message);return fixture;}
   }));
   for(const path of await store.list())if(/^\/savesth12\/replay\/[^/]+\.rpy$/i.test(path))try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);corpus=corpus.filter(f=>f.id!==id);corpus.push(replayMetadata(r,{id}));}catch(error){console.warn(error.message);}
-  practiceBridge=new PracticeBridge(core);damageSources=new DamageSourceBridge(core);practiceUI=new PracticeOverlay({bridge:practiceBridge,canvas,onError:fail,onMenuAction:action=>model.practiceAction(action)});
+  practiceBridge=new PracticeBridge(core);damageSources=new DamageSourceBridge(core);practiceUI=new PracticeOverlay({bridge:practiceBridge,canvas,onError:fail,onMenuAction:action=>model.practiceAction(action),onRetry:()=>{model.openPause(resultData(false));model.state.readyAt=0;model.quickRetry();}});
   practiceUI.configure({enabled:!!runtimeOptions.thpracEnabled&&!runtimeOptions.replayViewer,locale:runtimeOptions.thpracLocale??'ja-JP'});
+  await practiceUI.initialize(assets.fonts);
   if(runtimeOptions.thpracEnabled&&!practiceBridge.snapshot().enabled)throw Error('当前构建未包含 THPrac，请重新生成完整适配版');
   model=new TitleScenes({profile,corpus,settings:profile.settings,musicTracks:resources.musicComments,practiceEnabled:!!runtimeOptions.thpracEnabled,practiceLocale:runtimeOptions.thpracLocale??'ja-JP'});presentation=new TitlePresentation(renderer,resources,profile);
   if(runtimeOptions.replayViewer)replayWorkspace=new ReplayWorkspace({
@@ -539,7 +546,7 @@ async function bootstrap(){
     },
     resources:async items=>{await assets.install(items,message=>emit(message));await installRuntimeFonts(assets.fonts);},launch:launchRuntime,
     playback:message=>{if(!ready||!runtimeOptions.replayViewer||!replayWorkspace)throw Error('请先打开录像工作区');return replayWorkspace.command(message);},
-    key:(code,down,message)=>{if(!managedInput.key(message,down,message.inputSource==='physical'?'physical':'virtual',eventKey))eventKey(keyboardCode(message),down,'host');},clearKeyboard:()=>{clearKeys({touchToo:false,practiceToo:false});practiceUI?.keys.clear();},cancelTouch:()=>{touch.cancel();practiceUI?.cancel();},
+    key:(code,down,message)=>{if(!managedInput.key(message,down,message.inputSource==='physical'?'physical':'virtual',eventKey))eventKey(keyboardCode(message),down,'host');},clearKeyboard:()=>{clearKeys({touchToo:false,practiceToo:false});practiceUI?.clearKeyboard();},cancelTouch:()=>{touch.cancel();practiceUI?.cancel();},
     touch:message=>{touch.controls(message,ready&&!busy?touchState():{key:'inactive',kind:'menu',instance:'',ready:false});practiceUI?.mobilePanels(message);updatePracticeUI();},pointer:hostPointer,practicePointer,sync:syncRuntime,
   },window,{announceReady:false});
   store=await openStore();await assets.prepare();emit.ready();

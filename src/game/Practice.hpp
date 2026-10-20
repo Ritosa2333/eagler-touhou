@@ -6,12 +6,14 @@ namespace th12::practice {
 struct Parameters {
   int32_t mode=1, stage=0, section=0, phase=0;
   int64_t score=0;
-  int32_t life=8, life_fragment=0, bomb=8, bomb_fragment=0, power=400,
+  int32_t life=9, life_fragment=0, bomb=9, bomb_fragment=0, power=400,
           value=10000, graze=0, ufo_side=0, ventra_1=0, ventra_2=0, ventra_3=0;
   bool dlg=false;
 };
 enum Tool : uint32_t {Invulnerable=1, InfiniteLives=2, InfiniteBombs=4, InfinitePower=8,
-  TimeLock=16, AutoBomb=32, EverlastingBgm=64, AllClearBonus=128};
+  TimeLock=16, AutoBomb=32, EverlastingBgm=64, AllClearBonus=128, EnemyInvulnerable=256};
+struct TrackerInfo {int misses=0,bombs=0;int collected[3]{},dropped[4]{},summoned[4]{};};
+const TrackerInfo& trackerInfo();
 
 void setEnabled(bool enabled);
 bool enabled();
@@ -42,6 +44,7 @@ void recordUfoDropped(int nativeType);
 void recordUfoSummoned(int nativeType);
 // Original TH12 auto-bomb replaces only the deathbomb key test at436d9b.
 void beforeTick(int& held, int& pressed);
+const int32_t* resolvedInput();
 void afterTick();
 void setSpeed(int fps, int replaySlow, int replayFast, bool debugAcceleration);
 double interval(bool replay, bool fast, bool slow, bool debug);

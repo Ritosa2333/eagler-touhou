@@ -4,6 +4,26 @@
   "revision": "608729a1637231d392e9fe97c09551f5b311dc54",
   "subdirectory": "common",
   "files": {
-    "include/eagler/thprac/PracticeSpeed.hpp": "d2918548210a26aaae6211771bd4d28213453693e998c24b55c1e79851fb01fd"
+    "include/eagler/thprac/PracticeSpeed.hpp": "d2918548210a26aaae6211771bd4d28213453693e998c24b55c1e79851fb01fd",
+    "third_party/imgui/imgui.cpp": "c84dbfe0f73d5f708d9b2cf2fc9bc3a16fcbce4afda7b826a7fcffb02753e4b5",
+    "third_party/imgui/imgui_draw.cpp": "87ff88f2abf632c566627b5466e20e2f5bf38382449149eea1d06a3069318050",
+    "third_party/imgui/imgui_tables.cpp": "70b9be24c67f603423c7e2da8e00023b5468d8604c99017d3e46a72f2488c4c4",
+    "third_party/imgui/imgui_widgets.cpp": "e93f593d7ed3599ccfe1c989bf9b8ed7e61b3177c0bebf9b45bbe46b398194c0",
+    "third_party/imgui/imgui_freetype.cpp": "aede42cbf7c3381b46530080d3499d73582d76e0126c66905236fddd95d8483e",
+    "third_party/imgui/imconfig.h": "1173ac4475d11b3dc789509298cf2343cd931e63c37fc6cc127736608d877802",
+    "third_party/imgui/imgui.h": "df80ab4c641c6e55dcb30f73c61beae0efe93e7f5a6578d7462353b520f48449",
+    "third_party/imgui/imgui_freetype.h": "83880cad1a51b16efcd66fbb19602b4bfd7b49975afac1853aabe4de7d27cd4e",
+    "third_party/imgui/imgui_internal.h": "5017ae504f9d515f338cd6edcf918b87187cc34ea1e8df77d2a9cdd91af5367f",
+    "third_party/imgui/imgui_user.h": "f6a96f8d227c453136863dbd48680b3ed8b777213e53611d4b394ec935890b5c",
+    "third_party/imgui/imgui_user.inl": "79e6eafa650c7f6f2b1296eb8ff1e5028e4a76c85f455f95098f67fca5a6fe0a",
+    "third_party/imgui/imstb_rectpack.h": "61eb7950e45d4831faac6629a727ac464ddcfcf199eb27a7b47de02b898ab6ef",
+    "third_party/imgui/imstb_textedit.h": "fd8408584842d13ca4a3f5b002a77c80491626d289a96463ba52c11981816024",
+    "include/eagler/thprac/PracticeInput.hpp": "bf8e4a1623d3a959ac8288036256c274a3a2455afaf466ff1555849789554366",
+    "include/eagler/thprac/PracticeKeyHud.inc": "595647487150fdc129cbb3f58632956f10179f460ff79207bad9d4b7e09ee76c",
+    "include/eagler/thprac/PracticeKeyMonitor.hpp": "851e448d033925f847dcdf19baaa6062dd2d7ef45bc462bc1b657c87a64eb927",
+    "include/eagler/thprac/PracticeMobilePanels.hpp": "cc3d9ac518a8e82a467ef90e2014f42a513346f7294548909cb10a6f1a496c2c",
+    "include/eagler/thprac/PracticePointer.hpp": "e6de87d76cdb3b2fd1e2efad6271a3da121125fab24d39960d2fa380db7b09e0",
+    "include/eagler/thprac/PracticeReaction.inc": "ae0f2fb68b1e3ce1db8fdad199803aaf8ce13f58b37df3025671c5b8931d3280",
+    "include/eagler/thprac/PracticeSpeed.inc": "7e56beee518a15fc8d71f57e3880befcf2d5803e280ea9a97136059769f86c09"
   }
 }

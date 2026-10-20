@@ -69,8 +69,9 @@ export function spellTitleDescriptors(spell,logicalPoses=[]) {
   });
 }
 
-export function spellTextDescriptors(spell,logicalPoses=[]) {
-  return [...spellTitleDescriptors(spell,logicalPoses),...spellAsciiDescriptors(spell,logicalPoses)];
+export function spellTextDescriptors(spell,logicalPoses=[],{disableMaster=false}={}) {
+  const ascii=spellAsciiDescriptors(spell,logicalPoses).map(value=>disableMaster?{...value,drawFlag:0}:value);
+  return [...spellTitleDescriptors(spell,logicalPoses),...ascii];
 }
 
 function timerSubmission(text,x,y,colorARGB,scale=1){

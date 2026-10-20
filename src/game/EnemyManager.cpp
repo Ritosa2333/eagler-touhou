@@ -2,6 +2,7 @@
 #include "EnemyCallbacks.hpp"
 #include "GameState.hpp"
 #include "Practice.hpp"
+#include "PracticeTools.hpp"
 
 namespace th12 {
 void finishEnemyUpdate(Enemy& e);
@@ -175,7 +176,7 @@ void finishEnemyUpdate(Enemy& e) {
     if (spellState.pendingBomb())
       damage /= 30;
     if (hurtQuery) {
-      if (!(e.flags & 0x10u) && !e.immunityTicks) {
+      if (!(e.flags & 0x10u) && !e.immunityTicks && !practice::tool(practice::EnemyInvulnerable)) {
         enemy_life::hurt(e.life, e.lifeRaw, e.lifeThreshold, e.lifeFlags, damage);
         eventBits |= 8;
       }
@@ -220,6 +221,7 @@ void finishEnemyUpdate(Enemy& e) {
   // F5 removes only the normal-rate integer phase-age increment. Keep the
   // floating clock advancing, and retain the original slow-rate path.
   const bool lockPhaseAge = gameSpeed == 1 && practice::tool(practice::TimeLock);
+  if(practice::enabled())practice::toolSettings().lock_frame_pending=true;
   if (!lockPhaseAge && anm_logic::nativeInt(e.phaseAgeTime) != e.phaseAge)
     e.phaseAgeTime = float(e.phaseAge);
   e.ageTime = float(double(e.ageTime) + gameSpeed);

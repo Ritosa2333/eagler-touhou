@@ -385,7 +385,7 @@ export class Renderer {
     if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
     const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
-    for(const text of spellTextDescriptors(spell,logicalPoses))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:45,clipped:false,order:poses.length});
+    for(const text of spellTextDescriptors(spell,logicalPoses,{disableMaster:fps.disableMaster}))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:text.drawFlag===0?69:45,clipped:false,order:poses.length});
     for(const text of [...bossTimerDescriptors(bossHud),...spellResultDescriptors(spell,logicalPoses)])poses.push({nativeText:text,drawPriority:44,clip:2,order:poses.length});
     const ufo=readCoreUfo(core);
     for(const text of ufoTextPoses(ufo)){const priority=ufoTextRenderPriority(text),attached=!!ufo?.enemyId&&text.font===2&&text.drawFlag===1&&text.colorARGB===0xc080ffc0;

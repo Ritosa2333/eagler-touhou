@@ -17,7 +17,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 ORIGINAL = pathlib.Path(os.environ.get('TH12_ORIGINAL', ROOT / 'local/original')).expanduser().resolve()
 RETAIL = pathlib.Path(os.environ.get('TH12_RETAIL', ROOT / 'local/retail')).expanduser().resolve()
 DEST = pathlib.Path(os.environ.get('TH12_ASSETS', ROOT / 'site/assets')).expanduser().resolve()
-PINNED_EXE_SHA256 = '99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
+from retail_version import validate_executable
+PINNED_EXE_SHA256 = validate_executable(ORIGINAL / 'th12.exe')
 
 
 def shared_anm_decoder():

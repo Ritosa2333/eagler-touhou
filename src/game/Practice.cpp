@@ -1,4 +1,5 @@
 #include "Practice.hpp"
+#include "PracticeTools.hpp"
 #include "GameSession.hpp"
 #include "GameState.hpp"
 #include "StageFlow.hpp"
@@ -16,12 +17,11 @@
 namespace th12::practice {
 namespace {
 bool profileEnabled=false, live=false, playback=false, modified=false;
-uint32_t toolFlags=0, generation=0;
+uint32_t toolFlags=0, generation=0;int32_t resolved_input[2]{};
 Parameters config{};
 std::string failure, stateBuffer;
 std::vector<std::vector<u8>> pristineFiles;
-struct Tracker {int misses=0,bombs=0;std::array<int,3> collected{};std::array<int,4>dropped{},summoned{};};
-Tracker tracker;
+TrackerInfo tracker;
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
 eagler::thprac::PracticeSpeed speed;
 uint32_t headerCrc32(const uint8_t* bytes,size_t count) {
@@ -121,7 +121,7 @@ bool patchProgram(const Parameters& params) {
 bool fail(const char* text) {failure=text;return false;}
 bool validParameters(const Parameters& p,int diff=-1) {
   if (p.mode<0||p.mode>1||p.stage<0||p.stage>6||p.score<0||p.score>9999999990LL||p.score%10||
-      p.life<0||p.life>8||p.life_fragment<0||p.life_fragment>3||p.bomb<0||p.bomb>8||
+      p.life<0||p.life>9||p.life_fragment<0||p.life_fragment>3||p.bomb<0||p.bomb>9||
       p.bomb_fragment<0||p.bomb_fragment>2||p.power<0||p.power>400||p.value<0||p.value>999990||
       p.value%10||p.graze<0||p.graze>999999||p.ufo_side<0||p.ufo_side>1||
       p.ventra_1<0||p.ventra_1>3||p.ventra_2<0||p.ventra_2>3||p.ventra_3<0||p.ventra_3>3)
@@ -158,12 +158,15 @@ void reset(bool clearTools) {
   config={};live=playback=modified=false;pristineFiles.clear();failure.clear();tracker={};++generation;
   if (clearTools) {
     toolFlags=0;
+    toolSettings()={};
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
     speed={};
 #endif
   }
+  resetToolInput();
+  resetLockTimer();
 }
-void stageSelected() {live=false;playback=false;pristineFiles.clear();failure.clear();++generation;}
+void stageSelected() {live=false;playback=false;pristineFiles.clear();failure.clear();resetLockTimer();++generation;}
 const Parameters& parameters(){return config;}
 bool configure(const int32_t* w,int count) {
   failure.clear();
@@ -229,7 +232,7 @@ void applyBirth(){if(profileEnabled&&live&&config.mode) itemManager.tokenSideCou
 void setReplay(bool value){playback=value;}
 bool replay(){return playback;}
 bool active(){return profileEnabled&&live;}
-void setTools(uint32_t value){if(profileEnabled&&!playback){toolFlags=value&255u;if(toolFlags&191u)modified=true;}}
+void setTools(uint32_t value){if(profileEnabled&&!playback){toolFlags=value&511u;if(toolFlags&447u)modified=true;}}
 uint32_t tools(){return toolFlags;}
 bool tool(Tool flag){return profileEnabled&&!playback&&(toolFlags&uint32_t(flag));}
 bool assisted(){return modified||(profileEnabled&&live&&config.mode);}
@@ -241,11 +244,19 @@ void recordUfoCollected(int type){if(profileEnabled&&type>=0&&type<3)++tracker.c
 void recordUfoDropped(int type){if(!profileEnabled||type<0||type>5)return;if(type>3)type=3;++tracker.dropped[type==1||type==2?3-type:type];}
 void recordUfoSummoned(int type){if(profileEnabled&&type>=0&&type<4)++tracker.summoned[type==1||type==2?3-type:type];}
 void beforeTick(int& held,int& pressed){
-  if (!profileEnabled||playback) return;
-  if (toolFlags&191u) modified=true;
-  if (tool(AutoBomb)&&playerState==4&&playerStateTicks<8&&bombs>0) {held|=2;pressed|=2;}
+  if (profileEnabled&&!playback) {
+    applyToolInput(held,pressed);
+    if (toolFlags&447u) modified=true;
+    if (tool(AutoBomb)&&playerState==4&&playerStateTicks<8&&bombs>0) {held|=2;pressed|=2;}
+  }
+  resolved_input[0]=held;resolved_input[1]=pressed;
 }
-void afterTick(){}
+const int32_t* resolvedInput(){return resolved_input;}
+void afterTick(){recordToolTick(previousHeld);}
+const TrackerInfo& trackerInfo(){return tracker;}
+#if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
+eagler::thprac::PracticeSpeed& speedSettings(){return speed;}
+#endif
 void setSpeed(int fps,int slow,int fast,bool debug){
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
   if(!profileEnabled)return;
@@ -285,9 +296,9 @@ const std::string& snapshot(){
   out<<"\"fps\":60,\"slow\":15,\"fast\":60,\"debug\":false";
 #endif
   out<<"},\"tracker\":{\"misses\":"<<tracker.misses<<",\"bombs\":"<<tracker.bombs<<",\"collected\":[";
-  for(size_t i=0;i<tracker.collected.size();++i){if(i)out<<',';out<<tracker.collected[i];}out<<"],\"dropped\":[";
-  for(size_t i=0;i<tracker.dropped.size();++i){if(i)out<<',';out<<tracker.dropped[i];}out<<"],\"summoned\":[";
-  for(size_t i=0;i<tracker.summoned.size();++i){if(i)out<<',';out<<tracker.summoned[i];}
+  for(size_t i=0;i<3;++i){if(i)out<<',';out<<tracker.collected[i];}out<<"],\"dropped\":[";
+  for(size_t i=0;i<4;++i){if(i)out<<',';out<<tracker.dropped[i];}out<<"],\"summoned\":[";
+  for(size_t i=0;i<4;++i){if(i)out<<',';out<<tracker.summoned[i];}
   out<<"]},\"error\":\"";
   for(char value:failure){if(value=='\\'||value=='\"')out<<'\\';if(value=='\n')out<<"\\n";else out<<value;}
   out<<"\"}";stateBuffer=out.str();return stateBuffer;

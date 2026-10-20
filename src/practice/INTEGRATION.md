@@ -1,15 +1,15 @@
-# TH12 THPrac integration and evidence
+# TH12 Purple THPrac integration
 
-The source work began in `experiment/thprac`, based on canonical commit
-`b40dfb5c55bec2ebbfa4bdcabdb877a5f9500f27`. Its source, title entry and real core
-hooks are now connected in the canonical `main` working directory. The separate
-`experiments` restoration branch remains at
-`492eddf16a3d9389cb529bedf06555b2cafcabe5`. This records implementation ownership;
-it does not establish runtime, lifecycle or device acceptance.
+TH12 uses native ImGui practice, cheat, advanced and information windows.
+`src/wasm/PracticeUi.cpp` follows the TH10/11 platform adapters and uses the
+shared purple input, speed, key HUD, reaction test and mobile panels from
+[`common/docs/thprac.md`](../../../../common/docs/thprac.md). The browser adapter
+transports pointer/keyboard input, shared font bytes and cached `ImDrawData`.
 
-The complete C++ core with THPrac enabled and the separate Vorbis decoder have
-been compiled. The user requested no game, Oracle, browser, syntax-check or test
-execution. Those acceptance activities were not performed in this work.
+`UiCatalog.hpp` imports the three-language labels, selection groups, version
+2.2.2.7 and MIT license from `thprac_purple`. `purple-ui-source.json` records
+their source digests. The existing native TH12 section catalog, transactional
+ECL patches and replay parameter schema own the practice configuration.
 
 ## Source and redistribution boundary
 
@@ -32,11 +32,11 @@ stage/difficulty availability. Public source and `THPRAC-LICENSE.txt` (MIT,
 Ack 2022) are retained here. Original game resources are not redistributed with
 this source.
 
-The sole shared tool dependency is
-`<eagler/thprac/PracticeSpeed.hpp>`. Its source owner and expected SHA256 are pinned
-in `integration/common-dependency.json`; the build verifies the selected common
-input and includes its hash in the report. Auto-shoot, disable-key, reaction and
-key-HUD tools were not added to TH12's original F12 membership.
+Shared dependencies include `PracticeInput`, `PracticeKeyMonitor`, `PracticeSpeed`,
+their UI fragments, `PracticePointer`, `PracticeMobilePanels`, common ImGui and
+FreeType. `integration/common-dependency.json` pins the shared source hashes.
+`scripts/practice-build.mjs` inventories translation units and headers for both
+compilation and runtime source fingerprints.
 
 ## Rebuild and source generation
 
@@ -47,6 +47,20 @@ maps that flag to `TH12_ENABLE_THPRAC=1`. `TH12_THPRAC=0 npm run build` on a POS
 shell, or setting the equivalent PowerShell environment variable, builds the
 ordinary core without the common/UI dependency. Runtime configuration cannot
 enable THPrac in a core built without it.
+
+Regenerate or check the purple UI catalog from the supplied source tree:
+
+```sh
+node scripts/generate-purple-ui.mjs /path/to/thprac/thprac_purple --write
+node scripts/generate-purple-ui.mjs /path/to/thprac/thprac_purple --check
+```
+
+Native UI checks use CMake with `TH12_ENABLE_THPRAC=ON` and FreeType (an installed
+package or `FREETYPE_SOURCE_DIR`), then `ctest --test-dir BUILD -C Release`.
+From the monorepo root, `node tools/ports/th12-practice-browser.mjs` checks the
+actual Wasm/ImGui UI with the shared Unifont and writes desktop/mobile screenshots
+to `artifacts/th12-purple-ui`. These checks cover UI/input behavior on a synthetic
+game surface; game-resource checks use the acceptance paths below.
 
 To regenerate public patch extraction and digest tables from private local
 retail input, use:
@@ -94,6 +108,9 @@ starts, so its ECL patching does not replace recorded initial resources.
 | Connected seam | Source-owned behavior |
 | --- | --- |
 | Player collision, stock decrement and power loss | F1 invulnerability, F2 lives, F3 bombs and F4 power act at the actual game operations. Other miss/bomb/drop effects retain their normal paths. |
+| Enemy health subtraction | U preserves enemy health through the native damage path. |
+| ECL random movement range | The boss move-down option applies purple's lower-range transform before RNG sampling. |
+| Player stock decrement | Infinite-life mapping lets stock reach zero and holds it there without entering Continue. |
 | `beforeTick` before Player16 | F6 replaces the deathbomb key requirement only while state4 has stock and its window remains open. |
 | Spell bonus branch | F5 skips bonus decay; spell age, capture state and presentation still advance. |
 | Enemy update tail | F5 freezes only the phase-age integer at normal game rate. The float clock, ordinary age and slow-rate path retain their source behavior. |
@@ -108,14 +125,24 @@ rate above 1200. Space follows the optional debug-acceleration setting.
 
 ## UI and input boundary
 
-`PracticeOverlay` is constructed with the real `PracticeBridge`, canvas, error
-handler and `model.practiceAction` callback. The Runtime updates its current
-scene, replay owner, menu and readiness from the ordinary UI cadence.
+`PracticeOverlay` is constructed with the real `PracticeBridge`, canvas and
+`model.practiceAction` callback. The Runtime updates its scene, replay owner,
+menu and readiness on the UI cadence. Native ImGui runs once per logical input
+tick; presentation renders cached data. Short key and pointer edges survive
+between ticks. Numeric fields preserve the purple bounds, including 0–9 lives
+and bombs, score/value rounding, native combos and native drag/slider behavior.
 
-F12 opens speed, gameplay and About; Backspace opens F1–F7 cheats; Tab controls
-the tracker. The game's original Pause remains the Pause owner. Only an expanded
-advanced body captures gameplay input. Tool labels follow `thpracLocale`; they
-are separate from the game-language package.
+F12 opens advanced settings; Backspace opens the cheat window. Its F1–F7 and U
+shortcuts require an active game and the open cheat window; Tab controls the
+information window. F12 includes the shared speed controls, disable-key/forced
+Shift options, fast retry, APS recording/CSV, life mapping, boss range, chromatic
+UFO counts, complete capture-history display, lock timer, all-clear bonus,
+reaction test and About/license. Tool labels follow `thpracLocale`.
+
+The practice window captures its menu input. During play, an expanded Advanced
+window captures gameplay. Shared input filtering precedes the native player
+tick; the recorder stores the resolved input returned by `th12_practice_input`.
+Replay playback skips live input filters and gameplay cheat mutations.
 
 Launcher `touch-controls` may carry `thpracMobilePanelsEnabled` and
 `thpracMobilePanelsVisible`. Reopening the group starts cheat, advanced and tracker
@@ -125,6 +152,14 @@ coordinates are converted before reaching this pointer path. Ownership is fixed
 on down, retained through outside release/cancel, and does not transfer merely
 because a game drag crosses a header. Pointer actions invoke the same menu or
 core operations as keyboard actions.
+
+The active UI finger owns ImGui's mouse state. Cancelling another game finger
+preserves that UI finger. Lifecycle cancellation clears the pointer queue and
+native active widget; keyboard clearing preserves active pointer gestures.
+Native fields and scrollbars handle touch, while desktop wheel input scrolls
+the hovered native window. Shared `/unifont.otf` initializes the FreeType atlas
+before the native UI starts. The WebGL transport converts common ImGui's BGRA
+vertex colors to the browser framebuffer.
 
 ## Replay extension and compatibility limits
 
@@ -145,7 +180,5 @@ before main birth when the THPrac profile is enabled. Playback of an embedded
 damage snapshot also requires that profile. Raw native 0x74-byte damage-source
 blobs cannot be imported.
 Missing data in older native replays is reported by the compatibility state as
-unavailable, rather than converted into invented sources. Source integration
-and successful compilation do not establish section, retry, replay or mobile
-acceptance. The human-review checklist is in
+unavailable. The game-resource and device acceptance checklist is in
 [WEB_ADAPTATION.md](../../docs/WEB_ADAPTATION.md).

@@ -65,6 +65,15 @@ function coreRecord(state){
   const bytes=new TextEncoder().encode(JSON.stringify(state)),heap=new Uint8Array(bytes.length+64);heap.set(bytes,16);
   return {HEAPU8:heap,_th12_spell:()=>16,_th12_spell_size:()=>bytes.length};
 }
+
+test('purple complete-history option selects the outer ASCII pass without changing spell state',()=>{
+  for(const record of native.text){
+    const spell=structuredClone(record.input),before=structuredClone(spell),poses=spell.historyHandlePresent?[pose('ascii',261,spell.historyAlpha/255)]:[];
+    const ordinary=spellTextDescriptors(spell,poses),expanded=spellTextDescriptors(spell,poses,{disableMaster:true});
+    assert.deepEqual(expanded,ordinary.map(value=>value.kind==='spell-title'?value:{...value,drawFlag:0}));
+    assert.deepEqual(spell,before);
+  }
+});
 test('compact spell snapshot reader is bounded and does not read or tick the full game',()=>{
   const state={flags:3,titleHex:native.titles[1].titleHex,bonusDisplayed:4000000,records:[1,0,7,3],age:224};
   const core=coreRecord(state);core._th12_state=()=>{throw Error('whole state forbidden');};core._th12_tick=()=>{throw Error('logic tick forbidden');};

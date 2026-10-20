@@ -163,8 +163,10 @@ stream/full 音乐、THPrac 与触控模式；该检查页不进入 Runtime Rele
 
 真实 Launcher 的本机入口为 `http://127.0.0.1:8130/`，由上游 React 页面与
 `package-server.mjs --games=th12` 组装，当前输出位于忽略的 `artifacts/launcher-site/`。
-此轮已完成页面编译、浏览器核心／音频编译、Hosted 内容与独立繁中包打包，
-并启动本机静态服务器；没有自行运行游戏或测试。可重建入口为
+2026-10-20 已完成页面、浏览器核心与音频编译，以及日文 DATA 和音乐打包。
+Chromium 受管理资源验证覆盖标题、第一关、紫版高级选项及移动面板折叠；
+原生 ImGui 输入检查覆盖快捷键门控、数值编辑、弹出项取消和指针归属。test 使用日文资源。
+可重建入口为
 `scripts/package-launcher.mjs`，详见 [Launcher 接入](LAUNCHER_INTEGRATION.md)。
 
 ## 留给用户的人工确认项

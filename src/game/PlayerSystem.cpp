@@ -7,6 +7,7 @@
 #include "LaserWorld.hpp"
 #include "PlayerBounds.hpp"
 #include "Practice.hpp"
+#include "PracticeTools.hpp"
 
 namespace th12 {
 bool playerFocused = false;
@@ -1145,7 +1146,8 @@ void tickPlayer(int held, int pressed) {
       ++phasePlayerCounters[0];
       phasePlayerCounters[2] = 0;
       practice::recordMiss();
-      if (!practice::tool(practice::InfiniteLives)) --lives;
+      if (!practice::tool(practice::InfiniteLives) ||
+          (practice::toolSettings().map_inf_life_to_no_continue && lives>0)) --lives;
       resources.addRank(-1024);
       playerState = 2;
       playerStateTicks = 0;

@@ -1,5 +1,21 @@
 # 真实 Launcher 接入
 
+## monorepo 开发
+
+本作已接入当前工作区，源码位于 `ports/th12`。在仓库根目录运行：
+
+```sh
+node tools/workspace.mjs select th12
+npm run build:runtime -- --game=th12 --emsdk=工具链目录
+npm run ports:check -- --game=th12
+```
+
+构建产物位于 `ports/th12/build-eagler/`。源码来源见 [导入记录](../../../docs/migration/th12-eagler-20261020.json)，逐文件来源见 [eagler-source.json](../eagler-source.json)。Launcher 按测试作品提供星莲船入口，使用 `resources` 协议安装共享字体、音乐与语言包。
+
+THPrac 使用 [紫版原生 UI 接入](../src/practice/INTEGRATION.md)，与 TH10/11 共用 ImGui、FreeType、输入工具和移动端面板。`thpracLocale` 决定工具语言；共享 `unifont.otf` 在 UI 初始化前通过 `resources` 安装。
+
+以下独立仓库接入步骤用于同步原仓库或重建独立环境；monorepo 已包含接入改动，日常开发从上面的命令开始。
+
 本地接入使用 `YomotsuHisami/eagler-touhou` monorepo 中的真实 React Launcher、
 Package Store、存档管理和 Runtime Generation。`adapter-preview.html` 继续作为单独
 的协议观察页。平台改动保存在 `integration/eagler-touhou-th12.patch`，来源基线见
@@ -91,6 +107,8 @@ Python／JS 依赖，优先使用包内工具，不再依赖打包者本机的 `
 golden，不能把旧的 RNG／解密局部 Oracle 当作整局验收。
 
 发布 profile 保持 `web-validation-th12`，Runtime 保持 `completeAdapter: false`。
-本轮只完成源码接线、编译和本地打包；首次运行、离线重开、设备输入、存档往返
-及完整流程仍由用户实际确认。新端口是独立浏览器存储来源，不自动迁移旧预览页
+2026-10-20 的 Chromium 验证使用日文 1.00b 生成的 514 项 DATA，完成受管理资源、共享
+字体、标题与第一关启动，并展示紫版高级选项和移动端折叠面板。test 发布语言为日文；
+中文本地化按 thcrap 路径接入。离线重开、实体触控、存档往返及完整流程使用各自的验收记录。
+新端口是独立浏览器存储来源，不自动迁移旧预览页
 的存档；可通过文件管理导出、导入允许的成绩、配置及 Replay。

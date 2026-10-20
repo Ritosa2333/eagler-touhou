@@ -17,7 +17,7 @@ const MODES=[['原版练习','Original','オリジナル'],['自定义练习','C
 const PHASES1=[['正常','Normal','普通'],['发狂','Rage','発狂']];
 const PHASES3=[['P1','Phase 1','P1'],['P2','Phase 2','P2'],['P3','Phase 3','P3'],['P4','Phase 4','P4'],['发狂','Rage','発狂']];
 const COLORS=[['无','None','なし'],['红','Red','赤'],['蓝','Blue','青'],['绿','Green','緑']];
-const ranges={life:[0,8,1],life_fragment:[0,3,1],bomb:[0,8,1],bomb_fragment:[0,2,1],power:[0,400,1],
+const ranges={life:[0,9,1],life_fragment:[0,3,1],bomb:[0,9,1],bomb_fragment:[0,2,1],power:[0,400,1],
   value:[0,999990,10],graze:[0,999999,1],score:[0,9999999990,10]};
 export function localeIndex(locale='zh-CN'){return locale==='en-US'?1:locale==='ja-JP'?2:0;}
 

@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const EXE_SHA256='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417';
+const versions=JSON.parse(fs.readFileSync(path.join(root,'scripts/retail-versions.json'),'utf8'));
 const usage=`Prepare your own TH12 1.00b content without launching the game.
 
 node scripts/prepare-retail.mjs --original=<installation> --thdat=<thdat executable>
@@ -24,7 +24,7 @@ Options (also accept a separate value after the option):
   --help      Show this message without preparing files
 
 Python packages: Pillow, pefile, imageio-ffmpeg.
-Only the pinned unmodified Japanese 1.00b executable is supported.
+Only the exact Japanese retail/reference 1.00b identities in scripts/retail-versions.json are supported.
 `;
 
 function argumentsOf(argv){
@@ -65,7 +65,8 @@ function main(){
   const thdat=executable(options.thdat??process.env.TH12_THDAT??process.env.THDAT??'thdat');
   const python=executable(options.python??process.env.TH12_PYTHON??'python');
   for(const name of ['th12.exe','th12.dat','thbgm.dat'])requireFile(path.join(original,name));
-  if(createHash('sha256').update(fs.readFileSync(path.join(original,'th12.exe'))).digest('hex')!==EXE_SHA256)throw Error('The PE tables require the unmodified TH12 1.00b executable (SHA-256 '+EXE_SHA256+').');
+  const exeHash=createHash('sha256').update(fs.readFileSync(path.join(original,'th12.exe'))).digest('hex');
+  if(!Object.hasOwn(versions.executables,exeHash))throw Error('The PE tables require a supported TH12 1.00b executable; SHA-256: '+exeHash);
   const destinations=[retail,assets,output];
   for(const destination of destinations){
     if(inside(destination,original)||inside(original,destination)||inside(root,destination))throw Error('Generated directories must be separate from the original installation and source root: '+destination);

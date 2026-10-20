@@ -18,13 +18,14 @@ python -m venv .venv
 
 Linux 或 macOS 对应的 Python 路径为 `.venv/bin/python`。准备脚本不依赖工作区相邻目录中的 `tools/python`、原版行为采样器或私有 Python 模块。
 
-音效与部分展示元数据读取 EXE 中固定地址的表，因此仅接受下面的 EXE SHA-256：
+音效与部分展示元数据读取 EXE 中固定地址的表。准备工具核对 `scripts/retail-versions.json` 中的完整身份，支持日文零售 1.00b 和行为采样参考版本：
 
 ```text
+d8d644d2e64957a3031b1a1399d0502e1ddaa5252d2c4e492770ad6717827628
 99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417
 ```
 
-其他版本、汉化补丁或修改过的 EXE 会被拒绝；脚本不会据此猜测其他版本的地址。
+日文零售版身份与 [thcrap 的游戏版本表](https://github.com/thpatch/thcrap-tsa/blob/master/base_tsa/versions.js) 一致。其他身份会在提取前停止；每份生成内容记录实际输入的摘要。
 
 ## 一次准备
 

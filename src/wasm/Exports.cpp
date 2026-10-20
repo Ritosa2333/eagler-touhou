@@ -14,6 +14,7 @@
 #include "../game/SpellHistory.hpp"
 
 extern "C" {
+const int32_t* th12_practice_input(){return th12::practice::resolvedInput();}
 void th12_practice_enabled(int enabled) { th12::practice::setEnabled(enabled!=0); }
 void th12_practice_reset(int clearTools) { th12::practice::reset(clearTools!=0); }
 int th12_practice_configure(const int32_t* words,int count) { return th12::practice::configure(words,count)?1:0; }

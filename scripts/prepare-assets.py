@@ -9,9 +9,8 @@ from PIL import Image
 original=pathlib.Path(os.environ.get('TH12_ORIGINAL',ROOT/'local/original')).expanduser().resolve()
 retail=pathlib.Path(os.environ.get('TH12_RETAIL',ROOT/'local/retail')).expanduser().resolve()
 dest=pathlib.Path(os.environ.get('TH12_ASSETS',ROOT/'site/assets')).expanduser().resolve()
-PINNED_EXE_SHA256='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
-if hashlib.sha256((original/'th12.exe').read_bytes()).hexdigest()!=PINNED_EXE_SHA256:
-    raise ValueError('Presentation preparation supports the pinned TH12 1.00b executable')
+from retail_version import validate_executable
+PINNED_EXE_SHA256=validate_executable(original/'th12.exe')
 def u16(b,o):return struct.unpack_from('<H',b,o)[0]
 def u32(b,o):return struct.unpack_from('<I',b,o)[0]
 def anm(file):
