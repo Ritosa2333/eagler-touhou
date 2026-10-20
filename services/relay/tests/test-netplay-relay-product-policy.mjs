@@ -190,6 +190,28 @@ async function verifyTh08Timing(port) {
     assert.equal(started.room.predictionLimit,2);
   } finally { p1.close(1000);p2.close(1000); }
 }
+async function verifyLocalChargePriority(port){
+  const room=`th09mp-charge${Date.now().toString(36)}`;
+  const host=await openLobby(port,room,'charge_host'),guest=await openLobby(port,room,'charge_guest');
+  try{
+    const seated=await sendAndMatch(host,{type:'take-seat',seat:0,loadout:0},r=>r.room?.seats[0]);
+    assert.equal(seated.room.disableLocalChargePriority,false);
+    await sendAndMatch(guest,{type:'take-seat',seat:1,loadout:1},r=>r.room?.seats[1]);
+    for(const socket of [host,guest])await sendAndMatch(socket,{type:'set-ready',ready:true},r=>r.room?.seats[socket===host?0:1]?.ready);
+    await sendAndMatch(guest,{type:'settings',disableLocalChargePriority:true},r=>r.type==='error');
+    await sendAndMatch(host,{type:'settings',playerCount:2,difficulty:1,disableLocalChargePriority:'true'},r=>r.type==='error');
+    const changed=await sendAndMatch(host,{type:'settings',playerCount:2,difficulty:1,disableLocalChargePriority:true},r=>r.room?.disableLocalChargePriority===true);
+    assert.equal(changed.room.seats.every(s=>!s?.ready),true);
+    const normal=await sendAndMatch(host,{type:'settings',playerCount:2,difficulty:1,disableLocalChargePriority:false},r=>r.room?.disableLocalChargePriority===false);
+    assert.ok(normal.room.settingsVersion>seated.room.settingsVersion);
+    for(const socket of [host,guest])await sendAndMatch(socket,{type:'set-ready',ready:true},r=>r.room?.seats[socket===host?0:1]?.ready);
+    const started=await sendAndMatch(host,{type:'start'},r=>r.type==='start');assert.equal(started.room.disableLocalChargePriority,false);
+    await sendAndMatch(host,{type:'settings',disableLocalChargePriority:true},r=>r.type==='error');
+  }finally{host.close(1000);guest.close(1000);}
+  const saved=await openLobby(port,`th09mp-saved${Date.now().toString(36)}`,'charge_saved','intent=create&disableLocalChargePriority=1');
+  try{const state=await sendAndMatch(saved,{type:'take-seat',seat:0,loadout:0},r=>r.room?.seats[0]);assert.equal(state.room.disableLocalChargePriority,true);}
+  finally{saved.close(1000);}
+}
 
 async function verifyFixedRollbackInputDelay(port, product, adonisMode=0) {
   const room=`${product}-timing${Date.now().toString(36)}`;
@@ -366,6 +388,7 @@ try {
   await verifyRelayOnlyBarrier(port);
   await verifyRtcDisconnectSignal(port);
   await verifyTh08Timing(port);
+  await verifyLocalChargePriority(port);
   await verifyFixedRollbackInputDelay(port,"th08mp",1);
   await verifyFixedRollbackInputDelay(port,"th08mp",2);
   await verifyFixedRollbackInputDelay(port,"th09mp");

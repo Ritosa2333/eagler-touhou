@@ -24,10 +24,22 @@ export function isSpectatorFrameForRoom(roomId, payload, playerCount) {
       rttP95Us:rtt,lost,samples,route:'spectator'});
   }
   if (!payload || payload[6] !== playerCount) return false;
-  if (roomId.startsWith('th09mp-')) return playerCount === 2 &&
-    payload.length === 46 && payload[0] === 0x54 && payload[1] === 0x39 &&
-    payload[2] === 0x53 && payload[3] === 0x50 && payload[4] === 1 && payload[5] === 3 &&
-    payload[7] === 0;
+  if (roomId.startsWith('th09mp-')) {
+    if(playerCount!==2||payload[0]!==0x54||payload[1]!==0x39||payload[2]!==0x53||payload[3]!==0x50||payload[5]!==3||payload[7]!==0)return false;
+    if(payload[4]===1)return payload.length===46;
+    if(payload[4]!==2||payload.length!==126)return false;
+    const data=new DataView(payload.buffer,payload.byteOffset,payload.byteLength);
+    for(const at of [46,86]){
+      const charge=data.getFloat32(at,true),released=data.getFloat32(at+28,true),events=data.getUint32(at+32,true);
+      if(!Number.isFinite(charge)||charge<0||charge>400||!Number.isFinite(released)||
+         !(released===-1||released>=0&&released<=400)||(events&~7)||data.getUint32(at+36,true)>1||!!(events&2)!==(released>=0))return false;
+      for(const timer of [at+4,at+16]){
+        const previous=data.getInt32(timer,true),time=data.getFloat32(timer+4,true),current=data.getInt32(timer+8,true);
+        if(previous< -999999||previous>1e8||!Number.isFinite(time)||time< -1||time>1e8||current< -1||current>1e8)return false;
+      }
+    }
+    return true;
+  }
   return protocol !== undefined && policy?.playerCounts.includes(playerCount) &&
     payload.length === 24 + playerCount * 12 &&
     payload[0] === 0x45 && payload[1] === protocol &&
