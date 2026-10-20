@@ -16,8 +16,13 @@ export class TouchInput {
   cancel(){this.points.clear();this.primary=null;this.menu=null;this.pending=0;this.tap=null;this.focus=false;this.axes=[0,0];}
   sync(state){
     if(this.context===state.key)return;
+    const toggledFocus=this.focus&&this.options.touchFocusMode==='toggle-button'&&
+      ['game','dialogue'].includes(this.lastKind)&&['game','dialogue'].includes(state.kind);
     const continuous=this.context&&this.lastKind!=='menu'&&state.kind!=='menu'&&this.lastKind!=='replay'&&state.kind!=='replay'&&this.instance===state.instance;
     if(!continuous)this.cancel();else {this.pending=0;this.menu=null;this.tap=null;}
+    // Respawn replaces the player instance, invalidating old drag targets.
+    // The host's toggle remains selected until the next explicit snapshot.
+    if(toggledFocus)this.focus=true;
     this.context=state.key;this.lastKind=state.kind;this.instance=state.instance;
   }
   controls(snapshot,state){
