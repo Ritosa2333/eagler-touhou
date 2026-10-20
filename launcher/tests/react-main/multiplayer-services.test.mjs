@@ -21,6 +21,7 @@ before(async () => {
     export {createLobbyDirectory,directoryRoomCanEnter} from './app/services/lobby-directory.ts';
     export {createMultiplayerRoom} from './app/services/multiplayer-room.ts';
     export {createRoomPreparation} from './app/services/room-preparation.ts';
+    export {createNetworkActivityTracker} from './src/launcher/network-activity.mts';
     export {createDecisionStore} from './app/models/decisions.ts';
     export {createMultiplayerIdentityStore,multiplayerDisplayNameStorageKey} from './src/launcher/multiplayer-identity.mts';
     export {createMultiplayerRoomSessionStore,multiplayerRoomSessionStorageKey} from './src/launcher/multiplayer-room-session.mts';
@@ -514,7 +515,7 @@ test('every playing or full directory room admits spectators even without mid-ru
   }
 });
 
-function preparationFixture({installed = true, worker = null, installError, noCatalog = false} = {}) {
+function preparationFixture({installed = true, worker = null, installError, noCatalog = false, network, prepareProgram} = {}) {
   const events = [], progress = [], controller = new AbortController(); let onChange;
   let generation = installed ? {game: 'th06'} : null;
   const host = {games: {th06: {multiplayerRuntime: 'runtime/th06/mp.html'}}, shared: {runtimeManifest: 'runtime-manifest.json'}};
@@ -528,10 +529,10 @@ function preparationFixture({installed = true, worker = null, installError, noCa
   };
   const context = {product: 'th06mp', roomCode: '1234', epoch: 1, signal: controller.signal, isCurrent: () => !controller.signal.aborted};
   const service = owner.createRoomPreparation({acquisition, metadataReady: async () => {events.push(['metadata']);},
-    baseUrl: 'https://launcher.invalid/', translate: key => key,
+    baseUrl: 'https://launcher.invalid/', translate: key => key, network,
     activeWorker: async () => {events.push(['worker']); return worker;}, dependencies: {
       createTracker: options => {onChange = options.onChange; return {resourceFetch: async () => {throw new Error('fixture installer does not request bytes');}};},
-      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); return {url: '', generation: hash, cached: true};},
+      prepareRuntime: async (...args) => {events.push(['runtime', ...args]); await prepareProgram?.(args[1].onProgress); return {url: '', generation: hash, cached: true};},
     }});
   return {service, events, progress, controller, context, report: value => progress.push(value), emit: snapshot => onChange(snapshot)};
 }
@@ -560,6 +561,29 @@ test('room preparation verifies the current generation with its real worker and 
   const count = fixture.progress.length; fixture.controller.abort();
   fixture.emit({active: [{loaded: 50, total: 100, title: 'late'}]});
   assert.equal(fixture.progress.length, count);
+});
+
+for (const aborted of [false,true]) test(`room program downloads share visible byte progress and release their own tasks (${aborted?'cancel':'complete'})`,async()=>{
+ const visible=[],network=owner.createNetworkActivityTracker({fetchImpl:async()=>new Response(''),onChange:value=>visible.push(value)});
+ const unrelated=network.begin({title:'unrelated',loaded:10,total:20});
+ let late,fixture;
+ fixture=preparationFixture({network,prepareProgram:async report=>{
+  late=report;
+  report({path:'runtime/th06/game.wasm',phase:'requesting',loaded:0,total:4096});
+  report({path:'runtime/th06/game.wasm',phase:'receiving',loaded:2048,total:4096});
+  assert.equal(network.activeCount,2);
+  assert.ok(visible.some(value=>value.active.some(task=>task.label==='TH06 WebAssembly'&&task.loaded===2048&&task.total===4096)));
+  assert.ok(fixture.progress.some(value=>value.stage==='runtime'&&value.loaded===2048&&value.total===4096&&value.percent===50));
+  if(aborted)fixture.controller.abort();
+ }});
+ await fixture.service.prepare(fixture.context,fixture.report);
+ assert.equal(network.activeCount,1,'unrelated foreground downloads remain active');
+ const count=fixture.progress.length;
+ late({path:'runtime/th06/game.wasm',phase:'receiving',loaded:3072,total:4096});
+ network.update(unrelated,{loaded:15});
+ assert.equal(network.activeCount,1,'late program callbacks cannot create stale transfer tasks');
+ assert.equal(fixture.progress.length,count,'completed room preparation unsubscribes from foreground activity');
+ network.finish(unrelated);
 });
 
 test('room preparation classifies install errors while preserving original cancellation identity', async () => {

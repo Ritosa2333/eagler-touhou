@@ -2086,6 +2086,10 @@ test('actual BrowserLauncher: spectator toolbar exits playback into the existing
   await until(() => commands().includes('launch'), 'spectator Runtime launched');
   assert.equal(f.outbound.findLast(message => message.command === 'configure').options.netplaySpectator, true);
   assert.ok(node('#playbackExit'), 'native spectator controls expose their playback exit');
+  assert.equal(node('#player').classList.contains('room-workspace'), true, 'spectating starts inside the actual room player');
+  await click('.room-workspace-fullscreen');
+  assert.equal(f.fullscreen, node('#player'), 'room fullscreen includes the normal spectator controls');
+  assert.equal(node('#player').classList.contains('room-workspace'), false);
   assert.equal(env.document.querySelector('.spectator-workspace-panel'), null, 'spectating uses the native Player controls');
   await click('#playbackExit'); await until(() => !api.getTestSession().getSnapshot().playerOpen && !api.getTestSession().getRuntime().getSnapshot().launched, 'spectator playback retired');
   assert.equal(node('#player').classList.contains('room-workspace'), true);
@@ -2101,7 +2105,7 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
   const product=game+'mp',invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true});
   const host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
   const f=await mountBrowser({initial:'/?j='+invite,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
-   storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{touchEnabled:false,thpracEnabled:false}}));
+   storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{touchEnabled:true,thpracEnabled:false}}));
   }});
   await until(()=>f.sockets.length>0,'room socket');const socket=f.sockets[0],session=api.getTestSession();
   const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,
@@ -2110,6 +2114,7 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
   await React.act(async()=>{socket.open();socket.message({type:'state',room});socket.message({type:'spectator-start',serial:4,room});});
   let previousEpoch=null,previousDocument=null,initialNavigations,initialReads;
   for(let attempt=0;attempt<3;++attempt){
+   const fullscreenRequests = f.order.filter(value=>value==='fullscreen-enter').length;
    if(attempt)await React.act(async()=>{void session.room.service.launch();});
    await until(()=>f.outbound.filter(m=>m.command==='launch').length===attempt+1||session.startupError.getSnapshot().open,'spectator launch acknowledged',15_000);
    assert.equal(session.startupError.getSnapshot().open,false,session.startupError.getSnapshot().detail);
@@ -2117,7 +2122,8 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
    if(attempt){assert.equal(current.epoch,previousEpoch);assert.equal(f.native.document,previousDocument);}
    else{initialNavigations=f.navigations.length;initialReads=f.dataReads.length;}
    assert.equal(f.native.options.netplaySpectator,true);
-   assert.equal(f.order.includes('fullscreen-enter'),false,'spectating never requests fullscreen');
+   assert.equal(f.order.filter(value=>value==='fullscreen-enter').length,fullscreenRequests,'spectating never requests fullscreen automatically');
+   assert.equal(node('#player').classList.contains('room-workspace'),true,'the running spectator remains in the room player');
    assert.equal(env.document.querySelector('#touchHud'),null,'spectating has no gameplay touch buttons');
    assert.equal(env.document.querySelector('#touchEscape'),null);
    assert.equal(env.document.querySelector('#touchHelpOpen'),null);
@@ -2136,6 +2142,24 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
     await React.act(async()=>f.native.emit('runtime-info',{spectatorPlayback:{...playback,revision:2,position:900,seeking:false}}));
    }
    await until(()=>session.getSnapshot().roomLaunchStage===null,'current first frame and receiver settle the loading cover');
+   assert.equal(node('.room-workspace-preparation').hidden,true,'the cover exposes the running spectator picture');
+   const frame=node('#gameFrame'),returns=f.outbound.filter(m=>m.command==='return-room').length;
+   const route=f.router.state.location;
+   await click('.room-workspace-fullscreen');
+   assert.equal(f.fullscreen,node('#player'));
+   assert.equal(node('#player').classList.contains('room-workspace'),false);
+   assert.equal(env.document.querySelector('#touchHud'),null,'spectator fullscreen never mounts gameplay buttons');
+   assert.equal(env.document.querySelector('#touchEscape'),null);
+   assert.ok(node('#playbackExit'));
+   if(game!=='th09')assert.ok(node('#cooperativeSpectatorTimeline'),'normal spectator timeline remains available in fullscreen');
+   await React.act(async()=>env.document.exitFullscreen());
+   assert.equal(node('#player').classList.contains('room-workspace'),true,'system fullscreen exit restores the room');
+   assert.equal(node('#gameFrame'),frame);
+   assert.equal(f.router.state.location,route,'fullscreen changes do not add or traverse room history');
+   assert.equal(session.getRuntime().getSnapshot().launched,true);
+   assert.equal(f.outbound.filter(m=>m.command==='return-room').length,returns,'leaving fullscreen does not exit spectating');
+   assert.equal(f.navigations.length,initialNavigations);assert.equal(f.dataReads.length,initialReads);
+   await click('.room-workspace-fullscreen');
    previousEpoch=current.epoch;previousDocument=f.native.document;
    if(attempt===2)await React.act(async()=>f.native.emit('room-menu',{launchSerial:f.native.launchSerial}));
    else await click('#playbackExit');
@@ -2150,3 +2174,71 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
   }
  });
 }
+
+for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,false]) test(`actual BrowserLauncher: ${mobileDevice?'mobile':'desktop'} player fullscreen returns to the live room picture (${nativeFullscreen?'browser fullscreen':'page fullscreen'})`,async t=>{
+ const request=env.window.HTMLElement.prototype.requestFullscreen;
+ t.after(()=>{env.window.HTMLElement.prototype.requestFullscreen=request;});
+ if(!nativeFullscreen)env.window.HTMLElement.prototype.requestFullscreen=async()=>{throw new env.window.DOMException('Fullscreen unavailable','NotSupportedError');};
+ const agent=env.window.navigator.userAgent;t.after(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:agent}));
+ Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice?'Mozilla/5.0 Android Mobile':'Mozilla/5.0 Desktop'});
+ const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06'],seedStorage(storage){
+  storage.values.set(api.gamePreferenceStorageKey('th06mp'),JSON.stringify({music:'none',options:{touchEnabled:true,thpracEnabled:false}}));
+ }});
+ const session=api.getTestSession();await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','native room title prepared',15_000);
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,predictionLimit:8,startSerial:2,
+  seats:[{clientId:localId,name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[]};
+ const frame=node('#gameFrame'),epoch=session.getRuntime().getSnapshot().epoch,reads=f.dataReads.length,navigations=f.navigations.length;
+ await React.act(async()=>{socket.open();socket.message({type:'start',serial:2,room});});
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room launch music choice');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched,'room player launched',15_000);
+ f.native.Module={eaglerOptions:{netplayMode:'lan'}};
+ f.native.__eaglerNetplayTransport='relay';
+ f.native[api.multiplayerConfigForProduct('th06mp').peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
+ await React.act(async()=>f.native.emit('first-frame'));
+ await until(()=>session.getSnapshot().roomLaunchStage===null,'player first frame and gameplay path settled');
+ if(f.fullscreen)await React.act(async()=>env.document.exitFullscreen());
+ else if(session.getSnapshot().roomPlayerExpanded)await React.act(async()=>session.togglePlayerFullscreen());
+ assert.equal(node('#player').classList.contains('room-workspace'),true);
+ assert.equal(node('.room-workspace-preparation').hidden,true);
+ assert.equal(env.document.querySelector('#touchHud'),null,'room picture has no gameplay controls');
+ assert.equal(frame.hasAttribute('inert'),false,'embedded Runtime stays active for native spectator initialization');
+ assert.equal(frame.tabIndex,-1);
+ assert.equal(frame.contentDocument.dispatchEvent(new env.window.KeyboardEvent('keyup',{code:'KeyZ',bubbles:true,cancelable:true})),true,'embedded Runtime can still clear synthetic keyboard transitions');
+ for(let cycle=0;cycle<2;cycle++){
+  await click('.room-workspace-fullscreen');
+  assert.equal(f.fullscreen,nativeFullscreen?node('#player'):null);assert.equal(frame.hasAttribute('inert'),false);
+  assert.equal(frame.contentDocument.dispatchEvent(new env.window.KeyboardEvent('keydown',{code:'KeyZ',bubbles:true,cancelable:true})),true,'fullscreen releases the embedded input gate');
+  assert.equal(node('#player').classList.contains('room-workspace'),false,'page fullscreen keeps the normal game controls available');
+  assert.equal(node('#fullscreenToggle').dataset.fullscreen,'true');
+  assert.ok(node('#touchHud'));assert.ok(node('#touchEscape'));assert.ok(node('#fullscreenToggle'));
+  assert.equal(env.document.querySelector('#playbackExit'),null,'players get gameplay rather than spectator actions');
+  await click('#fullscreenToggle');
+  assert.equal(f.fullscreen,null);assert.equal(node('#player').classList.contains('room-workspace'),true);
+  assert.equal(env.document.querySelector('#touchHud'),null);assert.equal(node('#gameFrame'),frame);
+  assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(session.getRuntime().getSnapshot().launched,true);
+  assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+  assert.equal(f.outbound.filter(m=>m.command==='return-room').length,0);
+ }
+});
+
+test('actual BrowserLauncher: room loading renders authenticated Runtime byte progress inside the game viewport',async()=>{
+ const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06'],autoReady:false});
+ await until(()=>f.native?.envelope,'room Runtime begins loading',15_000);
+ await React.act(async()=>f.native.emit('transfer',{kind:'game',mode:'runtime',title:'Program loading',label:'game.wasm',loaded:1048576,total:2097152,speed:524288}));
+ assert.equal(node('#transfer').hidden,false);
+ assert.equal(node('#transfer').parentElement,node('#gameViewport'),'same transfer panel sits in the embedded picture');
+ assert.equal(node('#transferLabel').textContent,'game.wasm');
+ assert.equal(node('#transferAmount').textContent,'1.0 / 2.0 MiB');
+ assert.equal(node('#transferBar').style.width,'50%');
+ assert.equal(node('#transferSpeed').textContent,'512 KiB/s');
+ await click('.room-workspace-fullscreen');
+ assert.equal(f.fullscreen,node('#player'));
+ await click('#fullscreenToggle');
+ assert.equal(f.fullscreen,null,'a loading title can also exit fullscreen');
+ assert.equal(node('#transfer').parentElement,node('#gameViewport'));
+ assert.equal(node('#transferAmount').textContent,'1.0 / 2.0 MiB');
+});

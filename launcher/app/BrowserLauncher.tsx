@@ -47,7 +47,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const replayFiles = useSyncExternalStore(replayModel?.subscribe ?? emptySubscribe, replayModel?.getSnapshot ?? noDiagnostics, replayModel?.getSnapshot ?? noDiagnostics);
   const replayWorkspace = !!replayFiles?.open;
   const room = useSyncExternalStore(session.room.service.subscribe, session.room.service.getSnapshot, session.room.service.getSnapshot);
-  const roomWorkspace = !!room.room && (!state.runtime?.launched || !!state.roomLaunchStage) && !state.th09NetworkOverlayOpen && !replayWorkspace;
+  const roomWorkspace = !!room.room && !state.roomPlayerExpanded && !session.nativeTouch.isFullscreen() && !state.th09NetworkOverlayOpen && !replayWorkspace;
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
   const preferences = useSyncExternalStore(session.preferences.subscribe, session.preferences.getSnapshot, session.preferences.getSnapshot);
   const firstUse = useRef<FirstUseNoticeHandle>(null), notice = useRef<SiteNoticeHandle>(null), network = useRef<NetworkDiagnosticsHandle>(null);
@@ -68,7 +68,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     roomWorkspace,
     runtimeOpen: state.playerOpen, runtimeLaunched: state.runtime?.launched, titleOverlayOpen: state.th09NetworkOverlayOpen, runtimeFrame: session.attachFrame, requestRuntimeClose: session.requestRuntimeClose, requestRoomLeave: session.requestRoomLeave,
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,
-    roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing}/>,
+    roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing} workspaceVisible={roomWorkspace}/>,
     roomDrawer: <RoomDrawer session={session} onClosingChange={setSettingsClosing}/>,
     runtimeControls: <><PlayerControls session={session} replayWorkspace={replayWorkspace} roomWorkspace={roomWorkspace}/>{session.getReplays() && <ReplayWorkspace session={session}/>}<MultiplayerQuickChat model={session.room.quickChat}/></>,
     // The real directory renderer derives these slots from the live service;

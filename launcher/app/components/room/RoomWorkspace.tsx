@@ -85,7 +85,7 @@ export function RoomWorkspace(props: RoomViewProps) {
         <p role="status">{t('room.reloadSettingsPrompt')}</p>
         <div><button type="button" className="room-resource-reload-confirm" onClick={props.onReloadResources}>{t('room.reloadResources')}</button><button type="button" onClick={props.onRestoreSettings}>{t('room.restoreSettings')}</button></div>
       </section>}
-      <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || undefined} hidden={props.reloadPending || context.previewReady}><div className="room-preparation-caption">{loading && <i className="room-preparation-spinner" aria-hidden="true"/>}<strong>{loadingText}</strong><span id="mpRoomConnection">{!ready && roomConnectionMessage(state,t)}</span><RoomProgress state={state} service={service} transfer={context.transfer}/>{preparation?.error && <p>{preparation.error}</p>}</div></div>
+      <div className="room-workspace-preparation" role="status" data-preview-ready={context.previewReady || context.launched || undefined} hidden={props.reloadPending || !context.launchStage && (context.previewReady || context.launched)}><div className="room-preparation-caption">{loading && <i className="room-preparation-spinner" aria-hidden="true"/>}<strong>{loadingText}</strong><span id="mpRoomConnection">{!ready && roomConnectionMessage(state,t)}</span><RoomProgress state={state} service={service} transfer={context.transfer}/>{preparation?.error && <p>{preparation.error}</p>}</div></div>
       <button className="room-workspace-fullscreen" type="button" aria-label={t('player.enterFullscreen')} onClick={props.onFullscreen} dangerouslySetInnerHTML={{__html:playerUtilityIcons.fullscreenToggle}}/>
     </>,viewport)}
   </>;

@@ -129,6 +129,7 @@ export function createNetworkActivityTracker({
   const fetchTimeout = Math.max(0, Number(fetchTimeoutMs) || 0);
   let serial = 0;
   const tasks = new Map<string, NetworkTask>();
+  const listeners = new Set<(snapshot: NetworkActivitySnapshot) => void>();
   const downloadResource = createResourceDownloader({fetchImpl});
 
   const snapshot = (): NetworkActivitySnapshot => {
@@ -143,7 +144,11 @@ export function createNetworkActivityTracker({
     };
   };
 
-  const emit = () => onChange(snapshot());
+  const emit = () => {
+    const value = snapshot();
+    onChange(value);
+    for (const listener of listeners) listener(value);
+  };
 
   function begin(meta: NetworkTaskPatch = {}) {
     const id = `net-${Date.now().toString(36)}-${++serial}`;
@@ -471,6 +476,10 @@ export function createNetworkActivityTracker({
   }
 
   return {
+    subscribe(listener: (snapshot: NetworkActivitySnapshot) => void) {
+      listeners.add(listener);
+      return () => {listeners.delete(listener);};
+    },
     begin,
     update,
     finish,

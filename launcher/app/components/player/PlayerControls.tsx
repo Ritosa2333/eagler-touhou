@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {createPortal} from 'react-dom';
 import { touchMovementUsesJoystick } from '../../../src/launcher/game-preferences.mts';
 import {PRODUCT_GAMES} from '../../../src/contracts/product-catalog.mts';
 import type { BrowserSession } from '../../session/browser-session';
@@ -22,12 +23,16 @@ import { playerUtilityIcons } from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
+import {PlayerStage} from './PlayerSurface';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
 const noNetwork = () => null;
 /** The editor and actual game use one original control markup tree. Only this
  * mounted gameplay binding can deliver native input. */
 export function PlayerControls({ session, replayWorkspace = false, roomWorkspace = false }: { session: BrowserSession; replayWorkspace?: boolean; roomWorkspace?: boolean }) {
+  const stage = useContext(PlayerStage);
+  const transferHost = roomWorkspace ? stage?.querySelector<HTMLElement>('.game-viewport') : null;
+  const transferPanel = <TransferPanel model={session.transfer}/>;
   const state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot),
     navigation = useSurfaceNavigation(),
     { locale, t } = useLocale();
@@ -117,7 +122,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         ))}
       </aside>
       </PlayerInformationColumn>
-      {!roomWorkspace && <TransferPanel model={session.transfer} />}
+      {transferHost ? createPortal(transferPanel, transferHost) : transferPanel}
       <span id="playerStatus" className="visually-hidden" role="status">
         {feedback.playerStatus}
       </span>
@@ -292,7 +297,7 @@ function PlayerUtilities({
     <>
       <TouchHelp
         nativeControls={'touchActions' in PRODUCT_GAMES[settings.gameId]}
-        open={state.touchHelpOpen && !spectating}
+        open={state.touchHelpOpen && !spectating && !roomWorkspace}
         onCloseRequest={session.closeTouchHelp}
         touchEnabled={settings.options.touchEnabled}
         focusMode={settings.options.touchFocusMode}
@@ -313,17 +318,17 @@ function PlayerUtilities({
           className="fullscreen-toggle"
           id="fullscreenToggle"
           type="button"
-          data-fullscreen={session.nativeTouch.isFullscreen()}
+          data-fullscreen={session.nativeTouch.isFullscreen() || state.roomPlayerExpanded === true}
           aria-label={t(
-            session.nativeTouch.isFullscreen() ? 'player.exitFullscreen' : 'player.enterFullscreen',
+            session.nativeTouch.isFullscreen() || state.roomPlayerExpanded ? 'player.exitFullscreen' : 'player.enterFullscreen',
           )}
           title={t(
-            session.nativeTouch.isFullscreen()
+            session.nativeTouch.isFullscreen() || state.roomPlayerExpanded
               ? 'player.exitFullscreenTitle'
               : 'player.enterFullscreenTitle',
           )}
           onClick={() => {
-            if (state.runtime?.launched) void session.togglePlayerFullscreen();
+            void session.togglePlayerFullscreen();
           }}
           dangerouslySetInnerHTML={{ __html: playerUtilityIcons.fullscreenToggle }}
         />}

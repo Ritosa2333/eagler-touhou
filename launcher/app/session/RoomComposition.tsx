@@ -10,9 +10,11 @@ import { useSurfaceNavigation } from '../navigation/surface-navigation';
 export function RoomComposition({
   session,
   settingsClosing,
+  workspaceVisible: roomWorkspace,
 }: {
   session: BrowserSession;
   settingsClosing: boolean;
+  workspaceVisible: boolean;
 }) {
   const navigation = useSurfaceNavigation();
   const transfer = useSyncExternalStore(
@@ -33,7 +35,7 @@ export function RoomComposition({
   );
   const home = useRef<{ parent: Node; next: Node | null } | null>(null);
   const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
-  const workspaceVisible = !!room.room && (!state.runtime?.launched || !!state.roomLaunchStage) && !state.th09NetworkOverlayOpen && !state.replayViewer && navigation.surface !== 'touch';
+  const workspaceVisible = roomWorkspace && navigation.surface !== 'touch';
   useLayoutEffect(()=>{
     const host = document.getElementById('player'), stage = host?.querySelector<HTMLElement>('.player-stage');
     setWorkspace(previous => workspaceVisible && host && stage ? previous?.host === host && previous.stage === stage ? previous : {host,stage} : null);
