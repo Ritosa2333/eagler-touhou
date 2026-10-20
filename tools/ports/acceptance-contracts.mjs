@@ -177,6 +177,11 @@ export function selectRuntimeTargets(config,{game,variant}) {
   return {games,variant,expected,targets:expected.map(key=>byKey.get(key))};
 }
 
+/** The offline journey launches the normal Runtime; MP has its own room acceptance. */
+export function selectOfflineRuntimeTargets(config,{game}) {
+  return selectRuntimeTargets(config,{game,variant:'normal'});
+}
+
 export function selectRoomTargets({game,players,route}) {
   const games=parseExplicitGames(game,'--game');
   assert.ok(Number.isSafeInteger(players), '--players must be specified as an integer');

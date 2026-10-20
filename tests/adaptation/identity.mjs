@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readdir,readFile,stat} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {dependencySnapshot,fileIdentity,identityDigest} from '../../tools/testing/dependency-snapshot.mjs';
-import {verifyPrivateData,verifyPublishedRuntime,verifyRuntimePackage} from '../../tools/ports/acceptance-contracts.mjs';
+import {selectOfflineRuntimeTargets,verifyPrivateData,verifyPublishedRuntime,verifyRuntimePackage} from '../../tools/ports/acceptance-contracts.mjs';
 import {loadRuntimeReplayFixture} from '../../tools/ports/replay-fixtures.mjs';
 import {verifyMusicInputs} from '../../tools/ports/music-browser-helpers.mjs';
 
@@ -43,7 +43,8 @@ export function createCaseIdentityReader({root,environment}){
     const manifestPath=environment.EAGLER_TEST_RUNTIME_MANIFEST;
     assert.ok(manifestPath,'Required input: EAGLER_TEST_RUNTIME_MANIFEST');
     const manifest=await json(manifestPath),isOffline=testCase.task.args[0]?.endsWith('offline-runtime-browser.mjs');
-    const targets=(manifest.targets??[]).filter(target=>target.game===testCase.game&&(isOffline||target.variant===testCase.variant));
+    const targets=isOffline?selectOfflineRuntimeTargets(manifest,{game:testCase.game}).targets:
+      (manifest.targets??[]).filter(target=>target.game===testCase.game&&target.variant===testCase.variant);
     assert.ok(targets.some(target=>target.variant===testCase.variant),`Missing Runtime target ${testCase.game}/${testCase.variant}`);
     assert.equal(new Set(targets.map(target=>target.variant)).size,targets.length,'Duplicate selected Runtime variant');
     const products=await Promise.all(targets.map(product));

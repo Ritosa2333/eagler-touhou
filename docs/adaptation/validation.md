@@ -125,6 +125,8 @@ th08 MP 从 `multiplayer_status` 按原生本地席位选择输入与坐标，�
 
 启动 Chromium 前，驱动逐作核验本地 ZIP 的完整成员、每项声明的字节数和 SHA-256，以及 DATA 与本次私有输入的身份；未提供本地 ZIP 时，它核验同源 Release Catalog、Package Descriptor 和 DATA 字节。每个预检 HTTP 请求设有 5 秒上限并拒绝重定向。缺失或不匹配的作品会在报告中给出可执行的修复信息，该作不启动浏览器，其余资源就绪作品继续验收。每个席位在导入或下载后读取启动器原生资源状态，失败时点击界面重试一次并再次核验 `ready`；结果和错误文本按席位记录。每作结束后再次计算私有 DATA 与离线 ZIP 的字节数和 SHA-256，和预检身份比对，确保本次导入使用的输入保持一致。共享封面与站点图标作为独立 `siteAssets` 维度只检查和报告一次，不会被记成游戏 Runtime 失败。导入模式通过 `--packages=/absolute/packages.json` 提供作品到本地 ZIP 的映射，驱动使用房间设置中的导入按钮和文件选择器安装。ZIP 由 `package-server.mjs` 和 `package-offline-game.mjs` 生成，测试配置与私有游戏内容放在本地证据目录。
 
+为单作普通版准备验证站点时，`package-server.mjs` 可显式接收 `--runtime-variants=normal`，Runtime 输入只需要目标作品的 `--<game>-build`。此选项限于 `web-validation-*` profile；省略时仍按产品目录要求普通版与 MP Runtime，正式发布沿用该默认规则。
+
 多人命令加 `--disconnect` 后关闭一个实际客户端，检查另一端收到离开通知并停止推进。截图同时保存启动器界面与原生画布，驱动源码和哈希随结果保存。
 
 加 `--lifecycle` 执行全席暂停、恢复、重开与第二局推进。暂停比较本作世界时钟，网络收包时钟继续单独记录；重开必须实际降低世界帧，提供代次的作品同时增加代次。加 `--spectator` 在开局前经房间控件申请旁观，核对服务端名册与原生回放推进，并检查旁观端右移、射击和低速键不进入任一玩家的原生输入。旁观报告保留具体操作范围和 `complete`，对应方法见[多人检查](multiplayer.md)。

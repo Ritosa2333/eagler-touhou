@@ -50,39 +50,63 @@ async function writeBuildFixture(source,variant){
   return{directory,buildPath,build,wasm};
 }
 
-test('th075 packager seals explicit normal and MP identities in the closed package',async t=>{
-  const{root,source,common}=await createFixture(t);
+function assertManifestIdentity(manifest,variant){
+  const product=variant==='multiplayer'?'th075mp':'th075';
+  assert.equal(manifest.profile,variant==='multiplayer'?'multiplayer':'production',`manifest profile for ${variant}`);
+  assert.deepEqual({product:manifest.product,variant:manifest.variant,multiplayer:manifest.multiplayer},
+    {product,variant,multiplayer:variant==='multiplayer'});
+}
+
+async function runOwnerPackager(source,common,variant,{checkManifestIdentity=true}={}){
   const script=resolve(source,'portable/package-eagler.mjs');
+  const{build,wasm}=await writeBuildFixture(source,variant);
+  const args=variant==='multiplayer'?['--multiplayer']:[];
+  execFileSync(process.execPath,[script,...args],{cwd:source,windowsHide:true,stdio:'pipe',
+    env:{...process.env,EAGLER_COMMON_ROOT:common}});
+  const output=resolve(source,variant==='multiplayer'?'build-eagler-multiplayer':'build-eagler');
+  const packageIdentity=captureRuntimePackageFiles(output,{game:'th075',variant,entry:'th075.html'});
   const expectedBase=['th075.html','manifest.json','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs',
     'display.mjs','content-bundle.mjs','save-sync.mjs','th075.mjs','th075.wasm'];
-  for(const variant of ['normal','multiplayer']){
-    const{build,wasm}=await writeBuildFixture(source,variant);
-    const args=variant==='multiplayer'?['--multiplayer']:[];
-    execFileSync(process.execPath,[script,...args],{cwd:source,windowsHide:true,stdio:'pipe',
-      env:{...process.env,EAGLER_COMMON_ROOT:common}});
-    const product=variant==='multiplayer'?'th075mp':'th075';
-    const output=resolve(source,variant==='multiplayer'?'build-eagler-multiplayer':'build-eagler');
-    const packageIdentity=captureRuntimePackageFiles(output,{game:'th075',variant,entry:'th075.html'});
-    const expectedFiles=[...expectedBase,...(variant==='multiplayer'?['multiplayer.mjs','adonis-calibration.mjs']:[]),'runtime-files.json'].sort();
-    assert.deepEqual(Object.keys(packageIdentity.files).sort(),expectedFiles);
-    assert.equal(packageIdentity.inventory.product,product);
-    assert.equal(packageIdentity.inventory.variant,variant);
-    assert.equal(packageIdentity.inventory.files['th075.wasm'].sha256,build.sha256);
-    assert.equal(packageIdentity.files['th075.wasm'].sha256,hash(wasm));
-    if(variant==='multiplayer')assert.equal(packageIdentity.files['adonis-calibration.mjs'].sha256,
-      hash(await readFile(resolve(common,'browser/adonis-calibration.mjs'))));
-    const manifest=JSON.parse(await readFile(resolve(output,'manifest.json'),'utf8'));
-    assert.deepEqual({profile:manifest.profile,product:manifest.product,variant:manifest.variant,multiplayer:manifest.multiplayer},
-      {profile:variant==='multiplayer'?'multiplayer':'production',product,variant,multiplayer:variant==='multiplayer'});
-    const html=await readFile(resolve(output,'th075.html'),'utf8');
-    assert.ok(html.includes(`<meta name="eagler-runtime-variant" content="${variant}">`));
-    assert.ok(html.includes(`<meta name="eagler-runtime-product" content="${product}">`));
-  }
+  const expectedFiles=[...expectedBase,...(variant==='multiplayer'?['multiplayer.mjs','adonis-calibration.mjs']:[]),'runtime-files.json'].sort();
+  assert.deepEqual(Object.keys(packageIdentity.files).sort(),expectedFiles);
+  assert.equal(packageIdentity.inventory.product,variant==='multiplayer'?'th075mp':'th075');
+  assert.equal(packageIdentity.inventory.variant,variant);
+  assert.equal(packageIdentity.inventory.files['th075.wasm'].sha256,build.sha256);
+  assert.equal(packageIdentity.files['th075.wasm'].sha256,hash(wasm));
+  if(variant==='multiplayer')assert.equal(packageIdentity.files['adonis-calibration.mjs'].sha256,
+    hash(await readFile(resolve(common,'browser/adonis-calibration.mjs'))));
+  const manifest=JSON.parse(await readFile(resolve(output,'manifest.json'),'utf8'));
+  if(checkManifestIdentity)assertManifestIdentity(manifest,variant);
+  const html=await readFile(resolve(output,'th075.html'),'utf8');
+  assert.ok(html.includes(`<meta name="eagler-runtime-variant" content="${variant}">`));
+  assert.ok(html.includes(`<meta name="eagler-runtime-product" content="${variant==='multiplayer'?'th075mp':'th075'}">`));
+  return{build,output,script,manifest};
+}
+
+test('th075 MP source owner normal branch seals its package identity',async t=>{
+  const{source,common}=await createFixture(t);
+  await runOwnerPackager(source,common,'normal');
+});
+
+test('th075 MP source owner multiplayer branch seals its package identity and rejects a normal build receipt',async t=>{
+  const{source,common}=await createFixture(t);
+  const{script}=await runOwnerPackager(source,common,'multiplayer');
   const multiplayerBuild=await readFile(resolve(source,'web/artifacts/sdl3-multiplayer/build.json'),'utf8');
   const wrongMode={...JSON.parse(multiplayerBuild),multiplayer:false};
   await writeFile(resolve(source,'web/artifacts/sdl3-multiplayer/build.json'),JSON.stringify(wrongMode));
   assert.throws(()=>execFileSync(process.execPath,[script,'--multiplayer'],{cwd:source,windowsHide:true,stdio:'pipe',
     env:{...process.env,EAGLER_COMMON_ROOT:common}}),error=>String(error.stderr).includes('Runtime variant mismatch'));
+});
+
+test('th075 MP identity assertion rejects the prior production profile',async t=>{
+  const{source,common}=await createFixture(t);
+  const script=resolve(source,'portable/package-eagler.mjs');
+  const original=await readFile(script,'utf8');
+  const correctProfile="profile=multiplayer?'multiplayer':'production'";
+  assert.ok(original.includes(correctProfile),'fixture packager must expose the multiplayer profile selection');
+  await writeFile(script,original.replace(correctProfile,"profile='production'"));
+  const{manifest}=await runOwnerPackager(source,common,'multiplayer',{checkManifestIdentity:false});
+  assert.throws(()=>assertManifestIdentity(manifest,'multiplayer'),/manifest profile for multiplayer/);
 });
 
 test('th075 MP package recipe tracks the shared Adonis calibration control input',async t=>{

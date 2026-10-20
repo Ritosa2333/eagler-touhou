@@ -10,7 +10,7 @@ import {canonicalRuntimePayload} from '../../launcher/lib/contracts/runtime-gene
 import {expectedRuntimeBuildSources,expectedRuntimeBuildSubmodules,expectedRuntimeBuildOutputs,runtimeBuildPlanIdentity,RUNTIME_BUILD_CONTROL_FILES,RUNTIME_BUILD_HELPER_FILES,runtimeBuildSourceRoot} from '../../launcher/lib/runtime-build-evidence.mjs';
 import {captureRuntimePackageControlInputs,resolveRuntimePackagePlan,runtimePackageIdentity,runtimePackageSourceInputsIdentity,
   createRuntimePackageReceipt,RUNTIME_PACKAGE_CONTROL_FILES} from '../../launcher/lib/runtime-package-evidence.mjs';
-import {parseExplicitGames,readVerifiedRuntimeFile,selectRoomTargets,selectRuntimeTargets,verifyPrivateData,verifyPublishedRuntime,verifyRuntimePackage,verifySourceBuildReceipt} from './acceptance-contracts.mjs';
+import {parseExplicitGames,readVerifiedRuntimeFile,selectOfflineRuntimeTargets,selectRoomTargets,selectRuntimeTargets,verifyPrivateData,verifyPublishedRuntime,verifyRuntimePackage,verifySourceBuildReceipt} from './acceptance-contracts.mjs';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const checkoutRoot=resolve(import.meta.dirname,'../..');
@@ -32,6 +32,19 @@ test('game and Runtime mode must be explicit, supported, unique, and fully prese
   const selected=selectRuntimeTargets(manifest([target('th08','multiplayer'),target('th08','normal')]),{game:'th08',variant:'both'});
   assert.deepEqual(selected.expected,['th08/normal','th08/multiplayer']);
   assert.deepEqual(selected.targets.map(value=>value.variant),['normal','multiplayer']);
+});
+
+test('normal offline acceptance needs no MP target and ignores unselected Runtime files',()=>{
+  const normal=target('th08','normal');
+  const single=selectOfflineRuntimeTargets(manifest([normal]),{game:'th08'});
+  assert.deepEqual(single.expected,['th08/normal']);assert.deepEqual(single.targets,[normal]);
+  const other=target('th07','normal','unselected',{runtime:'missing-unselected-runtime',data:'missing-unselected-data'});
+  const mp=target('th08','multiplayer');
+  const expanded=manifest([other,normal,mp]);
+  assert.deepEqual(selectOfflineRuntimeTargets(expanded,{game:'th08'}),single);
+  mp.runtime='another-unselected-MP-runtime';
+  assert.deepEqual(selectOfflineRuntimeTargets(expanded,{game:'th08'}),single);
+  assert.throws(()=>selectOfflineRuntimeTargets(manifest([mp]),{game:'th08'}),/missing selected Runtime target th08\/normal/);
 });
 
 test('room selection rejects every unsupported game/player pair instead of skipping it',()=>{

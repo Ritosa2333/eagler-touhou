@@ -15,7 +15,7 @@ import { RUNTIME_MANIFEST_FILE, RUNTIME_PREPARE, canonicalRuntimePayload, parseR
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { createPublicationHostSeed } from "../lib/publication-host-seed.mjs";
 import { writeSyntheticRuntimeRelease } from "./support/runtime-release-fixture.mjs";
-import { verifyRuntimeRelease, LEGACY_RUNTIME_RELEASE_SCHEMA } from "../lib/runtime-release.mjs";
+import { verifyRuntimeRelease, LEGACY_RUNTIME_RELEASE_SCHEMA, runtimeFileNames } from "../lib/runtime-release.mjs";
 import { deployStaticSite } from "../lib/static-deployment.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -90,6 +90,44 @@ try {
     ["th06", "th07", "th08", "th10"].flatMap(game => [
       `runtime/${game}/`, ...(PRODUCT_GAMES[game].multiplayerRuntime ? [`runtime/${game}/multiplayer/`] : []),
     ]).sort(), "each selected game and declared multiplayer variant needs an independent Runtime generation");
+
+  // A validation Host may intentionally contain one product's normal Runtime
+  // only. Exercise package-server's direct-build input path with a real closed
+  // directory fixture and prove the default still requires its MP counterpart.
+  const th075Build = resolve(temp, "th075-normal-build");
+  const th075Runtime = runtimeRelease.games.th075.runtime;
+  await mkdir(th075Build, { recursive: true });
+  for (const name of runtimeFileNames("th075", th075Runtime.files)) {
+    await cp(resolve(release, th075Runtime.root, name), resolve(th075Build, name));
+  }
+  await writeFile(resolve(th075Build, "runtime-files.json"), JSON.stringify({
+    schema: "eagler-touhou/runtime-directory/1", files: th075Runtime.files,
+  }, null, 2));
+  const defaultNeedsMultiplayer = await command("scripts/package-server.mjs",
+    `--output=${resolve(temp, "default-needs-mp")}`, `--th075-build=${th075Build}`,
+    `--site-manifest=${resolve(temp, "seed.json")}`, `--feature-config=${resolve(temp, "features.json")}`,
+    "--profile=web-validation-generations", "--games=th075", "--music=midi")
+    .then(() => "", error => `${error.stdout || ""}\n${error.stderr || ""}\n${error.message}`);
+  assert.match(defaultNeedsMultiplayer, /missing --th075-multiplayer-build=PATH/,
+    "default packaging continues to require both declared Runtime variants");
+  const normalOnly = resolve(temp, "normal-only-output");
+  await command("scripts/package-server.mjs", `--output=${normalOnly}`, `--th075-build=${th075Build}`,
+    `--site-manifest=${resolve(temp, "seed.json")}`, `--feature-config=${resolve(temp, "features.json")}`,
+    "--profile=web-validation-generations", "--games=th075", "--music=midi", "--runtime-variants=normal");
+  await command("scripts/verify-server-build.mjs", normalOnly);
+  const normalOnlyHost = await json(resolve(normalOnly, "site-manifest.json"));
+  assert.equal(normalOnlyHost.games.th075.multiplayerRuntime, undefined,
+    "a validation Host must not retain the seed's stale multiplayer Runtime URL");
+  const normalOnlyRuntime = await verifyRuntimePublication(normalOnly, normalOnlyHost);
+  assert.deepEqual(normalOnlyRuntime.groups.map(group => group.root), ["runtime/th075/"],
+    "Runtime generations must include exactly the selected normal variant");
+  const releaseVariantFailure = await command("scripts/package-server.mjs",
+    `--output=${resolve(temp, "release-normal-only")}`, `--th075-build=${th075Build}`,
+    "--profile=web-release-runtime-variants", "--games=th075", "--runtime-variants=normal")
+    .then(() => "", error => `${error.stdout || ""}\n${error.stderr || ""}\n${error.message}`);
+  assert.match(releaseVariantFailure, /restricted to web-validation-\* packaging/,
+    "publication profiles must reject the normal-only validation option");
+
   for(const [game,entry] of Object.entries(host.games))for(const field of ["runtime","multiplayerRuntime"])if(entry[field]) {
     assert.equal(parseRuntimeGenerationPath(entry[field].split("?")[0]).generation,runtimeRelease.games[game][field].generation);
   }
