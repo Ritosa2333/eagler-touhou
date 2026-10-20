@@ -46,3 +46,9 @@ Node 测试使用锁定的 `puppeteer-core`，通过 `EAGLER_CHROME_PATH` 或标
 ## 记录结果
 
 记录测试名称、作品与模式、构建标识、浏览器、输入夹具和结果。游戏行为填写本作 `ADAPTATION.md`；[验证模板](../../docs/adaptation/record-template.md)用于保存操作和附件。截图、日志和录屏以链接附在对应条目中。
+
+## 资源切换与房间返回
+
+`react-main/resource-download.test.mjs` 检查失败节点切换、首包与断流超时、慢传输、取消、静态托管、版本参数和跨节点凭据隔离。`transfer.test.mjs` 通过实际语言包准备入口检查换节点、单一进度任务与完整归档校验。分流服务的 `npm test` 检查发布库存和有序节点发现。`browser-session-mounted.test.mjs` 在桌面与手机环境下覆盖七作旁观各三次往返，同时检查不自动全屏、隐藏游戏操作按键和保留原生实例。th09 构建直接验证正式 Wasm 中的房间返回导出。
+
+联机介绍通过固定历史转换器对照当前原文，另用独立的对战章节输入覆盖 th09 分组；正文按内容文档维护。

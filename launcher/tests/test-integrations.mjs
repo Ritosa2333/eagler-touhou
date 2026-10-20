@@ -82,6 +82,10 @@ assert.equal(th15.params.reisen_shield, 3);
 assert.equal(th15.params.enhanced_para, 0.25);
 assert.equal(th15.params.doremy_normal_1_phase, 0.5);
 assert.equal(normalizeThpracParams("th15", {stage: 6, life_fragment: 5}).life_fragment, 5);
+const th12=createThpracSession('th12',{life_fragment:99,bomb_fragment:99,score:123,value:99999,ventra_1:0,ventra_2:3,ventra_3:2});
+assert.equal(th12.params.life_fragment,3);assert.equal(th12.params.bomb_fragment,2);
+assert.equal(th12.params.score,120);assert.equal(th12.params.value,99990);
+assert.equal(th12.params.ventra_2,0);assert.equal(th12.params.ventra_3,0);
 const declaredThpracGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.features.thprac)
   .map(([game]) => game);

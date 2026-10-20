@@ -1,0 +1,2000 @@
+{
+  "schema": "th12-original-boss-spell-times/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "provider": "Actual41a7d3..41a834 countdown arithmetic;41f795..41f88a countdown draw;41f11a..41f33d result draw and41d0b0 decoder;retail454d10/455630 ascii3/4 front78.",
+  "limits": [
+    "Mapped synthetic valid HUD/Enemy/Spell/Font objects; actual font4015c0 submissions are captured before glyph expansion.",
+    "45c900 captures two direct embedded VM draw identities; no GPU submission.",
+    "No full HUD callback, wall-clock measurement, replay scene or original whole-game scheduling is asserted."
+  ],
+  "countdowns": [
+    {
+      "age": 0,
+      "limit": 2400,
+      "seconds": 40,
+      "hundredths": 0,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            0
+          ],
+          "text": "00",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 1,
+      "limit": 2400,
+      "seconds": 39,
+      "hundredths": 98,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            98
+          ],
+          "text": "98",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 58,
+      "limit": 2400,
+      "seconds": 39,
+      "hundredths": 3,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            3
+          ],
+          "text": "03",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 59,
+      "limit": 2400,
+      "seconds": 39,
+      "hundredths": 1,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            1
+          ],
+          "text": "01",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 60,
+      "limit": 2400,
+      "seconds": 39,
+      "hundredths": 0,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            0
+          ],
+          "text": "00",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 2399,
+      "limit": 2400,
+      "seconds": 0,
+      "hundredths": 1,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            1
+          ],
+          "text": "01",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 2400,
+      "limit": 2400,
+      "seconds": 0,
+      "hundredths": 0,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            0
+          ],
+          "text": "00",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 0,
+      "limit": 6001,
+      "seconds": 99,
+      "hundredths": 99,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            99
+          ],
+          "text": "99",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "age": 0,
+      "limit": 6000,
+      "seconds": 99,
+      "hundredths": 99,
+      "calls": [
+        {
+          "format": ".",
+          "arguments": [],
+          "text": ".",
+          "font": 3,
+          "position": [
+            394.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d",
+          "arguments": [
+            99
+          ],
+          "text": "99",
+          "font": 3,
+          "position": [
+            402.0,
+            22.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4289449455,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "embeddedDraws": [
+        "0x4b50",
+        "0x5004"
+      ],
+      "rngUnchanged": true
+    }
+  ],
+  "gates": [
+    {
+      "name": "missing-manager",
+      "calls": [],
+      "embeddedDraws": []
+    },
+    {
+      "name": "missing-boss",
+      "calls": [],
+      "embeddedDraws": []
+    },
+    {
+      "name": "manager-hidden",
+      "calls": [],
+      "embeddedDraws": []
+    },
+    {
+      "name": "dialogue",
+      "calls": [],
+      "embeddedDraws": []
+    },
+    {
+      "name": "unset-timer",
+      "calls": [],
+      "embeddedDraws": []
+    }
+  ],
+  "results": [
+    {
+      "ticks": 121,
+      "seconds": 2,
+      "hundredths": 1,
+      "encoded": 2506834,
+      "valid": true,
+      "alpha": 255,
+      "calls": [
+        {
+          "format": "%3d.",
+          "arguments": [
+            2
+          ],
+          "text": "  2.",
+          "font": 3,
+          "position": [
+            222.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4294967295,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            1
+          ],
+          "text": "01s",
+          "font": 3,
+          "position": [
+            266.0,
+            198.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4294967295,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%3d.",
+          "arguments": [
+            2
+          ],
+          "text": "  2.",
+          "font": 3,
+          "position": [
+            222.0,
+            208.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4286611584,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            1
+          ],
+          "text": "01s",
+          "font": 3,
+          "position": [
+            266.0,
+            214.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4286611584,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "ticks": 3601,
+      "seconds": 58,
+      "hundredths": 83,
+      "encoded": 16312416,
+      "valid": true,
+      "alpha": 128,
+      "calls": [
+        {
+          "format": "%3d.",
+          "arguments": [
+            60
+          ],
+          "text": " 60.",
+          "font": 3,
+          "position": [
+            222.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 2164260863,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            1
+          ],
+          "text": "01s",
+          "font": 3,
+          "position": [
+            266.0,
+            198.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 2164260863,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%3d.",
+          "arguments": [
+            58
+          ],
+          "text": " 58.",
+          "font": 3,
+          "position": [
+            222.0,
+            208.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 2155905152,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            83
+          ],
+          "text": "83s",
+          "font": 3,
+          "position": [
+            266.0,
+            214.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 2155905152,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "ticks": 60000,
+      "seconds": 999,
+      "hundredths": 99,
+      "encoded": 112006532,
+      "valid": true,
+      "alpha": 255,
+      "calls": [
+        {
+          "format": "%3d.",
+          "arguments": [
+            999
+          ],
+          "text": "999.",
+          "font": 3,
+          "position": [
+            222.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4294967295,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            0
+          ],
+          "text": "00s",
+          "font": 3,
+          "position": [
+            266.0,
+            198.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4294967295,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%3d.",
+          "arguments": [
+            999
+          ],
+          "text": "999.",
+          "font": 3,
+          "position": [
+            222.0,
+            208.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4286611584,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            99
+          ],
+          "text": "99s",
+          "font": 3,
+          "position": [
+            266.0,
+            214.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4286611584,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "ticks": 121,
+      "seconds": 2,
+      "hundredths": 1,
+      "encoded": 2506834,
+      "valid": true,
+      "alpha": 0,
+      "calls": [
+        {
+          "format": "%3d.",
+          "arguments": [
+            2
+          ],
+          "text": "  2.",
+          "font": 3,
+          "position": [
+            222.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 16777215,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            1
+          ],
+          "text": "01s",
+          "font": 3,
+          "position": [
+            266.0,
+            198.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 16777215,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%3d.",
+          "arguments": [
+            2
+          ],
+          "text": "  2.",
+          "font": 3,
+          "position": [
+            222.0,
+            208.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 8421504,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            1
+          ],
+          "text": "01s",
+          "font": 3,
+          "position": [
+            266.0,
+            214.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 8421504,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "ticks": 121,
+      "seconds": 2,
+      "hundredths": 1,
+      "encoded": 2506835,
+      "valid": false,
+      "alpha": 255,
+      "calls": [
+        {
+          "format": "%3d.",
+          "arguments": [
+            2
+          ],
+          "text": "  2.",
+          "font": 3,
+          "position": [
+            222.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4294967295,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            1
+          ],
+          "text": "01s",
+          "font": 3,
+          "position": [
+            266.0,
+            198.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4294967295,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%3d.",
+          "arguments": [
+            999
+          ],
+          "text": "999.",
+          "font": 3,
+          "position": [
+            222.0,
+            208.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "colorARGB": 4286611584,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2ds",
+          "arguments": [
+            99
+          ],
+          "text": "99s",
+          "font": 3,
+          "position": [
+            266.0,
+            214.0,
+            0.0
+          ],
+          "scale": [
+            0.6000000238418579,
+            0.6000000238418579
+          ],
+          "colorARGB": 4286611584,
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    }
+  ],
+  "animations": [
+    {
+      "bank": "ascii",
+      "script": 3,
+      "frames": [
+        {
+          "tick": 0,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 1,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 2,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 15,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 30,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 45,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 60,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 90,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 120,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 150,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 180,
+          "sprite": 243,
+          "position": [
+            382.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 4,
+      "frames": [
+        {
+          "tick": 0,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 1,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 2,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 15,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073741831
+        },
+        {
+          "tick": 30,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 45,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 60,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 90,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 120,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 150,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        },
+        {
+          "tick": 180,
+          "sprite": 243,
+          "position": [
+            394.0,
+            24.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1073750023
+        }
+      ]
+    },
+    {
+      "bank": "front",
+      "script": 78,
+      "frames": [
+        {
+          "tick": 0,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "flags": 1076363271
+        },
+        {
+          "tick": 1,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "flags": 1076363271
+        },
+        {
+          "tick": 2,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "flags": 1076363271
+        },
+        {
+          "tick": 15,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "flags": 1076363271
+        },
+        {
+          "tick": 30,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 218103807,
+          "flags": 1076363271
+        },
+        {
+          "tick": 45,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 3439329279,
+          "flags": 1076363271
+        },
+        {
+          "tick": 60,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1076363271
+        },
+        {
+          "tick": 90,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1076363271
+        },
+        {
+          "tick": 120,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "flags": 1076363271
+        },
+        {
+          "tick": 150,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 1929379839,
+          "flags": 1076363271
+        },
+        {
+          "tick": 180,
+          "sprite": 58,
+          "position": [
+            154.0,
+            192.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "flags": 1076363270
+        }
+      ]
+    }
+  ],
+  "timerTracks": [
+    {
+      "frames": [
+        {
+          "tick": 0,
+          "seconds": 40,
+          "digits": [
+            {
+              "sprite": 247,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073741831
+            },
+            {
+              "sprite": 243,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073741831
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "seconds": 39,
+          "digits": [
+            {
+              "sprite": 246,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            },
+            {
+              "sprite": 252,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            }
+          ]
+        },
+        {
+          "tick": 2,
+          "seconds": 39,
+          "digits": [
+            {
+              "sprite": 246,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            },
+            {
+              "sprite": 252,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "seconds": 10,
+          "digits": [
+            {
+              "sprite": 244,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            },
+            {
+              "sprite": 243,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "seconds": 9,
+          "digits": [
+            {
+              "sprite": 243,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            },
+            {
+              "sprite": 252,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.0,
+                1.0
+              ],
+              "primary": 4294967295,
+              "flags": 1073750023
+            }
+          ]
+        },
+        {
+          "tick": 5,
+          "seconds": 9,
+          "digits": [
+            {
+              "sprite": 243,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.350000023841858,
+                1.350000023841858
+              ],
+              "primary": 4294938768,
+              "flags": 1073750031
+            },
+            {
+              "sprite": 252,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.350000023841858,
+                1.350000023841858
+              ],
+              "primary": 4294938768,
+              "flags": 1073750031
+            }
+          ]
+        },
+        {
+          "tick": 6,
+          "seconds": 5,
+          "digits": [
+            {
+              "sprite": 243,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.2999999523162842,
+                1.2999999523162842
+              ],
+              "primary": 4294938768,
+              "flags": 1073750031
+            },
+            {
+              "sprite": 248,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.2999999523162842,
+                1.2999999523162842
+              ],
+              "primary": 4294938768,
+              "flags": 1073750031
+            }
+          ]
+        },
+        {
+          "tick": 7,
+          "seconds": 4,
+          "digits": [
+            {
+              "sprite": 243,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.350000023841858,
+                1.350000023841858
+              ],
+              "primary": 4294938768,
+              "flags": 1073750031
+            },
+            {
+              "sprite": 247,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.350000023841858,
+                1.350000023841858
+              ],
+              "primary": 4294938768,
+              "flags": 1073750031
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "seconds": 4,
+          "digits": [
+            {
+              "sprite": 243,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.6999999284744263,
+                1.6999999284744263
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            },
+            {
+              "sprite": 247,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.6999999284744263,
+                1.6999999284744263
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            }
+          ]
+        },
+        {
+          "tick": 9,
+          "seconds": 3,
+          "digits": [
+            {
+              "sprite": 243,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.5999999046325684,
+                1.5999999046325684
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            },
+            {
+              "sprite": 246,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.5999999046325684,
+                1.5999999046325684
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            }
+          ]
+        },
+        {
+          "tick": 10,
+          "seconds": 0,
+          "digits": [
+            {
+              "sprite": 243,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.6999999284744263,
+                1.6999999284744263
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            },
+            {
+              "sprite": 243,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.6999999284744263,
+                1.6999999284744263
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            }
+          ]
+        },
+        {
+          "tick": 11,
+          "seconds": 44,
+          "digits": [
+            {
+              "sprite": 247,
+              "position": [
+                382.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.6999999284744263,
+                1.6999999284744263
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            },
+            {
+              "sprite": 247,
+              "position": [
+                394.0,
+                24.0,
+                0.0
+              ],
+              "scale": [
+                1.6999999284744263,
+                1.6999999284744263
+              ],
+              "primary": 4294918208,
+              "flags": 1073750031
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

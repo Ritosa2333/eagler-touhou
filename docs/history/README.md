@@ -2,6 +2,8 @@
 
 monorepo 的原仓库来源与导入提交记录在 [import-sources.json](../migration/import-sources.json) 和 [move-sources-20261018.json](../migration/move-sources-20261018.json)。当前开发目录见[工作区](../../WORKSPACE.md)。
 
+TH12 的 `eagler` 分支导入来源、提交与目录映射见 [2026-10-20 导入记录](../migration/th12-eagler-20261020.json)，开发入口为 [ports/th12](../../ports/th12/README.md)。
+
 ## 查找旧结论
 
 [旧文档去向表](INDEX.md)列出重写前的全部文档、固定版本原文和当前入口。测试日志、原版对照、数值、失败记录及构建哈希保留在原始提交中，使用表内链接可直接阅读。

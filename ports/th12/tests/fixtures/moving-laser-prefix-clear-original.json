@@ -1,0 +1,594 @@
+{
+  "schema": "th12-original-moving-laser-prefix-clear/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Actual Enemy/ECL602 factory,4286f0/42a1f0 Moving virtual partial circle clear and next428270/429610 update with real bullet ANM. Controlled initial+78 offset, captured item request boundary; no input/golden changes.",
+  "records": [
+    {
+      "initialOffset": 0,
+      "radius": 8,
+      "removed": 1,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          110.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          16.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          111.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          17.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 0,
+      "radius": 24,
+      "removed": 2,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          126.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          32.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          127.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          33.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 0,
+      "radius": 40,
+      "removed": 3,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          142.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          48.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          143.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          49.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 0.01,
+      "radius": 8,
+      "removed": 1,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          110.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          16.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          111.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          17.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 0.01,
+      "radius": 24,
+      "removed": 2,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          126.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          32.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          127.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          33.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 0.01,
+      "radius": 40,
+      "removed": 3,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          142.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          48.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          143.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          49.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 1,
+      "radius": 8,
+      "removed": 1,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          110.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          16.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          111.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          17.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 1,
+      "radius": 24,
+      "removed": 2,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          126.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          32.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          127.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          33.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 1,
+      "radius": 40,
+      "removed": 3,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          142.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          48.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          143.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          49.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 17,
+      "radius": 8,
+      "removed": 1,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          110.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          16.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          111.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          17.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 17,
+      "radius": 24,
+      "removed": 2,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          126.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          32.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          127.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          33.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 17,
+      "radius": 40,
+      "removed": 3,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          142.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          48.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          143.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          49.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 50,
+      "radius": 8,
+      "removed": 1,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          110.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          16.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          111.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          80.0,
+          16.0,
+          1.0,
+          17.0
+        ],
+        "maxLength": 80.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 50,
+      "radius": 24,
+      "removed": 2,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          126.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          32.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          127.4000015258789,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          64.0,
+          16.0,
+          1.0,
+          33.0
+        ],
+        "maxLength": 64.0,
+        "retirePending": 0
+      }
+    },
+    {
+      "initialOffset": 50,
+      "radius": 40,
+      "removed": 3,
+      "afterClear": {
+        "phase": 2,
+        "position": [
+          142.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          48.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      },
+      "afterTick": {
+        "phase": 2,
+        "position": [
+          143.39999389648438,
+          144.0,
+          0.0
+        ],
+        "geometry": [
+          0.0,
+          48.0,
+          16.0,
+          1.0,
+          49.0
+        ],
+        "maxLength": 48.0,
+        "retirePending": 0
+      }
+    }
+  ]
+}

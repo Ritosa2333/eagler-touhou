@@ -25,6 +25,23 @@ export function runtimeStem(game) {
   return game;
 }
 
+// Directory ports declare the features of the actual code build in their
+// packaged manifest. Both direct site packaging and Runtime Release packaging
+// must consume the same declaration instead of assuming a particular C++ adapter.
+export async function directoryFeatureAttestation(game, build) {
+  const manifest = JSON.parse(await readFile(resolve(build, "manifest.json"), "utf8"));
+  if (manifest.game !== game || manifest.protocol !== "eagler-touhou/1") {
+    throw new Error(`${game}: invalid directory Runtime manifest`);
+  }
+  return Object.fromEntries(["thprac", "languages", "focusHitbox"].map(feature => {
+    const value = manifest.features?.[feature];
+    if (value != null && typeof value !== "boolean") {
+      throw new Error(`${game}: invalid directory Runtime feature attestation: ${feature}`);
+    }
+    return [feature, value === true];
+  }));
+}
+
 // A directory runtime remains a closed, hash-identified code/resource set. It does
 // not relax the old Emscripten contract or allow original EXE/DAT/DLL content.
 export function runtimeFileNames(game, files) {

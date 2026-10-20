@@ -1,0 +1,1105 @@
+{
+  "schema": "th12-native-enemy-animation-layer/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "stgenm01Sha256": "ed4095afed0c2057ae6997ef774f5d298683bf1084274338f80f096560733c4e",
+  "wholeGameOracle": false,
+  "acceptedReplayGolden": false,
+  "gpuExecuted": false,
+  "boundary": "Actual412990/413230 Enemy birth, ECL258/259/452,41c6a0/454d10/4612d0 registration,460fe0 Primary27 and4611d0 registered-layer draw. Constructed manager/resource host bootstrap, passive Player hurt/audio boundaries.45c900 is captured before GPU submission. Actual413220 scheduler draw21 is invoked separately and makes no submissions.",
+  "cases": [
+    {
+      "offset": null,
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000004c6179657250726f6265000045434c48000000000000000000000000000000000201140000003f010000000002000000000000000301180000003f02000000000000000005000000000000000301180000003f0200000000010000000f000000000000000301180000003f02000000000200000010000000000000005300140000003f0100000000a0860100",
+      "enemyLayerOffset": 1,
+      "slotHandles": [
+        1,
+        2,
+        3
+      ],
+      "birthPrimaryChain": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 8,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ],
+      "factory": [
+        {
+          "requestedLayer": 8,
+          "script": 5
+        },
+        {
+          "requestedLayer": 8,
+          "script": 15
+        },
+        {
+          "requestedLayer": 8,
+          "script": 16
+        }
+      ],
+      "registrations": [
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 5,
+            "sprite": 8,
+            "layer": 8,
+            "flags": 7,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 15,
+            "sprite": 31,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 16,
+            "sprite": 32,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "enemyManagerDraw21": {
+        "returned": 1,
+        "submissionCount": 0
+      },
+      "draws": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 8,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "offset": -8,
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000004c6179657250726f6265000045434c48000000000000000000000000000000000201140000003f01000000000200000000000000c401140000003f0100000000f8ffffff000000000301180000003f02000000000000000005000000000000000301180000003f0200000000010000000f000000000000000301180000003f02000000000200000010000000000000005300140000003f0100000000a0860100",
+      "enemyLayerOffset": -8,
+      "slotHandles": [
+        1,
+        2,
+        3
+      ],
+      "birthPrimaryChain": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 0,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ],
+      "factory": [
+        {
+          "requestedLayer": 4294967295,
+          "script": 5
+        },
+        {
+          "requestedLayer": 4294967295,
+          "script": 15
+        },
+        {
+          "requestedLayer": 4294967295,
+          "script": 16
+        }
+      ],
+      "registrations": [
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 5,
+            "sprite": 8,
+            "layer": 0,
+            "flags": 7,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 15,
+            "sprite": 31,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 16,
+            "sprite": 32,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "enemyManagerDraw21": {
+        "returned": 1,
+        "submissionCount": 0
+      },
+      "draws": [
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 0,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "offset": -7,
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000004c6179657250726f6265000045434c48000000000000000000000000000000000201140000003f01000000000200000000000000c401140000003f0100000000f9ffffff000000000301180000003f02000000000000000005000000000000000301180000003f0200000000010000000f000000000000000301180000003f02000000000200000010000000000000005300140000003f0100000000a0860100",
+      "enemyLayerOffset": -7,
+      "slotHandles": [
+        1,
+        2,
+        3
+      ],
+      "birthPrimaryChain": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 0,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ],
+      "factory": [
+        {
+          "requestedLayer": 0,
+          "script": 5
+        },
+        {
+          "requestedLayer": 0,
+          "script": 15
+        },
+        {
+          "requestedLayer": 0,
+          "script": 16
+        }
+      ],
+      "registrations": [
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 5,
+            "sprite": 8,
+            "layer": 0,
+            "flags": 7,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 15,
+            "sprite": 31,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 16,
+            "sprite": 32,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "enemyManagerDraw21": {
+        "returned": 1,
+        "submissionCount": 0
+      },
+      "draws": [
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 0,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "offset": 0,
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000004c6179657250726f6265000045434c48000000000000000000000000000000000201140000003f01000000000200000000000000c401140000003f010000000000000000000000000301180000003f02000000000000000005000000000000000301180000003f0200000000010000000f000000000000000301180000003f02000000000200000010000000000000005300140000003f0100000000a0860100",
+      "enemyLayerOffset": 0,
+      "slotHandles": [
+        1,
+        2,
+        3
+      ],
+      "birthPrimaryChain": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 7,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ],
+      "factory": [
+        {
+          "requestedLayer": 7,
+          "script": 5
+        },
+        {
+          "requestedLayer": 7,
+          "script": 15
+        },
+        {
+          "requestedLayer": 7,
+          "script": 16
+        }
+      ],
+      "registrations": [
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 5,
+            "sprite": 8,
+            "layer": 7,
+            "flags": 7,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 15,
+            "sprite": 31,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 16,
+            "sprite": 32,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "enemyManagerDraw21": {
+        "returned": 1,
+        "submissionCount": 0
+      },
+      "draws": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 7,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "offset": 4,
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000004c6179657250726f6265000045434c48000000000000000000000000000000000201140000003f01000000000200000000000000c401140000003f010000000004000000000000000301180000003f02000000000000000005000000000000000301180000003f0200000000010000000f000000000000000301180000003f02000000000200000010000000000000005300140000003f0100000000a0860100",
+      "enemyLayerOffset": 4,
+      "slotHandles": [
+        1,
+        2,
+        3
+      ],
+      "birthPrimaryChain": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 11,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ],
+      "factory": [
+        {
+          "requestedLayer": 11,
+          "script": 5
+        },
+        {
+          "requestedLayer": 11,
+          "script": 15
+        },
+        {
+          "requestedLayer": 11,
+          "script": 16
+        }
+      ],
+      "registrations": [
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 5,
+            "sprite": 8,
+            "layer": 11,
+            "flags": 7,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 15,
+            "sprite": 31,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 16,
+            "sprite": 32,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "enemyManagerDraw21": {
+        "returned": 1,
+        "submissionCount": 0
+      },
+      "draws": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 11,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "offset": 23,
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000004c6179657250726f6265000045434c48000000000000000000000000000000000201140000003f01000000000200000000000000c401140000003f010000000017000000000000000301180000003f02000000000000000005000000000000000301180000003f0200000000010000000f000000000000000301180000003f02000000000200000010000000000000005300140000003f0100000000a0860100",
+      "enemyLayerOffset": 23,
+      "slotHandles": [
+        1,
+        2,
+        3
+      ],
+      "birthPrimaryChain": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 30,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ],
+      "factory": [
+        {
+          "requestedLayer": 30,
+          "script": 5
+        },
+        {
+          "requestedLayer": 30,
+          "script": 15
+        },
+        {
+          "requestedLayer": 30,
+          "script": 16
+        }
+      ],
+      "registrations": [
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 5,
+            "sprite": 8,
+            "layer": 30,
+            "flags": 7,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 15,
+            "sprite": 31,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 16,
+            "sprite": 32,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "enemyManagerDraw21": {
+        "returned": 1,
+        "submissionCount": 0
+      },
+      "draws": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "offset": 24,
+      "syntheticEclHex": "534350540100000000000000000000000100000000000000000000000000000000000000340000004c6179657250726f6265000045434c48000000000000000000000000000000000201140000003f01000000000200000000000000c401140000003f010000000018000000000000000301180000003f02000000000000000005000000000000000301180000003f0200000000010000000f000000000000000301180000003f02000000000200000010000000000000005300140000003f0100000000a0860100",
+      "enemyLayerOffset": 24,
+      "slotHandles": [
+        1,
+        2,
+        3
+      ],
+      "birthPrimaryChain": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 1,
+          "asset": "stgenm01.anm",
+          "script": 5,
+          "sprite": 8,
+          "layer": 31,
+          "flags": 7,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ],
+      "factory": [
+        {
+          "requestedLayer": 31,
+          "script": 5
+        },
+        {
+          "requestedLayer": 31,
+          "script": 15
+        },
+        {
+          "requestedLayer": 31,
+          "script": 16
+        }
+      ],
+      "registrations": [
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 5,
+            "sprite": 8,
+            "layer": 31,
+            "flags": 7,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 15,
+            "sprite": 31,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "entry": "0x4612d0",
+          "vm": {
+            "id": 0,
+            "asset": "stgenm01.anm",
+            "script": 16,
+            "sprite": 32,
+            "layer": 3,
+            "flags": 8199,
+            "enginePosition": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "enemyManagerDraw21": {
+        "returned": 1,
+        "submissionCount": 0
+      },
+      "draws": [
+        {
+          "id": 3,
+          "asset": "stgenm01.anm",
+          "script": 16,
+          "sprite": 32,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        },
+        {
+          "id": 2,
+          "asset": "stgenm01.anm",
+          "script": 15,
+          "sprite": 31,
+          "layer": 3,
+          "flags": 8199,
+          "enginePosition": [
+            249.0,
+            116.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

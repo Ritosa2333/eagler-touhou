@@ -28,6 +28,7 @@ try {
   await put(resolve(layout.path("common"), "include/eagler/audio/WebSfx.hpp"));
   await put(resolve(layout.path("common"), "include/eagler/netplay/SessionChannel.hpp"));
   await put(resolve(layout.path("common"), "include/eagler/text/RuntimeFontRaster.hpp"));
+  await put(resolve(layout.path("common"), "include/eagler/thprac/PracticeSpeed.hpp"));
   await put(resolve(layout.path("dependencies"), "unifont-15.1.05/unifont-15.1.05.otf"));
   const context = { layout, config, environment: {} };
   const plans = [];
@@ -43,6 +44,7 @@ try {
         continue;
       }
       await put(resolve(source, recipe.kind === "cmake" ? "CMakeLists.txt" : recipe.build[0]));
+      for(const input of recipe.commonInputs??[])await put(resolve(layout.path("common"),input));
       const before = await readdir(source);
       const plan = await planRuntimeSourceBuild({ game, variant, emsdk: sdk }, context);
       assert.deepEqual(await readdir(source), before, "planning must not create build output");
@@ -61,7 +63,8 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 17);
+  assert.equal(plans.length, 18);
+  assert.equal(plans.find(plan=>plan.game==='th12').source,layout.path('th12'));
   assert.equal(plans.find(plan => plan.game === "th10" && plan.variant === "multiplayer").source, layout.path("th10mp"));
   assert(plans.find(plan => plan.game === "th11" && plan.variant === "multiplayer").steps[0].args.includes("--multiplayer"));
   const th15 = plans.find(plan => plan.game === "th15" && plan.variant === "multiplayer");
@@ -99,4 +102,4 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (17 variants, shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (18 variants, shared dependencies, explicit tools, invalid inputs)");

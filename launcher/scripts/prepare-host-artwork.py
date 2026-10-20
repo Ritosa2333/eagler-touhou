@@ -44,6 +44,7 @@ ARTWORK_BY_GAME = {
     "th11": ("th11-card.webp",),
     # TH15's title is layered artwork in the retail title.anm, not a screenshot.
     "th15": ("th15-card.webp",),
+    "th12": ("th12-card.webp",),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
 # original title artwork.  The UI darkens/crops them heavily and Lighthouse's
@@ -230,6 +231,7 @@ def prepare_host_artwork(
     override_dir: Path | None = None,
     thdat: str = "thdat",
     thanm: str = "thanm",
+    prepared_artwork_dirs: dict[str, Path] | None = None,
 ) -> dict[str, object]:
     output = output.resolve()
     if output.exists():
@@ -281,13 +283,20 @@ def prepare_host_artwork(
                 source_bytes = len(raw)
             else:
                 try:
-                    raw = _default_artwork(game, name, roots, thdat, thanm)
-                    if name.endswith(".webp"):
+                    prepared_root = (prepared_artwork_dirs or {}).get(game)
+                    raw = (prepared_root / name).read_bytes() if prepared_root is not None else _default_artwork(game, name, roots, thdat, thanm)
+                    if prepared_root is not None and name.endswith(".webp"):
+                        _validate_artwork(name, raw)
+                        with Image.open(BytesIO(raw)) as image:
+                            image.load()
+                            dimensions = image.size
+                        data = raw
+                    elif name.endswith(".webp"):
                         data, dimensions = _encode_webp(raw, f"{game}-title00")
                     else:
                         data = raw
                         _validate_artwork(name, data)
-                    source = "site-brand" if name == "favicon.ico" else "original-extraction"
+                    source = "prepared-content" if prepared_root is not None else "site-brand" if name == "favicon.ico" else "original-extraction"
                     source_bytes = len(raw)
                 except (FileNotFoundError, ValueError, EOFError, OSError) as error:
                     entries.append({
@@ -330,6 +339,7 @@ def _main() -> None:
         help="original game directory; repeat once per selected game",
     )
     parser.add_argument("--override-dir", type=Path)
+    parser.add_argument("--prepared-artwork-dir", action="append", default=[], metavar="GAME=DIR")
     parser.add_argument("--thdat", default="thdat")
     parser.add_argument("--thanm", default="thanm")
     args = parser.parse_args()
@@ -359,6 +369,15 @@ def _main() -> None:
         roots[game] = Path(directory).resolve()
     if args.override_dir is not None and not args.override_dir.is_dir():
         parser.error(f"override directory not found: {args.override_dir}")
+    prepared_artwork_dirs: dict[str, Path] = {}
+    for value in args.prepared_artwork_dir:
+        game, separator, directory = value.partition("=")
+        if not separator or game not in games or game in prepared_artwork_dirs or not directory.strip():
+            parser.error(f"invalid or duplicate --prepared-artwork-dir: {value}")
+        location = Path(directory).resolve()
+        if not location.is_dir():
+            parser.error(f"prepared artwork directory not found: {location}")
+        prepared_artwork_dirs[game] = location
     report = prepare_host_artwork(
         args.output,
         games,
@@ -366,6 +385,7 @@ def _main() -> None:
         args.override_dir.resolve() if args.override_dir else None,
         args.thdat,
         args.thanm,
+        prepared_artwork_dirs,
     )
     print(json.dumps(report, ensure_ascii=False))
 

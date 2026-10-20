@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {resolve, relative} from 'node:path';
 import {createRequire} from 'node:module';
 import {runInNewContext} from 'node:vm';
+import {execFileSync} from 'node:child_process';
 import {RUNTIME_PROTOCOL_COMMANDS, RUNTIME_PROTOCOL_COMMAND_BEHAVIOR, RUNTIME_PROTOCOL_EVENTS,
   TOUCH_SENSITIVITY_MIN, TOUCH_SENSITIVITY_MAX} from '../../launcher/lib/contracts/runtime-protocol.mjs';
 
@@ -10,6 +11,7 @@ const require = createRequire(new URL('../../launcher/package.json', import.meta
 const {parse} = require('acorn');
 
 export function runtimeSourceFiles(game, product) {
+  if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
   if (['th075', 'th15'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
@@ -33,6 +35,17 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
   const nativeBodies = nativeFiles.map(path => ({path, text:readFileSync(path, 'utf8')}));
   const native = nativeBodies.map(item => item.text).join('\n');
   const records = [];
+  if (game === 'th12') {
+    const testFile='tests/managed-adapter.test.mjs';
+    return [
+      ['runtime-protocol',['RUNTIME-01','RUNTIME-02','RUNTIME-03'],'managed protocol:'],
+      ['touch-sensitivity',['TOUCH-14'],'managed touch:'],
+      ['native-gamepad',['INPUT-04'],'managed gamepad:'],
+    ].map(([id,checks,pattern])=>result(id,checks,[...files,testFile],()=>{
+      execFileSync(process.execPath,['--test','--test-name-pattern='+pattern,resolve(root,directory,testFile)],
+        {cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
+    }));
+  }
   records.push(result('runtime-protocol', ['RUNTIME-01', 'RUNTIME-02', 'RUNTIME-03'], files, () => {
     assert.match(source, /runtimeEpoch/, 'Runtime must bind messages to its navigation epoch');
     assert.match(source, /\.epoch\s*!==\s*epoch|message\.epoch\s*!==\s*epoch/, 'Runtime must reject a retired epoch');

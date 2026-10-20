@@ -23,6 +23,9 @@ const th10ContentRoot = process.env.EAGLER_TH10_CONTENT_DIR?.trim()
 const th11ContentRoot = process.env.EAGLER_TH11_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH11_CONTENT_DIR.trim())
   : null;
+const th12ContentRoot = process.env.EAGLER_TH12_CONTENT_DIR?.trim()
+  ? resolve(process.env.EAGLER_TH12_CONTENT_DIR.trim())
+  : null;
 const th09ContentRoot = process.env.EAGLER_TH09_CONTENT_DIR?.trim()
   ? resolve(process.env.EAGLER_TH09_CONTENT_DIR.trim())
   : null;
@@ -168,6 +171,21 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
         ogg: Object.freeze({
           base: `${projectRelativePath(resolve(th11ContentRoot, "music"))}/`,
           ...PRODUCT_CONTENT.th11.music.ogg,
+        }),
+      } : {}),
+    }),
+    th12: Object.freeze({
+      runtime: `${ws("th12", "build-eagler", "th12.html")}?hosted=1`,
+      data: Object.freeze({
+        source: th12ContentRoot
+          ? projectRelativePath(resolve(th12ContentRoot, "th12.data"))
+          : ws("th12", "artifacts", "eagler-content", "th12.data"),
+        layout: PRODUCT_CONTENT.th12.dataLayout,
+      }),
+      music: Object.freeze(th12ContentRoot ? {
+        ogg: Object.freeze({
+          base: `${projectRelativePath(resolve(th12ContentRoot, "music"))}/`,
+          ...PRODUCT_CONTENT.th12.music.ogg,
         }),
       } : {}),
     }),

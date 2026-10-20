@@ -1,0 +1,15 @@
+// AUTOMATIC PSEUDOCODE: NOT ORIGINAL SOURCE OR VERIFIED BEHAVIOR
+// TH12 1.00b 0x45a530; EXE 99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417; angr 10.0.1.post1
+// Inferred types/register conventions/x87 expressions require assembly review.
+
+extern char g_4b56a0;
+
+unsigned int sub_45a530(unsigned int idx)
+{
+    unsigned int v1;  // eax
+
+    v1 = *((int *)(idx + 8607396));
+    *((unsigned int *)&(&g_4b56a0)[idx]) = *((int *)&(&g_4b56a0)[idx]) + 1;
+    *((unsigned int *)(idx + 8607396)) = v1 + 168;
+    return v1;
+}

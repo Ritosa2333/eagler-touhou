@@ -1,0 +1,30 @@
+[
+  {
+    "address": "0x4154d0",
+    "regionEnd": "0x419654",
+    "researchName": "ecl_high_dispatch",
+    "entryEvidence": "manually checked native instruction entry; limited CFG region",
+    "pseudocodeSha256": "1532ff5ae4be2583bf652784625ee7da4ca6085a1c135501aea562542c317329"
+  },
+  {
+    "address": "0x402a40",
+    "regionEnd": "0x402d90",
+    "researchName": "stage_load_register",
+    "entryEvidence": "manually checked native instruction entry; limited CFG region",
+    "pseudocodeSha256": "9336e67c2aa09fb2760e6ba351409bf898f44fe5618d30947ea7a17f03fc789c"
+  },
+  {
+    "address": "0x402970",
+    "regionEnd": "0x402a40",
+    "researchName": "stage_object_constructor",
+    "entryEvidence": "manually checked native instruction entry; limited CFG region",
+    "pseudocodeSha256": "f20d1489a69b1b7a69d123414109aa95cdea8240cd050ee6a0236dd7c0efad3c"
+  },
+  {
+    "address": "0x4466a0",
+    "regionEnd": "0x446c50",
+    "researchName": "replay_menu_tick",
+    "entryEvidence": "manually checked native instruction entry; limited CFG region",
+    "pseudocodeSha256": "90a6a86f5f044233eff79b168a5ba96c61bf9bddd795598651f8b3f637fcac68"
+  }
+]

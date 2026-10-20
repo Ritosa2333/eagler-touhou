@@ -477,6 +477,7 @@ TH09_EXPORT("th09_room_preview") u32 th09_room_preview(u32 on){
     if(!probe||!probe->in_title||network.active||spectator_mode)return 0;
     clear_inputs();room_preview=on!=0;return 1;
 }
+TH09_EXPORT("th09_room_return") u32 th09_room_return(){if(!probe)return 0;clear_inputs();if(probe->session)probe->session->finish();if(!probe->return_title(false))return 0;spectator_mode=false;spectator_frames.clear();probe->requested_transition=-1;room_preview=true;return 1;}
 TH09_EXPORT("th09_prepare_loading") u32 th09_prepare_loading(){TH09_PERF_SCOPE(loading_cost,PrepareLoading);if(running)return 0;probe=std::make_unique<Application>();if(!probe->prepare_loading()){failure=probe->error;return 0;}return 1;}
 TH09_EXPORT("th09_game_metrics") const u32* th09_game_metrics(){static u32 data[10]{};if(probe){auto& s=probe->graphics.backend.stats;data[0]=s.batches;data[1]=s.uploadBytes;data[2]=s.readBytes;data[3]=s.vertexUploadBytes;data[4]=s.programCompiles;data[5]=s.bufferReplacements;data[6]=s.bufferSubUpdates;data[7]=s.frames;data[8]=s.resamples;data[9]=s.presentations;}return data;}
 TH09_EXPORT("th09_network_begin") u32 th09_network_begin(u32 seed,i32 side,u32 unlocked,u32 difficulty,u32 focus){
@@ -967,7 +968,6 @@ TH09_EXPORT("th09_probe_save_replay") u32 th09_probe_save_replay(){return probe&
 TH09_EXPORT("th09_probe_world") const i32* th09_probe_world(){return probe?audit::snapshot(probe->world,probe->state):nullptr;}
 TH09_EXPORT("th09_probe_replay") u32 th09_probe_replay(u32 size,u32 stage){if(!probe||size>probe->import_bytes.size())return 0;ReplayFile f;if(!f.decode(probe->import_bytes.data(),size))return 0;probe->title_play_replay(f,stage,"");probe->launch_pending=false;probe->in_title=false;return probe->start();}
 TH09_EXPORT("th09_probe_return_title") u32 th09_probe_return_title(u32 score){if(!probe)return 0;if(probe->session)probe->session->finish();return probe->return_title(score!=0);}
-TH09_EXPORT("th09_room_return") u32 th09_room_return(){if(!probe)return 0;clear_inputs();if(probe->session)probe->session->finish();if(!probe->return_title(false))return 0;room_preview=true;return 1;}
 TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 difficulty){TH09_PERF_SCOPE(open_cost,GameOpen);probe=std::make_unique<Application>();if(!probe->open(a,b,mode,difficulty)){failure=probe->error;return 0;}return 1;}
 #endif
 #if TH09_DEVELOPMENT_HARNESS

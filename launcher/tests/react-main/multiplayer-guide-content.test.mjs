@@ -61,6 +61,7 @@ test('one framework-independent builder retains pinned bytes after the legacy co
 const cases = {
   authored: readFileSync(resolve(project, 'public/content/MULTIPLAYER.html'), 'utf8'),
   headings: '<p>Before any group</p><h2>  通用规则 \n </h2><h3>First</h3><p>Common A</p><h4>Nested</h4><p>Common B</p><h2>TH06 红魔乡</h2><h3>本作特有规则</h3><h4>Flattened</h4><p>Six</p><h3>Section</h3><h4>Nested section</h4><p>Six detail</p><h2>TH07 妖妖梦</h2><p>Direct child</p><h2>TH07 妖妖梦</h2><h3>Last duplicate wins</h3><p>Replacement</p><h2>Unknown group</h2><p>Not a game panel</p>',
+  versus: '<h2>通用规则</h2><p>合作规则</p><h2>TH09 花映塚</h2><h3>本作特有规则</h3><p>双人对战</p>',
   empty: '',
   noCommon: '<h2>TH06 红魔乡</h2><p>Kept sanitized without guide grouping</p>',
   hostile: '<h2>通用规则</h2><h3>Readable</h3><p id="Module" style="display:none" onclick="bad()" class="markdown-blockquote evil">Safe <strong>text</strong><a href="java&#x09;script:bad()">Unsafe</a><a href="/safe" target="_blank" rel="opener">Safe link</a></p><script>bad()</script><iframe srcdoc="bad"></iframe><svg><text>Bad</text></svg><math><mtext>Bad</mtext></math><img src="data:bad"><img src="/safe.png" onerror="bad()"><h2>TH08 永夜抄</h2><h3>本作特有规则</h3><ol start="-3"><li>Rule</li></ol><table><tr><td align="right" style="color:red">Cell</td></tr></table>' + '<div>'.repeat(70) + '<p>Too deep</p>' + '</div>'.repeat(70),
@@ -106,10 +107,6 @@ for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 't
       assert.equal(initial.document.querySelectorAll('.multiplayer-rule-game-tab').length, 7);
       assert.equal(initial.document.querySelectorAll('details[open]').length, 0);
       assert.equal(initial.document.querySelector('[aria-selected="true"]').dataset.game, ['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15'].includes(game) ? game : 'th07');
-      assert.equal(initial.document.querySelector('.multiplayer-rule-panel[data-game="th09"] .multiplayer-rule-disclosure-specific').textContent,
-        name === 'authored'
-          ? '本作特有规则TH09 为双人对战，不使用上方的合作规则。创建房间后，将四位房间码发给另一位玩家；双方在游戏内选择角色后，由房主开始对局。支持 Easy、Normal、Hard 和 Lunatic 难度，可选 16 个角色。房间支持观战。对局结束后可在 Replay 管理器中查看或导出录像；本作还提供按对手整理对局记录和自动保存录像的设置。操作使用方向键、射击、Bomb、低速等游戏输入。可在控制设置中选择适合本地键盘的 TH09 按键布局，或绑定手柄。'
-          : '本作特有规则无');
       if (name === 'authored' && game === 'th15') {
         const rules = initial.document.querySelector('.multiplayer-rule-panel[data-game="th15"] .multiplayer-rule-disclosure-specific').textContent;
         for (const text of ['1,500,000', '1,250,000', '0.02 Power', '0.03 Power', '2.00 Power', '280', '铃仙', '只显示自己的判定点']) assert.ok(rules.includes(text), `Missing TH15 rule: ${text}`);

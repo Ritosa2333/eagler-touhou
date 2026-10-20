@@ -11,6 +11,7 @@
 | th09 | [开发](th09/README.md) | 共用生产程序，分产品身份 | [普通版／MP](th09/ADAPTATION.md) |
 | th10 | [开发](th10/README.md) | [开发](th10-mp/README.md) | [普通版](th10/ADAPTATION.md) · [MP](th10-mp/ADAPTATION.md) |
 | th11 | [开发](th11/README.md) | [开发](th11-mp/README.md) | [普通版](th11/ADAPTATION.md) · [MP](th11-mp/ADAPTATION.md) |
+| th12 | [开发](th12/README.md) | — | [普通版](th12/ADAPTATION.md) |
 | th15 | [开发](th15/README.md) | [开发](th15-mp/README.md) | [普通版](th15/ADAPTATION.md) · [MP](th15-mp/ADAPTATION.md) |
 | th20 | [开发](th20/README.md) | — | [普通版实验适配](th20/ADAPTATION.md) |
 

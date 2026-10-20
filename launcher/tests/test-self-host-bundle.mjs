@@ -9,6 +9,8 @@ import {
   SELF_HOST_BUNDLE_NODE_DEPENDENCIES,
 } from "../lib/self-host-bundle.mjs";
 import { FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import {PRODUCT_CONTENT} from '../lib/content-definition.mjs';
+import {workspacePath} from '../lib/workspace-layout.mjs';
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const targets = new Map(SELF_HOST_BUNDLE_COPY_RULES.map(rule => [rule.target, rule.source]));
@@ -45,8 +47,12 @@ function moduleSpecifiers(source, path) {
   return specifiers;
 }
 
+const preparationSources=new Map(Object.values(PRODUCT_CONTENT).flatMap(content=>Object.values(content.hostPreparation??{})
+  .flatMap(preparation=>preparation?.buildSources??[])).map(source=>[
+    relative(project,workspacePath(source.repository,source.source)).replaceAll('\\','/'),source.target]));
 for (const rule of SELF_HOST_BUNDLE_COPY_RULES) {
-  assertCanonicalRelativePath(rule.source, "unsafe self-host bundle source");
+  if(preparationSources.has(rule.source))assert.equal(rule.target,preparationSources.get(rule.source),'workspace source must use its declared preparation target');
+  else assertCanonicalRelativePath(rule.source, "unsafe self-host bundle source");
   assertCanonicalRelativePath(rule.target, "unsafe self-host bundle target");
   const info = await stat(resolve(project, rule.source));
   assert.equal(info.isFile(), true, `self-host bundle source is not a file: ${rule.source}`);

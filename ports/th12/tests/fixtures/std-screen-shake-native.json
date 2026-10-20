@@ -1,0 +1,84 @@
+{
+  "schema": "th12-native-std-screen-shake/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "matrixHelperExecuted": false,
+  "scope": "Complete original430a70 with synthetic Camera input and ANMManager/Device. Actual LookAt and Perspective arguments and final screen-offset writes; D3DX helpers record inputs and supply identity matrices, SetTransform records kind only. No native matrix/projection/pixel claim. Native45bce0 mode8 uses World/View/Projection transforms and never reads ANMManager+b0/b4; those offsets belong to459e50 flat XYZRHW quads.",
+  "records": [
+    {
+      "screenShake": [
+        0,
+        0
+      ],
+      "viewInputs": {
+        "eye": [
+          5.0,
+          3000.0,
+          -705.0
+        ],
+        "target": [
+          0.0,
+          3300.0,
+          -370.0
+        ],
+        "up": [
+          0.05000000074505806,
+          1.0,
+          0.0
+        ]
+      },
+      "projectionInputs": [
+        0.5235987901687622,
+        0.8791666626930237,
+        30.0,
+        1800.0
+      ],
+      "setTransformKinds": [
+        2,
+        3
+      ],
+      "anmScreenOffset": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "screenShake": [
+        3.25,
+        -2.5
+      ],
+      "viewInputs": {
+        "eye": [
+          5.0,
+          3000.0,
+          -705.0
+        ],
+        "target": [
+          0.0,
+          3300.0,
+          -370.0
+        ],
+        "up": [
+          0.05000000074505806,
+          1.0,
+          0.0
+        ]
+      },
+      "projectionInputs": [
+        0.5235987901687622,
+        0.8791666626930237,
+        30.0,
+        1800.0
+      ],
+      "setTransformKinds": [
+        2,
+        3
+      ],
+      "anmScreenOffset": [
+        3.25,
+        -2.5
+      ]
+    }
+  ]
+}

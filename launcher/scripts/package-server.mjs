@@ -33,7 +33,7 @@ import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { writeAppShellRetirementWorker } from "../lib/app-shell-retirement.mjs";
 import { deploymentAppShellPatterns, runtimeAppShellPaths } from "../lib/app-shell-policy.mjs";
 import { sourceIdentity, verifyReleaseManifest, writeReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
-import { verifyRuntimeRelease, runtimeFileNames, runtimeStem } from "../lib/runtime-release.mjs";
+import { verifyRuntimeRelease, runtimeFileNames, runtimeStem, directoryFeatureAttestation } from "../lib/runtime-release.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
@@ -296,6 +296,11 @@ for (const game of languageGames) {
 for (const game of thpracGames) {
   if (!hostedResources || !serverFeatures[game].thprac) continue;
   if (runtimeRelease) continue;
+  if (PRODUCT_GAMES[game].runtimeFileLayout === "directory") {
+    const features = await directoryFeatureAttestation(game, builds[game]);
+    if (!features.thprac) throw new Error(`${game.toUpperCase()} directory Runtime does not attest thprac capability`);
+    continue;
+  }
   const compileCommandsPath = resolve(builds[game], "compile_commands.json");
   let compileCommands;
   try {
@@ -967,7 +972,7 @@ const deployment = {
 await writeFile(resolve(staging, "deployment.json"), `${JSON.stringify(deployment, null, 2)}\n`);
 const sources = {};
 const sourceOwners = runtimeRelease ? ["launcher"] : ["launcher", ...gameIds];
-if (!runtimeRelease && languageGames.some(game => serverFeatures[game]?.thprac)) sourceOwners.push("thprac");
+if (!runtimeRelease && thpracGames.some(game => serverFeatures[game]?.thprac && PRODUCT_GAMES[game].runtimeFileLayout !== "directory")) sourceOwners.push("thprac");
 let packagedLauncherSource = null;
 if (runtimeRelease) {
   try {

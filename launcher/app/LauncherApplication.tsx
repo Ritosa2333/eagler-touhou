@@ -59,6 +59,7 @@ export interface LauncherHost {
   titleOverlayOpen?: boolean;
   requestRuntimeClose?(): Promise<boolean>;
   requestRoomLeave?(): void;
+  requestRoomFullscreenExit?(): Promise<void>;
   roomSurface?: ReactNode;
   roomDrawer?: ReactNode;
   runtimeFrame?: RefCallback<HTMLIFrameElement>;
@@ -73,7 +74,7 @@ export function LauncherApplication({host}: {host: LauncherHost}) {
   const layout = useSyncExternalStore(host.touchLayout.subscribe, host.touchLayout.getSnapshot, host.touchLayout.getSnapshot);
   return <LocaleProvider locale={host.locale}>
     <SurfaceNavigationProvider dirty={layout.dirty} isEditing={layout.isEditing} onDiscard={host.touchLayout.discard} decisions={host.decisions}
-      playerOpen={host.runtimeOpen} requestRuntimeClose={host.requestRuntimeClose} requestRoomLeave={host.requestRoomLeave} titleOverlayOpen={host.titleOverlayOpen} productAvailable={host.productAvailable} onRouteSelection={host.onRouteSelection}>
+      playerOpen={host.runtimeOpen} requestRuntimeClose={host.requestRuntimeClose} requestRoomLeave={host.requestRoomLeave} requestRoomFullscreenExit={host.requestRoomFullscreenExit} titleOverlayOpen={host.titleOverlayOpen} productAvailable={host.productAvailable} onRouteSelection={host.onRouteSelection}>
       <LauncherSurfaces host={host}/>
     </SurfaceNavigationProvider>
   </LocaleProvider>;

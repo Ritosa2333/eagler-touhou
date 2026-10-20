@@ -22,6 +22,8 @@
     "th08mp": "ports/th08-mp",
     "relay": "services/relay",
     "turn": "services/turn",
-    "telemetry": "services/telemetry"
+    "telemetry": "services/telemetry",
+    "resources": "services/resource-router",
+    "th12": "ports/th12"
   }
 }

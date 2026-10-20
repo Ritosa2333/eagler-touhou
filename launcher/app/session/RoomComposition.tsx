@@ -1,18 +1,21 @@
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import { RoomView } from '../components/room';
 import type { BrowserSession } from './browser-session';
 import { useSurfaceNavigation } from '../navigation/surface-navigation';
+import {SpectatorPlayback} from '../components/player/SpectatorPlayback';
+import {SpectatorMatchScore} from '../components/player/SpectatorMatchScore';
 
-/** Same room section is reparented at the two original fullscreen/launch seams.
- * Its React lifetime, native panel, controls and the Runtime iframe never reset. */
+/** Room chrome and fullscreen share one permanent Player and room owner. */
 export function RoomComposition({
   session,
   settingsClosing,
+  workspaceVisible: roomWorkspace,
 }: {
   session: BrowserSession;
   settingsClosing: boolean;
+  workspaceVisible: boolean;
 }) {
   const navigation = useSurfaceNavigation();
   const transfer = useSyncExternalStore(
@@ -31,47 +34,22 @@ export function RoomComposition({
     session.settings.getSnapshot,
     session.settings.getSnapshot,
   );
-  const home = useRef<{ parent: Node; next: Node | null } | null>(null);
   const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
-  const workspaceVisible = !!room.room && (!state.runtime?.launched || !!state.roomLaunchStage) && !state.th09NetworkOverlayOpen && !state.replayViewer && navigation.surface !== 'touch';
+  const workspaceVisible = roomWorkspace && navigation.surface !== 'touch';
+  const playback = state.runtime?.launched && state.runtime.spectator
+    ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session}/>
+      : room.room?.spectatorTimeline ? <SpectatorMatchScore
+        wins={[room.room.seats?.[0]?.stats?.wins ?? 0,room.room.seats?.[1]?.stats?.wins ?? 0]}
+        minutes={Math.max(...(room.room.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
+        names={[room.room.seats?.[0]?.name ?? '',room.room.seats?.[1]?.name ?? '']}/> : null
+    : null;
   useLayoutEffect(()=>{
     const host = document.getElementById('player'), stage = host?.querySelector<HTMLElement>('.player-stage');
-    setWorkspace(previous => workspaceVisible && host && stage ? previous?.host === host && previous.stage === stage ? previous : {host,stage} : null);
-  }, [workspaceVisible]);
-  useLayoutEffect(() => {
-    if (workspaceVisible) return;
-    const element = document.getElementById('mpRoomView'),
-      player = document.getElementById('player');
-    if (!element || !player) return;
-    home.current ??= { parent: element.parentNode!, next: element.nextSibling };
-    const target = state.th09NetworkOverlayOpen
-      ? document.getElementById('th09NetworkRoom')
-      : state.roomLaunchStage
-        ? player
-        : null;
-    const restore = () => {
-      const original = home.current;
-      if (!original) return;
-      if (original.next?.parentNode === original.parent)
-        original.parent.insertBefore(element, original.next);
-      else original.parent.appendChild(element);
-      player.classList.remove('mp-room-launch-cover');
-    };
-    if (target) {
-      target.append(element);
-      player.classList.toggle('mp-room-launch-cover', !!state.roomLaunchStage);
-    } else restore();
-    return () => {
-      // RoomView may already have removed its section when membership ends.
-      // Moving that detached node back would resurrect an orphan room after
-      // the real service/socket and Router had successfully completed Leave.
-      if (element.isConnected) restore();
-      else player.classList.remove('mp-room-launch-cover');
-    };
-  }, [state.th09NetworkOverlayOpen, state.roomLaunchStage, !!room.room, workspaceVisible]);
+    if (host && stage) setWorkspace({host,stage});
+  }, []);
   return (
     <RoomView
-      visible={!!navigation.productId && isMultiplayerProductId(navigation.productId)}
+      visible={workspaceVisible && !!navigation.productId && isMultiplayerProductId(navigation.productId)}
       service={session.room.service}
       quickChat={session.room.quickChat}
       network={session.room.network}
@@ -91,8 +69,9 @@ export function RoomComposition({
       onOpenSettings={navigation.openRoomSettings}
       settingsOpen={navigation.roomSettingsOpen}
       settingsClosing={settingsClosing}
-      workspaceHost={workspaceVisible ? workspace?.host : null}
-      workspaceStage={workspaceVisible ? workspace?.stage : null}
+      workspaceHost={workspace?.host}
+      workspaceStage={workspace?.stage}
+      playbackControls={playback}
       onFullscreen={()=>{void session.togglePlayerFullscreen();}}
       reloadPending={state.roomReloadPending}
       onReloadResources={session.reloadRoomResources}

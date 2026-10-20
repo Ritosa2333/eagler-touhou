@@ -1,0 +1,954 @@
+{
+  "schema": "th12-native-bullet-cancellation-geometry/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "boundary": "Actual40d560 with2px extents and complete40caa0/40c8b0/4273f0/414f40. One synthetic slot0 bullet per circle, phase1, countdown0, cancel-effect script-1, blank Enemy list and item9 pool. No instruction replacements, no accepted replay golden.",
+  "points": [
+    {
+      "position": [
+        -194,
+        -2
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -194,
+        -1.9999998807907104
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -194,
+        -1.9409205913543701
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -194,
+        0
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -194,
+        448
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -194,
+        449.9999694824219
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -194,
+        450
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -193.99998474121094,
+        -2
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -193.99998474121094,
+        -1.9999998807907104
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -193.99998474121094,
+        -1.9409205913543701
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -193.99998474121094,
+        0
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -193.99998474121094,
+        448
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -193.99998474121094,
+        449.9999694824219
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -193.99998474121094,
+        450
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -192,
+        -2
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        -192,
+        -1.9999998807907104
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -192,
+        -1.9409205913543701
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -192,
+        0
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -192,
+        448
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -192,
+        449.9999694824219
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        -192,
+        450
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        0,
+        -2
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        0,
+        -1.9999998807907104
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        0,
+        -1.9409205913543701
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        0,
+        0
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        0,
+        448
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        0,
+        449.9999694824219
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        0,
+        450
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        192,
+        -2
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        192,
+        -1.9999998807907104
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        192,
+        -1.9409205913543701
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        192,
+        0
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        192,
+        448
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        192,
+        449.9999694824219
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        192,
+        450
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        193.99998474121094,
+        -2
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        193.99998474121094,
+        -1.9999998807907104
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        193.99998474121094,
+        -1.9409205913543701
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        193.99998474121094,
+        0
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        193.99998474121094,
+        448
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        193.99998474121094,
+        449.9999694824219
+      ],
+      "visible": true
+    },
+    {
+      "position": [
+        193.99998474121094,
+        450
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        194,
+        -2
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        194,
+        -1.9999998807907104
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        194,
+        -1.9409205913543701
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        194,
+        0
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        194,
+        448
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        194,
+        449.9999694824219
+      ],
+      "visible": false
+    },
+    {
+      "position": [
+        194,
+        450
+      ],
+      "visible": false
+    }
+  ],
+  "circles": [
+    {
+      "position": [
+        0.0,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        0.0,
+        128.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        12.0,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        12.0,
+        128.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        12.000020027160645,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        -12.0,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        -12.0,
+        128.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        -12.000020027160645,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        0.0,
+        140.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        0.0,
+        140.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        0.0,
+        140.00001525878906
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        0.0,
+        116.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        0.0,
+        116.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        7.199999809265137,
+        137.60000610351562
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        7.200019836425781,
+        137.60000610351562
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 10.0,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        0.0,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        0.0,
+        128.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        183.0,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        183.0,
+        128.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        183.00001525878906,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        -183.0,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        -183.0,
+        128.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        -183.00001525878906,
+        128.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        0.0,
+        311.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        0.0,
+        311.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        0.0,
+        311.0000305175781
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        0.0,
+        -55.0
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": true,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        109.80000305175781,
+        274.3999938964844
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        109.80000305175781,
+        274.3999938964844
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        109.80001831054688,
+        274.3999938964844
+      ],
+      "origin": [
+        0.0,
+        128.0
+      ],
+      "radius": 180.0,
+      "hitbox": 6.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        180.52999877929688,
+        78.94000244140625
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        180.53001403808594,
+        78.94000244140625
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        115.32999420166016,
+        78.94000244140625
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        115.32999420166016,
+        78.94000244140625
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        115.32997131347656,
+        78.94000244140625
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        147.92999267578125,
+        111.54000091552734
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        147.92999267578125,
+        111.54000091552734
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        147.92999267578125,
+        111.54002380371094
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        147.92999267578125,
+        46.340003967285156
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": true,
+      "converted": true,
+      "pointPosition": [
+        147.92999267578125,
+        46.340003967285156
+      ],
+      "pointDelay": 0,
+      "pointCursor": 1
+    },
+    {
+      "position": [
+        167.489990234375,
+        105.02000427246094
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    },
+    {
+      "position": [
+        167.49000549316406,
+        105.02000427246094
+      ],
+      "origin": [
+        147.92999267578125,
+        78.94000244140625
+      ],
+      "radius": 30.600000381469727,
+      "hitbox": 4.0,
+      "cancelled": false,
+      "converted": false,
+      "pointPosition": [
+        0.0,
+        0.0
+      ],
+      "pointDelay": 0,
+      "pointCursor": 0
+    }
+  ]
+}

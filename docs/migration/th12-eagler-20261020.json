@@ -1,0 +1,13 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/Tweet-META/th12",
+  "branch": "eagler",
+  "commit": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+  "destination": "ports/th12",
+  "sourceManifest": "../../ports/th12/eagler-source.json",
+  "importedFiles": 9533,
+  "monorepoBase": "01baa1a8",
+  "integrationPatch": "../../ports/th12/integration/eagler-touhou-th12.patch",
+  "mode": "source-snapshot",
+  "sharedSource": "common/include/eagler/thprac/PracticeSpeed.hpp"
+}

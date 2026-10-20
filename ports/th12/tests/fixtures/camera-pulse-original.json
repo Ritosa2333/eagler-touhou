@@ -1,0 +1,3167 @@
+{
+  "schema": "th12-original-camera-pulse/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "acceptedReplayGolden": false,
+  "gpuExecuted": false,
+  "seed": 42,
+  "boundary": "Actual4529a0/452a60 birth, registered4526e0(profile1)/4527f0(profile8),464a80 timer,main RNG,452960 destructor and460e40..460e62 Draw42 reset writes. Selected-manager unpaused startup host fixture, original application flags explicitly varied. No other managers advanced, no game instructions replaced.",
+  "records": [
+    {
+      "name": "retail-ecl417-fade",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              1,
+              30,
+              12,
+              0,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            11.600000381469727,
+            -11.600000381469727
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            11.199999809265137,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                2,
+                2.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                3,
+                3.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -10.399999618530273,
+            10.399999618530273
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                4,
+                4.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                5,
+                5.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 5,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -9.600000381469727
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 6,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            9.199999809265137,
+            -9.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                7,
+                7.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 7,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -8.800000190734863,
+            8.800000190734863
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                8,
+                8.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -8.399999618530273,
+            -8.399999618530273
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                9,
+                9.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 9,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -8.0,
+            8.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                10,
+                10.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 10,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                11,
+                11.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 11,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -7.199999809265137,
+            -7.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                12,
+                12.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31722,
+            52
+          ],
+          "offsets": [
+            6.800000190734863,
+            6.800000190734863
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                13,
+                13.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 13,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17177,
+            56
+          ],
+          "offsets": [
+            6.400000095367432,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                14,
+                14.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 14,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            -6.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                15,
+                15.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 15,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            5.599999904632568,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                16,
+                16.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 16,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33301,
+            68
+          ],
+          "offsets": [
+            -5.199999809265137,
+            5.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                17,
+                17.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 17,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47033,
+            72
+          ],
+          "offsets": [
+            -4.800000190734863,
+            4.800000190734863
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                18,
+                18.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 18,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21511,
+            76
+          ],
+          "offsets": [
+            4.400000095367432,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                19,
+                19.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 19,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            4.0,
+            -4.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                20,
+                20.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 20,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            50146,
+            84
+          ],
+          "offsets": [
+            -3.6000003814697266,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                21,
+                21.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 21,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27264,
+            88
+          ],
+          "offsets": [
+            3.1999998092651367,
+            -3.1999998092651367
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                22,
+                22.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 22,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64797,
+            92
+          ],
+          "offsets": [
+            0.0,
+            -2.8000001907348633
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                23,
+                23.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 23,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49292,
+            96
+          ],
+          "offsets": [
+            2.3999996185302734,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                24,
+                24.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 24,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12417,
+            100
+          ],
+          "offsets": [
+            2.0,
+            2.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                25,
+                25.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 25,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64591,
+            104
+          ],
+          "offsets": [
+            0.0,
+            -1.6000003814697266
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                26,
+                26.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 26,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63115,
+            108
+          ],
+          "offsets": [
+            0.0,
+            1.1999998092651367
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                27,
+                27.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 27,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12235,
+            112
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                28,
+                28.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 28,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            0.39999961853027344,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                29,
+                29.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 29,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 30,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 31,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 32,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 33,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    },
+    {
+      "name": "reimu-b-orb-burst",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              1,
+              8,
+              6,
+              6,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            6.0,
+            -6.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            6.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                2,
+                2.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                3,
+                3.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -6.0,
+            6.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                4,
+                4.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                5,
+                5.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 5,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -6.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 6,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            6.0,
+            -6.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                7,
+                7.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 7,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 8,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 9,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 10,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 11,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    },
+    {
+      "name": "signed-amplitude-rise",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              1,
+              17,
+              -7,
+              12,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            -5.882352828979492,
+            5.882352828979492
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            -4.764705657958984,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                2,
+                2.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                3,
+                3.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            2.529411792755127,
+            -2.529411792755127
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                4,
+                4.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                5,
+                5.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 5,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            0.29411745071411133
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 6,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            0.8235292434692383,
+            -0.8235292434692383
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                7,
+                7.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 7,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -1.941176414489746,
+            1.941176414489746
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                8,
+                8.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -3.058823585510254,
+            -3.058823585510254
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                9,
+                9.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 9,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -4.176470756530762,
+            4.176470756530762
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                10,
+                10.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 10,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                11,
+                11.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 11,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -6.411765098571777,
+            -6.411765098571777
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                12,
+                12.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31722,
+            52
+          ],
+          "offsets": [
+            7.529411315917969,
+            7.529411315917969
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                13,
+                13.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 13,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17177,
+            56
+          ],
+          "offsets": [
+            8.647058486938477,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                14,
+                14.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 14,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            -9.764705657958984
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                15,
+                15.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 15,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            10.882352828979492,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                16,
+                16.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 16,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 17,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 18,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 19,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 20,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 21,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    },
+    {
+      "name": "zero-duration-retires",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              1,
+              0,
+              8,
+              4,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42,
+            0
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42,
+            0
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42,
+            0
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    },
+    {
+      "name": "negative-duration-retires",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              1,
+              -1,
+              8,
+              4,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42,
+            0
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42,
+            0
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42,
+            0
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    },
+    {
+      "name": "profile1-ignores-application-pause",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              1,
+              20,
+              8,
+              4,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            7.800000190734863,
+            -7.800000190734863
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 1,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            7.599999904632568,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                2,
+                2.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 2,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                3,
+                3.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "births": [],
+          "flags": 4,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -7.199999809265137,
+            7.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                4,
+                4.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "births": [],
+          "flags": 16,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                5,
+                5.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 5,
+          "births": [],
+          "flags": 32,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -6.800000190734863
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 6,
+          "births": [],
+          "flags": 64,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            6.599999904632568,
+            -6.599999904632568
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                7,
+                7.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 7,
+          "births": [],
+          "flags": 119,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -6.400000095367432,
+            6.400000095367432
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                8,
+                8.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "births": [],
+          "flags": 128,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -6.199999809265137,
+            -6.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                9,
+                9.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 9,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -6.0,
+            6.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                10,
+                10.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 10,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                11,
+                11.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 11,
+          "births": [],
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 12,
+          "births": [],
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 13,
+          "births": [],
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 14,
+          "births": [],
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    },
+    {
+      "name": "mixed-newest-first",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              8,
+              3,
+              2,
+              8,
+              4
+            ],
+            [
+              1,
+              8,
+              6,
+              6,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            1.5,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                1,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                2,
+                2.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                2,
+                2.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                3,
+                3.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                3,
+                3.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "births": [
+            [
+              8,
+              7,
+              1,
+              3,
+              2
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                1,
+                1.0
+              ]
+            },
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                4,
+                4.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                4,
+                4.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                2,
+                2.0
+              ]
+            },
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                5,
+                5.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                5,
+                5.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 5,
+          "births": [
+            [
+              1,
+              6,
+              -3,
+              5,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                3,
+                3.0
+              ]
+            },
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                6,
+                6.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 6,
+          "births": [],
+          "flags": 119,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47033,
+            72
+          ],
+          "offsets": [
+            -6.0,
+            6.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                2,
+                2.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                3,
+                3.0
+              ]
+            },
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                7,
+                7.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 7,
+          "births": [],
+          "flags": 119,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21511,
+            76
+          ],
+          "offsets": [
+            1.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                3,
+                3.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                3,
+                3.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27264,
+            88
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                4,
+                4.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                4,
+                4.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                7,
+                7.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 9,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12417,
+            100
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                5,
+                5.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                5,
+                5.0
+              ]
+            },
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                8,
+                8.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 10,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64591,
+            104
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                9,
+                9.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 11,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63115,
+            108
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                10,
+                10.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12235,
+            112
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                11,
+                11.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 13,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            1.5,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                12,
+                12.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 14,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            270,
+            120
+          ],
+          "offsets": [
+            -0.75,
+            -0.75
+          ],
+          "nodes": [
+            {
+              "callback": "0x4527f0",
+              "timer": [
+                13,
+                13.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 15,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            270,
+            120
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 16,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            270,
+            120
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 17,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            270,
+            120
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    },
+    {
+      "name": "pulse-fractional-timer",
+      "frames": [
+        {
+          "tick": 0,
+          "births": [
+            [
+              1,
+              20,
+              11,
+              -5,
+              0
+            ]
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            10.199999809265137,
+            -10.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 1,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.25,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            10.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.25
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 2,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.5,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.75
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 3,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -9.600000381469727,
+            9.600000381469727
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                1,
+                1.75
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 4,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.25,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                3,
+                3.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 5,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 2.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -7.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                5,
+                5.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 6,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.9990000128746033,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            6.199999809265137,
+            -6.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                6,
+                6.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 7,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0010000467300415,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -5.400000095367432,
+            5.400000095367432
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                7,
+                7.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 8,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.9900000095367432,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -4.6080002784729,
+            -4.6080002784729
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                7,
+                7.989999771118164
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 9,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0099999904632568,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -3.8000001907348633,
+            3.8000001907348633
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                9,
+                9.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 10,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                10,
+                10.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 11,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -2.1999998092651367,
+            -2.1999998092651367
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                11,
+                11.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 12,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31722,
+            52
+          ],
+          "offsets": [
+            1.3999996185302734,
+            1.3999996185302734
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                12,
+                12.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 13,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17177,
+            56
+          ],
+          "offsets": [
+            0.6000003814697266,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                13,
+                13.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 14,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.19999980926513672
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                14,
+                14.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 15,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            -1.0,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                15,
+                15.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 16,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33301,
+            68
+          ],
+          "offsets": [
+            1.8000001907348633,
+            -1.8000001907348633
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                16,
+                16.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 17,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47033,
+            72
+          ],
+          "offsets": [
+            2.6000003814697266,
+            -2.6000003814697266
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                17,
+                17.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 18,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21511,
+            76
+          ],
+          "offsets": [
+            -3.3999996185302734,
+            0.0
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                18,
+                18.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 19,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            -4.199999809265137,
+            4.199999809265137
+          ],
+          "nodes": [
+            {
+              "callback": "0x4526e0",
+              "timer": [
+                19,
+                19.0
+              ]
+            }
+          ]
+        },
+        {
+          "tick": 20,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 21,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 22,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 23,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        },
+        {
+          "tick": 24,
+          "births": [],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "nodes": []
+        }
+      ]
+    }
+  ]
+}

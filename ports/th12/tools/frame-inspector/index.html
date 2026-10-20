@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>星莲船逐帧检查</title>
+<style>
+body{margin:24px;background:#161623;color:#ededf5;font:16px system-ui}h1{font-size:26px}p{color:#c0bdd2;line-height:1.6}.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}button,input,select{font:inherit;border:1px solid #68617f;border-radius:6px;padding:8px;color:inherit;background:#292537}button{cursor:pointer}input{width:115px}.views{display:grid;grid-template-columns:1fr 1fr;gap:16px}.view{min-width:0}img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#080811}iframe{width:100%;height:760px;border:1px solid #554c70}pre{white-space:pre-wrap;background:#22202f;padding:14px;border-radius:8px;font-size:13px}#status{color:#dbc9ff}a{color:#dbc9ff}@media(max-width:950px){.views{grid-template-columns:1fr}}label{display:flex;align-items:center;gap:5px}
+</style>
+<h1>星莲船逐帧检查</h1>
+<p>在新打开的原版窗口里选择录像与关卡，正常播放。这里的“停帧”直接停在一帧完成之后，不用在原版按 Esc。原版可逐帧前进；要回到更早的位置，请在原版重新播放该关。保存的画面来自原版窗口，请保持该窗口可见、不被其他窗口遮挡。</p>
+<div class="controls"><button data-command="launch">启动检查副本</button><button data-command="pause">原版停帧</button><button data-command="step">原版前进一帧</button><button data-command="resume">原版继续</button><button data-command="capture">保存当前帧</button><a href="/api/snapshot.json" download>下载内部数据</a><a href="/api/frame.png" download>下载画面</a></div>
+<div class="controls"><label>录像<input id="replay" value="th12_11.rpy"></label><label>关卡<select id="stage"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option></select></label><button id="load">网页版加载录像</button></div>
+<div class="controls"><label>时间<input id="time" value="4:03.95"></label><label>帧号<input id="frame" type="number" min="1" value="14637"></label><button id="until">原版运行到此帧</button><button id="seek">网页版定位到此帧</button><button id="align">网页对齐原版当前帧</button><button id="both-step">两边前进一帧</button></div>
+<div class="controls"><button id="auto-start">自动找分歧点</button><button id="auto-stop" disabled>停止自动检查</button></div>
+<p>选择与原版相同的录像、关卡并在原版停帧，直接点击“自动找分歧点”，网页会自动加载并对齐。首次内部数据不同就停住两边。检查整关请从关卡开头开始。显示分数滚动与贴图不参与比较。</p><p id="scan-status" role="status">选好同一录像和关卡，在原版停帧后直接开始。</p><pre id="scan-result" aria-label="首个分歧详情"></pre>
+<p id="status">正在连接原版…</p><p id="comparison">加载同一份录像后，可比较同帧内部数据。画面帧和录像帧分别显示，不按秒数猜测对齐。</p>
+<div class="views"><section class="view"><h2>原版当前帧</h2><img id="original" alt="停帧后显示原版画面"><pre id="native-state"></pre></section><section class="view"><h2>网页版</h2><iframe id="candidate" src="/preview.html?frameInspector=1" title="网页版逐帧检查"></iframe><pre id="candidate-state"></pre></section></div>
+<script type="module" src="/inspector.mjs"></script></html>

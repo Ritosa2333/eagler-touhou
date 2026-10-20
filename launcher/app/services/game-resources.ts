@@ -120,17 +120,18 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   completeSet?: boolean;
 }): Promise<{generation: InstalledPackageGeneration | null; music: MusicMode}> {
   if (!generation || !oggMusic(music)) return {generation, music};
+  const fallback: MusicMode = PRODUCT_GAMES[generation.game].musicCapabilities?.midi === true ? 'midi' : 'none';
   checkPreparationAbort(signal);
   const declared = componentFileIds(generation.descriptor, 'ogg');
   const initial = completeSet ? declared : declared.slice(0, 2);
-  if (initial.length < 2) return {generation, music: 'midi'};
+  if (initial.length < 2) return {generation, music: fallback};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
   let publication;
-  try {publication = await acquisition.getPublication(gameVersion, signal);} catch {onWarning?.(t("music.initialOggIncomplete")); return {generation, music: "midi"};}
+  try {publication = await acquisition.getPublication(gameVersion, signal);} catch {onWarning?.(t("music.initialOggIncomplete")); return {generation, music: fallback};}
   const {catalog, catalogUrl} = publication;
   if (metadata.siteManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {
-    onWarning?.(t('music.initialOggIncomplete')); return {generation, music: 'midi'};
+    onWarning?.(t('music.initialOggIncomplete')); return {generation, music: fallback};
   }
   const linked = linkAbortSignals(signal, downloadSignal);
   try {
@@ -151,6 +152,6 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   } catch (error) {
     checkPreparationAbort(signal);
     if (!downloadSignal?.aborted && !(error instanceof Error && error.name === 'AbortError')) onWarning?.(t('music.initialOggFailed', {reason: preparationErrorText(error)}));
-    return {generation, music: 'midi'};
+    return {generation, music: fallback};
   } finally {linked.dispose(); onMusicDownloadActivity?.(false);}
 }

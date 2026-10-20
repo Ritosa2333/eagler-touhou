@@ -21,6 +21,7 @@ export function SpectatorMatchScore({ wins, minutes, names = ['', ''] }: {
     const native = target.ownerDocument;
     native.documentElement.lang = locale;
     const panel = native.getElementById('spectatorTimeline');
+    if (panel?.dataset.collapsed === 'true') panel.querySelector<HTMLButtonElement>('.spectator-toggle')?.click();
     const icons: Record<string,string> = {pause:'player-pause.svg',play:'player-play.svg',live:'player-live.svg',toggle:'room-caret-right.svg'};
     panel?.querySelectorAll<HTMLImageElement>('[data-icon]').forEach(icon => {
       const path = icons[icon.dataset.icon || ''];

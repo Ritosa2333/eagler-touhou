@@ -1,0 +1,78 @@
+# 东方星莲船网页版与行为还原
+
+[monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
+
+本作源码位于 `ports/th12`，在 monorepo 根目录运行 `npm run build:runtime -- --game=th12 --emsdk=工具链目录` 构建普通版。浏览器代码包输出至 `ports/th12/build-eagler/`；内容准备与站点组装见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
+
+TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为的反编译资料。
+原作游戏、角色、贴图、文字和音乐版权属于上海爱丽丝幻乐团。
+
+本仓库只包含还原相关源码、验证工具、必要测试夹具和反编译结果。原版 EXE／DAT、
+素材、原版关卡脚本、录像、过程记录、移植参考及本地工具安装包均不包含在仓库中。
+
+## 内容
+
+- `src/game/`：独立编译的 C++20 游戏模块；`src/wasm/`：网页版接口。
+- `src/` 的其余文件：兼容头文件、输入及网页绘制。
+- `site/`：网页版入口、页面和样式；运行资源需在本地从自有原版准备。
+- `scripts/`、`tools/replay-verifier/`：构建、资源准备、原版行为分析与严格对照工具。
+- `tools/frame-inspector/`：Windows 原版逐帧停帧、画面保存和内部数据对照；使用说明见其 README。
+- `tests/`：逻辑测试、测试程序和局部行为夹具，不包含原版游戏安装文件。
+- `decompiled/`：4,340 个函数候选的伪代码、原版指令对照和函数关系索引。
+- `docs/behavior/`：UFO、战斗、动画与界面的行为说明及尚待实现的关键项。
+
+## 构建与运行
+
+需要 Node.js 22+、Python 和 Emscripten 4.0.22。激活 Emscripten 环境后：
+
+```sh
+npm run build
+npm start
+```
+
+打开 `http://127.0.0.1:8112/`。方向键移动，Z 射击，Shift 低速，X Bomb，Esc 暂停。
+默认入口为完整游戏。方向键、Z／X操作菜单；Ctrl快进对话，回放时四倍速；F1打开移植版操作说明。
+单关调试、录像拖动定位和逐帧检查保留在 `/preview.html`，原版检查器保留独立入口。
+详细的本地资源准备见 [构建说明](docs/BUILD.md)。无原版资源也能编译源码，
+但运行游戏、执行原版探针和资产相关测试需要自己的 TH12 1.00b 输入。
+
+```sh
+npm run test:portable
+```
+
+完整测试需要本地资源及自行生成的录像清单／Oracle 数据；它们不随仓库发布。
+
+原生 C++ 核心与不依赖原版资源的验证：
+
+```sh
+cmake -S . -B artifacts/native -DCMAKE_BUILD_TYPE=Release
+cmake --build artifacts/native
+ctest --test-dir artifacts/native --output-on-failure
+```
+
+模块职责和验证范围见 [C++ 结构说明](docs/CPP-RESTORATION.md)。
+`decompiled/*.c` 是分析材料，不参与构建；文件内容和扩展名保留以反映其实际性质。
+
+## 还原边界
+
+`eagler` 是 Eagler Touhou Web 适配的集成分支；接入进度、包边界及尚未完成项见 [Web 适配](docs/WEB_ADAPTATION.md)。
+使用真实 Launcher 的本地构建、资源包与启动入口见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
+
+`main` 保留建立 `eagler` 前的已提交版本，后续 Web 适配改动在 `eagler` 集成。
+`experiments` 保留已确认的还原基线；`eagler` 包含完整游戏流程：原版标题与选择菜单、
+六面连续游玩、Extra、Practice、Replay、成绩与符卡履历、音乐室、设置、闲置 Demo、
+暂停／续关／重试、十二种结局及staff、名字与录像保存。
+浏览器设置／成绩使用移植版存档结构；`.rpy`导出经过实际原版加载器、解密和解压的局部验证。
+整局实际跨关、菜单／结局的全部画面及时序仍需原版对照，不能把短流程测试当作整局 Oracle。
+实现、原版依据及验证范围见 [完整游戏流程](docs/FULL_GAME_FLOW.md)。
+自动反编译结果不是原作者源码；寄存器入参、类型、函数边界和浮点表达式需要结合
+指令与原版执行核对。网页核心是手写的行为实现，不在浏览器中执行原版 EXE。
+
+反编译索引见 [decompiled/functions.json](decompiled/functions.json)。
+核心飞碟规则见 [UFO 行为说明](docs/behavior/ufo.md)。
+
+## 版权与许可
+
+仓库已有的 MIT 许可适用于本项目手写的移植代码和工具；
+不授予原版游戏、素材或原版程序衍生反编译内容的许可。
+这些内容的权利仍属于原权利人。范围见 [NOTICE.md](NOTICE.md)。

@@ -1,0 +1,9827 @@
+{
+  "schema": "th12-controlled-original-camera-effects/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Actual4529a0/452a60 birth, registered4527f0 priority14, 452960 destructor; no other managers; Draw42 original460e40..460e62 zero-write block before next frame",
+  "initialSeed": 42,
+  "rows": [
+    {
+      "name": "marisa-a-full",
+      "frames": [
+        {
+          "tick": 0,
+          "born": [
+            3,
+            60,
+            240,
+            30
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            0.05000000447034836,
+            -0.05000000447034836
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            0.10000000894069672,
+            0.0
+          ],
+          "timers": [
+            [
+              2,
+              2.0
+            ]
+          ]
+        },
+        {
+          "tick": 2,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              3,
+              3.0
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -0.20000001788139343,
+            0.20000001788139343
+          ],
+          "timers": [
+            [
+              4,
+              4.0
+            ]
+          ]
+        },
+        {
+          "tick": 4,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              5,
+              5.0
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -0.30000001192092896
+          ],
+          "timers": [
+            [
+              6,
+              6.0
+            ]
+          ]
+        },
+        {
+          "tick": 6,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            0.3499999940395355,
+            -0.3499999940395355
+          ],
+          "timers": [
+            [
+              7,
+              7.0
+            ]
+          ]
+        },
+        {
+          "tick": 7,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -0.40000003576278687,
+            0.40000003576278687
+          ],
+          "timers": [
+            [
+              8,
+              8.0
+            ]
+          ]
+        },
+        {
+          "tick": 8,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -0.45000001788139343,
+            -0.45000001788139343
+          ],
+          "timers": [
+            [
+              9,
+              9.0
+            ]
+          ]
+        },
+        {
+          "tick": 9,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -0.5,
+            0.5
+          ],
+          "timers": [
+            [
+              10,
+              10.0
+            ]
+          ]
+        },
+        {
+          "tick": 10,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              11,
+              11.0
+            ]
+          ]
+        },
+        {
+          "tick": 11,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -0.6000000238418579,
+            -0.6000000238418579
+          ],
+          "timers": [
+            [
+              12,
+              12.0
+            ]
+          ]
+        },
+        {
+          "tick": 12,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31722,
+            52
+          ],
+          "offsets": [
+            0.6499999761581421,
+            0.6499999761581421
+          ],
+          "timers": [
+            [
+              13,
+              13.0
+            ]
+          ]
+        },
+        {
+          "tick": 13,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17177,
+            56
+          ],
+          "offsets": [
+            0.699999988079071,
+            0.0
+          ],
+          "timers": [
+            [
+              14,
+              14.0
+            ]
+          ]
+        },
+        {
+          "tick": 14,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            -0.75
+          ],
+          "timers": [
+            [
+              15,
+              15.0
+            ]
+          ]
+        },
+        {
+          "tick": 15,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            0.8000000715255737,
+            0.0
+          ],
+          "timers": [
+            [
+              16,
+              16.0
+            ]
+          ]
+        },
+        {
+          "tick": 16,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33301,
+            68
+          ],
+          "offsets": [
+            -0.8500000238418579,
+            0.8500000238418579
+          ],
+          "timers": [
+            [
+              17,
+              17.0
+            ]
+          ]
+        },
+        {
+          "tick": 17,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47033,
+            72
+          ],
+          "offsets": [
+            -0.9000000357627869,
+            0.9000000357627869
+          ],
+          "timers": [
+            [
+              18,
+              18.0
+            ]
+          ]
+        },
+        {
+          "tick": 18,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21511,
+            76
+          ],
+          "offsets": [
+            0.949999988079071,
+            0.0
+          ],
+          "timers": [
+            [
+              19,
+              19.0
+            ]
+          ]
+        },
+        {
+          "tick": 19,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            1.0,
+            -1.0
+          ],
+          "timers": [
+            [
+              20,
+              20.0
+            ]
+          ]
+        },
+        {
+          "tick": 20,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            50146,
+            84
+          ],
+          "offsets": [
+            -1.0499999523162842,
+            0.0
+          ],
+          "timers": [
+            [
+              21,
+              21.0
+            ]
+          ]
+        },
+        {
+          "tick": 21,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27264,
+            88
+          ],
+          "offsets": [
+            1.100000023841858,
+            -1.100000023841858
+          ],
+          "timers": [
+            [
+              22,
+              22.0
+            ]
+          ]
+        },
+        {
+          "tick": 22,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64797,
+            92
+          ],
+          "offsets": [
+            0.0,
+            -1.149999976158142
+          ],
+          "timers": [
+            [
+              23,
+              23.0
+            ]
+          ]
+        },
+        {
+          "tick": 23,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49292,
+            96
+          ],
+          "offsets": [
+            1.2000000476837158,
+            0.0
+          ],
+          "timers": [
+            [
+              24,
+              24.0
+            ]
+          ]
+        },
+        {
+          "tick": 24,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12417,
+            100
+          ],
+          "offsets": [
+            1.25,
+            1.25
+          ],
+          "timers": [
+            [
+              25,
+              25.0
+            ]
+          ]
+        },
+        {
+          "tick": 25,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64591,
+            104
+          ],
+          "offsets": [
+            0.0,
+            -1.2999999523162842
+          ],
+          "timers": [
+            [
+              26,
+              26.0
+            ]
+          ]
+        },
+        {
+          "tick": 26,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63115,
+            108
+          ],
+          "offsets": [
+            0.0,
+            1.3499999046325684
+          ],
+          "timers": [
+            [
+              27,
+              27.0
+            ]
+          ]
+        },
+        {
+          "tick": 27,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12235,
+            112
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              28,
+              28.0
+            ]
+          ]
+        },
+        {
+          "tick": 28,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            1.4499999284744263,
+            0.0
+          ],
+          "timers": [
+            [
+              29,
+              29.0
+            ]
+          ]
+        },
+        {
+          "tick": 29,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            270,
+            120
+          ],
+          "offsets": [
+            -1.5,
+            -1.5
+          ],
+          "timers": [
+            [
+              30,
+              30.0
+            ]
+          ]
+        },
+        {
+          "tick": 30,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44864,
+            124
+          ],
+          "offsets": [
+            -1.5499999523162842,
+            1.5499999523162842
+          ],
+          "timers": [
+            [
+              31,
+              31.0
+            ]
+          ]
+        },
+        {
+          "tick": 31,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47839,
+            128
+          ],
+          "offsets": [
+            -1.6000001430511475,
+            1.6000001430511475
+          ],
+          "timers": [
+            [
+              32,
+              32.0
+            ]
+          ]
+        },
+        {
+          "tick": 32,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15308,
+            132
+          ],
+          "offsets": [
+            -1.6500000953674316,
+            1.6500000953674316
+          ],
+          "timers": [
+            [
+              33,
+              33.0
+            ]
+          ]
+        },
+        {
+          "tick": 33,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29016,
+            136
+          ],
+          "offsets": [
+            -1.7000000476837158,
+            -1.7000000476837158
+          ],
+          "timers": [
+            [
+              34,
+              34.0
+            ]
+          ]
+        },
+        {
+          "tick": 34,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            62724,
+            140
+          ],
+          "offsets": [
+            -1.75,
+            0.0
+          ],
+          "timers": [
+            [
+              35,
+              35.0
+            ]
+          ]
+        },
+        {
+          "tick": 35,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            59508,
+            144
+          ],
+          "offsets": [
+            -1.8000000715255737,
+            1.8000000715255737
+          ],
+          "timers": [
+            [
+              36,
+              36.0
+            ]
+          ]
+        },
+        {
+          "tick": 36,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6571,
+            148
+          ],
+          "offsets": [
+            0.0,
+            1.850000023841858
+          ],
+          "timers": [
+            [
+              37,
+              37.0
+            ]
+          ]
+        },
+        {
+          "tick": 37,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23101,
+            152
+          ],
+          "offsets": [
+            1.899999976158142,
+            1.899999976158142
+          ],
+          "timers": [
+            [
+              38,
+              38.0
+            ]
+          ]
+        },
+        {
+          "tick": 38,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57454,
+            156
+          ],
+          "offsets": [
+            1.9499999284744263,
+            0.0
+          ],
+          "timers": [
+            [
+              39,
+              39.0
+            ]
+          ]
+        },
+        {
+          "tick": 39,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            3996,
+            160
+          ],
+          "offsets": [
+            2.0,
+            2.0
+          ],
+          "timers": [
+            [
+              40,
+              40.0
+            ]
+          ]
+        },
+        {
+          "tick": 40,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            16700,
+            164
+          ],
+          "offsets": [
+            -2.049999952316284,
+            0.0
+          ],
+          "timers": [
+            [
+              41,
+              41.0
+            ]
+          ]
+        },
+        {
+          "tick": 41,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57601,
+            168
+          ],
+          "offsets": [
+            0.0,
+            -2.0999999046325684
+          ],
+          "timers": [
+            [
+              42,
+              42.0
+            ]
+          ]
+        },
+        {
+          "tick": 42,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31905,
+            172
+          ],
+          "offsets": [
+            0.0,
+            2.1499998569488525
+          ],
+          "timers": [
+            [
+              43,
+              43.0
+            ]
+          ]
+        },
+        {
+          "tick": 43,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            7176,
+            176
+          ],
+          "offsets": [
+            2.200000047683716,
+            0.0
+          ],
+          "timers": [
+            [
+              44,
+              44.0
+            ]
+          ]
+        },
+        {
+          "tick": 44,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            58799,
+            180
+          ],
+          "offsets": [
+            -2.25,
+            -2.25
+          ],
+          "timers": [
+            [
+              45,
+              45.0
+            ]
+          ]
+        },
+        {
+          "tick": 45,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            22169,
+            184
+          ],
+          "offsets": [
+            0.0,
+            2.299999952316284
+          ],
+          "timers": [
+            [
+              46,
+              46.0
+            ]
+          ]
+        },
+        {
+          "tick": 46,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            13419,
+            188
+          ],
+          "offsets": [
+            2.3500001430511475,
+            -2.3500001430511475
+          ],
+          "timers": [
+            [
+              47,
+              47.0
+            ]
+          ]
+        },
+        {
+          "tick": 47,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6720,
+            192
+          ],
+          "offsets": [
+            0.0,
+            -2.4000000953674316
+          ],
+          "timers": [
+            [
+              48,
+              48.0
+            ]
+          ]
+        },
+        {
+          "tick": 48,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48558,
+            196
+          ],
+          "offsets": [
+            -2.450000047683716,
+            -2.450000047683716
+          ],
+          "timers": [
+            [
+              49,
+              49.0
+            ]
+          ]
+        },
+        {
+          "tick": 49,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            19665,
+            200
+          ],
+          "offsets": [
+            -2.5,
+            2.5
+          ],
+          "timers": [
+            [
+              50,
+              50.0
+            ]
+          ]
+        },
+        {
+          "tick": 50,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            35837,
+            204
+          ],
+          "offsets": [
+            -2.5500001907348633,
+            -2.5500001907348633
+          ],
+          "timers": [
+            [
+              51,
+              51.0
+            ]
+          ]
+        },
+        {
+          "tick": 51,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40971,
+            208
+          ],
+          "offsets": [
+            0.0,
+            -2.5999999046325684
+          ],
+          "timers": [
+            [
+              52,
+              52.0
+            ]
+          ]
+        },
+        {
+          "tick": 52,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            45027,
+            212
+          ],
+          "offsets": [
+            2.6500000953674316,
+            2.6500000953674316
+          ],
+          "timers": [
+            [
+              53,
+              53.0
+            ]
+          ]
+        },
+        {
+          "tick": 53,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18397,
+            216
+          ],
+          "offsets": [
+            2.6999998092651367,
+            0.0
+          ],
+          "timers": [
+            [
+              54,
+              54.0
+            ]
+          ]
+        },
+        {
+          "tick": 54,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            32868,
+            220
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              55,
+              55.0
+            ]
+          ]
+        },
+        {
+          "tick": 55,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51392,
+            224
+          ],
+          "offsets": [
+            -2.799999952316284,
+            -2.799999952316284
+          ],
+          "timers": [
+            [
+              56,
+              56.0
+            ]
+          ]
+        },
+        {
+          "tick": 56,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15050,
+            228
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              57,
+              57.0
+            ]
+          ]
+        },
+        {
+          "tick": 57,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41807,
+            232
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              58,
+              58.0
+            ]
+          ]
+        },
+        {
+          "tick": 58,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            60386,
+            236
+          ],
+          "offsets": [
+            -2.950000047683716,
+            2.950000047683716
+          ],
+          "timers": [
+            [
+              59,
+              59.0
+            ]
+          ]
+        },
+        {
+          "tick": 59,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23464,
+            240
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              60,
+              60.0
+            ]
+          ]
+        },
+        {
+          "tick": 60,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            1275,
+            244
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              61,
+              61.0
+            ]
+          ]
+        },
+        {
+          "tick": 61,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27301,
+            248
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              62,
+              62.0
+            ]
+          ]
+        },
+        {
+          "tick": 62,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            2078,
+            252
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              63,
+              63.0
+            ]
+          ]
+        },
+        {
+          "tick": 63,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49035,
+            256
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              64,
+              64.0
+            ]
+          ]
+        },
+        {
+          "tick": 64,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12236,
+            260
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              65,
+              65.0
+            ]
+          ]
+        },
+        {
+          "tick": 65,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29020,
+            264
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              66,
+              66.0
+            ]
+          ]
+        },
+        {
+          "tick": 66,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            261,
+            268
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              67,
+              67.0
+            ]
+          ]
+        },
+        {
+          "tick": 67,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            59456,
+            272
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              68,
+              68.0
+            ]
+          ]
+        },
+        {
+          "tick": 68,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48552,
+            276
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              69,
+              69.0
+            ]
+          ]
+        },
+        {
+          "tick": 69,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            721,
+            280
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              70,
+              70.0
+            ]
+          ]
+        },
+        {
+          "tick": 70,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            35895,
+            284
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              71,
+              71.0
+            ]
+          ]
+        },
+        {
+          "tick": 71,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            56764,
+            288
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              72,
+              72.0
+            ]
+          ]
+        },
+        {
+          "tick": 72,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24305,
+            292
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              73,
+              73.0
+            ]
+          ]
+        },
+        {
+          "tick": 73,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            11379,
+            296
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              74,
+              74.0
+            ]
+          ]
+        },
+        {
+          "tick": 74,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            8799,
+            300
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              75,
+              75.0
+            ]
+          ]
+        },
+        {
+          "tick": 75,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            50774,
+            304
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              76,
+              76.0
+            ]
+          ]
+        },
+        {
+          "tick": 76,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63097,
+            308
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              77,
+              77.0
+            ]
+          ]
+        },
+        {
+          "tick": 77,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            8653,
+            312
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              78,
+              78.0
+            ]
+          ]
+        },
+        {
+          "tick": 78,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28770,
+            316
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              79,
+              79.0
+            ]
+          ]
+        },
+        {
+          "tick": 79,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            56083,
+            320
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              80,
+              80.0
+            ]
+          ]
+        },
+        {
+          "tick": 80,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47086,
+            324
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              81,
+              81.0
+            ]
+          ]
+        },
+        {
+          "tick": 81,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            36532,
+            328
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              82,
+              82.0
+            ]
+          ]
+        },
+        {
+          "tick": 82,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            22722,
+            332
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              83,
+              83.0
+            ]
+          ]
+        },
+        {
+          "tick": 83,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15098,
+            336
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              84,
+              84.0
+            ]
+          ]
+        },
+        {
+          "tick": 84,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            37710,
+            340
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              85,
+              85.0
+            ]
+          ]
+        },
+        {
+          "tick": 85,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            61234,
+            344
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              86,
+              86.0
+            ]
+          ]
+        },
+        {
+          "tick": 86,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27555,
+            348
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              87,
+              87.0
+            ]
+          ]
+        },
+        {
+          "tick": 87,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21035,
+            352
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              88,
+              88.0
+            ]
+          ]
+        },
+        {
+          "tick": 88,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            55910,
+            356
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              89,
+              89.0
+            ]
+          ]
+        },
+        {
+          "tick": 89,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            50414,
+            360
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              90,
+              90.0
+            ]
+          ]
+        },
+        {
+          "tick": 90,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            36069,
+            364
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              91,
+              91.0
+            ]
+          ]
+        },
+        {
+          "tick": 91,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18366,
+            368
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              92,
+              92.0
+            ]
+          ]
+        },
+        {
+          "tick": 92,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24311,
+            372
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              93,
+              93.0
+            ]
+          ]
+        },
+        {
+          "tick": 93,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40562,
+            376
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              94,
+              94.0
+            ]
+          ]
+        },
+        {
+          "tick": 94,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43813,
+            380
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              95,
+              95.0
+            ]
+          ]
+        },
+        {
+          "tick": 95,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            34271,
+            384
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              96,
+              96.0
+            ]
+          ]
+        },
+        {
+          "tick": 96,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17847,
+            388
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              97,
+              97.0
+            ]
+          ]
+        },
+        {
+          "tick": 97,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24057,
+            392
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              98,
+              98.0
+            ]
+          ]
+        },
+        {
+          "tick": 98,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38001,
+            396
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              99,
+              99.0
+            ]
+          ]
+        },
+        {
+          "tick": 99,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44071,
+            400
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              100,
+              100.0
+            ]
+          ]
+        },
+        {
+          "tick": 100,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33756,
+            404
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              101,
+              101.0
+            ]
+          ]
+        },
+        {
+          "tick": 101,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            32960,
+            408
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              102,
+              102.0
+            ]
+          ]
+        },
+        {
+          "tick": 102,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15554,
+            412
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              103,
+              103.0
+            ]
+          ]
+        },
+        {
+          "tick": 103,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15182,
+            416
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              104,
+              104.0
+            ]
+          ]
+        },
+        {
+          "tick": 104,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            61274,
+            420
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              105,
+              105.0
+            ]
+          ]
+        },
+        {
+          "tick": 105,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            62366,
+            424
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              106,
+              106.0
+            ]
+          ]
+        },
+        {
+          "tick": 106,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            16272,
+            428
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              107,
+              107.0
+            ]
+          ]
+        },
+        {
+          "tick": 107,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            19791,
+            432
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              108,
+              108.0
+            ]
+          ]
+        },
+        {
+          "tick": 108,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            62976,
+            436
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              109,
+              109.0
+            ]
+          ]
+        },
+        {
+          "tick": 109,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31434,
+            440
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              110,
+              110.0
+            ]
+          ]
+        },
+        {
+          "tick": 110,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41743,
+            444
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              111,
+              111.0
+            ]
+          ]
+        },
+        {
+          "tick": 111,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43990,
+            448
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              112,
+              112.0
+            ]
+          ]
+        },
+        {
+          "tick": 112,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29928,
+            452
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              113,
+              113.0
+            ]
+          ]
+        },
+        {
+          "tick": 113,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17654,
+            456
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              114,
+              114.0
+            ]
+          ]
+        },
+        {
+          "tick": 114,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38756,
+            460
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              115,
+              115.0
+            ]
+          ]
+        },
+        {
+          "tick": 115,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51495,
+            464
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              116,
+              116.0
+            ]
+          ]
+        },
+        {
+          "tick": 116,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33737,
+            468
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              117,
+              117.0
+            ]
+          ]
+        },
+        {
+          "tick": 117,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41920,
+            472
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              118,
+              118.0
+            ]
+          ]
+        },
+        {
+          "tick": 118,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15073,
+            476
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              119,
+              119.0
+            ]
+          ]
+        },
+        {
+          "tick": 119,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23631,
+            480
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              120,
+              120.0
+            ]
+          ]
+        },
+        {
+          "tick": 120,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63083,
+            484
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              121,
+              121.0
+            ]
+          ]
+        },
+        {
+          "tick": 121,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            4042,
+            488
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              122,
+              122.0
+            ]
+          ]
+        },
+        {
+          "tick": 122,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41788,
+            492
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              123,
+              123.0
+            ]
+          ]
+        },
+        {
+          "tick": 123,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57047,
+            496
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              124,
+              124.0
+            ]
+          ]
+        },
+        {
+          "tick": 124,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29683,
+            500
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              125,
+              125.0
+            ]
+          ]
+        },
+        {
+          "tick": 125,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41491,
+            504
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              126,
+              126.0
+            ]
+          ]
+        },
+        {
+          "tick": 126,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47065,
+            508
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              127,
+              127.0
+            ]
+          ]
+        },
+        {
+          "tick": 127,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29620,
+            512
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              128,
+              128.0
+            ]
+          ]
+        },
+        {
+          "tick": 128,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            22803,
+            516
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              129,
+              129.0
+            ]
+          ]
+        },
+        {
+          "tick": 129,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49656,
+            520
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              130,
+              130.0
+            ]
+          ]
+        },
+        {
+          "tick": 130,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38005,
+            524
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              131,
+              131.0
+            ]
+          ]
+        },
+        {
+          "tick": 131,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6183,
+            528
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              132,
+              132.0
+            ]
+          ]
+        },
+        {
+          "tick": 132,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            52792,
+            532
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              133,
+              133.0
+            ]
+          ]
+        },
+        {
+          "tick": 133,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54402,
+            536
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              134,
+              134.0
+            ]
+          ]
+        },
+        {
+          "tick": 134,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            2272,
+            540
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              135,
+              135.0
+            ]
+          ]
+        },
+        {
+          "tick": 135,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23945,
+            544
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              136,
+              136.0
+            ]
+          ]
+        },
+        {
+          "tick": 136,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            25714,
+            548
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              137,
+              137.0
+            ]
+          ]
+        },
+        {
+          "tick": 137,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43799,
+            552
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              138,
+              138.0
+            ]
+          ]
+        },
+        {
+          "tick": 138,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46046,
+            556
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              139,
+              139.0
+            ]
+          ]
+        },
+        {
+          "tick": 139,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31952,
+            560
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              140,
+              140.0
+            ]
+          ]
+        },
+        {
+          "tick": 140,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            36109,
+            564
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              141,
+              141.0
+            ]
+          ]
+        },
+        {
+          "tick": 141,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44988,
+            568
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              142,
+              142.0
+            ]
+          ]
+        },
+        {
+          "tick": 142,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24287,
+            572
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              143,
+              143.0
+            ]
+          ]
+        },
+        {
+          "tick": 143,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18032,
+            576
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              144,
+              144.0
+            ]
+          ]
+        },
+        {
+          "tick": 144,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44285,
+            580
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              145,
+              145.0
+            ]
+          ]
+        },
+        {
+          "tick": 145,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40412,
+            584
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              146,
+              146.0
+            ]
+          ]
+        },
+        {
+          "tick": 146,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33070,
+            588
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              147,
+              147.0
+            ]
+          ]
+        },
+        {
+          "tick": 147,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            52929,
+            592
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              148,
+              148.0
+            ]
+          ]
+        },
+        {
+          "tick": 148,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15232,
+            596
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              149,
+              149.0
+            ]
+          ]
+        },
+        {
+          "tick": 149,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64858,
+            600
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              150,
+              150.0
+            ]
+          ]
+        },
+        {
+          "tick": 150,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            62352,
+            604
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              151,
+              151.0
+            ]
+          ]
+        },
+        {
+          "tick": 151,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            19859,
+            608
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              152,
+              152.0
+            ]
+          ]
+        },
+        {
+          "tick": 152,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            16898,
+            612
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              153,
+              153.0
+            ]
+          ]
+        },
+        {
+          "tick": 153,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31478,
+            616
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              154,
+              154.0
+            ]
+          ]
+        },
+        {
+          "tick": 154,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38670,
+            620
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              155,
+              155.0
+            ]
+          ]
+        },
+        {
+          "tick": 155,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44842,
+            624
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              156,
+              156.0
+            ]
+          ]
+        },
+        {
+          "tick": 156,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            53475,
+            628
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              157,
+              157.0
+            ]
+          ]
+        },
+        {
+          "tick": 157,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18418,
+            632
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              158,
+              158.0
+            ]
+          ]
+        },
+        {
+          "tick": 158,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            10996,
+            636
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              159,
+              159.0
+            ]
+          ]
+        },
+        {
+          "tick": 159,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39262,
+            640
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              160,
+              160.0
+            ]
+          ]
+        },
+        {
+          "tick": 160,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            65212,
+            644
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              161,
+              161.0
+            ]
+          ]
+        },
+        {
+          "tick": 161,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24978,
+            648
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              162,
+              162.0
+            ]
+          ]
+        },
+        {
+          "tick": 162,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            19221,
+            652
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              163,
+              163.0
+            ]
+          ]
+        },
+        {
+          "tick": 163,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47102,
+            656
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              164,
+              164.0
+            ]
+          ]
+        },
+        {
+          "tick": 164,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40711,
+            660
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              165,
+              165.0
+            ]
+          ]
+        },
+        {
+          "tick": 165,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44594,
+            664
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              166,
+              166.0
+            ]
+          ]
+        },
+        {
+          "tick": 166,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            30946,
+            668
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              167,
+              167.0
+            ]
+          ]
+        },
+        {
+          "tick": 167,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23321,
+            672
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              168,
+              168.0
+            ]
+          ]
+        },
+        {
+          "tick": 168,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46190,
+            676
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              169,
+              169.0
+            ]
+          ]
+        },
+        {
+          "tick": 169,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            3776,
+            680
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              170,
+              170.0
+            ]
+          ]
+        },
+        {
+          "tick": 170,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15680,
+            684
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              171,
+              171.0
+            ]
+          ]
+        },
+        {
+          "tick": 171,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48465,
+            688
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              172,
+              172.0
+            ]
+          ]
+        },
+        {
+          "tick": 172,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6609,
+            692
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              173,
+              173.0
+            ]
+          ]
+        },
+        {
+          "tick": 173,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            35898,
+            696
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              174,
+              174.0
+            ]
+          ]
+        },
+        {
+          "tick": 174,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            53948,
+            700
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              175,
+              175.0
+            ]
+          ]
+        },
+        {
+          "tick": 175,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24294,
+            704
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              176,
+              176.0
+            ]
+          ]
+        },
+        {
+          "tick": 176,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18288,
+            708
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              177,
+              177.0
+            ]
+          ]
+        },
+        {
+          "tick": 177,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44282,
+            712
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              178,
+              178.0
+            ]
+          ]
+        },
+        {
+          "tick": 178,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41180,
+            716
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              179,
+              179.0
+            ]
+          ]
+        },
+        {
+          "tick": 179,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            32481,
+            720
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              180,
+              180.0
+            ]
+          ]
+        },
+        {
+          "tick": 180,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23571,
+            724
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              181,
+              181.0
+            ]
+          ]
+        },
+        {
+          "tick": 181,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49775,
+            728
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              182,
+              182.0
+            ]
+          ]
+        },
+        {
+          "tick": 182,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            3446,
+            732
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              183,
+              183.0
+            ]
+          ]
+        },
+        {
+          "tick": 183,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            5944,
+            736
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              184,
+              184.0
+            ]
+          ]
+        },
+        {
+          "tick": 184,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54699,
+            740
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              185,
+              185.0
+            ]
+          ]
+        },
+        {
+          "tick": 185,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            20457,
+            744
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              186,
+              186.0
+            ]
+          ]
+        },
+        {
+          "tick": 186,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17405,
+            748
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              187,
+              187.0
+            ]
+          ]
+        },
+        {
+          "tick": 187,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40963,
+            752
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              188,
+              188.0
+            ]
+          ]
+        },
+        {
+          "tick": 188,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            59363,
+            756
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              189,
+              189.0
+            ]
+          ]
+        },
+        {
+          "tick": 189,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            37508,
+            760
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              190,
+              190.0
+            ]
+          ]
+        },
+        {
+          "tick": 190,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            26919,
+            764
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              191,
+              191.0
+            ]
+          ]
+        },
+        {
+          "tick": 191,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            52777,
+            768
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              192,
+              192.0
+            ]
+          ]
+        },
+        {
+          "tick": 192,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33666,
+            772
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              193,
+              193.0
+            ]
+          ]
+        },
+        {
+          "tick": 193,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64194,
+            776
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              194,
+              194.0
+            ]
+          ]
+        },
+        {
+          "tick": 194,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15244,
+            780
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              195,
+              195.0
+            ]
+          ]
+        },
+        {
+          "tick": 195,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12632,
+            784
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              196,
+              196.0
+            ]
+          ]
+        },
+        {
+          "tick": 196,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            62788,
+            788
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              197,
+              197.0
+            ]
+          ]
+        },
+        {
+          "tick": 197,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            9929,
+            792
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              198,
+              198.0
+            ]
+          ]
+        },
+        {
+          "tick": 198,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42075,
+            796
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              199,
+              199.0
+            ]
+          ]
+        },
+        {
+          "tick": 199,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            65491,
+            800
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              200,
+              200.0
+            ]
+          ]
+        },
+        {
+          "tick": 200,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33420,
+            804
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              201,
+              201.0
+            ]
+          ]
+        },
+        {
+          "tick": 201,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12471,
+            808
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              202,
+              202.0
+            ]
+          ]
+        },
+        {
+          "tick": 202,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24140,
+            812
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              203,
+              203.0
+            ]
+          ]
+        },
+        {
+          "tick": 203,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            61809,
+            816
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              204,
+              204.0
+            ]
+          ]
+        },
+        {
+          "tick": 204,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44176,
+            820
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              205,
+              205.0
+            ]
+          ]
+        },
+        {
+          "tick": 205,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            19160,
+            824
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              206,
+              206.0
+            ]
+          ]
+        },
+        {
+          "tick": 206,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29951,
+            828
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              207,
+              207.0
+            ]
+          ]
+        },
+        {
+          "tick": 207,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            26101,
+            832
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              208,
+              208.0
+            ]
+          ]
+        },
+        {
+          "tick": 208,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38937,
+            836
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              209,
+              209.0
+            ]
+          ]
+        },
+        {
+          "tick": 209,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46011,
+            840
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              210,
+              210.0
+            ]
+          ]
+        },
+        {
+          "tick": 210,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24531,
+            844
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              211,
+              211.0
+            ]
+          ]
+        },
+        {
+          "tick": 211,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33388,
+            848
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              212,
+              212.0
+            ]
+          ]
+        },
+        {
+          "tick": 212,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            4278,
+            852
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              213,
+              213.0
+            ]
+          ]
+        },
+        {
+          "tick": 213,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            22444,
+            856
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              214,
+              214.0
+            ]
+          ]
+        },
+        {
+          "tick": 214,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            20839,
+            860
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              215,
+              215.0
+            ]
+          ]
+        },
+        {
+          "tick": 215,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            3685,
+            864
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              216,
+              216.0
+            ]
+          ]
+        },
+        {
+          "tick": 216,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51266,
+            868
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              217,
+              217.0
+            ]
+          ]
+        },
+        {
+          "tick": 217,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51400,
+            872
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              218,
+              218.0
+            ]
+          ]
+        },
+        {
+          "tick": 218,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41673,
+            876
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              219,
+              219.0
+            ]
+          ]
+        },
+        {
+          "tick": 219,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29143,
+            880
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              220,
+              220.0
+            ]
+          ]
+        },
+        {
+          "tick": 220,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            32274,
+            884
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              221,
+              221.0
+            ]
+          ]
+        },
+        {
+          "tick": 221,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51986,
+            888
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              222,
+              222.0
+            ]
+          ]
+        },
+        {
+          "tick": 222,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            55935,
+            892
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              223,
+              223.0
+            ]
+          ]
+        },
+        {
+          "tick": 223,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            56305,
+            896
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              224,
+              224.0
+            ]
+          ]
+        },
+        {
+          "tick": 224,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            11128,
+            900
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              225,
+              225.0
+            ]
+          ]
+        },
+        {
+          "tick": 225,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            5470,
+            904
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              226,
+              226.0
+            ]
+          ]
+        },
+        {
+          "tick": 226,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            65448,
+            908
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              227,
+              227.0
+            ]
+          ]
+        },
+        {
+          "tick": 227,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            1423,
+            912
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              228,
+              228.0
+            ]
+          ]
+        },
+        {
+          "tick": 228,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            13882,
+            916
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              229,
+              229.0
+            ]
+          ]
+        },
+        {
+          "tick": 229,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54154,
+            920
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              230,
+              230.0
+            ]
+          ]
+        },
+        {
+          "tick": 230,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12528,
+            924
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              231,
+              231.0
+            ]
+          ]
+        },
+        {
+          "tick": 231,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            11601,
+            928
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              232,
+              232.0
+            ]
+          ]
+        },
+        {
+          "tick": 232,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            3169,
+            932
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              233,
+              233.0
+            ]
+          ]
+        },
+        {
+          "tick": 233,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            56383,
+            936
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              234,
+              234.0
+            ]
+          ]
+        },
+        {
+          "tick": 234,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39916,
+            940
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              235,
+              235.0
+            ]
+          ]
+        },
+        {
+          "tick": 235,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            37048,
+            944
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              236,
+              236.0
+            ]
+          ]
+        },
+        {
+          "tick": 236,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21804,
+            948
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              237,
+              237.0
+            ]
+          ]
+        },
+        {
+          "tick": 237,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            53589,
+            952
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              238,
+              238.0
+            ]
+          ]
+        },
+        {
+          "tick": 238,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            62948,
+            956
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              239,
+              239.0
+            ]
+          ]
+        },
+        {
+          "tick": 239,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18119,
+            960
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              240,
+              240.0
+            ]
+          ]
+        },
+        {
+          "tick": 240,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28155,
+            964
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              241,
+              241.0
+            ]
+          ]
+        },
+        {
+          "tick": 241,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27170,
+            968
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              242,
+              242.0
+            ]
+          ]
+        },
+        {
+          "tick": 242,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39710,
+            972
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              243,
+              243.0
+            ]
+          ]
+        },
+        {
+          "tick": 243,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48942,
+            976
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              244,
+              244.0
+            ]
+          ]
+        },
+        {
+          "tick": 244,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            52435,
+            980
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              245,
+              245.0
+            ]
+          ]
+        },
+        {
+          "tick": 245,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31101,
+            984
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              246,
+              246.0
+            ]
+          ]
+        },
+        {
+          "tick": 246,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            8212,
+            988
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              247,
+              247.0
+            ]
+          ]
+        },
+        {
+          "tick": 247,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47459,
+            992
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              248,
+              248.0
+            ]
+          ]
+        },
+        {
+          "tick": 248,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51165,
+            996
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              249,
+              249.0
+            ]
+          ]
+        },
+        {
+          "tick": 249,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            32228,
+            1000
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              250,
+              250.0
+            ]
+          ]
+        },
+        {
+          "tick": 250,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18703,
+            1004
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              251,
+              251.0
+            ]
+          ]
+        },
+        {
+          "tick": 251,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46664,
+            1008
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              252,
+              252.0
+            ]
+          ]
+        },
+        {
+          "tick": 252,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            9482,
+            1012
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              253,
+              253.0
+            ]
+          ]
+        },
+        {
+          "tick": 253,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            58180,
+            1016
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              254,
+              254.0
+            ]
+          ]
+        },
+        {
+          "tick": 254,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            10659,
+            1020
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              255,
+              255.0
+            ]
+          ]
+        },
+        {
+          "tick": 255,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21101,
+            1024
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              256,
+              256.0
+            ]
+          ]
+        },
+        {
+          "tick": 256,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            4198,
+            1028
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              257,
+              257.0
+            ]
+          ]
+        },
+        {
+          "tick": 257,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51120,
+            1032
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              258,
+              258.0
+            ]
+          ]
+        },
+        {
+          "tick": 258,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            60534,
+            1036
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              259,
+              259.0
+            ]
+          ]
+        },
+        {
+          "tick": 259,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6047,
+            1040
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              260,
+              260.0
+            ]
+          ]
+        },
+        {
+          "tick": 260,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            1703,
+            1044
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              261,
+              261.0
+            ]
+          ]
+        },
+        {
+          "tick": 261,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            20026,
+            1048
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              262,
+              262.0
+            ]
+          ]
+        },
+        {
+          "tick": 262,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54018,
+            1052
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              263,
+              263.0
+            ]
+          ]
+        },
+        {
+          "tick": 263,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            35047,
+            1056
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              264,
+              264.0
+            ]
+          ]
+        },
+        {
+          "tick": 264,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            36361,
+            1060
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              265,
+              265.0
+            ]
+          ]
+        },
+        {
+          "tick": 265,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            58293,
+            1064
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              266,
+              266.0
+            ]
+          ]
+        },
+        {
+          "tick": 266,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            22691,
+            1068
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              267,
+              267.0
+            ]
+          ]
+        },
+        {
+          "tick": 267,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            20980,
+            1072
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              268,
+              268.0
+            ]
+          ]
+        },
+        {
+          "tick": 268,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39269,
+            1076
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              269,
+              269.0
+            ]
+          ]
+        },
+        {
+          "tick": 269,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51133,
+            1080
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              270,
+              270.0
+            ]
+          ]
+        },
+        {
+          "tick": 270,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24439,
+            1084
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              271,
+              271.0
+            ]
+          ]
+        },
+        {
+          "tick": 271,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            7794,
+            1088
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              272,
+              272.0
+            ]
+          ]
+        },
+        {
+          "tick": 272,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43941,
+            1092
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              273,
+              273.0
+            ]
+          ]
+        },
+        {
+          "tick": 273,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            1515,
+            1096
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              274,
+              274.0
+            ]
+          ]
+        },
+        {
+          "tick": 274,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39478,
+            1100
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              275,
+              275.0
+            ]
+          ]
+        },
+        {
+          "tick": 275,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            55086,
+            1104
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              276,
+              276.0
+            ]
+          ]
+        },
+        {
+          "tick": 276,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            52459,
+            1108
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              277,
+              277.0
+            ]
+          ]
+        },
+        {
+          "tick": 277,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            37245,
+            1112
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              278,
+              278.0
+            ]
+          ]
+        },
+        {
+          "tick": 278,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            8236,
+            1116
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              279,
+              279.0
+            ]
+          ]
+        },
+        {
+          "tick": 279,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            53600,
+            1120
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              280,
+              280.0
+            ]
+          ]
+        },
+        {
+          "tick": 280,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            56048,
+            1124
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              281,
+              281.0
+            ]
+          ]
+        },
+        {
+          "tick": 281,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            10991,
+            1128
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              282,
+              282.0
+            ]
+          ]
+        },
+        {
+          "tick": 282,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38495,
+            1132
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              283,
+              283.0
+            ]
+          ]
+        },
+        {
+          "tick": 283,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            50730,
+            1136
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              284,
+              284.0
+            ]
+          ]
+        },
+        {
+          "tick": 284,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            53882,
+            1140
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              285,
+              285.0
+            ]
+          ]
+        },
+        {
+          "tick": 285,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            8425,
+            1144
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              286,
+              286.0
+            ]
+          ]
+        },
+        {
+          "tick": 286,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17506,
+            1148
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              287,
+              287.0
+            ]
+          ]
+        },
+        {
+          "tick": 287,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            56055,
+            1152
+          ],
+          "offsets": [
+            -3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              288,
+              288.0
+            ]
+          ]
+        },
+        {
+          "tick": 288,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            37870,
+            1156
+          ],
+          "offsets": [
+            0.0,
+            3.0
+          ],
+          "timers": [
+            [
+              289,
+              289.0
+            ]
+          ]
+        },
+        {
+          "tick": 289,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            36656,
+            1160
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              290,
+              290.0
+            ]
+          ]
+        },
+        {
+          "tick": 290,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27843,
+            1164
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              291,
+              291.0
+            ]
+          ]
+        },
+        {
+          "tick": 291,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29213,
+            1168
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              292,
+              292.0
+            ]
+          ]
+        },
+        {
+          "tick": 292,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49225,
+            1172
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              293,
+              293.0
+            ]
+          ]
+        },
+        {
+          "tick": 293,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            9084,
+            1176
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              294,
+              294.0
+            ]
+          ]
+        },
+        {
+          "tick": 294,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            8534,
+            1180
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              295,
+              295.0
+            ]
+          ]
+        },
+        {
+          "tick": 295,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63316,
+            1184
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              296,
+              296.0
+            ]
+          ]
+        },
+        {
+          "tick": 296,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63174,
+            1188
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              297,
+              297.0
+            ]
+          ]
+        },
+        {
+          "tick": 297,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42187,
+            1192
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              298,
+              298.0
+            ]
+          ]
+        },
+        {
+          "tick": 298,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28613,
+            1196
+          ],
+          "offsets": [
+            3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              299,
+              299.0
+            ]
+          ]
+        },
+        {
+          "tick": 299,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43036,
+            1200
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              300,
+              300.0
+            ]
+          ]
+        },
+        {
+          "tick": 300,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48875,
+            1204
+          ],
+          "offsets": [
+            -2.8999998569488525,
+            0.0
+          ],
+          "timers": [
+            [
+              301,
+              301.0
+            ]
+          ]
+        },
+        {
+          "tick": 301,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            36819,
+            1208
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              302,
+              302.0
+            ]
+          ]
+        },
+        {
+          "tick": 302,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33212,
+            1212
+          ],
+          "offsets": [
+            -2.6999998092651367,
+            -2.6999998092651367
+          ],
+          "timers": [
+            [
+              303,
+              303.0
+            ]
+          ]
+        },
+        {
+          "tick": 303,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            24757,
+            1216
+          ],
+          "offsets": [
+            0.0,
+            2.5999999046325684
+          ],
+          "timers": [
+            [
+              304,
+              304.0
+            ]
+          ]
+        },
+        {
+          "tick": 304,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            22556,
+            1220
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              305,
+              305.0
+            ]
+          ]
+        },
+        {
+          "tick": 305,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49403,
+            1224
+          ],
+          "offsets": [
+            0.0,
+            2.4000000953674316
+          ],
+          "timers": [
+            [
+              306,
+              306.0
+            ]
+          ]
+        },
+        {
+          "tick": 306,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41344,
+            1228
+          ],
+          "offsets": [
+            2.299999952316284,
+            0.0
+          ],
+          "timers": [
+            [
+              307,
+              307.0
+            ]
+          ]
+        },
+        {
+          "tick": 307,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64212,
+            1232
+          ],
+          "offsets": [
+            -2.200000047683716,
+            2.200000047683716
+          ],
+          "timers": [
+            [
+              308,
+              308.0
+            ]
+          ]
+        },
+        {
+          "tick": 308,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31119,
+            1236
+          ],
+          "offsets": [
+            2.0999999046325684,
+            -2.0999999046325684
+          ],
+          "timers": [
+            [
+              309,
+              309.0
+            ]
+          ]
+        },
+        {
+          "tick": 309,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            13854,
+            1240
+          ],
+          "offsets": [
+            -2.0,
+            2.0
+          ],
+          "timers": [
+            [
+              310,
+              310.0
+            ]
+          ]
+        },
+        {
+          "tick": 310,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49037,
+            1244
+          ],
+          "offsets": [
+            1.899999976158142,
+            0.0
+          ],
+          "timers": [
+            [
+              311,
+              311.0
+            ]
+          ]
+        },
+        {
+          "tick": 311,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            11724,
+            1248
+          ],
+          "offsets": [
+            0.0,
+            -1.8000000715255737
+          ],
+          "timers": [
+            [
+              312,
+              312.0
+            ]
+          ]
+        },
+        {
+          "tick": 312,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29022,
+            1252
+          ],
+          "offsets": [
+            1.7000000476837158,
+            -1.7000000476837158
+          ],
+          "timers": [
+            [
+              313,
+              313.0
+            ]
+          ]
+        },
+        {
+          "tick": 313,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            65284,
+            1256
+          ],
+          "offsets": [
+            0.0,
+            1.6000001430511475
+          ],
+          "timers": [
+            [
+              314,
+              314.0
+            ]
+          ]
+        },
+        {
+          "tick": 314,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            59794,
+            1260
+          ],
+          "offsets": [
+            -1.5,
+            0.0
+          ],
+          "timers": [
+            [
+              315,
+              315.0
+            ]
+          ]
+        },
+        {
+          "tick": 315,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            19373,
+            1264
+          ],
+          "offsets": [
+            -1.399999976158142,
+            -1.399999976158142
+          ],
+          "timers": [
+            [
+              316,
+              316.0
+            ]
+          ]
+        },
+        {
+          "tick": 316,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            20555,
+            1268
+          ],
+          "offsets": [
+            1.2999999523162842,
+            1.2999999523162842
+          ],
+          "timers": [
+            [
+              317,
+              317.0
+            ]
+          ]
+        },
+        {
+          "tick": 317,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64111,
+            1272
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              318,
+              318.0
+            ]
+          ]
+        },
+        {
+          "tick": 318,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            5774,
+            1276
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              319,
+              319.0
+            ]
+          ]
+        },
+        {
+          "tick": 319,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12203,
+            1280
+          ],
+          "offsets": [
+            0.0,
+            -1.0
+          ],
+          "timers": [
+            [
+              320,
+              320.0
+            ]
+          ]
+        },
+        {
+          "tick": 320,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23135,
+            1284
+          ],
+          "offsets": [
+            -0.9000000357627869,
+            0.0
+          ],
+          "timers": [
+            [
+              321,
+              321.0
+            ]
+          ]
+        },
+        {
+          "tick": 321,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            50798,
+            1288
+          ],
+          "offsets": [
+            -0.8000000715255737,
+            0.8000000715255737
+          ],
+          "timers": [
+            [
+              322,
+              322.0
+            ]
+          ]
+        },
+        {
+          "tick": 322,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            3706,
+            1292
+          ],
+          "offsets": [
+            -0.699999988079071,
+            -0.699999988079071
+          ],
+          "timers": [
+            [
+              323,
+              323.0
+            ]
+          ]
+        },
+        {
+          "tick": 323,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            4917,
+            1296
+          ],
+          "offsets": [
+            -0.6000000238418579,
+            0.6000000238418579
+          ],
+          "timers": [
+            [
+              324,
+              324.0
+            ]
+          ]
+        },
+        {
+          "tick": 324,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            55463,
+            1300
+          ],
+          "offsets": [
+            0.5,
+            0.5
+          ],
+          "timers": [
+            [
+              325,
+              325.0
+            ]
+          ]
+        },
+        {
+          "tick": 325,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            1396,
+            1304
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              326,
+              326.0
+            ]
+          ]
+        },
+        {
+          "tick": 326,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6576,
+            1308
+          ],
+          "offsets": [
+            -0.30000001192092896,
+            0.0
+          ],
+          "timers": [
+            [
+              327,
+              327.0
+            ]
+          ]
+        },
+        {
+          "tick": 327,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            60732,
+            1312
+          ],
+          "offsets": [
+            -0.20000001788139343,
+            -0.20000001788139343
+          ],
+          "timers": [
+            [
+              328,
+              328.0
+            ]
+          ]
+        },
+        {
+          "tick": 328,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57757,
+            1316
+          ],
+          "offsets": [
+            0.0,
+            0.10000000894069672
+          ],
+          "timers": [
+            [
+              329,
+              329.0
+            ]
+          ]
+        },
+        {
+          "tick": 329,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57757,
+            1316
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 330,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57757,
+            1316
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 331,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57757,
+            1316
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 332,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57757,
+            1316
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 333,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57757,
+            1316
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 334,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57757,
+            1316
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        }
+      ]
+    },
+    {
+      "name": "sanae-b-full",
+      "frames": [
+        {
+          "tick": 0,
+          "born": [
+            4,
+            1,
+            60,
+            10
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              2,
+              2.0
+            ]
+          ]
+        },
+        {
+          "tick": 2,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              3,
+              3.0
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              4,
+              4.0
+            ]
+          ]
+        },
+        {
+          "tick": 4,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              5,
+              5.0
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              6,
+              6.0
+            ]
+          ]
+        },
+        {
+          "tick": 6,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              7,
+              7.0
+            ]
+          ]
+        },
+        {
+          "tick": 7,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              8,
+              8.0
+            ]
+          ]
+        },
+        {
+          "tick": 8,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              9,
+              9.0
+            ]
+          ]
+        },
+        {
+          "tick": 9,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              10,
+              10.0
+            ]
+          ]
+        },
+        {
+          "tick": 10,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              11,
+              11.0
+            ]
+          ]
+        },
+        {
+          "tick": 11,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              12,
+              12.0
+            ]
+          ]
+        },
+        {
+          "tick": 12,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31722,
+            52
+          ],
+          "offsets": [
+            4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              13,
+              13.0
+            ]
+          ]
+        },
+        {
+          "tick": 13,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17177,
+            56
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              14,
+              14.0
+            ]
+          ]
+        },
+        {
+          "tick": 14,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              15,
+              15.0
+            ]
+          ]
+        },
+        {
+          "tick": 15,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              16,
+              16.0
+            ]
+          ]
+        },
+        {
+          "tick": 16,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33301,
+            68
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              17,
+              17.0
+            ]
+          ]
+        },
+        {
+          "tick": 17,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47033,
+            72
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              18,
+              18.0
+            ]
+          ]
+        },
+        {
+          "tick": 18,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21511,
+            76
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              19,
+              19.0
+            ]
+          ]
+        },
+        {
+          "tick": 19,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              20,
+              20.0
+            ]
+          ]
+        },
+        {
+          "tick": 20,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            50146,
+            84
+          ],
+          "offsets": [
+            -4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              21,
+              21.0
+            ]
+          ]
+        },
+        {
+          "tick": 21,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27264,
+            88
+          ],
+          "offsets": [
+            4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              22,
+              22.0
+            ]
+          ]
+        },
+        {
+          "tick": 22,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64797,
+            92
+          ],
+          "offsets": [
+            0.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              23,
+              23.0
+            ]
+          ]
+        },
+        {
+          "tick": 23,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49292,
+            96
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              24,
+              24.0
+            ]
+          ]
+        },
+        {
+          "tick": 24,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12417,
+            100
+          ],
+          "offsets": [
+            4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              25,
+              25.0
+            ]
+          ]
+        },
+        {
+          "tick": 25,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            64591,
+            104
+          ],
+          "offsets": [
+            0.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              26,
+              26.0
+            ]
+          ]
+        },
+        {
+          "tick": 26,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            63115,
+            108
+          ],
+          "offsets": [
+            0.0,
+            4.0
+          ],
+          "timers": [
+            [
+              27,
+              27.0
+            ]
+          ]
+        },
+        {
+          "tick": 27,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12235,
+            112
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              28,
+              28.0
+            ]
+          ]
+        },
+        {
+          "tick": 28,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31324,
+            116
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              29,
+              29.0
+            ]
+          ]
+        },
+        {
+          "tick": 29,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            270,
+            120
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              30,
+              30.0
+            ]
+          ]
+        },
+        {
+          "tick": 30,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44864,
+            124
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              31,
+              31.0
+            ]
+          ]
+        },
+        {
+          "tick": 31,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47839,
+            128
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              32,
+              32.0
+            ]
+          ]
+        },
+        {
+          "tick": 32,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15308,
+            132
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              33,
+              33.0
+            ]
+          ]
+        },
+        {
+          "tick": 33,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29016,
+            136
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              34,
+              34.0
+            ]
+          ]
+        },
+        {
+          "tick": 34,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            62724,
+            140
+          ],
+          "offsets": [
+            -4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              35,
+              35.0
+            ]
+          ]
+        },
+        {
+          "tick": 35,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            59508,
+            144
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              36,
+              36.0
+            ]
+          ]
+        },
+        {
+          "tick": 36,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6571,
+            148
+          ],
+          "offsets": [
+            0.0,
+            4.0
+          ],
+          "timers": [
+            [
+              37,
+              37.0
+            ]
+          ]
+        },
+        {
+          "tick": 37,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23101,
+            152
+          ],
+          "offsets": [
+            4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              38,
+              38.0
+            ]
+          ]
+        },
+        {
+          "tick": 38,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57454,
+            156
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              39,
+              39.0
+            ]
+          ]
+        },
+        {
+          "tick": 39,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            3996,
+            160
+          ],
+          "offsets": [
+            4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              40,
+              40.0
+            ]
+          ]
+        },
+        {
+          "tick": 40,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            16700,
+            164
+          ],
+          "offsets": [
+            -4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              41,
+              41.0
+            ]
+          ]
+        },
+        {
+          "tick": 41,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            57601,
+            168
+          ],
+          "offsets": [
+            0.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              42,
+              42.0
+            ]
+          ]
+        },
+        {
+          "tick": 42,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31905,
+            172
+          ],
+          "offsets": [
+            0.0,
+            4.0
+          ],
+          "timers": [
+            [
+              43,
+              43.0
+            ]
+          ]
+        },
+        {
+          "tick": 43,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            7176,
+            176
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              44,
+              44.0
+            ]
+          ]
+        },
+        {
+          "tick": 44,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            58799,
+            180
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              45,
+              45.0
+            ]
+          ]
+        },
+        {
+          "tick": 45,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            22169,
+            184
+          ],
+          "offsets": [
+            0.0,
+            4.0
+          ],
+          "timers": [
+            [
+              46,
+              46.0
+            ]
+          ]
+        },
+        {
+          "tick": 46,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            13419,
+            188
+          ],
+          "offsets": [
+            4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              47,
+              47.0
+            ]
+          ]
+        },
+        {
+          "tick": 47,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            6720,
+            192
+          ],
+          "offsets": [
+            0.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              48,
+              48.0
+            ]
+          ]
+        },
+        {
+          "tick": 48,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48558,
+            196
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              49,
+              49.0
+            ]
+          ]
+        },
+        {
+          "tick": 49,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            19665,
+            200
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              50,
+              50.0
+            ]
+          ]
+        },
+        {
+          "tick": 50,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            35837,
+            204
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              51,
+              51.0
+            ]
+          ]
+        },
+        {
+          "tick": 51,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40971,
+            208
+          ],
+          "offsets": [
+            0.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              52,
+              52.0
+            ]
+          ]
+        },
+        {
+          "tick": 52,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            45027,
+            212
+          ],
+          "offsets": [
+            4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              53,
+              53.0
+            ]
+          ]
+        },
+        {
+          "tick": 53,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            18397,
+            216
+          ],
+          "offsets": [
+            4.0,
+            0.0
+          ],
+          "timers": [
+            [
+              54,
+              54.0
+            ]
+          ]
+        },
+        {
+          "tick": 54,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            32868,
+            220
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              55,
+              55.0
+            ]
+          ]
+        },
+        {
+          "tick": 55,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            51392,
+            224
+          ],
+          "offsets": [
+            -4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              56,
+              56.0
+            ]
+          ]
+        },
+        {
+          "tick": 56,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            15050,
+            228
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              57,
+              57.0
+            ]
+          ]
+        },
+        {
+          "tick": 57,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            41807,
+            232
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              58,
+              58.0
+            ]
+          ]
+        },
+        {
+          "tick": 58,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            60386,
+            236
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              59,
+              59.0
+            ]
+          ]
+        },
+        {
+          "tick": 59,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            23464,
+            240
+          ],
+          "offsets": [
+            4.0,
+            -4.0
+          ],
+          "timers": [
+            [
+              60,
+              60.0
+            ]
+          ]
+        },
+        {
+          "tick": 60,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            1275,
+            244
+          ],
+          "offsets": [
+            4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              61,
+              61.0
+            ]
+          ]
+        },
+        {
+          "tick": 61,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27301,
+            248
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              62,
+              62.0
+            ]
+          ]
+        },
+        {
+          "tick": 62,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            2078,
+            252
+          ],
+          "offsets": [
+            0.0,
+            -3.200000047683716
+          ],
+          "timers": [
+            [
+              63,
+              63.0
+            ]
+          ]
+        },
+        {
+          "tick": 63,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            49035,
+            256
+          ],
+          "offsets": [
+            0.0,
+            -2.799999952316284
+          ],
+          "timers": [
+            [
+              64,
+              64.0
+            ]
+          ]
+        },
+        {
+          "tick": 64,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            12236,
+            260
+          ],
+          "offsets": [
+            -2.4000000953674316,
+            0.0
+          ],
+          "timers": [
+            [
+              65,
+              65.0
+            ]
+          ]
+        },
+        {
+          "tick": 65,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            29020,
+            264
+          ],
+          "offsets": [
+            0.0,
+            2.0
+          ],
+          "timers": [
+            [
+              66,
+              66.0
+            ]
+          ]
+        },
+        {
+          "tick": 66,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            261,
+            268
+          ],
+          "offsets": [
+            -1.600000023841858,
+            -1.600000023841858
+          ],
+          "timers": [
+            [
+              67,
+              67.0
+            ]
+          ]
+        },
+        {
+          "tick": 67,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            59456,
+            272
+          ],
+          "offsets": [
+            0.0,
+            1.2000000476837158
+          ],
+          "timers": [
+            [
+              68,
+              68.0
+            ]
+          ]
+        },
+        {
+          "tick": 68,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48552,
+            276
+          ],
+          "offsets": [
+            0.0,
+            -0.800000011920929
+          ],
+          "timers": [
+            [
+              69,
+              69.0
+            ]
+          ]
+        },
+        {
+          "tick": 69,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            721,
+            280
+          ],
+          "offsets": [
+            0.4000000059604645,
+            -0.4000000059604645
+          ],
+          "timers": [
+            [
+              70,
+              70.0
+            ]
+          ]
+        },
+        {
+          "tick": 70,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            721,
+            280
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 71,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            721,
+            280
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 72,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            721,
+            280
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 73,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            721,
+            280
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 74,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            721,
+            280
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        }
+      ]
+    },
+    {
+      "name": "overlap-newest-first",
+      "frames": [
+        {
+          "tick": 0,
+          "born": [
+            3,
+            2,
+            4,
+            3
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            1.5,
+            -1.5
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              2,
+              2.0
+            ]
+          ]
+        },
+        {
+          "tick": 2,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              3,
+              3.0
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "born": [
+            7,
+            1,
+            2,
+            3
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ],
+            [
+              4,
+              4.0
+            ]
+          ]
+        },
+        {
+          "tick": 4,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              2,
+              2.0
+            ],
+            [
+              5,
+              5.0
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "born": [
+            1,
+            1,
+            0,
+            2
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ],
+            [
+              3,
+              3.0
+            ],
+            [
+              6,
+              6.0
+            ]
+          ]
+        },
+        {
+          "tick": 6,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31722,
+            52
+          ],
+          "offsets": [
+            2.0,
+            2.0
+          ],
+          "timers": [
+            [
+              2,
+              2.0
+            ],
+            [
+              4,
+              4.0
+            ],
+            [
+              7,
+              7.0
+            ]
+          ]
+        },
+        {
+          "tick": 7,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            -1.0
+          ],
+          "timers": [
+            [
+              5,
+              5.0
+            ],
+            [
+              8,
+              8.0
+            ]
+          ]
+        },
+        {
+          "tick": 8,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 9,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 10,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 11,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 12,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 13,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 14,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        }
+      ]
+    },
+    {
+      "name": "pause-gates-and-stop",
+      "frames": [
+        {
+          "tick": 0,
+          "born": [
+            3,
+            2,
+            30,
+            3
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            1.5,
+            -1.5
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "born": null,
+          "flags": 1,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 2,
+          "born": null,
+          "flags": 2,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "born": null,
+          "flags": 4,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 4,
+          "born": null,
+          "flags": 16,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "born": null,
+          "flags": 32,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 6,
+          "born": null,
+          "flags": 64,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 7,
+          "born": null,
+          "flags": 128,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            3.0,
+            0.0
+          ],
+          "timers": [
+            [
+              2,
+              2.0
+            ]
+          ]
+        },
+        {
+          "tick": 8,
+          "born": null,
+          "flags": 512,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              3,
+              3.0
+            ]
+          ]
+        },
+        {
+          "tick": 9,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              4,
+              4.0
+            ]
+          ]
+        },
+        {
+          "tick": 10,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              5,
+              5.0
+            ]
+          ]
+        },
+        {
+          "tick": 11,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              6,
+              6.0
+            ]
+          ]
+        },
+        {
+          "tick": 12,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              7,
+              7.0
+            ]
+          ]
+        },
+        {
+          "tick": 13,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              8,
+              8.0
+            ]
+          ]
+        },
+        {
+          "tick": 14,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              9,
+              9.0
+            ]
+          ]
+        },
+        {
+          "tick": 15,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              10,
+              10.0
+            ]
+          ]
+        },
+        {
+          "tick": 16,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              11,
+              11.0
+            ]
+          ]
+        },
+        {
+          "tick": 17,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -3.0,
+            -3.0
+          ],
+          "timers": [
+            [
+              12,
+              12.0
+            ]
+          ]
+        },
+        {
+          "tick": 18,
+          "born": null,
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 19,
+          "born": null,
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 20,
+          "born": null,
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 21,
+          "born": null,
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 22,
+          "born": null,
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        },
+        {
+          "tick": 23,
+          "born": null,
+          "flags": 0,
+          "stopping": true,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": []
+        }
+      ]
+    },
+    {
+      "name": "fractional-native-timer",
+      "frames": [
+        {
+          "tick": 0,
+          "born": [
+            5,
+            5,
+            10,
+            5
+          ],
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33600,
+            4
+          ],
+          "offsets": [
+            1.0,
+            -1.0
+          ],
+          "timers": [
+            [
+              1,
+              1.0
+            ]
+          ]
+        },
+        {
+          "tick": 1,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.25,
+          "rng": [
+            48323,
+            8
+          ],
+          "offsets": [
+            1.25,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.25
+            ]
+          ]
+        },
+        {
+          "tick": 2,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.5,
+          "rng": [
+            42957,
+            12
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              1,
+              1.75
+            ]
+          ]
+        },
+        {
+          "tick": 3,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.0,
+          "rng": [
+            28100,
+            16
+          ],
+          "offsets": [
+            -1.75,
+            1.75
+          ],
+          "timers": [
+            [
+              1,
+              1.75
+            ]
+          ]
+        },
+        {
+          "tick": 4,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.25,
+          "rng": [
+            43294,
+            20
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              3,
+              3.0
+            ]
+          ]
+        },
+        {
+          "tick": 5,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 2.0,
+          "rng": [
+            48360,
+            24
+          ],
+          "offsets": [
+            0.0,
+            -5.0
+          ],
+          "timers": [
+            [
+              5,
+              5.0
+            ]
+          ]
+        },
+        {
+          "tick": 6,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.9990000128746033,
+          "rng": [
+            17102,
+            28
+          ],
+          "offsets": [
+            5.0,
+            -5.0
+          ],
+          "timers": [
+            [
+              6,
+              6.0
+            ]
+          ]
+        },
+        {
+          "tick": 7,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0010000467300415,
+          "rng": [
+            28407,
+            32
+          ],
+          "offsets": [
+            -5.0,
+            5.0
+          ],
+          "timers": [
+            [
+              7,
+              7.0
+            ]
+          ]
+        },
+        {
+          "tick": 8,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 0.9900000095367432,
+          "rng": [
+            40482,
+            36
+          ],
+          "offsets": [
+            -5.0,
+            -5.0
+          ],
+          "timers": [
+            [
+              7,
+              7.989999771118164
+            ]
+          ]
+        },
+        {
+          "tick": 9,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0099999904632568,
+          "rng": [
+            39730,
+            40
+          ],
+          "offsets": [
+            -5.0,
+            5.0
+          ],
+          "timers": [
+            [
+              9,
+              9.0
+            ]
+          ]
+        },
+        {
+          "tick": 10,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            27439,
+            44
+          ],
+          "offsets": [
+            0.0,
+            0.0
+          ],
+          "timers": [
+            [
+              10,
+              10.0
+            ]
+          ]
+        },
+        {
+          "tick": 11,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            54815,
+            48
+          ],
+          "offsets": [
+            -5.0,
+            -5.0
+          ],
+          "timers": [
+            [
+              11,
+              11.0
+            ]
+          ]
+        },
+        {
+          "tick": 12,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            31722,
+            52
+          ],
+          "offsets": [
+            5.0,
+            5.0
+          ],
+          "timers": [
+            [
+              12,
+              12.0
+            ]
+          ]
+        },
+        {
+          "tick": 13,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            17177,
+            56
+          ],
+          "offsets": [
+            5.0,
+            0.0
+          ],
+          "timers": [
+            [
+              13,
+              13.0
+            ]
+          ]
+        },
+        {
+          "tick": 14,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            46070,
+            60
+          ],
+          "offsets": [
+            0.0,
+            -5.0
+          ],
+          "timers": [
+            [
+              14,
+              14.0
+            ]
+          ]
+        },
+        {
+          "tick": 15,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            38099,
+            64
+          ],
+          "offsets": [
+            5.0,
+            0.0
+          ],
+          "timers": [
+            [
+              15,
+              15.0
+            ]
+          ]
+        },
+        {
+          "tick": 16,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            33301,
+            68
+          ],
+          "offsets": [
+            -4.0,
+            4.0
+          ],
+          "timers": [
+            [
+              16,
+              16.0
+            ]
+          ]
+        },
+        {
+          "tick": 17,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            47033,
+            72
+          ],
+          "offsets": [
+            -3.0,
+            3.0
+          ],
+          "timers": [
+            [
+              17,
+              17.0
+            ]
+          ]
+        },
+        {
+          "tick": 18,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            21511,
+            76
+          ],
+          "offsets": [
+            2.0,
+            0.0
+          ],
+          "timers": [
+            [
+              18,
+              18.0
+            ]
+          ]
+        },
+        {
+          "tick": 19,
+          "born": null,
+          "flags": 0,
+          "stopping": false,
+          "rate": 1.0,
+          "rng": [
+            44647,
+            80
+          ],
+          "offsets": [
+            1.0,
+            -1.0
+          ],
+          "timers": [
+            [
+              19,
+              19.0
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
