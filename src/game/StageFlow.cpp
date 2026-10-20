@@ -77,25 +77,9 @@ static void beginClear() {
   flow.clearDelay = flow.stage == 6 && !flow.practice ? 380 : 120;
   flow.nextStage = !flow.practice && flow.stage < 6 ? flow.stage + 1 : 0;
   gameSpeed = animationScene.runtime.delta = 1;
-  // Native scene teardown retires the enemy, projectile, item and laser
-  // managers without calling their kill/drop/cancel reward paths.
-  for (const auto& enemy : enemies) {
-    if (enemy->extraBombShieldAnimation)
-      animationScene.remove(enemy->extraBombShieldAnimation);
-    animationScene.removeOwner(enemy->id);
-  }
-  enemies.clear();
-  bullets.clear();
-  resetHostilePool();
-  resetFriendlyPool();
-  laserManager.reset(&laserWorld);
-  itemManager.reset();
-  resetItemPresentation();
-  sound_system::queue.stop(21);
-  sound_system::queue.stop(54);
-  animationScene.remove(bossHud.enemyIndicator);
-  bossHud = {};
-  dialogue = 0;
+  // MSG21 schedules scene12.4227dc waits for HUD's120-tick clear timer;
+  // player16, enemy18, bullet21, item22 and HUD/MSG25 remain registered.
+  // The outgoing managers are retired when the incoming stage is constructed.
 }
 
 bool tickFullGame(int held, int pressed) {
@@ -114,10 +98,6 @@ bool tickFullGame(int held, int pressed) {
   }
   if (flow.status != FullGameStatus::StageClear)
     return true;
-  eventBits = 0;
-  sound_system::queue.reset();
-  scorePopups.clear();
-  animationScene.tickSecondary();
   //4227dc first holds the clear reward for120 ticks.422839 then starts
   //4057e0's30-tick field fade;42296c creates the incoming stage afterwards.
   if (flow.nextStage && flow.clearAge == flow.clearDelay) {
@@ -127,10 +107,7 @@ bool tickFullGame(int held, int pressed) {
         animationScene.interruptNode(node->id, 1);
   }
   stageState.transitionAge = std::max(0, flow.clearAge - flow.clearDelay);
-  tickStage();
-  animationScene.collect();
-  animationScene.tickPrimary();
-  animationScene.collect();
+  tickGameplay(held, pressed);
   ++flow.clearAge;
   ++flow.totalFrames;
   if (flow.clearAge >= flow.clearDelay + (flow.nextStage ? 30 : 0)) {

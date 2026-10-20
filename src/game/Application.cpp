@@ -13,6 +13,9 @@ namespace th12 {
 void tick(int held, int pressed) {
   if (ended)
     return;
+  tickGameplay(held, pressed);
+}
+void tickGameplay(int held, int pressed) {
   eventBits = 0;
   sound_system::queue.reset();
   scorePopups.clear();

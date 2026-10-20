@@ -177,7 +177,9 @@ deterministic assisted playback is not guaranteed.
 
 ReimuA full-run stage-entry snapshots and real adjacent-stage carry are wired
 before main birth when the THPrac profile is enabled. Playback of an embedded
-damage snapshot also requires that profile. Raw native 0x74-byte damage-source
+damage snapshot also requires that profile. Launcher Replay workspace enables
+the playback profile automatically while keeping interactive ImGui hidden.
+Raw native 0x74-byte damage-source
 blobs cannot be imported.
 Missing data in older native replays is reported by the compatibility state as
 unavailable. The game-resource and device acceptance checklist is in

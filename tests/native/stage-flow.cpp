@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <fstream>
+#include "game/HostilePool.hpp"
 
 using namespace th12;
 static void require(bool result, const char* reason) {
@@ -97,6 +99,7 @@ int main(int argc,char** argv) {
   require(query==th12_stage_flow()&&beforeQuery==fullGameFlow.totalFrames&&th12::random.calls==rngBefore.calls,
           "Stage-flow query advanced the simulation");
   require(th12_start_next_stage()==0,"Unloaded next-stage resources were accepted");
+  const auto retained=captureSessionCarry();
   th12_select_stage(2);loadBirthProbe();
   Random birthRandom{original.seed,0};const auto expectedWord=birthRandom.next32();
   require(th12_start_next_stage()==1,"Ready next-stage birth failed");
@@ -113,12 +116,12 @@ int main(int argc,char** argv) {
     "Recorder next-stage header lost the immutable pre-main boundary");
   require(score==12345678&&power==347&&lives==5&&bombs==4&&graze==9876&&
     resources.lifeFragments==3&&resources.bombFragments==2&&resources.pointValueStored==1595310&&
-    resources.rank==-123&&replayStageGlobals==std::array<int,4>{4,7,1,9876},
+    resources.rank==retained.resources.rank&&replayStageGlobals==retained.nativeGlobals,
     "Cross-stage global resources or extend threshold did not survive");
   require(ufoManager.inventory.colors==original.inventory.colors&&
-    ufoManager.inventory.rotation==2&&ufoManager.inventory.gateTimer==13,
+    ufoManager.inventory.rotation==retained.inventory.rotation&&ufoManager.inventory.gateTimer==retained.inventory.gateTimer,
     "Cross-stage UFO colors/rotation/gate did not survive");
-  require(px==-4321&&py==49920&&playerFocused&&playerState==1&&playerStateTicks==0&&
+  require(px==-4321&&py==49920&&playerFocused==retained.focused&&playerState==1&&playerStateTicks==0&&
     playerTotalTime==0&&invuln==120&&fireFrame==0&&phasePlayerCounters==std::array<u32,3>{},
     "Incoming stage inherited old player timers or lost retained position/focus");
   require(playerMotion.count==3&&playerMotion.previousDx==0&&playerMotion.bodyAge==0&&
@@ -147,6 +150,28 @@ int main(int argc,char** argv) {
   th12_start(0,0,1,1234);installClearMessage();tickMessage(0,0);
   require(score==600000+stage_award::final(6,1,power,lives,bombs,resources.pointValueStored)/10,
           "Legacy sixth-stage final resource bonus changed");
+  // Original post-boss MSG:21,4,6 at time50, then0 at80. Execute
+  // the real retail MSG and ANM banks through the same gameplay callbacks.
+  if(argc==2){
+    start();
+    auto bytes=[&](const char* name){std::ifstream f(std::string(argv[1])+"/"+name,std::ios::binary);return std::vector<uint8_t>(std::istreambuf_iterator<char>(f),{});};
+    for(auto [slot,name]:std::vector<std::pair<int,const char*>>{{7,"front.anm"},{8,"text.anm"}}){auto b=bytes(name);require(th12_load_anm(slot,b.data(),int(b.size()))==1,"Retail ANM failed to load");}
+    auto msg=bytes("st01_01a.msg");
+    require(messageFiles[4].load(msg.data(),int(msg.size()))&&messageVM.start(messageFiles[4],1),"Retail post-boss MSG failed to load");
+    startMessageAnimations();
+    for(int i=0;i<2000&&fullGameFlow.status==FullGameStatus::Playing;i++)th12_tick(512,1);
+    require(fullGameFlow.status==FullGameStatus::StageClear,"Retail post-boss MSG did not clear stage");
+    require(messageVM.active,"MSG should retain its original30-tick tail after21");
+    // A live projectile survives scene scheduling and keeps moving.
+    const int slot=hostilePool.reserve();Projectile b{-100,50,0,1,3,0,0};b.entityId=900;b.physicalSlot=slot;
+    bullets.push_back(b);attachHostileSlot(bullets.back());
+    eb::initialize(bullets.back().enemy,900,{},0,0,-100,50,0,1,bulletWorld);
+    const int oldX=px,oldFrame=frame;const float oldBulletX=bullets.back().x;
+    for(int i=0;i<35;i++)th12_tick(128,0);
+    require(px>oldX&&frame==oldFrame+35,"Stage Clear froze player or gameplay clock");
+    require(!bullets.empty()&&bullets.back().x>oldBulletX,"Stage Clear retired or froze bullets");
+    require(!messageVM.active&&!dialogue,"Stage Clear froze MSG before its original end");
+  }
   start(7);ended=2;th12_tick(0,0);
   require(!canContinueFullGame()&&th12_continue_game()==0,"Extra incorrectly offersContinue");
   start(2);ended=2;th12_tick(0,0);require(canContinueFullGame(),"Story game over lacksContinue");
