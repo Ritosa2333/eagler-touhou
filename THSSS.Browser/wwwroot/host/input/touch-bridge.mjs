@@ -43,6 +43,11 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     for (const name of ARROWS) keys.setKey(name, false, "direct");
   }
 
+  function applyMenuHold(scene) {
+    const held = gestures.held(scene);
+    for (const name of ARROWS) keys.setKey(name, name === held, "menu");
+  }
+
   function pulse(name) {
     keys.setKey(name, true, "gesture");
     pulses.push(name);
@@ -89,24 +94,26 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
       gestures.cancel();
       movement.clear();
       releaseArrows();
+      applyMenuHold(reported());
       keys.setKey("ShiftKey", false, "touch-second");
       keys.setKey("ControlKey", false, "dialogue-skip");
       return;
     }
     const x = Number(message.x);
     const y = Number(message.y);
-    const current = mode();
+    const scene = reported();
+    const current = scene || "play";
     if (message.type === "down" && Number.isFinite(x) && Number.isFinite(y)) {
       gestures.down(message.id, x, y, now());
       syncSecondFinger();
       return;
     }
     if (message.type === "move" && Number.isFinite(x) && Number.isFinite(y)) {
-      const step = gestures.move(message.id, x, y, current);
-      if (step.pulse) pulse(step.pulse);
+      const step = gestures.move(message.id, x, y);
       if (step.primary && current === "play" && !joystickMode(settings().touchMovementMode)) {
         movement.add(step.dx, step.dy, sensitivity());
       }
+      applyMenuHold(scene);
       syncSecondFinger();
       return;
     }
@@ -116,11 +123,12 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
         Number.isFinite(x) ? x : 0,
         Number.isFinite(y) ? y : 0,
         now(),
-        current,
+        scene,
         settings().doubleTapBombEnabled === true,
       );
       for (const name of names) pulse(name);
-      if (!gestures.skipping(now(), current)) keys.setKey("ControlKey", false, "dialogue-skip");
+      applyMenuHold(scene);
+      if (!gestures.skipping(now(), scene)) keys.setKey("ControlKey", false, "dialogue-skip");
       syncSecondFinger();
     }
   }
@@ -128,8 +136,10 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
   function presented() {
     applyFire();
     releasePulses();
-    const current = mode();
-    keys.setKey("ControlKey", gestures.skipping(now(), current), "dialogue-skip");
+    const scene = reported();
+    applyMenuHold(scene);
+    const current = scene || "play";
+    keys.setKey("ControlKey", gestures.skipping(now(), scene), "dialogue-skip");
     if (current !== "play" || joystickMode(settings().touchMovementMode)) {
       movement.clear();
       releaseArrows();
@@ -163,6 +173,7 @@ export function createTouchBridge({ keys, surface, options, shift, now = () => p
     gestures.cancel();
     movement.clear();
     releaseArrows();
+    applyMenuHold(null);
     keys.setKey("ShiftKey", false, "touch-second");
     keys.setKey("ControlKey", false, "dialogue-skip");
   }

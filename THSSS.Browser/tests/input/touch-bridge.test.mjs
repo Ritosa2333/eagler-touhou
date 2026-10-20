@@ -60,6 +60,11 @@ test("shooting stays on until the fire latch is cleared", () => {
 test("a play drag moves along the path and a joystick uses the launcher axis", () => {
   const play = harness({ touchMovementMode: "touch", touchSensitivity: 100 });
   play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
+  play.bridge.direct({ type: "move", id: 1, x: 0.22, y: 0.5 });
+  play.bridge.presented();
+  assert.equal(play.keys.isDown("Right"), true);
+  play.bridge.direct({ type: "up", id: 1, x: 0.22, y: 0.5 });
+  play.bridge.direct({ type: "down", id: 1, x: 0.2, y: 0.5 });
   play.bridge.direct({ type: "move", id: 1, x: 0.3, y: 0.5 });
   play.bridge.direct({ type: "up", id: 1, x: 0.3, y: 0.5 });
   play.bridge.presented();
@@ -78,16 +83,41 @@ test("a play drag moves along the path and a joystick uses the launcher axis", (
   assert.equal(stick.keys.isDown("Right"), false);
 });
 
+test("a screen tap confirms once and does not hold Z", () => {
+  const unknown = harness({ touchMovementMode: "touch" }, null);
+  unknown.bridge.controls({ fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+  assert.equal(unknown.keys.isDown("Z"), false);
+  unknown.bridge.direct({ type: "down", id: 1, x: 0.4, y: 0.4 });
+  unknown.at(40);
+  unknown.bridge.direct({ type: "up", id: 1, x: 0.4, y: 0.4 });
+  assert.equal(unknown.keys.isDown("Z"), true);
+  unknown.bridge.presented();
+  assert.equal(unknown.keys.isDown("Z"), false);
+
+  const play = harness({ touchMovementMode: "touch" }, "play");
+  play.bridge.controls({ fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 });
+  play.bridge.direct({ type: "down", id: 1, x: 0.4, y: 0.4 });
+  play.at(40);
+  play.bridge.direct({ type: "up", id: 1, x: 0.4, y: 0.4 });
+  play.bridge.presented();
+  assert.equal(play.keys.isDown("Z"), true);
+});
+
 test("menu tap, swipe, and play double-tap use one edge each", () => {
   const menu = harness({ doubleTapBombEnabled: true }, "menu");
   menu.bridge.direct({ type: "down", id: 1, x: 0.5, y: 0.5 });
-  menu.bridge.direct({ type: "move", id: 1, x: 0.5, y: 0.7 });
+  menu.bridge.direct({ type: "move", id: 1, x: 0.5, y: 0.56 });
   assert.equal(menu.keys.isDown("Down"), true);
   menu.bridge.presented();
+  assert.equal(menu.keys.isDown("Down"), true);
+  menu.bridge.direct({ type: "move", id: 1, x: 0.5, y: 0.52 });
   assert.equal(menu.keys.isDown("Down"), false);
+  menu.bridge.direct({ type: "move", id: 1, x: 0.5, y: 0.7 });
   menu.bridge.presented();
-  assert.equal(menu.keys.isDown("Down"), false);
+  assert.equal(menu.keys.isDown("Down"), true);
   menu.bridge.direct({ type: "up", id: 1, x: 0.5, y: 0.7 });
+  assert.equal(menu.keys.isDown("Down"), false);
+  assert.equal(menu.keys.isDown("Z"), false);
 
   menu.at(1000);
   menu.bridge.direct({ type: "down", id: 2, x: 0.2, y: 0.2 });

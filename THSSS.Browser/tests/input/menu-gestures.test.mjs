@@ -2,16 +2,33 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createMenuGestures } from "../../wwwroot/host/input/menu-gestures.mjs";
 
-test("a menu swipe pulses one direction and a stationary tap confirms", () => {
+test("a menu swipe holds its direction and a stationary tap confirms", () => {
   const gestures = createMenuGestures();
   gestures.down(1, 0.5, 0.5, 0);
-  const swipe = gestures.move(1, 0.5, 0.7, "menu");
-  assert.equal(swipe.pulse, "Down");
-  assert.equal(gestures.move(1, 0.5, 0.9, "menu").pulse, null);
+  gestures.move(1, 0.5, 0.7);
+  assert.equal(gestures.held("menu"), "Down");
+  gestures.move(1, 0.5, 0.52);
+  assert.equal(gestures.held("menu"), null);
+  gestures.move(1, 0.5, 0.9);
+  assert.equal(gestures.held("menu"), "Down");
   assert.deepEqual(gestures.up(1, 0.5, 0.9, 100, "menu", true), []);
 
   gestures.down(2, 0.4, 0.4, 1000);
   assert.deepEqual(gestures.up(2, 0.41, 0.41, 1100, "menu", true), ["Z"]);
+
+  gestures.down(3, 0.3, 0.3, 2000);
+  gestures.move(3, 0.3, 0.34);
+  assert.equal(gestures.held("menu"), null);
+  assert.deepEqual(gestures.up(3, 0.3, 0.34, 2100, null, true), ["Z"]);
+  gestures.down(4, 0.3, 0.3, 3000);
+  assert.deepEqual(gestures.up(4, 0.3, 0.3, 3100, "play", false), []);
+
+  gestures.down(5, 0.5, 0.4, 4000);
+  gestures.move(5, 0.5, 0.44);
+  assert.equal(gestures.held("menu"), null);
+  gestures.move(5, 0.5, 0.46);
+  assert.equal(gestures.held("menu"), "Down");
+  assert.deepEqual(gestures.up(5, 0.5, 0.46, 4200, "menu", false), []);
 });
 
 test("two fingers go back and a play double-tap bombs once", () => {
