@@ -58,7 +58,9 @@ void HeadsUpDisplay::update(const HudFrame& f){
 void HeadsUpDisplay::draw_range(const HudFrame& f,u32 first,u32 count,bool rotated,bool relative,bool zero_z){
     for(u32 n=first;n<first+count;++n){auto& a=animations[n];Vec3 p=a.pos2;if(relative){p.x=f.player.x+p.x;p.y=f.player.y+p.y;}
         const Vec3 screen=f.geometry.to_screen(p);a.pos.x=screen.x;a.pos.y=screen.y;if(zero_z)a.pos.z=0;
-        if(first==39&&charge_active)a.pos.y-=24;output.hud_animation(a,rotated);}
+        if(first==39&&charge_active)a.pos.y-=24;
+        if(std::find(hud_gauge_slots.begin(),hud_gauge_slots.end(),n)!=hud_gauge_slots.end())output.hud_gauge(side,n,a,rotated);
+        else output.hud_animation(a,rotated);}
 }
 void HeadsUpDisplay::draw(const HudFrame& f){
     output.begin_hud(side);draw_range(f,0,11,true,false,true);draw_range(f,11,5,true,false,true);draw_range(f,16,7,true,false,true);
