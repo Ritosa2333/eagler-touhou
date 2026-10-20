@@ -3,26 +3,31 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {emscripten} from '../scripts/toolchain.mjs';
+import {runtimeSources} from '../scripts/runtime-sources.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 const output=path.join(root,'artifacts/stage-flow-tests');
 fs.mkdirSync(output,{recursive:true});
-const exe=path.join(output,'stage-flow.exe');
-const compiler=process.env.TH12_NATIVE_CXX||'C:/mingw64/bin/g++.exe';
-// Link fresh changed translation units against the existing same-runtime
-// native library; this avoids rebuilding unrelated scene/graphics work.
-const compiled=spawnSync(compiler,['-std=c++20','-O1','-Isrc',
-  'tests/native/stage-flow.cpp','src/game/GameSession.cpp','src/game/StageFlow.cpp',
-  'src/game/Dialogue.cpp','src/game/SpellHistory.cpp','src/wasm/Exports.cpp','artifacts/native-cpp/libth12_runtime.a',
-  '-o',exe],{cwd:root,encoding:'utf8'});
-assert.equal(compiled.status,0,compiled.stderr||compiled.stdout);
+const exe=path.join(output,'stage-flow.mjs');
+const runner=path.join(output,'run-stage-flow.mjs');
+fs.writeFileSync(runner,"import create from './stage-flow.mjs'; await create({arguments:process.argv.slice(2)});\n");
+const {python,compiler}=emscripten(root);
+// Build the complete current runtime: no pre-existing native library or
+// platform-specific C++ installation is needed by this behavioral fixture.
+const compiled=spawnSync(python,[compiler,'-std=c++20','-O1','-Isrc','-DTH12_DIAGNOSTIC=0',
+  'tests/native/stage-flow.cpp',...runtimeSources(root),'-o',exe,'-sENVIRONMENT=node',
+  '-sEXIT_RUNTIME=1','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576'],
+  {cwd:root,encoding:'utf8',windowsHide:true,env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache')}});
+assert.equal(compiled.status,0,compiled.error?.message||compiled.stderr||compiled.stdout||'Fixture compilation failed');
 test('full-game transitions preserve resources before main birth and keep standalone behavior isolated',()=>{
-  const r=spawnSync(exe,[],{cwd:root,encoding:'utf8'});
+  const r=spawnSync(process.execPath,[runner],{cwd:root,encoding:'utf8'});
   assert.equal(r.status,0,r.stderr||r.stdout);
+  assert.match(r.stdout,/Atomic main birth/);
 });
 test('Continue resources match selected original constructor and continue arithmetic samples',()=>{
   const native=JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/stage-flow-resources-original.json')));
   for(const n of native.continue){
-    const r=spawnSync(exe,[String(n.stage),String(n.difficulty),String(n.beforeCount),'sample','sample'],{cwd:root,encoding:'utf8'});
+    const r=spawnSync(process.execPath,[runner,String(n.stage),String(n.difficulty),String(n.beforeCount),'sample','sample'],{cwd:root,encoding:'utf8'});
     assert.equal(r.status,0,r.stderr||r.stdout);
     assert.deepEqual(r.stdout.trim().split(/\s+/).map(Number),[
       n.count,n.scoreStored,n.power,n.lives,n.bombs,n.piv,n.graze,

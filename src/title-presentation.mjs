@@ -107,7 +107,9 @@ export class TitlePresentation {
       if(state.scene==='pause-confirm'){
         popup.interrupt(15+state.selection);
       }else{
-        popup.interrupt(3,{immediate:true});
+        //432b45 queues only7+row. The other rows take their authored
+        //fallback IRQ3; resetting the selected row starts a grey color
+        //track that overwrites its immediate pink highlight for five ticks.
         const row=state.context?.mode==='replay'&&state.selection===2?3:state.selection;
         popup.interrupt((event.type==='ready'?17:7)+row);
         for(let i=0;i<state.choices.length;i++)if(state.choices[i].disabled)popup.interrupt(14,{script:state.scene==='continue'?107+i:state.scene==='result-menu'?113+i:state.context?.mode==='replay'?94+(i===2?3:i):90+i});

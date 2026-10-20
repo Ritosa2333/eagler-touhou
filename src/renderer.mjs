@@ -5,7 +5,7 @@ import {readCoreSpell,spellTextDescriptors,bossTimerDescriptors,spellResultDescr
 import {readCoreUfo,ufoTextPoses,ufoTextRenderPriority} from './ufo-presentation.mjs';
 import {asciiGlyphs} from './ascii-presentation.mjs';
 import {fpsTextDescriptors} from './fps-presentation.mjs';
-import {stageClearText} from './stage-clear-presentation.mjs';
+import {stageClearText,stageTransitionPose} from './stage-clear-presentation.mjs';
 import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
 import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
 import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
@@ -392,6 +392,7 @@ export class Renderer {
       poses.push({nativeText:text,drawPriority:priority,clip:priority===22?2:0,owner:attached?ufo.enemyId:0,presentationKey:attached?'ufo-countdown:'+ufo.enemyId:undefined,order:poses.length});}
     for(const text of fpsTextDescriptors(fps))poses.push({nativeText:text,drawPriority:text.drawPriority,clip:0,order:poses.length});
     if(fps.stageClear){const text=stageClearText(h,logicalPoses,fps.practice);if(text)poses.push({nativeText:text,drawPriority:69,clip:0,order:poses.length});}
+    const transition=stageTransitionPose(logicalBackground?.transition);if(transition)poses.push(transition);
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options,owner=Number.isInteger(sampling.entityId)?sampling.entityId:0;let child=0;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,owner,presentationKey:owner?'sample:'+owner+':'+id+':'+child++:undefined,order:poses.length});};
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;

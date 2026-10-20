@@ -2,6 +2,7 @@
 #include "CameraEffects.hpp"
 #include "GameState.hpp"
 #include "LaserSnapshot.hpp"
+#include "StageFlow.hpp"
 
 namespace th12 {
 // Read-only, semantic candidate state. This is not original-game evidence.
@@ -150,7 +151,17 @@ void snapshotBackground(std::ostream& out, bool full = false) {
   out << "{\"frame\":" << backgroundFrame << ",\"visible\":" << backgroundVisible
       << ",\"loaded\":" << (!stageProgram.commands.empty()) << ",\"flags\":" << s.flags
       << ",\"clock\":" << s.clock << ",\"previousClock\":" << s.previousClock << ",\"pc\":" << s.pc
-      << ",\"callbackCount\":" << s.callbackCount << ",\"camera\":{\"position\":";
+      << ",\"callbackCount\":" << s.callbackCount << ",\"transition\":";
+  const auto& flow = fullGameFlow;
+  if (flow.status == FullGameStatus::StageClear && flow.nextStage && flow.clearAge >= flow.clearDelay)
+    out << "{\"out\":true,\"age\":" << flow.clearAge - flow.clearDelay << '}';
+  else if (flow.status == FullGameStatus::NextStage)
+    out << "{\"out\":true,\"age\":30}";
+  else if (flow.status == FullGameStatus::Playing && flow.entryFadeAge < 30)
+    out << "{\"out\":false,\"age\":" << flow.entryFadeAge << '}';
+  else
+    out << "null";
+  out << ",\"camera\":{\"position\":";
   snapshotArray(out, c.position);
   out << ",\"direction\":";
   snapshotArray(out, c.direction);

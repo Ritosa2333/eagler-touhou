@@ -16,3 +16,10 @@ export function stageClearText(h,poses,practice=false){
   const alpha=Math.max(0,Math.min(255,Math.round(clear.a.alpha*255)));
   return {text:stageClearAward(h,practice).toLocaleString('en-US'),font:3,x:224,y:200,z:0,scaleX:1,scaleY:1,alignX:0,alignY:0,colorARGB:((alpha<<24)|0xffffff)>>>0};
 }
+export function stageTransitionPose(transition){
+  if(!transition)return null;
+  //4057e0 ->452a60(2,30,...,11),452470: black field rectangle at draw11.
+  //451ed0/4523e0 use byte alpha with a linear30-tick timer.
+  const age=Math.max(0,Math.min(30,transition.age)),alpha=transition.out?Math.trunc(255*age/30):Math.trunc(255-255*age/30);
+  return {rectangle:{bounds:[32,16,416,464],argb:(alpha<<24)>>>0},drawPriority:11,clip:1};
+}
