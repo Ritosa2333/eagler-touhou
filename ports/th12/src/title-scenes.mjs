@@ -75,7 +75,7 @@ export class TitleScenes {
       case 'key-config':s.choices=['Shoot','Bomb','Focus','Pause','Skip','Default','Quit'].map((v,i)=>choice(v,i));break;
       case 'manual':s.choices=['操作方法','ゲームの進め方','ベントラーとUFO','スペルカード','リプレイと記録'].map((v,i)=>choice(v,i));break;
       case 'quit':s.choices=[choice('Return','return'),choice('Quit','quit')];break;
-      case 'pause':s.choices=[choice('Return to Game','resume'),choice('Return to Title','title'),...(s.context?.mode==='replay'?[choice('Stop Replay','stop-replay')]:[choice('Save Replay and Quit','save-exit',s.context?.canSaveReplay===false),choice('Retry','retry')])];break;
+      case 'pause':s.choices=[choice('Return to Game','resume'),choice('Return to Title','title'),...(s.context?.mode==='replay'?[choice('Replay Again','replay-again')]:[choice('Save Replay and Quit','save-exit',s.context?.canSaveReplay===false),choice('Retry','retry')])];break;
       case 'pause-confirm':s.choices=[choice('Yes','yes'),choice('No','no')];break;
       case 'continue':s.choices=[choice('Continue','continue',s.context?.canContinue===false),choice('Return to Title','title'),choice('Save Replay','save-exit',s.context?.canSaveReplay===false),choice('Retry','retry')];break;
       case 'result-menu':s.choices=[choice('Return to Title','title'),choice('Save Replay','save-exit',s.context?.canSaveReplay===false),choice('Retry','retry')];break;
@@ -346,7 +346,10 @@ export class TitleScenes {
     }
   }
   pauseAction(action,context) {
-    if(action==='retry'){
+    if(action==='replay-again'){
+      this.enter('playing',0,{readyAt:0});this.emit('playReplay',{id:this.run.replayId,stage:this.run.stage});
+    }
+    else if(action==='retry'){
       // Result/pause context uses practice as a boolean. The running selection
       // owns the parameter object used to restart the same practice session.
       const run={...this.run,...context,practice:this.run.practice},stage=run.mode==='practice'?run.stage:run.mode==='extra'?7:1;

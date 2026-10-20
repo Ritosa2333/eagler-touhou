@@ -111,6 +111,7 @@ void tickBullets();
 void tickPlayer(int held, int pressed);
 void tickBomb();
 void tick(int held, int pressed);
+void tickGameplay(int held, int pressed);
 void tickMessage(int held, int pressed);
 void tickSpell();
 void configurePlayerAnimations();

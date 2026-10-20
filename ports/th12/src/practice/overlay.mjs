@@ -27,8 +27,8 @@ export class PracticeOverlay {
     if(this.core._th12_practice_ui_init(this.font,bytes.length,localeIndex(this.locale))!==1){this.core._free(this.font);this.font=0;throw Error('Purple THPrac initialization failed');}
     this.initialized=true;this.renderer=new ImGuiRenderer(this.core,this.root);this.root.hidden=false;
   }
-  configure({enabled=this.enabled,locale=this.locale}={}){
-    this.enabled=!!enabled;this.locale=locale;this.bridge.setEnabled(this.enabled);this.root.hidden=!this.enabled;
+  configure({enabled=this.enabled,coreEnabled=enabled,locale=this.locale}={}){
+    this.enabled=!!enabled;this.locale=locale;this.bridge.setEnabled(!!coreEnabled);this.root.hidden=!this.enabled;
     if(!this.enabled)this.cancel();
   }
   layout(){const rect=this.canvas.getBoundingClientRect();Object.assign(this.root.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});}

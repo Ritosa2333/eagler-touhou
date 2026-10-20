@@ -43,10 +43,10 @@ export function readCoreBackground(core){
 const argbRgba=(argb,alpha=1)=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255*alpha];
 export function beamSegmentVertices(x,y,angle,length,width,start,end){const dx=Math.cos(angle)*length/2,dy=Math.sin(angle)*length/2,nx=-Math.sin(angle)*width/2,ny=Math.cos(angle)*width/2;return [{x:x-dx-nx,y:y-dy-ny,color:start},{x:x-dx+nx,y:y-dy+ny,color:start},{x:x+dx+nx,y:y+dy+ny,color:end},{x:x+dx-nx,y:y+dy-ny,color:end}];}
 export function dialogueMetrics(width=354,height=17){return {width,height,sourceWidth:Math.min(1024,2*width+22),sourceHeight:36};}
-export function messageTextPoses(message,logicalPoses,atlases){
+export function messageTextPoses(message,logicalPoses,atlases,{logicalText=false}={}){
   const roots=logicalPoses.filter(p=>p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4),colors=[0xf8f08f,0x8088ff,0xd8d8d8],records=message?.textRecords??(message?.textHex??[]).map(textHex=>({textHex,offset:0,spacing:0,style:(message.flags>>1)&1,color:colors[message.speaker]??colors[2]}));
   const make=(p,slot)=>{let record=records[slot];if(!record?.textHex||!p.a.visible)return null;const translation=localizedHex('dialogue',record.textHex,{entry:message?.entry,offset:record.offset,spacing:record.spacing}),text=translation?.text??originalMessageHex(record.textHex),sprite=atlases.text.sprites[slot];if(translation)record={...record,offset:translation.offset??record.offset,spacing:translation.spacing??record.spacing,localizedWidths:translation.byteWidths,localizedRuby:translation.ruby};return {...p,dialogue:true,text,record,metrics:dialogueMetrics(sprite.w,sprite.h)};};
-  if(roots.length)return roots.map(p=>make(p,p.a.sprite)).filter(Boolean);
+  if(roots.length||logicalText)return roots.map(p=>make(p,p.a.sprite)).filter(Boolean);
   if(!message?.active)return [];
   // Older cores have no logical text VMs. Coordinates below come from the
   // retail text scripts and MSG engine offset; modern cores use Pose above.
@@ -403,7 +403,7 @@ export class Renderer {
     const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
     if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
     const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
-    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
+    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases,{logicalText:!!core._th12_anm_draw}),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     for(const text of spellTextDescriptors(spell,logicalPoses,{disableMaster:fps.disableMaster}))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:text.drawFlag===0?69:45,clipped:false,order:poses.length});
     for(const text of [...bossTimerDescriptors(bossHud),...spellResultDescriptors(spell,logicalPoses)])poses.push({nativeText:text,drawPriority:44,clip:2,order:poses.length});
     const ufo=readCoreUfo(core);
@@ -426,7 +426,7 @@ export class Renderer {
       else if(kind===3)add('bullet',animation>=165?animation:166+color,age,x,y,angle,scale,null,options);
       else {const bank=v[k+4],name=bank===0?'bullet':bank===1?'enemy':bank===2?'stgenm'+stageSuffix:bank===3?'stgenm'+stageSuffix+'m':null;if(name&&this.atlases[name])add(name,animation,age,x,y,angle,scale,null,options);}
     }
-    if(message?.active){
+    if(message?.active&&!core._th12_anm_draw){
       const events=message.events??[],windowEvent=[...events].reverse().find(e=>e[0]===3);
       // Native MSG opcode3 creates front script52. Use that original animation
       // while the message layer has not yet been registered as a core VM.
@@ -434,7 +434,8 @@ export class Renderer {
     }
     // The frame itself belongs at layer21/23. Painting it after every VM
     // hides the UFO panel and FontManager's right-side counters.
-    add('front',0,frame,0,0,0,1,null,{alpha:1,clipped:false});
+    //41d560 reinitializes stage HUD slots, but the front0 frame survives.
+    add('front',0,fps.hudAge??frame,0,0,0,1,null,{alpha:1,clipped:false});
     for(const rectangle of bossHealthRectangles(bossHud))poses.push({rectangle,drawPriority:44,clip:2,order:poses.length});
     poses.push({hudCounters:true,drawPriority:69,clipped:false,order:poses.length});
     for(let i=0;i<8;i++){add('front',13+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[5],h[21])});add('front',21+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[6],h[22])});}

@@ -16,7 +16,7 @@ const {python,compiler}=emscripten(root);
 // platform-specific C++ installation is needed by this behavioral fixture.
 const compiled=spawnSync(python,[compiler,'-std=c++20','-O1','-Isrc','-DTH12_DIAGNOSTIC=0',
   'tests/native/stage-flow.cpp',...runtimeSources(root),'-o',exe,'-sENVIRONMENT=node',
-  '-sEXIT_RUNTIME=1','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576'],
+  '-sEXIT_RUNTIME=1','-sNODERAWFS=1','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576'],
   {cwd:root,encoding:'utf8',windowsHide:true,env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache')}});
 assert.equal(compiled.status,0,compiled.error?.message||compiled.stderr||compiled.stdout||'Fixture compilation failed');
 test('full-game transitions preserve resources before main birth and keep standalone behavior isolated',()=>{
@@ -36,4 +36,9 @@ test('Continue resources match selected original constructor and continue arithm
     assert.deepEqual(n.inventory,[0,0,0,0,0]);
   }
   for(const n of native.stageRngBoundary){assert.equal(n.seed,n.recordedSeed);assert.equal(n.calls,0);}
+});
+
+test('retail post-boss MSG retires subtitles while Stage Clear keeps player and bullets moving',{skip:!process.env.TH12_TEST_ASSETS},()=>{
+  const r=spawnSync(process.execPath,[runner,path.resolve(process.env.TH12_TEST_ASSETS)],{cwd:root,encoding:'utf8'});
+  assert.equal(r.status,0,r.stderr||r.stdout);
 });

@@ -47,7 +47,7 @@ function notice(text=''){$('notice').textContent=text;}
 function fail(error){if(fatalError)return;fatalError=true;busy=true;audio.musicPaused=true;audio.pendingTrack=null;++audio.request;audio.music?.stop();audio.effects?.stop();clearKeys();notice('运行中断：'+error.message);console.error(error);emit({event:'error',message:error.message});}
 function clearKeys({touchToo=true,practiceToo=true}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel();if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);resetGamePresentation();}
 function resetGamePresentation(){previousPresentation=currentPresentation=null;renderer?.resetPresentation();}
-function gamePresentationOptions(){return {currentFps:meter.value,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
+function gamePresentationOptions(){return {currentFps:meter.value,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
 function captureGamePresentation(){if(!session||!ready)return;previousPresentation=currentPresentation;currentPresentation=renderer.capturePresentation(core,gamePresentationOptions());}
 function drawGamePresentation(interpolate=false){if(!currentPresentation)captureGamePresentation();if(currentPresentation)renderer.renderPresentation(previousPresentation,currentPresentation,interpolate&&!runtimeOptions.limitPresentationTo60?Math.min(1,accumulator/logicalStep):1);}
 function updatePracticeUI(){
@@ -69,8 +69,8 @@ function initializeReplayStage(replay,part){
 }
 function touchState(){
   const scene=model?.state.scene,playing=ready&&!busy&&session&&scene==='playing';
-  const h=playing?hud():null,message=playing?readJSON('message'):null,flow=playing?readJSON('stage_flow'):null;
-  const kind=playing?(session.replay?'replay':flow.status==='stage-clear'||message?.active&&(message.flags&1||message.wait>0)?'dialogue':'game'):'menu';
+  const h=playing?hud():null,message=playing?readJSON('message'):null;
+  const kind=playing?(session.replay?'replay':message?.active&&(message.flags&1||message.wait>0)?'dialogue':'game'):'menu';
   const instance=playing?`${session.stage}:${core._th12_player_instance()}`:'';
   return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,ready:!!playing&&core._th12_player_state()===1,
     x:h?Math.round(h[1]*128):0,y:h?Math.round(h[2]*128):0,
@@ -198,7 +198,7 @@ async function begin(settings,replay=null,id=null){
     if(replay?.extension?.damage&&!runtimeOptions.thpracEnabled)throw Error('这份录像带有 THPrac 跨关状态，请在启动器启用 THPrac');
     practiceBridge.reset();practiceBridge.setReplay(!!replay);
     damageSources.begin({replay:!!replay,practice:settings.mode==='practice'||!!replay?.practice,character:settings.character,shot:settings.shot,metadata:replay?.extension?.damage});
-    session={...settings,stage,replay,id,cursor:0,previous:0,clock:0,playTicks:0,resultKey:null,spellCount:0,continues:0,transitioning:false,clearRecorded:false,resultRecorded:false,unlimitedMovement:!!replay?.extension?.unlimited,assisted:!!replay?.extension?.practice?.assisted};
+    session={...settings,stage,replay,id,cursor:0,previous:0,clock:0,playTicks:0,hudAge:0,resultKey:null,spellCount:0,continues:0,transitioning:false,clearRecorded:false,resultRecorded:false,unlimitedMovement:!!replay?.extension?.unlimited,assisted:!!replay?.extension?.practice?.assisted};
     if(replay){const part=replay.stages.find(s=>s.number===stage);if(!part)throw Error('录像不包含关卡');initializeReplayStage(replay,part);}
     else{
       const seed=crypto.getRandomValues(new Uint16Array(1))[0];
@@ -209,7 +209,7 @@ async function begin(settings,replay=null,id=null){
       profile.recordPlayStart(settings.character,settings.shot,settings.difficulty);
       profile.recordStageEntry(settings.character,settings.shot,settings.difficulty,stage);
     }
-    model.run={...settings};audio.musicSerial=core._th12_music_serial();
+    model.run={...settings,...(replay?{replayId:id}:{})};audio.musicSerial=core._th12_music_serial();
     // Native4221bd and422928 gate the road/Boss slots on Demo flag20.
     // The title stream continues at its current playhead throughout the Demo.
     if(settings.mode!=='demo'){
@@ -289,7 +289,7 @@ function gameTick(input){
     ({held,pressed}=recorded);const delta=session.replay.motion?.(session.stage,session.cursor);motion=delta?{mode:4,x:delta[0],y:delta[1]}:null;session.cursor++;
   }
   core._th12_motion(motion?.mode??0,motion?.x??0,motion?.y??0);
-  core._th12_tick(held,pressed);session.clock++;
+  core._th12_tick(held,pressed);session.clock++;session.hudAge++;
   if(!session.replay){const resolved=new Int32Array(core.HEAPU8.buffer,core._th12_practice_input(),2);held=resolved[0];pressed=resolved[1];session.recorder?.pushInput({held,pressed,released:session.previous&~held},meter.value||60);}
   session.previous=held;
   if(runtimeOptions.replayViewer)viewerMusic.ticks++;
@@ -436,9 +436,10 @@ function frame(now){
       replayWorkspace?.update(elapsed,now);logicalStep=TICK;accumulator=(replayWorkspace?.credit??0)*TICK;
       if(loadingScreen.waiting)loadingScreen.renderBase(meter.value);else{present();loadingScreen.renderOverlay();}
     }else if(ready&&!busy){
-      const toolSpeed=runtimeOptions.thpracEnabled&&session&&model.state.scene==='playing',fast=keyDown(profile.settings.keyMap.skip)||keyDown('ControlRight')||!!(previousPadUI&512);
-      const rate=!toolSpeed&&session?.replay&&model.state.scene==='playing'&&fast?4:1;
-      logicalStep=toolSpeed?1000*practiceBridge.interval({replay:!!session.replay,fast,slow:keyDown('ShiftLeft')||keyDown('ShiftRight'),debug:keyDown('Space')}):TICK;accumulator+=elapsed*rate;
+      const toolSpeed=runtimeOptions.thpracEnabled&&session&&model.state.scene==='playing',fast=keyDown(profile.settings.keyMap.skip)||keyDown('ControlRight')||!!(previousPadUI&512),shoot=keyDown(profile.settings.keyMap.shoot)||!!(previousPadUI&1),slow=keyDown(profile.settings.keyMap.focus)||keyDown('ShiftRight')||!!(previousPadUI&8);
+      const rate=!toolSpeed&&session?.replay&&model.state.scene==='playing'&&fast&&!shoot?4:1;
+      logicalStep=toolSpeed?1000*practiceBridge.interval({replay:!!session.replay,fast,slow,debug:keyDown('Space')}):session?.replay&&model.state.scene==='playing'&&slow?TICK*4:TICK;
+      if(session?.replay&&model.state.scene==='playing'&&shoot)logicalStep=Math.min(logicalStep,TICK/4);accumulator+=elapsed*rate;
       for(let count=0;accumulator>=logicalStep&&count<Math.min(240,Math.max(8,Math.ceil(TICK/logicalStep)*8)*rate)&&!busy;count++){accumulator-=logicalStep;captureThisTick=accumulator<2*logicalStep;tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
       if(loadingScreen.waiting)loadingScreen.renderBase(meter.value);else{present();loadingScreen.renderOverlay();}
     }else if(ready){present();loadingScreen.renderOverlay();}
@@ -511,7 +512,8 @@ async function initialize(){
   }));
   for(const path of await store.list())if(/^\/savesth12\/replay\/[^/]+\.rpy$/i.test(path))try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);corpus=corpus.filter(f=>f.id!==id);corpus.push(replayMetadata(r,{id}));}catch(error){console.warn(error.message);}
   practiceBridge=new PracticeBridge(core);damageSources=new DamageSourceBridge(core);practiceUI=new PracticeOverlay({bridge:practiceBridge,canvas,onError:fail,onMenuAction:action=>model.practiceAction(action),onRetry:()=>{model.openPause(resultData(false));model.state.readyAt=0;model.quickRetry();}});
-  practiceUI.configure({enabled:!!runtimeOptions.thpracEnabled&&!runtimeOptions.replayViewer,locale:runtimeOptions.thpracLocale??'ja-JP'});
+  if(runtimeOptions.replayViewer)runtimeOptions={...runtimeOptions,thpracEnabled:true};
+  practiceUI.configure({enabled:!!runtimeOptions.thpracEnabled&&!runtimeOptions.replayViewer,coreEnabled:!!runtimeOptions.thpracEnabled,locale:runtimeOptions.thpracLocale??'ja-JP'});
   await practiceUI.initialize(assets.fonts);
   if(runtimeOptions.thpracEnabled&&!practiceBridge.snapshot().enabled)throw Error('当前构建未包含 THPrac，请重新生成完整适配版');
   model=new TitleScenes({profile,corpus,settings:profile.settings,musicTracks:resources.musicComments,practiceEnabled:!!runtimeOptions.thpracEnabled,practiceLocale:runtimeOptions.thpracLocale??'ja-JP'});presentation=new TitlePresentation(renderer,resources,profile);
