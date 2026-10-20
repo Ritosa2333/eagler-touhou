@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { appendRttSample, compactDiagnosticText, compactNetplayPeerStatus, compactRendererLabel, describeBrowserEnvironment, describeNetplayConnection, runtimeDiagnosticsVisibleByDefault, selectedRtcPair }
+import { appendRttSample, compactDiagnosticText, compactNetplayPeerStatus, compactRendererLabel, describeBrowserEnvironment, describeNetplayConnection, describeNetplayPeerStatus, runtimeDiagnosticsVisibleByDefault, selectedRtcPair }
   from "../.cache/build/browser/assets/launcher/runtime-diagnostics-model.mjs";
 
 assert.equal(runtimeDiagnosticsVisibleByDefault(true, true), true);
@@ -48,6 +48,11 @@ assert.equal(compactNetplayPeerStatus({ player: 1, route: "direct", rttMs: 42.4,
 assert.equal(compactNetplayPeerStatus({ player: 2, route: "turn", rttMs: 55.2 }), "P3 turn 55ms");
 assert.equal(compactNetplayPeerStatus({ player: 1, route: "relay" }), "P2 relay --ms");
 assert.equal(compactNetplayPeerStatus({ player: 1, route: "direct", connected: false, rttMs: 20 }), "P2 reconnecting");
+assert.equal(compactNetplayPeerStatus({ player: 1, route: "turn", rttMs: null, variationMs: null }), "P2 turn --ms");
+assert.equal(compactNetplayPeerStatus({ player: 1, route: "turn", rttMs: 50, variationMs: null }), "P2 turn 50ms");
+assert.deepEqual(describeNetplayPeerStatus({player: 1, route: 'turn', rttMs: 50.2, variationMs: 9.6}), {
+  label: 'P2', route: 'turn', reconnecting: false, rttMs: 50, variationMs: 10, text: 'P2 turn 50/10ms',
+});
 
 const rtcPeers = new Map([
   [1, { pc: { connectionState: "connected" }, inputOpen: true, controlOpen: true }],

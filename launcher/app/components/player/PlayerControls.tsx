@@ -24,6 +24,7 @@ import { playerUtilityIcons } from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
+import {NetplayPlayerStatus} from './NetplayPlayerStatus';
 import {PlayerStage} from './PlayerSurface';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
@@ -61,8 +62,9 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
       'netplay-player-status-visible',
       network?.playerStatusVisible === true,
     );
-    return () => player?.classList.remove('netplay-player-status-visible');
-  }, [network?.playerStatusVisible]);
+    player?.style.setProperty('--netplay-status-lines', String(network?.playerStatus.length || 1));
+    return () => {player?.classList.remove('netplay-player-status-visible');player?.style.removeProperty('--netplay-status-lines');};
+  }, [network?.playerStatusVisible, network?.playerStatus.length]);
   const room = useSyncExternalStore(
     session.room.service.subscribe,
     session.room.service.getSnapshot,
@@ -113,18 +115,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
           />
         </RuntimeDiagnostics>
       )}
-      <aside
-        className="netplay-player-status"
-        id="netplayPlayerStatus"
-        aria-label={t('multiplayer.connection')}
-        hidden={!network?.playerStatusVisible}
-      >
-        {network?.playerStatus.map((row, index) => (
-          <span key={index} title={row.title}>
-            {row.text}
-          </span>
-        ))}
-      </aside>
+      <NetplayPlayerStatus visible={network?.playerStatusVisible === true} rows={network?.playerStatus ?? []}/>
       </PlayerInformationColumn>
       {transferHost ? createPortal(transferPanel, transferHost) : transferPanel}
       <span id="playerStatus" className="visually-hidden" role="status">
