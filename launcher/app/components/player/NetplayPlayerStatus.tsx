@@ -2,7 +2,7 @@ import type {GameplayNetworkSnapshot} from '../../models/gameplay-network';
 import {useLocale} from '../../i18n';
 import './netplay-player-status.css';
 
-/** Present variation as a small subscript following the primary RTT. */
+/** Keep variation small and baseline-aligned with the primary RTT. */
 export function NetplayPlayerStatus({visible, rows}: {visible: boolean; rows: GameplayNetworkSnapshot['playerStatus']}) {
   const {t} = useLocale();
   const latency = t('diagnostics.roundTripLatency'), variation = t('diagnostics.latencyVariation');
@@ -17,6 +17,7 @@ export function NetplayPlayerStatus({visible, rows}: {visible: boolean; rows: Ga
           </span>
           {row.rttMs !== null && <span className="netplay-peer-variation" title={`${variation} ${row.variationMs ?? '--'}ms`}>
             <span className="visually-hidden">{variation} </span>
+            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M1 10h3l2-5 3 10 3-8 2 3h5"/></svg>
             <span>{row.variationMs ?? '--'}<small>ms</small></span>
           </span>}
         </span>}
