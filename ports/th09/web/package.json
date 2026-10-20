@@ -15,7 +15,6 @@
     "test:server": "node --test tests/server/*.test.mjs",
     "test:rollback": "node tests/multiplayer/run-tests.mjs",
     "test:rollback-output-history": "node tests/multiplayer/output-history-browser.mjs",
-    "test:confirmed-gauge": "node tests/multiplayer/confirmed-gauge-browser.mjs",
     "test:web": "node tests/browser/release-check.mjs",
     "test:versus-rules": "node tests/multiplayer/versus-rules.mjs"
   },

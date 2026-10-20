@@ -15,7 +15,6 @@ struct GameMedia {
     virtual void encountered(i32)=0;
     virtual void defeated(i32)=0;
     virtual void overlay()=0;
-    virtual const AnmVm* confirmed_gauge(i32,u32){return nullptr;}
 };
 class GamePresentation final:public WorldPresentation,public AsciiOutput {
     ZunGraphics& backend;GameMedia& media;
@@ -27,7 +26,6 @@ public:
     static Viewport viewport(i32 side){return side<2?Viewport{u32(16+320*side),16,288,448,0,1}:Viewport{};}
     void begin_field(i32)override;
     void animation(AnmVm&,BattleSprite)override;
-    void gauge_animation(i32,u32,AnmVm&,BattleSprite)override;
     void hitbox(i32 side,AnmLoaded* file,const Vec3& position,i32 frame)override{
         if(!file){hitbox_displays[side].reset();return;}
         auto marker=hitbox_displays[side].sample(*file,position,frame);renderer.draw_2d(marker);

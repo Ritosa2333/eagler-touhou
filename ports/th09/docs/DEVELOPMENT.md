@@ -44,7 +44,3 @@ npm --prefix launcher run dev:workspace
 ## 房间菜单返回
 
 正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。
-
-## 回滚蓄力显示验证
-
-`npm --prefix ports/th09/web run test:confirmed-gauge` 对比每次实际呈现的蓄力条、可用槽、等级和光效与对应确认帧的独立精确输入结果，并在蓄力中即时关闭、重新启用显示策略，核对对局状态和输入记录一致。设置 `PC_BUILD` 为开发 WASM 目录、`BROWSER_TEST_PACKAGE` 为含 `puppeteer-core` 的包路径、`BROWSER_EXECUTABLE` 为 Chromium/Edge 路径、`RUN_LABEL` 为独立报告名。`FRAMES=9600`、`PACKET_DELAY=3`、`PACKET_JITTER=4` 覆盖延迟波动，`CHAINED_SKILLS=1` 覆盖双方咲夜连续二级技能。资源由 `TH09_FIXTURE_DATA`、`TH09_FIXTURE_ASSETS` 和 `TH09_FIXTURE_MUSIC` 指定，报告保存在 `web/artifacts/multiplayer-tests/`。
