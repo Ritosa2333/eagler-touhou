@@ -59,12 +59,13 @@ CONTENT/
   artwork/th12-card.webp
   shared/msgothic.ttc      # 由平台资源所有者提供
   shared/unifont.otf
-  language/catalog.json   # 可选，本仓库语言编译器的输出
-  language/lang_zh-hant.zip
+  language/catalog.json   # 可选，统一 thcrap 准备器的输出
+  language/lang_zh-hans.zip
+  language/lang_en.zip
 ```
 
 语言包也可以放在单独目录，通过 `--language-packs=PATH` 指定。工具接受本仓库
-`th12-localization-catalog/1` 或上游准备脚本生成的标准 Host catalog；语言归档和
+统一 thcrap 准备器生成的标准 Host catalog；语言归档和
 目录声明的大小、摘要必须一致。没有语言目录时只发布日文。不能用解包后的预览
 目录替代语言 ZIP。
 

@@ -64,6 +64,7 @@ export function spellTitleDescriptors(spell,logicalPoses=[]) {
       // 460800 right aligns by CP932 byte count before44e660 doubles the
       // x coordinate. The MSG helper's default +2px x inset is absent here.
       raster:{fontFamily:translation?.fontFamily??'ＭＳ ゴシック',fontPixelHeight:32,fontWeight:400,
+        ...(translation?{localizedAlign:'right'}:{}),
         sourceX:2*offset,sourceY:2,foregroundColor:0xffffff,outlineColor:0,
         outlineOffsets:[[2,4],[-2,4],[2,0],[-2,0]]}};
   });

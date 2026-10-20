@@ -2,7 +2,6 @@
 // Retail content stays in ignored output directories; this does not run a game
 // or publish anything to a remote server.
 import {spawnSync} from 'node:child_process';
-import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -52,32 +51,11 @@ if (fs.existsSync(path.join(languageSource, 'catalog.json'))) {
   languageCatalog = JSON.parse(fs.readFileSync(path.join(languageSource, 'language/catalog.json'), 'utf8'));
 }
 if (args.has('language-packs') && !languageCatalog) throw Error('Language pack directory has no catalog');
-if (languageCatalog?.schema === 'th12-localization-catalog/1') {
-  if (languageCatalog.game !== 'th12' || languageCatalog.defaultLanguage !== 'ja' || languageCatalog.languages?.length !== 1) {
-    throw Error('Invalid TH12 localization catalog');
-  }
-  const entry = languageCatalog.languages[0];
-  if (entry.id !== 'lang_zh-hant' || entry.pack?.url !== 'language/lang_zh-hant.zip' || entry.pack.runtimeVersion !== 'independent') {
-    throw Error('Unsupported TH12 localization archive');
-  }
-  const bytes = fs.readFileSync(path.join(languageSource, entry.pack.url));
-  if (bytes.length !== entry.pack.bytes || createHash('sha256').update(bytes).digest('hex') !== entry.pack.sha256) {
-    throw Error('Language archive does not match its catalog');
-  }
-  // Promote the port compiler's catalog to the existing shared Host catalog;
-  // package-server retains ownership of ZIP validation and final publication.
-  languageSource = path.join(work, 'languages');
-  fs.mkdirSync(path.join(languageSource, 'language'), {recursive: true});
-  fs.writeFileSync(path.join(languageSource, entry.pack.url), bytes);
-  languageCatalog = {schema: 'eagler-touhou/thcrap-static-catalog/1', game: 'th12',
-    runtimeVersion: 'independent', defaultLanguage: 'ja', languages: [entry]};
-  fs.writeFileSync(path.join(languageSource, 'catalog.json'), JSON.stringify(languageCatalog, null, 2) + '\n');
-}
 if (languageCatalog && (languageCatalog.schema !== 'eagler-touhou/thcrap-static-catalog/1' || languageCatalog.game !== 'th12')) {
   throw Error('Unsupported Host language catalog');
 }
 const languages = ['ja', ...(languageCatalog?.languages ?? []).map(entry => entry.id)];
-if (languages.some(language => !['ja', 'lang_zh-hant'].includes(language)) || new Set(languages).size !== languages.length) {
+if (languages.some(language => language !== 'ja' && !/^lang_[a-z0-9-]+$/i.test(language)) || new Set(languages).size !== languages.length) {
   throw Error('Unsupported or duplicated TH12 language selection');
 }
 const features = path.join(work, 'features.json');

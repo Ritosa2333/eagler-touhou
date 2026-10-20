@@ -8,6 +8,7 @@ import {fpsTextDescriptors} from './fps-presentation.mjs';
 import {stageClearText,stageTransitionPose} from './stage-clear-presentation.mjs';
 import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
 import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
+import {thcrapLayout} from './localization/layout.mjs';
 import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
 export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10;if(size>40)exact[40]=score*10;return exact;}
 export function readCoreBossHud(core){
@@ -44,7 +45,7 @@ export function beamSegmentVertices(x,y,angle,length,width,start,end){const dx=M
 export function dialogueMetrics(width=354,height=17){return {width,height,sourceWidth:Math.min(1024,2*width+22),sourceHeight:36};}
 export function messageTextPoses(message,logicalPoses,atlases){
   const roots=logicalPoses.filter(p=>p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4),colors=[0xf8f08f,0x8088ff,0xd8d8d8],records=message?.textRecords??(message?.textHex??[]).map(textHex=>({textHex,offset:0,spacing:0,style:(message.flags>>1)&1,color:colors[message.speaker]??colors[2]}));
-  const make=(p,slot)=>{let record=records[slot];if(!record?.textHex||!p.a.visible)return null;const translation=localizedHex('dialogue',record.textHex,{entry:message?.entry}),text=translation?.text??originalMessageHex(record.textHex),sprite=atlases.text.sprites[slot];if(translation)record={...record,offset:translation.offset??record.offset,spacing:translation.spacing??record.spacing,localizedWidths:translation.byteWidths};return {...p,dialogue:true,text,record,metrics:dialogueMetrics(sprite.w,sprite.h)};};
+  const make=(p,slot)=>{let record=records[slot];if(!record?.textHex||!p.a.visible)return null;const translation=localizedHex('dialogue',record.textHex,{entry:message?.entry,offset:record.offset,spacing:record.spacing}),text=translation?.text??originalMessageHex(record.textHex),sprite=atlases.text.sprites[slot];if(translation)record={...record,offset:translation.offset??record.offset,spacing:translation.spacing??record.spacing,localizedWidths:translation.byteWidths,localizedRuby:translation.ruby};return {...p,dialogue:true,text,record,metrics:dialogueMetrics(sprite.w,sprite.h)};};
   if(roots.length)return roots.map(p=>make(p,p.a.sprite)).filter(Boolean);
   if(!message?.active)return [];
   // Older cores have no logical text VMs. Coordinates below come from the
@@ -311,14 +312,32 @@ export class Renderer {
     // (600), then text rendering reduces by two. Browser rasterization remains
     // a presentation fallback until the original GDI texture oracle is sampled.
     const cache=raster?.menu?(this.menuTextTextures??=new Map()):this.dialogueTextures;
-    const key=JSON.stringify([text,record,metrics,raster]);if(cache.has(key))return cache.get(key);
+    const family=localizedFontFamily(),key=JSON.stringify([text,record,metrics,raster,family,family?this.localizationTabs??[]:null]);
+    if(cache.has(key)){const result=cache.get(key);if(family)this.localizationTabs=[...result.tabs];return result;}
     const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${localizedFontFamily()??raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", "Eagler Unicode", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
     const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{const y=raster?.sourceY??2;ctx.fillStyle='#000';for(const [dx,dy]of raster?.outlineOffsets??[[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,y+dy-2);ctx.fillStyle=foreground;ctx.fillText(text,x,y);};
-    if(spacing&&record.localizedWidths){let advance=0;[...text].forEach((character,i)=>{draw(character,2*offset+advance*spacing);advance+=record.localizedWidths[i];});}
+    if(family){
+      ctx.textAlign='left';
+      const font=ctx.font,measure=(value,commands='')=>{ctx.font=(commands.includes('b')?'bold ':'')+(commands.includes('i')?'italic ':'')+font;return ctx.measureText(value).width;};
+      const layout=thcrapLayout(text,{measure,width:canvas.width,tabs:this.localizationTabs??=[]});ctx.font=font;
+      let x=raster?.sourceX??2*offset+2;
+      if(raster?.localizedAlign==='right')x=Math.max(0,canvas.width-26-layout.width);
+      else if(raster?.align==='right')x=Math.max(0,x-layout.width);
+      else if(raster?.align==='center')x=Math.max(0,x-layout.width/2);
+      if(record.localizedRuby){
+        const baseFont=font.replace(/\d+px/,'32px'),rubyMeasure=(value,commands='')=>{ctx.font=(commands.includes('b')?'bold ':'')+(commands.includes('i')?'italic ':'')+baseFont;return ctx.measureText(value).width;};
+        const base=thcrapLayout(record.localizedRuby.base,{measure:rubyMeasure}).width,span=thcrapLayout(record.localizedRuby.span,{measure:rubyMeasure}).width;
+        ctx.font=font;x=2+base+(span-layout.width)/2;
+      }
+      const available=Math.max(1,canvas.width-(raster?.localizedAlign==='right'?26:x)),scale=Math.min(1,available/Math.max(1,layout.width));
+      ctx.save();ctx.translate(x,0);ctx.scale(scale,1);
+      for(const run of layout.runs){measure('',run.commands);draw(run.text,run.x);}ctx.restore();ctx.font=font;
+    }
+    else if(spacing&&record.localizedWidths){let advance=0;[...text].forEach((character,i)=>{draw(character,2*offset+advance*spacing);advance+=record.localizedWidths[i];});}
     else if(spacing){const bytes=Uint8Array.from(record.textHex.match(/../g)??[],v=>parseInt(v,16));for(let i=0;i<bytes.length;i+=2)draw(new TextDecoder('shift-jis').decode(bytes.slice(i,i+2)),2*offset+i*spacing);}
     else draw(text,raster?.sourceX??2*offset+2);
     const g=this.gl,texture=g.createTexture();this.flush();g.bindTexture(g.TEXTURE_2D,texture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,canvas);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
-    const result={texture,w:canvas.width,h:canvas.height};cache.set(key,result);if(cache.size>(raster?.menu?96:16)){const oldest=cache.keys().next().value,old=cache.get(oldest);cache.delete(oldest);g.deleteTexture(old.texture);}return result;
+    const result={texture,w:canvas.width,h:canvas.height,tabs:[...this.localizationTabs??[]]};cache.set(key,result);if(cache.size>(raster?.menu?96:16)){const oldest=cache.keys().next().value,old=cache.get(oldest);cache.delete(oldest);g.deleteTexture(old.texture);}return result;
   }
   dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics,p.raster);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=p.a.mode===0||p.a.mode===1?nativeQuadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY,p.a.mode,p.screenShake):quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
   capturePauseField(){
