@@ -79,6 +79,33 @@ namespace Thsss.Browser
 			}
 		}
 
+		[UnmanagedCallersOnly(EntryPoint = "thsss_input_surface")]
+		public static int InputSurface()
+		{
+			try
+			{
+				return GameHost.TouchSurface();
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+				return 0;
+			}
+		}
+
+		[UnmanagedCallersOnly(EntryPoint = "thsss_touch_shift")]
+		public static void TouchShift(float dx, float dy)
+		{
+			try
+			{
+				GameHost.TouchShift(dx, dy);
+			}
+			catch (Exception ex)
+			{
+				Report(ex);
+			}
+		}
+
 		[UnmanagedCallersOnly(EntryPoint = "thsss_on_key")]
 		public static unsafe void OnKey(byte* name, int down)
 		{

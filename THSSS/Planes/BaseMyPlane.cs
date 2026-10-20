@@ -628,6 +628,20 @@ namespace Shooting
 			}
 			num += Vx;
 			num2 -= Vy;
+			OriginalPosition = ClampPosition(num, num2);
+		}
+
+		public void ShiftBy(float dx, float dy)
+		{
+			if (TxtureObject == null)
+			{
+				return;
+			}
+			OriginalPosition = ClampPosition(OriginalPosition.X + dx, OriginalPosition.Y + dy);
+		}
+
+		private PointF ClampPosition(float num, float num2)
+		{
 			if (num < (float)(TxtureObject.Width / 2 - 6))
 			{
 				num = (float)(TxtureObject.Width / 2 - 6);
@@ -644,7 +658,7 @@ namespace Shooting
 			{
 				num2 = (float)(BoundRect.Height - TxtureObject.Height / 2 + 8);
 			}
-			OriginalPosition = new PointF(num, num2);
+			return new PointF(num, num2);
 		}
 
 		public virtual void SubPlaneCtrl()

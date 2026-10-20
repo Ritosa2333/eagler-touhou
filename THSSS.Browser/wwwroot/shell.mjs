@@ -1,6 +1,9 @@
 import { keyNameFromEvent } from "./directory-keyboard.mjs";
 import { mountManagedData } from "./eagler-host.mjs";
+import { createFileBridge } from "./host/storage/files.mjs";
+import { createKeyOwners } from "./host/input/key-owners.mjs";
 import { prepareRuntime, launchRuntime } from "./main.js";
+import { createTouchBridge } from "./host/input/touch-bridge.mjs";
 import { installRuntimeFileSystem } from "./runtime-files.mjs";
 
 const protocol = "eagler-touhou/1";
@@ -12,16 +15,19 @@ const parentWindow = window.parent;
 
 installRuntimeFileSystem(window);
 
-const owners = new Map();
-const down = new Set();
-const sticks = new Map();
+const keys = createKeyOwners((name, down) => {
+  if (!runtime || !runtime.host) return;
+  try {
+    runtime.host.OnKey(name, down ? 1 : 0);
+  } catch (err) {
+    emit("error", { message: String(err && err.message || err) });
+  }
+});
 let phase = "booting";
 let starting = false;
 let runtime = null;
 let firstFrameSent = false;
 let runtimeInfoSent = false;
-let touchState = null;
-let pulses = [];
 let frameStats = { frames: 0, gaps: [] };
 let lastFrameAt = 0;
 let healthTimer = 0;
@@ -50,211 +56,27 @@ function reply(message, ok, extra) {
   }, extra || {}));
 }
 
-function setKey(name, pressed, source) {
-  if (!name || !source) return;
-  let group = owners.get(name);
-  if (!group) {
-    group = new Set();
-    owners.set(name, group);
-  }
-  if (pressed) group.add(source);
-  else group.delete(source);
-  const want = group.size > 0;
-  if (want === down.has(name)) return;
-  if (want) down.add(name);
-  else down.delete(name);
-  if (!runtime || !runtime.host) return;
-  try {
-    runtime.host.OnKey(name, want ? 1 : 0);
-  } catch (err) {
-    emit("error", { message: String(err && err.message || err) });
-  }
+function surface() {
+  const host = runtime && runtime.host;
+  if (!host || typeof host.InputSurface !== "function") return "play";
+  const value = host.InputSurface();
+  if (value === 2) return "dialogue";
+  if (value === 0) return "menu";
+  return "play";
 }
 
-function releaseSource(source) {
-  for (const [name, group] of owners) {
-    if (group.has(source)) setKey(name, false, source);
-  }
-}
-
-function releaseAll() {
-  for (const name of Array.from(owners.keys())) {
-    const group = owners.get(name);
-    if (!group) continue;
-    for (const source of Array.from(group)) setKey(name, false, source);
-  }
-}
-
-function normalizeUserPath(path) {
-  const text = String(path || "").replace(/\\/g, "/").replace(/^\/+/, "");
-  if (text === "Score.dat" || text === "Setting.INI" || text === "Log.txt") return text;
-  const replay = text.match(/^(?:replay|Replay)\/([^/]+)$/);
-  if (!replay) return null;
-  if (/^thSSS_(?:\d{2}|ud[0-9a-f]{4})\.rpy$/i.test(replay[1]) || /^AutoSave\.rpy$/i.test(replay[1])) {
-    return "Replay/" + replay[1];
-  }
-  return null;
-}
-
-function listedPath(stored) {
-  const replay = String(stored).match(/^Replay\/([^/]+)$/);
-  return replay ? "replay/" + replay[1] : stored;
-}
-
-function decodedSize(value) {
-  if (typeof value !== "string" || !value) return 0;
-  const pad = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
-  return Math.max(0, Math.floor((value.length * 3) / 4) - pad);
-}
-
-function base64ToBytes(value) {
-  const binary = atob(value || "");
-  const out = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
-  return out;
-}
-
-function bytesOf(value) {
-  if (value instanceof Uint8Array) return value;
-  if (Array.isArray(value)) return Uint8Array.from(value);
-  return null;
-}
-
-function toByteArray(bytes) {
-  const out = new Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) out[i] = bytes[i];
-  return out;
-}
-
-async function handleFile(message) {
-  const saves = runtime && runtime.saves;
-  if (!saves) {
-    reply(message, false, { error: "Storage is not ready" });
-    return;
-  }
-  if (message.command === "list") {
-    const files = [];
-    for (const stored of Object.keys(saves)) {
-      const canonical = normalizeUserPath(stored);
-      if (!canonical) continue;
-      files.push({ path: listedPath(canonical), size: decodedSize(saves[stored]) });
-    }
-    reply(message, true, { files });
-    return;
-  }
-  if (message.command === "sync") {
-    if (runtime.flushSaves) await runtime.flushSaves();
-    reply(message, true, {});
-    return;
-  }
-  const path = normalizeUserPath(message.path);
-  if (!path) {
-    reply(message, false, { error: "Path is not a user file", errno: 1 });
-    return;
-  }
-  if (message.command === "read") {
-    const value = saves[path];
-    if (typeof value !== "string") {
-      reply(message, false, { error: "Missing file", errno: 44 });
-      return;
-    }
-    reply(message, true, { bytes: toByteArray(base64ToBytes(value)) });
-    return;
-  }
-  if (message.command === "write") {
-    const bytes = bytesOf(message.bytes);
-    if (!bytes || !runtime.writeUserFile) {
-      reply(message, false, { error: "Missing bytes" });
-      return;
-    }
-    await runtime.writeUserFile(path, bytes);
-    reply(message, true, {});
-    return;
-  }
-  if (message.command === "remove") {
-    if (runtime.removeUserFile) await runtime.removeUserFile(path);
-    else delete saves[path];
-    reply(message, true, {});
-    return;
-  }
-  reply(message, false, { error: "Unsupported file command" });
-}
-
-function pulse(name, source) {
-  setKey(name, true, source);
-  pulses.push({ name, source });
-}
-
-function releasePulses() {
-  const due = pulses;
-  pulses = [];
-  for (const item of due) setKey(item.name, false, item.source);
-}
-
-function applyTouch(message) {
-  const next = message || {};
-  const previous = touchState;
-  setKey("Z", !!next.fireEnabled, "touch-fire");
-  setKey("ShiftKey", !!next.focusEnabled, "touch-focus");
-  if (previous && next.bombSerial !== previous.bombSerial) pulse("X", "touch-bomb");
-  if (previous && next.escapeSerial !== previous.escapeSerial) pulse("Escape", "touch-esc");
-  const dead = 6000;
-  const x = Number(next.joystickX) || 0;
-  const y = Number(next.joystickY) || 0;
-  setKey("Left", x <= -dead, "joy");
-  setKey("Right", x >= dead, "joy");
-  setKey("Up", y <= -dead, "joy");
-  setKey("Down", y >= dead, "joy");
-  touchState = {
-    fireEnabled: !!next.fireEnabled,
-    focusEnabled: !!next.focusEnabled,
-    bombSerial: next.bombSerial,
-    escapeSerial: next.escapeSerial,
-  };
-}
-
-function steerStick(stick) {
-  if (!stick) {
-    setKey("Left", false, "direct");
-    setKey("Right", false, "direct");
-    setKey("Up", false, "direct");
-    setKey("Down", false, "direct");
-    return;
-  }
-  const dx = stick.x - stick.originX;
-  const dy = stick.y - stick.originY;
-  const pixel = Math.abs(stick.originX) > 1.5 || Math.abs(stick.originY) > 1.5;
-  const dead = pixel ? 16 : 0.04;
-  const ax = Math.abs(dx);
-  const ay = Math.abs(dy);
-  const horizontal = ax >= dead && ax >= ay * 0.5;
-  const vertical = ay >= dead && ay >= ax * 0.5;
-  setKey("Left", horizontal && dx < 0, "direct");
-  setKey("Right", horizontal && dx > 0, "direct");
-  setKey("Up", vertical && dy < 0, "direct");
-  setKey("Down", vertical && dy > 0, "direct");
-}
-
-function applyDirectTouch(message) {
-  if (!message) return;
-  if (message.type === "up" && message.id == null) {
-    sticks.clear();
-    steerStick(null);
-    return;
-  }
-  const x = Number(message.x);
-  const y = Number(message.y);
-  if (message.type === "up") sticks.delete(message.id);
-  else if ((message.type === "down" || message.type === "move") && Number.isFinite(x) && Number.isFinite(y)) {
-    const stick = sticks.get(message.id);
-    if (message.type === "down" || !stick) sticks.set(message.id, { originX: x, originY: y, x, y });
-    else {
-      stick.x = x;
-      stick.y = y;
-    }
-  }
-  steerStick(sticks.values().next().value || null);
-}
+const files = createFileBridge({ getRuntime: () => runtime, reply });
+const touch = createTouchBridge({
+  keys,
+  surface,
+  options: () => (runtime && runtime.options) || {},
+  shift(dx, dy) {
+    const host = runtime && runtime.host;
+    if (!host || typeof host.TouchShift !== "function") return false;
+    host.TouchShift(dx, dy);
+    return true;
+  },
+});
 
 function rejectInapplicable(message) {
   reply(message, false, { error: "Command is not available for this title" });
@@ -300,41 +122,32 @@ async function handle(message) {
     return;
   }
   if (command === "list" || command === "read" || command === "write" || command === "remove" || command === "sync") {
-    await handleFile(message);
+    await files.handle(message);
     return;
   }
   if (command === "keyboard") {
     const name = keyNameFromEvent(message);
-    if (name) setKey(name, !!message.down, "key");
+    if (name) keys.setKey(name, !!message.down, "key");
     reply(message, true, {});
     return;
   }
   if (command === "keyboard-clear") {
-    releaseSource("key");
+    keys.releaseSource("key");
     reply(message, true, {});
     return;
   }
   if (command === "touch-controls") {
-    applyTouch(message);
+    touch.controls(message);
     reply(message, true, {});
     return;
   }
   if (command === "touch-cancel") {
-    applyTouch({
-      fireEnabled: false,
-      focusEnabled: false,
-      joystickX: 0,
-      joystickY: 0,
-      bombSerial: touchState ? touchState.bombSerial : 0,
-      escapeSerial: touchState ? touchState.escapeSerial : 0,
-    });
-    sticks.clear();
-    applyDirectTouch({ type: "up" });
+    touch.cancel();
     reply(message, true, {});
     return;
   }
   if (command === "direct-touch") {
-    applyDirectTouch(message);
+    touch.direct(message);
     reply(message, true, {});
     return;
   }
@@ -349,7 +162,7 @@ function onLocalKey(event) {
   if (!name) return;
   event.preventDefault();
   if (event.repeat) return;
-  setKey(name, event.type === "keydown", "local");
+  keys.setKey(name, event.type === "keydown", "local");
 }
 
 function onMessage(event) {
@@ -378,12 +191,12 @@ async function startGame() {
     onExit() {
       if (healthTimer) window.clearInterval(healthTimer);
       healthTimer = 0;
-      releaseAll();
+      keys.releaseAll();
       phase = "exited";
       emit("exit", { status: "success", code: 0 });
     },
     onPresented() {
-      releasePulses();
+      touch.presented();
       const now = performance.now();
       if (lastFrameAt) frameStats.gaps.push(now - lastFrameAt);
       lastFrameAt = now;
@@ -451,10 +264,13 @@ async function boot() {
 }
 
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) releaseAll();
+  if (document.hidden) {
+    touch.cancel();
+    keys.releaseAll();
+  }
 });
 window.addEventListener("pagehide", () => {
-  releaseAll();
+  keys.releaseAll();
   if (runtime && runtime.flushSaves) runtime.flushSaves();
 });
 

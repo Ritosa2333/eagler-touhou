@@ -100,6 +100,11 @@ const temp = await mkdtemp(resolve(tmpdir(), "thsss-shell-"));
 try {
   const graph = {
     "shell.mjs": await text(resolve(wwwroot, "shell.mjs")),
+    "host/input/key-owners.mjs": await text(resolve(wwwroot, "host/input/key-owners.mjs")),
+    "host/input/touch-movement.mjs": await text(resolve(wwwroot, "host/input/touch-movement.mjs")),
+    "host/input/menu-gestures.mjs": await text(resolve(wwwroot, "host/input/menu-gestures.mjs")),
+    "host/input/touch-bridge.mjs": await text(resolve(wwwroot, "host/input/touch-bridge.mjs")),
+    "host/storage/files.mjs": await text(resolve(wwwroot, "host/storage/files.mjs")),
     "directory-keyboard.mjs": await text(resolve(wwwroot, "directory-keyboard.mjs")),
     "eagler-host.mjs": await text(resolve(wwwroot, "eagler-host.mjs")),
     "runtime-files.mjs": await text(resolve(wwwroot, "runtime-files.mjs")),
@@ -110,7 +115,9 @@ try {
     "THSSS.Browser.js": rewritten.moduleJs,
   };
   for (const [name, contents] of Object.entries(graph)) {
-    await writeFile(resolve(temp, name), contents);
+    const destination = resolve(temp, name);
+    await mkdir(dirname(destination), { recursive: true });
+    await writeFile(destination, contents);
   }
   const bundled = resolve(temp, "bundled", "shell.mjs");
   await esbuild.build({

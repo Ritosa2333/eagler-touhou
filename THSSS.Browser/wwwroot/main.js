@@ -408,7 +408,9 @@ export async function prepareRuntime(options = {}) {
       }
     },
     FpsUnlocked: () => module._thsss_fps_unlocked(),
-    SetFpsUnlocked: (value) => module._thsss_set_fps_unlocked(value)
+    SetFpsUnlocked: (value) => module._thsss_set_fps_unlocked(value),
+    InputSurface: typeof module._thsss_input_surface === "function" ? () => module._thsss_input_surface() : null,
+    TouchShift: typeof module._thsss_touch_shift === "function" ? (dx, dy) => module._thsss_touch_shift(dx, dy) : null
   };
   return {
     saves,

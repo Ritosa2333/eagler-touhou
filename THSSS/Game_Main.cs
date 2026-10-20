@@ -883,6 +883,42 @@ namespace Shooting
 			}
 		}
 
+		public int TouchSurface()
+		{
+			if (PresentState is BaseMenu)
+			{
+				return 0;
+			}
+			if (PresentState is BaseGameState state)
+			{
+				if (state.StageData != null && state.StageData.Story != null)
+				{
+					return 2;
+				}
+				return 1;
+			}
+			return 0;
+		}
+
+		public void TouchShift(float dx, float dy)
+		{
+			if (PresentState is BaseMenu)
+			{
+				return;
+			}
+			var state = PresentState as BaseGameState;
+			if (state == null || state.StageData == null || state.StageData.Story != null)
+			{
+				return;
+			}
+			var plane = state.StageData.MyPlane;
+			if (plane == null)
+			{
+				return;
+			}
+			plane.ShiftBy(dx, dy);
+		}
+
 		public RenderForm_Main Form_Main;
 
 		private GlobalDataPackage GDP = new GlobalDataPackage();

@@ -158,6 +158,24 @@ namespace Thsss.Browser
 			}
 		}
 
+		public static int TouchSurface()
+		{
+			if (game == null)
+			{
+				return 0;
+			}
+			return game.TouchSurface();
+		}
+
+		public static void TouchShift(float dx, float dy)
+		{
+			if (game == null)
+			{
+				return;
+			}
+			game.TouchShift(dx, dy);
+		}
+
 		public static void OnKey(string name, int down)
 		{
 			if (game == null || game.Form_Main == null || string.IsNullOrEmpty(name))

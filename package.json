@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "stage:eagler": "node THSSS.Browser/stage-eagler-runtime.mjs"
+    "stage:eagler": "node THSSS.Browser/stage-eagler-runtime.mjs",
+    "test": "node --test THSSS.Browser/tests/input/*.test.mjs"
   },
   "devDependencies": {
     "esbuild": "0.28.2"
