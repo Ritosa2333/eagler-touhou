@@ -4,11 +4,11 @@
 
 本作源码位于 `ports/th12`，在 monorepo 根目录运行 `npm run build:runtime -- --game=th12 --emsdk=工具链目录` 构建普通版。浏览器代码包输出至 `ports/th12/build-eagler/`；内容准备与站点组装见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
-TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为的反编译资料。
+TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为的分析工具。
 原作游戏、角色、贴图、文字和音乐版权属于上海爱丽丝幻乐团。
 
-本仓库只包含还原相关源码、验证工具、必要测试夹具和反编译结果。原版 EXE／DAT、
-素材、原版关卡脚本、录像、过程记录、移植参考及本地工具安装包均不包含在仓库中。
+本仓库包含还原相关源码、验证工具、必要测试夹具和行为说明。原版 EXE／DAT、
+素材、反编译生成物、原版关卡脚本、录像、过程记录、移植参考及本地工具安装包保存在本地忽略目录中。
 
 ## 内容
 
@@ -18,7 +18,7 @@ TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为�
 - `scripts/`、`tools/replay-verifier/`：构建、资源准备、原版行为分析与严格对照工具。
 - `tools/frame-inspector/`：Windows 原版逐帧停帧、画面保存和内部数据对照；使用说明见其 README。
 - `tests/`：逻辑测试、测试程序和局部行为夹具，不包含原版游戏安装文件。
-- `decompiled/`：4,340 个函数候选的伪代码、原版指令对照和函数关系索引。
+- `decompiled/`：本地伪代码、原版指令对照和函数关系索引；生成物由 Git 忽略，准备方式见目录说明。
 - `docs/behavior/`：UFO、战斗、动画与界面的行为说明及尚待实现的关键项。
 
 ## 构建与运行
@@ -51,7 +51,7 @@ ctest --test-dir artifacts/native --output-on-failure
 ```
 
 模块职责和验证范围见 [C++ 结构说明](docs/CPP-RESTORATION.md)。
-`decompiled/*.c` 是分析材料，不参与构建；文件内容和扩展名保留以反映其实际性质。
+`decompiled/` 中的生成文件是本地分析材料，不参与构建和提交。
 
 ## 还原边界
 
@@ -68,7 +68,7 @@ ctest --test-dir artifacts/native --output-on-failure
 自动反编译结果不是原作者源码；寄存器入参、类型、函数边界和浮点表达式需要结合
 指令与原版执行核对。网页核心是手写的行为实现，不在浏览器中执行原版 EXE。
 
-反编译索引见 [decompiled/functions.json](decompiled/functions.json)。
+反编译资料的本地准备见 [decompiled/README.md](decompiled/README.md)。
 核心飞碟规则见 [UFO 行为说明](docs/behavior/ufo.md)。
 
 ## 版权与许可

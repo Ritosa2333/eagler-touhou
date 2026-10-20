@@ -11,3 +11,9 @@
 /prepared/
 /private-assets/
 **/__pycache__/
+
+# Local disassembly and diagnostic outputs
+*.asm
+*.obj
+*.pdb
+*.dmp

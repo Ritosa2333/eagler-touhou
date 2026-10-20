@@ -1,5 +1,11 @@
 # TH12 1.00b 反编译索引
 
+此目录只提交本说明。`assembly/`、`pseudocode/`、`native-entries/` 和
+`functions.json` 为本地分析生成物，由 Git 忽略，不参与运行时构建。
+已有本地资料可继续使用；原始快照来自 `Tweet-META/th12` 的 `eagler` 分支，
+固定提交为 `c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd`。
+重新分析使用 `scripts/reverse/` 下的脚本，输出保存在忽略的 `local/reverse/` 中。
+
 `pseudocode/` 和 `assembly/` 按十六进制地址一一对应，`functions.json` 保存函数候选、
 基本块、调用关系和输出内容身份。`native-entries/` 另保留四个经过入口对齐复核的版本。
 

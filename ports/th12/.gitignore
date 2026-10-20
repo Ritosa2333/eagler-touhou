@@ -1,4 +1,6 @@
 # Local original game and generated assets are never published.
+/decompiled/*
+!/decompiled/README.md
 local/
 artifacts/
 build-eagler/
