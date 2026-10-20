@@ -691,7 +691,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function confirmTouchInput(mode: PlayerMode, signal?: AbortSignal): Promise<boolean> {
     if (disposed || signal?.aborted) return false;
-    if (!playerUsesGameInput(mode) || externalInputConfirmed || settings.getSnapshot()?.options.touchEnabled ||
+    if (!mobile || !playerUsesGameInput(mode) || externalInputConfirmed || settings.getSnapshot()?.options.touchEnabled ||
         !(window.navigator.maxTouchPoints > 0 || primaryTouchPointer.matches)) return true;
     const previousRequestId = decisions.getSnapshot()?.requestId;
     const answer = decisions.askDecision({title: t('touch.disabledInputTitle'), message: t('touch.disabledInputWarning'),
