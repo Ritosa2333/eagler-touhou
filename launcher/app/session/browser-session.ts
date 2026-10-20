@@ -68,7 +68,7 @@ export interface BrowserNavigationPorts {
   syncSelectionFromRoute(): ProductId | null;
   openPlayer(product: ProductId, options?: {dismissInfo?: boolean}): void;
   openRoomFullscreen?(): void;
-  closeRoomFullscreen?(): void;
+  closeRoomFullscreen?(): Promise<void> | void;
   openDirectory(product: ProductId): void;
   closeSurface(): void;
   completeRuntimeClose(context?: {titleOverlayWasOpen?: boolean}): void;
@@ -450,6 +450,9 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (!room.room) return Promise.resolve();
     roomLeaveTask = Promise.resolve().then(async () => {
       launchAbort?.abort(new RuntimeSessionSupersededError());
+      await exitRoomPlayerFullscreen();
+      await navigation?.closeRoomFullscreen?.();
+      if (disposed || roomSession!.service.getSnapshot().epoch !== room.epoch) return;
       if (!await requestRuntimeClose({leaveRoom:true})) return;
       if (roomSession!.service.getSnapshot().epoch === room.epoch) roomSession!.service.leave();
     }).catch(reportError).finally(() => {roomLeaveTask = null;});

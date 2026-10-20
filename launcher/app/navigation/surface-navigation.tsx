@@ -111,7 +111,7 @@ interface SurfaceNavigation extends SurfaceAddress {
   playerOpen: boolean;
   openPlayer(productId: ProductId, options?: {dismissInfo?: boolean}): void;
   openRoomFullscreen(): void;
-  closeRoomFullscreen(): void;
+  closeRoomFullscreen(): Promise<void>;
   closeSurface(): void;
   completeRuntimeClose(context?: {titleOverlayWasOpen?: boolean}): void;
   infoDialogOpen(id: InformationDialogId): boolean;
@@ -343,17 +343,24 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   const gameEntry = plainState(plainState(location.state)[gameEntryKey]);
   const roomFullscreen = plainState(plainState(location.state)[roomFullscreenKey]);
   const ownsRoomFullscreen = address.roomCode !== null && roomFullscreen.session === dialogSession && roomFullscreen.href === href(location);
-  const fullscreenCloseIssued = useRef<string | null>(null);
+  const fullscreenCloseTask = useRef<{promise: Promise<void>; resolve(): void} | null>(null);
+  useLayoutEffect(() => {
+    if (!ownsRoomFullscreen) {fullscreenCloseTask.current?.resolve();fullscreenCloseTask.current = null;}
+  }, [ownsRoomFullscreen,location.key]);
+  useEffect(() => () => {fullscreenCloseTask.current?.resolve();fullscreenCloseTask.current = null;}, []);
   function openRoomFullscreen() {
     if (address.roomCode === null || ownsRoomFullscreen) return;
-    fullscreenCloseIssued.current = null;
     void navigate({pathname:location.pathname,search:location.search,hash:location.hash},{preventScrollReset:true,
       state:{...plainState(location.state),[roomFullscreenKey]:{session:dialogSession,href:href(location)}}});
   }
-  function closeRoomFullscreen() {
-    if (!ownsRoomFullscreen || blocker.state !== 'unblocked' || fullscreenCloseIssued.current === location.key) return;
-    fullscreenCloseIssued.current = location.key;
-    void navigate(-1);
+  function closeRoomFullscreen(): Promise<void> {
+    if (fullscreenCloseTask.current) return fullscreenCloseTask.current.promise;
+    if (!ownsRoomFullscreen) return Promise.resolve();
+    let resolve!: () => void;
+    const promise = new Promise<void>(complete => {resolve = complete;});
+    fullscreenCloseTask.current = {promise,resolve};
+    if (blocker.state === 'unblocked') void navigate(-1);
+    return promise;
   }
   const topGame = playerOpen && typeof gameEntry.position === 'number' && gameEntry.position === pageHistory?.position;
   const pendingDirectorySelection = useRef<{position: number; product: ProductId} | null>(null);

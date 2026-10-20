@@ -2506,8 +2506,24 @@ test('actual BrowserLauncher: room loading renders authenticated Runtime byte pr
  assert.equal(node('#transferSpeed').textContent,'512 KiB/s');
  await click('.room-workspace-fullscreen');
  assert.equal(f.fullscreen,node('#player'));
+ assert.equal(node('#player').getAttribute('aria-hidden'),'false','loading fullscreen keeps the player visible');
  await click('#fullscreenToggle');
  assert.equal(f.fullscreen,null,'a loading title can also exit fullscreen');
  assert.equal(node('#transfer').parentElement,node('#gameViewport'));
  assert.equal(node('#transferAmount').textContent,'1.0 / 2.0 MiB');
+});
+
+for(const game of ['th06','th07','th08','th09','th10','th11','th15'])test(`${game} prepared room title stays visible when entering fullscreen before a match starts`,async()=>{
+ const host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:'/?game='+game+'mp&mpRoom=1234',host,socketBoundary:true,seedPackages:[game]}),session=api.getTestSession();
+ await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','native menu presented',15_000);
+ assert.equal(session.getRuntime().getSnapshot().roomPreview,true);assert.equal(session.getRuntime().getSnapshot().launched,false);
+ const frame=node('#gameFrame'),epoch=session.getRuntime().getSnapshot().epoch,navigations=f.navigations.length;
+ await click('.room-workspace-fullscreen');
+ assert.equal(f.fullscreen,node('#player'));assert.equal(node('#player').getAttribute('aria-hidden'),'false');
+ assert.equal(node('#player').classList.contains('open'),true);assert.equal(node('#gameFrame'),frame);
+ assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(f.navigations.length,navigations);
+ await click('#fullscreenToggle');
+ assert.equal(f.fullscreen,null);assert.equal(node('#player').classList.contains('room-workspace'),true);
+ assert.equal(node('#player').getAttribute('aria-hidden'),'false');
 });
