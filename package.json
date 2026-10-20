@@ -13,6 +13,7 @@
     "test": "node tests/run.mjs --profile=quick",
     "test:integration": "node tests/run.mjs --profile=integration",
     "test:acceptance": "node tests/run.mjs --profile=acceptance",
+    "test:adaptation": "node tests/run.mjs --profile=adaptation",
     "test:oracles": "node tests/run.mjs --profile=oracle",
     "test:list": "node tests/run.mjs --list",
     "build:runtime": "node launcher/scripts/build-runtime.mjs",

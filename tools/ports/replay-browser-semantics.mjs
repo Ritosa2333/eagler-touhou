@@ -1,3 +1,11 @@
+import {gateReplayRecordOnFinalErrors} from '../browser/final-error-audit.mjs';
+
+export {gateReplayRecordOnFinalErrors};
+
+export function replayScenarioPassedTargetIds(records){
+  return records.filter(record=>record.status==='passed'&&record.playback?.scenarioStatus==='passed').map(record=>record.id);
+}
+
 export function playbackObservation(state){
   const phase=state?.phase??state?.screen??null;
   return {

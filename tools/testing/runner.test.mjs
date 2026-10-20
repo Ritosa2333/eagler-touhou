@@ -47,6 +47,14 @@ test('timeouts, missing executables and a cancelled selection all fail', () => f
   assert.equal(cancelled.results[0].status, 'cancelled');
 }));
 
+test('sealed assertion assessment controls persisted outcome and fail-fast before the next task',()=>fixture(async output=>{
+  const report=await runTasks([task('assertion','process.exit(0)'),task('later','throw Error("must not run")')],
+    {output,concurrency:1,failFast:true,assessResult:result=>{result.processStatus=result.status;result.status='failed';}});
+  assert.equal(report.status,'failed');assert.equal(report.results[0].processStatus,'passed');
+  assert.equal(report.results[0].status,'failed');assert.equal(report.results[1].status,'cancelled');
+  assert.deepEqual(JSON.parse(await readFile(resolve(output,'report.json'))),report);
+}));
+
 test('shared resources serialize actual child processes', () => fixture(async output => {
   const lock = resolve(output, 'exclusive.lock');
   const source = `const fs=require('node:fs'); const path=${JSON.stringify(lock)};

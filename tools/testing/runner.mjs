@@ -93,7 +93,7 @@ async function execute(task, {output, environment, unsetEnvironment, signal, cle
 
 /** A selected task must finish successfully. Missing inputs and timeouts fail. */
 export async function runTasks(tasks, {output, concurrency=4, environment={}, signal, failFast=false,
-  onResult=()=>{}, metadata={},unsetEnvironment=[]} = {}) {
+  assessResult=()=>{},onResult=()=>{}, metadata={},unsetEnvironment=[]} = {}) {
   if (!Array.isArray(tasks) || !tasks.length) throw new Error('No tests selected');
   if (!Number.isSafeInteger(concurrency) || concurrency < 1 || concurrency > 32)
     throw new Error('Test concurrency must be an integer from 1 to 32');
@@ -161,6 +161,8 @@ export async function runTasks(tasks, {output, concurrency=4, environment={}, si
     active.delete(task.id);
     (task.resources ?? []).forEach(resource=>held.delete(resource));
     report.results.push(result);
+    // Semantic drivers can validate their sealed assertions before this boundary is persisted.
+    await assessResult(result,task);
     if (failFast && result.status !== 'passed') stopping = true;
     await save();
     await onResult(result);

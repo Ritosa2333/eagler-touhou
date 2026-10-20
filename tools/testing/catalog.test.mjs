@@ -11,7 +11,8 @@ import {isNodeTest} from './discovery.mjs';
 
 test('tooling discovery includes every executable tool regression exactly once and excludes fixture programs',()=>{
   const files = trackedFiles();
-  const expected = files.filter(file=>file.startsWith('tools/') && isNodeTest(file));
+  const expected = [...files.filter(file=>file.startsWith('tools/') && isNodeTest(file)),
+    ...files.filter(file=>file.startsWith('tests/adaptation/')&&isNodeTest(file))];
   const catalog = suites(), [task] = catalog.tooling.tasks();
   assert.ok(expected.length > 0);
   assert.deepEqual(task.args.filter(arg=>isNodeTest(arg)), expected);

@@ -37,7 +37,7 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：从真实宿主页启动当前包，等待 ready，再发送 configure、launch，并等待首帧。
 - 观察与判定：事件顺序为 ready、配置成功、启动成功、首帧；首帧对应实际绘制提交，画布尺寸有效。关卡逻辑推进由输入与生命周期场景独立验证。
 - 反例：Runtime 在配置完成前报告首帧，或只回 ready 却没有运行画面，应判失败。
-- 入口与覆盖：`runtime-browser.mjs` 的 `configure-launch-first-frame` 在选定的普通版包上验证协议事件与有效画布尺寸，记录为本项部分覆盖。首帧事件与实际绘制提交的时序对照待接入；逻辑帧推进由后续 `hosted-keyboard-native-effect` 检查。
+- 入口与覆盖：`runtime-browser.mjs` 的 `configure-launch-first-frame` 在选定的普通版包上验证协议事件与有效画布尺寸，记录为本项部分覆盖。桌面报告将 host navigation、ready、keyboard bridge、configure、launch、first-frame 六项作为启动 stages；每个有首帧的 Runtime epoch 另以 `gameplayReadinessByEpoch` 记录原生玩法资格，不把资格读取计作第七个启动 stage。首帧事件与实际绘制提交的时序对照待接入；逻辑帧推进由后续 `hosted-keyboard-native-effect` 检查。
 
 ### RUNTIME-03 | 命令响应与错误信息
 - 操作：发送一条有效命令及一条未知命令，分别等待带相同 request 身份的响应。
@@ -49,7 +49,7 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：玩法中按住方向键和触点，把页面切到后台再恢复，随后退出并重新进入。
 - 观察与判定：恢复后画面与声音继续工作；退出时 held input 回到中立，重新进入后只有一组有效监听器。
 - 反例：退出后旧实例仍持续消费按键，或恢复时重复响应同一次输入，应判失败。
-- 入口与覆盖：`runtime-desktop-probes.mjs` 实际切换浏览器标签页，先核对隐藏／失焦事件，再检查持键释放及恢复输出，并另记窗口最小化结果。驱动退休旧 iframe、创建新 epoch 并重复原生输入。`runtime-browser.mjs` 检查暂停、重开与尺寸变化；触点和完整监听器清理分别记录。
+- 入口与覆盖：`runtime-desktop-probes.mjs` 用 public `launchServer` 启动完整 headed Chrome，并以 loopback CDP 网关按命令 id、session 和真实 page target 审计 Playwright 焦点改写及 Chrome 成功响应。检查前要求页面原生 visible/hasFocus，记录 Chrome target/window ID 与 bounds，再用真实窗口最小化和同窗标签激活观察浏览器生成的 blur/hidden 事件；最小化期间必须同时观察到 Host 接受 keyboard-clear、原生输入回到中立，才验证 held input 清理。标签窗口中的临时页关闭后，重新核对原游戏 page target、window ID、宿主页与 Runtime iframe 的 visible/hasFocus；音频检查重新取当前状态，要求输出 tap 对应的 AudioContext 在 KeyZ 前已经 running，再要求 Host 接受 KeyZ、原生输入发生变化，并记录 PCM 与输入释放。截图会先恢复真实 Chrome 窗口并核对 page target、window ID 和两个文档的原生焦点，再检查 iframe bounding box 完整落在 viewport 内，以 page screenshot clip 采集当前画面。后台连续运行与挂起后恢复单独记录，KeyZ 手势不能替代后台恢复证据。`--background-only` 运行窗口、标签和声音三项后台检查，并保留包与私有 DATA 前后身份核验；未运行的桌面矩阵以 omitted 单列。`runtime-browser.mjs` 检查暂停、重开与尺寸变化；触点和完整监听器清理分别记录。
 
 ### RUNTIME-05 | Runtime 与资源管理分工
 - 操作：先由 Launcher 安装/准备声明的资源，再启动 Runtime 并读取其声明的 DATA 或共享资源路径。
@@ -91,7 +91,7 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：在线安装后确认 Runtime 可启动，断开网络并刷新/重开页面，再进入同一游戏。
 - 观察与判定：Launcher、包入口、模块、WASM 与所需本地 DATA 均来自已安装内容，并到达首帧。
 - 反例：离线后仍请求未缓存的模块，或只能打开页面却不能加载游戏，应判失败。
-- 入口与覆盖：`tools/ports/offline-runtime-browser.mjs` 把实际 Launcher 打包到新站点，以真实 ZIP 导入并启动所选普通版 Runtime；HTTPS 静态入口、Runtime HTML/脚本、字体与站点文件由浏览器响应逐字节核验。关闭网络后由已安装 Service Worker 重开站点、恢复 Runtime 与 Replay 文件并再次同步。`runtime-offline` 对八作逐项运行，覆盖本次选择的真实包和 DATA。
+- 入口与覆盖：`tools/ports/offline-runtime-browser.mjs` 把实际 Launcher 打包到新站点，以真实 ZIP 导入并启动所选普通版 Runtime；HTTPS 静态入口、Runtime HTML/脚本、字体与站点文件由浏览器响应逐字节核验。关闭网络后由已安装 Service Worker 重开站点、恢复 Runtime 与 Replay 文件并再次同步。`runtime-offline` 对八作逐项运行，覆盖本次选择的真实包和 DATA。运行收尾统一核对页面异常、console、HTTP 与请求失败、Runtime 协议中止、响应身份及清理结果，作为场景最终判定。
 
 ### PACKAGE-06 | 统一安装和更新入口
 - 操作：分别从游戏卡片、资源准备和更新提示进入安装/更新，完成后再次打开游戏并读取当前代次。

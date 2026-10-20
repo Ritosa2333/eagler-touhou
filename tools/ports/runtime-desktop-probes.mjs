@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
-import {readFile,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {build} from '../../launcher/node_modules/esbuild/lib/main.js';
@@ -9,16 +9,45 @@ import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
 import {readRuntimeObservation} from './runtime-observations.mjs';
-import {createStageRecorder} from './runtime-desktop-stage.mjs';
-import {evaluateDesktopGameplayReadiness,incompleteGameplayPrecondition,incompleteTh09TouchPrecondition,correlateTh09SfxWindow} from './runtime-desktop-readiness.mjs';
+import {createStageRecorder,requiredDesktopReadinessEvidence,requiredDesktopStartupStages,summarizeDesktopStartupEvidence} from './runtime-desktop-stage.mjs';
+import {incompleteGameplayPrecondition,incompleteTh09TouchPrecondition,correlateTh09SfxWindow} from './runtime-desktop-readiness.mjs';
 import {createFixtureServer} from '../browser/fixture-server.mjs';
 import {createFixtureResponseProbe} from './runtime-fixture-site.mjs';
+import {assessFocusRewriteForTarget,identifyPlaywrightSources,launchFocusControlledChromium} from '../browser/cdp-focus-gateway.mjs';
+import {classifyAudioLifecyclePath,compareNativeBrowserTargets,desktopCheckScope,inspectAudioContextsBeforeGesture,inspectAudioGestureWindow,inspectMinimizedKeyboardClear,inspectNativeBackgroundEvents,inspectNativeFireStimulus,inspectNativePageFocus,inspectPostCleanupForeground,inspectViewportScreenshotClip,selectDesktopExecutionMode,selectNativePageTarget,summarizeDesktopCheckScope} from './runtime-desktop-lifecycle.mjs';
+import {resolveTitleFlow} from '../../tests/adaptation/adapters/title-flow.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const outputArgument=argument('output');
 if(!outputArgument)throw new Error('Required: --output=ignored-report-directory');
 const output=resolve(outputArgument),root=resolve(import.meta.dirname,'../..');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const nativeFocusState=page=>page.evaluate(()=>({visibilityState:document.visibilityState,hidden:document.hidden,hasFocus:document.hasFocus()}));
+async function waitForNativeFocus(page,timeoutMs=5000){
+  const started=Date.now();let state=null,samples=0,lastError=null;
+  do{
+    try{state=await nativeFocusState(page);samples++;if(inspectNativePageFocus(state).ready)return{ready:true,state,samples,durationMs:Date.now()-started};}
+    catch(error){lastError=String(error.message||error);}
+    await page.waitForTimeout(100).catch(()=>{});
+  }while(Date.now()-started<timeoutMs);
+  const inspected=inspectNativePageFocus(state);
+  return{ready:false,state,samples,durationMs:Date.now()-started,missing:inspected.missing,error:lastError};
+}
+async function readPageTargetWindow(browserCdp,page,{title}={}){
+  const url=page.url(),response=await browserCdp.send('Target.getTargets');
+  const selected=selectNativePageTarget({targetInfos:response.targetInfos??[],url:title===undefined?url:undefined,title});
+  if(selected.status!=='matched')return{status:'incomplete',reason:selected.reason,url,matchCount:selected.matchCount};
+  const target=selected.target;
+  try{
+    const window=await browserCdp.send('Browser.getWindowForTarget',{targetId:target.targetId});
+    const bounds=await browserCdp.send('Browser.getWindowBounds',{windowId:window.windowId});
+    if(!Number.isSafeInteger(window.windowId))return{status:'incomplete',target,reason:'Browser.getWindowForTarget returned no native window ID.'};
+    return{status:'matched',target,window:{windowId:window.windowId,bounds:window.bounds??null,currentBounds:bounds.bounds??null}};
+  }catch(error){return{status:'incomplete',target,url,reason:`Native Browser window identity unavailable: ${error.message}`};}
+}
+const playwrightSourceSignature=source=>JSON.stringify({entry:source.entry,coreEntry:source.coreEntry,packageRoot:source.packageRoot,
+  packageName:source.packageName,version:source.version,entryIdentity:source.entryIdentity,coreEntryIdentity:source.coreEntryIdentity,packageIdentity:source.packageIdentity,
+  files:Object.fromEntries(Object.entries(source.files).map(([name,file])=>[name,{path:file.path,bytes:file.bytes,sha256:file.sha256}]))});
 const audioProbeSource=`(()=>{
  if(!window.AudioContext||!window.AudioNode){window.__eaglerDesktopAudioProbe={contexts:[],taps:[],events:[{type:'unsupported'}],capture:()=>[],summary:()=>({contexts:[],tapCount:0})};return;}
  const probe={contexts:[],taps:[],events:[],capture(){
@@ -58,8 +87,13 @@ const audioProbeSource=`(()=>{
 })();`;
 
 const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-probes/1'},async(report,save)=>{
-  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant'],flags:['suppress-touch-movement']});
+  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant'],flags:['suppress-touch-movement','background-only','input-only']});
   const suppressTouchMovement=process.argv.includes('--suppress-touch-movement');
+  const backgroundOnly=process.argv.includes('--background-only');
+  const inputOnly=process.argv.includes('--input-only');
+  const executionMode=selectDesktopExecutionMode({backgroundOnly,inputOnly});
+  const checkScope=desktopCheckScope(executionMode);
+  if(suppressTouchMovement&&backgroundOnly)throw new Error('--background-only cannot be combined with --suppress-touch-movement.');
   const selectedGame=argument('game'),selectedVariant=argument('variant');
   if(!selectedGame||selectedVariant!=='normal')throw new Error('Required: --game=<explicit comma-separated games> --variant=normal');
   const manifestArgument=argument('manifest');if(!manifestArgument)throw new Error('Required: --manifest=<accepted private input manifest>');
@@ -74,9 +108,34 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
   const harnessSource=await readFile(new URL(import.meta.url));
   const stageRecorderSource=await readFile(new URL('./runtime-desktop-stage.mjs',import.meta.url));
   const readinessSource=await readFile(new URL('./runtime-desktop-readiness.mjs',import.meta.url));
+  const practiceReadinessSource=await readFile(new URL('./practice-observations.mjs',import.meta.url));
+  const titleFlowSource=await readFile(new URL('../../tests/adaptation/adapters/title-flow.mjs',import.meta.url));
+  const productCatalogSource=await readFile(new URL('../../common/contracts/product-catalog.mjs',import.meta.url));
   const fixtureServerSource=await readFile(new URL('../browser/fixture-server.mjs',import.meta.url));
   const fixtureResponseWatcherSource=await readFile(new URL('./runtime-fixture-site.mjs',import.meta.url));
   const responseBodyCaptureSource=await readFile(new URL('../browser/response-body-capture.mjs',import.meta.url));
+  const focusGatewaySource=await readFile(new URL('../browser/cdp-focus-gateway.mjs',import.meta.url));
+  const lifecycleClassifierSource=await readFile(new URL('./runtime-desktop-lifecycle.mjs',import.meta.url));
+  const browserLauncherSource=await readFile(new URL('../browser/launch.mjs',import.meta.url));
+  const playwrightLoaderSource=await readFile(new URL('../browser/playwright.mjs',import.meta.url));
+  const playwrightSources=await identifyPlaywrightSources({workspaceRoot:root});
+  const playwrightSourceStartSignature=playwrightSourceSignature(playwrightSources);
+  const playwrightCoreSourceBytes={};
+  const playwrightCoreArtifacts={};
+  await mkdir(resolve(output,'playwright-core-source'),{recursive:true});
+  for(const [relative,identity] of Object.entries({
+    'playwright-entry':playwrightSources.entryIdentity,
+    'core-entry':playwrightSources.coreEntryIdentity,
+    'package-manifest':playwrightSources.packageIdentity,
+    ...Object.fromEntries(Object.entries(playwrightSources.files).map(([name,file])=>[name,file])),
+  })){
+    const bytes=await readFile(identity.path);
+    assert.equal(bytes.length,identity.bytes,`Playwright source size changed while snapshotting ${identity.path}`);
+    assert.equal(hash(bytes),identity.sha256,`Playwright source hash changed while snapshotting ${identity.path}`);
+    const artifactPath=`playwright-core-source/${relative.replaceAll('/','_')}`;
+    playwrightCoreSourceBytes[relative]=bytes;
+    playwrightCoreArtifacts[relative]={path:artifactPath,sourcePath:identity.path,bytes:identity.bytes,sha256:identity.sha256};
+  }
   const readerSource=readRuntimeObservation.toString();
   const readerSourceBytes=Buffer.from(`(${readerSource})\n`,'utf8');
   const keyboardBundleBytes=Buffer.from(keyboardBundle,'utf8');
@@ -86,9 +145,19 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     harness:{path:'harness.mjs',sha256:hash(harnessSource)},
     stageRecorder:{path:'runtime-desktop-stage-recorder.mjs',sha256:hash(stageRecorderSource)},
     gameplayReadiness:{path:'runtime-desktop-readiness.mjs',sha256:hash(readinessSource)},
+    practiceReadiness:{path:'practice-observations.mjs',sha256:hash(practiceReadinessSource)},
+    titleFlow:{path:'tests/adaptation/adapters/title-flow.mjs',sha256:hash(titleFlowSource)},
+    productCatalog:{path:'common/contracts/product-catalog.mjs',sha256:hash(productCatalogSource)},
     fixtureServer:{path:'fixture-server.mjs',sha256:hash(fixtureServerSource)},
     fixtureResponseWatcher:{path:'runtime-fixture-site.mjs',sha256:hash(fixtureResponseWatcherSource)},
     responseBodyCapture:{path:'response-body-capture.mjs',sha256:hash(responseBodyCaptureSource)},
+    focusGateway:{path:'cdp-focus-gateway.mjs',sha256:hash(focusGatewaySource)},
+    lifecycleClassifier:{path:'runtime-desktop-lifecycle.mjs',sha256:hash(lifecycleClassifierSource)},
+    browserLauncher:{path:'browser-launch.mjs',sha256:hash(browserLauncherSource)},
+    playwrightLoader:{path:'playwright-loader.mjs',sha256:hash(playwrightLoaderSource)},
+    playwrightCore:{entry:playwrightSources.entry,coreEntry:playwrightSources.coreEntry,packageRoot:playwrightSources.packageRoot,
+      packageName:playwrightSources.packageName,version:playwrightSources.version,entryIdentity:playwrightSources.entryIdentity,
+      coreEntryIdentity:playwrightSources.coreEntryIdentity,packageIdentity:playwrightSources.packageIdentity,files:playwrightCoreArtifacts},
     injectedReader:{path:'runtime-observation-reader.js',serialization:'readRuntimeObservation.toString()',sha256:hash(readerSourceBytes)},
     keyboardBundle:{path:'desktop-keyboard-mapping.js',sha256:hash(keyboardBundleBytes)},
     audioProbeSource:{path:'desktop-audio-probe.js',sha256:hash(audioProbeBytes)},
@@ -97,9 +166,17 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     writeFile(resolve(output,probeArtifacts.harness.path),harnessSource),
     writeFile(resolve(output,probeArtifacts.stageRecorder.path),stageRecorderSource),
     writeFile(resolve(output,probeArtifacts.gameplayReadiness.path),readinessSource),
+    writeFile(resolve(output,probeArtifacts.practiceReadiness.path),practiceReadinessSource),
+    writeFile(resolve(output,probeArtifacts.titleFlow.path),titleFlowSource),
+    writeFile(resolve(output,probeArtifacts.productCatalog.path),productCatalogSource),
     writeFile(resolve(output,probeArtifacts.fixtureServer.path),fixtureServerSource),
     writeFile(resolve(output,probeArtifacts.fixtureResponseWatcher.path),fixtureResponseWatcherSource),
     writeFile(resolve(output,probeArtifacts.responseBodyCapture.path),responseBodyCaptureSource),
+    writeFile(resolve(output,probeArtifacts.focusGateway.path),focusGatewaySource),
+    writeFile(resolve(output,probeArtifacts.lifecycleClassifier.path),lifecycleClassifierSource),
+    writeFile(resolve(output,probeArtifacts.browserLauncher.path),browserLauncherSource),
+    writeFile(resolve(output,probeArtifacts.playwrightLoader.path),playwrightLoaderSource),
+    ...Object.entries(playwrightCoreSourceBytes).map(([relative,bytes])=>writeFile(resolve(output,playwrightCoreArtifacts[relative].path),bytes)),
     writeFile(resolve(output,probeArtifacts.injectedReader.path),readerSourceBytes),
     writeFile(resolve(output,probeArtifacts.keyboardBundle.path),keyboardBundleBytes),
     writeFile(resolve(output,probeArtifacts.audioProbeSource.path),audioProbeBytes),
@@ -110,14 +187,36 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     probeArtifacts,
     selection:{games:selection.games,variant:selection.variant,expectedTargets:selection.expected},
     negativeControl:{enabled:suppressTouchMovement,kind:suppressTouchMovement?'suppress-touch-movement':null},
-    scope:'Headed Chromium on Windows with current normal Runtime packages and private DATA. Playwright keyboard events pass through the production KeyboardMapping and Runtime KeyboardInputBridge. A small host harness forwards host blur/document-hidden to KeyboardMapping.clear and keyboard-clear; this verifies Runtime release behavior without claiming the Launcher UI wiring. Simulated touch commands enter each Runtime package through its documented touch protocol while the native game loop runs. WebAudio sampling is attached inside each Runtime iframe to its actual output graph. No physical keyboard, touchscreen, controller, retail EXE comparison, Launcher UI, multiplayer session, or OGG track is claimed.',
+    executionMode,
+    scope:backgroundOnly?'Headed full Chrome with current normal Runtime packages and private DATA. The probe performs the same Runtime launch and native gameplay preparation, then runs only package/DATA identity, real window-minimize lifecycle, same-window tab background/foreground lifecycle, background audio recovery, and postflight identity checks. It observes native target/window IDs and document focus state; Playwright focus emulation is audited and rewritten through a loopback CDP gateway. No synthetic lifecycle events are dispatched.':inputOnly?'Headed full Chrome with current normal Runtime packages and private DATA. This mode retains the full foreground gameplay input, touch, foreground SFX, pause, new-epoch and package/DATA identity checks. It omits only window-minimize, same-window tab-background and background-audio-recovery checks, which are recorded as omitted and do not count as passes.':'Headed Chromium on Windows with current normal Runtime packages and private DATA. Playwright keyboard events pass through the production KeyboardMapping and Runtime KeyboardInputBridge. A small host harness forwards host blur/document-hidden to KeyboardMapping.clear and keyboard-clear; this verifies Runtime release behavior without claiming the Launcher UI wiring. Simulated touch commands enter each Runtime package through its documented touch protocol while the native game loop runs. WebAudio sampling is attached inside each Runtime iframe to its actual output graph. No physical keyboard, touchscreen, controller, retail EXE comparison, Launcher UI, multiplayer session, or OGG track is claimed.',
     protocols:{keyboard:'eagler-touhou/keyboard-input/1',touch:'eagler-touhou/runtime-protocol top-level touch-controls fields',nativeObservation:'eagler-touhou/runtime-observation/1',audio:'Per-Runtime-realm AudioNode AnalyserNode tap immediately before AudioDestinationNode'},
     audioMode:'configure.music=none; this isolates actual sound-effect output from BGM. AUDIO-01 OGG track playback is outside this probe because the accepted input manifest supplies no music resource receipt.',
-    requiredChecks:['INPUT-01 arrows up/down/left/right','INPUT-02 WASD up/down/left/right through production keyboard aliases',
+    requiredChecks:backgroundOnly?[
+      'BUILD-04/PACKAGE-02 package and private DATA identity preflight',
+      'RUNTIME-04/INPUT-06 real minimized-window lifecycle and native input release',
+      'RUNTIME-04/INPUT-06 same-window tab background/foreground lifecycle and native input release',
+      'AUDIO-04 WebAudio output recovery after a real background transition',
+      'BUILD-04/PACKAGE-02 package and private DATA identity postflight',
+    ]:inputOnly?[
+      'BUILD-04/PACKAGE-02 package and private DATA identity preflight',
+      'INPUT-01 arrows up/down/left/right and input-negative controls',
+      'INPUT-06 native keyup and clear while held',
+      'AUDIO-02 foreground WebAudio PCM output with music disabled',
+      'TOUCH-01..04 all four configured movement modes',
+      'INPUT-02 WASD up/down/left/right through production keyboard aliases',
+      'TOUCH-05/06 fire and focus | TOUCH-15 mixed holders | TOUCH-16 cancel releases touch',
+      'RUNTIME-04 pause and simulation freeze when observable',
+      'RUNTIME-01 Runtime frame teardown and epoch replacement',
+      'BUILD-04/PACKAGE-02 package and private DATA identity postflight',
+    ]:['INPUT-01 arrows up/down/left/right','INPUT-02 WASD up/down/left/right through production keyboard aliases',
       'INPUT-06 native keyup and clear while held','TOUCH-01..04 all four configured movement modes','TOUCH-05/06 fire and focus','TOUCH-15 mixed holders','TOUCH-16 cancel releases touch',
       'RUNTIME-04 pause and simulation freeze when observable','RUNTIME-04 headed window minimize lifecycle observation',
       'INPUT-06/RUNTIME-04 real tab background/foreground and keyboard clear',
       'AUDIO-02 WebAudio PCM output with music disabled','RUNTIME-01 Runtime frame teardown and epoch replacement'],targets:[]});
+  report.requiredStartupStages=[...requiredDesktopStartupStages];
+  report.requiredReadinessEvidence={...requiredDesktopReadinessEvidence};
+  report.requiredCheckIds=checkScope.requiredIds;
+  report.omittedChecks=checkScope.omittedIds.map(id=>({id,status:'omitted',reason:`Excluded by explicit --${executionMode} execution mode; this is not a pass.`}));
   const routeFiles=new Map();
   for(const [name,file] of Object.entries(config.shared??{}))routeFiles.set(`/shared/${name}`,resolve(file));
   routeFiles.set('/desktop-keyboard-mapping.js',keyboardBundleBytes);
@@ -181,23 +280,68 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
   }catch(error){reply(request,response,String(error.message||error),'text/plain',500);}}, {protocol:'https',port:0,host:'127.0.0.1'});
   report.server={protocol:fixture.protocol,host:fixture.host,port:fixture.port,tlsIdentity:fixture.tlsIdentity};
   let browser;
+  let lifecycleController;
   try{
-    const {launchBrowser}=await import('../browser/launch.mjs');
-    browser=await launchBrowser({headless:false,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
+    const {loadPlaywright}=await import('../browser/playwright.mjs');
+    const {chromium}=await loadPlaywright();
+    lifecycleController=await launchFocusControlledChromium({chromium,args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
       `--ignore-certificate-errors-spki-list=${fixture.tlsIdentity.spkiSha256}`]});
-    report.browser={version:browser.version(),mode:'headed Chromium',headless:false,
-      certificateTrust:'Chromium trusts only the ephemeral fixture certificate SPKI pin for this run.'};
+    browser=lifecycleController.browser;
+    report.browser={...lifecycleController.metadata,version:browser.version(),mode:'headed full Chrome via public launchServer and loopback CDP gateway',headless:false,
+      certificateTrust:'Chromium trusts only the ephemeral fixture certificate SPKI pin for this run.',
+      playwrightCore:{packageName:playwrightSources.packageName,version:playwrightSources.version,entry:playwrightSources.entry,
+        coreEntry:playwrightSources.coreEntry,packageRoot:playwrightSources.packageRoot},
+      focusEmulationPolicy:'Controller Emulation.setFocusEmulationEnabled enabled=true commands are audited and forwarded with enabled=false; Chrome receives the request and generates lifecycle events natively.'};
     for(const target of selection.targets){
-      const record={game:target.game,variant:target.variant,id:target.id,status:'running',checks:[],stages:[],events:[],lifecycleEvents:[],errors:[],consoleErrors:[],httpErrors:[],audio:{}};
+      const titleFlow=resolveTitleFlow({game:target.game,variant:target.variant});
+      const record={game:target.game,variant:target.variant,id:target.id,status:'running',checks:[],stages:[],events:[],lifecycleEvents:[],errors:[],consoleErrors:[],httpErrors:[],audio:{},
+        executionMode,requiredCheckIds:checkScope.requiredIds,
+        requiredReadinessEvidence:{...requiredDesktopReadinessEvidence},
+        omittedChecks:report.omittedChecks.map(item=>({...item}))};
       report.targets.push(record);await save();
-      let context,page,frame,cdp,windowInfo,fixtureAudit,activeEpoch=1,backgroundAudioEventStart=0,resetInputState=async()=>{};
+      let context,page,frame,cdp,windowInfo,fixtureAudit,screenshotPageIdentity=null,activeEpoch=1,backgroundAudioEventStart=0,resetInputState=async()=>{};
       const stage=createStageRecorder(record,save);
-      const check=async(id,ids,operation)=>{const entry={id,adaptationIds:ids,status:'running'};record.checks.push(entry);await save();try{entry.observation=await operation();if(entry.observation?.checkStatus){entry.status=entry.observation.checkStatus;delete entry.observation.checkStatus;}else entry.status='passed';}
+      const requiredCheckIds=checkScope.requiredIds?new Set(checkScope.requiredIds):null;
+      const check=async(id,ids,operation)=>{
+        if(requiredCheckIds&&!requiredCheckIds.has(id)){
+          if(!record.omittedChecks.some(item=>item.id===id))record.omittedChecks.push({id,adaptationIds:ids,status:'omitted',reason:`Excluded by --${executionMode}; this check is not counted as a pass.`});
+          await save();return null;
+        }
+        const entry={id,adaptationIds:ids,status:'running'};record.checks.push(entry);await save();try{entry.observation=await operation();if(entry.observation?.checkStatus){entry.status=entry.observation.checkStatus;delete entry.observation.checkStatus;}else entry.status='passed';}
         catch(error){entry.status='failed';entry.error=String(error.stack||error);record.errors.push({check:id,error:entry.error});await save();await resetInputState().catch(()=>{});}await save();return entry;};
       const observe=()=>frame.evaluate(readRuntimeObservation,{game:target.game,variant:target.variant});
       const nativePeek=()=>frame.evaluate(game=>{const runtime=window[`__${game}Runtime`],module=runtime?.Module??window.Module,core=runtime?.core??module,audioContexts={};for(const api of ['SDL','SDL2','SDL3']){try{const context=module?.[api]?.audioContext;if(context)audioContexts[api]={state:context.state,sampleRate:context.sampleRate,currentTime:context.currentTime,sharedWithHost:context===parent.__touhouAudioContext};}catch(error){audioContexts[api]={error:String(error)};}}return{canvas:document.querySelector('canvas')?{width:document.querySelector('canvas').width,height:document.querySelector('canvas').height}:null,audioContexts,audioProbe:window.__eaglerDesktopAudioProbe?.summary?.()??null,wasmRuntime:!!core};},target.game);
+      const captureRuntimeScreenshot=async(label,path)=>{
+        const evidence={label,path,status:'running',startedAt:new Date().toISOString()};
+        try{
+          if(!page||!cdp||!frame)throw Error('The page, native CDP session, or Runtime frame is unavailable.');
+          const before=await readPageTargetWindow(cdp,page);evidence.pageBeforeRestore=before;
+          if(before.status!=='matched'||before.target?.type!=='page'||!Number.isSafeInteger(before.window?.windowId))
+            throw Error('The game page target and native window could not be identified before screenshot capture.');
+          await cdp.send('Browser.setWindowBounds',{windowId:before.window.windowId,bounds:{windowState:'normal'}});
+          await page.bringToFront();
+          evidence.hostFocus=await waitForNativeFocus(page,5000);
+          evidence.runtimeFocus=await waitForNativeFocus(frame,5000);
+          const after=await readPageTargetWindow(cdp,page);evidence.pageAfterRestore=after;
+          const samePage=after.status==='matched'&&after.target?.type==='page'&&after.target.targetId===before.target.targetId;
+          const sameWindow=after.status==='matched'&&after.window?.windowId===before.window.windowId;
+          evidence.identity={samePage,sameWindow,targetId:after.target?.targetId??null,windowId:after.window?.windowId??null};
+          if(!samePage||!sameWindow)throw Error('Page target or native window identity changed during screenshot preparation.');
+          if(!evidence.hostFocus.ready||!evidence.runtimeFocus.ready)throw Error('Host and Runtime documents did not both report native visible/focused state.');
+          if(screenshotPageIdentity&&(screenshotPageIdentity.targetId!==after.target.targetId||screenshotPageIdentity.windowId!==after.window.windowId))
+            throw Error('Screenshot page target/window does not match the previously captured game page.');
+          screenshotPageIdentity??={targetId:after.target.targetId,windowId:after.window.windowId};
+          const bounds=await page.locator('iframe').boundingBox();
+          const viewport=await page.evaluate(()=>({width:window.innerWidth,height:window.innerHeight}));
+          evidence.clip=inspectViewportScreenshotClip({bounds,viewport});
+          if(!evidence.clip.ready)throw Error(`Runtime iframe screenshot clip is outside or invalid for the viewport: ${evidence.clip.missing.join('; ')}`);
+          await page.screenshot({path,clip:evidence.clip.clip});
+          evidence.status='captured';
+        }catch(error){evidence.status='unavailable';evidence.error=String(error.stack||error);}
+        evidence.finishedAt=new Date().toISOString();record.screenshots??=[];record.screenshots.push(evidence);await save();return evidence;
+      };
       const waitObservation=async(label,predicate,timeoutMs=30000)=>{const start=Date.now();let state,samples=0;do{state=await observe();samples++;if(predicate(state)){record.preconditions??=[];record.preconditions.push({label,samples,durationMs:Date.now()-start,state});return state;}await page.waitForTimeout(75);}while(Date.now()-start<timeoutMs);throw Error(`${label}: native condition not reached: ${JSON.stringify(state)}`);};
-      const gameplayReadiness=state=>evaluateDesktopGameplayReadiness(state,target.game);
+      const gameplayReadiness=state=>titleFlow.gameplayReadiness(state,'desktop');
       const gameplayReady=state=>gameplayReadiness(state).ready;
       const waitForGameplayReadiness=async(epoch,label,timeoutMs=5000)=>{
         const start=Date.now();let state,samples=0;
@@ -207,6 +351,16 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         record.gameplayReadinessByEpoch.push({epoch,label,ready:readiness.ready,reasons:readiness.reasons,
           samples,durationMs:Date.now()-start,state});
         await save();
+        return state;
+      };
+      const enterNativeGameplay=async(epoch,label=`native gameplay eligibility epoch ${epoch}`)=>{
+        await titleFlow.enterGameplay({observe,press:async(code,holdMs=90)=>key(code,holdMs),
+          waitUntil:(waitLabel,predicate,timeoutMs=30000)=>waitObservation(waitLabel,predicate,timeoutMs),
+          lane:'desktop',epoch,label,timeoutMs:30000});
+        let state=await waitForGameplayReadiness(epoch,label);
+        if(titleFlow.needsControlWarmup&&gameplayReady(state)){
+          await key('ControlLeft',250);state=await observe();
+        }
         return state;
       };
       const waitRuntimeEvent=async(eventName,epoch,label,timeoutMs=120000)=>{await page.waitForFunction(({eventName,epoch})=>window.events.some(event=>event?.event===eventName&&event.epoch===epoch),{eventName,epoch},{timeout:timeoutMs});return page.evaluate(({eventName,epoch})=>window.events.find(event=>event?.event===eventName&&event.epoch===epoch),{eventName,epoch});};
@@ -241,6 +395,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
       try{
         await check('package-and-private-data-identity',['BUILD-04','PACKAGE-02'],async()=>{const packageIdentity=await verifyRuntimePackage(target,{repoRoot:root});const dataIdentity=await verifyPrivateData(target.data);packages.set(target.id,packageIdentity);dataIdentities.set(target.id,dataIdentity);if(target.dataSha256)assert.equal(dataIdentity.sha256,target.dataSha256);record.packageIdentity=packageIdentity;record.dataIdentity=dataIdentity;return{packageSha256:packageIdentity.packageSha256,sourceBuild:packageIdentity.sourceBuild,privateData:dataIdentity};});
         if(record.checks.at(-1).status!=='passed'){record.status='failed';record.finishedAt=new Date().toISOString();await save();continue;}
+        cdp=await browser.newBrowserCDPSession();
         context=await browser.newContext({viewport:{width:1100,height:820}});
         await context.addInitScript({content:`if(window!==window.top){${audioProbeSource}window.__desktopRawKeyboardEvents=[];for(const name of ['keydown','keyup'])window.addEventListener(name,event=>window.__desktopRawKeyboardEvents.push({type:name,code:event.code,key:event.key,keyCode:event.keyCode,isTrusted:event.isTrusted,target:event.target?.tagName??null,time:performance.now()}),true);const type=()=>({desktopProbe:true,game:new URL(location.href).pathname.split('/')[2],epoch:Number(new URLSearchParams(location.search).get('runtimeEpoch'))});for(const name of ['blur','focus','visibilitychange','pagehide','pageshow']){const target=name==='visibilitychange'?document:window;target.addEventListener(name,()=>{try{parent.postMessage({...type(),type:name,visibility:document.visibilityState,hidden:document.hidden,time:performance.now()},location.origin);}catch{}},true);}}`});
         page=await context.newPage();page.on('pageerror',error=>record.errors.push({page:String(error)}));page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push(message.text());});page.on('response',response=>{if(response.status()>=400)record.httpErrors.push({url:response.url(),status:response.status()});});
@@ -263,50 +418,17 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           await stage('launch',{epoch},()=>page.evaluate(()=>rpc('launch')));
           await stage('first-frame',{epoch,event:'first-frame'},async()=>{const event=await waitRuntimeEvent('first-frame',epoch,`desktop-first-frame-${epoch}`);await flushFixtureAudit();return event;});
           ensureFrame();await page.evaluate(()=>document.body.focus());
-          if(target.game==='th20'){
-            let state=await waitObservation(`TH20 title input ready epoch ${epoch}`,value=>value.status?.titleState===1&&value.status?.titlePhase===2);
-            for(let i=0;i<10&&state.status.titleCursor!==0;i++){await key('ArrowUp');state=await observe();}
-            assert.equal(state.status.titleCursor,0,'TH20 title must select ordinary game');await key('KeyZ');
-            await waitObservation(`TH20 difficulty input ready epoch ${epoch}`,value=>value.status?.titleState===5&&value.status.titlePhase===2);await key('KeyZ');
-            await waitObservation(`TH20 character input ready epoch ${epoch}`,value=>value.status?.titleState===6&&value.status.titlePhase===2);await key('KeyZ');
-            await waitObservation(`TH20 stone input ready epoch ${epoch}`,value=>value.status?.titleState===7&&value.status.titlePhase===2&&value.ui?.stone?.state===3&&value.ui.stone.category===0);await key('KeyZ');
-            await waitObservation(`TH20 loadout accepted epoch ${epoch}`,value=>value.status?.titleState===7&&value.status.titlePhase===3);
-            const afterLoadout=await observe();if(afterLoadout.capabilities.input&&afterLoadout.capabilities.position)
-              await waitObservation(`TH20 native gameplay ready epoch ${epoch}`,gameplayReady,30000);
-          }else{
-            for(let i=0;i<32&&!gameplayReady(await observe());i++)await key('KeyZ');
-          }
-          let state=await waitForGameplayReadiness(epoch,`native gameplay eligibility epoch ${epoch}`);
-          if(!['th09','th11'].includes(target.game)&&gameplayReady(state)){
-            await key('ControlLeft',250);state=await observe();
-          }
-          return state;
+          return enterNativeGameplay(epoch);
         };
         await stage('configure',{epoch:1,mode:'touch'},()=>configureEpoch('touch'));
         await stage('launch',{epoch:1},()=>page.evaluate(()=>rpc('launch')));
         await stage('first-frame',{epoch:1,event:'first-frame'},async()=>{const event=await waitRuntimeEvent('first-frame',1,'desktop-first-frame');await flushFixtureAudit();return event;});
         await page.evaluate(()=>document.body.focus());
         const canvas=await nativePeek();assert.ok(canvas.canvas?.width>0&&canvas.canvas?.height>0);record.initial={ready,canvas,audioContexts:canvas.audioContexts,audioProbe:canvas.audioProbe};
-        await page.locator('iframe').screenshot({path:resolve(output,`${target.id}-title.png`)});
-        if(target.game==='th20'){
-          let state=await waitObservation('TH20 title input ready',value=>value.status?.titleState===1&&value.status?.titlePhase===2);
-          for(let i=0;i<10&&state.status.titleCursor!==0;i++){await key('ArrowUp');state=await observe();}
-          assert.equal(state.status.titleCursor,0,'TH20 title must select ordinary game');await key('KeyZ');
-          await waitObservation('TH20 difficulty input ready',value=>value.status?.titleState===5&&value.status.titlePhase===2);await key('KeyZ');
-          await waitObservation('TH20 character input ready',value=>value.status?.titleState===6&&value.status.titlePhase===2);await key('KeyZ');
-          await waitObservation('TH20 stone input ready',value=>value.status?.titleState===7&&value.status.titlePhase===2&&value.ui?.stone?.state===3&&value.ui.stone.category===0);await key('KeyZ');
-          await waitObservation('TH20 loadout accepted',value=>value.status?.titleState===7&&value.status.titlePhase===3);
-          const afterLoadout=await observe();if(afterLoadout.capabilities.input&&afterLoadout.capabilities.position)
-            await waitObservation('TH20 native gameplay ready',gameplayReady,30000);
-        }else{
-          for(let i=0;i<32&&!gameplayReady(await observe());i++)await key('KeyZ');
-        }
-        let started=await waitForGameplayReadiness(activeEpoch,'native gameplay eligibility epoch 1');
-        if(!['th09','th11'].includes(target.game)&&gameplayReady(started)){
-          await key('ControlLeft',250);started=await observe();
-        }
+        await captureRuntimeScreenshot('title',resolve(output,`${target.id}-title.png`));
+        const started=await enterNativeGameplay(activeEpoch,'native gameplay eligibility epoch 1');
         record.gameplayStart=started;
-        if(gameplayReady(started))await page.locator('iframe').screenshot({path:resolve(output,`${target.id}-gameplay.png`)});
+        if(gameplayReady(started))await captureRuntimeScreenshot('gameplay',resolve(output,`${target.id}-gameplay.png`));
         const directionCase=async(layout,entries)=>{
           const selectionState=await page.evaluate(layout=>window.__desktopSelectLayout(layout),layout);assert.equal(selectionState.selected,layout);
           if(layout==='wasd')await page.evaluate(()=>document.body.focus());else await frame.locator('canvas').focus();
@@ -407,6 +529,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             if(sample.voices)voiceSamples.push({elapsedMs,voices:sample.voices,localTaps});
             await page.waitForTimeout(25);
           }while(Date.now()<end);
+          const captureWindowEndedAtMs=Date.now();
           const frames=captures.map(item=>item.samples),nonZeroSamples=captures.reduce((sum,item)=>sum+item.nonZero,0),peakAbs=captures.reduce((peak,item)=>Math.max(peak,item.peakAbs),0),rmsMax=captures.reduce((peak,item)=>Math.max(peak,item.rms),0);
           const pcmByTap=new Map();for(const capture of captures){const total=pcmByTap.get(capture.tapIndex)??{tapIndex:capture.tapIndex,captures:0,nonZeroSamples:0,peakAbs:0,rmsMax:0};
             total.captures++;total.nonZeroSamples+=capture.nonZero;total.peakAbs=Math.max(total.peakAbs,capture.peakAbs);total.rmsMax=Math.max(total.rmsMax,capture.rms);pcmByTap.set(capture.tapIndex,total);}
@@ -431,7 +554,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           }
           const samplePath=resolve(output,`${target.id}-${label}-webaudio.f32`);const flat=frames.flat(),buffer=Buffer.alloc(flat.length*4);flat.forEach((value,index)=>buffer.writeFloatLE(value,index*4));await writeFile(samplePath,buffer);
           const audioState=await nativePeek();
-          return{durationMs,captureCount:captures.length,contextState:captures.at(-1)?.contextState??Object.values(audioState.audioContexts??{})[0]?.state??null,sampleRate:captures.find(item=>item.sampleRate)?.sampleRate??null,
+          return{durationMs,captureStartedAtMs:start,captureWindowEndedAtMs,captureFinishedAtMs:Date.now(),captureCount:captures.length,contextState:captures.at(-1)?.contextState??Object.values(audioState.audioContexts??{})[0]?.state??null,
+            contextStates:captures.map(item=>item.contextState),sampleRate:captures.find(item=>item.sampleRate)?.sampleRate??null,
             tapCount:audioState.audioProbe?.tapCount??0,contexts:audioState.audioProbe?.contexts??[],nonZeroSamples,peakAbs,rmsMax,
             ...(voiceDiagnostics?{nativeSfx:voiceDiagnostics}:{}),samplePath,bytes:buffer.length,sha256:hash(buffer)};
         };
@@ -628,76 +752,228 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         });
         let backgroundTabEvidence;
         await check('window-minimize-foreground-and-release',['RUNTIME-04','INPUT-06'],async()=>{
-          const before=await observe(),eligibility=incompleteGameplayPrecondition(before,target.game);
+          await resetInputState(activeEpoch);
+          const before=await waitObservation('Native keyboard input is neutral before window minimize',state=>state.input.value===0,2000),eligibility=incompleteGameplayPrecondition(before,target.game);
           if(eligibility)return{...eligibility,stage:'before-window-minimize'};
-          let held,minimized,focused,events,hostEvents,released,afterKeyup;const lifecycleStart=await page.evaluate(()=>lifecycleEvents.length),hostLifecycleStart=await page.evaluate(()=>hostKeyboardLifecycle.length);
+          await page.bringToFront();const nativeFocusBefore=await waitForNativeFocus(page);
+          const nativePage=await readPageTargetWindow(cdp,page);
+          if(!nativeFocusBefore.ready)return{checkStatus:'incomplete',before,nativeFocusBefore,nativePage,reason:'The game page did not have native visible and focused state before minimizing.'};
+          if(nativePage.status!=='matched')return{checkStatus:'incomplete',before,nativeFocusBefore,nativePage,reason:'The game page could not be matched to one native Chrome target and window.'};
+          windowInfo=nativePage.window;
+          let held,minimized,focused,events,hostEvents,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,nativeFocusAfter,
+            boundsAtHiddenSample,hiddenInput,eventsWhileMinimized,hostEventsWhileMinimized,minimizedKeyboardClear;
+          const lifecycleStart=await page.evaluate(()=>lifecycleEvents.length),hostLifecycleStart=await page.evaluate(()=>hostKeyboardLifecycle.length);
           try{
           const directionKey=before.position.x>320?'ArrowLeft':'ArrowRight',sign=directionKey==='ArrowRight'?1:-1;
           await keyDown(directionKey);held=await waitObservation(`direction held before window minimize (${directionKey})`,state=>state.input.value!==before.input.value&&(state.position.x-before.position.x)*sign>0,3000);
-          cdp=await context.newCDPSession(page);windowInfo=await cdp.send('Browser.getWindowForTarget');await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'minimized'}});await page.waitForTimeout(650);
-          minimized={visibility:await page.evaluate(()=>document.visibilityState),hidden:await page.evaluate(()=>document.hidden),windowState:(await cdp.send('Browser.getWindowForTarget')).bounds.windowState};
-          await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'normal'}});await page.bringToFront();await page.waitForTimeout(300);
+          const hiddenStartAtMs=await page.evaluate(()=>performance.now());
+          await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'minimized'}});await page.waitForTimeout(650);
+          boundsAfterMinimize=await cdp.send('Browser.getWindowBounds',{windowId:windowInfo.windowId});
+          await page.waitForFunction(index=>hostKeyboardLifecycle.slice(index).some(item=>(item.reason==='host-blur'||item.reason==='host-hidden')&&item.accepted===true),
+            hostLifecycleStart,{timeout:1400}).catch(()=>{});
+          hostEventsWhileMinimized=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);
+          hiddenInput=await waitObservation('Native keyboard input is neutral while the Chrome window is still minimized',state=>state.input.value===before.input.value,1400).catch(()=>null);
+          boundsAtHiddenSample=await cdp.send('Browser.getWindowBounds',{windowId:windowInfo.windowId});
+          const nativeState=await nativeFocusState(page),hiddenSampledAtMs=await page.evaluate(()=>performance.now());
+          eventsWhileMinimized=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);
+          minimizedKeyboardClear=inspectMinimizedKeyboardClear({windowState:boundsAtHiddenSample.bounds?.windowState,nativeState,
+            events:eventsWhileMinimized.filter(item=>item.epoch===activeEpoch),hostEvents:hostEventsWhileMinimized,
+            hiddenStartAtMs,hiddenSampledAtMs,inputValue:hiddenInput?.input?.value,neutralInputValue:before.input.value});
+          minimized={nativeState,windowState:boundsAtHiddenSample.bounds?.windowState,bounds:boundsAtHiddenSample.bounds,boundsInitially:boundsAfterMinimize.bounds,hiddenStartAtMs,hiddenSampledAtMs,
+            hiddenInput,hostKeyboardLifecycle:hostEventsWhileMinimized,lifecycleEvents:eventsWhileMinimized,minimizedKeyboardClear,
+            lifecycle:inspectNativeBackgroundEvents({state:nativeState,events:eventsWhileMinimized.filter(item=>item.epoch===activeEpoch)})};
+          await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'normal'}});await page.bringToFront();
+          nativeFocusAfter=await waitForNativeFocus(page);boundsAfterRestore=await cdp.send('Browser.getWindowBounds',{windowId:windowInfo.windowId});
           focused=await observe();events=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);hostEvents=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);released=focused.input.value===before.input.value;
           await keyUp(directionKey);afterKeyup=await observe();
           }catch(error){const finalState=await observe().catch(()=>null),finalEligibility=incompleteGameplayPrecondition(finalState,target.game);
-            if(finalEligibility)return{...finalEligibility,before,held,minimized,focused,events,hostEvents,actionError:String(error.stack||error)};
+            if(finalEligibility)return{...finalEligibility,before,nativeFocusBefore,nativePage,held,minimized,focused,events,hostEvents,actionError:String(error.stack||error)};
             throw error;
           }finally{await keyUp(before.position.x>320?'ArrowLeft':'ArrowRight');await resetInputState(activeEpoch);}
-          const activeEvents=events.filter(item=>item.epoch===activeEpoch),backgroundVisibilityReached=minimized.hidden||activeEvents.some(item=>item.type==='visibilitychange'&&item.hidden),focusEventReached=activeEvents.some(item=>item.type==='blur')||hostEvents.some(item=>item.reason==='host-blur');
-          const minimizeEvidence={before,held,minimized,focused,released,afterKeyup,lifecycleEvents:events,hostKeyboardLifecycle:hostEvents,backgroundVisibilityReached,focusEventReached,directionKey:before.position.x>320?'ArrowLeft':'ArrowRight'};
+          const activeEvents=events.filter(item=>item.epoch===activeEpoch),lifecycle=inspectNativeBackgroundEvents({state:minimized.nativeState,events:activeEvents});
+          const backgroundVisibilityReached=lifecycle.visibilityHidden||lifecycle.visibilityChange,
+            focusEventReached=lifecycle.blur||hostEvents.some(item=>item.reason==='host-blur'),
+            minimizeEvidence={before,nativeFocusBefore,nativePage,held,minimized,focused,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,minimizedKeyboardClear,
+              nativeFocusAfter,lifecycleEvents:events,hostKeyboardLifecycle:hostEvents,backgroundVisibilityReached,focusEventReached,
+              directionKey:before.position.x>320?'ArrowLeft':'ArrowRight'};
+          if(minimized.windowState!=='minimized')return{checkStatus:'incomplete',...minimizeEvidence,reason:'Chrome did not report the owned window in minimized state.'};
+          if(!nativeFocusAfter?.ready)return{checkStatus:'incomplete',...minimizeEvidence,reason:'The restored game page did not regain native visible and focused state.'};
           if(!minimizeEvidence.focusEventReached&&!minimizeEvidence.backgroundVisibilityReached)
             return{checkStatus:'incomplete',...minimizeEvidence,reason:'Chromium minimized the window without hiding the document or blurring the Runtime'};
+          if(minimizedKeyboardClear.status==='incomplete')return{checkStatus:'incomplete',...minimizeEvidence,
+            reason:minimizedKeyboardClear.missing.join('; ')};
+          if(minimizedKeyboardClear.status==='failed')return{checkStatus:'failed',...minimizeEvidence,
+            reason:minimizedKeyboardClear.missing.join('; ')};
           assert.ok(released,'Foreground lifecycle must clear held native input');assert.equal(afterKeyup.input.value,before.input.value);
           return minimizeEvidence;
         });
         await check('background-tab-foreground-release',['RUNTIME-04','INPUT-06'],async()=>{
           const initial=await observe(),eligibility=incompleteGameplayPrecondition(initial,target.game);
           if(eligibility)return{...eligibility,stage:'before-background-tab'};
+          await page.bringToFront();const nativeFocusBefore=await waitForNativeFocus(page);
+          const gamePageTarget=await readPageTargetWindow(cdp,page);
+          if(!nativeFocusBefore.ready)return{checkStatus:'incomplete',initial,nativeFocusBefore,gamePageTarget,reason:'The game page did not have native visible and focused state before switching tabs.'};
+          if(gamePageTarget.status!=='matched')return{checkStatus:'incomplete',initial,nativeFocusBefore,gamePageTarget,reason:'The game page could not be matched to one native Chrome target and window.'};
           await resetInputState(activeEpoch);const neutralStart=await waitObservation('Native keyboard input is neutral before tab switch',state=>state.input.value===0,2000);
           await page.waitForTimeout(180);const before=await observe();assert.equal(before.input.value,neutralStart.input.value,'Native input must remain neutral before tab switch');
           const directionKey=before.position.x>320?'ArrowLeft':'ArrowRight',sign=directionKey==='ArrowRight'?1:-1;
           await page.evaluate(()=>document.body.focus());const lifecycleStart=await page.evaluate(()=>lifecycleEvents.length),hostLifecycleStart=await page.evaluate(()=>hostKeyboardLifecycle.length);
-          const audioBefore=await nativePeek();backgroundAudioEventStart=await frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.events?.length??0);
-          let held,movementDuringHold,hidden,events,hostEvents,restored,afterReturn,afterKeyup,audioAfterReturn;let backgroundPage;
+          backgroundAudioEventStart=await frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.events?.length??0);const audioBefore=await nativePeek();
+          let held,movementDuringHold,hidden,events,hostEvents,restored,afterReturn,afterKeyup,audioAfterReturn,backgroundPageTarget,windowComparison;
+          let backgroundPage,backgroundPageClose={status:'not-created'};const backgroundTitle=`eagler-desktop-background-${randomUUID()}`;
           try{
             await keyDown(directionKey);held=await waitObservation(`native direction input held before background tab (${directionKey})`,state=>state.input.value!==before.input.value,3000);
             movementDuringHold=Number.isFinite(held.position?.x)&&Number.isFinite(before.position?.x)?(held.position.x-before.position.x)*sign>0:null;
-            backgroundPage=await context.newPage();await backgroundPage.bringToFront();
-            try{await page.waitForFunction(()=>document.visibilityState==='hidden',undefined,{timeout:5000});hidden={visibility:await page.evaluate(()=>document.visibilityState),hidden:await page.evaluate(()=>document.hidden)};}
-            catch{hidden={visibility:await page.evaluate(()=>document.visibilityState),hidden:await page.evaluate(()=>document.hidden)};}
-            await page.bringToFront();try{await page.waitForFunction(()=>document.visibilityState==='visible',undefined,{timeout:5000});}catch{}
-            restored={visibility:await page.evaluate(()=>document.visibilityState),hidden:await page.evaluate(()=>document.hidden)};
+            backgroundPage=await context.newPage();await backgroundPage.setContent(`<!doctype html><title>${backgroundTitle}</title><body>background tab target</body>`);
+            backgroundPageTarget=await readPageTargetWindow(cdp,backgroundPage,{title:backgroundTitle});
+            if(backgroundPageTarget.status!=='matched')return{checkStatus:'incomplete',nativeFocusBefore,gamePageTarget,backgroundPageTarget,before,held,
+              reason:'The second page could not be matched to one native Chrome page target and window.'};
+            windowComparison=compareNativeBrowserTargets({pageTarget:gamePageTarget.target,pageWindowId:gamePageTarget.window.windowId,
+              otherTarget:backgroundPageTarget.target,otherWindowId:backgroundPageTarget.window.windowId});
+            if(windowComparison.status!=='matched')return{checkStatus:'incomplete',nativeFocusBefore,gamePageTarget,backgroundPageTarget,windowComparison,before,held,
+              reason:'The second page did not belong to the same native Chrome window as the game page.'};
+            await backgroundPage.bringToFront();
+            const backgroundState=await (async()=>{
+              const started=Date.now();let state=null,samples=0;
+              do{
+                state=await nativeFocusState(page);samples++;
+                const lifecycleEventsNow=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);
+                if(state.hidden||state.visibilityState==='hidden'||state.hasFocus===false||lifecycleEventsNow.some(item=>item.epoch===activeEpoch&&item.type==='blur'))
+                  return{state,samples,durationMs:Date.now()-started};
+                await page.waitForTimeout(100);
+              }while(Date.now()-started<5000);
+              return{state,samples,durationMs:Date.now()-started};
+            })();
+            const backgroundEvents=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);
+            hidden={...backgroundState,backgroundTarget:backgroundPageTarget,windowComparison,
+              bounds:(await cdp.send('Browser.getWindowBounds',{windowId:backgroundPageTarget.window.windowId})).bounds,
+              lifecycle:inspectNativeBackgroundEvents({state:backgroundState.state,events:backgroundEvents.filter(item=>item.epoch===activeEpoch)})};
+            await page.bringToFront();const nativeFocusAfter=await waitForNativeFocus(page,5000);
+            restored={...(await nativeFocusState(page)),focus:nativeFocusAfter,
+              bounds:(await cdp.send('Browser.getWindowBounds',{windowId:gamePageTarget.window.windowId})).bounds};
             events=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);hostEvents=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);
             audioAfterReturn=await nativePeek();
-            const activeEvents=events.filter(item=>item.epoch===activeEpoch),backgroundVisibilityReached=hidden.hidden||activeEvents.some(item=>item.type==='visibilitychange'&&item.hidden),focusEventReached=activeEvents.some(item=>item.type==='blur')||hostEvents.some(item=>item.reason==='host-blur'),hostClearReached=hostEvents.some(item=>(item.reason==='host-blur'||item.reason==='host-hidden')&&item.accepted===true);
-            const lifecycleEvidence={neutralStart,before,held,movementDuringHold,hidden,restored,audioBefore,audioAfterReturn,lifecycleEvents:events,hostKeyboardLifecycle:hostEvents,backgroundVisibilityReached,focusEventReached,hostClearReached,directionKey,
+            const backgroundAudioEvents=await frame.evaluate(index=>window.__eaglerDesktopAudioProbe?.events?.slice(index)??[],backgroundAudioEventStart);
+            const backgroundAudioLifecycle=classifyAudioLifecyclePath({beforeContexts:audioBefore.audioProbe?.contexts??[],
+              afterContexts:audioAfterReturn.audioProbe?.contexts??[],stateEvents:backgroundAudioEvents.filter(item=>item.type==='state')});
+            const activeEvents=events.filter(item=>item.epoch===activeEpoch),lifecycle=inspectNativeBackgroundEvents({state:hidden.state,events:activeEvents}),
+              backgroundVisibilityReached=lifecycle.visibilityHidden||lifecycle.visibilityChange,
+              focusEventReached=lifecycle.blur||hostEvents.some(item=>item.reason==='host-blur'),
+              hostClearReached=hostEvents.some(item=>(item.reason==='host-blur'||item.reason==='host-hidden')&&item.accepted===true);
+            const lifecycleEvidence={neutralStart,before,nativeFocusBefore,gamePageTarget,backgroundPageTarget,windowComparison,held,movementDuringHold,hidden,restored,audioBefore,audioAfterReturn,
+              backgroundAudioLifecycle,backgroundAudioEvents,
+              lifecycleEvents:events,hostKeyboardLifecycle:hostEvents,backgroundVisibilityReached,focusEventReached,hostClearReached,directionKey,
               browserPages:context.pages().map(item=>({url:item.url(),isGamePage:item===page,isBackgroundPage:item===backgroundPage}))};
             backgroundTabEvidence=lifecycleEvidence;
+            if(!restored.focus?.ready)return{checkStatus:'incomplete',...lifecycleEvidence,reason:'The game page did not regain native visible and focused state after tab activation.'};
             if(!backgroundVisibilityReached&&!focusEventReached)return{checkStatus:'incomplete',...lifecycleEvidence,reason:'Switching to a second browser page produced no hidden or blur lifecycle event'};
             if(!hostClearReached)return{checkStatus:'incomplete',...lifecycleEvidence,reason:'A browser background event occurred without the host keyboard clear path accepting it'};
             afterReturn=await waitObservation('Host blur clears held native input before explicit keyup',state=>state.input.value===before.input.value,2500);
             await keyUp(directionKey);afterKeyup=await waitObservation('Held native keyboard input stays released after keyup',state=>state.input.value===before.input.value,2500);
           }catch(error){const finalState=await observe().catch(()=>null),finalEligibility=incompleteGameplayPrecondition(finalState,target.game);
-            if(finalEligibility)return{...finalEligibility,neutralStart,before,held,movementDuringHold,hidden,restored,events,hostEvents,audioBefore,audioAfterReturn,
+            if(finalEligibility)return{...finalEligibility,neutralStart,before,nativeFocusBefore,gamePageTarget,backgroundPageTarget,windowComparison,held,movementDuringHold,hidden,restored,events,hostEvents,audioBefore,audioAfterReturn,
               actionError:String(error.stack||error)};
             throw error;
-          }finally{await page.bringToFront().catch(()=>{});await keyUp(directionKey).catch(()=>{});await backgroundPage?.close().catch(()=>{});await resetInputState(activeEpoch);}
+          }finally{
+            await keyUp(directionKey).catch(()=>{});
+            if(backgroundPage){try{await backgroundPage.close();backgroundPageClose={status:'closed'};}
+              catch(error){backgroundPageClose={status:'failed',error:String(error.stack||error)};}}
+            await page.bringToFront().catch(()=>{});await resetInputState(activeEpoch);
+          }
           Object.assign(backgroundTabEvidence,{afterReturn,afterKeyup});
           assert.equal(afterReturn.input.value,before.input.value,'Host blur/hidden lifecycle must clear native held input before explicit keyup');
+          const hostFocusAfterCleanup=await waitForNativeFocus(page,5000),runtimeFocusAfterCleanup=await waitForNativeFocus(frame,5000),pageAfterCleanup=await readPageTargetWindow(cdp,page);
+          const postCleanupForeground=inspectPostCleanupForeground({hostState:hostFocusAfterCleanup.state,runtimeState:runtimeFocusAfterCleanup.state,
+            beforePage:gamePageTarget,afterPage:pageAfterCleanup,backgroundPageCloseStatus:backgroundPageClose.status});
+          backgroundTabEvidence.postCleanupForeground={...postCleanupForeground,hostFocus:hostFocusAfterCleanup,runtimeFocus:runtimeFocusAfterCleanup,
+            pageTargetAfterCleanup:pageAfterCleanup,audio:await nativePeek(),lifecycleEvents:await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart)};
+          if(!postCleanupForeground.ready)return{checkStatus:'incomplete',...backgroundTabEvidence,
+            reason:'After closing the temporary tab, the game page did not retain native foreground state on its original Chrome target and window.'};
           return backgroundTabEvidence;
         });
         await check('background-audio-recovery',['AUDIO-04'],async()=>{
-          if(!backgroundTabEvidence?.backgroundVisibilityReached||backgroundTabEvidence.restored?.visibility!=='visible')return{checkStatus:'incomplete',backgroundTabEvidence,reason:'A real hidden-to-visible game-page transition was not observed'};
-          const audioEvents=await frame.evaluate(index=>window.__eaglerDesktopAudioProbe?.events?.slice(index)??[],backgroundAudioEventStart);
-          const stateChanges=audioEvents.filter(item=>item.type==='state').map(item=>item.state);
-          let foregroundAudio;try{await keyDown('KeyZ');await page.waitForTimeout(20);foregroundAudio=await sampleAudio('foreground',500);}finally{await keyUp('KeyZ');}
-          const suspendedAt=stateChanges.lastIndexOf('suspended'),resumedAfterSuspend=suspendedAt>=0&&stateChanges.slice(suspendedAt+1).includes('running');
-          const wasRunning=backgroundTabEvidence.audioBefore?.audioProbe?.contexts?.some(item=>item.state==='running')??false;
-          const remainedRunning=wasRunning&&backgroundTabEvidence.audioAfterReturn?.audioProbe?.contexts?.some(item=>item.state==='running')===true;
-          const recovered=foregroundAudio.contextState==='running'&&foregroundAudio.tapCount>0&&foregroundAudio.nonZeroSamples>0;
-          if(!recovered)return{checkStatus:'incomplete',backgroundTabEvidence,stateChanges,foregroundAudio,reason:'No non-zero WebAudio PCM was observed after the game page returned to foreground'};
-          const recoveryPath=resumedAfterSuspend?'suspended-resumed':remainedRunning?'continuous-running':'running-after-return';
-          return{backgroundTabEvidence,stateChanges,foregroundAudio,recoveryPath,foregroundOutputVerified:true};
+          if(!backgroundTabEvidence?.backgroundVisibilityReached||!backgroundTabEvidence.postCleanupForeground?.ready)
+            return{checkStatus:'incomplete',backgroundTabEvidence,reason:'A hidden-to-visible transition and post-cleanup native foreground state on the original game page were not both established'};
+          const gameplay=await observe(),gameplayIssue=incompleteGameplayPrecondition(gameplay,target.game);
+          if(gameplayIssue)return{...gameplayIssue,backgroundTabEvidence,gameplay,reason:'Native gameplay eligibility was not established after foreground cleanup'};
+          await resetInputState(activeEpoch);
+          const neutralStart=await waitObservation('Native gameplay input is neutral before AUDIO-04 fire',state=>state.input.value===0,2000);
+          await page.waitForTimeout(100);const neutral=await observe();
+          if(neutral.input.value!==0)return{checkStatus:'incomplete',backgroundTabEvidence,neutralStart,neutral,
+            reason:'The Runtime did not reach a neutral native input baseline before the foreground audio stimulus'};
+          const hostFocus=await waitForNativeFocus(page,1000),runtimeFocus=await waitForNativeFocus(frame,1000),pageTarget=await readPageTargetWindow(cdp,page);
+          const foreground=inspectPostCleanupForeground({hostState:hostFocus.state,runtimeState:runtimeFocus.state,
+            beforePage:backgroundTabEvidence.gamePageTarget,afterPage:pageTarget,backgroundPageCloseStatus:backgroundTabEvidence.postCleanupForeground.temporaryPageClosed?'closed':'failed'});
+          if(!foreground.ready)return{checkStatus:'incomplete',backgroundTabEvidence,foreground:{...foreground,hostFocus,runtimeFocus,pageTarget},neutral,
+            reason:'The fresh pre-stimulus focus or native game page identity check was not satisfied'};
+          const foregroundIdle=await sampleAudio('foreground-idle',400);
+          if(foregroundIdle.captureCount<=0||foregroundIdle.tapCount<=0)
+            return{checkStatus:'incomplete',backgroundTabEvidence,foreground,neutral,foregroundIdle,
+              reason:'The Runtime WebAudio output tap did not provide a foreground baseline capture'};
+          if(foregroundIdle.nonZeroSamples>0)
+            return{checkStatus:'incomplete',backgroundTabEvidence,foreground,neutral,foregroundIdle,
+              reason:'Foreground PCM was already active before KeyZ, so this capture cannot isolate the fire stimulus'};
+          const audioBeforeFire=await nativePeek();
+          const audioPreKey=await frame.evaluate(()=>{const probe=window.__eaglerDesktopAudioProbe;return{
+            contexts:probe?.summary?.().contexts??[],eventCount:probe?.events?.length??0,time:performance.now()};});
+          const audioContextGate=inspectAudioContextsBeforeGesture(audioPreKey.contexts);
+          if(!audioContextGate.ready)return{checkStatus:'incomplete',backgroundTabEvidence,foreground,neutral,foregroundIdle,
+            audioBeforeFire,audioPreKey,audioContextGate,audioLifecyclePath:backgroundTabEvidence.backgroundAudioLifecycle?.path??'unclassified',
+            reason:'The Runtime AudioContext was not already running before the KeyZ gesture; this window cannot establish background audio continuity/recovery.'};
+          const keyboardForwardStart=await page.evaluate(()=>keyboardForwardEvents.length),keyboardMapStart=await page.evaluate(()=>keyboardMapEvents.length);
+          const audioEventsBefore=audioPreKey.eventCount;
+          let keyDownEvent=null,held=null,heldError=null,heldObservedAtMs=null,foregroundAudio=null;
+          const capturePromise=sampleAudio('foreground',1000).catch(error=>({captureError:String(error.stack||error)}));
+          let afterCapture,afterKeyup;
+          try{
+            await keyDown('KeyZ');
+            await page.waitForFunction(({index,epoch})=>keyboardForwardEvents.slice(index).some(item=>item.code==='KeyZ'&&item.down===true&&item.epoch===epoch),
+              {index:keyboardForwardStart,epoch:activeEpoch},{timeout:1500}).catch(()=>{});
+            keyDownEvent=await page.evaluate(({index,epoch})=>keyboardForwardEvents.slice(index).find(item=>item.code==='KeyZ'&&item.down===true&&item.epoch===epoch)??null,
+              {index:keyboardForwardStart,epoch:activeEpoch});
+            if(keyDownEvent?.accepted===true){
+              try{held=await waitObservation('Native input consumes KeyZ during the foreground audio capture',state=>state.input.value!==neutral.input.value,900);
+                heldObservedAtMs=Date.now();}
+              catch(error){heldError=String(error.message||error);}
+            }
+            foregroundAudio=await capturePromise;afterCapture=await observe();
+          }finally{await keyUp('KeyZ');}
+          afterKeyup=await waitObservation('Native input returns to neutral after foreground KeyZ release',state=>state.input.value===neutral.input.value,2000).catch(async()=>observe());
+          const forwardEvents=await page.evaluate(index=>keyboardForwardEvents.slice(index),keyboardForwardStart);
+          const mappingEvents=await page.evaluate(index=>keyboardMapEvents.slice(index),keyboardMapStart);
+          const fireStimulus=inspectNativeFireStimulus({forwardEvents,epoch:activeEpoch,neutralInputValue:neutral.input.value,
+            heldInputValue:held?.input?.value});
+          const heldObservedBeforeCaptureFinished=!!held&&Number.isFinite(heldObservedAtMs)&&
+            Number.isFinite(foregroundAudio?.captureStartedAtMs)&&Number.isFinite(foregroundAudio?.captureWindowEndedAtMs)&&
+            heldObservedAtMs>=foregroundAudio.captureStartedAtMs&&heldObservedAtMs<=foregroundAudio.captureWindowEndedAtMs;
+          const nativeInputWindow={neutral:{simulationFrame:neutral.frames?.simulation,inputValue:neutral.input.value},
+            held:held?{simulationFrame:held.frames?.simulation,inputValue:held.input.value}:null,
+            afterCapture:{simulationFrame:afterCapture?.frames?.simulation,inputValue:afterCapture?.input?.value},
+            afterKeyup:{simulationFrame:afterKeyup?.frames?.simulation,inputValue:afterKeyup?.input?.value},
+            heldObservedBeforeCaptureFinished,heldError};
+          const allAudioEvents=await frame.evaluate(index=>window.__eaglerDesktopAudioProbe?.events?.slice(index)??[],backgroundAudioEventStart);
+          const stimulusEvents=allAudioEvents.slice(Math.max(0,audioEventsBefore-backgroundAudioEventStart));
+          const stimulusStateChanges=stimulusEvents.filter(item=>item.type==='state').map(item=>({state:item.state,time:item.time}));
+          const audioGestureWindow=inspectAudioGestureWindow({contextsBeforeGesture:audioPreKey.contexts,stateEvents:stimulusStateChanges,
+            capturedContextStates:foregroundAudio.contextStates??[]});
+          const afterAudio=await nativePeek(),audioLifecyclePath=backgroundTabEvidence.backgroundAudioLifecycle?.path??'context-state-transition-unclassified';
+          const captureOverlappedNativeFire=nativeInputWindow.heldObservedBeforeCaptureFinished;
+          const evidence={backgroundTabEvidence,foreground:{...foreground,hostFocus,runtimeFocus,pageTarget},neutralStart,neutral,foregroundIdle,
+            audioBeforeFire,audioPreKey,audioContextGate,audioGestureWindow,nativeInputWindow,fireStimulus,keyboardForwardEvents:forwardEvents,keyboardMapEvents:mappingEvents,
+            audioEvents:stimulusEvents,stimulusStateChanges,audioLifecyclePath,foregroundAudio,afterAudio,
+            captureStartedBeforeKeyDown:true,keyDownStartedAfterAudioContextGate:true,captureOverlappedNativeFire};
+          if(foregroundAudio?.captureError)return{checkStatus:'incomplete',...evidence,reason:'The Runtime audio capture did not complete'};
+          if(!audioGestureWindow.ready)return{checkStatus:'incomplete',...evidence,
+            reason:audioGestureWindow.missing.join('; ')};
+          if(!fireStimulus.ready||!captureOverlappedNativeFire)
+            return{checkStatus:'incomplete',...evidence,reason:'A bridge-accepted KeyZ with native input consumption was not captured during the foreground PCM window'};
+          if(afterKeyup?.input?.value!==neutral.input.value)
+            return{checkStatus:'incomplete',...evidence,reason:'Native input did not return to neutral after the foreground audio stimulus'};
+          if(foregroundAudio.captureCount<=0||foregroundAudio.tapCount<=0)
+            return{checkStatus:'incomplete',...evidence,reason:'The Runtime WebAudio output tap did not provide PCM captures'};
+          if(foregroundAudio.contextState!=='running'||foregroundAudio.nonZeroSamples===0)
+            return{checkStatus:'failed',...evidence,reason:'A bridge-accepted, natively consumed KeyZ produced no PCM on the live Runtime WebAudio output tap'};
+          return{...evidence,foregroundOutputVerified:true};
         });
         await check('iframe-exit-and-new-epoch',['RUNTIME-01','RUNTIME-04'],async()=>{
           const priorEpoch=activeEpoch,nextEpoch=priorEpoch+1;
@@ -721,6 +997,25 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
       finally{
         await resetInputState(activeEpoch);
         if(fixtureAudit){await flushFixtureAudit().catch(error=>{record.fixtureAuditFailure=String(error.stack||error);});await fixtureAudit.stop();}
+        if(lifecycleController)record.focusEmulationGateway=lifecycleController.gatewaySnapshot();
+        if(lifecycleController&&page&&cdp){
+          try{
+            const actualPage=await readPageTargetWindow(cdp,page),targetId=actualPage.target?.targetId??null;
+            const focusRewriteProof=assessFocusRewriteForTarget(record.focusEmulationGateway,targetId);
+            record.focusEmulationTargetAudit={actualPage,proof:focusRewriteProof};
+            if(!focusRewriteProof.ready){
+              const message=`CDP focus rewrite proof failed for the actual page target: ${focusRewriteProof.reason}`;
+              record.failure??=message;record.errors.push({check:'focus-emulation-target-audit',error:message});
+            }
+          }catch(error){
+            const message=`Could not audit CDP focus rewrites against the actual page target: ${error.message}`;
+            record.failure??=message;record.errors.push({check:'focus-emulation-target-audit',error:message});
+          }
+        }
+        else if(lifecycleController){
+          const message='The actual Playwright page target was unavailable for CDP focus rewrite auditing.';
+          record.failure??=message;record.errors.push({check:'focus-emulation-target-audit',error:message});
+        }
         if(record.packageIdentity&&record.dataIdentity){
           await check('package-and-private-data-identity-postflight',['BUILD-04','PACKAGE-02'],async()=>{
             const packageIdentity=await verifyRuntimePackage(target,{repoRoot:root}),dataIdentity=await verifyPrivateData(target.data);
@@ -730,15 +1025,33 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             return{packageSha256:packageIdentity.packageSha256,sourceBuild:packageIdentity.sourceBuild,privateData:dataIdentity};
           });
         }
-        record.status=record.failure||record.checks.some(item=>item.status==='failed')?'failed':record.checks.every(item=>item.status==='passed')?'passed':'incomplete';
-        if(page)await page.screenshot({path:resolve(output,`${target.id}-last.png`)}).catch(()=>{});
+        const scopeSummary=checkScope.requiredIds?summarizeDesktopCheckScope(record.checks,checkScope):null;
+        const startupEvidenceSummary=summarizeDesktopStartupEvidence({stages:record.stages,gameplayReadinessByEpoch:record.gameplayReadinessByEpoch});
+        record.startupEvidenceSummary=startupEvidenceSummary;
+        if(scopeSummary){record.requiredCheckSummary=scopeSummary;record.missingRequiredChecks=scopeSummary.missingRequired;}
+        if(record.focusEmulationGateway?.errors?.length){record.failure??='The audited CDP focus gateway recorded protocol or transport errors.';record.gatewayErrors=record.focusEmulationGateway.errors;}
+        record.status=record.failure||record.checks.some(item=>item.status==='failed')||scopeSummary?.status==='failed'||startupEvidenceSummary.status==='failed'?'failed':
+          scopeSummary?.status==='incomplete'||startupEvidenceSummary.status!=='passed'?'incomplete':record.checks.every(item=>item.status==='passed')?'passed':'incomplete';
+        if(page&&frame&&cdp)await captureRuntimeScreenshot('last',resolve(output,`${target.id}-last.png`));
         if(cdp){try{if(windowInfo)await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'normal'}});}catch{}await cdp.detach().catch(()=>{});}
         await context?.close().catch(()=>{});record.finishedAt=new Date().toISOString();await save();
         console.log(`${target.id}: ${record.status.toUpperCase()} ${record.failure?.split('\n')[0]??record.checks.filter(item=>item.status!=='passed').map(item=>item.id+':'+item.status).join(', ')}`);
       }
     }
   }finally{
-    await browser?.close();await fixture?.close();
+    try{
+      if(lifecycleController){
+        report.browserCleanup=await lifecycleController.close();
+        report.focusEmulationGateway=report.browserCleanup.gateway;
+      }else await browser?.close();
+    }catch(error){
+      report.browserCleanupFailure=String(error.stack||error);
+      report.focusEmulationGateway=error.gatewaySnapshot??lifecycleController?.gatewaySnapshot?.()??null;
+      for(const target of report.targets)if(target.status==='passed'){
+        target.status='failed';target.failure='Browser CDP gateway reported an error during shutdown.';
+      }
+    }
+    await fixture?.close();
     report.finishedAt=new Date().toISOString();report.sourceSnapshotEnd=sourceSnapshot(root);
     report.sourceStable=report.sourceSnapshotStart.sha256===report.sourceSnapshotEnd.sha256;
     const currentHarness=await readFile(new URL(import.meta.url));
@@ -759,9 +1072,27 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     const currentResponseBodyCapture=await readFile(new URL('../browser/response-body-capture.mjs',import.meta.url));
     report.probeArtifacts.responseBodyCapturePostflightSha256=hash(currentResponseBodyCapture);
     report.probeArtifacts.responseBodyCaptureStable=report.probeArtifacts.responseBodyCapture.sha256===report.probeArtifacts.responseBodyCapturePostflightSha256;
+    const currentFocusGateway=await readFile(new URL('../browser/cdp-focus-gateway.mjs',import.meta.url));
+    report.probeArtifacts.focusGatewayPostflightSha256=hash(currentFocusGateway);
+    report.probeArtifacts.focusGatewayStable=report.probeArtifacts.focusGateway.sha256===report.probeArtifacts.focusGatewayPostflightSha256;
+    const currentLifecycleClassifier=await readFile(new URL('./runtime-desktop-lifecycle.mjs',import.meta.url));
+    report.probeArtifacts.lifecycleClassifierPostflightSha256=hash(currentLifecycleClassifier);
+    report.probeArtifacts.lifecycleClassifierStable=report.probeArtifacts.lifecycleClassifier.sha256===report.probeArtifacts.lifecycleClassifierPostflightSha256;
+    const currentBrowserLauncher=await readFile(new URL('../browser/launch.mjs',import.meta.url));
+    report.probeArtifacts.browserLauncherPostflightSha256=hash(currentBrowserLauncher);
+    report.probeArtifacts.browserLauncherStable=report.probeArtifacts.browserLauncher.sha256===report.probeArtifacts.browserLauncherPostflightSha256;
+    const currentPlaywrightLoader=await readFile(new URL('../browser/playwright.mjs',import.meta.url));
+    report.probeArtifacts.playwrightLoaderPostflightSha256=hash(currentPlaywrightLoader);
+    report.probeArtifacts.playwrightLoaderStable=report.probeArtifacts.playwrightLoader.sha256===report.probeArtifacts.playwrightLoaderPostflightSha256;
+    const currentPlaywrightSources=await identifyPlaywrightSources({workspaceRoot:root});
+    report.probeArtifacts.playwrightCore.postflight={entry:currentPlaywrightSources.entry,coreEntry:currentPlaywrightSources.coreEntry,
+      packageRoot:currentPlaywrightSources.packageRoot,packageName:currentPlaywrightSources.packageName,version:currentPlaywrightSources.version,
+      entryIdentity:currentPlaywrightSources.entryIdentity,coreEntryIdentity:currentPlaywrightSources.coreEntryIdentity,packageIdentity:currentPlaywrightSources.packageIdentity,
+      files:currentPlaywrightSources.files};
+    report.probeArtifacts.playwrightCore.stable=playwrightSourceStartSignature===playwrightSourceSignature(currentPlaywrightSources);
     const manifestPostflightSha256=hash(await readFile(manifestPath));
     report.manifestPostflight={path:manifestPath,sha256:manifestPostflightSha256,stable:manifestPostflightSha256===manifestIdentity.sha256};
-    report.status=!report.probeArtifacts.harnessStable||!report.probeArtifacts.stageRecorderStable||!report.probeArtifacts.gameplayReadinessStable||!report.probeArtifacts.fixtureServerStable||!report.probeArtifacts.fixtureResponseWatcherStable||!report.probeArtifacts.responseBodyCaptureStable||!report.manifestPostflight.stable?'failed':report.targets.length!==selection.expected.length?'incomplete':report.targets.every(target=>target.status==='passed')?'passed':report.targets.some(target=>target.status==='failed')?'failed':'incomplete';
+    report.status=report.browserCleanupFailure||!report.probeArtifacts.harnessStable||!report.probeArtifacts.stageRecorderStable||!report.probeArtifacts.gameplayReadinessStable||!report.probeArtifacts.fixtureServerStable||!report.probeArtifacts.fixtureResponseWatcherStable||!report.probeArtifacts.responseBodyCaptureStable||!report.probeArtifacts.focusGatewayStable||!report.probeArtifacts.lifecycleClassifierStable||!report.probeArtifacts.browserLauncherStable||!report.probeArtifacts.playwrightLoaderStable||!report.probeArtifacts.playwrightCore.stable||!report.manifestPostflight.stable?'failed':report.targets.length!==selection.expected.length?'incomplete':report.targets.every(target=>target.status==='passed')?'passed':report.targets.some(target=>target.status==='failed')?'failed':'incomplete';
     report.workspaceSnapshotChanged=!report.sourceStable;
     if(!report.sourceStable)report.workspaceSnapshotNote='Full-workspace snapshot is contextual. Selected production source, build receipts, package bytes, and private DATA are verified independently before and after each title.';
     if(!report.probeArtifacts.harnessStable)report.harnessDrift='The test harness changed while this run was executing.';
@@ -770,6 +1101,11 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     if(!report.probeArtifacts.fixtureServerStable)report.fixtureServerDrift='The ephemeral fixture server implementation changed while this run was executing.';
     if(!report.probeArtifacts.fixtureResponseWatcherStable)report.fixtureResponseWatcherDrift='The browser response identity watcher changed while this run was executing.';
     if(!report.probeArtifacts.responseBodyCaptureStable)report.responseBodyCaptureDrift='The dedicated Chromium response-body capture implementation changed while this run was executing.';
+    if(!report.probeArtifacts.focusGatewayStable)report.focusGatewayDrift='The loopback CDP focus gateway changed while this run was executing.';
+    if(!report.probeArtifacts.lifecycleClassifierStable)report.lifecycleClassifierDrift='The native browser lifecycle classifier changed while this run was executing.';
+    if(!report.probeArtifacts.browserLauncherStable)report.browserLauncherDrift='The browser launch helper changed while this run was executing.';
+    if(!report.probeArtifacts.playwrightLoaderStable)report.playwrightLoaderDrift='The Playwright loader changed while this run was executing.';
+    if(!report.probeArtifacts.playwrightCore.stable)report.playwrightCoreDrift='The resolved Playwright core package or its browser control sources changed while this run was executing.';
     if(!report.manifestPostflight.stable)report.manifestDrift='The accepted Runtime input manifest changed while this run was executing.';
     report.passed=report.status==='passed';
     await save();

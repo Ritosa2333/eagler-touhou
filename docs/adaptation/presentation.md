@@ -129,11 +129,11 @@
 
 ### AUDIO-04 | 返回前台后恢复声音
 
-- 操作：播放期间隐藏页面或切后台，再返回并执行浏览器需要的音频恢复手势。
+- 操作：播放期间隐藏页面或切后台，再返回并按游戏需要恢复音频的真实手势。
 - 观察与独立预期：记录 AudioContext 状态、选中曲目、输出 PCM 和当前位置；返回前后按音频连续状态及曲目循环规则比较。
-- 判定：前台恢复后有正确曲目输出，位置沿连续曲目推进或按本作既定暂停策略恢复。
-- 反例：AudioContext 显示 running 但采样 PCM 仍为零，应失败。
-- 当前入口/边界：`runtime-desktop-probes.mjs` 用真实标签页隐藏／恢复及原生 WebAudio PCM 检查音效输出，分别记录上下文暂停后恢复和持续运行两种路径。OGG 曲目位置与循环按独立音乐场景验证；audio-health 与 MidiBridge 单测检查恢复策略。
+- 判定：前台后，输出 tap 对应的 AudioContext 在 KeyZ 前已处于 running；Host 键盘桥已接受且原生输入观察确认的射击动作在 Runtime 输出 tap 上产生非零 PCM，释放后原生输入回到中立。后台连续运行与挂起后恢复分别记录；KeyZ 后才变为 running 不算后台恢复证据。若有效射击输入已消费、输出 tap 可用而 PCM 为零，判失败；焦点、桥接、原生输入或采集前置未建立时记 incomplete。
+- 反例：KeyZ 被 Host 拒绝或原生输入仍为中立时，零 PCM 不代表恢复故障；有效射击输入已被原生消费、输出 tap 可用而 PCM 仍为零时应失败。
+- 当前入口/边界：`runtime-desktop-probes.mjs` 在同窗标签切换后关闭临时页，再核对原游戏 page target、window ID、宿主页和 Runtime iframe 的原生前台状态。报告分别保留隐藏至恢复期间的 AudioContext 状态事件及恢复分类，并在 PCM 窗口开始前原子读取输出 tap 的 AudioContext 状态与事件序号；按键前及捕获期间的每次采样都要求上下文保持 running，任何转换都会将本次窗口标为 incomplete。先采 400ms 前景静音基线，再在 KeyZ 前启动 1000ms PCM 捕获；报告记录桥接接受、原生输入变化、交叠逻辑帧与释放状态。`--background-only` 将输出观察与窗口/标签生命周期及包身份检查组成专用报告；声音窗口使用 `music=none` 的射击音效，不替代 OGG 曲目位置与循环检查。audio-health 与 MidiBridge 单测覆盖恢复策略。
 
 ### AUDIO-05 | 音乐资源错误信息
 

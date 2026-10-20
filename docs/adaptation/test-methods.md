@@ -58,7 +58,7 @@
 
 记录可操作关卡的逻辑帧，执行暂停并连续采样，要求逻辑帧保持。按本作实际确认流程执行重开，等待重建边界、恢复可操作阶段，并再次确认世界前进。呈现计数与世界逻辑帧分别观察。
 
-当前入口为 [runtime-browser.mjs](../../tools/ports/runtime-browser.mjs) 的 `native-pause-and-restart`，原生字段由 [runtime-observations.mjs](../../tools/ports/runtime-observations.mjs) 归一化。th20 的重开另经过原作确认菜单。
+当前入口为 [runtime-browser.mjs](../../tools/ports/runtime-browser.mjs) 的 `native-pause-and-restart`，原生字段由 [runtime-observations.mjs](../../tools/ports/runtime-observations.mjs) 归一化。[作品流程适配器](../../tests/adaptation/adapters/title-flow.mjs) 集中普通游戏入口、玩法就绪和暂停重开确认，Runtime、桌面输入和练习驱动共同调用；th20 的符石路径及重开确认在适配器中定义。MP 由真实房间驱动负责本机席位和就绪条件。
 
 ### 例：原版数值对照
 
@@ -71,14 +71,18 @@
 1. 在[产品目录](../../common/contracts/product-catalog.mjs)、[源码映射](../../launcher/config/workspace.json)与[构建配方](../../launcher/config/runtime-builds.json)登记作品及支持的模式。按[适配表创建命令](README.md#4-建立并维护适配表)生成逐目录表格。
 2. 在本作 `docs/DEVELOPMENT.md` 登记有效 DATA、录像和字体的准备方式，以及本作场景、输入位、逻辑帧、暂停和结束条件。普通版与 MP 分别列出差异。
 3. 为正式 Runtime 提供只读状态观察。优先使用[统一观察 ABI](../../tools/ports/native-observation-contract.mjs)，从本作真实权威状态填值；MP 明确本机席位。观察函数只复制状态。
-4. 扩展 `runtime-observations.mjs` 的本作映射，并将菜单导航、场景就绪与重开操作接入共用浏览器驱动。有效位、字段含义和边界用固定夹具验证，再运行正式包。
+4. 扩展 `runtime-observations.mjs` 的本作映射，在 `tests/adaptation/adapters/title-flow.mjs` 登记本作普通版导航、场景就绪与重开操作。共用驱动沿用操作和断言；MP 继续通过房间驱动验证席位与联机生命周期。有效位、字段含义和边界用固定夹具验证，再运行正式包。
 5. 对接本作需要的原版或 Replay 对照。使用 frozen-oracle 的作品，在 `oracle-suite.json` 分类每个测试并声明输入，提供本作核心构建入口和共享 native 输入策略；其他作品沿用本作已登记的验证入口。
-6. 在 `tests/suites.mjs` 及所属组件的执行清单登记测试。浏览器普通版与多人支持组合从产品目录选择；新作接入后运行实际目标，核对测试选择和报告中均存在该作。给关键路径加入破坏行为的反例，检查进程确实返回失败。
+6. `tests/adaptation/catalog.mjs` 从产品目录生成普通版、MP 和房间组合，通过 `tests/run.mjs --profile=adaptation` 统一选择、预览和执行。场景组声明适配编号、输入、驱动和时间预算；本作专项对照继续进入 `tests/suites.mjs` 及所属组件清单。新作接入后核对计划与报告均存在该作。给关键路径加入破坏行为的反例，检查封存断言失败与进程失败都会使队列失败。
 7. 按编号补足本作方法：共用场景沿用共用驱动，特有机制由本作夹具与适配器提供。适配表填写本次实际范围，报告链接到对应模式和产物身份。
 
 新作登记、表格生成、测试发现与完整行为覆盖分别核对。没有驱动、输入或有效观察的编号保持待验证；失败记录区分行为差异、测试错误和环境输入。每次修复依据明确的方法复验。
 
 ## 结果怎样进入适配表
+
+统一队列读取实际驱动报告，并核对作品、变体、运行时间和封存状态。进程返回成功且内部断言失败时，任务记录 failed；缺输入、未执行和覆盖不完整分别保留 blocked、not-run 和 incomplete。桌面报告的 `adaptationIds`、其他驱动的 `checks` 共同汇入逐编号证据。按编号选择时需要 `complete=true` 的成功证明；场景执行结果和完整适配覆盖各自保留。
+
+续跑以作品和场景组为边界，检查当前驱动依赖、产物、私有输入、浏览器与旧封存报告的身份。沿用旧证据标为 retained，本次运行标为 executed；原始时间和报告哈希随证据保存。具体选择、输入配置与重跑命令见[逐作适配队列](../../tests/README.md#逐作适配队列)。
 
 `ports:check` 更新源码接口、模块检查和已登记构建结果。浏览器报告分别保存本次场景结果与逐编号 `checks`；每项检查记录 `complete` 和观察证据，房间报告还保存逐席操作、输入效果和生命周期结果。覆盖该编号全部操作的成功记录支持“已验证”；场景可通过自身断言，同时在覆盖汇总中保留 partial 或 blocked 项。
 

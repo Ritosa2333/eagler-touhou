@@ -32,7 +32,8 @@
 - 操作：选择来源和 SHA-256 已登记的原版 Replay，导入后按其声明阶段播放至结束点。
 - 观察与判定：文件被识别为对应原版格式，播放到声明终点并满足该样本的既定结束条件。
 - 反例：损坏文件被当作成功载入，或播放未到声明终点就报告完成，应判失败。
-- 入口与覆盖：`tools/ports/replay-browser.mjs` 核对正式包、DATA 与 Replay 身份，执行 Shell 导入、120 个默认速率原生帧并记录 Runtime `ended` 终止信号。报告将终止信号与完整输入消费分别记录；当前 `ended` 字段不区分场景退出原因，完整输入消费状态保持 unproven。作品原生 cursor/total 和阶段 metadata 按本作定义核对或记录，TH11 保留 cursor、total 与 metadata 各自原值。REPLAY-01 完整状态依据同一 Replay 身份和同一计数语义的原版终点证据判定；普通版播放场景单独记录。播放器能力、MP 格式及多人录像输入按具体目标登记。普通版播放与多人新录像的席位、输入还原各自验收。
+- 入口与覆盖：`tools/ports/replay-browser.mjs` 核对正式包、DATA 与 Replay 身份，执行 Shell 导入、120 个默认速率原生帧并记录 Runtime `ended` 终止信号。报告将终止信号与完整输入消费分别记录；当前 `ended` 字段不区分场景退出原因，完整输入消费状态保持 unproven。作品原生 cursor/total 和阶段 metadata 按本作定义核对或记录，TH11 保留 cursor、total 与 metadata 各自原值。REPLAY-01 完整状态依据同一 Replay 身份和同一计数语义的原版终点证据判定；普通版播放场景单独记录。播放器能力、MP 格式及多人录像输入按具体目标登记。普通版播放与多人新录像的席位、输入还原各自验收。公共浏览器启动实现 `tools/browser/launch.mjs` 与 `tools/browser/playwright.mjs` 也纳入 Replay 决策输入哈希。
+- 最终错误审计：同源 Runtime iframe 的 `error`、`abort` 与拒绝命令通过页面绑定实时留存，关闭前排空绑定调用并完成响应 capture 的 flush/stop；浏览器 context 关闭后再审计页面、Console、HTTP、协议、响应身份和 teardown 六个原始频道。任何频道非空都将场景标为失败，当前 epoch 的资源请求失败也照此判定。晚到错误会把最终 `scenarioStatus` 设为 `failed`，并将 teardown 前的状态留在 `preTeardownScenarioStatus`；终止步骤及其原始观测仍保留。覆盖报告只统计记录状态为 `passed` 且 `scenarioStatus` 为 `passed` 的目标。复核报告的 `finalErrorAudit.status`、`failedChannels`、原始 `channels` 与 `lifecycle`；以晚到协议 abort、请求中断和 response stop 错误作负例验证失败门控。
 
 ### REPLAY-02 | 按原版格式导出可表达输入
 - 操作：录制一个能由原版格式表示的键盘/手柄序列，导出后用原版格式解析器重新读取。

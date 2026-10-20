@@ -93,7 +93,7 @@
 - 观察与独立预期：读取输入所有者清理事件、设备连接状态、原生输入位及角色状态；恢复后由本次有效设备采样或按键事件继续操作。
 - 判定：失焦、隐藏和断开均清除当时持有，恢复事件本身不重放清理前的旧输入。
 - 反例：持有右移时隐藏页面，恢复后仍继续移动，应失败。
-- 当前入口/边界：player-keyboard 单测覆盖 blur/hidden/pagehide，gamepad mapping 单测覆盖 blur/disconnect，native gamepad probe 覆盖持有低速时断开后的中立；尚未把这些场景合并为实际 Runtime 的完整焦点生命周期验收。
+- 当前入口/边界：`runtime-desktop-probes.mjs` 经 Playwright `launchServer` 和 loopback CDP 网关运行全尺寸 headed Chrome，按真实窗口最小化或同窗标签切换采集原生 blur/hidden、输入位和释放结果。最小化期间要求 Host keyboard-clear 被接受且原生输入已中立；恢复后的读数不替代隐藏期间证据。标签检查关闭临时页后再次核对宿主页与 Runtime iframe 的 `visibilityState`、`hidden`、`hasFocus()`，并确认仍为原来的 Chrome page target 与 window ID。报告保存实际可执行文件与版本、启动参数、CDP target/window ID、窗口边界，以及按命令 id/session/page target 关联并取得 Chrome 成功响应的焦点改写记录。`--background-only` 专用于窗口、标签和声音三项生命周期检查，报告将其他桌面检查单列为 omitted；手柄断开由 gamepad mapping 与 native gamepad probe 覆盖。
 
 ### INPUT-07 | 原作菜单与对话输入
 

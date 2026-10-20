@@ -12,7 +12,7 @@ import {RUNTIME_BUILD_CONTROL_FILES,RUNTIME_BUILD_HELPER_FILES} from '../../laun
 import {RUNTIME_PACKAGE_CONTROL_FILES} from '../../launcher/lib/runtime-package-evidence.mjs';
 import {createFixtureServer} from '../browser/fixture-server.mjs';
 import {createFixtureResponseProbe} from './runtime-fixture-site.mjs';
-import {assessReplayTerminalSignal,createReplayProgressTracker,playbackObservation,replayProtocolFailures} from './replay-browser-semantics.mjs';
+import {assessReplayTerminalSignal,createReplayProgressTracker,gateReplayRecordOnFinalErrors,playbackObservation,replayProtocolFailures,replayScenarioPassedTargetIds} from './replay-browser-semantics.mjs';
 
 const arg=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const flag=name=>process.argv.includes(`--${name}`);
@@ -25,7 +25,7 @@ const repoRoot=resolve(import.meta.dirname,'../..');
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const decisionInputs=new Map();
 const decisionSourcePaths=[...new Set([
-  'tools/ports/replay-browser.mjs','tools/ports/acceptance-contracts.mjs','tools/ports/replay-fixtures.mjs','tools/ports/replay-browser-semantics.mjs','tools/ports/replay-browser-semantics.test.mjs','tools/ports/runtime-fixture-site.mjs','tools/browser/fixture-server.mjs','tools/browser/response-body-capture.mjs',
+  'tools/ports/replay-browser.mjs','tools/ports/acceptance-contracts.mjs','tools/ports/replay-fixtures.mjs','tools/ports/replay-browser-semantics.mjs','tools/ports/replay-browser-semantics.test.mjs','tools/ports/runtime-fixture-site.mjs','tools/browser/fixture-server.mjs','tools/browser/response-body-capture.mjs','tools/browser/final-error-audit.mjs','tools/browser/final-error-audit.test.mjs','tools/browser/launch.mjs','tools/browser/playwright.mjs',
   'tools/testing/cli-report.mjs','tools/testing/cli-options.mjs','common/contracts/product-catalog.mjs',
   'common/browser/local-replay.mjs','common/browser/local-replay-native.mjs','common/browser/playback-clock.mjs',
   'launcher/lib/contracts/runtime-generations.mjs','launcher/lib/contracts/site-manifest.mjs',
@@ -65,6 +65,7 @@ function publicDecisionInputs(){
 }
 
 async function verifyDecisionInputs(){
+  const verified=[];
   for(const item of decisionInputs.values()){
     const current=await readFile(item.absolutePath);
     assert.equal(current.length,item.bytes,`Decision input size changed during Replay acceptance: ${item.path}`);
@@ -72,7 +73,9 @@ async function verifyDecisionInputs(){
     const copy=await readFile(resolve(output,item.copyPath));
     assert.equal(copy.length,item.bytes,`Saved decision input copy has the wrong size: ${item.path}`);
     assert.equal(hash(copy),item.sha256,`Saved decision input copy has the wrong hash: ${item.path}`);
+    verified.push({path:item.path,bytes:item.bytes,sha256:item.sha256});
   }
+  return{status:'passed',verifiedAt:new Date().toISOString(),inputs:verified};
 }
 
 function hostPageHtml(target,epoch,runId){
@@ -245,11 +248,12 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
     await save();
   }
   const prepared=selection.targets.filter(target=>verifiedPackages.has(target.id)&&records.get(target.id)?.playback?.status!=='pending-multiplayer-fixture');
+  report.decisionInputsPreflight=publicDecisionInputs().map(({path,bytes,sha256})=>({path,bytes,sha256}));
   if(planOnly){
     report.status=report.targets.some(record=>record.status==='failed')?'failed':'incomplete';report.passed=false;
     report.reason='Plan-only mode verified package, DATA, Replay, and any available original counter references; no browser playback was run.';
     for(const target of prepared){const record=records.get(target.id);if(!record.playback)record.playback={status:'not-run'};}
-    await verifyDecisionInputs();
+    report.decisionInputsPostflight=await verifyDecisionInputs();
     await save();return;
   }
 
@@ -315,7 +319,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
   let browser;
   try{
     report.fixtureServer={protocol:fixtureServer.protocol,host:fixtureServer.host,port:fixtureServer.port,
-      tlsIdentity:fixtureServer.tlsIdentity,trustScope:'ignoreHTTPSErrors is limited to this fixture BrowserContext; Chromium also receives the ephemeral fixture certificate SPKI pin.'};
+      tlsIdentity:fixtureServer.tlsIdentity,trustScope:'Chromium trusts the ephemeral fixture certificate SPKI pin; BrowserContext certificate validation remains enabled.'};
     await save();
     const {launchBrowser}=await import('../browser/launch.mjs');
     browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
@@ -324,7 +328,21 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
     for(const target of prepared){
       const record=records.get(target.id);
       if(target.game==='th20')continue;
-      const context=await browser.newContext({viewport:{width:1100,height:820},ignoreHTTPSErrors:true}),page=await context.newPage();
+      const context=await browser.newContext({viewport:{width:1100,height:820}}),page=await context.newPage();
+      record.runtimeProtocolEvents=[];record.runtimeProtocolErrors=[];record.protocolCaptureErrors=[];
+      await page.exposeBinding('__captureReplayProtocolFailure',(_source,event)=>record.runtimeProtocolEvents.push(event));
+      await page.addInitScript(({game,epoch})=>{
+        if(window!==window.top)return;
+        const pending=new Set(),runtimeFrame=()=>document.querySelector('iframe');
+        window.__flushReplayProtocolCaptures=async()=>{while(pending.size)await Promise.all([...pending]);return pending.size;};
+        addEventListener('message',event=>{
+          const data=event.data;
+          if(event.origin!==location.origin||event.source!==runtimeFrame()?.contentWindow||data?.protocol!=='eagler-touhou/1'||
+            data.game!==game||data.epoch!==epoch||!(data.event==='error'||data.event==='abort'||data.ok===false))return;
+          const capture=Promise.resolve(window.__captureReplayProtocolFailure(data));pending.add(capture);
+          void capture.then(()=>pending.delete(capture),()=>pending.delete(capture));
+        });
+      },{game:target.game,epoch:1});
       const responseEvidenceDirectory=resolve(output,'evidence/browser-response-bodies',target.id);
       await mkdir(responseEvidenceDirectory,{recursive:true});
       const identity=verifiedPackages.get(target.id);
@@ -343,6 +361,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
       report.fixtureResponseCapture=responseProbe.capture;
       record.responseCapture={...responseProbe.capture,evidenceDirectory:relative(output,responseEvidenceDirectory).replaceAll('\\','/')};
       record.responseIntegrityErrors=responseProbe.errors;record.fixtureResponses=responseProbe.responses;
+      record.responsePolicyErrors=[];record.responseErrors=[];record.teardownErrors=[];
       record.sharedResponses=[];record.runtimeHtmlResponses=[];record.hostDocumentResponse=null;
       const updateResponseSummary=()=>{
         record.fixtureResponses=responseProbe.responses;
@@ -353,21 +372,38 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
           return url.pathname.startsWith(prefix)&&extname(decodeURIComponent(url.pathname.slice(prefix.length))).toLowerCase()==='.html';
         });
       };
-      const assertFixtureResponsePolicies=()=>{
+      const collectFixtureResponsePolicyErrors=()=>{
         updateResponseSummary();
+        const errors=[];
         for(const item of responseProbe.responses){
           const headers=item.headers??{},cacheControl=Object.entries(headers).find(([name])=>name.toLowerCase()==='cache-control')?.[1]??'';
-          assert.match(cacheControl,/\bno-store\b/i,`${target.id}: fixture response must disable caching: ${item.url}`);
-          assert.equal(item.fromServiceWorker,false,`${target.id}: fixture response must come directly from the HTTPS fixture: ${item.url}`);
+          if(!/\bno-store\b/i.test(cacheControl))errors.push({url:item.url,rule:'cache-control-no-store',observed:cacheControl});
+          if(item.fromServiceWorker!==false)errors.push({url:item.url,rule:'direct-fixture-response',observed:item.fromServiceWorker});
           const url=new URL(item.url),isHost=url.pathname===`/host/${target.id}`;
           if(isHost||url.pathname===`/runtime/${target.id}/${target.entry}`)
-            assert.equal(url.searchParams.get('runId'),report.runId,`${target.id}: Host/entry HTML URL must include this report runId`);
+            if(url.searchParams.get('runId')!==report.runId)
+              errors.push({url:item.url,rule:'report-run-id',observed:url.searchParams.get('runId'),expected:report.runId});
         }
+        return errors;
+      };
+      const assertFixtureResponsePolicies=()=>{
+        const errors=collectFixtureResponsePolicyErrors();
+        assert.deepEqual(errors,[],`${target.id}: fixture response cache, service-worker, or runId policy failed`);
       };
       const captureProtocolErrors=async()=>{
-        const events=await page.evaluate(()=>window.events??[]).catch(()=>[]);
-        record.runtimeProtocolErrors=replayProtocolFailures(events);
+        const capture=await page.evaluate(async()=>{
+          const pending=await window.__flushReplayProtocolCaptures?.();
+          return{events:window.events??[],pending:Number.isSafeInteger(pending)?pending:null};
+        });
+        record.protocolCaptureDrain={pending:capture.pending,observedAt:new Date().toISOString()};
+        assert.equal(capture.pending,0,`${target.id}: same-origin iframe protocol binding calls were not drained`);
+        record.runtimeProtocolEventsFromWindow=replayProtocolFailures(capture.events);
+        mergeReplayProtocolFailures();
         return record.runtimeProtocolErrors;
+      };
+      const mergeReplayProtocolFailures=()=>{
+        const failures=[...(record.runtimeProtocolEventsFromWindow??[]),...replayProtocolFailures(record.runtimeProtocolEvents)];
+        record.runtimeProtocolErrors=failures;
       };
       page.on('pageerror',error=>record.errors.push(String(error)));
       page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push(message.text());});
@@ -508,20 +544,56 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
         record.playback.scenarioStatus='passed';
         record.playback.scenarioEvidence={officialShellImport:'passed',nativeFramesAtDefaultRate:record.playbackPacing.naturalFrames,
           terminalSignalObserved:record.playback.terminalSignalObserved,fullInputConsumption:record.playback.fullInputConsumption,
-          browserAndRuntimeErrors:'none',rawHtmlResponseIntegrity:'passed'};
+          browserAndRuntimeErrors:'pending-final-audit',rawHtmlResponseIntegrity:'passed'};
         record.compatibility={complete:false,status:'incomplete',reason:'No exact native terminal count with a source-attested same-counter mapping is bound to this fixture.'};
         record.status='passed';
       }catch(error){record.status='failed';record.error=String(error.stack||error);
-        await captureProtocolErrors();
+        await captureProtocolErrors().catch(captureError=>record.protocolCaptureErrors.push(String(captureError.stack||captureError)));
         record.failureState=await page.evaluate(()=>({events:window.events?.slice(-20)??[],body:document.body.innerText})).catch(()=>null);
         await page.screenshot({path:resolve(output,`${target.id}-replay-failure.png`)}).catch(()=>{});
       }finally{
-        await responseProbe.stop().catch(error=>record.responseIntegrityErrors.push(String(error.stack||error)));
-        await responseProbe.flush().catch(error=>{record.status='failed';record.error??=String(error.stack||error);});
-        updateResponseSummary();await context.close();await save();
+        let responseProbeFlushed=false,responseProbeFlushFailed=false,responseProbeStopped=false,contextClosed=false,pageClosed=false;
+        try{await responseProbe.flush();responseProbeFlushed=true;}
+        catch(error){responseProbeFlushFailed=true;record.teardownErrors.push({phase:'responseProbe.flush',error:String(error.stack||error)});}
+        try{await responseProbe.stop();responseProbeStopped=true;}
+        catch(error){record.teardownErrors.push({phase:'responseProbe.stop',error:String(error.stack||error)});}
+        try{await responseProbe.flush();responseProbeFlushed=true;}
+        catch(error){responseProbeFlushFailed=true;record.teardownErrors.push({phase:'responseProbe.finalFlush',error:String(error.stack||error)});}
+        updateResponseSummary();record.responsePolicyErrors=collectFixtureResponsePolicyErrors();
+        try{await captureProtocolErrors();}
+        catch(error){record.protocolCaptureErrors.push(String(error.stack||error));}
+        const pageClosedEvent=page.isClosed()?Promise.resolve():new Promise(resolveClosed=>page.once('close',resolveClosed));
+        try{await context.close();contextClosed=true;await pageClosedEvent;pageClosed=true;}
+        catch(error){record.teardownErrors.push({phase:'context.close',error:String(error.stack||error)});}
+        // Binding callbacks synchronously append their payloads before the page-close event;
+        // context.close plus the observed close event is the drain boundary for late messages.
+        mergeReplayProtocolFailures();
+        updateResponseSummary();
+        record.responseErrors=[
+          ...record.responseIntegrityErrors.map(error=>({kind:'identity',error})),
+          ...record.responsePolicyErrors.map(error=>({kind:'policy',...error})),
+        ];
+        const teardownErrors=[...record.teardownErrors,...record.protocolCaptureErrors.map(error=>({phase:'protocolCapture',error}))];
+        gateReplayRecordOnFinalErrors(record,{pageErrors:record.errors,consoleErrors:record.consoleErrors,
+          httpErrors:record.httpErrors,protocolErrors:record.runtimeProtocolErrors,responseErrors:record.responseErrors,teardownErrors});
+        record.finalErrorAudit.lifecycle={responseProbeFlushed:responseProbeFlushed&&!responseProbeFlushFailed?'passed':'failed',
+          responseProbeStopped:responseProbeStopped?'passed':'failed',
+          protocolCaptureDrainedBeforeClose:record.protocolCaptureErrors.length===0&&record.protocolCaptureDrain?.pending===0,
+          protocolCaptureDrain:record.protocolCaptureDrain??null,bindingEventsAtClose:record.runtimeProtocolEvents.length,
+          contextClosed,pageClosed};
+        await save();
       }
     }
   }finally{await browser?.close();await fixtureServer.close();}
+  for(const target of selection.targets){
+    const record=records.get(target.id);
+    if(!record||record.postflight||!verifiedPackages.has(target.id))continue;
+    const latestPackage=await verifyRuntimePackage(target,{repoRoot}),latestData=await verifyPrivateData(target.data),latestFixture=await loadRuntimeReplayFixture(target);
+    assert.deepEqual(latestPackage,verifiedPackages.get(target.id),`${target.id}: Runtime package changed after Replay acceptance`);
+    assert.deepEqual(latestData,verifiedData.get(target.id),`${target.id}: private DATA changed after Replay acceptance`);
+    assert.deepEqual(latestFixture.identity,fixtures.get(target.id).identity,`${target.id}: Replay input changed after Replay acceptance`);
+    record.postflight={packageIdentity:latestPackage,dataIdentity:latestData,fixture:latestFixture.identity};
+  }
   const sharedPostflight={};
   for(const [url,identity] of sharedInputs){
     const bytes=await readFile(identity.path);
@@ -530,13 +602,13 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
     sharedPostflight[url]={path:identity.path,bytes:bytes.length,sha256:hash(bytes)};
   }
   report.sharedPostflight=sharedPostflight;
-  await verifyDecisionInputs();
+  report.decisionInputsPostflight=await verifyDecisionInputs();
   report.decisionInputs=publicDecisionInputs();
   const failures=report.targets.some(record=>record.status==='failed');
   const incomplete=report.targets.some(record=>record.status!=='passed'||record.compatibility?.complete!==true);
   const multiplayerTargets=report.targets.filter(record=>record.variant==='multiplayer');
   report.coverage={selectedTargets:report.targets.length,expectedTargets:selection.expected.length,
-    scenarioPassedTargets:report.targets.filter(record=>record.playback?.scenarioStatus==='passed').map(record=>record.id),
+    scenarioPassedTargets:replayScenarioPassedTargetIds(report.targets),
     compatibilityCompleteTargets:report.targets.filter(record=>record.compatibility?.complete===true).map(record=>record.id),
     nativeTerminalSignalObservedTargets:report.targets.filter(record=>record.playback?.status==='observed').map(record=>record.id),
     blockedTargets:report.targets.filter(record=>record.playback?.scenarioStatus==='blocked').map(record=>record.id),

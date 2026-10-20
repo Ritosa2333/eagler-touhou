@@ -12,7 +12,7 @@ export function stampRoomProtocolEvent(event, receivedAt, nativeAtReceipt = null
 export function roomProtocolErrorEntries(snapshots, stage) {
   if (!Array.isArray(snapshots)) throw new TypeError('snapshots must be an array');
   return snapshots.flatMap((native, seat) => (native?.events ?? [])
-    .filter(event => event.event === 'error' || event.ok === false)
+    .filter(event => event.event === 'error' || event.event === 'abort' || event.ok === false)
     .map(event => ({seat, stage, checkerMs: event.receivedAt, kind: 'protocol-error',
       text: String(event.message ?? event.error ?? JSON.stringify(event)), native:event.nativeAtReceipt,
       sampledNative:native})));

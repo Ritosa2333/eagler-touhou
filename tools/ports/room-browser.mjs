@@ -7,7 +7,9 @@ import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {gamepadProbeBundle,gamepadProbeFailureEvidence,gamepadTargetFor,prepareVirtualGamepad,probeNativeGamepad} from './gamepad-probe.mjs';
 import {selectRoomTargets,selectRuntimeTargets,verifyPublishedRuntime,verifyRuntimePackage} from './acceptance-contracts.mjs';
 import {inspectRoomResources,inspectRoomSiteAssets,recordRoomSiteAssetFailures,verifyRoomResourcePostflight} from './room-resources.mjs';
-import {classifyRoomConsoleErrors,roomProtocolErrorEntries,stampRoomProtocolEvent} from './room-errors.mjs';
+import {classifyRoomConsoleErrors,roomProtocolErrorEntries} from './room-errors.mjs';
+import {attachRoomProtocolCapture} from './room-protocol-capture.mjs';
+import {auditBrowserFinalErrors} from '../browser/final-error-audit.mjs';
 import {compareTh08FrozenWorld,compareTh08LiveWorld,th08DisconnectedWaitState} from './th08-world-progress.mjs';
 import {readRuntimeObservation} from './runtime-observations.mjs';
 import {sourceSnapshot} from '../testing/source-snapshot.mjs';
@@ -55,10 +57,10 @@ report.sourcePackages=Object.fromEntries(sourcePackages);
 report.sourcePackageErrors=Object.fromEntries(sourcePackageErrors);
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 report.helperSources={};
-for(const name of ['room-errors.mjs','runtime-observations.mjs','native-observation-contract.mjs','th08-world-progress.mjs','room-lifecycle.mjs','room-spectator.mjs']){
+for(const name of ['room-errors.mjs','room-protocol-capture.mjs','../browser/final-error-audit.mjs','runtime-observations.mjs','native-observation-contract.mjs','th08-world-progress.mjs','room-lifecycle.mjs','room-spectator.mjs']){
   const bytes=await readFile(new URL(name,import.meta.url));
   report.helperSources[name]=createHash('sha256').update(bytes).digest('hex');
-  await writeFile(resolve(directory,name),bytes);
+  await writeFile(resolve(directory,name.replaceAll('../','').replaceAll('/','-')),bytes);
 }
 const observationReader=readRuntimeObservation.toString();
 report.observationReaderSha256=createHash('sha256').update(observationReader).digest('hex');
@@ -219,7 +221,7 @@ function assertRoomErrors(record,entries){
 }
 const records=new Map(games.map(game=>{
   const resource=report.resourcePreparation.games.find(item=>item.game===game);
-  const record={game,players,route,resourcePreparation:resource??{status:'failed',error:{code:'resource-result-missing',message:`${game}: resource preflight returned no result`}},
+  const record={game,variant:'multiplayer',players,route,resourcePreparation:resource??{status:'failed',error:{code:'resource-result-missing',message:`${game}: resource preflight returned no result`}},
     steps:[],errors:[],consoleErrors:[],httpErrors:[]};report.targets.push(record);return[game,record];
 }));
 for(const game of games){
@@ -239,7 +241,8 @@ await save();
 try{
   for(const game of games){
     const record=records.get(game);if(!record.runtimeIdentity||record.resourcePreparation.status!=='ready')continue;
-    let browser,viewer;const contexts=[],pages=[],pendingConsoleSamples=[];
+    let browser,viewer;const contexts=[],pages=[],pendingConsoleSamples=[],protocolCaptures=[];
+    record.teardownErrors=[];record.requestFailures=[];
     const step=async(name,operation)=>{record.stage=name;record.steps.push({name,at:new Date().toISOString()});await save();return operation();};
     const awaitPendingConsoleSamples=async()=>{
       while(pendingConsoleSamples.length)await Promise.all(pendingConsoleSamples.splice(0));
@@ -252,27 +255,18 @@ try{
         const context=await browser.newContext({viewport:{width:1280,height:900}});contexts.push(context);
         if(gamepad)await prepareVirtualGamepad(context,gamepadBundle,gamepadTargetFor(game,'multiplayer',seat));
         if(route==='relay')await context.addInitScript(()=>Object.defineProperty(window,'RTCPeerConnection',{value:undefined,configurable:true}));
-        await context.addInitScript({content:`{
-          const stampRoomProtocolEvent=(${stampRoomProtocolEvent.toString()});
-          window.acceptanceEvents=[];
-          addEventListener('message',event=>{
-            if(event.source!==document.querySelector('#gameFrame')?.contentWindow||event.data?.protocol!=='eagler-touhou/1')return;
-            const runtime=event.source;
-            const nativeAtReceipt={failed:runtime.__eaglerNetplayFailed===true,
-              error:String(runtime.__eaglerNetplayError??''),
-              transportState:{disconnected:runtime.__eaglerPeerTransport?.disconnected===true}};
-            window.acceptanceEvents.push(stampRoomProtocolEvent(event.data,Date.now(),nativeAtReceipt));
-          });
-        }`});
         const page=await context.newPage();pages.push(page);
+        protocolCaptures.push({seat,page,capture:await attachRoomProtocolCapture(page,{game})});
         page.on('pageerror',error=>record.errors.push({seat,error:String(error)}));
+        page.on('crash',()=>record.errors.push({seat,error:'Browser page crashed'}));
         page.on('console',message=>{if(message.type()==='error'){
           const entry={seat,stage:record.stage,checkerMs:Date.now(),kind:'console-error',text:message.text(),native:null};
           record.consoleErrors.push(entry);
           pendingConsoleSamples.push(nativeSnapshot(page,game,seat).then(native=>{entry.native=native;})
             .catch(error=>{entry.observationError=String(error.message??error);}));
         }});
-        page.on('response',response=>{if(response.status()>=400&&!response.url().endsWith('/favicon.ico'))record.httpErrors.push({seat,url:response.url(),status:response.status()});});
+        page.on('response',response=>{if(response.status()>=400)record.httpErrors.push({seat,url:response.url(),status:response.status()});});
+        page.on('requestfailed',request=>record.requestFailures.push({seat,url:request.url(),failure:request.failure()?.errorText??'request failed'}));
         await step(`P${seat+1}-directory`,async()=>{
           await page.goto(base);await page.waitForFunction(()=>window.__eaglerBoot?.done===true);await dismiss(page);
           await page.locator(`[data-product="${game}mp"]`).click();await page.locator('#createButton').waitFor({state:'visible'});
@@ -542,8 +536,39 @@ try{
     }catch(error){record.passed=false;record.error=String(error.stack||error);record.failure=await Promise.all(pages.map(page=>roomSnapshot(page).catch(error=>({error:String(error)}))));
       record.failureNative=await Promise.all(pages.map((page,seat)=>nativeSnapshot(page,game,seat).then(({events,...state})=>state).catch(error=>({error:String(error)}))));
       for(let seat=0;seat<pages.length;seat++)await pages[seat].screenshot({path:resolve(directory,`${game}-failure-p${seat+1}.png`)}).catch(()=>{});
-    }finally{recordRoomSiteAssetFailures(report.siteAssets,record.httpErrors);report.siteAssetsPassed=report.siteAssets.passed;
-      try{for(const context of contexts)await context.close();}finally{if(browser)await browser.close();}
+    }finally{
+      for(const {seat,page,capture} of protocolCaptures){
+        if(page.isClosed())continue;
+        try{await capture.drain();}catch(error){record.teardownErrors.push({seat,phase:'protocol-capture-drain',error:String(error.stack||error)});}
+      }
+      if(viewer&&!viewer.page.isClosed())try{await viewer.protocolCapture.drain();}
+      catch(error){record.teardownErrors.push({seat:'spectator',phase:'protocol-capture-drain',error:String(error.stack||error)});}
+      for(const context of contexts)try{await context.close();}
+      catch(error){record.teardownErrors.push({phase:'context.close',error:String(error.stack||error)});}
+      let browserClosed=false;
+      if(browser)try{await browser.close();browserClosed=true;}
+      catch(error){record.teardownErrors.push({phase:'browser.close',error:String(error.stack||error)});}
+      await awaitPendingConsoleSamples();
+      record.finalProtocolEvents=protocolCaptures.map(({seat,capture})=>({seat,events:capture.events}));
+      record.protocolErrors=roomProtocolErrorEntries(record.finalProtocolEvents,record.stage);
+      record.errorClassification=classifyRoomConsoleErrors({entries:[...record.consoleErrors,...record.protocolErrors],disconnect:record.disconnect});
+      const unexpected=record.errorClassification.unexpected;
+      const siteFailure=failure=>{const path=new URL(failure.url).pathname;return path==='/favicon.ico'||path.startsWith('/assets/');};
+      recordRoomSiteAssetFailures(report.siteAssets,record.httpErrors);
+      recordRoomSiteAssetFailures(report.siteAssets,record.requestFailures.filter(siteFailure).map(failure=>({...failure,status:0})));
+      report.siteAssetsPassed=report.siteAssets.passed;
+      record.finalErrorAudit=auditBrowserFinalErrors({
+        pageErrors:[...record.errors,...(viewer?.result.errors??[]).map(error=>({seat:'spectator',error}))],
+        consoleErrors:[...unexpected.filter(error=>error.kind==='console-error'),...(viewer?.result.consoleErrors??[])],
+        httpErrors:[...record.httpErrors.filter(failure=>!siteFailure(failure)),...record.requestFailures.filter(failure=>!siteFailure(failure))],
+        protocolErrors:[...unexpected.filter(error=>error.kind!=='console-error'),
+          ...roomProtocolErrorEntries([{events:viewer?.protocolCapture.events??[]}],record.stage).map(error=>({...error,seat:'spectator'}))],
+        responseErrors:[],teardownErrors:record.teardownErrors});
+      record.finalErrorAudit.afterBrowserClosed=browserClosed;
+      if(record.finalErrorAudit.status==='failed'){
+        record.runtimePassed=false;record.passed=false;
+        record.error??=`Final room browser audit failed: ${record.finalErrorAudit.failedChannels.join(', ')}`;
+      }
       await save();console.log(`${game}: ${record.passed?'PASS':'FAIL'} at ${record.stage} ${record.error?.split('\n')[0]??''}`);}
   }
 }finally{

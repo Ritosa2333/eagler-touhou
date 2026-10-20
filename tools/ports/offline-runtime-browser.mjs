@@ -17,6 +17,7 @@ import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
 import {offlineRuntimeOutcome} from './offline-runtime-result.mjs';
 import {classifyOfflineBrowserEvents} from './offline-runtime-errors.mjs';
+import {auditBrowserFinalErrors} from '../browser/final-error-audit.mjs';
 import {createOfflineStaticTlsProxy,captureOfflineSiteIdentity,watchOfflineSiteResponses,verifyOfflineSiteIdentity} from './offline-runtime-https.mjs';
 import {loadOfflineUpdateManifest,inspectOfflineUpdateDescriptor,assertOfflineUpdateManifestIdentity,writeInterruptedOfflineUpdateArchive} from './offline-runtime-update.mjs';
 
@@ -79,7 +80,8 @@ async function startStaticServer(site,port){
 async function stopChild(child){
   if(!child||child.exitCode!==null||child.signalCode!==null)return;
   child.kill();
-  await Promise.race([new Promise(accept=>child.once('close',accept)),pause(3000)]);
+  const closed=await Promise.race([new Promise(accept=>child.once('close',()=>accept(true))),pause(3000).then(()=>false)]);
+  if(!closed)throw Error(`Static server process ${child.pid??'unknown'} did not exit after shutdown`);
 }
 
 function runtimeLayout(target,identity){
@@ -133,13 +135,26 @@ function featureConfig(){
 
 function offlineRuntimeInitScript({game}){
   const hash=async buffer=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',buffer)),value=>value.toString(16).padStart(2,'0')).join('');
-  Object.defineProperty(window,'__offlineRuntimeEvents',{configurable:true,value:[]});
-  Object.defineProperty(window,'__offlineManagedDataReads',{configurable:true,value:[]});
-  addEventListener('message',event=>{
-    const frame=document.getElementById('gameFrame');
-    if(event.origin===location.origin&&event.source===frame?.contentWindow&&event.data?.protocol==='eagler-touhou/1')
-      window.__offlineRuntimeEvents.push(event.data);
-  });
+  if(window===window.top){
+    Object.defineProperty(window,'__offlineRuntimeEvents',{configurable:true,value:[]});
+    const pending=new Set();
+    Object.defineProperty(window,'__flushOfflineProtocolCaptures',{configurable:true,value:async()=>{
+      while(pending.size)await Promise.all([...pending]);
+      if(window.__offlineProtocolCaptureError)throw new Error(window.__offlineProtocolCaptureError);
+    }});
+    addEventListener('message',event=>{
+      const frame=document.getElementById('gameFrame');
+      const data=event.data;
+      if(event.origin!==location.origin||event.source!==frame?.contentWindow||data?.protocol!=='eagler-touhou/1'||
+        data.game!==game||!Number.isSafeInteger(data.epoch)||data.epoch<1)return;
+      window.__offlineRuntimeEvents.push(data);
+      if(data.event!=='error'&&data.event!=='abort'&&data.ok!==false)return;
+      const operation=Promise.resolve(window.__captureOfflineRuntimeProtocolFailure({...data,origin:event.origin}))
+        .catch(error=>{window.__offlineProtocolCaptureError=String(error?.stack||error);});
+      pending.add(operation);void operation.finally(()=>pending.delete(operation));
+    });
+  }
+  Object.defineProperty(window,'__offlineManagedDataReads',{configurable:true,value:window.__offlineManagedDataReads??[]});
   let current;
   Object.defineProperty(window,'__eaglerPrepareManagedRuntimeDataV1',{configurable:true,enumerable:true,
     get(){return current;},set(provider){
@@ -154,6 +169,22 @@ function offlineRuntimeInitScript({game}){
     }});
 }
 
+async function bindOfflineProtocolCapture(page,game,protocolErrors){
+  await page.exposeBinding('__captureOfflineRuntimeProtocolFailure',(source,event)=>{
+    const samePage=source.page===page,mainFrame=source.frame===page.mainFrame();
+    if(!samePage||!mainFrame){protocolErrors.push({type:'untrusted-binding-source',samePage,mainFrame,event});return;}
+    protocolErrors.push(event);
+  });
+  await page.addInitScript(offlineRuntimeInitScript,{game});
+}
+
+async function drainOfflineProtocolCapture(page){
+  if(!page||page.isClosed())return;
+  await page.evaluate(async()=>{
+    if(typeof window.__flushOfflineProtocolCaptures==='function')await window.__flushOfflineProtocolCaptures();
+  });
+}
+
 const HARNESS_ROOTS=[
   'tools/ports/offline-runtime-browser.mjs',
   'tools/ports/acceptance-contracts.mjs',
@@ -164,6 +195,7 @@ const HARNESS_ROOTS=[
   'tools/browser/launch.mjs',
   'tools/browser/playwright.mjs',
   'tools/browser/fixture-server.mjs',
+  'tools/browser/final-error-audit.mjs',
   'tools/ports/offline-runtime-https.mjs',
   'tools/ports/offline-runtime-update.mjs',
   'tools/ports/offline-runtime-result.mjs',
@@ -351,6 +383,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/offline-runtime-b
   let staticServer,tlsProxy,siteSnapshot,browser,context,page;
   const pageWatchers=[];
   const browserEvents=[];
+  const protocolErrors=[],responseErrors=[],teardownErrors=[];
   try{
     staticServer=await startStaticServer(site,port);
     tlsProxy=await createOfflineStaticTlsProxy({backendBase:staticServer.baseUrl});
@@ -362,8 +395,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/offline-runtime-b
       `--ignore-certificate-errors-spki-list=${tlsProxy.tlsIdentity.spkiSha256}`]});
     report.browser={engine:'Chromium',version:browser.version(),headless:true};
     context=await browser.newContext({viewport:{width:1280,height:900}});
-    await context.addInitScript(offlineRuntimeInitScript,{game});
     page=await context.newPage();
+    await bindOfflineProtocolCapture(page,game,protocolErrors);
     const onlineSiteWatcher=await watchOfflineSiteResponses(page,{base:tlsProxy.base,snapshot:siteSnapshot,output,label:'online-site'});
     pageWatchers.push(onlineSiteWatcher);
     page.on('console',message=>{if(message.type()==='error')browserEvents.push({type:'console',text:message.text()});});
@@ -381,7 +414,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/offline-runtime-b
     if(!shell.controlled){await page.reload({waitUntil:'load',timeout:60_000});await page.waitForFunction(()=>window.__eaglerBoot?.done===true,null,{timeout:60_000});}
     await page.waitForFunction(()=>!!navigator.serviceWorker.controller,null,{timeout:30_000});
     shell=await controller();
-    assert.equal(new URL(shell.scope).origin,new URL(staticServer.baseUrl).origin);
+    assert.equal(new URL(shell.scope).origin,new URL(tlsProxy.base).origin,'App Shell scope must belong to the browser HTTPS origin');
+    assert.equal(new URL(shell.worker).origin,new URL(tlsProxy.base).origin,'App Shell worker must belong to the browser HTTPS origin');
     report.appShell={...shell,controlledBeforeImport:true};await save();
     const firstUse=page.locator('#firstUseNoticeDialog');
     if(await firstUse.count()&&await firstUse.evaluate(element=>element.open))await page.locator('#firstUseNoticeClose').click();
@@ -614,10 +648,14 @@ const report=await runWithReport({output,schema:'eagler-touhou/offline-runtime-b
       await save();
     }
 
-    await onlineSiteWatcher.flush();await onlineSiteWatcher.stop();
-    await page.close();page=null;
+    await onlineSiteWatcher.flush();
+    try{await onlineSiteWatcher.stop();}catch(error){teardownErrors.push({phase:'online-response-probe.stop',error:String(error.stack||error)});throw error;}
+    await drainOfflineProtocolCapture(page);
+    try{await page.close();}catch(error){teardownErrors.push({phase:'online-page.close',error:String(error.stack||error)});throw error;}
+    page=null;
     await context.setOffline(true);
     page=await context.newPage();
+    await bindOfflineProtocolCapture(page,game,protocolErrors);
     const offlineSiteWatcher=await watchOfflineSiteResponses(page,{base:tlsProxy.base,snapshot:siteSnapshot,output,label:'offline-site'});
     pageWatchers.push(offlineSiteWatcher);
     page.on('console',message=>{if(message.type()==='error')browserEvents.push({type:'offline-console',text:message.text()});});
@@ -741,12 +779,41 @@ const report=await runWithReport({output,schema:'eagler-touhou/offline-runtime-b
       :'HTTPS Launcher import, Runtime startup and offline user-file recovery passed. PACKAGE-03 and SAVE-06 remain blocked until a second-generation update manifest is selected.';
     await save();
   }finally{
-    if(page&&!page.isClosed())await page.close().catch(()=>{});
-    for(const watcher of pageWatchers)await watcher.stop().catch(()=>{});
-    if(context)await context.close().catch(()=>{});
-    if(browser)await browser.close().catch(()=>{});
-    if(tlsProxy)await tlsProxy.close().catch(()=>{});
-    if(staticServer)await stopChild(staticServer.child);
+    const teardown=async(phase,operation)=>{
+      try{await operation();}catch(error){teardownErrors.push({phase,error:String(error.stack||error)});}
+    };
+    if(page&&!page.isClosed())await teardown('runtime-protocol.drain',()=>drainOfflineProtocolCapture(page));
+    for(let index=0;index<pageWatchers.length;index++){
+      const watcher=pageWatchers[index];
+      await teardown(`response-probe[${index}].flush-before-stop`,()=>watcher.flush());
+      await teardown(`response-probe[${index}].stop`,()=>watcher.stop());
+      await teardown(`response-probe[${index}].flush-after-stop`,()=>watcher.flush());
+      for(const error of watcher.errors??[])responseErrors.push({watcher:index,error});
+    }
+    if(page&&!page.isClosed())await teardown('page.close',()=>page.close());
+    if(context)await teardown('context.close',()=>context.close());
+    if(browser)await teardown('browser.close',()=>browser.close());
+    if(tlsProxy)await teardown('tls-proxy.close',()=>tlsProxy.close());
+    if(staticServer)await teardown('static-server.close',()=>stopChild(staticServer.child));
+    report.browserEvents=browserEvents;
+    report.protocolErrors=protocolErrors;
+    report.responseErrors=responseErrors;
+    report.teardownErrors=teardownErrors;
+    report.browserSiteResponses=pageWatchers.map(watcher=>({capture:watcher.capture,count:watcher.responses.length,errors:watcher.errors,responses:watcher.responses}));
+    const finalErrorAudit=auditBrowserFinalErrors({
+      pageErrors:browserEvents.filter(event=>event.type==='pageerror'||event.type==='offline-pageerror'),
+      consoleErrors:browserEvents.filter(event=>event.type==='console'||event.type==='offline-console'),
+      httpErrors:browserEvents.filter(event=>event.type==='http'||event.type==='offline-http'||event.type==='requestfailed'||event.type==='offline-requestfailed'),
+      protocolErrors,responseErrors,teardownErrors,
+    });
+    report.finalErrorAudit=finalErrorAudit;
+    if(finalErrorAudit.status==='failed'){
+      report.preFinalAuditStatus=report.status;
+      if(report.scenario){report.scenario.status='failed';report.scenario.passed=false;}
+      for(const scenario of report.scenarios??[])if(scenario.status==='passed'){scenario.status='failed';scenario.passed=false;}
+      report.status='failed';report.passed=false;
+    }
+    await save();
   }
 });
 

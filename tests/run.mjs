@@ -5,6 +5,7 @@ import {repository, suites, profiles} from './suites.mjs';
 import {sourceSnapshot} from '../tools/testing/source-snapshot.mjs';
 import {acquireOutputLock} from '../tools/testing/output-lock.mjs';
 import {runWithReport} from '../tools/testing/cli-report.mjs';
+import {freshAdaptationOutput,runAdaptationVerification} from './adaptation/execution.mjs';
 
 const options = {suite:[], profile:[], jobs:4, output:resolve(repository, 'artifacts/validation/tests')};
 const argumentsForRun=process.argv.slice(2);
@@ -13,13 +14,29 @@ if(outputHint)options.output=resolve(outputHint.slice('--output='.length));
 let argumentError;
 try{for (const argument of argumentsForRun) {
   if (argument === '--list') {options.list=true; continue;}
-  const match = argument.match(/^--(suite|profile|jobs|output)=(.+)$/);
+  if (argument === '--plan') {options.planOnly=true; continue;}
+  const match = argument.match(/^--(suite|profile|jobs|output|game|variant|check|inputs|resume|rerun-failed)=(.+)$/);
   if (!match) throw new Error(`Unknown test argument: ${argument}`);
   const [, name, value] = match;
   if (name === 'suite' || name === 'profile') options[name].push(...value.split(','));
+  else if(['game','variant','check'].includes(name))options[name]=value;
+  else if(name==='rerun-failed')options.rerunFailed=resolve(value);
   else options[name] = name === 'jobs' ? Number(value) : resolve(value);
 }}catch(error){argumentError=error;}
-if (options.list&&!argumentError) {
+if(options.profile.includes('adaptation')){
+  try{
+    if(argumentError)throw argumentError;
+    if(options.profile.length!==1||options.list)throw Error('Adaptation selection requires only --profile=adaptation');
+    const report=await runAdaptationVerification({root:repository,...options,
+      output:outputHint?options.output:freshAdaptationOutput(repository),games:options.game?.split(','),checks:options.check?.split(','),
+      groups:options.suite.length?options.suite:undefined,
+      onResult:item=>console.log(`${item.id}: ${item.status} ${item.report?.path??''}`)});
+    console.log(JSON.stringify({status:report.status,counts:report.counts,executed:report.executed,retained:report.retained,
+      coverageComplete:report.coverage?.complete,summary:resolve(report.output,'summary.json')}));
+    if(report.failure)console.error(report.failure);
+    if(!report.passed&&report.status!=='planned')process.exitCode=1;
+  }catch(error){console.error(error.message);process.exitCode=1;}
+} else if (options.list&&!argumentError) {
   const catalog=suites({output:options.output});
   console.log(JSON.stringify(Object.entries(catalog).map(([id, suite])=>({id, tier:suite.tier, scope:suite.scope})), null, 2));
 } else {
@@ -27,6 +44,8 @@ if (options.list&&!argumentError) {
   try {
   const report=await runWithReport({output:options.output,filename:'summary.json',schema:'eagler-touhou/test-selection/1'},async(summary,save)=>{
   if(argumentError)throw argumentError;
+  if(['game','variant','check','inputs','resume','rerunFailed','planOnly'].some(name=>options[name]!==undefined))
+    throw Error('Adaptation selectors require --profile=adaptation');
   const catalog=suites({output:options.output});
   if (!options.suite.length && !options.profile.length) options.profile.push('quick');
   const selected = new Set(options.suite);

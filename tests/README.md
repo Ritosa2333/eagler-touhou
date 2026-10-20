@@ -53,6 +53,28 @@ th06／th07 的 Replay 源码契约随 `ports-unit` 执行，核对输入注入�
 
 共用 protocol-host 使用独立 localhost HTTPS 站点，并校验浏览器实际收到的响应字节。需要 OpenSSL，`EAGLER_OPENSSL` 可指定路径。测试浏览器按本次临时证书的 SPKI 指纹连接；站点退出后清理证书和连接。
 
+## 逐作适配队列
+
+`npm run test:adaptation` 按作品、普通版／MP 和场景组生成队列，执行过程与既有测试共用进程管理器。先预览同一计划，再按需执行：
+
+```sh
+npm run test:adaptation -- --game=th08 --variant=both --suite=runtime,replay --plan
+npm run test:adaptation -- --game=th08 --variant=normal --suite=runtime,desktop-input --inputs=.local/adaptation-inputs.json
+npm run test:adaptation -- --game=th08 --variant=normal --check=INPUT-01 --inputs=.local/adaptation-inputs.json
+npm run test:adaptation -- --resume=artifacts/validation/上次目录
+npm run test:adaptation -- --rerun-failed=artifacts/validation/上次目录
+```
+
+`--variant=normal|multiplayer|both` 选择产品身份，`mp` 是 `multiplayer` 的别名。`--suite` 可选 `runtime`、`desktop-input`、`desktop-background`、`practice`、`replay`、`music`、`offline`、`offline-update`、`rooms`、`spectator`。省略时生成全部场景。`--check` 选择适配编号；编号存在但没有对应场景时记录 unmapped，并返回未完成。显式选择编号要求对应完整证据，场景通过但编号覆盖 partial 时返回未完成。
+
+任务边界为作品 | 变体 | 场景组；房间再按人数与 RTC／Relay 拆分。输入和后台分别运行，支持更新的作品把基础离线与更新旅程合在一次任务里。共享 Launcher 准备执行一次，作品打包复用内容缓存。`--jobs=1` 控制排队并发，浏览器与共享资源按互斥声明运行。单项缺输入会记录 blocked，其他独立项继续。
+
+本地输入配置采用 `eagler-touhou/adaptation-inputs/1`，可登记 `runtimeManifest`、`packages`、`updatePackages`、`musicManifest`、`artwork` 和 `launcherUrl`。前五项的相对路径以配置文件目录为基准；也可继续使用下文的环境变量。配置、私有资源与原始报告留在本地。
+
+每轮默认创建新目录，`--output` 可指定新的证据目录。`summary.json` 包含计划、实际命令、逐项状态、日志、原始封存报告的哈希、产物与输入身份，以及逐编号覆盖。`--plan` 保存同样的任务选择与缺失输入，不启动测试，报告为 planned。执行状态与编号完整度分别呈现：全部所选场景通过可返回 passed，完整适配证明由 `coverage.complete` 和逐编号记录给出。
+
+`--resume` 沿用身份一致且封存证据完整的已完成任务，执行未完成或身份变化的任务。`--rerun-failed` 额外重跑 failed、timeout 和 cancelled；已记录的 incomplete 覆盖范围保留原证据，补充输入或修改驱动后由身份变化触发重跑。沿用结果标为 retained，保留原运行编号、时间和报告路径，本次执行标为 executed。父报告、子报告、测试依赖、Runtime、DATA、录像、字体、音乐、离线包及浏览器身份共同约束复用；文档正文变化不触发游戏重跑。执行后独立复核身份。
+
 ## Runtime 验收输入
 
 `EAGLER_TEST_RUNTIME_MANIFEST` 指向本地清单，逐项登记八作普通版的 Runtime 目录、入口和 DATA，结构见[运行验收](../docs/adaptation/validation.md)。多人验收通过 `EAGLER_TEST_LAUNCHER_URL` 指定本地 Launcher；`EAGLER_TEST_PACKAGES` 可提供作品到本地导入包的映射。

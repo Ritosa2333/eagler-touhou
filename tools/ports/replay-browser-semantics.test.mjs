@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {assessReplayTerminalSignal,createReplayProgressTracker,playbackObservation,replayProtocolFailures} from './replay-browser-semantics.mjs';
+import {assessReplayTerminalSignal,createReplayProgressTracker,gateReplayRecordOnFinalErrors,playbackObservation,replayProtocolFailures,replayScenarioPassedTargetIds} from './replay-browser-semantics.mjs';
 
 test('Replay fails on native error, abort, or rejected protocol response and preserves original event data',()=>{
   const events=[{event:'ready',protocol:'eagler-touhou/1'},{event:'error',error:'native failed'},
@@ -9,6 +9,31 @@ test('Replay fails on native error, abort, or rejected protocol response and pre
   assert.deepEqual(failures,[events[1],events[2],events[3]]);
   assert.strictEqual(failures[0],events[1]);
   assert.deepEqual(replayProtocolFailures(null),[]);
+});
+
+test('Replay final audit turns a late same-origin protocol abort into a failed record after playback passed',()=>{
+  const rawEvent={protocol:'eagler-touhou/1',game:'th06',epoch:1,event:'abort',reason:'runtime iframe closed with an active resource'};
+  const channels={pageErrors:[],consoleErrors:[],httpErrors:[],protocolErrors:[rawEvent],responseErrors:[],teardownErrors:[]};
+  const record={status:'passed',playback:{scenarioStatus:'passed',terminalSignalObserved:{status:'passed',value:true},
+    scenarioEvidence:{browserAndRuntimeErrors:'pending-final-audit'}}};
+  const audit=gateReplayRecordOnFinalErrors(record,channels);
+  assert.equal(audit.status,'failed');assert.deepEqual(audit.failedChannels,['protocolErrors']);
+  assert.strictEqual(audit.channels.protocolErrors[0],rawEvent);
+  assert.equal(record.status,'failed');
+  assert.equal(record.playback.preTeardownScenarioStatus,'passed');
+  assert.equal(record.playback.scenarioStatus,'failed');
+  assert.equal(record.playback.scenarioEvidence.finalErrorAudit,'failed');
+  assert.equal(record.playback.scenarioEvidence.browserAndRuntimeErrors,'present');
+  assert.deepEqual(record.playback.terminalSignalObserved,{status:'passed',value:true});
+});
+
+test('Replay coverage excludes teardown-failed and incomplete records from passed scenarios',()=>{
+  const records=[
+    {id:'th06-normal',status:'failed',playback:{scenarioStatus:'failed',preTeardownScenarioStatus:'passed'}},
+    {id:'th07-normal',status:'passed',playback:{scenarioStatus:'passed'}},
+    {id:'th08-normal',status:'incomplete',playback:{scenarioStatus:'passed'}},
+  ];
+  assert.deepEqual(replayScenarioPassedTargetIds(records),['th07-normal']);
 });
 
 test('TH06 and TH07 retain their native cursor/total self-consistency check without claiming full input consumption',()=>{

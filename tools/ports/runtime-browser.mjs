@@ -13,6 +13,7 @@ import {readRuntimeObservation,assertRuntimeObservation,runtimeScenarioResult} f
 import {createNavigationAbortEvidence,shouldRecordHttpFailure,completedSharedResourceAbort} from './navigation-abort-evidence.mjs';
 import {loadRuntimeReplayFixture} from './replay-fixtures.mjs';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
+import {resolveTitleFlow} from '../../tests/adaptation/adapters/title-flow.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const requestedOutput=argument('output');
@@ -44,7 +45,7 @@ report.harnessSha256=hash(await readFile(new URL(import.meta.url)));
 const observationReader=`export const readRuntimeObservation = (${readRuntimeObservation.toString()});\n`;
 report.observationReaderSha256=hash(observationReader);
 await writeFile(resolve(output,'observation-reader.mjs'),observationReader);
-for(const name of ['runtime-observations','replay-fixtures','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options']){
+for(const name of ['runtime-observations','runtime-desktop-readiness','practice-observations','replay-fixtures','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options','../../common/contracts/product-catalog','../../tests/adaptation/adapters/title-flow']){
   const contents=await readFile(new URL(`./${name}.mjs`,import.meta.url));
   (report.helperSha256??={})[name]=hash(contents);
   await writeFile(resolve(output,basename(`${name}.mjs`)),contents);
@@ -60,6 +61,7 @@ try{
   browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',`--ignore-certificate-errors-spki-list=${site.tlsIdentity.spkiSha256}`]});
   report.browser=browser.version();
   for(const target of targets){
+  const titleFlow=resolveTitleFlow({game:target.game,variant:target.variant});
     const record={game:target.game,variant:target.variant,id:target.id,checks:[],errors:[],protocolErrors:[],consoleErrors:[],httpErrors:[],expectedNavigationAborts:[],observations:{}};
     report.targets.push(record);
       const check=async(id,checks,operation,{complete=false,fatal=true,verified=()=>true}={})=>{try{const observation=await operation();record.checks.push({id,checks,complete,status:verified(observation)?'passed':'observed',observation});return observation;}catch(error){record.checks.push({id,checks,complete,status:'failed',error:String(error.stack||error)});if(fatal)throw error;}finally{await save();}};
@@ -130,9 +132,12 @@ try{
       finally{await sendKey(code,key,keyCode,false);}
       await page.waitForTimeout(180);
     };
-    const gameplayReady=state=>state.capabilities.input&&state.capabilities.position&&!state.pause?.active&&
-      (!state.nativeObservation||(state.localSeat===0&&Number.isFinite(state.frames.simulation)))&&
-      (state.capabilities.phase?['stage','match'].includes(state.phase?.name):target.game==='th08'&&state.status?.supervisorActive===2&&state.status.active===1&&!state.status.loading);
+    const flowKey=code=>{
+      const values={KeyZ:['z',90],KeyR:['r',82],ArrowUp:['ArrowUp',38],ControlLeft:['Control',17]}[code];
+      if(!values)throw new Error(`No runtime-browser key mapping for title-flow action ${code}`);
+      return key(code,values[0],values[1],code==='ControlLeft'?350:code==='KeyR'?100:90);
+    };
+    const gameplayReady=state=>titleFlow.isGameplayReady(state,'runtime');
     const waitObservation=async(label,predicate,timeoutMs=20000)=>{
       const started=Date.now();let state,samples=0;
       do{
@@ -204,35 +209,21 @@ try{
       const beforeKeyboard=await observe();
       const keyboardScenario=async()=>{
         await frame.locator('canvas').first().focus();
-        if(target.game==='th20'){
-          await waitObservation('main menu accepts input',state=>state.status?.titleState===1&&state.status.titlePhase===2);
-          const neutral=await observe();
-          assert.equal(neutral.input?.value,0,'A neutral controller must not create native menu input');
-          const cursor=neutral.status.titleCursor;
-          await page.waitForTimeout(600);
-          const stillNeutral=await observe();
-          assert.equal(stillNeutral.input?.value,0,'A neutral controller must remain neutral across native samples');
-          assert.equal(stillNeutral.status.titleCursor,cursor,'A neutral controller must not move the title cursor');
-          record.observations.neutralController={before:neutral,after:stillNeutral};
-          for(let i=0;i<10&&(await observe()).status.titleCursor!==0;i++)await key('ArrowUp','ArrowUp',38);
-          assert.equal((await observe()).status.titleCursor,0,'Select the ordinary game before confirming');
-          await key('KeyZ','z',90);
-          await waitObservation('difficulty accepts input',state=>state.status?.titleState===5&&state.status.titlePhase===2);
-          await key('KeyZ','z',90);
-          await waitObservation('character accepts input',state=>state.status?.titleState===6&&state.status.titlePhase===2);
-          await key('KeyZ','z',90);
-          await waitObservation('default stone page accepts input',state=>state.status?.titleState===7&&state.status.titlePhase===2&&
-            state.ui?.stone?.state===3&&state.ui.stone.category===0);
-          await key('KeyZ','z',90);
-          await waitObservation('loadout accepted the stone selection',state=>state.status?.titleState===7&&state.status.titlePhase===3);
-        }else{
-          for(let i=0;i<32;i++){
-            if(gameplayReady(await observe()))break;
-            await key('KeyZ','z',90);
-          }
-        }
+        const entered=await titleFlow.enterGameplay({observe,press:flowKey,waitUntil:waitObservation,lane:'runtime',
+          label:'gameplay ready before keyboard',timeoutMs:20000,waitAfterTh20Loadout:false,
+          onTitleReady:target.game==='th20'?async initial=>{
+            assert.equal(initial.input?.value,0,'A neutral controller must not create native menu input');
+            const cursor=initial.status.titleCursor;
+            await page.waitForTimeout(600);
+            const stillNeutral=await observe();
+            assert.equal(stillNeutral.input?.value,0,'A neutral controller must remain neutral across native samples');
+            assert.equal(stillNeutral.status.titleCursor,cursor,'A neutral controller must not move the title cursor');
+            record.observations.neutralController={before:initial,after:stillNeutral};
+          }:undefined});
         await key('ControlLeft','Control',17,350);
-        const ready=await waitObservation('gameplay ready before keyboard',gameplayReady);
+        const ready=await waitObservation('gameplay ready before keyboard',gameplayReady,20000);
+        assert.ok(gameplayReady(ready),'Title navigation must reach actual native gameplay');
+        if(!entered||!Number.isFinite(ready.position?.x))throw new Error('Title flow did not return a native gameplay observation');
         const worldClock=ready.nativeObservation?'simulation':'enemy';
         assert.ok(Number.isFinite(ready.frames[worldClock]),'Gameplay requires an observable world clock');
         await waitObservation('world advances before keyboard',state=>gameplayReady(state)&&state.frames[worldClock]>ready.frames[worldClock]);
@@ -281,15 +272,10 @@ try{
             await page.waitForTimeout(350);assertRuntimeObservation(await observe(),'frame-frozen',{key:simulationKey,before:paused.native.frames[simulationKey]});
           }
         }
-        await key('KeyR','r',82);
-        if(target.game==='th20'){
-          const confirmation=await waitObservation('retry confirmation accepts input',state=>state.ui?.pause?.retryConfirmInputReady);
+        const confirmation=await titleFlow.restartFromPause({press:flowKey,waitUntil:waitObservation});
+        if(confirmation){
           assertRuntimeObservation(confirmation,'pause-active');
           assertRuntimeObservation(confirmation,'frame-frozen',{key:'simulation',before:paused.native.frames.simulation});
-          assert.equal(confirmation.ui.pause.cursor,1,'Retry confirmation initially selects no');
-          await key('ArrowUp','ArrowUp',38);
-          await waitObservation('retry confirmation selects yes',state=>state.ui?.pause?.retryConfirmInputReady&&state.ui.pause.cursor===0);
-          await key('KeyZ','z',90);
           record.observations.retryConfirmation=confirmation;
         }
         const restartClock=paused.native.capabilities.restartFrame;

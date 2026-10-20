@@ -5,6 +5,7 @@ import {PRODUCT_GAMES} from '../common/contracts/product-catalog.mjs';
 import {isNodeTest} from '../tools/testing/discovery.mjs';
 import {MUSIC_BROWSER_GAMES} from '../tools/ports/music-browser-helpers.mjs';
 import {isFullWindowsImagePath} from '../tools/testing/windows-image-path.mjs';
+import {buildAdaptationPlan} from './adaptation/catalog.mjs';
 
 export const repository = resolve(import.meta.dirname, '..');
 const node = (id, args, cwd=repository, extra={}) => ({id, command:process.execPath, args, cwd,
@@ -48,6 +49,7 @@ export function testFiles(files, directory, pattern) {
 export function suites({root=repository, output=resolve(root, 'artifacts/validation/tests'), environment=process.env,
   platform=process.platform}={}) {
   const files = trackedFiles(root), launcher = resolve(root, 'launcher');
+  const adaptationTestFiles=testFiles(files,'tests/adaptation',isNodeTest);
   const workspace = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json')));
   const nativeBuild = resolve(output, 'common-native-build');
   const compilerHelpers=parseWindowsCompilerHelpers(environment,platform);
@@ -76,7 +78,7 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
   return {
     tooling: {
       scope:'Build tools, test execution, source ownership and repository policy', tier:'quick',
-      tasks:()=>[node('tooling', ['--test', '--test-concurrency=2', ...testFiles(files, 'tools', isNodeTest)], root,
+      tasks:()=>[node('tooling', ['--test', '--test-concurrency=2', ...testFiles(files, 'tools', isNodeTest),...adaptationTestFiles], root,
         {timeoutMs:180000, resources:['source-tree']})],
     },
     'launcher-core': {
@@ -268,6 +270,10 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
         {timeoutMs:1800000, resources:['browser','runtime']});
       })),
     },
+    adaptation: {
+      scope:'Product and variant acceptance scenarios with per-case inputs, coverage mapping and explicit blocked work',tier:'acceptance',
+      plan:options=>buildAdaptationPlan({root,output,environment,...options}),
+    },
   };
 }
 
@@ -275,5 +281,6 @@ export const profiles = Object.freeze({
   quick:['tooling','launcher-core','relay','telemetry','turn'],
   integration:['tooling','launcher-core','launcher-ui','launcher-support','browser-shell','ports-source','ports-unit','common-native','relay','telemetry','turn'],
   acceptance:['launcher-workspace','runtime-browser','runtime-desktop','runtime-practice','runtime-replay','runtime-music','runtime-offline','runtime-rooms','runtime-spectator'],
+  adaptation:['adaptation'],
   oracle:['ports-oracle'],
 });

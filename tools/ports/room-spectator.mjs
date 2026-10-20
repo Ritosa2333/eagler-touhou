@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
 import {readRoomWorldFrame} from './room-lifecycle.mjs';
+import {attachRoomProtocolCapture} from './room-protocol-capture.mjs';
 
 export function assertPlayerObservationSeats(states){
   assert.ok(states.length>=2,'Spectator isolation requires every player');
@@ -12,22 +13,18 @@ export async function admitRoomSpectator({browser,base,game,room,route,packages,
   dismiss,waitForRoomEntry,waitForRoomResources}) {
   const context = await browser.newContext({viewport: {width: 1280, height: 900}});
   const page = await context.newPage();
+  const protocolCapture=await attachRoomProtocolCapture(page,{game});
   const result = {checks: [], errors: [], consoleErrors: [], coverage: {ids: ['MP-06'], complete: false,
     scope: 'Pre-start admission through real room controls, native playback progress and physical keyboard isolation'}};
   record.spectator = result;
   try {
     if (route === 'relay') await context.addInitScript(() => Object.defineProperty(window, 'RTCPeerConnection', {value: undefined, configurable: true}));
-    await context.addInitScript(() => {
-      window.acceptanceEvents = [];
-      addEventListener('message', event => {
-        if (event.source === document.querySelector('#gameFrame')?.contentWindow && event.data?.protocol === 'eagler-touhou/1')
-          window.acceptanceEvents.push(event.data);
-      });
-    });
     page.on('pageerror', error => result.errors.push(String(error)));
+    page.on('crash',()=>result.errors.push('Spectator page crashed'));
     page.on('console', message => {if (message.type() === 'error') result.consoleErrors.push(message.text());});
-    page.on('response',response=>{if(response.status()>=400&&!response.url().endsWith('/favicon.ico'))
+    page.on('response',response=>{if(response.status()>=400)
       record.httpErrors.push({seat:'spectator',url:response.url(),status:response.status()});});
+    page.on('requestfailed',request=>record.requestFailures.push({seat:'spectator',url:request.url(),failure:request.failure()?.errorText??'request failed'}));
     await page.goto(base); await page.waitForFunction(() => window.__eaglerBoot?.done === true); await dismiss(page);
     await page.locator(`[data-product="${game}mp"]`).click();
     await page.locator('#codeButton').click();
@@ -55,7 +52,7 @@ export async function admitRoomSpectator({browser,base,game,room,route,packages,
     // eventual real first frame establishes successful loading at launch.
     result.resources=await waitForRoomResources(page,record,0,{requireReadyControl:false,label:'spectator'});
     await page.screenshot({path: resolve(directory, game + '-spectator-admitted.png')});
-    return {page, context, result};
+    return {page, context, result, protocolCapture};
   } catch (error) {await context.close(); throw error;}
 }
 
