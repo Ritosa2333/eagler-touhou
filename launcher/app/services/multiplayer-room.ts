@@ -124,7 +124,7 @@ export interface MultiplayerRoomPorts {
     context: RoomOperationContext,
   ): void | Promise<void>;
   isLaunched(): boolean;
-  canLaunchFromTitle?(): boolean;
+  canReuseRuntime?(): boolean;
   routes: {
     restore(input: { product: MultiplayerProductId; code: string; fromDirectory: boolean }): void;
     enter(input: { product: MultiplayerProductId; code: string; created: boolean }): void;
@@ -1174,7 +1174,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       !product ||
       state.launchBusy ||
       (startSerial !== undefined && (startSerial <= appliedStartSerial || startSerial !== state.startSerial)) ||
-      (ports.isLaunched() && !ports.canLaunchFromTitle?.())
+      (ports.isLaunched() && !ports.canReuseRuntime?.())
     )
       return;
     if (startSerial !== undefined) appliedStartSerial = startSerial;

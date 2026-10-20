@@ -6,9 +6,9 @@ const char* TitleFlow::begin(){
     auto& context=menus.context;state.screen_effect_counter=0;state.pause_state=0;ascii.reset();ascii.initialize_vms(ascii_context);game_config={};game_values={};state.frame_rate=1;
     if(context.flags.isReplay)context.character=0;if(context.flags.isDemoMode)context.flags.isReplay=false;
     information_count=information_index=0;
-    if(context.IsExtraUnlocked()&&!context.flags.isExtraUnlocked)information[information_count++]="title/info00.jpg";
-    if(context.IsSpellPracticeUnlocked()&&!context.flags.isSpellPracticeUnlocked)information[information_count++]="title/info02.jpg";
-    if(context.IsExtraUnlockedWithAllTeams()&&!context.flags.isExtraUnlockedWithAllTeams)information[information_count++]="title/info01.jpg";
+    if(!default_all_content_unlocked&&context.IsExtraUnlocked()&&!context.flags.isExtraUnlocked)information[information_count++]="title/info00.jpg";
+    if(!default_all_content_unlocked&&context.IsSpellPracticeUnlocked()&&!context.flags.isSpellPracticeUnlocked)information[information_count++]="title/info02.jpg";
+    if(!default_all_content_unlocked&&context.IsExtraUnlockedWithAllTeams()&&!context.flags.isExtraUnlockedWithAllTeams)information[information_count++]="title/info01.jpg";
     if(information_count)return information[0];finish_begin();return nullptr;
 }
 const char* TitleFlow::complete_information(){

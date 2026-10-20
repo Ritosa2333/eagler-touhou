@@ -2578,7 +2578,7 @@ bool ProductionLanMode()
 {
 #ifdef __EMSCRIPTEN__
     return EM_ASM_INT({
-        return Module.eaglerOptions?.netplayMode === 'lan' ? 1 : 0;
+        return !Module.eaglerRoomPreview && Module.eaglerOptions?.netplayMode === 'lan' ? 1 : 0;
     }) != 0;
 #else
     return false;

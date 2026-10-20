@@ -1543,7 +1543,7 @@ for (const kind of ['launch', undefined]) test(`actual BrowserLauncher: failed-r
 function capturePreparationTimers() {
   const originalSet = globalThis.setTimeout, originalClear = globalThis.clearTimeout, timers = [];
   globalThis.setTimeout = (callback, delay, ...args) => {
-    if (![10_000, 20_000, 120_000].includes(delay)) return originalSet(callback, delay, ...args);
+    if (![10_000, 20_000, 120_000, 122_000].includes(delay)) return originalSet(callback, delay, ...args);
     const id = originalSet(() => {}, 2_147_483_647); id.unref?.();
     timers.push({id, delay, callback: () => callback(...args), active: true}); return id;
   };
@@ -2191,6 +2191,12 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
    assert.equal(f.outbound.filter(m=>m.command==='return-room').length,Math.min(attempt+1,2));
    assert.equal(f.outbound.filter(m=>m.command==='launch').length,attempt+1,'returning to the room never auto-launches the prepared spectator');
    assert.equal(session.room.service.getSnapshot().room.code,'1234');
+   if(game==='th09'&&attempt===0){
+    await React.act(async()=>assert.equal(await session.requestRuntimeClose(),true));
+    assert.equal(session.getRuntime().getSnapshot().phase,'prepared','a repeated close keeps the already returned room title');
+    assert.equal(session.getRuntime().getSnapshot().epoch,previousEpoch);assert.equal(f.native.document,previousDocument);
+    assert.equal(f.navigations.length,initialNavigations);assert.equal(f.dataReads.length,initialReads);
+   }
   }
  });
 }
@@ -2248,6 +2254,72 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
   assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
   assert.equal(f.outbound.filter(m=>m.command==='return-room').length,0);
  }
+});
+
+for(const failure of ['first frame','gameplay path'])test(`actual BrowserLauncher: room ${failure} failure preserves the acknowledged native game`,async()=>{
+ const timers=capturePreparationTimers();
+ try{
+  const host=developmentAcquisitionHost(['th09']);host.shared.netplayRelay='wss://relay.invalid/socket';
+  const f=await mountBrowser({initial:'/?game=th09mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th09'],seedStorage(storage){
+   storage.values.set(api.gamePreferenceStorageKey('th09mp'),JSON.stringify({music:'none',options:{thpracEnabled:false}}));
+  }});
+  const session=api.getTestSession();await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','room native menu prepared',15_000);
+  const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+  const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,adonisMode:0,predictionLimit:8,startSerial:2,
+   seats:[{clientId:localId,name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[]};
+  const frame=node('#gameFrame'),epoch=session.getRuntime().getSnapshot().epoch,reads=f.dataReads.length,navigations=f.navigations.length;
+  await React.act(async()=>{socket.open();socket.message({type:'start',serial:2,room});});
+  await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room music choice');
+  if(node('#decisionDialog').open)await click('#decisionConfirm');
+  await until(()=>session.getRuntime().getSnapshot().launched,'native acknowledged launch');
+  await click('.room-workspace-fullscreen');
+  if(failure==='first frame')await React.act(async()=>timers.fire(timers.live(122_000)[0]));
+  else await React.act(async()=>{f.native.Module={eaglerOptions:{netplayMode:'lan'}};f.native.__eaglerPeerTransport={peers:new Map()};f.native.__eaglerNetplayFailed=true;f.native.__eaglerNetplayError='fixture gameplay path failed';f.native.emit('first-frame');});
+  await until(()=>session.startupError.getSnapshot().open,'room reports the failed wait');
+  assert.equal(session.getRuntime().getSnapshot().launched,true);assert.equal(session.getRuntime().getSnapshot().epoch,epoch);
+  assert.equal(node('#gameFrame'),frame);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+  assert.equal(f.fullscreen,null);assert.equal(node('#player').classList.contains('room-workspace'),true);
+  assert.equal(session.getSnapshot().roomLaunchStage,null);assert.equal(f.outbound.some(m=>m.command==='return-room'),false);
+ }finally{timers.restore();}
+});
+
+for(const game of ['th06','th07','th08','th09','th10','th11','th15']) test(`actual BrowserLauncher: ${game} Return to room preserves the ended game and reuses it for the next start`,async()=>{
+ const product=game+'mp',host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';
+ const f=await mountBrowser({initial:`/?game=${product}&mpRoom=1234`,host,socketBoundary:true,seedPackages:[game],seedStorage(storage){
+  storage.values.set(api.gamePreferenceStorageKey(product),JSON.stringify({music:'none',options:{touchEnabled:true,thpracEnabled:false}}));
+ }});
+ const session=api.getTestSession();await until(()=>session.room.service.getSnapshot().preparation?.status==='ready','native room title prepared',15_000);
+ const socket=f.sockets[0],localId=new URL(socket.url).searchParams.get('lobby');
+ const policy=api.multiplayerConfigForProduct(product).inputTiming,rollback=policy?.rollbackLimit!==0;
+ const room={code:'1234',playerCount:2,difficulty:1,phase:'running',inputDelay:0,adonisMode:rollback?0:1,inputDelayAuto:false,predictionLimit:rollback?(policy?.sendPredictionLimit??8):0,startSerial:2,
+  seats:[{clientId:localId,name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}],spectators:[]};
+ const frame=node('#gameFrame'),epoch=session.getRuntime().getSnapshot().epoch,reads=f.dataReads.length,navigations=f.navigations.length;
+ await React.act(async()=>{socket.open();socket.message({type:'start',serial:2,room});});
+ await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room launch music choice');
+ if(node('#decisionDialog').open)await click('#decisionConfirm');
+ await until(()=>session.getRuntime().getSnapshot().launched,'room player launched',15_000);
+ const peer={peers:new Map(),relay:{readyState:1}};
+ f.native.Module={eaglerOptions:{netplayMode:'lan'}};f.native.__eaglerNetplayTransport='relay';
+ f.native[api.multiplayerConfigForProduct(product).peerTransportGlobal]=peer;
+ await React.act(async()=>f.native.emit('first-frame'));
+ await until(()=>session.getSnapshot().roomLaunchStage===null,'gameplay path settled');
+ await click('.room-workspace-fullscreen');
+ peer.disconnected=true;
+ await until(()=>session.getGameplayNetwork().getSnapshot().returnToRoom,'ended connection offers Return to room');
+ await click('#netplayConnectionReturn');
+ await until(()=>!f.fullscreen&&node('#player').classList.contains('room-workspace'),'Return to room collapses presentation');
+ assert.equal(session.getRuntime().getSnapshot().launched,true,'the ended game stays open');
+ assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(node('#gameFrame'),frame);
+ assert.equal(f.outbound.filter(m=>m.command==='return-room').length,0,'the presentation button does not reset the native menu or connection');
+ assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+ peer.disconnected=false;
+ await React.act(async()=>socket.message({type:'start',serial:3,room:{...room,startSerial:3}}));
+ await until(()=>f.outbound.filter(m=>m.command==='launch').length===2,'next Start reuses the retained engine',15_000);
+ assert.equal(f.outbound.filter(m=>m.command==='return-room').length,1,'new Start hands the previous native session back to its title before configuring the next run');
+ assert.equal(session.getRuntime().getSnapshot().epoch,epoch);assert.equal(node('#gameFrame'),frame);
+ assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+ await React.act(async()=>f.native.emit('first-frame'));
+ await until(()=>session.getSnapshot().roomLaunchStage===null,'second run presented');
 });
 
 test('actual BrowserLauncher: room loading renders authenticated Runtime byte progress inside the game viewport',async()=>{

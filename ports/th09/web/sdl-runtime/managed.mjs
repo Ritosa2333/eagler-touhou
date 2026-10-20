@@ -226,7 +226,7 @@ case 'return-room':roomOwned=true;
  if(runtimeVariant!=='multiplayer'||!core._th09_room_return)throw Error('Room menu return is unavailable');
  roomPreview=true;clearKeyboard();neutralTouch();core._th09_loop_stop();netplay?.close(false);netplay=null;
  if(!core._th09_room_return())throw Error(err());
- launched=false;launchSettled=false;first=false;core._th09_loop_start();await new Promise(requestAnimationFrame);return {presented:true};
+ launched=false;launchSettled=false;first=false;if(!retired)stopPending=false;core._th09_loop_start();await new Promise(requestAnimationFrame);return {presented:true};
 case 'network-cancel':networkOverlayPending=false;clearKeyboard();neutralTouch();core._th09_loop_pause(+document.hidden);canvas.focus();return {};
 default:throw Error('不支持的操作：'+m.command);}}
 async function dispatchCommand(m,receivedLifetime=receiveLifetime(),waitForInitialized=false){

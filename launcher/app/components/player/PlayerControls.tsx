@@ -84,7 +84,10 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
           network={network}
           calibration={session.calibration}
           english={locale === 'en'}
-          onReturn={navigation.closeSurface}
+          onReturn={() => {
+            if (room.room) void session.exitRoomPlayerFullscreen().then(navigation.closeRoomFullscreen);
+            else navigation.closeSurface();
+          }}
         />
       )}
       <PlayerInformationColumn enabled={informationColumn} className={th09Information ? 'th09-player-information' : undefined}>
