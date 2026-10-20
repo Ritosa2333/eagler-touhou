@@ -2314,7 +2314,12 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
    await until(()=>session.getSnapshot().roomLaunchStage===null,'current first frame and receiver settle the loading cover');
    assert.equal(node('.room-workspace-preparation').hidden,true,'the cover exposes the running spectator picture');
    if(game!=='th09'){
-    assert.ok(node('.room-workspace-playback').contains(node('#cooperativeSpectatorTimeline')),'embedded playback controls sit below the picture');
+    const playback=node('.room-workspace-playback'),lounge=node('.room-workspace-spectators');
+    assert.ok(playback.contains(node('#cooperativeSpectatorTimeline')),'embedded controls retain the shared spectator timeline');
+    if(!env.window.matchMedia('(max-width:760px)').matches){
+     assert.equal(playback.closest('.room-workspace-column'),lounge.parentElement,'desktop playback shares the chat and spectator column');
+     assert.ok(playback.compareDocumentPosition(lounge)&env.window.Node.DOCUMENT_POSITION_FOLLOWING,'playback precedes the spectator lounge in keyboard order');
+    }
     assert.equal(node('#cooperativeSpectatorDetails').hidden,false);
    }
    const frame=node('#gameFrame'),returns=f.outbound.filter(m=>m.command==='return-room').length;

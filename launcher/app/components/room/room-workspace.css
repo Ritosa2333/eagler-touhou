@@ -14,7 +14,9 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #player.room-workspace #gameViewport{position:relative!important;inset:auto!important;margin:0!important;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#090a09;transform:none!important}
 #player.room-workspace #gameFrame{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:none;transform:none!important;opacity:.2}
 #player.room-workspace :is(.player-information-column,.runtime-diagnostics,.netplay-player-status,.mp-quick-chat){display:none!important}
-#player.room-workspace .room-workspace-playback{order:1;flex:none;min-width:0}
+#player.room-workspace .room-workspace-playback{order:1;flex:none;min-width:0;min-height:0;overflow:clip;margin-top:-12px;opacity:0;transform:translateY(10px);transition:height .46s cubic-bezier(.22,1,.36,1),margin-top .46s cubic-bezier(.22,1,.36,1),opacity .28s ease,transform .46s cubic-bezier(.22,1,.36,1)}
+#player.room-workspace .room-workspace-playback[data-visible=true]{margin-top:0;opacity:1;transform:translateY(0)}
+.room-workspace-playback-content{display:flow-root;min-width:0}
 #player.room-workspace .room-workspace-roster{order:2}
 .room-workspace-playback :is(.spectator-playback-host,.th09-playback-host){display:block;width:100%;max-width:none;pointer-events:auto}
 .room-workspace-playback .spectator-timeline,.room-workspace-playback .spectator-timeline[data-collapsed=true]{position:relative;inset:auto;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:0}
@@ -27,7 +29,10 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 .room-workspace-meta>span{padding-left:18px;border-left:1px solid var(--line)}
 .room-workspace-top-actions{margin-left:auto;gap:12px}
 #mpRoomView.room-workspace-view .room-workspace-top-actions #mpSettingsRoomDrawerToggle{width:auto!important;flex-basis:auto!important;padding:0 12px!important}
-.room-workspace-sidebar{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:20px;background:#111110e8;overflow:hidden}
+.room-workspace-column{grid-column:2;grid-row:2/4;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.room-workspace-column>.room-workspace-spectators{order:2;flex:none}
+.room-workspace-playback-host{display:contents}
+.room-workspace-sidebar{grid-column:2;grid-row:2;display:flex;flex:1;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:20px;background:#111110e8;overflow:hidden}
 .room-workspace-tabs{position:relative;display:flex;flex-shrink:0;border-bottom:1px solid var(--line);padding:8px 10px 0;gap:2px}
 #mpRoomView.room-workspace-view .room-workspace-tabs button{flex:1;border:0!important;border-radius:0!important;border-bottom:3px solid transparent!important;background:transparent!important;color:var(--muted);padding:13px 4px;font:600 14px var(--ui-font);white-space:nowrap}
 #mpRoomView.room-workspace-view .room-workspace-tabs button[aria-selected=true]{color:var(--paper)}
@@ -238,9 +243,10 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
  #player.room-workspace .room-workspace-roster .mp-seat-owner-mark{display:none}
  .room-seat-watermark{font-size:31px;bottom:-5px;right:-6px;letter-spacing:-2px}
  .room-workspace-spectators{order:2;gap:10px;padding:6px 10px;flex:none;min-height:36px}
- .room-workspace-sidebar{order:3;flex:none;min-height:360px;overflow:visible}
+ .room-workspace-column{display:contents}
+ .room-workspace-sidebar{order:3;flex:none;min-height:max(216px,calc(360px - var(--room-playback-height,0px)));overflow:visible;transition:min-height .46s cubic-bezier(.22,1,.36,1)}
  .room-workspace-panels{overflow:visible;padding:16px}
- .room-workspace-chat{height:300px;min-height:0}
+ .room-workspace-chat{height:clamp(156px,calc(300px - var(--room-playback-height,0px)),300px);min-height:0;transition:height .46s cubic-bezier(.22,1,.36,1)}
  .room-workspace-tabs{padding:6px 6px 0}
  .room-workspace-tabs::after{left:6px;width:calc((100% - 12px) / 2)}
  .room-seat-player-tag{font-size:10px}
