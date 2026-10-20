@@ -196,3 +196,10 @@
 
 - SC Bonus分隔符、满火力提示、跨面飞碟轮转槽位由完整C++运行库与原版ANM验证；入口为`tests/reward-feedback.test.mjs`。
 - 通关计分音乐与保存录像音效的场景请求由`tests/reward-menu-audio.test.mjs`核对，覆盖普通通关、Extra和辅助局。
+
+### 2026-10-20：thcrap 简体中文与英文本地化
+
+- LANGUAGE：与 TH10、TH11 共用 thpatch 依赖解析、CRC 校验、静态包和 Host 安装流程；输入为日文 1.00b DAT。准备命令见 [本地化](docs/LOCALIZATION.md)。
+- MESSAGE：实际 MSG Wasm 对两种语言逐条检查42个文件、108个入口，正常确认与 Ctrl 跳过均与日文控制指令及完成帧数一致；简体2272行、英文2341行，覆盖6组自动剧情。翻译中同一时间点普通文字最多两行，注音使用独立槽位。
+- PRESENTATION：Chromium 使用生产 WebGL renderer、零售 atlas 与安装的 Unifont 验证音乐室、居中提醒、双行剧情、长符卡和日文回退；113个符卡、17首音乐评论及12个结局数据通过检查。
+- SCOPE：本记录覆盖本地化编译、MSG 行为和上述渲染场景，整局通关及实际设备输入另按对应项目验收。

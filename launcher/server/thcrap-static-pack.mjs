@@ -61,6 +61,7 @@ export function createStaticThcrapPack({ pack, resources }) {
       path: targetPath,
       sourcePath: typeof resource.sourcePath === "string" ? resource.sourcePath : resource.path,
       format: typeof resource.format === "string" ? resource.format : "binary",
+      ...(game === 'th12' ? {sha256:sha256(bytes)} : {}),
       bytes: bytes.length
     });
     if (entryName === "manifest.json") throw new Error("thcrap resource cannot replace pack manifest");

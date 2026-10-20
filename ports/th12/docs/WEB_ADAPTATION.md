@@ -35,11 +35,11 @@ Hosted／External／Import 和公开部署验收也未执行。因此本轮修�
 | THPrac | 原 Practice 位置进入真实参数菜单；71 分段、43 章节、符卡阶段、ECL 事务补丁、初始资源、F12/Backspace/Tab 工具与触控面板；真实资源事件和跨关钩子已连接。 | 原版/自定义练习、暂停、Retry、退出重入、阶段选择和辅助录像。局部 ECL 保护表只保存摘要，不含原指令字节。 |
 | 存档与 Replay | 原版 `scoreth12.dat`、`th12.cfg` 编解码及白名单导入导出；IDBFS v21 存储；启动器录像工作区的详情、选关、播放／暂停、调速、定位；原版 Replay 输入格式保留，Web 扩展统一存于 `TH12WEB1`。 | 存档迁移、录像工作区及跨关需要人工验收；原版 THPrac 的 raw damage-source blob 无法导入。 |
 | 音频、字体与图卡 | OGG full/真实分块 stream/静音；原音效事件；共享字体安装；从本地原资源生成独立 Host 图卡。 | BGM 样本循环、切曲/渐隐/暂停恢复、片尾 `th10_17.ogg`、音效、缺字与图卡最终观感；有限 stream 队列仍可能被长时间主线程阻塞耗尽。 |
-| 独立语言包 | 日文原始路径与指定 TH12c 来源的繁中 `lang_zh-hant`；独立静态语言包覆盖已声明文字和贴图，缺失条目保留日文。 | 完整对话/结局/符卡/音乐室和字距显示。仅实做日文与该繁中来源，不声明简中、英文游戏汉化或通用 THCRAP 补丁执行。 |
+| 独立语言包 | 日文原始路径与 thcrap 简体中文、英文静态语言包；与 TH10、TH11 共用依赖解析、校验和发布流程。 | 42 个 MSG、12 个结局、113 个符卡和17首音乐说明；自动文字保留时间节点，Unicode 字体按实际字形排版。 |
 
 THPrac 工具自身的 `ja-JP`/`en-US`/`zh-CN` 标签选项不等于游戏语言支持。
 语言编译保持日文非文字 MSG 控制命令和 ECL 游戏逻辑；不能据此声称与汉化 EXE 的
-全部显示时序完全相同。具体来源及两个结局映射例外见 [LOCALIZATION.md](LOCALIZATION.md)。
+全部显示时序完全相同。编译、字体与验证入口见 [LOCALIZATION.md](LOCALIZATION.md)。
 
 ## Host / Runtime 契约
 
@@ -55,7 +55,7 @@ Runtime 校验父窗口、同源身份和正整数导航 epoch，串行处理命
 | 契约面 | 当前约束 |
 | --- | --- |
 | 导航与 DATA | 使用 `managedData=1`、`gameGeneration`、`runtimeEpoch`；正式入口读取 Package Store 提供的 DATA，不回退到开发服务器。 |
-| 配置 | 支持音乐、展示上限、触控、THPrac 等已连接选项；未知选项或不支持的判定点增强报错。语言仅接受 `ja` 与 `lang_zh-hant`，所选语言与安装包必须匹配。 |
+| 配置 | 支持音乐、展示上限、触控、THPrac 等已连接选项；未知选项或不支持的判定点增强报错。语言接受 `ja` 与已安装的 thcrap 静态包，所选语言与安装包必须匹配。 |
 | 资源 | 附加资源的路径、来源、大小和声明摘要受校验；语言包只能安装受支持的文字/贴图数据，不执行包内代码。 |
 | 输入 | `keyboard`、`keyboard-clear`、`touch-controls`、`direct-touch`、`touch-cancel`；`thprac-mouse` 走练习面板指针路径。游戏拖动与工具面板在按下时决定归属。 |
 | 文件 | `list/read/write/remove/sync` 使用存档白名单和相对路径；正常游玩中不导入/删除文件；录像工作区可管理录像文件，已打开的输入保持独立副本；未知成绩、配置或损坏录像拒绝导入。 |
@@ -115,19 +115,16 @@ node scripts/prepare-retail.mjs --original="D:\Games\TH12" --thdat="D:\Tools\tht
 node scripts/prepare-managed-content.mjs --assets="site/assets" --output="artifacts/eagler-content"
 ```
 
-独立繁中包需要同一来源目录中的 `th12.dat`、`th12.exe`、`th12c.dat`、`th12c.exe`，
-并匹配 `localization/th12c-1.00b.json` 固定来源。缺失或版本不符时明确失败：
+语言包以日文 `th12.dat` 为输入，在 monorepo 根目录使用统一准备器：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/prepare-localization.py --original="D:\Games\TH12" --thdat="D:\Tools\thtk\thdat.exe" --output="artifacts/eagler-content"
+node launcher/scripts/prepare-th06-language-pack.mjs --game th12 --language lang_zh-hans --archive D:/Games/TH12/th12.dat --thdat D:/Tools/thtk/thdat.exe --thmsg D:/Tools/thtk/thmsg.exe --output artifacts/th12-language
 ```
 
-输出为 `language/catalog.json`、`language/lang_zh-hant.zip`、独立 manifest/coverage 和来源文件。
-它们属于本地内容包；Runtime 源码只包含加载/校验逻辑。转换后的语言文字和贴图也不纳入代码提交。
+英文将语言改为 `lang_en`。输出为 `catalog.json` 与 `language/*.zip`，供 Host 组装。
+准备器从 thpatch 获取文字和贴图；本地安装目录中的旧汉化不参与输入。
+语言包及转换资源保存在 Git 忽略目录，默认语言为日文。
 完整准备细节见 [CONTENT_PREPARATION.md](CONTENT_PREPARATION.md) 与 [LOCALIZATION.md](LOCALIZATION.md)。
-
-包声明的默认/缺省语言为日文；启动器仍按已有用户偏好和界面语言选择可用语言。
-Host 中两份可选汉化输入均缺失时只发布日文，部分缺失或来源不符则报错。
 
 固定 common 来源及文件摘要见 `integration/common-dependency.json`。
 工作区可显式指定它和本机 Emscripten，再生成代码包：
@@ -158,7 +155,7 @@ node scripts/install-eagler-source.mjs --workspace="D:\Sources\eagler-touhou"
 也不能拿旧预览目录替代正式来源。
 
 共享开发入口可用 `EAGLER_TH12_CONTENT_DIR` 指向准备好的 DATA/音乐目录。
-本机人工入口为 `http://127.0.0.1:8114/adapter-preview.html`，可选择日文/繁中、
+本机人工入口为 `http://127.0.0.1:8114/adapter-preview.html`，可选择日文与已安装语言、
 stream/full 音乐、THPrac 与触控模式；该检查页不进入 Runtime Release。
 
 真实 Launcher 的本机入口为 `http://127.0.0.1:8130/`，由上游 React 页面与
@@ -177,5 +174,5 @@ Chromium 受管理资源验证覆盖标题、第一关、紫版高级选项及�
 - 四种触控模式、低速、双击 Bomb、菜单/对话、失焦释放及原判定点常显。
 - THPrac 原位置入口、分段/阶段、Pause、Retry、退出重入、跨关与辅助 Replay。
 - 原版成绩和配置导入、Web 修改后导出，以及 Replay 全流程/独立关卡兼容。
-- stream/full 音乐循环和渐隐、音效、共享字体；日文与繁中对话/结局/菜单/音乐室显示。
+- stream/full 音乐循环和渐隐、音效、共享字体；日文、简体中文与英文对话/结局/菜单/音乐室显示。
 - 实际 Launcher 的 Hosted/External/Import、离线资源、存储落盘，以及发布范围和资源版权分离。

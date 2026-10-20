@@ -37,7 +37,7 @@ export function managedCommandHandler(api){
       if(api.running())throw Error('游戏运行中不能重新配置');
       if(!['ogg','none'].includes(message.music))throw Error('星莲船未支持此音乐模式');
       const language=message.language||message.runtimePack?.language||'ja';
-      if(!['ja','lang_zh-hant'].includes(language))throw Error('尚未安装此语言的星莲船资源');
+      if(language!=='ja'&&!/^lang_[a-z0-9-]+$/i.test(language))throw Error('尚未安装此语言的星莲船资源');
       if(message.runtimePack&&message.runtimePack.language!==language)throw Error('语言包与所选语言不匹配');
       const options=runtimeOptions(message.options),resources=[];
       for(const key of ['resources','runtimeResources','sharedResources']){if(message[key]!==undefined&&!Array.isArray(message[key]))throw Error('附加资源列表无效');resources.push(...(message[key]??[]));}

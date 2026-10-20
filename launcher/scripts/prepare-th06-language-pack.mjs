@@ -63,6 +63,8 @@ async function localInputFingerprint() {
     resolve(project, "scripts/subset-font.py"),
     resolve(project, "integrations/thcrap.mjs"),
     resolve(project, "server/thcrap-compiler.mjs"),
+    resolve(project, "server/th12-thcrap-compiler.mjs"),
+    resolve(project, "scripts/th12-language-textures.py"),
     resolve(project, "server/th075-thcrap-compiler.mjs"),
     resolve(project, "server/th075-menu-text.mjs"),
     resolve(project, "server/th075-chinese-static.mjs"),
@@ -233,7 +235,7 @@ async function applyFontOverride(input) {
   }
 }
 
-const preparedResources = game === "th075" ? resources : await applyFontOverride(resources);
+const preparedResources = ['th075','th12'].includes(game) ? resources : await applyFontOverride(resources);
 const result = createStaticThcrapPack({ pack, resources: preparedResources });
 const preparedRuntimeVersion = result.manifest.runtimeVersion;
 const packDirectory = resolve(output, "language");

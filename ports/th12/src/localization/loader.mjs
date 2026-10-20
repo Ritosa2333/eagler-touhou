@@ -1,14 +1,17 @@
-// Installed data-only TH12c overlay. Network/package installation belongs to
+// Installed data-only thcrap overlay. Network/package installation belongs to
 // Launcher. This module never imports code or fetches a translation URL.
 export const LOCALIZATION_PREFIX='/thcrap/th12/';
-export const LOCALIZATION_SCHEMA='th12-localization-overlay/1';
-export const LOCALIZATION_SOURCE='9854c455fecb4c3c3e34b9a11a10700ec8fccfec13877a5bb96c4560d634e73a';
+export const LOCALIZATION_SCHEMA='th12-localization-overlay/2';
 const ORIGINAL_EXE='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417';
+const JAPANESE_EXES=new Set([ORIGINAL_EXE,'d8d644d2e64957a3031b1a1399d0502e1ddaa5252d2c4e492770ad6717827628']);
 const TEXTURES=new Set([
   ...['e08-4','e10-4','e11-4','front-0','front-3','staff-0','staff-3','staff-4','title_v-0'],
   ...Array.from({length:7},(_,i)=>String(i+1).padStart(2,'0')).flatMap(s=>['st'+s+'logo-0','st'+s+'logo-1']),
-  ...['stgenm01-14','stgenm02-16','stgenm03-14','stgenm04-15','stgenm05-14','stgenm06-14','stgenm07-14'],
-  ...[0,6,7,...Array.from({length:14},(_,i)=>i+12)].map(i=>'title-'+i)
+  ...['stgenm01-14','stgenm02-16','stgenm03-14','stgenm04-15','stgenm05-14','stgenm06-2','stgenm06-14','stgenm07-14'],
+  ...[0,6,7,...Array.from({length:14},(_,i)=>i+12)].map(i=>'title-'+i),
+  ...Array.from({length:32},(_,i)=>'title-'+i),...Array.from({length:8},(_,i)=>'ascii-'+i),
+  ...Array.from({length:8},(_,i)=>'front-'+i)
+  ,...[7,8,10,11].flatMap(e=>Array.from({length:6},(_,i)=>'e'+String(e).padStart(2,'0')+'-'+i))
 ].map(name=>name+'.png'));
 export function isLocalizationResourcePath(path){
   return typeof path==='string'&&(path===LOCALIZATION_PREFIX+'overlay.json'||
@@ -39,6 +42,7 @@ function checkTextRecord(value){
   if(!object(value)||!text(value.text)||!hex(value.sourceHex)||!integer(value.byteLength,0,4096)||
     (value.offset!==undefined&&!integer(value.offset,-8192,8192))||
     (value.spacing!==undefined&&!integer(value.spacing,-8192,8192)))throw Error('语言包文字记录无效');
+  if(value.ruby!==undefined&&(!object(value.ruby)||!text(value.ruby.base)||!text(value.ruby.span)))throw Error('语言包注音记录无效');
   if(value.byteWidths!==undefined&&(!Array.isArray(value.byteWidths)||value.byteWidths.length!==[...value.text].length||
     !value.byteWidths.every(v=>v===1||v===2)||value.byteWidths.reduce((a,b)=>a+b,0)!==value.byteLength))throw Error('语言包字距记录无效');
 }
@@ -49,7 +53,7 @@ function recordTable(table,namePattern,keyPattern){
     for(const [key,value]of Object.entries(records)){
       if(!keyPattern.test(key))throw Error('语言包文字索引无效');
       checkTextRecord(value);
-      if(key.includes(':')&&key.slice(key.indexOf(':')+1)!==value.sourceHex)throw Error('语言包原文索引不匹配');
+      if(key.includes(':')&&key.split(':')[1]!==value.sourceHex)throw Error('语言包原文索引不匹配');
     }
   }
 }
@@ -68,15 +72,16 @@ function validateDialoguePatches(overlay){
           !Array.isArray(anchor.texts)||anchor.texts.length>64)throw Error('语言包对话锚点范围无效');
         previous=anchor.offset;
         for(const record of anchor.texts){
+          if(integer(record.originalOffset,0,1024*1024))continue;
           checkTextRecord(record);
           if(![15,16,17].includes(record.op)||!integer(record.time,0,65535)||!hex(record.utf8Hex)||record.utf8Hex.length>502)throw Error('语言包只能修改对话文字命令');
           const raw=new TextDecoder('utf-8',{fatal:true}).decode(Uint8Array.from(record.utf8Hex.match(/../g)??[],v=>parseInt(v,16)));
           const plain=record.op===17&&raw.startsWith('|')?raw.match(/^\|(-?\d+),(-?\d+),([\s\S]*)$/):null;
           if((plain?(Number(plain[1])!==record.offset||Number(plain[2])!==record.spacing||plain[3]!==record.text):raw!==record.text)||raw.includes('\0'))throw Error('语言包对话文字编码不匹配');
           const visible=[...new TextEncoder().encode(record.text)].map(v=>v.toString(16).padStart(2,'0')).join('');
-          const lookup=overlay.dialogue[name][entry+':'+visible];
+          const lookup=overlay.dialogue[name][entry+':'+visible+(record.ruby?':'+record.offset+':'+record.spacing:'')];
           if(visible!==record.sourceHex||!lookup||lookup.text!==record.text||lookup.byteLength!==record.byteLength||
-            lookup.offset!==record.offset||lookup.spacing!==record.spacing||JSON.stringify(lookup.byteWidths)!==JSON.stringify(record.byteWidths))throw Error('语言包对话显示记录不匹配');
+            lookup.offset!==record.offset||lookup.spacing!==record.spacing||JSON.stringify(lookup.byteWidths)!==JSON.stringify(record.byteWidths)||JSON.stringify(lookup.ruby)!==JSON.stringify(record.ruby))throw Error('语言包对话显示记录不匹配');
         }
       }
     }
@@ -84,8 +89,8 @@ function validateDialoguePatches(overlay){
 }
 function validateOverlay(value,language){
   if(!object(value)||value.schema!==LOCALIZATION_SCHEMA||value.game!=='th12'||value.language!==language||
-    value.sourceRevision!==LOCALIZATION_SOURCE||value.sourceExeSha256!==ORIGINAL_EXE)throw Error('星莲船语言包源版本无效');
-  recordTable(value.dialogue,/^st0[1-7]_0[012][ab]\.msg$/,/^(?:0|[1-9]\d{0,2}):[a-f0-9]*$/);
+    value.sourceKind!=='thcrap'||value.sourceExeSha256!==ORIGINAL_EXE)throw Error('星莲船语言包源版本无效');
+  recordTable(value.dialogue,/^st0[1-7]_0[012][ab]\.msg$/,/^(?:0|[1-9]\d{0,2}):[a-f0-9]*(?::-?\d{1,4}:-?\d{1,4})?$/);
   validateDialoguePatches(value);
   recordTable(value.endings,/^e(?:0\d|1[01])\.msg$/,/^(?:0|[1-9]\d{0,7})$/);
   if(!object(value.spells)||Object.keys(value.spells).length>113)throw Error('语言包符卡表无效');
@@ -100,10 +105,11 @@ function validateOverlay(value,language){
   }
   if(!object(value.musicComments)||Object.keys(value.musicComments).length>17)throw Error('语言包音乐表无效');
   for(const [id,item]of Object.entries(value.musicComments))if(!/^th12_\d\d$/.test(id)||!object(item)||
-    !text(item.label)||!text(item.title)||!text(item.comment)||!Array.isArray(item.lines)||
-    item.lines.length!==8||!item.lines.every(text)||item.comment!==item.lines.join('\n'))throw Error('语言包音乐说明无效');
+    (item.label!==undefined&&!text(item.label))||(item.title!==undefined&&!text(item.title))||!Array.isArray(item.lines)||
+    item.lines.length>8||!item.lines.every(line=>line===null||text(line)))throw Error('语言包音乐说明无效');
   if(value.musicWarning!==undefined&&(!object(value.musicWarning)||
-    !['lines','sourceLines'].every(key=>Array.isArray(value.musicWarning[key])&&value.musicWarning[key].length===8&&value.musicWarning[key].every(text))))throw Error('语言包音乐提醒无效');
+    !Array.isArray(value.musicWarning.lines)||value.musicWarning.lines.length!==8||!value.musicWarning.lines.every(text)))throw Error('语言包音乐提醒无效');
+  if(!object(value.endingPatches)||Object.keys(value.endingPatches).some(name=>!/^e(?:0\d|1[01])\.msg$/.test(name)))throw Error('语言包结局文字补丁无效');
   return value;
 }
 function uniqueIndex(records){
@@ -146,7 +152,7 @@ function rebuildMessage(data,patch){
   const entries=[];
   for(let entry=0;entry<count;entry++){
     let cursor=source.getUint32(4+8*entry,true),anchor=0,ended=false,
-      originalInstructions=0,translatedInstructions=0,sourceTextCount=0,sourceTextTime=null;
+      originalInstructions=0,translatedInstructions=0,sourceTexts=new Map();
     const end=entry+1<count?source.getUint32(12+8*entry,true):data.length,parts=[],anchors=patch.entries[entry].anchors;
     if(cursor<4+8*count||cursor>=end||end>data.length)throw Error('原版对话入口范围无效');
     while(cursor+4<=end){
@@ -154,25 +160,29 @@ function rebuildMessage(data,patch){
       if(cursor+length>end)throw Error('原版对话指令范围无效');
       if(++originalInstructions>=4096)throw Error('原版对话入口指令数必须小于4096');
       if([15,16,17].includes(op)){
-        const time=source.getUint16(cursor,true);
-        if(sourceTextCount&&time!==sourceTextTime)throw Error('原版对话文字组包含多个时间点');
-        sourceTextTime=time;sourceTextCount++;
+        sourceTexts.set(cursor,{time:source.getUint16(cursor,true),op,length});
       }else{
         const target=anchors[anchor++];
         if(!target||target.offset!==cursor)throw Error('语言对话控制锚点与原版不匹配');
         // A whole-group insertion/removal can change Ctrl skip's next time
         // even when the following non-text instruction is copied unchanged.
-        if(Boolean(sourceTextCount)!==Boolean(target.texts.length))throw Error('语言对话不能增删整个文字组');
+        if(Boolean(sourceTexts.size)!==Boolean(target.texts.length))throw Error('语言对话不能增删整个文字组');
         translatedInstructions+=target.texts.length+1;
         if(translatedInstructions>=4096)throw Error('语言对话入口指令数必须小于4096');
         for(const record of target.texts){
-          if(record.time!==sourceTextTime)throw Error('语言对话文字时间与原版文字组不匹配');
-          parts.push(textCommand(record));
+          if(![...sourceTexts.values()].some(s=>s.time===record.time))throw Error('语言对话文字时间与原版文字组不匹配');
+          if(record.originalOffset!==undefined){
+            const original=sourceTexts.get(record.originalOffset);
+            if(!original||original.time!==record.time||original.op!==record.op)throw Error('语言对话原文引用无效');
+            parts.push(data.slice(record.originalOffset,record.originalOffset+original.length));
+          }else parts.push(textCommand(record));
         }
-        sourceTextCount=0;sourceTextTime=null;
+        for(const original of sourceTexts.values())if(!target.texts.some(r=>r.time===original.time))throw Error('语言对话丢失原版文字时间点');
+        sourceTexts.clear();
         // Every non-text instruction, including its time and payload, is
         // copied from the verified Japanese resource, never from the pack.
-        parts.push(data.slice(cursor,cursor+length));
+        if(target.skip&&op!==25)throw Error('语言对话只能移除 thcrap OP_DELETE');
+        if(!target.skip)parts.push(data.slice(cursor,cursor+length));
       }
       cursor+=length;
       if(op===0){ended=true;break;}
@@ -197,9 +207,9 @@ function rebuildMessage(data,patch){
  */
 export async function prepareLocalization({language='ja',manifest=null,readFile,fontFamily='Eagler Unicode',fontReady}={}){
   if(language==='ja'||language==='lang_ja')return new Localization(null,new Map(),fontFamily);
-  if(language!=='lang_zh-hant'||!object(manifest)||manifest.schema!=='eagler-touhou/thcrap-static-pack/1'||
+  if(!/^lang_[a-z0-9-]+$/i.test(language)||!object(manifest)||manifest.schema!=='eagler-touhou/thcrap-static-pack/1'||
     manifest.game!=='th12'||manifest.language!==language||manifest.runtimeVersion!=='independent'||
-    manifest.sourceRevision!==LOCALIZATION_SOURCE||!Array.isArray(manifest.files)||
+    !/^[a-f0-9]{24}$/.test(manifest.sourceRevision)||!Array.isArray(manifest.files)||
     !manifest.files.length||manifest.files.length>256||typeof readFile!=='function')throw Error('星莲船静态语言包清单无效');
   if(typeof fontFamily!=='string'||!/^[A-Za-z0-9 _-]{1,80}$/.test(fontFamily))throw Error('已安装语言字体名称无效');
   const installed=new Map();let total=0;
@@ -245,7 +255,7 @@ class Localization {
     let record;
     if(kind==='dialogue'){
       const name=options.resource??this.context,table=this.overlay.dialogue[name];
-      if(table)record=integer(options.entry,0,255)?table[options.entry+':'+key]:uniqueIndex(Object.values(table)).get(key);
+      if(table)record=integer(options.entry,0,255)?table[options.entry+':'+key+':'+options.offset+':'+options.spacing]??table[options.entry+':'+key]:uniqueIndex(Object.values(table)).get(key);
       // A selected context must not borrow a different route's translation.
       if(!table)record=this.dialogue.get(key);
     }else if(kind==='spell'){
@@ -271,23 +281,36 @@ class Localization {
   }
   applyMenuResources(base){
     if(!this.overlay)return base;
-    if(base?.originalExeSha256!==ORIGINAL_EXE)throw Error('语言覆盖的原版菜单版本不匹配');
+    if(!JAPANESE_EXES.has(base?.originalExeSha256))throw Error('语言覆盖的原版菜单版本不匹配');
     const overlay=this.overlay,translateEnding=ending=>{
-      const table=overlay.endings[ending.file];if(!table)return ending;
-      return {...ending,commands:ending.commands.map(command=>{
-        const record=table[String(command.offset)];
-        return command.op===3&&record&&japanese(record.sourceHex)===command.text?
-          {...command,text:record.text,localized:true}:command;
-      })};
+      const patch=overlay.endingPatches[ending.file];if(!patch)return ending;
+      const commands=[],byOffset=new Map(ending.commands.map(c=>[c.offset,c]));
+      if(patch.entries?.length!==1)throw Error('结局语言入口无效');
+      let pending=[];
+      for(const command of ending.commands){
+        if(command.op===3){pending.push(command);continue;}
+        const anchor=patch.entries[0].anchors.find(a=>a.offset===command.offset);
+        if(!anchor)throw Error('结局语言控制锚点无效');
+        for(const record of anchor.texts){
+          if(record.originalOffset!==undefined){const source=byOffset.get(record.originalOffset);if(source?.op!==3)throw Error('结局语言原文引用无效');commands.push(source);}
+          else{const source=pending.find(c=>c.time===record.time);if(!source)throw Error('结局语言时间无效');commands.push({...source,text:record.text,localized:true});}
+        }
+        pending=[];commands.push(command);
+      }
+      return {...ending,commands};
     },spellNames={...base.spellNames};
     for(const [id,record]of Object.entries(overlay.spells))if(spellNames[id]?.title===japanese(record.sourceHex))
       spellNames[id]={...spellNames[id],title:record.text,byteLength:record.byteLength,localized:true};
     const warning=overlay.musicWarning;
     return {...base,localization:{language:this.language,fontFamily:this.fontFamily},spellNames,
       endings:base.endings.map(translateEnding),
-      musicComments:base.musicComments.map(comment=>has(overlay.musicComments,comment.id)?
-        {...comment,...overlay.musicComments[comment.id],localized:true}:comment),
-      musicWarning:warning&&JSON.stringify(base.musicWarning?.lines)===JSON.stringify(warning.sourceLines)?
+      musicComments:base.musicComments.map(comment=>{
+        const translated=overlay.musicComments[comment.id];if(!translated)return comment;
+        const lines=comment.lines.map((line,i)=>translated.lines[i]===null||translated.lines[i]===undefined?line:
+          translated.lines[i].replace(/@/g,'♪'+(translated.title??comment.title)));
+        return {...comment,...translated,lines,comment:lines.join('\n'),localized:true};
+      }),
+      musicWarning:warning?
         {...base.musicWarning,lines:[...warning.lines],localized:true}:base.musicWarning};
   }
 }

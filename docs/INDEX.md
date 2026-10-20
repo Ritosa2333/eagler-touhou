@@ -76,7 +76,7 @@
 | 作品源码文档 | [ports/th12/docs/FULL_GAME_FLOW.md](../ports/th12/docs/FULL_GAME_FLOW.md) | TH12 完整游戏流程 |
 | 作品源码文档 | [ports/th12/docs/HIGH_REFRESH.md](../ports/th12/docs/HIGH_REFRESH.md) | TH12 fixed-tick / high-refresh presentation draft |
 | 作品源码文档 | [ports/th12/docs/LAUNCHER_INTEGRATION.md](../ports/th12/docs/LAUNCHER_INTEGRATION.md) | 真实 Launcher 接入 |
-| 作品源码文档 | [ports/th12/docs/LOCALIZATION.md](../ports/th12/docs/LOCALIZATION.md) | TH12 local Chinese resource adaptation |
+| 作品源码文档 | [ports/th12/docs/LOCALIZATION.md](../ports/th12/docs/LOCALIZATION.md) | thcrap 本地化 |
 | 作品源码文档 | [ports/th12/docs/WEB_ADAPTATION.md](../ports/th12/docs/WEB_ADAPTATION.md) | TH12 Web 适配现状与交付边界 |
 | 作品源码文档 | [ports/th12/docs/behavior/animation.md](../ports/th12/docs/behavior/animation.md) | 动画、场景与界面行为 |
 | 作品源码文档 | [ports/th12/docs/behavior/combat.md](../ports/th12/docs/behavior/combat.md) | 战斗行为与原版接口 |
