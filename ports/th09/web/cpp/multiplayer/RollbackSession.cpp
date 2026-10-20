@@ -22,6 +22,9 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
     if (session.playerCount != 2 || session.localPlayer > 1 || session.gameId != 9 || inputDelay > 9 || !Netplay::ValidAdonisMode(mode))
         return Fail("Invalid TH09 rollback session");
     auto negotiated = session;
+    const bool localCharge=chargeRequested_&&mode!=Netplay::AdonisMode::Delay;
+    if(localCharge)negotiated.gameplayAbi^=0x43504701u;
+    charges_.begin(session.sessionId,session.localPlayer,localCharge);
     if (inputDelay) negotiated.gameplayAbi ^= 0x49444c00u ^ inputDelay;
     negotiated.gameplayAbi = Netplay::AdonisGameplayAbi(negotiated.gameplayAbi, mode, inputDelay);
     if(measured_)negotiated.gameplayAbi^=0x4d530100u^(predictionReserve<<20);
@@ -55,6 +58,8 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
     return true;
 }
 void RollbackSession::Clear() {
+    charges_=ChargeHistory{};
+    chargeRepairAt_=0;
     channel_.Clear(); gate_.Clear(); core_.Clear();hashes_={};
     next_ = replayEnd_ = captures_ = corrections_ = resimulated_ = 0;
     configured_ = failed_ = invalidInput_ = false; error_ = "";
@@ -120,6 +125,14 @@ bool RollbackSession::Pump(std::uint64_t now, bool expectsInput,std::uint64_t me
     const bool captureFollows = deferOrdinaryInput && expectsInput &&
         mode_ == Netplay::AdonisMode::Rollback && NeedsCapture();
     if (!channel_.Pump(gate_, core_, now, expectsInput && gate_.CanStart(), captureFollows)) return Fail(channel_.ErrorText());
+    if(charges_.Enabled()&&now>=chargeRepairAt_&&charges_.AcknowledgedCount()<charges_.LocalCount()){
+        // A reliable channel may be replaced during route recovery. Repeat a
+        // bounded immutable tail until its independent ACK reaches the end.
+        chargeRepairAt_=now+100;const auto end=charges_.LocalCount();
+        const auto first=std::max(charges_.AcknowledgedCount(),end>History?end-History:0);
+        for(u32 frame=first;frame<end;++frame){std::array<u8,ChargeHistory::PacketBytes> packet{};
+            if(!charges_.Repeat(frame,packet)||!transport_.SendControl(packet.data(),packet.size()))return Fail("TH09 charge repair send failed");}
+    }
     if (invalidInput_) return Fail("Invalid TH09 peer input");
     return !failed_;
 }
@@ -146,6 +159,15 @@ bool RollbackSession::Poll(std::vector<std::uint8_t>* bytes) {
         if(measured_&&Netplay::AdonisStartup::IsPacket(bytes->data(),bytes->size())){
             if(!startup_.Receive(transport_,bytes->data(),bytes->size(),startupNowUs_)){Fail(startup_.Error());return false;}
             continue;
+        }
+        if(ChargeHistory::IsSample(bytes->data(),bytes->size())){
+            std::array<u8,ChargeHistory::AckBytes> ack{};bool accepted=false;
+            if(!charges_.Receive(bytes->data(),bytes->size(),next_,ack,accepted)||
+               (accepted&&!transport_.SendControl(ack.data(),ack.size()))){Fail("Invalid TH09 charge record");return false;}
+            continue;
+        }
+        if(ChargeHistory::IsAck(bytes->data(),bytes->size())){
+            if(!charges_.ReceiveAck(bytes->data(),bytes->size())){Fail("Invalid TH09 charge acknowledgement");return false;}continue;
         }
         if(bytes->size()==20&&!std::memcmp(bytes->data(),"T9HC",4)){
             std::uint64_t id;std::uint32_t frame,hash;
@@ -183,10 +205,26 @@ bool RollbackSession::Capture(const Netplay::FrameInput& input, std::uint64_t no
     ++captures_;
     return true;
 }
+bool RollbackSession::CaptureLocalCharge(u32 frame,const ChargeSample& sample){
+    if(!charges_.Enabled())return true;
+    if(frame!=next_)return Fail("Invalid TH09 charge frame");
+    const auto side=gate_.Config().localPlayer;
+    if(!charges_.Get(side,frame)){
+        std::array<u8,ChargeHistory::PacketBytes> packet{};
+        if(!charges_.Publish(frame,sample,packet)||!transport_.SendControl(packet.data(),packet.size()))
+            return Fail("TH09 charge record send failed");
+    }
+    return true;
+}
+bool RollbackSession::CommitChargeFrame(u32 frame,const std::array<ChargeSample,2>& samples){
+    if(!charges_.Enabled())return true;
+    if(!CaptureLocalCharge(frame,samples[gate_.Config().localPlayer]))return false;
+    return charges_.Applied(frame,samples)||Fail("TH09 charge result differs from its accepted record");
+}
 Netplay::FrameDecision RollbackSession::Prepare(bool beforeRecovery) const {
-    if (!Ready() || (core_.HasRollbackRequest()&&!beforeRecovery)) return {};
+    if (!Ready() || (HasRollback()&&!beforeRecovery)||!charges_.CanAdvance(next_,History)) return {};
     if(beforeRecovery&&(mode_!=Netplay::AdonisMode::Rollback||next_<replayEnd_||
-        (core_.HasRollbackRequest()&&next_-core_.RollbackFrame()>=History)))return {};
+        (HasRollback()&&next_-RollbackFrame()>=History)))return {};
     auto decision = core_.PrepareFrame(next_);
     if (!decision.canAdvance) return decision;
     for (unsigned seat = 0; seat < 2; ++seat) {
@@ -196,7 +234,7 @@ Netplay::FrameDecision RollbackSession::Prepare(bool beforeRecovery) const {
     return decision;
 }
 bool RollbackSession::Complete(const Netplay::FrameDecision& decision,bool beforeRecovery) {
-    if (!Ready() || (core_.HasRollbackRequest()&&!beforeRecovery) || !decision.canAdvance) return Fail("Invalid TH09 frame completion");
+    if (!Ready() || (HasRollback()&&!beforeRecovery) || !decision.canAdvance) return Fail("Invalid TH09 frame completion");
     const auto expected = Prepare(beforeRecovery);
     if (!expected.canAdvance || decision.predictedMask != expected.predictedMask || decision.inputs != expected.inputs)
         return Fail("TH09 frame input changed during simulation");
@@ -206,24 +244,27 @@ bool RollbackSession::Complete(const Netplay::FrameDecision& decision,bool befor
     return true;
 }
 bool RollbackSession::Restored(std::uint32_t frame) {
-    if (mode_ == Netplay::AdonisMode::Delay || !Ready() || frame != core_.RollbackFrame() || frame >= next_)
+    if (mode_ == Netplay::AdonisMode::Delay || !Ready() || frame != RollbackFrame() || frame >= next_)
         return Fail("Invalid TH09 restore frame");
     replayEnd_ = std::max(next_, replayEnd_);
     if (!core_.RewindSimulationTo(frame)) return Fail("TH09 input history rewind failed");
-    core_.ClearRollbackRequest(); next_ = frame; ++corrections_;
+    core_.ClearRollbackRequest();charges_.Restored(frame); next_ = frame; ++corrections_;
     return true;
 }
 std::uint32_t RollbackSession::ConfirmedThrough() const {
-    if (!Ready() || core_.HasRollbackRequest() || next_ < replayEnd_ || next_ == 0) return Netplay::INVALID_FRAME;
+    if (!Ready() || HasRollback() || next_ < replayEnd_ || next_ == 0) return Netplay::INVALID_FRAME;
     const auto confirmed = core_.ConfirmedThroughAllRemotes();
-    return confirmed == Netplay::INVALID_FRAME ? confirmed : std::min(confirmed, next_ - 1);
+    if(confirmed==Netplay::INVALID_FRAME)return confirmed;
+    const auto through=std::min(confirmed,next_-1);
+    if(!charges_.Enabled())return through;
+    const auto count=charges_.ConfirmedCount();return count?std::min(through,count-1):Netplay::INVALID_FRAME;
 }
 bool RollbackSession::ConfirmedInputs(std::uint32_t frame, std::array<Netplay::FrameInput, Netplay::MAX_PLAYERS>* out) const {
     const auto through = ConfirmedThrough();
     return through != Netplay::INVALID_FRAME && frame <= through && core_.ConfirmedInputs(frame, out);
 }
 bool RollbackSession::CanRetire() const {
-    return Ready() && next_ != 0 && next_ >= replayEnd_ && !core_.HasRollbackRequest() &&
+    return Ready() && next_ != 0 && next_ >= replayEnd_ && !HasRollback()&&charges_.CanRetire(next_) &&
         channel_.CanRetire(core_, next_ - 1);
 }
 bool RollbackSession::Retire(std::uint64_t now) {

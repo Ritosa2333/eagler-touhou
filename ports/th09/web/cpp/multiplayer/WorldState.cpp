@@ -131,6 +131,7 @@ void WorldState::Shots(PlayerShots& x) {
     Bind(x.checkpoint);
 }
 void WorldState::PlayerState(Player& x) {
+    NamedFields("x.pending_charge,x.charge_generation",x.pending_charge,x.charge_generation);
     NamedFields("x.frame",x.frame);NamedFields("x.motion",x.motion);NamedFields("x.control",x.control);NamedFields("x.body",x.body);NamedFields("x.input",x.input);NamedFields("x.hazards",x.hazards);NamedFields("x.cpu",x.cpu);NamedFields("x.combo_state",x.combo_state);NamedFields("x.secondary_target",x.secondary_target);NamedFields("x.target_priority",x.target_priority);NamedFields("x.attack_levels",x.attack_levels);NamedFields("x.initialized",x.initialized);
     auto& s=x.shots;Shots(s);NamedFields("s.player_position",s.player_position);NamedFields("s.option_positions",s.option_positions);NamedFields("s.target",s.target);NamedFields("s.player_scale",s.player_scale);NamedFields("s.side",s.side);NamedFields("s.beam_time",s.beam_time);NamedFields("s.beam",s.beam);NamedFields("s.areas",s.areas);
     NamedFields("x.items.items",x.items.items);NamedFields("x.items.attraction",x.items.attraction);
@@ -169,6 +170,7 @@ bool WorldState::Save(GameSession& s) {
     if(!s.world||s.is_replay||s.world->rules.mode!=GameMode::versus)return good=false;
     NamedFields("s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input",s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input);Text(s.error);
     Recording(s.recording);
+    auto& charge=s.charge_replay;NamedFields("charge.enabled,charge.playing,charge.invalid,charge.cursors",charge.enabled,charge.playing,charge.invalid,charge.cursors);for(auto& entries:charge.stages)AppendOnly(entries);
     auto& m=s.motion;NamedFields("m.ticks,m.cursors,m.playing,m.recording,m.invalid,m.active,m.unlimited,m.target_x,m.target_y",m.ticks,m.cursors,m.playing,m.recording,m.invalid,m.active,m.unlimited,m.target_x,m.target_y);for(auto& v:m.stages)AppendOnly(v);
     auto& w=*s.world;NamedFields("w.configuration,w.combined_input,w.timing,w.markers,w.music_track,w.ready,w.paused,w.transition_pending,w.transition",w.configuration,w.combined_input,w.timing,w.markers,w.music_track,w.ready,w.paused,w.transition_pending,w.transition);Text(w.error);
     auto& r=w.rules;NamedFields("r.progress,r.mode,r.scores,r.attack_levels",r.progress,r.mode,r.scores,r.attack_levels);Vector(w.screen_effects.effects);

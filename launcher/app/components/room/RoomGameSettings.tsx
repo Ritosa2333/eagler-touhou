@@ -32,6 +32,9 @@ export function RoomGameSettings({state, service, hidden}: {state: RoomOwnerSnap
       {(['cheat','challenge'] as const).map(kind => <div className="room-rule-field" key={kind} hidden={kind === 'challenge' && config.gameplay !== 'cooperative'}><div><strong>{t(kind === 'cheat' ? 'lobby.noCheat' : 'room.challengeMode')}</strong><p className="room-setting-description" id={kind === 'cheat' ? 'mpRoomCheatHint' : 'mpRoomChallengeHint'}>{t(kind === 'cheat' ? 'room.cheatHint' : 'room.challengeHint')}</p></div>
         <OptionSwitch id={kind === 'cheat' ? 'mpRoomCheatToggle' : 'mpRoomChallengeToggle'} label={t(kind === 'cheat' ? 'lobby.noCheat' : 'room.challengeMode')} checked={kind === 'cheat' ? !!room.disableCheatMovement : !!room.challengeMode} disabled={disabled} onChange={() => service.setRoomSettings(kind === 'cheat' ? {disableCheatMovement:!room.disableCheatMovement} : {challengeMode:!room.challengeMode})}/>
       </div>)}
+      {state.product === 'th09mp' && <div className="room-rule-field"><div><strong>{t('room.disableLocalChargePriority')}</strong><p className="room-setting-description" id="mpLocalChargeReplayHint">{t('room.localChargeReplayHint')}</p></div>
+        <OptionSwitch id="mpDisableLocalChargePriority" label={t('room.disableLocalChargePriority')} describedBy="mpLocalChargeReplayHint" checked={!!room.disableLocalChargePriority} disabled={disabled} onChange={()=>service.setRoomSettings({disableLocalChargePriority:!room.disableLocalChargePriority})}/>
+      </div>}
     </section>
     {!owner && <p className="room-setting-description" id="mpRoomSettingsHint">{t(!room.seats?.[0] ? 'room.hostAvailable' : 'multiplayer.ownerRemoteHint')}</p>}
     <button id="mpTakeHostSeat" type="button" hidden={!!room.seats?.[0] || owner} disabled={!ready || room.phase !== 'lobby'} onClick={()=>{void service.takeSeat(0);}}>{t('room.takeHostSeat')}</button>

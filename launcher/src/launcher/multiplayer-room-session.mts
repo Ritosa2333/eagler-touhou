@@ -12,6 +12,7 @@ export interface MultiplayerRoomSessionSnapshot {
   room: {
     visibility?: "public" | "private";
     disableCheatMovement?: boolean;
+    disableLocalChargePriority?: boolean;
     challengeMode?:boolean;
   chapterThreshold?: number;
     prankMode?:boolean;
@@ -62,6 +63,7 @@ export function createMultiplayerRoomSessionStore({
           code: snapshot.room.code,
           visibility: snapshot.room.visibility,
           disableCheatMovement: snapshot.room.disableCheatMovement,
+          disableLocalChargePriority: snapshot.room.disableLocalChargePriority,
           chapterThreshold:snapshot.room.chapterThreshold,challengeMode:snapshot.room.challengeMode,prankMode:snapshot.room.prankMode,
           playerCount: snapshot.room.playerCount,
           difficulty: snapshot.room.difficulty,
@@ -107,6 +109,7 @@ export function createMultiplayerRoomSessionStore({
         code: roomCode,
         visibility: room.visibility === "private" ? "private" : "public",
         disableCheatMovement: room.disableCheatMovement === true,
+        ...(product === 'th09mp' ? {disableLocalChargePriority: room.disableLocalChargePriority === true} : {}),
         ...(validTh15ChapterThreshold(room.chapterThreshold)?{chapterThreshold:room.chapterThreshold}:{}),
         ...(room.challengeMode!==undefined?{challengeMode:room.challengeMode===true}:{}),
         ...(room.prankMode!==undefined?{prankMode:room.prankMode===true}:{}),

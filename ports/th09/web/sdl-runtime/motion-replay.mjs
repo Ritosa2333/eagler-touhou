@@ -16,9 +16,24 @@ export function validateMotionReplay(bytes,game){
  }
  if(offset!==end)fail();return true;
 }
-export function exportReplayName(name,bytes,game){return name.endsWith('.rpy')&&validateMotionReplay(bytes,game)?name+'x':name;}
+export function validateChargeReplay(bytes,game){
+ if(!(bytes instanceof Uint8Array))throw Error('录像数据无效');
+ const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+ let size=bytes.length;
+ if(validateMotionReplay(bytes,game))size-=24+view.getUint32(size-8,true);
+ const end=size-24,magic=[84,57,67,72,65,82,71,69];
+ if(end<0||magic.some((v,i)=>bytes[end+i]!==v))return false;
+ const length=view.getUint32(end+16,true),start=end-length;
+ const fail=()=>{throw Error('本地蓄力录像数据损坏或不属于这款游戏');};
+ if(game!==9||view.getUint32(end+8,true)!==9||view.getUint32(end+12,true)!==1||length<5||start<0||length>32*1024*1024)fail();
+ const plain=view.getUint32(start,true);if(plain<40||plain>40+600000*88||(plain-40)%88)fail();
+ let hash=2166136261;for(let i=start;i<end;i++)hash=Math.imul(hash^bytes[i],16777619)>>>0;
+ if(hash!==view.getUint32(end+20,true))fail();return true;
+}
+const extendedReplay=(bytes,game)=>{const motion=validateMotionReplay(bytes,game),charge=validateChargeReplay(bytes,game);return motion||charge;};
+export function exportReplayName(name,bytes,game){return name.endsWith('.rpy')&&extendedReplay(bytes,game)?name+'x':name;}
 export function importReplayName(name,bytes,game){
  if(!/\.rpyx?$/.test(name))return name;
- const extended=validateMotionReplay(bytes,game);if(name.endsWith('.rpyx')&&!extended)throw Error('触摸录像缺少移动记录');
+ const extended=extendedReplay(bytes,game);if(name.endsWith('.rpyx')&&!extended)throw Error('扩展录像缺少播放记录');
  return name.endsWith('.rpyx')?name.slice(0,-1):name;
 }
