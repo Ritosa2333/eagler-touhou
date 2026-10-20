@@ -3,7 +3,7 @@
 </h1>
 
 <div align="center">
-  <p>一个旨在<strong>极大降低玩家入门门槛</strong>的，东方 Project 官方游戏、同人游戏及其工具、联机 Mod 的<strong> Web 适配计划</strong>。</p>
+  <p>一个旨在<strong>极大降低玩家入门门槛</strong>的，东方 Project 官方游戏、同人游戏及其工具、联机 Mod 的<strong>全平台适配计划</strong>。</p>
   <p>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
@@ -11,6 +11,11 @@
   </p>
   <p>简体中文 | <a href="README.en.md">English</a></p>
 </div>
+
+> [!WARNING]
+> 目前暂时通过 Web 适配实现「全平台适配」，这是因为 Web 迭代快，并且真的能做到全平台都能玩。
+>
+> 但由于性能问题等，以后有计划推出各平台的原生版。
 
 > [!TIP]
 > 对于游戏支持情况，参见[游戏还原和适配总进度表](docs/TOUHOU_PROGRESS.md)。<br>
