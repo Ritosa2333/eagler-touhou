@@ -46,7 +46,7 @@ void ItemPresentation::reset(anm_logic::Scene& scene, const ufo_system::Inventor
                0, {}, false, nullptr, 0, 0, 20);
   }
   for (int i = 0; i < 3; i++)
-    scene.interrupt(stock_[i], 7 + i, true);
+    scene.interrupt(stock_[inventory.physicalSlot(i) - 1], 7 + i, true);
   for (int i = 0; i < 3; i++) {
     const int physical = inventory.physicalSlot(i) - 1;
     scene.interrupt(stock_[physical], 10 + inventory.colors[i], true);

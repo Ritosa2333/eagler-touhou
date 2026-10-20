@@ -75,6 +75,7 @@ void startMessageAnimations();
 void messageCommand(const message_system::Command&);
 void startSpellAnimations();
 void endSpellAnimations(const spell_system::Result&);
+void showFullPowerNotice();
 void showExtendNotice();
 bool enemyOutside(Enemy&);
 uint64_t stagePrimitiveKey(int slot);

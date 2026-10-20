@@ -191,3 +191,8 @@
 
 - PRESENTATION：6项流程与呈现检查通过，覆盖六面衔接、通关奖励等待、30帧淡出／淡入、跨面资源继承、Practice／Continue及日文原版暂停选项的连续高亮。
 - DISPLAY/THPrac：暂停与确认页保留状态栏和监视显示，F1–F7／U及复选框在暂停与确认页保持可用，快捷键由THPrac消费；Replay保持只读，快速重开按游戏运行状态判定。实际Wasm／ImGui检查入口为`tools/ports/th12-practice-browser.mjs`。
+
+### 2026-10-20：奖励显示与计分声音
+
+- SC Bonus分隔符、满火力提示、跨面飞碟轮转槽位由完整C++运行库与原版ANM验证；入口为`tests/reward-feedback.test.mjs`。
+- 通关计分音乐与保存录像音效的场景请求由`tests/reward-menu-audio.test.mjs`核对，覆盖普通通关、Extra和辅助局。
