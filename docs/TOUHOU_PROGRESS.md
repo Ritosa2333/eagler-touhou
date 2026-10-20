@@ -10,7 +10,7 @@
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th09.jpg" width="40" height="40" alt="东方花映塚"> | **[th09] 東方花映塚 v1.50a** | [SteinsGateON](https://github.com/YomotsuHisami/th09/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th09/tree/main)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th09/tree/eagler)<br>[![In Progress][in-progress-detail]](#th09-web-适配) | [YomotsuHisami](https://github.com/YomotsuHisami/th09/tree/experiment/th09-multiplayer)<br>![Done][done] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th10.jpg" width="40" height="40" alt="东方风神录"> | **[th10] 東方風神録 v1.00a** | [SteinsGateON](https://github.com/YomotsuHisami/th10/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th10/tree/portable)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th10/tree/eagler)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th10/tree/experiment/th10-multiplayer)<br>![Done][done] |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th11.jpg" width="40" height="40" alt="东方地灵殿"> | **[th11] 東方地霊殿 v1.00a** | [SteinsGateON](https://github.com/YomotsuHisami/th11/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th11/tree/main)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th11/tree/eagler)<br>[![In Progress][in-progress-detail]](#th11-web-适配) | [YomotsuHisami](https://github.com/YomotsuHisami/th11/tree/eagler)<br>[![In Progress][in-progress-detail]](#th11-多人联机) |
-| <img src="../launcher/docs/assets/game-covers/thumbnails/th12.jpg" width="40" height="40" alt="东方星莲船"> | **[th12] 東方星蓮船 v1.00b** | [Tweet-META](https://github.com/Tweet-META/th12/tree/main)<br>![In Progress][in-progress] | [C++／WebAssembly](../ports/th12/README.md)<br>![In Progress][in-progress] | [monorepo](../ports/th12/README.md)<br>[![In Progress][in-progress-detail]](#th12-web-适配) | - |
+| <img src="../launcher/docs/assets/game-covers/thumbnails/th12.jpg" width="40" height="40" alt="东方星莲船"> | **[th12] 東方星蓮船 v1.00b** | [Tweet-META](https://github.com/Tweet-META/th12/tree/main)<br>![In Progress][in-progress] | - | [Tweet-META](../ports/th12/README.md)<br>[![In Progress][in-progress-detail]](../ports/th12/ADAPTATION.md) | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th13.jpg" width="40" height="40" alt="东方神灵庙"> | **[th13] 東方神霊廟 v1.00c** | ![Unassigned][unassigned] | - | - | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th14.jpg" width="40" height="40" alt="东方辉针城"> | **[th14] 東方輝針城 v1.00b** | Asuna<br>![In Progress][in-progress]<br>[AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - |
 | <img src="../launcher/docs/assets/game-covers/thumbnails/th15.jpg" width="40" height="40" alt="东方绀珠传"> | **[th15] 東方紺珠伝 v1.00b** | [SteinsGateON](https://github.com/YomotsuHisami/th15/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th15/tree/main)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th15/tree/eagler)<br>![Done][done] | ![In Progress][in-progress] |
@@ -71,25 +71,6 @@
 | 规则 | 预测回滚 | 重开 | Replay | 旁观 |
 | :---: | :---: | :---: | :---: | :---: |
 | ✅ | ❌ | ✅ | ✅ | ✅ |
-
-## [th12] 東方星蓮船 v1.00b
-
-### th12 Web 适配
-
-更新于 2026-10-20，已在 [test](https://test.touhou.vip/) 接入真实启动器与独立导入包。
-
-| 协议 | 高刷新率 | 触控 | 多语言 | thprac | Replay |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| ✅ | 🧪 | ✅ | ✅ | ✅ | 🧪 |
-
-✅ 表示已接入并完成对应专项验证；🧪 表示已接入，设备表现或长流程验收继续进行。
-
-- **启动与资源**：C++20／WebAssembly Runtime 接入受管理 DATA、共享字体、完整音乐和启动器资源安装；支持离线资源导入。
-- **触控与练习**：沿用紫版 THPrac 和共享 ImGui，支持原版／自定义分段练习、作弊选项和移动面板；已验证面板外单指开始、双指返回、练习重开保留参数，以及切换型低速跨 Miss 保持。
-- **thcrap 本地化**：日文原版资源配合简体中文、英文静态语言包；两种语言各覆盖42个剧情文件、108个入口、12个结局、113个符卡名称和17首音乐说明。已验证自动剧情多句输出、Ctrl 跳过、注音、音乐室字体和标题菜单贴图。
-- **高刷新率与录像**：已接入固定60 Hz逻辑与展示插值、原版 Replay 导入导出和启动器录像工作区；高刷设备表现与整局／跨关 Replay 按专项记录推进验收。
-
-构建和接入见[本作指南](../ports/th12/README.md)，行为验证见[适配记录](../ports/th12/ADAPTATION.md#运行验收记录)，语言包准备见[本地化说明](../ports/th12/docs/LOCALIZATION.md)。
 
 ## [th15] 東方紺珠伝 v1.00b
 
