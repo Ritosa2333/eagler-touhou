@@ -61,5 +61,6 @@ npm --prefix launcher run dev:workspace
 - `web/tests/multiplayer/charge-history.cpp`：不可变记录、接收确认、回滚恢复、环形历史、录像编解码和触控轨道共存。
 - `web/tests/multiplayer/local-charge-browser.mjs`：双方咲夜 C2、延迟与抖动下的实际 HUD、独立确认记录模拟、录像和旁观逐帧对照。`CHAINED_SKILLS=1` 测试双方连续技能，`PAUSE_CYCLE=1` 核对暂停记录与原生录像帧的衔接。
 - `web/tests/multiplayer/local-charge-compatibility.mjs`：`PC_BUILD` 为当前开发构建，`BASELINE_BUILD` 为保留的修改前开发构建，关闭功能后比较 6000 帧状态及原生录像字节。
+- `web/tests/multiplayer/legacy-replay-compatibility.mjs`：`TH09_REPLAY_FILE` 指向九关旧版样例 `th9_udyt22.rpy`，比较完整原生回放与旧触控录像。基线、本地优先开启和关闭三种配置逐帧核对 48 项场景状态及 8 项播放状态。
 
 浏览器验证需要 `BROWSER_EXECUTABLE`、含 `puppeteer-core` 的 `BROWSER_TEST_PACKAGE`、`TH09_FIXTURE_DATA`、`TH09_FIXTURE_ASSETS` 和 `TH09_FIXTURE_MUSIC`。`PC_BUILD` 指向开发构建目录，`RUN_LABEL` 使用新的报告名。测试报告保留 WASM、脚本身份和首个差异。
