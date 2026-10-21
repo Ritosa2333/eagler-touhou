@@ -32,6 +32,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-host-workspace.mjs",
   "tests/test-host-artwork-adapter-coverage.mjs",
   "tests/test-format-adapter-coverage.mjs",
+  "tests/test-ogg-production-baseline.mjs",
   "tests/test-th10-ogg-production-baseline.mjs",
   "tests/test-th20-ogg-production-baseline.mjs",
   "tests/test-node-environment.mjs",

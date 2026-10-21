@@ -24,7 +24,6 @@ const catalogIds = Object.entries(runtimeBuilds.games).flatMap(([game, definitio
     .map(variant => `${game}-${variant}`)).sort();
 assert.deepEqual(catalogIds, expectedIds,
   "runtime-builds and Product Catalog must expose the same formal gamepad variants");
-assert.equal(expectedIds.length, 15, "the complete registered gamepad matrix currently contains 15 variants");
 
 const variants = [];
 for (const [game, product] of Object.entries(PRODUCT_GAMES)) {

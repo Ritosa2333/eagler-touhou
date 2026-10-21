@@ -34,6 +34,8 @@
 
 ## 浏览器环境
 
+`react-main/netplay-security.test.mjs` 从房主大厅实际打开共用操作菜单，核对移到观众席、移除入口的顺序、目标身份及选择后的关闭，同时检查游戏中和访客状态的权限。`th09-in-game-selection.test.mjs` 核对游戏内选人与大厅选项的分工，并通过共用难度按钮检查支持值、当前选择和设置操作。
+
 `npm run test:room-runtime-retention:browser` 使用真实 th06 或 th07 多人 Wasm、两名玩家、一名旁观者和本地 Relay，连续三次从旁观回到原生菜单并重进同一局。显式设置 `ROOM_RUNTIME_GAME`、`ROOM_RUNTIME_ROOT`、`ROOM_RUNTIME_DATA`、`EAGLER_SHARED_GOTHIC` 和 `EAGLER_SHARED_UNIFONT`；结果与截图位于 `.cache/native-room-retention/<game>/`。
 
 `npm run test:th10-room-native-preview:browser` 检查 th10 原生标题动画、同实例双人开局、相同逻辑帧的 RNG 与世界状态，以及主动返回和原生退出后的菜单动画。输入为 `TH10_PREVIEW_RUNTIME`、`TH10_TEST_ARCHIVE` 与上述两项字体路径，`TH10_PREVIEW_MODE` 选择同步模式。`test:room-native-preview:browser` 提供 th15 标题与双人启动检查，使用对应的 `TH15_PREVIEW_RUNTIME`、`TH15_TEST_ARCHIVE`；`test:room-title-preload:browser -- <game> <mode>` 提供各作预加载检查，使用 `ROOM_PREVIEW_RUNTIME`、`ROOM_PREVIEW_DATA` 与上述字体路径。

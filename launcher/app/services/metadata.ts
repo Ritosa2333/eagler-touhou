@@ -36,6 +36,8 @@ export interface MetadataServiceOptions {
   mobile: boolean;
   testBuild?: boolean;
   locale?: () => string;
+  /** Network availability is a hint only; local package reads remain available offline. */
+  isOnline?: () => boolean;
 }
 
 /** Read-only metadata owner. Installation, migration and garbage collection remain
@@ -123,6 +125,10 @@ export function createMetadataService(options: MetadataServiceOptions) {
     // Local package availability never waits for either network request, and a
     // slow/unavailable IndexedDB cannot hold remote metadata initialization.
     void refreshInstalled();
+    if ((options.isOnline ?? (() => globalThis.navigator?.onLine !== false))() === false) {
+      initialization = Promise.resolve().then(() => {publish({phase: 'ready'});}).finally(() => {initialization = null;});
+      return initialization;
+    }
     initialization = loadRemoteMetadata(fetchJson).then(result => {
       if (disposed) return;
       const siteManifest = result.siteManifest.ok ? result.siteManifest.value : snapshot.siteManifest;

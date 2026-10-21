@@ -3,7 +3,7 @@
 Only the generated WASM/Emscripten import is replaced with a native input sink.
 The Runtime page, Shell initialization, identity checks, DOM listeners and
 Launcher mapping implementation are served from this workspace and run as-is.
-This test proves the Shell-to-native keyboard boundary, not game behavior.
+This test proves the Shell-to-JS Emscripten export sink, not native game behavior.
 """
 from __future__ import annotations
 
@@ -346,7 +346,7 @@ def run_variant(browser, launcher_bundle: str, workspace: Path, launcher_root: P
             page.keyboard.up("w")
         assert not page_errors, (variant["id"], "Runtime Shell raised browser page errors", page_errors)
         result = {"variant": variant["id"], "shell": "production-source", "browser": "Chromium", "identityRejection": "PASS",
-                  "launcherMapping": "PASS" if not negative_control else "EXPECTED_FAILURE", "nativeInputBoundary": "PASS" if not negative_control else "EXPECTED_FAILURE"}
+                  "launcherMapping": "PASS" if not negative_control else "EXPECTED_FAILURE", "jsExportSink": "PASS" if not negative_control else "EXPECTED_FAILURE"}
         return result
     finally:
         page.close()

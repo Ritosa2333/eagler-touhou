@@ -22,6 +22,8 @@ interface LaunchOptions {
   timeoutMs?: number;
   /** Online multiplayer must verify the current publication before navigation. */
   requireCurrent?: boolean;
+  /** Injectable online hint; false suppresses mutable publication checks but not local generations. */
+  isOnline?: () => boolean;
   expectedGeneration?: string;
   onProgress?: (progress: RuntimeDownloadProgress) => void;
 }
@@ -87,7 +89,7 @@ export async function runtimeProgramWorker(base: string): Promise<WorkerLike | n
 export async function prepareRuntimeLaunch(runtime: string, {
   baseUrl = new URL("./", globalThis.location.href).href,
   fetchImpl = globalThis.fetch.bind(globalThis), worker, exclude = [], timeoutMs = 8000,
-  requireCurrent = false, expectedGeneration, onProgress,
+  requireCurrent = false, expectedGeneration, onProgress, isOnline,
 }: LaunchOptions = {}): Promise<PreparedRuntime> {
   if (expectedGeneration !== undefined && !/^[a-f0-9]{64}$/.test(expectedGeneration)) throw new Error('Invalid agreed Runtime generation');
   requireCurrent ||= expectedGeneration !== undefined;
@@ -127,7 +129,8 @@ export async function prepareRuntimeLaunch(runtime: string, {
     const reason = lastError instanceof Error ? lastError.message : String(lastError);
     throw new Error(`Runtime request failed after ${retries + 1} attempts: ${url} (${reason})`);
   }
-  const latest = (): Promise<RuntimeManifest | null> => network(new URL(RUNTIME_MANIFEST_FILE, base).href, async response => {
+  const online = isOnline ?? (() => globalThis.navigator?.onLine !== false);
+  const latest = (): Promise<RuntimeManifest | null> => !online() ? Promise.resolve(null) : network(new URL(RUNTIME_MANIFEST_FILE, base).href, async response => {
     const text = await response.text();
     if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest exceeds size limit");
     return validateRuntimeManifest(JSON.parse(text));
@@ -159,12 +162,19 @@ export async function prepareRuntimeLaunch(runtime: string, {
       const local = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,localOnly:true,exclude:[...exclude]}, 120000, reportProgress), null);
       if (local) {
         let checking: Promise<RuntimeUpdate | null> | undefined;
-        local.checkForUpdate = () => checking ??= (async () => {
-          const manifest = await latest(), group = manifest && findRuntimeGroup(manifest, path);
-          if (!group || group.current.generation === local.generation || exclude.includes(group.current.generation)) return null;
-          const update = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,catalog:manifest,exclude:[...exclude]},120000,reportProgress),manifest);
-          return update?.cached && update.generation === group.current.generation ? {url:update.url,generation:update.generation} : null;
-        })().catch(() => null);
+        local.checkForUpdate = () => {
+          if (checking) return checking;
+          checking = (async () => {
+            const manifest = await latest(), group = manifest && findRuntimeGroup(manifest, path);
+            if (!group || group.current.generation === local.generation || exclude.includes(group.current.generation)) return null;
+            const update = prepared(await message(target, {type:RUNTIME_PREPARE,entry:path,catalog:manifest,exclude:[...exclude]},120000,reportProgress),manifest);
+            return update?.cached && update.generation === group.current.generation ? {url:update.url,generation:update.generation} : null;
+          })().catch(() => null).then(result => {
+            if (result === null) checking = undefined;
+            return result;
+          });
+          return checking;
+        };
         return local;
       }
     }

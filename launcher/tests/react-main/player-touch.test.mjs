@@ -8,6 +8,7 @@ import {resolve, dirname} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
 import {installMountedDom} from './mounted-dom-environment.mjs';
+import {createKeyboardInputBridge} from '../../../common/browser/keyboard-input-bridge.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 let work, env, createPlayerTouch, active = [];
 before(async () => {
@@ -21,15 +22,38 @@ before(async () => {
 });
 afterEach(() => {for (const f of active) f.touch.dispose(); active = []; env.document.body.replaceChildren(); assert.deepEqual(env.errors, []);});
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
-function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-button', spectator = false, fireState} = {}) {
+function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-button', spectator = false, fireState, keyboardOwners = false} = {}) {
   const elements = Object.fromEntries(['frame', 'directSurface', 'fire', 'focus', 'functionKey', 'escape', 'bomb', 'restart', 'joystick', 'joystickKnob', 'thpracBackspace'].map(name => [name, env.document.createElement('div')]));
   const u = env.document.createElement('button'); u.dataset.thpracKey = 'U'; elements.thpracKeys = [u];
   for (const element of [...Object.values(elements).filter(x => !Array.isArray(x)), u]) env.document.body.append(element);
   let measures = 0, editing = false, refocused = 0, zoomActive = false;
-  elements.frame.getBoundingClientRect = () => {measures++; return {left: 10, top: 20, width: 400, height: 600};};
+  let frameBounds = {left: 10, top: 20, width: 400, height: 600};
+  elements.frame.getBoundingClientRect = () => {measures++; return {...frameBounds};};
   elements.joystick.getBoundingClientRect = () => ({left: 0, top: 0, width: 100, height: 100});
-  const sent = [], listeners = new Set(), zoomCalls = [];
-  let context = {target: {postMessage(message) {sent.push(message);}}, targetOrigin: 'https://launcher.invalid', protocol: 'eagler-touhou/1', game, epoch: 1, ready: true, launched: true, spectator};
+  const sent = [], keyboardEvents = [], listeners = new Set(), zoomCalls = [];
+  const target = {postMessage(message) {sent.push(message);}};
+  let keyboardBridge;
+  if (keyboardOwners) {
+    const identity = {protocol: 'eagler-touhou/1', game, epoch: 1, origin: 'https://launcher.invalid'};
+    const owners = new Set();
+    target.__eaglerKeyboardMapping = {
+      schema: 'eagler-touhou/keyboard-input/1', ...identity, supports: () => true,
+      map(event, down, source) {
+        if (event.code !== 'KeyZ') return [];
+        const before = owners.size > 0;
+        if (down) owners.add(source); else owners.delete(source);
+        const after = owners.size > 0;
+        return before === after ? [] : [{code: 'KeyZ', key: 'z', keyCode: 90, location: 0, down: after}];
+      },
+      clear() {
+        const wasHeld = owners.size > 0; owners.clear();
+        return wasHeld ? [{code: 'KeyZ', key: 'z', keyCode: 90, location: 0, down: false}] : [];
+      },
+    };
+    keyboardBridge = createKeyboardInputBridge({target, ...identity, ready: () => true,
+      dispatch(event, down) {keyboardEvents.push([event.code, down]);}});
+  }
+  let context = {target, targetOrigin: 'https://launcher.invalid', protocol: 'eagler-touhou/1', game, epoch: 1, ready: true, launched: true, spectator};
   const native = {target: new env.window.EventTarget(), epoch: 1, document: {}, game, music: 'none'};
   const settings = {gameId: game, options: {touchEnabled: true, touchMovementMode: movement, touchFocusMode: focus, touchSensitivity: 1, thpracTouchControlsEnabled: true}};
   let fireEnabled = true;
@@ -39,8 +63,8 @@ function fixture({game = 'th06', ios = false, movement = 'touch', focus = 'hold-
     getSettings: () => settings, fireState, editing: () => editing, playerOpen: () => true, iosWebKitTouch: ios,
     refocus() {refocused++;}, elements, zoom: {isActive: () => zoomActive, beginPointer(e) {zoomCalls.push(['down', e.pointerId]);}, movePointer(e) {zoomCalls.push(['move', e.pointerId]);}, endPointer(e) {zoomCalls.push(['up', e.pointerId]);}},
     document: env.document, window: env.window});
-  const f = {touch, elements, sent, settings, native, zoomCalls, measures: () => measures, refocused: () => refocused,
-    edit(value) {editing = value; touch.sync();}, zoom(value) {zoomActive = value;},
+  const f = {touch, elements, sent, keyboardEvents, keyboardBridge, settings, native, zoomCalls, measures: () => measures, refocused: () => refocused,
+    edit(value) {editing = value; touch.sync();}, zoom(value) {zoomActive = value;}, frameBounds(value) {frameBounds = {...value};},
     epoch(value) {context = {...context, epoch: value}; native.epoch = value; for (const fn of listeners) fn();},
     pointer(name, type, values = {}) {const event = new env.window.PointerEvent(type, {bubbles: true, cancelable: true, pointerId: 1, pointerType: 'touch', clientX: 210, clientY: 320, ...values}); elements[name].dispatchEvent(event); return event;},
     click(name, detail = 0) {elements[name].dispatchEvent(new env.window.MouseEvent('click', {bubbles: true, cancelable: true, detail}));},
@@ -84,14 +108,73 @@ test('iOS owns native touch sequence and HUD does not refocus an active movement
   f.iosEvent('directSurface', 'touchend', [contact]); f.pointer('bomb', 'pointerdown'); assert.equal(f.refocused(), 1);
   assert.deepEqual(f.sent.filter(x => x.command === 'direct-touch').map(x => x.type), ['down', 'up']);
 });
-test('zoom path remeasures moving frame and uses same direct stream', () => {
-  const f = fixture(); f.zoom(true); f.pointer('directSurface', 'pointerdown'); f.pointer('directSurface', 'pointermove'); f.pointer('directSurface', 'pointerup');
-  assert.equal(f.measures(), 3); assert.deepEqual(f.zoomCalls, [['down', 1], ['move', 1], ['up', 1]]);
+test('magnifier path remeasures its viewport and maps the same game point after scaling', () => {
+  const f = fixture();
+  f.pointer('directSurface', 'pointerdown', {clientX: 210, clientY: 320});
+  f.pointer('directSurface', 'pointerup', {clientX: 210, clientY: 320});
+  f.zoom(true);
+  f.pointer('directSurface', 'pointerdown', {pointerId: 2, clientX: 210, clientY: 320});
+  f.pointer('directSurface', 'pointermove', {pointerId: 2, clientX: 230, clientY: 340});
+  f.pointer('directSurface', 'pointerup', {pointerId: 2, clientX: 230, clientY: 340});
+  assert.deepEqual(f.zoomCalls, [['down', 2], ['move', 2], ['up', 2]]);
+  f.frameBounds({left: 50, top: 30, width: 800, height: 1200}); f.zoom(false);
+  f.pointer('directSurface', 'pointerdown', {pointerId: 3, clientX: 450, clientY: 630});
+  f.pointer('directSurface', 'pointerup', {pointerId: 3, clientX: 450, clientY: 630});
+  const downs = f.sent.filter(message => message.command === 'direct-touch' && message.type === 'down');
+  assert.deepEqual(downs.map(({x, y}) => [x, y]), [[.5, .5], [.5, .5], [.5, .5]],
+    'the baseline point, magnifier contact, and same point after a resized frame all map to its center');
+  assert.ok(f.measures() >= 5, 'each contact uses the current viewport geometry');
 });
 test('TH09 held fire never also enables automatic pulse stream and releases on lost capture', () => {
   const f = fixture({game: 'th09'}); f.pointer('fire', 'pointerdown'); f.touch.syncControls(); f.pointer('fire', 'lostpointercapture');
   assert.deepEqual(f.sent.filter(x => x.command === 'keyboard').map(x => [x.code, x.down]), [['KeyZ', true], ['KeyZ', false]]);
   assert.equal(f.sent.find(x => x.command === 'touch-controls').fireEnabled, false);
+});
+for (const cancel of [
+  ['direct cancellation', async f => f.touch.cancelPointers()],
+  ['window blur', async f => {
+    const descriptor = Object.getOwnPropertyDescriptor(env.document, 'hasFocus');
+    Object.defineProperty(env.document, 'hasFocus', {configurable: true, value: () => false});
+    try {env.window.dispatchEvent(new env.window.Event('blur')); await Promise.resolve();}
+    finally {if (descriptor) Object.defineProperty(env.document, 'hasFocus', descriptor); else delete env.document.hasFocus;}
+  }],
+  ['hidden document', async f => {
+    const descriptor = Object.getOwnPropertyDescriptor(env.document, 'visibilityState');
+    Object.defineProperty(env.document, 'visibilityState', {configurable: true, value: 'hidden'});
+    try {env.document.dispatchEvent(new env.window.Event('visibilitychange'));}
+    finally {if (descriptor) Object.defineProperty(env.document, 'visibilityState', descriptor); else delete env.document.visibilityState;}
+  }],
+]) test(`th09 held-fire ${cancel[0]} releases only its owner and accepts a fresh pointer`, async () => {
+  let fireEnabled = false; const fireWrites = [];
+  const f = fixture({game: 'th09', keyboardOwners: true,
+    fireState: {getEnabled: () => fireEnabled, setEnabled(value) {fireEnabled = value; fireWrites.push(value);}}});
+  f.keyboardBridge.event({code: 'KeyZ', key: 'z', keyCode: 90}, true, 'physical');
+  f.pointer('fire', 'pointerdown', {pointerId: 11});
+  assert.equal(f.touch.getSnapshot().heldFire, true);
+  assert.deepEqual(f.keyboardEvents, [['KeyZ', true]], 'the physical and virtual owners publish one shared key-down');
+
+  await cancel[1](f);
+  assert.equal(f.touch.getSnapshot().heldFire, false);
+  assert.equal(f.touch.getSnapshot().fireEnabled, false);
+  assert.equal(fireEnabled, false); assert.deepEqual(fireWrites, [], 'held-key cancellation does not rewrite the auto-fire choice');
+  assert.deepEqual(f.keyboardEvents, [['KeyZ', true]], 'the physical owner keeps the shared key held through touch cancellation');
+  f.keyboardBridge.event({code: 'KeyZ', key: 'z', keyCode: 90}, false, 'physical');
+  assert.deepEqual(f.keyboardEvents, [['KeyZ', true], ['KeyZ', false]], 'the retired touch owner cannot strand the key after physical release');
+
+  f.pointer('fire', 'pointerdown', {pointerId: 12});
+  assert.equal(f.touch.getSnapshot().heldFire, true, 'a new pointer can acquire held fire after cancellation');
+  f.pointer('fire', 'pointerup', {pointerId: 12});
+  assert.equal(f.touch.getSnapshot().heldFire, false);
+  assert.deepEqual(f.keyboardEvents, [['KeyZ', true], ['KeyZ', false], ['KeyZ', true], ['KeyZ', false]]);
+});
+test('toggle-fire choice survives pointer cancellation', () => {
+  let fireEnabled = true; const fireWrites = [];
+  const f = fixture({fireState: {getEnabled: () => fireEnabled, setEnabled(value) {fireEnabled = value; fireWrites.push(value);}}});
+  f.pointer('fire', 'pointerdown');
+  assert.equal(fireEnabled, false); assert.deepEqual(fireWrites, [false]);
+  f.touch.cancelPointers();
+  assert.equal(f.touch.getSnapshot().fireEnabled, false);
+  assert.equal(fireEnabled, false); assert.deepEqual(fireWrites, [false], 'cancellation does not toggle the saved fire choice again');
 });
 test('single mobile practice entry changes native panel visibility without a Backspace pulse', () => {
   const f = fixture({game: 'th11'});
@@ -125,6 +208,16 @@ test('ordinary C pulse survives pointerup followed by lost-capture and releases 
   const f = fixture({game: 'th11'}); f.pointer('functionKey', 'pointerdown'); f.pointer('functionKey', 'pointerup'); f.pointer('functionKey', 'lostpointercapture');
   assert.deepEqual(f.sent.filter(x => x.command === 'keyboard').map(x => x.down), [true]);
   await wait(60); assert.deepEqual(f.sent.filter(x => x.command === 'keyboard').map(x => [x.code, x.down]), [['KeyC', true], ['KeyC', false]]);
+});
+test('shared Restart button emits the ordinary KeyR down/up path', async () => {
+  const f = fixture();
+  f.pointer('restart', 'pointerdown');
+  assert.deepEqual(f.sent.filter(message => message.command === 'keyboard').map(({code, down}) => [code, down]), [['KeyR', true]]);
+  await wait(80);
+  assert.deepEqual(f.sent.filter(message => message.command === 'keyboard').map(({code, down}) => [code, down]),
+    [['KeyR', true], ['KeyR', false]]);
+  assert.equal(f.sent.some(message => message.command === 'restart'), false,
+    'the Launcher preserves the Runtime keyboard restart owner');
 });
 test('joystick uses original dead zone and signed axes; cancellation cannot restore stale RAF movement', async () => {
   const f = fixture({movement: 'joystick'}); f.pointer('joystick', 'pointerdown', {clientX: 52, clientY: 50}); await wait(25);

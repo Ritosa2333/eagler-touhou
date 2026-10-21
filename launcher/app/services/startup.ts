@@ -26,6 +26,7 @@ export interface StartupOptions {
   baseUrl: string;
   decodeImage?: (source: string) => Promise<unknown>;
   preloadLabel?(context: StartupPorts['context']): string;
+  isOnline?: () => boolean;
 }
 /** Document/session-owned startup policy. Attach after real notice carriers are
  * mounted. Deferred activation ignores StrictMode's immediately retired setup;
@@ -55,15 +56,18 @@ export function createStartupController(options: StartupOptions) {
     for (const raf of rafs) win.cancelAnimationFrame(raf); rafs.clear();
   }
   function bindDeferredFonts(id: number) {
+    let requested = false;
     const load = () => {
-      if (!current(id) || doc.querySelector('link[data-deferred-ui-fonts]')) return;
+      if (!current(id) || !requested || doc.querySelector('link[data-deferred-ui-fonts]') || !(options.isOnline ?? (() => win.navigator?.onLine !== false))()) return;
       const stylesheet = doc.createElement('link'); stylesheet.rel = 'stylesheet';
       stylesheet.href = new URL('ui-fonts-deferred.css', options.baseUrl).href;
       stylesheet.dataset.deferredUiFonts = 'true'; doc.head.append(stylesheet);
+      removeFontTriggers?.(); removeFontTriggers = null;
     };
-    const config = {capture: true, once: true, passive: true};
-    win.addEventListener('pointerdown', load, config); win.addEventListener('keydown', load, config);
-    removeFontTriggers = () => {win.removeEventListener('pointerdown', load, config); win.removeEventListener('keydown', load, config);};
+    const request = () => {requested = true; load();};
+    const config = {capture: true, passive: true};
+    win.addEventListener('pointerdown', request, config); win.addEventListener('keydown', request, config); win.addEventListener('online', load);
+    removeFontTriggers = () => {win.removeEventListener('pointerdown', request, config); win.removeEventListener('keydown', request, config); win.removeEventListener('online', load);};
   }
   function current(id: number) {return !disposed && active?.id === id && generation === id;}
   function delay(callback: () => void, ms: number) {

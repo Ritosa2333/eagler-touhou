@@ -418,7 +418,8 @@ async function copyFrontend() {
   }
   await writeSiteMetadata(frontend, siteUrl);
   const copiedHostAssets = [];
-  const artworkNames = hostArtworkFiles(gameIds);
+  // Runtime selection does not limit the Launcher catalog shown for importing games.
+  const artworkNames = hostArtworkFiles(Object.keys(PRODUCT_GAMES));
   const requiredArtwork = publicationBuild ? new Set(artworkNames) : new Set();
   if (artworkDir) {
     for (const name of artworkNames) {

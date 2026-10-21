@@ -54,19 +54,31 @@ for (const locale of ['zh-CN', 'en']) {
     const props={state,service:{movePlayerToSpectator:(...args)=>moves.push(args),removePlayer:i=>removals.push(i)},
       network:{metric:()=>null},context:{touchEnabled:false,touchMovementMode:'joystick'},openPanel(){}};
     const node=await mount(views.RoomSeats,props,locale);
-    const menu=node.querySelector('[data-mp-seat="1"] details');
-    assert.equal(menu.hidden,false);
-    const buttons=[...menu.querySelectorAll('button')];
+    node.classList.add('less-motion');
+    const moderation=node.querySelector('[data-mp-seat="1"] .mp-seat-moderation');
+    const trigger=moderation.querySelector('button[aria-haspopup="menu"]');
+    assert.equal(moderation.hidden,false);
+    assert.equal(trigger.disabled,false);
+    await React.act(async()=>trigger.click());
+    assert.equal(trigger.getAttribute('aria-expanded'),'true');
+    const menu=env.document.querySelector('.room-member-menu[role="menu"]');
+    assert.ok(menu,'the actual room action menu must open');
+    const buttons=[...menu.querySelectorAll('[role="menuitem"]')];
+    assert.deepEqual(buttons.map(button=>button.dataset.phrase),['move-spectator','remove-player']);
     assert.equal(buttons[0].textContent,locale==='en'?'Move to spectators':'移到观众席');
-    menu.open=true;
     await React.act(async()=>buttons[0].click());
     assert.deepEqual(moves,[[1,'guest12345']]);
     assert.deepEqual(removals,[]);
-    assert.equal(menu.open,false);
+    assert.equal(trigger.getAttribute('aria-expanded'),'false');
+    assert.equal(env.document.querySelector('.room-member-menu[role="menu"]'),null);
     const playing=await mount(views.RoomSeats,{...props,state:{...state,room:{...state.room,phase:'running'}}},locale);
-    assert.equal(playing.querySelector('[data-mp-seat="1"] details').hidden,true);
+    const playingModeration=playing.querySelector('[data-mp-seat="1"] .mp-seat-moderation');
+    assert.equal(playingModeration.hidden,true);
+    assert.equal(playingModeration.querySelector('button[aria-haspopup="menu"]').disabled,true);
     const guest=await mount(views.RoomSeats,{...props,state:{...state,seat:1}},locale);
-    assert.equal(guest.querySelector('[data-mp-seat="1"] details').hidden,true);
+    const guestModeration=guest.querySelector('[data-mp-seat="1"] .mp-seat-moderation');
+    assert.equal(guestModeration.hidden,true);
+    assert.equal(guestModeration.querySelector('button[aria-haspopup="menu"]').disabled,true);
   });
   test(`${locale}: unlisted-room limits appear before submitting entry`, async () => {
     const state = {connection: 'live', mine: null, leaving: false, products: ['th06mp'],
