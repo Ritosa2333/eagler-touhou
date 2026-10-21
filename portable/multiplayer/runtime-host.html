@@ -22,6 +22,23 @@ window.addEventListener('message',e=>{
 });
 window.host={
  events,
+ async installOgg(){const r=iframe.contentWindow.__th08Runtime,fs=r.Module.FS;
+  fs.mkdirTree('/bgm-ogg');
+  for(const name of ['th08_00.ogg','th08_01.ogg','th08_03.ogg']){
+   const response=await fetch('/input/bgm/'+name);if(!response.ok)throw Error('Missing OGG fixture '+name);
+   fs.writeFile('/bgm-ogg/'+name,new Uint8Array(await response.arrayBuffer()));
+  }
+  r.musicOpens=[];const open=fs.open;fs.open=function(path,...args){if(typeof path==='string'&&path.startsWith('/bgm-ogg/'))r.musicOpens.push(path);return open.call(this,path,...args);};
+ },
+ musicState(){const r=iframe.contentWindow.__th08Runtime,p=r.core.sdl_music_stats();return {stats:Array.from(new Uint32Array(r.core.memory.buffer,p,6)),opens:r.musicOpens||[]};},
+ displayFrames(){const r=iframe.contentWindow.__th08Runtime,w=iframe.contentWindow,original=w.requestAnimationFrame,queue=[],result=[];
+  w.requestAnimationFrame=callback=>{queue.push(callback);return queue.length;};
+  try{r.core.sdl_loop_pause(0);r.core.sdl_loop_start();
+   for(const now of [1000,1034,1068,1102,1136]){const callback=queue.shift();if(!callback)throw Error('Native SDL animation callback missing');
+    const before=this.nativePlayback();callback(now);const after=this.nativePlayback();result.push({before:before.position,after:after.position,edge:after.edge});}
+  }finally{r.core.sdl_loop_stop();w.requestAnimationFrame=original;}
+  return result;
+ },
  open(){ready=false;epoch++;const next='/runtime/th08.html?managedData=1&gameGeneration=test&runtimeEpoch='+epoch+'&runtimeVariant=multiplayer&manual=1';
   if(!iframe){iframe=document.createElement('iframe');iframeCreateCount++;document.querySelector('#player').append(iframe);iframe.src=next;}
   else{iframe.onload=()=>{iframe.onload=null;blankNavigationCount++;iframe.src=next;};iframe.src='about:blank';}return epoch;},

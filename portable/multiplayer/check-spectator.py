@@ -22,6 +22,7 @@ parser.add_argument('--stage-two-controls',action='store_true')
 parser.add_argument('--first-diff-only',action='store_true')
 parser.add_argument('--old-viewer-cross-stage',action='store_true')
 parser.add_argument('--lifecycle-reentry',action='store_true')
+parser.add_argument('--music',choices=['none','ogg'],default='none')
 args=parser.parse_args()
 assert args.frames>=239
 if args.stage_two_controls:assert args.frames>=900,'Stage-two controls need at least 600 frames after the native Stage 2 checkpoint'
@@ -315,11 +316,12 @@ with sync_playwright() as pw:
                     session_ids={packet['sessionId'] for packet in packets if packet['sessionId'] is not None}
                     assert len(session_ids)==1,{'entry':entry,'wireSessionIds':sorted(session_ids),
                         'wirePacketCounts':counts}
-                    # Packet receipt only proves transport admission. The first
-                    # native report is intentionally unavailable until the
-                    # required checkpoint restore has completed, so keep
-                    # stepping the healthy observer while sources remain at a
-                    # fixed, fully captured boundary.
+                    # Admission polling may already consume a few frames. Rewind
+                    # explicitly so the canonical 0..4 oracle does not depend
+                    # on browser task timing or audio initialization latency.
+                    admitted=call(observer,'host.nativePlayback()')
+                    assert admitted and admitted['min']==0,{'entry':entry,'admittedPlayback':admitted}
+                    request(observer,'spectator-playback',run=admitted['run'],action='seek',frame=0)
                     deadline=time.monotonic()+60;native=None;viewer=None
                     while True:
                         # Poll and execute at most one native callback, then
@@ -462,7 +464,8 @@ with sync_playwright() as pw:
                 sentinel=[84,72,48,56,0,0,0,0]+[0]*120
                 request(observer,'write',path='score.dat',bytes=sentinel)
                 if args.stage_two_controls:call(observer,'v=>host.trackFrames(v)',tracked)
-                request(observer,'configure',options={**common,'netplayPlayer':-1,'netplaySpectator':True,'netplaySpectatorId':observer_id,'netplayUrl':url+'&member=fixture_'+observer_id},music='none')
+                request(observer,'configure',options={**common,'netplayPlayer':-1,'netplaySpectator':True,'netplaySpectatorId':observer_id,'netplayUrl':url+'&member=fixture_'+observer_id},music=args.music)
+                if args.music=='ogg':call(observer,'()=>host.installOgg()')
                 request(observer,'launch')
                 writes=call(observer,'host.spectatorWriteProbe()')
                 assert writes=={'local':0,'analog':0,'ready':0,'hello':0,'packet':0,'wire':1,'practice':0},writes
@@ -1247,6 +1250,22 @@ with sync_playwright() as pw:
                 if args.lifecycle_reentry:
                     lifecycle_entries=[]
                     lifecycle_entries.append(lifecycle_entry(initial_target,caught))
+                    current=call(observer,'host.nativePlayback()')
+                    request(observer,'spectator-playback',run=current['run'],action='seek',frame=current['min'])
+                    call(observer,'t=>host.tickTo(t,false)',current['min'])
+                    request(observer,'spectator-playback',run=current['run'],action='play')
+                    display_frames=call(observer,'()=>host.displayFrames()')
+                    assert all(0<=tick['after']-tick['before']<=1 for tick in display_frames),display_frames
+                    assert sum(tick['after']-tick['before'] for tick in display_frames)>0,display_frames
+                    assert display_frames[-1]['edge']-display_frames[-1]['after']>10,display_frames
+                    case['nativeDisplayCadence']=display_frames
+                    if args.music=='ogg':
+                        music=call(observer,'host.musicState()')
+                        assert music['stats'][0]==1 and music['stats'][2]==1 and music['stats'][3]==0,music
+                        assert '/bgm-ogg/th08_01.ogg' in music['opens'],music
+                        assert music['opens'][-1]=='/bgm-ogg/th08_00.ogg',music
+                        case['nativeStageMusic']=music
+                    save()
                     case['phase']='repeated-runtime-admission-and-idle-pause'
                     case['lifecycleReentry']={'entries':lifecycle_entries,'phase':'initial-admission',
                         'permanentHostIframe':observer_host_iframe,'runtimeDocumentEpochs':[observer_host_iframe['epoch']]};save()
@@ -1286,7 +1305,8 @@ with sync_playwright() as pw:
                                 'entry':entry,'initialHostIframe':observer_host_iframe,'hostIframe':host_iframe}
                         request(observer,'configure',options={**common,'netplayPlayer':-1,
                             'netplaySpectator':True,'netplaySpectatorId':observer_id,
-                            'netplayUrl':url+'&member=fixture_'+observer_id},music='none')
+                            'netplayUrl':url+'&member=fixture_'+observer_id},music=args.music)
+                        if args.music=='ogg':call(observer,'()=>host.installOgg()')
                         request(observer,'launch')
                         case['lifecycleReentry'].update({'phase':f'entry-{entry}-waiting',
                             'targetLastFrame':target,'runtimeSocketClosedBeforeReentry':True,

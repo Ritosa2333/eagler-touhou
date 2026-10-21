@@ -26,11 +26,9 @@ bool spectator_silent(BrowserRuntime& runtime){
     if(!runtime.app.session.netplay.Spectator())return false;
     const auto* driver=runtime.network_driver();if(!driver)return true;
     const auto& playback=driver->Network().StagePlayback();
-    // Sound effects are useful while the observer follows the live stream, but
-    // seeking and replaying a backlog should not replay hundreds of historical
-    // cues into the viewer's device. Resume once playback reaches the edge.
-    return !playback.Ready()||playback.Paused()||playback.Seeking()||
-        (playback.Following()&&playback.Edge()>playback.Position()+1);
+    // Suppress historical sound-effect bursts during explicit navigation.
+    // Native Replay initialization and normal delayed playback remain audible.
+    return !playback.Ready()||playback.Paused()||playback.FastForwarding();
 #else
     (void)runtime;return false;
 #endif
@@ -373,17 +371,20 @@ void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){
 #endif
     if(!silent)audio->sound(i,m,x,p);
 }
-bool BrowserRuntime::play_music(i32 i,i32 s){return spectator_silent(*this)||audio->play_music(i,s);}
-void BrowserRuntime::load_music(i32 i,const char* p){if(!spectator_silent(*this))audio->load_music(i,p);}
-void BrowserRuntime::play_audio(const char* p,i32 s){if(!spectator_silent(*this))audio->play_audio(p,s);}
-void BrowserRuntime::stop_audio(){if(!spectator_silent(*this))audio->stop_audio();}
-void BrowserRuntime::fade_music(float s){if(!spectator_silent(*this))audio->fade_music(s);}
-void BrowserRuntime::menu_music(MenuMusic m,float s){if(!spectator_silent(*this))audio->menu_music(m,s);}
-void BrowserRuntime::midi_reset(){if(!spectator_silent(*this))audio->midi_reset();}
-void BrowserRuntime::start_bgm(){if(!spectator_silent(*this))audio->start_bgm();}
-void BrowserRuntime::process_sounds(){if(!spectator_silent(*this))audio->process_sounds();}
-void BrowserRuntime::update_audio_fades(){if(!spectator_silent(*this))audio->update_audio_fades();}
-void BrowserRuntime::apply_volume(const GameConfiguration& c){if(!spectator_silent(*this))audio->apply_volume(c);}
+// Music commands carry the native scene's persistent playback state. Replay
+// reconstruction must retain its load/start/stop sequence even when transient
+// historical sound effects are suppressed. SDL mixes after the callback batch.
+bool BrowserRuntime::play_music(i32 i,i32 s){return audio->play_music(i,s);}
+void BrowserRuntime::load_music(i32 i,const char* p){audio->load_music(i,p);}
+void BrowserRuntime::play_audio(const char* p,i32 s){audio->play_audio(p,s);}
+void BrowserRuntime::stop_audio(){audio->stop_audio();}
+void BrowserRuntime::fade_music(float s){audio->fade_music(s);}
+void BrowserRuntime::menu_music(MenuMusic m,float s){audio->menu_music(m,s);}
+void BrowserRuntime::midi_reset(){audio->midi_reset();}
+void BrowserRuntime::start_bgm(){audio->start_bgm();}
+void BrowserRuntime::process_sounds(){audio->process_sounds();}
+void BrowserRuntime::update_audio_fades(){audio->update_audio_fades();}
+void BrowserRuntime::apply_volume(const GameConfiguration& c){audio->apply_volume(c);}
 bool BrowserRuntime::audio_tick(u32 now){return spectator_silent(*this)||audio->audio_tick(now);}
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool BrowserRuntime::diagnostic_audio_clock_independent(){
