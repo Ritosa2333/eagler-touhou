@@ -43,6 +43,7 @@
     "test:local-replay-recorded:browser": "node tests/browser/test-local-replay-recorded.mjs",
     "test:local-replay-th08mp:browser": "python tests/browser/test-local-replay-th08mp.py",
     "test:local-replay-workspace:browser": "node tests/browser/test-local-replay-workspace.mjs",
+    "test:replay-audio:browser": "python tests/browser/test-replay-audio.py",
     "test:runtime-shared-font-upgrade:browser": "node tests/test-runtime-shared-font-upgrade-browser.mjs",
     "test:runtime-offline-first:browser": "node tests/test-runtime-offline-first-browser.mjs",
     "test:runtime-download:browser": "node tests/test-runtime-download-browser.mjs",

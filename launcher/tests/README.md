@@ -12,6 +12,8 @@
 
 核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行，每个测试入口在同一计划中执行一次。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。
 
+`npm run test:replay-audio:browser -- --help` 列出录像音频测试的输入，支持 th08、th10、th11、th15 的普通版与多人版。共享录像桥测试为异步定位保留有超时的状态等待，覆盖暂停归属和定位前后的音效输出。房间组件测试通过实际管理菜单与产品目录声明的难度选项验证成员管理和原生选角边界。
+
 `react-main/directory-views.test.mjs` 在中英文环境中遍历完整作品目录，检查已发布多人作品的房间信息和创建表单。采用原生菜单选择的作品隐藏大厅难度，其余作品展示房间声明的难度。
 
 `npm run test:workspace-viewport:browser` 使用真实房间、Replay 和触控组件的展示夹具，检查手机 4:3 画面、桌面全宽及高度上限、双人和三人房右侧观战栏、少量观众头像放大、头像预览与完整名单、空席、加入及离开旁观、重新入座、成员移至旁观、竖屏快捷发言位置、面板触控隔离、大尺寸自定义控件边界和房间状态动效。截图输出到 `.cache/workspace-viewport/`。设置 `WORKSPACE_VIEWPORT_PREVIEW_ONLY=1` 可直接启动交互预览，`WORKSPACE_VIEWPORT_PREVIEW_PORT` 指定端口。
