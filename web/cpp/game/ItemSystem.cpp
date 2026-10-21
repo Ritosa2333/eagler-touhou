@@ -150,13 +150,20 @@ bool ItemSystem::spawn_power_gift(const Vec3& position,u32 seat){
     }
     return true;
 }
+u32 ItemSystem::nearest_power_owner(const Vec3& origin,bool only_needy)const noexcept{
+    const int seat=eagler::cooperative::NearestPowerRecipient(3,
+        [&](unsigned s){const auto& o=owners[s];return o.available&&o.player&&o.resources&&
+            (!only_needy||o.input.power<128);},
+        [&](unsigned s){return owners[s].input.power<128;},
+        [&](unsigned s){const auto& p=owners[s].input.player;
+            const double dx=double(p.x)-origin.x,dy=double(p.y)-origin.y;return dx*dx+dy*dy;});
+    return seat<0?no_owner:u32(seat);
+}
 u32 ItemSystem::overflow_owner(ItemState& item,u32 collector){
     if(collector>=3||!owners[collector].resources||owners[collector].input.power<128||
        (item.type!=0&&item.type!=2&&item.type!=4))return collector;
-    const int seat=eagler::cooperative::LowestPower(3,
-        [&](unsigned s){return owners[s].available&&owners[s].player&&owners[s].resources&&owners[s].input.power<128;},
-        [&](unsigned s){return Scalar::truncate(owners[s].input.power);},[](unsigned){return 1;});
-    if(seat<0)return collector;
+    const u32 seat=nearest_power_owner(item.position,true);
+    if(seat==no_owner)return collector;
     item_owners[item_index(item)]=u8(seat);gift_recipients[item_index(item)]=no_owner;
     item.state=1;return u32(seat);
 }
@@ -189,6 +196,7 @@ u32 ItemSystem::auto_collect_owner(ItemState& item){
            (input.power>=128||input.focused||input.character==1||input.character==6)){claimant=seat;break;}
     }
     if(claimant==no_owner)return no_owner;
+    if(item.type==0||item.type==2||item.type==4)claimant=nearest_power_owner(item.position,false);
     // One retail player crossing the POC claims the field. Multiplayer keeps
     // that semantic; the seat order is only the deterministic tie-break for
     // the simultaneous multi-claim edge, never a round-robin item split.
