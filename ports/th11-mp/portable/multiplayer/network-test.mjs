@@ -121,6 +121,10 @@ for(const mode of [0,1,2]){
 const challengeBytes=new Uint8Array(readFileSync(resolve(out,'replay-challenge.rpy'))),challengeMetadata=inspectMultiplayerReplay(challengeBytes,{validate,buildWords});
 assert.equal(challengeMetadata.challenge,true);assert.equal(challengeMetadata.prediction,0);assert.equal(challengeMetadata.frameCount,180);
 assert.throws(()=>inspectMultiplayerReplay(challengeBytes,{validate,buildWords:[1,2,3,4]}));
+for(const oldRules of [1,2]){
+ const old=bytes.slice();new DataView(old.buffer).setUint32(48,oldRules,true);checksum(old);
+ assert.equal(validate(old),false);assert.throws(()=>inspectMultiplayerReplay(old,{validate,buildWords}));
+}
 const invalidChallenge=challengeBytes.slice();new DataView(invalidChallenge.buffer).setUint32(164,2,true);assert.throws(()=>inspectMultiplayerReplay(invalidChallenge,{validate,buildWords}));
 assert.throws(()=>inspectMultiplayerReplay(bytes,{validate,buildWords:[1,2,3,4]}));
 const malformed=bytes.slice();malformed[malformed.length-1]^=1;assert.throws(()=>inspectMultiplayerReplay(malformed,{validate,buildWords}));

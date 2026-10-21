@@ -16,7 +16,7 @@
 #include "product-fixture.hpp"
 #include "../../web/cpp/multiplayer/TextureJournal.hpp"
 #include "../../web/cpp/multiplayer/RollbackDriver.hpp"
-#include "../../web/cpp/multiplayer/SpectatorStageState.hpp"
+#include "../../web/cpp/multiplayer/SpectatorReplayStart.hpp"
 
 extern "C" __attribute__((export_name("mp_fixture_network_capture")))
 th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
@@ -32,6 +32,7 @@ th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
+namespace th08::multiplayer {extern "C" const u32* multiplayer_replay_gameplay_state(BrowserRuntime* runtime);}
 using namespace th08;
 extern "C" {
 __attribute__((export_name("mp_fixture_skip_resim_visual")))
@@ -59,13 +60,6 @@ const u32* mp_fixture_rng_state(BrowserRuntime* r){
     if(!r||!r->app.in_game())return out;
     const auto& rng=r->app.session.random;
     out[0]=1;out[1]=rng.seed;out[2]=rng.backup;out[3]=rng.calls;return out;
-}
-__attribute__((export_name("mp_fixture_spectator_restore_probe")))
-const u32* mp_fixture_spectator_restore_probe(BrowserRuntime* r,u32 request){
-    static u32 out[33]{};const auto* driver=r?r->network_driver():nullptr;
-    if(!driver)return out;
-    if(request)const_cast<multiplayer::RollbackDriver*>(driver)->RequestSpectatorRestoreProbe();
-    return driver->SpectatorRestoreProbe();
 }
 __attribute__((export_name("mp_fixture_texture_restore_stats")))
 const u32* mp_fixture_texture_restore_stats(BrowserRuntime* r){
@@ -283,22 +277,16 @@ const u32* mp_fixture_spectator_diagnostics(BrowserRuntime* r){
         words[11]=first.frame;words[12]=last.frame;words[13]=last.stage;}
     words[16]=playback.Seeking();words[17]=driver->SpectatorRestoreFailure();
     if(const auto* segment=history.Locate(playback.Target())){
-        Netplay::SpectatorScalars::Reader reader(segment->checkpoint.state);multiplayer::SpectatorStageScalars scalars;
-        if(multiplayer::ReadSpectatorStageScalars(reader,scalars)){
-            std::copy(scalars.canonical.begin(),scalars.canonical.end(),words+18);
+        Netplay::SpectatorScalars::Reader reader(segment->checkpoint.state);multiplayer::ReplayStageStart entry;
+        if(multiplayer::ReplayStartValues(reader,entry)&&reader.Done()){
             words[44]=segment->checkpoint.frame;words[45]=segment->checkpoint.stage;
-            words[46]=scalars.stage;words[47]=u32(scalars.difficulty);words[48]=u32(scalars.character);words[49]=u32(scalars.spell);
-            words[50]=u32(scalars.load_request.stage);words[51]=u32(scalars.load_request.difficulty);
-            words[52]=u32(scalars.load_request.character);words[53]=u32(scalars.load_request.spell);
-            words[54]=u32(scalars.load_request.supervisor_state);words[55]=u32(Scene::Init);words[56]=u32(Scene::NextStage);
-            words[57]=scalars.load_request.initial;words[58]=scalars.load_request.keep_resources;
-            words[59]=scalars.load_request.release_resources;
+            words[46]=entry.stage;words[47]=entry.difficulty;words[48]=entry.characters[0];
         }
     }
     words[60]=r->app.game.load_failure_step;
     words[61]=r->app.game.load_request().initial;words[62]=r->app.game.load_request().keep_resources;
     words[63]=r->app.game.load_request().release_resources;
-    const auto* actual=multiplayer_canonical_state(r);
+    const auto* actual=th08::multiplayer::multiplayer_replay_gameplay_state(r);
     if(actual&&actual[0]==1)std::copy(actual,actual+13,words+31);
     return words;
 }
@@ -310,15 +298,6 @@ const u32* mp_fixture_spectator_checkpoint_info(BrowserRuntime* r){
     words[0]=1;words[1]=frame;
     const auto& canonical=driver->SpectatorCheckpointCanonical();
     std::copy(canonical.begin(),canonical.end(),words+2);return words;
-}
-__attribute__((export_name("mp_fixture_spectator_checkpoint_group_bytes")))
-const u32* mp_fixture_spectator_checkpoint_group_bytes(BrowserRuntime* r,u32 group){
-    static std::vector<u32> words;words.clear();
-    const auto* driver=r?r->network_driver():nullptr;
-    const auto* bytes=driver?driver->SpectatorCheckpointTrace(group):nullptr;
-    if(!bytes||driver->SpectatorCheckpointFrame()==Netplay::INVALID_FRAME){words.push_back(0);return words.data();}
-    words.resize(1+(bytes->size()+sizeof(u32)-1)/sizeof(u32));words[0]=u32(bytes->size());
-    if(!bytes->empty())std::memcpy(words.data()+1,bytes->data(),bytes->size());return words.data();
 }
 __attribute__((export_name("mp_fixture_spectator_audio")))
 const u32* mp_fixture_spectator_audio(BrowserRuntime* r){

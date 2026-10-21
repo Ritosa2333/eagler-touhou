@@ -56,7 +56,7 @@ bool MultiplayerHud::draw_transfer_feedback(AnmRenderer& renderer,HudDrawService
         if(feedback.kind==MultiplayerTransferFeedback::none)continue;
         const auto p=pilot.player->motion.position;HudTextStyle style;style.font=2;style.coordinate_space=2;
         if(feedback.kind==MultiplayerTransferFeedback::life){
-            const auto value=format("%u%%",feedback.value);
+            const auto value=format("L %u/5",feedback.value);
             if(!sink.hud_text({{p.x+224-float(value.size())*3.5f,p.y-8,0},style,value}))return fail("Transfer life progress text failed");
         }else{
             auto icon=transfer_power_icon;icon.visual.translation={p.x-16,p.y-24,0};

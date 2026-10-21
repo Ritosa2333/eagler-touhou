@@ -108,6 +108,7 @@ bool GetMultiplayerPlaybackStageContributions(
     i32 stage,
     u8 playerId,
     MultiplayerContributionSnapshot *out);
+bool GetMultiplayerRecordedFrame(i32 stage, i32 frame, Netplay::FrameInput *inputs, std::size_t count);
 bool GetMultiplayerPlaybackFrame(i32 stage, i32 frame, Netplay::FrameInput *inputs,
                                  std::size_t count);
 bool UsesFixedTickTouchPlayback();

@@ -118,9 +118,18 @@ bool GameSession::start_stage(GameResources& source, u32 stage) {
         economy.max_power=shot.max_power_level*shot.power_step;economy.power_step=shot.power_step;
         entry.restore(economy,animations.script_rng,true);
     }
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_stream_pending){
+        multiplayer_stream_entries[0].restore(economy,animations.script_rng,true);
+        recording_seed=multiplayer_stream_entries[0].seed;
+    }
+#endif
     battle=std::make_unique<GameBattle>(resources,animations,economy,spell_records,compositor,clear_records);
 #ifdef TH11_MULTIPLAYER
-    if(multiplayer_active)battle->enable_multiplayer(multiplayer_options);
+    if(multiplayer_active){
+        battle->enable_multiplayer(multiplayer_options);
+        if(multiplayer_stream_pending)battle->mp_replay_entries=&multiplayer_stream_entries;
+    }
 #endif
     battle->replaying=state.replay;battle->demo=state.demo;battle->replay_entry=entry;
 #ifdef TH_ENABLE_THPRAC
@@ -146,6 +155,9 @@ bool GameSession::start_stage(GameResources& source, u32 stage) {
     battle->player_input.replay=state.replay;
     battle->completion.mode.control_mode=state.replay||state.demo;
     battle->completion.mode.replay_mode=state.replay?1:0;
+#ifdef TH11_MULTIPLAYER
+    multiplayer_stream_pending=false;
+#endif
     battle_attached=true;
     if(!state.demo)scores.settings[0x26+stage_music(stage)]=1;
     if(!state.replay

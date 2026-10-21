@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "ItemManager.hpp"
 #include "graphics/ItemPresentation.hpp"
 
@@ -229,6 +230,24 @@ bool CanAutoCollect(const Player *player)
             player->hasBorder == BORDER_ACTIVE);
 }
 
+Player *OverflowPowerTarget(Item *item, Player *collector)
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer() || !collector ||
+        ItemPlayerPower(collector) < 128 ||
+        (item->itemType != ITEM_POWER_SMALL && item->itemType != ITEM_POWER_BIG &&
+         item->itemType != ITEM_FULL_POWER)) return collector;
+    const int seat = eagler::cooperative::LowestPower(TH07_MULTI_MAX_PLAYERS,
+        [](unsigned id) { return ItemPlayerActive(&g_Players[id]) && GetPlayerPower(id) < 128; },
+        [](unsigned id) { return GetPlayerPower(id); }, [](unsigned) { return 1; });
+    if (seat >= 0) {
+        item->autoCollect = i8(AutoCollectMarkerForPlayer(u8(seat))); item->state = 1;
+        return &g_Players[seat];
+    }
+#endif
+    return collector;
+}
+
 Player *AutoCollectTarget(Item *item)
 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -257,12 +276,10 @@ i32 RoundRobinPowerTarget(i32 itemIndex)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::IsMultiplayer())
     {
-        i32 ids[TH07_MULTI_MAX_PLAYERS];
-        i32 count = 0;
-        for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
-            if (IsPlayerSlotActive(playerId))
-                ids[count++] = playerId;
-        return count > 0 ? ids[itemIndex % count] : 0;
+        const int seat = eagler::cooperative::LowestPower(TH07_MULTI_MAX_PLAYERS,
+            [](unsigned id) { return ItemPlayerActive(&g_Players[id]); },
+            [](unsigned id) { return GetPlayerPower(id); }, [](unsigned) { return 1; });
+        return seat >= 0 ? seat : 0;
     }
 #endif
     return 0;
@@ -577,6 +594,7 @@ void ItemManager::OnUpdate()
             }
             if (item->state == 1)
             {
+                targetPlayer = OverflowPowerTarget(item, targetPlayer);
                 if (targetPlayer->playerState != PLAYER_STATE_DEAD)
                 {
                     playerAngle = targetPlayer->AngleToPlayer(&item->pos);
@@ -623,12 +641,18 @@ void ItemManager::OnUpdate()
         }
     check_collision:
         targetPlayer = ItemTargetPlayer(item);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ZunVec3 overflowBox(targetPlayer->shooterData->itemCollectRadius,
+                            targetPlayer->shooterData->itemCollectRadius, 16.0f);
+        if (ItemPlayerActive(targetPlayer) && targetPlayer->CalcItemBoxCollision(&item->pos, &overflowBox) &&
+            OverflowPowerTarget(item, targetPlayer) != targetPlayer) continue;
+#endif
         local_20.x = targetPlayer->shooterData->itemCollectRadius;
         local_20.y = targetPlayer->shooterData->itemCollectRadius;
         if (!(IsMultiplayerTransferState(item->state) && item->timer < 20) &&
             targetPlayer->CalcItemBoxCollision(&item->pos, &local_20))
         {
-            g_ReplayManager->replayEventFlags |= 0x40;
+            ReplayManager::RecordEventFlags(0x40);
             switch (item->itemType)
             {
             case ITEM_POWER_SMALL:

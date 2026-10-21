@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #if TH15_MULTIPLAYER
 #include "GameBattle.hpp"
 #include "MultiplayerPilot.hpp"
@@ -35,21 +36,22 @@ bool GameBattle::mp_spawn_transfer(i32 kind,const Vec3& position,unsigned target
 }
 int GameBattle::mp_life_receiver(unsigned giver)const{
     if(giver>=mp_options.seat_count)return -1;const auto& p=*pilots[giver];int receiver=-1;
-    if(!p.alive()||(p.keys.held&9)!=8||p.life_latched||p.session.extra_lives<=0)return -1;
+    if(!p.alive()||(p.keys.held&1)!=0||p.life_latched||p.session.extra_lives<=0)return -1;
     for(unsigned j=0;j<mp_options.seat_count;++j){if(giver==j)continue;const auto& q=*pilots[j];
         if((!q.alive()&&!q.ghost)||(!q.ghost&&q.session.extra_lives>=8)||distance2(p.player->motion.position,q.player->motion.position)>400)continue;
         if(receiver<0||q.ghost>pilots[unsigned(receiver)]->ghost||(q.ghost==pilots[unsigned(receiver)]->ghost&&q.session.extra_lives<pilots[unsigned(receiver)]->session.extra_lives))receiver=int(j);
     }return receiver;
 }
-// Same TH11 confirmed-frame actions: Shift without Z for 90 ticks within
-// 20px gives a life/rescues; five Z edges with <=24-tick gaps give one Power.
+// Five Focus edges while not shooting give a life within 20px.
+// Five Shoot edges give one Power; both gestures use a 24-frame window.
 bool GameBattle::mp_update_rules(){
     for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];const auto held=p.keys.held;
-        if(!(held&8)){p.life_hold=0;p.life_latched=false;}
+        if((p.keys.pressed&8)&&!(held&1))p.power_taps=p.power_gap=0;
+        if(!(held&8))p.life_latched=false;
         if(p.power_gap<25)++p.power_gap;if(p.power_gap>24)p.power_taps=0;
         if(!p.alive()||(input.game_flags&(4|0x70|0x4000|0x10000))){p.life_hold=0;continue;}
         int receiver=mp_life_receiver(i);
-        if(receiver>=0){if(++p.life_hold>=90){auto& q=*pilots[unsigned(receiver)];bool transferred=false;
+        if(receiver>=0){if(eagler::cooperative::AdvanceLifeTransfer(p.life_hold,(p.keys.pressed&8)!=0,true)){auto& q=*pilots[unsigned(receiver)];bool transferred=false;
             if(q.ghost){--p.session.extra_lives;transferred=q.revive(true);if(!transferred)return false;if(!p.sound(17,true))return false;}
             else if(mp_spawn_transfer(5,p.player->motion.position,unsigned(receiver))){--p.session.extra_lives;transferred=true;}
             if(transferred){p.life_latched=true;p.life_hold=0;if(!p.life_hud(p.session.extra_lives,p.session.life_pieces))return false;}

@@ -380,6 +380,46 @@ u32 CanonicalResourceTraceLocation(u32 trace_offset,u32* out){
 }
 }
 #endif
+// A native Replay reconstructs presentation and integrity scratch values.
+// This independent oracle visits live gameplay owners after each replayed input.
+extern "C" __attribute__((export_name("multiplayer_replay_gameplay_state")))
+const u32* multiplayer_replay_gameplay_state(BrowserRuntime* runtime){
+    using namespace multiplayer;
+    static u32 out[13]{};std::fill(out,out+13,0);out[0]=1;
+    if(!runtime||!runtime->app.in_game())return out;
+    auto& a=runtime->app;auto& g=a.game;const auto& n=a.session.numbers;Hash h[11];StateHash world{g};
+    h[0].add(n.score);h[0].add(n.points);h[0].add(n.graze);h[0].add(n.point_extends);h[0].add(n.point_value);
+    h[0].add(n.gauge);h[0].add(n.clock_time);h[0].add(a.session.rank);
+    for(u32 seat=0;seat<a.session.player_count;++seat){
+        const auto& b=a.session.pilot_resources[seat];
+        h[0].add(b.lives);h[0].add(b.bombs);h[0].add(b.power);h[0].add(b.gauge);h[0].add(b.deaths);h[0].add(b.bombs_used);
+        const auto& p=g.pilot(seat).status();
+        h[1].add(p.motion.movement.position);h[1].add(p.motion.movement.velocity);
+        h[1].add(p.motion.form.focused);h[1].add(p.motion.form.youkai);
+        h[1].add(p.life.state);h[1].add(p.life.timer.current);h[1].add(p.context.power);
+        h[1].add(p.bomb.active);h[1].add(p.bomb.type);h[1].add(p.bomb.timer.current);
+        for(const auto& shot:p.shots.shots){h[1].add(shot.state);if(shot.state){
+            h[1].add(shot.position);h[1].add(shot.velocity);h[1].add(shot.angle);h[1].add(shot.timer.current);h[1].add(shot.damage);}}
+    }
+    h[2].add(a.session.random.seed);
+    for(const auto& t:g.enemies.state.timelines){h[3].add(t.timeline);h[3].add(t.timer.current);h[3].add(t.finished);
+        h[3].add(offset(t.instruction,g.program.data(),g.program.size()));}
+    for(u32 i=0;i<481;++i){const auto* e=g.enemies.population.at(i);const bool live=e!=nullptr;h[3].add(live);if(!live)continue;
+        h[3].add(e->life);h[3].add(e->flags);h[3].add(e->flags2);h[3].add(e->position);h[3].add(e->resolved_position);
+        h[3].add(e->velocity);h[3].add(e->speed);h[3].add(e->lifetime.current);
+        auto c=e->main_context;world.context(c);h[3].add(c);
+        for(const auto& async:e->asynchronous){h[3].add(bool(async));if(async){auto c=*async;world.context(c);h[3].add(c);}}
+    }
+    for(const auto& b:g.projectile_pool.bullets){h[4].add(b.state);if(b.state){h[4].add(b.position);h[4].add(b.velocity);
+        h[4].add(b.speed);h[4].add(b.angle);h[4].add(b.flags);h[4].add(b.active_time.current);h[4].add(b.current_extra);}}
+    for(const auto& l:g.projectile_pool.lasers){h[5].add(l.in_use);if(l.in_use){h[5].add(l.state);h[5].add(l.position);
+        h[5].add(l.angle);h[5].add(l.length);h[5].add(l.width);h[5].add(l.timer.current);}}
+    for(const auto& i:g.items.status().items){h[6].add(i.active);if(i.active){h[6].add(i.type);h[6].add(i.state);h[6].add(i.position);h[6].add(i.velocity);h[6].add(i.timer.current);}}
+    cooperation(h[7],g.cooperation);h[8].add(g.globals.stage);h[8].add(g.globals.difficulty);h[8].add(g.paused);
+    h[9].add(g.enemies.state.timer.current);h[9].add(g.globals.current_spell);
+    h[10].add(g.globals.player);h[10].add(g.globals.boss_life);h[10].add(g.globals.stage_completion);
+    Hash total;for(u32 i=0;i<11;++i){out[i+2]=h[i].value;total.add(h[i].value);}out[1]=total.value;return out;
+}
 #ifdef TH_MULTIPLAYER_FIXTURES
 extern "C" __attribute__((export_name("mp_fixture_canonical_group_bytes")))
 const u32* mp_fixture_canonical_group_bytes(BrowserRuntime* runtime,u32 group){

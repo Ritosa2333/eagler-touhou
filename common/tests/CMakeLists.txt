@@ -328,3 +328,7 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
     add_test(NAME eagler-common.keyboard-input-bridge
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/keyboard-input-bridge.test.mjs)
 endif()
+
+add_executable(eagler_common_cooperative_rules_test cooperative-rules-test.cpp)
+target_link_libraries(eagler_common_cooperative_rules_test PRIVATE eagler::netplay_headers)
+add_test(NAME eagler-common.cooperative-rules COMMAND eagler_common_cooperative_rules_test)

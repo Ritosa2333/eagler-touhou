@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace th08::multiplayer {
-constexpr std::uint8_t rescue_ticks=90;
+constexpr std::uint8_t rescue_ticks=5;
 constexpr std::uint16_t wipe_retry_ticks=180;
 struct CooperativeSeat {
     bool spirit=false,waiting_for_focus_release=false;
@@ -23,7 +23,7 @@ struct CooperativeState {
 struct CooperativeSeatInput {
     // TH08 world coordinates in hundredths of a pixel.
     std::int32_t x=0,y=0,lives=0,power=0;
-    bool available=false,can_give=false,can_receive=false,focus=false,shoot=false,shoot_pressed=false;
+    bool available=false,can_give=false,can_receive=false,focus=false,shoot=false,shoot_pressed=false,focus_pressed=false;
 };
 struct CooperativeFrameInput {CooperativeSeatInput seats[3]{};};
 enum class CooperativeEventKind:std::uint8_t {Revive,LifeItem,PowerItems,Retry};

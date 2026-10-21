@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "Player.hpp"
 #ifdef TH_ENABLE_THPRAC
 #include "PurpleRuntime.hpp"
@@ -321,7 +322,7 @@ i32 NormalizePlayerAnmScript(const Player *player, i32 script)
     return script - PlayerAnmOffset(player) + ANM_OFFSET_PLAYER;
 }
 
-constexpr i32 LIFE_GIVE_HOLD_FRAMES = 90;
+constexpr i32 LIFE_GIVE_HOLD_FRAMES = 5;
 constexpr i32 LIFE_GIVE_WAIT_RELEASE_TOKEN = -1;
 constexpr f32 RESOURCE_TRANSFER_DISTANCE_SQ = 20.0f * 20.0f;
 constexpr i32 POWER_GIVE_TAPS_REQUIRED = 5;
@@ -625,9 +626,6 @@ void UpdateLifeTransfer(Player *giver)
         return;
     }
 
-    // One continuous Focus hold may complete at most one life transfer.
-    // After a successful rescue/gift, require a real Shift release before
-    // another transfer can begin so a held key cannot silently spend a second life.
     if (giver->lifeGiveTargetToken == LIFE_GIVE_WAIT_RELEASE_TOKEN)
     {
         giver->lifeGiveTimer = 0;
@@ -635,6 +633,9 @@ void UpdateLifeTransfer(Player *giver)
             giver->lifeGiveTargetToken = 0;
         return;
     }
+
+    if (WAS_PRESSED_PLAYER(giver, TH_BUTTON_FOCUS) &&
+        !IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT)) { giver->powerGiveTaps = giver->powerGiveWindow = 0; }
 
     Player *receiver = SelectLifeTransferReceiver(giver);
     if (!receiver)
@@ -649,14 +650,10 @@ void UpdateLifeTransfer(Player *giver)
         giver->lifeGiveTimer = 0;
         giver->lifeGiveTargetToken = targetToken;
     }
-    if (giver->powerGiveTaps > 0 || !giver->isFocus ||
-        IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT))
-    {
-        giver->lifeGiveTimer = 0;
-        return;
-    }
-    if (++giver->lifeGiveTimer < LIFE_GIVE_HOLD_FRAMES ||
-        GetPlayerLives(giver->initParam) <= 0)
+    if (!eagler::cooperative::AdvanceLifeTransfer(
+            giver->lifeGiveTimer, WAS_PRESSED_PLAYER(giver, TH_BUTTON_FOCUS),
+            !IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT) &&
+            GetPlayerLives(giver->initParam) > 0))
         return;
 
     if (receiver->playerState == PLAYER_STATE_REVIVABLE)
@@ -724,7 +721,8 @@ void DrawLifeTransferPrompt(const Player *giver)
         giver->initParam >= TH06_MULTI_MAX_PLAYERS ||
         GetPlayerLives(giver->initParam) <= 0 ||
         giver->lifeGiveTargetToken == LIFE_GIVE_WAIT_RELEASE_TOKEN ||
-        !SelectLifeTransferReceiver(giver) || !giver->isFocus ||
+        !SelectLifeTransferReceiver(giver) ||
+        eagler::cooperative::TapCount(giver->lifeGiveTimer) < 3 ||
         IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT) || giver->powerGiveTaps > 0)
         return;
 
@@ -744,8 +742,8 @@ void DrawLifeTransferPrompt(const Player *giver)
     g_AsciiManager.isGui = 1;
     g_AsciiManager.isSelected = false;
     g_AsciiManager.AddFormatText(
-        &position, "%d%%",
-        std::clamp(giver->lifeGiveTimer * 100 / LIFE_GIVE_HOLD_FRAMES, 0, 100));
+        &position, "L %u/5",
+        eagler::cooperative::TapCount(giver->lifeGiveTimer));
     g_AsciiManager.scale = oldScale;
     g_AsciiManager.color = oldColor;
     g_AsciiManager.isGui = oldGui;
@@ -3054,7 +3052,7 @@ void Player::Die()
     g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_6, &this->positionCenter, 16, COLOR_WHITE);
     this->playerState = PracticeRuntime::OverlayInvincible() ? PLAYER_STATE_INVULNERABLE : PLAYER_STATE_DEAD;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    this->respawnTimer = 6 + (PlayerUsedTouch(this) ? Touch::DEATHBOMB_TOLERANCE : 0);
+    this->respawnTimer = (MultiplayerGameplay::IsMultiplayer() ? eagler::cooperative::DeathbombFrames(6) : 6) + (PlayerUsedTouch(this) ? Touch::DEATHBOMB_TOLERANCE : 0);
 #else
     this->respawnTimer = 6 + (Touch::WasUsedThisRun() ? Touch::DEATHBOMB_TOLERANCE : 0);
 #endif

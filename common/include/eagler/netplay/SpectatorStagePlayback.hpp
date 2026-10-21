@@ -80,6 +80,7 @@ public:
         // A Pause before the first Step still installs its required native
         // checkpoint, then holds there without advancing any authored input.
         if (paused_ && !seeking_) return true;
+        const bool recovering = !seeking_ && FastForwarding();
         for (unsigned n = 0; n < budget; ++n) {
             const auto limit = seeking_ ? target_ : Edge();
             if (position_ >= limit) {
@@ -100,7 +101,7 @@ public:
                 has_restored_checkpoint_ = true;
             }
             const auto& packet = segment->inputs[position_ - segment->checkpoint.frame];
-            if (!tick(packet, seeking_)) return !(failed_ = true);
+            if (!tick(packet, seeking_ || recovering)) return !(failed_ = true);
             ++position_;
             if (seeking_ && position_ == target_) {seeking_ = false; following_ = live_requested_; accelerated_ = false; break;}
             if (shouldYield()) break;
@@ -117,8 +118,13 @@ public:
     bool Paused() const {return paused_;}
     bool Seeking() const {return seeking_;}
     // Bootstrap reconstruction and explicit Seek/Live may consume bounded
-    // batches. Passive live Following always remains at normal pace.
-    bool FastForwarding() const {return seeking_ && accelerated_;}
+    // batches. Following recovers a stalled input buffer with the same bounded
+    // batches, while historical Play keeps its normal presentation pace.
+    bool FastForwarding() const {
+        if(seeking_)return accelerated_;
+        const auto edge=Edge();
+        return following_&&!paused_&&edge>position_&&edge-position_>4;
+    }
     bool Following() const {return following_;}
     bool Ready() const {return bootstrapped_;}
     // A no-input timeout applies only while this viewer has caught up to the

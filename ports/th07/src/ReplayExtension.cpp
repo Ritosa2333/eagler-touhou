@@ -1082,6 +1082,23 @@ bool GetMultiplayerPlaybackStageContributions(
     return true;
 }
 
+bool GetMultiplayerRecordedFrame(i32 stage, i32 frame, Netplay::FrameInput *inputs,
+                                 std::size_t count)
+{
+    if (!inputs || !g_RecordHasMultiplayer || frame < 0 ||
+        count < g_RecordMultiplayerConfig.playerCount)
+        return false;
+    stage = std::clamp(stage, 0, 6);
+    const auto &samples = g_RecordMultiplayerInputs[stage];
+    if (static_cast<std::size_t>(frame) >= samples.size())
+        return false;
+    for (u32 player = 0; player < g_RecordMultiplayerConfig.playerCount; ++player)
+        inputs[player] = UnpackInput(samples[frame].players[player]);
+    for (u32 player = g_RecordMultiplayerConfig.playerCount; player < count; ++player)
+        inputs[player] = {};
+    return true;
+}
+
 bool GetMultiplayerPlaybackFrame(i32 stage, i32 frame, Netplay::FrameInput *inputs,
                                  std::size_t count)
 {

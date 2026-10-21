@@ -24,9 +24,8 @@ struct SpectatorStageEvent {
 };
 
 inline constexpr std::size_t SpectatorStageHeaderBytes = 32;
-// A sparse portable object initializer may include typed ANM/ECL state. Leave
-// room for the 40-byte event header and relay envelope under its 64 KiB cap.
-inline constexpr std::size_t SpectatorStageMaxStateBytes = 60 * 1024;
+// Native Replay stage headers and multiplayer resource extensions.
+inline constexpr std::size_t SpectatorStageMaxStateBytes = 4 * 1024;
 
 inline bool IsCooperativeSpectatorGame(std::uint8_t game) {
     return game == '6' || game == '7' || game == '8' ||
@@ -74,7 +73,7 @@ inline bool EncodeSpectatorStageEvent(const SpectatorStageEvent& event,
     const auto extra = event.kind == SpectatorEventKind::Checkpoint || event.kind == SpectatorEventKind::Node ? 8u : 0u;
     std::vector<std::uint8_t> bytes(SpectatorStageHeaderBytes + extra + event.state.size());
     bytes[0] = 'E'; bytes[1] = event.game; bytes[2] = 'S'; bytes[3] = 'V';
-    bytes[4] = 1; bytes[5] = std::uint8_t(event.kind); bytes[6] = event.playerCount;
+    bytes[4] = 2; bytes[5] = std::uint8_t(event.kind); bytes[6] = event.playerCount;
     using namespace SpectatorStageWire;
     Put(bytes, 8, event.sessionId, 8); Put(bytes, 16, event.gameplayAbi);
     Put(bytes, 20, event.frame); Put(bytes, 24, event.stage); Put(bytes, 28, event.serial);
@@ -92,7 +91,7 @@ inline bool EncodeSpectatorStageEvent(const SpectatorStageEvent& event,
 inline bool DecodeSpectatorStageEvent(const std::uint8_t* data, std::size_t size,
                                      SpectatorStageEvent* output) {
     if (!output || !IsSpectatorStageEvent(data, size) || size < SpectatorStageHeaderBytes ||
-        size > 40 + SpectatorStageMaxStateBytes || data[4] != 1 || data[7]) return false;
+        size > 40 + SpectatorStageMaxStateBytes || data[4] != 2 || data[7]) return false;
     using namespace SpectatorStageWire;
     SpectatorStageEvent event;
     event.game = data[1]; event.kind = SpectatorEventKind(data[5]); event.playerCount = data[6];

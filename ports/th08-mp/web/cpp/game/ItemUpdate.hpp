@@ -29,6 +29,7 @@ struct ItemUpdateActions {
     // and fixes the item's owner when one or more pilots qualify; directed
     // gifts remain owned by their promised recipient.
     virtual u32 auto_collect_owner(ItemState& item)=0;
+    virtual u32 overflow_owner(ItemState&,u32 collector){return collector;}
 #endif
     virtual bool touching(u32 seat,const Vec3& position,const Vec3& size)=0;
     // Collection may change power or item max_value; the shared context must

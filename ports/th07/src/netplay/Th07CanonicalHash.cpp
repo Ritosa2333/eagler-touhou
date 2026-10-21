@@ -668,7 +668,7 @@ std::uint64_t MixComposite(const Sample &sample)
 }
 } // namespace
 
-Sample Capture()
+Sample Capture(bool replayStage)
 {
     Sample sample;
 
@@ -799,13 +799,19 @@ Sample Capture()
     enemies.Scalar(g_EnemyManager.randomItemSpawnIdx);
     enemies.Scalar(g_EnemyManager.randomItemTableIdx);
     enemies.Scalar(g_EnemyManager.enemyCountReal);
-    enemies.Scalar(g_EnemyManager.spellcardInfo.isCapturing);
-    enemies.Scalar(g_EnemyManager.spellcardInfo.isActive);
-    enemies.Scalar(g_EnemyManager.spellcardInfo.captureScore);
-    enemies.Scalar(g_EnemyManager.spellcardInfo.grazeBonusScore);
-    enemies.Scalar(g_EnemyManager.spellcardInfo.scoreDrainRate);
-    enemies.Scalar(g_EnemyManager.spellcardInfo.spellcardIdx);
-    enemies.Scalar(g_EnemyManager.spellcardInfo.usedBomb);
+    // A native Replay stage starts with an empty inactive spell record.
+    // Completed spell totals belong to the previous stage's presentation.
+    if(replayStage&&!g_EnemyManager.spellcardInfo.isActive){
+        enemies.Scalar(g_EnemyManager.spellcardInfo.isActive);
+    }else{
+        enemies.Scalar(g_EnemyManager.spellcardInfo.isCapturing);
+        enemies.Scalar(g_EnemyManager.spellcardInfo.isActive);
+        enemies.Scalar(g_EnemyManager.spellcardInfo.captureScore);
+        enemies.Scalar(g_EnemyManager.spellcardInfo.grazeBonusScore);
+        enemies.Scalar(g_EnemyManager.spellcardInfo.scoreDrainRate);
+        enemies.Scalar(g_EnemyManager.spellcardInfo.spellcardIdx);
+        enemies.Scalar(g_EnemyManager.spellcardInfo.usedBomb);
+    }
     HashTimer(enemies, g_EnemyManager.timer);
     for (i32 i = 0; i < 480; ++i)
     {

@@ -30,6 +30,12 @@ Relay 使用 WebSocket 提供房间目录、等待室、信令、游戏传输和
 
 版本化 `runtimeGeneration` 为 64 个小写十六进制字符；同一局准备的玩家必须匹配。消息有效性、成员权限、房间状态和数值范围以 Relay 实现与 [`tests/`](../tests/) 为准。
 
+## 合作作品旁观
+
+`E?SV/2` 携带原生 Replay 关头、关卡与 Boss 导航节点、结束事件和首次追赶目标。关头携带作品版本号，大小上限为 4096 字节。Relay 保存最新关头与其后连续的全席位已确认输入，按原始顺序为新旁观者分发，并在关卡切换后整体替换历史前缀。
+
+客户端与 Relay 共同校验产品、人数、会话、ABI、事件序号和输入帧连续性。慢旁观者使用独立的发送队列与容量边界。数据格式、原生 Replay 入口和播放控制见[流式 Replay 旁观](../../../docs/architecture/spectator-replay.md)。
+
 ## 服务端处理
 
 - `common/contracts/` 是静态产品和协议规则的唯一来源；Relay 不依赖 Launcher UI。

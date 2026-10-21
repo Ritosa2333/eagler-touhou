@@ -73,6 +73,13 @@ void ItemUpdate::update(){
             if(!(p->velocity.y<3))p->velocity.y=3;else p->velocity.y=(number(.03f)*number(falling)+number(p->velocity.y)).to_float();
         }
         if(can_collect&&selected&&p->state!=3&&actions.touching(owner,p->position,size)){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            // Recheck after native falling motion, at the actual pickup edge.
+            if(actions.overflow_owner(*p,owner)!=owner){
+                p->timer.tick(timing);if(p->animation.currentInstruction)actions.animation_step(p->animation);
+                continue;
+            }
+#endif
             const u32 seat=owner;context.replay_flags|=0x40;actions.collect(seat,*p);if(sound<22){sound_owner=seat;sound=p->max_value?44:21;}actions.removed(*p);pool.remove(*p);
         }else{p->timer.tick(timing);if(p->animation.currentInstruction)actions.animation_step(p->animation);}
     }

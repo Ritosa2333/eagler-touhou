@@ -1,4 +1,5 @@
 #include "GameManager.hpp"
+#include "ReplayStageStart.hpp"
 
 #include <cstdio>
 
@@ -508,8 +509,7 @@ void IncrementCappedAgain(u32 *param, u32 cap)
 
 ZunResult GameManager::AddedCallback(GameManager *arg)
 {
-    std::printf("spectator-th07-restore GM callback begin state=%d stage=%d globals=%p\n",
-                g_Supervisor.curState, arg->currentStage, static_cast<void *>(arg->globals));
+
     u16 oldSeed;
     i32 shotTypeAndChar;
     u32 size;
@@ -565,7 +565,7 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
             g_GameErrorContext.Log("error : プレイヤーの初期化に失敗しました\n");
             return ZUN_ERROR;
         }
-        std::printf("spectator-th07-restore GM player registered stage=%d\n", arg->currentStage);
+
         if (!g_GameManager.replay)
         {
             g_GameManager.SetLivesRemaining(arg->defaultCfg->lifeCount);
@@ -787,14 +787,14 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
         g_GameErrorContext.Log("error : 背景データの初期化に失敗しました\n");
         return ZUN_ERROR;
     }
-    std::printf("spectator-th07-restore GM stage registered stage=%d\n", arg->currentStage);
+
 
     if (BulletManager::RegisterChain("data/etama.anm") != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log("error : 敵弾の初期化に失敗しました\n");
         return ZUN_ERROR;
     }
-    std::printf("spectator-th07-restore GM bullets registered stage=%d\n", arg->currentStage);
+
 
     if (EnemyManager::RegisterChain(g_EnemyAnmStageFiles[arg->currentStage].anmPath1,
                                     g_EnemyAnmStageFiles[arg->currentStage].anmPath2) !=
@@ -803,28 +803,28 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
         g_GameErrorContext.Log("error : 敵の初期化に失敗しました\n");
         return ZUN_ERROR;
     }
-    std::printf("spectator-th07-restore GM enemies registered stage=%d\n", arg->currentStage);
+
 
     if (g_EclManager.Load(g_EclPaths[arg->currentStage]) != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log("error : 敵頭脳の初期化に失敗しました\n");
         return ZUN_ERROR;
     }
-    std::printf("spectator-th07-restore GM ecl loaded stage=%d\n", arg->currentStage);
+
 
     if (EffectManager::RegisterChain() != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log("error : エフェクトの初期化に失敗しました\n");
         return ZUN_ERROR;
     }
-    std::printf("spectator-th07-restore GM effects registered stage=%d\n", arg->currentStage);
+
 
     if (Gui::RegisterChain() != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log("error : 2D表示の初期化に失敗しました\n");
         return ZUN_ERROR;
     }
-    std::printf("spectator-th07-restore GM gui registered stage=%d\n", arg->currentStage);
+
 
     if (!g_GameManager.replay)
     {
@@ -885,6 +885,9 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
 
 ZunResult GameManager::DeletedCallback(GameManager *arg)
 {
+#if defined(TH_ENABLE_NETPLAY) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    SpectatorReplayStart::EndStream();
+#endif
     g_Supervisor.StopAudio();
     if (g_Supervisor.cfg.musicMode == MUSIC_MIDI && g_Supervisor.midiOutput)
     {

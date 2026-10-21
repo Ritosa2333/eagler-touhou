@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "../platform/World.hpp"
 #include "PlayerCollisionBroadphase.hpp"
 #include "Balance.hpp"
@@ -668,6 +669,10 @@ void World::destroy_player(Player*){
     }
 }
 
+void World::initialize_replay_players(){
+    for(u32 seat=0;seat<player_count;++seat)canonicalize_next_stage_player(*this,pilots[seat]);
+}
+
 void World::activate_player(){
     const bool next_stage=backgrounds.previous!=nullptr;
     if(next_stage){
@@ -826,8 +831,8 @@ i32 World::draw_player(Player* player){
         u32 rescue_ticks=0;
         for(u32 seat=0;seat<player_count;++seat){
             const auto& rescue=cooperation.seats[seat];
-            if(rescue.rescueTarget==static_cast<std::int8_t>(pilot->seat)&&rescue.rescueTicks>rescue_ticks)
-                rescue_ticks=rescue.rescueTicks;
+            if(rescue.rescueTarget==static_cast<std::int8_t>(pilot->seat)&&eagler::cooperative::TapCount(rescue.rescueTicks)>rescue_ticks)
+                rescue_ticks=eagler::cooperative::TapCount(rescue.rescueTicks);
         }
         if(rescue_ticks){
             const u32 capped=std::min<u32>(rescue_ticks,multiplayer::kRescueTicks);
@@ -860,12 +865,12 @@ i32 World::draw_player(Player* player){
         effects.rectangle({x-.5f,16.f,x+.5f,464.f},0xffffffff);
     }
     const auto& rescue=cooperation.seats[pilot->seat];
-    if(!high_refresh::render_only&&common.value&&rescue.rescueTarget>=0&&rescue.rescueTicks){
+    if(!high_refresh::render_only&&common.value&&rescue.rescueTarget>=0&&eagler::cooperative::TapCount(rescue.rescueTicks)>=3){
         auto& text=*common.value;
         const auto scale=text.scale;const auto color=text.color;
         const auto camera=text.camera,shadow=text.shadow;
-        const u32 ticks=rescue.rescueTicks<multiplayer::kRescueTicks?rescue.rescueTicks:multiplayer::kRescueTicks;
-        char label[32];std::snprintf(label,sizeof(label),"%u%%",ticks*100u/multiplayer::kRescueTicks);
+        const u32 ticks=eagler::cooperative::TapCount(rescue.rescueTicks);
+        char label[32];std::snprintf(label,sizeof(label),"L %u/5",ticks);
         text.scale={1,1};text.color=0xffd5efc8;text.camera=0;text.shadow=1;
         text.queue(label,{draw->position.x+194.0f,draw->position.y-10.0f,.47f},false);
         text.scale=scale;text.color=color;text.camera=camera;text.shadow=shadow;
@@ -1009,6 +1014,7 @@ void World::update_cooperation(){
             pilot.game.power<=multiplayer::kMaxPowerTransferRecipient;
         controls.focus=(pilot.input_keys&4u)!=0;
         controls.shoot=(pilot.input_keys&1u)!=0;
+        controls.focusPressed=(state.input_lanes.seats[seat].pressed&multiplayer::InputLanes::kFocus)!=0;
         controls.shootPressed=(state.input_lanes.seats[seat].pressed&multiplayer::InputLanes::kShoot)!=0;
     }
     const auto result=multiplayer::AdvanceOneTick(

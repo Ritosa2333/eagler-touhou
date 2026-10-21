@@ -1,6 +1,7 @@
 #include "../web/cpp/multiplayer/CooperativeRules.hpp"
 
 #include <cassert>
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include <cstdint>
 #include <initializer_list>
 #include <type_traits>
@@ -37,9 +38,9 @@ State make_state(std::uint8_t count) {
 FrameInput input_at(std::int32_t x0 = 0, std::int32_t x1 = 1000,
                     std::int32_t x2 = 0) {
     FrameInput input{};
-    input.seats[0] = {x0, 10000, true, true, true, true, false, false};
-    input.seats[1] = {x1, 10000, true, true, true, true, false, false};
-    input.seats[2] = {x2, 10000, true, true, true, true, false, false};
+    input.seats[0] = {x0, 10000, true, true, true, true, false, false, true};
+    input.seats[1] = {x1, 10000, true, true, true, true, false, false, true};
+    input.seats[2] = {x2, 10000, true, true, true, true, false, false, true};
     return input;
 }
 
@@ -86,7 +87,7 @@ void repeated_inputs_advance_logical_ticks_and_focus_release_gates_next_use() {
     for (int tick = 0; tick < kRescueTicks - 1; ++tick) {
         assert(AdvanceOneTick(state, input).eventCount == 0);
     }
-    assert(state.seats[0].rescueTicks == kRescueTicks - 1);
+    assert(eagler::cooperative::TapCount(state.seats[0].rescueTicks) == kRescueTicks - 1);
     assert(AdvanceOneTick(state, input).events[0].kind ==
            EventKind::SpiritRevived);
     assert(AdvanceOneTick(state, input).eventCount == 0);
@@ -115,6 +116,7 @@ void five_rapid_shoot_presses_transfer_one_native_big_power_item() {
     assert(ReportNativeSeatOutcome(state, 0, LifeState::Alive, 2, 40));
     assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, 0));
     FrameInput input = input_at();
+    for(auto& seat:input.seats)seat.focusPressed=false;
     ItemProbe probe{true, 0, {}, {}};
     TickResult result{};
     for (std::uint8_t tap = 1; tap <= kPowerTapCount; ++tap) {
@@ -143,6 +145,7 @@ void power_taps_expire_and_never_count_a_held_shot_twice() {
     assert(ReportNativeSeatOutcome(state, 0, LifeState::Alive, 2, 40));
     assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, 0));
     FrameInput input = input_at();
+    for(auto& seat:input.seats)seat.focusPressed=false;
     input.seats[0].shoot = true;
     input.seats[0].shootPressed = true;
     assert(AdvanceOneTick(state, input).eventCount == 0);
@@ -160,6 +163,7 @@ void power_transfer_rejects_full_or_spirit_recipients_and_failed_allocation() {
     assert(ReportNativeSeatOutcome(state, 0, LifeState::Alive, 2, 40));
     assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, kMaxPower));
     FrameInput input = input_at();
+    for(auto& seat:input.seats)seat.focusPressed=false;
     input.seats[0].shoot = true;
     input.seats[0].shootPressed = true;
     AdvanceOneTick(state, input);
@@ -290,8 +294,8 @@ void sequential_givers_keep_th07_rescue_frame_semantics() {
     for (int tick = 0; tick < kRescueTicks - 1; ++tick) {
         result = AdvanceOneTick(state, input);
     }
-    assert(state.seats[0].rescueTicks == kRescueTicks - 1);
-    assert(state.seats[1].rescueTicks == kRescueTicks - 1);
+    assert(eagler::cooperative::TapCount(state.seats[0].rescueTicks) == kRescueTicks - 1);
+    assert(eagler::cooperative::TapCount(state.seats[1].rescueTicks) == kRescueTicks - 1);
     ItemProbe probe{true, 0, {}, {}};
     result = AdvanceOneTick(state, input, {&probe, allocate_item});
     assert(result.eventCount == 2);
@@ -454,6 +458,13 @@ void rescue_uses_fixed_resources_without_charging_donor_power() {
 int main() {
     static_assert(std::is_trivially_copyable<State>::value,
                   "state must be safe to copy into a rollback journal");
+    {
+        State state=make_state(2);spirit(state,1);auto in=input_at();
+        for(auto& seat:in.seats)seat.focusPressed=false;
+        in.seats[0].focusPressed=true;AdvanceOneTick(state,in);in.seats[0].focusPressed=false;
+        for(unsigned frame=0;frame<100;++frame)assert(AdvanceOneTick(state,in).eventCount==0);
+        assert(state.seats[1].lifeState==LifeState::Spirit&&state.seats[0].lives==2);
+    }
     no_teammate_in_range_resets_progress();
     radius_is_inclusive_at_twenty_pixels();
     repeated_inputs_advance_logical_ticks_and_focus_release_gates_next_use();

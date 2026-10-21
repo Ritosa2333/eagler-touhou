@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "ItemManager.hpp"
 #ifdef TH_ENABLE_THPRAC
 #include "PurpleRuntime.hpp"
@@ -288,6 +289,24 @@ Player *ItemTargetPlayer(Item *item)
     return GetClosestActivePlayer(item ? &item->currentPosition : nullptr);
 }
 
+Player *OverflowPowerTarget(Item *item, Player *collector)
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer() || !collector ||
+        ItemPlayerPower(collector) < 128 ||
+        (item->itemType != ITEM_POWER_SMALL && item->itemType != ITEM_POWER_BIG &&
+         item->itemType != ITEM_FULL_POWER)) return collector;
+    const int seat = eagler::cooperative::LowestPower(TH06_MULTI_MAX_PLAYERS,
+        [](unsigned id) { return ItemPlayerActive(&g_Players[id]) && GetPlayerPower(id) < 128; },
+        [](unsigned id) { return GetPlayerPower(id); }, [](unsigned) { return 1; });
+    if (seat >= 0) {
+        item->state = FixedItemState(u8(seat));
+        return &g_Players[seat];
+    }
+#endif
+    return collector;
+}
+
 Player *AutoCollectTarget(Item *item)
 {
     if (!MultiplayerGameplay::IsMultiplayer())
@@ -446,7 +465,7 @@ void ItemManager::OnUpdate()
 
             if (curItem->state == ITEM_STATE_AUTO_COLLECT || HasFixedItemTarget(curItem))
             {
-                targetPlayer = ItemTargetPlayer(curItem);
+                targetPlayer = OverflowPowerTarget(curItem, ItemTargetPlayer(curItem));
                 playerAngle = targetPlayer->AngleToPlayer(&curItem->currentPosition);
                 sincosmul(&curItem->startPosition, playerAngle, 8.0f);
             }
@@ -494,6 +513,10 @@ void ItemManager::OnUpdate()
     yolo:
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         targetPlayer = ItemTargetPlayer(curItem);
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (targetPlayer->CalcItemBoxCollision(&curItem->currentPosition, &g_ItemSize) &&
+            OverflowPowerTarget(curItem, targetPlayer) != targetPlayer) continue;
 #endif
         if (targetPlayer->CalcItemBoxCollision(&curItem->currentPosition, &g_ItemSize))
         {

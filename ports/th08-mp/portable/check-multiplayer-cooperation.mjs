@@ -9,7 +9,7 @@ if(!existsSync(compiler))throw Error('WASI SDK not found: '+compiler);
 const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
 const wasm=resolve(out,'cooperative-lifecycle.wasm');
 execFileSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti',
-  '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-Wl,-z,stack-size=1048576',
+  '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-I'+resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'),'include'),'-Wl,-z,stack-size=1048576',
   resolve(root,'web/cpp/multiplayer/CooperativeLifecycle.cpp'),
   resolve(root,'tests/cooperative-lifecycle-test.cpp'),'-o',wasm],{windowsHide:true,stdio:'inherit'});
 const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});

@@ -36,5 +36,5 @@ writeFileSync(resolve(dir,'build.json'),JSON.stringify({schema:'eagler-th15-spec
  privateSpectatorFixture:true,builtAt:new Date().toISOString(),productionWasm:build.sha256,
  productionLoaderSha256:sha(productionLoader),productionBuiltAt:build.builtAt,
  sha256:sha(fixtureWasm),loaderSha256:sha(fixtureLoader),fixtureSourceSha256:sha(readFileSync(resolve(dir,'fixture.cpp'))),
- commonDependency:dependency,commonDependencyManifestSha256:sha(readFileSync(resolve(dependency,'SPECTATOR-DEPENDENCY.json')))},null,2)+'\n');
+ commonDependency:dependency,commonProtocolSha256:sha(readFileSync(resolve(dependency,'include/eagler/netplay/SpectatorStageProtocol.hpp')))},null,2)+'\n');
 console.log(JSON.stringify({status:'PASS',fixture:dir,wasm:sha(fixtureWasm),loader:sha(fixtureLoader),productionWasm:build.sha256}));

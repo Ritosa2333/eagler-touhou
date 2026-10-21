@@ -48,6 +48,7 @@ public:
     bool initialize();bool update();bool hit();bool die();bool draw(AnmRenderer&);
     bool start_stage();
     bool restore_replay_position(const ReplayStageState&);
+    bool restore_replay_stage(const ReplayStageState&);
     PlayerCollision collision()const noexcept;
     void copy_item_state(ItemPlayer&)const noexcept;
 private:

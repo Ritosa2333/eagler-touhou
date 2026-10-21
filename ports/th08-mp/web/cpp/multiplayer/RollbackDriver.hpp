@@ -54,16 +54,9 @@ public:
     u32 CheckpointSpan()const{return checkpoint_span;}
 #ifdef TH_MULTIPLAYER_FIXTURES
     bool SetCheckpointSpan(u32 span){if(open||(world&&world->HasHistory())||span<1||span>3)return false;checkpoint_span=span;return true;}
-    void RequestSpectatorRestoreProbe(){diagnostic_spectator_restore_requested=true;diagnostic_spectator_restore_result.fill(0);}
-    const u32* SpectatorRestoreProbe()const{return diagnostic_spectator_restore_result.data();}
     u32 SpectatorRestoreFailure()const{return diagnostic_spectator_restore_failure;}
     u32 SpectatorCheckpointFrame()const{return diagnostic_spectator_checkpoint_frame;}
     const std::array<u32,13>& SpectatorCheckpointCanonical()const{return diagnostic_spectator_checkpoint_canonical;}
-    const std::vector<u8>* SpectatorCheckpointTrace(u32 group)const{
-        if(group==1)return &diagnostic_spectator_checkpoint_traces[0];
-        if(group==8)return &diagnostic_spectator_checkpoint_traces[1];
-        return nullptr;
-    }
     const std::vector<std::array<u32,14>>& SpectatorCanonicalTrace()const{return diagnostic_spectator_canonical_trace;}
 #ifdef TH_MULTIPLAYER_FIXTURES
     bool SetBombLazy(bool enabled){return !open&&EnsureJournals()&&world->SetBombLazy(enabled);}
@@ -100,13 +93,10 @@ public:
     std::size_t DiagnosticWorldBlockBytes(u32 index)const{return world?world->DiagnosticBlockBytes(index):0;}
     const char* DiagnosticWorldBlockName(u32 index)const{return world?world->BlockName(index):"";}
     double diagnostic_correction_ms=0,diagnostic_correction_max_ms=0;
-    bool diagnostic_spectator_restore_requested=false;
     u32 diagnostic_spectator_restore_failure=0;
-    std::array<u32,41> diagnostic_spectator_restore_result{};
     std::vector<std::array<u32,14>> diagnostic_spectator_canonical_trace;
     u32 diagnostic_spectator_checkpoint_frame=Netplay::INVALID_FRAME;
     std::array<u32,13> diagnostic_spectator_checkpoint_canonical{};
-    std::array<std::vector<u8>,2> diagnostic_spectator_checkpoint_traces;
 #endif
 private:
     BrowserRuntime& runtime;

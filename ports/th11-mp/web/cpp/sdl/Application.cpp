@@ -191,7 +191,7 @@ struct Application:StageResourceEffects {
         }
         return true;
     }
-    bool multiplayer_begin(u32 stage_override=0,bool reset_clock=true){
+    bool multiplayer_begin(u32 stage_override=0,bool reset_clock=true,const std::array<ReplayStageState,3>* stream=nullptr){
         rollback_release();
         if(!netplay.Spectator())audio.spectator_silent(false);
         if(reset_clock)reset_cadences();
@@ -210,7 +210,7 @@ struct Application:StageResourceEffects {
         auto& core=session.resources.core;
         for(AnmResource* file:{&core.text,&core.ascii,&core.bullet,&core.enemy,&core.front,&core.title,&core.title_variant,&core.players[0],&core.players[1]})graphics.unload(*file);
         if(session.resources.stage)for(AnmResource* file:{&session.resources.stage->background,&session.resources.stage->logo,&session.resources.stage->enemies})graphics.unload(*file);
-        if(!session.begin_multiplayer(resources,opts)){error=session.error;return false;}
+        if(!session.begin_multiplayer(resources,opts,stream)){error=session.error;return false;}
         for(AnmResource* file:{&core.text,&core.ascii,&core.bullet,&core.enemy,&core.front,&core.title,&core.title_variant,&core.players[0],&core.players[1],&session.resources.stage->background,&session.resources.stage->logo,&session.resources.stage->enemies})
             if(!graphics.preload(*file)){error=graphics.error;return false;}
         multiplayer_world=true;multiplayer_advanced=false;multiplayer_finish_pending=multiplayer_restart_pending=multiplayer_saved=multiplayer_pause_requested=false;clear_inputs();
@@ -221,8 +221,7 @@ struct Application:StageResourceEffects {
         refresh_multiplayer_touch_frontier();return true;
     }
     bool multiplayer_capture_spectator_checkpoint(u32 frame,u32& stage,std::vector<u8>& initializer){
-        const bool stable=session.state.phase==GameSessionPhase::stage&&session.battle&&session.battle->stage_active&&
-            !session.battle->transitioning&&!session.battle->outgoing_stage;
+        const bool stable=session.state.phase==GameSessionPhase::stage&&session.battle&&session.battle->stage_active;
         u32 previous=0;
         if(stable||!frame||!netplay.SpectatorRecordedStage(frame-1,previous))stage=session.state.stage;
         else stage=previous;
@@ -240,7 +239,7 @@ struct Application:StageResourceEffects {
             else if(!session.battle->stage)multiplayer_spectator_capture_reason=6;
             else for(u32 i=0;i<session.multiplayer_options.seat_count;++i)
                 if(!session.battle->pilots[i]||!session.battle->pilots[i]->player){multiplayer_spectator_capture_reason=7+i;break;}
-            if(!multiplayer_spectator_capture_reason)multiplayer_spectator_capture_reason=100+multiplayer::SpectatorShotAccess::Failure();
+            if(!multiplayer_spectator_capture_reason)multiplayer_spectator_capture_reason=10;
             return false;
         }
         multiplayer::SpectatorStageState decoded;
@@ -260,9 +259,9 @@ struct Application:StageResourceEffects {
             multiplayer_world=false;multiplayer_viewer=true;
             // The outer callback already owns its due forward tick. Native
             // construction must not erase that offer before it is completed.
-            if(!multiplayer_begin(state.stage,false))return false;
+            if(!multiplayer_begin(state.stage,false,&state.players))return false;
             if(!multiplayer::ApplySpectatorStageState(session,state)){
-                error="TH11 spectator checkpoint canonical hash mismatch";return false;
+                error="TH11 streaming Replay stage initialization failed";return false;
             }
             multiplayer_spectator_stage=state.stage;multiplayer_world=true;multiplayer_viewer=true;
             return true;
@@ -357,8 +356,8 @@ struct Application:StageResourceEffects {
         if(decision.predictedMask||!multiplayer::InputLanes::Decode(decision.inputs.data(),netplay.Setup().player_count,input)){error="TH11 multiplayer requires exact inputs";return false;}
         const auto before=session.state.phase;const auto stage=session.state.stage;
         std::vector<u8> spectator_initializer;u32 spectator_stage=stage;
-        if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);
-        {auto timed=rollback_timer(5);if(!session.update_multiplayer(input)){error=session.error;return false;}}
+
+        {auto timed=rollback_timer(5);if(!session.update_multiplayer(input,[&]{if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);})){error=session.error;return false;}}
         const bool restart=before==GameSessionPhase::paused&&
             ((input[0].held&0x200000u)!=0||(session.pause_menu&&session.pause_menu->action==PauseAction::Restart));
         const auto after=session.state.phase;

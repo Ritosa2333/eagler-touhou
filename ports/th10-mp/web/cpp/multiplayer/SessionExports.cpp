@@ -1344,6 +1344,33 @@ const u32* multiplayer_spectator_parity_debug(browser::Application* app){
     }
     return words;
 }
+// Native Replay reconstructs timer sentinels and presentation owners. Visit
+// the actual gameplay fields shared by local Replay and streamed playback.
+extern "C" __attribute__((export_name("multiplayer_replay_gameplay_debug")))
+const u32* multiplayer_replay_gameplay_debug(browser::Application* app){
+    static u32 out[108]{};std::fill(out,out+108,0u);out[0]=1;
+    if(!app||!app->world)return out;const auto& w=*app->world;out[1]=w.player_count;
+    for(u32 seat=0;seat<w.player_count&&seat<3;++seat){
+        const auto& pilot=w.pilots[seat];if(!pilot.player)continue;
+        const auto& p=*pilot.player;const auto h=hash_player_parts(p);auto* row=out+2+seat*20;
+        row[0]=pilot.input_keys;row[1]=h.core;row[2]=u32(p.fire_timer.current);
+        row[3]=u32(p.state_timer.current);row[4]=u32(p.focus_timer.current);row[5]=u32(p.invulnerability.current);
+        row[6]=h.shots;row[7]=h.shotCount;row[8]=h.damage;row[9]=h.options;row[10]=h.activeLasers;
+        row[11]=h.bounds;row[12]=h.history;row[13]=h.optionSpeed;
+        row[14]=u32(pilot.game.lives);row[15]=u32(pilot.game.power);row[16]=u32(p.state);
+        row[17]=u32(p.fixed_position.x);row[18]=u32(p.fixed_position.y);row[19]=u32(p.focused);
+    }
+    const auto& team=app->state.team_economy;auto* t=out+62;
+    t[0]=u32(team.score);t[1]=u32(team.item_value);t[2]=u32(team.enemy_activity);
+    t[3]=u32(team.faith_timer.previous);t[4]=u32(team.faith_timer.current);t[5]=float_bits(team.faith_timer.fractional);
+    t[6]=team.faith_timer_flags;t[7]=u32(team.difficulty);t[8]=team.reserved_038;t[9]=u32(team.stage);
+    t[10]=team.reserved_040;t[11]=u32(team.section);t[12]=team.stage_frames;t[13]=team.section_frames;
+    t[14]=u32(team.score_units);t[15]=u32(team.rank);t[16]=u32(team.extend_index);t[17]=team.flags&~4u;
+    for(u32 seat=0;seat<3;++seat){const auto& p=app->state.pilot_economies[seat];auto* r=out+80+seat*6;
+        r[0]=u32(p.power);r[1]=p.reserved_power;r[2]=u32(p.character);r[3]=u32(p.shot_type);r[4]=u32(p.lives);r[5]=p.challenge_deaths;}
+    out[98]=hash_value(w.cooperation);out[99]=hash_input_lanes(app->state.input_lanes);
+    return out;
+}
 extern "C" __attribute__((export_name("multiplayer_spectator_options_debug")))
 const u32* multiplayer_spectator_options_debug(browser::Application* app){
     // Expose the authored option-follow state behind the player hash component.
