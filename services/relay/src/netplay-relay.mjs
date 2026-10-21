@@ -361,6 +361,7 @@ function getRoom(id, socket) {
         difficulty: 1,
         visibility: 'public',
         disableCheatMovement: false,
+        ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
         ...(id.startsWith("th15mp-")
           ? {
               chapterThreshold: defaultTh15ChapterThreshold(
@@ -779,6 +780,7 @@ function lobbySnapshot(room) {
     difficulty: room.lobby.difficulty,
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
+    ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
     prankMode: room.lobby.prankMode,
@@ -945,6 +947,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   if (!existing && intent === 'create') {
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
+    if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     const modesSupported = room.multiplayer?.gameplay === 'cooperative';
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
     room.lobby.prankMode = false;
@@ -1441,6 +1444,11 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         typeof message.disableCheatMovement === 'boolean'
           ? message.disableCheatMovement
           : room.lobby.disableCheatMovement;
+      if(message.disableLocalChargePriority !== undefined &&
+         (!room.id.startsWith('th09mp-') || typeof message.disableLocalChargePriority !== 'boolean')){
+        sendLobby(socket,{type:'error',error:'invalid local charge priority setting'});return;
+      }
+      const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
       const modesSupported = room.multiplayer?.gameplay === 'cooperative';
       const challengeMode =
         modesSupported &&
@@ -1454,12 +1462,14 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.playerCount !== playerCount ||
         room.lobby.difficulty !== difficulty ||
         room.lobby.disableCheatMovement !== disableCheatMovement ||
+        room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
       ) {
         invalidateLobbyReady(room);
         room.lobby.disableCheatMovement = disableCheatMovement;
+        if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
@@ -1719,8 +1729,8 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
       }
       const batch = [first];
       index++;
-      if (first.length === 46)
-        while (batch.length < 64 && history[index]?.length === 46) batch.push(history[index++]);
+      if (first.length === 46 || first.length === 126)
+        while (batch.length < 64 && history[index]?.length === first.length) batch.push(history[index++]);
       if (!sendSpectatorPayload(socket, Buffer.concat(batch), roomId, runId, spectatorId)) return;
       socket.spectatorReplayTimer = setTimeout(replay, 0);
     };
@@ -1831,6 +1841,7 @@ server.on('connection', (socket, request) => {
     handleLobbyConnection(socket, roomId, lobbyClient, memberId, url.searchParams.get('intent'), {
       visibility: url.searchParams.get('visibility'),
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
+      disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))
         : undefined,
@@ -2012,7 +2023,7 @@ server.on('connection', (socket, request) => {
         run.spectatorHistory = run.spectatorTiming ? [run.spectatorTiming] : [];
         run.spectatorHistoryBytes = run.spectatorTiming?.length || 0;
       }
-      if (th09Stream && (payload.length === 46 || ending || roundStart)) {
+      if (th09Stream && (payload.length === 46 || payload.length === 126 || ending || roundStart)) {
         const frame = payload.readUInt32LE(8),
           build = payload.subarray(12, 24);
         if (

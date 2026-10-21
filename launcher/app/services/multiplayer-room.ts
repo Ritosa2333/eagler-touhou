@@ -231,6 +231,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         created: room.created,
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        disableLocalChargePriority: room.disableLocalChargePriority,
         chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
         prankMode: false,
@@ -409,6 +410,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty: room.difficulty,
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
+      ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
       ...(product === "th15mp"
         ? {
             chapterThreshold:
@@ -440,6 +442,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
+      ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
       prankMode: false,
       inputDelayAuto: normalized.inputDelayAuto ?? false,
       predictionReserve: normalized.predictionReserve ?? 2,
@@ -486,6 +489,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         intent,
         visibility: room.visibility,
         disableCheatMovement: room.disableCheatMovement,
+        disableLocalChargePriority: room.disableLocalChargePriority,
         chapterThreshold: room.chapterThreshold,
         challengeMode: room.challengeMode,
         prankMode: false,
@@ -740,6 +744,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
+      ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
       chapterThreshold: saved?.room.chapterThreshold,
       challengeMode: saved?.room.challengeMode ?? false,
       prankMode: false,
@@ -967,7 +972,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     patch: Partial<
       Pick<
         MultiplayerRoomState,
-        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode'
+        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
         | "chapterThreshold"
       >
     >,
@@ -979,9 +984,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       room.phase !== 'lobby' &&
       (patch.visibility !== undefined ||
         patch.disableCheatMovement !== undefined ||
+        patch.disableLocalChargePriority !== undefined ||
         patch.challengeMode !== undefined)
     )
       return;
+    if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
     if (
       patch.chapterThreshold !== undefined &&
       (product !== "th15mp" ||
@@ -1023,6 +1030,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
+      ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
       prankMode: false,
     });
@@ -1176,6 +1184,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
         ...(product === 'th09mp' ? {
+          disableLocalChargePriority:room.disableLocalChargePriority === true,
           replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
           replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
         } : {}),

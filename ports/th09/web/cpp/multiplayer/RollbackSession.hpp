@@ -2,6 +2,7 @@
 #include <eagler/netplay/SessionChannel.hpp>
 #include <eagler/netplay/AdonisStartup.hpp>
 #include <deque>
+#include "ChargeHistory.hpp"
 
 namespace th09::multiplayer {
 // Network state never belongs to a world checkpoint. Restoring gameplay must
@@ -22,6 +23,11 @@ public:
     bool FlushDeferredInputs(std::uint64_t now);
     bool NeedsCapture() const;
     bool Capture(const Netplay::FrameInput&, std::uint64_t now);
+    bool SetLocalChargePriority(bool enabled){if(configured_||measuring_)return false;chargeRequested_=enabled;return true;}
+    bool LocalChargePriority()const{return charges_.Enabled();}
+    const ChargeSample* ChargeInput(u32 side,u32 frame)const{return charges_.Get(side,frame);}
+    bool CaptureLocalCharge(u32 frame,const ChargeSample& sample);
+    bool CommitChargeFrame(u32 frame,const std::array<ChargeSample,2>& samples);
     // The opt-in visible pass may advance once on an unreconciled base, as in
     // Higan's live_tick. It remains speculative until post-Present recovery.
     Netplay::FrameDecision Prepare(bool beforeRecovery=false) const;
@@ -33,10 +39,10 @@ public:
     bool Failed() const override { return failed_ || invalidInput_ || transport_.Failed(); }
     const char* Error() const { return error_; }
     std::uint32_t Frame() const { return next_; }
-    std::uint32_t RollbackFrame() const { return core_.RollbackFrame(); }
+    std::uint32_t RollbackFrame() const { const auto a=core_.RollbackFrame(),b=charges_.RollbackFrame();return a<b?a:b; }
     std::uint32_t ConfirmedThrough() const;
     bool ConfirmedInputs(std::uint32_t frame, std::array<Netplay::FrameInput, Netplay::MAX_PLAYERS>* out) const;
-    bool InputsReconciledBeforeNext() const { const auto c=core_.ConfirmedThroughAllRemotes();return !core_.HasRollbackRequest()&&(next_==0||(c!=Netplay::INVALID_FRAME&&c>=next_-1)); }
+    bool InputsReconciledBeforeNext() const { const auto c=core_.ConfirmedThroughAllRemotes();return !HasRollback()&&(!charges_.Enabled()||charges_.ConfirmedCount()>=next_)&&(next_==0||(c!=Netplay::INVALID_FRAME&&c>=next_-1)); }
     void FinishExactBoundary(){if(InputsReconciledBeforeNext())replayEnd_=next_;}
     bool CanRetire() const;
     bool Retire(std::uint64_t now);
@@ -56,6 +62,9 @@ public:
     std::uint32_t Resimulated() const { return resimulated_; }
     static bool ValidInput(const Netplay::FrameInput&);
 private:
+    ChargeHistory charges_;bool chargeRequested_=false;
+    std::uint64_t chargeRepairAt_=0;
+    bool HasRollback()const{return RollbackFrame()!=Netplay::INVALID_FRAME;}
     bool Configure(const Netplay::SessionConfig&,std::uint64_t now,std::uint8_t delay,
                    Netplay::AdonisMode mode,unsigned predictionReserve=0);
     bool PumpStartup(std::uint64_t now, std::uint64_t measurementNowUs);

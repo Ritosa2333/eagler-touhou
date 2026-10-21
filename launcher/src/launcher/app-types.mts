@@ -68,6 +68,7 @@ export interface MultiplayerRoomState {
   runtimeGeneration?: string;
   visibility?: 'public' | 'private';
   disableCheatMovement?: boolean;
+  disableLocalChargePriority?: boolean;
   challengeMode?: boolean;
   chapterThreshold?: number;
   prankMode?: boolean;
