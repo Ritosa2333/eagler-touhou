@@ -132,11 +132,11 @@ inline bool Apply(){
     g_Rng.SetSeed(n.stageRngSeed);
     applied=true;return true;
 }
-inline ChainElem stream_rng;
+inline ChainElem& StreamRng(){static ChainElem node;return node;}
 inline bool stream_rng_attached=false;
-inline void EndStream(){if(stream_rng_attached){g_Chain.Cut(&stream_rng);stream_rng_attached=false;}}
+inline void EndStream(){if(stream_rng_attached){g_Chain.Cut(&StreamRng());stream_rng_attached=false;}}
 inline bool BeginStream(){
-    EndStream();stream_rng.arg=nullptr;stream_rng.callback=[](void*)->u32{
+    EndStream();auto& stream_rng=StreamRng();stream_rng.arg=nullptr;stream_rng.callback=[](void*)->u32{
         g_Rng.generationCount=0;g_GameManager.isPaused=FALSE;
         return CHAIN_CALLBACK_RESULT_CONTINUE;
     };
