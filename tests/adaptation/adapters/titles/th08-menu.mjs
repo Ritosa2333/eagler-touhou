@@ -1,0 +1,17 @@
+export const TH08_MENU_CONTRACT=Object.freeze({
+  statusExport:'sdl_replay_trace_status_v1',titleScene:1,
+  fields:{scene:0,screen:8,cursor:9,phase:11,confirmationReady:25,stateTimer2:26,currentInput:27,previousInput:28},
+  identity:{export:'sdl_dialogue_touch_observation_v1',wordCount:45,magic:0x44544f31,version:1,fields:{generation:5,pointer:6,epoch:7}},
+  expected:{startScreen:0,startCursor:0,difficultyScreen:4,readyPhase:1,startPhase:1,difficultyCount:4},
+  inputMasks:{confirm:1,up:16,down:32,cancel:2},
+  touchCancelMask:8,
+  keys:{confirm:'KeyZ',up:'ArrowUp',down:'ArrowDown',cancel:'KeyX',skip:'ControlLeft'},
+  gamepad:{confirm:0,cancel:1,up:12,down:13,skip:5},
+  geometry:{pointerId:9501,cancelPointerId:9502,start:{x:.5,y:.5},swipeFrom:{x:.5,y:.45},swipeTo:{x:.5,y:.6},
+    cancelPoint:{x:.4,y:.5},cancelSecondPoint:{x:.6,y:.5},width:640,height:480,swipeThresholdPx:24,swipeHoldTicks:40,
+    source:'ports/th08/portable/input/TouchController.hpp | menu gesture thresholds'},
+  sources:{titleState:'ports/th08/web/cpp/platform/BrowserRuntime.cpp | status 8/9/11/25/26/27/28',
+    navigation:'ports/th08/web/cpp/game/TitleMenus.cpp | OnUpdateDifficultySelect | MoveCursorVertical',
+    cancel:'ports/th08/web/cpp/game/TitleMenus.cpp | OnUpdateDifficultySelect | TH_BUTTON_BOMB'},
+  budgets:{readyTicks:20,transitionTicks:40,inputReleaseTicks:3,source:'ports/th08/web/cpp/game/TitleMenus.cpp | ten-tick initial gate and eight-tick difficulty gate'},
+});

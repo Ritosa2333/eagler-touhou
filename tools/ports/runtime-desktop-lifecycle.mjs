@@ -6,6 +6,47 @@ export function inspectNativePageFocus(state) {
   return {ready:missing.length===0,missing,state:state??null};
 }
 
+export function inspectDesktopInputCleanup({required=false,result=null,keyErrors=[],evaluationError=null}={}) {
+  const missing=[...keyErrors];
+  if(evaluationError)missing.push(evaluationError);
+  if(required){
+    for(const field of ['liveRuntime','keyboardCleared','touchCancelAcknowledged','touchControlsAcknowledged'])
+      if(result?.[field]!==true)missing.push(`input cleanup ${field} was not acknowledged`);
+    missing.push(...(result?.sendErrors??[]));
+  }
+  return{status:missing.length?'failed':required?'passed':'not-required',required,result,keyErrors,evaluationError,missing};
+}
+
+export function inspectNativeForegroundIdentity({expected,observed,requireNormal=true}={}) {
+  const missing=[];
+  const valid=page=>page?.status==='matched'&&page.target?.type==='page'&&
+    typeof page.target.targetId==='string'&&page.target.targetId.length>0&&Number.isSafeInteger(page.window?.windowId);
+  if(!valid(expected))missing.push('the expected actual page target and native window identity are unavailable');
+  if(!valid(observed))missing.push('the observed actual page target and native window identity are unavailable');
+  const sameTarget=valid(expected)&&valid(observed)&&expected.target.targetId===observed.target.targetId;
+  const sameWindow=valid(expected)&&valid(observed)&&expected.window.windowId===observed.window.windowId;
+  if(valid(expected)&&valid(observed)&&!sameTarget)missing.push('the actual page target changed during foreground restoration');
+  if(valid(expected)&&valid(observed)&&!sameWindow)missing.push('the native browser window changed during foreground restoration');
+  const windowState=observed?.window?.currentBounds?.windowState??observed?.window?.bounds?.windowState??null;
+  if(requireNormal&&windowState!=='normal')missing.push('the observed native browser window is not in normal state');
+  return{ready:missing.length===0,missing,sameTarget,sameWindow,windowState,
+    targetId:observed?.target?.targetId??null,windowId:Number.isSafeInteger(observed?.window?.windowId)?observed.window.windowId:null};
+}
+
+export function desktopExecutionBrowserMode(mode){
+  if(['input-only','touch-only','actions-only','replay-recording-only','audio-latency-only'].includes(mode))return'headless';
+  if(['background-only','full-desktop'].includes(mode))return'headed';
+  throw new RangeError(`Unknown desktop execution mode ${String(mode)}`);
+}
+
+export function inspectDesktopTerminalErrors({errors=[],events=[],httpErrors=[],fixtureBase}={}){
+  const pageErrors=errors.filter(item=>item?.page);
+  const protocolErrors=events.filter(event=>event?.protocol==='eagler-touhou/1'&&
+    ['error','runtime-error','fatal-error'].includes(event.event));
+  const localHttpErrors=httpErrors.filter(event=>typeof fixtureBase==='string'&&event?.url?.startsWith(fixtureBase));
+  return{ready:!pageErrors.length&&!protocolErrors.length&&!localHttpErrors.length,pageErrors,protocolErrors,localHttpErrors};
+}
+
 export function inspectViewportScreenshotClip({bounds,viewport}={}) {
   const missing=[];
   const validBounds=['x','y','width','height'].every(key=>Number.isFinite(bounds?.[key]));
@@ -61,21 +102,30 @@ export function inspectNativeBackgroundEvents({state,events=[]}={}) {
   return {visibilityHidden,visibilityChange,blur,observed:visibilityHidden||visibilityChange||blur};
 }
 
-export function inspectMinimizedKeyboardClear({windowState,nativeState,events=[],hostEvents=[],hiddenStartAtMs,hiddenSampledAtMs,inputValue,neutralInputValue}={}) {
+export function inspectMinimizedKeyboardClear({windowState,nativeState,events=[],hostEvents=[],hiddenStartAtMs,hiddenSampledAtMs,inputValue,neutralInputValue,inputObservation}={}) {
   const background=inspectNativeBackgroundEvents({state:nativeState,events});
   const windowHidden=windowState==='minimized'&&background.observed;
   const acceptedClear=(hostEvents??[]).find(event=>
     (event?.reason==='host-blur'||event?.reason==='host-hidden')&&event.accepted===true&&
     Number.isFinite(event.time)&&Number.isFinite(hiddenStartAtMs)&&Number.isFinite(hiddenSampledAtMs)&&
     event.time>=hiddenStartAtMs&&event.time<=hiddenSampledAtMs)??null;
-  const nativeNeutral=Number.isSafeInteger(inputValue)&&Number.isSafeInteger(neutralInputValue)&&inputValue===neutralInputValue&&neutralInputValue===0;
-  const status=!windowHidden||!acceptedClear?'incomplete':nativeNeutral?'passed':'failed';
+  const inputObserved=Number.isSafeInteger(inputValue),neutralObserved=Number.isSafeInteger(neutralInputValue)&&neutralInputValue===0;
+  const nativeNeutral=inputObserved&&neutralObserved&&inputValue===neutralInputValue;
+  const status=!windowHidden||!acceptedClear||!inputObserved||!neutralObserved?'incomplete':nativeNeutral?'passed':'failed';
   return{ready:status==='passed',status,windowHidden,background,acceptedClear,hostClearAccepted:!!acceptedClear,
+    inputObserved,neutralObserved,inputObservation:inputObservation?{
+      status:inputObservation.status??null,samples:Number.isSafeInteger(inputObservation.samples)?inputObservation.samples:null,
+      validSamples:Number.isSafeInteger(inputObservation.validSamples)?inputObservation.validSamples:null,
+      readErrors:Number.isSafeInteger(inputObservation.readErrors)?inputObservation.readErrors:null,
+      durationMs:Number.isFinite(inputObservation.durationMs)?inputObservation.durationMs:null,
+      lastReadError:typeof inputObservation.lastReadError==='string'?inputObservation.lastReadError:null,
+    }:null,
     nativeNeutral,inputValue:Number.isSafeInteger(inputValue)?inputValue:null,
     neutralInputValue:Number.isSafeInteger(neutralInputValue)?neutralInputValue:null,
     missing:!windowHidden?['native hidden/blur state was not established while the window was minimized']:
       !acceptedClear?['Host keyboard-clear was not accepted during the minimized hidden interval']:
-        !nativeNeutral?['native input was not neutral while the window was still minimized']:[]};
+        !inputObserved||!neutralObserved?['Native input could not be observed while the window was still minimized']:
+          !nativeNeutral?['native input was not neutral while the window was still minimized']:[]};
 }
 
 export function inspectAudioContextsBeforeGesture(contexts=[]) {
@@ -129,58 +179,109 @@ export function selectNativePageTarget({targetInfos=[],url,title}={}) {
   return {status:'matched',target:{targetId:target.targetId,type:target.type,url:target.url,title:target.title??''},matchCount:1};
 }
 
-export const backgroundOnlyRequiredChecks=Object.freeze([
-  'package-and-private-data-identity',
-  'window-minimize-foreground-and-release',
-  'background-tab-foreground-release',
-  'background-audio-recovery',
-  'package-and-private-data-identity-postflight',
+const DESKTOP_CHECK_DECLARATIONS=Object.freeze([
+  Object.freeze({id:'package-and-private-data-identity',adaptationIds:['BUILD-04','PACKAGE-02'],modes:['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']}),
+  Object.freeze({id:'launcher-touch-native-consumers',adaptationIds:['TOUCH-06','TOUCH-15','INPUT-05'],modes:['actions-only']}),
+  Object.freeze({id:'shared-touch-restart',adaptationIds:['TOUCH-18'],modes:['actions-only']}),
+  Object.freeze({id:'shared-replay-recording-and-isolation',adaptationIds:['REPLAY-02','REPLAY-03','REPLAY-04','REPLAY-06'],modes:['replay-recording-only']}),
+  Object.freeze({id:'shared-touch-actions',adaptationIds:['TOUCH-08','RUNTIME-04'],modes:['actions-only']}),
+  Object.freeze({id:'shared-touch-double-tap-bomb',adaptationIds:['TOUCH-11'],modes:['actions-only']}),
+  Object.freeze({id:'shared-touch-deathbomb',adaptationIds:['TOUCH-09'],modes:['actions-only']}),
+  Object.freeze({id:'shared-touch-dialogue-confirm',adaptationIds:['TOUCH-13'],modes:['actions-only']}),
+  Object.freeze({id:'shared-touch-unlimited-result',adaptationIds:['TOUCH-10'],modes:['actions-only']}),
+  Object.freeze({id:'shared-original-menu-dialogue-input',adaptationIds:['INPUT-07'],modes:['input-only']}),
+  Object.freeze({id:'shared-touch-menu-dialogue-gestures',adaptationIds:['TOUCH-12'],modes:['actions-only']}),
+  Object.freeze({id:'shared-launcher-gamepad-mapping',adaptationIds:['INPUT-03'],modes:['input-only']}),
+  Object.freeze({id:'shared-launcher-touch-layout',adaptationIds:['TOUCH-17'],modes:['actions-only']}),
+  Object.freeze({id:'shared-launcher-touch-magnifier',adaptationIds:['TOUCH-19'],modes:['actions-only']}),
+  Object.freeze({id:'native-four-direction-arrows',adaptationIds:['INPUT-01'],modes:['input-only']}),
+  Object.freeze({id:'negative-control-suppressed-iframe-runtime-listener-keyboard-mapping',adaptationIds:['INPUT-01'],modes:['input-only']}),
+  Object.freeze({id:'negative-control-suppressed-host-runtime-bridge-keyboard-mapping',adaptationIds:['INPUT-01'],modes:['input-only']}),
+  Object.freeze({id:'native-key-clear-while-held',adaptationIds:['INPUT-06'],modes:['input-only']}),
+  Object.freeze({id:'audio-output-with-music-disabled',adaptationIds:['AUDIO-02'],modes:['input-only']}),
+  Object.freeze({id:'native-sfx-before-mixed-queue-tail',adaptationIds:['AUDIO-02'],modes:['audio-latency-only']}),
+  Object.freeze({id:'negative-control-sfx-delayed-to-mixed-queue-tail',adaptationIds:['AUDIO-02'],modes:['audio-latency-only']}),
+  Object.freeze({id:'shared-touch-limited',adaptationIds:['TOUCH-01','TOUCH-05','TOUCH-14','TOUCH-16'],modes:['input-only','touch-only']}),
+  Object.freeze({id:'shared-touch-unlimited',adaptationIds:['TOUCH-02','TOUCH-14','TOUCH-16'],modes:['input-only','touch-only']}),
+  Object.freeze({id:'shared-touch-joystick-free',adaptationIds:['TOUCH-04','TOUCH-05','TOUCH-16'],modes:['input-only','touch-only']}),
+  Object.freeze({id:'shared-touch-limited-restored',adaptationIds:['TOUCH-01','TOUCH-14','TOUCH-16'],modes:['input-only','touch-only']}),
+  Object.freeze({id:'shared-touch-two-finger-focus',adaptationIds:['TOUCH-07','TOUCH-15'],modes:['input-only','touch-only']}),
+  Object.freeze({id:'native-four-direction-wasd',adaptationIds:['INPUT-02'],modes:['input-only']}),
+  Object.freeze({id:'touch-fire-focus-and-mixed-input',adaptationIds:['TOUCH-15','INPUT-05'],adaptationIdsByGame:{th09:[]},modes:['input-only']}),
+  Object.freeze({id:'native-pause-state-and-freeze',adaptationIds:['RUNTIME-04'],modes:['input-only']}),
+  Object.freeze({id:'iframe-exit-and-new-epoch',adaptationIds:['RUNTIME-01','RUNTIME-04'],modes:['input-only']}),
+  Object.freeze({id:'window-minimize-foreground-and-release',adaptationIds:['RUNTIME-04','INPUT-06'],modes:['background-only']}),
+  Object.freeze({id:'background-tab-foreground-release',adaptationIds:['RUNTIME-04','INPUT-06'],modes:['background-only']}),
+  Object.freeze({id:'background-audio-recovery',adaptationIds:['AUDIO-04'],modes:['background-only']}),
+  Object.freeze({id:'runtime-epoch-touch-mode-touch-unlimited',adaptationIds:['RUNTIME-01'],modes:[]}),
+  Object.freeze({id:'runtime-epoch-touch-mode-joystick',adaptationIds:['RUNTIME-01','TOUCH-03'],modes:['input-only','touch-only']}),
+  Object.freeze({id:'runtime-epoch-touch-mode-joystick-free',adaptationIds:['RUNTIME-01','TOUCH-04'],modes:[]}),
+  Object.freeze({id:'package-and-private-data-identity-postflight',adaptationIds:['BUILD-04','PACKAGE-02'],modes:['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']}),
 ]);
+const DESKTOP_CHECK_BY_ID=new Map(DESKTOP_CHECK_DECLARATIONS.map(check=>[check.id,check]));
+const DESKTOP_SELECTIVE_MODES=Object.freeze(['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']);
 
-export const backgroundOnlyOmittedChecks=Object.freeze([
-  'native-four-direction-arrows',
-  'negative-control-suppressed-iframe-runtime-listener-keyboard-mapping',
-  'negative-control-suppressed-host-runtime-bridge-keyboard-mapping',
-  'native-key-clear-while-held',
-  'audio-output-with-music-disabled',
-  'simulated-touch-mode-touch',
-  'native-four-direction-wasd',
-  'touch-fire-focus-and-mixed-input',
-  'native-pause-state-and-freeze',
-  'iframe-exit-and-new-epoch',
-]);
-
-export const inputOnlyRequiredChecks=Object.freeze([
-  'package-and-private-data-identity',
-  'native-four-direction-arrows',
-  'negative-control-suppressed-iframe-runtime-listener-keyboard-mapping',
-  'negative-control-suppressed-host-runtime-bridge-keyboard-mapping',
-  'native-key-clear-while-held',
-  'audio-output-with-music-disabled',
-  'simulated-touch-mode-touch',
-  'native-four-direction-wasd',
-  'touch-fire-focus-and-mixed-input',
-  'native-pause-state-and-freeze',
-  'iframe-exit-and-new-epoch',
-  'package-and-private-data-identity-postflight',
-]);
-
-export const inputOnlyOmittedChecks=Object.freeze([
-  'window-minimize-foreground-and-release',
-  'background-tab-foreground-release',
-  'background-audio-recovery',
-]);
-
-export function selectDesktopExecutionMode({backgroundOnly=false,inputOnly=false}={}){
-  if(backgroundOnly&&inputOnly)throw new Error('--background-only and --input-only are mutually exclusive.');
-  return backgroundOnly?'background-only':inputOnly?'input-only':'full-desktop';
+function checksForMode(mode){
+  return DESKTOP_CHECK_DECLARATIONS.filter(check=>check.modes.includes(mode)).map(check=>check.id);
 }
 
-export function desktopCheckScope(mode){
+function omittedForMode(mode){
+  const required=new Set(checksForMode(mode));
+  return DESKTOP_CHECK_DECLARATIONS.filter(check=>!required.has(check.id))
+    .map(check=>check.id);
+}
+
+export const backgroundOnlyRequiredChecks=Object.freeze(checksForMode('background-only'));
+export const backgroundOnlyOmittedChecks=Object.freeze(omittedForMode('background-only'));
+export const inputOnlyRequiredChecks=Object.freeze(checksForMode('input-only'));
+export const inputOnlyOmittedChecks=Object.freeze(omittedForMode('input-only'));
+export const touchOnlyRequiredChecks=Object.freeze(checksForMode('touch-only'));
+export const touchOnlyOmittedChecks=Object.freeze(omittedForMode('touch-only'));
+
+export function desktopCheckAdaptationIds(id,{game}={}){
+  const declaration=DESKTOP_CHECK_BY_ID.get(id);
+  if(!declaration)throw new RangeError(`Unknown desktop check ${String(id)}`);
+  return [...(declaration.adaptationIdsByGame?.[game]??declaration.adaptationIds)];
+}
+
+export function desktopAdaptationIdsForMode(mode,options={}){
+  if(!DESKTOP_SELECTIVE_MODES.includes(mode))throw new RangeError(`Unknown desktop check scope ${String(mode)}`);
+  const ids=[];
+  for(const checkId of checksForMode(mode))for(const adaptationId of desktopCheckAdaptationIds(checkId,options))
+    if(!ids.includes(adaptationId))ids.push(adaptationId);
+  return ids;
+}
+
+export function selectDesktopExecutionMode({backgroundOnly=false,inputOnly=false,touchOnly=false,actionsOnly=false,replayRecordingOnly=false,audioLatencyOnly=false}={}){
+  const selected=[backgroundOnly&&'background-only',inputOnly&&'input-only',touchOnly&&'touch-only',actionsOnly&&'actions-only',replayRecordingOnly&&'replay-recording-only',audioLatencyOnly&&'audio-latency-only'].filter(Boolean);
+  if(selected.length>1)throw new Error(`${selected.map(mode=>`--${mode}`).join(' and ')} are mutually exclusive.`);
+  return selected[0]??'full-desktop';
+}
+
+function baseDesktopCheckScope(mode){
   if(mode==='background-only')return{requiredIds:[...backgroundOnlyRequiredChecks],omittedIds:[...backgroundOnlyOmittedChecks]};
   if(mode==='input-only')return{requiredIds:[...inputOnlyRequiredChecks],omittedIds:[...inputOnlyOmittedChecks]};
+  if(mode==='touch-only')return{requiredIds:[...touchOnlyRequiredChecks],omittedIds:[...touchOnlyOmittedChecks]};
+  if(mode==='audio-latency-only'||mode==='actions-only'||mode==='replay-recording-only')return{requiredIds:checksForMode(mode),omittedIds:omittedForMode(mode)};
   if(mode==='full-desktop')return{requiredIds:null,omittedIds:[]};
   throw new RangeError(`Unknown desktop check scope ${String(mode)}`);
+}
+
+/** Select assertions inside an existing scene group while retaining artifact gates. */
+export function desktopCheckScope(mode,{adaptationIds=[],game}={}){
+  const base=baseDesktopCheckScope(mode);
+  if(!Array.isArray(adaptationIds))throw Error('Select distinct adaptation check IDs');
+  if(!adaptationIds.length)return base;
+  if(base.requiredIds===null)throw Error('Numbered check selection requires an explicit desktop scene mode');
+  if(adaptationIds.some(id=>!/^([A-Z]+-)+\d+$/.test(id))||new Set(adaptationIds).size!==adaptationIds.length)
+    throw Error('Select distinct adaptation check IDs');
+  const supported=new Set(base.requiredIds.flatMap(id=>desktopCheckAdaptationIds(id,{game})));
+  for(const id of adaptationIds)if(!supported.has(id))throw Error(`${id} is outside the ${mode} scene group`);
+  const selected=new Set(adaptationIds);
+  const requiredIds=base.requiredIds.filter(id=>id==='package-and-private-data-identity'||id==='package-and-private-data-identity-postflight'||
+    desktopCheckAdaptationIds(id,{game}).some(check=>selected.has(check)));
+  const required=new Set(requiredIds);
+  return{requiredIds,omittedIds:DESKTOP_CHECK_DECLARATIONS.filter(check=>!required.has(check.id)).map(check=>check.id)};
 }
 
 export function summarizeDesktopCheckScope(checks,{requiredIds=[],omittedIds=[]}={}) {

@@ -1,10 +1,11 @@
 import {execFileSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {runTasks} from '../tools/testing/runner.mjs';
-import {repository, suites, profiles} from './suites.mjs';
+import {repository, suites, profiles, trackedFiles} from './suites.mjs';
 import {sourceSnapshot} from '../tools/testing/source-snapshot.mjs';
 import {acquireOutputLock} from '../tools/testing/output-lock.mjs';
 import {runWithReport} from '../tools/testing/cli-report.mjs';
+import {assertNoSameProfileTestDuplicates,buildExecutionOwnership,summarizeExecutionOwnership} from '../tools/testing/execution-ownership.mjs';
 import {freshAdaptationOutput,runAdaptationVerification} from './adaptation/execution.mjs';
 
 const options = {suite:[], profile:[], jobs:4, output:resolve(repository, 'artifacts/validation/tests')};
@@ -14,6 +15,7 @@ if(outputHint)options.output=resolve(outputHint.slice('--output='.length));
 let argumentError;
 try{for (const argument of argumentsForRun) {
   if (argument === '--list') {options.list=true; continue;}
+  if (argument === '--ownership') {options.ownership=true; continue;}
   if (argument === '--plan') {options.planOnly=true; continue;}
   const match = argument.match(/^--(suite|profile|jobs|output|game|variant|check|inputs|resume|rerun-failed)=(.+)$/);
   if (!match) throw new Error(`Unknown test argument: ${argument}`);
@@ -36,9 +38,15 @@ if(options.profile.includes('adaptation')){
     if(report.failure)console.error(report.failure);
     if(!report.passed&&report.status!=='planned')process.exitCode=1;
   }catch(error){console.error(error.message);process.exitCode=1;}
-} else if (options.list&&!argumentError) {
+} else if ((options.list||options.ownership)&&!argumentError) {
   const catalog=suites({output:options.output});
-  console.log(JSON.stringify(Object.entries(catalog).map(([id, suite])=>({id, tier:suite.tier, scope:suite.scope})), null, 2));
+  if(options.ownership){
+    const profileSelections=Object.fromEntries(Object.entries(profiles).map(([name,ids])=>[name,ids]));
+    const ownership=await buildExecutionOwnership({root:repository,catalog,profileSelections,files:trackedFiles(repository)});
+    assertNoSameProfileTestDuplicates(ownership);
+    if(ownership.managedOrphans.length)throw new Error(`Executable tests lost their declared owner: ${ownership.managedOrphans.map(item=>item.file).join(', ')}`);
+    console.log(JSON.stringify(summarizeExecutionOwnership(ownership),null,2));
+  }else console.log(JSON.stringify(Object.entries(catalog).map(([id, suite])=>({id, tier:suite.tier, scope:suite.scope})), null, 2));
 } else {
   const release=await acquireOutputLock(options.output);
   try {
@@ -57,6 +65,10 @@ if(options.profile.includes('adaptation')){
   for (const id of selected) if (!catalog[id]) throw new Error(`Unknown test suite: ${id}`);
   // Resolve every input before starting: incomplete selections cannot pass.
   const planned = [...selected].map(id=>({id, ...catalog[id], tasks:catalog[id].tasks()}));
+  const profileSelections={...Object.fromEntries(options.profile.map(name=>[name,profiles[name]])),selection:[...selected]};
+  const ownership=await buildExecutionOwnership({root:repository,catalog,profileSelections,files:trackedFiles(repository)});
+  assertNoSameProfileTestDuplicates(ownership);
+  if(ownership.managedOrphans.length)throw new Error(`Executable tests lost their declared owner: ${ownership.managedOrphans.map(item=>item.file).join(', ')}`);
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], {cwd:repository, encoding:'utf8', windowsHide:true}).trim();
   const source = sourceSnapshot(repository);
   Object.assign(summary,{commit,source,selected:[...selected],results:[]});
@@ -77,7 +89,7 @@ if(options.profile.includes('adaptation')){
         }
       }
       const report = await runTasks(suite.tasks, {output:resolve(options.output, suite.id),
-        concurrency:suite.sequential ? 1 : Math.min(suite.concurrency ?? 32,options.jobs), failFast:suite.sequential === true, signal:controller.signal,
+        concurrency:suite.sequential ? 1 : Math.min(suite.concurrency ?? 32,options.jobs), failFast:suite.failFast??suite.sequential===true, signal:controller.signal,
         metadata:{commit, source,runId:summary.runId, node:process.versions.node, platform:process.platform, suite:suite.id, scope:suite.scope},
         onResult:result=>console.log(`${result.id}: ${result.status} (${(result.durationMs/1000).toFixed(1)}s) ${result.log}`)});
       results.push({suite:suite.id, status:report.status, report:resolve(options.output, suite.id, 'report.json')});

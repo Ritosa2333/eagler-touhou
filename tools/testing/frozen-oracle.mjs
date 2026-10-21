@@ -64,9 +64,110 @@ async function coreEvidence(root) {
   return {core,coreSha256,manifest,inputs};
 }
 
-function countsFromLog(text) {
-  const count=key=>Number(text.match(new RegExp('(?:^|\\n)(?:ℹ )?'+key+' ([0-9.]+)'))?.[1]??0);
-  return Object.fromEntries(['tests','pass','fail','cancelled','skipped','todo'].map(key=>[key,count(key)]));
+const testEventReporter=new URL('./oracle-test-reporter.mjs',import.meta.url).href;
+
+function normalizedPath(path) {
+  const value=resolve(path).replaceAll('\\','/');
+  return process.platform==='win32'?value.toLowerCase():value;
+}
+
+/** Return the exact test-runner arguments used by candidate and maintenance oracle tasks. */
+export function oracleTestRunnerArgs({files,eventsPath,concurrency=1}) {
+  if (!Array.isArray(files)||!files.length||files.some(file=>typeof file!=='string'))
+    throw new Error('Oracle test runner requires manifest files');
+  if (typeof eventsPath!=='string'||!eventsPath) throw new Error('Oracle test event path is required');
+  if (!Number.isSafeInteger(concurrency)||concurrency<1||concurrency>32)
+    throw new Error('Oracle test concurrency must be a positive integer');
+  return ['--test','--test-concurrency='+concurrency,
+    '--test-reporter=spec','--test-reporter-destination=stdout',
+    '--test-reporter='+testEventReporter,'--test-reporter-destination='+resolve(eventsPath),
+    ...files];
+}
+
+const emptyCounts=()=>({tests:0,pass:0,fail:0,cancelled:0,skipped:0,todo:0});
+const countFields=['tests','passed','failed','cancelled','skipped','todo'];
+
+function numericSummary(counts) {
+  if (!counts||typeof counts!=='object'||countFields.some(field=>!Number.isSafeInteger(counts[field])||counts[field]<0)) return null;
+  return {tests:counts.tests,pass:counts.passed,fail:counts.failed,cancelled:counts.cancelled,
+    skipped:counts.skipped,todo:counts.todo};
+}
+
+/** Validate Node test-runner events against each declared manifest file. */
+export function assessOracleTestEvents(text,{root,files}) {
+  const expected=new Map(files.map(file=>[normalizedPath(resolve(root,'tests/cpp',file)),file]));
+  const perFile=new Map([...expected].map(([key,file])=>[key,{file,registered:false,completed:false,executedNonSkipTodo:0,
+    observed:emptyCounts(),summary:null}]));
+  const errors=[];
+  let globalSummary=null;
+  for (const [index,line] of text.split(/\r?\n/).entries()) {
+    if (!line.trim()) continue;
+    let event;
+    try {event=JSON.parse(line);} catch {errors.push(`invalid event JSON at line ${index+1}`);continue;}
+    if (!event||typeof event.type!=='string'||!event.data||typeof event.data!=='object') {
+      errors.push(`invalid event shape at line ${index+1}`);continue;
+    }
+    const data=event.data;
+    const fileKey=typeof data.file==='string'?normalizedPath(data.file):null;
+    const fileEvidence=fileKey?perFile.get(fileKey):null;
+    if (['test:enqueue','test:dequeue','test:start','test:complete','test:pass','test:fail','test:skip','test:todo','test:summary'].includes(event.type)&&
+        fileKey&&!fileEvidence) errors.push(`unmanifested test event file ${data.file}`);
+    if (event.type==='test:enqueue'&&fileEvidence&&data.type==='test'&&typeof data.name==='string'&&
+        normalizedPath(data.name)===fileKey) fileEvidence.registered=true;
+    if (event.type==='test:complete'&&fileEvidence&&typeof data.name==='string'&&
+        normalizedPath(data.name)===fileKey&&data.details?.type==='test') fileEvidence.completed=true;
+    if (event.type==='test:summary') {
+      const counts=numericSummary(data.counts);
+      if (!counts) {errors.push(`invalid test summary for ${data.file??'group'}`);continue;}
+      if (fileEvidence) {
+        if (fileEvidence.summary) errors.push(`duplicate test summary for ${fileEvidence.file}`);
+        fileEvidence.summary=counts;
+      } else if (!data.file) {
+        if (globalSummary) errors.push('duplicate aggregate test summary');
+        globalSummary=counts;
+      } else errors.push(`summary is not bound to a manifest file: ${data.file}`);
+    }
+    if (!['test:pass','test:fail','test:skip','test:todo'].includes(event.type)||data.details?.type!=='test') continue;
+    if (!fileEvidence) {errors.push(`test outcome has no manifest file at line ${index+1}`);continue;}
+    if (typeof data.name==='string'&&normalizedPath(data.name)===fileKey) continue;
+    const outcome=fileEvidence.observed;
+    outcome.tests++;
+    if (event.type==='test:skip'||data.skip===true) outcome.skipped++;
+    else if (event.type==='test:todo'||data.todo===true) outcome.todo++;
+    else if (event.type==='test:fail') {outcome.fail++;fileEvidence.executedNonSkipTodo++;}
+    else {outcome.pass++;fileEvidence.executedNonSkipTodo++;}
+  }
+  const filesEvidence=[];
+  for (const item of perFile.values()) {
+    const {summary,observed}=item;
+    if (!item.registered) errors.push(`manifest test file was not registered: ${item.file}`);
+    if (!item.completed) errors.push(`manifest test file did not complete: ${item.file}`);
+    if (!summary&&observed.tests>0) errors.push(`manifest test file has no file summary: ${item.file}`);
+    if (item.executedNonSkipTodo===0) errors.push(`manifest test file executed no non-skip/non-todo test: ${item.file}`);
+    if (summary) {
+      if (summary.tests!==observed.tests||summary.pass!==observed.pass||summary.fail!==observed.fail||
+          summary.skipped!==observed.skipped||summary.todo!==observed.todo)
+        errors.push(`structured event totals disagree with file summary: ${item.file}`);
+      if (summary.cancelled>0) errors.push(`manifest test file has cancelled tests: ${item.file}`);
+    }
+    filesEvidence.push({...item,...(summary??observed),observed});
+  }
+  const totals=emptyCounts();
+  for (const item of filesEvidence) for (const field of Object.keys(totals)) totals[field]+=item[field]??0;
+  if (!globalSummary) errors.push('missing aggregate test summary');
+  else if (Object.keys(totals).some(field=>totals[field]!==globalSummary[field]))
+    errors.push('aggregate test summary disagrees with manifest file summaries');
+  return {valid:errors.length===0&&files.length>0&&totals.tests>0&&totals.pass===totals.tests&&totals.fail===0&&
+      totals.cancelled===0&&totals.skipped===0&&totals.todo===0,
+    counts:totals,files:filesEvidence,errors};
+}
+
+async function readOracleTestEvents(path,options) {
+  try {return assessOracleTestEvents(await readFile(path,'utf8'),options);}
+  catch (error) {
+    return {valid:false,counts:emptyCounts(),files:options.files.map(file=>({file,registered:false,completed:false,
+      executedNonSkipTodo:0,...emptyCounts()})),errors:[`could not read Node test events: ${error.message}`]};
+  }
 }
 
 function blockedInputsEqual(before=[],after=[]) {
@@ -96,15 +197,24 @@ export async function preflightFrozenOracle({root,environment=process.env}) {
 }
 
 /** Execute only manifest-classified candidate groups. Missing private inputs block that group and never suppress ready groups. */
-export async function runFrozenOracle({root,name='full-suite',concurrency=2,timeoutMs=7200000,environment=process.env}) {
+export async function runFrozenOracle({root,name='full-suite',concurrency=2,timeoutMs=7200000,
+  overallTimeoutMs=7200000,signal,environment=process.env}) {
   if (!validEvidenceName(name)) throw new Error('Invalid evidence name');
   if (!Number.isSafeInteger(concurrency)||concurrency<1||concurrency>4) throw new Error('Test concurrency must be 1..4');
+  if (!Number.isSafeInteger(timeoutMs)||timeoutMs<1||!Number.isSafeInteger(overallTimeoutMs)||overallTimeoutMs<1)
+    throw new Error('Oracle time budgets must be positive integer milliseconds');
   const directory=resolve(root,'artifacts/cpp/verification');
   await mkdir(directory,{recursive:true});
   const resultPath=resolve(directory,name+'-result.json'),runId=randomUUID(),startedAt=new Date().toISOString();
   const running={schema:'eagler-touhou/native-oracle-result/1',runId,status:'running',passed:false,exitCode:1,
-    owner:basename(dirname(resolve(root))),name,startedAt,baselineChanged:null,protectedInputsChanged:null};
+    owner:basename(dirname(resolve(root))),name,startedAt,timeoutMs,overallTimeoutMs,terminalReason:null,
+    baselineChanged:null,protectedInputsChanged:null};
   await writeJsonAtomic(resultPath,running,runId);
+  const deadlineController=new AbortController();
+  let deadlineExceeded=false;
+  const deadlineTimer=setTimeout(()=>{deadlineExceeded=true;deadlineController.abort();},overallTimeoutMs);
+  deadlineTimer.unref();
+  const runSignal=signal?AbortSignal.any([signal,deadlineController.signal]):deadlineController.signal;
   try {
   const suite=await loadOracleSuite(root),repository=gitRoot(root);
   const headBefore=gitRevision(repository);
@@ -121,16 +231,24 @@ export async function runFrozenOracle({root,name='full-suite',concurrency=2,time
 
   const baselineBefore=await acceptedReferenceSnapshot(root,suite);
   const runnable=suite.candidateGroups.filter(group=>preflightById.get(group.id)?.status==='ready');
-  const tasks=runnable.map(group=>({id:group.id,command:process.execPath,
-    args:['--test','--test-concurrency='+concurrency,'--test-reporter=spec',...group.tests.map(file=>resolve(root,'tests/cpp',file))],
-    cwd:root,timeoutMs,environment:scopeForRun(suite,group,preflightById.get(group.id)?.envOverrides??{},environment,
-      {EAGLER_ORACLE_ROOT:root,TH11_CORE_TEST_FILE:core}).environment}));
+  const eventReports=new Map();
+  const tasks=[];
+  for (const group of runnable) {
+    const eventsPath=resolve(directory,name,'node-events-'+group.id+'.jsonl');
+    await mkdir(dirname(eventsPath),{recursive:true});
+    eventReports.set(group.id,eventsPath);
+    tasks.push({id:group.id,command:process.execPath,
+      args:oracleTestRunnerArgs({files:group.tests.map(file=>resolve(root,'tests/cpp',file)),eventsPath,concurrency}),
+      cwd:root,timeoutMs,environment:scopeForRun(suite,group,preflightById.get(group.id)?.envOverrides??{},environment,
+        {EAGLER_ORACLE_ROOT:root,TH11_CORE_TEST_FILE:core}).environment});
+  }
   let taskReport=null;
-  const nativePolicy=validateNativeEnvironmentPolicy(suite),baseEnvironment={...environment};
-  for (const key of nativePolicy.clearInherited) delete baseEnvironment[key];
-  if (tasks.length) taskReport=await runTasks(tasks,{output:resolve(directory,name),concurrency:1,environment:{...baseEnvironment,
+  const nativePolicy=validateNativeEnvironmentPolicy(suite),baseEnvironment={...environment},
+    unsetEnvironment=[...new Set([...nativePolicy.clearInherited,'NODE_TEST_CONTEXT'])];
+  for (const key of unsetEnvironment) delete baseEnvironment[key];
+  if (tasks.length) taskReport=await runTasks(tasks,{output:resolve(directory,name),concurrency:1,signal:runSignal,environment:{...baseEnvironment,
     NO_COLOR:'1',NODE_DISABLE_COLORS:'1',TH11_CORE_TEST_FILE:core,EAGLER_ORACLE_ROOT:root},
-    unsetEnvironment:nativePolicy.clearInherited,
+    unsetEnvironment,
     metadata:{schema:'eagler-touhou/native-oracle-groups/1',owner:suite.owner}});
   const taskById=new Map((taskReport?.results??[]).map(task=>[task.id,task]));
   const postflightCache=new Map(),postflightById=new Map();
@@ -152,12 +270,12 @@ export async function runFrozenOracle({root,name='full-suite',concurrency=2,time
         protectedInputsChanged:postflight?.protectedInputsChanged??true,effectiveScope});
       continue;
     }
-    const text=task?.log?await readFile(task.log,'utf8'):'';
-    const counts=countsFromLog(text),afterInputs=postflight.after,privateInputsChanged=postflight.protectedInputsChanged;
-    const passed=task?.status==='passed'&&counts.tests>0&&counts.pass===counts.tests&&counts.fail===0&&
-      counts.cancelled===0&&counts.skipped===0&&counts.todo===0&&!privateInputsChanged;
+    const eventReport=await readOracleTestEvents(eventReports.get(group.id),{root,files:group.tests});
+    const counts=eventReport.counts,afterInputs=postflight.after,privateInputsChanged=postflight.protectedInputsChanged;
+    const passed=task?.status==='passed'&&eventReport.valid&&!runSignal.aborted&&!privateInputsChanged;
     groups.push({id:group.id,status:passed?'passed':'failed',testFiles:group.tests.length,...counts,
-      durationMs:task?.durationMs??0,exitCode:task?.code??null,log:task?.log??null,
+      taskStatus:task?.status??'not-started',durationMs:task?.durationMs??0,exitCode:task?.code??null,log:task?.log??null,
+      nodeEvents:eventReports.get(group.id)??null,testFileEvidence:eventReport.files,nodeEventErrors:eventReport.errors,
       inputsBefore:initial.inputs,inputsAfter:afterInputs.inputs,privateInputsChanged,protectedInputsChanged:privateInputsChanged,
       inputErrors:afterInputs.blocked,effectiveScope});
   }
@@ -180,10 +298,14 @@ export async function runFrozenOracle({root,name='full-suite',concurrency=2,time
   const counts=Object.fromEntries(['tests','pass','fail','cancelled','skipped','todo'].map(key=>
     [key,groups.reduce((sum,group)=>sum+group[key],0)]));
   const protectedInputsChanged=groups.some(group=>group.protectedInputsChanged);
-  const passed=groups.length>0&&groups.every(group=>group.status==='passed')&&counts.tests>0&&counts.pass===counts.tests&&
+  const terminalReason=deadlineExceeded?'time-budget-exceeded':signal?.aborted?'cancelled':
+    groups.some(group=>group.taskStatus==='timeout')?'task-timeout':
+      groups.some(group=>group.taskStatus==='cancelled')?'cancelled':null;
+  const passed=!terminalReason&&!runSignal.aborted&&groups.length>0&&groups.every(group=>group.status==='passed')&&counts.tests>0&&counts.pass===counts.tests&&
       counts.fail===0&&counts.cancelled===0&&counts.skipped===0&&counts.todo===0&&
       hash(await readFile(core))===coreSha256&&!testChanges.length&&!inventoryChanged&&!nativeInputsChanged&&!baselineChanged&&!protectedInputsChanged;
   const result={...running,status:passed?'passed':'failed',finishedAt:new Date().toISOString(),passed,exitCode:passed?0:1,
+    terminalReason,
     owner:suite.owner,game:suite.game,variant:suite.variant,
     discoveredFiles:suite.discovered.length,candidateFiles:tests.length,maintenanceFiles:suite.tests.length-tests.length,
     testFiles:groups.filter(group=>group.status==='passed'||group.status==='failed').reduce((sum,group)=>sum+group.testFiles,0),
@@ -198,14 +320,17 @@ export async function runFrozenOracle({root,name='full-suite',concurrency=2,time
   return result;
   } catch(error) {
     const failed={...running,status:'failed',finishedAt:new Date().toISOString(),passed:false,exitCode:1,
+      terminalReason:deadlineExceeded?'time-budget-exceeded':signal?.aborted?'cancelled':null,
       error:{name:error.name??'Error',message:error.message??String(error)}};
     await writeJsonAtomic(resultPath,failed,runId);
     throw error;
+  } finally {
+    clearTimeout(deadlineTimer);
   }
 }
 
 /** Run one explicitly selected maintenance task into ignored staging only. */
-export async function runOracleMaintenance({root,taskId,name,timeoutMs=7200000,environment=process.env}) {
+export async function runOracleMaintenance({root,taskId,name,timeoutMs=7200000,signal,environment=process.env}) {
   if (!validEvidenceName(taskId)||!validEvidenceName(name)) throw new Error('Maintenance task and evidence name are required');
   const suite=await loadOracleSuite(root),task=suite.maintenance?.find(item=>item.id===taskId);
   if (!task) throw new Error(`Unknown maintenance task: ${taskId}`);
@@ -214,32 +339,37 @@ export async function runOracleMaintenance({root,taskId,name,timeoutMs=7200000,e
       [...suite.baseInputs,...(task.requiredInputs??[])],scope.environment);
   if (preflight.status!=='ready') return {passed:false,status:'blocked',exitCode:1,task:taskId,output,blocked:preflight.blocked,inputs:preflight.inputs};
   if(task.kind!=='test')throw new Error(`Maintenance task must use the Node test runner: ${taskId}`);
-  const inputFile=resolve(root,'tests/cpp',task.file),args=['--test','--test-reporter=spec',inputFile];
+  const inputFile=resolve(root,'tests/cpp',task.file),eventsPath=resolve(output,'logs','node-events.jsonl'),
+    args=oracleTestRunnerArgs({files:[inputFile],eventsPath});
   const repository=gitRoot(root),headBefore=gitRevision(repository),evidence=await coreEvidence(root),
     nativeBefore=await nativeInputSnapshot(root,suite,environment),baselineBefore=await acceptedReferenceSnapshot(root,suite);
   assertBuildMatchesNativeSnapshot(evidence.manifest,nativeBefore);
   const taskScope=scopeForRun(suite,task,preflight.envOverrides,environment,
     {EAGLER_ORACLE_ROOT:root,TH11_CORE_TEST_FILE:evidence.core,EAGLER_MAINTENANCE_OUTPUT:output});
-  const baseEnvironment={...environment};
-  for (const key of policy.clearInherited) delete baseEnvironment[key];
+  const baseEnvironment={...environment},unsetEnvironment=[...new Set([...policy.clearInherited,'NODE_TEST_CONTEXT'])];
+  for (const key of unsetEnvironment) delete baseEnvironment[key];
   const report=await runTasks([{id:taskId,command:process.execPath,args,cwd:root,timeoutMs,
     environment:taskScope.environment}],
   {output:resolve(output,'logs'),concurrency:1,environment:{...baseEnvironment,NO_COLOR:'1',NODE_DISABLE_COLORS:'1',
-    TH11_CORE_TEST_FILE:evidence.core,EAGLER_ORACLE_ROOT:root},unsetEnvironment:policy.clearInherited,
+    TH11_CORE_TEST_FILE:evidence.core,EAGLER_ORACLE_ROOT:root},unsetEnvironment,
+    signal,
     metadata:{schema:'eagler-touhou/oracle-maintenance/1',owner:suite.owner,task:taskId}});
-  const taskResult=report.results[0],log=taskResult.log?await readFile(taskResult.log,'utf8'):'',counts=countsFromLog(log),
+  const taskResult=report.results[0],eventAssessment=await readOracleTestEvents(eventsPath,{root,files:[task.file]}),
+    counts=eventAssessment.counts,
     after=await preflightOracleInputs(root,suite,[...suite.baseInputs,...(task.requiredInputs??[])],taskScope.environment),
     nativeAfter=await nativeInputSnapshot(root,suite,environment),nativeInputsChanged=!nativeInputSnapshotsEqual(nativeBefore,nativeAfter),
     headAfter=gitRevision(repository);
   let baselineAfter=null,baselineError=null;
   try {baselineAfter=await acceptedReferenceSnapshot(root,suite);} catch(error) {baselineError=error.message;}
   const baselineChanged=!acceptedReferenceSnapshotsEqual(baselineBefore,baselineAfter);
-  const passed=report.status==='passed'&&taskResult.status==='passed'&&counts.tests>0&&counts.pass===counts.tests&&
-    counts.fail===0&&counts.cancelled===0&&counts.skipped===0&&counts.todo===0&&after.status==='ready'&&
+  const passed=report.status==='passed'&&taskResult.status==='passed'&&eventAssessment.valid&&after.status==='ready'&&
     inputSnapshotsEqual(preflight.inputs,after.inputs)&&!nativeInputsChanged&&!baselineChanged;
+  const terminalReason=taskResult.status==='timeout'?'task-timeout':taskResult.status==='cancelled'?'cancelled':null;
   return {passed,status:passed?'passed':'failed',exitCode:passed?0:1,task:taskId,output,durationMs:report.durationMs,
+    terminalReason,
     inputsBefore:preflight.inputs,inputsAfter:after.inputs,inputChanges:!inputSnapshotsEqual(preflight.inputs,after.inputs),
     nativeInputsChanged,nativeInputs:{before:nativeBefore,after:nativeAfter},head:{before:headBefore,after:headAfter},
     effectiveScope:taskScope.effective,baselineChanged,acceptedReference:{before:baselineBefore,after:baselineAfter,error:baselineError},
-    ...counts,report:resolve(output,'logs','report.json'),log:taskResult.log};
+    ...counts,testFileEvidence:eventAssessment.files,nodeEventErrors:eventAssessment.errors,nodeEvents:eventsPath,
+    report:resolve(output,'logs','report.json'),log:taskResult.log};
 }

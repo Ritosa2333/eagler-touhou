@@ -160,13 +160,33 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
+    - run: npm --prefix launcher ci --ignore-scripts
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/eagler-wasi-sdk-34.deb
+        key: wasi-sdk-34-09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a
+    - name: Prepare pinned wasm32 test compiler
+      shell: bash
+      run: |
+        set -euo pipefail
+        package="$HOME/.cache/eagler-wasi-sdk-34.deb"
+        mkdir -p "$HOME/.cache" "$RUNNER_TEMP/eagler-wasi-sdk"
+        if [ ! -f "$package" ]; then
+          curl --fail --location --retry 2 --max-time 300 --output "$package" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb
+        fi
+        echo "09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package" | sha256sum --check
+        dpkg-deb --extract "$package" "$RUNNER_TEMP/eagler-wasi-sdk"
+        echo "WASI_SDK_PATH=$RUNNER_TEMP/eagler-wasi-sdk/opt/wasi-sdk" >> "$GITHUB_ENV"
     - run: node tools/ci/validate-source-entries.mjs
       env:
         EAGLER_CI_AFFECTED: ${{ needs.scope.outputs.affected }}
     - run: node tests/run.mjs --suite=tooling
+    - run: node tests/run.mjs --suite=ports-touch-wasi --output=artifacts/validation/ports-touch-wasi
   port-adaptation:
     needs: scope
     if: ${{ needs.scope.outputs.port-adaptation == 'true' }}
@@ -902,14 +922,14 @@ jobs:
     - run: npm --prefix launcher ci --ignore-scripts
     - run: python -m pip install --requirement launcher/tests/requirements-browser.txt
     - run: python -m playwright install --with-deps chromium
-    - name: Check the Runtime protocol contract across registered variants
-      run: node launcher/tests/test-runtime-protocol-contract.mjs
-    - name: Check native gamepad contract
-      run: node launcher/tests/test-gamepad-contract.mjs
-    - name: Exercise all Runtime Shell variants in Chromium
-      run: python launcher/tests/test-keyboard-mapping-browser.py --workspace=.
-    - name: Verify the disconnected Shell fails the same assertion
-      run: python launcher/tests/test-keyboard-mapping-browser.py --workspace=. --negative-control
+    - name: Run shared input, audio output and Runtime Shell contracts
+      run: node tests/run.mjs --suite=browser-shell --output=artifacts/test-results/browser-shell-runtime
+    - uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        name: browser-shell-runtime
+        path: artifacts/test-results/browser-shell-runtime
+        if-no-files-found: error
   checks:
     name: Checks
     if: ${{ always() }}

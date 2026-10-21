@@ -3,13 +3,14 @@ import {test} from 'node:test';
 import {selectedPortGames} from '../../launcher/tests/support/port-selection.mjs';
 import {STATUS_SCHEMA,checkStates,retainedVerification,validateStatusReport} from './status.mjs';
 import {targets,dependencyRevision,runtimeDependencyInputs,sourceIdentity,inspectInputs} from './inputs.mjs';
-import {mkdtempSync,mkdirSync,writeFileSync,rmSync} from 'node:fs';
+import {appendFileSync,mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
 import {parseRuntimeDependencyArgs,planRuntimeDependencyPreparation,executeRuntimeDependencyCommands} from '../../launcher/scripts/prepare-runtime-dependencies.mjs';
 import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
+import {runSharedGates,sharedGateTasks} from './check.mjs';
 
-test('th20 compiler include precedence uses the same module order on every platform',()=>{
-  const input=inspectInputs(targets({game:'th20',variant:'normal'})[0]);
+test('th20 compiler include precedence uses the same module order on every platform',async()=>{
+  const input=await inspectInputs(targets({game:'th20',variant:'normal'})[0]);
   const modules=input.compilerFlags.map(flag=>flag.replaceAll('\\','/'))
     .filter(flag=>/-I.*\/ports\/th20\/src\/[^/]+$/.test(flag));
   assert.ok(modules.some(flag=>flag.endsWith('/game_session')));
@@ -49,6 +50,40 @@ test('single-game inspection is explicit and ordinary tests retain full coverage
     assert.throws(()=>selectedPortGames(['th06'],{EAGLER_PORT_CHECK_GAMES:value}));
   assert.throws(()=>targets({game:'th99'}));
   assert.throws(()=>targets({game:'th20',variant:'multiplayer'}));
+});
+
+test('shared gates keep running after a failed file and preserve the source/module gate record',async()=>{
+  const directory=mkdtempSync(resolve(tmpdir(),'eagler-shared-gates-'));
+  const launcher=resolve(directory,'launcher'),output=resolve(directory,'output'),marker=resolve(directory,'executed.txt');
+  mkdirSync(launcher,{recursive:true});
+  const helper={path:'C:\\Tools\\vctip.exe',sha256:'a'.repeat(64)};
+  const childTasks=sharedGateTasks({id:'source-gate',files:['launcher/first-fails.mjs']},['th08'],
+    {repositoryRoot:directory,compilerHelpers:[helper]});
+  assert.deepEqual(childTasks[0].cleanupImages,[helper]);
+  assert.equal(childTasks[0].environment.EAGLER_PORT_CHECK_GAMES,'["th08"]');
+  const script=(name,line,exit='')=>writeFileSync(resolve(launcher,name),
+    `import {appendFileSync} from 'node:fs';appendFileSync(${JSON.stringify(marker)},${JSON.stringify(line+'\\n')});${exit}\n`);
+  script('first-fails.mjs','first-fails','process.exitCode=7;');
+  script('same-gate-still-runs.mjs','same-gate-still-runs');
+  script('next-gate-runs.mjs','next-gate-runs');
+  try {
+    const gates=await runSharedGates([
+      {id:'failing-shared',level:'module',checks:['INPUT-01'],files:['launcher/first-fails.mjs','launcher/same-gate-still-runs.mjs']},
+      {id:'next-shared',level:'source-contract',checks:['DISPLAY-01'],files:['launcher/next-gate-runs.mjs']},
+    ],{output,games:['th08'],repositoryRoot:directory});
+    assert.deepEqual(gates.map(gate=>({id:gate.id,level:gate.level,checks:gate.checks,complete:gate.complete,status:gate.status})),[
+      {id:'failing-shared',level:'module',checks:['INPUT-01'],complete:true,status:'failed'},
+      {id:'next-shared',level:'source-contract',checks:['DISPLAY-01'],complete:true,status:'passed'},
+    ]);
+    assert.equal(readFileSync(marker,'utf8'),'first-fails\\n'+'same-gate-still-runs\\n'+'next-gate-runs\\n');
+    assert.match(readFileSync(resolve(output,'failing-shared.log'),'utf8'),/launcher\/first-fails\.mjs \[failed\]/);
+    assert.match(readFileSync(resolve(output,'failing-shared.log'),'utf8'),/same-gate-still-runs\.mjs \[passed\]/);
+    assert.match(readFileSync(resolve(output,'next-shared.log'),'utf8'),/next-gate-runs\.mjs \[passed\]/);
+    const taskReport=JSON.parse(readFileSync(resolve(output,'failing-shared-tasks/report.json'),'utf8'));
+    assert.deepEqual(taskReport.results.map(result=>result.status),['failed','passed']);
+  } finally {
+    assert.equal(dirname(directory),resolve(tmpdir()));rmSync(directory,{recursive:true,force:true});
+  }
 });
 
 test('failed evidence wins, partial checks cannot complete an acceptance item',()=>{

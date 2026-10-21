@@ -1,10 +1,20 @@
 import {evaluateDesktopGameplayReadiness} from '../../../tools/ports/runtime-desktop-readiness.mjs';
 import {practiceGameplayReady} from '../../../tools/ports/practice-observations.mjs';
 import {PRODUCT_GAMES} from '../../../common/contracts/product-catalog.mjs';
+import {ADAPTATION_ADAPTERS,resolveAdaptationAdapter} from './registry.mjs';
+import {TITLE_FLOW_STEPS_SCHEMA,executeTitleFlowSteps,validateTitleFlow} from './flow-steps.mjs';
+
+function registeredStrategy(flow){
+  if(flow?.schema===TITLE_FLOW_STEPS_SCHEMA)return 'steps';
+  return flow?.strategy;
+}
 
 const TITLE_ENTRY=Object.freeze({
-  th06:'confirm',th07:'confirm',th08:'confirm',th09:'confirm',
+  th06:'confirm',th07:'confirm',th09:'confirm',
   th10:'confirm',th11:'confirm',th15:'confirm',th20:'th20-menu',
+  ...Object.fromEntries(ADAPTATION_ADAPTERS.products.filter(({variant})=>variant==='normal').map(({game,variant})=>[
+    game,registeredStrategy(resolveAdaptationAdapter(game,variant).flow),
+  ]).filter(([,strategy])=>strategy)),
 });
 export const TITLE_FLOW_GAMES=Object.freeze(Object.keys(TITLE_ENTRY));
 const TITLE_MODES=Object.freeze(Object.fromEntries(Object.entries(TITLE_ENTRY).map(([game,normal])=>[
@@ -39,15 +49,22 @@ export function resolveTitleFlow({game,variant}={}){
   if(!modes)throw new RangeError(`No adaptation flow is registered for ${String(game)}`);
   if(variant!=='normal'&&variant!=='multiplayer')
     throw new RangeError(`Adaptation flow requires explicit variant normal or multiplayer; received ${String(variant)}`);
+  const adapterFlow=resolveAdaptationAdapter(game,variant)?.flow;
   const strategy=modes[variant];
   if(variant==='multiplayer'){
     if(!strategy)throw new Error(`${game}/multiplayer is not a registered product Runtime variant`);
     throw new Error(`${game}/multiplayer gameplay belongs to the multiplayer room acceptance driver; normal navigation is not reused`);
   }
-  if(strategy!=='confirm'&&strategy!=='th20-menu')throw new Error(`${game}/normal has no registered navigation strategy`);
+  if(strategy!=='confirm'&&strategy!=='th20-menu'&&strategy!=='steps')
+    throw new Error(`${game}/normal has no registered navigation strategy`);
+  if(adapterFlow){
+    const validation=validateTitleFlow(adapterFlow);
+    if(validation.status!=='passed')throw new TypeError(`Invalid ${game}/${variant} title flow: ${validation.issues.map(item=>`${item.path}: ${item.reason}`).join('; ')}`);
+    if(registeredStrategy(adapterFlow)!==strategy)throw new TypeError(`${game}/${variant} title flow strategy changed after registration`);
+  }
 
   const flow={game,variant,
-    needsControlWarmup:!['th09','th11'].includes(game),
+    needsControlWarmup:adapterFlow?.needsControlWarmup??!['th09','th11'].includes(game),
     gameplayReadiness(state,lane='runtime'){
       if(lane==='runtime')return runtimeGameplayReadiness(state,game);
       if(lane==='desktop')return evaluateDesktopGameplayReadiness(state,game);
@@ -62,6 +79,10 @@ export function resolveTitleFlow({game,variant}={}){
       waitAfterTh20Loadout=true}={}){
       requireCallback(observe,'observe');requireCallback(press,'press');
       const ready=state=>flow.isGameplayReady(state,lane);
+      if(strategy==='steps'){
+        return executeTitleFlowSteps({flow:adapterFlow,observe,press,waitUntil,isGameplayReady:ready,
+          onTitleReady,labelSuffix:epoch===undefined?'':`epoch ${epoch}`,timeoutMs});
+      }
       if(strategy==='th20-menu'){
         requireCallback(waitUntil,'waitUntil');
         const suffix=epoch===undefined?'':` epoch ${epoch}`;
@@ -94,6 +115,11 @@ export function resolveTitleFlow({game,variant}={}){
     },
     async restartFromPause({press,waitUntil,epoch}={}){
       requireCallback(press,'press');
+      if(strategy==='steps'){
+        return executeTitleFlowSteps({flow:adapterFlow,phase:'restart',press,waitUntil,
+          isGameplayReady:state=>flow.isGameplayReady(state,'runtime'),
+          labelSuffix:epoch===undefined?'':`epoch ${epoch}`});
+      }
       await press('KeyR');
       if(strategy!=='th20-menu')return null;
       requireCallback(waitUntil,'waitUntil');

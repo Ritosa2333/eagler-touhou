@@ -111,6 +111,12 @@ test('cooperative multiplayer rules do not apply to TH09 versus mode', () => {
   }
 });
 
+test('an optional hitbox display cannot exempt the required restart behavior', () => {
+  const check=checklist.checks.find(item=>item.id==='RUNTIME-06');
+  for(const port of portDefinitions())for(const variant of port.variants)
+    assert.equal(notApplicable(check,port.game,variant),null,`${port.game}/${variant}`);
+});
+
 test('a missing checklist row fails', () => {
   const markdown = adaptationMarkdown(port).replace(/^\| BUILD-01 \|.*\n/m, '');
   assert.ok(validateAdaptationMarkdown(markdown, { port, checklist }).some(issue => issue.includes('缺少清单编号：BUILD-01')));

@@ -11,8 +11,8 @@ for(const game of ['th075','th08','th10','th11','th15'])test(`${game} ordinary a
   assert.throws(()=>runtimeSourceOwner({source:mp,game}),/requires declared source/);
   assert.throws(()=>runtimeSourceOwner({source:ordinary,game,multiplayer:true}),/requires declared source/);
 });
-for(const target of targets({game:'th075'}))test(`th075/${target.variant} keyboard mappings participate in compiler input identity`,()=>{
-  const input=inspectInputs(target);
+for(const target of targets({game:'th075'}))test(`th075/${target.variant} keyboard mappings participate in compiler input identity`,async()=>{
+  const input=await inspectInputs(target);
   assert.ok(input.inputFiles.includes(resolve(root,target.directory,'portable/input/KeyboardMap.inc')),
     'changing native key mappings must invalidate the Runtime build');
 });

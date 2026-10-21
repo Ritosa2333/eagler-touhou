@@ -8,9 +8,35 @@
 
 选择一个已提供的翻译语言，准备对应字体。构建启用练习的变体后，分别测试普通开局、Practice、Restart 和 Replay。
 
+语言输入预检从显式选定作品与模式读取发布目录和归档，核对清单、SHA-256、成员与实际 Launcher 校验规则。原始归档和字体留在本地，报告记录输入身份。
+
 字段、文件目标和实践接口见[语言与 thprac 接口](../../launcher/integrations/RUNTIME_CONTRACT.md)。
 
+每个作品的适配器声明练习快照的 ABI 宽度、导出签名、归一化字段、独立参数案例和菜单选择预期。共享 `practice-browser.mjs` 负责运行时操作与逐字段比较；PRAC 格式解析和原生菜单导航由作品适配器提供。菜单步骤通过 `waitUntil` 使用同步状态谓词；玩法就绪通过 `waitForGameplay` 异步返回 Runtime 观察。每个快照导出明确声明是否接收 Runtime app 参数。
+
 ## 逐项检查
+
+语言场景使用 `--suite=language`。本地适配输入中的 `languageManifest` 指向以下清单；路径使用本机绝对路径，发布目录可选静态语言 catalog 或完整 Site Manifest：
+
+```json
+{
+  "schema": "eagler-touhou/language-inputs/1",
+  "products": {
+    "th08": {
+      "normal": {
+        "catalog": "/absolute/prepared-language/catalog.json",
+        "packs": {
+          "lang_en": "/absolute/prepared-language/language/lang_en.zip"
+        }
+      }
+    }
+  }
+}
+```
+
+共用场景组组装一次正式 Launcher，依次执行各语言冷启动、断网日语、单键缺译、归档获取失败与归档损坏对照。语言包字节由发布目录与实际 Launcher 校验器核对，文本预期由[独立表解析](../../tools/ports/language-tables.mjs)提供。游戏的真实 lookup、栅格文本、字形来源和成功呈现在[只读观察接口](language-observation.md)中按观察序号关联；场景未切换时要求同场景后续呈现，Init→Title 首帧切换则要求成功呈现紧接栅格记录。原文基线来自另一份冷启动实例，缺译键按同一原文字节比较。每个实例绑定 ready、configure、首帧的同一代次，并逐文件核对实际挂载字节。场景结果记录本次文本集合，完整编号与文字显示人审分别汇总。
+
+适配器可在 `language.browserDiagnostics` 声明 Runtime 相对资源和生产日志来源，并用顶层 `classifyLanguageDiagnostic` 提供 Node 侧分类函数。共用场景只对已在当前代次与产品资源清单中核验的资源精确 URL 调用该函数；frame 请求只携带数据契约。
 
 | 编号 | 操作 | 通过时应看到 |
 | --- | --- | --- |
@@ -29,6 +55,8 @@
 | <a id="lang-05"></a>LANG-05 \| 字体字符覆盖 | 检查菜单、对话、结算、练习界面的实际字符。 | 当前语言所需字形完整。 |
 | <a id="lang-06"></a>LANG-06 \| 缺译资源使用原文 | 提供只翻译部分资源的包。 | 缺少的翻译使用本作原资源。 |
 
+文字显示的人审按场景集合并：机器先核对字符覆盖、资源身份与语言切换，再生成菜单、对话、结算及练习的代表性界面图。人集中判断字形和排版是否可阅读，整组记录一次结论，异常处标出界面与文字位置。审查范围按新增或变化的语言、字体及界面选择。
+
 ## 可审查的验收方法
 
 以下方法供逐项审查，当前入口说明实际覆盖范围。
@@ -39,7 +67,7 @@
 - 权威观察与预期：产品目录给出支持上限，构建选项决定当前包是否启用。Runtime Release 匹配本次构建，Host 和 UI 按发布能力与 Host 配置启用，逐层保持能力上限；具体接口、资源和菜单行为按 PRACTICE-02 至 PRACTICE-08 验证。
 - 通过／失败：包身份正确，发布能力不超产品上限，Host 和 UI 不宣称当前包未启用的功能。产品支持而当前包关闭是合法配置。
 - 反例：让不支持练习的产品发布启用包，或让关闭练习的包宣称已启用，必须检出；产品支持、包关闭且 UI 同步关闭的对照应通过。
-- 当前入口与覆盖：`launcher/tests/test-adapter-capabilities.mjs`、`ports:check` 与包身份验收分别核对注册、源码和产物声明。`practice-browser.mjs` 读取正式包的能力声明；已编入练习功能的普通版分别启用和关闭，检查真实原生菜单。完整构建／Runtime Release／Host／UI 布尔矩阵另行验收。
+- 当前入口与覆盖：`launcher/tests/test-adapter-capabilities.mjs`、`ports:check` 与包身份验收分别核对注册、源码和产物声明。`practice-browser.mjs` 从正式包输出 `PRACTICE-01` 观察行，记录实际 feature 声明；Host、发布选择器与 UI 的能力矩阵由对应验收记录。
 
 ### PRACTICE-02 | 开局前启用与语言
 
@@ -47,7 +75,7 @@
 - 权威观察与预期：比较 Shell 发出的 `thpracEnabled`／`thpracLocale` 与本作开局前实际消费的配置和语言资源。
 - 通过／失败：首个游戏场景采用所选练习能力和 locale；配置缺失、晚到或被默认值覆盖即失败。
 - 反例：让启动器显示已开启但在 Runtime 配置载荷中清除字段，确认首帧前断言失败。
-- 当前入口与覆盖：`practice-browser.mjs --manifest=<本地清单> --game=th06,th07,th08,th09,th10,th11,th15,th20 --output=<结果目录>` 对支持练习的作品要求提供练习启用包，分别配置日语、英语、中文与关闭对照，进入实际关卡，通过 Backspace 打开和关闭原生菜单；记录原生菜单事件、消费配置与画面。页面、请求、协议、响应和清理结果共同构成最终场景判定。产品不支持练习时记为不适用；缺少启用包时记为输入不满足。关卡参数和 Replay 设置分别验收。
+- 当前入口与覆盖：`practice-browser.mjs --manifest=<本地清单> --game=th06,th07,th08,th09,th10,th11,th15,th20 --output=<结果目录>` 对支持练习的作品要求提供练习启用包，分别配置日语、英语、中文与关闭对照，进入实际关卡，通过 Backspace 打开和关闭原生菜单；`PRACTICE-02` 观察运行时消费的 enable／locale，结果按 `observed` 记录且 `complete=false`。页面、请求、协议、响应和清理结果共同构成最终场景判定。产品不支持练习时记为不适用；缺少启用包时记为输入不满足。关卡参数和 Replay 设置分别验收。
 
 ### PRACTICE-03 | 游戏内练习状态
 
@@ -55,7 +83,7 @@
 - 权威观察与预期：读取本作原生练习／关卡／Replay 状态及其创建和清理边界，不用启动器选择状态替代游戏状态。
 - 通过／失败：练习状态只在相应局内有效，重开与回放按本作流程恢复，普通开局不继承旧参数。
 - 反例：练习局退出后直接普通开局，确认旧关卡或资源设置没有残留。
-- 当前入口与覆盖：`practice-browser.mjs` 使用四个独立普通版实例检查原生菜单开关及关闭练习的对照，并按本作世界时钟判断关卡就绪。th06 `thprac-replay-restart-contract-test.mjs`、th11 `mobile-thprac.test.mjs` 与 th15 `title-practice-resume.test.mjs` 等分别覆盖场景转换；普通版与 MP 结果分别记录。
+- 当前入口与覆盖：`practice-browser.mjs` 的 `PRACTICE-03` 将实际关卡中的原生菜单初始关闭、开启事件、关闭状态与关闭事件写入编号观察行，结果为 `observed` 且 `complete=false`。th06 `thprac-replay-restart-contract-test.mjs`、th11 `mobile-thprac.test.mjs` 与 th15 `title-practice-resume.test.mjs` 等分别覆盖场景转换；普通版与 MP 结果分别记录。
 
 ### PRACTICE-04 | 关卡与资源参数
 
@@ -63,7 +91,7 @@
 - 权威观察与预期：用本作状态字段、固定输入和已声明参数映射确认参数对逻辑的作用；界面显示值只作操作记录。
 - 通过／失败：每个选定参数作用于其声明的游戏字段或阶段；值仅留在菜单、被截断或映射到错误关卡即失败。
 - 反例：保持界面参数不变而从消费端清除一个参数，确认该参数对应的状态断言失败。
-- 当前入口与覆盖：th15 `title-practice-draw`／`title-practice-resume` 和各作 practice fixture 覆盖已接入字段；未登记独立状态观察的参数保持待验证。
+- 当前入口与覆盖：共享 `practice-browser.mjs` 按适配器声明的参数案例和菜单选择运行一次原生练习开局，并读取配置、接受和 GameplaySession 消费值。th08 的独立输入值覆盖分数、残机、Bomb、火力、Gauge、擦弹、蓝点、刻符、夜点、时刻、Rank 与使魔；逐字段映射以 `PracticeRuntime::apply_practice` 为依据。菜单默认难度与所选角色来自独立的作品声明，再与消费快照比较。阶段记录将菜单选择与同一 epoch 的原生 gameplay-ready snapshot 绑定，后续 F7／指针操作以这份状态为起点。此记录为 `observed` 且 `complete=false`，完整 UI 参数范围由各作适配器声明。
 
 ### PRACTICE-05 | 练习 Replay 元数据
 
@@ -71,7 +99,8 @@
 - 权威观察与预期：比较独立 Replay 文件中的练习元数据、重新加载后的本作设置和对应起始状态。
 - 通过／失败：必要参数随文件保存并在回放前还原；缺字段、值错配或旧实例状态泄漏即失败。
 - 反例：从 metadata 中移除一个已声明必要字段，确认导入拒绝或按格式约定报出缺项。
-- 当前入口与覆盖：th06 `thprac-replay-restart-contract-test.mjs` 及各作 Replay 录制／解析测试提供部分链路；新实例导入是证明持久化语义的必需边界。
+- 当前入口与覆盖：共享 `practice-browser.mjs` 负责实际 GameplaySession 推进、生产保存、IDBFS 同步、文件读回、同一浏览器上下文中的新 Runtime epoch、启动前 Shell 导入及最终判定。th08 normal 适配器提供生产 `save_replay` finalizer、IDBFS 观察器、USER/PRAC 与输入容量解析器及原生 Title Replay 菜单导航。新 epoch 读取持久槽位并核对字节身份，再经 Shell `write` 导入唯一用户 Replay；原生菜单打开候选并启动后，报告比较 fresh 默认值、PRAC、native candidate/run/applied 字段及 Replay 输入游标推进。该链覆盖普通局 GameplaySession 中录制到的参数和 Replay 菜单恢复，不包含 Result UI 的保存入口。
+- 参数起点来自 `GameplayScene::load` 中 `apply_practice` 后、`bind_jobs` 前冻结的原生快照；播放中的实时分数和游标按实际推进及容量分别核对。Last Word 的 stage 9 通过 section 映射到实际玩法关卡后再比较。
 
 ### PRACTICE-06 | 触控功能键与指针
 
@@ -79,7 +108,7 @@
 - 权威观察与预期：观察生产 Shell 事件到本作已消费输入、指针坐标和菜单选择的完整路径。
 - 通过／失败：画面指示与实际游戏动作一致；只改变 DOM 焦点或启动器控件而未到达原生菜单即失败。
 - 反例：屏蔽 Runtime 指针桥但保留按钮外观，确认选择动作没有原生效果并报告失败。
-- 当前入口与覆盖：th07 `test-practice-pointer.mjs`、th15 `application-menus-practice-browser.test.mjs` 覆盖部分产品；虚拟触控结果不代替实体触屏和指针设备记录。
+- 当前入口与覆盖：th08 `practice-browser.mjs` 在实际游戏内打开原生练习覆盖层，用 F7 将永续 BGM 开启，再经画布指针操作关闭，并逐次读取 Native state。操作由 Runtime 的键盘和 SDL 鼠标路径到达 Thprac UI；记录覆盖原生菜单中一个可逆功能，不代表实体触屏验证。
 
 ### PRACTICE-07 | 练习语言跟随设置
 
@@ -87,7 +116,7 @@
 - 权威观察与预期：读取本作实际选用的 locale、练习文本资源与字体，并将可见字符串和来源翻译表逐项比对。
 - 通过／失败：练习界面文字与字体跟随本次设置，未出现旧缓存文本、缺字或错误 locale。
 - 反例：保留旧语言的练习文本缓存再切换语言，确认首开后的资源身份断言失败。
-- 当前入口与覆盖：`practice-browser.mjs` 保存日语、英语、中文和关闭对照的原生菜单事件、配置及截图，报告绑定实际字体字节身份；截图与来源字符串供人工审查。th11 `mobile-thprac.test.mjs`、th15 `application-menus-practice-browser.test.mjs` 与字体测试覆盖各自路径。
+- 当前入口与覆盖：`practice-browser.mjs` 的 `PRACTICE-07` 记录已配置的 locale 与日语、英语、中文截图，自动结果为 `observed` 且 `complete=false`；人工审查者对照实际文案和字体后填写视觉结论。th11 `mobile-thprac.test.mjs`、th15 `application-menus-practice-browser.test.mjs` 与字体测试覆盖各自路径。
 
 ### PRACTICE-08 | 练习界面的可用功能
 
@@ -95,7 +124,7 @@
 - 权威观察与预期：将菜单动作映射到本作状态机或实际逻辑结果，并以本作功能定义作为可用项清单。
 - 通过／失败：每个显示为可用的功能都触发对应行为，禁用项不会伪装成可操作；菜单转移与游戏状态相符。
 - 反例：保留按钮但断开其回调，确认该项被测试发现为无行为。
-- 当前入口与覆盖：th15 的 practice/title 菜单测试、th11 `thprac` 测试覆盖部分交互；按本作逐项列出覆盖功能，不能由一项菜单测试推及整张界面。
+- 当前入口与覆盖：th08 `practice-browser.mjs` 输出源归属明确的功能清单：标题练习选择、自定义参数消费、Replay 候选参数、F1–F7／U 训练项、Tab Tracker、F12 Advanced Options 与原生指针。报告标注实际执行的参数与 F7／指针子集；Replay、Tracker 与 Advanced Options 保持未执行状态。
 
 ### LANG-01 | 内置日语原文
 
@@ -103,7 +132,7 @@
 - 权威观察与预期：核对本作随包原文资源、挂载路径和显示字符串；同时记录启动期间的语言包请求。
 - 通过／失败：未依赖翻译包也能使用内置日语原文；缺失原文或启动暗中依赖网络即失败。
 - 反例：从包中移除原文资源或屏蔽本地挂载，确认首个需要该资源的界面失败。
-- 当前入口与覆盖：th09、th11 有 hosted localization smoke，文本 oracle 覆盖部分字形；每作离线包的原文覆盖需单独记录。
+- 当前入口与覆盖：`language` 场景组安装实际包后，按生产 App Shell 流程等待 active worker；首次安装页未受控时先重载，再在同一存储环境断网新建页面与 WASM。`language-browser.mjs` 对声明的标题文本核对原生 lookup、原文字节、实际字形及后续成功呈现；其他界面的文本由作品声明扩展。
 
 ### LANG-02 | 语言包身份与发布清单
 
@@ -111,7 +140,7 @@
 - 权威观察与预期：以实际归档字节和发布描述作为身份来源，核对选择器中的语言集合。
 - 通过／失败：只有完整打包且身份匹配的语言可供选择；丢失成员或哈希变化即失败。
 - 反例：修改归档内一个文件但保留旧清单，确认预检阻止安装或启动。
-- 当前入口与覆盖：`launcher/tests/audit-th09-generated-pack.mjs` 审核 th09 生成包，通用包校验测试核对归档；各作目录发布清单需各自绑定。
+- 当前入口与覆盖：`language-inputs.mjs` 逐包核对发布目录、归档字节与成员，并调用生产归档校验器。`language-browser.mjs` 从正式选择器选择语言，绑定本次 configure 与所有实际挂载成员的字节数和 SHA-256。若目标值只是 UI locale 给出的初始默认值，场景先在选择器切到另一项再选回目标，确认设置模型通过其正式 storage key 保存该选择。th09 生成包审计继续负责其生成来源。
 
 ### LANG-03 | 开局前挂载翻译与字体
 
@@ -119,7 +148,7 @@
 - 权威观察与预期：通过本作资源挂载状态及首帧文本确认所选包在开局前生效，字体字节与发布清单一致。
 - 通过／失败：首个使用翻译的画面来自本次选定的翻译与字体；资源在首帧后才到达或误用旧缓存即失败。
 - 反例：延后翻译包响应到首帧之后，确认首屏资源身份断言能发现竞态。
-- 当前入口与覆盖：`launcher/tests/smoke-th09-localization.mjs` 和 `smoke-th11-localization.mjs` 记录 hosted 资源；逐作冷启动和 offline package 路径按模式另测。
+- 当前入口与覆盖：`language-browser.mjs` 在生产 Runtime ready 事件中、原生世界构造前启用只读观察，核对 configure 在首帧前完成。每种语言使用独立 WASM，实际消费文本与独立解析的归档内容一致，字形观察进入同一场景证据。
 
 ### LANG-04 | 语言包失败时回到原文
 
@@ -127,7 +156,7 @@
 - 权威观察与预期：检查失败请求、当前实际挂载资源、本次显示原文以及保存的语言偏好。
 - 通过／失败：本次回到内置原文且偏好仍可供下次重试；空白、混用前次缓存或静默伪装成功即失败。
 - 反例：留下上次运行的翻译缓存再注入请求失败，确认测试辨别当前输入与陈旧缓存。
-- 当前入口与覆盖：启动器已有资源获取失败和回退状态测试，th09／th11 smoke 覆盖资源挂载；本作原文显示与缓存隔离仍要连接到 Runtime。
+- 当前入口与覆盖：`language-browser.mjs` 分别使用冷浏览器存储返回指定归档的 404，以及同长度但 SHA-256 不符的完整字节。响应审核记录控制字节，实际 Runtime 须不挂载翻译包、显示独立日语基线，并保留原语言偏好。预期网络事件按实际已校验响应的精确 URL 与状态关联，其他页面、请求和原生错误继续阻断。
 
 ### LANG-05 | 字体字符覆盖
 
@@ -135,7 +164,7 @@
 - 权威观察与预期：把显示字符串的码点与字体字符覆盖、字形栅格输出及排版边界对照；系统字体 fallback 来源也纳入输入身份。
 - 通过／失败：当前语言所有实际使用字符均有预期字形并在界面中可辨；缺字、替换字形、裁切或不一致的 fallback 即失败。
 - 反例：移除样本中一个字形或让系统回退到另一字体，确认码点覆盖或渲染对照指出具体字符。
-- 当前入口与覆盖：th11 `text-raster.test.mjs` 对固定字符做原版图像对照，th15 有 `font-browser.test.mjs`；清单与环境必须记录真实 fallback 字体，单份字符样本不代表全 UI。
+- 当前入口与覆盖：共享语言场景按真实栅格字符串逐码点核对请求字形、实际字形、来源与覆盖位，拒绝替代字形和 `.notdef`。场景截图进入文字人审材料；已声明文本集合与全 UI 字符范围分别登记。th11 原版图像对照与 th15 字体浏览器检查继续提供本作专项证据。
 
 ### LANG-06 | 缺译资源使用原文
 
@@ -143,7 +172,7 @@
 - 权威观察与预期：逐键比较当前翻译包与本作原文资源；缺少的键独立回退，存在的键继续使用本次翻译。
 - 通过／失败：缺译项显示对应原文，已有译文不被整体丢弃；空字符串、键名或其他语言文本即失败。
 - 反例：删掉单个键并保留其他键，确认只有该条回退到原文。
-- 当前入口与覆盖：th09 生成包审计和 th09／th11 localization smoke 覆盖包身份与挂载；尚需每作的部分资源包和逐键原文断言。
+- 当前入口与覆盖：共享语言场景从真实包移除作品声明的单个键，重新生成有效归档。冷启动实例分别断言保留键仍为译文、缺失键等于另一实例采集的日语原文字节；两项都经过真实栅格、字形与呈现路径。
 
 ## 记录
 

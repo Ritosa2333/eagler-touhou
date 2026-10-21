@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {resolve} from 'node:path';
 import {readRuntimeObservation,assertRuntimeObservation} from './runtime-observations.mjs';
+import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 export async function gamepadProbeBundle(){
@@ -14,19 +15,23 @@ export async function gamepadProbeBundle(){
   return result.outputFiles[0].text;
 }
 
-const TARGET_GAMES=new Set(['th06','th07','th08','th09','th10','th11','th15','th20']);
 const REQUIRED_NATIVE_MASK=0x107; // phase, consumed input, position, local seat
 const GAMEPLAY_PHASE=game=>game==='th09'?'match':'stage';
 
-export function gamepadTargetFor(game,variant,localSeat){
-  assert.ok(TARGET_GAMES.has(game),`Unsupported gamepad target: ${game}`);
+export function gamepadTargetFor(game,variant,localSeat,{products=PRODUCT_GAMES}={}){
+  const product=products[game];
+  assert.ok(product&&product.inputProfile!=='fighting',`Unsupported gamepad target: ${game}`);
   assert.ok(variant==='normal'||variant==='multiplayer',`Unsupported gamepad variant: ${variant}`);
-  assert.ok(Number.isInteger(localSeat)&&localSeat>=0&&localSeat<=(game==='th09'?1:2),`${game}: invalid local seat ${localSeat}`);
+  const counts=product.multiplayer?.playerCounts;
+  if(variant==='multiplayer')assert.ok(product.multiplayerRuntime&&Array.isArray(counts)&&counts.length&&
+    counts.every(count=>Number.isInteger(count)&&count>=2),`${game}: multiplayer gamepad seats are not registered`);
+  const maxSeat=variant==='normal'?0:Math.max(...counts)-1;
+  assert.ok(Number.isInteger(localSeat)&&localSeat>=0&&localSeat<=maxSeat,`${game}: invalid local seat ${localSeat}`);
   assert.ok(variant!=='normal'||localSeat===0,'Normal Runtime gamepad input belongs to seat 0');
   // TH09 reads a distinct Launcher mapping for each versus side. The other
   // current shells call BrowserGamepadState() with its default mapping slot 0;
   // their native observer still identifies the local multiplayer seat.
-  return {game,variant,localSeat,mappingSeat:game==='th09'?localSeat:0};
+  return {game,variant,localSeat,mappingSeat:product.multiplayer?.gameplay==='versus'?localSeat:0};
 }
 
 function validateTarget(target){

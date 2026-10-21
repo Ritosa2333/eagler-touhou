@@ -28,7 +28,13 @@ export async function createChromiumResponseSource(page,{
     const {requestId,response}=event;if(!acceptResponse(response))return;
     let finish;
     const completed=new Promise(resolve=>{finish=resolve;});
-    const state={requestId,url:response.url,finish,completed,chunks:[],bytes:0,streamError:null,terminal:null};
+    const headers=Object.fromEntries(Object.entries(response.headers??{}).map(([name,value])=>[name.toLowerCase(),String(value)]));
+    const contentEncoding=headers['content-encoding']?.trim().toLowerCase();
+    const contentLength=headers['content-length']?.trim();
+    const expectedBodyBytes=(!contentEncoding||contentEncoding==='identity')&&/^(?:0|[1-9]\d*)$/.test(contentLength??'')&&
+      Number.isSafeInteger(Number(contentLength))?Number(contentLength):null;
+    const state={requestId,url:response.url,finish,completed,chunks:[],bytes:0,streamedBytes:0,
+      expectedBodyBytes,streamFallbackReason:null,streamError:null,terminal:null};
     requests.set(requestId,state);
     // Start immediately: the command rejects resources which have already finished.
     // dataReceived may precede the reply. bufferedData always belongs before those chunks.
@@ -36,7 +42,9 @@ export async function createChromiumResponseSource(page,{
       append(state,Buffer.from(result.bufferedData??'','base64'),{prefix:true});state.streaming=true;
     }).catch(error=>{state.streamError=String(error.message??error);});
     const details=()=>({requestId,url:response.url,resourceType:event.type,terminal:state.terminal,
-      method:state.method,streamError:state.streamError,fallbackError:state.fallbackError??null,capturedBytes:state.bytes});
+      method:state.method,streamError:state.streamError,fallbackError:state.fallbackError??null,
+      expectedBodyBytes,streamedBytes:state.streamedBytes,streamFallbackReason:state.streamFallbackReason,
+      capturedBytes:state.bytes});
     let bodyPromise;
     const readBody=()=>bodyPromise??=(async()=>{
       let timer;
@@ -45,14 +53,21 @@ export async function createChromiumResponseSource(page,{
         if(state.captureError)throw state.captureError;
         if(state.terminal.event==='captureClosed')throw Error(state.terminal.error);
         if(state.streaming&&state.bytes>0){
-          state.method='Network.streamResourceContent';
-          return Buffer.concat([state.prefix??Buffer.alloc(0),...state.chunks],state.bytes);
+          const streamed=Buffer.concat([state.prefix??Buffer.alloc(0),...state.chunks],state.bytes);
+          if(state.terminal.event!=='loadingFinished'||expectedBodyBytes===null||streamed.length===expectedBodyBytes){
+            state.method='Network.streamResourceContent';
+            return streamed;
+          }
+          state.streamedBytes=streamed.length;
+          state.streamFallbackReason=`Streamed body length ${streamed.length} differs from unencoded Content-Length ${expectedBodyBytes}`;
+          bufferedBytes-=state.bytes;state.bytes=0;state.prefix=null;state.chunks=[];
         }
         state.method='Network.getResponseBody';
         let result;
         try{result=await session.send('Network.getResponseBody',{requestId});}
         catch(error){
           state.fallbackError=String(error.message??error);
+          if(state.streamFallbackReason)throw Error(`${state.streamFallbackReason}; response-body fallback failed: ${state.fallbackError}`,{cause:error});
           if(state.streaming){state.method='Network.streamResourceContent';return Buffer.alloc(0);}
           throw error;
         }

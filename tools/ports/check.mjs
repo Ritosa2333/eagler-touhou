@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {resolve, relative} from 'node:path';
-import {spawnSync, execFileSync} from 'node:child_process';
+import {execFileSync} from 'node:child_process';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {targets, root, inspectInputs, sourceDependencies, sourceIdentity, slash} from './inputs.mjs';
 import {checkRuntimeSource, runtimeSourceFiles} from './runtime-contracts.mjs';
 import {STATUS_SCHEMA, checkStates, retainedVerification, validateStatusReport, readStatusReport} from './status.mjs';
 import {adaptationMarkdown, preserveManualEvidence, portDefinitions, notApplicable} from '../docs/new-adaptation.mjs';
+import {runTasks} from '../testing/runner.mjs';
+import {parseWindowsCompilerHelpers} from '../testing/compiler-helpers.mjs';
 
 const spec = JSON.parse(readFileSync(resolve(root, 'docs/adaptation/checklist.json'), 'utf8'));
 const sharedPlan = JSON.parse(readFileSync(resolve(root, 'tools/ports/shared-checks.json'), 'utf8'));
@@ -16,19 +18,56 @@ const ownSources = ['tools/ports/check.mjs','tools/ports/inputs.mjs','tools/port
   'launcher/config/runtime-builds.json','launcher/config/workspace.json','launcher/src/contracts/runtime-protocol.mts',
   'common/contracts/product-catalog.mjs'].map(name => resolve(root, name));
 
-function commandCheck(id, files, checks, level, output, games) {
-  const logs = [];
-  let code = 0;
-  for (const file of files) {
-    const result = spawnSync(process.execPath, [resolve(root, file)], {cwd:resolve(root,'launcher'), encoding:'utf8',
-      env:{...process.env,EAGLER_PORT_CHECK_GAMES:JSON.stringify(games)},
-      windowsHide:true, maxBuffer:16*1024*1024, timeout:180000});
-    logs.push(`${file}\n${result.stdout ?? ''}${result.stderr ?? ''}${result.error?.message ?? ''}`);
-    if (result.error || result.status !== 0) code = 1;
+export function sharedGateTasks(gate,games,{repositoryRoot=root,compilerHelpers=[]}={}) {
+  return gate.files.map((file,index)=>({id:`${gate.id}-${index+1}`,command:process.execPath,
+    args:[resolve(repositoryRoot,file)],cwd:resolve(repositoryRoot,'launcher'),timeoutMs:180000,
+    environment:{EAGLER_PORT_CHECK_GAMES:JSON.stringify(games)},
+    ...(compilerHelpers.length ? {cleanupImages:compilerHelpers} : {})}));
+}
+
+async function commandCheck(id, files, checks, level, output, games,
+  {repositoryRoot=root, compilerHelpers=[]}={}) {
+  const taskOutput=resolve(output,`${id}-tasks`);
+  const tasks=sharedGateTasks({id,files},games,{repositoryRoot,compilerHelpers});
+  let report, runnerError;
+  try {
+    report=await runTasks(tasks,{output:taskOutput,concurrency:1,failFast:false,
+      metadata:{gateId:id,gateLevel:level,checks}});
+  } catch (error) {
+    runnerError=error.message;
   }
-  writeFileSync(resolve(output, `${id}.log`), logs.join('\n'), 'utf8');
-  return {id, checks, level, files, complete:true, status:code ? 'failed' : 'passed',
-    ...(code ? {error:`Executable checks failed; see ${id}.log`} : {})};
+  const results=new Map((report?.results ?? []).map(result=>[result.id,result]));
+  const logs=tasks.map((task,index)=>{
+    const file=files[index],result=results.get(task.id);
+    let detail='';
+    if(result?.log) {
+      try { detail=readFileSync(result.log,'utf8'); }
+      catch (error) { detail=`Unable to read task log ${result.log}: ${error.message}\n`; }
+    }
+    if(result?.error)detail+=`${result.error}\n`;
+    return `===== ${file} [${result?.status ?? 'not-run'}] =====\n${detail}`;
+  });
+  if(runnerError)logs.push(`===== task runner failed =====\n${runnerError}\n`);
+  writeFileSync(resolve(output,`${id}.log`),logs.join('\n'),'utf8');
+  const failed=!report||report.status!=='passed';
+  return {id,checks,level,files,complete:true,status:failed?'failed':'passed',
+    ...(failed ? {error:`Executable checks failed; see ${id}.log`} : {})};
+}
+
+/** Run every selected shared gate, preserving each gate's domain and continuing after failures. */
+export async function runSharedGates(gates,{output,games,repositoryRoot=root,compilerHelpers=[]}={}) {
+  mkdirSync(output,{recursive:true});
+  const results=[];
+  for(const gate of gates) {
+    try {
+      results.push({...gate,...await commandCheck(gate.id,gate.files,gate.checks,gate.level,output,games,
+        {repositoryRoot,compilerHelpers})});
+    } catch(error) {
+      writeFileSync(resolve(output,`${gate.id}.log`),`===== task runner failed =====\n${error.message}\n`,'utf8');
+      results.push({...gate,complete:true,status:'failed',error:`Executable checks failed; see ${gate.id}.log`});
+    }
+  }
+  return results;
 }
 
 function evidenceSources(target) {
@@ -87,20 +126,24 @@ async function main(args) {
   const options = parseArgs(args);
   const selected = targets(options);
   mkdirSync(options.output, {recursive:true});
-  const preparation=spawnSync(process.execPath,[resolve(root,'launcher/scripts/build-launcher.mjs'),'--force'],
-    {cwd:resolve(root,'launcher'),encoding:'utf8',windowsHide:true,maxBuffer:16*1024*1024,timeout:180000});
-  writeFileSync(resolve(options.output,'launcher-build.log'),`${preparation.stdout ?? ''}${preparation.stderr ?? ''}${preparation.error?.message ?? ''}`);
-  if (preparation.error || preparation.status!==0) throw new Error('Launcher module build failed; see launcher-build.log');
+  const compilerHelpers=parseWindowsCompilerHelpers(process.env,process.platform);
+  const preparation=await runTasks([{id:'launcher-build',command:process.execPath,
+    args:[resolve(root,'launcher/scripts/build-launcher.mjs'),'--force'],cwd:resolve(root,'launcher'),timeoutMs:180000,
+    ...(compilerHelpers.length ? {cleanupImages:compilerHelpers} : {})}],
+  {output:resolve(options.output,'launcher-build-task'),concurrency:1});
+  const preparationResult=preparation.results[0];
+  writeFileSync(resolve(options.output,'launcher-build.log'),readFileSync(preparationResult.log,'utf8'));
+  if (preparationResult.status!=='passed') throw new Error('Launcher module build failed; see launcher-build.log');
   const previous = readStatusReport(root);
   const games = [...new Set(selected.map(target=>target.game))];
-  const shared = sharedPlan.gates.filter(gate=>selected.some(target=>
-    (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
-    .map(gate => ({...gate, ...commandCheck(gate.id, gate.files, gate.checks, gate.level, options.output, games)}));
+  const shared = await runSharedGates(sharedPlan.gates.filter(gate=>selected.some(target=>
+    (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant)))),
+  {output:options.output,games,repositoryRoot:root,compilerHelpers});
   const records = [];
   for (const target of selected) {
     const label = `${target.game}-${target.variant}`;
     try {
-      const input = inspectInputs(target);
+      const input = await inspectInputs(target);
       const {dependencies, inputFiles: dependencyFiles} = sourceDependencies(target);
       writeFileSync(resolve(options.output, `${label}-inputs.json`), JSON.stringify(input,null,2)+'\n');
       const issues = validatePortLayout(target.directory, input.inputFiles);

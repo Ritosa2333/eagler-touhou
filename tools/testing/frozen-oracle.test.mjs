@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
-import {runFrozenOracle,runOracleMaintenance} from './frozen-oracle.mjs';
+import {assessOracleTestEvents,oracleTestRunnerArgs,runFrozenOracle,runOracleMaintenance} from './frozen-oracle.mjs';
 import {acceptedReferenceSnapshot,acceptedReferenceSnapshotsEqual,loadOracleSuite,maintenanceOutputPath,preflightOracleInputs} from './oracle-suite.mjs';
 import {oracleInputs,captureOracleInputs,assertOracleInputsUnchanged} from './oracle-inputs.mjs';
 import {nativeEnvironmentPolicy,nativeInputPlan,nativeInputSnapshot,nativeInputSnapshotsEqual} from './native-inputs.mjs';
@@ -95,17 +95,89 @@ async function prepareNativeFixture(repo,root) {
   }
 }
 
+async function runStructuredNodeTests(sources) {
+  const root=await mkdtemp(resolve(tmpdir(),'eagler-node-test-events-'));
+  try {
+    const testDirectory=resolve(root,'tests/cpp'),eventsPath=resolve(root,'node-events.jsonl');
+    await mkdir(testDirectory,{recursive:true});
+    const files=Object.keys(sources);
+    for (const [file,source] of Object.entries(sources)) await writeFile(resolve(testDirectory,file),source);
+    const args=oracleTestRunnerArgs({files:files.map(file=>resolve(testDirectory,file)),eventsPath,concurrency:2});
+    const environment={...process.env};
+    delete environment.NODE_TEST_CONTEXT;
+    const processResult=spawnSync(process.execPath,args,{cwd:root,encoding:'utf8',windowsHide:true,env:environment});
+    assert.equal(processResult.error,undefined,processResult.error?.message);
+    let eventText;
+    try {eventText=await readFile(eventsPath,'utf8');}
+    catch(error) {throw new Error(`${error.message}; node exit ${processResult.status}; stderr ${processResult.stderr}; args ${args.join(' ')}`);}
+    return {exitCode:processResult.status,stdout:processResult.stdout,stderr:processResult.stderr,
+      assessment:assessOracleTestEvents(eventText,{root,files})};
+  } finally {
+    assert.equal(dirname(root),resolve(tmpdir()));
+    await rm(root,{recursive:true,force:true});
+  }
+}
+
+test('Node 24 reporter events reject forged stdout, skipped and empty files, and bind a real multi-file run',async()=>{
+  const forged=await runStructuredNodeTests({'forged.test.mjs':[
+    'import test from "node:test";',
+    'process.stdout.write("ℹ tests 9\\nℹ pass 9\\nℹ fail 0\\nℹ cancelled 0\\nℹ skipped 0\\nℹ todo 0\\n");',
+    'test.skip("not executed",()=>{});',
+  ].join('\n')});
+  assert.match(forged.stdout,/ℹ tests 9/);
+  assert.equal(forged.exitCode,0);
+  assert.equal(forged.assessment.valid,false);
+  assert.deepEqual(forged.assessment.counts,{tests:1,pass:0,fail:0,cancelled:0,skipped:1,todo:0});
+  assert.match(forged.assessment.errors.join('\n'),/no non-skip\/non-todo test/);
+
+  const empty=await runStructuredNodeTests({'empty.test.mjs':'// no registered tests\n'});
+  assert.equal(empty.exitCode,0);
+  assert.equal(empty.assessment.valid,false);
+  assert.equal(empty.assessment.files[0].registered,true);
+  assert.equal(empty.assessment.files[0].executedNonSkipTodo,0,JSON.stringify(empty.assessment));
+
+  const failure=await runStructuredNodeTests({'failure.test.mjs':[
+    'import test from "node:test";',
+    'test("real failure",()=>{throw new Error("fixture failure")});',
+  ].join('\n')});
+  assert.notEqual(failure.exitCode,0);
+  assert.equal(failure.assessment.valid,false);
+  assert.equal(failure.assessment.counts.fail,1);
+  assert.equal(failure.assessment.files[0].executedNonSkipTodo,1);
+
+  const multiple=await runStructuredNodeTests({
+    'first.test.mjs':'import test from "node:test";test("first registered case",()=>{});\n',
+    'second.test.mjs':'import test from "node:test";test("second registered case",()=>{});\n',
+  });
+  assert.equal(multiple.exitCode,0);
+  assert.equal(multiple.assessment.valid,true,JSON.stringify(multiple.assessment));
+  assert.equal(multiple.assessment.files.length,2);
+  assert.deepEqual(multiple.assessment.files.map(file=>file.executedNonSkipTodo),[1,1]);
+});
+
 test('frozen oracle rejects unclassified and skipped selections, then accepts a complete pass',async()=>{
   const f=await fixture();
   try {
     const file=resolve(f.root,'tests/cpp/fixture.test.mjs');
     await rm(file);
     await assert.rejects(loadOracleSuite(f.root),/Oracle test classification mismatch/);
-    await writeFile(file,"import test from 'node:test';test.skip('missing input',()=>{});\n");
+    await writeFile(file,[
+      "import test from 'node:test';",
+      "process.stdout.write('ℹ tests 9\\nℹ pass 9\\nℹ fail 0\\nℹ cancelled 0\\nℹ skipped 0\\nℹ todo 0\\n');",
+      "test.skip('missing input',()=>{});",
+    ].join('\n')+'\n');
     const skipped=await runFrozenOracle({root:f.root,environment:{}});
     assert.equal(skipped.passed,false);assert.ok(skipped.skipped>0);
     assert.equal(skipped.groups.find(group=>group.id==='private').status,'blocked');
     assert.equal(skipped.groups.find(group=>group.id==='unit').status,'failed');
+    assert.equal(skipped.tests,1);assert.equal(skipped.pass,0);assert.equal(skipped.skipped,1);
+    assert.match(skipped.groups.find(group=>group.id==='unit').nodeEventErrors.join('\n'),/no non-skip\/non-todo test/);
+    await writeFile(file,'// discovered file with no registered test\n');
+    const empty=await runFrozenOracle({root:f.root,name:'empty-manifest-file',environment:{}});
+    const emptyGroup=empty.groups.find(group=>group.id==='unit');
+    assert.equal(emptyGroup.status,'failed');assert.equal(emptyGroup.tests,0);
+    assert.equal(emptyGroup.testFileEvidence[0].registered,true);
+    assert.equal(emptyGroup.testFileEvidence[0].executedNonSkipTodo,0,JSON.stringify(emptyGroup));
     await writeFile(file,"import test from 'node:test';import assert from 'node:assert/strict';test('fixture',()=>assert.equal(2+2,4));\n");
     const readyWhileBlocked=await runFrozenOracle({root:f.root,name:'ready-while-blocked',environment:{}});
     assert.equal(readyWhileBlocked.passed,false);
@@ -113,6 +185,12 @@ test('frozen oracle rejects unclassified and skipped selections, then accepts a 
     assert.equal(readyWhileBlocked.groups.find(group=>group.id==='private').status,'blocked');
     assert.equal(readyWhileBlocked.tests,1);
     assert.equal(readyWhileBlocked.pass,1);
+    await writeFile(file,"import test from 'node:test';test('real failure',()=>{throw new Error('expected fixture failure')});\n");
+    const actualFailure=await runFrozenOracle({root:f.root,name:'actual-failure',environment:{}});
+    const failedUnit=actualFailure.groups.find(group=>group.id==='unit');
+    assert.equal(failedUnit.status,'failed');assert.equal(failedUnit.fail,1);
+    assert.equal(failedUnit.testFileEvidence[0].executedNonSkipTodo,1);
+    await writeFile(file,"import test from 'node:test';import assert from 'node:assert/strict';test('fixture',()=>assert.equal(2+2,4));\n");
     const data=resolve(f.root,'private/replay.rpy'),receiptPath=resolve(f.root,'.local/oracle-inputs.json');
     await mkdir(dirname(data),{recursive:true});await mkdir(dirname(receiptPath),{recursive:true});
     await writeFile(data,'accepted replay bytes');
@@ -126,6 +204,28 @@ test('frozen oracle rejects unclassified and skipped selections, then accepts a 
     assert.equal(result.pass,2);
     assert.equal(result.groups[0].status,'passed');
     assert.equal(result.nativeInputsChanged,false);
+  } finally {await f.close();}
+});
+
+test('frozen oracle seals time-budget expiry and external cancellation as failed',async()=>{
+  const f=await fixture();
+  try {
+    const result=await runFrozenOracle({root:f.root,name:'time-budget',environment:{},timeoutMs:60000,overallTimeoutMs:1});
+    assert.equal(result.passed,false);
+    assert.equal(result.status,'failed');
+    assert.equal(result.terminalReason,'time-budget-exceeded');
+    const sealed=JSON.parse(await readFile(resolve(f.root,'artifacts/cpp/verification/time-budget-result.json'),'utf8'));
+    assert.equal(sealed.status,'failed');
+    assert.equal(sealed.terminalReason,'time-budget-exceeded');
+    assert.ok(sealed.finishedAt);
+    const controller=new AbortController();controller.abort();
+    const cancelled=await runFrozenOracle({root:f.root,name:'cancelled-run',environment:{},signal:controller.signal,
+      timeoutMs:60000,overallTimeoutMs:60000});
+    assert.equal(cancelled.status,'failed');
+    assert.equal(cancelled.terminalReason,'cancelled');
+    const cancelledSealed=JSON.parse(await readFile(resolve(f.root,'artifacts/cpp/verification/cancelled-run-result.json'),'utf8'));
+    assert.equal(cancelledSealed.status,'failed');
+    assert.equal(cancelledSealed.terminalReason,'cancelled');
   } finally {await f.close();}
 });
 

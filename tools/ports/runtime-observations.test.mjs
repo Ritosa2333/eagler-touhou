@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {assertRuntimeObservation, readRuntimeObservation,runtimeScenarioResult,REQUIRED_RUNTIME_CHECKS} from './runtime-observations.mjs';
 import {evaluateDesktopGameplayReadiness} from './runtime-desktop-readiness.mjs';
+import {resolveAdaptationAdapter} from '../../tests/adaptation/adapters/registry.mjs';
 
 test('observed actions and missing required behaviors cannot produce an overall passing Runtime',()=>{
   const checks=REQUIRED_RUNTIME_CHECKS.map(id=>({id,status:'passed'}));
@@ -37,6 +38,12 @@ function wasmFixture() {
   };
 }
 
+const nativeTarget=(game,variant='normal',inputSemantics='consumed')=>({game,variant,adapter:{
+  runtime:{global:'__nativeRuntime',core:'core',module:'Module',app:'app'},observation:{
+  kind:'native-v1',export:`${game}_native_observation_v1`,source:`ports/${game}/runtime.cpp | read_native_state`,
+  sampleBoundary:'after-native-update',inputSemantics,
+}}});
+
 test('versioned native observation uses validity and consumed local-seat state, not legacy guesses',()=>{
   const wasm=wasmFixture();
   const words=[1,0x1bf,2,0x80,120,120,1,0xffffffff,0,0,777,0];
@@ -44,32 +51,71 @@ test('versioned native observation uses validity and consumed local-seat state, 
   words[8]=new Uint32Array(positions.buffer)[0];words[9]=new Uint32Array(positions.buffer)[1];
   wasm.uint32(128,words);
   const core={memory:wasm.memory,th11_phase:()=>1,th11_frame:()=>999,th11_native_observation_v1:()=>128};
-  withWindow({core},()=>{
-    const normal=readRuntimeObservation({game:'th11',variant:'normal'});
+  withWindow({core,__nativeRuntime:{core}},()=>{
+    const normal=readRuntimeObservation(nativeTarget('th11'));
+    assert.equal(normal.nativeObservation.sampleBoundary,'after-native-update');
+    assert.equal(normal.nativeObservation.inputSemantics,'consumed');
     assert.deepEqual(normal.phase,{value:2,name:'paused'});
     assert.equal(normal.input.value,0x80);assert.deepEqual(normal.position,{x:-12.5,y:240.25});
     assert.equal(normal.frames.simulation,120);assert.equal(normal.frames.application,777);
     assert.equal(normal.frames.multiplayer,undefined);assert.equal(normal.localSeat,0);
     assert.equal(normal.capabilities.restartFrame,'restart');
     wasm.uint32(128,[...words.slice(0,11),2]);
-    assert.throws(()=>readRuntimeObservation({game:'th11',variant:'normal'}),/invalid local seat/);
-    assert.equal(readRuntimeObservation({game:'th11',variant:'multiplayer'}).capabilities.restartFrame,null);
-    assert.equal(readRuntimeObservation({game:'th11',variant:'multiplayer'}).localSeat,2);
+    assert.throws(()=>readRuntimeObservation(nativeTarget('th11')),/invalid local seat/);
+    assert.equal(readRuntimeObservation(nativeTarget('th11','multiplayer')).capabilities.restartFrame,null);
+    assert.equal(readRuntimeObservation(nativeTarget('th11','multiplayer')).localSeat,2);
     wasm.uint32(128,[1,1,6,...Array(5).fill(0xffffffff),0x7fc00000,0x7fc00000,0xffffffff,0xffffffff]);
-    const inactive=readRuntimeObservation({game:'th11',variant:'normal'});
+    const inactive=readRuntimeObservation(nativeTarget('th11'));
     assert.deepEqual(inactive.phase,{value:6,name:'inactive'});
     assert.equal(inactive.input,null);assert.equal(inactive.position,null);assert.equal(inactive.pause,null);
     assert.equal(inactive.capabilities.pause,false);assert.equal(inactive.capabilities.restartFrame,null);
     wasm.uint32(128,[2,...words.slice(1)]);
-    assert.throws(()=>readRuntimeObservation({game:'th11',variant:'normal'}),/unsupported.*ABI/);
+    assert.throws(()=>readRuntimeObservation(nativeTarget('th11')),/unsupported.*ABI/);
     wasm.uint32(128,[1,0x201,...words.slice(2)]);
-    assert.throws(()=>readRuntimeObservation({game:'th11',variant:'normal'}),/unsupported.*ABI/);
+    assert.throws(()=>readRuntimeObservation(nativeTarget('th11')),/unsupported.*ABI/);
     wasm.uint32(128,[...words.slice(0,6),2,...words.slice(7)]);
-    assert.throws(()=>readRuntimeObservation({game:'th11',variant:'normal'}),/invalid observed pause/);
+    assert.throws(()=>readRuntimeObservation(nativeTarget('th11')),/invalid observed pause/);
     wasm.uint32(128,[...words.slice(0,3),0xffffffff,...words.slice(4)]);
-    assert.throws(()=>readRuntimeObservation({game:'th11',variant:'normal'}),/missing native observation field 3/);
+    assert.throws(()=>readRuntimeObservation(nativeTarget('th11')),/missing native observation field 3/);
     assert.throws(()=>assertRuntimeObservation({...normal,phase:{value:3,name:'game_over'}},'pause-active'),/not a paused game/);
   });
+});
+
+test('native-v1 export discovery requires an explicit ABI and input meaning',()=>{
+  const wasm=wasmFixture();wasm.uint32(128,[1,0x13f,1,128,20,20,0,0xffffffff,0,0,0xffffffff,0]);
+  const core={memory:wasm.memory,th11_native_observation_v1:()=>128,th11_phase:()=>1,th11_frame:()=>20};
+  withWindow({core,__nativeRuntime:{core}},()=>{
+    const legacy=readRuntimeObservation({game:'th11',variant:'normal'});
+    assert.equal(legacy.nativeObservation,undefined,'an export-shaped symbol alone is not a registered ABI');
+    assert.equal(legacy.capabilities.input,false);
+    assert.throws(()=>readRuntimeObservation({game:'th11',variant:'normal',adapter:{...nativeTarget('th11').adapter,observation:{
+      kind:'native-v1',export:'th11_native_observation_v1',sampleBoundary:'after-update',
+      inputSemantics:'consumed',
+    }}}),/must declare its source, sampling boundary and input semantics/);
+    const unsupported=readRuntimeObservation({game:'th11',variant:'normal',adapter:{observation:{
+      kind:'unsupported',reason:'title input has no stable native snapshot',
+    }}});
+    assert.ok(unsupported.unsupported.includes('native-observation-unsupported:title input has no stable native snapshot'));
+  });
+});
+
+test('TH08 legacy input mapping names the real queued status trace, not a fabricated native-v1 export',()=>{
+  const wasm=wasmFixture(),app=8,adapter=resolveAdaptationAdapter('th08','normal');
+  wasm.uint32(128,[0,0,0,1,0,0,0,0,0,0,0]);wasm.int32(512,[...Array(11).fill(0),1,...Array(4).fill(0)]);
+  const core={memory:wasm.memory,status:(_app,index)=>[2,1,0,1,0,0,1,0,0,0,0][index],trace:()=>128,
+    diagnostics:()=>512,sdl_stats:()=>0,allocate:()=>1536,deallocate:()=>{},
+    touch_state:(_app,pointer)=>wasm.float32(pointer,[1,1,1,0,0,0,0,0,0,0,0,0]),
+    th08_native_observation_v1(){throw Error('TH08 does not export this ABI');}};
+  const result=withWindow({__th08Runtime:{core,app}},()=>readRuntimeObservation({game:'th08',variant:'normal',
+    adapter:{runtime:adapter.runtime,observation:adapter.observation}}));
+  assert.equal(result.input.kind,'native-queued-for-next-movement-buttons');
+  assert.equal(result.input.inputSemantics,'queued-for-next-movement');
+  assert.equal(result.input.source,adapter.observation.inputSource);
+  assert.equal(result.input.sampleBoundary,adapter.observation.sampleBoundary);
+  const unsupported=withWindow({__th08Runtime:{core,app}},()=>readRuntimeObservation({game:'th08',variant:'normal',
+    adapter:{runtime:adapter.runtime,observation:{kind:'unsupported',reason:'no supported observation ABI'}}}));
+  assert.equal(unsupported.input,null);
+  assert.equal(unsupported.capabilities.input,false,'unsupported observation cannot satisfy input readiness');
 });
 
 test('TH11 phase can become ready before its native player ABI, then become gameplay-ready in the same runtime epoch',()=>{
@@ -78,8 +124,8 @@ test('TH11 phase can become ready before its native player ABI, then become game
   const words=[1,0x029,1,missing,24,missing,0,missing,missingFloat,missingFloat,missing,missing];
   wasm.uint32(128,words);
   const core={memory:wasm.memory,th11_phase:()=>1,th11_frame:()=>24,th11_native_observation_v1:()=>128};
-  withWindow({core},()=>{
-    const before=readRuntimeObservation({game:'th11',variant:'normal'});
+  withWindow({core,__nativeRuntime:{core}},()=>{
+    const before=readRuntimeObservation(nativeTarget('th11'));
     assert.deepEqual(before.phase,{value:1,name:'stage'});
     assert.equal(before.capabilities.input,false);
     assert.equal(before.capabilities.position,false);
@@ -90,7 +136,7 @@ test('TH11 phase can become ready before its native player ABI, then become game
     const position=new Float32Array([27,310]);
     const positionWords=new Uint32Array(position.buffer);
     wasm.uint32(128,[1,0x13f,1,0,25,25,0,missing,positionWords[0],positionWords[1],missing,0]);
-    const after=readRuntimeObservation({game:'th11',variant:'normal'});
+    const after=readRuntimeObservation(nativeTarget('th11'));
     assert.equal(after.capabilities.input,true);
     assert.equal(after.capabilities.position,true);
     assert.equal(after.input.value,0);
@@ -117,6 +163,8 @@ test('TH08 normal exports expose native control/enemy frames, mapped buttons, an
     assert.equal(observed.render.presentationFrame, 22);
     assert.deepEqual(observed.position, {x: 40, y: 80});
     assert.equal(observed.input.value, 1);
+    assert.equal(observed.input.sampleBoundary,'after-application-update');
+    assert.equal(observed.input.source,'diagnostics[11] | player_state.input.buttons');
     assert.equal(observed.pause.active, false);
     assert.deepEqual(observed.worldProgress.counters,{stage:1,enemySceneFrame:17,controlTick:17,
       lastCompletedNetworkFrame:null,confirmedNetworkFrame:null,nextNetworkFrame:null});
@@ -130,6 +178,28 @@ test('TH08 normal exports expose native control/enemy frames, mapped buttons, an
     assertRuntimeObservation({...observed, position: {x: 41, y: 80}}, 'position-moved',
       {before: {x: 40, y: 80}, axis: 'x', direction: 'positive'});
   }
+});
+
+test('TH08 Replay observation exposes no-playback defaults and the native selected-stage consumption counters',()=>{
+  const wasm=wasmFixture(),app=8,slots=Array(10).fill(0);
+  wasm.uint32(1024,[0,0,0,0,0]);
+  const core={memory:wasm.memory,eagler_replay_state:()=>1024,
+    status:(_app,field)=>field>=12?slots[field-12]:[2,1,0,5,0,0,0,0,0,0,0,0][field]};
+  const read=()=>withWindow({__th08Runtime:{core,app}},()=>readRuntimeObservation({game:'th08',variant:'normal'}));
+  let observed=read();
+  assert.deepEqual(observed.replay,{ready:false,state:{frame:0,total:0,ended:false,stage:0,startStage:0},
+    stream:{available:false,loaded:false,frame:0,inputCursor:0,inputBytes:0,timingCursor:0,timingBytes:0,stride:0,
+      gameFlags:0,inGame:false,stage:0,reportedFrame:0,ended:false,reason:'no Replay stage is loaded'}});
+
+  slots.splice(0,10,1,5,10,10,1,2,2,8,0,5);wasm.uint32(1024,[5,0,1,5,5]);
+  observed=read();
+  assert.equal(observed.replay.state.ended,true);
+  assert.deepEqual(observed.replay.stream,{available:true,loaded:true,frame:5,inputCursor:10,inputBytes:10,
+    timingCursor:1,timingBytes:2,stride:2,gameFlags:8,inGame:false,stage:5,reportedFrame:5,ended:true,reason:null});
+
+  slots.splice(0,10,...Array(10).fill(-1));
+  observed=read();assert.equal(observed.replay.stream.available,false);
+  assert.match(observed.replay.stream.reason,/does not expose/);
 });
 
 test('TH08 MP effects select the authoritative local seat and cannot fall back to player zero', () => {
@@ -327,7 +397,7 @@ test('th15 input context explains unavailable gameplay input without making the 
   wasm.float32(128+8*4,[-48,400]);
   const context=[1,0x3ff,1,1,1,0,1,1,0,4,0,0];wasm.uint32(512,context);
   const core={memory:wasm.memory,_th15_native_observation_v1:()=>128,_th15_input_context_v1:()=>512};
-  const read=()=>withWindow({core},()=>readRuntimeObservation({game:'th15',variant:'multiplayer'}));
+  const read=()=>withWindow({core,__nativeRuntime:{core}},()=>readRuntimeObservation(nativeTarget('th15','multiplayer')));
   const observed=read();
   assert.equal(observed.phase.name,'transition');assert.equal(observed.input,null);
   assert.equal(observed.capabilities.input,false);
@@ -376,12 +446,13 @@ test('TH06/07 replay readiness and rendering cannot be mistaken for live gamepla
   }
 });
 
-test('classic Emscripten pages read the native ABI from the same global heap used by their shell', () => {
+test('classic Emscripten declarations bind the native ABI to the Module-owned shell heap', () => {
   for(const game of ['th06','th07']){
     const wasm=wasmFixture();
     wasm.uint32(256,[1,0x123,1,16,0xffffffff,0xffffffff,0,0xffffffff,0x7fc00000,0x7fc00000,0xffffffff,0]);
-    const observed=withWindow({HEAPU8:new Uint8Array(wasm.buffer),Module:{[`_${game}_native_observation_v1`]:()=>256}},
-      ()=>readRuntimeObservation({game,variant:'normal'}));
+    const module={HEAPU8:new Uint8Array(wasm.buffer),[`_${game}_native_observation_v1`]:()=>256};
+    const observed=withWindow({HEAPU8:module.HEAPU8,Module:module,__nativeRuntime:{Module:module}},
+      ()=>readRuntimeObservation(nativeTarget(game)));
     assert.equal(observed.nativeObservation.version,1);
     assert.equal(observed.phase.name,'stage');assert.equal(observed.input.value,16);assert.equal(observed.localSeat,0);
   }
@@ -421,4 +492,47 @@ test('the browser-side reader has no imported closure dependencies', () => {
   const observed = withWindow({Module: {HEAPU8: new Uint8Array(256)}, core}, () => serialized({game: 'th11', variant: 'normal'}));
   assert.deepEqual(observed.phase, {value: 1, name: 'stage'});
   assert.equal(observed.frames.session, 12);
+});
+
+test('a new title uses the shared ABI reader with declared mounting, export and input sampling semantics',()=>{
+  const wasm=wasmFixture(),words=[1,0x13f,1,128,20,20,0,0xffffffff,0,0,0xffffffff,0];
+  const positions=new Float32Array([12.5,27.75]);
+  words[8]=new Uint32Array(positions.buffer)[0];words[9]=new Uint32Array(positions.buffer)[1];
+  wasm.uint32(128,words);
+  const request={game:'next',variant:'normal',adapter:{runtime:{global:'__next',core:'exports',module:'Module',app:'instance'},
+    observation:{kind:'native-v1',export:'observe_state',source:'ports/next/runtime.cpp | read_state',
+      sampleBoundary:'after-application-update',inputSemantics:'queued-for-next-movement'}}};
+  const serialized=new Function(`return (${readRuntimeObservation.toString()})`)();
+  const core={memory:wasm.memory,observe_state:()=>128};
+  withWindow({__next:{exports:core}},()=>{
+    const observed=serialized(request);
+    assert.deepEqual(observed.position,{x:12.5,y:27.75});
+    assert.deepEqual(observed.phase,{value:1,name:'stage'});
+    assert.equal(observed.frames.simulation,20);assert.equal(observed.localSeat,0);
+    assert.equal(observed.input.kind,'native-queued-for-next-movement-buttons');
+    assert.equal(observed.input.sampleBoundary,'after-application-update');
+    assert.ok(!observed.unsupported.includes('unknown-runtime'));
+    delete core.observe_state;
+    assert.throws(()=>serialized(request),/declared native observation .* is unavailable/);
+  });
+});
+
+test('a declared Runtime never borrows another mount, exports or wasm memory from the browser realm',()=>{
+  const wasm=wasmFixture();wasm.uint32(128,[1,0x13f,1,128,20,20,0,0xffffffff,0,0,0xffffffff,0]);
+  const request={game:'next',variant:'normal',adapter:{runtime:{global:'__next',core:'exports',module:'engine',app:'instance'},
+    observation:{kind:'native-v1',export:'observe_state',source:'ports/next/runtime.cpp | read_state',
+      sampleBoundary:'after-application-update',inputSemantics:'consumed'}}};
+  const serialized=new Function(`return (${readRuntimeObservation.toString()})`)();
+  const otherCore={memory:wasm.memory,observe_state:()=>128};
+  const otherRealm={core:otherCore,Module:{HEAPU8:new Uint8Array(wasm.memory.buffer),...otherCore},
+    HEAPU8:new Uint8Array(wasm.memory.buffer)};
+  withWindow(otherRealm,()=>assert.throws(()=>serialized({...request,adapter:{observation:request.adapter.observation}}),
+    /native-v1 observation requires its declared Runtime mapping/));
+  withWindow(otherRealm,()=>assert.throws(()=>serialized(request),/declared Runtime mount __next is unavailable/));
+  withWindow({...otherRealm,__next:{}},()=>assert.throws(()=>serialized(request),/declared native observation .* is unavailable/));
+  withWindow({...otherRealm,__next:{exports:{observe_state:()=>128}}},()=>
+    assert.throws(()=>serialized(request),/declared native observation .* is unavailable/));
+  withWindow({...otherRealm,__next:{engine:otherCore}},()=>{
+    assert.equal(serialized(request).frames.simulation,20,'declared Module-owned exports remain supported');
+  });
 });

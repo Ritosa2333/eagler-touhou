@@ -42,7 +42,8 @@ async function checkedWorkspacePath(repoRoot,relativePath,label,{directory=false
 export async function verifySourceBuildReceipt(target,{repoRoot,wasmSha256}) {
   assert.ok(repoRoot,'Repository root is required to verify a source build receipt');
   repoRoot=resolve(repoRoot);
-  assert.match(target.packageSha256,/^[a-f0-9]{64}$/,`${target.id}: expected packageSha256 is required`);
+  if(target.packageSha256!==undefined)
+    assert.match(target.packageSha256,/^[a-f0-9]{64}$/,`${target.id}: expected packageSha256 is invalid`);
   const expectedOwner=runtimeBuildSourceRoot(target.game,target.variant,repoRoot);
   assert.equal(target.sourceRoot,expectedOwner,`${target.id}: sourceRoot must identify the current ${target.game}/${target.variant} source owner`);
   const sourceRoot=await checkedWorkspacePath(repoRoot,target.sourceRoot,`${target.id}: sourceRoot`,{directory:true});

@@ -53,6 +53,8 @@
 - 反例：替换一个样本字节或使用另一个版本 EXE，要求预检拒绝。
 - 当前入口：原版 `target.json`、私有输入凭据和 frozen-oracle 预检；构建与包身份由正式 Runtime 验收入口核对。
 
+th11 normal／MP 的历史核心对照从私有 receipt 读取基准文件位置与 SHA-256，并绑定 `reference/` 下独立的来源文件；`referenceSource` 记录来源路径、SHA-256 和来源说明，来源文件进入完整 `acceptedReference` 前后快照。world-prefix 对照同时核对捕获目录 `state.json.identity.coreSha256`。报告列出基准、来源与当前 `artifacts/cpp/game-core-test.wasm` 的路径和 SHA-256；规范路径、realpath 与文件身份检查拒绝候选产物别名。若字节相同，报告同时保留独立来源绑定供审查。th15 normal／MP 的 `battle-callback-order` 独立成组，显式登记其读取的原版 EXE。
+
 ### VERIFY-04 | 参考保持原值
 
 - 在候选比较前后分别快照完整参考目录和声明的外部输入，核对文件清单、目标位置与字节。比较过程使用只读输入；保存结果进入本次独立输出目录。
@@ -60,6 +62,8 @@
 - 当前入口：frozen-oracle 的 `acceptedReference`、`baselineChanged` 和各组输入前后快照；维护回归包含参考改变的反例。
 
 ### VERIFY-05 | 原版参考维护
+
+统一队列的 `source-review` 组同时检查已接纳的参考来源。本地审查清单的 `products.<game>.<variant>.reference` 记录独立 provider、采集方法、单独接纳方法、采集程序与原版 EXE／DATA 身份、已接纳 golden manifest 和审查材料。每份 golden trace 的文件哈希、Replay 身份与有效帧范围均进入本次检查。清单显式声明候选不可更新 golden、维护输出写入 staging；普通验收读取这些证据，参考重新采集由显式维护入口执行。
 
 - 显式选择参考维护任务，从已校验的原版独立采集到 staging，附输入身份、采集程序、范围和变化说明。审核新值的来源与方法后，再单独接纳参考。
 - 反例：普通候选比较触发采集，或维护输出直接替换已接受参考，都不满足该流程；缺少维护任务或证据名称时入口必须拒绝。
@@ -81,13 +85,15 @@
 
 - 在本作指南登记字段来源、类型、单位、阶段、席位和结束条件，用独立固定状态逐项校验映射。构造正常完成、尚未完成和提前中止，要求结果分别正确。
 - 反例：把应用帧当世界帧、把席位 0 当本地席位，或把菜单状态当回放完成，必须由固定夹具和运行边界检出。
-- 当前入口：本作 Replay adapter、`runtime-observations.mjs` 及映射测试；维护 `state-schema.json` 的作品同时核对该表。新增或改变映射时，检查受影响作品和变体。
+- 当前入口：通用 Replay parser／policy 与 `runtime-observations.mjs` 提供跨作品观察约定；TH08 的 capture／golden suite 独立位于 `tests/adaptation/adapters/titles/th08-replay.mjs`，由 quick 与 daily 两个本作 gate 调用。通用 Replay driver 的导入身份不包含其他作品源码目录，方便新作稀疏检出后直接接入共享流程。维护 `state-schema.json` 的作品同时核对该表。新增或改变映射时，检查受影响作品和变体。
 
 ## 测试辅助器
 
 共用 protocol-host 站点通过本地 HTTPS 提供经过身份核对的 Runtime、DATA 和字体。每次运行创建独立的一日 localhost 证书，测试浏览器按该证书的 SPKI 指纹接受连接。报告保存证书身份，并逐响应比较浏览器实际收到的字节数和 SHA-256；Host 与 Runtime HTML 同时记录响应头、缓存和 Service Worker 状态，身份不符时保存浏览器的原始响应供复核。站点关闭时释放连接并清理临时证书。工具使用 OpenSSL，可通过 `EAGLER_OPENSSL` 指定可执行文件。
 
-响应采集在资源到达时启用独立 CDP 字节流，依次保存已缓冲的前缀和后续数据块；已结束的资源通过响应体接口读取。默认单资源预算为 256 MiB，总预算为 512 MiB，超时和超出预算均进入失败结果。`contentIdentity` 由实际字节数和 SHA-256 判断，`transport` 保存原始完成或取消事件；完整字节身份与浏览器传输终态分别可审查。截断、替换或无法取得内容的响应不能通过身份核对。
+响应采集在资源到达时启用独立 CDP 字节流，依次保存已缓冲的前缀和后续数据块；已结束的资源通过响应体接口读取。未压缩响应的流字节数与 `Content-Length` 不符时，重新读取完整响应体，最终身份仍由原冻结文件的字节数和 SHA-256 判定。默认单资源预算为 256 MiB，总预算为 512 MiB，超时和超出预算均进入失败结果。`contentIdentity` 由实际字节数和 SHA-256 判断，`transport` 保存原始完成或取消事件；完整字节身份与浏览器传输终态分别可审查。截断、替换或无法取得内容的响应不能通过身份核对。
+
+离线路径边界反例单独保存预期拒绝响应。只有唯一请求、作品、Runtime 代次、读写操作、固定越界路径与原生拒绝文本全部匹配时，才从协议错误审计中分离；其他 Runtime 拒绝继续判为错误。
 
 th06／th07 的输入清单必须提供 msgothic 与 unifont。配置完成后读取 Runtime 文件系统中的两份字体，核对实际安装字节与输入的大小和 SHA-256。若浏览器对同一代唯一请求记录 `ERR_ABORTED`，只有完整响应、安装结果和所属代次全部吻合，才能归为已完成消费的取消；原始请求失败与对应证明均保存在报告。截断、替换、重复请求、未知来源及其他网络错误继续使验收失败。基础 Runtime 检查在实例关闭、收齐事件后再次审计错误，再生成最终状态；最终关闭不会把当前代的未完成资源请求归为预期取消。
 
@@ -116,6 +122,8 @@ th15 的独立输入上下文记录本地席位的生命阶段、幽灵状态、
 th20 的普通游戏按主菜单、难度、角色、石头选择逐页等待原生就绪后确认。重开按原作确认页操作，等待可输入后选择“是”，再检查世界重建与继续推进。th06／th07 的经典 Emscripten 页面从其全局 `HEAPU8` 读取同一只读观察 ABI。
 
 th08 MP 从 `multiplayer_status` 按原生本地席位选择输入与坐标，并用 `multiplayer_netplay_status` 的世界就绪和已模拟帧判断进度。普通版沿用其单人状态导出。
+
+th08 普通版的 `input.value` 来自 `diagnostics[11]`，读取 `player_state.input.buttons` 在整个应用更新结束后的发布值，报告标明 `snapshotPhase=after-application-update`。普通录制局的玩家更新在 priority 9，录制发布在 priority 17，此时的发布值将供下一次玩家更新消费。精确释放检查把桥接收到的输入、已发布的排队输入与实际移动 Tick 分别记录，按本作消费顺序核对边界。
 
 行为断言读取正式 Runtime 已公开的原生输入、玩家坐标、逻辑帧、暂停阶段和呈现计数。方向操作在进入关卡后核对按下、位移与松开；暂停和重开按本作对应的逻辑状态判断。进入关卡、手柄采样、原生输入生效分别记录。键盘与手柄行为完成须同时具有原生输入变化、方向位移和释放证据。截图与无只读观察器的操作单独记为 `observed`；必需行为缺少通过记录时，目标状态为 `incomplete` 并返回非零。加 `--gamepad` 执行必需的原生手柄取样与效果检查。呈现计数和应用 Tick 按各自职责记录，观察器与必需场景由 `tools/ports/runtime-observations.mjs` 集中维护。
 

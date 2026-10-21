@@ -1,9 +1,72 @@
 import {gateReplayRecordOnFinalErrors} from '../browser/final-error-audit.mjs';
+import {replayTerminalPolicy} from '../../tests/adaptation/adapters/replay.mjs';
 
 export {gateReplayRecordOnFinalErrors};
 
 export function replayScenarioPassedTargetIds(records){
   return records.filter(record=>record.status==='passed'&&record.playback?.scenarioStatus==='passed').map(record=>record.id);
+}
+
+export function hasHashBoundNaturalReplayEndpoint(replay){
+  const consumption=replay?.fullInputConsumption,reference=consumption?.naturalTerminalReference;
+  const expected=consumption?.expected,actual=consumption?.actual;
+  return consumption?.status==='passed'&&reference?.status==='passed'&&
+    typeof expected?.sha256==='string'&&reference.fixtureSha256===expected.sha256&&
+    Number.isSafeInteger(expected.stage)&&reference.stage===expected.stage&&
+    Number.isSafeInteger(actual?.frame)&&reference.frame===actual.frame&&
+    Number.isSafeInteger(actual?.inputCursor)&&reference.inputCursor===actual.inputCursor&&
+    Number.isSafeInteger(actual?.timingCursor)&&reference.timingCursor===actual.timingCursor&&
+    typeof reference.source==='string'&&reference.source.length>0;
+}
+
+/** Bind REPLAY-01 to the imported fixture and the successful native playback operations. */
+export function replayOriginalImportCheck(record,{game=record?.game,variant=record?.variant}={}){
+  const step=id=>record?.checks?.find(check=>check?.id===id);
+  const imported=step('import-current-replay-through-shell');
+  const advancing=step('native-replay-plays-and-advances');
+  const terminal=step('native-terminal-signal-observed');
+  const importValue=imported?.value;
+  const playbackValue=advancing?.value;
+  const replay=record?.playback;
+  const sameReplayBytes=typeof importValue?.sha256==='string'&&
+    /^[a-f0-9]{64}$/.test(importValue.sha256)&&importValue.sha256===replay?.fixture?.sha256;
+  const importValid=imported?.status==='passed'&&typeof importValue?.path==='string'&&
+    Number.isSafeInteger(importValue.bytes)&&importValue.bytes>0&&sameReplayBytes;
+  const playbackValid=advancing?.status==='passed'&&playbackValue?.naturalFrames>=120&&
+    Number.isSafeInteger(playbackValue?.startFrame)&&Number.isSafeInteger(playbackValue?.frame)&&
+    playbackValue.frame>=playbackValue.startFrame+120&&Array.isArray(playbackValue?.observed)&&playbackValue.observed.length>0;
+  const endpointProven=hasHashBoundNaturalReplayEndpoint(replay);
+  const terminalValid=terminal?.status==='passed'&&replay?.status==='observed'&&
+    replay?.scenarioStatus==='passed'&&replay?.terminalSignalObserved?.status==='passed'&&
+    replay?.terminalSignalObserved?.value===true&&
+    (replayTerminalPolicy({game,variant})?endpointProven:replay?.fullInputConsumption?.status==='unproven');
+  const finalAudit=record?.finalErrorAudit?.status;
+  const failed=record?.status==='failed'||finalAudit==='failed'||
+    [imported,advancing,terminal].some(check=>check?.status==='failed');
+  const observed=importValid&&playbackValid&&terminalValid&&record?.status==='passed'&&finalAudit==='passed';
+  const complete=observed&&Boolean(replayTerminalPolicy({game,variant}))&&endpointProven;
+  const status=failed?'failed':complete?'passed':observed?'partial':'incomplete';
+  const reason=!importValid?'The original Replay import has no successful hash-bound fixture observation.':
+    !playbackValid?'The imported Replay has not demonstrated 120 naturally advancing native frames.':
+    finalAudit!=='passed'?'The Replay scenario has no successful final browser error audit.':
+    terminal?.status!=='passed'||replay?.terminalSignalObserved?.value!==true?
+      'The imported Replay has no successful native terminal signal observation.':
+    !endpointProven?replay?.fullInputConsumption?.reason??
+      'The imported Replay has no independently sourced natural endpoint bound to its fixture SHA-256.':
+    'The Replay scenario has not completed successfully.';
+  return{id:'REPLAY-01',adaptationIds:['REPLAY-01'],status,complete,
+    ...(!failed&&!complete?{reason}:{}),
+    scope:complete?`${game}/${variant} imported the hash-bound original Replay, matched its independently sourced natural endpoint, and reached the native terminal state.`:
+      'Replay import, native progress, and the terminal signal are reported separately from independently sourced natural endpoint evidence.',
+    observation:{game,variant,adaptationIds:['REPLAY-01'],observation:{
+      imported:imported?{status:imported.status,path:importValue?.path,bytes:importValue?.bytes,sha256:importValue?.sha256}:null,
+      nativeAdvance:advancing?{status:advancing.status,startFrame:playbackValue?.startFrame,
+        frame:playbackValue?.frame,naturalFrames:playbackValue?.naturalFrames,observed:playbackValue?.observed}:null,
+      terminalSignal:replay?.terminalSignalObserved??null,
+      fullInputConsumption:replay?.fullInputConsumption??{status:'unobserved'},
+      replayFixtureSha256:replay?.fixture?.sha256??null,sameReplayBytes,
+      finalErrorAudit:finalAudit??'unobserved',scenarioStatus:replay?.scenarioStatus??'unobserved',
+    }}};
 }
 
 export function playbackObservation(state){
@@ -75,14 +138,25 @@ function candidateCounterObservation(reference,observation){
  * Assess only the native terminal signal and documented native
  * self-consistency. Original-format compatibility remains a separate result.
  */
-export function assessReplayTerminalSignal({game,state,candidateCounterReference=null,inspectionStages=[],maximumFrame=null}){
+export function assessReplayTerminalSignal({game,variant=null,state,candidateCounterReference=null,inspectionStages=[],maximumFrame=null,
+  nativeInputConsumption=null}){
   const observation=playbackObservation(state);
   const candidate=candidateCounterObservation(candidateCounterReference,observation);
   const terminalSignalObserved={status:observation.ended?'passed':'failed',value:observation.ended,field:'ended'};
   const fullInputConsumption={status:'unproven',reason:game==='th11'
-    ?'TH11 ended does not distinguish game_over, StageExit, or input end_marker, and does not prove that every Replay input block was consumed.'
+    ?'th11 ended does not distinguish game_over, StageExit, or input end_marker, and does not prove that every Replay input block was consumed.'
     :'The native ended signal does not prove that every Replay input block was consumed.'};
-  const evidence={terminalSignalObserved,fullInputConsumption};
+  const requiresParsedConsumption=Boolean(replayTerminalPolicy({game,variant}));
+  let th08FullConsumption=requiresParsedConsumption?
+    nativeInputConsumption??{status:'incomplete',reason:'The parsed th08 Replay capacity was not assessed.'}:null;
+  if(requiresParsedConsumption&&th08FullConsumption?.status==='passed'&&!hasHashBoundNaturalReplayEndpoint({
+    fullInputConsumption:th08FullConsumption,
+  })){
+    th08FullConsumption={...th08FullConsumption,status:'incomplete',
+      reason:'File-derived capacity and native terminal counters have no hash-bound natural endpoint reference for this Replay.'};
+  }
+  const consumption=requiresParsedConsumption?th08FullConsumption:fullInputConsumption;
+  const evidence={terminalSignalObserved,fullInputConsumption:consumption};
   if(!observation.ended)return{...evidence,status:'failed',reason:'Native Replay state has not reported its terminal signal',observation,candidateCounterObservation:candidate};
 
   if(game==='th06'||game==='th07'){
@@ -93,8 +167,11 @@ export function assessReplayTerminalSignal({game,state,candidateCounterReference
   }
 
   if(game==='th08'){
+    if(th08FullConsumption?.status==='failed')return{...evidence,status:'failed',reason:th08FullConsumption.reason,observation,candidateCounterObservation:candidate};
+    if(th08FullConsumption?.status==='incomplete')return{...evidence,status:'incomplete',reason:th08FullConsumption.reason,observation,candidateCounterObservation:candidate};
     return{...evidence,status:'observed',observation,candidateCounterObservation:candidate,
-      terminalSignalScope:'TH08 native state reports its terminal signal after leaving gameplay; its Replay cursor has no declared total tick count.',
+      terminalSignalScope:th08FullConsumption?'th08 Replay reached its hash-bound natural endpoint and then left gameplay.':
+        'th08 native state reports its terminal signal after leaving gameplay; its Replay cursor has no declared total tick count.',
       nativeCounterObservation:{unit:'ReplayStream consumed-input cursor',frame:observation.frame,total:observation.total}};
   }
 
@@ -102,7 +179,7 @@ export function assessReplayTerminalSignal({game,state,candidateCounterReference
     const validStages=inspectionStages.length>0&&inspectionStages.every(stage=>Number.isSafeInteger(stage.frames)&&stage.frames>0);
     const metadataTotal=validStages?inspectionStages.reduce((sum,stage)=>sum+stage.frames,0):null;
     const totalMatches=metadataTotal!==null&&observation.total===metadataTotal;
-    return{...evidence,status:totalMatches?'observed':'failed',reason:totalMatches?null:'TH11 native total differs from the inspected stage metadata sum',
+    return{...evidence,status:totalMatches?'observed':'failed',reason:totalMatches?null:'th11 native total differs from the inspected stage metadata sum',
       observation,candidateCounterObservation:candidate,
       nativeFormatConsistency:{status:totalMatches?'passed':'failed',unit:'sum of inspected stage metadata frames',metadataTotal,observedTotal:observation.total,
         stageFrames:validStages?inspectionStages.map(stage=>stage.frames):null}};

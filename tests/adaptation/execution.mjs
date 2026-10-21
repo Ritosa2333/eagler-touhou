@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {mkdir,readFile,readdir} from 'node:fs/promises';
+import {mkdir,readFile,readdir,writeFile} from 'node:fs/promises';
 import {isAbsolute,relative,resolve} from 'node:path';
 import {runTasks} from '../../tools/testing/runner.mjs';
 import {runWithReport} from '../../tools/testing/cli-report.mjs';
@@ -9,7 +9,7 @@ import {fileIdentity} from '../../tools/testing/dependency-snapshot.mjs';
 import {buildAdaptationPlan} from './catalog.mjs';
 import {createCaseIdentityReader} from './identity.mjs';
 import {adaptationEnvironment,INPUT_ENVIRONMENT} from './inputs.mjs';
-import {adaptationCoverage,assertPreviousRun,readCaseReport,reusableResult,summarizeAdaptationCases} from './results.mjs';
+import {adaptationCoverage,adaptationReviewMarkdown,assertPreviousRun,readCaseReport,reusableResult,summarizeAdaptationCases} from './results.mjs';
 
 export const freshAdaptationOutput=root=>resolve(root,'artifacts/validation',`adaptation-${new Date().toISOString().replace(/[:.]/g,'-')}-${randomUUID().slice(0,8)}`);
 const inputNames=Object.values(INPUT_ENVIRONMENT);
@@ -43,7 +43,13 @@ export async function runAdaptationVerification(options,dependencies={}){
         mode:options.planOnly?'plan':options.rerunFailed?'rerun-failed':options.resume?'resume':'run',
         ...(previous?{parent:{path:previous.path,...previous.identity,runId:previous.report.runId}}:{}),cases:[]});
       const plan=(dependencies.buildPlan??buildAdaptationPlan)({root,output,environment,...selection});
+      const checklist=JSON.parse(await readFile(new URL('../../docs/adaptation/checklist.json',import.meta.url),'utf8'));
+      const guides=Object.fromEntries(await Promise.all(checklist.sections.map(async section=>[section.file,
+        await readFile(new URL('../../docs/adaptation/'+section.file,import.meta.url),'utf8')])));
+      const saveReview=()=>writeFile(resolve(output,'review.md'),adaptationReviewMarkdown(report,{root,checklist,guides}),'utf8');
       report.unmappedChecks=plan.unmappedChecks??[];
+      report.verificationScope=plan.scope??'scenes';
+      report.coverageTargets=plan.coverageTargets;
       for(const item of plan.cases){
         assert.ok(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(item.id),'Invalid adaptation case ID');
         const within=relative(output,item.reportPath);
@@ -52,7 +58,23 @@ export async function runAdaptationVerification(options,dependencies={}){
       }
       assert.equal(new Set(report.cases.map(item=>item.id)).size,report.cases.length,'Duplicate adaptation case IDs');
       if(options.planOnly){
-        report.status='planned';report.passed=false;await save();return;
+        const inputReader=(dependencies.createInputReader??createCaseIdentityReader)({root,environment,inputOnly:true});
+        for(const item of report.cases){
+          if(item.status!=='not-run'||!item.task)continue;
+          try{
+            const preflight=await inputReader({...item,checks:item.checksMapped});
+            assert.equal(preflight?.inputPreflight?.status,'passed','Input-only preflight must not return an execution identity');
+            item.inputPreflight=preflight.inputPreflight;
+          }catch(error){
+            const issue=error.message||String(error);
+            item.status='blocked';
+            item.inputPreflight={status:'blocked',issues:[issue]};
+            item.issues=[`Plan input preflight: ${issue}`];
+            item.blockedInputs=[...(item.blockedInputs??[]),{name:'selected-local-inputs',reason:issue}];
+          }
+        }
+        report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks,targets:report.coverageTargets});
+        report.status='planned';report.passed=false;await saveReview();await save();return;
       }
       assert.ok(report.cases.length||report.unmappedChecks.length,'No adaptation scenarios selected');
       const identityReader=(dependencies.createIdentityReader??createCaseIdentityReader)({root,environment});
@@ -64,8 +86,8 @@ export async function runAdaptationVerification(options,dependencies={}){
         const prior=previous?.report.cases.find(old=>old.id===item.id);
         const rerun=options.rerunFailed&&['failed','timeout','cancelled','not-run'].includes(prior?.status);
         if(!rerun&&await reusableResult(prior,item.fingerprint)){
-          const {status,issues,checks,scenarios,driverRunId,driverStatus,adaptationComplete,process:processResult,finishedAt,report:childReport}=prior;
-          Object.assign(item,{status,issues,checks,scenarios,driverRunId,driverStatus,adaptationComplete,process:processResult,finishedAt,
+          const {status,issues,incompleteReasons,checks,scenarios,driverRunId,driverStatus,adaptationComplete,process:processResult,finishedAt,report:childReport}=prior;
+          Object.assign(item,{status,issues,incompleteReasons,checks,scenarios,driverRunId,driverStatus,adaptationComplete,process:processResult,finishedAt,
             report:childReport,execution:'retained',source:{runId:previous.report.runId,path:previous.path,finishedAt}});
         }else pending.push({...item.task,id:item.id});
         await save();
@@ -106,11 +128,11 @@ export async function runAdaptationVerification(options,dependencies={}){
       }
       Object.assign(report,summarizeAdaptationCases(report.cases));
       if(report.preparation&&report.preparation.status!=='passed'){report.status='failed';report.passed=false;}
-      report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks});
-      if((report.unmappedChecks.length||selection.checks.length&&!report.coverage.complete)&&report.status==='passed'){
+      report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks,targets:report.coverageTargets});
+      if((report.unmappedChecks.length||(selection.checks.length||report.verificationScope==='product')&&!report.coverage.complete)&&report.status==='passed'){
         report.status='incomplete';report.passed=false;
       }
-      await save();
+      await saveReview();await save();
     });
   }finally{await release();}
 }

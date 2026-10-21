@@ -6,6 +6,17 @@ import { selectedPaths } from './workspace.mjs';
 
 const portPaths = paths => paths.filter(path => path.startsWith('ports/'));
 
+test('single-title selection includes the adaptation runner and only its source owner', () => {
+  const paths = selectedPaths('th08', 'normal');
+  assert.deepEqual(paths, ['launcher', 'common', 'tools', 'docs', 'tests', 'ports/th08']);
+  assert.equal(paths.includes('ports/th08-mp'), false);
+  assert.equal(paths.filter(path => path.startsWith('ports/')).length, 1);
+});
+
+test('frontend-only selection stays limited to Launcher integration inputs', () => {
+  assert.deepEqual(selectedPaths('frontend'), ['launcher', 'common/contracts', 'tools', 'docs']);
+});
+
 test('TH06 and TH07 use one source directory for normal and multiplayer builds', () => {
   for (const game of ['th06', 'th07']) {
     const expected = [`ports/${game}`];

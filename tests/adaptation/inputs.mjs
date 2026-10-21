@@ -6,6 +6,10 @@ export const INPUT_ENVIRONMENT=Object.freeze({
   runtimeManifest:'EAGLER_TEST_RUNTIME_MANIFEST',packages:'EAGLER_TEST_PACKAGES',
   updatePackages:'EAGLER_TEST_UPDATE_PACKAGES',musicManifest:'EAGLER_TEST_MUSIC_MANIFEST',
   artwork:'EAGLER_TEST_ARTWORK',launcherUrl:'EAGLER_TEST_LAUNCHER_URL',
+  diagnosticManifest:'EAGLER_TEST_DIAGNOSTIC_MANIFEST',
+  languageManifest:'EAGLER_TEST_LANGUAGE_MANIFEST',
+  sourceReview:'EAGLER_TEST_SOURCE_REVIEW',
+  minimalRuntime:'EAGLER_TEST_MINIMAL_RUNTIME',
 });
 
 /** Local paths live in one user-owned configuration, outside the test catalog. */

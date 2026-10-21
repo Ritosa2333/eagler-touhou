@@ -16,6 +16,7 @@
 | 适配指南 | [docs/adaptation/desktop-20261018.md](adaptation/desktop-20261018.md) | 桌面逐作运行记录 |
 | 适配指南 | [docs/adaptation/input.md](adaptation/input.md) | 键盘、手柄与触控 |
 | 适配指南 | [docs/adaptation/localization.md](adaptation/localization.md) | 语言与练习 |
+| 适配指南 | [docs/adaptation/language-observation.md](adaptation/language-observation.md) | Runtime 真实文本与字形观察接口 |
 | 适配指南 | [docs/adaptation/multiplayer.md](adaptation/multiplayer.md) | 多人接入与规则 |
 | 适配指南 | [docs/adaptation/presentation.md](adaptation/presentation.md) | 画面与声音 |
 | 适配指南 | [docs/adaptation/record-template.md](adaptation/record-template.md) | 验证记录模板 |

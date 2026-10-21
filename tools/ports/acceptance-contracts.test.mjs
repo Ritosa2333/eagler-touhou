@@ -232,6 +232,18 @@ test('required dependency pins cannot be omitted, forged, or downgraded to a leg
   }finally{await fixture.cleanup();}
 });
 
+test('source build receipt verification does not require a package identity',async()=>{
+  const fixture=await packageFixture();
+  try{
+    const {packageSha256,...sourceTarget}=fixture.target;
+    const identity=await verifySourceBuildReceipt(sourceTarget,{repoRoot:fixture.repoRoot,
+      wasmSha256:fixture.files[fixture.wasmName]&&hash(fixture.files[fixture.wasmName])});
+    assert.equal(identity.game,fixture.target.game);
+    assert.equal(identity.variant,fixture.target.variant);
+    assert.match(identity.receiptSha256,/^[a-f0-9]{64}$/);
+  }finally{await fixture.cleanup();}
+});
+
 test('expected package identity and builder-recorded source hashes must match current files and execution',async()=>{
   const fixture=await packageFixture();
   try{

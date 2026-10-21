@@ -37,7 +37,9 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：从真实宿主页启动当前包，等待 ready，再发送 configure、launch，并等待首帧。
 - 观察与判定：事件顺序为 ready、配置成功、启动成功、首帧；首帧对应实际绘制提交，画布尺寸有效。关卡逻辑推进由输入与生命周期场景独立验证。
 - 反例：Runtime 在配置完成前报告首帧，或只回 ready 却没有运行画面，应判失败。
-- 入口与覆盖：`runtime-browser.mjs` 的 `configure-launch-first-frame` 在选定的普通版包上验证协议事件与有效画布尺寸，记录为本项部分覆盖。桌面报告将 host navigation、ready、keyboard bridge、configure、launch、first-frame 六项作为启动 stages；每个有首帧的 Runtime epoch 另以 `gameplayReadinessByEpoch` 记录原生玩法资格，不把资格读取计作第七个启动 stage。首帧事件与实际绘制提交的时序对照待接入；逻辑帧推进由后续 `hosted-keyboard-native-effect` 检查。
+- 入口与覆盖：`runtime-browser.mjs` 的 `configure-launch-first-frame` 在选定的普通版包上验证协议事件与有效画布尺寸，记录为本项部分覆盖。桌面报告将 host navigation、ready、keyboard bridge、configure、launch、first-frame 六项作为启动 stages；每个有首帧的 Runtime epoch 以唯一 `gameplayReadinessByEpoch` 收据记录原生玩法资格，重启期间的同实例观察另存为 `gameplayReadinessTransitions`。这两类读取分开归档，启动汇总按 epoch 检查唯一启动收据；资格读取不计作第七个启动 stage。首帧事件与实际绘制提交的时序对照待接入；逻辑帧推进由后续 `hosted-keyboard-native-effect` 检查。
+
+逐作标题导航放在 normal adapter 的 `flow` 声明中。有限流程只使用 `wait`、`press` 和有最大次数的 `press-until`，条件从具名谓词与安全字段路径组成；路径只读归一化 observation 的自有对象字段，不执行任意表达式或数组索引。每个步骤和谓词都指向本作源码，并受总时长、步骤数和输入次数约束。共享执行器只通过正式运行时的 observe、press 和 waitUntil 接口操作；状态缺失或预算耗尽会停止流程，不继续猜测按键。既有 `confirm` 和 TH20 菜单流程保持兼容，多人版仍走房间验收入口。
 
 ### RUNTIME-03 | 命令响应与错误信息
 - 操作：发送一条有效命令及一条未知命令，分别等待带相同 request 身份的响应。
@@ -55,19 +57,27 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：先由 Launcher 安装/准备声明的资源，再启动 Runtime 并读取其声明的 DATA 或共享资源路径。
 - 观察与判定：Launcher 的安装状态与资源字节可核对，Runtime 从提供的挂载读取；游戏运行期间不自行安装或替换 Package Store 内容。
 - 反例：在 Runtime 内直接下载并覆盖用户包，绕过 Launcher 版本管理，应判失败。
-- 入口与覆盖：Launcher 的 `test:package-store:browser` 运行 Package Store 浏览器用例，`runtime-browser.mjs` 核对当前普通版包和 DATA；逐作完整安装到读取场景待接入。
+- 入口与覆盖：`offline-runtime-browser.mjs` 通过 Launcher UI 导入真实包，分别在在线启动与离线重开时核对已安装代次、全部文件引用、存储对象的实际字节哈希和 Runtime 实际取得的 managed DATA 哈希。Runtime 文档在脚本加载前记录 Package Store 的对象、代次和安装表写事务、删库及升级操作，要求这些安装内容保持不变；租约管理和本作用户文件由各自的状态观察。
+
+资源边界旅程在在线会话的正常操作完成后，复用同一 Runtime 执行一次安装对象表写事务，要求原判据检出并保存反例，再继续离线重开。事务保持包字节不变，检查写入尝试本身也会被检出。`--mutate-runtime-package-store` 在初次启动时执行同一反例，可单独验证整个旅程以失败退出；输入与证据均属于本轮临时站点和浏览器存储。
 
 ### RUNTIME-06 | 重开与常显判定点
-- 操作：在关卡中记录逻辑帧和玩家位置，暂停后执行本作重开，再分别开关常显判定点并移动、低速。
+- 操作：在关卡中记录逻辑帧和玩家位置，暂停后执行本作重开；产品声明常显判定点时，再分别开关它并移动、低速。重开适用于全部支持该流程的作品与模式。
 - 观察与判定：暂停期间世界逻辑帧停止；重开后场景状态重建且逻辑继续；判定点开关与本作碰撞区域显示一致。
 - 反例：暂停时世界仍推进、重开沿用旧局状态，或关闭显示选项后判定点仍残留，应判失败。
 - 入口与覆盖：`runtime-browser.mjs` 的 `native-pause-and-restart` 检查选定 Runtime 的暂停/重开原生状态； hitbox 视觉与碰撞区域对照需按作品记录，尚无覆盖全部产品的统一场景。
+
+桌面重开场景在每次物理按键前读取宿主页焦点和活动元素，将焦点交给宿主页 body，并再次读取确认；只接受当前 Runtime epoch 的宿主键盘转发记录，且按下与释放都必须被 Runtime 输入桥接受。iframe 内部收到的按键不替代宿主转发证据。
+
+th08 的受控场景锁定后，每次 `game.load()`（包括按 R 重开）都会进入独立写入 scope。`score.dat` 初始化写入进入当前 Runtime 的 RAM overlay，其他路径保持拒绝，持久提交字节为零；未锁定会话继续走原持久化写入路径。
+
+`runtime` 场景组登记当前实际执行的 RUNTIME-01／02／03／06。RUNTIME-05 的资源管理职责边界保留为整作验收要求，由对应的资源获取、挂载与故障操作提供独立证据。
 
 ### PACKAGE-01 | 共用游戏包存储
 - 操作：在浏览器中安装包，随后从 Launcher 读取当前代次及其文件对象，再重新打开包列表。
 - 观察与判定：安装结果出现在同一 Package Store 当前代次，文件引用可读且刷新后仍能定位。
 - 反例：成功提示出现但当前代次没有包对象，或包被写入仅当前标签页可见的临时位置，应判失败。
-- 入口与覆盖：`test:package-store:browser` 检查浏览器 IndexedDB 中的 Package Store 事务；测试包字节为夹具，未覆盖每个作品的实际发布包。
+- 入口与覆盖：`test:package-store:browser` 检查浏览器 IndexedDB 事务；`offline-runtime-browser.mjs` 用本次选择的真实 ZIP 经 Launcher UI 安装，核对可读代次与对象引用，并在启动 Runtime 和离线重开后再次读取同一安装状态。
 
 ### PACKAGE-02 | DATA 身份与挂载目标
 - 操作：对照包描述符中的 DATA 路径、挂载目标与本次私有 DATA 文件，计算实际字节数和 SHA-256。
@@ -95,9 +105,10 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 
 ### PACKAGE-06 | 统一安装和更新入口
 - 操作：分别从游戏卡片、资源准备和更新提示进入安装/更新，完成后再次打开游戏并读取当前代次。
-- 观察与判定：入口最终显示同一安装状态，Runtime 只消费 Launcher 当前代次提供的资源。
+- 观察与判定：入口读取同一安装状态；运行中的 Runtime 固定启动代次，后台更新完整提交后，经重开切换到 Launcher 当前代次。
 - 反例：卡片显示“已安装”而资源服务读到另一代次，应判失败。
-- 入口与覆盖：`game-preparation.test.mjs`、`runtime-service.test.mjs` 和 Package Store 浏览器测试覆盖各服务片段；跨所有 UI 入口到真实 Runtime 的单一验收流程待接入。
+- 入口与覆盖：`offline-runtime-browser.mjs --installation-authority-only` 使用显式 update manifest 指定的真实第二代 ZIP，核对描述符、文件哈希后在隔离站点生成同源 Release Catalog。浏览器经 UI 导入、重开游戏卡片并启动原代次，分别处理音乐确认与“更新已就绪”提示。后台下载提交新代次时，运行中的 Runtime 保持原代次；点击生产“立即重启”后，新 epoch 的 ready、first-frame 与 managed DATA 必须绑定新代次，离线重开继续使用该代次。只读 IndexedDB 日志记录卡片、首次资源准备、更新后重开与离线读取，共享判据重算完整代次链。第二代 ZIP、原代次首帧、新 epoch 或任一读取环节缺失均阻止完整覆盖。PACKAGE-03 与 SAVE-06 使用各自的中断导入及文件恢复场景。
+- 该更新旅程输出 PACKAGE-06 的完整收据。基础安装、Runtime 资源边界和存储编号由 `runtime-offline` 的同代次旅程各自生成收据，保留不同场景的代次语义。
 
 ## 记录
 

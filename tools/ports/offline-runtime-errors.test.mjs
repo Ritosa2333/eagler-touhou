@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {classifyOfflineBrowserEvents} from './offline-runtime-errors.mjs';
+import {classifyOfflineBrowserEvents,matchExpectedOfflinePathTraversal} from './offline-runtime-errors.mjs';
 
 const origin='https://127.0.0.1:49152';
 
@@ -46,4 +46,40 @@ test('unclassifiable requests and new event types fail closed',()=>{
   assert.deepEqual(result.blockingEvents,[malformed,unknown]);
   assert.deepEqual(result.sameOriginTransportEvents,[]);
   assert.deepEqual(result.crossOriginTransportEvents,[]);
+});
+
+test('only the exact request-bound read/write/remove traversal responses are expected negatives',()=>{
+  const expectation={requestId:'offline-runtime-unique-1',game:'th08',epoch:7,command:'read',
+    path:'../outside-offline-acceptance.dat'};
+  const event={protocol:'eagler-touhou/1',game:'th08',epoch:7,request:expectation.requestId,ok:false,
+    error:'Error: Invalid save path: ../outside-offline-acceptance.dat'};
+  assert.deepEqual(matchExpectedOfflinePathTraversal(event,expectation),{
+    kind:'expected-storage-path-traversal-rejection',requestId:expectation.requestId,game:'th08',epoch:7,
+    command:'read',path:'../outside-offline-acceptance.dat',outcome:'rejected',error:event.error,
+  });
+  assert.ok(matchExpectedOfflinePathTraversal({...event,error:'Error: Invalid save path'},expectation),
+    'Retain the exact generic path-guard diagnostic used by runtimes which do not echo the rejected path');
+  for(const command of ['read','write','remove'])
+    assert.ok(matchExpectedOfflinePathTraversal(event,{...expectation,command}),`${command} must be supported`);
+});
+
+test('a changed request, identity, outcome, path or rejection text remains a protocol error',()=>{
+  const expectation={requestId:'offline-runtime-unique-2',game:'th08',epoch:3,command:'remove',
+    path:'../outside-offline-acceptance.dat'};
+  const event={protocol:'eagler-touhou/1',game:'th08',epoch:3,request:expectation.requestId,ok:false,
+    error:'Error: Invalid save path: ../outside-offline-acceptance.dat'};
+  for(const changedEvent of [
+    {...event,request:'offline-runtime-other'},
+    {...event,game:'th09'},
+    {...event,epoch:4},
+    {...event,ok:true},
+    {...event,error:'Error: not found'},
+    {...event,protocol:'other'},
+  ])assert.equal(matchExpectedOfflinePathTraversal(changedEvent,expectation),null);
+  for(const changedExpectation of [
+    {...expectation,command:'sync'},
+    {...expectation,path:'../other.dat'},
+    {...expectation,requestId:''},
+    {...expectation,epoch:0},
+  ])assert.equal(matchExpectedOfflinePathTraversal(event,changedExpectation),null);
 });

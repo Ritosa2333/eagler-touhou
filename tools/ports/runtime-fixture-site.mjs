@@ -10,7 +10,11 @@ const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const mime=path=>({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript',
   '.wasm':'application/wasm','.json':'application/json','.css':'text/css'})[extname(path)]??'application/octet-stream';
 
-/** Compare browser-visible bytes with the verified bytes supplied by this fixture. */
+/**
+ * Compare browser-visible bytes with the verified fixture. expectedResponse may
+ * return a semantic descriptor with validate({url,response,record,bytes}); the
+ * body is still captured and hashed before that validator runs.
+ */
 export function watchFixtureResponses(page,{base,expectedResponses,expectedResponse,output,label='runtime'}){
   assert.match(label,/^[A-Za-z0-9_-]+$/,'Response evidence label must be a basename');
   const origin=new URL(base).origin,responses=[],errors=[],pending=new Set();
@@ -18,9 +22,10 @@ export function watchFixtureResponses(page,{base,expectedResponses,expectedRespo
     const url=new URL(response.url());if(!['http:','https:'].includes(url.protocol)||url.origin!==origin)return;
     if(url.pathname==='/favicon.ico'&&response.status()===204)return;
     const operation=(async()=>{
-      const expected=expectedResponse?await expectedResponse(url):expectedResponses.get(url.pathname+url.search);
+      const expected=expectedResponse?await expectedResponse(url,response):expectedResponses.get(url.pathname+url.search);
       assert.ok(expected,`Browser response was not supplied by the verified fixture: ${url.href}`);
-      const record={url:url.href,status:response.status(),expected,
+      const semantic=typeof expected.validate==='function';
+      const record={url:url.href,status:response.status(),expected:semantic?(expected.expected??{kind:expected.kind??'semantic'}):expected,
         headers:await response.allHeaders(),
         fromServiceWorker:response.fromServiceWorker(),requestId:response.requestId,resourceType:response.resourceType};
       responses.push(record);
@@ -35,6 +40,19 @@ export function watchFixtureResponses(page,{base,expectedResponses,expectedRespo
       record.capture=response.captureDetails?.();
       record.transport=record.capture?.terminal;
       record.contentIdentity='failed';
+      if(semantic){
+        try{
+          const receipt=await expected.validate({url,response,record,bytes});
+          record.semanticReceipt=receipt;
+          if(receipt&&typeof receipt==='object'&&Object.hasOwn(receipt,'metadata'))record.metadata=receipt.metadata;
+          record.contentIdentity='passed';
+          return;
+        }catch(error){
+          if(output){const name=`${label}-${responses.length}-${sha256(url.href).slice(0,16)}.response`;
+            await writeFile(resolve(output,name),bytes);record.actualBody=name;}
+          throw error;
+        }
+      }
       if(response.status()!==200||bytes.length!==expected.bytes||record.actual.sha256!==expected.sha256){
         if(output){const name=`${label}-${responses.length}-${sha256(url.href).slice(0,16)}.response`;
           await writeFile(resolve(output,name),bytes);record.actualBody=name;}

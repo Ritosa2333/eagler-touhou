@@ -47,8 +47,12 @@ export interface ObservationFrame {
 }
 export interface StateEvidence {
   coverageVersion: string;
-  groups: Array<{id: string; digest: string | number; includedFields?: string[]}>;
+  groups: Array<{id: string; digest: string | number; includedFields: string[]}>;
   missingGroups: string[];
+  authority: {
+    schema: 'presentation-lab/state-authority/1';
+    domains: Array<{id: string; groups: string[]; sourceFields: string[]}>;
+  };
 }
 export interface RuntimeDriverV1 {
   describe(): Capabilities;

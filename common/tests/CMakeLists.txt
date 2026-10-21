@@ -18,6 +18,10 @@ add_test(NAME eagler-common.thprac-pointer COMMAND eagler_common_thprac_pointer_
 add_executable(eagler_common_assertions_enabled_test assertions-enabled-test.cpp)
 add_test(NAME eagler-common.assertions-enabled COMMAND eagler_common_assertions_enabled_test)
 
+add_executable(eagler_common_touch_motion_test touch-motion-test.cpp)
+target_link_libraries(eagler_common_touch_motion_test PRIVATE eagler::netplay_headers)
+add_test(NAME eagler-common.touch-motion COMMAND eagler_common_touch_motion_test)
+
 add_executable(eagler_common_adonis_timing_test adonis-timing-test.cpp)
 target_include_directories(eagler_common_adonis_timing_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
 target_link_libraries(eagler_common_adonis_timing_test PRIVATE eagler::netplay_base)

@@ -49,9 +49,16 @@ export async function dependencySnapshot(root,entrypoints){
     };
     visit(source);
     for(const specifier of imports){
+      if(specifier.startsWith('/')){
+        // Browser modules may import a repository asset through its served URL.
+        const found=await find([resolve(root,specifier.slice(1)),resolve(root,'launcher',specifier.slice(1))]);
+        if(found&&inside(found))pending.push(found);
+        continue;
+      }
       if(!specifier.startsWith('.'))continue;
       const base=resolve(dirname(absolute),specifier);
       const found=await find([base,base+'.mjs',base+'.js',base+'.mts',base+'.ts',base+'/index.mjs',
+        ...(specifier.endsWith('.mjs')?[base.slice(0,-4)+'.mts']:[]),
         ...(specifier.endsWith('.js')?[base.slice(0,-3)+'.ts']:[]),
         // Literal imports evaluated inside Launcher page callbacks use its URL root.
         resolve(root,'launcher',specifier)]);

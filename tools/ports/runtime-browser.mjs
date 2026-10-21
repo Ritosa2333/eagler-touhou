@@ -9,11 +9,14 @@ import {selectRuntimeTargets,verifyPrivateData,verifyRuntimePackage} from './acc
 import {sourceSnapshot} from '../testing/source-snapshot.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
-import {readRuntimeObservation,assertRuntimeObservation,runtimeScenarioResult} from './runtime-observations.mjs';
+import {readRuntimeObservation,assertRuntimeObservation,runtimeScenarioResult,runtimeObservationRequest} from './runtime-observations.mjs';
 import {createNavigationAbortEvidence,shouldRecordHttpFailure,completedSharedResourceAbort} from './navigation-abort-evidence.mjs';
 import {loadRuntimeReplayFixture} from './replay-fixtures.mjs';
+import {deriveReplayStorageLocations,parseReplayStoragePolicy,readRuntimeStorageMount,runtimeReplayFilePath,
+  readRuntimeReplayApis,validateReplayInspection} from './runtime-storage-contract.mjs';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
 import {resolveTitleFlow} from '../../tests/adaptation/adapters/title-flow.mjs';
+import {titleFlowKeyFields} from '../../tests/adaptation/adapters/flow-steps.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const requestedOutput=argument('output');
@@ -37,15 +40,19 @@ const evidenceEvents=events=>events.map(event=>{
   return {...metadata,bytePayload:{bytes:bytes.length,sha256:hash(new Uint8Array(bytes))}};
 });
 const root=resolve(import.meta.dirname,'../..');
+const storagePolicyPath=resolve(root,'launcher/src/launcher/replay-storage-policy.mts');
+const storagePolicySource=await readFile(storagePolicyPath,'utf8');
+const storagePolicy=parseReplayStoragePolicy(storagePolicySource);
 Object.assign(report,{commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
   sourceSnapshot:sourceSnapshot(root),
   selection:{games:selection.games,variant:selection.variant,expectedTargets:selection.expected},
   scope:'Desktop Chromium, hash-identified production Runtime package, real private game DATA, protocol host; no physical-device or multiplayer-session claim',targets:[]});
 report.harnessSha256=hash(await readFile(new URL(import.meta.url)));
+report.storagePolicySource={path:'launcher/src/launcher/replay-storage-policy.mts',sha256:hash(storagePolicySource)};
 const observationReader=`export const readRuntimeObservation = (${readRuntimeObservation.toString()});\n`;
 report.observationReaderSha256=hash(observationReader);
 await writeFile(resolve(output,'observation-reader.mjs'),observationReader);
-for(const name of ['runtime-observations','runtime-desktop-readiness','practice-observations','replay-fixtures','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options','../../common/contracts/product-catalog','../../tests/adaptation/adapters/title-flow']){
+for(const name of ['runtime-observations','runtime-desktop-readiness','practice-observations','replay-fixtures','runtime-storage-contract','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options','../../common/contracts/product-catalog','../../tests/adaptation/adapters/title-flow']){
   const contents=await readFile(new URL(`./${name}.mjs`,import.meta.url));
   (report.helperSha256??={})[name]=hash(contents);
   await writeFile(resolve(output,basename(`${name}.mjs`)),contents);
@@ -112,7 +119,7 @@ try{
       assert.deepEqual(record.consoleErrors.filter(message=>!message.startsWith('Failed to load resource:')),[],'Runtime console errors');
     };
     let frame;
-    const observe=()=>frame.evaluate(readRuntimeObservation,{game:target.game,variant:target.variant});
+    const observe=()=>frame.evaluate(readRuntimeObservation,runtimeObservationRequest(target));
     const inspect=async()=>({...await frame.evaluate(game=>{
       const runtime=window[`__${game}Runtime`],module=runtime?.Module??window.Module,core=runtime?.core??module;
       let state=null;
@@ -121,21 +128,21 @@ try{
       return{state,canvas:document.querySelector('canvas')?{width:document.querySelector('canvas').width,height:document.querySelector('canvas').height}:null,
         renderCallbacks:window.__eaglerDebugRenderCallbacks??null,filesystem:!!module?.FS,options:module?.eaglerOptions??null};
     },target.game),native:await observe()});
-    const sendKey=async(code,key,keyCode,down)=>{
+    const sendKey=async(code,key,keyCode,down,location=0)=>{
       const request='acceptance-keyboard-'+randomUUID();
       (record.inputRequests??=[]).push(request);
-      await page.evaluate(fields=>send('keyboard',fields),{code,key,keyCode,location:0,inputSource:'physical',down,request});
+      await page.evaluate(fields=>send('keyboard',fields),{code,key,keyCode,location,inputSource:'physical',down,request});
     };
-    const key=async(code,key,keyCode,hold=100)=>{
-      await sendKey(code,key,keyCode,true);
+    const key=async(code,key,keyCode,hold=100,location=0)=>{
+      await sendKey(code,key,keyCode,true,location);
       try{await page.waitForTimeout(hold);}
-      finally{await sendKey(code,key,keyCode,false);}
+      finally{await sendKey(code,key,keyCode,false,location);}
       await page.waitForTimeout(180);
     };
     const flowKey=code=>{
-      const values={KeyZ:['z',90],KeyR:['r',82],ArrowUp:['ArrowUp',38],ControlLeft:['Control',17]}[code];
-      if(!values)throw new Error(`No runtime-browser key mapping for title-flow action ${code}`);
-      return key(code,values[0],values[1],code==='ControlLeft'?350:code==='KeyR'?100:90);
+      const fields=titleFlowKeyFields(code);
+      return key(fields.code,fields.key,fields.keyCode,
+        code==='ControlLeft'?350:code==='KeyR'?100:90,fields.location);
     };
     const gameplayReady=state=>titleFlow.isGameplayReady(state,'runtime');
     const waitObservation=async(label,predicate,timeoutMs=20000)=>{
@@ -337,9 +344,19 @@ try{
         assert.equal(await page.evaluate(request=>events.some(event=>event.request===request),stale),false);
         return{files:Object.fromEntries(Object.entries(contents).map(([name,bytes])=>[name,{bytes:bytes.length,sha256:hash(new Uint8Array(bytes))}])),oldEpochIgnored:true};
       },{fatal:false});
-      await check('replay-file-roundtrip-persistence',['REPLAY-05','SAVE-02','SAVE-03','SAVE-04'],async()=>{
-        const path=`replay/${PRODUCT_GAMES[target.game].replay.prefix}_udtest.rpy`;
-        const fixture=await loadRuntimeReplayFixture(target),bytes=Array.from(fixture.contents);
+      await check('replay-file-roundtrip-persistence',['REPLAY-05','SAVE-01'],async()=>{
+        assert.equal(target.variant,'normal','The runtime-browser file journey must use its selected normal product Runtime');
+        const fixture=await loadRuntimeReplayFixture(target),bytes=Array.from(fixture.contents),product=PRODUCT_GAMES[target.game];
+        const locations=deriveReplayStorageLocations({game:target.game,product,policy:storagePolicy,language:'ja'});
+        const runtimeMapping=runtimeObservationRequest(target).adapter?.runtime;
+        assert.ok(runtimeMapping,`${target.id}: storage acceptance needs the selected product Runtime mapping`);
+        const suffix=randomUUID().replaceAll('-','').slice(0,4),path=runtimeReplayFilePath({product,fixturePath:fixture.identity.path,suffix});
+        const badSuffix=randomUUID().replaceAll('-','').slice(0,4),invalidPath=runtimeReplayFilePath({product,fixturePath:fixture.identity.path,suffix:badSuffix});
+        const journey=record.replayFileJourney={schema:'eagler-touhou/runtime-replay-storage-journey/1',
+          product:{id:target.game,game:target.game,variant:target.variant,targetId:target.id,packageSha256:record.packageIdentity?.packageSha256??target.packageSha256,
+            declaredSaveRoot:product.storage.saveRoot,runtimeMapping},
+          fixture:fixture.identity,path,storage:{policySource:locations.policySource,normal:locations.normal,multiplayer:locations.multiplayer,
+            multiplayerRuntimeObserved:false},operations:[],sessions:[],negativeControls:[]};
         const rejected=[];
         for(const command of ['read','write','remove']){
           const error=await page.evaluate(async({command,bytes})=>{
@@ -349,24 +366,147 @@ try{
           assert.ok(error&&!error.startsWith('Timeout:'),`${command} must reject paths outside the declared storage`);
           rejected.push({command,error});
         }
-        await page.evaluate(({path,bytes})=>rpc('write',{path,bytes}),{path,bytes});
-        assert.deepEqual((await page.evaluate(path=>rpc('read',{path}),path)).bytes,bytes);
-        assert.ok((await page.evaluate(()=>rpc('list'))).files.some(file=>file.path===path));
-        const reopen=async epoch=>{
-          await page.evaluate(()=>rpc('sync'));
-          record.priorSessionEvents=[...(record.priorSessionEvents??[]),...evidenceEvents(await page.evaluate(()=>window.events))];
+        journey.negativeControls.push({kind:'path-escape',status:'passed',rejected});
+        const openReplayStorageRuntime=async epoch=>{
+          record.priorSessionEvents=[...(record.priorSessionEvents??[]),...evidenceEvents(await page.evaluate(()=>window.events??[]))];
           await navigate(site.hostUrl(target,epoch));
           await page.waitForFunction(epoch=>events.some(event=>event.event==='ready'&&event.epoch===epoch),epoch,{timeout:120000});
+          frame=page.frames().find(item=>item.url().includes(`/runtime/${target.id}/`));assert.ok(frame,`${target.id}: storage Runtime iframe is missing`);
+          const ready=await page.evaluate(epoch=>events.find(event=>event.event==='ready'&&event.epoch===epoch),epoch);
+          assert.equal(ready.game,target.game);assert.equal(ready.epoch,epoch);
+          const sharedResources=Object.keys(config.shared??{}).map(name=>({path:`/${name}`,url:`/shared/${name}`}));
+          await page.evaluate(({sharedResources,options})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],sharedResources,
+            thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,thpracEnabled:false,limitPresentationTo60:false,...options,replayViewer:true}}),
+            {sharedResources,options:target.options??{}});
+          await page.evaluate(()=>rpc('launch'));
+          await page.waitForFunction(()=>events.some(event=>event.event==='first-frame'),null,{timeout:120000});
+          const mount=await frame.evaluate(readRuntimeStorageMount,{runtime:runtimeMapping,expectedDatabase:locations.normal.database});
+          const runtimeUrl=frame.url();
+          assert.ok(new URL(runtimeUrl).pathname.startsWith(`/runtime/${target.id}/`),
+            `${target.id}: storage operation moved to a different packaged product Runtime`);
+          const readyRoot=typeof ready.saveRoot==='string'?ready.saveRoot:null;
+          if(readyRoot!==null)assert.equal(readyRoot,locations.normal.database,`${target.id}: ready event storage root differs from product policy`);
+          journey.sessions.push({epoch,targetId:target.id,game:target.game,variant:target.variant,packageSha256:journey.product.packageSha256,
+            runtimeMapping,
+            runtimeUrl,readySaveRoot:readyRoot,mount});
+          return{epoch,ready,mount};
         };
-        await reopen(3);
-        assert.deepEqual((await page.evaluate(path=>rpc('read',{path}),path)).bytes,bytes);
+        const initial=await openReplayStorageRuntime(3);
+        const storageRootPassed=initial.mount.available&&initial.mount.idbfs&&initial.mount.mountpoint===locations.normal.database&&
+          (initial.ready.saveRoot===undefined||initial.ready.saveRoot===locations.normal.database);
+        if(initial.mount.available&&initial.mount.idbfs===false)
+          throw Error(`${target.id}: storage root exists but is not an identified IDBFS mount (${initial.mount.typeName})`);
+        if(initial.mount.available&&initial.mount.mountpoint!==locations.normal.database)
+          throw Error(`${target.id}: Runtime persistence mount ${initial.mount.mountpoint} differs from declared ${locations.normal.database}`);
+        journey.storage.observedNormalMount=initial.mount;
+        journey.storage.normalMountStatus=storageRootPassed?'passed':'unavailable';
+        const beforeWrite=(await page.evaluate(()=>rpc('list'))).files;
+        assert.ok(Array.isArray(beforeWrite));
+        assert.ok(!beforeWrite.some(file=>file.path===path),`${target.id}: generated Replay path already exists`);
+        await page.evaluate(({path,bytes})=>rpc('write',{path,bytes}),{path,bytes});
+        const stored=await page.evaluate(path=>rpc('read',{path}),path),storedBytes=new Uint8Array(stored.bytes);
+        assert.deepEqual(Array.from(storedBytes),bytes,`${target.id}: Runtime read differs from the fixture bytes`);
+        const listed=(await page.evaluate(()=>rpc('list'))).files.find(file=>file.path===path);
+        assert.ok(listed,`${target.id}: official Runtime list omitted the imported Replay`);
+        assert.equal(listed.size,bytes.length,`${target.id}: Runtime list size differs from the Replay bytes`);
+        const fixtureDigest=hash(fixture.contents),storedDigest=hash(storedBytes);
+        assert.equal(storedDigest,fixtureDigest,`${target.id}: Runtime stored Replay hash differs from the verified fixture`);
+        await page.evaluate(()=>rpc('sync'));
+        journey.operations.push({operation:'write',path,bytes:storedBytes.length,sha256:storedDigest});
+        journey.operations.push({operation:'read',path,bytes:storedBytes.length,sha256:storedDigest});
+        journey.operations.push({operation:'list',path,size:listed.size});
+        journey.operations.push({operation:'sync',status:'passed'});
+
+        const replayApis=await frame.evaluate(readRuntimeReplayApis,{runtime:runtimeMapping});
+        const inspectOrOpen=async(candidatePath,{onAccepted=()=>{}}={})=>{
+          if(replayApis.inspect){
+            const inspection=await page.evaluate(path=>rpc('playback',{action:'inspect',path}),candidatePath);
+            const evidence=validateReplayInspection({description:inspection.description,inspectedPath:candidatePath,expectedPath:candidatePath});
+            onAccepted(evidence);
+            return{...evidence,description:inspection.description};
+          }
+          try{
+            const opened=await page.evaluate(path=>rpc('playback',{action:'open',path}),candidatePath);
+            const evidence={status:'passed',method:'official-runtime-open-pause',path:candidatePath,
+              opened:opened?.playback??null,naturalEndpointClaimed:false};
+            onAccepted(evidence);
+            await page.evaluate(()=>rpc('playback',{action:'pause'}));
+            return evidence;
+          }catch(error){
+            const message=String(error?.message??error);
+            if(/Unsupported runtime command: playback|needs update to parse|需要更新后才能解析录像/.test(message))
+              return{status:'unavailable',method:'official-runtime-playback',path:candidatePath,reason:message,naturalEndpointClaimed:false};
+            throw error;
+          }
+        };
+        const validity=await inspectOrOpen(path);
+        journey.fixtureValidation=validity;
+        const invalidBytes=[0];let invalidWriteError=null;
+        try{await page.evaluate(({path,bytes})=>rpc('write',{path,bytes}),{path:invalidPath,bytes:invalidBytes});}
+        catch(error){invalidWriteError=String(error?.message??error);}
+        if(invalidWriteError){
+          journey.negativeControls.push({kind:'malformed-replay',status:'unavailable',rejectedAt:'write',path:invalidPath,
+            reason:'Runtime storage did not persist the malformed control file, so Replay validation was not exercised',error:invalidWriteError});
+        }else{
+          let invalidAccepted=false,invalidError=null;
+          try{await inspectOrOpen(invalidPath,{onAccepted:()=>{invalidAccepted=true;}});}
+          catch(error){invalidError=String(error?.message??error);}
+          if(validity.status==='unavailable')
+            journey.negativeControls.push({kind:'malformed-replay',status:'unavailable',path:invalidPath,reason:'Runtime has no Replay inspection or open validator'});
+          else{
+            journey.negativeControls.push({kind:'malformed-replay',status:invalidAccepted?'failed':'passed',
+              rejectedAt:'official-runtime-validator',path:invalidPath,error:invalidError});
+          }
+        }
+        const removeIfPresent=async(candidatePath)=>{
+          const files=(await page.evaluate(()=>rpc('list'))).files;
+          if(files.some(file=>file.path===candidatePath)){
+            await page.evaluate(path=>rpc('remove',{path}),candidatePath);
+            await page.evaluate(()=>rpc('sync'));
+          }
+        };
+        await removeIfPresent(invalidPath);
+        assert.ok(!(await page.evaluate(()=>rpc('list'))).files.some(file=>file.path===invalidPath),`${target.id}: malformed control file remained in storage`);
+        if(validity.status!=='unavailable'&&!invalidWriteError)
+          assert.equal(journey.negativeControls.at(-1)?.status,'passed',`${target.id}: malformed Replay was not rejected by a production gate`);
+
+        await openReplayStorageRuntime(4);
+        const afterRestoreList=(await page.evaluate(()=>rpc('list'))).files;
+        assert.ok(afterRestoreList.some(file=>file.path===path),`${target.id}: synchronized Replay is absent in the new Runtime epoch`);
+        const restored=await page.evaluate(path=>rpc('read',{path}),path),restoredBytes=new Uint8Array(restored.bytes);
+        assert.deepEqual(Array.from(restoredBytes),bytes,`${target.id}: restored Runtime bytes differ from the imported fixture`);
+        const restoredDigest=hash(restoredBytes);assert.equal(restoredDigest,fixtureDigest,`${target.id}: restored Replay hash changed`);
+        journey.operations.push({operation:'fresh-epoch-read',epoch:4,path,bytes:restoredBytes.length,sha256:restoredDigest});
         await page.evaluate(path=>rpc('remove',{path}),path);
-        await reopen(4);
-        assert.ok(!(await page.evaluate(()=>rpc('list'))).files.some(file=>file.path===path));
+        await page.evaluate(()=>rpc('sync'));
+        assert.ok(!(await page.evaluate(()=>rpc('list'))).files.some(file=>file.path===path),`${target.id}: remove did not update the current Runtime list`);
+        journey.operations.push({operation:'remove',path,sha256:restoredDigest});
+        journey.operations.push({operation:'sync-after-remove',status:'passed'});
+
+        await openReplayStorageRuntime(5);
+        const afterDeleteList=(await page.evaluate(()=>rpc('list'))).files;
+        assert.ok(!afterDeleteList.some(file=>file.path===path),`${target.id}: deleted Replay returned after a fresh Runtime epoch`);
+        const missingRead=await page.evaluate(async path=>{try{await rpc('read',{path});return null;}catch(error){return String(error.message??error);}},path);
+        assert.ok(missingRead&&!missingRead.startsWith('Timeout:'),`${target.id}: deleted Replay remained readable after reopen`);
+        journey.operations.push({operation:'fresh-epoch-list-after-delete',epoch:5,path,absent:true});
+        journey.operations.push({operation:'fresh-epoch-read-after-delete',epoch:5,path,error:missingRead});
+        const replayComplete=validity.status==='passed'&&journey.negativeControls.at(-1)?.status==='passed';
+        const normalComplete=storageRootPassed&&replayComplete;
+        journey.scope={game:target.game,variant:target.variant,targetId:target.id,packageSha256:journey.product.packageSha256,
+          replayFixtureSha256:fixtureDigest,storageMountObserved:storageRootPassed,validReplayObserved:validity.status==='passed',replayFileLifecycleComplete:replayComplete,
+          malformedReplayRejected:journey.negativeControls.at(-1)?.status==='passed',normalRuntimeExecuted:true,multiplayerRuntimeExecuted:false,
+          observedVariants:['normal'],coverageComplete:false,naturalReplayEndpointClaimed:false};
+        journey.coverage={normal:{status:normalComplete?'passed':'observed',targetId:target.id,packageSha256:journey.product.packageSha256,
+            mount:initial.mount,fixtureValidation:validity},
+          multiplayer:locations.multiplayer?{status:'not-executed',policyDerived:true,location:locations.multiplayer}:
+            {status:'not-applicable',policyDerived:true,reason:'Product directory declares no multiplayer Runtime'}};
         assert.deepEqual((await loadRuntimeReplayFixture(target)).identity,fixture.identity,'Replay input changed during acceptance');
-        return{path,bytes:bytes.length,sha256:hash(new Uint8Array(bytes)),restoredAcrossNewInstance:true,deletionPersisted:true,rejected,
-          fixture:fixture.identity,scope:'An existing replay passes the real import validator and file operations through Runtime browser storage. Playback is a separate check.'};
-      },{fatal:false});
+        journey.cleanup={validReplayAbsentAfterDelete:true,malformedReplayAbsentAfterControl:true};
+        return{normalComplete,coverageComplete:false,storageRootPassed,replayComplete,game:target.game,variant:target.variant,targetId:target.id,
+          product:journey.product,storage:journey.storage,path,storagePath:`${locations.normal.root}/${path}`,
+          fixture:fixture.identity,bytes:storedBytes.length,sha256:fixtureDigest,restoredAcrossNewInstance:true,deletionPersisted:true,
+          operations:journey.operations,negativeControls:journey.negativeControls,fixtureValidation:validity,coverage:journey.coverage};
+      },{complete:false,fatal:false,verified:observation=>observation.normalComplete===true});
       await check('runtime-errors',[],async()=>{
         await responseProbe.flush();
         const packageAfter=await verifyRuntimePackage(target,{repoRoot:root}),dataAfter=await verifyPrivateData(target.data);
@@ -401,6 +541,7 @@ try{
   report.httpFailures=site.httpFailures;assert.deepEqual(report.httpFailures,[],'Verified fixture request failures');
   report.harnessPostflightSha256=hash(await readFile(new URL(import.meta.url)));
   assert.equal(report.harnessPostflightSha256,report.harnessSha256,'Runtime driver changed during acceptance');
+  assert.equal(hash(await readFile(storagePolicyPath)),report.storagePolicySource.sha256,'Replay storage policy changed during acceptance');
   for(const [name,expected] of Object.entries(report.helperSha256))
     assert.equal(hash(await readFile(new URL(`./${name}.mjs`,import.meta.url))),expected,`Runtime acceptance helper changed: ${name}`);
   if(gamepad)assert.equal(hash(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))),report.gamepadProbeSha256,'Gamepad probe changed during acceptance');

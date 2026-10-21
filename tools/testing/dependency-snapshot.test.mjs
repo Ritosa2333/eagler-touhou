@@ -24,3 +24,19 @@ test('browser callback imports bind to actual Launcher modules and repository UR
   assert.ok(snapshot.some(file=>file.path==='launcher/package/package-store.mjs'));
   assert.ok(snapshot.some(file=>file.path==='tools/testing/cli-report.mjs'));
 });
+
+test('registered title meanings and source-derived sound mappings belong to the driver import identity',async()=>{
+  const snapshot=await dependencySnapshot(root,['tools/ports/runtime-desktop-probes.mjs']);
+  for(const path of ['tests/adaptation/adapters/registry.mjs','tests/adaptation/adapters/titles/th08.mjs',
+    'tests/adaptation/adapters/scene.mjs','tests/adaptation/adapters/touch-clock.mjs',
+    'tools/ports/launcher-touch-fixture.ts','launcher/app/services/player-touch.ts',
+    'launcher/src/contracts/runtime-protocol.mts'])
+    assert.ok(snapshot.some(file=>file.path===path),`Missing adapter dependency ${path}`);
+});
+
+test('diagnostic browser modules bind their served repository URLs and shared controller dependencies',async()=>{
+  const snapshot=await dependencySnapshot(root,['ports/th08/portable/presentation-lab/app.mjs']);
+  for(const path of ['common/testkit/presentation-lab/review-record.mjs',
+    'common/testkit/presentation-lab/controller-core.mjs','common/testkit/presentation-lab/state-authority.mjs'])
+    assert.ok(snapshot.some(file=>file.path===path),`Missing actual served diagnostic dependency ${path}`);
+});

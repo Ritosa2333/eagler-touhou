@@ -1,5 +1,10 @@
 import {runWithReport} from '../testing/cli-report.mjs';
 
+/** Bind one structured observation to every adaptation claim that consumes it. */
+export function offlineObservationEnvelope(game,variant,adaptationIds,observation){
+  return{game,variant,adaptationIds:[...adaptationIds],observation};
+}
+
 /** Keep execution of this offline lane separate from its adaptation coverage. */
 export function offlineRuntimeOutcome({scenarioPassed,checks=[],updateScenario=null}={}) {
   const failed=scenarioPassed!==true||checks.some(check=>check?.status==='failed')||

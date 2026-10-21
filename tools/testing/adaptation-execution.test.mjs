@@ -14,7 +14,7 @@ await writeFile(resolve(root,game+'.marker'),(Number(await readFile(resolve(root
 await mkdir(out,{recursive:true});
 if(!behavior.missing)await writeFile(resolve(out,'report.json'),JSON.stringify({schema:'eagler-touhou/runtime-browser/1',runId:game+'-'+startedAt,
 startedAt,finishedAt:new Date().toISOString(),status:'passed',passed:true,targets:[{game:behavior.wrongGame?'th20':game,variant:'normal',status:'passed',
-checks:[{id:'movement',checks:['INPUT-01'],status:behavior.fail?'failed':'passed',complete:false}]}]}));
+checks:behavior.empty?[]:[{id:'movement',checks:['INPUT-01'],status:behavior.fail?'failed':'passed',complete:false}]}]}));
 process.exitCode=behavior.exit??0;`;
 
 async function setup(t,{offlineGames=[]}={}){
@@ -22,13 +22,15 @@ async function setup(t,{offlineGames=[]}={}){
   await writeFile(resolve(root,'driver.mjs'),fixture);
   for(const game of ['th06','th07'])await writeFile(resolve(root,game+'.json'),'{}');
   const buildPlan=({output})=>({unmappedChecks:[],cases:['th06','th07'].map(game=>({id:game,game,variant:'normal',
-    group:offlineGames.includes(game)?'offline':'runtime',requiresLauncherBuild:offlineGames.includes(game),checks:['INPUT-01'],
+    group:offlineGames.includes(game)?'offline':'runtime',requiresLauncherBuild:offlineGames.includes(game),
+    scenarioIds:['native-runtime-contract'],checks:['INPUT-01'],
     status:'ready',reportPath:resolve(output,game,'report.json'),requiredInputs:[],blockedInputs:[],
     task:{command:process.execPath,args:[resolve(root,'driver.mjs'),root,game,resolve(output,game)],cwd:root,timeoutMs:30000,resources:[]}}))});
   const createIdentityReader=()=>async item=>({fingerprint:identityDigest({driver:await fileIdentity(resolve(root,'driver.mjs')),
     input:await fileIdentity(resolve(root,item.game+'.json'))})});
+  const createInputReader=()=>async()=>({inputPreflight:{status:'passed',targetIds:['th06','th07'],inputs:['runtimeManifest']}});
   const run=(name,options={},dependencies={})=>runAdaptationVerification({root,output:resolve(root,name),environment:{},...options},
-    {buildPlan,createIdentityReader,skipPreparation:true,...dependencies});
+    {buildPlan,createIdentityReader,createInputReader,skipPreparation:true,...dependencies});
   const count=async game=>Number(await readFile(resolve(root,game+'.marker'),'utf8').catch(()=>0));
   return{root,run,count};
 }
@@ -80,8 +82,38 @@ test('changed input reruns its product; unrelated documents preserve cached evid
 test('preview never prepares inputs or launches a process, and existing evidence is preserved',async t=>{
   const {root,run,count}=await setup(t);const report=await run('plan',{planOnly:true});
   assert.equal(report.status,'planned');assert.equal(report.passed,false);assert.equal(await count('th06'),0);
+  assert.deepEqual(report.cases.map(item=>item.inputPreflight.status),['passed','passed']);
   const bytes=await readFile(resolve(root,'plan/summary.json'),'utf8');
   await assert.rejects(run('plan'),/new evidence directory/);assert.equal(await readFile(resolve(root,'plan/summary.json'),'utf8'),bytes);
+});
+
+test('preview blocks an absent, invalid or wrong-target Runtime manifest without launching its case',async t=>{
+  const root=await mkdtemp(resolve(tmpdir(),'adaptation-plan-inputs-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  const driver=resolve(root,'driver.mjs'),marker=resolve(root,'launched.marker');
+  await writeFile(driver,`import{writeFile}from'node:fs/promises';await writeFile(${JSON.stringify(marker)},'launched');`);
+  const manifest=resolve(root,'runtime.json');
+  const selections=[
+    {name:'missing',write:false,reason:/ENOENT|no such file/i},
+    {name:'invalid',write:'{',reason:/JSON|position/i},
+    {name:'wrong-target',write:'{"targets":[]}',reason:/Missing Runtime target th08\/normal/},
+  ];
+  for(const selection of selections){
+    await rm(manifest,{force:true});
+    if(selection.write)await writeFile(manifest,selection.write);
+    const output=resolve(root,selection.name);
+    const report=await runAdaptationVerification({root,output,environment:{EAGLER_TEST_RUNTIME_MANIFEST:manifest},
+      games:['th08'],variant:'normal',groups:['runtime'],planOnly:true},{buildPlan:({output:planOutput})=>({scope:'scenes',unmappedChecks:[],coverageTargets:[],cases:[{
+        id:'runtime-normal-th08',game:'th08',variant:'normal',group:'runtime',scenarioIds:['native-runtime-contract'],checks:['INPUT-01'],
+        status:'ready',requiredInputs:['EAGLER_TEST_RUNTIME_MANIFEST'],blockedInputs:[],reportPath:resolve(planOutput,'runtime/report.json'),
+        task:{command:process.execPath,args:[driver,'--manifest='+manifest],cwd:root,timeoutMs:30000,resources:[]},
+      }]})});
+    assert.equal(report.status,'planned');assert.equal(report.passed,false);
+    assert.equal(report.cases[0].status,'blocked',selection.name);
+    assert.equal(report.cases[0].inputPreflight.status,'blocked',selection.name);
+    assert.match(report.cases[0].issues.join(' '),selection.reason,selection.name);
+    assert.ok(report.cases[0].blockedInputs.some(input=>input.name==='selected-local-inputs'),selection.name);
+  }
+  await assert.rejects(readFile(marker,'utf8'),{code:'ENOENT'});
 });
 
 test('selecting an adaptation ID requires complete evidence beyond a passed scene',async t=>{
@@ -90,12 +122,60 @@ test('selecting an adaptation ID requires complete evidence beyond a passed scen
   assert.equal(report.status,'incomplete');assert.equal(report.passed,false);
 });
 
+test('a passing driver with no result rows cannot pass a planned scene group',async t=>{
+  const {root,run}=await setup(t);await writeFile(resolve(root,'th06.json'),'{"empty":true}');
+  const report=await run('empty-scene');
+  assert.equal(report.cases[0].status,'incomplete');
+  assert.match(report.cases[0].incompleteReasons.join(' '),/INPUT-01/);
+  assert.equal(report.cases[1].status,'passed');
+  assert.equal(report.status,'incomplete');assert.equal(report.passed,false);
+});
+
+test('resume reruns a prior case without proven postflight identity stability',async t=>{
+  const {root,run,count}=await setup(t);await run('first');
+  const summaryPath=resolve(root,'first','summary.json'),summary=JSON.parse(await readFile(summaryPath,'utf8'));
+  delete summary.cases[0].identityStable;
+  await writeFile(summaryPath,JSON.stringify(summary));
+  const resumed=await run('resumed',{resume:resolve(root,'first')});
+  assert.equal(resumed.cases[0].execution,'executed');
+  assert.equal(resumed.cases[1].execution,'retained');
+  assert.equal(await count('th06'),2);assert.equal(await count('th07'),1);
+});
+
+test('whole-product runs cannot pass while an applicable checklist requirement has no driver',async t=>{
+  const {root,run}=await setup(t);
+  const report=await run('whole-product',{}, {buildPlan:({output})=>({scope:'product',unmappedChecks:[],
+    coverageTargets:[{game:'th06',variant:'normal',requirements:[{id:'DISPLAY-03'}]}],
+    cases:[{id:'th06',game:'th06',variant:'normal',group:'runtime',requiresLauncherBuild:false,checks:['INPUT-01'],
+      status:'ready',reportPath:resolve(output,'th06/report.json'),requiredInputs:[],blockedInputs:[],
+      task:{command:process.execPath,args:[resolve(root,'driver.mjs'),root,'th06',resolve(output,'th06')],cwd:root,timeoutMs:30000,resources:[]}}]})});
+  assert.equal(report.counts.passed,1);assert.equal(report.status,'incomplete');
+  assert.deepEqual(report.coverage.rows.map(({id,status})=>({id,status})),[{id:'DISPLAY-03',status:'unmapped'}]);
+  assert.equal(report.verificationScope,'product');assert.equal(report.passed,false);
+  const review=await readFile(resolve(root,'whole-product/review.md'),'utf8');
+  assert.match(review,/DISPLAY-03/);assert.match(review,/未关联自动任务/);
+  assert.doesNotMatch(review,/\| 待填写 \||\| 待审查 \|/);
+  assert.match(review,/固定逻辑状态重复绘制，比较状态摘要/);
+  assert.match(review,/额外绘制只改变画面，逻辑与存档状态相同/);
+});
+
 test('a tampered parent pass and missing or mismatched child reports cannot be retained',async t=>{
   const {root,run}=await setup(t);await writeFile(resolve(root,'th06.json'),'{"missing":true}');
   await writeFile(resolve(root,'th07.json'),'{"wrongGame":true}');const first=await run('first');
   assert.deepEqual(first.cases.map(item=>item.status),['failed','failed']);
   first.cases[1].status='passed';await writeFile(resolve(root,'first/summary.json'),JSON.stringify(first));
   const next=await run('second',{resume:resolve(root,'first')});assert.equal(next.executed,2);assert.equal(next.status,'failed');
+});
+
+test('resume cannot upgrade numbered coverage through an edited parent summary',async t=>{
+  const {root,run,count}=await setup(t);const first=await run('first');
+  const check=first.cases[0].checks[0];assert.equal(check.complete,false);
+  check.complete=true;check.claimedComplete=true;
+  check.proof={source:'driver-report',references:[{pointer:'/invented',sha256:'f'.repeat(64)}]};
+  await writeFile(resolve(root,'first/summary.json'),JSON.stringify(first));
+  const resumed=await run('resumed',{resume:resolve(root,'first')});
+  assert.equal(resumed.executed,1);assert.equal(resumed.retained,1);assert.equal(await count('th06'),2);
+  assert.equal(resumed.cases[0].checks[0].complete,false);assert.equal(resumed.coverage.complete,false);
 });
 
 test('runtime-selected native judging input changes invalidate retained Replay evidence',async t=>{

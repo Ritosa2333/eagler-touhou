@@ -136,6 +136,86 @@ function receiptInput(receipt,spec,environment) {
     setEnv:spec.pathEnv?{[spec.pathEnv]:environmentPath}: {}};
 }
 
+function isWithin(parent,path) {
+  const rel=relative(parent,path);
+  return !rel||(!isAbsolute(rel)&&rel!=='..'&&!rel.startsWith(`..${sep}`));
+}
+
+function sameResolvedPath(first,second) {
+  const normalize=value=>{
+    const path=resolve(value);
+    return process.platform==='win32'?path.toLowerCase():path;
+  };
+  return normalize(first)===normalize(second);
+}
+
+async function sameFileIdentity(first,second) {
+  const [a,b]=await Promise.all([stat(first,{bigint:true}),stat(second,{bigint:true})]);
+  return a.dev!==0n&&b.dev!==0n&&a.ino!==0n&&b.ino!==0n&&a.dev===b.dev&&a.ino===b.ino;
+}
+
+async function captureReferenceIdentity(root,spec,resolved,actual,receipt,environment) {
+  const policy=spec.referenceIdentity;
+  if (!policy) return null;
+  if (policy.kind==='accepted-reference-file') {
+    const reference=resolved.input.referenceSource;
+    if (!reference||typeof reference.path!=='string'||!reference.path||!sha256Pattern.test(reference.sha256)||
+        typeof reference.provenance!=='string'||!reference.provenance.trim())
+      throw new Error(`Private receipt lacks accepted reference source identity: ${spec.receiptId}`);
+    const sourcePath=resolve(root,assertSafeRelative(reference.path,'referenceSource.path'));
+    const referenceRoot=resolve(root,'reference');
+    if (!isWithin(referenceRoot,sourcePath)||sourcePath===referenceRoot)
+      throw new Error(`Reference source must be located under reference/: ${reference.path}`);
+    if (!lstatSync(sourcePath,{throwIfNoEntry:false})?.isFile())
+      throw new Error(`Reference source must be a regular file: ${reference.path}`);
+    const sourceReal=await realpath(sourcePath);
+    const source=await shaFile(sourceReal);
+    if (source.sha256!==reference.sha256||source.sha256!==actual.sha256)
+      throw new Error(`Accepted reference source hash mismatch: ${reference.path}`);
+    return {kind:policy.kind,path:sourceReal,sha256:source.sha256,provenance:reference.provenance,
+      receiptPath:receipt.path,receiptSha256:receipt.sha256};
+  }
+  if (policy.kind==='receipt-json-field') {
+    const sourceSpec={receiptId:policy.receiptId,inputKind:'directory'};
+    const source=receiptInput(receipt,sourceSpec,environment);
+    const tree=await directorySnapshot(source.path);
+    if (tree.sha256!==source.expectedSha256)
+      throw new Error(`Reference identity receipt hash mismatch: ${policy.receiptId}`);
+    const statePath=resolve(source.path,assertSafeRelative(policy.file,'referenceIdentity.file'));
+    if (!isWithin(source.path,statePath)||statePath===source.path)
+      throw new Error('Reference identity file must stay inside its receipt directory');
+    const state=JSON.parse(await readFile(statePath,'utf8'));
+    const value=policy.jsonPath.split('.').reduce((current,key)=>current?.[key],state);
+    if (value!==actual.sha256)
+      throw new Error(`Reference identity field does not match ${spec.receiptId}: ${policy.receiptId}/${policy.file}#${policy.jsonPath}`);
+    return {kind:policy.kind,receiptId:policy.receiptId,path:statePath,receiptPath:source.path,
+      receiptSha256:source.expectedSha256,file:statePath,jsonPath:policy.jsonPath,sha256:value};
+  }
+  throw new Error(`Unsupported reference identity policy: ${policy.kind}`);
+}
+
+async function compareCandidateArtifact(root,spec,inputPath,inputSha256,referenceIdentity) {
+  if (!spec.distinctFromCandidate) return null;
+  const candidatePath=resolve(root,assertSafeRelative(spec.distinctFromCandidate,'distinctFromCandidate'));
+  if (!isWithin(root,candidatePath)||candidatePath===root)
+    throw new Error(`Candidate artifact path must stay inside the title checkout: ${spec.distinctFromCandidate}`);
+  let inputReal,candidateReal,candidate;
+  try {
+    [inputReal,candidateReal]=await Promise.all([realpath(inputPath),realpath(candidatePath)]);
+    candidate=await shaFile(candidateReal);
+  } catch (error) {
+    throw new Error(`Cannot verify baseline independence from candidate ${spec.distinctFromCandidate}: ${error.message}`);
+  }
+  if (sameResolvedPath(inputPath,candidatePath)||sameResolvedPath(inputReal,candidateReal)||
+      await sameFileIdentity(inputReal,candidateReal))
+    throw new Error(`Reference input aliases the candidate artifact: ${spec.distinctFromCandidate}`);
+  if (referenceIdentity&&(sameResolvedPath(referenceIdentity.path,candidatePath)||
+      sameResolvedPath(referenceIdentity.path,candidateReal)||await sameFileIdentity(referenceIdentity.path,candidateReal)))
+    throw new Error(`Reference source aliases the candidate artifact: ${spec.distinctFromCandidate}`);
+  return {path:candidateReal,sha256:candidate.sha256,sameSha256:candidate.sha256===inputSha256,
+    referenceIdentityBound:Boolean(referenceIdentity)};
+}
+
 const receiptRoots=new WeakMap();
 function rootForReceipt(receipt) { return receiptRoots.get(receipt); }
 
@@ -156,8 +236,13 @@ async function captureInput(root,spec,receipt,environment) {
     const actual=resolved.input.kind==='file'?await shaFile(resolved.path):await directorySnapshot(resolved.path);
     if (actual.sha256!==resolved.expectedSha256)
       throw new Error(`Private input hash mismatch: ${spec.receiptId}`);
+    const referenceIdentity=await captureReferenceIdentity(root,spec,resolved,actual,receipt,environment);
+    const candidateComparison=await compareCandidateArtifact(root,spec,resolved.path,actual.sha256,referenceIdentity);
+    if (candidateComparison?.sameSha256&&!referenceIdentity)
+      throw new Error(`Baseline matches candidate bytes without independent reference identity: ${spec.id}`);
     return {id:spec.id,kind:spec.kind,receiptId:spec.receiptId,path:resolved.path,
       sha256:actual.sha256,bytes:actual.bytes,files:actual.files,receiptSha256:resolved.receiptSha256,
+      ...(referenceIdentity?{referenceIdentity}:{}),...(candidateComparison?{candidateComparison}:{}),
       setEnv:resolved.setEnv};
   }
   if (spec.kind==='file'||spec.kind==='directory') {
@@ -193,6 +278,24 @@ function validateInput(spec,label) {
     if (spec.inputKind&&!['file','directory'].includes(spec.inputKind)) inputError(`${label}.inputKind is invalid`);
     if (spec.pathEnv&&typeof spec.pathEnv!=='string') inputError(`${label}.pathEnv must be a string`);
     if (spec.expectedPath) assertSafeRelative(spec.expectedPath,`${label}.expectedPath`);
+    if (spec.distinctFromCandidate) {
+      if (spec.inputKind&&spec.inputKind!=='file') inputError(`${label}.distinctFromCandidate requires a file input`);
+      assertSafeRelative(spec.distinctFromCandidate,`${label}.distinctFromCandidate`);
+      if (!spec.referenceIdentity||!['accepted-reference-file','receipt-json-field'].includes(spec.referenceIdentity.kind))
+        inputError(`${label} requires a supported referenceIdentity to compare against the candidate`);
+    }
+    if (spec.referenceIdentity&&spec.inputKind!=='file')
+      inputError(`${label}.referenceIdentity requires a file input`);
+    if (spec.referenceIdentity?.kind==='accepted-reference-file') {
+      if (spec.referenceIdentity.receiptId!==undefined||spec.referenceIdentity.file!==undefined)
+        inputError(`${label}.referenceIdentity accepted-reference-file has unexpected fields`);
+    } else if (spec.referenceIdentity?.kind==='receipt-json-field') {
+      const identity=spec.referenceIdentity;
+      if (typeof identity.receiptId!=='string'||!identity.receiptId||typeof identity.file!=='string'||!identity.file||
+          typeof identity.jsonPath!=='string'||!/^[$A-Z_a-z][$\w]*(?:\.[$A-Z_a-z][$\w]*)*$/.test(identity.jsonPath))
+        inputError(`${label}.referenceIdentity receipt-json-field requires receiptId, file and jsonPath`);
+      assertSafeRelative(identity.file,`${label}.referenceIdentity.file`);
+    } else if (spec.referenceIdentity!==undefined) inputError(`${label}.referenceIdentity has unsupported kind`);
     return;
   }
   if (spec.kind==='file'||spec.kind==='directory') {
@@ -247,6 +350,9 @@ export async function loadOracleSuite(root) {
     if (!/^[a-z0-9][a-z0-9-]*$/.test(group.id)||!Array.isArray(group.requiredInputs)) throw new Error(`Invalid oracle group: ${group.id}`);
     if (!suite.tests.some(item=>item.role==='candidate'&&item.group===group.id)) throw new Error(`Empty oracle candidate group: ${group.id}`);
     for (const [index,input] of group.requiredInputs.entries()) validateInput(input,`${group.id}.requiredInputs[${index}]`);
+    for (const input of group.requiredInputs) if (input.referenceIdentity?.kind==='receipt-json-field'&&
+        !group.requiredInputs.some(source=>source.kind==='receipt'&&source.receiptId===input.referenceIdentity.receiptId&&source.inputKind==='directory'))
+      throw new Error(`Reference identity receipt must also be a required directory input: ${group.id}/${input.id}`);
     const ids=group.requiredInputs.map(input=>input.id);
     if (new Set(ids).size!==ids.length) throw new Error(`Duplicate required input id: ${group.id}`);
     if (group.environment!==undefined&&(!group.environment||Array.isArray(group.environment)||typeof group.environment!=='object'||

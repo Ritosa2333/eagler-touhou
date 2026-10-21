@@ -1,4 +1,12 @@
 import assert from 'node:assert/strict';
+import {ADAPTATION_ADAPTERS} from '../../tests/adaptation/adapters/registry.mjs';
+
+export function runtimeObservationRequest({game,variant,localSeat,adapterRegistry=ADAPTATION_ADAPTERS}){
+  assert.equal(typeof adapterRegistry?.resolve,'function','Runtime observation requests require an adaptation registry');
+  const adapter=adapterRegistry.resolve(game,variant);
+  return{game,variant,...(localSeat!==undefined?{localSeat}:{}),
+    ...(adapter?{adapter:{runtime:adapter.runtime,observation:adapter.observation}}:{})};
+}
 
 export const REQUIRED_RUNTIME_CHECKS=Object.freeze(['runtime-input-identity','runtime-ready','configure-launch-first-frame',
   'reject-unknown-command','save-list-and-flush','hosted-keyboard-native-effect','native-gamepad-sampling','native-gamepad-effect',
@@ -17,14 +25,18 @@ export function readRuntimeObservation(target) {
   const th15Phases = ['title', 'stage', 'paused', 'ending', 'exit'];
   const game = typeof target === 'string' ? target : target?.game;
   const variant = typeof target === 'object' ? target.variant : undefined;
+  const includeAudioClock = typeof target === 'object' && target.includeAudioClock === true;
+  const observerContract=typeof target==='object'?target.adapter?.observation:null;
   const root = typeof window === 'object' ? window : globalThis;
-  const runtime = root[`__${game}Runtime`];
-  const module = runtime?.Module ?? root.Module;
-  // Shells expose a few different Emscripten/WebAssembly shapes: a named
-  // runtime wrapper, `window.core` as raw instance.exports, or only Module.
-  // Keep the reader tolerant of those real mounting shapes without probing
-  // or invoking game actions.
-  const core = runtime?.core ?? root.core ?? module;
+  const mapping=typeof target==='object'?target.adapter?.runtime:null;
+  if(observerContract?.kind==='native-v1'&&(!mapping||['global','core','module','app'].some(key=>typeof mapping[key]!=='string'||!mapping[key])))
+    throw new Error(`${game}: native-v1 observation requires its declared Runtime mapping`);
+  const runtime = root[mapping?.global??`__${game}Runtime`];
+  if(mapping&&!runtime)throw new Error(`${game}: declared Runtime mount ${mapping.global} is unavailable`);
+  const module = mapping?runtime[mapping.module]:runtime?.Module??root.Module;
+  // Explicit declarations bind exports and memory to one Runtime wrapper.
+  // Legacy readers also support raw window.core or Module shell shapes.
+  const core = mapping?runtime[mapping.core]??module:runtime?.core??root.core??module;
   const nativeExport = name => {
     for (const owner of [core, module]) {
       if (!owner) continue;
@@ -33,7 +45,7 @@ export function readRuntimeObservation(target) {
     }
     return undefined;
   };
-  const buffer = core?.memory?.buffer ?? module?.HEAPU8?.buffer ?? root.HEAPU8?.buffer ?? null;
+  const buffer = core?.memory?.buffer ?? module?.HEAPU8?.buffer ?? (mapping?null:root.HEAPU8?.buffer) ?? null;
   const finite = value => typeof value === 'number' && Number.isFinite(value) ? value : null;
   const wasmArray = (fn, count, Type) => {
     if (typeof fn !== 'function' || !buffer) return null;
@@ -78,10 +90,11 @@ export function readRuntimeObservation(target) {
     if (game === 'th07') result.render.renderCallbacks = finite(root.__eaglerDebugRenderCallbacks);
     unsupported.push('gameplay-phase', 'gameplay-frame', 'keyboard-gameplay-effect', 'pause-state', 'restart-state', 'player-position');
   } else if (game === 'th08') {
-    const app = runtime?.app;
+    const app = runtime?.[mapping?.app??'app'];
     const statusExport = nativeExport('status'), traceExport = nativeExport('trace'), diagnosticsExport = nativeExport('diagnostics');
+    const replayStateExport=nativeExport('eagler_replay_state');
     let status=null,trace=null,tracePtr=null,diagnostics=null,multiplayer=null,netplay=null,netProgress=null,touch=null;
-    const memoryBuffer=()=>core?.memory?.buffer??module?.HEAPU8?.buffer??root.HEAPU8?.buffer??null;
+    const memoryBuffer=()=>core?.memory?.buffer??module?.HEAPU8?.buffer??(mapping?null:root.HEAPU8?.buffer)??null;
     const float2FromCurrentBuffer=(pointer,offset=0)=>{
       const current=memoryBuffer();
       if(!current||!Number.isInteger(pointer)||pointer<=0||pointer+(offset+2)*4>current.byteLength)return null;
@@ -98,6 +111,22 @@ export function readRuntimeObservation(target) {
     };
     if(app!=null){
       if(statusExport)status=Array.from({length:11},(_,index)=>finite(statusExport(app,index)));
+      const replayState=replayStateExport?wasmArray(replayStateExport,5,Uint32Array):null;
+      const replaySlots=statusExport?Array.from({length:10},(_,index)=>finite(statusExport(app,12+index))):null;
+      if(replayState){
+        const loaded=replaySlots?.[0]===1;
+        const slotAvailable=replaySlots?.every(value=>value!==null&&value!==-1)===true;
+        result.replay={ready:replayState[0]!==0||replayState[2]!==0,
+          state:{frame:replayState[0],total:replayState[1],ended:replayState[2]!==0,stage:replayState[3],startStage:replayState[4]},
+          stream:{available:loaded&&slotAvailable,loaded,
+            frame:slotAvailable?replaySlots[1]:null,inputCursor:slotAvailable?replaySlots[2]:null,
+            inputBytes:slotAvailable?replaySlots[3]:null,timingCursor:slotAvailable?replaySlots[4]:null,
+            timingBytes:slotAvailable?replaySlots[5]:null,stride:slotAvailable?replaySlots[6]:null,
+            gameFlags:slotAvailable?replaySlots[7]:null,inGame:slotAvailable?replaySlots[8]!==0:null,
+            stage:slotAvailable?replaySlots[9]:null,reportedFrame:replayState[0],ended:replayState[2]!==0,
+            reason:!slotAvailable?'Runtime does not expose the TH08 Replay consumption status slots':
+              loaded?null:'no Replay stage is loaded'}};
+      }
       tracePtr=traceExport?.(app);const currentBuffer=memoryBuffer();
       if(Number.isInteger(tracePtr)&&tracePtr>0&&currentBuffer&&tracePtr+68*4<=currentBuffer.byteLength)
         trace=Array.from(new Uint32Array(currentBuffer,tracePtr,68));
@@ -133,7 +162,8 @@ export function readRuntimeObservation(target) {
       result.frames.control=finite(trace[3]);
       result.position=float2FromCurrentBuffer(tracePtr,7);
       result.capabilities.position=result.position!==null;
-      result.input=diagnostics?{kind:variant==='multiplayer'?'native-consumed-buttons':'logical-buttons',value:diagnostics[11]}:null;
+      result.input=diagnostics?{kind:variant==='multiplayer'?'native-consumed-buttons':'logical-buttons',value:diagnostics[11],
+        ...(variant==='normal'?{source:'diagnostics[11] | player_state.input.buttons',sampleBoundary:'after-application-update'}:{})}:null;
       result.capabilities.input=result.input!==null;
       result.pause=diagnostics?{active:diagnostics[6]!==0,raw:diagnostics[6]}:null;
       result.capabilities.pause=result.pause!==null;
@@ -351,12 +381,45 @@ export function readRuntimeObservation(target) {
     unsupported.push('unknown-runtime');
   }
 
-  // Versioned exports copy title-owned state without advancing a tick or
-  // draining diagnostic/input queues. Legacy packages retain their readers.
-  const native=wasmArray(nativeExport(`${game}_native_observation_v1`),12,Uint32Array);
+  // Versioned exports are read only when the adapter names their ABI and
+  // input semantics. Legacy and unsupported observations never guess an ABI.
+  if(observerContract){
+    if(!['native-v1','legacy-th08-status-trace','unsupported'].includes(observerContract.kind))
+      throw new Error(`${game}: observation kind must be declared explicitly`);
+    if(observerContract.kind==='native-v1'&&
+       (!observerContract.source?.trim()||!observerContract.sampleBoundary?.trim()||
+        !['consumed','queued-for-next-movement'].includes(observerContract.inputSemantics)))
+      throw new Error(`${game}: native-v1 observation must declare its source, sampling boundary and input semantics`);
+    if(observerContract.kind==='unsupported'&&!(typeof observerContract.reason==='string'&&observerContract.reason.trim()))
+      throw new Error(`${game}: unsupported observation must include its reason`);
+    if(observerContract.kind==='legacy-th08-status-trace'&&
+       (game!=='th08'||variant!=='normal'||observerContract.sampleBoundary!=='after-application-update'||
+        observerContract.inputSource!=='diagnostics[11] | player_state.input.buttons'||
+        observerContract.inputSemantics!=='queued-for-next-movement'))
+      throw new Error(`${game}: invalid legacy TH08 status-trace declaration`);
+  }
+  const native=observerContract?.kind==='native-v1'
+    ?wasmArray(nativeExport(observerContract.export),12,Uint32Array):null;
+  if(observerContract?.kind==='native-v1'&&!native)
+    throw new Error(`${game}: declared native observation ${observerContract.export} is unavailable`);
+  if(observerContract?.kind==='legacy-th08-status-trace'&&result.input){
+    if(result.input.kind!=='logical-buttons'||result.input.source!==observerContract.inputSource||
+       result.input.sampleBoundary!==observerContract.sampleBoundary)
+      throw new Error('TH08 legacy input observation source or sample boundary changed');
+    result.input={...result.input,kind:'native-queued-for-next-movement-buttons',
+      inputSemantics:observerContract.inputSemantics,source:observerContract.inputSource,
+      sampleBoundary:observerContract.sampleBoundary};
+  }
+  if(observerContract?.kind==='unsupported'){
+    result.input=null;
+    result.capabilities.input=false;
+    unsupported.push(`native-observation-unsupported:${observerContract.reason}`);
+  }
   if(native){
     if(native[0]!==1||(native[1]&~0x1ff)!==0)throw new Error(`${game}: unsupported native observation ABI`);
-    const valid=native[1];result.nativeObservation={version:native[0],validMask:valid};
+    const valid=native[1];result.nativeObservation={version:native[0],validMask:valid,kind:observerContract.kind,
+      export:observerContract.export,source:observerContract.source,sampleBoundary:observerContract.sampleBoundary,
+      inputSemantics:observerContract.inputSemantics};
     for(const [index,bit] of [[2,1],[3,2],[4,8],[5,0x10],[6,0x20],[7,0x40],[10,0x80],[11,0x100]]){
       if((valid&bit)&&native[index]===0xffffffff)throw new Error(`${game}: missing native observation field ${index} has a valid bit`);
       if(!(valid&bit)&&native[index]!==0xffffffff)throw new Error(`${game}: invalid native observation field ${index} has data`);
@@ -370,7 +433,10 @@ export function readRuntimeObservation(target) {
       if(!names[native[2]])throw new Error(`${game}: invalid observed native phase`);
       result.phase={value:native[2],name:names[native[2]]};result.capabilities.phase=true;
     }
-    if(valid&2){result.input={kind:'native-consumed-buttons',value:native[3]};result.capabilities.input=true;}
+    if(valid&2){result.input={kind:observerContract.inputSemantics==='queued-for-next-movement'?
+      'native-queued-for-next-movement-buttons':'native-consumed-buttons',value:native[3],
+      inputSemantics:observerContract.inputSemantics,source:observerContract.source,
+      sampleBoundary:observerContract.sampleBoundary};result.capabilities.input=true;}
     if(valid&4){
       const words=new Uint32Array([native[8],native[9]]),values=new Float32Array(words.buffer);
       if(!values.every(Number.isFinite))throw new Error(`${game}: invalid observed player position`);
@@ -388,6 +454,8 @@ export function readRuntimeObservation(target) {
       if(native[11]>2||(variant==='normal'&&native[11]!==0))throw new Error(`${game}: observed input belongs to an invalid local seat`);
       result.localSeat=native[11];
     }
+    const unknownIndex=unsupported.indexOf('unknown-runtime');
+    if(unknownIndex>=0)unsupported.splice(unknownIndex,1);
     if(!result.capabilities.restartFrame&&!unsupported.includes('restart-frame'))unsupported.push('restart-frame');
     for(let i=unsupported.length-1;i>=0;i--){
       const item=unsupported[i];
@@ -434,6 +502,14 @@ export function readRuntimeObservation(target) {
         pause:ui[1]&1?{state:ui[2],substate:ui[3],cursor:ui[4],retryConfirmInputReady:ui[5]===1}:null,
         stone:ui[1]&2?{state:ui[6],visible:ui[7],category:ui[8]}:null};
     }
+  }
+
+  if(includeAudioClock){
+    const context=module?.SDL3?.audioContext??null,probe=root.__eaglerMusicPcmProbe??null;
+    const contextIndex=context&&Array.isArray(probe?.contexts)?probe.contexts.indexOf(context):-1;
+    const state=context?.state??null,sampleRate=finite(context?.sampleRate),currentTime=finite(context?.currentTime);
+    result.audioClock={available:contextIndex>=0&&sampleRate!==null&&currentTime!==null,
+      source:'SDL3.audioContext.currentTime',contextIndex:contextIndex>=0?contextIndex:null,state,sampleRate,currentTime};
   }
 
   if (!result.capabilities.phase && !unsupported.includes('semantic-phase') && !unsupported.includes('standardized-phase')) unsupported.push('phase');

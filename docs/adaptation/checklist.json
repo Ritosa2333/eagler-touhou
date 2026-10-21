@@ -1,5 +1,23 @@
 {
   "schema": "eagler-touhou/adaptation-checklist/1",
+  "humanReviewBundles": [
+    {
+      "id": "display-scenes",
+      "label": "显示场景集",
+      "checks": ["DISPLAY-02", "DISPLAY-04", "DISPLAY-05", "DISPLAY-06", "DISPLAY-08"],
+      "method": "presentation.md#人工显示审查表",
+      "judgement": "集中查看连续运动、出生销毁、瞬移与暂停素材，在实际高刷屏比较限帧开关，判断抖动、拖线、残影及菜单观感。",
+      "preparation": "机器准备同一构建的对象与边界素材、自动结果和帧范围。实体屏幕记录当前刷新设置。"
+    },
+    {
+      "id": "text-presentation",
+      "label": "文字显示场景集",
+      "checks": ["LANG-05", "PRACTICE-07"],
+      "method": "localization.md#lang-05",
+      "judgement": "集中查看当前语言的菜单、对话、结算与练习界面，判断字形可辨认、排版可阅读以及遮挡。",
+      "preparation": "机器先检查字符覆盖、语言资源身份与切换行为，再准备代表性界面图。按新增或变化的语言、字体及界面审查。"
+    }
+  ],
   "sections": [
     {
       "id": "build",

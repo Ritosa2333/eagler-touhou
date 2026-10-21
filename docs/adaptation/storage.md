@@ -33,8 +33,10 @@
 ### REPLAY-01 | 导入原版 Replay
 - 操作：选择来源和 SHA-256 已登记的原版 Replay，导入后按其声明阶段播放至结束点。
 - 观察与判定：文件被识别为对应原版格式，播放到声明终点并满足该样本的既定结束条件。
+- 结果定位：逐项结果和汇总同时保留尚缺的具体证据。先核对导入文件身份、原生推进与最终错误审计，再核对绑定本 Replay 的独立自然终点。
+- 模式归属：浏览器驱动按实际作品和普通版／MP 选择终点判据，格式解析、输入游标与终点评估连到同一目标的结果。
 - 反例：损坏文件被当作成功载入，或播放未到声明终点就报告完成，应判失败。
-- 入口与覆盖：`tools/ports/replay-browser.mjs` 核对正式包、DATA 与 Replay 身份，执行 Shell 导入、120 个默认速率原生帧并记录 Runtime `ended` 终止信号。报告将终止信号与完整输入消费分别记录；当前 `ended` 字段不区分场景退出原因，完整输入消费状态保持 unproven。作品原生 cursor/total 和阶段 metadata 按本作定义核对或记录，TH11 保留 cursor、total 与 metadata 各自原值。REPLAY-01 完整状态依据同一 Replay 身份和同一计数语义的原版终点证据判定；普通版播放场景单独记录。播放器能力、MP 格式及多人录像输入按具体目标登记。普通版播放与多人新录像的席位、输入还原各自验收。公共浏览器启动实现 `tools/browser/launch.mjs` 与 `tools/browser/playwright.mjs` 也纳入 Replay 决策输入哈希。
+- 入口与覆盖：`tools/ports/replay-browser.mjs` 核对正式包、DATA 与 Replay 身份，执行 Shell 导入和 120 个默认速率原生帧。th08 normal 的 SHA-256 绑定格式解析器独立解密 v6 Replay、解压 payload 并计算所选 stage 的最大成功读取容量；Runtime `ReplayStream` 帧数、输入游标、timing 游标、块长度、stride、stage 和自然结束状态按源码关系核对。容量定义文件块允许的读取上限，不能单独定义原版自然终点。原版捕获绑定 Replay 身份、完整阶段和最终分数；自然终点没有映射到 `ReplayStream` 游标，本样本的 REPLAY-01 保持 `incomplete`，报告保留容量与实际终点计数供核对。原版画面采样行数只表示显示采样，不充当输入游标。其他标题依各自源码和格式记录 cursor/total、阶段 metadata 与可证明的终止范围。普通版播放和多人录像分别记录；MP 新录像按真实多人输入验证。公共浏览器启动实现 `tools/browser/launch.mjs` 与 `tools/browser/playwright.mjs` 也纳入 Replay 决策输入哈希。
 - 最终错误审计：同源 Runtime iframe 的 `error`、`abort` 与拒绝命令通过页面绑定实时留存，关闭前排空绑定调用并完成响应 capture 的 flush/stop；浏览器 context 关闭后再审计页面、Console、HTTP、协议、响应身份和 teardown 六个原始频道。任何频道非空都将场景标为失败，当前 epoch 的资源请求失败也照此判定。晚到错误会把最终 `scenarioStatus` 设为 `failed`，并将 teardown 前的状态留在 `preTeardownScenarioStatus`；终止步骤及其原始观测仍保留。覆盖报告只统计记录状态为 `passed` 且 `scenarioStatus` 为 `passed` 的目标。复核报告的 `finalErrorAudit.status`、`failedChannels`、原始 `channels` 与 `lifecycle`；以晚到协议 abort、请求中断和 response stop 错误作负例验证失败门控。
 
 ### REPLAY-02 | 按原版格式导出可表达输入
@@ -59,13 +61,20 @@
 - 操作：在 Runtime 中创建 Replay 文件，列出、读取、同步，重开实例复读后删除并再次同步。
 - 观察与判定：路径、文件字节和 SHA-256 在同步后保持一致；删除后新实例列表中不再出现该文件。
 - 反例：路径逃逸请求写到允许目录外，或删除只影响当前页面而刷新后复现，应判失败。
-- 入口与覆盖：`runtime-browser.mjs` 的 `replay-file-roundtrip-persistence` 实际测试写/读/列出/同步/新代恢复/删除；范围为输入清单中当前普通版 Runtime，播放语义另测。
+- 入口与覆盖：`runtime-browser.mjs` 的 `replay-file-roundtrip-persistence` 在同一产品包与 normal Runtime 中使用已登记的 Replay 样本，调用官方 Runtime 文件接口完成写入、读取、列出、同步、新 epoch 恢复、删除和再次同步。官方 Replay 检查器或打开入口确认样本格式；一字节伪文件作为拒收负例。报告以游戏、variant、包哈希、存储根、相对文件路径、逐步字节数和 SHA-256 绑定结果；自然播放终点由 REPLAY-01 场景单独记录。
 
 ### REPLAY-06 | 回放与实时输入隔离
 - 操作：播放录像时分别按方向、射击和菜单控制，并记录录像帧、原生输入与播放器控制状态。
 - 观察与判定：游戏实时输入不会改写正在回放的录像输入；只有产品声明允许的播放器/菜单控制能改变播放状态。
 - 反例：按实时射击导致录像当前帧输入或录像文件字节改变，应判失败。
 - 入口与覆盖：`test-local-replay-native.py` 检查实际 WASM 播放控制；没有覆盖键盘、手柄、触控并发隔离的统一行为矩阵，该项待接入。
+
+### 有限 Replay 场景接口
+`tools/ports/replay-recording-scenes.mjs` 根据标题声明生成键盘、虚拟手柄、触控、THMOTION 指针轨迹、基线播放和逐项实时输入扰动场景。适配器通过 `replay` 声明格式语义、原生 trace ABI、生产录制 finalizer 与回放 opener，并保留标题自有的帧和扩展解析函数；共享 runner 调用真实输入接口、写出原生 Replay，并在相同 Runtime 通过官方打开入口播放。共享判定器对照独立解码字节、原生 poll、ReplayStream 游标和玩家消费回执，结果限定在各场景窗口。
+
+浏览器侧复用接口位于 `tests/adaptation/adapters/replay-trace.mjs`：`controlReplayTrace({runtime, contract, enabled, reset})` 显式控制声明的只读 trace，`readReplayTrace({runtime, contract, afterSequence})` 按标题字段映射返回新增样本和环形缓冲区丢样状态。新增标题声明同一版本化样本语义并提供其 production source anchors；标题格式解析器留在本作 `titles/<game>-replay-format.mjs`，共享入口不复制文件布局算法。
+
+th08 普通版的只读 trace 通过 `sdl_replay_trace_control_v1(enabled, reset)` 显式启停；默认关闭，查询状态不会启用或消费采样。`sdl_replay_trace_status_v1(field)` 可读取 ABI 元数据和环形记录：字段 29 返回 ABI 版本 2，30–33 分别返回 next sequence、first available、sample count 和 capacity；从字段 34 开始，每样本 36 个字。word 0–31 包含 post-update 阶段、输入轮询、录制/回放帧与光标、MotionTrack 光标以及玩家消费序号/控制帧/当前与前一输入。word 32–35 是已应用指针的 id、x/y Float32 位模式和 released 标记；点数在 word 24，id 从 `MotionTrack::playback_points` 的有序 map 读取。本场景声明单活动指针，th08 坐标单位为归一化 `[0,1]`，比较容差为 `1e-6`。环形记录的读取由调用方用 sequence 区间检查丢样。各场景结果标记为有限窗口；自然结束和完整 Replay 终点仍按对应适配的终止语义单独判定。
 
 ### REPLAY-07 | 回放独立于显示刷新率
 - 操作：对同一已登记 Replay，在 60 Hz 和更高显示刷新设置下运行到相同声明结束点。
@@ -77,7 +86,7 @@
 - 操作：分别启动 normal 和 MP，读取产品目录声明的存储根，并列出成绩、设置与 Replay 文件。
 - 观察与判定：每个文件落在该模式允许的根下，normal/MP 分别核对本作声明的路径与文件策略。
 - 反例：MP 成绩写入 normal 的成绩根，应判失败。
-- 入口与覆盖：`test-runtime-storage-contract.mjs` 在 th06/07 Shell 夹具中执行部分路径规则，Runtime 浏览器可列出本次文件；完整产品/模式存储根矩阵待逐项运行。
+- 入口与覆盖：`runtime-browser.mjs` 对当前选中的 normal Runtime 执行文件生命周期，并通过适配器声明的 Runtime 映射读取它自己的 IDBFS 挂载点；产品目录与 `launcher/src/launcher/replay-storage-policy.mts` 共同生成该产品的 normal/MP 命名空间和语言子目录。一次 normal 运行的报告把 MP 路径标为策略派生、把 MP Runtime 标为未执行。MP 实际隔离由对应 MP Runtime 验收报告确认。
 
 ### SAVE-02 | 用户文件允许范围
 - 操作：对允许路径执行写入/读取/列出/删除，并对 `../`、绝对路径、反斜线和空路径执行同样请求。
@@ -102,6 +111,7 @@
 - 观察与判定：离线启动成功，读出的原始字节及哈希与断网前相同，并能完成一次新写入和同步。
 - 反例：页面离线可打开但数据为空，或读取依赖在线请求，应判失败。
 - 入口与覆盖：`tools/ports/offline-runtime-browser.mjs` 将真实 Launcher 与普通版 Runtime 放在已安装 App Shell 下，在线同步 Replay 后断网重开页面，再核对原始字节并完成离线读取、写入与同步。成绩、配置等数据类型按各自适配报告记录。
+- App Shell 响应身份：`app-shell-sw.js` 动态生成 `/__app-shell-update-status__` JSON。离线站点响应观察器只对该精确路由接受 Service Worker 的 HTTP 200、`application/json`、`Cache-Control: no-store` 响应；其 `build` 和完整 `entries` 必须匹配部署 App Shell 合同及冻结站点各文件 SHA-256，`integrity`、时间戳、安装计数和 `runtimeTrusted` 子集按 worker 元数据结构核对。报告保留原响应字节数与 SHA-256、解析出的 metadata 和语义 receipt；其他未登记同源路径仍须匹配静态站点快照。
 
 ### SAVE-06 | 游戏包与用户数据分开
 - 操作：保存并同步用户文件，安装包含新 Runtime/DATA 的完整新包，再创建新实例读取原文件。

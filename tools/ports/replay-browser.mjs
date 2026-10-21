@@ -12,7 +12,10 @@ import {RUNTIME_BUILD_CONTROL_FILES,RUNTIME_BUILD_HELPER_FILES} from '../../laun
 import {RUNTIME_PACKAGE_CONTROL_FILES} from '../../launcher/lib/runtime-package-evidence.mjs';
 import {createFixtureServer} from '../browser/fixture-server.mjs';
 import {createFixtureResponseProbe} from './runtime-fixture-site.mjs';
-import {assessReplayTerminalSignal,createReplayProgressTracker,gateReplayRecordOnFinalErrors,playbackObservation,replayProtocolFailures,replayScenarioPassedTargetIds} from './replay-browser-semantics.mjs';
+import {assessReplayTerminalSignal,createReplayProgressTracker,gateReplayRecordOnFinalErrors,hasHashBoundNaturalReplayEndpoint,playbackObservation,
+  replayOriginalImportCheck,replayProtocolFailures,replayScenarioPassedTargetIds} from './replay-browser-semantics.mjs';
+import {assessTh08ReplayInputConsumption,deriveTh08ReplayInputExpectation,replayTerminalPolicy} from '../../tests/adaptation/adapters/replay.mjs';
+import {readRuntimeObservation,runtimeObservationRequest} from './runtime-observations.mjs';
 
 const arg=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const flag=name=>process.argv.includes(`--${name}`);
@@ -26,16 +29,14 @@ const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const decisionInputs=new Map();
 const decisionSourcePaths=[...new Set([
   'tools/ports/replay-browser.mjs','tools/ports/acceptance-contracts.mjs','tools/ports/replay-fixtures.mjs','tools/ports/replay-browser-semantics.mjs','tools/ports/replay-browser-semantics.test.mjs','tools/ports/runtime-fixture-site.mjs','tools/browser/fixture-server.mjs','tools/browser/response-body-capture.mjs','tools/browser/final-error-audit.mjs','tools/browser/final-error-audit.test.mjs','tools/browser/launch.mjs','tools/browser/playwright.mjs',
+  'tools/ports/runtime-observations.mjs','tools/ports/runtime-observations.test.mjs','tests/adaptation/adapters/replay.mjs','tests/adaptation/adapters/replay.test.mjs',
   'tools/testing/cli-report.mjs','tools/testing/cli-options.mjs','common/contracts/product-catalog.mjs',
   'common/browser/local-replay.mjs','common/browser/local-replay-native.mjs','common/browser/playback-clock.mjs',
   'launcher/lib/contracts/runtime-generations.mjs','launcher/lib/contracts/site-manifest.mjs',
   'launcher/lib/contracts/load-compiled-contract.mjs','launcher/lib/contracts-build.mjs',
   'launcher/src/contracts/runtime-generations.mts','launcher/src/contracts/site-manifest.mts',
-  'ports/th06/src/ReplayWorkspace.cpp','ports/th07/src/ReplayWorkspace.cpp',
-  'ports/th08/web/cpp/sdl/LocalReplay.inc','ports/th08/web/cpp/game/ReplayStream.cpp',
-  'ports/th09/web/sdl-runtime/managed.mjs','ports/th09/web/sdl-runtime/replay-player.mjs',
-  'ports/th10/web/cpp/sdl/LocalReplay.inc','ports/th11/web/cpp/sdl/Application.cpp','ports/th11/web/cpp/game/Replay.cpp',
-  'ports/th15/web/cpp/sdl/LocalReplay.inc',
+  // Native inputs are bound by each selected Runtime's verified source receipt.
+  // Reference-specific source anchors are captured by candidateCounterReferenceFor.
   ...RUNTIME_BUILD_CONTROL_FILES,...RUNTIME_BUILD_HELPER_FILES,...RUNTIME_PACKAGE_CONTROL_FILES,
 ])].sort((a,b)=>a<b?-1:a>b?1:0);
 
@@ -133,7 +134,7 @@ const candidateCounterReferenceFor=async(target,replaySha256)=>{
     if(report.verifier?.passed===true&&entry?.status==='PASS'&&entry.comparedTicks>0)return{
       kind:'original-process-and-cpp-session-replay-comparison',counter:{name:'comparedTicks',value:entry.comparedTicks},replaySha256,
       persistedReplaySha256:entry.replaySha256??null,counterBoundToSelectedReplay:false,comparableToNativeCursor:false,
-      countDefinition:'TH09 test code hashes the raw input and includes that hash in both comparison identities while it runs. The persisted ignored session-replays.json result does not carry the Replay hash, so this PASS count is not bound to the selected bytes. Official inspect is not implemented; playback open constructs the ReplayPlayer.',
+      countDefinition:'th09 test code hashes the raw input and includes that hash in both comparison identities while it runs. The persisted ignored session-replays.json result does not carry the Replay hash, so this PASS count is not bound to the selected bytes. Official inspect is not implemented; playback open constructs the ReplayPlayer.',
       evidence:[{path:replayPath,sha256:hash(replayBytes)},{path:testPath,sha256:hash(testBytes)},{path:resultPath,sha256:hash(resultBytes)},
         {path:managedPath,sha256:hash(managedBytes)},{path:playerPath,sha256:hash(playerBytes)},{path:clockPath,sha256:hash(clockBytes)}]};
   }
@@ -212,7 +213,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
     nativeStepPath:'common/browser/local-replay-native.mjs',nativeStepSha256:decisionsByPath.get('common/browser/local-replay-native.mjs').sha256,
     pacing:'Official rate 1 for the first 120 logical frames; official rate 0 then runs the same native replay step in bounded sequential batches until the native terminal signal is observed.'};
   report.selection={games:selection.games,variant,expectedTargets:selection.expected};
-  report.scope='Each playable target records official Shell storage/import, 120 rate-1 native frames, and the Runtime native terminal signal without browser or Runtime errors. Full input consumption remains unproven; Replay compatibility completion requires a hash-bound original terminal reference with matching counter semantics.';
+  report.scope='Each playable target records official Shell storage/import, 120 rate-1 native frames, and the Runtime native terminal signal without browser or Runtime errors. th08 normal derives the maximum successful reads from the exact imported version-6 stage blocks and records Runtime cursor consistency at natural termination. REPLAY-01 completion additionally requires a hash-bound reference mapping the original natural endpoint to ReplayStream cursors. Other targets retain their title-specific proof scope.';
   report.multiplayerScope='A single-player Replay fixture is tested in an MP Runtime only when the official Shell and native format admit it. MP-11 requires a Replay recorded by a real multiplayer session; an unavailable MP fixture remains blocked and is not reported as out of scope.';
   report.port=port;report.targets=[];
   const records=new Map(),verifiedPackages=new Map(),verifiedData=new Map(),fixtures=new Map();
@@ -459,7 +460,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
         const description=await step('native-replay-inspection',async()=>{
           if(target.game==='th09'){
             record.replayDescription={method:'official-playback-open',inspection:'not-implemented',
-              reason:'TH09 creates its ReplayPlayer through playback action open; the official shell has no inspect action.'};
+              reason:'th09 creates its ReplayPlayer through playback action open; the official shell has no inspect action.'};
             return null;
           }
           const inspected=await page.evaluate(path=>rpc('playback',{action:'inspect',path}),replayPath);
@@ -469,6 +470,17 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
           return inspected.description;
         });
         const selectedStage=description?.stages?.[0]?.id??null;
+        const strictConsumptionPolicy=replayTerminalPolicy({game:target.game,variant:target.variant});
+        let replayInputExpectation=null;
+        if(strictConsumptionPolicy){
+          await step('derive-independent-replay-read-capacity',async()=>{
+            assert.ok(Number.isInteger(selectedStage),`${target.id}: th08 normal Replay inspector did not select a numeric stage`);
+            replayInputExpectation=deriveTh08ReplayInputExpectation(fixture.contents,{stage:selectedStage,expectedSha256:fixture.identity.sha256});
+            record.replayInputExpectation=replayInputExpectation;
+            return{source:replayInputExpectation.source,stage:replayInputExpectation.stage,sha256:replayInputExpectation.sha256,
+              blocks:replayInputExpectation.blocks,stride:replayInputExpectation.stride,capacity:replayInputExpectation.capacity};
+          });
+        }
         await step('native-replay-plays-and-advances',async()=>{
           const opened=await page.evaluate(({path,stage})=>rpc('playback',{action:'open',path,...(stage===null?{}:{stage})}),{path:replayPath,stage:selectedStage});
           const naturalFrames=120,started=Date.now(),progress=[];let last=null,latest=opened.playback??opened;
@@ -511,12 +523,19 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
             await page.waitForTimeout(2000);
           }
           if(!finalState)throw new Error(`${target.id}: native Replay did not report its terminal signal within ${replayTimeout}ms; last observation ${JSON.stringify(record.playbackTerminalSignalMonitor?.lastState??null)}`);
-          const assessment=assessReplayTerminalSignal({game:target.game,state:finalState,candidateCounterReference:record.candidateCounterReference,
-            inspectionStages:description?.stages??[],maximumFrame:tracker.maximumFrame});
+          const runtimeFrame=page.frames().find(frame=>frame.url().includes(`/runtime/${target.id}/`));
+          const nativeRuntimeObservation=runtimeFrame?await runtimeFrame.evaluate(readRuntimeObservation,runtimeObservationRequest(target)):null;
+          record.nativeReplayObservation=nativeRuntimeObservation?.replay??null;
+          const nativeInputConsumption=strictConsumptionPolicy?assessTh08ReplayInputConsumption({
+            expected:replayInputExpectation,actual:nativeRuntimeObservation?.replay?.stream,ended:finalState.ended===true,
+          }):null;
+          const assessment=assessReplayTerminalSignal({game:target.game,variant:target.variant,state:finalState,candidateCounterReference:record.candidateCounterReference,
+            inspectionStages:description?.stages??[],maximumFrame:tracker.maximumFrame,nativeInputConsumption});
           record.playbackTerminalSignalAssessment=assessment;
           assert.notEqual(assessment.status,'failed',`${target.id}: ${assessment.reason} ${JSON.stringify(assessment.comparison??assessment.observation)}`);
           record.playback={status:assessment.status,path:replayPath,fixture:fixture.identity,stage:selectedStage,
             state:playbackObservation(finalState),progress:record.playbackTerminalSignalMonitor,
+            nativeReplayObservation:record.nativeReplayObservation,
             terminalSignalObserved:assessment.terminalSignalObserved,
             fullInputConsumption:assessment.fullInputConsumption,
             nativeFormatConsistency:assessment.nativeFormatConsistency??null,
@@ -540,13 +559,23 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
         assert.deepEqual(latestData,verifiedData.get(target.id),`${target.id}: private DATA changed during playback`);
         assert.deepEqual(latestFixture.identity,fixture.identity,`${target.id}: Replay input changed during playback`);
         record.postflight={packageIdentity:latestPackage,dataIdentity:latestData,fixture:latestFixture.identity};
-        assert.ok(record.playback&&record.playback.status==='observed',`${target.id}: Replay scenario lacks a successful native terminal signal observation`);
-        record.playback.scenarioStatus='passed';
+        assert.ok(record.playback&&['observed','incomplete'].includes(record.playback.status),`${target.id}: Replay scenario lacks a native terminal signal assessment`);
+        const scenarioPassed=record.playback.status==='observed'&&
+          (!strictConsumptionPolicy||hasHashBoundNaturalReplayEndpoint(record.playback));
+        record.playback.scenarioStatus=scenarioPassed?'passed':'incomplete';
         record.playback.scenarioEvidence={officialShellImport:'passed',nativeFramesAtDefaultRate:record.playbackPacing.naturalFrames,
           terminalSignalObserved:record.playback.terminalSignalObserved,fullInputConsumption:record.playback.fullInputConsumption,
+          replayInputExpectation:record.replayInputExpectation??null,
           browserAndRuntimeErrors:'pending-final-audit',rawHtmlResponseIntegrity:'passed'};
-        record.compatibility={complete:false,status:'incomplete',reason:'No exact native terminal count with a source-attested same-counter mapping is bound to this fixture.'};
-        record.status='passed';
+        if(scenarioPassed){
+          record.status='passed';
+          record.compatibility=strictConsumptionPolicy?
+            {complete:true,status:'passed',reason:'Native th08 Replay counters match the hash-bound original natural endpoint and independently parsed stage capacity.'}:
+            {complete:false,status:'incomplete',reason:'This target has no exact native terminal count with a source-attested same-counter mapping bound to this fixture.'};
+        }else{
+          const reason=record.playback.fullInputConsumption?.reason??'Native Replay input consumption is unavailable.';
+          record.status='incomplete';record.compatibility={complete:false,status:'incomplete',reason};
+        }
       }catch(error){record.status='failed';record.error=String(error.stack||error);
         await captureProtocolErrors().catch(captureError=>record.protocolCaptureErrors.push(String(captureError.stack||captureError)));
         record.failureState=await page.evaluate(()=>({events:window.events?.slice(-20)??[],body:document.body.innerText})).catch(()=>null);
@@ -581,6 +610,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/replay-browser/1'
           protocolCaptureDrainedBeforeClose:record.protocolCaptureErrors.length===0&&record.protocolCaptureDrain?.pending===0,
           protocolCaptureDrain:record.protocolCaptureDrain??null,bindingEventsAtClose:record.runtimeProtocolEvents.length,
           contextClosed,pageClosed};
+        record.checks.push(replayOriginalImportCheck(record,{game:target.game,variant:target.variant}));
         await save();
       }
     }
@@ -634,7 +664,7 @@ function multiplayerFixtureAdmission(target,bytes){
   const signature=Buffer.from(bytes.subarray(0,8)).toString('ascii');
   if(target.game==='th08'){
     if(signature==='T8MPRPY1')return{status:'candidate-multiplayer-format'};
-    return{status:'requires-multiplayer-replay',reason:'TH08 MP import requires a .rpyx TH08 multiplayer Replay archive. The configured original .rpy has a different format.',evidence:['ports/th08-mp/web/sdl-runtime/shell.mjs:478','ports/th08-mp/web/cpp/multiplayer/ReplayArchive.cpp']};
+    return{status:'requires-multiplayer-replay',reason:'th08 MP import requires a .rpyx multiplayer Replay archive. The configured original .rpy has a different format.',evidence:['ports/th08-mp/web/sdl-runtime/shell.mjs:478','ports/th08-mp/web/cpp/multiplayer/ReplayArchive.cpp']};
   }
   if(['th10','th11','th15'].includes(target.game)){
     if(signature==='EAGLRPY1')return{status:'candidate-multiplayer-format'};

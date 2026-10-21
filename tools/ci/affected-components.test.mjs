@@ -74,6 +74,12 @@ test('source validation lanes follow their actual component inputs', () => {
     {sourceContracts:false, portAdaptation:true});
   assert.deepEqual(ciJobCoverage(['tests/suites.mjs']),
     {sourceContracts:true, portAdaptation:true});
+  for(const input of [
+    'ports/th08/portable/input/TouchController.hpp',
+    'ports/th08/portable/input/touch-bomb-check.cpp',
+    'ports/th08/portable/input/touch-bomb-check.mjs',
+    'tools/ports/fixtures/touch-native-invariants.cpp',
+  ])assert.deepEqual(ciJobCoverage([input]),{sourceContracts:true,portAdaptation:true},input);
   assert.deepEqual(ciJobCoverage(null), {sourceContracts:true, portAdaptation:true});
 });
 

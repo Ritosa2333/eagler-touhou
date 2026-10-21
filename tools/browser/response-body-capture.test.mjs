@@ -3,12 +3,15 @@ import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
 import {createChromiumResponseSource} from './response-body-capture.mjs';
 
-function fixture({stream=async()=>{throw Error('Streaming unavailable');},body=Buffer.from([0,1,255])}={}){
+function fixture({stream=async()=>{throw Error('Streaming unavailable');},body=Buffer.from([0,1,255]),bodyError=null}={}){
   const session=new EventEmitter(),calls=[];let detached=false;
   session.send=async(method,options)=>{
     calls.push({method,options});
     if(method==='Network.streamResourceContent')return stream(options);
-    if(method==='Network.getResponseBody')return{body:body.toString('base64'),base64Encoded:true};
+    if(method==='Network.getResponseBody'){
+      if(bodyError)throw bodyError;
+      return{body:body.toString('base64'),base64Encoded:true};
+    }
   };
   session.detach=async()=>{detached=true;};
   return{session,calls,detached:()=>detached,page:{context:()=>({newCDPSession:async()=>session})}};
@@ -44,6 +47,40 @@ test('actual stream bytes include the buffered prefix before chunks delivered ah
     assert.deepEqual(response.captureDetails().terminal,{event:'loadingFailed',error:'net::ERR_ABORTED',canceled:true});
     assert.equal(response.captureDetails().method,'Network.streamResourceContent');
     assert.equal(f.calls.some(call=>call.method==='Network.getResponseBody'),false);
+  }finally{await source.close();}
+});
+
+test('a finished stream missing its unencoded Content-Length falls back to the complete response body',async()=>{
+  const full=Buffer.from('0123456789'),suffix=Buffer.from('56789');
+  const f=fixture({stream:async()=>({bufferedData:''}),body:full});
+  const source=await createChromiumResponseSource(f.page);let response,body;
+  source.on('response',value=>{response=value;body=value.body();});
+  try{
+    f.session.emit('Network.responseReceived',{requestId:'css',type:'Stylesheet',response:{url:'https://fixture.test/root.css',status:200,
+      headers:{'Content-Length':String(full.length),'Content-Type':'text/css'}}});
+    f.session.emit('Network.dataReceived',{requestId:'css',data:suffix.toString('base64')});
+    f.session.emit('Network.loadingFinished',{requestId:'css',encodedDataLength:full.length+30});
+    assert.deepEqual(await body,full);
+    assert.equal(response.captureDetails().method,'Network.getResponseBody');
+    assert.equal(response.captureDetails().expectedBodyBytes,full.length);
+    assert.equal(response.captureDetails().streamedBytes,suffix.length);
+    assert.match(response.captureDetails().streamFallbackReason,/differs from unencoded Content-Length/);
+    assert.equal(f.calls.filter(call=>call.method==='Network.getResponseBody').length,1);
+  }finally{await source.close();}
+});
+
+test('an incomplete stream cannot become an empty success when the complete-body fallback fails',async()=>{
+  const f=fixture({stream:async()=>({bufferedData:''}),bodyError:Error('body unavailable')});
+  const source=await createChromiumResponseSource(f.page);let result;
+  source.on('response',response=>{result=response.body().catch(error=>error);});
+  try{
+    f.session.emit('Network.responseReceived',{requestId:'css',response:{url:'https://fixture.test/root.css',status:200,
+      headers:{'content-length':'10'}}});
+    f.session.emit('Network.dataReceived',{requestId:'css',data:Buffer.from('tail').toString('base64')});
+    f.session.emit('Network.loadingFinished',{requestId:'css',encodedDataLength:40});
+    const error=await result;
+    assert.match(error.message,/differs from unencoded Content-Length 10; response-body fallback failed/);
+    assert.equal(error.responseCapture.streamedBytes,4);
   }finally{await source.close();}
 });
 

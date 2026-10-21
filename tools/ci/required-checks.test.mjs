@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {affectedComponents,nodeBuildTargets} from './affected-components.mjs';
 import {nodeBuildTargetsForScope,requiredJobIds,verifyRequiredJobs} from './required-checks.mjs';
+import {suites} from '../../tests/suites.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const workspace = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json'), 'utf8'));
@@ -161,12 +162,15 @@ test('Runtime Shell Chromium lane is a hard gate in every workflow run', () => {
   assert.notEqual(end, -1);
   const job = workflow.slice(start, end);
   assert.doesNotMatch(job, /^    if:/m, 'the browser gate cannot be conditionally skipped');
-  assert.match(job, /node launcher\/tests\/test-runtime-protocol-contract\.mjs/,
-    'the L0 protocol contract must run in the full-checkout Runtime lane');
-  assert.match(job, /node launcher\/tests\/test-gamepad-contract\.mjs/,
-    'native gamepad contract remains a required Runtime Shell check');
-  assert.match(job, /test-keyboard-mapping-browser\.py --workspace=\./);
-  assert.match(job, /test-keyboard-mapping-browser\.py --workspace=\. --negative-control/);
+  assert.match(job, /node tests\/run\.mjs --suite=browser-shell --output=/,
+    'CI must execute the same shared suite used by local integration checks');
+  const tasks=suites({root,environment:{}})['browser-shell'].tasks();
+  assert.equal(suites({root,environment:{}})['browser-shell'].failFast,false,
+    'independent input and audio checks must still execute when another contract fails');
+  for(const id of ['runtime-protocol','native-gamepad','sfx-queue-output','touch-native-invariants','browser-shell','browser-shell-negative'])
+    assert.ok(tasks.some(task=>task.id===id),`${id} remains a required shared Runtime Shell check`);
+  assert.ok(tasks.find(task=>task.id==='browser-shell-negative').args.includes('--negative-control'));
+  assert.match(job,/if-no-files-found: error/,'the hard gate retains its actual reports');
   const checks = workflow.slice(end, workflow.indexOf('\n  relay:\n', end));
   assert.match(checks, /^    - browser-shell-runtime$/m);
   const selected = requiredJobIds({affected:['launcher'], sourceContracts:false, portAdaptation:false});
@@ -207,6 +211,8 @@ test('source-contract tooling suite receives a complete checkout', () => {
   assert.doesNotMatch(job, /sparse-checkout:/,
     'tooling discovery reads tracked tools, ports, common contracts, and the root test catalog');
   assert.match(job, /node tests\/run\.mjs --suite=tooling/);
+  assert.match(job, /node tests\/run\.mjs --suite=ports-touch-wasi/,
+    'the fixed source-contract WASI SDK must execute the cataloged production touch-bomb wrappers');
 });
 
 test('scope and Launcher core sparse checkouts include their test import closure', () => {

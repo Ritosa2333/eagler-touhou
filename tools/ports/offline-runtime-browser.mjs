@@ -1,26 +1,26 @@
+import {assertPortAvailable,runLogged,startStaticServer,stopChild,preloadLayout,createSiteSeed,featureConfig} from './launcher-fixture-preparation.mjs';
 import assert from 'node:assert/strict';
 import {createHash,randomUUID} from 'node:crypto';
-import {spawn} from 'node:child_process';
-import {createServer} from 'node:net';
 import {createRequire} from 'node:module';
 import {readFile,mkdir,writeFile,stat} from 'node:fs/promises';
 import {resolve,basename,relative,isAbsolute,dirname,sep} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {PRODUCT_CONTENT} from '../../launcher/lib/content-definition.mjs';
-import {extractGameDataLayout} from '../../launcher/lib/runtime-data-layout.mjs';
-import {createPublicationHostSeed} from '../../launcher/lib/publication-host-seed.mjs';
 import {PACKAGE_STORE_DB,PACKAGE_STORE_DB_VERSION,PACKAGE_INSTALLATIONS,PACKAGE_GENERATIONS,PACKAGE_OBJECTS} from '../../launcher/package/package-store.mjs';
-import {selectOfflineRuntimeTargets,verifyPrivateData,verifyRuntimePackage,readVerifiedRuntimeFile} from './acceptance-contracts.mjs';
+import {selectOfflineRuntimeTargets,verifyPrivateData,verifyRuntimePackage} from './acceptance-contracts.mjs';
 import {inspectRoomResources,verifyRoomResourcePostflight} from './room-resources.mjs';
 import {loadRuntimeReplayFixture} from './replay-fixtures.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
-import {runOfflineRuntimeReport} from './offline-runtime-result.mjs';
+import {offlineObservationEnvelope,runOfflineRuntimeReport} from './offline-runtime-result.mjs';
 import {installOfflinePackageStoreObserver} from './offline-package-observer.mjs';
-import {classifyOfflineBrowserEvents} from './offline-runtime-errors.mjs';
+import {assertRuntimeResourceBoundary,installRuntimePackageWriteObserver,probeRuntimePackageWrite,readInstalledPackageSnapshot} from './runtime-resource-boundary.mjs';
+import {classifyOfflineBrowserEvents,matchExpectedOfflinePathTraversal} from './offline-runtime-errors.mjs';
+import {inspectOfflineArtwork} from './offline-runtime-artwork.mjs';
 import {auditBrowserFinalErrors} from '../browser/final-error-audit.mjs';
 import {createOfflineStaticTlsProxy,captureOfflineSiteIdentity,watchOfflineSiteResponses,verifyOfflineSiteIdentity} from './offline-runtime-https.mjs';
 import {loadOfflineUpdateManifest,inspectOfflineUpdateDescriptor,assertOfflineUpdateManifestIdentity,writeInterruptedOfflineUpdateArchive} from './offline-runtime-update.mjs';
+import {assessPackageInstallationAuthority,classifyPackageAuthorityPrompt,createPublishedPackageFixture,installPackageInstallationReadJournal,snapshotPackageRuntime} from './offline-installation-authority.mjs';
 
 const arg=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const required=name=>{const value=arg(name);if(!value)throw Error(`Required: --${name}=VALUE`);return value;};
@@ -35,7 +35,6 @@ if(requestedOutputPath){
 const output=requestedOutputPath&&(!outputExists||outputIsDirectory)?requestedOutputPath:
   resolve(root,'artifacts/validation',`offline-runtime-browser-cli-${randomUUID()}`);
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
-const appendTail=(current,chunk)=>`${current}${chunk}`.slice(-300_000);
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 async function configureOfflineMusic(page){
@@ -49,102 +48,6 @@ async function configureOfflineMusic(page){
   await page.locator('.mizuki-select-menu:visible [data-value="none"]').click();
   assert.equal(await select.inputValue(),'none','Launcher must commit the visible music choice');
   return{mode:'none',source:'Launcher visible music menu'};
-}
-
-async function assertPortAvailable(port){
-  const probe=createServer();
-  await new Promise((accept,reject)=>{probe.once('error',reject);probe.listen(port,'127.0.0.1',accept);});
-  await new Promise((accept,reject)=>probe.close(error=>error?reject(error):accept()));
-}
-
-async function runLogged(command,args,{cwd,stdoutPath,stderrPath,label}){
-  const child=spawn(command,args,{cwd,windowsHide:true,stdio:['ignore','pipe','pipe']});
-  let stdout='',stderr='';
-  child.stdout.on('data',chunk=>{stdout=appendTail(stdout,chunk.toString());});
-  child.stderr.on('data',chunk=>{stderr=appendTail(stderr,chunk.toString());});
-  const [code,signal]=await new Promise((accept,reject)=>{
-    child.once('error',reject);child.once('close',(exitCode,exitSignal)=>accept([exitCode,exitSignal]));
-  });
-  if(stdoutPath)await writeFile(stdoutPath,stdout);
-  if(stderrPath)await writeFile(stderrPath,stderr);
-  if(code!==0)throw Error(`${label} exited ${code??signal}: ${stderr.slice(-6000)||stdout.slice(-6000)}`);
-  return{exitCode:code,stdoutTail:stdout.slice(-8000),stderrTail:stderr.slice(-8000)};
-}
-
-async function startStaticServer(site,port){
-  const script=resolve(launcher,'scripts/serve-static.mjs');
-  const child=spawn(process.execPath,[script,site,String(port)],{cwd:launcher,windowsHide:true,stdio:['ignore','pipe','pipe']});
-  let stdout='',stderr='',closed=null;
-  child.stdout.on('data',chunk=>{stdout=appendTail(stdout,chunk.toString());});
-  child.stderr.on('data',chunk=>{stderr=appendTail(stderr,chunk.toString());});
-  child.once('error',error=>{closed=error;});
-  child.once('close',(code,signal)=>{closed=new Error(`static server exited ${code??signal}: ${stderr.slice(-4000)||stdout.slice(-4000)}`);});
-  const baseUrl=`http://127.0.0.1:${port}/`,deadline=Date.now()+10_000;
-  while(Date.now()<deadline){
-    if(closed)throw closed;
-    try{const response=await fetch(new URL('deployment.json',baseUrl),{redirect:'error',signal:AbortSignal.timeout(1500)});
-      if(response.ok)return{child,baseUrl,stdout:()=>stdout,stderr:()=>stderr};
-    }catch{}
-    await pause(100);
-  }
-  child.kill();
-  throw Error(`Local site did not become ready on ${baseUrl}: ${stderr.slice(-4000)||stdout.slice(-4000)}`);
-}
-
-async function stopChild(child){
-  if(!child||child.exitCode!==null||child.signalCode!==null)return;
-  child.kill();
-  const closed=await Promise.race([new Promise(accept=>child.once('close',()=>accept(true))),pause(3000).then(()=>false)]);
-  if(!closed)throw Error(`Static server process ${child.pid??'unknown'} did not exit after shutdown`);
-}
-
-function runtimeLayout(target,identity){
-  const product=PRODUCT_GAMES[target.game];
-  if(product.dataProvider==='retail-memory')return PRODUCT_CONTENT[target.game]?.dataLayout;
-  if(product.dataProvider!=='emscripten-preload')throw Error(`${target.game}: unsupported DATA provider ${product.dataProvider}`);
-  return null;
-}
-
-async function preloadLayout(target,identity){
-  const product=PRODUCT_GAMES[target.game];
-  if(product.dataProvider==='retail-memory'){
-    const layout=runtimeLayout(target,identity);
-    assert.ok(layout,`${target.game}: declared retail DATA layout is missing`);
-    return layout;
-  }
-  for(const name of Object.keys(identity.files).filter(path=>/\.(?:js|mjs)$/i.test(path))){
-    const bytes=await readVerifiedRuntimeFile(target,identity,name);
-    try{return extractGameDataLayout(bytes.toString('utf8'),target.game).layout;}catch{}
-  }
-  throw Error(`${target.id}: packaged Runtime has no verifiable Emscripten DATA layout`);
-}
-
-function createSiteSeed(game,data,dataLayout){
-  const seed=createPublicationHostSeed('web-validation-offline-desktop');
-  seed.schema='eagler-touhou/site-manifest/1';
-  seed.shared={resourceMode:'hosted',vanillaFont:'shared/msgothic.ttc?v=fixture',unicodeFont:'shared/unifont.otf?v=fixture'};
-  const placeholderHash=digest(Buffer.from('unselected product seed'));
-  for(const [id,product] of Object.entries(PRODUCT_GAMES)){
-    const entry=seed.games[id];
-    Object.assign(entry,{
-      runtime:`runtime/${id}/${id}.html?hosted=1&v=seed`,
-      ...(product.multiplayerRuntime?{multiplayerRuntime:`runtime/${id}/multiplayer/${id}.html?hosted=1&v=seed`}:{}),
-      gameData:{path:product.package.dataTarget.slice(1),bytes:4,sha256:placeholderHash,
-        version:`sha256-${placeholderHash}`,layout:'sha256-'+ '0'.repeat(64)},
-      features:{thprac:false,focusHitbox:false},
-      music:{midi:{files:[],...(product.musicCapabilities.midi?{}:{supported:false})}},
-    });
-  }
-  seed.games[game].gameData={path:PRODUCT_GAMES[game].package.dataTarget.slice(1),bytes:data.bytes,
-    sha256:data.sha256,version:`sha256-${data.sha256}`,layout:dataLayout};
-  return seed;
-}
-
-function featureConfig(){
-  return{schema:'eagler-touhou/server-features/1',resourceMode:'import',
-    games:Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game,product])=>[game,{
-      ...(product.features.languages?{languages:['ja']}:{}),...(product.features.thprac?{thprac:false}:{})
-    }]))};
 }
 
 function offlineRuntimeInitScript({game}){
@@ -183,13 +86,24 @@ function offlineRuntimeInitScript({game}){
     }});
 }
 
-async function bindOfflineProtocolCapture(page,game,protocolErrors){
+async function bindOfflineProtocolCapture(page,game,protocolErrors,expectedProtocolResponses,expectedRequests){
   await page.exposeBinding('__captureOfflineRuntimeProtocolFailure',(source,event)=>{
     const samePage=source.page===page,mainFrame=source.frame===page.mainFrame();
     if(!samePage||!mainFrame){protocolErrors.push({type:'untrusted-binding-source',samePage,mainFrame,event});return;}
+    const expectation=expectedRequests.get(event?.request);
+    if(expectation){
+      const match=matchExpectedOfflinePathTraversal(event,expectation);
+      expectedRequests.delete(event.request);
+      expectation.resolve(match);
+      if(match){expectedProtocolResponses.push({classification:match,response:event});return;}
+    }
     protocolErrors.push(event);
   });
   await page.addInitScript(offlineRuntimeInitScript,{game});
+  await page.addInitScript(installPackageInstallationReadJournal,{database:PACKAGE_STORE_DB,installations:PACKAGE_INSTALLATIONS,
+    generations:PACKAGE_GENERATIONS,initialPhase:'page-load'});
+  await page.addInitScript(installRuntimePackageWriteObserver,{database:PACKAGE_STORE_DB,
+    stores:[PACKAGE_OBJECTS,PACKAGE_GENERATIONS,PACKAGE_INSTALLATIONS]});
 }
 
 async function drainOfflineProtocolCapture(page){
@@ -271,6 +185,9 @@ function injectedHarnessSources(){
   return new Map([
     ['browser-injected/offline-runtime-init.js',Buffer.from(`${offlineRuntimeInitScript.toString()}\n`)],
     ['browser-injected/offline-package-observer.js',Buffer.from(`${installOfflinePackageStoreObserver.toString()}\n`)],
+    ['browser-injected/package-installation-authority-journal.js',Buffer.from(`${installPackageInstallationReadJournal.toString()}\n`)],
+    ['browser-injected/package-runtime-snapshot.js',Buffer.from(`${snapshotPackageRuntime.toString()}\n`)],
+    ['browser-injected/runtime-package-write-observer.js',Buffer.from(`${installRuntimePackageWriteObserver.toString()}\n`)],
   ]);
 }
 
@@ -290,7 +207,8 @@ async function captureHarnessSources(destination){
 }
 
 const report=await runOfflineRuntimeReport({output},async(report,save)=>{
-  assertCliArguments(process.argv.slice(2),{values:['output','manifest','packages','artwork-dir','game','port','update-manifest']});
+  assertCliArguments(process.argv.slice(2),{values:['output','manifest','packages','artwork-dir','game','port','update-manifest'],
+    flags:['mutate-runtime-package-store','installation-authority-only']});
   report.outputDirectory=output;
   report.requestedOutput=requestedOutputPath;
   if(!requestedOutputPath)throw Error('Required: --output=directory');
@@ -301,6 +219,8 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
   const game=required('game'),manifestPath=resolve(required('manifest')),packagesPath=resolve(required('packages'));
   const updateManifestPath=arg('update-manifest')?resolve(arg('update-manifest')):null;
   const updateManifest=updateManifestPath?await loadOfflineUpdateManifest(updateManifestPath):null;
+  const installationAuthorityOnly=process.argv.includes('--installation-authority-only');
+  if(installationAuthorityOnly&&!updateManifest)throw Error('--installation-authority-only requires an explicit --update-manifest with a real second-generation ZIP');
   const artworkPath=resolve(required('artwork-dir'));
   const portValue=arg('port')??'8143',port=Number(portValue);
   assert.ok(Number.isSafeInteger(port)&&port>0&&port<65536,'--port must be an available TCP port');
@@ -314,19 +234,27 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
   await mkdir(output,{recursive:true});
   const runId=randomUUID(),site=resolve(output,`site-${runId}`);
   try{await stat(site);throw Error(`Refusing to replace existing packaged site: ${site}`);}catch(error){if(error.code!=='ENOENT')throw error;}
-  report.scope={game,variant:'normal',checks:['PACKAGE-02','PACKAGE-04','PACKAGE-05','SAVE-02','SAVE-03','SAVE-04','SAVE-05',
-      ...(updateManifest?['PACKAGE-03','SAVE-06']:[])],
-    excluded:updateManifest?[]:['PACKAGE-03','SAVE-06 require an explicit second-generation update manifest'],
-    statement:updateManifest?
-      'HTTPS-served packaged Launcher, local DATA ZIP import, verified failed-import retention, complete second-generation UI import, user Replay recovery and offline startup from the new generation.'
-      :'HTTPS-served packaged Launcher, local DATA ZIP import through the Launcher UI, real normal Runtime first frame, Runtime file sync and read after an offline page reopen.'};
+  report.scope={game,variant:'normal',checks:installationAuthorityOnly?['PACKAGE-06']:['RUNTIME-05','PACKAGE-01','PACKAGE-02','PACKAGE-04','PACKAGE-05','SAVE-02','SAVE-03','SAVE-04','SAVE-05',
+      ...(updateManifest&&!installationAuthorityOnly?['PACKAGE-03','SAVE-06']:[])],
+    excluded:installationAuthorityOnly?['PACKAGE-03','SAVE-06 use the separate local-import update route']:
+      updateManifest?[]:['PACKAGE-03','SAVE-06 require an explicit second-generation update manifest'],
+    statement:installationAuthorityOnly?
+      'HTTPS Launcher imports a local package, launches its pinned generation, commits a background update, and uses the new generation after the real restart decision and offline reopen.'
+      :updateManifest?
+        'HTTPS-served packaged Launcher, local DATA ZIP import, verified failed-import retention, complete second-generation UI import, user Replay recovery and offline startup from the new generation.'
+        :'HTTPS-served packaged Launcher, local DATA ZIP import through the Launcher UI, real normal Runtime first frame, Runtime file sync and read after an offline page reopen.'};
   report.inputs={manifest:{path:manifestPath,sha256:digest(await readFile(manifestPath))},packages:{path:packagesPath,sha256:digest(await readFile(packagesPath))},
     ...(updateManifest?{updateManifest:{path:updateManifest.path,bytes:updateManifest.bytes,sha256:updateManifest.sha256}}:{}),
     offlinePackagePath:resolve(packageMap[game]),artworkPath,outputSite:site,port};
   report.selection={games:selection.games,variant:selection.variant,expected:selection.expected};
   report.startedAt=report.startedAt??new Date().toISOString();
+  report.negativeControl={enabled:process.argv.includes('--mutate-runtime-package-store'),
+    kind:'Runtime installation-object write transaction'};
   await save();
 
+  report.artworkPreflight=await inspectOfflineArtwork(artworkPath);await save();
+  assert.equal(report.artworkPreflight.available,true,
+    `Offline Launcher artwork input is incomplete: ${report.artworkPreflight.missing.map(file=>file.name).join(', ')}`);
   const [normalPackage,dataIdentity]=await Promise.all([
     verifyRuntimePackage(normal,{repoRoot:root}),verifyPrivateData(normal.data),
   ]);
@@ -340,7 +268,7 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
   report.runtimePackages={normal:{packageSha256:normalPackage.packageSha256,wasmSha256:normalPackage.wasmSha256,
       sourceBuild:normalPackage.sourceBuild,packageBuild:normalPackage.packageBuild},
     data:dataIdentity,dataLayout};
-  report.offlinePackagePreflight=resource;
+  report.offlinePackagePreflight=offlineObservationEnvelope(game,'normal',['PACKAGE-02'],resource);
   let updateInput=null,updateIdentity=null,interruptedArchive=null;
   if(updateManifest){
     const entry=updateManifest.games[game];
@@ -385,18 +313,26 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
   assert.deepEqual(deployment.games,[game]);
   assert.equal(deployment.appShell?.schema,'eagler-touhou/app-shell/2',`${game}: packaged Launcher does not declare its App Shell`);
   assert.deepEqual(releaseCatalog.games,{},'Import-mode site must not silently supply a second online package');
+  const publishedPackageFixture=installationAuthorityOnly?await createPublishedPackageFixture({siteDirectory:site,game,
+    archivePath:updateIdentity.updatePath,expectedRevision:updateIdentity.updateRevision}):null;
+  if(publishedPackageFixture){
+    report.packageAuthority={status:'published-fixture-ready',fixture:publishedPackageFixture,
+      updatePrompt:null,productionReads:null,coverageComplete:false};await save();
+  }
   const normalRoot=`runtime/${game}/`,runtimeGroup=runtimeManifest.groups.find(group=>group.root===normalRoot);
   assert.ok(runtimeGroup?.current?.generation,`${game}: packaged normal Runtime generation is missing`);
   report.packagedSite={profile:deployment.profile,resourceMode:siteManifest.shared.resourceMode,
     deploymentSha256:digest(await readFile(resolve(site,'deployment.json'))),siteManifestSha256:digest(await readFile(resolve(site,'site-manifest.json'))),
     appShell:deployment.appShell,normalRuntime:{root:runtimeGroup.root,generation:runtimeGroup.current.generation,
-      files:runtimeGroup.current.files.length},releaseCatalogGames:Object.keys(releaseCatalog.games)};
+      files:runtimeGroup.current.files.length},releaseCatalogGames:Object.keys(releaseCatalog.games),
+    ...(publishedPackageFixture?{publishedPackageFixture:{revision:publishedPackageFixture.revision,
+      descriptor:publishedPackageFixture.descriptor,catalog:publishedPackageFixture.catalog,files:publishedPackageFixture.files}}:{})};
   await save();
 
-  let staticServer,tlsProxy,siteSnapshot,browser,context,page;
+  let staticServer,tlsProxy,siteSnapshot,browser,context,page,onlineAuthorityJournal=null,offlineAuthorityJournal=null;
   const pageWatchers=[];
   const browserEvents=[];
-  const protocolErrors=[],responseErrors=[],teardownErrors=[];
+  const protocolErrors=[],expectedProtocolResponses=[],expectedRequests=new Map(),responseErrors=[],teardownErrors=[];
   try{
     staticServer=await startStaticServer(site,port);
     tlsProxy=await createOfflineStaticTlsProxy({backendBase:staticServer.baseUrl});
@@ -411,8 +347,8 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     await context.addInitScript(installOfflinePackageStoreObserver,{name:PACKAGE_STORE_DB,version:PACKAGE_STORE_DB_VERSION,
       installations:PACKAGE_INSTALLATIONS,generations:PACKAGE_GENERATIONS,objects:PACKAGE_OBJECTS});
     page=await context.newPage();
-    await bindOfflineProtocolCapture(page,game,protocolErrors);
-    const onlineSiteWatcher=await watchOfflineSiteResponses(page,{base:tlsProxy.base,snapshot:siteSnapshot,output,label:'online-site'});
+    await bindOfflineProtocolCapture(page,game,protocolErrors,expectedProtocolResponses,expectedRequests);
+    const onlineSiteWatcher=await watchOfflineSiteResponses(page,{base:tlsProxy.base,snapshot:siteSnapshot,appShell:deployment.appShell,output,label:'online-site'});
     pageWatchers.push(onlineSiteWatcher);
     page.on('console',message=>{if(message.type()==='error')browserEvents.push({type:'console',text:message.text()});});
     page.on('pageerror',error=>browserEvents.push({type:'pageerror',text:String(error.stack||error)}));
@@ -431,12 +367,15 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     shell=await controller();
     assert.equal(new URL(shell.scope).origin,new URL(tlsProxy.base).origin,'App Shell scope must belong to the browser HTTPS origin');
     assert.equal(new URL(shell.worker).origin,new URL(tlsProxy.base).origin,'App Shell worker must belong to the browser HTTPS origin');
-    report.appShell={...shell,controlledBeforeImport:true};await save();
+    report.appShell=offlineObservationEnvelope(game,'normal',['PACKAGE-05'],{...shell,controlledBeforeImport:true});await save();
     const firstUse=page.locator('#firstUseNoticeDialog');
     if(await firstUse.count()&&await firstUse.evaluate(element=>element.open))await page.locator('#firstUseNoticeClose').click();
+    const setAuthorityPhase=phase=>page.evaluate(value=>window.__packageInstallationAuthorityJournal.setPhase(value),phase);
+    const snapshotAuthorityJournal=()=>page.evaluate(()=>window.__packageInstallationAuthorityJournal.snapshot());
     await page.locator('#gamePackageImport').waitFor({state:'visible',timeout:20_000});
     await page.locator('#gamePackageImport').click();
     await page.locator('#gameDataImportWindow').waitFor({state:'visible',timeout:15_000});
+    await setAuthorityPhase('local-package-import');
     await page.locator('#gameDataImportInput').setInputFiles(resolve(packageMap[game]));
     try{
       await page.waitForFunction(()=>{
@@ -467,48 +406,166 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     assert.equal(installed.declaredBytes,dataIdentity.bytes,`${game}: imported descriptor byte count differs`);
     assert.equal(installed.declaredSha256,dataIdentity.sha256,`${game}: imported descriptor SHA differs`);
     assert.equal(installed.target,product.package.dataTarget,`${game}: imported DATA target differs from product contract`);
-    report.uiImport={path:resolve(packageMap[game]),source:'Launcher #gamePackageImport UI',store:'IndexedDB Package Store',generation:installed};await save();
+    report.uiImport=offlineObservationEnvelope(game,'normal',['RUNTIME-05','PACKAGE-01','PACKAGE-02',
+      ...(installationAuthorityOnly?['PACKAGE-06']:[])],
+      {path:resolve(packageMap[game]),source:'Launcher #gamePackageImport UI',store:'IndexedDB Package Store',generation:installed});await save();
 
+    if(installationAuthorityOnly){
+      await page.reload({waitUntil:'load',timeout:60_000});
+      await page.waitForFunction(()=>window.__eaglerBoot?.done===true,null,{timeout:60_000});
+      await page.waitForFunction(()=>!!navigator.serviceWorker.controller,null,{timeout:30_000});
+      const reopenedFirstUse=page.locator('#firstUseNoticeDialog');
+      if(await reopenedFirstUse.count()&&await reopenedFirstUse.evaluate(element=>element.open))await page.locator('#firstUseNoticeClose').click();
+      const card=await page.evaluate(()=>({launchLabel:document.querySelector('#launch')?.textContent?.trim()??null,
+        importLabel:document.querySelector('#gamePackageImport')?.textContent?.trim()??null}));
+      assert.ok(['启动游戏','Start game'].includes(card.launchLabel),`${game}: reopened game card did not resolve the imported Package Store installation: ${JSON.stringify(card)}`);
+      report.packageAuthority.gameCard={source:'Launcher game card after a real page reopen',...card};await save();
+    }
     report.musicSelection={online:await configureOfflineMusic(page)};await save();
-    await page.locator('#launch').click();
-    const decision=page.locator('#decisionDialog');
-    if(await decision.count()&&await decision.evaluate(element=>element.open))await page.locator('#decisionConfirm').click();
-    await page.waitForFunction(()=>window.__offlineRuntimeEvents.some(event=>event.event==='ready'),null,{timeout:180_000});
-    await page.waitForFunction(()=>window.__offlineRuntimeEvents.some(event=>event.event==='first-frame'),null,{timeout:180_000});
-    const onlineRuntime=await page.evaluate(({game,generation,expectedData})=>{
-      const frame=document.getElementById('gameFrame'),src=new URL(frame.src,location.href),events=window.__offlineRuntimeEvents;
-      const ready=events.find(event=>event.event==='ready'),first=events.find(event=>event.event==='first-frame');
-      const reads=window.__offlineManagedDataReads.filter(item=>item.game===game);
-      const data=reads.find(item=>item.generation===generation&&item.bytes===expectedData.bytes&&item.sha256===expectedData.sha256);
-      return{frameUrl:frame.src,pathname:src.pathname,query:Object.fromEntries(src.searchParams),ready,first,
-        pageOnline:navigator.onLine,workerControlled:!!navigator.serviceWorker.controller,dataRead:data??null,dataReads:reads};
-    },{game,generation:installed.generationId,expectedData:dataIdentity});
+    await setAuthorityPhase('harness-package-snapshot');
+    let beforeOnline=await page.evaluate(readInstalledPackageSnapshot,game);
+    const importedBeforeLaunch=beforeOnline;
+    const captureResourceBoundary=async(label,before,runtime)=>{
+      const value={before,after:await page.evaluate(readInstalledPackageSnapshot,game),
+        dataRead:runtime.dataRead,expectedData:dataIdentity,
+        writes:await page.evaluate(()=>window.document.getElementById('gameFrame').contentWindow.__eaglerRuntimePackageWrites)};
+      report.resourceBoundaries??={};
+      report.resourceBoundaries[label]=offlineObservationEnvelope(game,'normal',['RUNTIME-05','PACKAGE-01'],value);
+      await save();assertRuntimeResourceBoundary(value);
+    };
+    let authorityPrompt=null,musicConsent=null,launchGenerationId=installed.generationId,updatedCurrent=null;
+    if(installationAuthorityOnly){
+      await setAuthorityPhase('resource-preparation-and-update-prompt');
+      await page.locator('#launch').click();
+      const decision=page.locator('#decisionDialog');
+      await page.waitForFunction(()=>document.querySelector('#decisionDialog')?.open===true,null,{timeout:60_000});
+      const readPrompt=()=>page.evaluate(()=>({title:document.querySelector('#decisionTitle')?.textContent?.trim()??'',
+        message:document.querySelector('#decisionMessage')?.textContent?.trim()??'',
+        confirm:document.querySelector('#decisionConfirm')?.textContent?.trim()??'',
+        cancel:document.querySelector('#decisionCancel')?.textContent?.trim()??''}));
+      let promptUi=await readPrompt(),promptKind=classifyPackageAuthorityPrompt(promptUi);
+      if(promptKind==='midi-launch-consent'){
+        musicConsent={observed:true,confirmed:false,...promptUi,source:'Launcher production launch warning'};
+        report.packageAuthority.launchMusicConsent=musicConsent;await save();
+        await decision.locator('#decisionConfirm').click();
+        await page.waitForFunction(()=>document.querySelector('#decisionDialog')?.open!==true,null,{timeout:15_000});
+        musicConsent.confirmed=true;await save();
+        await page.waitForFunction(()=>document.querySelector('#decisionDialog')?.open===true,null,{timeout:60_000});
+        promptUi=await readPrompt();promptKind=classifyPackageAuthorityPrompt(promptUi);
+      }
+      assert.equal(promptKind,'published-package-update-ready',`${game}: Launcher did not show its production downloaded-update decision after launch consent: ${JSON.stringify(promptUi)}`);
+      await page.waitForFunction(()=>{
+        const frame=document.getElementById('gameFrame'),epoch=Number(new URL(frame.src,location.href).searchParams.get('runtimeEpoch'));
+        return window.__offlineRuntimeEvents.some(event=>event.event==='first-frame'&&event.epoch===epoch);
+      },null,{timeout:180_000});
+      const initialRuntime=await page.evaluate(snapshotPackageRuntime,{game,generation:installed.generationId,expectedData:dataIdentity});
+      assert.equal(initialRuntime.query.gameGeneration,installed.generationId,`${game}: background update replaced the already-running generation before restart`);
+      assert.ok(initialRuntime.dataRead,`${game}: original pinned Runtime did not read its imported DATA before the update-ready decision`);
+      report.packageAuthority.initialRuntime=initialRuntime;await save();
+      await setAuthorityPhase('update-ready-checkpoint');
+      const currentAtPrompt=await page.evaluate(async game=>{
+        const current=await window.__offlinePackageStoreObserver.readCurrentPackageGeneration(game);
+        return{generationId:current.generation?.id??null,revision:current.generation?.descriptor?.revision??null,
+          source:current.installation?.source??null,pendingGeneration:current.installation?.pendingGeneration??null};
+      },game);
+      assert.notEqual(currentAtPrompt.generationId,installed.generationId,`${game}: update-ready prompt appeared before a new generation was committed`);
+      assert.equal(currentAtPrompt.revision,updateIdentity.updateRevision,`${game}: update-ready prompt is not backed by the published descriptor`);
+      assert.equal(currentAtPrompt.pendingGeneration,null,`${game}: update-ready generation is still pending`);
+      authorityPrompt={observed:true,confirmed:false,title:promptUi.title,message:promptUi.message,confirm:promptUi.confirm,cancel:promptUi.cancel,
+        publishedRevision:updateIdentity.updateRevision,currentGenerationAtPrompt:currentAtPrompt.generationId,currentRevisionAtPrompt:currentAtPrompt.revision,
+        sourceAtPrompt:currentAtPrompt.source,pinnedRuntimeGenerationAtPrompt:initialRuntime.query.gameGeneration,
+        pinnedRuntimeEpoch:Number(initialRuntime.query.runtimeEpoch),pendingGenerationAtPrompt:currentAtPrompt.pendingGeneration};
+      report.packageAuthority.updatePrompt=authorityPrompt;await save();
+      await setAuthorityPhase('published-update-commit');
+      await decision.locator('#decisionConfirm').click();
+      authorityPrompt.confirmed=true;
+    }else{
+      await setAuthorityPhase('resource-preparation-and-update-prompt');
+      await page.locator('#launch').click();
+      const decision=page.locator('#decisionDialog');
+      if(await decision.count()&&await decision.evaluate(element=>element.open))await page.locator('#decisionConfirm').click();
+    }
+    await page.waitForFunction(({previousEpoch})=>{
+      const frame=document.getElementById('gameFrame'),epoch=Number(new URL(frame.src,location.href).searchParams.get('runtimeEpoch'));
+      return epoch>previousEpoch&&['ready','first-frame'].every(name=>window.__offlineRuntimeEvents.some(event=>event.event===name&&event.epoch===epoch));
+    },{previousEpoch:authorityPrompt?.pinnedRuntimeEpoch??0},{timeout:180_000});
+    if(installationAuthorityOnly){
+      await setAuthorityPhase('harness-post-update-checkpoint');
+      updatedCurrent=await page.evaluate(async game=>{
+        const current=await window.__offlinePackageStoreObserver.readCurrentPackageGeneration(game),generation=current.generation;
+        if(!generation)throw Error(`${game}: published update did not leave a current Package Store generation`);
+        return{generationId:generation.id,revision:generation.descriptor.revision,source:current.installation?.source??null,
+          pendingGeneration:current.installation?.pendingGeneration??null,fileCount:Object.keys(generation.files).length};
+      },game);
+      assert.notEqual(updatedCurrent.generationId,installed.generationId,`${game}: published update reused the old Package Store generation`);
+      assert.equal(updatedCurrent.revision,updateIdentity.updateRevision,`${game}: published update committed the wrong descriptor`);
+      assert.equal(updatedCurrent.pendingGeneration,null,`${game}: published update left a pending Package Store generation`);
+      launchGenerationId=updatedCurrent.generationId;
+      beforeOnline=await page.evaluate(readInstalledPackageSnapshot,game);
+      assert.notDeepEqual(beforeOnline,importedBeforeLaunch,`${game}: published update left the imported Package Store generation active`);
+      report.packageAuthority.update={status:'committed',prompt:authorityPrompt,base:{generationId:installed.generationId,revision:installed.revision},
+        current:updatedCurrent,sourceArchive:publishedPackageFixture.sourceArchive};await save();
+      report.packageUpdate={...report.packageUpdate,status:'published-fixture-committed',
+        scenario:{id:'published-update-prompt-authority',status:'passed',passed:true,
+          stages:['real Launcher update prompt observed for the imported generation','published package installed through same-origin catalog','updated generation selected by online Runtime']}};
+    }
+    const onlineRuntime=await page.evaluate(snapshotPackageRuntime,{game,generation:launchGenerationId,expectedData:dataIdentity});
     assert.equal(onlineRuntime.pageOnline,true);
     assert.equal(onlineRuntime.workerControlled,true);
     assert.equal(onlineRuntime.ready?.game,game);assert.equal(onlineRuntime.ready?.protocol,'eagler-touhou/1');
     assert.equal(onlineRuntime.first?.game,game);
-    assert.equal(onlineRuntime.query.managedData,'1');assert.equal(onlineRuntime.query.gameGeneration,installed.generationId);
+    assert.equal(onlineRuntime.query.managedData,'1');assert.equal(onlineRuntime.query.gameGeneration,launchGenerationId);
     assert.ok(onlineRuntime.pathname.startsWith(`/runtime/${game}/`),`${game}: Launcher selected a nonlocal Runtime path`);
     assert.ok(!onlineRuntime.pathname.startsWith(`/runtime/${game}/multiplayer/`),`${game}: normal lane launched the MP Runtime`);
     assert.ok(onlineRuntime.pathname.includes(runtimeGroup.current.generation),`${game}: Runtime URL does not use packaged generation`);
     assert.ok(onlineRuntime.dataRead,`${game}: Runtime did not receive the exact imported DATA through the production Launcher provider`);
-    report.onlineRuntime=onlineRuntime;
+    report.onlineRuntime=offlineObservationEnvelope(game,'normal',['PACKAGE-02',
+      ...(installationAuthorityOnly?['PACKAGE-06']:[])],onlineRuntime);
+    if(report.negativeControl.enabled){
+      report.negativeControl.actual=await page.evaluate(probeRuntimePackageWrite,{database:PACKAGE_STORE_DB,store:PACKAGE_OBJECTS});
+      await save();
+    }
+    await captureResourceBoundary('online',beforeOnline,onlineRuntime);
     const frameUrl=onlineRuntime.frameUrl;
     const runtimeEpoch=Number(new URL(frameUrl).searchParams.get('runtimeEpoch'));
     assert.ok(Number.isSafeInteger(runtimeEpoch)&&runtimeEpoch>0,`${game}: Runtime epoch is missing`);
 
-    const runtimeCommand=async(command,payload={})=>page.evaluate(({game,command,payload})=>new Promise((accept,reject)=>{
-      const frame=document.getElementById('gameFrame'),runtimeEpoch=Number(new URL(frame.src,location.href).searchParams.get('runtimeEpoch')),
-        request=`offline-runtime-${crypto.randomUUID()}`;
-      const timer=setTimeout(()=>{removeEventListener('message',receive);reject(Error(`Runtime ${command} timed out`));},30_000);
-      function receive(event){
-        if(event.origin!==location.origin||event.source!==frame?.contentWindow||event.data?.request!==request)return;
-        clearTimeout(timer);removeEventListener('message',receive);
-        if(event.data.ok)accept(event.data);else reject(Error(event.data.error||`Runtime ${command} rejected`));
+    const runtimeCommand=async(command,payload={},options={})=>{
+      const requestId=`offline-runtime-${randomUUID()}`,expectedPathTraversal=options.expectedPathTraversal===true;
+      let expectation=null;
+      if(expectedPathTraversal){
+        assert.ok(['read','write','remove'].includes(command),'Only read/write/remove path operations can be expected traversal negatives');
+        assert.equal(payload.path,'../outside-offline-acceptance.dat','Expected traversal negative must use the exact probe path');
+        let resolve;
+        const response=new Promise(accept=>{resolve=accept;});
+        expectation={requestId,game,epoch:runtimeEpoch,command,path:payload.path,response,resolve};
+        expectedRequests.set(requestId,expectation);
       }
-      addEventListener('message',receive);
-      frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:runtimeEpoch,command,request,...payload},location.origin);
-    }),{game,command,payload});
+      try{
+        let result,commandError=null;
+        try{
+          result=await page.evaluate(({game,command,payload,requestId})=>new Promise((accept,reject)=>{
+            const frame=document.getElementById('gameFrame'),runtimeEpoch=Number(new URL(frame.src,location.href).searchParams.get('runtimeEpoch'));
+            const timer=setTimeout(()=>{removeEventListener('message',receive);reject(Error(`Runtime ${command} timed out`));},30_000);
+            function receive(event){
+              if(event.origin!==location.origin||event.source!==frame?.contentWindow||event.data?.request!==requestId)return;
+              clearTimeout(timer);removeEventListener('message',receive);
+              if(event.data.ok)accept(event.data);else reject(Error(event.data.error||`Runtime ${command} rejected`));
+            }
+            addEventListener('message',receive);
+            frame.contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:runtimeEpoch,command,request:requestId,...payload},location.origin);
+          }),{game,command,payload,requestId});
+        }catch(error){commandError=error;}
+        if(expectation){
+          if(!commandError)throw Error(`${command} unexpectedly accepted the traversal probe`);
+          const receipt=await Promise.race([expectation.response,pause(1000).then(()=>null)]);
+          if(!receipt)throw Error(`${command} traversal rejection was not matched to its exact protocol response`,{cause:commandError});
+          throw Object.assign(new Error(String(commandError?.message??commandError)),{expectedProtocolRejection:receipt});
+        }
+        if(commandError)throw commandError;
+        return result;
+      }finally{if(expectation)expectedRequests.delete(requestId);}
+    };
     const listBefore=await runtimeCommand('list');
     assert.ok(Array.isArray(listBefore.files),`${game}: Runtime file list response is invalid`);
     const storage=product.storage;
@@ -525,12 +582,14 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     const listBeforeWrite=await runtimeCommand('list');
     const rejected=[];
     for(const command of ['read','write','remove']){
-      let error=null;
-      try{await runtimeCommand(command,{path:'../outside-offline-acceptance.dat',bytes:replayBytes});}
-      catch(reason){error=String(reason?.message??reason);}
+      let error=null,protocolRejection=null;
+      try{await runtimeCommand(command,{path:'../outside-offline-acceptance.dat',bytes:replayBytes},{expectedPathTraversal:true});}
+      catch(reason){error=String(reason?.message??reason);protocolRejection=reason?.expectedProtocolRejection??null;}
       assert.ok(error&&!/timed out/i.test(error),`${command} must reject paths outside the declared storage`);
-      rejected.push({command,error});
+      rejected.push({command,error,protocolRejection});
     }
+    assert.ok(rejected.every(entry=>entry.protocolRejection?.kind==='expected-storage-path-traversal-rejection'),
+      'All path traversal negatives must match their exact request-bound Runtime rejection');
     const listAfterRejected=await runtimeCommand('list');
     assert.deepEqual(listAfterRejected.files,listBeforeWrite.files,`${game}: rejected path operations changed the Runtime file list`);
     await runtimeCommand('write',{path:replayPath,bytes:replayBytes});
@@ -543,13 +602,16 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     const savedUserFile=resolve(output,'user-files',`${game}-user-replay.rpy`);
     await mkdir(resolve(output,'user-files'),{recursive:true});await writeFile(savedUserFile,replay.contents);
     report.userFiles={sync:{status:'passed',runtimePath:replayPath,...savedIdentity,evidencePath:savedUserFile},
-      pathTraversal:{status:'passed',commands:rejected,unchangedFileList:true},
+      pathTraversal:{status:'passed',commands:rejected,unchangedFileList:true,
+        expectedProtocolResponses:rejected.map(entry=>entry.protocolRejection)},
       nativeGameFiles:{status:nativeFiles.length?'observed':'not-created-during-title-session',files:nativeFiles}};
     report.persistence={onlineList:listBefore.files.map(file=>({path:file.path,bytes:file.bytes??null})),syncResponse:saved.ok??true};
     await save();
+    await captureResourceBoundary('onlineEnd',beforeOnline,onlineRuntime);
 
-    let finalGeneration=installed,updateScenario=null,onlineRuntimeAfterUpdate=null;
-    if(updateInput){
+    let finalGeneration=installationAuthorityOnly&&updatedCurrent?{generationId:updatedCurrent.generationId,revision:updatedCurrent.revision}:installed,
+      updateScenario=null,onlineRuntimeAfterUpdate=null,beforeUpdated=null;
+    if(updateInput&&!installationAuthorityOnly){
       await onlineSiteWatcher.flush();
       await page.reload({waitUntil:'load',timeout:60_000});
       await page.waitForFunction(()=>window.__eaglerBoot?.done===true,null,{timeout:60_000});
@@ -638,6 +700,7 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
       await save();
 
       report.musicSelection.updated=await configureOfflineMusic(page);await save();
+      beforeUpdated=await page.evaluate(readInstalledPackageSnapshot,game);
       await page.locator('#launch').click();
       const updateDecision=page.locator('#decisionDialog');
       if(await updateDecision.count()&&await updateDecision.evaluate(element=>element.open))await page.locator('#decisionConfirm').click();
@@ -663,6 +726,26 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
       await save();
     }
 
+    await captureResourceBoundary('finalOnlineEnd',beforeUpdated??beforeOnline,onlineRuntimeAfterUpdate??onlineRuntime);
+    const writeProbe=await page.evaluate(probeRuntimePackageWrite,{database:PACKAGE_STORE_DB,store:PACKAGE_OBJECTS});
+    const negativeBoundary={before:report.resourceBoundaries.finalOnlineEnd.observation.after,
+      after:await page.evaluate(readInstalledPackageSnapshot,game),expectedData:dataIdentity,
+      dataRead:(onlineRuntimeAfterUpdate??onlineRuntime).dataRead,
+      writes:await page.evaluate(()=>window.document.getElementById('gameFrame').contentWindow.__eaglerRuntimePackageWrites)};
+    report.resourceBoundaryNegative=offlineObservationEnvelope(game,'normal',['RUNTIME-05'],{probe:writeProbe,actual:negativeBoundary,status:'running'});
+    await save();
+    assert.throws(()=>assertRuntimeResourceBoundary(negativeBoundary),/Runtime wrote installation objects/,
+      'The unchanged resource-boundary assertion must reject a real Runtime installation write transaction');
+    report.resourceBoundaryNegative.observation.status='passed';
+    report.resourceBoundaryNegative.observation.rejectedByUnchangedAssertion=true;await save();
+    if(installationAuthorityOnly){
+      await setAuthorityPhase('harness-online-journal-snapshot');
+      onlineAuthorityJournal=await snapshotAuthorityJournal();
+      for(const read of onlineAuthorityJournal.reads??[])if(read.phase==='page-load')read.phase='post-import-card-reopen';
+      assert.equal(onlineAuthorityJournal.overflow,false,`${game}: online Package Store read journal overflowed`);
+      assert.equal(onlineAuthorityJournal.pending,0,`${game}: online Package Store read journal has unfinished requests`);
+      report.packageAuthority.onlineReadCount=onlineAuthorityJournal.reads?.length??0;await save();
+    }
     await onlineSiteWatcher.flush();
     try{await onlineSiteWatcher.stop();}catch(error){teardownErrors.push({phase:'online-response-probe.stop',error:String(error.stack||error)});throw error;}
     await drainOfflineProtocolCapture(page);
@@ -670,8 +753,8 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     page=null;
     await context.setOffline(true);
     page=await context.newPage();
-    await bindOfflineProtocolCapture(page,game,protocolErrors);
-    const offlineSiteWatcher=await watchOfflineSiteResponses(page,{base:tlsProxy.base,snapshot:siteSnapshot,output,label:'offline-site'});
+    await bindOfflineProtocolCapture(page,game,protocolErrors,expectedProtocolResponses,expectedRequests);
+    const offlineSiteWatcher=await watchOfflineSiteResponses(page,{base:tlsProxy.base,snapshot:siteSnapshot,appShell:deployment.appShell,output,label:'offline-site'});
     pageWatchers.push(offlineSiteWatcher);
     page.on('console',message=>{if(message.type()==='error')browserEvents.push({type:'offline-console',text:message.text()});});
     page.on('pageerror',error=>browserEvents.push({type:'offline-pageerror',text:String(error.stack||error)}));
@@ -687,6 +770,11 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     const offlineFirstUse=page.locator('#firstUseNoticeDialog');
     if(await offlineFirstUse.count()&&await offlineFirstUse.evaluate(element=>element.open))await page.locator('#firstUseNoticeClose').click();
     report.musicSelection.offline=await configureOfflineMusic(page);await save();
+    if(installationAuthorityOnly)await setAuthorityPhase('harness-offline-snapshot');
+    const beforeOffline=await page.evaluate(readInstalledPackageSnapshot,game);
+    assert.deepEqual(beforeOffline,report.resourceBoundaries.finalOnlineEnd.observation.after,
+      'Runtime retirement or offline reopen changed installed package bytes or file references');
+    if(installationAuthorityOnly)await setAuthorityPhase('offline-resource-preparation');
     await page.locator('#launch').click();
     const offlineDecision=page.locator('#decisionDialog');
     if(await offlineDecision.count()&&await offlineDecision.evaluate(element=>element.open))await page.locator('#decisionConfirm').click();
@@ -723,6 +811,37 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     await offlineRuntimeCommand('sync');
     const afterOfflineSync=await offlineRuntimeCommand('read',{path:replayPath});
     assert.deepEqual(afterOfflineSync.bytes,replayBytes,`${game}: offline sync changed saved user bytes`);
+    if(installationAuthorityOnly){
+      await setAuthorityPhase('harness-offline-journal-snapshot');
+      offlineAuthorityJournal=await snapshotAuthorityJournal();
+      for(const read of offlineAuthorityJournal.reads??[])if(read.phase==='page-load')read.phase='offline-reopen';
+      assert.equal(offlineAuthorityJournal.overflow,false,`${game}: offline Package Store read journal overflowed`);
+      assert.equal(offlineAuthorityJournal.pending,0,`${game}: offline Package Store read journal has unfinished requests`);
+    }
+    if(installationAuthorityOnly)await setAuthorityPhase('harness-offline-boundary');
+    await captureResourceBoundary('offline',beforeOffline,offlineRuntime);
+    assert.equal(beforeOffline.generationId,finalGeneration.generationId,'Offline Launcher restored a different installed generation');
+    if(installationAuthorityOnly){
+      const nonSelectedGame=Object.keys(PRODUCT_GAMES).find(id=>id!==game);
+      assert.ok(nonSelectedGame,`${game}: no non-selected product is available for the installation ownership negative control`);
+      const journal={schema:onlineAuthorityJournal?.schema,overflow:!!onlineAuthorityJournal?.overflow||!!offlineAuthorityJournal?.overflow,
+        pending:(onlineAuthorityJournal?.pending??1)+(offlineAuthorityJournal?.pending??1),
+        reads:[...(onlineAuthorityJournal?.reads??[]),...(offlineAuthorityJournal?.reads??[])]};
+      const authorityInput={schema:'eagler-touhou/package-installation-authority-input/1',journal,game,nonSelectedGame,
+        baseGenerationId:installed.generationId,baseRevision:installed.revision,
+        updatedGenerationId:updatedCurrent?.generationId,updatedRevision:updatedCurrent?.revision,
+        finalRuntimeGenerationId:onlineRuntime.query.gameGeneration,offlineRuntimeGenerationId:offlineRuntime.query.gameGeneration,
+        updatePrompt:authorityPrompt};
+      const authority=assessPackageInstallationAuthority(authorityInput);
+      assert.equal(authority.available,true,`${game}: PACKAGE-06 authority evidence is unavailable: ${authority.reason}`);
+      assert.equal(authority.valid,true,`${game}: PACKAGE-06 installation authority chain failed: ${authority.reason}`);
+      report.packageAuthority=offlineObservationEnvelope(game,'normal',['PACKAGE-06'],
+        {...report.packageAuthority,status:'passed',coverageComplete:true,authorityInput,productionReads:authority,
+        uiResults:{gameCard:report.packageAuthority.gameCard,launchMusicConsent:musicConsent,updatePrompt:authorityPrompt,
+          onlineRuntime:{generationId:onlineRuntime.query.gameGeneration,dataRead:onlineRuntime.dataRead},
+          offlineRuntime:{generationId:offlineRuntime.query.gameGeneration,dataRead:offlineRuntime.dataRead}}});
+      await save();
+    }
     const offlinePackageAfter=await verifyRoomResourcePostflight({target:normal,prepared:resource});
     const dataAfter=await verifyPrivateData(normal.data);
     assert.deepEqual(dataAfter,dataIdentity,`${game}: private DATA changed during the browser run`);
@@ -743,7 +862,8 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     const staticSiteAfter=await verifyOfflineSiteIdentity(siteSnapshot);
     report.browserSiteResponses=pageWatchers.map(watcher=>({capture:watcher.capture,count:watcher.responses.length,errors:watcher.errors,responses:watcher.responses}));
     report.staticSitePostflight=staticSiteAfter;
-    report.offlineRuntime=offlineRuntime;
+    report.offlineRuntime=offlineObservationEnvelope(game,'normal',['PACKAGE-05',
+      ...(installationAuthorityOnly?['PACKAGE-06']:[])],offlineRuntime);
     report.browserEvents=browserEvents;
     report.offlineFailures=browserEvents.filter(event=>event.type==='offline-requestfailed'||event.type==='offline-http');
     const offlineEventClassification=classifyOfflineBrowserEvents(
@@ -756,9 +876,10 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     };
     assert.deepEqual(offlineEventClassification.blockingEvents,[],
       `${game}: browser error or HTTP/request failure occurred while offline`);
-    report.postflight={privateData:dataAfter,offlinePackage:offlinePackageAfter,
-      normalRuntimePackage:normalAfter,
-      ...(updateInput?{updatePackage:{resource:updatePackageAfter,descriptor:updateDescriptorAfter}}:{})};
+    report.postflight=offlineObservationEnvelope(game,'normal',['PACKAGE-02','PACKAGE-05'],
+      {privateData:dataAfter,offlinePackage:offlinePackageAfter,
+        normalRuntimePackage:normalAfter,
+        ...(updateInput?{updatePackage:{resource:updatePackageAfter,descriptor:updateDescriptorAfter}}:{})});
     report.harnessSourcesPostflight=await collectHarnessSources().then(sources=>Object.fromEntries(
       [...sources].sort(([left],[right])=>left.localeCompare(right)).map(([name,entry])=>[name,{bytes:entry.bytes,sha256:entry.sha256}])
     ));
@@ -766,29 +887,44 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
       report.harnessSourcesPostflight[name]={bytes:bytes.length,sha256:digest(bytes)};
     assert.deepEqual(report.harnessSourcesPostflight,report.harnessSources,`${game}: offline driver or its judging dependencies changed during the run`);
     report.checks=[
-      {id:'PACKAGE-02',status:'passed',complete:true,scope:'selected game, normal Runtime',evidence:'The offline ZIP, Package Store DATA object, actual managed Runtime provider and current private DATA share exact byte count and SHA-256; the imported target matches the product contract.'},
+      {id:'RUNTIME-05',status:'passed',complete:true,scope:'selected normal Runtime | online/offline managed DATA',
+        evidenceRefs:['/uiImport','/resourceBoundaries/online','/resourceBoundaries/onlineEnd','/resourceBoundaries/finalOnlineEnd','/resourceBoundaries/offline','/resourceBoundaryNegative'],
+        evidence:'Launcher imports the real package and supplies hash-identified managed DATA. The Runtime leaves the installed generation and every file reference unchanged, with no write transaction or schema operation against installation objects, generations or installations. Lease bookkeeping and separate user-file storage are observed independently.'},
+      {id:'PACKAGE-01',status:'passed',complete:true,scope:'selected game | installed Package Store before launch and after offline reopen',
+        evidenceRefs:['/uiImport','/resourceBoundaries/online','/resourceBoundaries/offline'],
+        evidence:'The actual imported generation and its stored file references are readable through the production Package Store before launch, after Runtime startup and after the offline page reopens.'},
+      {id:'PACKAGE-02',status:'passed',complete:true,scope:'selected game, normal Runtime',evidenceRefs:['/offlinePackagePreflight','/uiImport','/onlineRuntime','/postflight'],evidence:'The offline ZIP, Package Store DATA object, actual managed Runtime provider and current private DATA share exact byte count and SHA-256; the imported target matches the product contract.'},
       {id:'PACKAGE-04',status:'partial',complete:false,scope:'selected game, local ZIP import',evidence:'One local ZIP was installed through the Launcher UI and verified in Package Store; online installation and an independent original-file import were not compared.'},
-      {id:'PACKAGE-05',status:'passed',complete:true,scope:'selected game, normal Runtime and installed App Shell',evidence:'The selected packaged normal Runtime reached first-frame after the installed site was reopened offline; the same Package Store generation supplied the verified DATA bytes.'},
+      {id:'PACKAGE-05',status:'passed',complete:true,scope:'selected game, normal Runtime and installed App Shell',evidenceRefs:['/appShell','/offlineRuntime','/postflight'],evidence:'The selected packaged normal Runtime reached first-frame after the installed site was reopened offline; the same Package Store generation supplied the verified DATA bytes.'},
+      ...(installationAuthorityOnly?[{id:'PACKAGE-06',status:'passed',complete:true,scope:'selected game | Launcher game card, production update prompt, online and offline Runtime',
+        evidenceRefs:['/packageAuthority','/uiImport','/onlineRuntime','/offlineRuntime'],
+        evidence:'The re-opened game card and initial resource preparation read the imported generation. At the downloaded-update prompt, Package Store has committed the published generation while the running Runtime remains pinned to its original generation. The production restart creates a new epoch using the updated generation, and offline reopen restores that generation with verified managed DATA. A non-selected game installation slot remains empty.'}]:[]),
       {id:'SAVE-02',status:'partial',complete:false,scope:'Replay file only',evidence:'The Runtime accepted a hash-identified Replay at its allowed path; read, write and remove traversal requests failed without changing the file list. Score/configuration and other invalid-path forms were not exercised.'},
       {id:'SAVE-03',status:'partial',complete:false,scope:'Replay file only',evidence:'Runtime sync completed for the Replay file before document retirement and after offline restore; native score and settings writes were not produced or checked.'},
       {id:'SAVE-04',status:'partial',complete:false,scope:'Replay file only',evidence:'A new Runtime document restored the exact synced Replay bytes and path; native score/settings recovery was not checked.'},
       {id:'SAVE-05',status:'partial',complete:false,scope:'Replay file only',evidence:'The offline page, App Shell worker, selected Runtime first-frame and Replay file read/write/sync completed; other user-data classes are outside this run.'},
-      updateInput?
+      ...(!installationAuthorityOnly?[updateInput?
         {id:'PACKAGE-03',status:'partial',complete:false,scope:'selected game, interrupted partial ZIP import and complete UI retry',evidence:'A partial archive was rejected before staging with the old generation unchanged; the full second ZIP committed a new Package Store generation and started. Network interruption after file staging remains outside this route.'}:
         {id:'PACKAGE-03',status:'blocked',reason:report.packageUpdate.reason},
       updateInput?
         {id:'SAVE-06',status:'partial',complete:false,scope:'selected game, synchronized Replay across package generations',evidence:'The second ZIP changed the package descriptor generation while retaining the same DATA identity; the synchronized Replay remained byte-identical through the new-generation Runtime and offline launch. Score/configuration and changed-DATA recovery were not exercised.'}:
-        {id:'SAVE-06',status:'blocked',reason:report.packageUpdate.reason},
-    ];
-    report.result=updateInput?
-      'HTTPS Launcher import, package generation retry, Replay recovery and offline Runtime startup passed. PACKAGE-03 and SAVE-06 adaptation coverage remains partial.'
-      :'HTTPS Launcher import, Runtime startup and offline user-file recovery passed. PACKAGE-03 and SAVE-06 remain blocked until a second-generation update manifest is selected.';
+        {id:'SAVE-06',status:'blocked',reason:report.packageUpdate.reason}]:[]),
+    ].filter(check=>!installationAuthorityOnly||check.id==='PACKAGE-06');
+    report.result=installationAuthorityOnly?
+      'HTTPS Launcher import, published update prompt, canonical generation handoff, online Runtime startup and offline reopen passed. PACKAGE-03 and SAVE-06 local-import coverage was not run in this authority route.'
+      :updateInput?
+        'HTTPS Launcher import, package generation retry, Replay recovery and offline Runtime startup passed. PACKAGE-03 and SAVE-06 adaptation coverage remains partial.'
+        :'HTTPS Launcher import, Runtime startup and offline user-file recovery passed. PACKAGE-03 and SAVE-06 remain blocked until a second-generation update manifest is selected.';
     await save();
     return{scenarioPassed:true,updateScenario};
   }finally{
     const teardown=async(phase,operation)=>{
       try{await operation();}catch(error){teardownErrors.push({phase,error:String(error.stack||error)});}
     };
+    if(installationAuthorityOnly&&page&&!page.isClosed()&&report.packageAuthority?.observation?.status!=='passed')
+      await teardown('package-authority.failure-snapshot',async()=>{
+        report.packageAuthority.failureJournal=await page.evaluate(()=>window.__packageInstallationAuthorityJournal?.snapshot()??null);
+      });
     if(page&&!page.isClosed())await teardown('runtime-protocol.drain',()=>drainOfflineProtocolCapture(page));
     for(let index=0;index<pageWatchers.length;index++){
       const watcher=pageWatchers[index];
@@ -804,6 +940,8 @@ const report=await runOfflineRuntimeReport({output},async(report,save)=>{
     if(staticServer)await teardown('static-server.close',()=>stopChild(staticServer.child));
     report.browserEvents=browserEvents;
     report.protocolErrors=protocolErrors;
+    report.expectedProtocolResponses=expectedProtocolResponses;
+    report.unmatchedExpectedProtocolRequests=[...expectedRequests.values()].map(({requestId,game,epoch,command,path})=>({requestId,game,epoch,command,path}));
     report.responseErrors=responseErrors;
     report.teardownErrors=teardownErrors;
     report.browserSiteResponses=pageWatchers.map(watcher=>({capture:watcher.capture,count:watcher.responses.length,errors:watcher.errors,responses:watcher.responses}));

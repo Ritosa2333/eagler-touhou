@@ -2,14 +2,23 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {readFileSync,mkdirSync,writeFileSync,renameSync,statSync} from 'node:fs';
-import {resolve} from 'node:path';
+import {basename,isAbsolute,resolve} from 'node:path';
 import {WASI} from 'node:wasi';
 import {workspacePath} from '../../launcher/lib/workspace-layout.mjs';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export function wasiCompiler(environment=process.env,platform=process.platform){
-  const bin=environment.WASI_SDK_BIN||(environment.WASI_SDK_ROOT&&resolve(environment.WASI_SDK_ROOT,'bin'));
-  if(!bin)throw Error('Set WASI_SDK_BIN to the WASI SDK bin directory, or WASI_SDK_ROOT to its root');
+  const candidates=[
+    ['EAGLER_WASI_SDK',environment.EAGLER_WASI_SDK,'root'],
+    ['WASI_SDK_PATH',environment.WASI_SDK_PATH,'root'],
+    ['WASI_SDK_BIN',environment.WASI_SDK_BIN,'bin'],
+    ['WASI_SDK_ROOT',environment.WASI_SDK_ROOT,'root'],
+  ];
+  const selected=candidates.find(([,value])=>value!==undefined);
+  if(!selected)throw Error('Set EAGLER_WASI_SDK or WASI_SDK_PATH to the WASI SDK root; WASI_SDK_BIN and WASI_SDK_ROOT are supported as legacy aliases');
+  const [name,value,kind]=selected;
+  if(typeof value!=='string'||!isAbsolute(value))throw Error(`${name} must be an absolute path`);
+  const bin=kind==='bin'?value:resolve(value,'bin');
   const compiler=resolve(bin,platform==='win32'?'clang++.exe':'clang++');
   if(!statSync(compiler,{throwIfNoEntry:false})?.isFile())throw Error(`Configured WASI compiler is missing: ${compiler}`);
   return compiler;
@@ -17,10 +26,15 @@ export function wasiCompiler(environment=process.env,platform=process.platform){
 
 /** Compile and execute the unchanged title-owned production-module fixture. */
 export async function checkTouchBomb({sourceRoot,checks,before=false,environment=process.env}){
-  const output=resolve(sourceRoot,'artifacts/touch-bomb');mkdirSync(output,{recursive:true});
+  const output=environment.EAGLER_TOUCH_BOMB_REPORT_DIRECTORY
+    ?resolve(environment.EAGLER_TOUCH_BOMB_REPORT_DIRECTORY):resolve(sourceRoot,'artifacts/touch-bomb');
+  mkdirSync(output,{recursive:true});
   const reportPath=resolve(output,before?'before.json':'report.json');
+  const sourceOwner=environment.EAGLER_TOUCH_BOMB_SOURCE_OWNER??basename(resolve(sourceRoot));
+  const variants=(environment.EAGLER_TOUCH_BOMB_VARIANTS??'').split(',').filter(Boolean);
   const report={schema:'eagler-touhou/touch-bomb-module/1',status:'running',passed:false,startedAt:new Date().toISOString(),
     driverSha256:hash(readFileSync(new URL(import.meta.url))),
+    task:{id:environment.EAGLER_TOUCH_BOMB_TASK_ID??`touch-bomb-${sourceOwner}`,sourceOwner,variants},
     scope:'Production C++ touch module through WASI; browser wiring and complete adaptation rows are separate checks',checks};
   const save=()=>{writeFileSync(reportPath+'.pending',JSON.stringify(report,null,2)+'\n');renameSync(reportPath+'.pending',reportPath);};
   save();

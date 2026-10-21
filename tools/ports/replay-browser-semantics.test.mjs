@@ -1,6 +1,49 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {assessReplayTerminalSignal,createReplayProgressTracker,gateReplayRecordOnFinalErrors,playbackObservation,replayProtocolFailures,replayScenarioPassedTargetIds} from './replay-browser-semantics.mjs';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {assessReplayTerminalSignal,createReplayProgressTracker,gateReplayRecordOnFinalErrors,playbackObservation,
+  replayOriginalImportCheck,replayProtocolFailures,replayScenarioPassedTargetIds} from './replay-browser-semantics.mjs';
+
+function successfulReplayRecord(){
+  const sha256='a'.repeat(64);
+  return{id:'th06-normal',game:'th06',variant:'normal',status:'passed',finalErrorAudit:{status:'passed'},
+    checks:[
+      {id:'import-current-replay-through-shell',status:'passed',value:{path:'replay/th6_udabcd.rpy',bytes:128,sha256}},
+      {id:'native-replay-plays-and-advances',status:'passed',value:{startFrame:0,frame:120,naturalFrames:120,observed:[{frame:120}]}},
+      {id:'native-terminal-signal-observed',status:'passed'},
+    ],
+    playback:{status:'observed',scenarioStatus:'passed',fixture:{path:'replay/th6.rpy',bytes:128,sha256},
+      terminalSignalObserved:{status:'passed',value:true},
+      fullInputConsumption:{status:'unproven',reason:'Native ended does not prove all blocks were consumed.'}}};
+}
+
+test('the production Replay terminal call selects its product mode and retains the parsed endpoint assessment',()=>{
+  const source=readFileSync(new URL('./replay-browser.mjs',import.meta.url),'utf8');
+  const {parse}=createRequire(new URL('../../launcher/package.json',import.meta.url))('acorn');
+  const calls=[];
+  function visit(node){
+    if(!node||typeof node!=='object')return;
+    if(node.type==='CallExpression'&&node.callee?.name==='assessReplayTerminalSignal')calls.push(node);
+    for(const child of Object.values(node)){
+      if(Array.isArray(child))child.forEach(visit);else if(child?.type)visit(child);
+    }
+  }
+  visit(parse(source,{ecmaVersion:'latest',sourceType:'module',allowHashBang:true}));
+  assert.equal(calls.length,1,'The browser driver must have one identifiable terminal assessment call');
+  const call=source.slice(calls[0].start,calls[0].end);
+  const evaluate=new Function('assessReplayTerminalSignal','target','finalState','record','description','tracker',
+    'nativeInputConsumption',`return ${call};`);
+  const consumption={status:'incomplete',reason:'Accepted original Replay has no independent natural endpoint mapping.'};
+  const assess=variant=>evaluate(assessReplayTerminalSignal,{game:'th08',variant},{frame:120,total:0,ended:true},
+    {},null,{maximumFrame:120},consumption);
+  const normal=assess('normal');
+  assert.equal(normal.status,'incomplete');assert.deepEqual(normal.fullInputConsumption,consumption);
+  assert.equal(normal.reason,consumption.reason);
+  const multiplayer=assess('multiplayer');
+  assert.equal(multiplayer.fullInputConsumption.status,'unproven');
+  assert.notEqual(multiplayer.fullInputConsumption.reason,consumption.reason);
+});
 
 test('Replay fails on native error, abort, or rejected protocol response and preserves original event data',()=>{
   const events=[{event:'ready',protocol:'eagler-touhou/1'},{event:'error',error:'native failed'},
@@ -36,7 +79,37 @@ test('Replay coverage excludes teardown-failed and incomplete records from passe
   assert.deepEqual(replayScenarioPassedTargetIds(records),['th07-normal']);
 });
 
-test('TH06 and TH07 retain their native cursor/total self-consistency check without claiming full input consumption',()=>{
+test('REPLAY-01 is a numbered partial result only when the same fixture imports and reaches native playback terminal',()=>{
+  const record=successfulReplayRecord(),check=replayOriginalImportCheck(record);
+  assert.equal(check.id,'REPLAY-01');assert.equal(check.status,'partial');assert.equal(check.complete,false);
+  assert.equal(check.observation.game,'th06');assert.deepEqual(check.observation.adaptationIds,['REPLAY-01']);
+  assert.equal(check.observation.observation.sameReplayBytes,true);
+  assert.equal(check.observation.observation.fullInputConsumption.status,'unproven');
+
+  for(const mutate of [
+    item=>{item.checks=item.checks.filter(check=>check.id!=='import-current-replay-through-shell');},
+    item=>{item.checks=item.checks.filter(check=>check.id!=='native-replay-plays-and-advances');},
+    item=>{item.checks=item.checks.filter(check=>check.id!=='native-terminal-signal-observed');},
+    item=>{item.checks[0].value.sha256='b'.repeat(64);},
+    item=>{item.checks[1].value.frame=119;},
+    item=>{delete item.finalErrorAudit;},
+    item=>{item.playback.fullInputConsumption={status:'passed'};},
+  ]){
+    const incomplete=successfulReplayRecord();mutate(incomplete);
+    assert.equal(replayOriginalImportCheck(incomplete).status,'incomplete');
+  }
+});
+
+test('a failed final Replay audit makes the numbered import observation fail',()=>{
+  const record=successfulReplayRecord();
+  gateReplayRecordOnFinalErrors(record,{pageErrors:[],consoleErrors:[],httpErrors:[],
+    protocolErrors:[{event:'abort'}],responseErrors:[],teardownErrors:[]});
+  const check=replayOriginalImportCheck(record);
+  assert.equal(record.finalErrorAudit.status,'failed');assert.equal(record.playback.scenarioStatus,'failed');
+  assert.equal(check.status,'failed');assert.equal(check.complete,false);
+});
+
+test('th06 and th07 retain their native cursor/total self-consistency check without claiming full input consumption',()=>{
   for(const game of ['th06','th07']){
     const result=assessReplayTerminalSignal({game,state:{frame:4856,total:4856,ended:true}});
     assert.equal(result.status,'observed');assert.equal(result.nativeFormatConsistency.status,'passed');
@@ -47,7 +120,7 @@ test('TH06 and TH07 retain their native cursor/total self-consistency check with
   }
 });
 
-test('TH08 reports the native terminal signal without imposing a declared total and keeps the candidate counter separate',()=>{
+test('th08 reports the native terminal signal without imposing a declared total and keeps the candidate counter separate',()=>{
   const reference={kind:'original-executable-presentation-row-count',counter:{name:'presentationRows',value:10607},
     replaySha256:'a'.repeat(64),selectedReplaySha256:'a'.repeat(64),counterBoundToSelectedReplay:true,comparableToNativeCursor:false,
     countDefinition:'Original presentation rows and native consumed-input cursor have no proven mapping.'};
@@ -59,7 +132,45 @@ test('TH08 reports the native terminal signal without imposing a declared total 
   assert.equal(assessReplayTerminalSignal({game:'th08',state:{frame:11047,total:10607,ended:true}}).status,'observed');
 });
 
-test('TH09 reports the native terminal signal and leaves an unbound persisted comparison as a candidate count',()=>{
+test('th08 normal reports capacity and native terminal evidence without promoting an unmapped endpoint',()=>{
+  const expected={stage:5,sha256:'6de76d9f5d0ef8d58887bc74087fd566c246c676b6429850ea4702776f2533d8',
+    capacity:{maxSuccessfulFrames:11084,inputCursorAtCapacity:22168,timingCursorAtCapacity:370,
+      inputFrameCapacity:11084,timingFrameCapacity:11100},
+    blocks:{inputBytes:22168,timingBytes:371},stride:2,debugRecords:false};
+  const actual={available:true,loaded:true,stage:5,frame:11047,reportedFrame:11047,inputCursor:22094,inputBytes:22168,
+    timingCursor:369,timingBytes:371,stride:2,ended:true,inGame:false};
+  const withinCapacity={status:'incomplete',expected,actual,matches:{withinStageCapacity:true,atFileDerivedCapacity:false},
+    reason:'The accepted original capture has no mapped natural ReplayStream cursor for this fixture.'};
+  const terminal=assessReplayTerminalSignal({game:'th08',variant:'normal',state:{frame:11047,total:0,ended:true},nativeInputConsumption:withinCapacity});
+  assert.equal(terminal.status,'incomplete');assert.equal(terminal.fullInputConsumption.status,'incomplete');
+  assert.equal(terminal.terminalSignalObserved.status,'passed');
+  assert.equal(assessReplayTerminalSignal({game:'th08',variant:'normal',state:{frame:11047,total:0,ended:true}}).status,'incomplete');
+  assert.equal(assessReplayTerminalSignal({game:'th08',variant:'normal',state:{frame:11047,total:0,ended:true},
+    nativeInputConsumption:{status:'failed',reason:'frame/input cursor relation'}}).status,'failed');
+
+  const capacityOnlyClaim={status:'passed',expected,actual:{...actual,frame:11084,reportedFrame:11084,inputCursor:22168,timingCursor:370},
+    naturalTerminalReference:null};
+  const noReference=assessReplayTerminalSignal({game:'th08',variant:'normal',state:{frame:11084,total:0,ended:true},
+    nativeInputConsumption:capacityOnlyClaim});
+  assert.equal(noReference.status,'incomplete');
+  assert.equal(noReference.fullInputConsumption.status,'incomplete');
+
+  const record={id:'th08-normal',game:'th08',variant:'normal',status:'passed',finalErrorAudit:{status:'passed'},checks:[
+    {id:'import-current-replay-through-shell',status:'passed',value:{path:'replay/th8_udabcd.rpy',bytes:3539,sha256:expected.sha256}},
+    {id:'native-replay-plays-and-advances',status:'passed',value:{startFrame:0,frame:120,naturalFrames:120,observed:[{frame:120}]}},
+    {id:'native-terminal-signal-observed',status:'passed'},
+  ],playback:{status:'observed',scenarioStatus:'passed',fixture:{path:'replay/th8_udabcd.rpy',bytes:3539,sha256:expected.sha256},
+    terminalSignalObserved:{status:'passed',value:true},fullInputConsumption:capacityOnlyClaim}};
+  const check=replayOriginalImportCheck(record,{game:'th08',variant:'normal'});
+  assert.equal(check.status,'incomplete');assert.equal(check.complete,false);
+  assert.match(check.reason,/independently sourced natural endpoint/);
+  record.playback.fullInputConsumption={...capacityOnlyClaim,status:'incomplete',reason:'no natural endpoint reference'};
+  record.playback.status='incomplete';record.playback.scenarioStatus='incomplete';record.status='incomplete';
+  const incomplete=replayOriginalImportCheck(record,{game:'th08',variant:'normal'});
+  assert.equal(incomplete.status,'incomplete');assert.equal(incomplete.reason,'no natural endpoint reference');
+});
+
+test('th09 reports the native terminal signal and leaves an unbound persisted comparison as a candidate count',()=>{
   const reference={kind:'original-process-and-cpp-session-replay-comparison',counter:{name:'comparedTicks',value:7996},
     replaySha256:'b'.repeat(64),persistedReplaySha256:null,selectedReplaySha256:'b'.repeat(64),
     counterBoundToSelectedReplay:false,comparableToNativeCursor:false,
@@ -70,7 +181,7 @@ test('TH09 reports the native terminal signal and leaves an unbound persisted co
   assert.equal(result.candidateCounterObservation.counterBoundToSelectedReplay,false);
 });
 
-test('TH11 preserves cursor, total and metadata while leaving full input consumption unproven',()=>{
+test('th11 preserves cursor, total and metadata while leaving full input consumption unproven',()=>{
   const stages=[9095,10726,15607,17513,22280,25831].map(frames=>({frames}));
   const reference={kind:'original-retail-replay-golden',counter:{name:'gameplayUpdatesBeforeTerminalMarker',value:100672},
     replaySha256:'c'.repeat(64),selectedReplaySha256:'c'.repeat(64),counterBoundToSelectedReplay:true,
@@ -86,7 +197,7 @@ test('TH11 preserves cursor, total and metadata while leaving full input consump
   assert.equal(assessReplayTerminalSignal({game:'th11',state:{frame:100680,total:101052,stage:6,ended:true},inspectionStages:[]}).status,'failed');
 });
 
-test('TH10 and TH15 require rate-window progress and report terminal signals without full input proof',()=>{
+test('th10 and th15 require rate-window progress and report terminal signals without full input proof',()=>{
   const th10=assessReplayTerminalSignal({game:'th10',state:{frame:0,total:0,stage:1,ended:true},maximumFrame:120});
   assert.equal(th10.status,'observed');assert.match(th10.terminalSignalScope,/does not prove/);
   assert.equal(th10.fullInputConsumption.status,'unproven');

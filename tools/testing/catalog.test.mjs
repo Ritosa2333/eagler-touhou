@@ -1,12 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync} from 'node:fs';
-import {mkdtemp,rm,writeFile} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
+import {existsSync,readFileSync} from 'node:fs';
+import {mkdir,mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {isAbsolute, resolve} from 'node:path';
-import {parseWindowsCompilerHelpers,profiles, suites, trackedFiles, testFiles, repository} from '../../tests/suites.mjs';
+import {parseWindowsCompilerHelpers,profiles, suites, trackedFiles, testFiles, repository, runtimeBrowserStgGames, touchBombFixtureOwners} from '../../tests/suites.mjs';
+import {parseWindowsCompilerHelpers as parseCompilerHelpers} from './compiler-helpers.mjs';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {MUSIC_BROWSER_GAMES,validateMusicManifest} from '../ports/music-browser-helpers.mjs';
+import {gamepadTargetFor} from '../ports/gamepad-probe.mjs';
 import {isNodeTest} from './discovery.mjs';
 
 test('tooling discovery includes every executable tool regression exactly once and excludes fixture programs',()=>{
@@ -14,6 +17,8 @@ test('tooling discovery includes every executable tool regression exactly once a
   const expected = [...files.filter(file=>file.startsWith('tools/') && isNodeTest(file)),
     ...files.filter(file=>file.startsWith('tests/adaptation/')&&isNodeTest(file))];
   const catalog = suites(), [task] = catalog.tooling.tasks();
+  assert.ok(task.args.includes('--test-timeout=30000'),'tooling must bound individual test execution');
+  assert.equal(task.timeoutMs,180000,'the outer tooling task retains its independent deadline');
   assert.ok(expected.length > 0);
   assert.deepEqual(task.args.filter(arg=>isNodeTest(arg)), expected);
   for (const file of ['tools/workspace.test.mjs','tools/ports/package-plan.test.mjs','tools/ports/acceptance-errors.test.mjs'])
@@ -21,6 +26,61 @@ test('tooling discovery includes every executable tool regression exactly once a
   assert.equal(new Set(task.args).size, task.args.length);
   assert.deepEqual(testFiles(['tools/nested/check.test.mjs','tools/fixtures/do-not-run.test.mjs'], 'tools', /\.test\.mjs$/), ['tools/nested/check.test.mjs']);
   assert.throws(()=>testFiles(['tools/fixtures/do-not-run.test.mjs'], 'tools', /\.test\.mjs$/), /No test files/);
+});
+
+test('Presentation Lab regressions enter the CI component suite once, including newly discovered shared tests',()=>{
+  const catalog=suites(),tasks=catalog['ports-unit'].tasks();
+  const expected=[...trackedFiles().filter(file=>file.startsWith('common/testkit/presentation-lab/')&&isNodeTest(file)),
+    'ports/th08/portable/presentation-lab/test-analyzer.mjs'];
+  const task=tasks.find(item=>item.id==='presentation-lab-components');
+  assert.ok(task);assert.deepEqual(task.args.slice(1),expected);
+  for(const file of expected)assert.equal(tasks.flatMap(item=>item.args).filter(arg=>arg===file).length,1,file);
+});
+
+test('catalog-derived touch-bomb WASI tasks execute each production owner once and preserve variant identity',()=>{
+  const output=resolve(repository,'artifacts','touch-bomb-catalog-test');
+  const tasks=suites({output})['ports-touch-wasi'].tasks(),owners=touchBombFixtureOwners();
+  const production=owners.filter(owner=>owner.status==='production-fixture');
+  const references=owners.filter(owner=>owner.status==='reference-only');
+  assert.ok(references.length>0);
+  assert.deepEqual(tasks.map(task=>task.id),production.map(owner=>`touch-bomb-${owner.sourceOwner}`));
+  for(let index=0;index<production.length;index++){
+    const owner=production[index],task=tasks[index];
+    assert.deepEqual(task.args,[resolve(owner.sourceRoot,'portable/input/touch-bomb-check.mjs')]);
+    assert.equal(task.environment.EAGLER_TOUCH_BOMB_TASK_ID,task.id);
+    assert.equal(task.environment.EAGLER_TOUCH_BOMB_SOURCE_OWNER,owner.sourceOwner);
+    assert.deepEqual(task.environment.EAGLER_TOUCH_BOMB_VARIANTS.split(','),owner.variants);
+    assert.equal(task.environment.EAGLER_TOUCH_BOMB_REPORT_DIRECTORY,
+      resolve(output,'touch-bomb-reports',owner.sourceOwner));
+    assert.equal(task.timeoutMs,240000);
+  }
+  assert.ok(references.every(owner=>!tasks.some(task=>task.id===`touch-bomb-${owner.sourceOwner}`)),
+    'reference-only owners stay references and do not receive invented executables');
+});
+
+test('a new production touch owner cannot enter the catalog without its old C++ fixture and wrapper',async t=>{
+  const root=await mkdtemp(resolve(tmpdir(),'touch-bomb-new-owner-'));
+  t.after(()=>rm(root,{recursive:true,force:true}));
+  const repositoryPath='ports/future-stg',input=resolve(root,repositoryPath,'portable/input');
+  await mkdir(input,{recursive:true});
+  await writeFile(resolve(input,'TouchController.hpp'),'// production controller marker\n');
+  await writeFile(resolve(input,'MotionTrack.hpp'),'// production motion marker\n');
+  const options={root,products:{'future-stg':{inputProfile:'stg'}},repositories:{'future-stg':repositoryPath}};
+  assert.throws(()=>touchBombFixtureOwners(options),/Production touch-bomb owner future-stg is missing: portable\/input\/touch-bomb-check\.cpp, portable\/input\/touch-bomb-check\.mjs/);
+  await writeFile(resolve(input,'touch-bomb-check.cpp'),'// existing fixture marker\n');
+  assert.throws(()=>touchBombFixtureOwners(options),/Production touch-bomb owner future-stg is missing: portable\/input\/touch-bomb-check\.mjs/);
+  await writeFile(resolve(input,'touch-bomb-check.mjs'),'// wrapper marker\n');
+  assert.equal(touchBombFixtureOwners(options)[0].status,'production-fixture');
+});
+
+test('TH09 frozen smoothness comparison has a private-input package entry, not a synthetic unit task',()=>{
+  const evidenceFile='ports/th09/web/tests/multiplayer/smoothness-window.test.mjs';
+  const unit=suites()['ports-unit'].tasks().find(item=>item.id==='per-title-module-unit-fixtures');
+  const webPackage=JSON.parse(readFileSync(resolve(repository,'ports/th09/web/package.json'),'utf8'));
+  assert.ok(unit);
+  assert.ok(!unit.args.includes(evidenceFile));
+  assert.equal(webPackage.scripts['test:smoothness-window-evidence'],
+    'node --test tests/multiplayer/smoothness-window.test.mjs');
 });
 
 test('profiles resolve to real bounded commands and never silently select zero tests',()=>{
@@ -43,33 +103,18 @@ test('profiles resolve to real bounded commands and never silently select zero t
   }
 });
 
-test('Windows compiler helper declarations are strict and attach only to declared native tasks',()=>{
+test('Windows compiler helper parser remains exported and cleanup attaches to individual native tasks',()=>{
   const helper={path:'C:\\VS\\VC\\Tools\\vctip.exe',sha256:'A'.repeat(64)};
-  const uncHelper={path:'\\\\build-host\\tool-share\\vctip.exe',sha256:'B'.repeat(64)};
-  const raw=JSON.stringify([helper,uncHelper]);
+  const raw=JSON.stringify([helper]);
   const environment={EAGLER_TEST_WINDOWS_COMPILER_HELPERS:raw};
   const parsed=parseWindowsCompilerHelpers(environment,'win32');
-  assert.deepEqual(parsed,[{path:helper.path,sha256:'a'.repeat(64)},{path:uncHelper.path,sha256:'b'.repeat(64)}]);
-  assert.throws(()=>parseWindowsCompilerHelpers(environment,'linux'),/supported only on Windows/);
+  assert.equal(parseWindowsCompilerHelpers,parseCompilerHelpers);
+  assert.deepEqual(parsed,[{path:helper.path,sha256:'a'.repeat(64)}]);
   assert.throws(()=>suites({environment,platform:'linux'}),/supported only on Windows/);
-  for(const invalid of [
-    '{',
-    JSON.stringify({path:helper.path,sha256:helper.sha256}),
-    JSON.stringify([{path:'relative\\vctip.exe',sha256:helper.sha256}]),
-    JSON.stringify([{path:'\\vctip.exe',sha256:helper.sha256}]),
-    JSON.stringify([{path:'/vctip.exe',sha256:helper.sha256}]),
-    JSON.stringify([{path:'C:vctip.exe',sha256:helper.sha256}]),
-    JSON.stringify([{path:'\\\\build-host',sha256:helper.sha256}]),
-    JSON.stringify([{path:helper.path,sha256:'bad'}]),
-    JSON.stringify([{...helper,extra:true}]),
-    JSON.stringify([helper,helper]),
-  ]) assert.throws(()=>parseWindowsCompilerHelpers({EAGLER_TEST_WINDOWS_COMPILER_HELPERS:invalid},'win32'),
-    /EAGLER_TEST_WINDOWS_COMPILER_HELPERS/);
-  assert.throws(()=>suites({environment:{EAGLER_TEST_WINDOWS_COMPILER_HELPERS:'{}'},platform:'win32'}),
-    /must be a JSON array/);
 
   const catalog=suites({environment,platform:'win32'});
   const selected=[
+    ...catalog.tooling.tasks(),
     ...catalog['common-native'].tasks(),
     ...catalog['browser-shell'].tasks(),
     ...catalog['ports-source'].tasks(),
@@ -77,16 +122,18 @@ test('Windows compiler helper declarations are strict and attach only to declare
   ];
   const cleanupTasks=selected.filter(task=>task.cleanupImages);
   assert.deepEqual(cleanupTasks.map(task=>task.id).sort(),[
-    'common-build','common-configure','common-test','native-gamepad','ports-source',
-    'th06-cooperative-rules','th07-cooperative-rules',
+    'common-build','common-configure','common-test','native-gamepad','touch-native-invariants',
+    'th06-cooperative-rules','th07-cooperative-rules','tooling',
   ].sort());
+  assert.ok(!selected.find(task=>task.id==='ports-source').cleanupImages,
+    'ports-source delegates helper cleanup to its executable child gates');
   for(const task of cleanupTasks)assert.deepEqual(task.cleanupImages,parsed,task.id);
   for(const task of catalog['common-native'].tasks())
     assert.equal(task.environment.MSBUILDDISABLENODEREUSE,'1',task.id);
   assert.ok(!selected.find(task=>task.id==='golden-integrity').cleanupImages);
 
   const noHelpers=suites({environment:{}});
-  for(const [suiteId,taskId] of [['common-native','common-configure'],['browser-shell','native-gamepad'],['ports-source','ports-source'],['ports-unit','th06-cooperative-rules']])
+  for(const [suiteId,taskId] of [['tooling','tooling'],['common-native','common-configure'],['browser-shell','native-gamepad'],['browser-shell','touch-native-invariants'],['ports-source','ports-source'],['ports-unit','th06-cooperative-rules']])
     assert.ok(!noHelpers[suiteId].tasks().find(task=>task.id===taskId).cleanupImages,`${taskId} declared helpers by default`);
 });
 
@@ -94,13 +141,19 @@ test('acceptance requires explicit private inputs and selects the complete produ
   const empty = suites({environment:{}});
   assert.throws(()=>empty['runtime-browser'].tasks(), /EAGLER_TEST_RUNTIME_MANIFEST/);
   assert.throws(()=>empty['runtime-rooms'].tasks(), /EAGLER_TEST_RUNTIME_MANIFEST/);
-  for(const id of ['runtime-desktop','runtime-practice','runtime-replay','runtime-music','runtime-offline','runtime-spectator'])
+  for(const id of ['runtime-desktop','runtime-practice','runtime-replay','runtime-offline','runtime-spectator'])
     assert.throws(()=>empty[id].tasks(), /EAGLER_TEST_RUNTIME_MANIFEST/, id);
-  assert.throws(()=>suites({environment:{EAGLER_TEST_RUNTIME_MANIFEST:'private-inputs.json'}})['runtime-music'].tasks(), /EAGLER_TEST_MUSIC_MANIFEST/);
+  const [music]=empty['runtime-music'].tasks();
+  assert.deepEqual(music.args.slice(0,4),['tests/run.mjs','--profile=adaptation','--suite=music','--variant=normal'],
+    'music input preflight and blocked products are reported by the canonical adaptation queue');
+  assert.deepEqual(music.environment,{EAGLER_TEST_RUNTIME_MANIFEST:'',EAGLER_TEST_MUSIC_MANIFEST:''},
+    'an empty selection cannot borrow private inputs from the parent process');
   assert.throws(()=>suites({environment:{EAGLER_TEST_RUNTIME_MANIFEST:'private-inputs.json'}})['runtime-rooms'].tasks(), /EAGLER_TEST_LAUNCHER_URL/);
   const catalog = suites({environment:{EAGLER_TEST_RUNTIME_MANIFEST:resolve(repository, 'private-inputs.json'), EAGLER_TEST_LAUNCHER_URL:'http://127.0.0.1:8130/'}});
   const [ordinary] = catalog['runtime-browser'].tasks();
-  assert.deepEqual(ordinary.args.find(arg=>arg.startsWith('--game=')).slice(7).split(','), Object.keys(PRODUCT_GAMES));
+  assert.deepEqual(ordinary.args.find(arg=>arg.startsWith('--game=')).slice(7).split(','), runtimeBrowserStgGames());
+  assert.match(catalog['runtime-browser'].scope,/ordinary STG/);
+  assert.ok(ordinary.args.includes('--gamepad'));
   assert.ok(ordinary.args.includes('--variant=normal'));
   const rooms = catalog['runtime-rooms'].tasks();
   assert.equal(rooms.length, 4);
@@ -110,6 +163,21 @@ test('acceptance requires explicit private inputs and selects the complete produ
     assert.deepEqual(task.args.find(arg=>arg.startsWith('--game=')).slice(7).split(','), expected);
     assert.ok(task.args.includes('--disconnect') && task.args.includes('--gamepad') && task.args.includes('--lifecycle'));
   }
+});
+
+test('runtime-browser and gamepad targets follow new STG product registration',()=>{
+  const products={...PRODUCT_GAMES,'future-stg':{inputProfile:'stg'},'future-fighting':{inputProfile:'fighting'}};
+  assert.deepEqual(runtimeBrowserStgGames(products),[...runtimeBrowserStgGames(),'future-stg']);
+  assert.ok(!runtimeBrowserStgGames().includes('th075'));
+  assert.throws(()=>gamepadTargetFor('future-stg','normal',0),/Unsupported gamepad target/);
+  assert.deepEqual(gamepadTargetFor('future-stg','normal',0,{products}),
+    {game:'future-stg',variant:'normal',localSeat:0,mappingSeat:0});
+  assert.throws(()=>gamepadTargetFor('future-fighting','normal',0,{products}),/Unsupported gamepad target/);
+  assert.throws(()=>gamepadTargetFor('future-stg','multiplayer',0,{products}),/multiplayer gamepad seats/);
+  const multiplayerProducts={'new-coop':{multiplayerRuntime:'./new-coop-mp.html',
+    multiplayer:{gameplay:'cooperative',playerCounts:[2,4]}}};
+  assert.equal(gamepadTargetFor('new-coop','multiplayer',3,{products:multiplayerProducts}).mappingSeat,0);
+  assert.throws(()=>gamepadTargetFor('new-coop','multiplayer',4,{products:multiplayerProducts}),/invalid local seat/);
 });
 
 test('behavior acceptance schedules each title and keeps distinct user journeys mandatory',()=>{
@@ -125,14 +193,14 @@ test('behavior acceptance schedules each title and keeps distinct user journeys 
   }
   const [music]=catalog['runtime-music'].tasks();
   assert.ok(profiles.acceptance.includes('runtime-music'));
-  assert.equal(music.args[0],'tools/ports/music-browser.mjs');
-  assert.deepEqual(music.args.find(arg=>arg.startsWith('--game=')).slice(7).split(','),MUSIC_BROWSER_GAMES);
+  assert.equal(music.args[0],'tests/run.mjs');
+  assert.ok(music.args.includes('--profile=adaptation')&&music.args.includes('--suite=music'));
+  assert.ok(!music.args.some(arg=>arg.startsWith('--game=')),'the canonical catalog owns product enumeration');
   assert.ok(music.args.includes('--variant=normal'));
-  assert.ok(music.args.includes('--manifest=private-inputs.json'));
-  assert.ok(music.args.includes('--music-manifest=private-music-inputs.json'));
+  assert.deepEqual(music.environment,{EAGLER_TEST_RUNTIME_MANIFEST:'private-inputs.json',
+    EAGLER_TEST_MUSIC_MANIFEST:'private-music-inputs.json'});
   assert.ok(music.resources.includes('browser')&&music.resources.includes('runtime'));
-  assert.match(catalog['runtime-music'].scope,/title OGG Runtime PCM and native track identity where exposed/);
-  assert.match(catalog['runtime-music'].scope,/AUDIO-01 full coverage is reported separately/);
+  assert.match(catalog['runtime-music'].scope,/shared adaptation plan/);
   const offline=catalog['runtime-offline'].tasks();
   assert.deepEqual(offline.map(task=>task.args.find(arg=>arg.startsWith('--game=')).slice(7)),games);
   assert.equal(new Set(offline.map(task=>task.args.find(arg=>arg.startsWith('--output=')))).size,games.length);
@@ -142,6 +210,23 @@ test('behavior acceptance schedules each title and keeps distinct user journeys 
   assert.deepEqual(spectator.args.find(arg=>arg.startsWith('--game=')).slice(7).split(','),
     Object.entries(PRODUCT_GAMES).filter(([,product])=>product.multiplayer?.playerCounts.includes(2)).map(([game])=>game));
   for(const id of ['runtime-offline','runtime-spectator'])assert.ok(profiles.acceptance.includes(id));
+});
+
+test('standard music entry records every product as blocked when private inputs are absent',async()=>{
+  const output=await mkdtemp(resolve(tmpdir(),'eagler-music-catalog-'));
+  try{
+    const [task]=suites({output,environment:{}})['runtime-music'].tasks();
+    const result=spawnSync(task.command,task.args,{cwd:task.cwd,encoding:'utf8',windowsHide:true,timeout:10000,
+      env:{...process.env,...task.environment,NODE_OPTIONS:''},maxBuffer:1024*1024});
+    assert.equal(result.error,undefined,String(result.error));
+    assert.equal(result.status,1,result.stdout+'\n'+result.stderr);
+    const report=JSON.parse(readFileSync(resolve(output,'runtime-music-adaptation/summary.json'),'utf8'));
+    assert.equal(report.status,'incomplete');assert.equal(report.passed,false);
+    assert.equal(report.executed,0);
+    assert.deepEqual([...new Set(report.cases.map(item=>item.game))].sort(),Object.keys(PRODUCT_GAMES).sort());
+    assert.ok(report.cases.every(item=>item.status==='blocked'));
+    assert.equal(report.coverage.complete,false);
+  }finally{await rm(output,{recursive:true,force:true});}
 });
 
 test('music acceptance selects every registered input and rejects any missing selected game',()=>{

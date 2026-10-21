@@ -18,7 +18,7 @@ export function selectedPaths(game, variant = 'normal') {
     if (!definition || !['normal', 'multiplayer'].includes(name)) throw new Error(`${game} 没有 ${name} 构建。`);
     return workspace.repositories[definition.workspaceRepository ?? entry.workspaceRepository];
   });
-  return [...new Set(['launcher', 'common', 'tools', 'docs', ...owners])];
+  return [...new Set(['launcher', 'common', 'tools', 'docs', 'tests', ...owners])];
 }
 
 function runGit(args, options = {}) {

@@ -1,10 +1,14 @@
 import {existsSync, readFileSync, readdirSync} from 'node:fs';
 import {resolve, relative, sep} from 'node:path';
-import {execFileSync} from 'node:child_process';
+import {execFile} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {promisify} from 'node:util';
 import {expectedRuntimeBuildSources, expectedRuntimeBuildSubmodules} from '../../launcher/lib/runtime-build-evidence.mjs';
 
 export const root = resolve(import.meta.dirname, '../..');
+export const INPUT_INSPECTION_TIMEOUT_MS = 30_000;
+export const INPUT_INSPECTION_MAX_BUFFER_BYTES = 8*1024*1024;
+const execFileAsync=promisify(execFile);
 export const layout = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json'), 'utf8'));
 export const builds = JSON.parse(readFileSync(resolve(root, 'launcher/config/runtime-builds.json'), 'utf8'));
 export const slash = value => value.split(sep).join('/');
@@ -58,8 +62,24 @@ function headers(directory) {
   });
 }
 
-export function inspectInputs(target) {
-  const owner = resolve(root, target.directory);
+function commandEnvironment(environment) {
+  const child = {...environment};
+  // Input inspection is a standalone manifest query, not a nested debugger/test session.
+  delete child.NODE_OPTIONS;
+  delete child.NODE_TEST_CONTEXT;
+  return child;
+}
+
+function capturedOutput(value) {
+  if (value === undefined || value === null) return '<empty>';
+  const text = Buffer.isBuffer(value) ? value.toString('utf8') : String(value);
+  return JSON.stringify(text.length > 2000 ? `${text.slice(0,2000)}…[truncated]` : text);
+}
+
+export async function inspectInputs(target, {
+  repositoryRoot=root, timeoutMs=INPUT_INSPECTION_TIMEOUT_MS, environment=process.env,
+}={}) {
+  const owner = resolve(repositoryRoot, target.directory);
   if (target.recipe.kind === 'cmake') {
     const cmake = readFileSync(resolve(owner, 'CMakeLists.txt'), 'utf8');
     const names = [...new Set([...cmake.matchAll(/\bsrc\/[A-Za-z0-9_./-]+\.(?:cpp|c)\b/g)].map(match => match[0]))].sort();
@@ -73,9 +93,36 @@ export function inspectInputs(target) {
   const args = [...target.recipe.build];
   if (target.definition.features.thprac === true && target.recipe.practiceFlag) args.push(target.recipe.practiceFlag);
   const command = [process.execPath, ...args, '--print-inputs'];
-  const source = execFileSync(command[0], command.slice(1), {cwd:owner, encoding:'utf8', windowsHide:true, maxBuffer:8*1024*1024});
-  const report = JSON.parse(source);
-  if (report.schema !== 'eagler-touhou/runtime-inputs/1') throw new Error('Unexpected runtime input schema');
+  const commandEvidence=JSON.stringify(command),targetEvidence=`${target.game??'<unknown>'}/${target.variant??'<unknown>'} (${owner})`;
+  if (!Number.isSafeInteger(timeoutMs)||timeoutMs<1)
+    throw new Error(`Invalid input-inspection timeout for ${targetEvidence}: ${timeoutMs}`);
+  const context=`target=${targetEvidence} command=${commandEvidence} timeoutMs=${timeoutMs}`;
+  let source,elapsedMs;
+  const started=performance.now();
+  try {
+    ({stdout:source}=await execFileAsync(command[0],command.slice(1),{cwd:owner,env:commandEnvironment(environment),encoding:'utf8',
+      windowsHide:true,stdio:['ignore','pipe','pipe'],maxBuffer:INPUT_INSPECTION_MAX_BUFFER_BYTES,
+      timeout:timeoutMs,killSignal:'SIGKILL'}));
+    elapsedMs=Math.round(performance.now()-started);
+  } catch(error) {
+    elapsedMs=Math.round(performance.now()-started);
+    const outputLimit=error.code==='ERR_CHILD_PROCESS_STDIO_MAXBUFFER';
+    const timedOut=!outputLimit&&(error.code==='ETIMEDOUT'||(error.killed===true&&error.signal==='SIGKILL'));
+    const failure=outputLimit?'exceeded the output limit':timedOut?'timed out':'failed';
+    const exitCode=Number.isInteger(error.code)?error.code:error.status;
+    throw new Error(`Runtime input inspection ${failure}: ${context} maxBufferBytes=${INPUT_INSPECTION_MAX_BUFFER_BYTES} `+
+      `elapsedMs=${elapsedMs} childError=${error.code??'<none>'} exitCode=${exitCode??'<none>'} signal=${error.signal??'<none>'} `+
+      `killed=${error.killed===true} `+
+      `stdout=${capturedOutput(error.stdout)} stderr=${capturedOutput(error.stderr)}`,{cause:error});
+  }
+  let report;
+  try { report=JSON.parse(source); }
+  catch(error) {
+    throw new Error(`Runtime input inspection returned invalid JSON: ${context} elapsedMs=${elapsedMs} exitCode=0 `+
+      `stdout=${capturedOutput(source)}`,{cause:error});
+  }
+  if (report?.schema !== 'eagler-touhou/runtime-inputs/1'||!report.inputs||typeof report.inputs!=='object'||Array.isArray(report.inputs))
+    throw new Error(`Unexpected runtime input manifest: ${context} elapsedMs=${elapsedMs} exitCode=0`);
   return {...report, selection:'build-entrypoint', inputFiles:Object.keys(report.inputs).map(name => resolve(owner, name)),
     command:['node', ...args, '--print-inputs']};
 }

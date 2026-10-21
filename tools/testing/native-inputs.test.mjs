@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {dirname,resolve} from 'node:path';
+import {dirname,relative,resolve} from 'node:path';
 import {nativeEnvironmentPolicy,nativeGroupEnvironment,nativeInputPlan,nativeInputSnapshot,nativeInputSnapshotsEqual,validateNativeEnvironmentPolicy} from './native-inputs.mjs';
 
 const th11Suites=[
@@ -16,19 +16,40 @@ const th15Packages=[
 const launcherLock=new URL('../../launcher/package-lock.json',import.meta.url);
 
 async function snapshotFixture(game) {
-  const root=await mkdtemp(resolve(tmpdir(),`eagler-native-inputs-${game}-`)),suite={game};
+  const temporaryRoot=await mkdtemp(resolve(tmpdir(),`eagler-native-inputs-${game}-`));
+  const root=resolve(temporaryRoot,'ports',game,'web'),suite={game};
+  await mkdir(root,{recursive:true});
   const plan=nativeInputPlan(root,suite,{});
-  for (const item of plan.directories) await mkdir(resolve(root,item.path),{recursive:true});
+  const fixturePath=path=>{
+    const absolute=resolve(root,path),inside=relative(temporaryRoot,absolute);
+    assert.ok(inside&&!inside.startsWith('..')&&!inside.startsWith('/')&&!inside.includes(':'),
+      `Native fixture input escapes its temporary repository: ${path}`);
+    return absolute;
+  };
+  for (const item of plan.directories) await mkdir(fixturePath(item.path),{recursive:true});
   await mkdir(resolve(root,'node_modules/@koromix',plan.koffiBackendPackage),{recursive:true});
   for (const item of plan.files) {
     if (item.optional) continue;
-    const path=resolve(root,item.path);
+    const path=fixturePath(item.path);
     await mkdir(dirname(path),{recursive:true});
     await writeFile(path,'native input fixture');
   }
   if (game==='th15') await writeFile(resolve(root,'node_modules/fflate/index.js'),'fixture package content A');
-  return {root,suite,close:()=>rm(root,{recursive:true,force:true})};
+  return {root,suite,close:()=>rm(temporaryRoot,{recursive:true,force:true})};
 }
+
+test('native comparison identity includes its shared report writer and isolates fixture repositories',async()=>{
+  const first=await snapshotFixture('th15'),second=await snapshotFixture('th15');
+  try{
+    const firstBefore=await nativeInputSnapshot(first.root,first.suite,{});
+    const secondBefore=await nativeInputSnapshot(second.root,second.suite,{});
+    const path='../../../tools/testing/oracle-report-writer.mjs';
+    assert.ok(firstBefore.details.some(entry=>entry.path===path&&entry.kind==='file'));
+    await writeFile(resolve(first.root,path),'changed report identity behavior');
+    assert.equal(nativeInputSnapshotsEqual(firstBefore,await nativeInputSnapshot(first.root,first.suite,{})),false);
+    assert.equal(nativeInputSnapshotsEqual(secondBefore,await nativeInputSnapshot(second.root,second.suite,{})),true);
+  }finally{await first.close();await second.close();}
+});
 
 test('TH11 log-only oracle tracing is cleared from inherited native environments',async()=>{
   const policy=nativeEnvironmentPolicy('th11');
