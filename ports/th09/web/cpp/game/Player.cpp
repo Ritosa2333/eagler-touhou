@@ -23,6 +23,7 @@ bool Player::initialize(const u8* data,u32 size,u32 side,u32 character,i32 contr
     control.available=100;initialized=true;return true;
 }
 void Player::reset_round(i32 health,i32 difficulty,i32 round,float height){
+    pending_charge={};++charge_generation;
     actions.body_interrupt(body,0);motion.position={-160,height-64,.49f};shots.areas.reset();
     motion.direction=0;combo_state.pending=0;control.player_state=5;control.protection.reset(120);
     shots.deactivate_all();motion.base_scale=motion.effect_scale={1,1};motion.history.fill(motion.position);
@@ -35,11 +36,26 @@ void Player::reset_round(i32 health,i32 difficulty,i32 round,float height){
 }
 void Player::charge(float n){ChargeGauge gauge{control.available};const auto level=gauge.add(n,motion.character);control.available=gauge.value;if(level>=0)actions.charge_level(level);}
 void Player::synchronize_shots(){shots.player_position=motion.position;shots.player_scale=motion.base_scale;shots.side=i32(motion.player);}
+bool Player::prioritized_charge(bool permitted){
+    if(!charge_frame||!charge_frame->enabled)return false;
+    auto& step=*charge_frame;if(step.used)return true;step.used=true;
+    if(step.supplied)step.output=step.input;
+    else {
+        LocalChargePlanner prediction;
+        auto& planner=step.owner?*step.owner:prediction;
+        step.output=planner.plan(control,input,frame.automatic_focus,i32(motion.player),resource,frame.timing,
+                                 permitted,actions.opponent_boss_available(),step.instance^charge_generation);
+    }
+    if(!step.output.active)return false;
+    if(!ShotControl(control,shots.areas,*this).update_priority(input,frame.automatic_focus,i32(motion.player),
+            resource,motion.position,frame.timing,step.output,pending_charge,permitted))step.failed=true;
+    return true;
+}
 void Player::update(const PlayerFrameContext& context,DamageRules& damage){
-    frame=context;if(frame.game_flags&0x1800)return;const bool frozen=(frame.field_flags&1)!=0;
-    if(frozen&&motion.character!=2)return;
+    frame=context;if(frame.game_flags&0x1800){prioritized_charge(false);return;}const bool frozen=(frame.field_flags&1)!=0;
+    if(frozen&&motion.character!=2){prioritized_charge(false);return;}
     if(!frozen){ItemContext item;item.state=control.player_state;item.side=i32(motion.player);item.rank=world.rank;item.difficulty=world.difficulty;item.pickup_size=resource.item_size;item.player=motion.position;item.pickup_bounds=motion.item_bounds;item.geometry[0]=frame.geometry[0];item.geometry[1]=frame.geometry[1];items.update(item);}
-    if(control.player_state==5)return;
+    if(control.player_state==5){prioritized_charge(false);return;}
     if(control.player_state==4)life.recover(frame.limits);else if(control.player_state==1)life.enter();
     if(life.shield_active&&control.player_state==3)actions.shield_position(motion.position);life.update_timers(frame.timing);
     if(life.input_controller>0){
@@ -56,8 +72,9 @@ void Player::update(const PlayerFrameContext& context,DamageRules& damage){
     if(!frame.dialogue){
         combo_state.pending=wrapping_add(combo_state.pending,1);
         if(control.flags&8){actions.play_sound(48,motion.player?500:-500);actions.critical_health();control.flags&=~8u;if(frame.extra_mode&&motion.player==0)actions.critical_opponent_time(CpuPlayer::survival_seconds(frame.opponent_level)*60-frame.opponent_survival_time);}
-        if(!frame.scene_state)shooting.update(input,frame.automatic_focus,i32(motion.player),resource,motion.position,frame.timing);
+        if(!frame.scene_state){if(!prioritized_charge(true))shooting.update(input,frame.automatic_focus,i32(motion.player),resource,motion.position,frame.timing);}
     }
+    prioritized_charge(false);
     if(!frozen&&!frame.scene_state)life.collide(hazards,resource.hit_size,damage,resource);
     shots.target=secondary_target={-999,-999,0};target_priority=0;motion.effect_scale={1,1};motion.flags=control.flags;
     if(!frozen)combo_system().update_timers(combo_state);hazard_trace.push(i32(motion.player),hazards);hazards.clear();

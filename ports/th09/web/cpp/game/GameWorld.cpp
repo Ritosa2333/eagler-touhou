@@ -84,7 +84,6 @@ struct GameWorld::Services:BattlePresentation,HudPresentation,MatchRuleActions,S
     void portrait(i32 side,u32 layer,i32 script)override{g.huds[side]->portrait(layer,script,character_animation(side));}
     void begin_hud(i32 side)override{g.output.begin_field(side);}
     void hud_animation(AnmVm& vm,bool rotated)override{g.output.animation(vm,rotated?BattleSprite::rotated:BattleSprite::unrotated);}
-    void hud_gauge(i32 side,u32 slot,AnmVm& vm,bool rotated)override{g.output.gauge_animation(side,slot,vm,rotated?BattleSprite::rotated:BattleSprite::unrotated);}
     void hud_triangle(const AttackColorVertex* p)override{g.output.colored(nullptr,p,3,BattleGeometry::strip,false);}
     void reward_enemy(i32 side,i32 kind)override{g.battle->reward_enemy(side,kind);}
     void play_sound(i32 id,i32 pan)override{sound(id,pan);}

@@ -4,7 +4,6 @@
 #include "MatchRules.hpp"
 #include "SpriteGeometry.hpp"
 namespace th09 {
-inline constexpr std::array<u32,6> hud_gauge_slots{{16,17,35,36,37,38}};
 struct HudFrame {
     FrameTiming timing;PlayfieldGeometry geometry;Vec3 player;
     ComboState combo;ScoreCounter score;
@@ -15,7 +14,6 @@ struct HudPresentation {
     virtual ~HudPresentation()=default;
     virtual void begin_hud(i32 side)=0;
     virtual void hud_animation(AnmVm&,bool rotated)=0;
-    virtual void hud_gauge(i32,u32,AnmVm& vm,bool rotated){hud_animation(vm,rotated);}
     virtual void hud_triangle(const AttackColorVertex*)=0;
 };
 class HeadsUpDisplay {

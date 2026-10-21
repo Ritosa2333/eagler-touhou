@@ -180,7 +180,6 @@ case 'launch':{
  // Room navigation and URL parameters do not control reconciliation timing.
  const recoveryAfterPresent=options.netplayMode==='lan'&&!options.netplaySpectator&&!options.replayViewer;
  if(typeof core._th09_rollback_recovery_mode==='function'&&!core._th09_rollback_recovery_mode(+recoveryAfterPresent))throw Error('重算时机设置失败');
- if(!core._th09_confirmed_gauge_mode(+(query.get('confirmedGauge')!=='0')))throw Error('蓄力显示设置失败');
  if(options.replayPath!==undefined){
   if(options.netplayMode==='lan')throw Error('不能在联机对战中打开录像');
   const selected=path(options.replayPath);if(!selected.startsWith('replay/'))throw Error('录像路径无效');
