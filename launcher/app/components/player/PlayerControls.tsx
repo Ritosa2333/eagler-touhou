@@ -10,6 +10,7 @@ import {
 } from '../../services/player-input';
 import type { PlayerTouch } from '../../services/player-touch';
 import type { SettingsSnapshot } from '../../models/game-settings';
+import {playerUsesGameInput} from '../../models/player-mode';
 import { TouchHelp } from './TouchHelp';
 import { TitleNetworkOverlay } from './TitleNetworkOverlay';
 import { NetplayConnectionWindow } from '../NetplayConnectionWindow';
@@ -23,6 +24,7 @@ import { playerUtilityIcons } from './utility-icons';
 import { SpectatorMatchScore } from './SpectatorMatchScore';
 import { Th09MatchStats } from './Th09MatchStats';
 import { SpectatorPlayback } from './SpectatorPlayback';
+import {NetplayPlayerStatus} from './NetplayPlayerStatus';
 import {PlayerStage} from './PlayerSurface';
 const noopSubscribe = () => () => {};
 const initialTouch = () => undefined;
@@ -60,8 +62,9 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
       'netplay-player-status-visible',
       network?.playerStatusVisible === true,
     );
-    return () => player?.classList.remove('netplay-player-status-visible');
-  }, [network?.playerStatusVisible]);
+    player?.style.setProperty('--netplay-status-lines', String(network?.playerStatus.length || 1));
+    return () => {player?.classList.remove('netplay-player-status-visible');player?.style.removeProperty('--netplay-status-lines');};
+  }, [network?.playerStatusVisible, network?.playerStatus.length]);
   const room = useSyncExternalStore(
     session.room.service.subscribe,
     session.room.service.getSnapshot,
@@ -69,7 +72,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
   );
   const spectatorTimeline =
     state.runtime?.launched && room.spectatorRequested && room.room?.spectatorTimeline === true;
-  const spectating = state.spectatorViewer || state.runtime?.spectator === true;
+  const mode = session.getPlayerMode(), spectating = mode === 'spectator';
   const netplay = network?.diagnostics as NetplayDiagnosticLines | undefined;
   const th09Information = state.runtime?.launched === true && room.product === 'th09mp' && !state.replayViewer;
   const cooperativeSpectator = state.runtime?.launched === true && state.runtime.spectator === true &&
@@ -112,18 +115,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
           />
         </RuntimeDiagnostics>
       )}
-      <aside
-        className="netplay-player-status"
-        id="netplayPlayerStatus"
-        aria-label={t('multiplayer.connection')}
-        hidden={!network?.playerStatusVisible}
-      >
-        {network?.playerStatus.map((row, index) => (
-          <span key={index} title={row.title}>
-            {row.text}
-          </span>
-        ))}
-      </aside>
+      <NetplayPlayerStatus visible={network?.playerStatusVisible === true} rows={network?.playerStatus ?? []}/>
       </PlayerInformationColumn>
       {transferHost ? createPortal(transferPanel, transferHost) : transferPanel}
       <span id="playerStatus" className="visually-hidden" role="status">
@@ -139,7 +131,7 @@ export function PlayerControls({ session, replayWorkspace = false, roomWorkspace
         navigation.surface !== 'touch' && (
           <BootTouchControls session={session} settings={settings} />
         )}
-      {session.getActiveSettings() && !spectating && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
+      {session.getActiveSettings() && playerUsesGameInput(mode) && !replayWorkspace && !roomWorkspace && navigation.surface !== 'touch' && state.playerOpen && (
         <GameplayControls session={session} />
       )}
     </>
@@ -218,8 +210,8 @@ function GameplayControls({ session }: { session: BrowserSession }) {
     input?.getSnapshot ?? initialTouch,
     initialTouch,
   );
-  const spectator = state.runtime?.spectator === true,
-    enabled = settings.options.touchEnabled && !spectator;
+  const spectator = session.getPlayerMode() === 'spectator',
+    enabled = settings.options.touchEnabled && playerUsesGameInput(session.getPlayerMode());
   const wheel = touchMovementUsesJoystick(settings.options.touchMovementMode);
   const hostDirect =
     /\bAndroid\b|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
@@ -281,7 +273,7 @@ function PlayerUtilities({
     navigation = useSurfaceNavigation(),
     state = useSyncExternalStore(session.subscribe, session.getSnapshot, session.getSnapshot);
   const [, updateOrientation] = useState(0);
-  const spectating = state.spectatorViewer || state.runtime?.spectator === true;
+  const spectating = session.getPlayerMode() === 'spectator';
   const portrait =
     (window.visualViewport?.height || window.innerHeight) >
     (window.visualViewport?.width || window.innerWidth);

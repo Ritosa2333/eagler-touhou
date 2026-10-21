@@ -2,6 +2,7 @@ import {useLayoutEffect, useRef, useSyncExternalStore} from 'react';
 import type {BrowserSession} from '../../session/browser-session';
 import {useLocale} from '../../i18n';
 import {createSpectatorTimelineView} from '../../shared/spectator-timeline-view.mjs';
+import './spectator-playback.css';
 
 const clock = (frame: number) => `${Math.floor(frame / 3600)}:${String(Math.floor(frame / 60) % 60).padStart(2, '0')}`;
 

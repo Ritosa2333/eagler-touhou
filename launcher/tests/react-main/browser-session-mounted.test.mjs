@@ -206,10 +206,11 @@ function siteManifest(mode = 'hosted') {
       ...(mode === 'import' ? {offlineCompatibility: {schema: 'eagler-touhou/offline-game-pack/1', runtimeCompatibility: {protocol: 'eagler-touhou/1', dataLayout: `sha256-${'b'.repeat(64)}`, versionSource: 'offline-pack'}, requiredShared: ['/msgothic.ttc', '/unifont.otf'], languages: {source: 'offline-pack', baseline: ['ja']}}} : {}),
       languages: [], languageOptions: [{id: 'ja', title: '日本語', pack: null}], music: {midi: {files: []}}}}};
 }
-async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', noticeEnabled = false, touchDevice = false,
+async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', noticeEnabled = false, touchDevice = false, mobileDevice = false,
   hydrate = false, host = siteManifest(resourceMode), holdHost = false, holdFirstUse = false, seedStorage = () => {}, seedPackages = [], socketBoundary = false, directoryTransport = false, actualHistory = false, fetchBoundary = () => null} = {}) {
   api.validateSiteManifest(host); api.validateReleaseCatalog({schema: 'eagler-touhou/release-catalog/1', games: {}});
   Object.defineProperty(env.window.navigator, 'maxTouchPoints', {configurable:true,value:touchDevice ? 2 : 0});
+  Object.defineProperty(env.window.navigator, 'userAgentData', {configurable:true,value:{mobile:mobileDevice}});
   env.errors.length = 0; env.window.history.replaceState(null, '', initial);
   const storage = new MemoryStorage(), sessionStorage = new MemoryStorage();
   storage.values.set('eagler-touhou-first-use-notice-seen-v1', '1');
@@ -316,15 +317,177 @@ for (const exitStatus of ['success', 'error']) test(`actual BrowserLauncher: ori
   assert.equal(f.navigations.at(-1), 'about:blank');
 });
 
-test('actual BrowserLauncher: touch device starts with touch disabled without a touch warning', async () => {
-  const f=await mountBrowser({touchDevice:true}),session=api.getTestSession();
-  assert.equal(session.settings.getSnapshot().options.touchEnabled,false);
+const touchStartupDevices = [
+  {name: 'desktop mouse', touchDevice: false, coarse: false, mobileDevice: false},
+  {name: 'touchscreen laptop', touchDevice: true, coarse: false, mobileDevice: false},
+  {name: 'desktop coarse pointer', touchDevice: false, coarse: true, mobileDevice: false},
+  {name: 'touchscreen desktop coarse pointer', touchDevice: true, coarse: true, mobileDevice: false},
+  {name: 'mobile without touch input', touchDevice: false, coarse: false, mobileDevice: true},
+  {name: 'Android phone', touchDevice: true, coarse: true, mobileDevice: false, agent: 'Mozilla/5.0 (Linux; Android 14) Mobile', reminder: true},
+  {name: 'iPad desktop agent', touchDevice: true, coarse: true, mobileDevice: false, agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15', reminder: true},
+];
+for (const device of touchStartupDevices) test(`touch startup: device classification ${device.name}`, async t => {
+  const agent = Object.getOwnPropertyDescriptor(env.window.navigator, 'userAgent'), media = env.window.matchMedia;
+  t.after(() => {
+    if (agent) Object.defineProperty(env.window.navigator, 'userAgent', agent); else delete env.window.navigator.userAgent;
+    env.window.matchMedia = media;
+  });
+  Object.defineProperty(env.window.navigator, 'userAgent', {configurable: true, value: device.agent ?? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'});
+  env.window.matchMedia = query => ({...media(query), ...(query === '(pointer: coarse)' ? {matches: device.coarse} : {})});
+  const f = await mountBrowser({initial: '/en.html?game=th06', touchDevice: device.touchDevice, mobileDevice: device.mobileDevice});
   await click('#launch');
-  assert.match(node('#decisionMessage').textContent,/music/i,'the remaining confirmation is only about the selected music mode');
-  assert.doesNotMatch(node('#decisionMessage').textContent,/touch|keyboard|gamepad/i);
-  await click('#decisionConfirm');await until(()=>session.getRuntime().getSnapshot().launched,'no second input warning blocks launch');
-  assert.equal(node('#decisionDialog').open,false);
-  assert.equal(f.outbound.find(value=>value.command==='configure').options.touchMovementMode,'touch-unlimited');
+  if (device.reminder) {
+    assert.equal(node('#decisionTitle').textContent, 'Touch controls are disabled');
+    assert.equal(commands().includes('launch'), false);
+    return;
+  }
+  assert.match(node('#decisionMessage').textContent, /without music/i, 'start continues directly to the ordinary music choice');
+  assert.equal(f.storage.getItem('eagler-external-input-confirmed-v1'), null, 'desktop users need no remembered exemption');
+  await click('#decisionConfirm');
+  await until(() => api.getTestSession().getRuntime().getSnapshot().launched, 'desktop launch keeps its chosen input');
+  assert.equal(f.outbound.find(value => value.command === 'configure').options.touchEnabled, false);
+});
+
+test('touch startup: touchscreen desktop room preparation keeps touch disabled', async () => {
+  const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({touchDevice: true, initial: '/en.html?game=th06mp&mpRoom=1234', host, socketBoundary: true, seedPackages: ['th06']});
+  const session = api.getTestSession();
+  await until(() => f.sockets.length > 0, 'desktop room socket');
+  const socket = f.sockets[0];
+  await React.act(async () => {socket.open(); socket.message({type: 'state', roomDirectory: {version: 1, controlModes: true}, room: {
+    code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, predictionLimit: 8, startSerial: 0,
+    seats: [{clientId: new URL(socket.url).searchParams.get('lobby'), name: 'A', loadout: 0, ready: false}, null], spectators: [],
+  }});});
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready' || node('#decisionDialog').open, 'desktop prepares without a touch reminder', 15_000);
+  if (node('#decisionDialog').open) {
+    assert.match(node('#decisionMessage').textContent, /without music/i);
+    await click('#decisionConfirm');
+  }
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'desktop room is prepared', 15_000);
+  assert.equal(session.settings.getSnapshot().options.touchEnabled, false);
+  assert.equal(f.outbound.findLast(value => value.command === 'configure').options.touchEnabled, false);
+  assert.equal(f.storage.getItem('eagler-external-input-confirmed-v1'), null);
+  await React.act(async () => {void session.room.service.toggleReady();});
+  await until(() => socket.sent.some(value => value.type === 'set-ready' && value.ready), 'desktop player can become ready');
+});
+
+for (const locale of ['zh-CN', 'en']) test(`touch startup: ${locale} enable-and-continue persists controls before fullscreen and native launch`, async () => {
+  const f = await mountBrowser({touchDevice: true, mobileDevice: true, seedStorage(storage) {storage.values.set('eagler-touhou-ui-locale-v1', locale);}});
+  const session = api.getTestSession();
+  await React.act(async () => {session.setLocale(locale);});
+  await click('#launch');
+  assert.equal(session.getPlayerMode(), 'singleplayer');
+  assert.equal(node('#decisionTitle').textContent, locale === 'zh-CN' ? '未启用触控' : 'Touch controls are disabled');
+  if (locale === 'zh-CN') {
+    assert.equal(node('#decisionMessage').textContent, '如果您只有触屏而没有外接键盘或是其他输入设备，您将无法正常进行游戏');
+    assert.equal(node('#decisionConfirm').textContent, '启用触控并继续');
+    assert.equal(node('#decisionSecondary').textContent, '我有外接设备');
+  }
+  assert.equal(node('#decisionCancel').hidden, true);
+  assert.equal(f.order.includes('fullscreen-enter'), false);
+  assert.equal(commands().includes('launch'), false);
+  await click('#decisionConfirm');
+  assert.equal(session.settings.getSnapshot().options.touchEnabled, true);
+  assert.equal(JSON.parse(f.storage.getItem(api.gamePreferenceStorageKey('th06'))).options.touchEnabled, true);
+  assert.match(node('#decisionMessage').textContent, locale === 'zh-CN' ? /无音乐/ : /without music/i);
+  await click('#decisionConfirm');
+  await until(() => session.getRuntime().getSnapshot().launched, 'enabled touch reaches native launch');
+  assert.equal(f.outbound.find(value => value.command === 'configure').options.touchEnabled, true);
+});
+
+test('touch startup: external input is remembered across document reload and a different game', async () => {
+  const f = await mountBrowser({touchDevice: true, mobileDevice: true});
+  await React.act(async () => {api.getTestSession().setLocale('en');});
+  await click('#launch'); await click('#decisionSecondary');
+  assert.equal(api.getTestSession().settings.getSnapshot().options.touchEnabled, false);
+  assert.equal(f.storage.getItem('eagler-external-input-confirmed-v1'), '1');
+  await click('#decisionConfirm');
+  await until(() => api.getTestSession().getRuntime().getSnapshot().launched, 'external input continues launch');
+  const saved = new Map(f.storage.values);
+  await React.act(async () => {f.root.unmount();}); f.router.dispose(); mounted = null;
+  await mountBrowser({touchDevice: true, mobileDevice: true, initial: '/?game=th07', host: subsetHost(['th07']), seedStorage(storage) {
+    for (const [key, value] of saved) storage.values.set(key, value);
+    storage.values.set(api.gamePreferenceStorageKey('th07'), JSON.stringify({music: 'none', options: {touchEnabled: false}}));
+  }});
+  await React.act(async () => {api.getTestSession().setLocale('en');});
+  await click('#launch');
+  assert.match(node('#decisionMessage').textContent, /without music/i, 'the remembered external device skips the touch prompt across games');
+});
+
+test('touch startup: dismissing the reminder cancels this launch and never acknowledges external input', async () => {
+  const f = await mountBrowser({touchDevice: true, mobileDevice: true});
+  await React.act(async () => {api.getTestSession().setLocale('en');});
+  await click('#launch');
+  await React.act(async () => {node('#decisionDialog').dispatchEvent(new env.window.Event('cancel', {cancelable: true}));});
+  await until(() => !node('#decisionDialog').open, 'dismissal stops the launch');
+  assert.equal(f.order.includes('fullscreen-enter'), false);
+  assert.equal(commands().includes('launch'), false);
+  assert.equal(f.storage.getItem('eagler-external-input-confirmed-v1'), null);
+  await click('#launch'); assert.equal(node('#decisionTitle').textContent, 'Touch controls are disabled');
+});
+
+test('touch startup: enabled controls skip the reminder', async () => {
+  await mountBrowser({touchDevice: true, mobileDevice: true, seedStorage(storage) {
+    storage.values.set(api.gamePreferenceStorageKey('th06'), JSON.stringify({music: 'none', options: {touchEnabled: true}}));
+  }});
+  await React.act(async () => {api.getTestSession().setLocale('en');});
+  await click('#launch'); assert.match(node('#decisionMessage').textContent, /without music/i);
+});
+
+for (const choice of ['confirm', 'secondary']) test(`touch startup: room player ${choice} settles input before readiness`, async () => {
+  const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({touchDevice: true, mobileDevice: true, initial: '/en.html?game=th06mp&mpRoom=1234', host, socketBoundary: true, seedPackages: ['th06']});
+  const session = api.getTestSession();
+  await until(() => f.sockets.length > 0, 'room socket');
+  const socket = f.sockets[0];
+  await React.act(async () => {socket.open(); socket.message({type: 'state', roomDirectory: {version: 1, controlModes: true}, room: {
+    code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, predictionLimit: 8, startSerial: 0,
+    seats: [{clientId: new URL(socket.url).searchParams.get('lobby'), name: 'A', loadout: 0, ready: false}, null], spectators: [],
+  }});});
+  await until(() => node('#decisionDialog').open, 'room preparation shows the input reminder');
+  assert.equal(node('#decisionTitle').textContent, 'Touch controls are disabled');
+  assert.equal(session.getPlayerMode(), 'multiplayer');
+  assert.equal(socket.sent.some(value => value.type === 'set-ready' && value.ready), false);
+  await click(choice === 'confirm' ? '#decisionConfirm' : '#decisionSecondary');
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready' || node('#decisionDialog').open && /without music/i.test(node('#decisionMessage').textContent), 'room continues its ordinary preparation', 15_000);
+  if (node('#decisionDialog').open) await click('#decisionConfirm');
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'room prepares the chosen input configuration', 15_000);
+  assert.notEqual(session.getSnapshot().roomReloadPending, true);
+  assert.equal(session.settings.getSnapshot().options.touchEnabled, choice === 'confirm');
+  assert.equal(f.outbound.findLast(value => value.command === 'configure').options.touchEnabled, choice === 'confirm');
+  assert.equal(node('#decisionDialog').open, false);
+  await React.act(async () => {void session.room.service.toggleReady();});
+  await until(() => socket.sent.some(value => value.type === 'set-ready' && value.ready), 'the chosen input configuration can become ready', 15_000);
+  assert.equal(node('#decisionDialog').open, false);
+});
+
+test('touch startup: unavailable storage still remembers external input for the document lifetime', async () => {
+  await mountBrowser({touchDevice: true, mobileDevice: true, blockStorage: true});
+  await React.act(async () => {api.getTestSession().setLocale('en');});
+  await click('#launch'); await click('#decisionSecondary');
+  await click('#decisionCancel'); await click('#launch');
+  assert.match(node('#decisionMessage').textContent, /without music/i);
+});
+
+test('touch startup: terminal room closure dismisses its pending reminder without acknowledging external input', async () => {
+  const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({touchDevice: true, mobileDevice: true, initial: '/en.html?game=th06mp&mpRoom=1234', host, socketBoundary: true, directoryTransport: true, seedPackages: ['th06']});
+  await until(() => f.sockets.length > 0 && node('#decisionDialog').open, 'room owns the pending reminder');
+  const socket = f.sockets.find(value => new URL(value.url).searchParams.has('lobby'));
+  await React.act(async () => {socket.close(4004);});
+  await until(() => !node('#decisionDialog').open && api.getTestSession().room.service.getSnapshot().room === null, 'closed room releases its reminder');
+  assert.equal(f.storage.getItem('eagler-external-input-confirmed-v1'), null);
+  assert.equal(commands().includes('launch'), false);
+});
+
+test('touch startup: spectator preparation never asks for gameplay input', async () => {
+  const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const invite = api.encodeRoomInvite({g: 'th06mp', r: '1234', f: true, a: 'join', s: true});
+  await mountBrowser({touchDevice: true, mobileDevice: true, initial: '/?j=' + invite, host, socketBoundary: true, seedPackages: ['th06']});
+  const session = api.getTestSession();
+  await until(() => session.room.service.getSnapshot().preparation?.status === 'ready', 'spectator loads the native menu without a gameplay prompt', 15_000);
+  assert.equal(session.getPlayerMode(), 'spectator');
+  assert.equal(node('#decisionDialog').open, false);
 });
 
 for (const retired of [false,true]) test(`actual BrowserLauncher: failed offline-first update stays quiet after retirement=${retired}`, async () => {
@@ -1176,7 +1339,7 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   host.games[game].multiplayerRuntime = `${runtimePath}?hosted=1&v=test-multiplayer`;
   // Same explicit setup boundary as above: the old home-card activation is
   // baseline-conflicted, so it is not counted as original browser acceptance.
-  const f = await mountBrowser({initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game], autoReady: game !== 'th09',
+  const f = await mountBrowser({touchDevice: true, initial: `/?game=${product}&keep=a%20b`, host, seedPackages: [game], autoReady: game !== 'th09',
     seedStorage(storage) {if (game === 'th09') storage.values.set('eagler-touhou-runtime-diagnostics-v1', '1');}});
   const frame = node('#gameFrame');
   const assertPlaybackOnly = () => {
@@ -1218,6 +1381,8 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
   assert.ok(source.includes(`/${runtimePath}`), source);
   assert.ok(source.includes('runtimeVariant=multiplayer'), source);
   assert.ok(configure); assert.equal(configure.options.replayViewer, true);
+  assert.equal(api.getTestSession().getPlayerMode(), 'replay');
+  assert.equal(node('#decisionDialog').open, false, 'touchscreen Replay is a viewing mode and needs no gameplay-input reminder');
   assert.equal(Object.keys(configure.options).some(key => key.startsWith('netplay')), false);
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.deepEqual(f.dataReads, [[1, 2, 3]]);
   assert.equal(f.sockets.length, 0, 'Replay viewer never creates room/gameplay transport');
@@ -2204,7 +2369,12 @@ for (const mobileDevice of [false,true]) for (const game of ['th06','th07','th08
    await until(()=>session.getSnapshot().roomLaunchStage===null,'current first frame and receiver settle the loading cover');
    assert.equal(node('.room-workspace-preparation').hidden,true,'the cover exposes the running spectator picture');
    if(game!=='th09'){
-    assert.ok(node('.room-workspace-playback').contains(node('#cooperativeSpectatorTimeline')),'embedded playback controls sit below the picture');
+    const playback=node('.room-workspace-playback'),lounge=node('.room-workspace-spectators');
+    assert.ok(playback.contains(node('#cooperativeSpectatorTimeline')),'embedded controls retain the shared spectator timeline');
+    if(!env.window.matchMedia('(max-width:760px)').matches){
+     assert.equal(playback.closest('.room-workspace-column'),lounge.parentElement,'desktop playback shares the chat and spectator column');
+     assert.ok(playback.compareDocumentPosition(lounge)&env.window.Node.DOCUMENT_POSITION_FOLLOWING,'playback precedes the spectator lounge in keyboard order');
+    }
     assert.equal(node('#cooperativeSpectatorDetails').hidden,false);
    }
    const frame=node('#gameFrame'),returns=f.outbound.filter(m=>m.command==='return-room').length;

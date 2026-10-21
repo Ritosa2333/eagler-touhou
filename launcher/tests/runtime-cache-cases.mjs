@@ -168,8 +168,22 @@ const entries=legacy.a.files.map(file=>({url:root+file.path,revision:file.sha256
 for(const file of legacy.a.files)await old.put(new URL(root+file.path,legacy.scopeUrl).href,
  new Response(legacy.state.files[runtimeGenerationBase(root,legacy.a.generation)+file.path]));
 await old.put(new URL("__runtime-cache__/complete",legacy.scopeUrl).href,new Response(JSON.stringify({complete:true,group:{root,entries},createdAt:1})));
+legacy.publish("b");
+const legacyLocal=await legacy.launch(legacy.worker(),"legacy-local",{localOnly:true});
+assert.equal(legacyLocal.generation,legacy.a.generation,'a complete legacy program starts before downloading its successor');
+assert.equal(legacy.requests.length,0,'legacy cache migration is entirely local');
+await assert.rejects(legacy.worker().prepareLaunch(root+'game.html',{localOnly:true,exclude:[legacy.a.generation]}),/No complete local/);
+assert.equal(legacy.requests.length,0,'excluded legacy programs cannot trigger a foreground download');
 legacy.state.outage=true;
-assert.match((await legacy.launch(legacy.worker(),"legacy-offline")).body,/a$/);
+assert.match((await legacy.launch(legacy.worker(),"legacy-offline",{localOnly:true})).body,/a$/);
+for(const failure of ['missing','corrupt']) {
+ const invalid=harness(),copy=await invalid.caches.open('eagler-touhou-runtime-%2Fgame%2F-invalid');
+ for(const request of await old.keys())await copy.put(request,await old.match(request));
+ const wasm=new URL(root+'game.wasm',invalid.scopeUrl).href;
+ if(failure==='missing')await copy.delete(wasm);else await copy.put(wasm,new Response('damaged wasm'));
+ await assert.rejects(invalid.worker().prepareLaunch(root+'game.html',{localOnly:true}),/No complete local/);
+ assert.equal(invalid.requests.length,0,failure+' legacy caches stay out of local startup');
+}
 const damaged=harness(),poison=await damaged.caches.open("eagler-touhou-app-shell-poisoned");
 await poison.put(new URL(root+"glue.mjs",damaged.scopeUrl).href,new Response("glue a"));
 const newB=damaged.publish("b");

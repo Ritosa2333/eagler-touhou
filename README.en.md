@@ -3,7 +3,7 @@
 </h1>
 
 <div align="center">
-  <p>A <strong>Web adaptation project</strong> for official Touhou Project games, fangames, community tools, and multiplayer mods, aiming to <strong>greatly lower the barrier to entry</strong>.</p>
+  <p>A project to bring official Touhou Project games, fan games, community tools, and multiplayer mods to <strong>every platform</strong>, aiming to <strong>greatly lower the barrier to entry for players</strong>.</p>
   <p>
     <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?style=flat-square&amp;logo=tencentqq&amp;logoColor=white" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Chromium-%E2%89%A5108-4285F4?style=flat-square&amp;logo=googlechrome&amp;logoColor=white" alt="Chromium >=108">
@@ -11,6 +11,11 @@
   </p>
   <p><a href="README.md">简体中文</a> | English</p>
 </div>
+
+> [!WARNING]
+> For now, support for every platform is delivered through Web adaptations. The Web allows rapid iteration and makes games playable across all platforms.
+>
+> Native versions for individual platforms are planned to address performance and other concerns.
 
 > [!TIP]
 > For game support, see the [Game Restoration and Adaptation Progress](docs/TOUHOU_PROGRESS.md).<br>

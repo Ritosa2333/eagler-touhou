@@ -9,6 +9,7 @@ import {RoomGameSettings} from './RoomGameSettings';
 import {RoomQuickChat} from './RoomQuickChat';
 import {RoomSpectators} from './RoomSpectators';
 import {RoomSpectatorPreview} from './RoomSpectatorPreview';
+import {RoomPlaybackPanel} from './RoomPlaybackPanel';
 import {RoomPanel} from './RoomPanel';
 import {RoomPersonal} from './RoomPersonal';
 import {RoomNetwork} from './RoomNetwork';
@@ -25,6 +26,7 @@ export function RoomWorkspace(props: RoomViewProps) {
   const [tab, setTab] = useState<'chat'|'game'>('chat');
   const [narrow, setNarrow] = useState(false);
   const [loungeHost, setLoungeHost] = useState<HTMLDivElement | null>(null);
+  const [playbackHost, setPlaybackHost] = useState<HTMLDivElement | null>(null);
   const trigger = useRef<HTMLElement | null>(null);
   const retainedPanel = useRef<NonNullable<RoomViewProps['panel']>>({kind:'personal'});
   if (props.panel) retainedPanel.current = props.panel;
@@ -61,13 +63,15 @@ export function RoomWorkspace(props: RoomViewProps) {
         <div className="room-workspace-top-actions"><button className="mp-room-code mp-room-top-action" id="mpCopyRoomCode" type="button" aria-label={t('multiplayer.copyRoomCode')} onClick={()=>{void props.onCopyRoomCode(room.code);}}><span className="mp-room-code-label">{t('multiplayer.roomCode')}</span><strong id="mpRoomCode">{room.code}</strong>{icon('room-copy')}</button>
           <button className="mp-room-top-action" id="mpSettingsRoomDrawerToggle" type="button" aria-label={t('settings.title')} aria-expanded={props.settingsOpen} aria-controls="mpSettingsRoomDrawer" disabled={locked} onClick={props.onOpenSettings}>{icon('room-gear-six')}<span>{t('room.gameSettingsGroup')}</span></button></div>
       </header>
-      <aside className="room-workspace-sidebar"><nav className="room-workspace-tabs" data-active-tab={tab} role="tablist" aria-label={t('multiplayer.gameSettings')}>
+      <div className="room-workspace-column"><aside className="room-workspace-sidebar"><nav className="room-workspace-tabs" data-active-tab={tab} role="tablist" aria-label={t('multiplayer.gameSettings')}>
         {(['chat','game'] as const).map((name,index)=><button id={`roomWorkspaceTab-${name}`} key={name} type="button" role="tab" aria-selected={tab===name} tabIndex={tab===name ? 0 : -1} aria-controls={`roomWorkspacePanel-${name}`} onClick={()=>setTab(name)} onKeyDown={event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();const next=index ? 'chat' : 'game';setTab(next);document.getElementById(`roomWorkspaceTab-${next}`)?.focus();}}}>{t(name==='chat' ? 'room.quickChat' : 'multiplayer.gameSettings')}</button>)}
       </nav><div className="room-workspace-panels">
         <div className="room-workspace-chat" id="roomWorkspacePanel-chat" role="tabpanel" aria-labelledby="roomWorkspaceTab-chat" hidden={tab!=='chat'}>{props.quickChat && <><RoomQuickChat model={props.quickChat} part="log"/><RoomQuickChat model={props.quickChat} part="actions"/></>}</div>
         <div id="roomWorkspacePanel-game" role="tabpanel" aria-labelledby="roomWorkspaceTab-game" hidden={tab!=='game'}><fieldset disabled={locked}><RoomGameSettings state={state} service={service} hidden={false}/></fieldset><button id="mpRoomGuideOpen" type="button" onClick={props.onGuide}>{t('multiplayerGuide.action')}</button></div>
       </div></aside>
+      <div className="room-workspace-playback-host" ref={setPlaybackHost}/>
       {!sideLounge && lounge}
+      </div>
       <footer className="room-workspace-actions" hidden={!room.synced || !selecting}>
         <button className="mp-ready-button" id="mpReady" type="button" disabled={!ready || locked || state.loadoutPending || state.checkBusy || (!state.ready && preparation?.status !== 'ready')} aria-pressed={state.ready} onClick={()=>{void service.toggleReady();}}>{t(state.ready ? 'room.cancelReady' : 'multiplayer.ready')}</button>
         <button className="mp-start-button" id="mpStartGame" type="button" disabled={locked || !owner || !state.canStart} onClick={service.start}>{t('multiplayer.startGame')}</button>
@@ -79,7 +83,7 @@ export function RoomWorkspace(props: RoomViewProps) {
       </RoomPanel>
     </section>,props.workspaceHost)}
     {createPortal(roster,props.workspaceStage)}
-    {props.playbackControls && createPortal(<div className="room-workspace-playback">{props.playbackControls}</div>,props.workspaceStage)}
+    {(narrow || playbackHost) && createPortal(<RoomPlaybackPanel workspace={props.workspaceHost}>{props.playbackControls}</RoomPlaybackPanel>, narrow ? props.workspaceStage : playbackHost!)}
     {sideLounge && loungeHost && createPortal(lounge,loungeHost)}
     {viewport && createPortal(<>
       {props.reloadPending && !context.launched && <section className="room-resource-reload" role="region" aria-label={t('room.reloadResources')}>
