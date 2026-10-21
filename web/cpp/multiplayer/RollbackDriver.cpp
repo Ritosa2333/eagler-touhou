@@ -1,7 +1,7 @@
 #include "RollbackDriver.hpp"
 #include "NetworkFailure.hpp"
 #include "ResourceTrace.hpp"
-#include "SpectatorStageState.hpp"
+#include "SpectatorReplayStart.hpp"
 #include "../platform/BrowserRuntime.hpp"
 #include "../platform/PlatformDevices.hpp"
 #include <algorithm>
@@ -11,7 +11,7 @@
 
 namespace th08::multiplayer {
 #ifdef TH_MULTIPLAYER_FIXTURES
-const std::vector<u8>* CanonicalTrace(u32 group);
+extern "C" const u32* multiplayer_replay_gameplay_state(BrowserRuntime* runtime);
 void SnapshotCanonicalPlayerRegions();
 u32 CanonicalPlayerField(u32 offset);
 u32 CanonicalPlayerFieldByteOffset(u32 offset);
@@ -64,7 +64,6 @@ bool RollbackDriver::Connect(const char* relay){
 #ifdef TH_MULTIPLAYER_FIXTURES
     diagnostic_spectator_checkpoint_frame=Netplay::INVALID_FRAME;
     diagnostic_spectator_checkpoint_canonical.fill(0);
-    for(auto& trace:diagnostic_spectator_checkpoint_traces)trace.clear();
 #endif
     return !failed&&network.Connect(relay);
 }
@@ -73,7 +72,6 @@ bool RollbackDriver::ConnectSpectator(const char* relay,const char* id){
     diagnostic_spectator_canonical_trace.clear();
     diagnostic_spectator_checkpoint_frame=Netplay::INVALID_FRAME;
     diagnostic_spectator_checkpoint_canonical.fill(0);
-    for(auto& trace:diagnostic_spectator_checkpoint_traces)trace.clear();
 #endif
     return !failed&&network.ConnectSpectator(relay,id);
 }
@@ -167,7 +165,6 @@ bool RollbackDriver::Admit(){
 #ifdef TH_MULTIPLAYER_FIXTURES
         diagnostic_spectator_checkpoint_frame=Netplay::INVALID_FRAME;
         diagnostic_spectator_checkpoint_canonical.fill(0);
-        for(auto& trace:diagnostic_spectator_checkpoint_traces)trace.clear();
 #endif
         // The native teardown/loading graph writes records and emits loading
         // audio outside gameplay frames, just as at the initial bootstrap.
@@ -222,7 +219,7 @@ bool RollbackDriver::RunFrame(bool render){
         pending_spectator_frame=frame;pending_spectator_stage=stage;
         pending_spectator_checkpoint=checkpoint;
         u32 capture_failure=0;
-        if(checkpoint&&!CaptureSpectatorStageScalars(runtime,pending_spectator_initializer,&capture_failure)){
+        if(checkpoint&&!EncodeSpectatorReplayStart(runtime,pending_spectator_initializer,&capture_failure)){
             pending_spectator_checkpoint=false;pending_spectator_initializer.clear();
             // A stage number can change before its new GameplayLoad owner is
             // ready. Keep the old published stage tag for this transition
@@ -233,61 +230,11 @@ bool RollbackDriver::RunFrame(bool render){
             }else network.DisableSpectatorPublishing();
         }
 #ifdef TH_MULTIPLAYER_FIXTURES
-        if(checkpoint&&frame==0&&!pending_spectator_initializer.empty()){
-            Netplay::SpectatorScalars::Reader reader(pending_spectator_initializer);
-            SpectatorStageScalars captured;
-            if(ReadSpectatorStageScalars(reader,captured)){
+        if(checkpoint&&!pending_spectator_initializer.empty()){
+            const auto* hash=multiplayer_replay_gameplay_state(&runtime);
+            if(hash&&hash[0]==1){
                 diagnostic_spectator_checkpoint_frame=frame;
-                diagnostic_spectator_checkpoint_canonical=captured.canonical;
-                constexpr u32 groups[]{1,8};
-                for(u32 i=0;i<2;++i)if(const auto* trace=CanonicalTrace(groups[i]))
-                    diagnostic_spectator_checkpoint_traces[i]=*trace;
-            }
-        }
-#endif
-#ifdef TH_MULTIPLAYER_FIXTURES
-        if(checkpoint&&diagnostic_spectator_restore_requested&&!pending_spectator_initializer.empty()){
-            diagnostic_spectator_restore_requested=false;
-            auto& result=diagnostic_spectator_restore_result;
-            const auto* before=multiplayer_canonical_state(&runtime);
-            if(before&&before[0]==1){
-                std::copy(before,before+13,result.begin()+3);result[0]=1;
-                constexpr u32 trace_groups[]{1,3,9};std::array<std::vector<u8>,3> before_traces;
-                for(u32 i=0;i<3;++i)if(const auto* trace=CanonicalTrace(trace_groups[i]))before_traces[i]=*trace;
-                SnapshotCanonicalPlayerRegions();
-                Netplay::SpectatorStageEvent event;event.game='8';event.playerCount=u8(session.player_count);
-                event.kind=Netplay::SpectatorEventKind::Checkpoint;event.sessionId=1;event.gameplayAbi=1;
-                event.frame=frame;event.stage=stage;event.serial=1;event.schema=1;event.state=pending_spectator_initializer;
-                runtime.bind_audio_events(nullptr);
-                result[31]=u32(runtime.app.game.enemies.state.active_frames);
-                result[1]=RestoreSpectatorStageScalars(runtime,event,&result[2])?1u:0u;
-                result[32]=u32(runtime.app.game.enemies.state.active_frames);
-                std::vector<u8> restored_scalars;
-                if(CaptureSpectatorStageScalars(runtime,restored_scalars)){
-                    u32 differences=0;
-                    const auto count=std::min(restored_scalars.size(),pending_spectator_initializer.size());
-                    for(std::size_t i=0;i<count;++i)if(restored_scalars[i]!=pending_spectator_initializer[i]){if(!result[29])result[29]=u32(i+1);++differences;}
-                    if(!result[29]&&count!=pending_spectator_initializer.size())result[29]=u32(count+1);
-                    result[30]=differences;
-                }
-                audio.Reset(frame);files.Reset(frame);
-                runtime.bind_audio_events(&audio);
-                const auto* after=multiplayer_canonical_state(&runtime);
-                if(after&&after[0]==1){
-                    std::copy(after,after+13,result.begin()+16);result[33]=result[34]=~u32(0);
-                    for(u32 i=0;i<3&&result[33]==~u32(0);++i){
-                        const auto* trace=CanonicalTrace(trace_groups[i]);if(!trace)continue;
-                        const auto& old=before_traces[i];const auto count=std::min(old.size(),trace->size());
-                        std::size_t offset=0;while(offset<count&&old[offset]==(*trace)[offset])++offset;
-                        if(offset<count||old.size()!=trace->size()){
-                            result[33]=trace_groups[i];result[34]=u32(offset);
-                            result[35]=offset<old.size()?old[offset]:0xffu;
-                            result[36]=offset<trace->size()?(*trace)[offset]:0xffu;
-                            if(trace_groups[i]==1)result[2]=(result[2]&0xffffu)|((CanonicalPlayerField(u32(offset))&0xffu)<<16)|((CanonicalPlayerFieldByteOffset(u32(offset))&0xffu)<<24);
-                            if(trace_groups[i]==9)CanonicalResourceTraceLocation(u32(offset),result.data()+37);
-                        }
-                    }
-                }
+                std::copy(hash,hash+13,diagnostic_spectator_checkpoint_canonical.begin());
             }
         }
 #endif
@@ -368,7 +315,7 @@ bool RollbackDriver::FinishFrame(){
     if(pending_spectator_frame==frame){
         const auto index=frame%spectator_stage_tags.size();
         spectator_stage_tags[index]={frame,pending_spectator_stage};
-        const auto schema=pending_spectator_checkpoint?1u:0u;
+        const auto schema=pending_spectator_checkpoint?SpectatorReplaySchema:0u;
         if(!network.RecordSpectatorStage(frame,pending_spectator_stage,schema,pending_spectator_initializer,
             session.network_frame.inputs,runtime.app.game.globals.spectator_boss_slots))return Fail("spectator stage record failed");
     }
@@ -499,9 +446,9 @@ bool RollbackDriver::RunSpectatorPlayback(double callback_start_ms){
     const auto restore=[&](const Netplay::SpectatorStageEvent& event){
 #ifdef TH_MULTIPLAYER_FIXTURES
         diagnostic_spectator_restore_failure=0;
-        return RestoreSpectatorStageScalars(runtime,event,&diagnostic_spectator_restore_failure);
+        return RestoreSpectatorReplayStart(runtime,event,&diagnostic_spectator_restore_failure);
 #else
-        return RestoreSpectatorStageScalars(runtime,event);
+        return RestoreSpectatorReplayStart(runtime,event);
 #endif
     };
     bool rendered_input=false;
@@ -520,7 +467,7 @@ bool RollbackDriver::RunSpectatorPlayback(double callback_start_ms){
         session.network_frame_open=false;
         ++runtime.multiplayer_logic_frame;
 #ifdef TH_MULTIPLAYER_FIXTURES
-        if(const auto* canonical=multiplayer_canonical_state(&runtime);canonical&&canonical[0]==1){
+        if(const auto* canonical=multiplayer_replay_gameplay_state(&runtime);canonical&&canonical[0]==1){
             std::array<u32,14> sample{};sample[0]=packet.frame+1;
             std::copy(canonical,canonical+13,sample.begin()+1);
             if(diagnostic_spectator_canonical_trace.size()==4096)

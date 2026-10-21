@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "ItemSystem.hpp"
 #include "../multiplayer/ResourceTrace.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -149,15 +150,25 @@ bool ItemSystem::spawn_power_gift(const Vec3& position,u32 seat){
     }
     return true;
 }
+u32 ItemSystem::overflow_owner(ItemState& item,u32 collector){
+    if(collector>=3||!owners[collector].resources||owners[collector].input.power<128||
+       (item.type!=0&&item.type!=2&&item.type!=4))return collector;
+    const int seat=eagler::cooperative::LowestPower(3,
+        [&](unsigned s){return owners[s].available&&owners[s].player&&owners[s].resources&&owners[s].input.power<128;},
+        [&](unsigned s){return Scalar::truncate(owners[s].input.power);},[](unsigned){return 1;});
+    if(seat<0)return collector;
+    item_owners[item_index(item)]=u8(seat);gift_recipients[item_index(item)]=no_owner;
+    item.state=1;return u32(seat);
+}
 u32 ItemSystem::owner_for(ItemState& item){
     const u32 index=item_index(item);if(index>=ItemPoolState::capacity)return no_owner;
     const u8 recipient=gift_recipients[index];
     if(recipient<3&&owners[recipient].available&&owners[recipient].player){
-        item_owners[index]=recipient;return recipient;
+        item_owners[index]=recipient;return overflow_owner(item,recipient);
     }
     gift_recipients[index]=no_owner;
     const u8 previous=item_owners[index];
-    if(item.state==1&&previous<3&&owners[previous].available&&owners[previous].player)return previous;
+    if(item.state==1&&previous<3&&owners[previous].available&&owners[previous].player)return overflow_owner(item,previous);
     const u32 result=nearest_owner(item.position);item_owners[index]=u8(result);
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     if(previous!=result)multiplayer::diagnostic::Event("item.owner",int(result),previous,&item);
@@ -185,7 +196,7 @@ u32 ItemSystem::auto_collect_owner(ItemState& item){
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     multiplayer::diagnostic::Event("item.poc",int(claimant),0,&item);
 #endif
-    return claimant;
+    return overflow_owner(item,claimant);
 }
 bool ItemSystem::touching(u32 seat,const Vec3& p,const Vec3& size){return seat<3&&owners[seat].available&&owners[seat].player&&owners[seat].player->collision().item(p,size);}
 void ItemSystem::collect(u32 seat,ItemState& item){

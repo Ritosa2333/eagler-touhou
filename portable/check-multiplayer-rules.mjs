@@ -23,3 +23,14 @@ for(const multiplayer of [false,true]){
   const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});
   const code=wasi.start(instance);if(code!==0)throw Error('Player life rules failed: '+code);
 }
+
+{
+  const wasm=resolve(out,'item-overflow.wasm');
+  execFileSync(binary('clang++'),['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti',
+    '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-Wl,-z,stack-size=1048576',
+    ...['Arithmetic','Timer','GameMath','ItemUpdate'].map(name=>resolve(root,`web/cpp/game/${name}.cpp`)),
+    resolve(root,'tests/item-overflow-test.cpp'),soft,'-o',wasm],{stdio:'inherit'});
+  const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
+  const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});
+  if(wasi.start(instance)!==0)throw Error('Item overflow failed');
+}
