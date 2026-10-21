@@ -28,6 +28,8 @@ th06、th07、th10 的多人录像已有分关数据。th08、th11、th15 的多
 
 ## 验证入口
 
+th08 的旁观输入按 SDL 普通 60 Hz 时钟播放，积压输入由用户的跳转或直播操作定位。原生 Replay 重建保留音乐载入、切曲与停止命令，BGM 跟随当前关卡和 Boss；历史音效在显式快进期间静音。
+
 - `common/tests/spectator-stage-test.cpp` 覆盖协议、连续历史、暂停、跳转和直播控制。
 - `common/tests/spectator-stage-publisher-boundary-test.cpp` 覆盖确认发布和关头输入边界。
 - `services/relay/tests/test-spectator-stages.mjs` 与 `test-spectator-stage-relay.mjs` 覆盖事件身份、缓存替换和真实 WebSocket 旁观分发。

@@ -225,9 +225,10 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     const bool high=display_cadence.high_refresh&&interpolation_ready();bool presented=false;
     bool due=tick_due;unsigned completed=0;bool completed_after_correction=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Observer Seek/Live batching belongs to StagePlayback. Buffered observer
+    // input never enables the player's network catch-up clock.
     const bool catchup=runtime&&runtime->app.session.netplay.Configured()&&
-        (!runtime->app.session.netplay.ReadOnly()||(runtime->app.session.netplay.Spectator()&&
-          runtime->app.session.netplay.CanStart()&&runtime->network_driver()&&runtime->network_driver()->Network().SpectatorBacklog()>4));
+        !runtime->app.session.netplay.ReadOnly();
     constexpr double interval=touhou::sdl::FrameCadence::interval;
     const double network_scale=catchup&&runtime->network_driver()?runtime->network_driver()->Network().IntervalScale():1.;
     const bool live_rollback=catchup&&!runtime->app.session.netplay.ReadOnly()&&
