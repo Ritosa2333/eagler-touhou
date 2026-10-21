@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #if TH15_MULTIPLAYER
 #include "GameBattle.hpp"
 #include "MultiplayerPilot.hpp"
@@ -150,14 +151,25 @@ bool GameBattle::mp_enable(const MultiplayerOptions& o,const std::array<ShtResou
     for(unsigned s=0;s<o.seat_count;++s)pilots[s]=std::make_unique<MultiplayerPilot>(*this,s,o.selections[s]);
     for(unsigned s=0;s<o.seat_count;++s)if(!pilots[s]->initialize(shots[o.selections[s]],banks[o.selections[s]]))return false;
     for(unsigned s=0;s<o.seat_count;++s){auto& c=*pilots[s]->collection;c.small_power_amount=i32(o.seat_count);c.shared_life_piece=[this](){return mp_reward_fragment();};}
-    items->multiplayer_release=[this](u32 index){mp_gift_targets[index]=-1;};
+    items->multiplayer_release=[this](u32 index){mp_gift_targets[index]=mp_item_targets[index]=-1;};
     enemy_world.multiplayer_target=[this](const Vec3& p){return mp_target(p);};bullet_scene->manager.multiplayer_target=enemy_world.multiplayer_target;laser_scene->multiplayer_target=enemy_world.multiplayer_target;return true;
 }
 int GameBattle::mp_item_owner(u32 index,ItemState& item){
     const bool power=item.kind==1||item.kind==3||item.kind==8;
     auto& directed=mp_gift_targets[index];
     if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}
-    if(directed>=0)return directed;
+    auto overflow=[&](int seat){
+        if(!power||pilots[unsigned(seat)]->session.power<pilots[unsigned(seat)]->score.max_power)return seat;
+        const int target=eagler::cooperative::LowestPower(mp_options.seat_count,
+            [&](unsigned j){return pilots[j]->alive()&&pilots[j]->session.power<pilots[j]->score.max_power;},
+            [&](unsigned j){return pilots[j]->session.power;},[&](unsigned j){return pilots[j]->session.power_step;});
+        if(target>=0){directed=-1;item.state=3;item.attraction_speed=8;return target;}return seat;
+    };
+    if(directed>=0)return overflow(directed);
+    if((item.state==3||item.state==4)&&mp_item_targets[index]>=0){
+        const int owner=mp_item_targets[index];if(pilots[unsigned(owner)]->alive())return overflow(owner);
+        item.state=1;item.velocity={};mp_item_targets[index]=-1;
+    }
     const auto contains=[](const PlayerBox& box,const Vec3& p){return p.x>=box.minimum.x&&p.x<=box.maximum.x&&p.y>=box.minimum.y&&p.y<=box.maximum.y;};
     auto eligible=[&](const MultiplayerPilot& p){
         if(!p.alive()||item.state==5||(item.state==1&&item.delay>0))return false;
@@ -172,7 +184,7 @@ int GameBattle::mp_item_owner(u32 index,ItemState& item){
     };
     auto nearest=[&](bool needs_power){int chosen=-1;double best=0;for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if((needs_power&&p.session.power>=p.score.max_power)||!eligible(p))continue;
         const double dx=double(item.position.x)-p.player->motion.position.x,dy=double(item.position.y)-p.player->motion.position.y,d=dx*dx+dy*dy;if(chosen<0||d<best){chosen=int(s);best=d;}}return chosen;};
-    int target=nearest(power);return target<0&&power?nearest(false):target;
+    const int target=nearest(false);return target>=0?overflow(target):target;
 }
 void GameBattle::mp_input(const std::array<MultiplayerInput,3>& in){for(unsigned s=0;s<mp_options.seat_count;++s)pilots[s]->input=in[s];}
 const PlayerCollision& GameBattle::mp_collision(unsigned s){
@@ -260,7 +272,7 @@ bool GameBattle::mp_draw(AnmRenderer& r){
         // TH11 rescue feedback: the recipient becomes opaque as the donor's
         // confirmed 90-tick hold progresses. No authoritative ANM mutation.
         for(unsigned giver=0;giver<mp_options.seat_count;++giver){const auto& donor=*pilots[giver];
-            if(donor.life_hold&&mp_life_receiver(giver)==int(s))alpha=std::max(alpha,base_alpha+(255-base_alpha)*std::min(donor.life_hold,90u)/90);}
+            if(donor.life_hold&&mp_life_receiver(giver)==int(s))alpha=std::max(alpha,base_alpha+(255-base_alpha)*eagler::cooperative::TapCount(donor.life_hold)/5);}
         body.visual.color=(body.visual.color&0xffffffu)|(alpha<<24);
         body.visual.translation=pilot.player->motion.position;body.presentation_motion=true;
         if(r.draw(body)==-2)return fail(r.error);

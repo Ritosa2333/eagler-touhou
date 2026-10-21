@@ -154,7 +154,7 @@ bool ApplicationState::bind_run_display(){
  session->driver()->auto_focus=config.auto_focus();if(replay->live())live_description=replay->live()->description();else if(replay->replay_file()){const auto& bytes=replay->replay_file()->decoded();if(bytes.size()>=live_description.size())std::copy_n(bytes.begin(),live_description.size(),live_description.begin());}
  return display->attach(*scene(),progress,records,*this,*this,pause.get(),&live_description)||fail(display->error);
 }
-bool ApplicationState::begin_run(){
+bool ApplicationState::begin_run(const std::array<ReplayStageSnapshot,3>* stream){
  if(!save_settings())return false;remember_title();title.reset();ending.reset();release_run();scene_effects.reset();for(auto& callback:animation_updates)callback.enabled=false;
  replay=std::make_unique<SessionReplay>(config,environment.game_rng,visual);
  progress.stage=selected_stage;progress.starting_stage=selected_stage;progress.scene_flags=0;progress.restart_frames=0;progress.rate=1;
@@ -169,6 +169,10 @@ bool ApplicationState::begin_run(){
  // Selection carries stocks/mode; active bomb state belongs to the departing
  // bomb object (native +0x24) and cannot survive construction of a fresh one.
  scene()->battle.session=selection_player;scene()->battle.session.bomb_state=0;
+ if(stream){auto& b=scene()->battle;std::string track;
+  ReplayRunState state{progress,b.session,b.score,b.enemy_world,b.player->motion,track};
+  if(!replay->open_stream(*stream,state))return fail(replay->error);
+ }
  session=std::make_unique<RunSession>(*run,progress,*replay,*this,*this);initialization=std::make_unique<RunInitialization>(*run,progress,records,*replay,*session,*this);
  if(!initialization->initialize(camera,current_destination,selected_replay.empty()?nullptr:selected_replay.data(),u32(selected_replay.size())))return fail(initialization->error);
  flow=std::make_unique<RunStageFlow>(*run,*session,progress,records,*initialization,*replay,*this,*this);

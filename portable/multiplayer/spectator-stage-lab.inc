@@ -27,7 +27,7 @@ void spectator_lab_logic(std::vector<u8>& bytes,GameBattle& battle){
   for(const auto& d:player.damage.sources){w.Value(d.flags);if(d.flags){w.Values(d.radius,d.radius_growth,d.angle,d.angular_speed,d.damage,d.accumulated,d.damage_limit,d.interval,d.last_target,d.shot_index,d.callback_target,d.callback_kind);motion(d.motion);timer(d.lifetime);}}
   if(!flush())last_error="Spectator fixture canonical player state exceeded section limit";
  }
- spectator_lab_logic_bytes=std::move(logic);bytes.insert(bytes.end(),spectator_lab_logic_bytes.begin(),spectator_lab_logic_bytes.end());
+ bytes.insert(bytes.end(),logic.begin(),logic.end());spectator_lab_logic_bytes=bytes;
 }
 }
 }
@@ -35,6 +35,7 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_begin(unsigned count,unsigned stage){
  using namespace th15::sdl;th15::multiplayer::SessionSetup setup;setup.session_id=0x12345678;setup.seed=417;setup.player_count=count;setup.local_player=0;setup.difficulty=stage==7?4:1;setup.automatic=false;setup.build={1,2,3,4};setup.selections=count==2?std::array<unsigned,3>{2,3,0}:std::array<unsigned,3>{0,1,2};
  if(!app||running||!setup.valid()||!network.Reset(setup))return 0;
+ spectator_lab_capsule.clear();spectator_lab_saved_frame=0;
  app->files.read_only=true;spectator_lab_frame=0;app->audio_device.music_enabled=false;app->loading_startup=false;
  if(!th15_mp_start())return 0;if(stage!=setup.initial_stage()){app->selected_stage=stage;app->mp_options.stage=stage;if(!app->begin_run())return 0;}
  return 1;
@@ -42,14 +43,24 @@ EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_begin(unsigned count,unsigned stage)
 EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_step(unsigned count,unsigned held){
  using namespace th15::sdl;for(unsigned n=0;n<count;n++){
   if(!app||!app->scene())return 0;std::array<th15::MultiplayerInput,3> lanes{};lanes[0].held=held;
+  const auto activation=app->replay?app->replay->activation_count():0;
   app->scene()->battle.mp_input(lanes);mp_menu.update(held);
-  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return 0;}++spectator_lab_frame;
+  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return 0;}
+  if(app->replay&&activation!=app->replay->activation_count()){
+   spectator_lab_saved_frame=spectator_lab_frame;
+   if(!th15::multiplayer::SpectatorReplayStart::Capture(*app,network.Setup(),mp_menu,spectator_lab_frame,spectator_lab_capsule,last_error))return 0;
+  }
+  ++spectator_lab_frame;
  }return 1;
 }
-EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_boundary(){using namespace th15::sdl;return app&&th15::multiplayer::SpectatorStageCheckpoint::Boundary(*app);}
+EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_boundary(){using namespace th15::sdl;return app&&th15::multiplayer::SpectatorReplayStart::Boundary(*app);}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_spectator_lab_boundary_state(){using namespace th15::sdl;static std::array<unsigned,12> out{};out.fill(0);if(app&&app->scene()){auto& scene=*app->scene();auto& b=scene.battle;out={unsigned(app->progress.stage),unsigned(app->progress.stage_frame),scene.spectator_ready(),app->run&&app->run->previous_scene()?1u:0u,app->display&&app->display->previous_background?app->display->previous_background->state.flags:0u,app->pending_load,app->pause?unsigned(app->pause->state.screen):0u,b.spell.flags,b.mp_bomb_active()?1u:0u,b.laser_scene->manager.count(),scene.messages.active()?1u:0u,app->loading_waiting()?1u:0u};}return out.data();}
-EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_capture(){using namespace th15::sdl;spectator_lab_saved_frame=spectator_lab_frame;return app&&th15::multiplayer::SpectatorStageCheckpoint::Capture(*app,network.Setup(),mp_menu,spectator_lab_frame,spectator_lab_capsule,last_error);}
-EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_restore(){using namespace th15::sdl;spectator_lab_frame=spectator_lab_saved_frame;return app&&th15::multiplayer::SpectatorStageCheckpoint::Restore(*app,network.Setup(),mp_menu,spectator_lab_frame,spectator_lab_capsule,last_error);}
+EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_capture(){
+ using namespace th15::sdl;th15::multiplayer::SpectatorStageState entry;
+ return app&&th15::multiplayer::DecodeSpectatorStageState(spectator_lab_capsule,entry)&&entry.stage==unsigned(app->progress.stage);
+}
+EMSCRIPTEN_KEEPALIVE unsigned th15_spectator_lab_entry_frame(){return th15::sdl::spectator_lab_saved_frame;}
+EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_restore(){using namespace th15::sdl;spectator_lab_frame=spectator_lab_saved_frame;return app&&th15::multiplayer::SpectatorReplayStart::Restore(*app,network.Setup(),mp_menu,spectator_lab_frame,spectator_lab_capsule,last_error);}
 EMSCRIPTEN_KEEPALIVE int th15_spectator_lab_import(const unsigned char* bytes,unsigned size,unsigned frame){using namespace th15::sdl;if(!bytes||!size||size>Netplay::SpectatorStageMaxStateBytes)return 0;spectator_lab_capsule.assign(bytes,bytes+size);spectator_lab_saved_frame=frame;return th15_spectator_lab_restore();}
 EMSCRIPTEN_KEEPALIVE unsigned th15_spectator_lab_frame(){return th15::sdl::spectator_lab_frame;}
 EMSCRIPTEN_KEEPALIVE const unsigned char* th15_spectator_lab_logic_bytes(){return th15::sdl::spectator_lab_logic_bytes.data();}
@@ -60,9 +71,13 @@ EMSCRIPTEN_KEEPALIVE const char* th15_spectator_lab_error(){using namespace th15
 EMSCRIPTEN_KEEPALIVE const char* th15_spectator_lab_publication(){using namespace th15::sdl;static std::string text;text="stage="+std::to_string(mp_spectator_stage)+" capture="+mp_spectator_error;return text.c_str();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_spectator_lab_state(){
  using namespace th15::sdl;static std::array<unsigned,16> out{};out.fill(0);if(!app||!app->scene())return out.data();auto& b=app->scene()->battle;
- th15::multiplayer::SpectatorStageState state;state.setup=network.Setup();state.setup.local_player=0;state.progress=app->progress;state.score=b.score;state.enemy=b.enemy_world;state.game_random=app->environment.game_rng;state.visual_random=app->visual;state.menu=mp_menu;state.frame=spectator_lab_frame;state.application_frames=app->frames;state.fragments=b.mp_fragments;
- for(unsigned n=0;n<state.setup.player_count;n++)th15::multiplayer::CaptureSpectatorPilot(*b.pilots[n],state.pilots[n]);std::vector<th15::u8> bytes;
- out[0]=th15::multiplayer::EncodeSpectatorStageState(state,bytes)?(spectator_lab_logic(bytes,b),spectator_lab_hash(bytes)):0;out[1]=app->progress.stage;out[2]=app->progress.stage_frame;out[3]=app->frames;out[4]=app->environment.game_rng.seed;out[5]=app->environment.game_rng.calls;out[6]=app->visual.seed;out[7]=app->visual.calls;out[8]=b.enemies->count();out[9]=b.bullet_scene->manager.visible_count;out[10]=b.items->active_count;out[11]=app->session->driver()->runtime.age.current;out[12]=app->scene()->background.frames;out[13]=app->scene()->hud.flags;out[14]=app->scene()->hud.intro_age.current;
+ std::vector<th15::u8> bytes;Netplay::SpectatorScalars::Writer values;
+ values.Values(app->progress.stage,app->progress.stage_frame,b.score.score,b.score.point_value,b.score.graze_total,b.mp_fragments);
+ for(unsigned n=0;n<b.mp_options.seat_count;++n){const auto& p=*b.pilots[n];
+  values.Values(p.session.extra_lives,p.session.life_pieces,p.session.bombs,p.session.power,
+   p.player->motion.position_fixed.x,p.player->motion.position_fixed.y,p.player->life.state,p.ghost);
+ }
+ bytes=values.Bytes();spectator_lab_logic(bytes,b);out[0]=spectator_lab_hash(bytes);out[1]=app->progress.stage;out[2]=app->progress.stage_frame;out[3]=app->frames;out[4]=app->environment.game_rng.seed;out[5]=app->environment.game_rng.calls;out[6]=app->visual.seed;out[7]=app->visual.calls;out[8]=b.enemies->count();out[9]=b.bullet_scene->manager.visible_count;out[10]=b.items->active_count;out[11]=app->session->driver()->runtime.age.current;out[12]=app->scene()->background.frames;out[13]=app->scene()->hud.flags;out[14]=app->scene()->hud.intro_age.current;
  for(bool alternate:{false,true})for(unsigned n=0;n<app->animations.registry.ordered_count(alternate);n++){const auto h=app->animations.registry.ordered_handle(alternate,n);if(auto* vm=app->animations.registry.find(h))if((vm->visual.render_flags>>5&3)!=1)++out[15];}
  return out.data();
 }

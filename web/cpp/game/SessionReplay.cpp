@@ -12,6 +12,14 @@ bool SessionReplay::initialize_live(const ReplayRunState& state){
  if(!snapshots[stage].create(state,game)||!recording.begin(snapshots[stage].bytes().data(),0x238))return fail(snapshots[stage].error.empty()?recording.error():snapshots[stage].error);
  state.player.replay_state=0;game.calls=0;selected=stage;initialized=true;return true;
 }
+bool SessionReplay::open_stream(const std::array<ReplayStageSnapshot,3>& entries,ReplayRunState& state){
+ if(initialized)return fail("Streaming Replay entry unavailable");
+ seat_entries=entries;
+ if(!entries[0].restore_seed(game,&visual))return false;
+ if(!initialize_live(state))return false;
+ snapshots[selected]=entries[0];stream_stage=u32(selected);
+ return snapshots[selected].restore_progress(state)&&snapshots[selected].restore_seed(game,&visual);
+}
 bool SessionReplay::open(const u8* bytes,u32 size,i32 stage,ReplayRunState& state){
  if(initialized)return fail("Session replay already initialized");if(!error.empty())return false;if(!file.open(bytes,size))return fail(file.error());if(stage<1||stage>7||!file.stage(stage))return fail("Selected replay stage unavailable");
  for(u32 n=1;n<8;n++)if(file.stage(n)&&!snapshots[n].read(file.header(n),0x238))return fail(snapshots[n].error);
@@ -23,12 +31,15 @@ bool SessionReplay::open(const u8* bytes,u32 size,i32 stage,ReplayRunState& stat
 }
 bool SessionReplay::prepare_stage(ReplayRunState& state){
  if(!initialized||!error.empty())return fail("Session replay unavailable during scene preparation");const i32 stage=state.progress.stage;if(stage<1||stage>7)return fail("Replay scene outside stage range");
+ if(stream_entry(u32(stage)))return snapshots[stage].restore_progress(state)&&snapshots[stage].restore_seed(game,&visual);
  if(playback){if(!file.stage(stage))return fail("Replay next stage unavailable");if(!snapshots[stage].restore_progress(state)||!snapshots[stage].restore_seed(game,&visual)||!playback->select(stage))return fail(snapshots[stage].error.empty()?playback->error():snapshots[stage].error);}
  else {if(!snapshots[stage].create(state,game,false))return fail(snapshots[stage].error);if(!snapshots[stage].restore_seed(game,&visual))return fail("Recording seed unavailable");}
  selected=stage;return true;
 }
 bool SessionReplay::activate_stage(ReplayRunState& state){
  if(!initialized||!error.empty())return fail("Session replay unavailable during scene activation");if(state.progress.stage!=selected)return fail("Replay activated a different scene");
+ ++activation_count_;
+ if(stream_entry(u32(selected))&&!snapshots[selected].restore_player(state.motion))return false;
  if(playback){if(!snapshots[selected].restore_player(state.motion))return fail("Replay player snapshot unavailable");playback->activate();return true;}
  if(!snapshots[selected].refresh(state)||!recording.begin(snapshots[selected].bytes().data(),0x238))return fail(snapshots[selected].error.empty()?recording.error():snapshots[selected].error);recording.activate();return true;
 }
