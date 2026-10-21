@@ -58,10 +58,10 @@ Relay 先完整校验新 checkpoint，再把 late-join 历史起点切换到该 
 ### 合作观众生命周期
 
 1. 观众下载历史时，Relay 同时收集其间到达的新输入；先按序交付历史，再交付后续输入，最后发送 bootstrap。bootstrap 确认历史末端，不是新 checkpoint，也不代表已经追到直播。
-2. 作品恢复 bootstrap 选择的最新有效 stage/Boss 节点：从其依赖 checkpoint 建立 world，逐帧重演到固定节点。加载画面在恢复完成前保持；仅收到 checkpoint 不替换暂停中的旧画面。
+2. 首次进入从已接收历史的首个原生 Replay 关头建立场景，随后正常播放。Boss 只作为导航标记，加入时不自动跳到 Boss。原生关头安装完成后开放播放与跳转控件；加载画面在关头初始化完成前保持。接收新关头不会替换暂停中的画面。
 3. 初次重建完成后播放已收历史，活动流保留 90 帧缓冲。没有输入时等待，不因暂停、seek、历史回看或 ended 状态判定断线。
 4. `pause` 在原生已模拟游标停止并取消当前 seek/live 目标；接收继续。`seek` 只接受本地保留起点至当前 edge 的 frame，恢复必要 checkpoint 后重演到固定目标。暂停期间 seek 完成后仍暂停；重建中再次 pause 会停在实际游标。
-5. `live` 在命令时固定当前 edge，完成有界追赶后进入持续 Following。后续输入保持该操作目标固定；持续跟播在积压超过 4 帧时复用有时间预算的追赶，逐帧消费到当前播放边缘。历史 Play 使用正常作品节奏。
+5. `live` 在命令时固定当前 edge，完成一次有界追赶后恢复正常速度。追赶期间重复点击保留原目标；后续输入和网络积压按正常节奏播放。`seek` 与 `live` 的快进只由用户操作触发。
 6. 接收 `end` 后播放已排入的尾部；它不代表 Relay、房间或 run 已关闭。退出时清理该旁观身份自己的接收流和档案。
 
 公共 Runtime 报告为 `spectatorPlayback` version 1：`run`、递增 `revision`、`min`、`position`、`received`、`edge`、`target`、`paused`、`seeking`、`following`、`ended`、`nodes`。节点含 `id`、`kind`、`frame`、`stage`、`bossSlots` 和可选 `label`；最多 512 个。Host 命令 `spectator-playback {run, action, frame?}` 的 action 为 `pause | play | seek | live`；th09 继续使用作品自己的控件。

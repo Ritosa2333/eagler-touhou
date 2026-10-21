@@ -15,6 +15,7 @@ parser.add_argument('--mode',choices=['rtc','relay'],default='rtc')
 parser.add_argument('--players',type=int,choices=[2,3],default=2)
 parser.add_argument('--stage2-only',action='store_true',help='diagnose a fresh Stage2 viewer without the Stage1 control/future-frame prelude')
 parser.add_argument('--lifecycle-only',action='store_true',help='focused reentry, seek cancellation, idle and normal playback budget checks')
+parser.add_argument('--navigation-only',action='store_true',help='native stage rewind and forward seek used by timeline marks')
 args=parser.parse_args()
 SPECTATOR_BUFFER_FRAMES=90
 report={'passed':False,'scope':'TH10 independent native stage restore and live spectator playback over real relay',
@@ -567,12 +568,13 @@ with sync_playwright() as p:
         assert_sources_equal(at_44,'players frame 44')
         assert_sources_equal(host_at_89,'players frame 89')
 
-        if args.lifecycle_only:
+        if args.lifecycle_only or args.navigation_only:
             from spectator_lifecycle import run as run_lifecycle
             phase='focused-lifecycle'
             run_lifecycle(pages=pages,viewer=spectator,setup=setup,call=call,
                 advance_sources=advance_sources,url=args.url,spectator_url=spectator_url,
-                spectator_id=spectator_id,loadouts=loadouts,session=(session_low,session_high),report=report)
+                spectator_id=spectator_id,loadouts=loadouts,session=(session_low,session_high),report=report,
+                navigation_only=args.navigation_only)
             raise LifecycleComplete()
 
         phase='spectator-connect'
@@ -751,17 +753,25 @@ with sync_playwright() as p:
                                    'gameAndVisualRng':viewer_at_600['canonical'][13:17]})
         edge=current['edge']
         assert call(spectator,"()=>multiplayerSmoke.spectatorPlaybackControl('live')")
+        deadline=time.monotonic()+120
+        while True:
+            current=call(spectator,'multiplayerSmoke.spectatorTick()')['playback']
+            if current['following'] and not current['seeking']:break
+            assert time.monotonic()<deadline,('fixed live target timeout',current)
+        live_target=current['target']
         live_start_edge=edge;live_start_position=current['position'];max_live_lag=0;live_trace=[]
         live_rounds=120;player_frames_per_viewer_tick=1
         for round_index in range(live_rounds):
             for _ in range(player_frames_per_viewer_tick):advance_sources(pages)
+            before=current['position']
             live_value=call(spectator,'multiplayerSmoke.spectatorTick()')
             current=live_value['playback'];lag=current['edge']-current['position']
             max_live_lag=max(max_live_lag,lag)
             live_trace.append({'round':round_index,'position':current['position'],'edge':current['edge'],'lag':lag})
             assert current['following'] and not current['seeking'],('live mode lost follow',current)
             assert lag>=0,('playback advanced beyond received edge',current)
-            assert lag<=12,('live spectator fell behind moving edge',current,'maxLag',max_live_lag)
+            assert 0<=current['position']-before<=1 and current['target']==live_target,(
+                'passive following restarted fast-forward',before,current)
         deadline=time.monotonic()+120
         while True:
             player_states=[call(page,'multiplayerSmoke.netStatus()') for page in pages]
@@ -1102,18 +1112,21 @@ with sync_playwright() as p:
                 if current['following'] and not current['seeking'] and current['position']==current['edge']:break
                 assert time.monotonic()<deadline,('Stage2 return to live timeout',current)
         stage2_live_trace=[];stage2_live_max_lag=[0,0];stage2_host_buffered_lag=[0,0]
+        fixed_live=[call(page,'multiplayerSmoke.spectatorPlaybackState()')['target'] for page in [spectator,late_viewer]]
         for round_index in range(60):
             for _ in range(1):advance_sources(pages)
             for index,page in enumerate([spectator,late_viewer]):
+                before=call(page,'multiplayerSmoke.spectatorPlaybackState()')['position']
                 current=call(page,'multiplayerSmoke.spectatorTick()')['playback']
                 lag=current['edge']-current['position']
                 stage2_live_max_lag[index]=max(stage2_live_max_lag[index],lag)
-                assert current['following'] and not current['seeking'] and 0<=lag<=12,(
-                    'Stage2 moving live edge fell behind',index,current)
+                assert current['following'] and not current['seeking'] and lag>=0 and \
+                    0<=current['position']-before<=1 and current['target']==fixed_live[index],(
+                    'Stage2 passive following restarted fast-forward',index,current)
                 host_next=call(pages[0],'multiplayerSmoke.netStatus()')[2]
                 buffered_lag=host_next-current['position']-SPECTATOR_BUFFER_FRAMES
                 stage2_host_buffered_lag[index]=max(stage2_host_buffered_lag[index],buffered_lag)
-                assert 0<=buffered_lag<=12,('Stage2 extra live backlog',index,host_next,current)
+                assert buffered_lag>=0,('Stage2 playback exceeded source input',index,host_next,current)
                 expected=live_player_history[current['position']-1]
                 actual=call(page,"()=>({portable:multiplayerSmoke.portableCanonical(),stageScene:multiplayerSmoke.stageSceneCanonical(),canonical:multiplayerSmoke.canonical(),replayGameplay:multiplayerSmoke.replayGameplayDebug()})")
                 for source in expected:assert_hash_equal(source,actual,f'Stage2 live viewer {index}')

@@ -351,6 +351,7 @@ def wait_live_window(game, source_pages, viewer, baseline_position: int,
     deadline = time.time() + timeout
     next_status = time.time()
     max_lag = 0
+    fixed_target = (snapshot(viewer, target_hash_frame).get('playback') or {}).get('target')
     latest = None
     while time.time() < deadline:
         sources = [snapshot(page, target_hash_frame) for page in source_pages]
@@ -361,9 +362,10 @@ def wait_live_window(game, source_pages, viewer, baseline_position: int,
         edge = int(state.get("edge", 0))
         position = int(state.get("position", 0))
         max_lag = max(max_lag, max(0, edge - position))
-        if max_lag > 4:
-            raise AssertionError(f"{game.upper()} following playback accumulated edge lag >4 frames: "
-                                 f"maxLag={max_lag} state={state}")
+        # Normal playback may retain receive lag. New inputs must not restart
+        # the completed Live seek or change its latched destination.
+        if state.get('seeking') or not state.get('following') or state.get('target') != fixed_target:
+            raise AssertionError(f"{game.upper()} passive playback restarted its Live seek: {state}")
         if time.time() >= next_status:
             received = int(state.get("received", 0))
             print(f"{game.upper()} live-window telemetry: sourceStart={source_floor} "
@@ -375,7 +377,7 @@ def wait_live_window(game, source_pages, viewer, baseline_position: int,
             next_status = time.time() + 5
         if min(value["frame"] for value in sources) >= required_frame and \
                 position >= required_frame and state.get("following") is True and \
-                not state.get("seeking") and edge <= position + 1:
+                not state.get("seeking"):
             compared = sources + [latest]
             hashes = [value["hash"] for value in compared]
             if not all(hashes) or len(set(hashes)) != 1:
@@ -791,7 +793,7 @@ def run_game(game: str, force_relay: bool, spectator_delay_ms: int = 0,
             late_live = wait_playback(
                 late_viewer,
                 lambda state: state.get("following") is True and not state.get("seeking") and
-                    state.get("edge", 0) <= state.get("position", 0) + 1,
+                    state.get("position", 0) >= state.get("target", 0),
                 timeout=600.0)
             late_live_frame = (late_live["position"] // 20) * 20
             late_live_values = [snapshot(p, late_live_frame) for p in player_pages]
@@ -855,7 +857,6 @@ def run_game(game: str, force_relay: bool, spectator_delay_ms: int = 0,
                     bool(matching_nodes) and state.get("following") is True and
                     not state.get("seeking") and
                     state.get("position", 0) >= target_hash_frame and
-                    state.get("edge", 0) <= state.get("position", 0) + 4 and
                     current_continuous["frame"] >= target_hash_frame and
                     bool(current_continuous["hash"]))
                 late_ready = (current_late["frame"] >= target_hash_frame and
@@ -931,7 +932,7 @@ def run_game(game: str, force_relay: bool, spectator_delay_ms: int = 0,
             live = wait_playback(
                 continuous, lambda state: state.get("following") is True and not state.get("seeking") and
                     state.get("position", 0) >= target_hash_frame and
-                    state.get("edge", 0) <= state.get("position", 0) + 1,
+                    state.get("position", 0) >= state.get("target", 0),
                 timeout=600.0)
             live_hash_frame = (live["position"] // 20) * 20
             if live_hash_frame <= cross_stage_target:

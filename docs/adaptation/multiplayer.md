@@ -8,6 +8,8 @@
 
 本地多人驱动从同仓库 `services/relay/src/netplay-relay.mjs` 启动 Relay，从 `launcher/` 读取共用前端与协议辅助器。外置服务源码可通过 `EAGLER_RELAY_ROOT` 显式选择。
 
+th15 的旁观驱动使用同一 Relay 入口，可通过 `TH15_RELAY_ROOT` 指定服务源码目录；发布验收核对打包使用的 `th15.mjs` 与同次构建的 WASM。合作旁观首次进入按原生关头正常播放，只有显式定位或“回到直播”执行一次固定目标的快进。
+
 TH11 的启动器场景驱动通过房间里的回滚开关选择实测纯延迟，并在结果中记录 `pure-delay`。有界回滚使用本作 `rollback-browser-acceptance.mjs` 的对应场景验收，两种时序分别保存结果。
 
 TH11 回滚驱动通过 `TH11_TEST_FONT` 与 `TH11_TEST_UNICODE_FONT` 接收共用字体，按正常 `configure.sharedResources` 接口安装，并把字体哈希纳入验收输入身份。

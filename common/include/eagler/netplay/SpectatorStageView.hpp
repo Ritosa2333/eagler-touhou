@@ -59,7 +59,7 @@ public:
 private:
     static bool Usable(const SpectatorStagePlayback& playback) {
         const auto& segments = playback.History().Segments();
-        return playback.Ready() && !playback.Failed() && !segments.empty() &&
+        return playback.Ready() && playback.Initialized() && !playback.Failed() && !segments.empty() &&
             playback.Position() >= segments.front().checkpoint.frame;
     }
     void Number(std::uint32_t value) {report_ += std::to_string(value);}

@@ -22,9 +22,9 @@ th06、th07、th10 的多人录像已有分关数据。th08、th11、th15 的多
 
 ## 传输与播放
 
-合作作品使用 `E?SV/2` 发送关头、导航节点和结束事件。单个关头最多 4096 字节，按作品自身格式解释。Relay 保存最新关头及其后连续输入，为新旁观者发送固定的初始追赶目标。
+合作作品使用 `E?SV/2` 发送关头、导航节点和结束事件。单个关头最多 4096 字节，按作品自身格式解释。Relay 保存最新关头及其后连续输入，新旁观者从可用关头开始正常播放。
 
-共享层负责连续历史、确认发布、缓存边界和播放控制。暂停期间继续接收输入，跳转目标固定在操作发起时的帧。关卡和 Boss 节点定位到所属关头，再重放到节点目标。持续跟播使用同一时间预算消化短时积压，历史播放保持正常速度。旁观输入独立于玩家输入，存档与录像输出沿用旁观只读生命周期。
+共享层负责连续历史、确认发布、缓存边界和播放控制。暂停期间继续接收输入，跳转目标固定在操作发起时的帧。Boss 节点保存导航位置，重建使用所属关卡的原生 Replay 关头。同一关卡向前跳转直接消费现有场景中的输入。“回到直播”完成一次固定目标的追赶后恢复正常速度，重复点击和后续输入保持本次目标不变。旁观输入独立于玩家输入，存档与录像输出沿用旁观只读生命周期。
 
 ## 验证入口
 
@@ -32,8 +32,10 @@ th06、th07、th10 的多人录像已有分关数据。th08、th11、th15 的多
 - `common/tests/spectator-stage-publisher-boundary-test.cpp` 覆盖确认发布和关头输入边界。
 - `services/relay/tests/test-spectator-stages.mjs` 与 `test-spectator-stage-relay.mjs` 覆盖事件身份、缓存替换和真实 WebSocket 旁观分发。
 - `ports/th07/tests/netplay-spectator-stage2-browser.py` 验证 th06、th07 的原生切关、独立旁观和持续跟播。
+- 持续跟播核对同帧游戏状态、接收连续性和固定直播目标，网络积压按正常播放节奏消费。
 - `ports/th08-mp/portable/multiplayer/check-spectator.py` 验证各席位输入、原生加载入口、第二关与播放控制。
 - `ports/th10-mp/portable/multiplayer/check-spectator-stage.py` 验证多人 Replay 入口与第二关连续 600 帧演算。
+- 同一驱动的 `--navigation-only` 验证原生关头重建、向前定位、反复回跳与恢复播放，`--lifecycle-only` 验证固定直播目标和普通播放节奏。
 - `ports/th11-mp/portable/multiplayer/spectator-relay-browser.mjs` 验证原生关头首帧、后续 600 帧和两位独立旁观者。
 - `ports/th15-mp/portable/multiplayer/spectator-stage-codec.cpp` 使用原生 Replay 关头验证两人、三人和截断数据的事务式解码。
 

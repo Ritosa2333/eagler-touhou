@@ -7,6 +7,7 @@ import {
 } from "../../../common/contracts/th15-chapter-reward.mjs";
 import { quickChatPhrase } from '../../../common/contracts/multiplayer-quick-chat.mjs';
 import { createHmac } from 'node:crypto';
+import { createTurnConfigReader } from './turn-config.mjs';
 import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
@@ -211,6 +212,9 @@ const turnUrls = envValue('EAGLER_NETPLAY_TURN_URLS', ['TH07_TURN_URLS'])
 const turnSharedSecret = envValue('EAGLER_NETPLAY_TURN_SHARED_SECRET', ['TH07_TURN_SHARED_SECRET']);
 const turnUsername = envValue('EAGLER_NETPLAY_TURN_USERNAME', ['TH07_TURN_USERNAME']);
 const turnCredential = envValue('EAGLER_NETPLAY_TURN_CREDENTIAL', ['TH07_TURN_CREDENTIAL']);
+const readTurnConfig = createTurnConfigReader(envValue('EAGLER_NETPLAY_TURN_CONFIG_FILE', []), {
+  urls: turnUrls, sharedSecret: turnSharedSecret,
+});
 const turnTtlSeconds = Math.max(
   60,
   Number.parseInt(
@@ -273,19 +277,20 @@ const sendBounded = createBoundedRelaySender();
 function iceServersFor(roomId, runId, player) {
   const servers = [];
   if (stunUrls.length) servers.push({ urls: stunUrls });
-  if (!turnUrls.length) return servers;
-  if (turnSharedSecret) {
+  const activeTurn = readTurnConfig();
+  if (!activeTurn.urls.length) return servers;
+  if (activeTurn.sharedSecret) {
     // coturn TURN REST API style ephemeral credentials. The shared secret
     // stays server-side; only the short-lived username/credential is sent to
     // the browser during signaling.
     const expires = Math.floor(Date.now() / 1000) + turnTtlSeconds;
     const username = `${expires}:${roomId}-${runId}-p${player}`;
-    const credential = createHmac('sha1', turnSharedSecret).update(username).digest('base64');
-    servers.push({ urls: turnUrls, username, credential });
+    const credential = createHmac('sha1', activeTurn.sharedSecret).update(username).digest('base64');
+    servers.push({ urls: activeTurn.urls, username, credential });
   } else if (turnUsername && turnCredential) {
     // Static credentials are supported for local testing only; production
     // deployments should prefer EAGLER_NETPLAY_TURN_SHARED_SECRET.
-    servers.push({ urls: turnUrls, username: turnUsername, credential: turnCredential });
+    servers.push({ urls: activeTurn.urls, username: turnUsername, credential: turnCredential });
   }
   return servers;
 }
