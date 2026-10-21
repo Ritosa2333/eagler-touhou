@@ -86,7 +86,14 @@ function audioFixture(context={state:'running',resume:async()=>{}},pumpName='eag
   const reports=[],waiters=new Set(),player=createNativeLocalReplay({core:()=>core,module:()=>module,physical:path=>path,
     stopLoop(){outputPaused=true;},pauseAudio:paused=>{outputPaused=paused;},resumeAudio(){resumes++;return module.SDL3.audioContext.resume();},onState(value){reports.push(value);for(const waiter of waiters)if(waiter.matches(value)){waiters.delete(waiter);waiter.resolve();}}});
   return {player,module,voices,stops,reports,get frame(){return frame;},get outputPaused(){return outputPaused;},get pumps(){return pumps;},get resumes(){return resumes;},
-    hide(value){hidden=value;},waitForReport(matches){return matches(reports.at(-1))?Promise.resolve():new Promise(resolve=>waiters.add({matches,resolve}));},draw(){const entry=callbacks.entries().next().value;if(!entry)return;const [id,fn]=entry;callbacks.delete(id);fn(time+=1000/60);},
+    hide(value){hidden=value;},waitForReport(matches){
+      if(matches(reports.at(-1)))return Promise.resolve();
+      return new Promise((resolve,reject)=>{
+        const waiter={matches,resolve(){clearTimeout(timeout);resolve();}};
+        const timeout=setTimeout(()=>{waiters.delete(waiter);reject(Error('Replay state report timed out'));},2000);
+        waiters.add(waiter);
+      });
+    },draw(){const entry=callbacks.entries().next().value;if(!entry)return;const [id,fn]=entry;callbacks.delete(id);fn(time+=1000/60);},
     close(){player.close();globalThis.requestAnimationFrame=previous.raf;globalThis.cancelAnimationFrame=previous.cancel;globalThis.document=previous.document;}};
 }
 
