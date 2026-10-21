@@ -119,6 +119,7 @@ void sdl_audio_music_speed(float ratio){audio.music_speed=std::isfinite(ratio)?s
 void sdl_audio_pause(bool pause){if(audio.paused==pause)return;audio.paused=pause;web_sfx::suspend(pause);if(audio.stream){if(pause)SDL_PauseAudioStreamDevice(audio.stream);else SDL_ResumeAudioStreamDevice(audio.stream);}}
 void sdl_audio_shutdown(){audio.buffers.clear();if(audio.stream)SDL_DestroyAudioStream(audio.stream);audio.stream=nullptr;if(audio.ready)ma_engine_uninit(&audio.engine);audio.ready=false;audio.music_speed=1.f;}
 extern "C" {
+__attribute__((export_name("eagler_replay_audio_pump"))) void eagler_replay_audio_pump(){sdl_audio_pump();}
 __attribute__((export_name("sdl_music_enabled"))) void sdl_music_enabled(u32 on){audio.music=on!=0;if(!audio.music)if(auto* b=audio.buffers.count(1000)?audio.buffers[1000].get():nullptr){b->requested=false;if(b->sound_ready)ma_sound_stop(&b->sound);}}
 __attribute__((export_name("sdl_ogg_decode_mode"))) void sdl_ogg_decode_mode(u32 full){audio.ogg_full=full!=0;}
 __attribute__((export_name("sdl_music_resource_changed"))) void sdl_music_resource_changed(){static_cast<SDLSound&>(sound_device()).resource_changed();}

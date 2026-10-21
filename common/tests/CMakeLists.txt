@@ -271,6 +271,12 @@ target_include_directories(eagler_common_adonis_startup_test PRIVATE "${CMAKE_CU
 target_link_libraries(eagler_common_adonis_startup_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.adonis-startup COMMAND eagler_common_adonis_startup_test)
 if(EAGLER_COMMON_NODE_EXECUTABLE)
+    add_test(NAME eagler-common.local-replay
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/local-replay-bridge.test.mjs)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../ports/th09/web/tests/server/replay-player.test.mjs")
+        add_test(NAME eagler-common.versus-replay
+            COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/../../ports/th09/web/tests/server/replay-player.test.mjs)
+    endif()
     add_test(NAME eagler-common.web-sfx-output
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/web-sfx-output.test.mjs)
     add_test(NAME eagler-common.browser-peer-receive-queue

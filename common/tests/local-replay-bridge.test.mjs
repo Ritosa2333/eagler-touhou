@@ -69,3 +69,72 @@ test('native C strings use zero terminators and malloc buffers are always freed'
   const player=createNativeLocalReplay({core:()=>core,module:()=>({FS:{readFile:()=>new Uint8Array([1,2])}}),physical:path=>'/save/'+path,stopLoop(){}});
   await player.command({action:'inspect',path:'replay/中文.rpy'});assert.equal(allocated,2);assert.equal(freed,2);
 });
+
+function audioFixture(context={state:'running',resume:async()=>{}},pumpName='eagler_replay_audio_pump'){
+  const previous={raf:globalThis.requestAnimationFrame,cancel:globalThis.cancelAnimationFrame,document:globalThis.document};
+  const callbacks=new Map(),memory=new WebAssembly.Memory({initial:1}),heap=new Uint8Array(memory.buffer);
+  let serial=0,time=0,frame=0,outputPaused=false,pumps=0,resumes=0,hidden=false;
+  globalThis.document={get hidden(){return hidden;}};
+  globalThis.requestAnimationFrame=fn=>{callbacks.set(++serial,fn);return serial;};globalThis.cancelAnimationFrame=id=>callbacks.delete(id);
+  const voices=new Map(),stops=[];
+  const module={HEAPU8:heap,SDL3:{audioContext:context},FS:{readFile:()=>new Uint8Array([1])},
+    eaglerSfxOutput:{voices,stop(voice){voice.playing=false;voice.node=null;stops.push(voice);}}};
+  const description=new TextEncoder().encode(JSON.stringify({difficulty:1,stages:[{id:1,score:0}]}));heap.set(description,4096);heap[4096+description.length]=0;
+  const core={memory,eagler_replay_allocate:()=>8192,eagler_replay_free(){},eagler_replay_inspect:()=>4096,
+    eagler_replay_open(){frame=0;return 1;},eagler_replay_step(){frame++;return 1;},[pumpName](){pumps++;},
+    eagler_replay_state(){new Uint32Array(memory.buffer,1024,5).set([frame,5,+(frame>=5),1,1]);return 1024;}};
+  const reports=[],waiters=new Set(),player=createNativeLocalReplay({core:()=>core,module:()=>module,physical:path=>path,
+    stopLoop(){outputPaused=true;},pauseAudio:paused=>{outputPaused=paused;},resumeAudio(){resumes++;return module.SDL3.audioContext.resume();},onState(value){reports.push(value);for(const waiter of waiters)if(waiter.matches(value)){waiters.delete(waiter);waiter.resolve();}}});
+  return {player,module,voices,stops,reports,get frame(){return frame;},get outputPaused(){return outputPaused;},get pumps(){return pumps;},get resumes(){return resumes;},
+    hide(value){hidden=value;},waitForReport(matches){return matches(reports.at(-1))?Promise.resolve():new Promise(resolve=>waiters.add({matches,resolve}));},draw(){const entry=callbacks.entries().next().value;if(!entry)return;const [id,fn]=entry;callbacks.delete(id);fn(time+=1000/60);},
+    close(){player.close();globalThis.requestAnimationFrame=previous.raf;globalThis.cancelAnimationFrame=previous.cancel;globalThis.document=previous.document;}};
+}
+
+test('native output resumes after every open, pumps playback, and follows pause, visibility, EOF and close',async()=>{
+  const f=audioFixture();
+  try{
+    await f.player.command({action:'open',path:'a.rpy'});assert.equal(f.outputPaused,false);assert.equal(f.player.audioPaused,false);
+    f.draw();f.draw();assert.ok(f.pumps>0);
+    await f.player.command({action:'pause'});assert.equal(f.outputPaused,true);const at=f.frame;f.draw();assert.equal(f.frame,at);
+    f.hide(true);f.draw();f.hide(false);f.draw();assert.equal(f.outputPaused,true,'foreground keeps the user pause');
+    await f.player.command({action:'play'});assert.equal(f.outputPaused,false);
+    await f.player.command({action:'open',path:'b.rpy'});assert.equal(f.outputPaused,false,'native stop/reconstruction invalidates the previous output state');
+    for(let i=0;i<12;i++)f.draw();assert.equal(f.frame,5);assert.equal(f.outputPaused,true);
+    await f.player.command({action:'play'});assert.equal(f.frame,0);assert.equal(f.outputPaused,false);
+    f.player.close();assert.equal(f.outputPaused,true);assert.equal(f.player.active,false);
+  }finally{f.close();}
+});
+
+test('th10 fills the SDL PCM queue separately from its native music task pump',async()=>{
+  const f=audioFixture(undefined,'sdl_audio_pump');
+  try{
+    await f.player.command({action:'open',path:'replay/a.rpy'});f.draw();f.draw();
+    assert.ok(f.frame>0);assert.equal(f.pumps,f.frame);
+    await f.player.command({action:'pause'});f.draw();assert.equal(f.pumps,f.frame);
+  }finally{f.close();}
+});
+
+test('seek keeps its pause owner and discards transient voices while retaining loop state',async()=>{
+  const f=audioFixture();
+  try{
+    await f.player.command({action:'open',path:'a.rpy'});f.draw();f.draw();
+    await f.player.command({action:'pause'});
+    const old={loop:false,playing:true},loop={loop:true,playing:true};f.voices.set(1,old);f.voices.set(2,loop);
+    await f.player.command({action:'seek',value:0});assert.equal(old.playing,false);
+    const skipped={loop:false,playing:true};f.voices.set(3,skipped);
+    await f.waitForReport(value=>value&&!value.seeking);
+    assert.equal(f.reports.at(-1).seeking,false);assert.equal(f.reports.at(-1).paused,true);
+    assert.equal(f.outputPaused,true);assert.equal(skipped.playing,false);assert.equal(loop.playing,true);
+    await f.player.command({action:'play'});assert.equal(f.outputPaused,false);
+  }finally{f.close();}
+});
+
+test('pending browser recovery leaves RPCs responsive, retains logical frame, and resumes once output runs',async()=>{
+  let finish;const context={state:'suspended',resume:()=>new Promise(resolve=>{finish=resolve;})},f=audioFixture(context);
+  try{
+    await f.player.command({action:'open',path:'a.rpy'});assert.equal(f.resumes,1);
+    for(let i=0;i<8;i++)f.draw();assert.equal(f.frame,0);assert.equal(f.resumes,1);assert.equal(f.outputPaused,true);
+    await f.player.command({action:'pause'});context.state='running';finish();await Promise.resolve();f.draw();assert.equal(f.outputPaused,true);
+    await f.player.command({action:'play'});f.draw();f.draw();assert.equal(f.outputPaused,false);assert.ok(f.frame>0);
+  }finally{f.close();}
+});

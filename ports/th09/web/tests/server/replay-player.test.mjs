@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-const source=await readFile(new URL('../../sdl-runtime/replay-player.mjs',import.meta.url),'utf8');
+const source=await readFile(new URL('../../../../../common/browser/versus-replay-th09.mjs',import.meta.url),'utf8');
+assert.equal(source,await readFile(new URL('../../sdl-runtime/replay-player.mjs',import.meta.url),'utf8'),'development copy matches the shared player');
 const clock=new URL('../../../../../common/browser/playback-clock.mjs',import.meta.url);
 const {createReplayPlayer}=await import('data:text/javascript;base64,'+Buffer.from(source.replace('./playback-clock.mjs',clock.href).replace('./auto-replay.mjs',new URL('../../sdl-runtime/auto-replay.mjs',import.meta.url).href)).toString('base64'));
 
