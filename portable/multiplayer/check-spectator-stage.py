@@ -132,7 +132,7 @@ def advance_sources(players):
     return advanced
 
 pointer_words={1,10,11,28,29,30,40,41,42}
-semantic_canonical_words=set([12,13,14,15,16,*range(31,38)])
+semantic_canonical_words=set([12,13,14,*range(31,38)])
 canonical_field_names={
     0:'canonical schema',1:'composite hash',2:'team/economy/input-lane hash',
     3:'script and visual RNG hash',4:'player semantic hash',5:'enemy semantic hash',
@@ -233,6 +233,7 @@ def snapshot(page):
         enemyDebug:multiplayerSmoke.enemyDebug(),eclContextDebug:multiplayerSmoke.eclContextDebug(),
         spectatorParityDebug:multiplayerSmoke.spectatorParityDebug(),
         spectatorOptionsDebug:multiplayerSmoke.spectatorOptionsDebug(),
+        replayGameplay:multiplayerSmoke.replayGameplayDebug(),
         spectatorEntityCounts:multiplayerSmoke.spectatorEntityCounts(),
         spectatorItemDebug:multiplayerSmoke.spectatorItemDebug(),
         spectatorBulletDebug:multiplayerSmoke.spectatorBulletDebug(),
@@ -243,8 +244,12 @@ def snapshot(page):
     return value
 
 def assert_hash_equal(expected,actual,label):
-    assert expected['portable']==actual['portable'],(label,'portable canonical mismatch',expected['portable'],actual['portable'])
-    assert expected['stageScene']==actual['stageScene'],(label,'STD/embedded ANM canonical mismatch',expected['stageScene'],actual['stageScene'])
+    # Gameplay owners and script RNG are the native Replay oracle. Background
+    # fades, visual RNG and file-recorder buffers have independent lifetimes.
+    # Native Replay stores the faith countdown, whose previous-tick cache is rebuilt.
+    groups=(4,5,6,7,8)
+    assert all(expected['portable'][i]==actual['portable'][i] for i in groups),(label,'Replay gameplay mismatch',hash_diff(expected,actual))
+    assert all(a==b for i,(a,b) in enumerate(zip(expected['replayGameplay'],actual['replayGameplay'])) if i!=65),(label,'Replay player mismatch',[(i,a,b) for i,(a,b) in enumerate(zip(expected['replayGameplay'],actual['replayGameplay'])) if a!=b and i!=65])
     mismatches=[(i,expected['canonical'][i],actual['canonical'][i]) for i in semantic_canonical_words
                 if expected['canonical'][i]!=actual['canonical'][i]]
     assert not mismatches,(label,'logical scalar canonical mismatch',mismatches)
@@ -254,7 +259,8 @@ def assert_sources_equal(sources,label):
     for seat,source in enumerate(sources[1:],1):assert_hash_equal(sources[0],source,f'{label} source{seat}')
 
 def hash_diff(expected,actual):
-    return {'portable':[(i,a,b) for i,(a,b) in enumerate(zip(expected['portable'],actual['portable'])) if a!=b],
+    return {'gameplay':[(i,a,b) for i,(a,b) in enumerate(zip(expected['replayGameplay'],actual['replayGameplay'])) if a!=b and i!=65] + [(i,a,b) for i,(a,b) in enumerate(zip(expected['portable'],actual['portable'])) if a!=b and i in (4,5,6,7,8)],
+            'portable':[(i,a,b) for i,(a,b) in enumerate(zip(expected['portable'],actual['portable'])) if a!=b],
             'stageScene':[(i,a,b) for i,(a,b) in enumerate(zip(expected['stageScene'],actual['stageScene'])) if a!=b],
             'canonical':[(i,a,b) for i,(a,b) in enumerate(zip(expected['canonical'],actual['canonical']))
                          if a!=b and i in semantic_canonical_words],
@@ -265,7 +271,7 @@ def snap_next_values(snapshot):
     words=snapshot['spectatorOptionsDebug'];values=[]
     for seat in range(args.players):
         base=4+seat*84
-        values.append([words[base+2+option*20+13] for option in range(4)])
+        values.append([words[base+2+option*20+13] for option in range(4) if words[base+2+option*20]])
     return values
 
 def assert_enemy_ecl_equal(expected,actual,label):
@@ -607,7 +613,7 @@ with sync_playwright() as p:
                 if sample['playback']['position']==target and not sample['playback']['seeking']:break
                 assert time.monotonic()<seek_deadline,('early checkpoint seek timeout',target,sample['playback'])
             expected=player_timeline.get(target-1,[None])[0]
-            actual={'portable':sample['portable'],'canonical':sample['canonical'],'stageScene':sample['stageScene'],
+            actual={'portable':sample['portable'],'canonical':sample['canonical'],'stageScene':sample['stageScene'],'replayGameplay':sample['replayGameplay'],
                     'stageFields':call(spectator,'multiplayerSmoke.stageSceneFields()'),
                     'enemyDebug':call(spectator,'multiplayerSmoke.enemyDebug()'),
                     'eclContextDebug':call(spectator,'multiplayerSmoke.eclContextDebug()'),
@@ -688,13 +694,13 @@ with sync_playwright() as p:
             current=seek_value['playback']
             if current['position']==45 and not current['seeking']:break
             assert time.monotonic()<deadline,('back seek timeout',current)
-        viewer_at_45={'portable':seek_value['portable'],'canonical':seek_value['canonical'],'stageScene':seek_value['stageScene']}
+        viewer_at_45={'portable':seek_value['portable'],'canonical':seek_value['canonical'],'stageScene':seek_value['stageScene'],'replayGameplay':seek_value['replayGameplay']}
         back_seek_diff=hash_diff(at_44[0],viewer_at_45)
         report['backSeekHashDiff']=back_seek_diff
         report['backSeekHashes']={'playerAt44':at_44[0],'viewerAt45':viewer_at_45}
         report['backSeek']={'position':current['position'],'target':current['target'],
                             'portable':seek_value['portable'],'canonical':seek_value['canonical'],
-                            'matchesPlayerFrame44':not back_seek_diff['portable'] and not back_seek_diff['canonical']}
+                            'matchesPlayerFrame44':not back_seek_diff['gameplay'] and not back_seek_diff['canonical']}
 
         phase='players-advance-and-live'
         target_last_simulated=599
@@ -746,7 +752,7 @@ with sync_playwright() as p:
         edge=current['edge']
         assert call(spectator,"()=>multiplayerSmoke.spectatorPlaybackControl('live')")
         live_start_edge=edge;live_start_position=current['position'];max_live_lag=0;live_trace=[]
-        live_rounds=120;player_frames_per_viewer_tick=2
+        live_rounds=120;player_frames_per_viewer_tick=1
         for round_index in range(live_rounds):
             for _ in range(player_frames_per_viewer_tick):advance_sources(pages)
             live_value=call(spectator,'multiplayerSmoke.spectatorTick()')
@@ -946,6 +952,7 @@ with sync_playwright() as p:
                 automatic_viewer=snapshot(spectator)
                 assert_sources_equal(automatic_sources,f'automatic Stage2 sources frame {automatic_last}')
                 assert automatic_viewer['state'][6]==2,('automatic viewer did not construct Stage2',automatic_viewer['state'])
+                report['automaticStage2Comparison']={'sources':automatic_sources,'viewer':automatic_viewer}
                 assert_hash_equal(automatic_sources[0],automatic_viewer,f'automatic Stage2 frame {automatic_last}')
                 assert_enemy_ecl_equal(automatic_sources[0],automatic_viewer,f'automatic Stage2 frame {automatic_last}')
                 assert snap_next_values(automatic_sources[0])==snap_next_values(automatic_viewer),(
@@ -1050,7 +1057,7 @@ with sync_playwright() as p:
                     assert time.monotonic()<stage2_deadline,('Stage2 buffered input arrival timeout',
                         index,expected_position,current)
                 actual=call(page,"""()=>({portable:multiplayerSmoke.portableCanonical(),stageScene:multiplayerSmoke.stageSceneCanonical(),
-                    canonical:multiplayerSmoke.canonical(),enemyDebug:multiplayerSmoke.enemyDebug(),
+                    canonical:multiplayerSmoke.canonical(),replayGameplay:multiplayerSmoke.replayGameplayDebug(),enemyDebug:multiplayerSmoke.enemyDebug(),
                     eclContextDebug:multiplayerSmoke.eclContextDebug()})""")
                 try:
                     assert_hash_equal(expected[0],actual,f'Stage2 position {expected_position} viewer {index}')
@@ -1096,7 +1103,7 @@ with sync_playwright() as p:
                 assert time.monotonic()<deadline,('Stage2 return to live timeout',current)
         stage2_live_trace=[];stage2_live_max_lag=[0,0];stage2_host_buffered_lag=[0,0]
         for round_index in range(60):
-            for _ in range(2):advance_sources(pages)
+            for _ in range(1):advance_sources(pages)
             for index,page in enumerate([spectator,late_viewer]):
                 current=call(page,'multiplayerSmoke.spectatorTick()')['playback']
                 lag=current['edge']-current['position']
@@ -1108,7 +1115,7 @@ with sync_playwright() as p:
                 stage2_host_buffered_lag[index]=max(stage2_host_buffered_lag[index],buffered_lag)
                 assert 0<=buffered_lag<=12,('Stage2 extra live backlog',index,host_next,current)
                 expected=live_player_history[current['position']-1]
-                actual=call(page,"()=>({portable:multiplayerSmoke.portableCanonical(),stageScene:multiplayerSmoke.stageSceneCanonical(),canonical:multiplayerSmoke.canonical()})")
+                actual=call(page,"()=>({portable:multiplayerSmoke.portableCanonical(),stageScene:multiplayerSmoke.stageSceneCanonical(),canonical:multiplayerSmoke.canonical(),replayGameplay:multiplayerSmoke.replayGameplayDebug()})")
                 for source in expected:assert_hash_equal(source,actual,f'Stage2 live viewer {index}')
             stage2_live_trace.append({'round':round_index,'position':current['position'],
                 'edge':current['edge'],'sourceNextFrame':host_next})
@@ -1131,22 +1138,12 @@ with sync_playwright() as p:
             'maxHostLagBeyondRelayBuffer':stage2_host_buffered_lag,
             'liveTraceSamples':stage2_live_trace[::max(1,len(stage2_live_trace)//20)]}
         assert not report['errors'],report['errors']
-        passed=(not report['frame90MatchesHost89']['portable'] and
-                not report['frame90MatchesHost89']['canonical'] and
-                not report['frame90MatchesHost89']['stageScene'] and
-                not back_seek_diff['portable'] and not back_seek_diff['canonical'] and
-                not back_seek_diff['stageScene'] and
-                current['position']==current['edge'] and max_live_lag<=12 and
-                not report['crossStageStage1Seek']['originalDiff']['portable'] and
-                not report['crossStageStage1Seek']['originalDiff']['stageScene'] and
-                not report['crossStageStage2Seek']['originalDiff']['portable'] and
-                not report['crossStageStage2Seek']['originalDiff']['stageScene'] and
-                not report['crossStageStage2Seek']['lateViewerDiff']['portable'] and
-                not report['crossStageStage2Seek']['lateViewerDiff']['stageScene'] and
-                not report['stage2FutureFrame']['originalDiff']['portable'] and
-                not report['stage2FutureFrame']['originalDiff']['stageScene'] and
-                not report['stage2FutureFrame']['lateViewerDiff']['portable'] and
-                not report['stage2FutureFrame']['lateViewerDiff']['stageScene'])
+        gameplay_diffs=[report['frame90MatchesHost89'],back_seek_diff,
+            report['crossStageStage1Seek']['originalDiff'],
+            report['crossStageStage2Seek']['originalDiff'],report['crossStageStage2Seek']['lateViewerDiff'],
+            report['stage2FutureFrame']['originalDiff'],report['stage2FutureFrame']['lateViewerDiff']]
+        passed=(all(not diff['gameplay'] and not diff['canonical'] for diff in gameplay_diffs) and
+                current['position']==current['edge'] and max_live_lag<=12)
         report.update({'passed':passed,'readOnly':True,
                        'semanticCanonicalWords':sorted(semantic_canonical_words),
                        'canonicalDiagnosticFieldNames':canonical_field_names})

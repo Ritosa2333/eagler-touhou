@@ -76,10 +76,11 @@ struct World final:HudActions,CallbackReceiver {
     void clear_replay_checkpoint_precommit();
     bool restore_replay_checkpoint_bootstrap();
     bool finalize_replay_checkpoint();
+    bool capture_replay_stage_entry(multiplayer::ReplayCheckpoint&);
+    void initialize_replay_players();
     bool capture_spectator_checkpoint(u32 frame,multiplayer::SpectatorStageState&);
     u32 spectator_stage_tag()const;
     bool prepare_spectator_checkpoint(const multiplayer::SpectatorStageState&);
-    bool restore_spectator_checkpoint_active();
     bool restore_spectator_checkpoint_bootstrap();
     void suppress_spectator_audio(bool suppress);
     bool rollback_resimulating=false;

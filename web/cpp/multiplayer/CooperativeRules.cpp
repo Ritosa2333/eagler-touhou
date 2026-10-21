@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "CooperativeRules.hpp"
 
 #include <type_traits>
@@ -291,6 +292,7 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
             }
         }
 
+        if(controls.focusPressed&&!controls.shoot&&power_taps(source))reset_rescue(source);
         if (source.waitingForFocusRelease) {
             reset_rescue(source);
             if (!controls.focus) {
@@ -304,7 +306,7 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
             continue;
         }
 
-        // Rapid-shot Power transfer and the continuous focus-hold life
+        // Rapid-shot Power transfer and the five-Focus-edge life
         // transfer intentionally cannot accumulate in the same two fields.
         if (power_taps(source)) {
             continue;
@@ -319,14 +321,9 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
             source.rescueTicks = 0;
             source.rescueTarget = target;
         }
-        if (!controls.focus || controls.shoot) {
-            reset_rescue(source);
-            continue;
-        }
-        if (source.rescueTicks < kRescueTicks) {
-            ++source.rescueTicks;
-        }
-        if (source.rescueTicks < kRescueTicks || source.lives <= 0) {
+        if(controls.shoot || source.lives<=0){reset_rescue(source);continue;}
+        if (!eagler::cooperative::AdvanceLifeTransfer(source.rescueTicks,
+                controls.focusPressed, !controls.shoot && source.lives > 0)) {
             continue;
         }
 

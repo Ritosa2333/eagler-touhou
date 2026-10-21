@@ -134,6 +134,7 @@ const modelQuadResidency=enabled=>{
 const enemyDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_enemy_debug(app),81));
 const eclContextDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_ecl_context_debug(app),225));
 const spectatorParityDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_parity_debug(app),96));
+const replayGameplayDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_replay_gameplay_debug(app),108));
 const spectatorOptionsDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_options_debug(app),256));
 const spectatorEntityCounts=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_entity_counts(app),8));
 const spectatorItemDebug=()=>{const pointer=core.multiplayer_spectator_item_debug(app),header=new Uint32Array(core.memory.buffer,pointer,10);
@@ -162,8 +163,7 @@ const spectatorAnmFields=()=>{
 };
 const lifecycle=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_lifecycle_status(app),12));
 const spectatorLoadDebug=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_spectator_load_debug(app),29));
-const spectatorRestoreDiagnostic=()=>({prepare:core.multiplayer_spectator_prepare_phase(),scene:core.multiplayer_spectator_scene_restore_phase(),
- detail:Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_scene_restore_diag(),8))});
+const spectatorRestoreDiagnostic=()=>({prepare:core.multiplayer_spectator_prepare_phase()});
 const audioStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_audio_status(app),9));
 const generationStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_generation_status(app),9));
 const calibrationStatus=()=>{
@@ -448,8 +448,8 @@ window.multiplayerSmoke={
   if(!core.multiplayer_network_poll(app))throw Error(networkError());
   const result=core.sdl_loop_tick(app,1/60,16);
   if(result||core.application_error(app))throw Error('Native spectator tick failed '+JSON.stringify({result,error:core.application_error(app),detail:errorDetail(),restore:spectatorRestoreDiagnostic(),network:networkError()}));
-  const value={playback:this.spectatorPlaybackState(),canonical:null,portable:null,stageScene:null};
-  try{value.canonical=canonical();value.portable=portableCanonical();value.stageScene=stageSceneCanonical();}
+  const value={playback:this.spectatorPlaybackState(),canonical:null,portable:null,stageScene:null,replayGameplay:null};
+  try{value.canonical=canonical();value.portable=portableCanonical();value.stageScene=stageSceneCanonical();value.replayGameplay=replayGameplayDebug();}
   catch(error){if(!String(error?.message||error).includes('Canonical schema 2 required'))throw error;}
   return value;
  },
@@ -561,6 +561,7 @@ window.multiplayerSmoke={
  spectatorAnmFields,
  lifecycle,
  spectatorLoadDebug,
+ replayGameplayDebug,
  spectatorRestoreDiagnostic,
  audioStatus,
  generationStatus,
