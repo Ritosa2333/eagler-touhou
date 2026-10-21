@@ -32,6 +32,7 @@ class RunSession final:private SessionGameplayServices,private SceneActivationSe
 public:
  std::string error;
  RunSession(RunGameplay& r,SessionState& p,SessionReplay& q,SessionGameplayServices& h,SessionEntryServices& e):run(r),progress(p),replay(q),platform(h),entry(e){}
+ bool enter_replay_stage();
  bool attach(const StageCamera&,i32 scene_destination,bool prepare_replay=false,bool restart_audio=false);
  void detach(){activation.reset();gameplay.reset();}
  bool step(const SessionGameplayInput&);SessionGameplay* driver()const noexcept{return gameplay.get();}

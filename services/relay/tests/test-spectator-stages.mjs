@@ -5,7 +5,7 @@ import {isSpectatorFrameForRoom} from '../src/spectator-frame.mjs';
 
 function event(marker, count, {kind = 1, frame = 600, stage = 4, serial = 1, checkpoint = 1, node = 2, slots = 1} = {}) {
   const b = Buffer.alloc(kind === 1 ? 44 : kind === 2 ? 40 : 32);
-  b.set([69, marker, 83, 86, 1, kind, count, 0]);
+  b.set([69, marker, 83, 86, 2, kind, count, 0]);
   b.writeBigUInt64LE(0x123456789abcdef0n, 8); b.writeUInt32LE(0x10203040, 16);
   b.writeUInt32LE(frame, 20); b.writeUInt32LE(stage, 24); b.writeUInt32LE(serial, 28);
   if (kind === 1) { b.writeUInt32LE(7, 32); b.writeUInt32LE(4, 36); b.set([4, 10, 3, 2], 40); }
@@ -55,7 +55,7 @@ test('history limits fail before evicting a still-needed input prefix', () => {
   assert.throws(() => stream.accept(input(55, 2, 601)), /frame limit/);
   assert.equal(stream.history.length, 2); assert.equal(stream.next, 601);
 });
-test('portable object stage initializers fit inside the bounded relay envelope',()=>{
+test('native Replay stage headers fit inside the bounded relay envelope',()=>{
   const header=event(70,3),large=Buffer.alloc(40+SPECTATOR_STAGE_LIMITS.stateBytes);
   large.set(header.subarray(0,40));large.writeUInt32LE(large.length-40,36);
   assert.ok(large.length+1<64*1024);

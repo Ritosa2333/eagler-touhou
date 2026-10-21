@@ -23,7 +23,9 @@ struct NullGraphics final:ZunGraphics {
     bool clear_target(u32,const GraphicsViewport*)override{return true;}
 };
 struct Peer {GameResources resources;GameSession session;NullGraphics graphics;AnmRenderer renderer{graphics};explicit Peer(const std::vector<u8>& raw){check(resources.open_archive(raw.data(),u32(raw.size())),"open retail archive");}};
-void step(Peer& peer,const std::array<MultiplayerInput,3>& input){if(!peer.session.update_multiplayer(input)){std::fprintf(stderr,"%s\n",peer.session.error.c_str());check(false,"native confirmed tick");}if(!peer.session.draw(peer.renderer)){std::fprintf(stderr,"draw frame=%u session=%s battle=%s code=%d\n",peer.session.multiplayer_frame,peer.session.error.c_str(),peer.session.battle->error.c_str(),peer.session.battle->last_error);check(false,"native draw transaction");}++ticks;}
+void step(Peer& peer,const std::array<MultiplayerInput,3>& input){if(!peer.session.update_multiplayer(input)){std::fprintf(stderr,"frame=%u %s\n",peer.session.multiplayer_frame,peer.session.error.c_str());
+    for(const auto& pilot:peer.session.battle->pilots)if(pilot)std::fprintf(stderr,"seat=%u life=%d age=%d player=%d motion=%d shots=%d power=%d misses=%u\n",pilot->seat,pilot->player->state.life_state,pilot->player->state.state_timer.current,pilot->player->last_error,pilot->player->motion.last_error,pilot->player->shots.last_error,pilot->economy.power,pilot->challenge_misses);
+    check(false,"native confirmed tick");}if(!peer.session.draw(peer.renderer)){std::fprintf(stderr,"draw frame=%u session=%s battle=%s code=%d\n",peer.session.multiplayer_frame,peer.session.error.c_str(),peer.session.battle->error.c_str(),peer.session.battle->last_error);check(false,"native draw transaction");}++ticks;}
 void put(PlayerFrame& p,float x,float y){p.motion.state.x=i32(x*128);p.motion.state.y=i32(y*128);p.motion.state.position={x,y,0};}
 u64 code_token(const EclOwner& owner,uintptr_t address){unsigned index=0;for(const auto& file:owner.program->files){++index;const auto begin=reinterpret_cast<uintptr_t>(file->bytes.data());if(address>=begin&&address<begin+file->bytes.size())return (u64(index)<<32)|(address-begin);}return address;}
 void compare_owners(const GameBattle& a,const GameBattle& b){
@@ -62,8 +64,8 @@ void ghost_dialogue_cases(const std::vector<u8>& bytes){
         for(unsigned n=0;n<125;++n)step(*peer,in);
         std::vector<u8> msg={1,0,0,0,12,0,0,0,0,0,0,0};for(unsigned n=0;n<10;++n){const u8 wait[]={u8(n*2000),u8((n*2000)>>8),11,4,0x58,2,0,0};msg.insert(msg.end(),wait,wait+8);}msg.insert(msg.end(),{0,0,0,0});
         auto& ghost=*w.pilots[0];ghost.economy.lives=-1;check(ghost.game_over(false)&&w.dialogue->begin(msg,0),"ghost host and active native dialogue");auto& giver=*w.pilots[1];giver.economy.lives=3;put(*giver.player,0,400);put(*ghost.player,10,400);
-        for(unsigned n=0;n<90;++n){ghost.ghost_clock=1;ghost.ghost_dx=ghost.ghost_dy=0;in[1].held=8;step(*peer,in);}
-        check(w.dialogue->active&&!ghost.ghost&&giver.economy.lives==2,"90-tick life rescue works during dialogue without ending it");
+        for(unsigned n=0;n<5;++n){ghost.ghost_clock=1;ghost.ghost_dx=ghost.ghost_dy=0;in[1].held=0;step(*peer,in);in[1].held=8;step(*peer,in);}
+        check(w.dialogue->active&&!ghost.ghost&&giver.economy.lives==2,"five-Shift life rescue works during dialogue without ending it");
         in={};step(*peer,in);put(*giver.player,0,400);put(*ghost.player,10,400);giver.economy.power=giver.economy.max_power;ghost.economy.power=0;check(giver.power_changed()&&ghost.power_changed(),"dialogue Power transfer setup");const auto before=giver.economy.power;
         for(unsigned n=0;n<5;++n){in[1].held=1;step(*peer,in);in[1].held=0;step(*peer,in);}
         check(w.dialogue->active&&giver.economy.power==before-giver.economy.power_step,"five Shoot taps transfer Power while native dialogue remains active");
@@ -78,15 +80,15 @@ void reported_rule_cases(const std::vector<u8>& bytes){
         for(unsigned n=0;n<125;++n)step(*peer,in);
         auto& dead=*w.pilots[victim];dead.economy.lives=0;dead.economy.power=0;
         check(w.mp_hit(victim,{CollisionKind::Hit,true}),"real native hit enters final death");
-        for(unsigned n=0;n<41;++n)step(*peer,in);
+        for(unsigned n=0;n<49;++n)step(*peer,in);
         check(dead.ghost&&!w.game_over_requested&&peer->session.state.phase==GameSessionPhase::stage,"every seat including P1 becomes a ghost without single-player Game Over");
         peer->renderer.flush();peer->graphics.triangles_drawn=0;check(w.mp_draw_players(peer->renderer),"ghost body draw");peer->renderer.flush();check((dead.player->motion.body.flags&2)&&peer->graphics.triangles_drawn>0,"native ghost sprite stays visible");
         const auto old_body=dead.player->motion.body;dead.player->motion.body.flags&=~2u;dead.player->motion.body.color&=0xffffff;
         const auto hidden_body=dead.player->motion.body;peer->renderer.flush();peer->graphics.triangles_drawn=0;check(w.mp_draw_players(peer->renderer),"ghost ignores native hidden/zero-alpha draw flags");peer->renderer.flush();check(peer->graphics.triangles_drawn==count*2,"every ghost still submits its original sprite quad");check(std::memcmp(&hidden_body,&dead.player->motion.body,sizeof(hidden_body))==0,"ghost visibility is a draw copy, never gameplay animation mutation");dead.player->motion.body=old_body;
         const unsigned giver=(victim+1)%count;auto& donor=*w.pilots[giver];donor.economy.lives=3;
         put(*donor.player,0,400);put(*dead.player,10,400);in[giver].held=8;if(count==3){in[giver].touch_mode=2;in[giver].touch_x=0;in[giver].touch_y=400;}
-        for(unsigned n=0;n<90;++n){dead.ghost_dx=dead.ghost_dy=0;dead.ghost_clock=1;step(*peer,in);}
-        check(!dead.ghost&&dead.player->state.life_state==1&&donor.economy.lives==2,"all-seat actual final deaths can receive 90-tick rescue");
+        for(unsigned n=0;n<5;++n){dead.ghost_dx=dead.ghost_dy=0;dead.ghost_clock=1;in[giver].held=0;step(*peer,in);in[giver].held=8;step(*peer,in);}
+        check(!dead.ghost&&dead.player->state.life_state==1&&donor.economy.lives==2,"all-seat actual final deaths can receive five-Shift rescue");
     }
     for(unsigned source:{0u,1u})for(int selection=0;selection<6;++selection){
         auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions o;o.seat_count=3;o.selections={0,0,0};o.selections[source]=selection;
@@ -122,6 +124,43 @@ void battle_cases(const std::vector<u8>& bytes){
     }
     std::puts("PASS: 2P/3P deterministic confirmed ticks, six loadouts, simultaneous bombs");
 }
+void cooperative_rule_cases(const std::vector<u8>& bytes){
+    auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};
+    check(peer->session.begin_multiplayer(peer->resources,options),"cooperative rule world");auto& w=*peer->session.battle;
+    std::array<MultiplayerInput,3> in{};for(unsigned i=0;i<125;++i)step(*peer,in);
+    auto& p=*w.pilots[0];auto& q=*w.pilots[1];auto& r=*w.pilots[2];
+    for(auto& pilot:w.pilots)pilot->player->state.invincibility.set(100000,&w.animations.rate);
+    put(*p.player,0,400);put(*q.player,10,400);put(*r.player,120,400);
+    p.economy.lives=3;q.economy.lives=1;
+    const auto controls=[&](u32 held){in[0].held=held;w.mp_set_input(in);check(w.mp_update_rules(),"native cooperative controls");};
+    for(unsigned i=0;i<90;++i)controls(8);
+    check(p.economy.lives==3,"held Focus never gives a life");controls(0);
+    for(unsigned i=0;i<5;++i){controls(8);if(i<4)controls(0);}
+    check(p.economy.lives==2,"five Focus edges commit one life item");
+    for(unsigned i=0;i<30;++i)controls(8);check(p.economy.lives==2,"held fifth press never repeats");
+    controls(0);for(unsigned i=0;i<4;++i){controls(8);controls(0);}controls(1);controls(0);controls(8);
+    check(p.economy.lives==2,"shoot cancels pending life gesture");controls(0);
+    for(unsigned i=0;i<25;++i)controls(0);for(unsigned i=0;i<4;++i){controls(8);controls(0);}
+    check(p.economy.lives==2,"expired taps cannot complete a later gesture");
+    const auto settle=[&]{in={};step(*peer,in);};
+    put(*p.player,0,100);put(*q.player,-120,400);put(*r.player,120,400);settle();
+    w.items.reset();check(w.items.spawn(2,{0,260,0})==0&&w.items.update(),"native POC item");
+    check(w.items.multiplayer_targets[0]==-2,"POC locks original owner");
+    put(*p.player,0,400);put(*q.player,0,245);settle();check(w.items.multiplayer_targets[0]==-2,"crossing teammates never steal homing item");
+    for(bool poc:{false,true}){
+        put(*p.player,0,poc?100:350);put(*q.player,-140,400);put(*r.player,140,400);
+        p.economy.power=p.economy.max_power;q.economy.power=36;r.economy.power=12;settle();w.items.reset();
+        check(w.items.spawn(1,{0,poc?260.f:350.f,0})==0&&w.items.update(),"native overflow item");
+        check(w.items.multiplayer_targets[0]==-4,"full collector forwards to lowest normalized Power below POC");
+        r.economy.power=r.economy.max_power;check(w.items.update(),"recipient fills while item flies");
+        check(w.items.multiplayer_targets[0]==-3,"in-flight overflow forwards again");
+    }
+    p.player->state.life_state=4;p.player->state.state_timer.set(15,&w.animations.rate);p.player->input.movement.pressed=0;
+    check(p.player->update()&&p.player->state.life_state==4,"deathbomb remains open at frame 15");
+    p.player->state.state_timer.set(16,&w.animations.rate);
+    check(p.player->update()&&p.player->state.life_state==2,"deathbomb closes at frame 16");
+    std::puts("PASS: real th11 five-Shift gesture, hold/fire/timeout gates, POC owner retention, manual/POC Power overflow, 16-frame deathbomb");
+}
 void rules_cases(const std::vector<u8>& bytes){
     auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};check(peer->session.begin_multiplayer(peer->resources,options),"rule world begin");auto& w=*peer->session.battle;
     std::array<MultiplayerInput,3> in{};for(unsigned i=0;i<125;++i)step(*peer,in);
@@ -132,11 +171,11 @@ void rules_cases(const std::vector<u8>& bytes){
     put(*p.player,0,400);put(*q.player,10,400);put(*r.player,100,400);p.economy.power=40;q.economy.power=0;
     for(unsigned i=0;i<5;++i){in[0].held=1;step(*peer,in);in[0].held=0;step(*peer,in);}
     for(unsigned i=0;i<15;++i)step(*peer,in);check(p.economy.power==20&&q.economy.power==12,"cross-loadout transfer consumes and grants one native level");
-    p.economy.lives=3;q.economy.lives=1;for(unsigned i=0;i<90;++i){in[0].held=8;step(*peer,in);}for(unsigned i=0;i<15;++i)step(*peer,in);check(p.economy.lives==2&&q.economy.lives==2,"life transfer item delivery");
+    p.economy.lives=3;q.economy.lives=1;for(unsigned i=0;i<5;++i){in[0].held=0;step(*peer,in);in[0].held=8;step(*peer,in);}for(unsigned i=0;i<15;++i)step(*peer,in);check(p.economy.lives==2&&q.economy.lives==2,"life transfer item delivery");
     for(unsigned i=0;i<95;++i)step(*peer,in);check(p.economy.lives==2,"life transfer latches until focus release");
     in={};step(*peer,in);q.economy.lives=-1;check(q.game_over(false),"native final death becomes ghost");
     put(*p.player,0,400);put(*q.player,10,400);q.ghost_dx=q.ghost_dy=0;q.ghost_clock=1;
-    for(unsigned i=0;i<90;++i){q.ghost_dx=q.ghost_dy=0;q.ghost_clock=1;in[0].held=8;step(*peer,in);}check(!q.ghost&&q.economy.power==48,"ghost rescue restores selected half power");check(q.player->state.invincibility.current==280,"rescue invincibility begins at 280 logic ticks");
+    for(unsigned i=0;i<5;++i){q.ghost_dx=q.ghost_dy=0;q.ghost_clock=1;in[0].held=0;step(*peer,in);in[0].held=8;step(*peer,in);}check(!q.ghost&&q.economy.power==48,"ghost rescue restores selected half power");check(q.player->state.invincibility.current==280,"rescue invincibility begins at 280 logic ticks");
     check(q.player->state.life_state==1&&q.player->state.state_timer.current>=60,"rescue bypasses native cancel-all entrance");
     ItemState fragment{};fragment.type=5;w.items.multiplayer_current_target=0;bool convert=false;const int old=p.economy.lives;
     for(unsigned i=0;i<5;++i)check(w.mp_collect(fragment,convert),"shared fragment pickup");check(p.economy.lives==old+1&&w.mp_fragments==0,"five shared fragments grant team extend");
@@ -160,7 +199,7 @@ void owner_cases(const std::vector<u8>& bytes){
     w.spell_flags=3;w.spell_elapsed=61;w.spell_bonus=12340;EnemyAnimations helper(w.animations);helper.erase(shield.bomb->state.animation);check(w.animations.update(false)&&shield.tick_bomb(),"unused shield expiry");check(shield.economy.power==70&&(w.spell_flags&2)&&w.spell_bonus==12340,"unused Nitori shield refunds ten raw power without failing shared spell");
     w.spell_flags=0;shield.economy.power=80;in[2].held=2;step(*peer,in);in={};w.spell_flags=3;w.spell_elapsed=61;w.spell_bonus=12340;const int lives=shield.economy.lives,misses=w.enemy_environment.shared_integers[0];
     check(w.mp_hit(2,{CollisionKind::Hit,true})&&shield.tick_bomb(),"Nitori absorbs its own hit");check(shield.player->state.life_state==1&&shield.economy.lives==lives&&w.enemy_environment.shared_integers[0]==misses,"shield hit preserves lives and shared Miss count");check(!(w.spell_flags&2)&&w.spell_bonus==0&&w.enemy_environment.shared_integers[1]>0,"hit shield fails shared capture and reports team Bomb use");w.spell_flags=0;
-    auto& victim=*w.pilots[1];const int before=victim.economy.lives;victim.player->state.invincibility.set(0,&w.animations.rate);check(w.mp_hit(1,{CollisionKind::Hit,true}),"P2 hit uses exact owner");for(unsigned i=0;i<9;++i)check(victim.tick(),"native P2 death sequence");check(victim.economy.lives==before-1&&w.enemy_environment.shared_integers[0]==misses+1,"P2 Miss increments shared stage death counter once");
+    auto& victim=*w.pilots[1];const int before=victim.economy.lives;victim.player->state.invincibility.set(0,&w.animations.rate);check(w.mp_hit(1,{CollisionKind::Hit,true}),"P2 hit uses exact owner");for(unsigned i=0;i<17;++i)check(victim.tick(),"native P2 death sequence");check(victim.economy.lives==before-1&&w.enemy_environment.shared_integers[0]==misses+1,"P2 Miss increments shared stage death counter once");
     victim.economy.lives=-1;check(victim.game_over(false)&&victim.revive(true),"P2 ghost and rescue cleanup");check(w.animations.multiplayer_tag(victim.player->motion.body)==2,"rescue body keeps permanent seat owner");for(const auto& option:victim.player->motion.options)if(auto* vm=w.animations.find(option.animation))check(w.animations.multiplayer_tag(*vm)==2,"rescue options keep permanent seat owner");
     victim.economy.power=96;check(victim.power_changed(),"restore Marisa A power");in[1].held=2;step(*peer,in);in={};check(victim.bomb->distortion()!=nullptr,"native remote Bomb owns distortion");const auto ids=victim.bomb->distortion()->animations;check(victim.game_over(false)&&!victim.bomb->distortion(),"ghost retires Bomb distortion owner");check(w.animations.update(false),"consume ANM retirement markers");for(auto id:ids)check(!w.animations.find(id),"distortion ANM released before next draw");check(peer->session.draw(peer->renderer),"draw after Bomb owner cleanup");
     w.stage->state.effects_enabled=2;const auto prior=w.stage->state.effects_enabled;in[0].pause=true;step(*peer,in);in[0].pause=false;for(unsigned i=0;i<5;++i)step(*peer,in);check(w.stage->state.effects_enabled==prior,"paused confirmed presentation does not advance stage draw effects");
@@ -273,12 +312,12 @@ void native_ui_cases(const std::vector<u8>& bytes){
     options.local_seat=0;check(a->session.begin_multiplayer(a->resources,options),"life UI fixture");auto& world=*a->session.battle;in={};for(unsigned i=0;i<125;++i)step(*a,in);
     auto& donor=*world.pilots[0];auto& ghost=*world.pilots[1];donor.economy.lives=3;ghost.economy.lives=-1;check(ghost.game_over(false),"native ghost feedback fixture");
     for(auto& p:world.pilots)if(p)p->player->state.invincibility.set(100000,&world.animations.rate);put(*donor.player,0,400);put(*ghost.player,10,400);put(*world.pilots[2]->player,120,400);in[0].held=8;
-    unsigned previous_alpha=0;for(unsigned tick=1;tick<=89;++tick){ghost.ghost_dx=ghost.ghost_dy=0;ghost.ghost_clock=1;step(*a,in);
+    unsigned previous_alpha=0;for(unsigned tick=1;tick<=4;++tick){ghost.ghost_dx=ghost.ghost_dy=0;ghost.ghost_clock=1;in[0].held=0;step(*a,in);in[0].held=8;step(*a,in);
         const auto alpha=a->renderer.multiplayer_opacity[2];check(alpha>=previous_alpha,"recipient ghost brightens monotonically with confirmed life progress");previous_alpha=alpha;
-        if(tick==30||tick==60||tick==89){const std::string text=std::to_string(tick*100/90)+"%";bool shown=false;for(const auto& q:world.ascii.requests)if(q.text==text){shown=true;check(q.style.font==2&&q.style.pass==1&&q.position.x>200&&q.position.x<240&&q.position.y==392,"life feedback uses native numeric atlas in field next to giver");}check(shown,"native life percentage is visible during transfer");}
+        if(tick>=3){const std::string text="L "+std::to_string(tick)+"/5";bool shown=false;for(const auto& q:world.ascii.requests)if(q.text==text){shown=true;check(q.style.font==2&&q.style.pass==1&&q.position.x>200&&q.position.x<240&&q.position.y==392,"life feedback uses native numeric atlas in field next to giver");}check(shown,"native life tap count is visible during transfer");}
     }
-    check(previous_alpha>245&&ghost.ghost,"ghost is nearly fully visible before rescue completes");const auto identity=world.mp_hash(),calls=world.animations.script_rng.calls;check(a->session.draw(a->renderer)&&world.mp_hash()==identity&&world.animations.script_rng.calls==calls,"progress and ghost alpha are presentation-only");
-    const auto sound_begin=world.events.size();ghost.ghost_dx=ghost.ghost_dy=0;ghost.ghost_clock=1;step(*a,in);check(!ghost.ghost&&donor.economy.lives==2&&donor.life_hold==0&&donor.life_latched,"90th tick preserves exact native rescue resource boundary");
+    check(previous_alpha>210&&ghost.ghost,"ghost brightens with the fourth tap");const auto identity=world.mp_hash(),calls=world.animations.script_rng.calls;check(a->session.draw(a->renderer)&&world.mp_hash()==identity&&world.animations.script_rng.calls==calls,"progress and ghost alpha are presentation-only");
+    in[0].held=0;step(*a,in);in[0].held=8;const auto sound_begin=world.events.size();ghost.ghost_dx=ghost.ghost_dy=0;ghost.ghost_clock=1;step(*a,in);check(!ghost.ghost&&donor.economy.lives==2&&donor.life_hold==0&&donor.life_latched,"fifth Shift edge preserves exact native rescue resource boundary");
     bool cue=false;for(size_t i=sound_begin;i<world.events.size();++i)cue|=world.events[i].kind==BattleEventKind::Sound&&world.events[i].value==0x2c;check(cue,"rescue success uses native extend sound");
     for(const auto& q:world.ascii.requests)check(q.text.find('%')==std::string::npos,"completed life operation has no lingering percentage");
     std::puts("PASS: original pause overlay/Resume, confirmed P1/menu input, combat freeze, native life feedback and ghost rescue alpha");
@@ -346,14 +385,15 @@ int main(int argc,char** argv){
     std::ifstream file(argv[1],std::ios::binary);std::vector<u8> bytes((std::istreambuf_iterator<char>(file)),{});
     check(!bytes.empty(),"retail archive fixture present");
     const auto mode=[&](const char* value){return argc==3&&std::strcmp(argv[2],value)==0;};
-    if(mode("presentation")){resource_cases(bytes);presentation_risk_cases(bytes);}
+    if(mode("cooperative"))cooperative_rule_cases(bytes);
+    else if(mode("presentation")){resource_cases(bytes);presentation_risk_cases(bytes);}
     else if(mode("restart"))restart_risk_cases(bytes);
     else if(mode("challenge"))challenge_cases(bytes);
     else if(mode("score")){score_cases(bytes);result_risk_cases(bytes);}
     else if(mode("ui")){native_ui_cases(bytes);presentation_risk_cases(bytes);restart_risk_cases(bytes);}
     else if(mode("repair")){presentation_risk_cases(bytes);restart_risk_cases(bytes);}
     else{
-        if(argc==2){battle_cases(bytes);rules_cases(bytes);owner_cases(bytes);}
+        if(argc==2){battle_cases(bytes);cooperative_rule_cases(bytes);rules_cases(bytes);owner_cases(bytes);}
         ghost_dialogue_cases(bytes);reported_rule_cases(bytes);challenge_cases(bytes);score_cases(bytes);item_risk_cases(bytes);resource_cases(bytes);presentation_risk_cases(bytes);result_risk_cases(bytes);restart_risk_cases(bytes);native_ui_cases(bytes);
     }
     std::printf("PASS: %u checks, %u native logic/draw ticks; no original executable\n",checks,ticks);return 0;

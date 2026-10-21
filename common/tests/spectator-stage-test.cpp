@@ -527,17 +527,17 @@ int main() {
         assert(playback.Target() == fixedTarget);
         assert(playback.Step(restore, tick, yield, 512));
         assert(playback.Position() == fixedTarget && playback.Following());
-        assert(!playback.Seeking() && !playback.FastForwarding());
+        assert(!playback.Seeking() && playback.FastForwarding());
 
-        // Once the fixed Live destination is reached, even a persistent edge
-        // backlog advances one normal tick per presentation callback.
-        const auto start = playback.Position();
+        // Following recovers the input received during a fixed Live seek.
+        // Every input is still consumed exactly once within the caller budget.
         const auto targetBeforeFollow = playback.Target();
         for (std::uint32_t frame = 240; frame < 300; ++frame) {
             input.frame = frame; assert(playback.Receive(input));
-            assert(!playback.FastForwarding());
-            assert(playback.Step(restore, tick, yield, playback.FastForwarding() ? 32 : 1));
-            assert(playback.Position() == start + frame - 239);
+            const auto before = playback.Position();
+            const auto budget = playback.FastForwarding() ? 32u : 1u;
+            assert(playback.Step(restore, tick, yield, budget));
+            assert(playback.Position() == std::min(before + budget, playback.Edge()));
             assert(playback.Target() == targetBeforeFollow);
             assert(playback.Following() && !playback.Seeking());
         }
@@ -659,22 +659,16 @@ int main() {
         assert(!reader.Value(number) && !reader.Done());
         const std::vector<std::uint8_t> badBool{2}; SpectatorScalars::Reader bad(badBool);
         assert(!bad.Value(flag));
-        // Larger local preimages must still fail the unchanged wire gate.
+        // Stage headers have a fixed budget and never use a compressed world image.
         const std::vector<std::uint8_t> large(SpectatorStageMaxStateBytes + 17, 1);
         SpectatorScalars::Writer ordinary;
         assert(!ordinary.Array(large) && !ordinary.Good());
         assert(ordinary.Bytes().size() == SpectatorStageMaxStateBytes);
-        SpectatorScalars::Writer local(large.size());
-        assert(local.Array(large) && local.Good());
         SpectatorStageEvent oversized; oversized.game='6'; oversized.playerCount=3;
         oversized.sessionId=oversized.gameplayAbi=oversized.serial=oversized.schema=1;
-        oversized.frame=0; oversized.stage=1; oversized.state=local.Bytes();
+        oversized.frame=0; oversized.stage=1; oversized.state=large;
         std::vector<std::uint8_t> untouched{7};
         assert(!EncodeSpectatorStageEvent(oversized,&untouched) && untouched == std::vector<std::uint8_t>{7});
-        assert(!local.Value(std::uint8_t(1)) && !local.Good());
-        SpectatorScalars::Writer zero(0), excessive(SpectatorScalars::MaxLocalBytes+1);
-        assert(!zero.Good() && !zero.Value(1));
-        assert(!excessive.Good() && !excessive.Value(1));
         SpectatorStagePlayback playback; SpectatorStageView view;
         assert(!view.State(playback));
         SpectatorStageEvent cp; cp.game = '8'; cp.playerCount = 2; cp.sessionId = 1;

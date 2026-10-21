@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/CooperativeResources.hpp"
 #endif
@@ -299,7 +300,7 @@ JobResult GameplayScene::draw_players(bool impacts){
             const auto& p=pilot(seat).status().motion.movement.position;
             const auto& c=cooperation.seats[seat];
             if(c.power_taps>=3){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/5",u32(c.power_taps));}
-            else if(c.progress&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"%u%%",u32(c.progress)*100/multiplayer::rescue_ticks);}
+            else if(eagler::cooperative::TapCount(c.progress)>=3&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"L %u/5",eagler::cooperative::TapCount(c.progress));}
         }
         text.color=color;text.scale_x=scale.x;text.scale_y=scale.y;text.gui=gui;text.selected=selected;
         if(enhance&&!paused&&!retrying&&!menus.context.pause_state&&!menus.context.show_retry&&
@@ -473,6 +474,14 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
         }
 #endif
         if(playing_replay){if(!playback.begin(wanted.stage,session,globals,player_state.context.miss_control)){load_failure_step=50;unload();return false;}playback.input.current=playback.input.previous=0;replay_stage_mask=playback.stage_mask();if(wanted.initial&&playback.metadata().header.unknown6)sample_replay_frame();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(replay_stage_start_pending.present){
+            multiplayer::ApplyReplayStageStart(replay_stage_start_pending,session,player_state.context.miss_control);
+            replay_stage_start_pending.present=false;
+            for(u32 seat=0;seat<session.player_count;++seat)pilot_services(seat).sync_values();
+        }
+        multiplayer::CaptureReplayStageStart(replay_stage_start,session,globals,player_state.context.miss_control);
+#endif
         startup.after_replay();std::memcpy(dialogue_context.clears,session.clears,sizeof(session.clears));
     }
     background_context={wanted.stage,false,bool(wanted.flags&0x4000),false};background_flow.context={wanted.keep_resources,dialogue_context.text};

@@ -124,7 +124,22 @@ static void shared_bomb_during_respawn(){
     life.die();assert(state.state==2);
 }
 #endif
+static void deathbomb_windows(){
+    for(int bombs:{0,1,3,8})for(bool time:{false,true})for(bool orbs:{false,true})for(u8 character:{u8(0),u8(2),u8(5)}){
+        PlayerLifeState state{};PlayerLifeContext context{};PlayerMovementState movement{};AnmVm animation{};
+        context.bombs=bombs;context.character=character;context.time_spell=time;context.last_spell_requirement=100;context.time_orbs=orbs?100:0;
+        LifeActions actions(context);PlayerLife life(state,context,movement,animation,actions);
+        int native=2;if(bombs){native=bombs*6+(orbs?7:0);if(native>15)native=15;if(time){native*=2;if(native>30)native=30;}if(character==0||character==5)native=native*9/5;}
+        life.die();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        assert(state.predead_count==native*2);
+#else
+        assert(state.predead_count==native);
+#endif
+    }
+}
 int main(){
+    deathbomb_windows();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     initial_and_reset_resources();
     challenge_deaths();

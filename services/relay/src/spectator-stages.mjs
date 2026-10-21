@@ -1,14 +1,14 @@
-// E?SV/1 extends the cooperative spectator lane. TH09 keeps its own codec.
+// E?SV/2 extends the cooperative spectator lane. TH09 keeps its own codec.
 export const COOPERATIVE_SPECTATOR_MARKERS = Object.freeze({
   th06mp: 0x36, th07mp: 0x37, th08mp: 0x38, th10mp: 0x41, th11mp: 0x42, th15mp: 0x46,
 });
 const markers = new Set(Object.values(COOPERATIVE_SPECTATOR_MARKERS));
-export const SPECTATOR_STAGE_LIMITS = Object.freeze({ stateBytes: 60 * 1024, historyBytes: 16 * 1024 * 1024, historyFrames: 108000 });
+export const SPECTATOR_STAGE_LIMITS = Object.freeze({ stateBytes: 4 * 1024, historyBytes: 16 * 1024 * 1024, historyFrames: 108000 });
 
 export function parseSpectatorStageEvent(payload, marker, count) {
   if (!markers.has(marker) || !(payload instanceof Uint8Array) || payload.length < 32 || payload.length > 40 + SPECTATOR_STAGE_LIMITS.stateBytes ||
       payload[0] !== 69 || payload[1] !== marker || payload[2] !== 83 || payload[3] !== 86 ||
-      payload[4] !== 1 || payload[6] !== count || ![2, 3].includes(count) || payload[7]) return null;
+      payload[4] !== 2 || payload[6] !== count || ![2, 3].includes(count) || payload[7]) return null;
   const v = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
   const event = {kind: payload[5], session: v.getBigUint64(8, true), abi: v.getUint32(16, true),
     frame: v.getUint32(20, true), stage: v.getUint32(24, true), serial: v.getUint32(28, true)};
@@ -100,7 +100,7 @@ export class SpectatorStageRelay {
   bootstrap() {
     if (!this.session) throw Error('spectator initializer missing');
     const bytes = Buffer.alloc(32);
-    bytes.set([69, this.marker, 83, 86, 1, 4, this.count, 0]);
+    bytes.set([69, this.marker, 83, 86, 2, 4, this.count, 0]);
     bytes.writeBigUInt64LE(this.session, 8); bytes.writeUInt32LE(this.abi, 16);
     bytes.writeUInt32LE(this.next, 20); bytes.writeUInt32LE(this.stage, 24); bytes.writeUInt32LE(this.serial, 28);
     return bytes;

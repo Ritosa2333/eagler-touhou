@@ -101,6 +101,7 @@ public:
     std::string error;
 #ifdef TH11_MULTIPLAYER
     MultiplayerOptions mp_options{};
+    const std::array<ReplayStageState,3>* mp_replay_entries=nullptr;
     std::array<std::unique_ptr<MultiplayerPilot>,3> pilots;
     bool mp_enabled=false,mp_failed=false;
     bool mp_rollback_boundary_requested=false;

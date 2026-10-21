@@ -16,7 +16,7 @@ async function open(query){const ws=new WebSocket(`ws://127.0.0.1:${port}/?${que
   ws.addEventListener('message',e=>typeof e.data==='string'?r.json.push(JSON.parse(e.data)):r.binary.push(Buffer.from(e.data)));
   ws.addEventListener('close',()=>r.closed=true);await wait(()=>ws.readyState===1||r.closed,'connect');assert.equal(ws.readyState,1,query+'\n'+log);return r;}
 const send=(r,v)=>r.ws.send(JSON.stringify(v));const room=r=>r.json.findLast(m=>m.room && typeof m.room === 'object')?.room;
-function event(marker,kind,frame,stage,serial){const b=Buffer.alloc(kind===1?44:kind===2?40:32);b.set([69,marker,83,86,1,kind,2,0]);b.writeBigUInt64LE(9n,8);b.writeUInt32LE(7,16);b.writeUInt32LE(frame,20);b.writeUInt32LE(stage,24);b.writeUInt32LE(serial,28);
+function event(marker,kind,frame,stage,serial){const b=Buffer.alloc(kind===1?44:kind===2?40:32);b.set([69,marker,83,86,2,kind,2,0]);b.writeBigUInt64LE(9n,8);b.writeUInt32LE(7,16);b.writeUInt32LE(frame,20);b.writeUInt32LE(stage,24);b.writeUInt32LE(serial,28);
  if(kind===1){b.writeUInt32LE(1,32);b.writeUInt32LE(4,36);b.set([4,3,2,1],40);}if(kind===2){b.writeUInt32LE(1,32);b[36]=2;b[37]=3;}return b;}
 function input(marker,frame){const b=Buffer.alloc(48);b.set([69,marker,78,80,4,3,2,0]);b.writeBigUInt64LE(9n,8);b.writeUInt32LE(frame,16);b.writeUInt32LE(7,20);return b;}
 function upload(p,b){p.ws.send(Buffer.concat([Buffer.from([0xe8]),b]));}
@@ -66,7 +66,7 @@ try{
   const length=product==='th06mp'?3072:1,next=600+length;
   let initial=event(marker,1,600,4,1);
   if(product==='th15mp'){
-    const expanded=Buffer.alloc(40+43*1024);expanded.set(initial);expanded.writeUInt32LE(expanded.length-40,36);initial=expanded;
+    const expanded=Buffer.alloc(40+16+3*0x238);expanded.set(initial);expanded.writeUInt32LE(expanded.length-40,36);initial=expanded;
   }
   upload(p0,initial);for(let frame=600;frame<next;++frame){
     upload(p0,input(marker,frame));

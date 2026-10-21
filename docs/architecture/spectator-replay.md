@@ -1,0 +1,40 @@
+# 流式 Replay 旁观
+
+旁观使用游戏已有的分关 Replay 入口。关头数据负责恢复难度、机体、原生 RNG seed、初始生命与 Bomb 规则、各席位资源与 Replay 位置，后续持续追加全席位已确认输入。中途加入和时间线跳转从对应关头重建，再以有界快进到目标帧。
+
+| 作品 | 关头来源 | 应用入口 |
+| --- | --- | --- |
+| th06、th07 | ReplayManager 记录的 StageReplayData 字段与多人资源扩展 | 原生关卡构造中的 Replay 注册阶段 |
+| th08 | 原生 ReplayStage 字段、配置、路线、原生加载进度与各席位资源 | GameplayScene 的原生 Replay 初始化位置 |
+| th10 | 多人 Replay 录像器的 ReplayCheckpoint | 原生 Replay bootstrap、玩家入场初始化与 activation |
+| th11 | 原生 ReplayStageState 与多人共享资源 | GameSession 构造、原生 Replay 输入采样边界 |
+| th15 | 每席位的原生 t15r ReplayStageSnapshot | SessionReplay 与 SessionActivation |
+
+玩家子弹、Bomb、ANM、ECL 和场景资源由游戏正常创建。各作按自己的 Replay 生命周期采集和应用入口数据，激活帧与该帧输入一起进入连续历史。th09 的对战旁观沿用其比赛回放入口。
+
+th06、th07 同时取出 Replay 录像器在网络起点之前已记录的初始化输入。旁观从原生关头构造场景，再重放这段输入，与网络帧零衔接；切关也使用同一入口。th07 记录玩家实际消费的按键，包含原生构造阶段清空输入后的首帧。录像事件统一经过可选记录器入口。
+
+th07 的旁观 RNG 链节点在首次开始播放时创建，退出播放时从演算链移除，重复进入沿用同一节点。
+
+th11 在多人关卡激活时统一初始化玩家子弹与子机相位，采集后的关头可独立重建。原生玩家位置、资源、武器模式和各席位选择进入同一 Replay 入口。多人规则版本 3 同时用于房间握手与录像元数据校验。
+
+th06、th07、th10 的多人录像已有分关数据。th08、th11、th15 的多人录像文件沿用开局参数和确认输入；旁观的分关入口复用原生 Replay 类型与初始化位置。
+
+## 传输与播放
+
+合作作品使用 `E?SV/2` 发送关头、导航节点和结束事件。单个关头最多 4096 字节，按作品自身格式解释。Relay 保存最新关头及其后连续输入，为新旁观者发送固定的初始追赶目标。
+
+共享层负责连续历史、确认发布、缓存边界和播放控制。暂停期间继续接收输入，跳转目标固定在操作发起时的帧。关卡和 Boss 节点定位到所属关头，再重放到节点目标。持续跟播使用同一时间预算消化短时积压，历史播放保持正常速度。旁观输入独立于玩家输入，存档与录像输出沿用旁观只读生命周期。
+
+## 验证入口
+
+- `common/tests/spectator-stage-test.cpp` 覆盖协议、连续历史、暂停、跳转和直播控制。
+- `common/tests/spectator-stage-publisher-boundary-test.cpp` 覆盖确认发布和关头输入边界。
+- `services/relay/tests/test-spectator-stages.mjs` 与 `test-spectator-stage-relay.mjs` 覆盖事件身份、缓存替换和真实 WebSocket 旁观分发。
+- `ports/th07/tests/netplay-spectator-stage2-browser.py` 验证 th06、th07 的原生切关、独立旁观和持续跟播。
+- `ports/th08-mp/portable/multiplayer/check-spectator.py` 验证各席位输入、原生加载入口、第二关与播放控制。
+- `ports/th10-mp/portable/multiplayer/check-spectator-stage.py` 验证多人 Replay 入口与第二关连续 600 帧演算。
+- `ports/th11-mp/portable/multiplayer/spectator-relay-browser.mjs` 验证原生关头首帧、后续 600 帧和两位独立旁观者。
+- `ports/th15-mp/portable/multiplayer/spectator-stage-codec.cpp` 使用原生 Replay 关头验证两人、三人和截断数据的事务式解码。
+
+原生 Replay 验证独立实例在相同输入下的资源、RNG seed、玩家、敌机、ECL、弹幕与道具演算。完整 world hash 同时保留为诊断数据；从关头重建的界面累计统计和切关展示使用原生 Replay 的初始化值。

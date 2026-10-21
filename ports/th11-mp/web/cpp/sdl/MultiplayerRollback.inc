@@ -180,7 +180,7 @@ bool rollback_run_frame(bool historical){
         return rollback_fail("TH11 rollback input decode failed");
     auto record=std::make_unique<MultiplayerRollbackTick>();record->frame=frame;record->stage=session.state.stage;
     std::vector<u8> spectator_initializer;u32 spectator_stage=record->stage;
-    if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);
+
     // Replayed exact frames still live inside a correction. Retain a fresh
     // checkpoint until the complete old frontier has been reconstructed.
     const bool capture=true;
@@ -195,7 +195,7 @@ bool rollback_run_frame(bool historical){
     }
     rollback_frames.push_back(std::move(record));auto& current=*rollback_frames.back();
     {auto measured=rollback_timer(5);
-    if(!session.update_multiplayer(input))return rollback_abort(frame,"TH11 rollback native Update failed");}
+    if(!session.update_multiplayer(input,[&]{if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);}))return rollback_abort(frame,"TH11 rollback native Update failed");}
     current.sounds=std::move(session.battle->events);session.battle->events.clear();
     {auto measured=rollback_timer(6);
     if(!text_events())return rollback_abort(frame,"TH11 rollback text raster failed");}

@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "CooperativeLifecycle.hpp"
 #include <type_traits>
 
@@ -88,14 +89,15 @@ CooperativeTick advance(CooperativeState& state,const CooperativeFrameInput& inp
                 }
             }
         }
+        if(controls.focus_pressed&&!controls.shoot)clear_power(source);
         if(source.waiting_for_focus_release){clear_progress(source);if(!controls.focus)source.waiting_for_focus_release=false;continue;}
         if(source.spirit||!controls.available||!controls.can_give){clear_progress(source);continue;}
         const auto target=recipient(state,input,giver);
         if(target<0){clear_progress(source);continue;}
         if(source.target!=target){source.target=target;source.progress=0;}
-        if(source.power_taps||!controls.focus||controls.shoot){clear_progress(source);continue;}
-        if(source.progress<rescue_ticks)++source.progress;
-        if(source.progress<rescue_ticks||controls.lives<=0)continue;
+        if(controls.shoot||controls.lives<=0){clear_progress(source);continue;}
+        if(!eagler::cooperative::AdvanceLifeTransfer(source.progress,controls.focus_pressed,
+                !controls.shoot&&controls.lives>0))continue;
         auto& receiver=state.seats[std::uint8_t(target)];
         if(receiver.spirit){
             revive(state,std::uint8_t(target));source.waiting_for_focus_release=true;clear_progress(source);

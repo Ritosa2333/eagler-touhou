@@ -29,6 +29,7 @@ def function(text, signature):
     return text[start:end] + '\n'
 
 stub = r'''
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -46,7 +47,7 @@ constexpr int PLAYER_STATE_ALIVE=0, PLAYER_STATE_INVULNERABLE=1, PLAYER_STATE_DE
  PLAYER_STATE_SPAWNING=3, PLAYER_STATE_REVIVABLE=4, PLAYER_STATE_SPIRIT=4,
  PLAYER_STATE_ELIMINATED=5, PLAYER_STATE_BORDER=6;
 constexpr int ORB_UNFOCUSED=0, OPTION_UNFOCUSED=0, ORB_HIDDEN=1, OPTION_HIDDEN=1,
- BORDER_ACTIVE=1, CHAR_SAKUYA=2, TH_BUTTON_SHOOT=1, TH_BUTTON_BOMB=2,
+ BORDER_ACTIVE=1, CHAR_SAKUYA=2, TH_BUTTON_SHOOT=1, TH_BUTTON_BOMB=2, TH_BUTTON_FOCUS=4,
  ITEM_POWER_BIG=2, ITEM_POWER_SMALL=1, ITEM_LIFE=3, ITEM_FULL_POWER=4, ITEM_BOMB=5,
  SOUND_1UP=0, SOUND_EXTEND=0, SOUND_POWERUP=0, SOUND_ITEM_GET=0, SOUND_DIR_CHANGING=0,
  AnmVmBlendMode_InvSrcAlpha=0, AnmVmBlendMode_One=1, ANM_SCRIPT_PLAYER_IDLE=0;
@@ -68,7 +69,7 @@ struct Player {u8 initParam=0; int playerState=0,orbState=0,optionState=0,
  float previousHorizontalSpeed=0,previousVerticalSpeed=0,
  verticalMovementSpeedMultiplierDuringBomb=1,horizontalMovementSpeedMultiplierDuringBomb=1;
  Timer invulnerabilityTimer,teamBombProtectionTimer; ZunVec3 pos,prevPos,positionCenter; Sprite playerSprite;
- struct {int isInUse=0;}bombInfo; Shooter*shooterData=&shooter; bool shoot=false,pressed=false;
+ struct {int isInUse=0;}bombInfo; Shooter*shooterData=&shooter; bool shoot=false,pressed=false,focus_pressed=false;
  void BreakBorder(){hasBorder=0;} };
 Player g_Players[3]; bool g_PlayerActive[3]; bool absent[3],departed[3];
 int lives[3],bombs[3],power[3],g_powerGiveTaps[3],g_powerGiveWindow[3],g_teamWipeRetryFrames;
@@ -92,7 +93,7 @@ int GetPlayerPower(u8 p){return power[p];}
 void SetPlayerLives(u8 p,int v){lives[p]=v;} void AddPlayerLives(u8 p,int v){lives[p]+=v;}
 void SetPlayerBombs(u8 p,int v){bombs[p]=challenge?0:v;} void SetPlayerPower(u8 p,int v){power[p]=v;}
 void AddPlayerPower(u8 p,int v){power[p]+=v;}
-#define WAS_PRESSED_PLAYER(p,b) ((p)->pressed)
+#define WAS_PRESSED_PLAYER(p,b) ((b)==TH_BUTTON_FOCUS?(p)->focus_pressed:(p)->pressed)
 #define IS_PRESSED_PLAYER(p,b) ((p)->shoot)
 struct Item {bool isInUse=false; int type=0,state=0; ZunVec3 position;};
 struct ItemManager {Item items[ITEM_CAPACITY+1]; std::vector<int> emitted;
@@ -122,6 +123,7 @@ constexpr int SUPERVISOR_STATE_GAMEMANAGER_REINIT=3;
 struct {struct {int bombCount=4;}defaultConfig;int curState=0;}g_Supervisor;
 struct {unsigned replayEventFlags=0;}replay;
 auto*g_ReplayManager=&replay;
+struct ReplayManager {static void RecordEventFlags(unsigned flags){replay.replayEventFlags|=flags;}};
 struct {struct {int captureScore=123,isCapturing=1,isActive=0;}spellcardInfo;}g_EnemyManager;
 struct {unsigned n=0;unsigned GetRandomU16(){return ++n;}}g_Rng;
 struct Anm {void SetAndExecuteScriptIdx(Sprite*,int){} void SetAnmIdxAndExecuteScript(Sprite*,int){}}anm;
@@ -186,7 +188,7 @@ void reset(int count=3){
  for(int i=0;i<3;++i){g_Players[i]=Player{};g_Players[i].initParam=i;g_PlayerActive[i]=i<count;
  absent[i]=departed[i]=false;lives[i]=2;bombs[i]=4;power[i]=100;g_powerGiveTaps[i]=g_powerGiveWindow[i]=0;}
 }
-void hold(Player*p,int n){p->isFocus=1;for(int i=0;i<n;++i)UpdateLifeTransfer(p);}
+void hold(Player*p,int n){p->isFocus=1;for(int i=0;i<n;++i){p->focus_pressed=true;UpdateLifeTransfer(p);p->focus_pressed=false;UpdateLifeTransfer(p);}}
 void tap(Player*p,int n){for(int i=0;i<n;++i){p->pressed=true;UpdatePowerTransfer(p);p->pressed=false;UpdatePowerTransfer(p);}}
 void test(){
  for(int count: {2,3}){
@@ -200,7 +202,7 @@ void test(){
   reset();shooter.initialBombs=native;const int expected=std::max(1,native-1);
   assert(GetPlayerInitialBombs(1)==expected);
   ResetMultiplayerPlayerResources(1);assert(g_MultiplayerPlayerResources[0].bombsRemaining==expected);
-  g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=5;hold(&g_Players[0],90);
+  g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=5;hold(&g_Players[0],5);
   assert(bombs[1]==expected&&lives[1]==5&&power[1]==64);
  }
 
@@ -223,7 +225,7 @@ void test(){
  assert(SelectLifeTransferReceiver(&g_Players[0])==&g_Players[1]); // Inactive spectator never selected.
  for(int count: {2,3}){
   reset(count);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;power[1]=0;bombs[1]=0;
-  hold(&g_Players[0],89);assert(lives[0]==2);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
+  hold(&g_Players[0],4);assert(lives[0]==2);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
   hold(&g_Players[0],1);assert(lives[0]==1);assert(lives[1]==0);
   assert(bombs[0]==4&&bombs[1]==INITIAL_BOMBS&&power[1]==64);
   assert(g_Players[1].bulletGracePeriod==0&&g_BulletManager.calls==0);
@@ -231,12 +233,12 @@ void test(){
   assert(g_Players[1].invulnerabilityTimer==240);
   hold(&g_Players[0],180);assert(lives[0]==1); // Same hold/retransmitted level is one donation.
   g_Players[0].isFocus=0;UpdateLifeTransfer(&g_Players[0]);
-  hold(&g_Players[0],90);assert(lives[0]==0); // Explicit release and repress permits a new paid gift.
+  hold(&g_Players[0],5);assert(lives[0]==0); // Explicit release and repress permits a new paid gift.
  }
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=3;
- hold(&g_Players[0],90);assert(lives[1]==3); // Rescue preserves banked shared extends.
+ hold(&g_Players[0],5);assert(lives[1]==3); // Rescue preserves banked shared extends.
  reset(2);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=8;
- hold(&g_Players[0],90);assert(lives[1]==8&&g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
+ hold(&g_Players[0],5);assert(lives[1]==8&&g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
  reset();lives[0]=0;g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
  hold(&g_Players[0],180);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
  for(int stock: {0,1,3}){
@@ -268,7 +270,7 @@ void test(){
  departed[2]=false;g_Players[1].playerState=PLAYER_STATE_ALIVE;assert(GetBossParticipantCount()==3);
  for(int count: {2,3})for(int donorBombs: {0,1,4}){
   reset(count);bombs[0]=donorBombs;g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;bombs[1]=3;
-  hold(&g_Players[0],90);assert(bombs[0]==donorBombs&&bombs[1]==INITIAL_BOMBS);AddPlayerLives(1,1);
+  hold(&g_Players[0],5);assert(bombs[0]==donorBombs&&bombs[1]==INITIAL_BOMBS);AddPlayerLives(1,1);
   Player*p=&g_Players[1];p->playerState=PLAYER_STATE_DEAD;p->respawnTimer=1;DeathTick(p);
   p->invulnerabilityTimer=30;DeathTick(p);
   assert(bombs[1]==INITIAL_BOMBS&&lives[1]==0&&bombs[0]==donorBombs&&lives[0]==1);
@@ -308,12 +310,12 @@ void test(){
    assert(g_MultiplayerContributionStats[0].challengeDeaths==unsigned(n+1));
   }
   p->playerState=PLAYER_STATE_ALIVE;p->pos=p->positionCenter={};
-  hold(p,90);assert(lives[0]==(stock?stock-1:0));
+  hold(p,5);assert(lives[0]==(stock?stock-1:0));
   assert(g_MultiplayerContributionStats[0].challengeDeaths==20);
  }
  // Exact deterministic re-execution of production rescue from a copied pre-frame fixture.
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
- hold(&g_Players[0],89);auto before0=g_Players[0],before1=g_Players[1];
+ hold(&g_Players[0],4);auto before0=g_Players[0],before1=g_Players[1];
  int beforeLives[3],beforeBombs[3],beforePower[3];std::copy(lives,lives+3,beforeLives);std::copy(bombs,bombs+3,beforeBombs);std::copy(power,power+3,beforePower);
  hold(&g_Players[0],1);auto expected0=g_Players[0],expected1=g_Players[1];int expectedLives=lives[0];
  g_Players[0]=before0;g_Players[1]=before1;std::copy(beforeLives,beforeLives+3,lives);std::copy(beforeBombs,beforeBombs+3,bombs);std::copy(beforePower,beforePower+3,power);
@@ -339,5 +341,13 @@ main = main.replace('INITIAL_BOMBS', '2' if SIX else '3')
 with tempfile.TemporaryDirectory(prefix='coop-rules-') as temp:
     source=Path(temp)/'rules.cpp'
     source.write_text(stub+constants+functions+main)
-    subprocess.run([os.environ.get('CXX','c++'),'-std=c++20','-O0','-g',str(source),'-o',str(Path(temp)/'rules')],check=True)
-    subprocess.run([str(Path(temp)/'rules')],check=True)
+    emxx=os.environ.get('EMXX')
+    if emxx:
+        output=Path(temp)/'rules.cjs'
+        subprocess.run([emxx,'-std=c++20','-O0','-I'+str(ROOT.parents[1]/'common/include'),
+                        '-sENVIRONMENT=node','-sEXIT_RUNTIME=1',str(source),'-o',str(output)],check=True)
+        subprocess.run(['node',str(output)],check=True)
+    else:
+        subprocess.run([os.environ.get('CXX','c++'),'-std=c++20','-O0','-g',
+                        '-I'+str(ROOT.parents[1]/'common/include'),str(source),'-o',str(Path(temp)/'rules')],check=True)
+        subprocess.run([str(Path(temp)/'rules')],check=True)

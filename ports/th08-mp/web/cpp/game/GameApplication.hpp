@@ -202,11 +202,9 @@ public:
     bool update();bool draw(float presentation_alpha=1.0f,bool presentation_active=false,bool presentation_only=false,bool world_interpolate=true);
     void shutdown();bool save_score();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    bool restore_multiplayer_stage(const GameplayLoad&,bool initial_ready_boundary,u32* failure=nullptr);
+    bool restore_multiplayer_stage(const GameplayLoad&,bool initial_ready_boundary,u32* failure=nullptr,bool native_loading=false,u32 native_loading_frames=0);
     void set_spectator_playback_input(u16 buttons){spectator_playback=true;spectator_buttons=buttons;}
     void clear_spectator_playback_input(){spectator_playback=false;spectator_buttons=0;}
-    void spectator_loading_state(bool& gate,bool& hidden)const{gate=loading_gate;hidden=loading_hidden;}
-    void restore_spectator_loading_state(bool gate,bool hidden){loading_gate=gate;loading_hidden=hidden;}
 #endif
     bool finalize_replay(i32 slot,const char* name){if(!game.recording.ready()||(game.globals.game_flags&8)||slot<1||slot>15||!name)return false;last_game=result_context();save_replay(slot,name);return !invalid();}
     bool active()const{return running;}

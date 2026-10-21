@@ -4,6 +4,8 @@
 
 C++ 手柄输入可包含 `<eagler/input/BrowserGamepad.hpp>`，同步读取 Launcher 的标准化动作并合并到本作键盘／扫描码路径。该入口使用共用浏览器桥头，供各作品直接接入。
 
+合作作品共用 [`gameplay/CooperativeRules.hpp`](include/eagler/gameplay/CooperativeRules.hpp) 的五次连按、24 帧间隔和标准化 Power 比较。各作在自身的回滚状态中保存手势计数。
+
 ## 开始
 
 需要 CMake 3.20、C++17 编译器；安装 Node.js 后，CTest 也会运行可用的 JavaScript 测试。从仓库根目录执行：

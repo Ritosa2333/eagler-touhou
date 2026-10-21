@@ -31,5 +31,5 @@ struct Sample
 // renderer/Web handles, function pointers and wall-clock/presentation state.
 // Every included value can influence fixed-60-Hz gameplay or identifies the
 // logical simulation slot that owns such a value.
-Sample Capture();
+Sample Capture(bool replayStage = false);
 } // namespace Netplay::Th07CanonicalHash

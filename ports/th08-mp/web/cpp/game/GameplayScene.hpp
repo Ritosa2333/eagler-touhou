@@ -12,6 +12,9 @@
 #include "ReplayPlayback.hpp"
 #include "ReplayRecording.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "ReplayStageStart.hpp"
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PlayerRoster.hpp"
 #include "../multiplayer/CooperativeLifecycle.hpp"
 #endif
@@ -126,10 +129,6 @@ public:
     bool enhance_local_player_visibility=false; // non-authoritative viewer option
     multiplayer::CooperativeState cooperation;
     u16 committed_buttons[3]{},previous_buttons[3]{};
-    void restore_spectator_input_edges(u16 shared_previous,const u16* committed,const u16* previous){
-        previous_input=shared_previous;
-        for(u32 seat=0;seat<3;++seat){committed_buttons[seat]=committed?committed[seat]:0;previous_buttons[seat]=previous?previous[seat]:0;}
-    }
     void enter_spirit(u32 seat);
     void update_cooperation();
     void reset_team_after_continue();
@@ -144,6 +143,9 @@ public:
     EnemyNameAtlas name_atlas;
     i32 screen_counter=0;EnemyNativeScene native_scene;PlayerSceneWorld player_world;
     BackgroundFlow background_flow;BulletFlow bullet_flow;EnemyFlow enemy_flow;EffectFlow effect_flow;GuiFlow gui_flow;SpellFlow spell_flow;
+    #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::ReplayStageStart replay_stage_start{}, replay_stage_start_pending{};
+#endif
     UiMenus menus;GameplayControl control;ReplayPlayback playback;ReplayRecording recording;u32 replay_stage_mask=0;
     bool time_stopped=false,paused=false,retrying=false,always_hitbox=false;u32 load_failure_step=0;
     GameplayScene(GameplaySession&,TextureStore&,AnmLibrary&,AnmRenderer&,GameplayPlatform&,Chain* shared_chain=nullptr,AsciiManager* shared_ascii=nullptr);
@@ -151,8 +153,6 @@ public:
     bool load(const GameplayLoad&,bool initialize_values=false);void unload(bool keep_resources=false,bool release_resources=true);
     bool start(const GameplayLoad& wanted){return load(wanted,true);}
     const GameplayLoad& load_request()const{return request;}
-    void restore_spectator_load_request(const GameplayLoad& source){request=source;}
-    u16 spectator_previous_input()const{return previous_input;}
     bool load_replay(const u8* data,u32 size){if(loaded)return false;return playback.load(data,size)&&platform.load_motion(data,size);}
     void play_practice_music(i32 slot,i32 song){play_music(slot,song);}
     // Upstream routes the scene-teardown BGM stop through the same hooked BGM

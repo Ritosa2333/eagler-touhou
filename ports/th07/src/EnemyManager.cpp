@@ -589,7 +589,7 @@ void Enemy::Despawn()
     {
         g_EnemyManager.bosses[this->bossId] = NULL;
     }
-    g_ReplayManager->replayEventFlags |= 0x20;
+    ReplayManager::RecordEventFlags(0x20);
 }
 
 void Enemy::ClampPos()
@@ -1186,7 +1186,7 @@ u32 EnemyManager::OnUpdate(EnemyManager *arg)
                 enemy->canBeDamaged = 0;
                 enemy->deathType = ENEMY_DEATH_DESPAWN;
                 g_Gui.bossPresent = 0;
-                g_ReplayManager->replayEventFlags |= 0x20;
+                ReplayManager::RecordEventFlags(0x20);
                 if (enemy->deathAnm1 >= 0)
                 {
                     g_EffectManager.SpawnEffect(enemy->deathAnm1, &enemy->pos, 1, 0xffffffff);
@@ -1242,7 +1242,7 @@ u32 EnemyManager::OnUpdate(EnemyManager *arg)
                     }
                 }
                 enemy->life = 0;
-                g_ReplayManager->replayEventFlags |= 0x20;
+                ReplayManager::RecordEventFlags(0x20);
                 break;
             }
 

@@ -31,8 +31,8 @@ std::uint32_t GameplayAbi(const SessionSetup& s){
     word(0x54483131u);word(SessionSetup::GameplayVersion);word(s.player_count);word(s.difficulty);
     for(auto selection:s.selections)word(selection);word(s.challenge);word(s.automatic);word(s.requested_delay);
     word(s.input_delay);word(s.prediction_reserve);for(auto build:s.build)word(build);
-    // Keep the complete Version5 pure-delay ABI byte-for-byte. New prediction
-    // modes explicitly negotiate their semantic policy and fixed history cap.
+    // Pure-delay and prediction modes hash the same gameplay revision above.
+    // Prediction modes also negotiate their semantic policy and history cap.
     if(s.mode!=1){word(0x52423600u);word(s.mode);word(s.prediction_limit);}
     return h?h:1;
 }

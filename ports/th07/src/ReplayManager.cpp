@@ -1,4 +1,5 @@
 #include "ReplayManager.hpp"
+#include "ReplayStageStart.hpp"
 #ifdef TH_ENABLE_NETPLAY
 #include <eagler/netplay/NetplayInput.hpp>
 #include "netplay/NetplaySideEffects.hpp"
@@ -29,6 +30,10 @@
 #endif
 
 ReplayManager *g_ReplayManager;
+void ReplayManager::RecordEventFlags(u16 flags)
+{
+    if(g_ReplayManager)g_ReplayManager->replayEventFlags|=flags;
+}
 
 static void ApplyReplayExtensionFrame()
 {
@@ -145,8 +150,10 @@ u32 ReplayManager::OnUpdate(ReplayManager *arg)
         std::array<Netplay::FrameInput, TH07_MULTI_MAX_PLAYERS> inputs{};
         for (i32 playerId = 0; playerId < MultiplayerGameplay::GetPlayerCount(); ++playerId)
         {
-            if (!Netplay::Input::PlayerInputOverride(playerId, &inputs[playerId]))
-                inputs[playerId].buttons = g_CurFrameGameInputs[playerId];
+            (void)Netplay::Input::PlayerInputOverride(playerId, &inputs[playerId]);
+            // Native stage construction can clear the legacy button lanes
+            // after the network override was offered. Record what Player used.
+            inputs[playerId].buttons = g_CurFrameGameInputs[playerId];
         }
         ReplayExtension::RecordMultiplayerFrame(stage, arg->frameId, inputs.data(),
                                                 MultiplayerGameplay::GetPlayerCount());
@@ -468,6 +475,9 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *arg)
     replayData->nextNeededPointItemsForExtend =
         g_GameManager.globals->nextNeededPointItemsForExtend;
 
+#if defined(TH_ENABLE_NETPLAY) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    SpectatorReplayStart::Record(*replayData);
+#endif
     arg->replayInputs = replayData->replayInputs;
     arg->stageReplayData = endData;
     arg->fpsCursor = (u8 *)&endData->score;
@@ -823,6 +833,11 @@ ZunResult ReplayManager::DeletedCallback(ReplayManager *arg)
 
 ZunResult ReplayManager::RegisterChain(ZunBool isDemo, const char *replayFilename)
 {
+#if defined(TH_ENABLE_NETPLAY) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    if(SpectatorReplayStart::applying)
+        return SpectatorReplayStart::Apply()?ZUN_SUCCESS:ZUN_ERROR;
+#endif
+
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     for (i32 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
     {

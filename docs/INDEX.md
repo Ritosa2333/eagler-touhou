@@ -1,6 +1,6 @@
 # 文档总表
 
-共 225 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 226 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -129,6 +129,7 @@
 | 架构说明 | [docs/architecture/netplay.md](architecture/netplay.md) | 联机输入时序与 Adonis |
 | 架构说明 | [docs/architecture/rollback.md](architecture/rollback.md) | 回滚运行参考 |
 | 架构说明 | [docs/architecture/source-layout.md](architecture/source-layout.md) | 游戏源码目录 |
+| 架构说明 | [docs/architecture/spectator-replay.md](architecture/spectator-replay.md) | 流式 Replay 旁观 |
 | 架构说明 | [docs/architecture/spectator.md](architecture/spectator.md) | 旁观协议 |
 | 迁移记录 | [docs/migration/README.md](migration/README.md) | Monorepo 迁移记录 |
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
