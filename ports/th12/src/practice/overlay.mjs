@@ -14,7 +14,7 @@ export class PracticeOverlay {
   constructor({bridge,canvas,container=document.body,onError=error=>{throw error;},onMenuAction=null,onRetry=null,locale='zh-CN'}){
     this.bridge=bridge;this.core=bridge.core;this.canvas=canvas;this.onError=onError;this.onMenuAction=onMenuAction;this.locale=locale;
     this.enabled=false;this.initialized=false;this.keys=new Set();this.ids=new Map();this.serial=0;this.scene='title';this.menu=null;this.replay=false;
-    this.onRetry=onRetry;
+    this.onRetry=onRetry;this.pendingPointers=new Map();
     this.root=document.createElement('canvas');this.root.width=640;this.root.height=480;this.root.className='th12-practice-native';this.root.setAttribute('aria-label','Purple THPrac');
     Object.assign(this.root.style,{position:'fixed',zIndex:'80',pointerEvents:'none'});this.root.hidden=true;container.append(this.root);
     this.resize=()=>this.layout();window.addEventListener('resize',this.resize);this.observer=typeof ResizeObserver==='function'?new ResizeObserver(this.resize):null;this.observer?.observe(canvas);this.layout();
@@ -61,16 +61,21 @@ export class PracticeOverlay {
     this.menu.params=params;this.onMenuAction?.({type:'start',params,difficulty:params.stage===6?4:this.menu.difficulty});
   }
   render(){if(!this.initialized||!this.enabled)return;this.layout();this.renderer.render();}
-  pointer(event){
+  pointer(event,forwardGamePointer=()=>{}){
     if(!this.enabled||!this.initialized)return false;
     const id=event.id??'mouse',type={down:0,move:1,up:2,cancel:3}[event.type];if(type===undefined)return false;
     if(!this.ids.has(id))this.ids.set(id,++this.serial);
     const rect=this.canvas.getBoundingClientRect(),x=(event.x-rect.left)*640/rect.width,y=(event.y-rect.top)*480/rect.height;
-    const result=this.core._th12_practice_ui_pointer(type,this.ids.get(id),Number.isFinite(x)?x:0,Number.isFinite(y)?y:0,Number(event.pointerType==='mouse'||id==='mouse'))!==0;
+    if(type===0)this.pendingPointers.delete(id);
+    const route=this.core._th12_practice_ui_pointer(type,this.ids.get(id),Number.isFinite(x)?x:0,Number.isFinite(y)?y:0,Number(event.pointerType==='mouse'||id==='mouse'));
+    if(route===2&&type===0)this.pendingPointers.set(id,{...event});
+    if(route===3){const down=this.pendingPointers.get(id);this.pendingPointers.delete(id);if(down)forwardGamePointer(down);}
+    if(type>=2)this.pendingPointers.delete(id);
+    const result=route===1||route===2;
     if(type>=2)this.ids.delete(id);return result;
   }
   clearKeyboard(){this.keys.clear();if(this.initialized)this.core._th12_practice_ui_clear_keys();}
   wheel(event){if(!this.enabled||!this.initialized)return false;const rect=this.canvas.getBoundingClientRect(),scale=event.deltaMode===1?1:1/100;return this.core._th12_practice_ui_wheel((event.clientX-rect.left)*640/rect.width,(event.clientY-rect.top)*480/rect.height,-event.deltaX*scale,-event.deltaY*scale)!==0;}
-  cancel(){this.keys.clear();this.ids.clear();if(this.initialized)this.core._th12_practice_ui_cancel();}
+  cancel(){this.keys.clear();this.ids.clear();this.pendingPointers.clear();if(this.initialized)this.core._th12_practice_ui_cancel();}
   destroy(){this.cancel();this.observer?.disconnect();window.removeEventListener('resize',this.resize);this.renderer?.destroy();if(this.initialized)this.core._th12_practice_ui_shutdown();if(this.font)this.core._free(this.font);this.root.remove();this.initialized=false;}
 }

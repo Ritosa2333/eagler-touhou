@@ -59,6 +59,12 @@ bool hit(float x,float y){
     if(window->Active&&!window->Hidden&&!(window->Flags&ImGuiWindowFlags_NoMouseInputs)&&window->OuterRectClipped.Contains({x,y}))return true;
   return false;
 }
+bool passive(float x,float y){
+  if(!Mobile::enabled||!Mobile::visible||practice_open||Mobile::captures_advanced(advanced_open))return false;
+  if(ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel))return false;
+  auto* window=ImGui::FindWindowByName("Tracker###th12-thprac-tracker");
+  return window&&window->Active&&!window->Hidden&&window->OuterRectClipped.Contains({x,y});
+}
 void hotkey_line(const char* key,const char* name,bool& value){
   if(Mobile::enabled){Mobile::checkbox(key,name,value);return;}
   const auto cursor=ImGui::GetCursorPos();
@@ -186,7 +192,11 @@ void draw_overlay(){
     }ImGui::End();
   }
   if(Mobile::show(Mobile::Information,tracker_open)&&game_visible){
-    ImGui::SetNextWindowPos({425,338},ImGuiCond_Always);ImGui::SetNextWindowSize({210,0},ImGuiCond_Always);
+    // Mobile adds a folding header. Anchor the whole auto-sized panel above
+    // the canvas bottom, including that header and every UFO counter row.
+    if(Mobile::enabled)ImGui::SetNextWindowPos({425,475},ImGuiCond_Always,{0,1});
+    else ImGui::SetNextWindowPos({425,338},ImGuiCond_Always);
+    ImGui::SetNextWindowSize({210,0},ImGuiCond_Always);
     constexpr auto flags=ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse|ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoInputs|ImGuiWindowFlags_NoFocusOnAppearing|ImGuiWindowFlags_NoNav;
     if(Mobile::begin(Mobile::Information,"Tracker###th12-thprac-tracker",flags,locale)){
       const auto& tracker=trackerInfo();const auto* diffs=selection(practice_group_IGI_DIFF);const auto* players=selection(practice_group_IGI_PL_12);
@@ -270,7 +280,19 @@ int th12_practice_ui_capture(){return initialized&&enabled()&&(practice_open||th
 int th12_practice_ui_pointer(int type,int id,float x,float y,int desktop){
   if(!initialized||!enabled())return 0;desktop_pointer|=desktop!=0;
   if(type==3){const bool owned=pointers.route(2,id,false);if(pointer_owner==id){pointer_owner=-1;edges.clear();mouse_down=sample_down=false;ImGui::GetIO().MouseDown[0]=false;ImGui::ClearActiveID();}return owned;}
-  const bool owned=pointers.route(unsigned(type),id,type==0&&hit(x,y));
+  using Route=eagler::thprac::PracticePointer::TouchRoute;
+  const auto decision=desktop?eagler::thprac::PracticePointer::TouchDecision{pointers.route(unsigned(type),id,type==0&&hit(x,y))?Route::Ui:Route::Game,x,y}:
+    pointers.route_touch(unsigned(type),id,type==0&&hit(x,y),type==0&&passive(x,y),x,y);
+  // Match TH15: a read-only panel keeps taps but gives swipes to the game,
+  // with the original down replayed by the platform adapter (return 3).
+  if(decision.route==Route::Pending)return 2;
+  if(decision.route==Route::BeginGame)return 3;
+  if(decision.route==Route::Tap){
+    if(edges.size()+2>64){cancel_pointer();return 1;}
+    edges.push_back({true,decision.x,decision.y});edges.push_back({false,x,y});
+    mouse_x=x;mouse_y=y;return 1;
+  }
+  const bool owned=decision.route==Route::Ui;
   if(desktop&&type==1&&pointer_owner<0){mouse_x=x;mouse_y=y;}
   if(!owned)return 0;
   if(type==0&&pointer_owner<0)pointer_owner=id;

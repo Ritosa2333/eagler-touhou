@@ -16,9 +16,9 @@ window.ui=new PracticeOverlay({bridge:new PracticeBridge(core),canvas:document.g
 ui.configure({enabled:true,locale:'zh-CN'});await ui.initialize(new Map([['/unifont.otf',await (await fetch('/unifont.otf')).blob()]]));
 window.openPractice=()=>{window.context={scene:'practice',menu:new PracticeMenu({locale:'zh-CN'}),menuReady:true};};
 window.routed=[];for(const name of ['keydown','keyup'])addEventListener(name,event=>{routed.push({code:event.code,down:name==='keydown',consumed:ui.key(event.code,name==='keydown')});event.preventDefault();});
-for(const name of ['pointerdown','pointermove','pointerup','pointercancel'])addEventListener(name,event=>{const pointer={id:event.pointerId,type:name==='pointercancel'?'cancel':name.slice(7),x:event.clientX,y:event.clientY,pointerType:event.pointerType,button:event.button};if(!ui.pointer(pointer)&&event.pointerType==='touch')touch.pointer(pointer,touchState());});
+for(const name of ['pointerdown','pointermove','pointerup','pointercancel'])addEventListener(name,event=>{const pointer={id:event.pointerId,type:name==='pointercancel'?'cancel':name.slice(7),x:event.clientX,y:event.clientY,pointerType:event.pointerType,button:event.button};if(!ui.pointer(pointer,down=>touch.pointer(down,touchState()))&&event.pointerType==='touch')touch.pointer(pointer,touchState());});
 addEventListener('wheel',event=>{if(ui.wheel(event))event.preventDefault();},{passive:false});
-window.ticks=0;let last=0;function frame(now){if(now-last>=1000/60-.5){ui.update(context);const touched=touch.sample(touchState());ui.tick(touched.held);last=now;window.ticks++;}ui.render();requestAnimationFrame(frame);}requestAnimationFrame(frame);window.ready=true;
+window.ticks=0;window.touchCommands=[];let last=0;function frame(now){if(now-last>=1000/60-.5){ui.update(context);const touched=touch.sample(touchState());if(touched.held)touchCommands.push(touched.held);ui.tick(touched.held);last=now;window.ticks++;}ui.render();requestAnimationFrame(frame);}requestAnimationFrame(frame);window.ready=true;
 </script>`;
 const server=createServer(async(request,response)=>{
   try{
@@ -80,9 +80,43 @@ try{
   await page.evaluate(()=>{context.replay=false;ui.mobilePanels({thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true});});
   await page.waitForFunction(()=>!ui.replay&&!ui.capturesGameplay);
   await page.screenshot({path:resolve(output,'mobile-collapsed.png'),clip:{x:20,y:20,width:640,height:480}});
+  // Native mobile Information panel: bottom-anchored bounds and TH15's
+  // deferred tap/swipe ownership, tested through the production Wasm API.
+  const info=await page.evaluate(()=>{
+    const header=new Uint32Array(core.HEAPU8.buffer,core._th12_practice_ui_draw(),8),view=new DataView(core.HEAPU8.buffer),points=[];
+    for(let i=0;i<header[3];i++){const at=header[0]+i*header[6],x=view.getFloat32(at,true),y=view.getFloat32(at+4,true);if(x>=425)points.push({x,y});}
+    return {top:Math.min(...points.map(p=>p.y)),bottom:Math.max(...points.map(p=>p.y))};
+  });
+  assert.ok(info.bottom<=475&&info.top>=0,JSON.stringify(info));
+  const infoY=info.top+14;
+  await page.evaluate(y=>{
+    const down={id:'info-tap',type:'down',x:470,y:y+20,pointerType:'touch'};
+    window.infoDown=down;
+    if(!ui.pointer(down))throw Error('tracker down must wait for tap/swipe');
+    ui.pointer({...down,type:'up'});
+  },infoY);await settle();
+  const expandedInfo=await page.evaluate(()=>{
+    const header=new Uint32Array(core.HEAPU8.buffer,core._th12_practice_ui_draw(),8),view=new DataView(core.HEAPU8.buffer),ys=[];
+    for(let i=0;i<header[3];i++){const at=header[0]+i*header[6];if(view.getFloat32(at,true)>=425)ys.push(view.getFloat32(at+4,true));}
+    return {top:Math.min(...ys),bottom:Math.max(...ys),vertices:ys.length};
+  });
+  assert.ok(expandedInfo.vertices>100&&expandedInfo.top<info.top-40,JSON.stringify(expandedInfo));
+  assert.ok(expandedInfo.top>=0&&expandedInfo.bottom<=476,JSON.stringify(expandedInfo)); // 1px border AA fringe.
+  await page.screenshot({path:resolve(output,'mobile-information.png'),clip:{x:20,y:20,width:640,height:480}});
+  const drag=await page.evaluate(y=>{
+    const forwarded=[],down={id:'info-drag',type:'down',x:470,y:y+50,pointerType:'touch'};
+    const forward=e=>forwarded.push(e);
+    const decisions=[ui.pointer(down,forward),ui.pointer({...down,type:'move',x:500},forward),ui.pointer({...down,type:'up',x:500},forward)];
+    const crossing={id:'game-cross',type:'down',x:300,y:350,pointerType:'touch'};
+    const cross=[ui.pointer(crossing),ui.pointer({...crossing,type:'move',x:470,y:y+50}),ui.pointer({...crossing,type:'up',x:470,y:y+50})];
+    return {decisions,forwarded,cross};
+  },expandedInfo.top);
+  assert.deepEqual(drag.decisions,[true,false,false]);assert.equal(drag.forwarded.length,1);
+  assert.equal(drag.forwarded[0].type,'down');assert.equal(drag.forwarded[0].x,470);
+  assert.deepEqual(drag.cross,[false,false,false]);
   await page.keyboard.press('Enter');assert.equal(await page.evaluate(()=>ui.capturesGameplay),false);
   const routed=await page.evaluate(()=>[
-    ui.pointer({id:'game-finger',type:'down',x:650,y:490}),
+    ui.pointer({id:'game-finger',type:'down',x:400,y:490}),
     ui.pointer({id:'game-finger',type:'move',x:200,y:42}),
     ui.pointer({id:'game-finger',type:'up',x:200,y:42}),
   ]);assert.deepEqual(routed,[false,false,false]);
@@ -124,8 +158,17 @@ try{
   await openTouchPractice();
   await fingers([[1,100,250]]);await fingers([],'touchCancel');await settle();
   assert.equal(await page.evaluate(()=>actions.length),0,'cancelled outside contact emits no action');
+  await page.evaluate(()=>{ui.cancel();touch.cancel();context={scene:'playing',menuReady:true};ui.mobilePanels({thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true});});await settle();
+  await fingers([[9,470,infoY+20]]);await fingers([],'touchEnd');await settle();
+  await page.evaluate(()=>{touchCommands.length=0;});
+  await fingers([[9,470,420]]);await fingers([[9,470,350]],'touchMove');await fingers([],'touchEnd');await settle();
+  assert.ok(await page.evaluate(()=>touchCommands.some(mask=>mask&16)),'native tracker swipe reaches game gesture recognizer');
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(()=>{document.body.style.margin='0';const c=document.getElementById('game');Object.assign(c.style,{width:'100vw',height:'75vw',marginTop:'220px'});});await settle();
+  await page.screenshot({path:resolve(output,'mobile-information-portrait.png')});
   assert.deepEqual(errors,[]);
   const report={status:'PASS',runtime:'actual TH12 Wasm + common ImGui + shared Unifont',checks:['native checkbox mutation','original hotkey gating','enemy invincibility','paused tracker geometry','pause-confirm tracker geometry','paused F1-F7/U mutation and routing','paused checkbox mutation','held shortcut edge detection','paused replay read only','title manual routing','title HUD isolation','replay cheat isolation','mobile folded reopen','pointer-only headers','game drag ownership','combo cancel isolation','numeric keyboard editing','native practice cancel','touch outside single tap starts','touch outside two fingers cancel','touch widget and popup isolation','touch cancellation isolation'],retailAssets:false,screenshots:6};
+  report.checks.push('mobile information bounds including last UFO row','native touch header folding','passive swipe original down replay','cross-panel game ownership','CDP tracker swipe reaches game gestures','portrait canvas scaling');report.screenshots=8;
   await writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }catch(error){
   console.error({errors,state:await page.evaluate(()=>({ready:window.ready,flags:window.core?._th12_practice_ui_flags(),enabled:window.ui?.enabled,initialized:window.ui?.initialized})).catch(()=>null)});

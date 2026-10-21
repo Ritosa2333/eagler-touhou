@@ -55,7 +55,7 @@ function updatePracticeUI(){
   practiceUI.update({scene:model.state.scene,replay:!!session?.replay,menu:model.state.scene==='practice'?model.practiceMenu:null,menuReady:model.ready()});
   if(practiceCaptured!==practiceUI.capturesGameplay){practiceCaptured=practiceUI.capturesGameplay;clearKeys({practiceToo:false});}
 }
-function practicePointer(message){if(runtimeOptions.replayViewer)return false;const consumed=practiceUI?.pointer(message)??false;if(consumed)updatePracticeUI();return consumed;}
+function practicePointer(message){if(runtimeOptions.replayViewer)return false;const consumed=practiceUI?.pointer(message,down=>touch.pointer({...down,...pointerPosition(down.x,down.y)},touchState()))??false;if(consumed)updatePracticeUI();return consumed;}
 function checkDamageEntry(){const state=damageSources.state();if(state.error&&state.entryResult===-1)throw Error(state.error);}
 function initializeReplayStage(replay,part){
   practiceBridge.setReplay(true);

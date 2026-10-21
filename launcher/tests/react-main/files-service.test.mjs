@@ -85,6 +85,33 @@ function fixture({ready = true, launched = false, confirm = true, corrupt = fals
   return {actions, events, stored, storedMatches, downloads, feedback, decisions, state, mutations, capturedContexts, completedContexts, presentationGuards, setImportContext(value) {importContext = value;}, pick(file) {picked = file;}, managerOpen() {managerOpen = true;}};
 }
 const save = () => new File([new Uint8Array([3, 7, 9])], 'any.dat');
+
+for (const product of ['th15','th15mp']) test(`${product} save archive round-trips score and every Pointdevice slot`,async()=>{
+ const f=fixture({launched:true});f.stored.set('scoreth15.dat',[1,2,3]);
+ for(let character=0;character<4;character++)for(let difficulty=0;difficulty<5;difficulty++)f.stored.set(`autosave/save${character}_${difficulty}.dat`,[character,difficulty,7]);
+ f.stored.set('replay/th15_01.rpy',[9]);f.stored.set('autosave/save4_0.dat',[9]);
+ await f.actions.run('export-save',product);
+ assert.equal(f.downloads[0].name,'scoreth15.zip');assert.equal(f.downloads[0].mime,'application/zip');
+ const {unzipSync}=await import('fflate'),archive=new Uint8Array(f.downloads[0].bytes),entries=unzipSync(archive);assert.equal(Object.keys(entries).length,21);
+ const g=fixture();await g.actions.importFile('save',new File([archive],'scoreth15.zip'),product);
+ for(const [path,data]of Object.entries(entries)){assert.deepEqual(g.stored.get(path),[...data]);assert(g.events.includes('read:'+path),'Every imported file must be verified after cold restart');}
+ assert.equal(g.events.filter(e=>e.startsWith('restart:')).length,1);assert.equal(g.stored.has('replay/th15_01.rpy'),false);
+});
+
+test('TH15 accepts historical score-only ZIP and DAT without deleting checkpoint slots',async()=>{
+ const {zipSync}=await import('fflate'),f=fixture();f.stored.set('autosave/save0_0.dat',[7]);
+ await f.actions.importFile('save',new File([zipSync({'scoreth15.dat':new Uint8Array([3])})],'old.zip'),'th15');
+ assert.deepEqual(f.stored.get('scoreth15.dat'),[3]);assert.deepEqual(f.stored.get('autosave/save0_0.dat'),[7]);
+ await f.actions.importFile('save',save(),'th15');assert.deepEqual(f.stored.get('scoreth15.dat'),[3,7,9]);
+ const picker=fixture();await picker.actions.run('import-save','th15');assert(picker.events.includes('pick:.dat,.zip'));
+});
+
+test('TH15 save ZIP rejects traversal and case-duplicate slots before writing any files',async()=>{
+ const {zipSync}=await import('fflate');
+ for(const [entries,error]of [[{'../autosave/save0_0.dat':new Uint8Array([1])},/file.zipUnsafePath/],[{'autosave/save0_0.dat':new Uint8Array([1]),'AUTOSAVE/save0_0.dat':new Uint8Array([2])},/file.zipDuplicatePath/]]){
+  const f=fixture();await assert.rejects(f.actions.importFile('save',new File([zipSync(entries)],'bad.zip'),'th15'),error);assert.equal(f.events.some(e=>e.startsWith('write:')),false);
+ }
+});
 test('TH09 match archive exports matchup folders and restores names from its ZIP', async () => {
   const f = fixture(), match = {schema:'eagler-touhou/th09-match-replay/1',names:['xxx','abdjfal'],startedAt:1792029600000,frames:7200,winner:1};
   f.stored.set('replay/xxx vs abdjfal/th9_ud0000.rpy', [84,57,82]); f.storedMatches.set('replay/xxx vs abdjfal/th9_ud0000.rpy',match);
