@@ -1,5 +1,6 @@
 #include "PlayerShots.hpp"
 #include "BulletMotion.hpp"
+#include "PresentationAudit.hpp"
 #include <cmath>
 namespace th08 {
 void PlayerShots::snapshot_presentation(){
@@ -39,7 +40,7 @@ bool PlayerShots::update_callback(PlayerShot& shot,ShotUpdate kind){
         if(shot.laser_slot<0||shot.laser_slot>=3){failure=Failure::InvalidLaserSlot;return true;}auto& slot=state.lasers[shot.laser_slot];
         if(slot.shot!=&shot&&shot.animation.stopped)shot.animation.SetInterrupt(1);
         if((state.gui_blocked||state.bomb||(state.game_flags&0x2000))&&slot.timer.current>20)slot.timer.set(20);
-        if(slot.timer.current<=0){slot.timer.set(0);slot.shot=nullptr;shot.state=0;return true;}
+        if(slot.timer.current<=0){slot.timer.set(0);slot.shot=nullptr;TH08_AUDIT_RETIRED(PlayerShot,&shot);shot.state=0;return true;}
         if(slot.timer.current<=70&&shot.animation.stopped)shot.animation.SetInterrupt(1);
         shot.position.x=Scalar::add(shot.position.x,shot.velocity.z);shot.position.z=.44f;if(state.player_state==2)return true;
         shot.animation.scale.y=Scalar::div(shot.position.y,14);shot.size.y=shot.position.y;shot.position.y=Scalar::div(shot.position.y,2);
@@ -62,10 +63,10 @@ bool PlayerShots::update_callback(PlayerShot& shot,ShotUpdate kind){
 bool PlayerShots::update(){
     failure=Failure::None;snapshot_presentation();if(state.game_flags&0x400)return true;
     for(auto& shot:state.shots){if(!shot.state)continue;
-        if(update_callback(shot,shot.update)){if(failure!=Failure::None)return false;shot.state=0;continue;}
+        if(update_callback(shot,shot.update)){if(failure!=Failure::None)return false;if(shot.state){TH08_AUDIT_RETIRED(PlayerShot,&shot);shot.state=0;}continue;}
         shot.position.x=(number(timing.rate)*number(shot.velocity.x)+number(shot.position.x)).to_float();shot.position.y=(number(timing.rate)*number(shot.velocity.y)+number(shot.position.y)).to_float();
-        if(shot.kind!=4&&shot.kind!=5){if(!shot.animation.loadedSprite){failure=Failure::MissingSprite;return false;}const auto& sprite=*shot.animation.loadedSprite;if(!bullet_in_view(shot.position,sprite.widthPx,sprite.heightPx))shot.state=0;}
-        if(!actions){failure=Failure::MissingActions;return false;}if(actions->step_animation(shot.animation))shot.state=0;shot.timer.tick(timing);
+        if(shot.kind!=4&&shot.kind!=5){if(!shot.animation.loadedSprite){failure=Failure::MissingSprite;return false;}const auto& sprite=*shot.animation.loadedSprite;if(!bullet_in_view(shot.position,sprite.widthPx,sprite.heightPx)){TH08_AUDIT_RETIRED(PlayerShot,&shot);shot.state=0;}}
+        if(!actions){failure=Failure::MissingActions;return false;}if(actions->step_animation(shot.animation)&&shot.state){TH08_AUDIT_RETIRED(PlayerShot,&shot);shot.state=0;}shot.timer.tick(timing);
     }
     return true;
 }

@@ -4,6 +4,7 @@
 #include "../game/MusicCommands.hpp"
 #include "../game/SoundEffects.hpp"
 #include "../game/MidiPlayer.hpp"
+#include <array>
 namespace th08 {
 class BrowserRuntime;
 // Owns game music selection, effect voices, fades and MIDI sequencing.
@@ -13,10 +14,15 @@ class GameAudioManager:public AudioSink,public MusicControlActions,public MusicA
     BgmFormats formats;const BgmFormat* current_format=nullptr;SoundEffects effects{*this};AudioFades fades{*this};
     MusicCommands commands{*this};std::unique_ptr<MusicControl> control;bool music_loop=false;
     MidiPlayer midi{*this};u32 midi_clock=0;bool midi_failed=false;
+    std::array<std::array<char,256>,32> midi_paths{};std::array<char,256> midi_current_path{};
+    u32 midi_messages=0,midi_note_ons=0,midi_note_offs=0,midi_controllers=0,midi_sysex=0,midi_opens=0,midi_closes=0;
+    i32 last_music_song=-1;
     void audio_context();bool open_music(const BgmFormat*);
     std::vector<u8> read(const char*);u32 milliseconds();
 public:
     explicit GameAudioManager(BrowserRuntime&);
+    ~GameAudioManager();
+    const u32* midi_observation()const;const char* midi_path()const{return midi_current_path.data();}
     bool prepare_formats();bool prepare_samples();void shutdown();
     void sound(i32,i32,float,bool);bool play_music(i32,i32);void load_music(i32,const char*);void play_audio(const char*,i32);
     void stop_audio();void fade_music(float);void menu_music(MenuMusic,float);void midi_reset();void start_bgm();

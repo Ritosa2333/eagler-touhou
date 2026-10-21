@@ -39,7 +39,7 @@ bool EnemySimulation::finish_enemy(EclVm& enemy,bool hit){
     return true;
 }
 JobResult EnemySimulation::update(){
-    failed=false;i32 bomb_hit=0;
+    input.validation.note_update_started();failed=false;i32 bomb_hit=0;
     if(!dialogue_active()){
         state.frames=wrapping_add(state.frames,1);
         if(state.timer.current>=16){state.active_frames=wrapping_add(state.active_frames,1);if(!input.focused)state.unfocused_frames=wrapping_add(state.unfocused_frames,1);}
@@ -52,7 +52,7 @@ JobResult EnemySimulation::update(){
         if(i64(state.timer.current)%interval==0)rank.add(100);
     }
     for(auto& layer:state.layers)layer=nullptr;
-    for(u32 i=0;i<program.timeline_count();++i){
+    if(input.validation.allow_timeline())for(u32 i=0;i<program.timeline_count();++i){
         auto& timeline=state.timelines[i];if(!timeline.instruction){const Timer clock=timeline.timer;if(!timeline_executor.start(timeline,program,i,globals.difficulty)){failed=true;return JobResult::Error;}timeline.timer=clock;}
         globals.dialogue_active=dialogue_active();timeline_executor.step(timeline);if(timeline.invalid||failed){failed=true;return JobResult::Error;}
     }

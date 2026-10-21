@@ -42,7 +42,7 @@ sources.push(...readdirSync(resolve(root,'cpp/sdl')).filter(n=>n.endsWith('.cpp'
 sources.push(...['imgui.cpp','imgui_draw.cpp','imgui_widgets.cpp','imgui_tables.cpp','imgui_freetype.cpp'].map(name=>resolve(imgui,name)));
 const shared=resolve(workspace,'portable/sdl'),numeric=resolve(workspace,'portable/numeric'),input=resolve(workspace,'portable/input'),renderer=resolve(shared,'Renderer.cpp');
 common.push('-I'+audioInclude);
-const audioHeaders=[resolve(audioInclude,'eagler/audio/WebSfx.hpp')];
+const audioHeaders=[...headerInputs(resolve(audioInclude,'eagler/input')),resolve(audioInclude,'eagler/audio/WebSfx.hpp')];
 function headers(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headers(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);}
 const observedInputs=new Map();
 function observed(path){const bytes=readFileSync(path),digest=createHash('sha256').update(bytes).digest('hex');if(observedInputs.has(path)&&observedInputs.get(path)!==digest)throw Error('Source changed during build: '+path);observedInputs.set(path,digest);return bytes;}
@@ -51,7 +51,7 @@ const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp'
 // th20 game code genuinely throws (archive/verify paths, D3DX loader errors)
 // and uses dynamic_cast once, so the wasm build keeps exceptions and RTTI.
 const flags=[...common,game==='th20'?'-std=c++20':'-std=c++17',...(game==='th20'?['-fexceptions','-frtti','-include',resolve(root,'cpp/shim/msvc_compat.h'),'-I'+resolve(workspace,'include'),'-I'+resolve(root,'cpp'),'-msimd128','-msse','-msse2','-mavx']:['-fno-exceptions','-fno-rtti'])],prefix=JSON.stringify([flags,hash.digest('hex')]);
-if(printingRuntimeInputs)await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:headerInputs(resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input'),resolve(workspace,'src'),imgui),flags});
+if(printingRuntimeInputs)await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:[...headerInputs(resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input'),resolve(workspace,'src'),imgui),...audioHeaders],flags});
 const objects=resolve(out,'objects');if(!printingRuntimeInputs)mkdirSync(objects,{recursive:true});
 async function compile(source,name,c=false){const experiment=replayClockExperiments&&source.endsWith('ReplayVerifier.cpp')?['-DTH20_REPLAY_CLOCK_EXPERIMENTS=1']:[];const object=resolve(objects,name+'.o'),key=createHash('sha256').update(prefix).update(experiment.join()).update(observed(source)).digest('hex');if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;
  await run([...(c?[...common,'-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5']:flags),...experiment,'-c',source,'-o',object]);writeFileSync(object+'.key',key);return object;

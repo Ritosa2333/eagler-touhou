@@ -58,22 +58,22 @@ function gameplayRows(rows) {
   });
 }
 
-function traceIdentity(fixture) {
+function traceIdentity(fixture, identity = {}) {
   return {
-      game: 'th08', profile: 'jp-1.00d/historical-oracle-v1', replaySha256: fixture.replaySha256,
-      executableSha256: '330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924',
-      resourceSha256: '9d7edf43b8ddd347cbb641836f6b5050745dd936f688daebbf9382ca557043bb',
+      game: 'th08', profile: identity.profile ?? 'jp-1.00d/historical-oracle-v1', replaySha256: fixture.replaySha256,
+      executableSha256: identity.executableSha256 ?? '330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924',
+      resourceSha256: identity.resourceSha256 ?? '9d7edf43b8ddd347cbb641836f6b5050745dd936f688daebbf9382ca557043bb',
       stateSchema: 'th08/legacy-replay-oracle-row/v1', traceCodec: 'in-memory/v1',
       digestAlgorithm: 'sha256-truncated-128/legacy-json-v1',
   };
 }
 
-export function recordsFromRows(fixture, rows, provider, {digestCanonicalJson, recordsFromSegments}) {
+export function recordsFromRows(fixture, rows, provider, {digestCanonicalJson, recordsFromSegments, identity, provenance = {}}) {
   const stage = rows[0]?.stage, ticks = ticksFromRows(rows, digestCanonicalJson);
   return recordsFromSegments({
-    comparisonIdentity: traceIdentity(fixture),
+    comparisonIdentity: traceIdentity(fixture, identity),
     coverage: {requiredCategories: ['rng', 'player', 'world'], optionalCategories: []},
-    provenance: {provider}, runReason: 'demo-complete',
+    provenance: {provider, ...provenance}, runReason: 'demo-complete',
     segments: [{segmentId: `stage-${stage}#0`, route: `stage-${stage}`, ticks, reason: 'demo-returned'}],
   });
 }
@@ -87,7 +87,7 @@ export function recordsFromLongRows({fixture, rows, provider, identity, complete
   const groups = contiguousStages(gameplayRows(rows));
   return recordsFromSegments({
     comparisonIdentity: {
-      game: 'th08', profile: 'jp-1.00d/ordinary-replay-v1', replaySha256: fixture.replaySha256,
+      game: 'th08', profile: identity.profile ?? 'jp-1.00d/ordinary-replay-v1', replaySha256: fixture.replaySha256,
       executableSha256: identity.executableSha256, resourceSha256: identity.resourceSha256,
       stateSchema: 'th08/ordinary-replay-state/v1', traceCodec: 'jsonl/v1',
       digestAlgorithm: 'sha256-truncated-128/legacy-json-v1',
@@ -103,16 +103,16 @@ export function recordsFromLongRows({fixture, rows, provider, identity, complete
   });
 }
 
-export async function* recordsFromLongJsonLines({fixture, rows, provider, identity, complete, limit = null}, {digestCanonicalJson}) {
+export async function* recordsFromLongJsonLines({fixture, rows, provider, identity, complete, limit = null, provenance = {}}, {digestCanonicalJson}) {
   yield {
     type: 'run-start', schema: 'eagler/replay-trace/v1',
     comparisonIdentity: {
-      game: 'th08', profile: 'jp-1.00d/ordinary-replay-v1', replaySha256: fixture.replaySha256,
+      game: 'th08', profile: identity.profile ?? 'jp-1.00d/ordinary-replay-v1', replaySha256: fixture.replaySha256,
       executableSha256: identity.executableSha256, resourceSha256: identity.resourceSha256,
       stateSchema: 'th08/ordinary-replay-state/v1', traceCodec: 'jsonl/v1',
       digestAlgorithm: 'sha256-truncated-128/legacy-json-v1',
     },
-    coverage: {requiredCategories: ['rng', 'player', 'world'], optionalCategories: []}, provenance: {provider},
+    coverage: {requiredCategories: ['rng', 'player', 'world'], optionalCategories: []}, provenance: {provider, ...provenance},
   };
   let sequence = 0, logicalTick = 0, tickCount = 0, segmentCount = 0, stage = null, segmentId = null;
   let previousRawStage = null, previousGameFrames = null;

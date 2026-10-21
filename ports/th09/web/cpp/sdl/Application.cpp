@@ -1,4 +1,5 @@
 #include "browser-gamepad-input.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 // SDL application integration under validation. Test-only entry points are
 // compiled behind TH09_DEVELOPMENT_HARNESS; no original executable is linked.
 #include "Assets.hpp"
@@ -70,6 +71,7 @@ EM_JS(int, th09_keyboard_gamepad_dpad, (), {
 namespace th09::sdl {
 namespace {
 i32 joy_button(i32);
+float current_touch_sensitivity();
 NetworkInput network;
 multiplayer::RollbackSession rollback(th09_shared_transport());
 bool rollback_active=false,network_selection=false;
@@ -339,7 +341,15 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
             else {session->finish();return return_title(action==InGameAction::save_score);}
         }
         }
-        if(!paused&&!over&&!complete){presentation.renderer.flush();if(!session->update(left,right,keys)){error=session->error;return false;}world=session->world.get();presentation.world=world;}
+        if(!paused&&!over&&!complete){
+            const u32 logicFrame=recording_frame?recording_frame->beginFrame:session->frames;
+            const u32 executionKind=(session->is_replay||spectator_mode)?eagler::input::TouchMotionTraceBank::replay:
+                recording_frame&&logicFrame<rollback_catchup?eagler::input::TouchMotionTraceBank::resimulation:
+                recording_frame&&recording_frame->captured?eagler::input::TouchMotionTraceBank::speculative:
+                eagler::input::TouchMotionTraceBank::forward;
+            eagler::input::GlobalTouchMotionTraceBank().set_context(logicFrame,executionKind,current_touch_sensitivity());
+            presentation.renderer.flush();if(!session->update(left,right,keys)){error=session->error;return false;}world=session->world.get();presentation.world=world;
+        }
         over=session->phase==SessionPhase::game_over;complete=session->phase==SessionPhase::match_complete;
         if(session->phase==SessionPhase::finished)return return_title(!session->is_replay);
         requested_transition=world->transition_pending?100+i32(world->transition):-1;
@@ -391,6 +401,7 @@ bool deferred_recovery_active(){
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+float current_touch_sensitivity(){return gestures.sensitivity;}
 KeyboardInputBuffer keyboard_inputs;
 int launcher_gamepad[2]{-1,-1};
 SDL_Gamepad* controllers[2]{};u32 pulse_ticks[16]{};u32 auto_fire_frame=0;
@@ -450,6 +461,12 @@ void sample_keys(u16 (&out)[3]){
             const float sx=m.base_scale.x*m.effect_scale.x,sy=m.base_scale.y*m.effect_scale.y;float x=sx?(sample.x-state.x)/sx:0,y=sy?(sample.y-state.y)/sy:0;if(sample.motion!=2)touch::limit_vector(x,y,speed);
             probe->session->motion_input[side]={true,x,y,sample.motion==2,false};
         }
+        auto& motion=probe->session->motion_input[side];
+        motion.trace_target_known=!network.active;
+        motion.trace_target_x=sample.x;
+        motion.trace_target_y=sample.y;
+        motion.trace_sensitivity_known=!network.active;
+        motion.trace_sensitivity=gestures.sensitivity;
     }
     out[2]=keyboard[2]|keyboard_input(sample.keys,2)|joy_keys(0)|joy_keys(1)|local_keys[0]|local_keys[1];for(u32 n=0;n<16;++n)if(pulse_ticks[n]){out[2]|=u16(1u<<n);--pulse_ticks[n];}
     const bool paired=local_versus_input_context();
@@ -496,6 +513,9 @@ TH09_EXPORT("th09_native_observation_v1") const unsigned* th09_native_observatio
         }else{words[1]|=phase_valid;words[2]=6;}
     }
     return words.data();
+}
+TH09_EXPORT("th09_touch_motion_trace_v2") const unsigned* th09_touch_motion_trace_v2(u32 seat,u32 executionKind){
+    return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,executionKind);
 }
 TH09_EXPORT("th09_rollback_recovery_mode") u32 th09_rollback_recovery_mode(u32 after){
     if(after>1||running||rollback_active)return 0;

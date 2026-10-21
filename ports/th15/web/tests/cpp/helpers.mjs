@@ -1,13 +1,16 @@
-import {readFileSync,writeFileSync,mkdirSync} from "node:fs";
+import {readFileSync} from "node:fs";
 import {fileURLToPath} from "node:url";
-import {resolve} from "node:path";
+import {resolve,isAbsolute} from "node:path";
 import {createHash} from "node:crypto";
 import {WASI} from "node:wasi";
 import {NativeMachine} from "../../scripts/native/machine.mjs";
+import {createOracleReportWriter} from "../../../../../tools/testing/oracle-report-writer.mjs";
 export const root=fileURLToPath(new URL("../../",import.meta.url));
 export function privateOracleInput(name){const value=process.env[name];if(typeof value!=="string"||!value)throw Error(`${name} must come from the private oracle input receipt`);if(!isAbsolute(value))throw Error(`${name} must be an absolute receipt-bound path`);return value;}
 export const target=JSON.parse(readFileSync(resolve(root,"target.json"),"utf8"));
 export const sha=data=>createHash("sha256").update(data).digest("hex");
+const reportWriter=createOracleReportWriter({targetPath:resolve(root,"target.json"),candidateWasmPath:resolve(root,"artifacts/cpp/game-core-test.wasm"),outputDirectory:resolve(root,"artifacts/cpp/verification")});
+export const reportRecord=(data,source="candidate-comparison")=>reportWriter.create(data,source);
 export async function core(){const wasi=new WASI({version:"preview1",args:[],env:{},preopens:{}});const {instance}=await WebAssembly.instantiate(readFileSync(resolve(root,"artifacts/cpp/game-core-test.wasm")),{wasi_snapshot_preview1:wasi.wasiImport,env:{emscripten_notify_memory_growth(){}}});wasi.initialize(instance);return instance.exports;}
 export const memory=(c,p,n)=>new Uint8Array(c.memory.buffer,p,n);
 export function string(c,p){if(!Number.isInteger(p)||p<0||p>=c.memory.buffer.byteLength)throw Error("Invalid Wasm string pointer "+p);const bytes=memory(c,p,Math.min(1024,c.memory.buffer.byteLength-p)),n=bytes.indexOf(0);return Buffer.from(bytes.subarray(0,n<0?bytes.length:n)).toString();}
@@ -21,7 +24,7 @@ export async function oracle(options={}){const bytes=readFileSync(resolve(root,t
  // would corrupt the return value of every protected original function.
  m.replace(0x490390,"security_check_cookie",()=>m.reg("EAX"));
  m.onImport=e=>{if(e.handler)m.ret(e.handler(),e.argc);else throw Error("Unimplemented original import "+e.dll+"!"+e.name);};return m;}
-export function report(name,data){const dir=resolve(root,"artifacts/cpp/verification");mkdirSync(dir,{recursive:true});writeFileSync(resolve(dir,name+".json"),JSON.stringify({target,coreSha256:sha(readFileSync(resolve(root,"artifacts/cpp/game-core-test.wasm"))),...data},null,2)+"\n");}
+export function report(name,data,source="candidate-comparison"){return reportWriter.write(name,data,source);}
 // Unicorn's bundled TCI backend lacks PEXTRW. This test-only instruction shim
 // performs the same word extraction via MOVQ/MOVZX, preserving flags and XMM0.
 // It does not replace the original CRT math function or its numeric operations.

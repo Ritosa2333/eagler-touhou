@@ -5,6 +5,7 @@
 #include <map>
 #endif
 namespace th08 {
+enum class JapaneseGlyphSource:u8 {None=0,Bitmap=1,Msgothic=2,Pack=3,Unifont=4,MsgothicNotdef=5};
 // Prepared translations arrive as UTF-8 while original assets stay CP932.
 // These helpers decode one buffer at the rasterization boundary; localization
 // off never touches them.
@@ -23,9 +24,9 @@ private:
 };
 class JapaneseFont {
 public:
-    struct Glyph {u32 code=0,offset=0;i16 advance=0,left=0,top=0;u16 width=0,height=0;};
+    struct Glyph {u32 code=0,offset=0;i16 advance=0,left=0,top=0;u16 width=0,height=0;u32 actual_code=0xffffffffu;JapaneseGlyphSource source=JapaneseGlyphSource::None;bool has_glyph=false,notdef=false;};
     bool load(const u8*,u32);
-    const Glyph* find(u16 code) const noexcept;
+    const Glyph* find(u16 code,bool* cache_hit=nullptr) const noexcept;
     const u8* coverage(const Glyph& g) const noexcept;
     i32 height=0,weight=0;
 #ifdef TH_NATIVE_PLATFORM

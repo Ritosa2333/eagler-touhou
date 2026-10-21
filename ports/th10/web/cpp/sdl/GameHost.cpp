@@ -92,6 +92,7 @@ void touch(int type,int id,float x,float y){
 extern "C" {
 __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Application* app){
     if(!session||session->app!=app)return;
+    if(app->world)app->world->touch_sensitivity=gestures.sensitivity;
     SDL_Event event;while(SDL_PollEvent(&event)){
 #ifdef TH_ENABLE_THPRAC
         ThpracUi::process_event(event);

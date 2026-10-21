@@ -59,6 +59,9 @@ bool GameApplication::enter_game(){
     auto& g=game.globals;
     if(from_title){const auto& c=title.context;g.stage=c.currentStage;g.difficulty=c.difficulty;g.shot=c.character;g.current_spell=c.currentSpellCardNumber;g.game_flags=flag_bits(c.flags);supervisor.state.stage=g.stage;supervisor.state.difficulty=g.difficulty;supervisor.state.practice=g.game_flags&1;}
     else if(target==Scene::Restart)g.stage=supervisor.state.stage;
+    const bool validation_requested=platform.take_validation_scene_request();
+    const bool validation_candidate=validation_requested&&validation_scene_request_eligible(from_title,initial,g.game_flags);
+    if(validation_requested&&!validation_candidate)platform.finish_validation_scene_request(false,false);
     const auto request=GameplayLoad{i32(g.stage),i32(g.difficulty),g.shot,g.current_spell,g.game_flags,initial,supervisor.state.keep_resources,initial,i32(target)};
     if(from_title){
         auto& p=session.practice;p.cheats=0;p.assisted=false;p.replay=bool(g.game_flags&8);p.active=false;
@@ -74,7 +77,21 @@ bool GameApplication::enter_game(){
     }
     title.detach();show_loading(from_title?Vec3{500,440,0}:Vec3{280,430,0},true);if(from_title)start_effect();
     GameplayLoad prepared=request;if((prepared.flags&0x60)>=0x40)prepared.flags=(prepared.flags&~0x60u)|0x20;
-    if(!game.load(prepared,true))return false;game_attached=true;game.menus.context.supervisor_state=2;game.control.state.load_state=1;game.control.state.replay_mode=title.context.replayMode;game.control.state.demo_index=title.context.currentDemoReplay;
+    platform.validation_scene_load_scope(true);
+    const bool loaded=game.load(prepared,true);
+    platform.validation_scene_load_scope(false);
+    if(!loaded){if(validation_candidate)platform.finish_validation_scene_request(false,false);return false;}
+    if(validation_candidate){
+        const u32 bullets=game.projectile_pool.live_bullet_count();u32 lasers=0;
+        for(const auto& laser:game.projectile_pool.lasers)lasers+=laser.in_use!=0;
+        const bool busy=game.paused||game.menus.context.pause_state||game.dialogue.present()||
+            game.player_state.context.game_over||(g.game_flags&0x60u);
+        auto& gate=game.enemies.validation_scene();
+        const bool accepted=gate.begin_before_first_update(game.ready(),(g.game_flags&8u)!=0||session.practice.replay,
+            busy,game.enemies.population.active_count(),bullets,lasers);
+        platform.finish_validation_scene_request(accepted,accepted&&gate.accepted_before_first_update());
+    }
+    game_attached=true;game.menus.context.supervisor_state=2;game.control.state.load_state=1;game.control.state.replay_mode=title.context.replayMode;game.control.state.demo_index=title.context.currentDemoReplay;
     // The platform implements the original capture request. Enable the ANM
     // pause/retry background after load() resets the menu context each stage.
     game.menus.context.lockable_backbuffer=true;

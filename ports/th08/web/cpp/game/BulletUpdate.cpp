@@ -1,7 +1,8 @@
 #include "BulletUpdate.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
 namespace {
-void retire(BulletState& b){b.state=0;b.since_fired.set(0);b.active_time.set(0);}
+void retire(BulletState& b){TH08_AUDIT_RETIRED(Bullet,&b);b.state=0;b.since_fired.set(0);b.active_time.set(0);}
 void move(Vec3& position,const Vec3& velocity,float divisor=1){
     if(divisor==1){position.x=Scalar::add(position.x,velocity.x);position.y=Scalar::add(position.y,velocity.y);position.z=Scalar::add(position.z,velocity.z);}
     else{const float inverse=Scalar::div(1,divisor);position.x=(number(position.x)+number(Scalar::mul(inverse,velocity.x))).to_float();position.y=(number(position.y)+number(Scalar::mul(inverse,velocity.y))).to_float();position.z=(number(position.z)+number(Scalar::mul(inverse,velocity.z))).to_float();}

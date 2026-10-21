@@ -1,8 +1,13 @@
 #include "PlayerMotion.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #include <algorithm>
+#include <cmath>
 namespace th15 {
 void PlayerMotion::configure(const ShtHeader& shot)noexcept{normal_speed=truncate_int(float(shot.speed*128.f));focus_speed=truncate_int(float(shot.focus_speed*128.f));normal_diagonal_speed=truncate_int(float(shot.diagonal_speed*128.f));focus_diagonal_speed=truncate_int(float(shot.focus_diagonal_speed*128.f));}
-bool PlayerMotion::update(u32 input,bool focus_allowed,float rate,PlayerMotionVisuals& visuals){
+bool PlayerMotion::update(u32 input,bool focus_allowed,float rate,PlayerMotionVisuals& visuals,u32 trace_seat,bool trace_sensitivity_known){
+    const i32 trace_before_x=position_fixed.x,trace_before_y=position_fixed.y;
+    const float trace_rate=rate,trace_movement_scale=movement_scale;
+    const Vec3 trace_external_velocity=external_velocity;
     const u32 movement=input&0xf0;if((movement&0x50)==0x50)direction=5;else if((movement&0x60)==0x60)direction=7;else if((movement&0x90)==0x90)direction=6;else if((movement&0xa0)==0xa0)direction=8;else if(movement&0x20)direction=2;else if(movement&0x10)direction=1;else if(movement&0x40)direction=3;else if(movement&0x80)direction=4;else direction=0;
     if(!focus_allowed||input_frame<4){focus=0;option_follow_percentage=30;}else focus=(input>>3)&1;
     const float indicator_scale=behavior_flags&16?float(float(float(enlargement-1.f)*2.f)+1.f):1.f;if(!visuals.focus_begin(focus!=0,indicator_scale)){error="Player focus animation failed";return false;}
@@ -27,6 +32,30 @@ bool PlayerMotion::update(u32 input,bool focus_allowed,float rate,PlayerMotionVi
         visuals.option_position(i,{float(float(option.position.x)*.0078125f),float(float(option.position.y)*.0078125f),0});
     }
     if(barrier_timer.current>0){if(!visuals.barrier_position(position)){error="Player barrier animation failed";return false;}barrier_timer.decrement(&rate);if(barrier_timer.current<1){if(!visuals.barrier_remove()){error="Player barrier removal failed";return false;}barrier_timer.set(0);}}
+    auto& trace=eagler::input::GlobalTouchMotionTraceBank();const auto owner=trace.context();
+    if(owner.frame_known){
+        eagler::input::TouchMotionTraceBank::Sample sample{};
+        sample.frame=owner.frame;sample.execution_kind=owner.execution_kind;sample.seat=trace_seat;
+        sample.mode=unsigned(std::max(0,touch.mode));sample.flags=eagler::input::TouchMotionTraceBank::flag_gameplay_tick;
+        if(focus)sample.flags|=eagler::input::TouchMotionTraceBank::flag_focused;
+        const double before_x=double(trace_before_x)/128,before_y=double(trace_before_y)/128;
+        sample.before_x=float(before_x);sample.before_y=float(before_y);
+        sample.target_x=touch.mode?touch.x:float(before_x);sample.target_y=touch.mode?touch.y:float(before_y);
+        sample.after_x=float(double(position_fixed.x)/128);sample.after_y=float(double(position_fixed.y)/128);
+        const i32 native_speed=touch.mode?(focus?focus_speed:normal_speed):
+            (focus?(direction<5?focus_speed:focus_diagonal_speed):(direction<5?normal_speed:normal_diagonal_speed));
+        sample.speed=float(double(native_speed)/128);
+        sample.scale_x=sample.scale_y=trace_movement_scale*trace_rate;
+        sample.sensitivity=owner.sensitivity;
+        if(!trace_sensitivity_known||!std::isfinite(owner.sensitivity)||owner.sensitivity<1||owner.sensitivity>3){sample.flags|=eagler::input::TouchMotionTraceBank::flag_sensitivity_unknown;sample.sensitivity=1;}
+        if(touch.mode<0||touch.mode>2||!std::isfinite(sample.target_x)||!std::isfinite(sample.target_y))
+            sample.flags|=eagler::input::TouchMotionTraceBank::flag_mode_unknown|eagler::input::TouchMotionTraceBank::flag_target_unknown;
+        if(flip_vertical_step||!std::isfinite(trace_movement_scale)||!std::isfinite(trace_rate)||
+           (trace_movement_scale!=1.f&&trace_rate!=1.f)||
+           trace_external_velocity.x!=0||trace_external_velocity.y!=0)
+            sample.flags|=eagler::input::TouchMotionTraceBank::flag_mode_unknown|eagler::input::TouchMotionTraceBank::flag_target_unknown;
+        trace.append(sample);
+    }
     return true;
 }
 }

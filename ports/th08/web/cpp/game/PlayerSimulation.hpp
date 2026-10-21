@@ -32,6 +32,13 @@ struct PlayerSimulationServices {
     PlayerSetupActions& setup;PlayerMotionActions& motion;PlayerLifeActions& life;PlayerBombActions& bomb;
     PlayerBombPatternActions& patterns;PlayerShotActions& shots;PlayerSimulationWorld& world;
 };
+// Captured from the exact input fields consumed by update_player_frame. A
+// receipt becomes valid only after that unpaused player update completes.
+struct PlayerInputConsumption {
+    u32 sequence=0;
+    u16 current=0,previous=0;
+    bool completed=false,paused=false,valid=false;
+};
 class PlayerSimulation:private PlayerFrameActions,private PlayerBombActions,private ShotFiringActions,private PlayerCollisionActions,private PlayerGrazeActions {
     PlayerSimulationState& state;ShotResource (&resources)[2];GameGauge& gauge;GaugeThresholds& thresholds;PlayerSimulationServices services;
     GameGlobals& values;GameRank& rank;
@@ -41,6 +48,7 @@ class PlayerSimulation:private PlayerFrameActions,private PlayerBombActions,priv
     presentation::VisualSample presentation_previous_animation,presentation_previous_option_animation[4];
     presentation::SnapshotMarker presentation_marker;
     i32 presentation_previous_life_state=0,presentation_previous_option_state[4]{};i16 presentation_previous_script=-1,presentation_previous_sprite=-1;bool presentation_valid=false;
+    PlayerInputConsumption input_consumption{};
     void synchronize_shots();
     void update_bomb()override;
     bool resolve_death()override;
@@ -82,6 +90,7 @@ public:
     void die()override;
     PlayerCollision& collision()noexcept{return collisions;}
     PlayerSimulationState& status()noexcept{return state;}
+    const PlayerInputConsumption& consumed_input()const noexcept{return input_consumption;}
     const ShotProfile& profile(bool focused)const noexcept{return resources[focused].settings();}
     i32 damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit);
     bool draw(const Vec2& screen_offset,bool impacts=false);

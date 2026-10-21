@@ -1,4 +1,5 @@
 #include "browser-gamepad-input.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #include "ApplicationState.hpp"
 #if TH15_MULTIPLAYER
 #include "../multiplayer/NetplayRuntime.hpp"
@@ -23,6 +24,7 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <limits>
 EM_JS(void, th15_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
 EM_JS(int, th15_host_has_focus, (), {
  try { return parent.document.hasFocus() && !parent.document.hidden ? 1 : 0; }
@@ -35,6 +37,7 @@ EM_JS(int, th15_browser_read_only, (), {return Module.eaglerOptions?.netplaySpec
 #endif
 namespace th15::sdl {
 namespace {
+float touch_motion_sensitivity() noexcept;
 std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH15_MULTIPLAYER
@@ -50,6 +53,9 @@ bool mp_apply_confirmed(const Netplay::SpectatorFramePacket& packet,bool histori
  if(app->title||(app->pause&&app->pause->state.screen!=PauseScreen::Inactive))menu=(lanes[0].held&~0x100u)|(lanes[0].pause?0x100u:0);
  mp_menu.update(menu);if(app->scene())app->scene()->battle.mp_input(lanes);
  app->audio_device.spectator_silent(historical);
+ eagler::input::GlobalTouchMotionTraceBank().set_context(app->progress.stage_frame,
+  historical?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward,
+  historical||network.Spectator()?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
  return true;
 }
@@ -100,6 +106,9 @@ bool mp_tick(u32 held,bool physical=true){
   }
  }
  if(app->scene()){mp_stage=unsigned(app->progress.stage);app->scene()->battle.mp_input(lanes);}const auto stage=mp_stage;
+ eagler::input::GlobalTouchMotionTraceBank().set_context(app->progress.stage_frame,
+  mp_playback?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward,
+  mp_playback||network.ReadOnly()?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
  if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
  if(mp_recording&&!mp_replay.Append(frame,stage,decision.inputs.data(),network.Setup().player_count)){last_error="MP recording capacity exhausted";return false;}
  if(record_spectator&&mp_spectator_stage)network.RecordSpectatorFrame(std::move(spectator));
@@ -112,6 +121,7 @@ bool mp_tick(u32 held,bool physical=true){
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+float touch_motion_sensitivity() noexcept{return gestures.sensitivity;}
 eagler::thprac::PracticePointer practice_pointers;
 PracticeCadence cadence;
 touhou::sdl::PresentationCadence presentation;bool limit_presentation_60=false;
@@ -233,6 +243,9 @@ bool sample_and_tick(){
 #if TH15_MULTIPLAYER
  if(mp_started)return mp_tick(capture?0:held);
 #endif
+ eagler::input::GlobalTouchMotionTraceBank().set_context(app->progress.stage_frame,
+  app->progress.replay?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward,
+  app->progress.replay?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
  const bool ok=app->step(capture?0:controls.held,capture?0:controls.pressed,capture?0:controls.repeated,measured_fps,focus);
 #if TH15_PRESENTATION_LAB
  if(ok&&app->graphics.presentation.ready){lab_reference_clock[0]=lab_reference_clock[1];lab_reference_clock[2]=lab_reference_clock[3];lab_reference_clock[1]=app->frames;++lab_reference_clock[3];}
@@ -245,6 +258,7 @@ bool sample_and_tick(){
 }
 }
 extern "C" {
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_touch_motion_trace_v2(unsigned seat,unsigned execution_kind){return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);}
 #if TH15_MULTIPLAYER
 EMSCRIPTEN_KEEPALIVE int th15_mp_configure(const unsigned* words,unsigned count){using namespace th15::sdl;th15::multiplayer::SessionSetup setup;if(running||!app||!th15::multiplayer::DecodeSessionSetup(setup,words,count)||!network.Reset(setup))return 0;room_preview=false;mp_started=mp_recording=mp_playback=mp_local_results=false;mp_menu={};mp_replay.Clear();mp_replay_path.clear();last_error.clear();return 1;}
 EMSCRIPTEN_KEEPALIVE int th15_mp_connect(const char* url){using namespace th15::sdl;return network.Connect(url);}

@@ -83,6 +83,7 @@ struct World final:HudActions,CallbackReceiver {
     bool restore_spectator_checkpoint_bootstrap();
     void suppress_spectator_audio(bool suppress);
     bool rollback_resimulating=false;
+    u8 touch_trace_predicted_mask=0;
     u32 player_count=2,local_player=0;
     // Presentation-only generation handles, retained through native fade-out.
     mutable std::map<u32,u32> multiplayer_hitbox_owners;
@@ -116,7 +117,7 @@ struct World final:HudActions,CallbackReceiver {
     struct Preview {ReplayDocument document;Preview* next;Preview(FileSystem& files,u32 flags,Preview* next):document(files,flags),next(next){}};
     Preview* previews=nullptr;
     i32 new_game=0,loader_stop=0,loader_running=0,resource_drawing=-1,resource_updating=-1,pending_upload=0;
-    float measured_fps=60;bool loading=false;bool always_hitbox=false;i32 error=0;
+    float measured_fps=60;float touch_sensitivity=1.f;bool loading=false;bool always_hitbox=false;i32 error=0;
     struct PlayerPresentation {Vec3 position{};i32 state=0;bool valid=false;} player_presentation;
     struct BulletPresentation {Vec3 position{};float angle=0;i32 id=0;u16 state=0;bool active=false;} bullet_presentation[2000]{};
     struct ItemPresentation {Vec3 position{};i32 age=0,state=0,kind=0;bool active=false;} item_regular_presentation[150]{},item_faith_presentation[2048]{};

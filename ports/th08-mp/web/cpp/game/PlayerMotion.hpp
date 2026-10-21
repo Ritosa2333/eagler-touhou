@@ -12,6 +12,10 @@ struct PlayerMotionInput {
 struct PlayerMotionActions:PlayerFormActions,PlayerMovementActions,PlayerOptionActions,PlayerGaugeActions {
     virtual void step_animation(AnmVm&)=0;
     virtual void draw_player(AnmVm&)=0;
+    // Observation hook after the native movement consumer has applied its
+    // multipliers, frame timing, and field clamp. Existing actions need not
+    // implement diagnostics.
+    virtual void movement_completed(const Vec3&,const PlayerMovementState&){}
 };
 // Entire 0044aec0 sequence. ANM loading/execution and effect allocation are
 // supplied by the owning game; history changes after options consume it.

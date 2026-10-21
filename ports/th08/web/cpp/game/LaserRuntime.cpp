@@ -1,6 +1,8 @@
 #include "LaserRuntime.hpp"
 #include "GameMath.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
+namespace {void retire(LaserState& laser){TH08_AUDIT_RETIRED(Laser,&laser);laser.in_use=0;}}
 LaserState* LaserRuntime::create(const BulletEmission& e){
     auto* laser=state.lasers;invalid=false;
     if(state.cancel_frames&&!(e.flags&4))return laser;
@@ -17,7 +19,7 @@ LaserState* LaserRuntime::create(const BulletEmission& e){
         laser->flags=u16(e.flags);laser->timer.set(0);laser->start_offset=e.laser.start_offset;laser->end_offset=e.laser.end_offset;
         laser->length=e.laser.length;laser->width=e.laser.width;laser->speed=e.speed;
         laser->start=e.laser.start;laser->duration=e.laser.duration;laser->stop=e.laser.stop;laser->hitbox_start=e.laser.hitbox_start;laser->hitbox_stop=e.laser.hitbox_stop;
-        laser->unknown599=0;laser->state=laser->start==0?1:0;return laser;
+        laser->unknown599=0;laser->state=laser->start==0?1:0;TH08_AUDIT_BORN(Laser,laser);return laser;
     }
     return laser;
 }
@@ -46,7 +48,7 @@ bool LaserRuntime::step(LaserState& l){
     }
     if(l.state==1){
         hit(l.timer.current%20==0);
-        if(l.timer.current>=l.duration){l.timer.set(0);++l.state;if(l.stop==0){l.in_use=0;return true;}}
+        if(l.timer.current>=l.duration){l.timer.set(0);++l.state;if(l.stop==0){retire(l);return true;}}
     }
     if(l.state==2){
         if(l.flags&1)alpha();
@@ -55,9 +57,9 @@ bool LaserRuntime::step(LaserState& l){
             vm.scale.x=(width/number(16)).to_float();size.x=Scalar::div(stored,2);
         }
         if(l.timer.current<l.hitbox_stop)hit(false);
-        if(l.timer.current>=l.stop){l.in_use=0;return true;}
+        if(l.timer.current>=l.stop){retire(l);return true;}
     }
-    if(l.start_offset>=640)l.in_use=0;
+    if(l.start_offset>=640)retire(l);
     l.timer.tick(timing);animation.execute(vm);if(animation.invalid){invalid=true;return false;}return true;
 }
 bool LaserRuntime::update(){

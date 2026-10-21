@@ -40,7 +40,7 @@ EffectSystem::EffectSystem(EffectPoolState& s,EffectEnvironment& e,AnmExecutor& 
  :anm(a),renderer(r),values(v),replay_flags(flags),state(s),environment(e),transforms(random,a.timing),space(random,a.timing,e),geometry(r),bomb(screen,damage){}
 const EffectDefinition& EffectSystem::definition(u32 kind){static const EffectDefinition empty{-1,nullptr,nullptr};return kind<66?definitions[kind]:empty;}
 void EffectSystem::release(){for(u32 i=0;i<653;++i)EffectGeometry::release(state.objects[i]);}
-void EffectSystem::reset(){release();std::memset(&state,0,sizeof(state));invalid=false;}
+void EffectSystem::reset(){for(auto& e:state.objects)if(e.active)TH08_AUDIT_RETIRED(Effect,&e);release();std::memset(&state,0,sizeof(state));invalid=false;}
 void EffectSystem::begin(EffectState& e,i32 kind,u32 color,bool depth){
     e.active=1;e.kind=u8(kind);const auto& d=definition(kind);e.scriptIndex=i16(d.script);
     auto* file=state.base_animation;
@@ -52,17 +52,17 @@ EffectState* EffectSystem::spawn(i32 kind,Vec3 position,i32 count,u32 color,cons
     if(u32(kind)>=66){invalid=true;return &state.objects[653];}
     for(i32 attempt=0;attempt<512;++attempt){auto& e=state.objects[state.cursor];state.cursor=(state.cursor+1)%512;if(e.active)continue;
         EffectGeometry::release(e);std::memset(&e,0,sizeof(e));e.position=position;if(parameters)e.parameters=*parameters;begin(e,kind,color,!parameters);initialize(e,kind);
-        if(--count==0){replay_flags|=0x400;return &e;}
+        if(e.active)TH08_AUDIT_BORN(Effect,&e);if(--count==0){replay_flags|=0x400;return &e;}
     }replay_flags|=0x400;return &state.objects[653];
 }
 EffectState* EffectSystem::fixed(i32 kind,Vec3 position,i32 slot,u32 color,const Vec3* parameters){
     auto* e=group(slot);if(!e||u32(kind)>=66){invalid=true;return &state.objects[653];}
-    EffectGeometry::release(*e);std::memset(e,0,sizeof(*e));e->slot=slot;e->position=position;if(parameters)e->parameters=*parameters;begin(*e,kind,color,true);initialize(*e,kind);replay_flags|=0x400;return e;
+    if(e->active)TH08_AUDIT_RETIRED(Effect,e);EffectGeometry::release(*e);std::memset(e,0,sizeof(*e));e->slot=slot;e->position=position;if(parameters)e->parameters=*parameters;begin(*e,kind,color,true);initialize(*e,kind);if(e->active)TH08_AUDIT_BORN(Effect,e);replay_flags|=0x400;return e;
 }
 EffectState* EffectSystem::overlay(i32 kind,Vec3 position,i32 count,u32 color){
     if(u32(kind)>=66){invalid=true;return &state.objects[653];}
     for(i32 i=512;i<640;++i){auto& e=state.objects[i];if(e.active)continue;EffectGeometry::release(e);e.draw=nullptr;e.layer=0;e.position=position;begin(e,kind,color,false);
-        e.age.set(0);e.dying=0;e.fade_frames=0;e.parameters={};initialize(e,kind);if(--count==0){replay_flags|=0x400;return &e;}
+        e.age.set(0);e.dying=0;e.fade_frames=0;e.parameters={};initialize(e,kind);if(e.active)TH08_AUDIT_BORN(Effect,&e);if(--count==0){replay_flags|=0x400;return &e;}
     }replay_flags|=0x400;return &state.objects[653];
 }
 void EffectSystem::shift_glows(const Vec3& offset){for(u32 i=0;i<512;++i)if(state.objects[i].kind==51)add(state.objects[i].world_position,offset);}
@@ -113,7 +113,7 @@ void EffectSystem::presentation_geometry(const EffectState& source,EffectState& 
 JobResult EffectSystem::update(){
     state.active_count=0;for(u32 i=0;i<5;++i){state.tails[i]=&state.sentinels[i];state.sentinels[i].next=nullptr;}
     for(u32 i=0;i<653;++i){auto& e=state.objects[i];if(!e.active){EffectGeometry::release(e);continue;}++state.active_count;
-        if(!paused||e.ignore_pause){if((e.update&&e.update(e,*this)!=1)||anm.execute(e)){e.active=0;continue;}e.age.tick(anm.timing);}
+        if(!paused||e.ignore_pause){if((e.update&&e.update(e,*this)!=1)||anm.execute(e)){e.active=0;TH08_AUDIT_RETIRED(Effect,&e);continue;}e.age.tick(anm.timing);}
         e.next=nullptr;if(e.kind==64)continue;
         const u32 list=(i8(e.layer)==1||i8(e.layer)>2)?1:e.layer==0?(e.alternative?3:e.blendMode==1?4:0):2;
         state.tails[list]->next=&e;state.tails[list]=&e;

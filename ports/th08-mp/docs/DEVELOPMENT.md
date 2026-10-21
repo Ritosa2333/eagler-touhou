@@ -27,3 +27,5 @@ npm --prefix launcher run dev:workspace
 ## 源码与验证
 
 `web/cpp/` 是游戏和 SDL 宿主；`portable/multiplayer/` 是合作玩法和网络接入；`portable/browser/`、`portable/input/`、`portable/sdl/` 提供浏览器端代码。源码检查从 `ports/th08-mp/` 运行：`node portable/check-multiplayer-cooperation.mjs` 和 `node portable/check-high-refresh-contract.mjs`。
+
+玩家移动轨迹由 `PlayerSimulation` 完成 `move_player` 后记录真实终点，经 `th08_touch_motion_trace_v2(seat, kind)` 按玩家席位与执行类型读取。直接目标与 Delta/Begin 的目标在生产 `ResolveAnalogMovement` 限速前形成；多帧回退、回放和远端输入保留各自执行流，未随输入包传输的敏感度以 ABI unknown 标志表达。

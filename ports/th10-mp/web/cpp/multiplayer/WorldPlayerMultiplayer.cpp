@@ -11,6 +11,7 @@
 #include "../game/PlayerFrame.hpp"
 #include "../game/PlayerOptions.hpp"
 #include "../game/PlayerResources.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #ifdef TH_ENABLE_THPRAC
 #include "../game/PracticeRuntime.hpp"
 #endif
@@ -216,6 +217,8 @@ struct Lifecycle final:PlayerLifecycleEnvironment {
 struct Movement final:PlayerMovementEnvironment {
     World& world;
     multiplayer::Pilot& pilot;
+    bool trace_ready=false;
+    eagler::input::TouchMotionTraceBank::Sample trace{};
     i32 spirit_enemy_count=1;
     Movement(World& value,multiplayer::Pilot& seat,bool is_spirit=false)
         :world(value),pilot(seat){
@@ -241,9 +244,57 @@ struct Movement final:PlayerMovementEnvironment {
         else __builtin_trap();
     }
     bool movement(const Player& player,i32 speed,i32& x,i32& y) override{
-        return multiplayer::InputLanes::ResolveMovement(
-            world.state.input_lanes.inputs[pilot.seat],speed,
+        using Bank=eagler::input::TouchMotionTraceBank;
+        const auto& input=world.state.input_lanes.inputs[pilot.seat];
+        trace={};trace_ready=true;trace.flags=Bank::flag_gameplay_tick|(player.focused?Bank::flag_focused:0u);
+        trace.seat=pilot.seat;trace.speed=static_cast<float>(speed)*.01f;
+        trace.scale_x=trace.scale_y=world.engine.speed;
+        trace.before_x=player.position.x;trace.before_y=player.position.y;
+        trace.target_x=player.position.x;trace.target_y=player.position.y;
+        const bool enabled=multiplayer::InputLanes::ResolveMovement(input,speed,
             player.fixed_position.x,player.fixed_position.y,world.engine.speed,x,y);
+        if(!enabled){trace.mode=Bank::mode_neutral;return false;}
+        if(input.analogMode==Netplay::AnalogMode::DirectTouch){
+            trace.mode=input.unlimited?Bank::mode_unlimited:Bank::mode_limited;
+            trace.target_x=static_cast<float>(input.x)*.01f;
+            trace.target_y=static_cast<float>(input.y)*.01f;
+        }else if(input.analogMode==Netplay::AnalogMode::Joystick){
+            trace.mode=Bank::mode_limited;
+            trace.flags|=Bank::flag_target_unknown;
+        }else if(input.analogMode==Netplay::AnalogMode::DirectTouchDelta||
+                 input.analogMode==Netplay::AnalogMode::DirectTouchBegin){
+            trace.mode=input.unlimited?Bank::mode_unlimited:Bank::mode_limited;
+            trace.flags|=Bank::flag_target_unknown;
+        }else{
+            trace.mode=Bank::mode_neutral;
+            trace.flags|=Bank::flag_mode_unknown|Bank::flag_target_unknown;
+        }
+        return true;
+    }
+    void finish_trace(const Player& player){
+        if(!trace_ready)return;trace_ready=false;using Bank=eagler::input::TouchMotionTraceBank;
+        trace.after_x=player.position.x;trace.after_y=player.position.y;
+        const auto& runtime=world.state.netplay_runtime;
+        if(world.rollback_resimulating)trace.execution_kind=Bank::resimulation;
+        else if(runtime.Playback()||runtime.Spectator())trace.execution_kind=Bank::replay;
+        else if(world.touch_trace_predicted_mask&(1u<<pilot.seat))trace.execution_kind=Bank::speculative;
+        else trace.execution_kind=Bank::forward;
+        if(world.engine.netplay_frame!=Netplay::INVALID_FRAME)trace.frame=world.engine.netplay_frame;
+        else if(runtime.Configured())trace.flags|=Bank::flag_frame_unknown;
+        else if(world.actors.session&&world.actors.session->elapsed.current>=0)
+            trace.frame=static_cast<u32>(world.actors.session->elapsed.current);
+        else trace.flags|=Bank::flag_frame_unknown;
+        if(trace.mode!=Bank::mode_neutral){
+            const auto& input=world.state.input_lanes.inputs[pilot.seat];
+            const bool direct_touch=input.analogMode==Netplay::AnalogMode::DirectTouch||
+                input.analogMode==Netplay::AnalogMode::DirectTouchDelta||
+                input.analogMode==Netplay::AnalogMode::DirectTouchBegin;
+            const bool local_forward=trace.execution_kind==Bank::forward&&
+                pilot.seat==world.local_player&&!runtime.Playback()&&!runtime.Spectator();
+            if(direct_touch&&input.touchUsed&&local_forward)trace.sensitivity=world.touch_sensitivity;
+            else if(direct_touch)trace.flags|=Bank::flag_sensitivity_unknown;
+        }
+        eagler::input::GlobalTouchMotionTraceBank().append(trace);
     }
 };
 
@@ -714,7 +765,7 @@ i32 World::update_player(Player* player){
     if(pilot->seat==0)player_presentation={player->position,player->state,true};
     Frame environment(*this,*pilot,spirit);
     if(spirit)update_spirit_drift(*player);
-    const i32 result=player->update(environment);
+    const i32 result=player->update(environment);environment.movement_env.finish_trace(*player);
     if(pilot->seat+1==player_count){
         // Rank is shared; adding its timed increase once per pilot would
         // change the difficulty ramp with the number of ships.

@@ -47,10 +47,29 @@ float PlayerBombPatterns::presentation_angle(u32 index)const{
     if(index>=128||!presentation::active)return index<128?objects.objects[index].angle:0;const auto& o=objects.objects[index];const auto& p=presentation_previous[index];if(p.state!=o.state||p.script!=o.animation[0].scriptIndex||o.animation[0].currentTimeInScript.current<p.age)return o.angle;
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=o.angle-p.angle;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(p.angle+delta*presentation::world_alpha,0);
 }
-void PlayerBombPatterns::begin(PlayerBombKind kind,i32 sprite,i32 duration,i32 invincibility,i32 variant){begin_player_bomb(objects,bomb,life,movement.position,sprite,bomb_display_name(kind),duration,invincibility,variant,actions);}
+void PlayerBombPatterns::begin(PlayerBombKind kind,i32 sprite,i32 duration,i32 invincibility,i32 variant){
+#if defined(TH_PRESENTATION_AUDIT)
+    // begin_player_bomb clears all 128 native object slots. Retire the prior
+    // generation at that source lifetime boundary before the pool is reset.
+    for(auto& object:objects.objects){u32 flags=0;if(audit::object_generation(audit::Owner::PlayerBomb,&object,&flags)&&(flags&2u))TH08_AUDIT_RETIRED(PlayerBomb,&object);}
+#endif
+    begin_player_bomb(objects,bomb,life,movement.position,sprite,bomb_display_name(kind),duration,invincibility,variant,actions);
+}
 void PlayerBombPatterns::step(AnmVm* vm,u32 count){for(u32 i=0;i<count;++i)if(vm[i].scriptIndex>=0)actions.step_animation(vm[i]);}
 void PlayerBombPatterns::tint(u32 color){if(presentation::render_only){actions.reset_screen_color();return;}actions.background_color(player_bomb_color(color,bomb.timer,bomb.duration));}
-bool PlayerBombPatterns::update(PlayerBombKind kind){snapshot_presentation();switch(kind){case PlayerBombKind::Youmu:if(!frame.main_animation)return false;youmu(false);break;case PlayerBombKind::YoumuLast:if(!frame.main_animation)return false;youmu(true);break;case PlayerBombKind::Yuyuko:yuyuko(false);break;case PlayerBombKind::YuyukoLast:yuyuko(true);break;case PlayerBombKind::Sakuya:sakuya(false);break;case PlayerBombKind::SakuyaLast:sakuya(true);break;case PlayerBombKind::Remilia:if(!frame.options)return false;remilia(false);break;case PlayerBombKind::RemiliaLast:if(!frame.options)return false;remilia(true);break;case PlayerBombKind::Alice:if(!frame.options)return false;alice(false);break;case PlayerBombKind::AliceLast:if(!frame.options)return false;alice(true);break;case PlayerBombKind::Reimu:reimu(false);break;case PlayerBombKind::ReimuLast:reimu(true);break;case PlayerBombKind::Marisa:marisa(false);break;case PlayerBombKind::MarisaLast:marisa(true);break;case PlayerBombKind::Yukari:yukari(false);break;case PlayerBombKind::YukariLast:yukari(true);break;case PlayerBombKind::LastWord:last_word();break;default:return false;}return true;}
+bool PlayerBombPatterns::update(PlayerBombKind kind){
+    snapshot_presentation();bool updated=true;
+    switch(kind){case PlayerBombKind::Youmu:if(!frame.main_animation)return false;youmu(false);break;case PlayerBombKind::YoumuLast:if(!frame.main_animation)return false;youmu(true);break;case PlayerBombKind::Yuyuko:yuyuko(false);break;case PlayerBombKind::YuyukoLast:yuyuko(true);break;case PlayerBombKind::Sakuya:sakuya(false);break;case PlayerBombKind::SakuyaLast:sakuya(true);break;case PlayerBombKind::Remilia:if(!frame.options)return false;remilia(false);break;case PlayerBombKind::RemiliaLast:if(!frame.options)return false;remilia(true);break;case PlayerBombKind::Alice:if(!frame.options)return false;alice(false);break;case PlayerBombKind::AliceLast:if(!frame.options)return false;alice(true);break;case PlayerBombKind::Reimu:reimu(false);break;case PlayerBombKind::ReimuLast:reimu(true);break;case PlayerBombKind::Marisa:marisa(false);break;case PlayerBombKind::MarisaLast:marisa(true);break;case PlayerBombKind::Yukari:yukari(false);break;case PlayerBombKind::YukariLast:yukari(true);break;case PlayerBombKind::LastWord:last_word();break;default:updated=false;break;}
+#if defined(TH_PRESENTATION_AUDIT)
+    // Pattern callbacks mutate the fixed object pool directly. Reconcile at
+    // the successful logic-update boundary; state is the native active bit.
+    if(updated)for(auto& object:objects.objects){u32 flags=0;const bool known=audit::object_generation(audit::Owner::PlayerBomb,&object,&flags)!=0;
+        if(object.state){if(!known||!(flags&2u))TH08_AUDIT_BORN(PlayerBomb,&object);}
+        else if(known&&(flags&2u))TH08_AUDIT_RETIRED(PlayerBomb,&object);
+    }
+#endif
+    return updated;
+}
 bool PlayerBombPatterns::draw(PlayerBombKind kind,const Vec2& offset){switch(kind){case PlayerBombKind::Youmu:draw_youmu(false);break;case PlayerBombKind::YoumuLast:draw_youmu(true);break;case PlayerBombKind::Yuyuko:draw_yuyuko(false,offset);break;case PlayerBombKind::YuyukoLast:draw_yuyuko(true,offset);break;case PlayerBombKind::Sakuya:draw_sakuya(false,offset);break;case PlayerBombKind::SakuyaLast:draw_sakuya(true,offset);break;case PlayerBombKind::Remilia:tint(0x80d02020);break;case PlayerBombKind::RemiliaLast:tint(0x80f00000);break;case PlayerBombKind::Alice:tint(0x80404040);break;case PlayerBombKind::AliceLast:draw_alice();break;case PlayerBombKind::Reimu:draw_reimu(false,offset);break;case PlayerBombKind::ReimuLast:draw_reimu(true,offset);break;case PlayerBombKind::Marisa:case PlayerBombKind::MarisaLast:return draw_marisa(offset);case PlayerBombKind::Yukari:tint(0x80404040);break;case PlayerBombKind::YukariLast:draw_yukari(offset);break;case PlayerBombKind::LastWord:{u32 color=0x80404040;if(bomb.timer.current>=60){const u32 component=u32(wrapping_add(signed_bits(u32(wrapping_sub(bomb.timer.current,60))*176)/60,64));color=0x80000000|(component<<16)|(component<<8)|component;}tint(color);break;}default:return false;}return true;}
 void PlayerBombPatterns::marisa(bool last){
     auto& object=objects.objects[0];

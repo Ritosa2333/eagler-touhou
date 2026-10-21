@@ -5,11 +5,13 @@ import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
 
-// Execute the complete shell ESM, including its actual message listener and
-// async command queue. Only native/platform dependencies are mocked. Override
-// TH08_SHELL_UNDER_TEST to run the queue regression against a frozen old shell.
-const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../web/sdl-runtime');
-const sourcePath=process.env.TH08_SHELL_UNDER_TEST||resolve(runtime,'shell.mjs');
+// Execute the selected source owner's complete Shell ESM, including its actual
+// message listener and async command queue. Only native/platform dependencies
+// are mocked. Override TH08_SHELL_UNDER_TEST to test a frozen Shell source.
+const testDirectory=dirname(fileURLToPath(import.meta.url));
+function runtimeFor(multiplayer){
+  return resolve(testDirectory,multiplayer?'../web/sdl-runtime':'../../th08/web/sdl-runtime');
+}
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
 const gate=()=>{let release;const promise=new Promise(resolve=>{release=resolve;});return {promise,release};};
 async function until(predicate,label){
@@ -22,6 +24,9 @@ function events(extra={}){
     dispatchEvent(event){for(const callback of listeners.get(event.type)||[])callback(event);return true;}};
 }
 async function harness({multiplayer=true,holdInitialization=false}={}){
+  const sourceOwner=multiplayer?'th08-mp':'th08';
+  const runtime=runtimeFor(multiplayer);
+  const sourcePath=process.env.TH08_SHELL_UNDER_TEST||resolve(runtime,'shell.mjs');
   const acknowledgments=[],notifications=[],calls=[],errors=[];
   const canvas=events({focus(){},getBoundingClientRect:()=>({left:80,top:0,width:640,height:480})});
   const nodes={canvas,'#screen':canvas,'#error':{textContent:''},'#loading':{textContent:''}};
@@ -63,7 +68,7 @@ async function harness({multiplayer=true,holdInitialization=false}={}){
   };
   const files=new Map([['/msgothic.ttc',new Uint8Array(1)]]);
   const FS={mkdirTree(){},mount(){},symlink(){},unlink:path=>files.delete(path),stat:()=>({mode:1,size:1}),
-    isFile:()=>true,readdir:()=>[],writeFile:(path,bytes)=>files.set(path,bytes),readFile:path=>files.get(path)||new Uint8Array(4),
+    analyzePath:path=>({exists:files.has(path)}),isFile:()=>true,readdir:()=>[],writeFile:(path,bytes)=>files.set(path,bytes),readFile:path=>files.get(path)||new Uint8Array(4),
     syncfs(_populate,callback){calls.push(['sync']);const wait=syncBlock?.promise??Promise.resolve();wait.then(()=>callback(null));}};
   const Module={FS,IDBFS:{},SDL3:{audioContext:{state:'running',async resume(){
     calls.push(['audio-resume']);if(audioBlock)await audioBlock.promise;this.state='running';
@@ -77,9 +82,10 @@ async function harness({multiplayer=true,holdInitialization=false}={}){
   };
   const context=createContext({window,parent,document,location,innerWidth:800,innerHeight:480,
     navigator:{},URL,URLSearchParams,TextEncoder,TextDecoder,Uint8Array,Uint32Array,Int32Array,ArrayBuffer,
-    performance:{now:()=>3000,mark(){}},indexedDB:{},fetch,
+    performance:{now:()=>3000,mark(){}},indexedDB:{databases:async()=>[]},fetch,
     console:{log(){},warn(){},debug(){},error:value=>errors.push(String(value))},
     queueMicrotask,requestAnimationFrame:callback=>queueMicrotask(()=>callback(3000)),
+    setInterval:()=>1,clearInterval(){},
     setTimeout:callback=>{queueMicrotask(callback);return 1;},clearTimeout(){},
     CustomEvent:class {constructor(type,fields={}){this.type=type;Object.assign(this,fields);}},
     WebAssembly:{instantiateStreaming:async()=>({instance:{exports:core},module:{}})}});
@@ -116,7 +122,7 @@ async function harness({multiplayer=true,holdInitialization=false}={}){
   };
   const ack=request=>acknowledgments.find(message=>message.request===request);
   const request=async fields=>{const id=send(fields);await until(()=>ack(id),'ACK '+fields.command);assert.equal(ack(id).ok,true,ack(id).error);return ack(id);};
-  return {core,Module,native,calls,errors,document,window,frame,parent,send,ack,request,
+  return {core,Module,native,calls,errors,document,window,frame,parent,send,ack,request,sourceOwner,sourcePath,
     async ready(){initialization.release();await until(()=>notifications.some(message=>message.event==='ready')||errors.length,'shell ready');assert.deepEqual(errors,[]);},
     async start(extra={}){
       await this.ready();await request({command:'configure',language:'lang_ja',music:'none',
@@ -134,7 +140,7 @@ const controls=(bombSerial=0,extra={})=>({command:'touch-controls',controls:{fir
   joystickX:16384,joystickY:-16384,bombSerial,escapeSerial:0,...extra}});
 const count=(h,name)=>h.calls.filter(call=>call[0]===name).length;
 
-test('real shell: touch and ACK bypass a blocked filesystem command queue',async()=>{
+test('TH08 MP Shell (ports/th08-mp): touch and ACK bypass a blocked filesystem command queue',async()=>{
   const h=await harness();await h.start();const release=h.blockSync();
   try{
     const syncBefore=count(h,'sync'),pending=h.send({command:'sync'});
@@ -149,16 +155,22 @@ test('real shell: touch and ACK bypass a blocked filesystem command queue',async
     assert.equal(h.native.focus,false);assert.equal(h.native.x,0);assert.equal(h.native.fire,true);
   }finally{release();await settle();}
 });
-test('real shell: live normal Runtime touch bypasses a blocked resource transfer',async()=>{
+test('TH08 normal Shell (ports/th08): live touch bypasses a blocked resource transfer',async()=>{
   const h=await harness({multiplayer:false});await h.start();const release=h.blockResource();
   try{
     h.send({command:'resources',resources:[{path:'/fonts/probe.bin',url:'./held-font.bin',bytes:4}]});
     await until(()=>count(h,'resource')===1,'blocked resource');
     const request=h.send(direct);await settle();
-    assert(h.ack(request)?.ok,'direct-touch ACK waited behind the resource queue');assert.equal(count(h,'touch'),1);
+    assert(h.ack(request)?.ok,`direct-touch ACK waited behind the resource queue (${h.sourceOwner}: ${h.sourcePath})`);assert.equal(count(h,'touch'),1);
+    const controlsRequest=h.send(controls(1));await settle();
+    assert(h.ack(controlsRequest)?.ok,`touch-controls ACK waited behind the resource queue (${h.sourceOwner}: ${h.sourcePath})`);
+    assert.equal(count(h,'controls'),1);assert.equal(h.native.bombPulses,1);
+    const cancelRequest=h.send({command:'touch-cancel'});await settle();
+    assert(h.ack(cancelRequest)?.ok,`touch-cancel ACK waited behind the resource queue (${h.sourceOwner}: ${h.sourcePath})`);
+    assert.equal(h.native.focus,false);assert.equal(h.native.fire,true);
   }finally{release();await settle();}
 });
-test('real shell: initialization and unfinished launch discard input immediately without replaying serial pulses',async()=>{
+test('TH08 MP Shell (ports/th08-mp): initialization and unfinished launch discard input immediately without replaying serial pulses',async()=>{
   const h=await harness({holdInitialization:true});
   for(const message of [direct,controls(7),{command:'touch-cancel'}]){
     const request=h.send(message);await settle();assert(h.ack(request)?.ok);
@@ -174,7 +186,7 @@ test('real shell: initialization and unfinished launch discard input immediately
   await h.request(controls(8));assert.equal(h.native.bombPulses,1,'first eligible new bomb must survive');
   await h.request(direct);assert.equal(count(h,'touch'),1);
 });
-test('real shell: hidden input is discarded; native transient cleanup preserves fire and consumes rejected serials',async()=>{
+test('TH08 MP Shell (ports/th08-mp): hidden input is discarded; native transient cleanup preserves fire and consumes rejected serials',async()=>{
   const h=await harness();await h.start();await h.request(controls(1));
   h.document.hidden=true;h.document.dispatchEvent({type:'visibilitychange'});await settle();
   const before=count(h,'controls');await h.request(direct);await h.request(controls(2));
@@ -184,7 +196,7 @@ test('real shell: hidden input is discarded; native transient cleanup preserves 
   await h.request(controls(2,{focusEnabled:false,joystickX:0,joystickY:0}));assert.equal(h.native.bombPulses,1);
   await h.request(controls(3));assert.equal(h.native.bombPulses,2);
 });
-test('real shell: closing input is dropped, and a fresh session preserves the source baseline but resets native serial mapping',async()=>{
+test('TH08 MP Shell (ports/th08-mp): closing input is dropped, and a fresh session preserves the source baseline but resets native serial mapping',async()=>{
   const h=await harness();await h.start();await h.request(controls(1));
   const release=h.blockSync(),stopping=h.window.__th08Runtime.stop();
   try{await h.request(direct);await h.request(controls(2));assert.equal(count(h,'touch'),0);assert.equal(h.native.bombPulses,1);}
@@ -194,7 +206,7 @@ test('real shell: closing input is dropped, and a fresh session preserves the so
   await h.request(controls(2));assert.equal(h.native.bombPulses,1,'old source snapshot must not become a new-session bomb');
   await h.request(controls(3));assert.equal(h.native.bombPulses,2,'first new-session press must not be eaten');
 });
-test('real shell: Replay menu keeps touch, while pending reopen drops input and rebases only native serials',async()=>{
+test('TH08 MP Shell (ports/th08-mp): Replay menu keeps touch, while pending reopen drops input and rebases only native serials',async()=>{
   const h=await harness();await h.start({netplayMode:undefined,replayViewer:true});await h.request(direct);await h.request(controls(1));
   const release=h.blockSync(),syncBefore=count(h,'sync');h.send({command:'sync'});
   await until(()=>count(h,'sync')>syncBefore,'replay queue blocker');
@@ -207,14 +219,14 @@ test('real shell: Replay menu keeps touch, while pending reopen drops input and 
   await h.request(controls(3));assert.equal(h.native.bombPulses,2);
   await h.request(direct);assert.equal(count(h,'touch'),2);
 });
-test('real shell: spectator rejection still consumes source serials before a later playable session',async()=>{
+test('TH08 MP Shell (ports/th08-mp): spectator rejection still consumes source serials before a later playable session',async()=>{
   const h=await harness();await h.start({netplaySpectator:true});
   await h.request(direct);await h.request(controls(5));assert.equal(count(h,'touch'),0);assert.equal(count(h,'controls'),0);
   await h.window.__th08Runtime.stop();await h.start({netplaySpectator:false});
   await h.request(controls(5));assert.equal(h.native.bombPulses,0);
   await h.request(controls(6));assert.equal(h.native.bombPulses,1);
 });
-test('real shell: pagehide and a replaced document owner cannot revive old touch',async()=>{
+test('TH08 MP Shell (ports/th08-mp): pagehide and a replaced document owner cannot revive old touch',async()=>{
   for(const retiredBy of ['pagehide','detached','replaced']){
     const h=await harness();await h.start();await h.request(controls(1));
     if(retiredBy==='pagehide')h.window.dispatchEvent({type:'pagehide'});
@@ -226,7 +238,7 @@ test('real shell: pagehide and a replaced document owner cannot revive old touch
     await h.request(direct);assert.equal(count(h,'touch'),0,retiredBy);
   }
 });
-test('real shell: source/origin/protocol/game/epoch validation remains before realtime dispatch',async()=>{
+test('TH08 MP Shell (ports/th08-mp): source/origin/protocol/game/epoch validation remains before realtime dispatch',async()=>{
   const h=await harness();await h.start();
   for(const overrides of [{source:{}},{origin:'http://other.invalid'},
     {data:{...direct,protocol:'wrong',game:'th08',epoch:23,request:'bad'}},
@@ -236,7 +248,7 @@ test('real shell: source/origin/protocol/game/epoch validation remains before re
   }
   assert.equal(count(h,'touch'),0);await h.request(direct);assert.equal(count(h,'touch'),1);
 });
-test('real shell: first valid bomb/escape and uint32 source wrap remain real presses',async()=>{
+test('TH08 normal Shell (ports/th08): first valid bomb/escape and uint32 source wrap remain real presses',async()=>{
   const h=await harness({multiplayer:false});await h.start();
   await h.request(controls(1,{escapeSerial:1}));assert.equal(h.native.bombPulses,1);assert.equal(h.native.escapePulses,1);
   await h.request(controls(0xffffffff,{escapeSerial:0xffffffff}));
@@ -244,13 +256,16 @@ test('real shell: first valid bomb/escape and uint32 source wrap remain real pre
   assert.equal(h.native.bombPulses,3);assert.equal(h.native.escapePulses,3);
 });
 
-test('real shell: letterbox pointers share lifecycle eligibility and cannot revive a cancelled gesture',async()=>{
+test('TH08 normal Shell (ports/th08): letterbox pointers share lifecycle eligibility and cannot revive a cancelled gesture',async()=>{
   const h=await harness({multiplayer:false});await h.start();
   const target={setPointerCapture(){}};
   const pointer=(type,clientX)=>h.document.dispatchEvent({type,pointerType:'touch',pointerId:45,target,clientX,clientY:240,
     preventDefault(){},stopPropagation(){}});
   pointer('pointerdown',60);pointer('pointermove',70);assert.equal(count(h,'touch'),2);
   h.document.hidden=true;h.document.dispatchEvent({type:'visibilitychange'});
+  const touchCount=count(h,'touch'),controlCount=count(h,'controls');
+  await h.request(direct);await h.request(controls(1));
+  assert.equal(count(h,'touch'),touchCount);assert.equal(count(h,'controls'),controlCount);
   pointer('pointermove',90);pointer('pointerdown',60);assert.equal(count(h,'touch'),2);
   h.document.hidden=false;h.document.dispatchEvent({type:'visibilitychange'});await settle();
   pointer('pointermove',90);assert.equal(count(h,'touch'),2);

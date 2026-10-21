@@ -54,7 +54,7 @@ const source=[...files('cpp/game'),...files('cpp/sdl'),...(release?[]:[resolve(r
 if(multiplayer)source.push(...files('cpp/multiplayer'),...readdirSync(resolve(netplayCommon,'src/netplay')).filter(p=>p.endsWith('.cpp')&&p!=='NetplayInput.cpp').map(p=>resolve(netplayCommon,'src/netplay',p)));
 if(thprac)source.push(...['imgui.cpp','imgui_draw.cpp','imgui_tables.cpp','imgui_widgets.cpp','imgui_freetype.cpp'].map(p=>resolve(imgui,p)));
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(imgui),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,resolve(commonInclude,'eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp'),resolve(commonInclude,'eagler/text/RuntimeFontRaster.hpp')].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(imgui),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders,...headerInputs(resolve(commonInclude,'eagler/input')),resolve(commonInclude,'eagler/audio/WebSfx.hpp'),resolve(commonInclude,'eagler/text/RuntimeFontRaster.hpp')].sort();
 if(multiplayer)headers.push(...headerFiles(resolve(netplayCommon,'include')));
 await printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
 const sha=b=>createHash('sha256').update(b).digest('hex');

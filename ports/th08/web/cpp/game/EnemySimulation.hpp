@@ -5,8 +5,9 @@
 #include "EnemyScoreCancel.hpp"
 #include "EclSpawn.hpp"
 #include "Chain.hpp"
+#include "ValidationScene.hpp"
 namespace th08 {
-struct EnemySimulationInput {EnemyFamiliarContext familiar;u8 focused=0,spell_bomb_damage=0;};
+struct EnemySimulationInput {EnemyFamiliarContext familiar;u8 focused=0,spell_bomb_damage=0;ValidationSceneGate validation;};
 struct EnemySimulationState {
     Timer timer{0,0,0};i32 frames=0,unfocused_frames=0,active_frames=0,active_count=0;
     EnemyDropSequence drops;EclVm* layers[4]{};EclTimelineVm timelines[16];

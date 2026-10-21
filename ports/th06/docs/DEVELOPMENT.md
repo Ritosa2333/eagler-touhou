@@ -33,3 +33,5 @@ Vendored SDL_image、libpng 与 zlib 会按 tracked 输入复制到各模式的 
 游戏逻辑在 `src/`，网络和多人代码在 `src/netplay/`、`src/multiplayer/`，浏览器适配在 `portable/`。核心检查从 `ports/th06/` 运行：`bash scripts/run-core-tests.sh`。CI CMake 预设位于 `CMakePresets.json`；它们是外置资源编译检查，不生成上面的含资源运行包。
 
 Runtime 提供 `th06_native_observation_v1()` 只读观测接口。它结合 `Supervisor.curState` 与 `GameManager.isInMenu` 区分标题、可操作游戏、暂停、结算、结尾和转场，以 `g_GameManager.gameFrames` 提供模拟帧；暂停/重试时该帧保持不变。普通构建读取当前已消费的 `g_CurFrameInput`，多人构建读取消费输入 lane `g_CurFrameGameInputs[GetLocalPlayerSlot()]`。多人位置与本地座位按已配置玩家槽读取，暂离或离场玩家的位置保持不可用。TH06 没有独立应用帧或多人逻辑帧时钟，因此不导出对应字段。
+
+`th06_touch_motion_trace_v2(seat, executionKind)` 提供完成移动步的只读轨迹，按座位和执行类型分环记录；类型 0/1/2/3 分别表示前进、重放、回滚重演和预测步。每条记录在 `Player::HandlePlayerInputs` 的位置边界限制后写入，包含移动前坐标、未经速度限幅与场地边界处理的目标坐标、实际坐标、角色原始速度、炸弹与有效帧率缩放、灵敏度和模拟帧。键盘步使用 mode 0 且目标等于移动前坐标；触控/摇杆步使用 mode 1，取消限速模式使用 mode 2。focus flag 记录原生 `isFocus` 状态，移动限速由 mode 与 speed 表达。重放和网络输入在没有原始灵敏度元数据时以 flags 明示未知。v2 header/row 布局和 selector 范围见 `common/include/eagler/input/TouchMotionTrace.hpp`。

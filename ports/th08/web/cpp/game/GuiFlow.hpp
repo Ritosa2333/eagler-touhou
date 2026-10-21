@@ -1,5 +1,6 @@
 #pragma once
 #include "GuiController.hpp"
+#include "DialogueInputReceipt.hpp"
 #include "Chain.hpp"
 namespace th08 {
 struct GuiLoadContext {bool initial=true,keep_resources=false,release_resources=true;u8 section_warp=0;i32 spell_number=0;};
@@ -17,11 +18,13 @@ public:
     bool setup();
     void release();
     void update();
+    const DialogueInputReceipt& dialogue_input_receipt()const noexcept{return consumer_receipt;}
     void draw();
     bool attach(Chain& owner);
     void detach();
 private:
     GuiController& controller;Dialogue& dialogue;GuiResources& resources;
+    DialogueInputReceipt consumer_receipt;
     Chain* chain=nullptr;ChainElement calculation,drawing;
 };
 }

@@ -313,7 +313,7 @@ i32 TitleMenus::OnUpdateStartMenu()
 
         state.cursor2 = state.cursor;
 
-        if (state.stateTimer2 < 10)
+        if (!title_confirmation_ready(state.currentScreen, state.currentScreenState, state.stateTimer2))
         {
             break;
         }

@@ -1,6 +1,7 @@
 #include "GameManager.hpp"
 #include "Player.hpp"
 #include "Supervisor.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -157,4 +158,10 @@ extern "C" TH06_OBSERVATION_EXPORT const std::uint32_t *th06_native_observation_
     }
 
     return words.data();
+}
+
+extern "C" TH06_OBSERVATION_EXPORT const std::uint32_t *th06_touch_motion_trace_v2(
+    std::uint32_t seat, std::uint32_t execution_kind)
+{
+    return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat, execution_kind);
 }

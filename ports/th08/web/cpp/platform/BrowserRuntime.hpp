@@ -3,11 +3,17 @@
 #include "../game/AnmText.hpp"
 #include <map>
 #include "ResourceManager.hpp"
+#include "DisposableWritePolicy.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
+#include <array>
+#include <cstddef>
 namespace th08 {
 struct BrowserTexture {u32 handle,width,height,format,pitch,data,size,revision;};
 class GameAudioManager;
 class BrowserRuntime:public ApplicationPlatform {
+    static constexpr u32 replay_trace_capacity=256,replay_trace_word_count=36;
+    struct ReplayTraceSample {std::array<u32,replay_trace_word_count> words{};};
     struct Graphics:SpriteBackend {
         BrowserRuntime& r;explicit Graphics(BrowserRuntime& r):r(r){}
 #ifdef TH_NATIVE_PLATFORM
@@ -27,7 +33,7 @@ class BrowserRuntime:public ApplicationPlatform {
     std::vector<u16> warm_glyphs;
 #endif
     std::map<i32,u32> surfaces;
-    BrowserTexture texture_result{};bool captured=false,prepared=false;
+    BrowserTexture texture_result{};bool captured=false,prepared=false;u32 language_present_sequence=0;
     InputController input;ControllerSnapshot pad;u8 keys[256]{};
     u32 back=0;JapaneseFonts fonts;std::unique_ptr<AnmText> text;
     std::unique_ptr<GameAudioManager> audio;
@@ -36,11 +42,47 @@ class BrowserRuntime:public ApplicationPlatform {
     struct PendingCapture {u32 target=0;TextureRect source{},destination{};bool triangle=false;} pending_capture;
     bool capture_failed=false;void finish_capture();
     bool visual_suppressed=false;
+    std::array<ReplayTraceSample,replay_trace_capacity> replay_trace_{};
+    u32 replay_trace_next_sequence_=1,replay_trace_count_=0,replay_trace_poll_sequence_=0,replay_trace_last_live_input_=0;
+    bool replay_trace_enabled_=false;
+    void append_replay_trace();
 public:
     GameApplication app;
     touhou::input::MotionTrack motion;
+    // Explicit ordinary-run fixture requests leave recording and persistence on
+    // their production paths. The browser harness owns disposable storage.
+    bool validation_run_boundaries_armed=false;
+    u32 validation_run_sequence=0,validation_run_transition_count=0;
+    eagler::input::TouchMotionTraceBank touch_trace;
+    eagler::input::TouchMotionTraceBank::Sample pending_touch_trace{};
+    unsigned touch_trace_callbacks=0;
+    float touch_sensitivity=1;
+    // Session statistics may outlive a world reset; prepared sessions stay disposable.
+    bool validation_scene_used=false;
+    DisposableWritePolicy validation_scene_writes;
+    bool validation_scene_request_pending=false;
+    u32 validation_scene_request_status=0,validation_scene_request_generation=0;
+    bool validation_scene_accepted_before_first_update=false;
+#if defined(TH_PRESENTATION_AUDIT)
+    u32 audit_write_attempts=0,audit_write_success=0,audit_write_bytes=0;
+    std::map<std::string,std::pair<u32,u32>> audit_saved_payloads;
+    // Field order is fixed here so the host digest covers raw and mapped
+    // controller input without exposing private runtime storage to the ABI.
+    void audit_controller_state(u32& hash)const{
+        const auto add=[&](const auto& value){const auto* bytes=reinterpret_cast<const u8*>(&value);for(size_t i=0;i<sizeof(value);++i)hash=(hash^bytes[i])*16777619u;};
+        add(pad.x);add(pad.y);add(pad.legacy_buttons);add(pad.x_min);add(pad.x_max);add(pad.y_min);add(pad.y_max);
+        for(const auto value:pad.buttons)add(value);add(pad.available);add(pad.direct);add(input.focus_conflict);
+        for(const auto value:app.title.context.controller_state)add(value);
+    }
+#endif
     bool player_motion(const PlayerMovementState&,float,const FrameTiming&,float&,float&)override;
-    void begin_motion(i32 stage,bool initial,bool replay,bool record)override{motion.begin(stage,initial,replay,record);}
+    bool take_validation_scene_request()override;
+    void finish_validation_scene_request(bool accepted,bool before_first_update)override;
+    void validation_scene_load_scope(bool active)override{validation_scene_writes.load_scope(active);}
+    void begin_motion(i32 stage,bool initial,bool replay,bool record)override{
+        if(initial&&!replay)++validation_run_sequence;
+        motion.begin(stage,initial,replay,record);
+    }
     bool load_motion(const u8* data,u32 size)override{return motion.load(data,size,8);}
     i32 replay_touch_points(ReplayTouchPoint*,i32)override;
     bool cheat_movement_used()const override{return motion.cheat_movement_used;}
@@ -52,6 +94,7 @@ public:
     bool prepare_loading();bool draw_loading(bool advance);
     const std::vector<ArchiveEntry>& resources()const{return resources_.contents();}
     bool native_fonts();
+    bool replay_trace_control(u32 enabled,u32 reset);
     u32 native_font_steps();bool native_font_step(u32);
     const std::vector<u8>& file(const char*);const BrowserTexture* texture(u32);u32 backbuffer()const{return back;}
     i32 status(i32)const;

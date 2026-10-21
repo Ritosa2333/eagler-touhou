@@ -80,7 +80,7 @@ BOOTSTRAP = r'''async ({bytes,startStage}) => {
   await presentationLab.boot({replayBytes:bytes});
   const controller=presentationLab.controller,core=controller.core,runtime=controller.runtime;
   controller.freeze();
-  const state={previous:null,rows:[],tail:[],applicationTicks:0,done:false,started:false,stages:[],finalScore:0};
+  const state={previous:null,rows:[],tail:[],applicationTicks:0,done:false,started:false,stopReason:null,terminalScene:null,stages:[],finalScore:0};
   const capture=()=>{
     const pointer=core.trace(runtime.app),u32=new Uint32Array(core.memory.buffer,pointer,68),f32=new Float32Array(core.memory.buffer,pointer,68);
     const diagnostics=new Int32Array(core.memory.buffer,core.diagnostics(runtime.app),16);
@@ -96,8 +96,9 @@ BOOTSTRAP = r'''async ({bytes,startStage}) => {
     if(scene===2)state.finalScore=traceView[13];const trace=Array.from(traceView.slice(0,14));
     const diagnostics=Array.from(new Int32Array(core.memory.buffer,core.diagnostics(runtime.app),16));
     state.tail.push({applicationTick:state.applicationTicks,receipt,scene,trace,diagnostics});if(state.tail.length>32)state.tail.shift();
-    if(receipt.status==='advanced')capture();else state.done=true;
-    if(state.started&&scene===1)state.done=true;
+    if(receipt.status==='advanced')capture();
+    if(state.started&&scene===1){state.done=true;state.stopReason='returned-to-title';state.terminalScene=scene;}
+    else if(receipt.status!=='advanced'){state.done=true;state.stopReason=state.started?'driver-not-advanced':'driver-not-advanced-before-playback';state.terminalScene=scene;}
   };
   const step=count=>{for(let i=0;i<count&&!state.done;i++)tick();};
   const press=(code,wait=40)=>{controller.key(code,true);step(3);controller.key(code,false);step(wait);};
@@ -111,7 +112,7 @@ BOOTSTRAP = r'''async ({bytes,startStage}) => {
   if(core.status(runtime.app,0)!==2||!(new Uint32Array(core.memory.buffer,core.trace(runtime.app),5)[4]&8))
     throw Error('Real Replay playback did not start: '+JSON.stringify(navigation));
   state.started=true;controller.clearKeys();capture();
-  window.replayVerifierCapture={run(count){state.rows=[];step(count);return {rows:state.rows,done:state.done,applicationTicks:state.applicationTicks,stages:state.stages,tail:state.tail,finalScore:state.finalScore};}};
+  window.replayVerifierCapture={run(count){state.rows=[];step(count);return {rows:state.rows,done:state.done,stopReason:state.stopReason,terminalScene:state.terminalScene,applicationTicks:state.applicationTicks,stages:state.stages,tail:state.tail,finalScore:state.finalScore};}};
   const rows=state.rows;state.rows=[];
   return {rows,navigation,build:presentationLab.identity};
 }'''
@@ -143,6 +144,7 @@ def main():
             page.wait_for_function('window.presentationLab !== undefined')
             initial = page.evaluate(BOOTSTRAP, {'bytes': list(replay), 'startStage': args.start_stage})
             ticks = 0; application_ticks = 0; done = False; tail = []; stages = []; final_score = None
+            stop_reason = None; terminal_scene = None
             with rows_path.open('w', encoding='utf-8', buffering=1) as rows:
                 for row in initial['rows']:
                     rows.write(json.dumps(row, separators=(',', ':')) + '\n'); ticks += 1
@@ -151,17 +153,25 @@ def main():
                     for row in batch['rows']:
                         rows.write(json.dumps(row, separators=(',', ':')) + '\n'); ticks += 1
                     application_ticks, done, tail, stages = batch['applicationTicks'], batch['done'], batch['tail'], batch['stages']
+                    stop_reason, terminal_scene = batch['stopReason'], batch['terminalScene']
                     final_score = batch['finalScore']
                     if ticks and ticks % 6000 < len(batch['rows']):
                         print(json.dumps({'ticks': ticks, 'stages': stages, 'last': batch['rows'][-1]}), flush=True)
-            complete = done and not errors and stages == [item['stage'] for item in expected['stages']] and final_score == expected['finalScore']
-            result = {'schema': 'th08/current-replay-tick-capture/v1', 'complete': complete,
+            if not done:
+                stop_reason = 'maximum-ticks'
+                terminal_scene = page.evaluate('() => presentationLab.controller.core.status(presentationLab.controller.runtime.app,0)')
+            complete = done and stop_reason == 'returned-to-title' and terminal_scene == 1 and not errors
+            terminal_match = stages == [item['stage'] for item in expected['stages']] and final_score == expected['finalScore']
+            result = {'schema': 'th08/current-replay-tick-capture/v2', 'complete': complete,
+                      'stopReason': stop_reason, 'terminalScene': terminal_scene,
+                      'terminalMatch': terminal_match,
                       'provider': 'th08-eagler/diagnostic-browser', 'replay': {'path': str(args.replay.resolve()), 'bytes': len(replay), 'sha256': hashlib.sha256(replay).hexdigest()},
                       'build': initial['build'], 'rows': {'path': str(rows_path.resolve()), 'ticks': ticks},
                       'applicationTicks': application_ticks, 'navigation': initial['navigation'], 'expected': expected,
                       'stages': stages, 'finalScore': final_score, 'tail': tail, 'errors': errors}
         except Exception as error:
-            result = {'schema': 'th08/current-replay-tick-capture/v1', 'complete': False,
+            result = {'schema': 'th08/current-replay-tick-capture/v2', 'complete': False,
+                      'stopReason': 'capture-error', 'terminalScene': None,
                       'replay': {'path': str(args.replay.resolve()), 'sha256': hashlib.sha256(replay).hexdigest()},
                       'rows': {'path': str(rows_path.resolve())}, 'errors': [*errors, repr(error)]}
             raise

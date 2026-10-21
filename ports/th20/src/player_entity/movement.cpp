@@ -2,6 +2,9 @@
 #include "frame_helpers.hpp"
 #include <bit>
 #include <cstring>
+#ifdef TH_SDL3
+#include "../../web/cpp/sdl/TouchMotion.hpp"
+#endif
 namespace th20::source::player_entity {
 namespace {
 int signed32(std::uint32_t value){return std::bit_cast<int>(value);}
@@ -20,6 +23,9 @@ std::uint32_t analog_octant(float x,float y){
 }
 std::uint32_t set_transition_direction(Player& player,std::uint32_t mode){recovered::timer_set(player.timers_2050[2],0);player.entity_flags=(player.entity_flags&~0xc0u)|((mode&3u)<<6);return mode&3u;}
 int update_movement(Player& player,MovementServices& env){
+#ifdef TH_SDL3
+    const auto motion_trace=input::begin_motion_trace(player,env.clock_scale());
+#endif
     int x=0,y=0;const int slot=env.input_slot(player.view_index);auto& options=env.options();auto& callbacks=options.callbacks();const float rate=callbacks.firing().clock_rate();
     if(const auto mode=(player.entity_flags>>6)&3u;mode){
         auto& timer=player.timers_2050[2];if(timer.current==0)finish_stage_visibility(player,env.reset());recovered::timer_tick(timer,&rate);
@@ -59,6 +65,9 @@ apply_movement:
     if(x<0&&previous>=0)env.bind_script(player,signed32(player.animation_scripts[1]));else if(x==0&&previous<0)env.bind_script(player,signed32(player.animation_scripts[2]));
     if(x>0&&previous<=0)env.bind_script(player,signed32(player.animation_scripts[3]));else if(x==0&&previous>0)env.bind_script(player,signed32(player.animation_scripts[4]));
     player.fields_674[0]=std::uint32_t(x);player.fields_674[1]=std::uint32_t(y);advance_fixed_motion(player,x,y,env.clock_scale());
+#ifdef TH_SDL3
+    input::finish_motion_trace(player,motion_trace);
+#endif
     if(auto* animation=env.animation(player.handle_60c))animation->vector_5bc=player.position_614;
     if(x||y){std::memmove(player.vectors_20fc+1,player.vectors_20fc,32*8);std::memcpy(player.vectors_20fc,&player.fixed_position,8);}
     if(player.entity_flags&2u)++player.fields_20e4[1];

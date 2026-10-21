@@ -1,4 +1,5 @@
 #include "browser-gamepad-input.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #include "GraphicsDevice.hpp"
 #include "AudioDevice.hpp"
 #include "FontDevice.hpp"
@@ -23,6 +24,7 @@
 #include "../../../portable/input/TouchController.hpp"
 #include <eagler/thprac/PracticePointer.hpp>
 #include <algorithm>
+#include <limits>
 EM_JS(int, th11_browser_keyboard, (), { return typeof Module["resetBrowserKeyboard"] === "function"; });
 EM_JS(void, th11_reset_browser_keyboard, (), { Module["resetBrowserKeyboard"]?.(); });
 EM_JS(void, th11_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
@@ -37,6 +39,7 @@ EM_JS(void, th11_browser_frame, (int ok,double milliseconds,unsigned ticks), { M
 
 namespace th11::sdl {
 namespace {
+float touch_motion_sensitivity() noexcept;
 struct Application:StageResourceEffects {
     GraphicsDevice graphics;
     AudioDevice audio;
@@ -255,6 +258,8 @@ struct Application:StageResourceEffects {
         if(!initialize())return false;
         const auto before=session.state.phase;
         const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+        eagler::input::GlobalTouchMotionTraceBank().set_context(session.state.frame,session.state.replay?1u:0u,
+            session.state.replay?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
         if(!session.update(input)){error=session.error;return false;}
         const auto after=session.state.phase;
         if(before!=GameSessionPhase::title&&after==GameSessionPhase::title)filter_practice_music(PracticeBgmEvent::Stop);
@@ -320,6 +325,7 @@ Application app;
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+float touch_motion_sensitivity() noexcept{return gestures.sensitivity;}
 eagler::thprac::PracticePointer practice_pointers;
 #ifdef TH_ENABLE_THPRAC
 PracticeCadence cadence;
@@ -432,6 +438,7 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
 EMSCRIPTEN_KEEPALIVE int th11_save_scores(){return th11::sdl::app.save_scores();}
 EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
 EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
+EMSCRIPTEN_KEEPALIVE const unsigned* th11_touch_motion_trace_v2(unsigned seat,unsigned execution_kind){return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);}
 EMSCRIPTEN_KEEPALIVE int th11_draw_loading(unsigned frames){return th11::sdl::app.draw_loading(frames);}
 EMSCRIPTEN_KEEPALIVE int th11_prepare_loading(){return th11::sdl::app.prepare_loading();}
 #if TH11_DEVELOPMENT_HARNESS

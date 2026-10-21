@@ -7,6 +7,7 @@ namespace Netplay::SideEffects
 {
 void SetSpeculative(bool speculative);
 bool IsSpeculative();
+bool IsResimulation();
 
 // BGM changes are long-lived presentation state. A corrected timeline may
 // encounter a different music opcode than the already-presented timeline, so

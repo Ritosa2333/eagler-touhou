@@ -6,6 +6,8 @@ namespace Netplay::SideEffects
 {
 void SetSpeculative(bool speculative);
 bool IsSpeculative();
+void SetResimulation(bool resimulation);
+bool IsResimulation();
 
 // Reconcile the final long-lived BGM selection after rollback while leaving
 // already-presented one-shot sounds suppressed during resimulation.

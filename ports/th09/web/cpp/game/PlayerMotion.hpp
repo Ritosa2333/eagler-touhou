@@ -6,7 +6,16 @@ struct Bounds {Vec3 minimum,maximum;};
 struct MovementSpeeds {float normal=0,focused=0,diagonal=0,focused_diagonal=0;};
 struct PlayfieldLimits {Vec2 origin,extent;};
 struct PlayerMotion;
-struct MotionSource {virtual ~MotionSource()=default;virtual bool movement(const PlayerMotion&,float speed,float rate,float& x,float& y)=0;};
+struct MotionTraceInput {
+    bool active=false,target_known=true,mode_known=true,sensitivity_known=false;
+    u32 mode=0;
+    float target_x=0,target_y=0,sensitivity=1;
+};
+struct MotionSource {
+    virtual ~MotionSource()=default;
+    virtual bool movement(const PlayerMotion&,float speed,float rate,float& x,float& y)=0;
+    virtual bool movement(const PlayerMotion& p,float speed,float rate,float& x,float& y,MotionTraceInput&){return movement(p,speed,rate,x,y);}
+};
 struct MotionEffects {
     virtual ~MotionEffects()=default;
     virtual void begin_focus(const Vec3&,u32 player,u32 character)=0;
@@ -14,6 +23,7 @@ struct MotionEffects {
     virtual void animation_interrupt(u32 label)=0;
     virtual void update_options()=0;
     virtual bool movement(float,float,float&,float&){return false;}
+    virtual bool movement(float speed,float rate,float& x,float& y,MotionTraceInput&){return movement(speed,rate,x,y);}
 };
 struct PlayerMotion {
     i32 health=10;

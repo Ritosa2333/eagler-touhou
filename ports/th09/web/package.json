@@ -8,6 +8,7 @@
     "cpp:build": "node scripts/cpp/build.mjs",
     "test": "node ../../../tools/testing/oracle-cli.mjs --root=. --name=local-oracle",
     "test:archive-oracle": "node --test tests/oracle/archive.test.mjs",
+    "test:smoothness-window-evidence": "node --test tests/multiplayer/smoothness-window.test.mjs",
     "web:build": "node scripts/build-sdl.mjs --release",
     "web:eagler": "node scripts/build-eagler.mjs",
     "web:eagler:multiplayer": "node scripts/build-eagler.mjs --multiplayer",

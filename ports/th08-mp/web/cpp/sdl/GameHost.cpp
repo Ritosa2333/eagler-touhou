@@ -175,6 +175,7 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     const int keyboardDpad=th08_keyboard_gamepad_dpad();
     if(keyboardDpad&1)keys[38]=128;if(keyboardDpad&2)keys[40]=128;if(keyboardDpad&4)keys[37]=128;if(keyboardDpad&8)keys[39]=128;
     const auto state=touch_state();sync_touch_context(state);
+    runtime->set_touch_sensitivity(touch.sensitivity);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const auto& net=runtime->app.session.netplay;
     const bool sample=!net.Configured()||(net.CanCapture()&&!net.HasCapture(net.NextCaptureFrame()));

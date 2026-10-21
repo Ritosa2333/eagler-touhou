@@ -4365,6 +4365,7 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     }
     InjectDenseBulletLoad(frame);
     SideEffects::SetSpeculative(resimulation);
+    SideEffects::SetResimulation(resimulation);
     // Legacy/global raw-input owners still need one deterministic word. Use
     // the synchronized union on every peer while Player consumes its own
     // slot below. This also prevents Supervisor from re-sampling hardware
@@ -4551,6 +4552,7 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     Input::ClearPlayerButtonOverrides();
     Input::ClearReplayOverride();
     SideEffects::SetSpeculative(false);
+    SideEffects::SetResimulation(false);
     g_PeakEnemies = std::max(
         g_PeakEnemies, static_cast<std::uint32_t>(g_EnemyManager.enemyCountReal));
     g_PeakBullets = std::max(

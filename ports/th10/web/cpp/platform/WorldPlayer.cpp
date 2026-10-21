@@ -9,7 +9,10 @@
 #ifdef TH_ENABLE_THPRAC
 #include "../game/PracticeRuntime.hpp"
 #endif
+#include <eagler/input/TouchMotionTrace.hpp>
+#include <eagler/input/LimitedTouchVector.hpp>
 #include <cstdlib>
+#include <cmath>
 namespace th10::browser {
 namespace {
 struct Lifecycle final:PlayerLifecycleEnvironment {
@@ -30,19 +33,43 @@ struct Movement final:PlayerMovementEnvironment {
     bool flip_vertical_step() const override{return w.state.practice.enabled&&w.state.practice.flip_screen_y;}
     void practice_velocity(i32& x,i32& y) override{const auto& p=w.state.practice;if(p.enabled&&p.keep_player_speed){x=i32(x*60.f/p.speed.fps);y=i32(y*60.f/p.speed.fps);}}
 #endif
-    World& w;explicit Movement(World& world):w(world){economy=&w.state.game;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;default_rate=&w.engine.speed;always_hitbox=&w.always_hitbox;input_keys=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.current);enemy_count=w.actors.enemies?&w.actors.enemies->count:nullptr;}
+    World& w;bool trace_ready=false;bool trace_from_motion_track=false;
+    eagler::input::TouchMotionTraceBank::Sample trace{};
+    explicit Movement(World& world):w(world){economy=&w.state.game;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;default_rate=&w.engine.speed;always_hitbox=&w.always_hitbox;input_keys=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.current);enemy_count=w.actors.enemies?&w.actors.enemies->count:nullptr;}
     void update_option(PlayerOption& option) override{if(option.on_update==callback_id::PlayerOptionInitialize)w.actors.player->update_trailing_option(option);else if(option.on_update==callback_id::PlayerOptionUpdate)w.actors.player->update_anchored_option(option,manager->registry);else __builtin_trap();}
     bool movement(const Player& p,i32 speed,i32& x,i32& y)override{
         if(!w.state.replay||w.state.replay->active_stage<0)return false;
+        using Bank=eagler::input::TouchMotionTraceBank;
+        trace={};trace_ready=true;trace_from_motion_track=false;trace.seat=0;
+        const auto stage=w.state.game.stage;
+        if(stage>=0&&stage<static_cast<i32>(w.motion.ticks.size()))trace.frame=w.motion.ticks[stage];
+        else trace.flags|=Bank::flag_frame_unknown;
+        trace.flags|=Bank::flag_gameplay_tick|(p.focused?Bank::flag_focused:0u);
+        trace.before_x=p.position.x;trace.before_y=p.position.y;trace.target_x=p.position.x;trace.target_y=p.position.y;
+        trace.speed=static_cast<float>(speed)*.01f;trace.scale_x=trace.scale_y=w.engine.speed;
+#ifdef TH_ENABLE_THPRAC
+        if(w.state.practice.enabled&&w.state.practice.keep_player_speed){
+            const float practice_scale=60.f/w.state.practice.speed.fps;
+            trace.scale_x*=practice_scale;trace.scale_y*=practice_scale;
+        }
+        if(w.state.practice.enabled&&w.state.practice.flip_screen_y)
+            trace.flags|=Bank::flag_target_unknown;
+#endif
         float dx=x,dy=y;bool enabled;
-        if(w.motion.playing){enabled=w.motion.playback(w.state.game.stage,dx,dy);}
+        if(w.motion.playing){enabled=w.motion.playback(stage,dx,dy);trace_from_motion_track=enabled;}
         else{
             enabled=w.motion.active&&p.state==1;
-            if(enabled){const float rate=w.engine.speed;dx=rate?(w.motion.target_x*100-p.fixed_position.x)/rate:0;dy=rate?(w.motion.target_y*100-p.fixed_position.y)/rate:0;if(!w.motion.unlimited)touhou::input::limit_vector(dx,dy,float(speed));dx=std::round(dx);dy=std::round(dy);w.motion.mark_cheat_movement(dx,dy);}
-            w.motion.record(w.state.game.stage,enabled,dx,dy);
+            if(enabled){trace.mode=w.motion.unlimited?Bank::mode_unlimited:Bank::mode_limited;trace.target_x=w.motion.target_x;trace.target_y=w.motion.target_y;trace.sensitivity=w.touch_sensitivity;const float rate=w.engine.speed;dx=rate?(w.motion.target_x*100-p.fixed_position.x)/rate:0;dy=rate?(w.motion.target_y*100-p.fixed_position.y)/rate:0;if(!w.motion.unlimited){touhou::input::limit_vector(dx,dy,float(speed));i32 quantized_x=0,quantized_y=0;if(!eagler::input::nearest_integer_touch_vector_within_speed(dx,dy,float(speed),quantized_x,quantized_y)){w.fail();return false;}dx=static_cast<float>(quantized_x);dy=static_cast<float>(quantized_y);}else{dx=std::round(dx);dy=std::round(dy);}w.motion.mark_cheat_movement(dx,dy);}
+            w.motion.record(stage,enabled,dx,dy);
         }
+        if(trace_from_motion_track)trace.flags|=Bank::flag_mode_unknown|Bank::flag_target_unknown|Bank::flag_sensitivity_unknown;
         if(enabled&&(!std::isfinite(dx)||!std::isfinite(dy)||std::abs(dx)>touhou::input::MotionTrack::velocity_limit||std::abs(dy)>touhou::input::MotionTrack::velocity_limit)){w.fail();return false;}
         if(enabled){x=i32(dx);y=i32(dy);}return enabled;
+    }
+    void finish_trace(const Player& p){
+        if(!trace_ready)return;trace_ready=false;trace.after_x=p.position.x;trace.after_y=p.position.y;
+        trace.execution_kind=(w.state.game.flags&8)?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward;
+        eagler::input::GlobalTouchMotionTraceBank().append(trace);
     }
 };
 struct Shooting final:PlayerShootingEnvironment {
@@ -128,7 +155,7 @@ i32 World::update_player(){
     // player consumes its buttons (F5 auto-bomb injects the bomb bit here).
     update_practice(*this,state);
 #endif
-    auto& p=*actors.player;player_presentation={p.position,p.state,true};Frame env(*this);return p.update(env);}
+    auto& p=*actors.player;player_presentation={p.position,p.state,true};Frame env(*this);const i32 result=p.update(env);env.move.finish_trace(p);return result;}
 i32 World::draw_player(){
     Draw env(*this);auto& player=*actors.player;Player copy;Player* draw=&player;
     if(high_refresh::render_only){copy=player;draw=&copy;engine.present(copy.animation,player.animation);if(high_refresh::active&&player_presentation.valid&&player_presentation.state==player.state){const float dx=player.position.x-player_presentation.position.x,dy=player.position.y-player_presentation.position.y;if(dx*dx+dy*dy<16384.0f)copy.position={high_refresh::lerp_world(player_presentation.position.x,player.position.x),high_refresh::lerp_world(player_presentation.position.y,player.position.y),high_refresh::lerp_world(player_presentation.position.z,player.position.z)};}}

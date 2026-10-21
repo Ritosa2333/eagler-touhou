@@ -1,5 +1,6 @@
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
+import {verifyBrowserRuntimePresent} from './presentation-method-component.mjs';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8').replaceAll('\r','');
 
@@ -83,6 +84,6 @@ assert.match(effects,/copy\.vertices=vertices\.data\(\)/);
 assert.match(effects,/if\(presentation::render_only\).*EffectState copy=\*e/s);
 
 const runtime=read('web/cpp/platform/BrowserRuntime.cpp');
-assert.match(runtime,/if\(presentation::render_only\)return graphics_device\(\)\.present\(back\)&&!capture_failed/);
+await verifyBrowserRuntimePresent(runtime);
 
-console.log('TH08 presentation purity PASS: render-only frames are isolated from authoritative ABI/state owners');
+console.log('TH08 presentation source contract + Web present method component PASS');

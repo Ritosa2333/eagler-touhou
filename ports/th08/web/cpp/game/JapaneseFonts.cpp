@@ -1,4 +1,5 @@
 #include "JapaneseFonts.hpp"
+#include <eagler/diagnostics/LanguageTrace.hpp>
 #ifdef TH_ENABLE_THCRAP
 #include "Localization.hpp"
 #endif
@@ -72,12 +73,14 @@ bool JapaneseFont::load(const u8* data,u32 size){
     }
     height=i32(word(data+8));weight=i32(word(data+12));bytes.assign(data,data+size);glyphs=std::move(parsed);return true;
 }
-const JapaneseFont::Glyph* JapaneseFont::find(u16 code) const noexcept {
+const JapaneseFont::Glyph* JapaneseFont::find(u16 code,bool* cache_hit) const noexcept {
 #ifdef TH_NATIVE_PLATFORM
-    if(native){auto found=rasters.find(code);if(found!=rasters.end())return &found->second.glyph;
+    if(native){auto found=rasters.find(code);if(found!=rasters.end()){if(cache_hit)*cache_hit=true;return &found->second.glyph;}
+        if(cache_hit)*cache_hit=false;
         Raster raster;if(!sdl_glyph(height,weight,code,raster.glyph,raster.pixels))return nullptr;
         return &rasters.emplace(code,std::move(raster)).first->second.glyph;}
 #endif
+    if(cache_hit)*cache_hit=false;
     const auto at=std::lower_bound(glyphs.begin(),glyphs.end(),code,[](const Glyph& g,u16 c){return g.code<c;});
     return at!=glyphs.end()&&at->code==code?&*at:nullptr;
 }
@@ -112,8 +115,27 @@ bool JapaneseFonts::draw(const JapaneseFont& font,PixelSurface& image,i32 x,i32 
 #else
     const bool utf8=false;
 #endif
+    auto& trace=eagler::diagnostics::language_trace();
+    const auto text_encoding=utf8?eagler::diagnostics::LanguageTrace::Encoding::Utf8:eagler::diagnostics::LanguageTrace::Encoding::Cp932;
+#ifdef TH_NATIVE_PLATFORM
+    const bool native_font=font.native;
+#else
+    const bool native_font=false;
+#endif
     while(cursor<end){const u16 code=utf8?utf8_next(cursor,end):encoding.next(cursor,end);
-        auto* glyph=font.find(code);if(!glyph)glyph=font.find(0x30fb);if(!glyph)return false;
+        const bool tracing=trace.enabled();bool cache_hit=false,requested_has_glyph=false,fallback=false;
+        auto* glyph=font.find(code,tracing?&cache_hit:nullptr);
+        if(glyph)requested_has_glyph=native_font?glyph->has_glyph&&glyph->actual_code==code:true;
+        if(!glyph){fallback=true;glyph=font.find(0x30fb,tracing?&cache_hit:nullptr);}
+        if(!glyph){if(tracing)trace.glyph(font.height,font.weight,code,-1,eagler::diagnostics::LanguageTrace::GlyphSource::None,false,false,native_font,cache_hit,true,false);return false;}
+        const bool actual_has_glyph=native_font?glyph->has_glyph:true;
+        const bool notdef=native_font&&glyph->notdef;
+        const bool used_fallback=fallback||notdef||(native_font&&glyph->actual_code!=0xffffffffu&&glyph->actual_code!=code);
+        if(tracing){
+            const auto source=native_font?static_cast<eagler::diagnostics::LanguageTrace::GlyphSource>(glyph->source):eagler::diagnostics::LanguageTrace::GlyphSource::Bitmap;
+            const i32 actual=native_font?(glyph->actual_code==0xffffffffu?-1:i32(glyph->actual_code)):i32(glyph->code);
+            trace.glyph(font.height,font.weight,code,actual,source,requested_has_glyph,notdef,native_font,cache_hit,used_fallback,actual_has_glyph);
+        }
         const auto* coverage=font.coverage(*glyph);
         for(u32 j=0;j<glyph->height;++j){const i64 row=i64(y)+glyph->top+j;if(row<0||row>=image.height)continue;
             for(u32 i=0;i<glyph->width;++i){const i64 column=i64(x)+glyph->left+i;const u32 index=coverage[j*glyph->width+i];if(!index||column<0||column>=image.width)continue;
@@ -124,6 +146,7 @@ bool JapaneseFonts::draw(const JapaneseFont& font,PixelSurface& image,i32 x,i32 
         }
         x=wrapping_add(x,glyph->advance);
     }
+    if(trace.enabled())trace.raster(text,size,text_encoding,font.height,font.weight);
     return true;
 }
 }

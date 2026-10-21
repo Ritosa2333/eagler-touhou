@@ -50,6 +50,8 @@ ANM 字形保留分数屏幕位置以支持连续呈现；popup-render 回归同
 
 SDL 普通版导出 `th15_native_observation_v1`。12-word 布局、有效位和阶段编码见 [`native-observation-contract.mjs`](../../../tools/ports/native-observation-contract.mjs)。`ApplicationState::frames` 是应用帧，`progress.stage_frame` 是实际模拟世界帧。Legacy 与 Practice 的 R 操作重建所选阶段；Pointdevice 的 R 操作恢复最近可用的章节快照，因此其 `stage_frame` 回到该快照记录的帧，不承诺归零。仅在非 replay 且当前重开路径有效时声明 restart frame：Legacy/Practice 可用时直接报告，Pointdevice 还要求 `scene()->checkpoint.ready()`。`progress.restart_frames` 只表示重启遮罩进度，不作重开帧。输入读取 `GameBattle::active_frame().held`，坐标读取当前玩家，暂停状态读取 `PauseState::screen`。阶段为 gameplay 时，原生玩家存活且场景标志允许常规输入；重启遮罩、死亡、转场等状态明确报告 transition。观测只读取运行数据。
 
+SDL 还导出 `th15_touch_motion_trace_v2(seat, execution_kind)`。ABI 使用 8-word header、最多 512 个 16-word native tick row；每行来自 `PlayerMotion::update` 完成位置夹紧后的 1/128 固定点坐标，并包含该 tick 实际消费的触控目标、原生速度、倍率和灵敏度。普通版 seat 为 0，帧来自 `progress.stage_frame`；执行流 0 表示前向模拟，1 表示回放。翻转 Y、非零背景外力或同时启用多个分阶段移动倍率时，会显式标记为不适用于标准触控运动判定。
+
 发布版同时导出独立的 `th15_input_context_v1` 诊断数组，不改变上述 12-word 观测 ABI。其 12 个 `u32` 依次为版本、有效位掩码、ApplicationState 是否初始化、场景是否存在、多人模式、native 本地 seat、pilot 是否存在、该 seat 的 player 是否存在、ghost、该 player 的 `life.state`、原始 `scene_flags`、`messages.active()`。有效位依次为 `APP=0x001`、`SCENE=0x002`、`MODE=0x004`、`SEAT=0x008`、`PILOT=0x010`、`PLAYER=0x020`、`GHOST=0x040`、`LIFE=0x080`、`FLAGS=0x100`、`MESSAGES=0x200`；未观测项为 `0xffffffff`。该函数只读运行上下文。
 
 记录夹具在隔离原版实例中初始化和保存，再用新的记录管理器解码，并核对完整状态，供记录、暂停与结局对照复用。解码前用独立填充值初始化目标，验证未执行解码会被检出。字体定义和字体目录通过本作私有输入收据提供。`EAGLER_ORACLE_INPUT_RECEIPT` 指定收据，登记绝对路径与 SHA-256，执行器在每组运行前后复核输入身份。

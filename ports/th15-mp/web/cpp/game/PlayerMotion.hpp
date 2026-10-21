@@ -31,6 +31,6 @@ public:
     std::array<PlayerOption,8> options;std::string error;
     void configure(const ShtHeader&)noexcept;
     void snap_options()noexcept{for(auto& option:options)option.snap=1;}
-    bool update(u32 input,bool focus_allowed,float rate,PlayerMotionVisuals&);
+    bool update(u32 input,bool focus_allowed,float rate,PlayerMotionVisuals&,u32 trace_seat=0,bool trace_sensitivity_known=true);
 };
 }

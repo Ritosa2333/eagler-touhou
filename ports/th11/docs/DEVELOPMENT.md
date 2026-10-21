@@ -49,3 +49,5 @@ npm --prefix launcher run dev:workspace
 ## 原生只读运行观测
 
 SDL 普通版和 MP 导出 `th11_native_observation_v1`。12-word 布局、有效位和阶段编码见 [`native-observation-contract.mjs`](../../../tools/ports/native-observation-contract.mjs)。`state.frame` 提供世界帧和普通版重开帧，暂停状态来自 session phase；普通版输入来自 `GameBattle::player_input.movement.held`。MP 会额外提供已确认的本地 seat 输入、该 seat 的玩家位置，以及 `session.multiplayer_frame`；MP 重开操作属于协议生命周期，观察接口不将普通版重开行为套用于 MP。TH11 没有独立宿主应用帧计数，因此不声明 application-frame 有效位。观测只读取运行数据。
+
+SDL 还导出按 seat 与执行流隔离的 `th11_touch_motion_trace_v2(seat, execution_kind)`。ABI 使用 8-word header、最多 512 个 16-word native tick row；每行取自 `PlayerMotion::update` 完成后的真实固定点位置及该 tick 实际消费的目标、速度、动画速率和输入灵敏度。位置单位为 1/128 像素；普通版帧来自 `GameSession::state.frame`。执行流 0 表示前向模拟，1 表示回放，2 表示 rollback 重模拟。原生更新没有 SDL 帧上下文时不伪造采样；warp 与 Marisa/B 加速帧标为不适用。

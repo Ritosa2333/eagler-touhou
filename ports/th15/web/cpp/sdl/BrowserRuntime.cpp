@@ -1,4 +1,5 @@
 #include <eagler/input/BrowserGamepad.hpp>
+#include <eagler/input/TouchMotionTrace.hpp>
 #include "ApplicationState.hpp"
 #include "../game/HitboxDisplay.hpp"
 #include "ThpracUi.hpp"
@@ -16,6 +17,7 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <limits>
 EM_JS(void, th15_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
 EM_JS(int, th15_host_has_focus, (), {
  try { return parent.document.hasFocus() && !parent.document.hidden ? 1 : 0; }
@@ -25,11 +27,13 @@ EM_JS(int, th15_browser_keyboard_owned, (), { return typeof Module.resetBrowserK
 EM_JS(void, th15_browser_keyboard_reset, (), { Module.resetBrowserKeyboard?.(); });
 namespace th15::sdl {
 namespace {
+float touch_motion_sensitivity() noexcept;
 std::unique_ptr<ApplicationState> app;
 std::string last_error;
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+float touch_motion_sensitivity() noexcept{return gestures.sensitivity;}
 eagler::thprac::PracticePointer practice_pointers;
 PracticeCadence cadence;
 touhou::sdl::PresentationCadence presentation;bool limit_presentation_60=false;
@@ -114,6 +118,9 @@ bool sample_and_tick(){
  app->numbered_chapter=0;for(u32 i=1;i<=9;i++)if(keys[48+i]){app->numbered_chapter=i;break;}
  const bool focus=lost_focus;lost_focus=false;
  const bool capture=ThpracUi::captures_game_input();
+ eagler::input::GlobalTouchMotionTraceBank().set_context(app->progress.stage_frame,
+  app->progress.replay?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward,
+  app->progress.replay?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
  const bool ok=app->step(capture?0:controls.held,capture?0:controls.pressed,capture?0:controls.repeated,measured_fps,focus);
 #if TH15_PRESENTATION_LAB
  if(ok&&app->graphics.presentation.ready){lab_reference_clock[0]=lab_reference_clock[1];lab_reference_clock[2]=lab_reference_clock[3];lab_reference_clock[1]=app->frames;++lab_reference_clock[3];}
@@ -126,6 +133,7 @@ bool sample_and_tick(){
 }
 }
 extern "C" {
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_touch_motion_trace_v2(unsigned seat,unsigned execution_kind){return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);}
 EMSCRIPTEN_KEEPALIVE int th15_draw_startup(unsigned frames){using namespace th15::sdl;return app&&!running&&app->render_loading(true,frames);}
 EMSCRIPTEN_KEEPALIVE int th15_prepare_loading(){using namespace th15::sdl;if(running)return 0;ThpracUi::shutdown();if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;return app->prepare_loading();}
 EMSCRIPTEN_KEEPALIVE int th15_initialize(){using namespace th15::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}if(!app||!app->platform_prepared||app->initialized){if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;}if(!app->initialize(true)){last_error=app->failure;app.reset();return 0;}fps_drawing.owner=nullptr;fps_drawing.enabled=true;fps_drawing.run=draw_frame_rate;if(app->scheduler.add(fps_drawing,th15::FramePass::Draw,72)<0){app->fail("Frame-rate draw callback registration failed");return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}

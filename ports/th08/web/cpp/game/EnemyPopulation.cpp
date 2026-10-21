@@ -1,8 +1,9 @@
 #include "EnemyPopulation.hpp"
 #include "EnemyRetirement.hpp"
 #include "EclSpawn.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
-void EnemyPopulation::reset(i32 time_items)noexcept{for(auto& enemy:enemies)if(enemy)*enemy=EclVm{};spawn_failed=false;replay_flags=0;initial_time_items=time_items;practice_familiar=0;}
+void EnemyPopulation::reset(i32 time_items)noexcept{for(auto& enemy:enemies)if(enemy){if(enemy->flags&1)TH08_AUDIT_RETIRED(Enemy,enemy.get());*enemy=EclVm{};}spawn_failed=false;replay_flags=0;initial_time_items=time_items;practice_familiar=0;}
 EclVm* EnemyPopulation::spawn(const TimelineSpawn& request){return spawn_impl(request,nullptr);}
 EclVm* EnemyPopulation::spawn_impl(const TimelineSpawn& request,const EclContext::Locals* inherited){
     replay_flags|=0x1000;u32 index=0;
@@ -29,6 +30,7 @@ EclVm* EnemyPopulation::spawn_impl(const TimelineSpawn& request,const EclContext
     }
     if(request.multiple_items){enemy.power_items=request.power_items;enemy.point_items=request.point_items;}
     if(!failed&&(enemy.flags&2)&&practice_familiar){enemy.practice_familiar=practice_familiar;practice_familiar=0;}
+    if(!failed&&(enemy.flags&1))TH08_AUDIT_BORN(Enemy,&enemy);
     spawn_failed=failed;return &enemy;
 }
 u32 EnemyPopulation::active_count()const noexcept{u32 count=0;for(u32 i=0;i<480;++i)if(enemies[i]&&(enemies[i]->flags&1))++count;return count;}
@@ -40,12 +42,12 @@ void EnemyPopulation::update_scripts(const FrameTiming& timing){
             if(!executor.step(*enemy)){enemy->flags&=~1u;retire_enemy(*enemy,executor.game_state(),replay_flags);break;}
             enemy->integrate_position(timing);
             const bool changed=check_life(*enemy)||(enemy->timeout>=0&&check_timeout(*enemy));
-            if(enemy->invalid){enemy->flags&=~1u;break;}
+            if(enemy->invalid){TH08_AUDIT_RETIRED(Enemy,enemy);enemy->flags&=~1u;break;}
             if(!changed)break;
-            if(++transitions>=10000){enemy->invalid=true;enemy->flags&=~1u;break;}
+            if(++transitions>=10000){enemy->invalid=true;TH08_AUDIT_RETIRED(Enemy,enemy);enemy->flags&=~1u;break;}
         }
         if((enemy->flags&1)&&!enemy->invalid){
-            if(!executor.update_animations(*enemy)){enemy->flags&=~1u;continue;}
+            if(!executor.update_animations(*enemy)){TH08_AUDIT_RETIRED(Enemy,enemy);enemy->flags&=~1u;continue;}
             enemy->update_attached_effects();if(!executor.game_state().paused)enemy->lifetime.tick(timing);
             if(enemy->damage_protection.current>0)enemy->damage_protection.decrement(1,timing);
         }

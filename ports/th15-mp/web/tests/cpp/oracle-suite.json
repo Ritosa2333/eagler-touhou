@@ -201,6 +201,16 @@
       "environment": {}
     },
     {
+      "id": "battle-callback-order",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        }
+      ],
+      "environment": {}
+    },
+    {
       "id": "dat",
       "requiredInputs": [
         {
@@ -566,7 +576,7 @@
     {
       "file": "battle-callback-order.test.mjs",
       "role": "candidate",
-      "group": "core"
+      "group": "battle-callback-order"
     },
     {
       "file": "battle-checkpoint.test.mjs",

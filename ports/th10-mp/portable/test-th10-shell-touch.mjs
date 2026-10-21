@@ -6,11 +6,11 @@ import {fileURLToPath} from 'node:url';
 import {webcrypto} from 'node:crypto';
 import {SourceTextModule,SyntheticModule,createContext} from 'node:vm';
 
-// Execute the complete shell, real message listener/queue and packaged input,
-// save-sync, Replay-file and optional-Practice loaders. Native/platform calls,
-// branding and the optional Practice UI are stand-ins. No game simulation is
-// inferred from these tests. TH10_SHELL_UNDER_TEST accepts a frozen old shell
-// for a real queue regression control; all unchanged helpers use this checkout.
+// Execute the MP source owner's complete Shell, message listener/queue and
+// packaged input, save-sync, Replay-file and optional-Practice loaders.
+// Native/platform calls and UI dependencies are controlled test probes.
+// Single-player configuration below still executes the MP Shell source.
+// TH10_SHELL_UNDER_TEST accepts a frozen Shell source for queue regressions.
 const runtime=resolve(dirname(fileURLToPath(import.meta.url)),'../web/sdl-runtime');
 const sourcePath=process.env.TH10_SHELL_UNDER_TEST||resolve(runtime,'shell.mjs');
 const settle=()=>new Promise(resolve=>setImmediate(resolve));
@@ -29,6 +29,7 @@ const lanOptions={netplayMode:'lan',netplayUrl:'ws://localhost/netplay?room=TEST
   netplayPlayerCount:2,netplayPlayer:0,netplaySeed:1234,netplayDifficulty:0,
   netplayLoadouts:[{character:0,shot:0},{character:1,shot:1}]};
 async function harness({multiplayer=true,holdInitialization=false,withPractice=false}={}){
+  const sourceOwner='th10-mp';
   const acknowledgments=[],notifications=[],calls=[],errors=[];
   const canvas=events({focus(){},getBoundingClientRect:()=>({left:80,top:0,width:640,height:480})});
   const nodes={canvas,'#screen':canvas,'#error':{textContent:''},'#loading':{textContent:''}};
@@ -92,10 +93,11 @@ async function harness({multiplayer=true,holdInitialization=false,withPractice=f
   };
   const context=createContext({window,parent,document,location,innerWidth:800,innerHeight:480,
     navigator:{},URL,URLSearchParams,TextEncoder,TextDecoder,Uint8Array,Uint32Array,Int32Array,ArrayBuffer,DataView,
-    performance:{now:()=>3000,mark(){}},indexedDB:{},fetch,
+    performance:{now:()=>3000,mark(){}},indexedDB:{databases:async()=>[]},fetch,
     crypto:{subtle:{async digest(...args){calls.push(['configure-digest']);if(configureBlock)await configureBlock.promise;return webcrypto.subtle.digest(...args);}}},
     console:{log(){},warn(){},debug(){},error:value=>errors.push(String(value))},
     queueMicrotask,requestAnimationFrame:callback=>queueMicrotask(()=>callback(3000)),
+    setInterval:()=>1,clearInterval(){},
     setTimeout:callback=>{queueMicrotask(callback);return 1;},clearTimeout(){},
     CustomEvent:class {constructor(type,fields={}){this.type=type;Object.assign(this,fields);}},
     WebAssembly:{instantiateStreaming:async()=>({instance:{exports:core},module:{}})}});
@@ -116,7 +118,7 @@ async function harness({multiplayer=true,holdInitialization=false,withPractice=f
     './eagler-host.mjs':resolve(runtime,'eagler-host.mjs'),
     './practice-loader.mjs':resolve(runtime,'practice-loader.mjs'),
     // package-eagler.mjs copies these sources into the immutable Runtime.
-    './save-sync.mjs':resolve(runtime,'../../third_party/eagler-common/browser/save-sync.mjs'),
+    './save-sync.mjs':resolve(runtime,'../../../../common/browser/save-sync.mjs'),
     './replay-file-policy.mjs':resolve(runtime,'../../portable/browser/replay-file-policy.mjs'),
     './motion-replay.mjs':resolve(runtime,'../../portable/browser/motion-replay.mjs'),
   };
@@ -141,7 +143,7 @@ async function harness({multiplayer=true,holdInitialization=false,withPractice=f
   };
   const ack=request=>acknowledgments.find(message=>message.request===request);
   const request=async fields=>{const id=send(fields);await until(()=>ack(id),'ACK '+fields.command);assert.equal(ack(id).ok,true,ack(id).error);return ack(id);};
-  return {core,Module,native,calls,errors,document,window,frame,parent,canvas,overlays,send,ack,request,
+  return {core,Module,native,calls,errors,document,window,frame,parent,canvas,overlays,send,ack,request,sourceOwner,sourcePath,
     async ready(){initialization.release();await until(()=>notifications.some(message=>message.event==='ready')||errors.length,'shell ready');assert.deepEqual(errors,[]);},
     async configure(extra={}){
       await this.ready();await request({command:'configure',language:'lang_ja',music:'none',
@@ -164,7 +166,7 @@ const controls=(bombSerial=0,extra={})=>({command:'touch-controls',controls:{fir
   joystickX:16384,joystickY:-16384,bombSerial,escapeSerial:0,...extra}});
 const count=(h,name)=>h.calls.filter(call=>call[0]===name).length;
 
-test('real shell: touch and ACK bypass a blocked filesystem command queue',async()=>{
+test('TH10 MP Shell (ports/th10-mp): touch and ACK bypass a blocked filesystem command queue',async()=>{
   const h=await harness();await h.start();const release=h.blockSync();
   try{
     const syncBefore=count(h,'sync'),pending=h.send({command:'sync'});
@@ -179,19 +181,25 @@ test('real shell: touch and ACK bypass a blocked filesystem command queue',async
     assert.equal(h.native.focus,false);assert.equal(h.native.x,0);assert.equal(h.native.fire,true);
   }finally{release();await settle();}
 });
-test('real shell: live TH10 touch bypasses a blocked resource transfer in both variants',async()=>{
+test('TH10 MP Shell: single-player and multiplayer configurations bypass a blocked resource transfer',async()=>{
   for(const multiplayer of [false,true]){
     const h=await harness({multiplayer});await h.start();const release=h.blockResource();
     try{
       const pending=h.send({command:'resources',resources:[{path:'/fonts/probe.bin',url:'./held-font.bin',bytes:4}]});
       await until(()=>count(h,'resource')===1,'blocked resource');
       const request=h.send(direct);await settle();
-      assert(h.ack(request)?.ok,'direct-touch ACK waited behind the resource queue');
-      assert.equal(count(h,'touch'),1);assert.equal(h.ack(pending),undefined);
+      assert(h.ack(request)?.ok,`direct-touch ACK waited behind the resource queue (${h.sourceOwner}: ${h.sourcePath})`);
+      assert.equal(count(h,'touch'),1);
+      const controlsRequest=h.send(controls(1));await settle();
+      assert(h.ack(controlsRequest)?.ok,`touch-controls ACK waited behind the resource queue (${h.sourceOwner}: ${h.sourcePath})`);
+      assert.equal(count(h,'controls'),1);assert.equal(h.native.bombPulses,1);
+      const cancelRequest=h.send({command:'touch-cancel'});await settle();
+      assert(h.ack(cancelRequest)?.ok,`touch-cancel ACK waited behind the resource queue (${h.sourceOwner}: ${h.sourcePath})`);
+      assert.equal(h.native.focus,false);assert.equal(h.native.fire,true);assert.equal(h.ack(pending),undefined);
     }finally{release();await settle();}
   }
 });
-test('real shell: initialization and ready-before-launch discard input and consume source serials',async()=>{
+test('TH10 MP Shell (ports/th10-mp): initialization and ready-before-launch discard input and consume source serials',async()=>{
   const h=await harness({holdInitialization:true});
   for(const message of [direct,controls(7),{command:'touch-cancel'}]){
     const request=h.send(message);await settle();assert(h.ack(request)?.ok);
@@ -201,7 +209,7 @@ test('real shell: initialization and ready-before-launch discard input and consu
   await h.request({command:'launch'});await h.request(controls(7));assert.equal(h.native.bombPulses,0);
   await h.request(controls(8));assert.equal(h.native.bombPulses,1);
 });
-test('real shell: branding, network configure and audio must settle before touch is accepted',async()=>{
+test('TH10 MP Shell (ports/th10-mp): branding, network configure and audio must settle before touch is accepted',async()=>{
   for(const [block,event] of [['blockBranding','branding'],['blockConfigure','configure-digest'],['blockAudio','audio-resume']]){
     const h=await harness();await h.configure();const release=h[block](),launch=h.send({command:'launch'});
     try{
@@ -215,7 +223,7 @@ test('real shell: branding, network configure and audio must settle before touch
     await h.request(direct);assert.equal(count(h,'touch'),1);
   }
 });
-test('real shell: hidden input is dropped; cancel preserves fire and prevents stale action replay',async()=>{
+test('TH10 MP Shell (ports/th10-mp): hidden input is dropped; cancel preserves fire and prevents stale action replay',async()=>{
   const h=await harness();await h.start();await h.request(controls(1));
   h.document.hidden=true;h.document.dispatchEvent({type:'visibilitychange'});await settle();
   const before=count(h,'controls');await h.request(direct);await h.request(controls(2));
@@ -225,7 +233,7 @@ test('real shell: hidden input is dropped; cancel preserves fire and prevents st
   await h.request(controls(2,{focusEnabled:false,joystickX:0,joystickY:0}));assert.equal(h.native.bombPulses,1);
   await h.request(controls(3));assert.equal(h.native.bombPulses,2);
 });
-test('real shell: closing rejects input; new native sessions reset mapped serials and retain source serials',async()=>{
+test('TH10 MP Shell (ports/th10-mp): closing rejects input; new native sessions reset mapped serials and retain source serials',async()=>{
   const h=await harness();await h.start();await h.request(controls(1));
   const release=h.blockSync(),stopping=h.window.__th10Runtime.stop();
   try{await h.request(direct);await h.request(controls(2));assert.equal(count(h,'touch'),0);assert.equal(h.native.bombPulses,1);}
@@ -235,7 +243,7 @@ test('real shell: closing rejects input; new native sessions reset mapped serial
   await h.request(controls(2));assert.equal(h.native.bombPulses,1,'old source state became a new-session bomb');
   await h.request(controls(3));assert.equal(h.native.bombPulses,2,'first new-session press was eaten');
 });
-test('real shell: native Replay menus, playback and seek keep local controls without a JS reopen or serial reset',async()=>{
+test('TH10 MP Shell (ports/th10-mp): native Replay menus, playback and seek keep local controls without a JS reopen or serial reset',async()=>{
   const h=await harness();await h.start({netplayMode:undefined,replayViewer:true});
   await h.request(direct);await h.request(controls(1,{escapeSerial:1}));
   h.replayState({playing:true,generation:1});
@@ -246,7 +254,7 @@ test('real shell: native Replay menus, playback and seek keep local controls wit
   h.replayState({generation:3});assert.equal(h.overlays[0].hidden,true);
   await h.request(direct);assert.equal(count(h,'touch'),2);assert.equal(h.native.opens,1);
 });
-test('real shell: spectators and disabled touch consume source serials without enabling native input',async()=>{
+test('TH10 MP Shell (ports/th10-mp): spectators and disabled touch consume source serials without enabling native input',async()=>{
   for(const rejected of [{netplaySpectator:true,netplaySpectatorId:'viewer-1'},{touchEnabled:false}]){
     const h=await harness();await h.start(rejected);
     assert.equal(h.calls.filter(call=>call[0]==='options').at(-1)[1],false);
@@ -256,7 +264,7 @@ test('real shell: spectators and disabled touch consume source serials without e
     await h.request(controls(6));assert.equal(h.native.bombPulses,1);
   }
 });
-test('real shell: pagehide, detached/replaced owners and fatal graphics failure cannot revive old touch',async()=>{
+test('TH10 MP Shell (ports/th10-mp): pagehide, detached/replaced owners and fatal graphics failure cannot revive old touch',async()=>{
   for(const retiredBy of ['pagehide','detached','replaced','contextlost']){
     const h=await harness();await h.start();await h.request(controls(1));
     if(retiredBy==='pagehide')h.window.dispatchEvent({type:'pagehide'});
@@ -269,7 +277,7 @@ test('real shell: pagehide, detached/replaced owners and fatal graphics failure 
     await h.request(direct);assert.equal(count(h,'touch'),0,retiredBy);
   }
 });
-test('real shell: envelope validation precedes fast dispatch and source serial consumption',async()=>{
+test('TH10 MP Shell (ports/th10-mp): envelope validation precedes fast dispatch and source serial consumption',async()=>{
   const h=await harness();await h.start();
   for(const overrides of [{source:{}},{origin:'http://other.invalid'},
     {data:{...controls(1),protocol:'wrong',game:'th10',epoch:23,request:'bad'}},
@@ -279,7 +287,7 @@ test('real shell: envelope validation precedes fast dispatch and source serial c
   }
   assert.equal(count(h,'controls'),0);await h.request(controls(1));assert.equal(h.native.bombPulses,1);
 });
-test('real shell: action serial changes, wrap, cancellation and host-owned focus preserve first presses',async()=>{
+test('TH10 MP Shell with single-player configuration: action serial changes, wrap, cancellation and host-owned focus preserve first presses',async()=>{
   const h=await harness({multiplayer:false});await h.start();
   assert.equal(h.document.hasFocus(),false);
   await h.request(controls(1,{escapeSerial:1}));assert.equal(h.native.bombPulses,1);assert.equal(h.native.escapePulses,1);
@@ -289,7 +297,7 @@ test('real shell: action serial changes, wrap, cancellation and host-owned focus
   await h.request(controls(0,{escapeSerial:0}));
   assert.equal(h.native.bombPulses,3);assert.equal(h.native.escapePulses,3);
 });
-test('real shell: direct touch remains an absolute target after viewport-to-canvas mapping',async()=>{
+test('TH10 MP Shell with single-player configuration: direct touch remains an absolute target after viewport-to-canvas mapping',async()=>{
   const h=await harness({multiplayer:false});await h.start();
   await h.request(direct);
   await h.request({...direct,type:'move',x:.6});
@@ -297,19 +305,22 @@ test('real shell: direct touch remains an absolute target after viewport-to-canv
   assert.deepEqual(h.calls.filter(call=>call[0]==='touch'),
     [['touch',0,9,.5,.5],['touch',1,9,.625,.5],['touch',1,9,.625,.5]]);
 });
-test('real shell: letterbox gestures use the same lifecycle and do not resurrect an old pointer',async()=>{
+test('TH10 MP Shell with single-player configuration: letterbox gestures share lifecycle and do not resurrect an old pointer',async()=>{
   const h=await harness({multiplayer:false});await h.start();
   const target={setPointerCapture(){}};
   const pointer=(type,clientX)=>h.document.dispatchEvent({type,pointerType:'touch',pointerId:45,target,clientX,clientY:240,
     preventDefault(){},stopPropagation(){}});
   pointer('pointerdown',60);pointer('pointermove',70);assert.equal(count(h,'touch'),2);
   h.document.hidden=true;h.document.dispatchEvent({type:'visibilitychange'});
+  const touchCount=count(h,'touch'),controlCount=count(h,'controls');
+  await h.request(direct);await h.request(controls(1));
+  assert.equal(count(h,'touch'),touchCount);assert.equal(count(h,'controls'),controlCount);
   pointer('pointermove',90);pointer('pointerdown',60);assert.equal(count(h,'touch'),2);
   h.document.hidden=false;h.document.dispatchEvent({type:'visibilitychange'});await settle();
   pointer('pointermove',90);assert.equal(count(h,'touch'),2);
   pointer('pointerdown',60);assert.equal(count(h,'touch'),3);
 });
-test('real shell: optional Practice stays capability-based and preserves its command/tick/close lifecycle',async()=>{
+test('TH10 MP Shell with single-player configuration: optional Practice stays capability-based and preserves its command/tick/close lifecycle',async()=>{
   const plain=await harness({multiplayer:false});await plain.start({thpracEnabled:true});assert.equal(plain.native.practiceImports,0);
   const h=await harness({multiplayer:false,withPractice:true});await h.start({thpracEnabled:true});
   assert.equal(h.native.practiceImports,1);assert.equal(h.calls.filter(call=>call[0]==='practice-configure').at(-1)[1],true);
@@ -317,7 +328,7 @@ test('real shell: optional Practice stays capability-based and preserves its com
   assert.equal(count(h,'practice-mouse'),1);assert.equal(count(h,'practice-tick'),1);assert.equal(count(h,'touch'),1);
   await h.window.__th10Runtime.stop();assert.equal(count(h,'practice-close'),1);
 });
-test('real shell: rollback modes normalize to native mode 0 and D0, including challenge ABI',async()=>{
+test('TH10 MP Shell (ports/th10-mp): rollback modes normalize to native mode 0 and D0, including challenge ABI',async()=>{
   for(const mode of [0,2]){
     for(const challenge of [false,true]){
       const h=await harness();await h.start({netplayAdonisMode:mode,netplayInputDelay:4,netplayInputDelayAuto:true,netplayChallengeMode:challenge});
@@ -328,7 +339,7 @@ test('real shell: rollback modes normalize to native mode 0 and D0, including ch
     }
   }
 });
-test('real shell: pure delay retains fixed/automatic timing and rejects a mixed policy',async()=>{
+test('TH10 MP Shell (ports/th10-mp): pure delay retains fixed/automatic timing and rejects a mixed policy',async()=>{
   for(const [delay,automatic] of [[4,false],[0,true]]){
     const h=await harness();await h.start({netplayAdonisMode:1,netplayInputDelay:delay,netplayInputDelayAuto:automatic});
     const words=h.native.configs[0];assert.equal(words[0],4);assert.equal(words[7],delay);

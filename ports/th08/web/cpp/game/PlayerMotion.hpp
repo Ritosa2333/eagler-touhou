@@ -17,5 +17,6 @@ struct PlayerMotionActions:PlayerFormActions,PlayerMovementActions,PlayerOptionA
 // supplied by the owning game; history changes after options consume it.
 void update_player_motion(PlayerMotionState&,PlayerMotionInput&,Timer& shooting,GameGauge&,const ShotProfile& human,const ShotProfile& focused,const FrameTiming&,PlayerMotionActions&);
 // Self/option portion of 0044d530; the owner draws active shots and the bomb first.
-void draw_player_motion(PlayerMotionState&,const Vec2& offset,bool game_over,PlayerMotionActions&);
+void draw_player_motion(PlayerMotionState&,const Vec2& offset,bool game_over,PlayerMotionActions&,
+                        const PlayerMotionState* authoritative=nullptr);
 }

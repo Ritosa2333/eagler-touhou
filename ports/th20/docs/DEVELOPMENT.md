@@ -40,6 +40,10 @@ npm run ports:check -- --game=th20 --variant=normal
 
 `th20_native_observation_v1()` 使用共用 12-word 只读 ABI，提供阶段、实际消费输入、玩家坐标、PauseInf 状态和 GameController 逻辑计时。有效位区分未建立的字段；读取不推进游戏，也不清空触控脉冲。
 
+`th20_touch_motion_trace_v2(seat, executionKind)` 按席位与执行类型读取已完成的运动 Tick。SDL 输入层保存限速前的原始目标，`player_entity::update_movement` 在 `advance_fixed_motion` 完成量化与边界约束后记录实际位置。位置与速度以像素表示，原生位置单位为 1/128；记录附本次 `GameController::frame_timer`、实际焦点状态、移动倍率、时钟倍率和触控灵敏度。过场位移及外部速度保留记录并设置未知模式标志，由对应机制场景解释。共用运动方法见[输入验收](../../../docs/adaptation/input.md)。
+
+触控记录使用 SDL 本帧实际传入的限速预算，焦点位另取角色实际状态。目标到达后未提供模拟向量的 Tick 按原生数字输入路径记录；共用判定要求角色已到达独立目标且保持原位，才接受这类中立尾帧。
+
 `th20_ui_observation_v1()` 提供版本化的 9-word `i32` 菜单快照：`version, validMask, pauseState, pauseSubstate, pauseCursor, retryConfirmInputReady, stoneState, stoneVisible, stoneCategory`。validMask 位 0 表示 pause 字段有效，位 1 表示 stone-menu 字段有效；无对应控制器时其字段为 `-1`。`retryConfirmInputReady` 仅在暂停页的重开确认子页且 `PauseInf.age >= 30` 时为 1，与菜单处理器开始接收该子页输入的条件一致。该 getter 只读取控制器状态，不推进菜单或消费输入。
 
 浏览器 SDL 手柄以 DirectInput 状态接入原生输入层。六根 SDL 轴按原生范围 `[-1000, 1000]` 映射，中心值保持为 0；方向键也写入同一范围。原生输入层继续使用作品自身的 deadzone 阈值，因此中立手柄不会触发菜单方向或玩家移动。

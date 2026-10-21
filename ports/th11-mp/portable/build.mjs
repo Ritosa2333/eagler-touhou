@@ -85,7 +85,7 @@ const linkFlags = multiplayer ? ['-lwebsocket'] : [];
 // export names stable when it is linked. Do not set private compiler options
 // or use DECLARE_ASM_MODULE_EXPORTS=0 (which changes module scoping).
 if(lto)linkFlags.push('-lexports.js');
-await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input'),resolve(netplayRoot,'include')),flags});
 if (printPlan) {
   console.log(JSON.stringify({game: 'th11', profile, variant, outputDirectory: out,
     packageDirectory: resolve(workspace, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
@@ -114,7 +114,7 @@ const headerFiles = dir => readdirSync(dir, {withFileTypes: true}).flatMap(entry
     headerFiles(resolve(dir, entry.name))) :
     /\.(h|hpp|inc)$/.test(entry.name) ? [resolve(dir, entry.name)] : []);
 const headers = [...headerFiles(resolve(root, 'cpp')),...headerFiles(imgui), ...headerFiles(resolve(workspace, 'portable/sdl')),
-  ...headerFiles(resolve(workspace, 'portable/input')), resolve(netplayRoot, 'include/eagler/input/DialogueGesture.hpp'),
+  ...headerFiles(resolve(workspace, 'portable/input')), ...headerInputs(resolve(netplayRoot,'include/eagler/input')),
   ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [resolve(netplayRoot,'include/eagler/text/RuntimeFontRaster.hpp')])].sort();
 const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));
 readObserved(fileURLToPath(import.meta.url));

@@ -34,6 +34,9 @@ public:
     JobResult calculate(ScreenEffectState& state);
     JobResult draw(ScreenEffectState& state);
     u32 active_count()const noexcept{return active.size();}
+#if defined(TH_PRESENTATION_AUDIT)
+    u32 audit_state_fingerprint()const noexcept;
+#endif
 private:
     struct Instance {ScreenEffectState state;ScreenEffects* owner;};
     Chain& chain;

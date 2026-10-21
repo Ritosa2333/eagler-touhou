@@ -28,8 +28,9 @@ public:
     // not a pre-scaled velocity. Networked gestures ship the target because a
     // velocity sampled from the sender's position is stale by the lockstep input
     // delay, which makes the player orbit the finger instead of reaching it.
-    struct MotionSample {bool enabled=false;float x=0,y=0;bool unlimited=false;bool target=false;};MotionSample motion_input[2];
+    struct MotionSample {bool enabled=false;float x=0,y=0;bool unlimited=false;bool target=false;bool trace_target_known=false;float trace_target_x=0,trace_target_y=0;bool trace_sensitivity_known=false;float trace_sensitivity=1;};MotionSample motion_input[2];
     bool movement(const PlayerMotion&,float,float,float&,float&)override;
+    bool movement(const PlayerMotion&,float,float,float&,float&,MotionTraceInput&)override;
     void clear_motion(){motion_input[0]=motion_input[1]={};}
     GameSession(EclWorldState& w,GameResources& r,AnmExecutor& a,WorldPresentation& p,EndingServices& e,PlayerRecords& s):state(w),resources(r),animations(a),output(p),ending_output(e),records(s){}
     bool begin(const WorldConfiguration&,const ReplayMetadata&,const char* date);

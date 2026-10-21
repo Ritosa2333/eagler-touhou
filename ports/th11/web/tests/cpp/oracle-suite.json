@@ -205,7 +205,11 @@
           "kind": "receipt",
           "receiptId": "baseline-core",
           "inputKind": "file",
-          "pathEnv": "TH11_EQUIVALENCE_CORE"
+          "pathEnv": "TH11_EQUIVALENCE_CORE",
+          "referenceIdentity": {
+            "kind": "accepted-reference-file"
+          },
+          "distinctFromCandidate": "artifacts/cpp/game-core-test.wasm"
         }
       ],
       "environment": {}
@@ -292,7 +296,14 @@
           "kind": "receipt",
           "receiptId": "prefix-baseline-core",
           "inputKind": "file",
-          "pathEnv": "TH11_PREFIX_CORE"
+          "pathEnv": "TH11_PREFIX_CORE",
+          "referenceIdentity": {
+            "kind": "receipt-json-field",
+            "receiptId": "native-prefix-state",
+            "file": "state.json",
+            "jsonPath": "identity.coreSha256"
+          },
+          "distinctFromCandidate": "artifacts/cpp/game-core-test.wasm"
         }
       ],
       "environment": {}

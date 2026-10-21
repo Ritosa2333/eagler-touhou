@@ -1,5 +1,6 @@
 #include "BulletCreation.hpp"
 #include "GameMath.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
 static constexpr i32 palette16[]{0,1,1,1,1,2,2,2,2,3,3,3,4,4,4,0};
 static constexpr i32 palette32[]{0,1,1,2,2,3,4,0};
@@ -52,6 +53,7 @@ i32 BulletCreation::create(const BulletEmission& e,i32 index,i32 layer,float aim
     if(!initialize_extra(b))return 1;
     if(state.cancel_frames!=0&&!(b.flags&0x1000))b.state=5;
     state.next_slot=(slot+1)->state==6?state.bullets:slot+1;
+    TH08_AUDIT_BORN(Bullet,&b);
     return 0;
 }
 bool BulletCreation::initialize_extra(BulletState& b){

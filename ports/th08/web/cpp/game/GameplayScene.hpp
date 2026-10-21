@@ -11,6 +11,7 @@
 #include "GameplayStart.hpp"
 #include "ReplayPlayback.hpp"
 #include "ReplayRecording.hpp"
+#include "TouchActionState.hpp"
 namespace th08 {
 struct ReplayTouchPoint {float x=0,y=0;};
 struct GameplayPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay {
@@ -34,6 +35,7 @@ struct GameplayPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay {
 // GameRuntime prototype. The supplied platform implements resource/device I/O.
 class GameplayScene:private BackgroundResources,private EnemyResources,private GuiResources,private SpellResources,private EffectResources,
                     private EnemySystemActions,private BulletSystemAudio,private SpellPresentationActions,private BackgroundActions,private BackgroundDrawActions,private DialogueActions,private EclLiveValues,private MenuActions,private GameplayStartActions {
+    static constexpr u32 practice_initial_snapshot_word_count=80;
     GameplaySession& session;TextureStore& textures;AnmLibrary& library;AnmRenderer& renderer;GameplayPlatform& platform;
     Chain owned_chain;Chain& chain;AnmExecutor animations;
     ChainElement player_calc,player_high,player_low,ascii_calc,ascii_high,ascii_low,control_calc,control_draw,replay_calc,replay_after,record_calc,replay_bookkeeping;
@@ -48,6 +50,7 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     struct Boundary {GameplayScene* scene=nullptr;i32 phase=0;ChainElement job;};
     Boundary boundaries[6];
     bool loaded=false,failed=false,playing_replay=false,recording_game=false;u32 owned_resources=0;GameplayLoad request;u16 previous_input=0;ReplayFrameState debug_frame;
+    TouchActionStateV1 touch_action_state;
     AnmLoaded* load(i32,const char*)override;AnmLoaded* get(i32)override;void release(i32)override;
     std::vector<u8> stage(const char* path)override{return platform.read(path);}
     std::vector<u8> ecl(const char* path)override{return platform.read(path);}
@@ -84,7 +87,8 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     void preload_music(i32 slot,const char* path)override{platform.preload_music(slot,path);}
     u32 now()override{return platform.milliseconds();}
     void update_game_time()override{accumulate_play_time(session.statistics.game_time,menus.context.system_time,now());}
-    void synchronize();void publish_dialogue();JobResult boundary(i32 phase);
+    void synchronize();void publish_dialogue();JobResult boundary(i32 phase);void capture_practice_initial_snapshot();
+    void publish_touch_action_state();
     // th08_everlasting_bgm (upstream ElBgmTest): returns true to swallow a
     // music command. command: 0=play 1=stop/fade 2=pause 3=resume.
     bool practice_bgm_filter(i32 command,i32 song);
@@ -111,6 +115,12 @@ public:
     i32 screen_counter=0;EnemyNativeScene native_scene;PlayerSceneWorld player_world;
     BackgroundFlow background_flow;BulletFlow bullet_flow;EnemyFlow enemy_flow;EffectFlow effect_flow;GuiFlow gui_flow;SpellFlow spell_flow;
     UiMenus menus;GameplayControl control;ReplayPlayback playback;ReplayRecording recording;u32 replay_stage_mask=0;
+    // Frozen immediately after PracticeRuntime::apply_practice and before the
+    // first bound gameplay job. The live PracticeSnapshot remains separate.
+    double practice_initial_snapshot_words[practice_initial_snapshot_word_count]{};
+    static constexpr u32 practice_initial_snapshot_words_count()noexcept{return practice_initial_snapshot_word_count;}
+    const double* practice_initial_snapshot_data()const noexcept{return practice_initial_snapshot_words;}
+    const TouchActionStateV1& touch_actions()const noexcept{return touch_action_state;}
     bool time_stopped=false,paused=false,retrying=false,always_hitbox=false;
     GameplayScene(GameplaySession&,TextureStore&,AnmLibrary&,AnmRenderer&,GameplayPlatform&,Chain* shared_chain=nullptr,AsciiManager* shared_ascii=nullptr);
     ~GameplayScene();

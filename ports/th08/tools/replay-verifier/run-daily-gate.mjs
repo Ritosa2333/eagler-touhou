@@ -1,47 +1,25 @@
 #!/usr/bin/env node
-import {readFile, writeFile} from 'node:fs/promises';
-import {dirname, isAbsolute, join, resolve} from 'node:path';
-import {fileURLToPath, pathToFileURL} from 'node:url';
-import {recordsFromLongJsonLines} from './legacy-oracle-adapter.mjs';
-import {assetPath, loadGoldenManifest, readJsonLinesMaybeGzip} from './golden.mjs';
+import {writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {runTh08ReplaySuite} from '../../../../tests/adaptation/adapters/titles/th08-replay.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-function options(argv) {
-  const result = {};
-  for (let index = 0; index < argv.length; index++) {
-    const token = argv[index];
-    if (!token.startsWith('--') || index + 1 >= argv.length) throw Error(`Invalid argument ${token}`);
-    result[token.slice(2)] = argv[++index];
+function options(argv){
+  const result={};
+  for(let index=0;index<argv.length;index++){
+    const token=argv[index];
+    if(!token.startsWith('--')||index+1>=argv.length)throw Error(`Invalid argument ${token}`);
+    result[token.slice(2)]=argv[++index];
   }
   return result;
 }
-const args = options(process.argv.slice(2));
-if (!args['capture-root']) throw Error('usage: node run-daily-gate.mjs --capture-root <lunatic-and-extra-directory> [--golden-root <published-golden>] [--common-root <eagler-common>] [--report <file>]');
-const captureRoot = resolve(args['capture-root']);
-const commonRoot = resolve(args['common-root'] ?? process.env.EAGLER_COMMON_ROOT ?? join(here, '..', '..', '..', '..', 'common'));
-const {compareTraces} = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'compare.mjs')));
-const common = await import(pathToFileURL(join(commonRoot, 'testkit', 'replay-verifier', 'adapter.mjs')));
-const golden = await loadGoldenManifest(args['golden-root']);
-const results = [];
-for (const id of golden.manifest.suites.daily) {
-  const asset = golden.manifest.assets[id];
-  try {
-    const metadataPath = join(captureRoot, `${id}.json`);
-    const candidate = JSON.parse(await readFile(metadataPath, 'utf8'));
-    if (!candidate.complete || candidate.replay?.sha256 !== asset.replaySha256)
-      throw Error(`${id}: candidate capture is incomplete or uses a different Replay`);
-    const candidateRows = isAbsolute(candidate.rows.path) ? candidate.rows.path : resolve(dirname(metadataPath), candidate.rows.path);
-    const fixture = {replaySha256: asset.replaySha256};
-    const result = await compareTraces(
-      recordsFromLongJsonLines({fixture, rows: readJsonLinesMaybeGzip(assetPath(golden.root, asset)), provider: 'th08/published-golden-v1', identity: golden.manifest.identity, complete: true}, common),
-      recordsFromLongJsonLines({fixture, rows: readJsonLinesMaybeGzip(candidateRows), provider: candidate.provider ?? 'th08-eagler/current-candidate', identity: golden.manifest.identity, complete: true}, common),
-    );
-    results.push({id, expectedTicks: asset.comparedTicks, ...result});
-  } catch (error) {
-    results.push({id, schema: 'eagler/replay-result/v1', status: 'ERROR', reason: 'adapter-error', message: error.message});
-  }
-}
-const report = {schema: 'th08/replay-verifier-suite-result/v1', suite: 'daily', results, passed: results.every(result => result.status === 'PASS')};
-if (args.report) await writeFile(resolve(args.report), `${JSON.stringify(report, null, 2)}\n`);
-for (const result of results) process.stdout.write(`${result.id}: ${result.status} (${result.comparedTicks ?? 0} ticks)${result.message ? ` - ${result.message}` : ''}\n`);
-process.exitCode = report.passed ? 0 : 1;
+const args=options(process.argv.slice(2));
+if(!args['capture-root'])throw Error('usage: node run-daily-gate.mjs --capture-root <lunatic-and-extra-directory> [--replay-lunatic <file>] [--replay-extra <file>] [--golden-root <published-golden>] [--common-root <eagler-common>] [--report <file>]');
+const result=await runTh08ReplaySuite({lane:'daily',captureRoot:resolve(args['capture-root']),
+  replayFiles:{lunatic:args['replay-lunatic']?resolve(args['replay-lunatic']):undefined,
+    extra:args['replay-extra']?resolve(args['replay-extra']):undefined},
+  goldenRoot:args['golden-root']?resolve(args['golden-root']):undefined,
+  commonRoot:args['common-root']?resolve(args['common-root']):undefined});
+const report={...result,suite:'daily',scope:'The declared Lunatic and Extra original Replay inputs compared through shared per-gameplay-tick state and natural-return checks.'};
+if(args.report)await writeFile(resolve(args.report),`${JSON.stringify(report,null,2)}\n`);
+for(const item of result.results)process.stdout.write(`${item.id}: ${item.status}${item.comparison?` (${item.comparison.comparedTicks} ticks)`:''}${item.reason?` - ${item.reason}`:''}\n`);
+process.exitCode=result.complete?0:1;

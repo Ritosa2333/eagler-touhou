@@ -4,6 +4,7 @@
 #include <map>
 #include "ResourceManager.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/ReplayArchive.hpp"
 #endif
@@ -69,7 +70,10 @@ public:
     GameApplication app;
     bool room_preview=false;
     touhou::input::MotionTrack motion;
+    float touch_sensitivity=1.f;
     bool player_motion(const PlayerMovementState&,float,const FrameTiming&,float&,float&)override;
+    void record_player_motion(eagler::input::TouchMotionTraceBank::Sample)override;
+    void set_touch_sensitivity(float value){touch_sensitivity=value;}
     void begin_motion(i32 stage,bool initial,bool replay,bool record)override{motion.begin(stage,initial,replay,record);}
     bool load_motion(const u8* data,u32 size)override{return motion.load(data,size,8);}
     i32 replay_touch_points(ReplayTouchPoint*,i32)override;

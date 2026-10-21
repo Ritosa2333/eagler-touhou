@@ -1,4 +1,5 @@
 #include <eagler/input/BrowserGamepad.hpp>
+#include <eagler/input/TouchMotionTrace.hpp>
 #include "GraphicsDevice.hpp"
 #include "AudioDevice.hpp"
 #include "FontDevice.hpp"
@@ -33,6 +34,7 @@
 #include "../../../portable/sdl/FrameCadence.hpp"
 #include "../../../portable/input/TouchController.hpp"
 #include <algorithm>
+#include <limits>
 EM_JS(int, th11_browser_keyboard, (), { return typeof Module["resetBrowserKeyboard"] === "function"; });
 EM_JS(void, th11_reset_browser_keyboard, (), { Module["resetBrowserKeyboard"]?.(); });
 EM_JS(void, th11_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
@@ -64,6 +66,7 @@ EM_JS(void, th11_request_recovery_task, (unsigned epoch), {
 
 namespace th11::sdl {
 namespace {
+float touch_motion_sensitivity() noexcept;
 void clear_inputs();
 void reset_cadences();
 struct Application:StageResourceEffects {
@@ -275,8 +278,11 @@ struct Application:StageResourceEffects {
             audio.spectator_silent(historical||fast_forwarding);
             if(!multiplayer_world||packet.frame!=session.multiplayer_frame)return false;
             std::array<MultiplayerInput,3> inputs{};
-            if(!multiplayer::InputLanes::Decode(packet.inputs.data(),netplay.Setup().player_count,inputs)||
-               !session.update_multiplayer(inputs)||!multiplayer_menu_metadata()||!capture_pause_frame()||
+            if(!multiplayer::InputLanes::Decode(packet.inputs.data(),netplay.Setup().player_count,inputs))return false;
+            eagler::input::GlobalTouchMotionTraceBank().set_context(session.multiplayer_frame+1,
+                historical||fast_forwarding?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward,
+                std::numeric_limits<float>::quiet_NaN());
+            if(!session.update_multiplayer(inputs)||!multiplayer_menu_metadata()||!capture_pause_frame()||
                !audio_events()||!text_events()||!audio.update())return false;
             frame_text.clear();const auto label=frame_statistics.label();frame_text.add(label.text.c_str(),label.position,label.style);
             if(!session.draw(renderer,&frame_text))return false;graphics.present();multiplayer_advanced=true;
@@ -359,6 +365,9 @@ struct Application:StageResourceEffects {
         const auto before=session.state.phase;const auto stage=session.state.stage;
         std::vector<u8> spectator_initializer;u32 spectator_stage=stage;
         if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);
+        eagler::input::GlobalTouchMotionTraceBank().set_context(session.multiplayer_frame+1,
+            historical?eagler::input::TouchMotionTraceBank::resimulation:netplay.Playback()?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward,
+            historical||netplay.ReadOnly()?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
         {auto timed=rollback_timer(5);if(!session.update_multiplayer(input)){error=session.error;return false;}}
         const bool restart=before==GameSessionPhase::paused&&
             ((input[0].held&0x200000u)!=0||(session.pause_menu&&session.pause_menu->action==PauseAction::Restart));
@@ -623,6 +632,8 @@ struct Application:StageResourceEffects {
         if(!initialize())return false;
         const auto before=session.state.phase;
         const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
+        eagler::input::GlobalTouchMotionTraceBank().set_context(session.state.frame,session.state.replay?1u:0u,
+            session.state.replay?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
         if(!session.update(input)){error=session.error;return false;}
 #ifdef TH11_MULTIPLAYER
         if(multiplayer_viewer&&session.title&&session.title->replay_start_requested){
@@ -719,6 +730,7 @@ Application app;
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+float touch_motion_sensitivity() noexcept{return gestures.sensitivity;}
 touhou::sdl::FrameCadence cadence;
 #ifdef TH11_MULTIPLAYER
 multiplayer::FrameSchedule rollback_cadence,exact_cadence;
@@ -1049,6 +1061,7 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
 EMSCRIPTEN_KEEPALIVE int th11_save_scores(){return th11::sdl::app.save_scores();}
 EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
 EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
+EMSCRIPTEN_KEEPALIVE const unsigned* th11_touch_motion_trace_v2(unsigned seat,unsigned execution_kind){return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);}
 EMSCRIPTEN_KEEPALIVE int th11_room_preview(){
 #ifdef TH11_MULTIPLAYER
     using namespace th11::sdl;

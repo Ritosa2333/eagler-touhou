@@ -15,6 +15,9 @@ public:
     i32 frame=0,transition_frames=0;
     u32 input_cursor=0,timing_cursor=0,input_end=0,timing_end=0;
     std::vector<u8> input,timing;
+#if defined(TH_PRESENTATION_AUDIT)
+    u32 audit_stride()const noexcept{return stride;}
+#endif
     void begin_record(u16 seed);
     bool begin_playback(const u8* keys,u32 key_size,const u8* timing_bytes,u32 timing_size,bool debug_records);
     void record(ReplayInputState& state);

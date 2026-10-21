@@ -7,6 +7,7 @@
 #include "PlayerSimulation.hpp"
 #include "ItemSystem.hpp"
 #include "EffectSystem.hpp"
+#include "DeathbombStimulus.hpp"
 namespace th08 {
 struct BulletSystemAudio {
     virtual ~BulletSystemAudio()=default;
@@ -19,6 +20,8 @@ class BulletSystem:public BulletEmissionActions,public LaserEmissionActions,priv
     BulletManagerState& state;EclGlobals& globals;PlayerSimulation& player;ItemSystem& inventory;EffectSystem& effect_system;AnmRenderer& renderer;BulletSystemAudio& audio;
     BulletCreation creation;BulletUpdate updater;LaserRuntime lasers;BulletDrawing drawing;
     Vec2 arcade{32,16};bool failed=false,ready=false,presentation_prepared=false;
+    DeathbombStimulusReceiptV1 deathbomb_stimulus;
+    BulletState* deathbomb_projectile=nullptr;
     void synchronize();void publish_collision();
     void sound(i32 index,float position,bool panned)override{audio.sound(index,position,panned);}
     void reemit(BulletEmission& emission)override{emit(emission);}
@@ -40,6 +43,10 @@ public:
     LaserState* laser(BulletEmission&)override;
     void clear(i32 mode)override;
     bool update();
+    bool validation_deathbomb_eligible(bool scene_enabled,bool write_lock_valid,bool quiet_scene)const noexcept;
+    bool request_validation_deathbomb_hit(bool scene_enabled,bool write_lock_valid,bool quiet_scene);
+    const DeathbombStimulusReceiptV1& validation_deathbomb_receipt()const noexcept{return deathbomb_stimulus;}
+    u32 validation_deathbomb_projectile_state()const noexcept{return deathbomb_projectile?deathbomb_projectile->state:0;}
     void snapshot_presentation(){if(ready){drawing.snapshot();presentation_prepared=true;}}
     bool draw(const Vec2& origin={32,16});
     bool invalid()const{return failed;}

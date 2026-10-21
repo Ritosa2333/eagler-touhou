@@ -19,6 +19,7 @@
 #include "../platform/Audio.hpp"
 #include "../platform/Graphics.hpp"
 #include "HitboxDisplay.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #include <cstring>
 #include <exception>
 #include <memory>
@@ -199,6 +200,10 @@ __attribute__((export_name("th20_ui_observation_v1"))) const std::int32_t* th20_
         out[1]|=2;out[6]=stones->state;out[7]=stones->visible;out[8]=stones->category.current;
     }
     return out;
+}
+__attribute__((export_name("th20_touch_motion_trace_v2"))) const std::uint32_t* th20_touch_motion_trace_v2(
+    std::uint32_t seat, std::uint32_t execution_kind) {
+    return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);
 }
 __attribute__((export_name("th20_native_observation_v1"))) const std::uint32_t* th20_native_observation_v1() {
     using namespace th20::source;

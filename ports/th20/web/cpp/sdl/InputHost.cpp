@@ -23,6 +23,7 @@ namespace th20::source::gameplay { class GameController; extern GameController* 
 #include <SDL3/SDL.h>
 #include <emscripten.h>
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstring>
 
@@ -41,6 +42,8 @@ bool touch_keys[256]{};
 // units), plus the pulses the shared controller produced this frame so the
 // browser regression check can observe the menu path.
 float analog_x=0.f,analog_y=0.f;
+float motion_target_x=0.f,motion_target_y=0.f;
+float motion_speed=0.f;
 bool analog_active=false,analog_unlimited=false,confirm_pulse=false,escape_pulse=false;
 // Last motion code the shared controller produced this frame (1 = drag towards
 // the finger, 2 = unlimited drag) and sticky one-shot pulse counters. The
@@ -257,6 +260,8 @@ void sample_native_input() {
     confirm_pulse = sample.keys[90];
     escape_pulse = sample.keys[27];
     last_motion = sample.motion;
+    motion_target_x = sample.x;
+    motion_target_y = sample.y;
     if (confirm_pulse) ++confirm_pulses;
     if (escape_pulse) ++escape_pulses;
     analog_active = false; analog_unlimited = false; analog_x = analog_y = 0.f;
@@ -268,8 +273,9 @@ void sample_native_input() {
         // is what the Launcher's "touch-unlimited" option selects.
         float dx = (sample.x - state.x) * 128.f, dy = (sample.y - state.y) * 128.f;
         analog_unlimited = sample.motion == 2;
+        motion_speed = std::max(1.f, sample.keys[16] ? state.slow : state.fast);
         if (!analog_unlimited) {
-            const float speed = std::max(1.f, sample.keys[16] ? state.slow : state.fast) * 128.f;
+            const float speed = motion_speed * 128.f;
             touhou::input::limit_vector(dx, dy, speed);
         }
         analog_x = dx; analog_y = dy; analog_active = (dx != 0.f || dy != 0.f);
@@ -307,6 +313,46 @@ bool analog_motion(float& x, float& y) {
     x = analog_x; y = analog_y;
     if (analog_unlimited) platform::set_unlimited_touch_used(true);
     return true;
+}
+
+eagler::input::TouchMotionTraceBank::Sample begin_motion_trace(
+    const player_entity::Player& player, float clock_scale) {
+    using Bank=eagler::input::TouchMotionTraceBank;
+    Bank::Sample trace{};
+    trace.flags=Bank::flag_gameplay_tick;
+    trace.seat=static_cast<std::uint32_t>(player.view_index);
+    if(const auto* game=gameplay::controller;game&&game->frame_timer.current>=0)
+        trace.frame=static_cast<std::uint32_t>(game->frame_timer.current);
+    else trace.flags|=Bank::flag_frame_unknown;
+    trace.execution_kind=replay::controller()&&replay::controller()->mode==1?Bank::replay:Bank::forward;
+    trace.before_x=float(player.fixed_position.x)/128.f;
+    trace.before_y=float(player.fixed_position.y)/128.f;
+    trace.target_x=analog_active?motion_target_x:trace.before_x;
+    trace.target_y=analog_active?motion_target_y:trace.before_y;
+    trace.mode=analog_active?(analog_unlimited?Bank::mode_unlimited:Bank::mode_limited):Bank::mode_neutral;
+    if(analog_active)trace.speed=motion_speed;
+    trace.sensitivity=gestures.sensitivity;
+    const float movement_scale=std::bit_cast<float>(player.fields_20e4[2]);
+    trace.scale_x=trace.scale_y=movement_scale*clock_scale;
+    // Transition motion and externally supplied velocity have their own native
+    // rules. Preserve those ticks and expose their state instead of presenting
+    // them as ordinary touch movement.
+    if(((player.entity_flags>>6)&3u)||player.vector_20f0.x!=0.f||player.vector_20f0.y!=0.f)
+        trace.flags|=Bank::flag_mode_unknown;
+    if(movement_scale!=1.f&&clock_scale!=1.f)
+        trace.flags|=Bank::flag_mode_unknown; // two separate native truncations
+    return trace;
+}
+
+void finish_motion_trace(const player_entity::Player& player,
+    eagler::input::TouchMotionTraceBank::Sample trace) {
+    using Bank=eagler::input::TouchMotionTraceBank;
+    if(player.focused_204c)trace.flags|=Bank::flag_focused;
+    if(trace.mode==Bank::mode_neutral)
+        trace.speed=float(player.speeds_20b4[player.focused_204c?1:0])/128.f;
+    trace.after_x=float(player.fixed_position.x)/128.f;
+    trace.after_y=float(player.fixed_position.y)/128.f;
+    eagler::input::GlobalTouchMotionTraceBank().append(trace);
 }
 
 void initialize_input_host() {

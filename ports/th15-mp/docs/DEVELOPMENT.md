@@ -54,6 +54,8 @@ ANM 字形保留分数屏幕位置以支持连续呈现；popup-render 回归同
 
 SDL MP 导出 `th15_native_observation_v1`。12-word 布局、有效位和阶段编码见 [`native-observation-contract.mjs`](../../../tools/ports/native-observation-contract.mjs)。`ApplicationState::frames` 是应用帧，`progress.stage_frame` 是真实模拟世界帧；网络帧独立报告为 `NetplayRuntime::NextFrame()` 的下一个逻辑帧游标。输入、坐标和 gameplay 阶段资格读取配置的本地 seat `MultiplayerPilot`，不是 seat 0 的共享应用输入。暂停状态来自 `PauseState::screen`；MP 不声明重开帧有效位。原生玩家存活且场景标志允许常规输入时报告 gameplay；重启遮罩、死亡、转场等状态明确报告 transition。观测只读取运行数据。
 
+SDL 还导出按 seat 与执行流隔离的 `th15_touch_motion_trace_v2(seat, execution_kind)`。ABI 使用 8-word header、最多 512 个 16-word native tick row；每行记录 `PlayerMotion::update` 完成位置夹紧后的真实 1/128 固定点坐标、消费目标、速度、倍率与灵敏度。帧来自 `progress.stage_frame`，seat 由 `MultiplayerPilot` 传入；仅本地 seat 的灵敏度可从当前 SDL 配置确认。执行流 0 表示前向模拟，1 表示回放。翻转 Y、非零背景外力或同时启用多个分阶段移动倍率时，会显式标记为不适用于标准触控运动判定。
+
 发布版同时导出独立的 `th15_input_context_v1` 诊断数组，不改变上述 12-word 观测 ABI。其 12 个 `u32` 依次为版本、有效位掩码、ApplicationState 是否初始化、场景是否存在、多人模式、native 本地 seat、pilot 是否存在、该 seat 的 player 是否存在、ghost、该 player 的 `life.state`、原始 `scene_flags`、`messages.active()`。有效位依次为 `APP=0x001`、`SCENE=0x002`、`MODE=0x004`、`SEAT=0x008`、`PILOT=0x010`、`PLAYER=0x020`、`GHOST=0x040`、`LIFE=0x080`、`FLAGS=0x100`、`MESSAGES=0x200`；未观测项为 `0xffffffff`。该函数只读运行上下文。
 
 记录夹具在隔离原版实例中初始化和保存，再用新的记录管理器解码，并核对完整状态，供记录、暂停与结局对照复用。解码前用独立填充值初始化目标，验证未执行解码会被检出。字体定义和字体目录通过本作私有输入收据提供。`EAGLER_ORACLE_INPUT_RECEIPT` 指定收据，登记绝对路径与 SHA-256，执行器在每组运行前后复核输入身份。

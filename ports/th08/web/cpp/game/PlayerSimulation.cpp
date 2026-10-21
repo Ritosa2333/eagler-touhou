@@ -14,7 +14,7 @@ PlayerSimulation::PlayerSimulation(PlayerSimulationState& s,ShotResource (&r)[2]
     shots.actions=&services.shots;patterns.frame.options=s.motion.options;patterns.frame.main_animation=&s.motion.animation;
 }
 bool PlayerSimulation::initialize(const PlayerSetupContext& context){
-    failed=!initialize_player(state.motion,state.life,state.bomb,state.shots,thresholds,resources[0].settings(),context,services.setup);
+    input_consumption={};failed=!initialize_player(state.motion,state.life,state.bomb,state.shots,thresholds,resources[0].settings(),context,services.setup);
     initialized=!failed;if(initialized){state.context.character=state.input.character=context.character;state.context.extent=context.extent;synchronize_shots();presentation_previous_position=state.motion.movement.position;presentation_previous_scale=state.motion.animation.scale;presentation_previous_color=state.motion.animation.color1;presentation_previous_script=state.motion.animation.scriptIndex;presentation_previous_sprite=state.motion.animation.activeSpriteIndex;presentation_previous_life_state=state.life.state;for(u32 i=0;i<4;++i){presentation_previous_options[i]=state.motion.options[i].position;presentation_previous_option_state[i]=state.motion.options[i].state;}presentation_valid=true;}return initialized;
 }
 void PlayerSimulation::synchronize_shots(){
@@ -24,6 +24,7 @@ void PlayerSimulation::synchronize_shots(){
     s.player_state=state.life.state;s.gui_blocked=state.input.gui_blocked;s.option_active=state.motion.options[0].state!=0;s.collision_timer=state.life.timer;s.time_spell=state.context.time_spell;s.human_bonus=gauge.human_bonus();shots.timing=timing;
 }
 bool PlayerSimulation::update(){
+    input_consumption.completed=false;input_consumption.paused=false;input_consumption.valid=false;
     if(!initialized)return false;failed=false;
     if(presentation_marker.capture()){
         presentation_previous_animation.capture(state.motion.animation);
@@ -33,7 +34,15 @@ bool PlayerSimulation::update(){
         presentation_valid=true;
     }
     state.context.focused=state.motion.form.focused;state.context.gauge=gauge.value();state.bomb_input.buttons=state.input.buttons;state.bomb_input.gui_blocked=state.input.gui_blocked;state.bomb_input.tampered=state.input.tampered;
-    synchronize_shots();update_player_frame(state.frame,state.motion,state.life,state.shots.regions,gauge,state.context.pause!=0,*this);synchronize_shots();return !failed;
+    const bool paused=state.context.pause!=0;
+    const u16 consumed_current=state.input.buttons,consumed_previous=state.bomb_input.previous_buttons;
+    synchronize_shots();update_player_frame(state.frame,state.motion,state.life,state.shots.regions,gauge,paused,*this);synchronize_shots();
+    input_consumption.completed=!failed;input_consumption.paused=paused;
+    if(input_consumption.completed&&!paused){
+        input_consumption.current=consumed_current;input_consumption.previous=consumed_previous;
+        input_consumption.sequence=wrapping_add(input_consumption.sequence,1);input_consumption.valid=true;
+    }
+    return !failed;
 }
 void PlayerSimulation::update_bomb(){failed|=!update_player_bomb(state.bomb,state.bomb_input,state.life,state.context,state.motion.movement,state.motion.animation,resources[0].settings(),timing,*this);}
 void PlayerSimulation::update(PlayerBombKind kind){patterns.frame.timing=timing;patterns.frame.homing_target=state.frame.homing_target;patterns.frame.shooting_timer=state.shots.shooting_timer;failed|=!patterns.update(kind);}
@@ -91,7 +100,9 @@ bool PlayerSimulation::draw(const Vec2& offset,bool impacts){
                     animation.color1.a=u8(std::clamp(presentation::lerp_world(float(presentation_previous_color.a),float(current.color1.a)),0.0f,255.0f));
                 }
             }
-            draw_player_motion(draw,offset,state.context.game_over,services.motion);
+            // Presentation uses a stack copy. Diagnostic identity belongs to
+            // the authoritative object across ordinary and render-only draws.
+            draw_player_motion(draw,offset,state.context.game_over,services.motion,&state.motion);
         }else draw_player_motion(state.motion,offset,state.context.game_over,services.motion);
     }
     if(presentation::render_only){failed=failed_before;shots.failure=shot_failure_before;}

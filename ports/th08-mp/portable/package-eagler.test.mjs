@@ -56,7 +56,7 @@ function makeFixture() {
   write('web/sdl-runtime/startup-branding.mjs', 'export const branding = true;');
   write('web/sdl-runtime/eagler-host.mjs', 'export const host = true;');
   write('web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
-  write('third_party/eagler-common/browser/adonis-calibration.mjs', 'export const calibration = true;');
+  write('common/browser/adonis-calibration.mjs', 'export const calibration = true;');
   write('web/sdl-runtime/multiplayer-host.mjs', 'export const multiplayer = true;');
   write('web/sdl-runtime/save-storage.mjs', 'export const storage = true;');
   write('web/sdl-runtime/practice.mjs', 'export const practice = true;');
@@ -97,6 +97,16 @@ function makeFixture() {
   return {root, fonts, dispose: () => rmSync(root, {recursive: true, force: true})};
 }
 
+function packageFixture(root, fonts, args) {
+  const previous = process.env.EAGLER_COMMON_ROOT;
+  process.env.EAGLER_COMMON_ROOT = resolve(root, 'common');
+  try { return packageEagler({root, fonts, args}); }
+  finally {
+    if (previous === undefined) delete process.env.EAGLER_COMMON_ROOT;
+    else process.env.EAGLER_COMMON_ROOT = previous;
+  }
+}
+
 test('package plans isolate ordinary, multiplayer and presentation-lab outputs', () => {
   const {root, dispose} = makeFixture();
   try {
@@ -120,9 +130,9 @@ test('package plans isolate ordinary, multiplayer and presentation-lab outputs',
 test('ordinary, multiplayer and diagnostic packages retain their manifests and file hashes', () => {
   const {root, fonts, dispose} = makeFixture();
   try {
-    const normal = packageEagler({root, fonts, args: []});
-    const multiplayer = packageEagler({root, fonts, args: ['--multiplayer']});
-    const lab = packageEagler({root, fonts, args: ['--presentation-lab']});
+    const normal = packageFixture(root, fonts, []);
+    const multiplayer = packageFixture(root, fonts, ['--multiplayer']);
+    const lab = packageFixture(root, fonts, ['--presentation-lab']);
     assert.equal(normal.out, resolve(root, 'build-eagler'));
     assert.equal(multiplayer.out, resolve(root, 'build-eagler-multiplayer'));
     assert.equal(lab.out, resolve(root, 'artifacts/presentation-lab/runtime'));
@@ -176,22 +186,22 @@ test('packaging rejects build-variant, export-inventory and binary-hash mismatch
     const sourcePath = resolve(root, 'web/cpp/game/source.cpp');
     const build = JSON.parse(readFileSync(buildPath, 'utf8'));
     writeFileSync(buildPath, JSON.stringify({...build, variant: 'normal'}));
-    assert.throws(() => packageEagler({root, fonts, args: ['--multiplayer']}), /profile or variant/);
+    assert.throws(() => packageFixture(root, fonts, ['--multiplayer']), /profile or variant/);
     assert.equal(existsSync(resolve(root, 'build-eagler-multiplayer')), false);
 
     writeFileSync(buildPath, JSON.stringify(build));
     writeFileSync(buildPath, JSON.stringify({...build, exports: [{name: 'unexpected'}]}));
-    assert.throws(() => packageEagler({root, fonts, args: ['--multiplayer']}), /export inventory/);
+    assert.throws(() => packageFixture(root, fonts, ['--multiplayer']), /export inventory/);
     assert.equal(existsSync(resolve(root, 'build-eagler-multiplayer')), false);
 
     writeFileSync(buildPath, JSON.stringify(build));
     writeFileSync(sourcePath, 'changed source');
-    assert.throws(() => packageEagler({root, fonts, args: ['--multiplayer']}), /Rebuild modified source/);
+    assert.throws(() => packageFixture(root, fonts, ['--multiplayer']), /Rebuild modified source/);
     assert.equal(existsSync(resolve(root, 'build-eagler-multiplayer')), false);
     writeFileSync(sourcePath, 'packager source identity');
 
     writeFileSync(buildPath, JSON.stringify({...build, sha256: '0'.repeat(64)}));
-    assert.throws(() => packageEagler({root, fonts, args: ['--multiplayer']}), /Build identity mismatch/);
+    assert.throws(() => packageFixture(root, fonts, ['--multiplayer']), /Build identity mismatch/);
     assert.equal(existsSync(resolve(root, 'build-eagler-multiplayer')), false);
   } finally {
     dispose();

@@ -1,6 +1,7 @@
 #include "EnemyDeath.hpp"
 #include "EnemyRetirement.hpp"
 #include "GuiState.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
 bool EnemyDeath::run(EclVm& enemy,i32 slot,bool focused,i32 bomb_hit){
     auto& globals=executor.game_state();enemy.flags2|=8;
@@ -15,7 +16,7 @@ bool EnemyDeath::run(EclVm& enemy,i32 slot,bool focused,i32 bomb_hit){
     if(mode<=2){
         if(mode<2){
             values.add_score(enemy.score_reward);
-            if(mode==0){enemy.flags&=~1u;stop_overlay();}
+            if(mode==0){TH08_AUDIT_RETIRED(Enemy,&enemy);enemy.flags&=~1u;stop_overlay();}
             else enemy.flags=(enemy.flags|0x800000u)&~0x4cu;
             if(enemy.flags&2){hide_boss();if(!retire_enemy_effects(enemy))return false;}
         }

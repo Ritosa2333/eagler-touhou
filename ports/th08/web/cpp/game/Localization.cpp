@@ -1,4 +1,5 @@
 #include "Localization.hpp"
+#include <eagler/diagnostics/LanguageTrace.hpp>
 
 #include <cctype>
 #include <cstring>
@@ -93,11 +94,12 @@ class Table
 {
 public:
     const char* Lookup(const char* path,std::uint32_t key,std::uint16_t line,const char* fallback,
-                       bool blankMissing=false)
+                       bool blankMissing=false,bool* foundRecord=nullptr)
     {
         Load(path);
         const std::uint64_t packed=(static_cast<std::uint64_t>(key)<<16)|line;
         const auto found=entries.find(packed);
+        if(foundRecord)*foundRecord=found!=entries.end();
         return found==entries.end()?(blankMissing&&available?"":fallback):found->second.c_str();
     }
 
@@ -579,6 +581,19 @@ void ReportActivation()
                           g_Spells.Count(),g_Stages.Count(),g_Themes.Count(),
                           g_MusicComments.Count(),g_SpellComments.Count(),g_Ascii.Count(),g_Strings.Count());
 }
+bool LookupAsciiRecord(const char* fallback,Localization::AsciiEntryView& view,bool* found)
+{
+    const AsciiRecord* record=g_Ascii.Lookup(fallback);
+    if(found)*found=record!=nullptr;
+    if(record==nullptr)return false;
+    view.id=record->id.c_str();
+    view.text=record->hasTranslation?record->translation.c_str():fallback;
+    view.baseline=record->baseline.c_str();
+    view.extraX=record->extraX;
+    view.hasTranslation=record->hasTranslation;
+    view.hasAlignment=record->hasAlignment;
+    return true;
+}
 } // namespace
 
 bool Localization::Active()
@@ -604,80 +619,105 @@ const char* Localization::FontName()
 
 const char* Localization::SpellName(std::uint32_t id,const char* fallback)
 {
-    return g_Spells.Lookup("localization/spells.etl",id,0,fallback);
+    bool found=false;const char* result=g_Spells.Lookup("localization/spells.etl",id,0,fallback,false,&found);
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::SpellName,fallback,result,fallback,found,found,id);
+    return result;
 }
 
 const char* Localization::StageName(std::uint32_t id,const char* fallback)
 {
-    return g_Stages.Lookup("localization/stages.etl",id,0,fallback);
+    bool found=false;const char* result=g_Stages.Lookup("localization/stages.etl",id,0,fallback,false,&found);
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::StageName,fallback,result,fallback,found,found,id);
+    return result;
 }
 
 const char* Localization::MusicTitle(std::uint32_t track,const char* fallback)
 {
-    return g_Themes.Lookup("localization/themes.etl",track,0,fallback);
+    bool found=false;const char* result=g_Themes.Lookup("localization/themes.etl",track,0,fallback,false,&found);
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::MusicTitle,fallback,result,fallback,found,found,track);
+    return result;
 }
 
 const char* Localization::MusicComment(std::uint32_t track,std::uint16_t line,const char* fallback)
 {
-    return g_MusicComments.Lookup("localization/musiccmt.etl",track,line,fallback,true);
+    bool found=false;const char* result=g_MusicComments.Lookup("localization/musiccmt.etl",track,line,fallback,true,&found);
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::MusicComment,fallback,result,fallback,found,found,track,line);
+    return result;
 }
 
 const char* Localization::SpellComment(std::uint32_t number,std::uint16_t line,const char* fallback)
 {
-    return g_SpellComments.Lookup("localization/spellcomments.etl",number,line,fallback);
+    bool found=false;const char* result=g_SpellComments.Lookup("localization/spellcomments.etl",number,line,fallback,false,&found);
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::SpellComment,fallback,result,fallback,found,found,number,line);
+    return result;
 }
 
 const char* Localization::SpellCommentOwner(std::uint32_t number,const char* fallback)
 {
-    return g_SpellComments.Lookup("localization/spellcomments.etl",number,kSpellCommentOwnerLine,fallback);
+    bool found=false;const char* result=g_SpellComments.Lookup("localization/spellcomments.etl",number,kSpellCommentOwnerLine,fallback,false,&found);
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::SpellCommentOwner,fallback,result,fallback,found,found,number,kSpellCommentOwnerLine);
+    return result;
 }
 
 bool Localization::LookupAscii(const char* fallback,AsciiEntryView& view)
 {
-    const AsciiRecord* record=g_Ascii.Lookup(fallback);
-    if(record==nullptr)
-        return false;
-    view.id=record->id.c_str();
-    view.text=record->hasTranslation?record->translation.c_str():fallback;
-    view.baseline=record->baseline.c_str();
-    view.extraX=record->extraX;
-    view.hasTranslation=record->hasTranslation;
-    view.hasAlignment=record->hasAlignment;
-    return true;
+    bool found=false;const bool result=LookupAsciiRecord(fallback,view,&found);
+    const char* translated=result?view.text:fallback;const char* id=result?view.id:nullptr;
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::LookupAscii,
+        fallback,translated,id,result&&view.hasTranslation,found);
+    return result;
 }
 
 const char* Localization::AsciiString(const char* fallback)
 {
-    AsciiEntryView view{};
-    return LookupAscii(fallback,view)?view.text:fallback;
+    AsciiEntryView view{};bool found=false;const bool lookedUp=LookupAsciiRecord(fallback,view,&found);
+    const char* result=lookedUp?view.text:fallback;const char* id=lookedUp?view.id:nullptr;
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::AsciiString,
+        fallback,result,id,lookedUp&&view.hasTranslation,found);
+    return result;
 }
 
 const char* Localization::AsciiStringById(const char* id,const char* fallback)
 {
-    const AsciiIdValue* value=g_Ascii.LookupId(id);
-    return value!=nullptr&&value->hasTranslation?value->translation.c_str():fallback;
+    const AsciiIdValue* value=g_Ascii.LookupId(id);const bool found=value!=nullptr;
+    const bool translated=found&&value->hasTranslation;const char* result=translated?value->translation.c_str():fallback;
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::AsciiStringById,
+        id,result,fallback,translated,found);
+    return result;
 }
 
 const char* Localization::StringById(const char* id,const char* fallback)
 {
-    const StringRecord* record=g_Strings.Lookup(id);
-    return record!=nullptr&&record->hasTranslation?record->translation.c_str():fallback;
+    const StringRecord* record=g_Strings.Lookup(id);const bool found=record!=nullptr;
+    const bool translated=found&&record->hasTranslation;const char* result=translated?record->translation.c_str():fallback;
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::StringById,
+        id,result,fallback,translated,found);
+    return result;
 }
 
 const char* Localization::FormatStringById(const char* id,const char* fallback)
 {
     const StringRecord* record=g_Strings.Lookup(id);
-    if(record==nullptr||!record->hasTranslation||fallback==nullptr)
+    if(record==nullptr||!record->hasTranslation||fallback==nullptr){
+        eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::FormatStringById,
+            id,fallback,fallback,false,record!=nullptr);
         return fallback;
+    }
 
     std::string fallbackSignature;
     std::string translatedSignature;
     if(!ParsePrintfSignature(fallback,fallbackSignature)||
        !ParsePrintfSignature(record->translation.c_str(),translatedSignature)||
-       fallbackSignature!=translatedSignature)
+       fallbackSignature!=translatedSignature){
+        eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::FormatStringById,
+            id,fallback,fallback,false,true);
         return fallback;
+    }
 
-    return record->translation.c_str();
+    const char* result=record->translation.c_str();
+    eagler::diagnostics::language_trace().lookup(eagler::diagnostics::LanguageTrace::LookupOperation::FormatStringById,
+        id,result,fallback,true,true);
+    return result;
 }
 
 const char* Localization::Utf8(const char* text)

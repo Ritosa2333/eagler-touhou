@@ -1,5 +1,6 @@
 #ifdef TH_NATIVE_PLATFORM
 #include "PlatformHost.hpp"
+#include <eagler/diagnostics/LanguageTrace.hpp>
 #ifdef TH_ENABLE_THCRAP
 #include "../game/Localization.hpp"
 #include <string>
@@ -33,6 +34,12 @@ bool render_glyph(TTF_Font* face,u16 code,JapaneseFont::Glyph& glyph,std::vector
     const auto* data=static_cast<const u8*>(rgba->pixels);for(int y=0;y<rgba->h;y++)for(int x=0;x<rgba->w;x++)pixels[y*rgba->w+x]=(u32(data[y*rgba->pitch+x*4+3])*15+127)/255;
     SDL_DestroySurface(rgba);return true;
 }
+bool render_from(TTF_Font* face,u16 code,JapaneseFont::Glyph& glyph,std::vector<u8>& pixels,
+                 JapaneseGlyphSource source,bool covered,bool notdef=false){
+    if(!face||!render_glyph(face,code,glyph,pixels))return false;
+    glyph.source=source;glyph.has_glyph=covered;glyph.notdef=notdef;
+    glyph.actual_code=covered?code:0xffffffffu;return true;
+}
 }
 bool sdl_glyph(i32 height,i32 weight,u16 code,JapaneseFont::Glyph& glyph,std::vector<u8>& pixels){
     if(!started){if(!TTF_Init())return false;started=true;}
@@ -40,24 +47,31 @@ bool sdl_glyph(i32 height,i32 weight,u16 code,JapaneseFont::Glyph& glyph,std::ve
 #ifdef TH_ENABLE_THCRAP
     // TTF_GetGlyphMetrics alone cannot report a missing glyph (FreeType
     // happily renders .notdef), so test coverage before trusting MS Gothic.
-    if(face&&TTF_FontHasGlyph(face,code))return render_glyph(face,code,glyph,pixels);
+    if(face&&TTF_FontHasGlyph(face,code)&&render_from(face,code,glyph,pixels,JapaneseGlyphSource::Msgothic,true))return true;
     if(const char* pack=Localization::FontFile()){
         const std::string path=std::string("/thcrap/th08/fonts/")+pack;
-        if(auto* pack_face=open_face(pack_faces,height,weight,path.c_str());pack_face&&TTF_FontHasGlyph(pack_face,code)&&render_glyph(pack_face,code,glyph,pixels)){
+        if(auto* pack_face=open_face(pack_faces,height,weight,path.c_str());pack_face&&TTF_FontHasGlyph(pack_face,code)&&render_from(pack_face,code,glyph,pixels,JapaneseGlyphSource::Pack,true)){
             static u16 reported=0;
             if(reported!=code){reported=code;SDL_Log("th08 thcrap font fallback: U+%04X from pack font %s",code,path.c_str());}
             return true;
         }
     }
     for(const char* path:{"/fonts/unifont.otf","/unifont.otf"})
-        if(auto* fallback=open_face(fallback_faces,height,weight,path);fallback&&TTF_FontHasGlyph(fallback,code)&&render_glyph(fallback,code,glyph,pixels)){
+        if(auto* fallback=open_face(fallback_faces,height,weight,path);fallback&&TTF_FontHasGlyph(fallback,code)&&render_from(fallback,code,glyph,pixels,JapaneseGlyphSource::Unifont,true)){
             static u16 reported=0;
             if(reported!=code){reported=code;SDL_Log("th08 thcrap font fallback: U+%04X from %s",code,path);}
             return true;
         }
-    return face&&render_glyph(face,code,glyph,pixels);
+    return render_from(face,code,glyph,pixels,JapaneseGlyphSource::MsgothicNotdef,false,true);
 #else
-    return face&&render_glyph(face,code,glyph,pixels);
+    if(!face||!render_glyph(face,code,glyph,pixels))return false;
+    glyph.source=JapaneseGlyphSource::Msgothic;
+    if(eagler::diagnostics::language_trace().enabled()){
+        glyph.has_glyph=TTF_FontHasGlyph(face,code)!=0;glyph.notdef=!glyph.has_glyph;
+        glyph.actual_code=glyph.has_glyph?code:0xffffffffu;
+        if(glyph.notdef)glyph.source=JapaneseGlyphSource::MsgothicNotdef;
+    }else{glyph.has_glyph=false;glyph.notdef=false;glyph.actual_code=0xffffffffu;}
+    return true;
 #endif
 }
 void sdl_fonts_shutdown(){for(auto& face:faces)TTF_CloseFont(face.second);faces.clear();
@@ -85,10 +99,19 @@ u32 BrowserRuntime::native_font_steps(){
 }
 bool BrowserRuntime::native_font_step(u32 step){
     const i32 profiles[][2]={{16,400},{16,600},{26,600},{28,600}};
+    auto& trace=eagler::diagnostics::language_trace();const auto previous_phase=trace.phase();trace.set_phase(eagler::diagnostics::LanguageTrace::Phase::Preparation);
     for(u32 i=step*16;i<std::min<u32>((step+1)*16,warm_glyphs.size()*4);i++){
-        const auto* profile=profiles[i/warm_glyphs.size()];const auto* font=fonts.find(profile[0],profile[1]);if(!font)return false;
-        if(!font->find(warm_glyphs[i%warm_glyphs.size()])&&!font->find(0x30fb))return false;
-    }return true;
+        const auto* profile=profiles[i/warm_glyphs.size()];const auto* font=fonts.find(profile[0],profile[1]);if(!font){trace.set_phase(previous_phase);return false;}
+        const u16 requested=warm_glyphs[i%warm_glyphs.size()];bool cache_hit=false;
+        const auto* glyph=font->find(requested,trace.enabled()?&cache_hit:nullptr);const bool requested_has_glyph=glyph&&glyph->has_glyph&&glyph->actual_code==requested;
+        bool fallback=false;if(!glyph){fallback=true;glyph=font->find(0x30fb,trace.enabled()?&cache_hit:nullptr);}
+        if(trace.enabled())trace.glyph(profile[0],profile[1],requested,
+            glyph&&glyph->actual_code!=0xffffffffu?i32(glyph->actual_code):-1,
+            glyph?static_cast<eagler::diagnostics::LanguageTrace::GlyphSource>(glyph->source):eagler::diagnostics::LanguageTrace::GlyphSource::None,
+            requested_has_glyph,glyph&&glyph->notdef,font->native,cache_hit,
+            fallback||(glyph&&glyph->notdef),glyph&&glyph->has_glyph);
+        if(!glyph){trace.set_phase(previous_phase);return false;}
+    }trace.set_phase(previous_phase);return true;
 }
 }
 #endif
