@@ -51,6 +51,8 @@ npm --prefix launcher run dev:workspace
 
 回滚对局默认启用本地优先蓄力，房间选项「关闭本地优先的蓄力条进度」默认不勾选。P1 在等待室修改选项后，双方重新准备，开局后规则固定。
 
+房间说明统一展示：「默认启用本地优先蓄力。勾选该选项后，使用原版蓄力逻辑和即时显示。」
+
 房间字段 `disableLocalChargePriority` 默认为 `false`，Launcher 将它作为 `configure.options.netplayDisableLocalChargePriority` 传入 Runtime：
 
 | 参数值 | 回滚对局行为 | 原生配置调用 |
