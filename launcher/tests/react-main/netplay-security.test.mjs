@@ -54,19 +54,24 @@ for (const locale of ['zh-CN', 'en']) {
     const props={state,service:{movePlayerToSpectator:(...args)=>moves.push(args),removePlayer:i=>removals.push(i)},
       network:{metric:()=>null},context:{touchEnabled:false,touchMovementMode:'joystick'},openPanel(){}};
     const node=await mount(views.RoomSeats,props,locale);
-    const menu=node.querySelector('[data-mp-seat="1"] details');
-    assert.equal(menu.hidden,false);
+    const moderation=node.querySelector('[data-mp-seat="1"] .mp-seat-moderation');
+    assert.equal(moderation.hidden,false);
+    const trigger=moderation.querySelector('.room-member-menu-trigger');
+    await React.act(async()=>trigger.click());
+    const menu=env.document.querySelector('.room-member-menu');
+    assert.equal(menu.getAttribute('role'),'menu');
     const buttons=[...menu.querySelectorAll('button')];
     assert.equal(buttons[0].textContent,locale==='en'?'Move to spectators':'移到观众席');
-    menu.open=true;
     await React.act(async()=>buttons[0].click());
     assert.deepEqual(moves,[[1,'guest12345']]);
     assert.deepEqual(removals,[]);
-    assert.equal(menu.open,false);
+    assert.equal(trigger.getAttribute('aria-expanded'),'false');
     const playing=await mount(views.RoomSeats,{...props,state:{...state,room:{...state.room,phase:'running'}}},locale);
-    assert.equal(playing.querySelector('[data-mp-seat="1"] details').hidden,true);
+    assert.equal(playing.querySelector('[data-mp-seat="1"] .mp-seat-moderation').hidden,true);
+    assert.equal(playing.querySelector('[data-mp-seat="1"] .room-member-menu-trigger').disabled,true);
     const guest=await mount(views.RoomSeats,{...props,state:{...state,seat:1}},locale);
-    assert.equal(guest.querySelector('[data-mp-seat="1"] details').hidden,true);
+    assert.equal(guest.querySelector('[data-mp-seat="1"] .mp-seat-moderation').hidden,true);
+    assert.equal(guest.querySelector('[data-mp-seat="1"] .room-member-menu-trigger').disabled,true);
   });
   test(`${locale}: unlisted-room limits appear before submitting entry`, async () => {
     const state = {connection: 'live', mine: null, leaving: false, products: ['th06mp'],

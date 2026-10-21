@@ -11,12 +11,14 @@ const variant = process.argv.includes('--multiplayer') ? 'multiplayer' : 'normal
 const output = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, process.env.TH09_PACKAGE_OUTPUT || (variant === 'multiplayer' ? 'build-eagler-multiplayer' : 'build-eagler'));
 const native = process.env.TH09_RUNTIME_ASSETS ? resolve(process.env.TH09_RUNTIME_ASSETS) : resolve(root, 'assets/sdl-native');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+const common = resolve(process.env.EAGLER_COMMON_ROOT || resolve(root, '../third_party/eagler-common'));
 const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
   ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
   ['managed.css', resolve(root, 'sdl-runtime/managed.css')],
-  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-timeline-view.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'replay-player.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
-  ['playback-clock.mjs', resolve(process.env.EAGLER_COMMON_ROOT || resolve(root, '../third_party/eagler-common'), 'browser/playback-clock.mjs')],
+  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'spectator-timeline.mjs', 'spectator-timeline-view.mjs', 'spectator-tape.mjs', 'motion-replay.mjs', 'auto-replay.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ['replay-player.mjs', resolve(common, 'browser/versus-replay-th09.mjs')],
+  ['playback-clock.mjs', resolve(common, 'browser/playback-clock.mjs')],
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],
   ['fonts/cp932.bin', resolve(native, 'cp932.bin')],
