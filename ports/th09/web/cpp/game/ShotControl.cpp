@@ -1,4 +1,5 @@
 #include "ShotControl.hpp"
+#include "LocalCharge.hpp"
 #include <algorithm>
 namespace th09 {
 void ShotControl::protect(i32 level,const Vec3& p){
@@ -37,6 +38,9 @@ void ShotControl::update(const GameInput& input,bool automatic_focus,i32 side,co
             else if(previous/100<i32(state.charge)/100)actions.play_sound(50,side?500:-500);
         }
     }else release(resource,position,timing);
+    update_firing(resource,timing);
+}
+void ShotControl::update_firing(const ShotResource& resource,const FrameTiming& timing){
     if(state.flags&4){
         if(state.charged_fire.current!=state.charged_fire.previous)actions.fire(1,state.charged_fire.current);
         state.charged_fire.tick(timing);if(state.charged_fire.value()>=resource.charge_duration){state.charged_fire.reset();state.flags&=~4u;}
@@ -45,6 +49,35 @@ void ShotControl::update(const GameInput& input,bool automatic_focus,i32 side,co
         if(state.normal_fire.current!=state.normal_fire.previous)actions.fire(0,state.normal_fire.current);
         state.normal_fire.tick(timing);if(state.normal_fire.current>=15)state.normal_fire.reset(-1);
     }
+}
+bool ShotControl::update_priority(const GameInput& input,bool automatic_focus,i32 side,const ShotResource& resource,
+                                  const Vec3& position,const FrameTiming& timing,const ChargeSample& sample,
+                                  PendingChargeRelease& pending,bool permitted){
+    if(!sample.valid()||!sample.active)return false;
+    if(sample.released>=100&&!pending.push(sample.released))return false;
+    bool released=false;
+    if(permitted){
+        const bool focus=(input.held&4)!=0,held=(input.held&1)!=0,pressed=(input.pressed&1)!=0;
+        const bool tap=(pressed&&!(automatic_focus&&focus))||(automatic_focus&&held&&!focus);
+        if(tap){
+            if(state.cooldown.current==0){
+                if(state.normal_fire.current<0)state.normal_fire.reset();
+                else if(state.normal_fire.current>=10)state.normal_fire.decrement(10,timing);
+                else if(state.normal_fire.current>=5)state.normal_fire.decrement(5,timing);
+                state.cooldown.reset(3);
+            }else if(state.cooldown.current>0)state.cooldown.decrement(1,timing);
+        }
+        if(pending.count||sample.released>=0){
+            state.charge=pending.count?pending.take():sample.released;
+            release(resource,position,timing);released=true;
+        }
+    }
+    if(sample.events&ChargeSample::Begin){actions.play_sound(43,side?500:-500);actions.begin_charge();}
+    if(sample.events&ChargeSample::LevelSound)actions.play_sound(50,side?500:-500);
+    if((sample.events&ChargeSample::End)&&!released)actions.end_charge();
+    state.charge=sample.charge;state.charging_time=sample.charging_time;state.full_charge=sample.full_charge;
+    if(permitted)update_firing(resource,timing);
+    return !pending.invalid;
 }
 bool ShotControl::bomb(const GameInput& input,bool scene_locked,const ShotResource& resource,const Vec3& p){
     if(scene_locked||state.player_state==4||!(input.held&2)||state.available<200)return false;

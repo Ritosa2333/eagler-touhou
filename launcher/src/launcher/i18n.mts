@@ -147,6 +147,8 @@ const entries = [
   ["room.privateHint", "隐藏房间不在大厅展示。任何知道房间号的人都能加入，请只分享给信任的人。", "Unlisted rooms are hidden from the lobby. Anyone with the room code can join. Share it only with people you trust."],
   ["room.cheatMovement", "作弊移动", "Cheat movement"],
   ["room.cheatHint", "禁用手机默认使用的无限速触控移动", "Disables the unlimited-speed touch movement used by default on phones."],
+  ['room.disableLocalChargePriority', '关闭本地优先的蓄力条进度', 'Disable local-priority charge progress'],
+  ['room.localChargeReplayHint', '启用该选项后可以得到兼容原版的 Replay，但蓄力条的显示可能是不准确的', 'Enable this option to save Replay files compatible with the original game. Charge-bar progress may be inaccurate.'],
   ["room.challengeMode", "挑战模式", "Challenge mode"],
   ["room.th15ChapterThreshold", "奖残所需得分", "Chapter score required for a life fragment"],
   ["room.th15ChapterSettingsHint", "（可在“房间/难度设置”处更改）", "(Change in Room / Difficulty settings)"],
