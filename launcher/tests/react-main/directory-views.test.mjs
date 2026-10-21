@@ -184,6 +184,8 @@ for (const locale of ['zh-CN', 'en']) test(`Original cooperative list shows room
   assert.equal(all('.lobby-seat').length,snapshot.visibleRooms[0].capacity);
   assert.equal(n('.lobby-player-count').textContent,`${snapshot.visibleRooms[0].players} / ${snapshot.visibleRooms[0].capacity}`);
   assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.recruiting'));
+  assert.equal(n('.lobby-room-watchers').getAttribute('aria-label'),t(locale,'th09.spectatorCount',{count:3}));
+  assert.equal(n('.lobby-room-watchers').textContent,t(locale,'th09.spectatorCount',{count:3}));
   assert.equal(env.document.querySelector('.coop-room-row'),null);
   assert.equal(env.document.querySelector('.room-elapsed'),null);
 });
@@ -437,6 +439,8 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
     }else{
       const state=phase==='playing'?'playing':players===2?'full':'recruiting';
       assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.'+state));
+      assert.equal(!!env.document.querySelector('.room-elapsed'),phase==='playing');
+      if(phase==='playing')assert.match(n('.room-elapsed').textContent,/1:0\d/);
       assert.equal(env.document.querySelector('.th09-room-duration'),null);
     }
   }
