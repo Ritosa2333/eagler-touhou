@@ -969,7 +969,7 @@ EMSCRIPTEN_KEEPALIVE const double* th11_mp_rollback_profile(int enabled){
     a.rollback_profile[0]=1;a.rollback_profile[1]=a.rollback_profile_enabled;return a.rollback_profile.data();
 }
 EMSCRIPTEN_KEEPALIVE const char* th11_mp_error(){auto& app=th11::sdl::app;return app.error.empty()?app.netplay.Error():app.error.c_str();}
-EMSCRIPTEN_KEEPALIVE void th11_mp_stop(){using namespace th11::sdl;app.rollback_release();rollback_cadence.reset();app.netplay.Clear();app.audio.spectator_silent(false);app.multiplayer_world=false;app.multiplayer_viewer=false;app.multiplayer_finish_pending=false;app.multiplayer_restart_pending=false;app.multiplayer_spectator_stage=Netplay::INVALID_FRAME;app.multiplayer_spectator_checkpoint_serial=0;app.multiplayer_spectator_pending_initializer.clear();app.multiplayer_spectator_pending_stage=0;clear_inputs();}
+EMSCRIPTEN_KEEPALIVE void th11_mp_stop(){using namespace th11::sdl;app.rollback_release();rollback_cadence.reset();app.netplay.Clear();app.audio.spectator_silent(false);app.session.multiplayer_active=false;app.multiplayer_world=false;app.multiplayer_viewer=false;app.multiplayer_finish_pending=false;app.multiplayer_restart_pending=false;app.multiplayer_spectator_stage=Netplay::INVALID_FRAME;app.multiplayer_spectator_checkpoint_serial=0;app.multiplayer_spectator_pending_initializer.clear();app.multiplayer_spectator_pending_stage=0;clear_inputs();}
 EMSCRIPTEN_KEEPALIVE int th11_mp_replay_menu(const unsigned* build,unsigned count){
     using namespace th11::sdl;if(!build||count!=4||std::none_of(build,build+count,[](unsigned word){return word!=0;}))return 0;
     std::copy_n(build,4,app.multiplayer_build.begin());app.error.clear();return app.multiplayer_open_replay_menu();
