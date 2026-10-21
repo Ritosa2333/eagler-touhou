@@ -184,7 +184,7 @@ export function createTransferModel({translate: t, context, ports, frames,
       else if (message.event === 'music-complete') musicComplete(message);
       else if (message.event === 'midi-fallback') midiFallback();
       else if (message.event === 'player-debug') playerDebug(message);
-      else if (message.event === 'ready' && snapshot.kind === 'game') hide();
+      else if (message.event === 'first-frame' && snapshot.kind === 'game') hide();
     },
     beginRuntime(plan: Readonly<RuntimePlan>) {
       if (disposed) return;

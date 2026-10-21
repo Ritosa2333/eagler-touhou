@@ -1,4 +1,4 @@
-import {appendRttSample, compactNetplayPeerStatus, describeNetplayConnection, selectedRtcPair, type NetplayConnectionView} from '../../src/launcher/runtime-diagnostics-model.mts';
+import {appendRttSample, describeNetplayPeerStatus, describeNetplayConnection, selectedRtcPair, type NetplayConnectionView, type NetplayPeerStatus} from '../../src/launcher/runtime-diagnostics-model.mts';
 import type {ProductId} from '../../src/contracts/product-catalog.mts';
 import {RuntimeSessionSupersededError, type RuntimeService} from '../services/runtime';
 import {readRuntimeNetplay, type RuntimeNetplaySnapshot, type RuntimePeerTransport, type RuntimePeerQuality} from './gameplay-network/native-snapshot';
@@ -13,7 +13,7 @@ export interface GameplayNetworkSnapshot {
   returnToRoom: boolean;
   calibrationEligible: boolean;
   playerStatusVisible: boolean;
-  playerStatus: readonly {text: string; title?: string}[];
+  playerStatus: readonly (NetplayPeerStatus & {title?: string})[];
   diagnostics: Readonly<Record<string, string>>;
 }
 export interface GameplayNetworkOptions {
@@ -49,7 +49,7 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
     const count = Math.max(2, Math.min(3, Number(context.playerCount) || 2));
     const local = Math.max(0, Math.min(count - 1, Number(context.player) || 0));
     const paths = new Map(net.rtcPaths.filter(entry => Number.isInteger(Number(entry.peer)) && Number(entry.peer) >= 0 && Number(entry.peer) < count).map(entry => [Number(entry.peer), entry]));
-    const rows: {text: string; title?: string}[] = [];
+    const rows: (NetplayPeerStatus & {title?: string})[] = [];
     for (let peerId = 0; peerId < count; peerId++) {
       if (peerId === local) continue;
       const peer = net.peerState?.peers.get(peerId), pcState = String(peer?.pc?.connectionState || peer?.pc?.iceConnectionState || '');
@@ -59,8 +59,8 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
       else if (ready || pcState === 'connected' || pcState === 'completed') connected = true;
       else if (['disconnected', 'failed', 'closed'].includes(pcState) || net.failed) connected = false;
       const path = paths.get(peerId), route = net.transport === 'relay' ? 'relay' : path?.path || (net.path === 'mixed' ? 'rtc' : net.path), sample = quality.peers.get(peerId);
-      const row: {text: string; title?: string} = {text: compactNetplayPeerStatus({player: peerId, route, rttMs: sample?.rttMs, variationMs: sample?.variationMs, connected})};
-      if (sample?.rttMs != null) row.title = `P${peerId + 1} ${[String(route || 'rtc'), path?.protocol, path?.family].filter(Boolean).join('/')} · RTT ${Math.round(sample.rttMs)}ms` + (sample.variationMs != null ? ` · variation ${Math.round(sample.variationMs)}ms` : '');
+      const row: NetplayPeerStatus & {title?: string} = describeNetplayPeerStatus({player: peerId, route, rttMs: sample?.rttMs, variationMs: sample?.variationMs, connected});
+      if (row.rttMs != null) row.title = `${row.label} ${[row.route, path?.protocol, path?.family].filter(Boolean).join('/')} | RTT ${row.rttMs}ms` + (row.variationMs != null ? ` | variation ${row.variationMs}ms` : '');
       rows.push(row);
     }
     return rows;

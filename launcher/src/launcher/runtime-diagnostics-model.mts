@@ -101,21 +101,36 @@ export interface CompactNetplayPeerStatusInput {
   connected?: unknown;
 }
 
-export function compactNetplayPeerStatus(input: CompactNetplayPeerStatusInput): string {
+export interface NetplayPeerStatus {
+  label: string;
+  route: string;
+  reconnecting: boolean;
+  rttMs: number | null;
+  variationMs: number | null;
+  text: string;
+}
+
+export function describeNetplayPeerStatus(input: CompactNetplayPeerStatusInput): NetplayPeerStatus {
   const player = Number(input.player);
   const label = Number.isFinite(player) && player >= 0 ? `P${Math.trunc(player) + 1}` : "P?";
-  if (input.connected === false) return `${label} reconnecting`;
   const rawRoute = String(input.route || "connecting").trim().toLowerCase();
   const route = ["direct", "turn", "relay", "rtc"].includes(rawRoute) ? rawRoute : "connecting";
-  const rtt = Number(input.rttMs);
-  const variation = Number(input.variationMs);
-  if (Number.isFinite(rtt) && rtt >= 0) {
-    const latency = Number.isFinite(variation) && variation >= 0
-      ? `${Math.round(rtt)}/${Math.round(variation)}ms`
-      : `${Math.round(rtt)}ms`;
-    return `${label} ${route} ${latency}`;
-  }
-  return route === "connecting" ? `${label} connecting` : `${label} ${route} --ms`;
+  const measured = (value: unknown): number | null => {
+    if (value == null || value === '') return null;
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0 ? Math.round(number) : null;
+  };
+  const reconnecting = input.connected === false;
+  const rttMs = reconnecting ? null : measured(input.rttMs);
+  const variationMs = rttMs === null ? null : measured(input.variationMs);
+  const text = reconnecting ? `${label} reconnecting` : rttMs !== null
+    ? `${label} ${route} ${rttMs}${variationMs === null ? '' : `/${variationMs}`}ms`
+    : route === "connecting" ? `${label} connecting` : `${label} ${route} --ms`;
+  return {label, route, reconnecting, rttMs, variationMs, text};
+}
+
+export function compactNetplayPeerStatus(input: CompactNetplayPeerStatusInput): string {
+  return describeNetplayPeerStatus(input).text;
 }
 
 export interface NetplayConnectionPeer {

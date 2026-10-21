@@ -157,10 +157,11 @@ test('main iOS debug block stays gated and hide clears its exact lines', () => {
   f.model.hide(); assert.equal(f.model.getSnapshot().debugText, ''); assert.equal(f.model.getSnapshot().debugVisible, false);
 });
 
-test('authenticated Runtime ready hides game DATA only; other event kinds retain original owners', () => {
-  const f = fixture(); f.model.runtimeTransfer({kind: 'game'}); f.model.runtimeEvent({epoch: 2, event: 'ready'}); assert.equal(f.model.getSnapshot().hidden, false);
-  f.model.runtimeEvent({epoch: 1, event: 'ready'}); assert.equal(f.model.getSnapshot().hidden, true);
-  f.model.runtimeTransfer({kind: 'music', mode: 'ogg'}); f.model.runtimeEvent({epoch: 1, event: 'ready'}); assert.equal(f.model.getSnapshot().hidden, false);
+test('game DATA progress waits for the authenticated first frame after the resource-ready handshake', () => {
+  const f = fixture(); f.model.runtimeTransfer({kind: 'game'}); f.model.runtimeEvent({epoch: 1, event: 'ready'}); assert.equal(f.model.getSnapshot().hidden, false);
+  f.model.runtimeEvent({epoch: 2, event: 'first-frame'}); assert.equal(f.model.getSnapshot().hidden, false);
+  f.model.runtimeEvent({epoch: 1, event: 'first-frame'}); assert.equal(f.model.getSnapshot().hidden, true);
+  f.model.runtimeTransfer({kind: 'music', mode: 'ogg'}); f.model.runtimeEvent({epoch: 1, event: 'first-frame'}); assert.equal(f.model.getSnapshot().hidden, false);
 });
 
 test('launch ACK clears resource mounts reported after ready while retaining downloads and music', () => {

@@ -157,6 +157,36 @@ try {
   assert.equal((await prepare()).generation,C.descriptor.generation);
   assert.deepEqual(errors,[]);
   report.push('persisted complete cache survives Launcher reload');
+  await offline(false);current=B;
+  const legacy=await browser.newContext(),legacyPage=await legacy.newPage();
+  try {
+    legacyPage.on('pageerror',error=>errors.push(error.message));
+    await legacyPage.goto(base);
+    await legacyPage.evaluate(async({base,root,descriptor,bodies})=>{
+      window.api=await import('./api.mjs');window.events=[];window.progress=[];
+      addEventListener('message',event=>{if(event.source===document.querySelector('iframe').contentWindow)events.push(event.data);});
+      const cache=await caches.open('eagler-touhou-runtime-'+encodeURIComponent(new URL(base).pathname)+'-legacy');
+      for(const file of descriptor.files)await cache.put(new URL(root+file.path,base),new Response(bodies[file.path],{
+        headers:{'Content-Type':file.path.endsWith('.html')?'text/html':file.path.endsWith('.mjs')?'text/javascript':'application/wasm'}}));
+      await cache.put(new URL('__runtime-cache__/complete',base),new Response(JSON.stringify({complete:true,createdAt:1,
+        group:{root,entries:descriptor.files.map(file=>({url:root+file.path,revision:file.sha256}))}})));
+    },{base,root,descriptor:A.descriptor,bodies:A.bodies});
+    requests.length=0;
+    const local=await legacyPage.evaluate(async entry=>{
+      window.prepared=await api.prepareRuntimeLaunch(entry,{onProgress:value=>progress.push(value)});
+      document.querySelector('iframe').src=prepared.url;return prepared.generation;
+    },root+'game.html');
+    assert.equal(local,A.descriptor.generation,'legacy program starts while the server advertises a newer one');
+    assert.equal(requests.some(path=>path.endsWith('runtime-manifest.json')||path.endsWith('.wasm')),false,'legacy startup uses local bytes');
+    await legacyPage.waitForFunction(()=>events.length>0);
+    assert.equal(await legacyPage.evaluate(()=>events[0].version),'a');
+    const update=await legacyPage.evaluate(()=>prepared.checkForUpdate());
+    assert.equal(update.generation,B.descriptor.generation);
+    assert.equal(await legacyPage.evaluate(()=>events[0].version),'a','background update keeps the running old program');
+    assert.equal(await legacyPage.evaluate(()=>progress.some(value=>value.path.endsWith('game.wasm')&&value.phase==='complete')),true,'background download retains loading-panel progress');
+    report.push('legacy complete cache starts locally before the successor download and retains background progress');
+  } finally {await legacy.close();}
+  assert.deepEqual(errors,[]);
   const outageMode=emulationSupported?'browser-offline-plus-origin-drop':'origin-connection-drop';
   report.push('multiplayer blocks offline, wrong agreement and corrupt current generations; waits for complete successor');
   await writeFile(resolve(out,'report.json'),JSON.stringify({passed:true,engine,variant,version:browser.version(),outageMode,probeError,deviceAirplaneModeVerified:false,report},null,2));

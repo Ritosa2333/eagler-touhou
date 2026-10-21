@@ -32,6 +32,7 @@ public:
     std::size_t SpectatorBacklog()const{return spectator_playback.History().Received()-spectator_playback.Position();}
     u32 SpectatorReceived()const{return spectator_playback.History().Received();}
     u32 SpectatorPublished()const{return spectator_publisher.Published();}
+    bool SpectatorPublisherStarted()const{return spectator_publisher_started;}
     bool SpectatorPublishFailed()const{return spectator_publish_failed;}
     // A callback may pump once before choosing its logical work. Step consumes
     // that pump before capture; it must not pump again and send the older tail.

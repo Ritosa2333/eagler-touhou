@@ -66,6 +66,7 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
     footer: <Footer donationAvailable={donationAvailable}/>, serverStatusNote: <ServerStatusNote session={session}/>, metadataRevision: state.metadataRevision,
     replayWorkspace,
     roomWorkspace,
+    roomPlayerExpanded: state.roomPlayerExpanded,
     runtimeOpen: state.playerOpen, runtimeLaunched: state.runtime?.launched, titleOverlayOpen: state.th09NetworkOverlayOpen, runtimeFrame: session.attachFrame, requestRuntimeClose: session.requestRuntimeClose, requestRoomLeave: session.requestRoomLeave, requestRoomFullscreenExit: session.exitRoomPlayerFullscreen,
     optionsActions: <SessionLaunchActions session={session}/>, multiplayerControls: <RoomSettingsControls session={session}/>, multiplayerDiagnostics: <InlineMultiplayerDiagnostics session={session}/>, multiplayerOnline: <LegacyMultiplayerOnline session={session}/>,
     roomSurface: <RoomComposition session={session} settingsClosing={settingsClosing} workspaceVisible={roomWorkspace}/>,
@@ -202,7 +203,7 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
     showFirstUseAutomatically: isCurrent => firstUse.current?.maybeShowAutomatically(isCurrent) ?? Promise.resolve(false),
     loadSiteNotice: () => notice.current?.load() ?? Promise.resolve(false), onError: session.reportError,
   }), [session, navigation.context, firstUse, notice]);
-  useEffect(() => {void session.restoreRoomFromUrl(window.location.href).catch(session.reportError);}, [session, navigation.roomCode, navigation.productId]);
+  useEffect(() => {void session.restoreRoomFromUrl(new URL(location.pathname+location.search+location.hash,session.baseUrl).href).catch(session.reportError);}, [session, location.pathname, location.search, location.hash]);
   useLayoutEffect(() => session.settleRoomReturnPresentation(navigation.surface, navigation.productId), [session, navigation.surface, navigation.productId]);
   useLayoutEffect(() => {if (navigation.directoryFormMode) session.directory.restoreFormMode(navigation.directoryFormMode);}, [session, navigation.directoryFormMode]);
   return <><input id="fileInput" type="file" hidden/><FullscreenTransient><Feedback model={session.feedback}/><StartupError model={session.startupError}/><GameDataImportWindows model={session.gameData} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}/></FullscreenTransient>

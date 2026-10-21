@@ -114,6 +114,7 @@ export interface MultiplayerRoomPorts {
   /** Main app6830 clears manual install-only recovery before an accepted retry. */
   beforePreparationRetry?(): void;
   releasePreparedResources?(): void;
+  beforeRoleChange?(context: RoomOperationContext): Promise<boolean>;
   /** Own input warnings, TH09 title handoff, fullscreen, first-frame/path gate and error continuation. */
   launch(context: RoomLaunchContext): Promise<void>;
   /** Real multiplayer Runtime, omitNetplay, first frame, then return to room without save RPC. */
@@ -124,7 +125,7 @@ export interface MultiplayerRoomPorts {
     context: RoomOperationContext,
   ): void | Promise<void>;
   isLaunched(): boolean;
-  canLaunchFromTitle?(): boolean;
+  canReuseRuntime?(): boolean;
   routes: {
     restore(input: { product: MultiplayerProductId; code: string; fromDirectory: boolean }): void;
     enter(input: { product: MultiplayerProductId; code: string; created: boolean }): void;
@@ -818,6 +819,18 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       });
     return movementDecision;
   }
+  let roleChanging = false;
+  let launchController: AbortController | null = null;
+  async function changeRole(commit: () => void) {
+    if (roleChanging) return;
+    const owned = context();
+    roleChanging = true;
+    try {
+      launchController?.abort();launchController = null;state.launchBusy = false;
+      if (ports.beforeRoleChange && !await ports.beforeRoleChange(owned)) return;
+      if (owned.isCurrent()) commit();
+    } finally {roleChanging = false;}
+  }
   async function takeSeat(index: number) {
     if (
       !room?.synced ||
@@ -837,49 +850,59 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       room.seats?.[index]
     )
       return;
-    send({
-      type: 'take-seat',
-      seat: index,
-      loadout: state.preferredLoadout,
-      ready: state.ready,
-      name: state.displayName,
-      ...input(),
+    return changeRole(() => {
+      if (!room || room.phase !== 'lobby' || room.seats?.[index]) return;
+      send({
+        type: 'take-seat',
+        seat: index,
+        loadout: state.preferredLoadout,
+        ready: state.ready,
+        name: state.displayName,
+        ...input(),
+      });
     });
   }
-  function standUp() {
-    if (!room?.synced || !state.connected || state.seat == null || !send({ type: 'stand-up' }))
+  async function standUp() {
+    if (!room?.synced || !state.connected || state.seat == null)
       return;
-    state.seat = null;
-    state.ready = false;
-    state.spectatorRequested = false;
-    publish();
+    return changeRole(() => {
+      if (!send({type:'stand-up'})) return;
+      state.seat = null;
+      state.ready = false;
+      state.spectatorRequested = false;
+      publish();
+    });
   }
-  function spectate() {
+  async function spectate() {
     if (
       !room?.synced ||
       !state.connected ||
       (state.seat != null && room.phase !== 'lobby') ||
-      state.spectatorRequested ||
-      !send({ type: 'spectate', name: state.displayName })
+      state.spectatorRequested
     )
       return;
-    state.seat = null;
-    state.ready = false;
-    state.spectatorRequested = true;
-    publish();
+    return changeRole(() => {
+      if (!send({type:'spectate',name:state.displayName})) return;
+      state.seat = null;
+      state.ready = false;
+      state.spectatorRequested = true;
+      publish();
+    });
   }
-  function leaveSpectator() {
+  async function leaveSpectator() {
     cancelSpectatorRetry();
     resourceRetrySpectatorSerial = 0;
     if (
       !room?.synced ||
       !state.connected ||
-      !state.spectatorRequested ||
-      !send({ type: 'leave-spectator' })
+      !state.spectatorRequested
     )
       return;
-    state.spectatorRequested = false;
-    publish();
+    return changeRole(() => {
+      if (!send({type:'leave-spectator'})) return;
+      state.spectatorRequested = false;
+      publish();
+    });
   }
   function setDisplayName(value: string) {
     if (state.nickname) {
@@ -1172,13 +1195,18 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (
       !room ||
       !product ||
+      roleChanging ||
       state.launchBusy ||
       (startSerial !== undefined && (startSerial <= appliedStartSerial || startSerial !== state.startSerial)) ||
-      (ports.isLaunched() && !ports.canLaunchFromTitle?.())
+      (ports.isLaunched() && !ports.canReuseRuntime?.())
     )
       return;
     if (startSerial !== undefined) appliedStartSerial = startSerial;
-    const owned = context();
+    const controller = new AbortController(), roomSignal = ownerController.signal;
+    const cancel = () => controller.abort();
+    roomSignal.addEventListener('abort',cancel,{once:true});
+    launchController = controller;
+    const owned = context(controller.signal);
     state.launchBusy = true;
     publish();
     try {
@@ -1203,7 +1231,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     } catch (error) {
       if (owned.isCurrent()) await ports.operationFailed(error, 'launch', owned);
     } finally {
-      if (owned.isCurrent()) {
+      roomSignal.removeEventListener('abort',cancel);
+      if (launchController === controller) {
+        launchController = null;
         state.launchBusy = false;
         publish();
       }
@@ -1431,6 +1461,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function resumeSpectator() {
     if (
+      roleChanging ||
       !room?.spectatorTimeline ||
       !state.spectatorRequested ||
       !state.connected ||
