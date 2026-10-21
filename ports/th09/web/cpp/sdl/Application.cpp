@@ -73,6 +73,7 @@ i32 joy_button(i32);
 NetworkInput network;
 multiplayer::RollbackSession rollback(th09_shared_transport());
 bool rollback_active=false,network_selection=false;
+bool confirmed_gauge_enabled=true;
 Netplay::AdonisMode adonis_mode=Netplay::AdonisMode::Rollback;
 u32 adonis_snapshots=0,adonis_waits=0;
 u32 rollback_published=0,rollback_catchup=0;
@@ -91,6 +92,12 @@ constexpr u32 spectator_begin_bytes=offsetof(SpectatorBeginState,match)+sizeof(S
 static_assert(spectator_begin_bytes==78);
 SpectatorBeginState spectator_begin_buffer;
 bool spectator_after_restart=false;
+struct GaugeOutput {
+    std::array<AnmVm,hud_gauge_slots.size()> sprites{};
+    float charge=0,available=0;
+    u32 frame=Netplay::INVALID_FRAME;
+    bool valid=false;
+};
 struct RollbackFrame {
     u32 number=Netplay::INVALID_FRAME,hash=0;
     std::unique_ptr<multiplayer::WorldState> state;
@@ -104,6 +111,7 @@ struct RollbackFrame {
     using Sound=multiplayer::FrameAudio::Event;
     std::vector<Sound> sounds;
     multiplayer::FrameAudio audio;
+    std::array<GaugeOutput,2> gauges;
 };
 std::array<RollbackFrame,multiplayer::RollbackSession::History+1> rollback_frames;
 RollbackFrame* recording_frame=nullptr;
@@ -111,6 +119,15 @@ RollbackFrame* recording_frame=nullptr;
 u32 rollback_test_limit=Netplay::INVALID_FRAME;
 double probe_tick_cost[2]{}; // Update/UI and semantic Draw; diagnostic only.
 bool probe_full_sprite_geometry=false;
+constexpr unsigned probe_gauge_stride=68;
+u32 probe_gauge_draw[2*probe_gauge_stride]{};
+void probe_gauge_appearance(u32* out,const AnmVm& vm){
+    std::memcpy(out,&vm.scale.x,4);std::memcpy(out+1,&vm.scale.y,4);
+    out[2]=u32(vm.color1.d3dColor);out[3]=u32(vm.color2.d3dColor);
+    out[4]=vm.flags|(vm.flag17<<17);out[5]=u32(vm.activeSpriteIndex);out[6]=vm.loadedSprite!=nullptr;
+    std::memcpy(out+7,&vm.uvScrollPos.x,4);std::memcpy(out+8,&vm.uvScrollPos.y,4);
+    std::memcpy(out+9,&vm.rotation.z,4);
+}
 #endif
 struct SpectatorFrame { u32 frame=0;u16 keys[2]{};NetworkInput::Motion motion[2]; };
 std::deque<SpectatorFrame> spectator_frames;
@@ -125,12 +142,42 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     u32 startup_background=0,startup_branding=0;
     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
     GamePresentation presentation{graphics,resources,*this};InGameMenus menus{resources,*this};
+    std::array<GaugeOutput,2> confirmed_gauges;
+    const AnmVm* confirmed_gauge(i32 side,u32 slot)override{
+        const auto found=std::find(hud_gauge_slots.begin(),hud_gauge_slots.end(),slot);
+        if(side<0||side>1||found==hud_gauge_slots.end())return nullptr;
+        const auto& gauge=confirmed_gauges[side];
+        const bool use=confirmed_gauge_enabled&&rollback_active&&network.active&&!spectator_mode&&
+            rollback.Mode()!=Netplay::AdonisMode::Delay&&gauge.valid;
+        const auto* sprite=use?&gauge.sprites[std::size_t(found-hud_gauge_slots.begin())]:nullptr;
+#if TH09_DEVELOPMENT_HARNESS
+        if(!graphics.skipSubmission&&world){
+            auto* out=probe_gauge_draw+side*probe_gauge_stride;
+            const auto& drawn=sprite?*sprite:world->huds[side]->animations[slot];
+            probe_gauge_appearance(out+8+10*std::size_t(found-hud_gauge_slots.begin()),drawn);
+            if(slot==17){
+                const auto& control=world->battle->fields[side].player->control;
+                out[0]=use;out[1]=use?gauge.frame:Netplay::INVALID_FRAME;
+                const float charge=use?gauge.charge:control.charge,available=use?gauge.available:control.available;
+                std::memcpy(out+2,&charge,4);std::memcpy(out+3,&available,4);
+                std::memcpy(out+4,&drawn.scale.x,4);out[5]=u32(drawn.color1.d3dColor);
+                std::memcpy(out+6,&control.charge,4);std::memcpy(out+7,&control.available,4);
+            }
+        }
+#endif
+        return sprite;
+    }
     std::array<u8,2> local_focus{};i32 local_versus=1;
     void release_network(){network.end();network_selection=false;settings.auto_focus=local_focus;settings.versus=local_versus;sync_records();}
     PlayerRecords records;bool clock_running=true,host_music_enabled=true;TitleSettings settings;GameConfiguration saved_configuration;u32 storage_revision=0;std::vector<u8> import_bytes;std::unique_ptr<TitleMenus> title;bool in_title=false,launch_pending=false;std::map<std::string,u32> title_images;u32 background_image=0;
     std::unique_ptr<GameSession> session;GameWorld* world=nullptr;WorldConfiguration configuration;InputFrame device;
     ReplayFile pending_replay;u32 replay_stage=0;bool replay_pending=false,demo_pending=false;u32 ending_image=0,ending_width=640,ending_height=480;
     bool paused=false,over=false,complete=false;u32 frames=0;std::string error;Vec2 shake[3]{};
+    u32 stop_resume_frame=Netplay::INVALID_FRAME;
+    u32 stop_state()const{
+        if(!world||in_title)return 0;const auto& battle=*world->battle;
+        return (battle.state.flags&0x1800u)|((battle.fields[0].script.flags&1u)<<16)|((battle.fields[1].script.flags&1u)<<17);
+    }
     SpectatorBeginState match_initializer(bool fresh)const{
         SpectatorBeginState out{state.random,device};auto& m=out.match;const auto& c=configuration;
         m.fresh=fresh;m.difficulty=u8(c.selection.difficulty);m.selector=u8(c.selection.selector+2);m.extra_lives=u8(c.starting_extra_lives);m.unlocked=c.selection.unlocked;
@@ -204,6 +251,8 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
     bool start(){
         TH09_PERF_SCOPE(start_cost,StartMatch);
+        stop_resume_frame=Netplay::INVALID_FRAME;
+        for(auto& gauge:confirmed_gauges)gauge.valid=false;
         presentation.renderer.flush();presentation.world=nullptr;world=nullptr;session.reset();executor.invalid=false;
         session=std::make_unique<GameSession>(state,resources,executor,presentation,*this,records);
         bool ok=false;if(replay_pending){replay_pending=false;ok=session->play(pending_replay,replay_stage,demo_pending);}
@@ -295,6 +344,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void title_exit()override{title_save_records();save_configuration();requested_transition=0;}
     void sync_records(){settings.versus_unlocked=records.versus_unlocked;settings.story_unlocked=records.story_unlocked;settings.extra_unlocked=records.extra_unlocked;settings.music_unlocked=records.music_unlocked;}
     bool return_title(bool score){
+        stop_resume_frame=Netplay::INVALID_FRAME;
         presentation.renderer.flush();const bool was_network=network.active;if(was_network)release_network();sync_records();title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);if(!title->initialize()){error=title->error;return false;}
         title->leaving=false;in_title=true;paused=over=complete=false;pause_audio(false);
         if(session){settings.game_flags=session->world?session->world->battle->state.flags:0;if(session->is_replay)score=false;if(session->is_demo())settings.game_flags&=~10u;if(!session->recordable)settings.game_flags|=0x2000;title->score_candidate=session->result;title->result_mode=GameMode(session->result.difficulty==4?1:session->world?i32(session->world->rules.mode):0);settings.difficulty=session->result.difficulty;}
@@ -313,7 +363,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void ending_sprite(AnmVm& vm)override{presentation.renderer.draw_2d(vm);}
     void ending_cover(u32 color)override{presentation.renderer.rectangle(0,0,640,480,color,color);}
     bool tick(u16 keys){return tick_inputs(keys,0,keys);}
-    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true,bool afterRestart=false){
+    bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true,bool afterRestart=false,bool submit=true){
         TH09_PERF_SCOPE(tick_cost,TickInputs);
 #if TH09_DEVELOPMENT_HARNESS
         const double cost_begin=emscripten_get_now();
@@ -352,7 +402,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
 #if TH09_DEVELOPMENT_HARNESS
             if(probe_full_sprite_geometry)presentation.renderer.omit_sprite_geometry=false;
 #endif
-            draw(render);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
+            draw(render&&submit);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
         }
         else if(render)draw();
 #if TH09_DEVELOPMENT_HARNESS
@@ -460,6 +510,10 @@ void sample_keys(u16 (&out)[3]){
 extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
 void queue_rollback_recovery();
+// Display policy only. Safe to toggle during a match without restoring state.
+TH09_EXPORT("th09_confirmed_gauge_mode") u32 th09_confirmed_gauge_mode(u32 enabled){
+    if(enabled>1)return 0;confirmed_gauge_enabled=enabled!=0;return 1;
+}
 TH09_EXPORT("th09_rollback_recovery_mode") u32 th09_rollback_recovery_mode(u32 after){
     if(after>1||running||rollback_active)return 0;
     recovery_schedule.Configure(after!=0);recovery_callbacks=recovery_ticks=recovery_last_us=0;return 1;
@@ -672,6 +726,11 @@ bool publish_rollback_outputs(){
     while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
         auto& record=rollback_frames[rollback_published%rollback_frames.size()];
         if(record.number!=rollback_published){probe->error="Confirmed output history expired";return false;}
+        // Meter appearance is committed output, like audio and spectator data.
+        // It advances in confirmed frame order and is never restored with the
+        // predicted world. The live charge/release rules keep their own state.
+        for(unsigned side=0;side<2;++side)if(record.gauges[side].valid)
+            probe->confirmed_gauges[side]=record.gauges[side];
         TH09_PERF_COUNT(PublishedCommands,record.sounds.size());
         record.audio.Emit(record.sounds,true,[](const auto& s){TH09_PERF_COUNT(PublishedSfx,1);if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
         for(const auto& s:record.sounds)switch(s.kind){case 2:TH09_PERF_COUNT(PublishedMusic,1);probe->music(s.id);break;case 3:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.fade_music();break;case 4:TH09_PERF_COUNT(PublishedOtherAudio,1);probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
@@ -731,8 +790,16 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
     // reached. Never draw a partially restored world or overrun our history.
     // Delayed recovery must preserve the oldest unpublished OUTPUT too, even
     // when the first prediction mismatch is several frames later.
-    if(forwardOnly&&(rollback.Frame()-rollback_published>=rollback_frames.size()||
-        !rollback.Prepare(true).canAdvance))forwardOnly=false;
+    if(forwardOnly){
+        const auto next=rollback.Prepare(true);bool chargeBoundary=false;
+        if(probe->world&&!probe->in_title)for(const auto& field:probe->world->battle->fields){
+            const auto& control=field.player->control;
+            chargeBoundary=chargeBoundary||control.charge>=200||
+                (control.available>=200&&(next.inputs[field.script.side].buttons&2));
+        }
+        if(rollback.Frame()-rollback_published>=rollback_frames.size()||!next.canAdvance||
+           probe->stop_state()||chargeBoundary)forwardOnly=false;
+    }
     if(correction!=Netplay::INVALID_FRAME&&!forwardOnly){
         TH09_PERF_SCOPE(restore_cost,Restore);
         rollback_catchup=std::max(rollback_catchup,rollback.Frame());
@@ -795,14 +862,37 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         TH09_PERF_COUNT(ForwardTicks,final?1:0);TH09_PERF_COUNT(ReplayTicks,final?0:1);TH09_PERF_COUNT(SpeculativeTicks,speculative?1:0);
         const bool wasComplete=probe->complete;
         const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
-        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,render&&final);
+        const auto priorStop=probe->stop_state();
+        const bool deferPresent=render&&final&&speculative&&!probe->in_title;
+        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,render&&final,false,!deferPresent);
+        for(unsigned side=0;side<2;++side){
+            auto& gauge=record.gauges[side];
+            gauge.valid=probe->world&&!probe->in_title&&rollback.Mode()!=Netplay::AdonisMode::Delay;
+            if(!gauge.valid)continue;
+            const auto& control=probe->world->battle->fields[side].player->control;
+            gauge.frame=f+1;gauge.charge=control.charge;gauge.available=control.available;
+            for(std::size_t i=0;i<hud_gauge_slots.size();++i)
+                gauge.sprites[i]=probe->world->huds[side]->animations[hud_gauge_slots[i]];
+        }
         if(!record.hasBegin&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0){
             record.round=probe->world->rules.progress.round;record.replayRoundFrame=probe->session->recording.frame();}
         record.hasEnd=!wasComplete&&probe->complete;
         if(record.hasEnd)record.winner=probe->world->scene->winner;
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
         if(record.captured){if(!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}TH09_PERF_COUNT(SealedCheckpoints,1);}
-        if(!ok||!rollback.Complete(decision,forwardOnly)){if(ok)probe->error=rollback.Error();return 0;}
+        if(!ok)return 0;
+        const auto afterStop=probe->stop_state();
+        if(speculative&&(priorStop!=afterStop||f==probe->stop_resume_frame)){
+            // Keep authored Draw side effects in the checkpoint, but publish
+            // stop transitions only after their input history is reconciled.
+            probe->presentation.renderer.flush();probe->graphics.backend.flush();
+            if(!record.state->Restore()){probe->error="Skill stop boundary restore failed";return 0;}
+            record.sounds.clear();++adonis_waits;return 2;
+        }
+        if(!rollback.Complete(decision,forwardOnly)){probe->error=rollback.Error();return 0;}
+        if(priorStop&&!afterStop&&!probe->in_title)probe->stop_resume_frame=f+1;
+        else if(f==probe->stop_resume_frame)probe->stop_resume_frame=Netplay::INVALID_FRAME;
+        if(deferPresent)probe->graphics.present();
         // Historical replay stays silent. Fresh forward feedback need not
         // wait for remote confirmation; its later publication is deduplicated.
         if(final)record.audio.Emit(record.sounds,false,[](const auto& s){if(s.kind==0)probe->audio.effects.enqueue(s.id,i32(s.value));else probe->audio.effects.positioned(s.id,s.value);});
@@ -966,6 +1056,21 @@ TH09_EXPORT("th09_title_status") const i32* th09_title_status(){static i32 value
 TH09_EXPORT("th09_probe_title_details") const i32* th09_probe_title_details(){static i32 v[12]{};if(!probe||!probe->title)return v;auto& p=*probe;v[0]=p.background_image;v[1]=p.title_images["title00.png"];v[2]=p.title_images["select00.png"];v[3]=p.title->animations.size()>2?p.title->animations[2].color1.d3dColor:0;v[4]=p.settings.extra_lives;v[5]=p.settings.frameskip;v[6]=p.settings.extra_unlocked[12];return v;}
 TH09_EXPORT("th09_probe_save_replay") u32 th09_probe_save_replay(){return probe&&probe->title_save_replay("replay/th9_25.rpy","TEST");}
 TH09_EXPORT("th09_probe_world") const i32* th09_probe_world(){return probe?audit::snapshot(probe->world,probe->state):nullptr;}
+TH09_EXPORT("th09_probe_stop_draw") const u32* th09_probe_stop_draw(){
+    static u32 words[9]{};if(probe&&probe->world&&!probe->in_title){words[8]=probe->stop_state();
+        for(u32 side=0;side<2;++side){const auto& p=*probe->world->battle->fields[side].player;
+            std::memcpy(words+4*side,&p.motion.position.x,4);std::memcpy(words+4*side+1,&p.motion.position.y,4);
+            std::memcpy(words+4*side+2,&p.body.pos.x,4);std::memcpy(words+4*side+3,&p.body.pos.y,4);}}
+    return words;
+}
+TH09_EXPORT("th09_probe_gauge_draw") const u32* th09_probe_gauge_draw(){return probe_gauge_draw;}
+TH09_EXPORT("th09_probe_gauge_live") const u32* th09_probe_gauge_live(){
+    static u32 data[2*probe_gauge_stride]{};
+    if(probe&&probe->world&&!probe->in_title)for(unsigned side=0;side<2;++side)
+        for(std::size_t i=0;i<hud_gauge_slots.size();++i)
+            probe_gauge_appearance(data+side*probe_gauge_stride+8+10*i,probe->world->huds[side]->animations[hud_gauge_slots[i]]);
+    return data;
+}
 TH09_EXPORT("th09_probe_replay") u32 th09_probe_replay(u32 size,u32 stage){if(!probe||size>probe->import_bytes.size())return 0;ReplayFile f;if(!f.decode(probe->import_bytes.data(),size))return 0;probe->title_play_replay(f,stage,"");probe->launch_pending=false;probe->in_title=false;return probe->start();}
 TH09_EXPORT("th09_probe_return_title") u32 th09_probe_return_title(u32 score){if(!probe)return 0;if(probe->session)probe->session->finish();return probe->return_title(score!=0);}
 TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 difficulty){TH09_PERF_SCOPE(open_cost,GameOpen);probe=std::make_unique<Application>();if(!probe->open(a,b,mode,difficulty)){failure=probe->error;return 0;}return 1;}

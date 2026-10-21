@@ -14,7 +14,9 @@
     "test:spectator-timeline": "node --test tests/multiplayer/spectator-timeline-adapter.test.mjs",
     "test:server": "node --test tests/server/*.test.mjs",
     "test:rollback": "node tests/multiplayer/run-tests.mjs",
+    "test:skill-stop": "node tests/multiplayer/skill-stop-browser.mjs",
     "test:rollback-output-history": "node tests/multiplayer/output-history-browser.mjs",
+    "test:confirmed-gauge": "node tests/multiplayer/confirmed-gauge-browser.mjs",
     "test:web": "node tests/browser/release-check.mjs",
     "test:versus-rules": "node tests/multiplayer/versus-rules.mjs"
   },
