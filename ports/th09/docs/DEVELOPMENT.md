@@ -1,12 +1,12 @@
-# TH09 开发指南
+# th09 开发指南
 
-当前适配记录见[TH09 适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。TH09 多人入口为对战模式。
+适配能力见[th09 适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。th09 多人入口为对战模式。
 
-暂停菜单的 R 键进入本作现有 Retry 流程，保留菜单退场时序，再按当前机体、难度与开局参数重建本局。普通版与对战版使用同一入口，联机时按已确认输入同步处理；运行验收比较暂停前后的原生局帧，并检查重开后继续推进。
+暂停菜单的 R 键进入 Retry 流程，按菜单退场时序和当前机体、难度、开局参数重建本局。普通版与对战版使用同一入口，联机时按已确认输入同步处理。验证比较暂停前后的原生局帧，并检查重开后继续推进。
 
 ## 构建并在 Launcher 启动
 
-需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 TH09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制；其余私有字体资源来自已有字体资源包。
+需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9、`ffmpeg` 和 `ffprobe`。原版目录需含日文 th09 1.50a 的 `th09.exe`、`th09.dat`、`thbgm.dat`。准备独立字体目录，包含 `blend.bin`（131072 字节）、`msgothic.ttc`，以及 `cp932.bin`（131072 字节）或 `codepages.bin`（262144 字节）。`msgothic.ttc` 可从 Windows 字体目录复制，其余私有字体资源来自已有字体资源包。
 
 ```powershell
 npm --prefix launcher ci --ignore-scripts # 仅首次安装
@@ -37,7 +37,7 @@ npm --prefix launcher run dev:workspace
 | WASI 源码模块 | Node.js 22.18 以上；WASI SDK 34.0 安装目录 | `$env:WASI_SDK_ROOT='C:\tools\wasi-sdk-34.0-x86_64-windows'` 后运行 [cpp/build.mjs](../web/scripts/cpp/build.mjs)：`node ports/th09/web/scripts/cpp/build.mjs`。产物：`ports/th09/web/artifacts/cpp/game-core-test.wasm`、`game-core-test-build.json`。 |
 | 原版 C++ 对照 | 上表 WASI 模块；日文 1.50a `th09.exe`、`th09.dat`、`thbgm.dat`；`ports/th09/web/reference/native/unicorn-bounded.wasm`；Node 依赖 `@alexaltea/unicorn-js@2.1.4` | 首次运行 `npm --prefix ports/th09/web ci` 和 `npm install --prefix ports/th09/web --no-save --package-lock=false @alexaltea/unicorn-js@2.1.4`；之后运行 `npm --prefix ports/th09/web test`。 |
 | 对战回滚组件 | WASI SDK 34.0；仓库 `common/`；Node.js 22.18 以上 | 设置 `$env:WASI_SDK_BIN='C:\tools\wasi-sdk-34.0-x86_64-windows\bin'`、`$env:EAGLER_COMMON_ROOT=(Resolve-Path 'common').Path`，运行 `npm --prefix ports/th09/web run test:rollback`。报告写入 `ports/th09/web/artifacts/multiplayer-tests/`。 |
-| Ghidra 源码分析 | TH09 原版 EXE；Ghidra 与 JDK 安装目录 | 设置 `$env:TH09_DECOMP_TOOLS='C:\tools\decomp'`，运行 `npm --prefix ports/th09/web run cpp:analyze`。分析产物写入 `ports/th09/web/artifacts/cpp/analysis/`。 |
+| Ghidra 源码分析 | th09 原版 EXE；Ghidra 与 JDK 安装目录 | 设置 `$env:TH09_DECOMP_TOOLS='C:\tools\decomp'`，运行 `npm --prefix ports/th09/web run cpp:analyze`。分析产物写入 `ports/th09/web/artifacts/cpp/analysis/`。 |
 
 `build-sdl.mjs` 直接构建宿主时可显式指定 Emscripten SDK：`node ports/th09/web/scripts/build-sdl.mjs --release --emsdk 'C:\tools\emsdk'`。该 SDK 路径须含 `.emscripten` 和 Emscripten 6.0.9 的 `install/` 或 `upstream/` 文件；宿主文件写入 `ports/th09/web/artifacts/sdl-release/`。
 
@@ -47,13 +47,34 @@ npm --prefix launcher run dev:workspace
 
 ## 回滚蓄力与 Replay
 
-房间规则 `disableLocalChargePriority` 默认 `false`，Launcher 通过 `netplayDisableLocalChargePriority` 传给 Runtime。启动时调用 `th09_local_charge_priority(0|1)`，在 HELLO 前固定规则并纳入 gameplay ABI。关闭本地优先或选择纯延迟模式时使用原版蓄力逻辑，HUD 直接显示当前进度。技能停顿边界确认始终生效，独立于蓄力开关。
+### 房间开关与启动参数
+
+回滚对局默认启用本地优先蓄力，房间选项「关闭本地优先的蓄力条进度」默认不勾选。P1 在等待室修改选项后，双方重新准备，开局后规则固定。
+
+房间字段 `disableLocalChargePriority` 默认为 `false`，Launcher 将它作为 `configure.options.netplayDisableLocalChargePriority` 传入 Runtime：
+
+| 参数值 | 回滚对局行为 | 原生配置调用 |
+| --- | --- | --- |
+| `false`（默认） | 使用本地优先蓄力，双方同步已接受的本机进度 | `th09_local_charge_priority(1)` |
+| `true` | 使用原版蓄力逻辑，HUD 即时显示当前进度 | `th09_local_charge_priority(0)` |
+
+Runtime 在 HELLO 前完成配置，并将蓄力规则纳入 gameplay ABI，核对双方的规则身份。纯延迟模式使用原版蓄力逻辑。技能停顿边界确认独立于蓄力开关，两种设置均生效。
+
+### 蓄力同步与旁观
 
 `LocalChargePlanner` 复用 `ShotControl::update` 接受本机进度。每帧结果经 `ChargeHistory` 的 `T9CP` 记录同步，`T9CA` 独立确认接收进度。已接受结果在重传与回滚中保持不变；待释放技能属于 Player 的回滚状态。资源重建边界使用已确认输入，新世界随后恢复本地优先。
 
 旁观帧 `T9SP/2` 在原有键盘与触控数据后附加两份 40 字节蓄力记录，共 126 字节。历史批次、跳转和实时播放使用同一帧记录。关闭本地优先时继续发送 46 字节 `T9SP/1`。
 
-本地优先 Replay 使用 `T9CHARGE/1` 尾部扩展：十个关卡计数、按原生录像输入帧索引排列的蓄力记录，经 LZSS 压缩并校验。若有触控轨道，`THMOTION` 保留最后一个尾部的位置。导出文件名为 `.rpyx`。关闭本地优先时，游戏逻辑、原生录像正文与导出格式走原有路径。
+### 录像格式与兼容
+
+本地优先 Replay 使用 `T9CHARGE/1` 尾部扩展，保存十个关卡计数和按原生录像输入帧索引排列的蓄力记录，经 LZSS 压缩并校验，导出文件名为 `.rpyx`。
+
+关闭本地优先后，游戏逻辑和蓄力输入按原版方式记录。不含触控扩展的录像以原版 `.rpy` 导出，含触控轨道的录像以 `.rpyx` 导出。蓄力轨道与触控轨道共存时，`THMOTION` 保持在文件末尾。
+
+原版 `.rpy` 和已有触控 `.rpyx` 按文件中的记录播放，房间蓄力开关不改变回放规则。
+
+### 验证
 
 验证入口：
 

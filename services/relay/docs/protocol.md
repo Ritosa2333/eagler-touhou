@@ -23,10 +23,12 @@ Relay 使用 WebSocket 提供房间目录、等待室、信令、游戏传输和
 | 消息 | 字段 |
 | --- | --- |
 | `set-ready` | `ready`、`runtimeGeneration`、`movementMode`、`touchEnabled`、`mobileDevice` |
-| `settings` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`challengeMode`；TH15 可带 `chapterThreshold` |
+| `settings` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`challengeMode`，th09 可带 `disableLocalChargePriority`，th15 可带 `chapterThreshold` |
 | `start` | `inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、可选 `predictionLimit` |
 | `quick-chat` | 当前 `serial` 与 `phrase` |
-| `state` 的 `room` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`chapterThreshold`（TH15）、`challengeMode`、`prankMode`、`inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、`timing`、`predictionLimit`、`settingsVersion`、`phase`、`runtimeGeneration`（版本化 run）、`startSerial`、`spectators`、`spectatorCount`、`seats` |
+| `state` 的 `room` | `playerCount`、`difficulty`、`visibility`、`disableCheatMovement`、`disableLocalChargePriority`（th09）、`chapterThreshold`（th15）、`challengeMode`、`prankMode`、`inputDelay`、`adonisMode`、`inputDelayAuto`、`predictionReserve`、`timing`、`predictionLimit`、`settingsVersion`、`phase`、`runtimeGeneration`（版本化 run）、`startSerial`、`spectators`、`spectatorCount`、`seats` |
+
+`disableLocalChargePriority` 是 th09mp 的布尔规则，默认 `false`，对应启用本地优先蓄力。创建房间时，查询参数使用 `disableLocalChargePriority=0` 或 `1`。修改权限属于等待室中的 P1，`settings` 消息使用布尔值，并携带有效的 `playerCount` 与 `difficulty`。修改会清除双方准备状态、更新 `settingsVersion`，并通过 `state.room` 同步当前值。开局后规则固定。参数映射、蓄力行为和录像格式见 [th09 开发指南](../../../ports/th09/docs/DEVELOPMENT.md#回滚蓄力与-replay)。
 
 版本化 `runtimeGeneration` 为 64 个小写十六进制字符；同一局准备的玩家必须匹配。消息有效性、成员权限、房间状态和数值范围以 Relay 实现与 [`tests/`](../tests/) 为准。
 
@@ -43,6 +45,7 @@ Relay 使用 WebSocket 提供房间目录、等待室、信令、游戏传输和
 - TURN 凭据通过服务端短期签名生成，Relay 与 coturn 使用同一共享密钥。
 
 本服务源码见 [`../src/netplay-relay.mjs`](../src/netplay-relay.mjs)，部署见 [`../deploy/README.md`](../deploy/README.md)。
+
 ## 已发布客户端的观战协议
 
 Relay 同时接收 `E?SV/1` 与 `E?SV/2`，每场对局在首份关卡记录中固定版本，后续关卡与旁观初始化沿用该版本。v1 保留 60 KiB 的状态上限，v2 使用 4 KiB 的原生 Replay 关卡头；同一对局的版本切换会被拒绝。各作品可以独立更新 Runtime，并保持现有旁观连接可用。
