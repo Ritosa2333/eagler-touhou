@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH11_MULTIPLAYER
 #include "GameBattle.hpp"
 #include <algorithm>
@@ -65,7 +66,7 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& renderer){
     // the transfer rule. It changes only the submitted ghost alpha.
     for(unsigned giver=0;giver<mp_options.seat_count;++giver){const auto& p=*pilots[giver];if(!p.life_hold)continue;const int receiver=mp_life_receiver(giver);if(receiver<0||!pilots[unsigned(receiver)]->ghost)continue;
         const unsigned owner=unsigned(receiver)+1,base=unsigned(receiver)==mp_options.local_seat?112:88;
-        renderer.multiplayer_opacity[owner]=u8(std::max<unsigned>(renderer.multiplayer_opacity[owner],base+(255-base)*std::min(p.life_hold,90u)/90));
+        renderer.multiplayer_opacity[owner]=u8(std::max<unsigned>(renderer.multiplayer_opacity[owner],base+(255-base)*eagler::cooperative::TapCount(p.life_hold)/5));
     }
 }
 bool GameBattle::mp_draw_players(AnmRenderer& renderer){
@@ -84,7 +85,7 @@ bool GameBattle::mp_draw_players(AnmRenderer& renderer){
     }
 
     for(unsigned i=0;i<mp_options.seat_count;++i){const auto& pilot=*pilots[i];if(!pilot.alive())continue;const auto p=pilot.player->motion.state.position;AsciiStyle style;style.font=2;style.pass=1;char text[8];
-        if(pilot.life_hold&&mp_life_receiver(i)>=0){std::snprintf(text,sizeof(text),"%u%%",std::min(pilot.life_hold*100/90,100u));const float left=p.x+224-float(std::strlen(text))*3.5f;if(!ascii.add(text,{left,p.y-8,0},style))return false;continue;}
+        if(eagler::cooperative::TapCount(pilot.life_hold)>=3&&mp_life_receiver(i)>=0){std::snprintf(text,sizeof(text),"L %u/5",eagler::cooperative::TapCount(pilot.life_hold));const float left=p.x+224-float(std::strlen(text))*3.5f;if(!ascii.add(text,{left,p.y-8,0},style))return false;continue;}
         if(pilot.power_taps<3)continue;AnmVm icon;icon.initialize();icon.resource=&resources.core.bullet;icon.flags=0x140003;icon.script_position={p.x+208,p.y-8,0};if(!icon.bind_sprite(0x159)||renderer.draw(icon)==-2)return false;std::snprintf(text,sizeof(text),"%u",pilot.power_taps);if(!ascii.add(text,{p.x+225,p.y-5,0},style))return false;
     }
     return true;

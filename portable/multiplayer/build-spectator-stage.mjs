@@ -28,6 +28,7 @@ source=source.replace('bool multiplayer_spectator_playback_tick(bool forward_due
  'void spectator_lab_keep_alive(){if(!session.battle)return;for(unsigned i=0;i<session.multiplayer_options.seat_count;++i){auto* p=session.battle->pilots[i].get();if(p&&p->player)p->player->state.invincibility.set(120,&session.animations.rate);}}\n    bool multiplayer_spectator_playback_tick(bool forward_due){');
 source=source.replaceAll('session.update_multiplayer(input)', '(spectator_lab_keep_alive(),session.update_multiplayer(input))')
  .replaceAll('session.update_multiplayer(inputs)', '(spectator_lab_keep_alive(),session.update_multiplayer(inputs))');
+source=source.replace('const auto before=session.state.phase;const auto stage=session.state.stage;', 'spectator_lab_keep_alive();const auto before=session.state.phase;const auto stage=session.state.stage;');
 const viewerTrace='if(!session.draw(renderer,&frame_text))return false;graphics.present();multiplayer_advanced=true;';
 if(!source.includes(viewerTrace))throw Error('Missing private viewer frame hook');
 source=source.replace(viewerTrace,()=>viewerTrace+'\n'+trace);
@@ -43,6 +44,12 @@ words=words.slice(words.indexOf('auto flt='));
 const names=['mp_options','pilots','mp_tick','mp_fragments','mp_wipe_frames','mp_rank','economy','frame','resources','animations','spell_flags','spell_id','spell_bonus','spell_elapsed','enemy_environment','transitioning','transition_started','stage_active','transition_timer','stage','enemies','mp_damage_remainders','bullets','items','lasers'];
 words=words.replace(new RegExp('(?<![.\\w])('+names.join('|')+')\\b','g'),'battle_owner.$1');
 source+='\nextern "C" EMSCRIPTEN_KEEPALIVE const unsigned* th11_spectator_lab_words(){using namespace th11;auto& a=th11::sdl::app;static std::vector<u32> out;out={0};if(!a.session.battle)return out.data();auto& battle_owner=*a.session.battle;auto word=[&](u32 v){out.push_back(v);};'+words+'word(a.session.multiplayer_frame);word(u32(a.session.state.phase));out[0]=u32(out.size()-1);return out.data();}\n';
+// Replay compares gameplay owners. Native stage jumps reconstruct background
+// fades and start a fresh RNG call counter; neither controls future inputs.
+let replayWords=words.replace('word(battle_owner.animations.script_rng.calls);','')
+ .replace('word(battle_owner.transitioning);word(battle_owner.transition_started);word(battle_owner.stage_active);timer(battle_owner.transition_timer);','')
+ .replace(/if\(battle_owner.stage\)\{[^\n]*\}/,'');
+source+='\nextern "C" EMSCRIPTEN_KEEPALIVE unsigned th11_spectator_lab_replay_hash(){using namespace th11;auto& a=th11::sdl::app;if(!a.session.battle)return 0;auto& battle_owner=*a.session.battle;u32 hash=2166136261u;auto word=[&](u32 v){for(unsigned i=0;i<4;++i){hash^=(v>>(8*i))&255;hash*=16777619u;}};'+replayWords+'return hash;}\n';
 const fixture=resolve(out,'Application.cpp');writeFileSync(fixture,source);
 const objects=plan.sources.filter(p=>p!=='web/cpp/sdl/Application.cpp').map(p=>resolve(plan.outputDirectory,'objects',p.replaceAll('\\','_').replaceAll('/','_').replaceAll(':','_').replaceAll('.','_')+'.o'));
 for(const file of objects)if(!existsSync(file))throw Error('Missing production object '+file);

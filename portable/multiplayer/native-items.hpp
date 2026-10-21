@@ -48,7 +48,7 @@ void item_risk_cases(const std::vector<u8>& bytes){
     place(0,0,300,10000);place(1,100,300,10000);place(2,-120,300,10000);
     p.economy.power=p.economy.max_power;q.economy.power=0;r.economy.power=r.economy.max_power;
     auto& power=fresh(4,{0,300,0});check(owner(power)==1,"eligible unfinished Power overrides a closer full-Power seat");
-    q.economy.power=q.economy.max_power;check(owner(power)==0,"existing Power falls back to nearest eligible seat when all are full");
+    q.economy.power=q.economy.max_power;check(owner(power)==1,"all-full items retain their existing collector");
 
     place(0,0,400);place(1,150,400);place(2,-150,400);
     auto& apex=fresh(8,{0,200,0});apex.velocity.y=-.01f;
