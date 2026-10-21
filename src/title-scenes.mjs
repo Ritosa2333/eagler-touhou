@@ -139,8 +139,11 @@ export class TitleScenes {
     if(extraClear)this.emit('pause'); // Native432850, freeze gameplay before score music.
     this.emit('stopEffects');this.emit('menuMusic',{track:'th10_17',restart:true});
     const eligible=result.ranked!==false&&!(result.continues>0||result.continueCount>0);
-    if(!eligible){this.emit('result',{result,needsName:false});this.openReplaySave(result);return;}
-    const ranking=this.scoreRanking(result);
+    if(!eligible&&!result.clear){this.emit('result',{result,needsName:false});this.openReplaySave(result);return;}
+    // Unranked (e.g. unlimited touch movement) still sees Score Ranking.
+    // Show the existing table without inserting an ineligible run or saving
+    // a name, then proceed through the same replay/result flow.
+    const ranking=this.scoreRanking(result,eligible);
     //Extra clear uses the common in-game ranking/name flow before root116.
     this.enter('name',ranking.ranked?90:0,{result,name:String(this.profile.data?.lastName||'').slice(0,8),nameKind:'score',
       nameContext:extraClear?'pause':'title',afterName:extraClear?'result-menu':'replay-save',...ranking,
