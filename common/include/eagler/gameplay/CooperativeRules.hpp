@@ -29,4 +29,20 @@ int LowestPower(unsigned count, Eligible eligible, Power power, Step step) noexc
     return best;
 }
 constexpr int DeathbombFrames(int native) noexcept { return native * 2; }
+template<class Eligible, class NeedsPower, class Distance>
+int NearestPowerRecipient(unsigned count, Eligible eligible, NeedsPower needs_power,
+                          Distance distance) noexcept {
+    int best = -1;
+    bool best_needs_power = false;
+    for (unsigned seat = 0; seat < count; ++seat) {
+        if (!eligible(seat)) continue;
+        const bool needs = needs_power(seat);
+        if (best < 0 || (needs && !best_needs_power) ||
+            (needs == best_needs_power && distance(seat) < distance(unsigned(best)))) {
+            best = int(seat);
+            best_needs_power = needs;
+        }
+    }
+    return best;
+}
 } // namespace eagler::cooperative

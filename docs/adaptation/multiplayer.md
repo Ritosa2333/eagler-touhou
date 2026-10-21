@@ -32,6 +32,12 @@ th10 返回房间菜单时结束本次录像记录、确认音频队列与待执
 
 MP-RULE-01 至 MP-RULE-05 是合作模式规则，只用于产品目录中 `multiplayer.gameplay` 为 `cooperative` 的作品。实际生命、Power、碎片、幽灵救援、资源给予与剧情规则按本作开发指南核对。TH09 标记为 `versus`，应将这五项标为“不适用”，改按 TH09 对战指南核对双方资源、对战状态和结束流程。TH15 当前使用实测输入延迟。
 
+红点采用最近未满 Power 优先的原生吸引：上线收点选择最近的未满 Power 玩家，全员满 Power 时选择最近玩家。直接拾取先归未满 Power 的拾取者，满 Power 拾取者将红点吸引到最近的未满 Power 队友。已吸引的道具保持接收者，接收者满 Power 或退出可操作状态时重新选择；席位资格以当前房间实际启用的玩家为准。统一说明位于[多人规则书](../../launcher/content/MULTIPLAYER.md#红点自动分配)。
+
+原生道具验证分别使用 th07 的 `tests/item-collection-browser.py`、th08 的 `portable/multiplayer/check-cooperation.py --case nearest_power_routing`、th10 的 `portable/check-multiplayer-rules.mjs --suite item-ownership`、th11 的 `portable/multiplayer/native-test.mjs --cooperative` 与 th15 的 `portable/multiplayer/native-test.mjs --items-only`。th15 的原生检查与正式构建使用同一公共头文件目录，按当前房间人数核对小 P 数值。
+
+六个合作作品同步更新玩法身份：th06 为 18、th07 为 16、th08 为 `0x08000017`、th10 为 `0x1000000e`、th11 为 4、th15 为 19。房间握手、旁观与多人 Replay 按对应身份选择同一套道具规则。
+
 ## 逐项检查
 
 | 编号 | 操作 | 通过时应看到 |

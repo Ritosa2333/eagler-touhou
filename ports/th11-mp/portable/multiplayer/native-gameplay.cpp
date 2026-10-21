@@ -151,10 +151,14 @@ void cooperative_rule_cases(const std::vector<u8>& bytes){
         put(*p.player,0,poc?100:350);put(*q.player,-140,400);put(*r.player,140,400);
         p.economy.power=p.economy.max_power;q.economy.power=36;r.economy.power=12;settle();w.items.reset();
         check(w.items.spawn(1,{0,poc?260.f:350.f,0})==0&&w.items.update(),"native overflow item");
-        check(w.items.multiplayer_targets[0]==-4,"full collector forwards to lowest normalized Power below POC");
-        r.economy.power=r.economy.max_power;check(w.items.update(),"recipient fills while item flies");
-        check(w.items.multiplayer_targets[0]==-3,"in-flight overflow forwards again");
+        check(w.items.multiplayer_targets[0]==-3,"full collector forwards to nearest unfinished seat with stable distance tie");
+        q.economy.power=q.economy.max_power;check(w.items.update(),"recipient fills while item flies");
+        check(w.items.multiplayer_targets[0]==-4,"in-flight overflow forwards again");
     }
+    put(*p.player,0,100);put(*q.player,20,400);put(*r.player,140,400);
+    p.economy.power=36;q.economy.power=36;r.economy.power=12;settle();w.items.reset();
+    check(w.items.spawn(1,{0,260,0})==0&&w.items.update(),"nearest unfinished POC item");
+    check(w.items.multiplayer_targets[0]==-3,"POC chooses nearest unfinished player below the line even when claimant needs Power");
     p.player->state.life_state=4;p.player->state.state_timer.set(15,&w.animations.rate);p.player->input.movement.pressed=0;
     check(p.player->update()&&p.player->state.life_state==4,"deathbomb remains open at frame 15");
     p.player->state.state_timer.set(16,&w.animations.rate);

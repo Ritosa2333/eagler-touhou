@@ -144,11 +144,14 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
     if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}
     items.multiplayer_current_target=-1;
     auto snapshot=[&](unsigned seat,ItemPlayer& candidate){const auto& p=*pilots[seat];p.player->copy_item_state(candidate);candidate.force_attract=p.force_attract||(dialogue&&dialogue->active);};
+    auto nearest_power=[&](bool only_needy){return eagler::cooperative::NearestPowerRecipient(mp_options.seat_count,
+        [&](unsigned s){const auto& p=*pilots[s];return p.alive()&&p.player->state.life_state!=4&&
+            (!only_needy||p.economy.power<p.economy.max_power);},
+        [&](unsigned s){return pilots[s]->economy.power<pilots[s]->economy.max_power;},
+        [&](unsigned s){return distance2(item.position,pilots[s]->player->motion.state.position);});};
     auto redirect=[&](int seat){
         if(!power||pilots[unsigned(seat)]->economy.power<pilots[unsigned(seat)]->economy.max_power)return seat;
-        const int target=eagler::cooperative::LowestPower(mp_options.seat_count,
-            [&](unsigned j){return pilots[j]->alive()&&pilots[j]->economy.power<pilots[j]->economy.max_power;},
-            [&](unsigned j){return pilots[j]->economy.power;},[&](unsigned j){return pilots[j]->economy.power_step;});
+        const int target=nearest_power(true);
         if(target>=0){directed=-2-target;item.state=3;item.attraction_speed=8;return target;}
         return seat;
     };
@@ -184,7 +187,13 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
         for(unsigned seat=0;seat<mp_options.seat_count;++seat){const auto& p=*pilots[seat];if(!p.alive()||(needs_power&&p.economy.power>=p.economy.max_power))continue;snapshot(seat,candidate);if(!eligible(candidate))continue;const auto next=distance2(item.position,candidate.position);if(selected<0||next<distance){selected=i32(seat);distance=next;out=candidate;}}
         return selected;
     };
-    int selected=nearest(false);if(selected>=0){selected=redirect(selected);snapshot(unsigned(selected),out);}
+    int selected=nearest(false);
+    if(selected>=0&&power&&item.state==1&&(out.force_attract||out.position.y<128||
+        (item.lifetime.current>=40&&out.communication>=10000))){
+        selected=nearest_power(false);
+        if(selected>=0){directed=-2-selected;item.state=3;item.attraction_speed=8;}
+    }else if(selected>=0)selected=redirect(selected);
+    if(selected>=0)snapshot(unsigned(selected),out);
     items.multiplayer_current_target=selected;return selected>=0;
 }
 bool GameBattle::mp_collect(ItemState& item,bool& convert){

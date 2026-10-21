@@ -661,6 +661,27 @@ u32 mp_fixture_items(BrowserRuntime* runtime,u32 kind,u32 seat){
         }
         return count;
     }
+    case 10:case 11:case 12:case 13:{
+        auto& app=runtime->app;auto& game=app.game;
+        items.reset();
+        for(u32 s=0;s<app.session.player_count;++s){
+            const i32 power=kind==12?128:(s==0?(kind==13?100:128):s==1?64:1);
+            app.session.pilot_values[s].set_power(power);game.pilot_services(s).sync_values();
+            auto& pilot=game.pilot(s);auto& state=pilot.status();state.life.state=0;
+            state.motion.form.focused=kind==13&&s==0;
+            state.motion.movement.position={s==0?64.f:s==1?180.f:320.f,
+                (kind==10||kind==13)&&s==0?64.f:360.f,0};
+            move_player(state.motion.movement,pilot.profile(false),pilot.profile(true),
+                state.motion.form.focused,state.context.character,0,state.input.minimum,state.input.extent,pilot.timing,nullptr,false);
+        }
+        const bool poc=kind==10||kind==13;
+        auto* item=items.spawn_single({64.f,poc?240.f:360.f,0},0,0);
+        if(!item||!item->active)return 0;
+        for(unsigned frame=0;frame<180&&item->active;++frame)if(!items.update())return 0;
+        const i32 first=Scalar::truncate(app.session.pilot_resources[0].power);
+        const i32 second=Scalar::truncate(app.session.pilot_resources[1].power);
+        return !item->active&&first==(kind==13?100:128)&&second==(kind==12?128:65)?1:0;
+    }
     default:return 0;
     }
 }

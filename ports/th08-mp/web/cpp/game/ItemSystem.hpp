@@ -52,6 +52,7 @@ class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemR
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     void synchronize(Owner&);
     u32 nearest_owner(const Vec3&)const noexcept;
+    u32 nearest_power_owner(const Vec3&,bool only_needy)const noexcept;
     u32 item_index(const ItemState&)const noexcept;
 #else
     void synchronize();
