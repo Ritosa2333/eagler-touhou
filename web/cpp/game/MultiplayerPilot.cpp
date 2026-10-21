@@ -158,11 +158,15 @@ int GameBattle::mp_item_owner(u32 index,ItemState& item){
     const bool power=item.kind==1||item.kind==3||item.kind==8;
     auto& directed=mp_gift_targets[index];
     if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}
+    auto nearest_power=[&](bool only_needy){return eagler::cooperative::NearestPowerRecipient(mp_options.seat_count,
+        [&](unsigned s){const auto& p=*pilots[s];return p.alive()&&
+            (!only_needy||p.session.power<p.score.max_power);},
+        [&](unsigned s){return pilots[s]->session.power<pilots[s]->score.max_power;},
+        [&](unsigned s){const auto& p=pilots[s]->player->motion.position;
+            const double dx=double(p.x)-item.position.x,dy=double(p.y)-item.position.y;return dx*dx+dy*dy;});};
     auto overflow=[&](int seat){
         if(!power||pilots[unsigned(seat)]->session.power<pilots[unsigned(seat)]->score.max_power)return seat;
-        const int target=eagler::cooperative::LowestPower(mp_options.seat_count,
-            [&](unsigned j){return pilots[j]->alive()&&pilots[j]->session.power<pilots[j]->score.max_power;},
-            [&](unsigned j){return pilots[j]->session.power;},[&](unsigned j){return pilots[j]->session.power_step;});
+        const int target=nearest_power(true);
         if(target>=0){directed=-1;item.state=3;item.attraction_speed=8;return target;}return seat;
     };
     if(directed>=0)return overflow(directed);
@@ -184,7 +188,17 @@ int GameBattle::mp_item_owner(u32 index,ItemState& item){
     };
     auto nearest=[&](bool needs_power){int chosen=-1;double best=0;for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if((needs_power&&p.session.power>=p.score.max_power)||!eligible(p))continue;
         const double dx=double(item.position.x)-p.player->motion.position.x,dy=double(item.position.y)-p.player->motion.position.y,d=dx*dx+dy*dy;if(chosen<0||d<best){chosen=int(s);best=d;}}return chosen;};
-    const int target=nearest(false);return target>=0?overflow(target):target;
+    int target=nearest(false);
+    if(target>=0&&power&&item.state==1&&item.delay<=0){
+        const auto& p=*pilots[unsigned(target)];
+        if(p.player->motion.position.y<float(p.character==1?148:128)||
+           (p.session.bomb_state==1&&p.bomb->age.current<60)||input.hud_collect||dialogue_present()){
+            target=nearest_power(false);
+            if(target>=0){item.state=3;item.attraction_speed=8;}
+            return target;
+        }
+    }
+    return target>=0?overflow(target):target;
 }
 void GameBattle::mp_input(const std::array<MultiplayerInput,3>& in){for(unsigned s=0;s<mp_options.seat_count;++s)pilots[s]->input=in[s];}
 const PlayerCollision& GameBattle::mp_collision(unsigned s){

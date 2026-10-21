@@ -5,8 +5,10 @@
 #include "native-balance.hpp"
 #include "native-ghost.hpp"
 int main(int argc,char** argv){
- require(argc==2,"Pass a legally supplied Japanese TH15 1.00b archive");RetailAssets files(argv[1]);unsigned ticks=0;
- item_rules(files);hud_rules(files);balance_rules(files);ghost_rules(files);
+ require(argc==2||(argc==3&&std::strcmp(argv[2],"--items-only")==0),"Pass a legally supplied Japanese th15 1.00b archive and optional --items-only");RetailAssets files(argv[1]);unsigned ticks=0;
+ item_rules(files);
+ if(argc==3){std::puts("PASS: native 2P/3P item rewards, nearest unfinished Power, POC, full-Power and ghost ownership");return 0;}
+ hud_rules(files);balance_rules(files);ghost_rules(files);
  for(const auto selections:{std::array<int,3>{0,1,2},std::array<int,3>{3,3,0}}){
   auto left=std::make_unique<World>(files,3,0,selections),right=std::make_unique<World>(files,3,2,selections);
   auto& b=*left->battle;
