@@ -218,7 +218,7 @@ Image observe(GameSession& s){
     const auto& bm=static_cast<const BulletManager&>(b.bullets);out.put("bullets/owner",bm.rate,bm.player,bm.default_tangent,bm.cursor,bm.active_count,bm.exclusion_squared,bm.last_error,bm.multiplayer_grazed,bm.cancel_center,bm.cancel_size);WorldRollbackTestAccess::bullets(out,bm);
     std::vector<BulletState> bullets;bullets.reserve(bm.capacity);
     for(u32 i=0;i<bm.capacity;++i){bullets.push_back(bm.at(i));bullets.back().vm=normalized(bullets.back().vm);}out.array("bullets/all-slots",bullets);
-    const auto& im=static_cast<const ItemManager&>(b.items);out.put("items/owner",im.player,im.cancel_cursor,im.cancel_spawn_count,im.active_count,im.last_error,im.multiplayer_targets,im.multiplayer_current_target,im.multiplayer_spawning_transfer,im.multiplayer_fan);
+    const auto& im=static_cast<const ItemManager&>(b.items);out.put("items/owner",im.player,im.cancel_cursor,im.cancel_spawn_count,im.active_count,im.last_error,im.multiplayer_targets,im.multiplayer_current_target,im.multiplayer_spawning_transfer,im.multiplayer_fan,im.multiplayer_transfer_donors,im.multiplayer_transfer_amounts);
     std::vector<ItemState> items;items.reserve(im.capacity);for(u32 i=0;i<im.capacity;++i){items.push_back(im.at(i));items.back().vm=normalized(items.back().vm);}out.array("items/all-slots",items);
     EnemyRollbackTestAccess::observe(out,"enemies",b.enemies);LaserRollbackTestAccess::observe(out,"lasers",b.lasers);
     AnmRollbackTestAccess::observe(out,"anm/combat",s.animations);AnmRollbackTestAccess::observe(out,"anm/presentation",b.mp_presentation);AnmRollbackTestAccess::observe(out,"anm/hitbox",b.hitbox_presentation);

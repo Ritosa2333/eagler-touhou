@@ -28,6 +28,11 @@ struct ItemWorld {
     virtual bool multiplayer_item_player(ItemState&,ItemPlayer&){return false;}
     virtual bool multiplayer_power_full()const{return false;}
     virtual unsigned multiplayer_item_copies(i32)const{return 1;}
+    // A directed Power transfer left play (offscreen, converted, recipient
+    // ghosted) without delivering its recorded amount. The implementation
+    // restores Power to the recorded donor seat; the caller clears the
+    // transfer sidecars only when this returns true.
+    virtual bool multiplayer_refund_transfer(ItemState&,i32 amount){return false;}
 #endif
     virtual ~ItemWorld()=default;
     virtual bool effect(Vec3,i32){return false;}
@@ -69,7 +74,23 @@ public:
     i32 multiplayer_current_target=-1;
     bool multiplayer_spawning_transfer=false;
     std::array<u8,ordinary_capacity> multiplayer_fan{};
-    bool spawn_transfer(i32,Vec3,unsigned);
+    // Donor seat and deducted Power of a directed Power transfer. Both stay at
+    // their neutral values for ordinary items and life transfers.
+    std::array<i32,capacity> multiplayer_transfer_donors{};
+    std::array<i32,capacity> multiplayer_transfer_amounts{};
+    bool spawn_transfer(i32,Vec3,unsigned target,i32 donor=-1,i32 amount=0);
+    // Stage transitions wipe the whole pool. Every in-flight directed Power
+    // transfer is refunded to its donor first; ordinary items are untouched.
+    bool refund_all_transfers();
+    void clear_transfer(u32 index)noexcept{
+        multiplayer_targets[index]=-1;multiplayer_transfer_donors[index]=-1;multiplayer_transfer_amounts[index]=0;
+    }
+    // Directed Power never exceeds the receiver's remaining headroom, so the
+    // donor is charged exactly what the receiver can still absorb.
+    static i32 multiplayer_transfer_amount(i32 power_step,i32 receiver_power,i32 receiver_max_power)noexcept{
+        const i32 headroom=receiver_max_power-receiver_power;
+        return headroom>0?(power_step<headroom?power_step:headroom):0;
+    }
 #endif
     // 0 success/full pool, -2 unavailable resource or world dependency.
     i32 spawn(i32 type,Vec3 position,u32 color=0xffffffff,float angle=-1.5707963705062866f,float speed=2.2f);

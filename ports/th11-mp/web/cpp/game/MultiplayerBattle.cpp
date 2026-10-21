@@ -129,8 +129,11 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
     const auto index=items.index_of(item);auto& directed=items.multiplayer_targets[index];
     const bool power=item.type==1||item.type==4||item.type==6||item.type==10||item.type==11;
     // A Power gift whose recipient becomes a ghost returns to the ordinary
-    // field pool. The successful emission already consumed the donor's Power.
-    if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}
+    // field pool and the donor's Power is restored in full.
+    if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){
+        if(!mp_refund_transfer(item,items.multiplayer_transfer_amounts[index]))return false;
+        directed=-1;item.state=1;item.velocity={};
+    }
     items.multiplayer_current_target=-1;
     auto snapshot=[&](unsigned seat,ItemPlayer& candidate){const auto& p=*pilots[seat];p.player->copy_item_state(candidate);candidate.force_attract=p.force_attract||(dialogue&&dialogue->active);};
     if(directed>=0){
@@ -165,7 +168,36 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
 bool GameBattle::mp_collect(ItemState& item,bool& convert){
     const int seat=items.multiplayer_current_target;if(seat<0||unsigned(seat)>=mp_options.seat_count)return false;auto& p=*pilots[unsigned(seat)];
     if(item.type==5){if(++mp_fragments>=5){mp_fragments=0;for(unsigned i=0;i<mp_options.seat_count;++i)if(!pilots[i]->rewards.add_life())return false;}for(unsigned i=0;i<mp_options.seat_count;++i)pilots[i]->economy.life_fragments=i32(mp_fragments);rank_delta(256);return true;}
+    const auto index=items.index_of(item);
+    if(items.multiplayer_transfer_donors[index]>=0&&items.multiplayer_transfer_amounts[index]>0){
+        // A directed Power transfer settles its recorded amount exactly. Any
+        // clamp at the receiver returns the difference to the donor, so a
+        // near-full receiver can no longer swallow the gift.
+        EffectOwner owner(*this,unsigned(seat));const i32 transfer=items.multiplayer_transfer_amounts[index];
+        bool changed=false;const i32 power_before=p.economy.power,rank_before=p.economy.rank;
+        if(!p.rewards.add_power(transfer,changed))return false;
+        const i32 delivered=p.economy.power-power_before;
+        if(delivered<transfer&&!mp_refund_transfer(item,transfer-delivered))return false;
+        if(changed){
+            if(!p.power_changed()||!sound(0x1d,item.position.x,true)||!popup(item.position,-1,0xffffff40))return false;
+            p.economy.add_rank(24);if(p.economy.power>=p.economy.max_power)convert=true;
+        }else if(!popup(item.position,p.economy.power/2,0xffff4040))return false;
+        mp_rank=std::clamp(mp_rank+(p.economy.rank-rank_before),-1024,1024);convert=convert||mp_all_power_full();return true;
+    }
     const i32 before=p.economy.rank;EffectOwner owner(*this,unsigned(seat));bool native_convert=false;if(!p.rewards.collect(item,native_convert))return false;mp_rank=std::clamp(mp_rank+(p.economy.rank-before),-1024,1024);convert=convert||mp_all_power_full();return true;
+}
+bool GameBattle::mp_refund_transfer(ItemState& item,i32 amount){
+    const auto index=items.index_of(item);
+    const i32 donor=items.multiplayer_transfer_donors[index];
+    if(donor<0||unsigned(donor)>=mp_options.seat_count)return true;
+    if(amount>0){
+        auto& d=*pilots[unsigned(donor)];
+        EffectOwner effect(*this,unsigned(donor));
+        d.economy.power=std::min(wrapping_add(d.economy.power,amount),d.economy.max_power);
+        if(!d.power_changed()){error="MP transfer refund";last_error=-614;return false;}
+    }
+    items.multiplayer_transfer_donors[index]=-1;items.multiplayer_transfer_amounts[index]=0;items.multiplayer_targets[index]=-1;
+    return true;
 }
 bool GameBattle::mp_stage_reset(){
     mp_wipe_frames=0;mp_damage_remainders.clear();
@@ -197,7 +229,13 @@ bool GameBattle::mp_update_rules(){
                 if(p.economy.power>=p.economy.power_step)for(unsigned j=0;j<mp_options.seat_count;++j){if(i==j)continue;const auto& q=*pilots[j];if(!q.alive()||q.economy.power>=q.economy.max_power||distance2(p.player->motion.state.position,q.player->motion.state.position)>400)continue;
                     if(receiver<0||i64(q.economy.power)*pilots[unsigned(receiver)]->economy.power_step<i64(pilots[unsigned(receiver)]->economy.power)*q.economy.power_step)receiver=j;
                 }
-                if(receiver>=0&&items.spawn_transfer(4,p.player->motion.state.position,unsigned(receiver))){p.economy.power-=p.economy.power_step;if(!p.power_changed())return false;}
+                // The gift is sized to the receiver's remaining headroom and the
+                // donor is charged exactly that amount, so a near-full receiver
+                // can no longer make the transfer a net loss.
+                if(receiver>=0){const auto& q=*pilots[unsigned(receiver)];
+                    const i32 amount=ItemManager::multiplayer_transfer_amount(p.economy.power_step,q.economy.power,q.economy.max_power);
+                    if(amount>0&&items.spawn_transfer(4,p.player->motion.state.position,unsigned(receiver),i32(i),amount)){p.economy.power-=amount;if(!p.power_changed())return false;}
+                }
             }
         }
     }
@@ -252,7 +290,7 @@ u32 GameBattle::mp_hash()const noexcept{
         const auto& script=n->value->script;for(auto* thread=&script.threads;thread;thread=thread->next){const auto& c=*thread->value;word(c.thread_id);flt(c.time);pc(script,c.instruction);word(c.state);word(c.flags);word(c.stack.top);word(c.stack.frame_base);}word(~0u);
     }
     for(u32 i=0;i<BulletManager::capacity;++i){const auto& b=bullets.at(i);if(!b.state)continue;word(i);word(b.state);word(b.flags);flt(b.position.x);flt(b.position.y);flt(b.speed);flt(b.angle);word(b.lifetime.current);word(bullets.multiplayer_grazed[i]);}
-    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=items.at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);flt(item.velocity.x);flt(item.velocity.y);if(i<ItemManager::ordinary_capacity)word(items.multiplayer_fan[i]);}
+    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=items.at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);flt(item.velocity.x);flt(item.velocity.y);if(i<ItemManager::ordinary_capacity){word(items.multiplayer_fan[i]);word(items.multiplayer_transfer_donors[i]);word(items.multiplayer_transfer_amounts[i]);}}
     for(auto* l=lasers.first();l;l=l->next){word(l->id);word(l->state);word(l->type);flt(l->position.x);flt(l->position.y);flt(l->velocity.x);flt(l->velocity.y);flt(l->angle);flt(l->length);flt(l->width);flt(l->speed);flt(l->offset);timer(l->lifetime);timer(l->graze_timer);timer(l->offscreen_timer);word(l->active_transforms);word(l->transform_index);
         for(const auto& motion:l->motion){timer(motion.timer);flt(motion.a);flt(motion.b);flt(motion.vector.x);flt(motion.vector.y);word(motion.duration);word(motion.limit);word(motion.count);}
         if(l->type==0){const auto& p=reinterpret_cast<const LaserLine*>(l)->parameters;flt(p.growth_limit);flt(p.initial_length);flt(p.end_distance);word(p.flags);}else{const auto& p=reinterpret_cast<const LaserInfinite*>(l)->parameters;flt(p.angular_velocity);flt(p.max_length);word(p.warning_frames);word(p.expand_frames);word(p.active_frames);word(p.shrink_frames);word(p.flags);}

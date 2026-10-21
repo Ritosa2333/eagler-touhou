@@ -39,6 +39,7 @@ bool ItemManager::BeginRollbackFrame(Netplay::RollbackJournal& journal){
     capture(player);capture(cancel_cursor);capture(cancel_spawn_count);capture(active_count);capture(last_error);
     capture(multiplayer_targets);capture(multiplayer_current_target);
     capture(multiplayer_spawning_transfer);capture(multiplayer_fan);
+    capture(multiplayer_transfer_donors);capture(multiplayer_transfer_amounts);
     for(u32 i=0;i<capacity;){
         if(activity.valid&&!exposed->count)i=activity.next(i);
         if(i==capacity)break;
@@ -58,6 +59,7 @@ void ItemManager::reset()noexcept{
     std::memset(storage.get(),0,sizeof(ItemState)*capacity);active_count=0;last_error=0;
 #ifdef TH11_MULTIPLAYER
     multiplayer_targets.fill(-1);multiplayer_current_target=-1;multiplayer_fan.fill(0);
+    multiplayer_transfer_donors.fill(-1);multiplayer_transfer_amounts.fill(0);
     activity.clear();
 #endif
 }
@@ -92,7 +94,7 @@ i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float
         if(!item.state){
 #ifdef TH11_MULTIPLAYER
             preserve_rollback_slots(ordinary_capacity+cancel_cursor,1);
-            multiplayer_targets[ordinary_capacity+cancel_cursor]=-1;
+            clear_transfer(ordinary_capacity+cancel_cursor);
 #endif
             item.delay=cancel_spawn_count<256?i32(cancel_cursor%4):cancel_spawn_count<512?i32(cancel_cursor%8+4):cancel_spawn_count<1024?i32(cancel_cursor%16+8):i32(cancel_cursor%32+16);
             set_state(item,5);item.type=item.display_type=8;item.position=position;
@@ -108,6 +110,7 @@ i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float
     set_state(item,1);item.position=position;
 #ifdef TH11_MULTIPLAYER
     multiplayer_targets[selected-storage.get()]=-1;multiplayer_fan[selected-storage.get()]=0;
+    multiplayer_transfer_donors[selected-storage.get()]=-1;multiplayer_transfer_amounts[selected-storage.get()]=0;
 #endif
     if(!(item.position.x>-192))item.position.x=-192;else if(item.position.x>192)item.position.x=192;
     const auto v=polar(angle,speed);item.velocity={v.x,v.y,0};item.lifetime.set(0,&animations.rate);item.reserved_44c=0;
@@ -141,6 +144,12 @@ void ItemManager::home(ItemState& item){
 void ItemManager::attract_all(){for(u32 i=next_active(0);i<capacity;i=next_active(i+1))if(storage[i].state==1){storage[i].state=3;storage[i].attraction_speed=player.attraction_speed;}}
 bool ItemManager::convert_power_items(){
     for(u32 i=next_active(0);i<ordinary_capacity;i=next_active(i+1)){auto& item=storage[i];if(item.state&&(item.type==1||item.type==4||item.type==10||item.type==11)){
+#ifdef TH11_MULTIPLAYER
+        if(world.multiplayer_world()&&multiplayer_transfer_donors[i]>=0){
+            if(!world.multiplayer_refund_transfer(item,multiplayer_transfer_amounts[i]))return false;
+            clear_transfer(i);
+        }
+#endif
         const Vec3 position=item.position;set_state(item,0);
         if(spawn(9,position)<0||!world.effect(position,0x73)){last_error=4;return false;}
     }}return true;
@@ -148,6 +157,17 @@ bool ItemManager::convert_power_items(){
 bool ItemManager::update(){
     if(last_error)return false;active_count=cancel_spawn_count=0;bool convert=false;
     for(u32 i=next_active(0);i<capacity;i=next_active(i+1)){auto& item=storage[i];if(!item.state)continue;
+#ifdef TH11_MULTIPLAYER
+        // A directed Power transfer that leaves play without a pickup must
+        // restore its recorded amount to the donor instead of vanishing.
+        const auto settle_offscreen=[&](){
+            if(world.multiplayer_world()&&multiplayer_transfer_donors[i]>=0){
+                if(!world.multiplayer_refund_transfer(item,multiplayer_transfer_amounts[i]))return false;
+                clear_transfer(i);
+            }
+            return true;
+        };
+#endif
 #ifdef TH11_MULTIPLAYER
         if(world.multiplayer_world()&&!world.multiplayer_item_player(item,player)){player=ItemPlayer{};player.state=2;}
 #endif
@@ -158,16 +178,29 @@ bool ItemManager::update(){
         if(item.state==1){
             const bool fall=(player.state==2||player.state==4||((item.lifetime.current<40||player.communication<10000)&&player.position.y>=128))&&!player.force_attract;
             if(fall){move(item);item.velocity.y=float(double(item.velocity.y)+double(animations.rate)*double(.03f));
-                if(item.velocity.y>=0)item.velocity.x=0;if(item.velocity.y>2)item.velocity.y=2;if(item.position.y>472){set_state(item,0);continue;}
+                if(item.velocity.y>=0)item.velocity.x=0;if(item.velocity.y>2)item.velocity.y=2;if(item.position.y>472){
+#ifdef TH11_MULTIPLAYER
+                    if(!settle_offscreen())return false;
+#endif
+                    set_state(item,0);continue;}
             }else{item.state=3;item.attraction_speed=player.attraction_speed;home(item);}
         }else if(item.state==2){
             move(item);item.velocity.y=float(double(item.velocity.y)+double(animations.rate)*double(.03f));
             if(item.velocity.y>=0){item.state=3;item.attraction_speed=player.attraction_speed;home(item);}
-            else if(item.position.y>472){set_state(item,0);if(!world.rank_delta(-4)){last_error=5;return false;}continue;}
+            else if(item.position.y>472){
+#ifdef TH11_MULTIPLAYER
+                if(!settle_offscreen())return false;
+#endif
+                set_state(item,0);if(!world.rank_delta(-4)){last_error=5;return false;}continue;}
         }else if(item.state==3||item.state==4)home(item);
         if(player.state!=2){
             if(player.pickup.contains(item.position)){
                 if(!world.collect(item,convert)){last_error=6;return false;}set_state(item,0);
+#ifdef TH11_MULTIPLAYER
+                // The collector settled any clamp difference inside collect;
+                // retiring the slot also retires the transfer bookkeeping.
+                if(world.multiplayer_world())clear_transfer(i);
+#endif
                 if(!world.sound(0x14,item.position.x)){last_error=7;return false;}continue;
             }
             if(item.state!=3&&item.state!=4&&(player.focused?player.focused_attract:player.unfocused_attract).contains(item.position)){
@@ -179,13 +212,27 @@ bool ItemManager::update(){
     return !convert||convert_power_items();
 }
 #ifdef TH11_MULTIPLAYER
-bool ItemManager::spawn_transfer(i32 type,Vec3 p,unsigned target){
+bool ItemManager::refund_all_transfers(){
+    if(!world.multiplayer_world())return true;
+    for(u32 i=0;i<ordinary_capacity;++i){
+        if(!storage[i].state||multiplayer_transfer_donors[i]<0)continue;
+        if(!world.multiplayer_refund_transfer(storage[i],multiplayer_transfer_amounts[i]))return false;
+        clear_transfer(i);
+    }
+    return true;
+}
+bool ItemManager::spawn_transfer(i32 type,Vec3 p,unsigned target,i32 donor,i32 amount){
     if(type!=4&&type!=7)return false;
     u32 index=0;while(index<ordinary_capacity&&storage[index].state)++index;
     if(index==ordinary_capacity)return false;
     multiplayer_spawning_transfer=true;const i32 result=spawn(type,p,0xffffffff,-1.57079637f,0);multiplayer_spawning_transfer=false;
     if(result<0||!storage[index].state)return false;
-    multiplayer_targets[index]=i32(target);storage[index].state=3;storage[index].attraction_speed=8;return true;
+    multiplayer_targets[index]=i32(target);storage[index].state=3;storage[index].attraction_speed=8;
+    // Only a Power transfer carries refundable credit; life gifts keep their
+    // reserve-life delivery semantics and record no donor debt.
+    multiplayer_transfer_donors[index]=type==4?donor:-1;
+    multiplayer_transfer_amounts[index]=type==4?amount:0;
+    return true;
 }
 #endif
 bool ItemManager::scatter(EnemyDrop& drops,Vec3 position){

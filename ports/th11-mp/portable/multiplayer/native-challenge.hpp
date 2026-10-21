@@ -40,7 +40,10 @@ void challenge_cases(const std::vector<u8>& bytes){
     giver.economy.lives=9;check(giver.rewards.add_life()&&giver.economy.lives==9&&giver.challenge_misses==10,"challenge hidden stock still caps at nine");
     w.items.reset();input={};step(*a,input);giver.economy.power=giver.economy.power_step*2;receiver.economy.power=0;w.pilots[2]->economy.power=w.pilots[2]->economy.max_power;
     for(unsigned i=0;i<5;++i){input[0].held=1;step(*a,input);input[0].held=0;step(*a,input);}for(unsigned i=0;i<16;++i)step(*a,input);
-    check(giver.economy.power==giver.economy.power_step&&receiver.economy.power==receiver.economy.power_step,"challenge retains loadout-specific Power transfer");
+    // The gift is min(giver step, receiver headroom). An empty receiver's
+    // headroom always covers the giver's step, so the delivered level is
+    // exactly the giver's step, independent of the receiver's own step.
+    check(giver.economy.power==giver.economy.power_step&&receiver.economy.power==giver.economy.power_step,"challenge Power transfer delivers the donor's exact recorded level");
     check(w.next_stage(a->resources,2),"challenge native stage transition");for(unsigned i=0;i<170;++i)step(*a,input);
     for(unsigned seat=0;seat<3;++seat)check(a->session.multiplayer_seat(seat).misses==10&&!w.pilots[seat]->ghost,"challenge stage transition preserves cumulative Miss");
     check(a->session.draw(a->renderer),"challenge HUD draw");unsigned miss_rows=0;for(const auto& text:w.ascii.requests)if(text.position.x==520&&(text.position.y==104||text.position.y==176||text.position.y==248)){++miss_rows;check(text.text=="10"&&text.style.font==3,"native life row renders cumulative Miss using native digits");}check(miss_rows==3,"every challenge life group renders its own Miss count");
