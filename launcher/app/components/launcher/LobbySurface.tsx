@@ -38,7 +38,7 @@ export function LobbySurface({
   notice,
   roomTools,
   roomList,
-  hasRooms: _hasRooms,
+  hasRooms,
   loading,
   emptyState,
   roomCount,
@@ -101,14 +101,14 @@ export function LobbySurface({
           <div className="lobby-actions">{roomTools}</div>
         </header>
         <section
-          className="lobby-list-surface th09-room-surface"
+          className={`lobby-list-surface${rail.selectedProduct === 'th09mp' ? ' th09-room-surface' : ''}`}
           aria-label={t('lobby.rooms')}
         >
           <div
             className="lobby-list-head"
             id="listHead"
             aria-hidden="true"
-            hidden
+            hidden={!hasRooms || rail.selectedProduct === 'th09mp'}
           >
             <span>{t('lobby.gameAndRoom')}</span>
             <span>{t('lobby.difficulty')}</span>
