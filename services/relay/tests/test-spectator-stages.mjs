@@ -19,6 +19,23 @@ function input(marker, count, frame) {
   return b;
 }
 for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)) for (const count of [2, 3]) {
+  test(`${product}/${count}: published v1 clients retain their envelope and bootstrap version`, () => {
+    const initial = event(marker, count), large = Buffer.alloc(40 + 60 * 1024);
+    large.set(initial.subarray(0, 40)); large[4] = 1; large.writeUInt32LE(large.length - 40, 36);
+    const stream = new SpectatorStageRelay(marker, count);
+    assert.equal(stream.accept(large), 'checkpoint'); assert.equal(stream.bootstrap()[4], 1);
+    stream.accept(input(marker, count, 600));
+    const next = event(marker, count, {serial: 2, stage: 5, frame: 601});
+    assert.throws(() => stream.accept(next), /identity/);
+    assert.equal(stream.next, 601); assert.equal(stream.history.length, 2);
+    next[4] = 1; assert.equal(stream.accept(next), 'checkpoint'); assert.equal(stream.bootstrap()[4], 1);
+    const tooLarge = Buffer.concat([large, Buffer.from([0])]); tooLarge.writeUInt32LE(tooLarge.length - 40, 36);
+    assert.equal(parseSpectatorStageEvent(tooLarge, marker, count), null);
+    const current = new SpectatorStageRelay(marker, count); current.accept(initial);
+    next[4] = 1; assert.throws(() => current.accept(next), /identity/); assert.equal(current.bootstrap()[4], 2);
+  });
+}
+for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)) for (const count of [2, 3]) {
   test(`${product}/${count}: nonzero stage bootstrap, Boss dependency and exact next-stage replacement`, () => {
     const stream = new SpectatorStageRelay(marker, count);
     const initial = event(marker, count);

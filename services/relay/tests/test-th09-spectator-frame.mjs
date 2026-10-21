@@ -9,6 +9,15 @@ assert.equal(isSpectatorFrameForRoom('th09mp-1234', th09.subarray(0, 45), 2), fa
 assert.equal(isSpectatorFrameForRoom('th09mp-1234', th09, 3), false);
 const wrong = Buffer.from(th09); wrong[5] = 4;
 assert.equal(isSpectatorFrameForRoom('th09mp-1234', wrong, 2), false);
+const priority=Buffer.alloc(126);th09.copy(priority);priority[4]=2;
+for(const at of [46,86]){priority.writeFloatLE(-1,at+28);priority.writeUInt32LE(1,at+36);}
+assert.equal(isSpectatorFrameForRoom('th09mp-1234',priority,2),true);
+assert.equal(isSpectatorFrameForRoom('th07mp-1234',priority,2),false);
+for(const [offset,value] of [[46,401],[86,NaN],[74,500]]){
+  const invalid=Buffer.from(priority);invalid.writeFloatLE(value,offset);assert.equal(isSpectatorFrameForRoom('th09mp-1234',invalid,2),false);
+}
+const badEvent=Buffer.from(priority);badEvent.writeUInt32LE(2,78);
+assert.equal(isSpectatorFrameForRoom('th09mp-1234',badEvent,2),false);
 
 const th07 = Buffer.alloc(24 + 3 * 12);
 th07.set([0x45, 0x37, 0x4e, 0x50, 4, 3, 3, 0]);

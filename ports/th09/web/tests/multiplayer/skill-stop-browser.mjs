@@ -106,7 +106,8 @@ try{
       w.core.onGameFrame=ok=>{
         if(!ok)throw Error('Native loop '+w.probeError()+' '+JSON.stringify({side,clock,status:status(w)}));
         const count=presentations(w);if(count===lastPresent)return;lastPresent=count;
-        presented[side].push({clock,frame:status(w)[0],world:world(w),load:load(w),draw:draw(w)});
+        presented[side].push({clock,frame:status(w)[0],confirmed:status(w)[1],world:world(w),load:load(w),draw:draw(w),
+          visual:w.core._th09_probe_charge_visual?values(w,'_th09_probe_charge_visual',8):null});
       };
       w.core._th09_loop_start();
     }
@@ -142,8 +143,14 @@ try{
     const summary=peers.map(status),hashes=windows.map(w=>w.core._th09_network_hash()>>>0),audits=windows.map(world);
     const images=windows.map(w=>{w.core._th09_game_draw();return w.document.querySelector('canvas').toDataURL();});
     const metrics=presented.map((rows,side)=>{
-      const errors=[];let frozen=0,resumed=0,edges=0,maxBullets=0,maxPose=0,maxDraw=0,starts=0,prior=false,priorBits=0,unseenStopFrames=0,unseenMaxPose=0;
+      const errors=[],gaugeErrors=[];let frozen=0,resumed=0,edges=0,maxBullets=0,maxPose=0,maxDraw=0,starts=0,prior=false,priorBits=0,unseenStopFrames=0,unseenMaxPose=0,unconfirmedChargeFrames=0;
       for(const row of rows){
+        if(!expectRegression){
+          if(!row.visual)throw Error('Charge observation required');
+          const charge=float(row.world[6+side*20+4]),scale=float(row.visual[side*4+1]);
+          if(scale!==Math.fround(charge*Math.fround(.0025)))gaugeErrors.push({frame:row.frame,charge,scale});
+          if(row.frame>row.confirmed&&charge>0)++unconfirmedChargeFrames;
+        }
         const stopBits=row.draw?row.draw[8]:row.world[2]&0x1800;
         const stopped=!!(row.world[2]&0x1800),wasStopped=prior,edge=stopBits!==priorBits;
         if(stopped&&!prior)++starts;prior=stopped;priorBits=stopBits;
@@ -167,7 +174,8 @@ try{
           if(pose||appearance)errors.push({frame:row.frame,clock:row.clock,player,resume,pose,appearance});
         }
       }
-      return {presentations:rows.length,frozen,resumed,edges,starts,maxBullets,maxPose,maxDraw,unseenStopFrames,unseenMaxPose,errorCount:errors.length,errors:errors.slice(0,12)};
+      return {presentations:rows.length,frozen,resumed,edges,starts,maxBullets,maxPose,maxDraw,unseenStopFrames,unseenMaxPose,
+        unconfirmedChargeFrames,gaugeErrorCount:gaugeErrors.length,gaugeErrors:gaugeErrors.slice(0,12),errorCount:errors.length,errors:errors.slice(0,12)};
     });
     let lastEnd=-1,prior=false,shortGaps=0;
     for(let f=0;f<exact.length;++f){
@@ -189,7 +197,14 @@ try{
   assert.equal(new Set(result.hashes).size,1,'Both final worlds match exact input');
   assert.deepEqual(result.audits[0],result.audits[2]);assert.deepEqual(result.audits[1],result.audits[2]);
   assert.ok(result.imagesEqual,'Final framebuffer matches exact input');
-  for(const m of result.metrics){assert.ok(m.frozen>100&&m.starts>=5&&m.resumed>0,'Repeated skill stops and resumes exercised');if(!expectRegression)assert.deepEqual(m.errors,[],'Both player poses match exact commands at stops and resume');}
+  for(const m of result.metrics){
+    assert.ok(m.frozen>100&&m.starts>=5&&m.resumed>0,'Repeated skill stops and resumes exercised');
+    if(!expectRegression){
+      assert.deepEqual(m.errors,[],'Both player poses match exact commands at stops and resume');
+      assert.deepEqual(m.gaugeErrors,[],'Charge HUD follows current game state');
+      assert.ok(m.unconfirmedChargeFrames>100,'Charge display advances before input confirmation');
+    }
+  }
   if(expectRegression)assert.ok(result.metrics.some(m=>m.errorCount>0),'Retained pre-fix build reproduces the position regression');
   if(chained){
     assert.ok(result.pairs>=5&&result.shortGaps>=5,'Both players chained level-2 skills within three ticks');

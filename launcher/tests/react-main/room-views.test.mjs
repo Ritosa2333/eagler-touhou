@@ -120,6 +120,25 @@ async function mountRoom(f, extra = {}, options = {}) {
     onOpenSettings: () => intents.push(['settings']), settingsOpen: false, panel: null, onOpenPanel: (...args) => intents.push(['panel', ...args]), onClosePanel: () => intents.push(['close']), ...extra}, {locale: f.locale, ...options}); return {m, intents};
 }
 const click = (selector, scope) => act(() => n(selector, scope).click());
+test('TH09 local charge rule defaults on, restores native Replay by room agreement, and locks during play', async () => {
+  const f=await fixture({product:'th09mp',locale:'zh-CN'}).live();await mountRoom(f,{panel:{kind:'game'}});
+  const toggle=n('#mpDisableLocalChargePriority');
+  assert.equal(toggle.getAttribute('aria-checked'),'false');
+  assert.equal(toggle.getAttribute('aria-label'),'关闭本地优先的蓄力条进度');
+  assert.equal(n('#mpLocalChargeReplayHint').textContent,'启用该选项后可以得到兼容原版的 Replay，但蓄力条的显示可能是不准确的');
+  assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,false);
+  await click('#mpDisableLocalChargePriority');
+  assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableLocalChargePriority,true);
+  await f.receive({disableLocalChargePriority:true});
+  assert.equal(toggle.getAttribute('aria-checked'),'true');
+  assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,true);
+  await f.receive({disableLocalChargePriority:true,phase:'running'});
+  assert.equal(toggle.disabled,true);
+  const sent=f.socket.sent.length;await act(()=>f.service.setRoomSettings({disableLocalChargePriority:false}));assert.equal(f.socket.sent.length,sent);
+  const other=await fixture({product:'th07mp'}).live();const {m}=await mountRoom(other,{panel:{kind:'game'}});
+  assert.equal(all('#mpDisableLocalChargePriority',m.container).length,0);
+  assert.equal('netplayDisableLocalChargePriority' in other.service.runtimeOptions(),false);
+});
 test('TH09 auto-save preference reaches only player Runtime options and survives leaving', async () => {
   const f = await fixture({product:'th09mp'}).live();
   // Seat identity is owned by the fixture, not the rendered nickname.

@@ -8,13 +8,6 @@ void GamePresentation::begin_field(i32 side){
 void GamePresentation::animation(AnmVm& a,BattleSprite mode){
     switch(mode){case BattleSprite::unrotated:renderer.draw_no_rotation(a);break;case BattleSprite::rotated:renderer.draw_2d(a);break;case BattleSprite::automatic:renderer.draw_3d(a);break;case BattleSprite::mirrored:renderer.draw_no_rotation(a,true,true);break;}
 }
-void GamePresentation::gauge_animation(i32 side,u32 slot,AnmVm& vm,BattleSprite mode){
-    const auto* confirmed=media.confirmed_gauge(side,slot);
-    if(!confirmed){animation(vm,mode);return;}
-    // Confirmed appearance follows the current HUD/player anchor. Draw a copy:
-    // presentation never writes delayed values into simulation or snapshots.
-    auto display=*confirmed;display.pos=vm.pos;animation(display,mode);
-}
 void GamePresentation::colored(const AnmVm* vm,const AttackColorVertex* vertices,u32 count,BattleGeometry mode,bool additive){
     renderer.flush();PipelineState state=renderer.state;state.depthWrite=false;state.fog=false;state.destinationBlend=additive?BlendFactor::One:BlendFactor::InverseSourceAlpha;
     if(vm&&vm->blendMode<2)state.destinationBlend=vm->blendMode?BlendFactor::One:BlendFactor::InverseSourceAlpha;

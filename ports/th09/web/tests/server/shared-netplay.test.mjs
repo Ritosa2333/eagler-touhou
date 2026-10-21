@@ -12,7 +12,7 @@ function harness(timeline = false) {
   const spectators = new Set();
   const core = () => {
     const buffer = new ArrayBuffer(2048), bytes = new Uint8Array(buffer);
-    const calls = {begin: [], modes: [], receive: [], pauses: [], timing:[], spectatorOutput: [], spectatorBegin: [], spectatorFeed: [], pumps: 0,ends:0};
+    const calls = {begin: [], modes: [], chargeModes:[], receive: [], pauses: [], timing:[], spectatorOutput: [], spectatorBegin: [], spectatorFeed: [], pumps: 0,ends:0};
     const self = {
       HEAPU8: bytes, HEAPU32: new Uint32Array(buffer), calls, incoming: [], side: -1,
       _th09_peer_url_buffer: () => 256,
@@ -50,6 +50,7 @@ function harness(timeline = false) {
       _th09_peer_close: () => { peers.delete(self.side); spectators.delete(self); },
       _th09_network_info: () => 0,
       _th09_adonis_configure: mode => { calls.modes.push(mode); return 1; },
+      _th09_local_charge_priority: mode => {calls.chargeModes.push(mode);return 1;},
       _th09_rollback_begin: (...args) => { calls.begin.push(args.slice(0,9)); return 1; },
       _th09_network_selection_begin:(...args)=>{calls.selection=args;return 1;},
       _th09_spectator_prepare:()=>{calls.preparedForSelection=true;return 1;},
@@ -130,6 +131,18 @@ test('pure delay receives on arrival without invoking a rollback live tick',asyn
   }finally{pair?.left.close();pair?.right.close();box.restore();}
 });
 
+test('native Replay compatibility disables local charge before rejoining an eight-digit room',async()=>{
+  const box=harness();let pair;
+  try{
+    pair=await connectPair(box);
+    const options={...pair.left.options,netplayUrl:'wss://example.test/netplay?room=th09mp-12345678&run=1&player=0',netplayDisableLocalChargePriority:true};
+    pair.left.close();await pair.left.connect(options);
+    assert.deepEqual(pair.leftCore.calls.chargeModes,[1,0]);
+    assert.equal(pair.leftCore.calls.begin.length,2);
+    pair.left.close();await assert.rejects(pair.left.connect({...options,netplayDisableLocalChargePriority:1}),/蓄力进度配置无效/);
+  }finally{pair?.left.close();pair?.right.close();box.restore();}
+});
+
 test('game selection starts a neutral native menu and leaves room presets outside gameplay identity',async()=>{
   const box=harness();let pair;
   try{
@@ -187,6 +200,7 @@ test('launcher and in-game entries share the TH09 room through the common peer t
     const {left, right, leftCore, rightCore} = await connectPair(box);
     assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0, 0]]);
     assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0, 0]]);
+    assert.deepEqual(leftCore.calls.chargeModes,[1]);assert.deepEqual(rightCore.calls.chargeModes,[1]);
     left.input(6, 123, 1, .25, -.5);
     right.pump();
     assert.deepEqual(rightCore.calls.receive, [], "JS must not feed the old lockstep queue");

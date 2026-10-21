@@ -7,7 +7,7 @@ Relay 使用 WebSocket 提供房间目录、等待室、信令、游戏传输和
 | 用途 | 查询参数 |
 | --- | --- |
 | 房间目录 | `directory=1`、`member` |
-| 等待室 | `room`、`lobby`、`member`；创建时可附 `intent`、`visibility`、`players`、`difficulty`、`disableCheatMovement`、`chapterThreshold`、`challengeMode`、`prankMode` |
+| 等待室 | `room`、`lobby`、`member`；创建时可附 `intent`、`visibility`、`players`、`difficulty`、`disableCheatMovement`、`disableLocalChargePriority`、`chapterThreshold`、`challengeMode`、`prankMode` |
 | 玩家连接 | `room`、`run`、`player`、`players`、`member`；`signal=1` 选择信令连接，版本化 run 另带 `runtimeGeneration` |
 | 旁观连接 | `room`、`run`、`spectator`、`players`、`member`；版本化 run 另带 `runtimeGeneration` |
 | 网络诊断 | `diagnostic=1` |
@@ -43,3 +43,6 @@ Relay 使用 WebSocket 提供房间目录、等待室、信令、游戏传输和
 - TURN 凭据通过服务端短期签名生成，Relay 与 coturn 使用同一共享密钥。
 
 本服务源码见 [`../src/netplay-relay.mjs`](../src/netplay-relay.mjs)，部署见 [`../deploy/README.md`](../deploy/README.md)。
+## 已发布客户端的观战协议
+
+Relay 同时接收 `E?SV/1` 与 `E?SV/2`，每场对局在首份关卡记录中固定版本，后续关卡与旁观初始化沿用该版本。v1 保留 60 KiB 的状态上限，v2 使用 4 KiB 的原生 Replay 关卡头；同一对局的版本切换会被拒绝。各作品可以独立更新 Runtime，并保持现有旁观连接可用。

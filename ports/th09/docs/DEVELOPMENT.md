@@ -45,6 +45,22 @@ npm --prefix launcher run dev:workspace
 
 正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。
 
-## 回滚蓄力显示验证
+## 回滚蓄力与 Replay
 
-`npm --prefix ports/th09/web run test:confirmed-gauge` 对比每次实际呈现的蓄力条、可用槽、等级和光效与对应确认帧的独立精确输入结果，并在蓄力中即时关闭、重新启用显示策略，核对对局状态和输入记录一致。设置 `PC_BUILD` 为开发 WASM 目录、`BROWSER_TEST_PACKAGE` 为含 `puppeteer-core` 的包路径、`BROWSER_EXECUTABLE` 为 Chromium/Edge 路径、`RUN_LABEL` 为独立报告名。`FRAMES=9600`、`PACKET_DELAY=3`、`PACKET_JITTER=4` 覆盖延迟波动，`CHAINED_SKILLS=1` 覆盖双方咲夜连续二级技能。资源由 `TH09_FIXTURE_DATA`、`TH09_FIXTURE_ASSETS` 和 `TH09_FIXTURE_MUSIC` 指定，报告保存在 `web/artifacts/multiplayer-tests/`。
+房间规则 `disableLocalChargePriority` 默认 `false`，Launcher 通过 `netplayDisableLocalChargePriority` 传给 Runtime。启动时调用 `th09_local_charge_priority(0|1)`，在 HELLO 前固定规则并纳入 gameplay ABI。关闭本地优先或选择纯延迟模式时使用原版蓄力逻辑，HUD 直接显示当前进度。技能停顿边界确认始终生效，独立于蓄力开关。
+
+`LocalChargePlanner` 复用 `ShotControl::update` 接受本机进度。每帧结果经 `ChargeHistory` 的 `T9CP` 记录同步，`T9CA` 独立确认接收进度。已接受结果在重传与回滚中保持不变；待释放技能属于 Player 的回滚状态。资源重建边界使用已确认输入，新世界随后恢复本地优先。
+
+旁观帧 `T9SP/2` 在原有键盘与触控数据后附加两份 40 字节蓄力记录，共 126 字节。历史批次、跳转和实时播放使用同一帧记录。关闭本地优先时继续发送 46 字节 `T9SP/1`。
+
+本地优先 Replay 使用 `T9CHARGE/1` 尾部扩展：十个关卡计数、按原生录像输入帧索引排列的蓄力记录，经 LZSS 压缩并校验。若有触控轨道，`THMOTION` 保留最后一个尾部的位置。导出文件名为 `.rpyx`。关闭本地优先时，游戏逻辑、原生录像正文与导出格式走原有路径。
+
+验证入口：
+
+- `web/tests/multiplayer/local-charge.cpp`：原有射击行为、停顿、自动低速与待释放技能。
+- `web/tests/multiplayer/charge-history.cpp`：不可变记录、接收确认、回滚恢复、环形历史、录像编解码和触控轨道共存。
+- `web/tests/multiplayer/local-charge-browser.mjs`：双方咲夜 C2、延迟与抖动下的实际 HUD、独立确认记录模拟、录像和旁观逐帧对照。`CHAINED_SKILLS=1` 测试双方连续技能，`PAUSE_CYCLE=1` 核对暂停记录与原生录像帧的衔接。
+- `web/tests/multiplayer/local-charge-compatibility.mjs`：`PC_BUILD` 为当前开发构建，`BASELINE_BUILD` 为保留的修改前开发构建，关闭功能后比较 6000 帧状态及原生录像字节。
+- `web/tests/multiplayer/legacy-replay-compatibility.mjs`：`TH09_REPLAY_FILE` 指向九关旧版样例 `th9_udyt22.rpy`，比较完整原生回放与旧触控录像。基线、本地优先开启和关闭三种配置逐帧核对 48 项场景状态及 8 项播放状态。
+
+浏览器验证需要 `BROWSER_EXECUTABLE`、含 `puppeteer-core` 的 `BROWSER_TEST_PACKAGE`、`TH09_FIXTURE_DATA`、`TH09_FIXTURE_ASSETS` 和 `TH09_FIXTURE_MUSIC`。`PC_BUILD` 指向开发构建目录，`RUN_LABEL` 使用新的报告名。测试报告保留 WASM、脚本身份和首个差异。
