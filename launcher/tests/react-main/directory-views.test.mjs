@@ -173,29 +173,41 @@ function expectedDialog(f, locale) {
   return n('#roomDialog', doc);
 }
 
-for (const locale of ['zh-CN', 'en']) test(`Large cards show room code, rank texture, roles, names and spectators: ${locale}`, async () => {
+for (const locale of ['zh-CN', 'en']) test(`Original cooperative list shows room identity, difficulty, seats and join action: ${locale}`, async () => {
   const f = await fixture({locale}).live([room({challengeMode:true,publicNames:true,spectators:3,seats:[{initial:'A',name:'Alice',loadout:1,online:true,ready:true},null]})]);
   const snapshot=f.service.getSnapshot();await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true},{locale});
   assert.equal(n('.lobby-room-code').textContent,'#1234');
-  assert.equal(n('.difficulty-label').dataset.difficulty,'normal');
-  assert.equal(n('.room-challenge-on').textContent,t(locale,'room.challengeEnabled'));
-  assert.equal(n('.th09-duel-name').textContent,'Alice');
-  assert.ok(n('.room-card-loadout').textContent.length>0);
-  assert.equal(all('.th09-duel-avatar').length,snapshot.visibleRooms[0].capacity);
-  assert.match(n('.th09-room-spectators').textContent,/3/);
-  assert.equal(n('.th09-room-duration').textContent,t(locale,'lobby.recruiting'));
+  assert.equal(n('.lobby-difficulty').textContent,'Normal');
+  assert.equal(n('.lobby-challengeMode').textContent,t(locale,'room.challengeMode'));
+  assert.equal(n('.lobby-seat-name').textContent,'Alice');
+  assert.ok(n('.lobby-room-title h2').textContent.length>0);
+  assert.equal(all('.lobby-seat').length,snapshot.visibleRooms[0].capacity);
+  assert.equal(n('.lobby-player-count').textContent,`${snapshot.visibleRooms[0].players} / ${snapshot.visibleRooms[0].capacity}`);
+  assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.recruiting'));
+  assert.equal(env.document.querySelector('.coop-room-row'),null);
   assert.equal(env.document.querySelector('.room-elapsed'),null);
 });
 
-test('Large cards retain keyed identity and creation-time motion across reorder', async () => {
+test('List rows retain keyed identity and creation-time motion across reorder', async () => {
   const f=await fixture().live([room()]), m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl,initialRows:true});
   const original=n('.lobby-room-row');
   await f.receive([room({code:'5678'}),room({difficulty:3})]);await m.update({snapshot:f.service.getSnapshot(),initialRows:false});
   assert.equal(all('.lobby-room-row')[1],original);
   assert.equal(original.classList.contains('lobby-room-initial'),true);
   assert.equal(all('.lobby-room-row')[0].classList.contains('lobby-room-initial'),false);
-  assert.equal(n('.difficulty-label',original).dataset.difficulty,'lunatic');
+  assert.equal(n('.lobby-difficulty',original).textContent,'Lunatic');
   await f.receive([room({code:'5678'})]);await m.update({snapshot:f.service.getSnapshot()});assert.equal(original.isConnected,false);
+});
+
+test('Restored list keeps Replay available offline and preserves the directory state', async () => {
+  const f=fixture();let replays=0;
+  await mountLobby(f,{onReplay:()=>replays++});
+  const before=f.service.getSnapshot();
+  assert.equal(n('#watchReplayButton').disabled,false);
+  await click('#watchReplayButton');assert.equal(replays,1);
+  assert.equal(f.service.getSnapshot(),before);
+  assert.equal(f.navigations.length,0);
+  assert.equal(n('#createButton').disabled,true);
 });
 
 test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the latest service room', async () => {
@@ -253,7 +265,7 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   }
   await click('#emptyAction'); await click('#createButton'); await click('#codeButton'); assert.deepEqual(opens, ['create', 'create', 'join']);
   assert.equal(n('#refreshRooms').getAttribute('aria-label'), t(locale, 'lobby.refresh'));
-  await f.receive([room()], {total: 45}); assert.equal(n('#listHead').hidden, true); assert.equal(env.document.querySelector('#emptyState'), null);
+  await f.receive([room()], {total: 45}); assert.equal(n('#listHead').hidden, false); assert.equal(env.document.querySelector('#emptyState'), null);
   assert.equal(n('#connectionNote').hidden, false); assert.equal(n('#connectionNote').textContent, t(locale, 'lobby.truncated', {count: 1}));
   assert.equal(n('#roomCount').getAttribute('aria-live'), 'polite'); assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 1}));
   await click('#refreshRooms'); assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listHead').hidden, true);
@@ -418,11 +430,15 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
   for(const [phase,players,key] of [['lobby',1,'lobby.recruiting'],['lobby',2,'lobby.roomFull'],['playing',2,null],['lobby',1,'lobby.recruiting']]){
     await f.receive([room({product,capacity:2,players,phase,startedAt:Date.now()-65000,seats:players===1?seats:[seats[0],{initial:'B',online:true,ready:false}]})]);
     await m.update({snapshot:f.service.getSnapshot()});
-    const text=n('.th09-room-duration').textContent;
-    assert.equal(env.document.querySelector('.lobby-room-state'),null,'state has one display location');
-    if(key){assert.equal(text,t(locale,key));assert.equal(env.document.querySelector('.room-elapsed'),null);}
-    else if(product==='th09mp')assert.equal(text,t(locale,'th09.elapsed',{minutes:0}));
-    else assert.ok(n('.room-elapsed').textContent.includes(':'));
+    if(product==='th09mp'){
+      const text=n('.th09-room-duration').textContent;
+      assert.equal(env.document.querySelector('.lobby-room-state'),null,'state has one display location');
+      if(key)assert.equal(text,t(locale,key));else assert.equal(text,t(locale,'th09.elapsed',{minutes:0}));
+    }else{
+      const state=phase==='playing'?'playing':players===2?'full':'recruiting';
+      assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.'+state));
+      assert.equal(env.document.querySelector('.th09-room-duration'),null);
+    }
   }
 });
 
@@ -440,15 +456,15 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
       assert.equal(n('.lobby-difficulty').textContent, '');
       assert.equal(all('.difficulty-label').length, 0);
     } else {
-      assert.equal(n('.difficulty-label').textContent, policy.difficulties[snapshot.visibleRooms[0].difficulty]);
+      assert.equal(n('.lobby-difficulty').textContent, policy.difficulties[snapshot.visibleRooms[0].difficulty]);
     }
     if (product === 'th09mp') {
       assert.equal(n('.th09-room-score').textContent,'VS');
       assert.equal(n('.th09-room-duration').textContent,t(locale,'lobby.recruiting'));
-      assert.equal(all('.th09-duel-avatar').length,2);
+      assert.equal(all('.lobby-seat').length,2);
     } else {
       assert.equal(n('.lobby-room-code').textContent, '#' + snapshot.visibleRooms[0].code);
-      assert.equal(all('.th09-duel-avatar').length,2);
+      assert.equal(all('.lobby-seat').length,2);
     }
   }
   await rowsMount.unmount();
@@ -533,5 +549,5 @@ for (const product of ['th06mp','th09mp']) test(`Approved public names remain co
   const snapshot=f.service.getSnapshot();
   assert.deepEqual(snapshot.visibleRooms[0].seats.map(seat=>seat.name),names);
   await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true});
-  assert.deepEqual(all('.th09-duel-name').map(node=>node.textContent),names);
+  assert.deepEqual(all(product==='th09mp'?'.th09-duel-name':'.lobby-seat-name').map(node=>node.textContent),names);
 });
