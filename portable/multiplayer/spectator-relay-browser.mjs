@@ -9,6 +9,7 @@ import {pathToFileURL} from 'node:url';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'../..'),launcher=resolve(process.env.TH15_LAUNCHER_ROOT);
+const relayRoot=resolve(process.env.TH15_RELAY_ROOT||resolve(launcher,'../services/relay/src'));
 const puppeteer=createRequire(resolve(launcher,'package.json'))('puppeteer-core');
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
 const runtime=resolve(process.env.TH15_TEST_RUNTIME),fixtures=process.argv.includes('--fixtures');
@@ -20,7 +21,7 @@ const productionBuild=JSON.parse(await readFile(resolve(buildRoot,'build.json'),
 const productionManifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
 const productionWasm=await readFile(resolve(runtime,'th15.wasm'));
 const productionLoader=await readFile(resolve(runtime,'th15.mjs'));
-const productionLoaderSha=sha256(await readFile(resolve(buildRoot,'th15-application.mjs')));
+const productionLoaderSha=sha256(await readFile(resolve(buildRoot,'th15.mjs')));
 assert.equal(productionBuild.features?.multiplayer,true,'TH15_OUTPUT must be a multiplayer build');
 assert.equal(sha256(productionWasm),productionBuild.sha256,'packaged Runtime WASM must match TH15_OUTPUT/build.json');
 assert.equal(productionManifest.execution?.sha256,productionBuild.sha256,'production manifest must name TH15_OUTPUT WASM');
@@ -39,7 +40,7 @@ const buildIdentity={productionWasm:productionBuild.sha256,productionLoader:prod
 const out=resolve(probes,process.env.TH15_TEST_EVIDENCE_NAME||(fixtures?'relay-fixture':'relay-production'));await mkdir(out,{recursive:true});let passReport=null;
 const archive=await readFile(process.env.TH15_TEST_ARCHIVE);let options=[],relayLog='',browser;
 const sharedFonts=resolve(process.env.TH15_TEST_SHARED_FONTS||resolve(root,'../dist/ui-rewrite-fixed-20261010/shared'));
-const relay=spawn(process.execPath,[resolve(launcher,'server/netplay-relay.mjs')],{cwd:launcher,windowsHide:true,
+const relay=spawn(process.execPath,[resolve(relayRoot,'netplay-relay.mjs')],{cwd:relayRoot,windowsHide:true,
  env:{...process.env,EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
 relay.stderr.on('data',b=>relayLog+=b);
 const relayPort=await new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error('Relay startup timeout '+relayLog)),15000);relay.stdout.on('data',b=>{relayLog+=b;const m=relayLog.match(/listening ws:\/\/127\.0\.0\.1:(\d+)/);if(m){clearTimeout(timer);yes(Number(m[1]));}});relay.once('exit',code=>{clearTimeout(timer);no(Error('Relay exited '+code+' '+relayLog));});});

@@ -31,7 +31,7 @@ if(result.status)throw Error(result.stdout+result.stderr);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const fixtureWasm=readFileSync(resolve(dir,'th15.wasm'));
 const fixtureLoader=readFileSync(resolve(dir,'th15.mjs'));
-const productionLoader=readFileSync(resolve(out,'th15-application.mjs'));
+const productionLoader=readFileSync(resolve(out,build.kind==='th15-sdl3-application-release'?'th15.mjs':'th15-application.mjs'));
 writeFileSync(resolve(dir,'build.json'),JSON.stringify({schema:'eagler-th15-spectator-stage-fixture/1',game:'th15',variant:'multiplayer',
  privateSpectatorFixture:true,builtAt:new Date().toISOString(),productionWasm:build.sha256,
  productionLoaderSha256:sha(productionLoader),productionBuiltAt:build.builtAt,
