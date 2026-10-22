@@ -26,6 +26,24 @@ namespace web_sfx = eagler::audio::web_sfx;
 
 #include "thirdparty/stb_vorbis.c"
 
+static void ObserveBgmPlayback(SoundPlayer& player, const SoundPlayerCommand& command)
+{
+#ifdef __EMSCRIPTEN__
+    if (player.backgroundMusic && ma_sound_is_playing(player.backgroundMusic))
+    {
+        const char* path = command.arg1 >= 0 ? player.bgmFileNames[command.arg1] : command.string;
+        EM_ASM({
+            if (Module.eaglerOptions?.netplayRollbackAudit) {
+                globalThis.__eaglerNetplayBgmStarted ||= [];
+                globalThis.__eaglerNetplayBgmStarted.push(UTF8ToString($0));
+            }
+        }, path);
+    }
+#else
+    (void)player; (void)command;
+#endif
+}
+
 SoundBufferIdxVolume SOUND_BUFFER_IDX_VOL[38] = {
     {0, -2000, 0},   {0, -2500, 0},   {1, -1200, 5},   {1, -1500, 5},   {2, -1000, 100},
     {3, -400, 100},  {4, -400, 100},  {5, -1500, 50},  {6, -1700, 50},  {7, -1900, 50},
@@ -1352,6 +1370,7 @@ loop:
                 if (this->backgroundMusic)
                 {
                     ma_sound_start(this->backgroundMusic);
+                    ObserveBgmPlayback(*this, *commandCursor);
                 }
             }
             else if (commandCursor->arg2 >= 20)
@@ -1383,6 +1402,7 @@ loop:
         {
             Supervisor::DebugPrint("Sound : Play Stage\n");
             ma_sound_start(this->backgroundMusic);
+            ObserveBgmPlayback(*this, *commandCursor);
         }
         else if (commandCursor->arg2 >= 7)
         {
@@ -1514,7 +1534,7 @@ loop_breakout:
 void SoundPlayer::PushCommand(AudioOpcode opcode, i32 arg1, const char *arg2)
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return;
 #endif
     // Upstream th07_soundplayer_queue_command hooks the exact function entry

@@ -7,6 +7,8 @@ namespace Netplay::SideEffects
 {
 void SetSpeculative(bool speculative);
 bool IsSpeculative();
+// Read-only Replay music commands follow the reconstructed native timeline.
+bool SuppressMusic();
 
 // BGM changes are long-lived presentation state. A corrected timeline may
 // encounter a different music opcode than the already-presented timeline, so

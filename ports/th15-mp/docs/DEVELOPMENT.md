@@ -6,6 +6,12 @@
 
 桌面生产 Runtime 专项使用 `TH15_TEST_ARCHIVE`、`TH15_TEST_FONT`、`TH15_TEST_UNICODE_FONT` 显式提供 DATA 与共用字体，运行 `node ports/th15-mp/portable/multiplayer/browser-test.mjs --output=/absolute/results`。该场景覆盖纯延迟双人／三人、双人旁观与离线多人 Replay，输入哈希和实际打包清单随结果保存。
 
+旁观从原生 Replay 关头重建时，将应用时钟对齐到连续已确认帧。`portable/multiplayer/spectator-relay-browser.mjs --fixtures` 比较独立入场、回跳、切关和后续 600 帧的角色、敌机、子弹、道具归属及激光状态。
+
+分关旁观使用玩法身份 20，每关统一初始化幽灵私有随机流。`node ports/th15-mp/portable/multiplayer/native-test.mjs --ghost-stage-only` 比较两人、三人各席位跨关后的 720 帧幽灵轨迹，使用 `TH15_TEST_ARCHIVE` 与 `TH15_EMSDK` 指定输入。
+
+设置 `TH15_TEST_UNINTERRUPTED_FRAMES=3600`，运行旁观驱动的 `--fixtures --uninterrupted-only`，可连续逐帧比较玩家与旁观场景。私有驱动用双方一致的碰撞保护保持活跃演算，全程按正常速度播放。`TH15_TEST_EVIDENCE_NAME` 指定独立的结果目录。
+
 ## 构建并在 Launcher 启动
 
 需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th15.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。未安装 Emscripten 时可运行 `python ports/th15-mp/tools/download-emscripten.py`。

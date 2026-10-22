@@ -1058,7 +1058,7 @@ bool Supervisor::ReadMidiFile(u32 midiFileIdx, const char *path)
 ZunResult Supervisor::PlayMidiFile(i32 midiFileIdx)
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return ZUN_SUCCESS;
 #endif
     bool useMidi = g_Supervisor.cfg.musicMode == MIDI;
@@ -1094,7 +1094,7 @@ ZunResult Supervisor::PlayMidiFile(i32 midiFileIdx)
 ZunResult Supervisor::PlayAudio(const char *path)
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return ZUN_SUCCESS;
 #endif
     char wavName[256];
@@ -1162,7 +1162,7 @@ ZunResult Supervisor::PlayAudio(const char *path)
 ZunResult Supervisor::StopAudio()
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return ZUN_SUCCESS;
 #endif
 #ifdef __EMSCRIPTEN__
@@ -1201,7 +1201,7 @@ ZunResult Supervisor::StopAudio()
 ZunResult Supervisor::FadeOutMusic(f32 fadeOutSeconds)
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return ZUN_SUCCESS;
 #endif
 #ifdef __EMSCRIPTEN__

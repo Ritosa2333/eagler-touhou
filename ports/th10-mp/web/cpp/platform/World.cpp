@@ -17,6 +17,7 @@ struct SpectatorSilentAudio final:AudioCommandSink {
     void capture_effect(i32,i32,const SoundDefinition*) noexcept override{}
     void capture_stop(i32) noexcept override{}
     void capture_music(i32,i32,const char*) override{}
+    bool captures_music() const noexcept override{return false;}
 };
 SpectatorSilentAudio spectator_silent_audio;
 }

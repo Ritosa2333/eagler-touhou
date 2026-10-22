@@ -1316,7 +1316,7 @@ i32 Supervisor::LoadAudio(i32 idx, const char *path)
 ZunResult Supervisor::PlayLoadedAudio(i32 idx)
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return ZUN_SUCCESS;
 #endif
 #ifdef __EMSCRIPTEN__
@@ -1357,7 +1357,7 @@ ZunResult Supervisor::PlayLoadedAudio(i32 idx)
 ZunResult Supervisor::PlayAudio(const char *path)
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return ZUN_SUCCESS;
 #endif
     char pathBuf[256];
@@ -1416,7 +1416,7 @@ ZunResult Supervisor::PlayAudio(const char *path)
 ZunResult Supervisor::StopAudio()
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return ZUN_SUCCESS;
 #endif
 #ifdef __EMSCRIPTEN__
@@ -1461,7 +1461,7 @@ ZunResult Supervisor::StopAudio()
 i32 Supervisor::FadeOutMusic(f32 musicFadeFrames)
 {
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::SideEffects::IsSpeculative())
+    if (Netplay::SideEffects::SuppressMusic())
         return 0;
 #endif
     f32 effectiveFadeFrames;

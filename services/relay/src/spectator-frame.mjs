@@ -5,7 +5,19 @@ import { COOPERATIVE_SPECTATOR_MARKERS as cooperativeProtocolMarkers } from './s
 // Only the room's declared game protocol may enter its spectator backlog.
 export function isSpectatorFrameForRoom(roomId, payload, playerCount) {
   const product = roomId.split('-')[0], policy = multiplayerConfigForProduct(product);
-  const protocol = cooperativeProtocolMarkers[product], timingPolicy = multiplayerInputTimingPolicy(policy);
+  const protocol = product === 'th075mp' ? 0x50 : cooperativeProtocolMarkers[product];
+  const timingPolicy = multiplayerInputTimingPolicy(policy);
+  if(product==='th075mp'&&playerCount===2&&payload?.length===40&&
+     payload[0]===69&&payload[1]===0x50&&payload[2]===84&&payload[3]===77&&payload[4]===1){
+    const v=new DataView(payload.buffer,payload.byteOffset,payload.byteLength);
+    const mode=payload[5],delay=payload[6],reserve=payload[7],rtt=v.getUint32(24,true);
+    const full=v.getUint32(8,true),lost=v.getUint32(28,true),automatic=v.getUint32(32,true),samples=v.getUint32(36,true);
+    // th075 native DelaySession uses 0=rollback, 1=pure delay and up to eight
+    // prediction frames; preserve that wire contract independently of Adonis.
+    return mode<=1&&delay<=9&&(mode===1?reserve===0:delay===0&&reserve>=1&&reserve<=8)&&
+      rtt>=1&&rtt<=1000000&&lost<=72&&automatic<=1&&samples>=96&&samples<=120&&
+      full===Math.max(1,Math.ceil(Math.floor(rtt/2)*60/1000000))&&(!automatic||mode===1&&delay===full);
+  }
   if(protocol!==undefined&&timingPolicy.measuredStartup&&policy.playerCounts.includes(playerCount)&&payload?.length===40&&
      payload[0]===69&&payload[1]===protocol&&payload[2]===84&&payload[3]===77&&payload[4]===1){
     if (!timingPolicy.rollback && (payload[5] !== 1 || payload[7] !== 0)) return false;

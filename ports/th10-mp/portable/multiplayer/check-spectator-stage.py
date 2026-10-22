@@ -11,6 +11,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--url',required=True)
 parser.add_argument('--relay',required=True)
 parser.add_argument('--output',type=Path,required=True)
+parser.add_argument('--music',choices=['off','stream','full'],default='off')
 parser.add_argument('--mode',choices=['rtc','relay'],default='rtc')
 parser.add_argument('--players',type=int,choices=[2,3],default=2)
 parser.add_argument('--stage2-only',action='store_true',help='diagnose a fresh Stage2 viewer without the Stage1 control/future-frame prelude')
@@ -316,6 +317,7 @@ with sync_playwright() as p:
         spectator.on('pageerror',lambda error:report['errors'].append({'endpoint':'spectator','error':str(error)}))
         before_load=time.monotonic()
         spectator.goto(args.url);spectator.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
+        if args.music!='off':call(spectator,'mode=>multiplayerSmoke.prepareMusic(mode)',args.music)
         report['spectatorRuntimePreloaded']=True
         report['spectatorRuntimeLoadMs']=(time.monotonic()-before_load)*1000
         late_context=browser.new_context(service_workers='block');contexts.append(late_context)
@@ -323,6 +325,7 @@ with sync_playwright() as p:
         late_viewer.on('pageerror',lambda error:report['errors'].append({'endpoint':'late-spectator','error':str(error)}))
         before_late_load=time.monotonic()
         late_viewer.goto(args.url);late_viewer.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
+        if args.music!='off':call(late_viewer,'mode=>multiplayerSmoke.prepareMusic(mode)',args.music)
         report['lateSpectatorRuntimePreloaded']=True
         report['lateSpectatorRuntimeLoadMs']=(time.monotonic()-before_late_load)*1000
         loadouts=[[0,0],[1,1],[0,1]][:args.players]
@@ -345,6 +348,7 @@ with sync_playwright() as p:
             page=context.new_page();pages.append(page)
             page.on('pageerror',lambda error,i=seat:report['errors'].append({'endpoint':i,'error':str(error)}))
             page.goto(args.url);page.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
+            if args.music!='off':call(page,'mode=>multiplayerSmoke.prepareMusic(mode)',args.music)
             call(page,'multiplayerSmoke.setSpectatorCount(1)')
             call(page,'v=>multiplayerSmoke.startNet(...v)',[loadouts,seat,1,1234,session_low,session_high])
             assert call(page,'u=>multiplayerSmoke.connect(u)',run_url[seat])
@@ -575,6 +579,9 @@ with sync_playwright() as p:
                 advance_sources=advance_sources,url=args.url,spectator_url=spectator_url,
                 spectator_id=spectator_id,loadouts=loadouts,session=(session_low,session_high),report=report,
                 navigation_only=args.navigation_only)
+            if args.music!='off':
+                report['music']=[call(page,'multiplayerSmoke.musicStatus()') for page in [*pages,spectator]]
+                assert all(value['enabled'] and value['trackMask'] and value['validDecoders'] for value in report['music']),report['music']
             raise LifecycleComplete()
 
         phase='spectator-connect'

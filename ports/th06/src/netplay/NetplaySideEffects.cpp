@@ -1,4 +1,5 @@
 #include "NetplaySideEffects.hpp"
+#include <eagler/audio/ReplayMusicScope.hpp>
 
 #include <cstddef>
 #include <cstring>
@@ -71,6 +72,11 @@ bool IsSpeculative()
     return g_Speculative;
 }
 
+bool SuppressMusic()
+{
+    return g_Speculative && !eagler::audio::ReplayMusicScope::Active();
+}
+
 void ResetBgmHistory()
 {
     g_PresentedBgmPath[0] = '\0';
@@ -82,9 +88,9 @@ void ResetBgmHistory()
 bool ObserveBgmPlay(const char *path)
 {
     if (!path || !std::memchr(path, '\0', BGM_PATH_CAPACITY))
-        return g_Speculative;
+        return SuppressMusic();
 
-    if (!g_Speculative)
+    if (!SuppressMusic())
     {
         std::strcpy(g_PresentedBgmPath, path);
         g_PresentedBgmKnown = true;

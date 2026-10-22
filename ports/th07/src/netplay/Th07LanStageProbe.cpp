@@ -4,6 +4,7 @@
 #include <eagler/netplay/RollbackReplayBudget.hpp>
 #include <eagler/netplay/InputRepairBudget.hpp>
 #include <eagler/netplay/SnapshotPolicy.hpp>
+#include <eagler/audio/ReplayMusicScope.hpp>
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplayInput.hpp>
 #include <eagler/netplay/NetplayProtocol.hpp>
@@ -294,6 +295,7 @@ void InjectDenseBulletLoad(std::uint32_t frame)
 bool ProbeMode();
 bool ProductionLanMode();
 void ClearTransientModes();
+void PublishConfirmedSpectatorFrames();
 std::uint16_t LocalScript(std::uint8_t player, std::uint32_t frame);
 
 std::uint64_t CurrentSessionId()
@@ -406,6 +408,19 @@ bool DetailedCanonicalTelemetry()
 
 void RetireGameplaySession()
 {
+    if (!g_SpectatorMode && g_LocalPlayer == 0 && g_SpectatorPublisherReady &&
+        g_ProductionTransportStarted && g_BrowserPeerTransport.IsOpen())
+    {
+        // End at the contiguous confirmed cursor. Viewers can then consume
+        // their buffered tail instead of waiting forever behind the live delay.
+        PublishConfirmedSpectatorFrames();
+        const bool ended = g_SpectatorPublisherReady && g_SpectatorPublisher.Finish(
+            g_SpectatorPublisher.Published(), [](const std::vector<std::uint8_t>& wire) {
+                return g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size());
+            });
+        if (!ended) g_BrowserPeerTransport.StopSpectators(false);
+        g_SpectatorPublisherReady = false;
+    }
     SetReconcileTimerMode(false);
     ClearTransientModes();
     Th07Rollback::Clear();
@@ -2762,6 +2777,11 @@ bool ReconcileRollback()
 }
 } // namespace
 
+bool SpectatorViewing()
+{
+    return g_SpectatorMode;
+}
+
 bool Active()
 {
     return RequestedInternal() && g_Active;
@@ -3017,17 +3037,18 @@ int RunCalcChain()
         }
         const bool fastForwarding = g_SpectatorPlayback.FastForwarding();
         const std::uint64_t catchUpStartedNs = fastForwarding ? SDL_GetTicksNS() : 0;
+        const eagler::audio::ReplayMusicScope musicTimeline;
         const bool stepped = g_SpectatorPlayback.Step(
             [](const SpectatorStageEvent &checkpoint) {
                 return RestoreSpectatorReplayStart(checkpoint);
             },
-            [&](const SpectatorFramePacket &packet, bool seeking) {
+            [&](const SpectatorFramePacket &packet, bool) {
                 if (packet.frame != g_SimFrame)
                     return false;
                 FrameDecision decision;
                 decision.canAdvance = true;
                 decision.inputs = packet.inputs;
-                const int result = SimulateFrame(packet.frame, decision, seeking || fastForwarding);
+                const int result = SimulateFrame(packet.frame, decision, fastForwarding);
                 if (result == 0 || result == -1)
                     return false;
                 ++g_SimFrame;

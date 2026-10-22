@@ -21,6 +21,18 @@ source=source.replace('app->audio_device.spectator_silent(playback.Paused()||pla
  'EM_ASM({Module.spectatorLabPlayback=({ticks:$0,elapsed:$1,fastForwarding:!!$2,position:$3,edge:$4});},playback.Position()-spectator_lab_position,emscripten_get_now()-begin,fast_forwarding,playback.Position(),playback.Edge());\n  app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());');
 source=source.replace('// Rankings and stored names belong to each browser, after the common ending fence.',
  'EM_ASM({Module.spectatorLabTrace?.($0);},frame+1);\n // Rankings and stored names belong to each browser, after the common ending fence.');
+// The long-run fixture holds collision protection symmetrically on sources
+// and viewers. Production objects and input transport remain the same.
+source=source.replace('bool mp_apply_confirmed(',`void spectator_lab_keep_alive(){
+ if(!EM_ASM_INT({return Module.spectatorLabKeepAlive?1:0;})||!app||!app->scene())return;
+ auto& battle=app->scene()->battle;if(!battle.mp_enabled)return;for(unsigned seat=0;seat<battle.mp_options.seat_count;++seat)
+  battle.pilots[seat]->player->life.invulnerability.set(120);
+}
+bool mp_apply_confirmed(`);
+source=source.replaceAll('if(!app->step(mp_menu.held,','spectator_lab_keep_alive();if(!app->step(mp_menu.held,');
+const viewerTraceAnchor=' return true;\n}\nbool mp_tick(u32 held,bool physical=true){';
+if(!source.includes(viewerTraceAnchor))throw Error('Missing confirmed viewer tick anchor');
+source=source.replace(viewerTraceAnchor,' EM_ASM({Module.spectatorLabTrace?.($0);},packet.frame+1);\n'+viewerTraceAnchor);
 source+='\n'+readFileSync(resolve(import.meta.dirname,'spectator-stage-lab.inc'),'utf8');
 source=source.replace(/#include "([^"]+)"/g,(_,p)=>'#include "'+resolve(root,'web/cpp/sdl',p).replaceAll('\\','/')+'"');
 writeFileSync(resolve(dir,'fixture.cpp'),source);

@@ -452,11 +452,12 @@ i32 Application::multiplayer_update(){
             }
             return true;
         };
-        const auto tick=[&](const Netplay::SpectatorFramePacket& packet,bool seeking){
+        const bool fast_forwarding=playback.FastForwarding();
+        const auto tick=[&](const Netplay::SpectatorFramePacket& packet,bool){
             // The shared controller restores a new checkpoint before its first
             // input, including during uninterrupted live following.
             if(!world||world->loading||state.pending_screen!=value.screen)return false;
-            world->suppress_spectator_audio(seeking);
+            world->suppress_spectator_audio(fast_forwarding);
             if(!world->begin_netplay_frame(packet.frame)){
                 world->suppress_spectator_audio(false);return false;
             }
