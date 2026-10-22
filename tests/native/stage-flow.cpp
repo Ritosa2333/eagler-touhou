@@ -153,9 +153,29 @@ int main(int argc,char** argv) {
   // Original post-boss MSG:21,4,6 at time50, then0 at80. Execute
   // the real retail MSG and ANM banks through the same gameplay callbacks.
   if(argc==2){
-    start();
     auto bytes=[&](const char* name){std::ifstream f(std::string(argv[1])+"/"+name,std::ios::binary);return std::vector<uint8_t>(std::istreambuf_iterator<char>(f),{});};
     for(auto [slot,name]:std::vector<std::pair<int,const char*>>{{7,"front.anm"},{8,"text.anm"}}){auto b=bytes(name);require(th12_load_anm(slot,b.data(),int(b.size()))==1,"Retail ANM failed to load");}
+    const auto borderNodes=[](){int count=0;for(const auto* node:animationScene.chain(anm_logic::Membership::Primary))
+      if(node->vm.state().bank==7&&node->vm.state().script>=49&&node->vm.state().script<=51)++count;return count;};
+    start();
+    require(borderNodes()==3,"First-stage HUD omitted the collection-line parent or its two children");
+    for(int i=0;i<70;i++)th12_tick(0,0);
+    require(borderNodes()==3,"Collection line disappeared before its original display interval");
+    for(int i=70;i<200;i++)th12_tick(0,0);
+    require(borderNodes()==0,"Collection-line VMs survived their original exit animation");
+    start(2);require(borderNodes()==0,"Collection line appeared outside stage1");
+    start();ended=2;th12_tick(0,0);require(th12_continue_game()==1,"Collection-line Continue fixture failed");
+    require(borderNodes()==0,"Continue replayed the collection-line tutorial");
+    int32_t replayHeader[17]={0,51200,100,2,2,0,1000000};
+    require(th12_start_replay(0,0,1,1234,replayHeader,17)==1,"Collection-line replay fixture failed");
+    require(borderNodes()==0,"Replay displayed the collection-line tutorial");
+    // Stage selection resets the tool profile. Playback is armed afterwards,
+    // just as PracticeBridge does before starting its selected session.
+    th12_select_stage(1);loadBirthProbe();th12_practice_replay(1);
+    require(th12_start_full_game(0,0,1,1234,1)==1,"THPrac replay fixture failed to start");
+    require(borderNodes()==0,"THPrac replay displayed the collection line");th12_practice_replay(0);
+    start(1,true);require(borderNodes()==3,"First-stage Practice omitted the collection line");
+    start();
     auto msg=bytes("st01_01a.msg");
     require(messageFiles[4].load(msg.data(),int(msg.size()))&&messageVM.start(messageFiles[4],1),"Retail post-boss MSG failed to load");
     startMessageAnimations();
