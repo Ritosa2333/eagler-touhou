@@ -199,3 +199,9 @@ MSG6 退出文本动画后不再生成旧字幕；下一关沿用外围 HUD 动�
 `TH12_TEST_ASSETS` 指向日文资源提取目录后运行
 `node --test ports/th12/tests/stage-flow.test.mjs`，可检查真实过关 MSG
 的结束指令、自机与弹幕持续运行，以及跨关资源继承。
+
+### 对话退出和暂停保存
+
+MSG 的动画所有权覆盖公开句柄与已触发退出的动画。对话结束及替换时回收该对话的整组动画，Ctrl 跳过与切关使用相同清理边界。暂停菜单的“保存录像并退出”直接进入保存页，以游戏暂停画面为背景；完整失败结算继续使用既有疮痍和成绩流程。
+
+回归入口：`tests/message-animation-retirement.test.mjs`（`TH12_TEST_RETAIL` 指向零售资源，`TH12_TEST_CORE` 指向支持 Node 的构建）与 `tests/pause-save-direct.test.mjs`。

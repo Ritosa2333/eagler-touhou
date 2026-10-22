@@ -73,6 +73,7 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial, const Se
   scorePopups.clear();
   spellAnimationKeys = {};
   messageAnimationKeys = {};
+  messageAnimationOwners.clear();
   laserManager.reset(&laserWorld);
   animationScene.reset();
   animationUnsupported.clear();

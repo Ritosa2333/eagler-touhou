@@ -73,10 +73,19 @@ void showExtendNotice() {
   animationScene.remove(bossHud.itemNotice);
   bossHud.itemNotice = bindScreenAnimation(7, 47);
 }
-void startMessageAnimations() {
+void endMessageAnimations() {
+  // MSG destructor41cd90 retires its presentation objects through461a70.
+  // Keep exit-animation ownership after op4/5 releases the public handles:
+  // a Ctrl skip can reach message teardown before the exit ANM has ticked.
+  for (const auto key : messageAnimationOwners)
+    animationScene.remove(key);
+  messageAnimationOwners.clear();
   messageAnimationKeys = {};
+}
+void startMessageAnimations() {
+  endMessageAnimations();
   for (int slot = 0; slot < 4; slot++)
-    messageAnimationKeys[slot + 3] = bindScreenAnimation(8, slot);
+    messageAnimationOwners.push_back(messageAnimationKeys[slot + 3] = bindScreenAnimation(8, slot));
 }
 void messagePortraitSprites(uint64_t key, const int* childScripts, const int* spriteBases,
                             int expression) {
@@ -123,6 +132,7 @@ void messageCommand(const message_system::Command& command) {
   switch (command.op) {
   case 0:
     bossHud.checkpoint = 0; // Native420d4c..420d5b.
+    endMessageAnimations();
     break;
   case 1: {
     static constexpr int scripts[] = {31, 30, 28};
@@ -221,6 +231,10 @@ void messageCommand(const message_system::Command& command) {
   default:
     break;
   }
+  for (const auto slot : {0, 1, 2, 7})
+    if (messageAnimationKeys[slot] &&
+        std::find(messageAnimationOwners.begin(), messageAnimationOwners.end(), messageAnimationKeys[slot]) == messageAnimationOwners.end())
+      messageAnimationOwners.push_back(messageAnimationKeys[slot]);
   for (const auto& action : messageVM.textActions)
     if (action.slot >= 0 && action.slot < 4)
       interrupt(action.slot + 3, action.interrupt);

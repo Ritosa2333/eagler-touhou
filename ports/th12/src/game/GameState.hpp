@@ -27,6 +27,7 @@ extern pw::Manager playerDamageSources;
 extern pw::BombState playerBomb;
 extern std::array<uint64_t, 7> spellAnimationKeys;
 extern std::array<uint64_t, 8> messageAnimationKeys;
+extern std::vector<uint64_t> messageAnimationOwners;
 struct MessageEvent {
   int op = 0, frame = 0;
   std::vector<u8> payload;
@@ -72,6 +73,7 @@ void enemyDeathVisual(const Enemy&, bool audible = true);
 void requestEnemyClear();
 uint64_t bindScreenAnimation(int bank, int script, int layer = 23);
 void startMessageAnimations();
+void endMessageAnimations();
 void messageCommand(const message_system::Command&);
 void startSpellAnimations();
 void endSpellAnimations(const spell_system::Result&);

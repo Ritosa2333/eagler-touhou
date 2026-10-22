@@ -268,10 +268,12 @@ async function recordRunOnce(result,name=profile.data.lastName){
   if(!session||session.replay||session.resultRecorded)return;
   profile.recordRun({...result,name});session.resultRecorded=true;await profile.save();
 }
-function completeRun(clear){
+function completeRun(clear,{saveOnly=false}={}){
   if(!session)return;
   pendingResult=resultData(clear);recordClear(pendingResult);session.recorder?.finishStage({end:true});stopEffects();saveProfile();
-  model.finish({kind:clear?'clear':'gameover',...pendingResult});clearKeys();
+  if(saveOnly)model.openReplaySave(pendingResult,profile.data.lastName,'pause');
+  else model.finish({kind:clear?'clear':'gameover',...pendingResult});
+  clearKeys();
 }
 function beginEnding(){
   pendingResult=resultData(true);recordClear(pendingResult);session.recorder?.finishStage({end:true});stopEffects();saveProfile();
@@ -375,7 +377,7 @@ async function actions(){
     else if(action.type==='practiceReset'){practiceBridge.reset();damageSources.reset();}
     else if(action.type==='saveName')await recordRunOnce(action.result,action.name);
     else if(action.type==='saveReplay')await saveReplay(action);
-    else if(action.type==='saveExit'){stopMusic();completeRun(false);}
+    else if(action.type==='saveExit'){stopMusic();completeRun(false,{saveOnly:true});}
     else if(action.type==='result'){
       if(action.needsName===false)await recordRunOnce(action.result);
     }else if(action.type==='continue'){
