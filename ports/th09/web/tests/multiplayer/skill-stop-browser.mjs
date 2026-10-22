@@ -1,5 +1,6 @@
 // Authored WASM worlds | native rAF and post-Present recovery | synthetic wire.
-// Compare both submitted player poses at skill-stop and resume boundaries.
+// Measure cadence and predicted poses at skill-stop and resume boundaries.
+// Confirmed worlds and the final replay oracle must match exactly.
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
@@ -22,6 +23,8 @@ const jitter=Number(process.env.PACKET_JITTER||0),warmup=Number(process.env.SKIL
 const chained=process.env.CHAINED_SKILLS==='1';
 const localCharge=process.env.LOCAL_CHARGE==='1',expectRegression=process.env.EXPECT_REGRESSION==='1';
 const expectResumeWait=process.env.EXPECT_RESUME_WAIT==='1';
+const auditPrediction=process.env.AUDIT_PREDICTION!=='0',delayControl=process.env.DELAY_CONTROL==='1';
+const expectContinuous=process.env.EXPECT_CONTINUOUS==='1';
 assert.ok(Number.isInteger(limit)&&limit>=2400&&limit<=24000);
 assert.ok(Number.isInteger(delay)&&delay>=1&&Number.isInteger(jitter)&&jitter>=0&&delay+jitter<=7);
 assert.ok(Number.isInteger(warmup)&&warmup>=0&&warmup<2400);
@@ -33,7 +36,7 @@ const browser=await puppeteer.launch({headless:true,executablePath:process.env.B
 const errors=[];
 try{
   const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(host.url);
-  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,localCharge,expectRegression})=>{
+  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl})=>{
     const windows=[],pending=[],tapes=[[],[]],captured=[[],[]],presented=[[],[]],exact=[],exactDraw=[],charges=[[],[]];
     let clock=0;
     for(let side=0;side<3;++side){
@@ -62,7 +65,7 @@ try{
           captured[side][frame]=bits;
         }
       }
-      pending.push({to:1-side,due:clock+(input||charge?delay+clock%(jitter+1):0),bytes:new Uint8Array(bytes)});
+      pending.push({to:1-side,due:clock+(input||charge||delayControl?delay+clock%(jitter+1):0),bytes:new Uint8Array(bytes)});
     };
     for(let side=0;side<3;++side){
       const w=windows[side],dc=()=>({readyState:'open',bufferedAmount:0,send:b=>{if(side<2)send(side,b);}});
@@ -145,7 +148,9 @@ try{
     const summary=peers.map(status),hashes=windows.map(w=>w.core._th09_network_hash()>>>0),audits=windows.map(world);
     const images=windows.map(w=>{w.core._th09_game_draw();return w.document.querySelector('canvas').toDataURL();});
     const metrics=presented.map((rows,side)=>{
-      const errors=[],gaugeErrors=[];let frozen=0,resumed=0,edges=0,maxBullets=0,maxPose=0,maxDraw=0,starts=0,prior=false,priorBits=0,unseenStopFrames=0,unseenMaxPose=0,unconfirmedChargeFrames=0;
+      const gaps=rows.slice(1).map((row,i)=>({clock:row.clock,frame:row.frame,gap:row.clock-rows[i].clock}));
+      const cadence={maxGap:Math.max(0,...gaps.map(g=>g.gap)),missedOpportunities:gaps.reduce((n,g)=>n+Math.max(0,g.gap-1),0),longGaps:gaps.filter(g=>g.gap>1).slice(0,24)};
+      const errors=[],gaugeErrors=[],confirmedErrors=[];let frozen=0,resumed=0,edges=0,maxBullets=0,maxPose=0,maxDraw=0,starts=0,prior=false,priorBits=0,unseenStopFrames=0,unseenMaxPose=0,unconfirmedChargeFrames=0;
       for(const row of rows){
         if(!expectRegression){
           if(!row.visual)throw Error('Charge observation required');
@@ -157,12 +162,13 @@ try{
         const stopped=!!(row.world[2]&0x1800),wasStopped=prior,edge=stopBits!==priorBits;
         if(stopped&&!prior)++starts;prior=stopped;priorBits=stopBits;
         const expected=exact[row.frame-1];
+        if(row.frame<=row.confirmed&&row.world.some((n,i)=>n!==expected[i]))confirmedErrors.push({frame:row.frame});
         const expectedBits=exactDraw[row.frame-1]?.[8]??(expected[2]&0x1800);
         const expectedStop=!!(expected[2]&0x1800),resume=!stopped&&wasStopped;
         maxBullets=Math.max(maxBullets,row.load[0]+row.load[1]);
         // A not-yet-received opponent release cannot be known to zero-delay
         // rollback. Retain that separate prediction diagnostic; the acceptance
-        // gate covers every displayed stop and its first displayed resume.
+        // diagnostics cover displayed stops and their first displayed resume.
         if(!stopped&&expectedStop&&!resume&&!edge){++unseenStopFrames;
           for(let player=0;player<2;++player){const p=6+player*20;unseenMaxPose=Math.max(unseenMaxPose,Math.hypot(float(row.world[p])-float(expected[p]),float(row.world[p+1])-float(expected[p+1])));}continue;}
         if(stopped)++frozen;if(resume)++resumed;if(edge)++edges;
@@ -176,8 +182,8 @@ try{
           if(pose||appearance)errors.push({frame:row.frame,clock:row.clock,player,resume,pose,appearance});
         }
       }
-      return {presentations:rows.length,frozen,resumed,edges,starts,maxBullets,maxPose,maxDraw,unseenStopFrames,unseenMaxPose,
-        unconfirmedChargeFrames,gaugeErrorCount:gaugeErrors.length,gaugeErrors:gaugeErrors.slice(0,12),errorCount:errors.length,errors:errors.slice(0,12)};
+      return {cadence,presentations:rows.length,frozen,resumed,edges,starts,maxBullets,maxPose,maxDraw,unseenStopFrames,unseenMaxPose,
+        confirmedErrors,unconfirmedChargeFrames,gaugeErrorCount:gaugeErrors.length,gaugeErrors:gaugeErrors.slice(0,12),errorCount:errors.length,errors:errors.slice(0,12)};
     });
     let lastEnd=-1,prior=false,shortGaps=0;
     for(let f=0;f<exact.length;++f){
@@ -189,9 +195,9 @@ try{
       different:t.flatMap((bits,f)=>bits===tapes[side][f]?[]:[{frame:f,planned:tapes[side][f],captured:bits}]).slice(0,20)}));
     return {clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,
       capturesMatch:captured.every((t,side)=>t.length===limit&&t.every((bits,f)=>bits===tapes[side][f]))};
-  },{limit,delay,jitter,warmup,chained,localCharge,expectRegression});
-  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait},browser:await browser.version(),
-    scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Both submitted poses on every global cut-in stop, field time-stop transition and first displayed resume versus exact captured commands. Sakuya can move during field time-stop; ordinary prediction remains active between transitions. Unreceived-release prediction differences remain in unseenStopFrames/unseenMaxPose. This is not device performance evidence.',result,errors};
+  },{limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl});
+  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait,auditPrediction,delayControl,expectContinuous},browser:await browser.version(),
+    scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Presentation cadence, predicted poses and confirmed worlds across global cut-ins, field time-stop and resume. Exact final worlds and framebuffer use captured inputs and immutable charge records as the replay oracle. This is not device performance evidence.',result,errors};
   writeFileSync(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   assert.deepEqual(errors,[]);
   assert.ok(result.stopWaits.every(Boolean),'Native boundary observations required');
@@ -203,9 +209,14 @@ try{
   assert.deepEqual(result.audits[0],result.audits[2]);assert.deepEqual(result.audits[1],result.audits[2]);
   assert.ok(result.imagesEqual,'Final framebuffer matches exact input');
   for(const m of result.metrics){
+    if(expectContinuous){
+      assert.equal(m.cadence.missedOpportunities,0,'Skill transitions preserve every due presentation');
+      assert.ok(result.stopWaits.every(row=>row.every(n=>n===0)),'Skill state never introduces a confirmation fence');
+    }
     assert.ok(m.frozen>100&&m.starts>=5&&m.resumed>0,'Repeated skill stops and resumes exercised');
     if(!expectRegression){
-      assert.deepEqual(m.errors,[],'Both player poses match exact commands at stops and resume');
+      assert.deepEqual(m.confirmedErrors,[],'Every presented confirmed world matches exact commands');
+      if(!auditPrediction)assert.deepEqual(m.errors,[],'Both player poses match exact commands at stops and resume');
       assert.deepEqual(m.gaugeErrors,[],'Charge HUD follows current game state');
       assert.ok(m.unconfirmedChargeFrames>100,'Charge display advances before input confirmation');
     }

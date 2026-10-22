@@ -66,9 +66,11 @@ npm --prefix launcher run dev:workspace
 | `false`（默认） | 使用本地优先蓄力，双方同步已接受的本机进度 | `th09_local_charge_priority(1)` |
 | `true` | 使用原版蓄力逻辑，HUD 即时显示当前进度 | `th09_local_charge_priority(0)` |
 
-Runtime 在 HELLO 前完成配置，并将蓄力规则纳入 gameplay ABI，核对双方的规则身份。纯延迟模式使用原版蓄力逻辑。技能停顿边界确认独立于蓄力开关，两种设置均生效。
+Runtime 在 HELLO 前完成配置，并将蓄力规则纳入 gameplay ABI，核对双方的规则身份。纯延迟模式使用原版蓄力逻辑。
 
-技能停顿的开始、结束与状态切换在对应边界帧确认，结束后的普通帧恢复预测推进。浏览器技能回归同时记录边界等待与恢复后等待，并核对双方位置、蓄力 HUD、原生 Replay 和最终画面。
+技能切入、停顿和恢复沿用可回滚世界帧推进，恢复工作安排在画面提交之后。历史窗口和资源重建决定确认等待边界。浏览器技能回归记录画面推进间隔、预测位置差异与蓄力 HUD，并以完整确认输入核对原生 Replay、最终世界和画面；`DELAY_CONTROL=1` 同时覆盖输入与控制包延迟，`AUDIT_PREDICTION=1` 单独报告预测画面与确认画面的差异。
+
+调度参考 HiganRTool 的 [input_point 与 post_present](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/core/src/rollback.rs) 和 [tick 边界判定](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/dll/src/rollback_play.rs)。技能停顿继续运行网络输入与回滚时钟；全局切入和咲夜场地时停由世界自身控制对象更新。预测画面差异单独记录，已确认世界与最终回放保持精确核对。`EXPECT_CONTINUOUS=1` 验证固定延迟场景逐次画面推进，`AUDIT_PREDICTION=0` 可复查旧版逐帧确认屏障的表现。
 
 ### 蓄力同步与旁观
 

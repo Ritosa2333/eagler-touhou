@@ -769,14 +769,11 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
     // Delayed recovery must preserve the oldest unpublished OUTPUT too, even
     // when the first prediction mismatch is several frames later.
     if(forwardOnly){
-        const auto next=rollback.Prepare(true);bool chargeBoundary=false;
-        if(probe->world&&!probe->in_title)for(const auto& field:probe->world->battle->fields){
-            const auto& control=field.player->control;
-            chargeBoundary=chargeBoundary||control.charge>=200||
-                (control.available>=200&&(next.inputs[field.script.side].buttons&2));
-        }
-        if(rollback.Frame()-rollback_published>=rollback_frames.size()||!next.canAdvance||
-           probe->stop_state()||chargeBoundary)forwardOnly=false;
+        const auto next=rollback.Prepare(true);
+        // Skill cut-ins and field time-stop remain reversible world ticks.
+        // Only the history horizon and real resource boundaries require
+        // reconciliation before submitting the next picture.
+        if(rollback.Frame()-rollback_published>=rollback_frames.size()||!next.canAdvance)forwardOnly=false;
     }
     if(correction!=Netplay::INVALID_FRAME&&!forwardOnly){
         TH09_PERF_SCOPE(restore_cost,Restore);
@@ -841,7 +838,6 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         TH09_PERF_COUNT(ForwardTicks,final?1:0);TH09_PERF_COUNT(ReplayTicks,final?0:1);TH09_PERF_COUNT(SpeculativeTicks,speculative?1:0);
         const bool wasComplete=probe->complete;
         const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
-        const auto priorStop=probe->stop_state();
         const bool deferPresent=render&&final&&speculative&&!probe->in_title;
         probe->charge_frames={};
         // Resource replacement requires exact keys and a reconciled past.
@@ -868,8 +864,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
                 }
             }
             if(probe->session&&!probe->in_title&&!probe->session->record_charge_frame(samples)){probe->error=probe->session->error;return 0;}
-            // Accept the owner's result once even if this uncommitted world
-            // tick must wait at a stop edge. Its retry uses the same record.
+            // Accept the owner's result once; recovery reuses this record.
             if(!rollback.CaptureLocalCharge(f,samples[network.side])){probe->error=rollback.Error();return 0;}
         }
         if(!record.hasBegin&&probe->world&&probe->world->rules.progress.round_frames<priorRoundFrames&&probe->world->rules.progress.round>0){
@@ -879,17 +874,6 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
         if(record.captured){if(!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}TH09_PERF_COUNT(SealedCheckpoints,1);}
         if(!ok)return 0;
-        const auto afterStop=probe->stop_state();
-        if(speculative&&priorStop!=afterStop){
-#if TH09_DEVELOPMENT_HARNESS
-            ++probe_stop_boundary_waits[priorStop!=afterStop?0:1];
-#endif
-            // Keep authored Draw side effects in the checkpoint, but publish
-            // stop transitions only after their input history is reconciled.
-            probe->presentation.renderer.flush();probe->graphics.backend.flush();
-            if(!record.state->Restore()){probe->error="Skill stop boundary restore failed";return 0;}
-            record.sounds.clear();++adonis_waits;return 2;
-        }
         if(!rollback.CommitChargeFrame(f,samples)){probe->error=rollback.Error();return 0;}
         if(!rollback.Complete(decision,forwardOnly)){probe->error=rollback.Error();return 0;}
         if(deferPresent)probe->graphics.present();
