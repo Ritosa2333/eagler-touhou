@@ -16,6 +16,6 @@ const loader=resolve(out,'native-gameplay.cjs'),rsp=resolve(out,'native-test.rsp
 writeFileSync(rsp,[...flags,'--use-port=sdl3','-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-sNODERAWFS=1','-sEXIT_RUNTIME=1','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=8388608','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824',...objects,fixture,'-o',loader].map(a=>JSON.stringify(a)).join('\n'));
 run('python',[compiler,'@'+rsp]);
 if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE to the Japanese 1.00b archive');
-const options=process.argv.slice(2);if(options.some(option=>option!=='--items-only'))throw Error('Expected --items-only');
+const options=process.argv.slice(2);if(options.some(option=>option!=='--items-only'&&option!=='--ghost-stage-only'))throw Error('Expected --items-only or --ghost-stage-only');
 const result=run(process.execPath,[loader,resolve(process.env.TH15_TEST_ARCHIVE),...options]);
 writeFileSync(resolve(out,'native-test-result.json'),result.stdout);

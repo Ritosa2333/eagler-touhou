@@ -31,6 +31,10 @@ bool SpectatorReplayStart::Restore(sdl::ApplicationState& app,const SessionSetup
     if(!app.begin_run(&entries)||!app.scene()||!app.session||!app.session->driver()){error=app.failure;return false;}
     // Run the native Replay entrance once, before consuming input frame F.
     if(!app.session->enter_replay_stage()){error=app.session->error;return false;}
+    // This Application clock drives multiplayer spell timing as well as the
+    // native frame telemetry. A rewind or independent late-stage join starts
+    // at the confirmed stream's frame, independently of prior local playback.
+    app.frames=frame;
     app.run->release_previous();app.display->release_previous();menu={};return true;
 }
 }

@@ -7,7 +7,10 @@
 #include "MultiplayerVisualPolicy.hpp"
 #include <algorithm>
 namespace th15 {
-MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned s,int ch):world(w),seat(s),character(ch),owned_session(w.session),owned_life_piece_tier(w.score.life_piece_tier),session(s?owned_session:w.session),score(w.score){ghost_random=w.mp_options.seed^(0x9e3779b9u*(s+1));if(!ghost_random)ghost_random=1;}
+namespace {
+u32 ghost_stage_seed(u32 seed,unsigned seat){const auto value=seed^(0x9e3779b9u*(seat+1));return value?value:1;}
+}
+MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned s,int ch):world(w),seat(s),character(ch),owned_session(w.session),owned_life_piece_tier(w.score.life_piece_tier),session(s?owned_session:w.session),score(w.score){ghost_random=ghost_stage_seed(w.mp_options.seed,s);}
 bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
     if(seat){
         owned_player=std::make_unique<Player>(sht,world.animations,world.effects,world.game_random,world.visual_random,session,world.spell,*this,character,bank,world.resources.effect);
@@ -87,6 +90,9 @@ void MultiplayerPilot::protect_teammates(i32 frames){
     }
 }
 bool MultiplayerPilot::reset_stage(){
+    // The native Replay entrance creates a fresh pilot. Give retained live
+    // pilots the same private drift origin when the next stage is bound.
+    ghost_random=ghost_stage_seed(world.mp_options.seed,seat);ghost_clock=0;ghost_dx=ghost_dy=0;
     session.bomb_state=0;spell_startup_bomb=false;keys={};input={};life_hold=power_taps=power_gap=0;life_latched=false;
     if(!rebuild_bomb())return false;
     if(ghost)return revive(false);
