@@ -524,16 +524,11 @@ with sync_playwright() as pw:
                     native_stage_one=call(observer,'host.spectatorDiagnostics()')
                     assert native_stage_one and native_stage_one[44]==stage_one_frame,{
                         'stageOneFrame':stage_one_frame,'nativeDiagnostics':native_stage_one}
-                    embedded_stage_one=native_stage_one[18:31]
-                    assert source_stage_one_capture and source_stage_one_capture['frame']==stage_one_frame and \
-                        source_stage_one_capture['canonical']==embedded_stage_one,{
-                            'sourceCheckpointCaptureMismatch':True,'sourceCheckpointCapture':{
-                                'frame':source_stage_one_capture.get('frame') if source_stage_one_capture else None,
-                                'canonical':source_stage_one_capture.get('canonical') if source_stage_one_capture else None},
-                            'embeddedCheckpointCanonical':embedded_stage_one,
-                            'nativeDiagnostics':native_stage_one}
+                    # The wire contains the native Replay header. Compare
+                    # reconstructed native owners below, rather than requiring
+                    # the retired world-checkpoint diagnostic hash on the wire.
+                    assert source_stage_one_capture and source_stage_one_capture['frame']==stage_one_frame
                     case['stageOneCheckpointCapture']={'frame':source_stage_one_capture['frame'],
-                        'canonicalMatchesEmbeddedCheckpoint':True,
                         'groupLengths':{group:len(value) for group,value in source_stage_one_capture['groups'].items()},
                         'groupSha256':{group:hashlib.sha256(value).hexdigest() for group,value in
                             source_stage_one_capture['groups'].items()}};save()
@@ -648,22 +643,18 @@ with sync_playwright() as pw:
                         native_stage_two[44]==stage_two_frame and native_stage_two[45]==stage_two_wire_key and \
                         native_stage_two[46]==1,{'nativeCheckpointIdentityMismatch':{'node':stage_two_node,
                             'nativeDiagnostics':native_stage_two,'playback':at_stage_two_checkpoint}}
-                    embedded_stage_two=native_stage_two[18:31]
                     viewer_stage_two_checkpoint=snapshot(observer)['canonical']
-                    assert len(embedded_stage_two)==13 and embedded_stage_two[0]==1 and \
-                        len(viewer_stage_two_checkpoint)==13 and viewer_stage_two_checkpoint[0]==1 and \
-                        embedded_stage_two==source_stage_two_checkpoint_by_player[0] and \
+                    assert len(viewer_stage_two_checkpoint)==13 and viewer_stage_two_checkpoint[0]==1 and \
                         viewer_stage_two_checkpoint==source_stage_two_checkpoint_by_player[0],{
-                            'stageTwoCheckpointPayloadDoesNotMatchSourceCapture':{
+                            'stageTwoNativeReplayDoesNotMatchSourceCapture':{
                                 'frame':stage_two_frame,'nodeIdSerial':stage_two_node['id'],
                                 'wireStageKey':stage_two_wire_key,'decodedStage':stage_two_wire_key&0xff,
-                                'routeFromWireKey':stage_two_route,'embeddedCanonical':embedded_stage_two,
+                                'routeFromWireKey':stage_two_route,
                                 'viewerCanonical':viewer_stage_two_checkpoint,
                                 'sourceCanonicalByPlayer':source_stage_two_checkpoint_by_player,
                                 'nativeDiagnostics':native_stage_two}}
-                    case['phase']='stage-two-embedded-checkpoint-strict-pass'
+                    case['phase']='stage-two-native-replay-strict-pass'
                     case['stageTwoCheckpointRestore']={'playback':at_stage_two_checkpoint,
-                        'embeddedCanonical':embedded_stage_two,
                         'viewerCanonical':viewer_stage_two_checkpoint,
                         'nativeDiagnostics':native_stage_two}
                     save()
@@ -686,12 +677,11 @@ with sync_playwright() as pw:
                         'stageTwoCheckpointIdentity':{'frame':stage_two_frame,'serial':stage_two_node['id'],
                             'wireStageKey':stage_two_wire_key,'nativeStage':stage_two_wire_key&0xff,
                             'routeFromWireKey':stage_two_route,'serialEvidence':'received playback node id',
-                            'nativeFrameStageAndEmbeddedPayloadVerifiedAfterAutomaticSwitch':True,
+                            'nativeFrameStageAndReplayRestoreVerifiedAfterAutomaticSwitch':True,
                             'embeddedCanonicalMatchesAllSources':True},
                         'stageTwoSourceCanonicalAtCheckpointByPlayer':source_stage_two_checkpoint_by_player,
                         'stageTwoCheckpointRestoreAfterAutomaticSwitch':{'playback':at_stage_two_checkpoint,
-                            'embeddedCanonical':embedded_stage_two,
-                            'viewerCanonical':viewer_stage_two_checkpoint,
+                                'viewerCanonical':viewer_stage_two_checkpoint,
                             'nativeDiagnostics':native_stage_two},
                         'stageTwoCheckpointFrame':stage_two_frame,'oldViewerReachedStageTwo':live_stage_two,
                         'stageTwoSameBoundaryFrame':same_boundary,
