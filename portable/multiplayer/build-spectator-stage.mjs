@@ -6,7 +6,7 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {responseFileContents} from '../response-file.mjs';
 const root=resolve(import.meta.dirname,'../..');
-const plan=JSON.parse(execFileSync(process.execPath,['portable/build.mjs','--multiplayer','--diagnostic','--print-plan'],{cwd:root,encoding:'utf8'}));
+const plan=JSON.parse(execFileSync(process.execPath,['portable/build.mjs','--multiplayer',...(process.argv.includes('--production')?[]:['--diagnostic']),'--print-plan'],{cwd:root,encoding:'utf8'}));
 const build=JSON.parse(readFileSync(resolve(plan.outputDirectory,'build.json'),'utf8'));
 const sha=b=>createHash('sha256').update(b).digest('hex');
 for(const [file,expected] of Object.entries(build.sourceFiles))if(sha(readFileSync(resolve(root,file)))!==expected)throw Error('Rebuild changed production source '+file);
