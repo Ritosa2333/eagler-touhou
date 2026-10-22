@@ -2,7 +2,7 @@
 // same IDs, so clients never submit arbitrary text or a claimed sender name.
 export const QUICK_CHAT_ROWS = Object.freeze([
     [{ id: "1", zh: "1", en: "1" }],
-    [{ id: "request-life", zh: "请求给条命（停止开火，然后在我旁边低速即可）", en: "Life please (stop firing, then focus next to me)" }],
+    [{ id: "request-life", zh: "请求给条命（停止开火，然后在我旁边连点 5 次低速即可）", en: "Life please (stop firing, then tap focus 5 times next to me)" }],
     [{ id: "request-power", zh: "请求给 Power（在我身旁快速按多下开火键即可）", en: "Power please (tap fire repeatedly next to me)" }],
     [{ id: "share-resources", zh: "请均分资源", en: "Please share resources evenly" }],
     [{ id: "follow-me", zh: "跟着我", en: "Follow me" }, { id: "spread-out", zh: "分开走", en: "Spread out" }],
