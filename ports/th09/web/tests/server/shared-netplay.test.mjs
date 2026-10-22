@@ -60,6 +60,7 @@ function harness(timeline = false) {
       _th09_startup_info:()=>768,
       _th09_rollback_pump: () => { ++calls.pumps; return self.pumpState ?? 2; },
       _th09_rollback_info: () => 32,
+      _th09_network_pacing_info: () => 640,
       _th09_network_receive: (...args) => { calls.receive.push(args); return 1; },
       _th09_network_hash: () => 123,
       _th09_network_end: () => ++calls.ends,
@@ -391,6 +392,8 @@ test('diagnostics report native rollback counters and result keeps pumping termi
     assert.equal(globalThis.__eaglerNetplayLanRollback,7);
     assert.equal(globalThis.__eaglerNetplayLanResimulated,19);
     assert.equal(globalThis.__eaglerNetplayLanConfirmed,98);
+    assert.equal(globalThis.__eaglerNetplayInputRepairs,3);
+    assert.equal(globalThis.__eaglerNetplayMissingInputs,0);
     const before=leftCore.calls.pumps;left.result();left.pump();
     assert.equal(leftCore.calls.pumps,before+1);
     assert.equal(left.active,false);

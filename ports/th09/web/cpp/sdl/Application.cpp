@@ -681,7 +681,7 @@ TH09_EXPORT("th09_network_hash") u32 th09_network_hash(){
     word(probe->state.random.seed);word(probe->state.random.calls);word(probe->in_title);word(probe->paused);word(probe->over);word(probe->complete);
     if(probe->in_title&&probe->title){const auto& t=probe->title->state;word(i32(t.screen));word(t.state);word(t.frames);word(t.selection);for(u32 side=0;side<2;++side){word(t.character_selection[side]);word(t.confirmed[side]);word(t.health[side]);}}
     else if(probe->world){const auto& w=*probe->world;word(w.battle->state.flags);word(w.scene->phase);word(w.dialogue->id);word(w.rules.progress.round);for(u32 side=0;side<2;++side){const auto& p=*w.battle->fields[side].player;real(p.motion.position.x);real(p.motion.position.y);real(p.motion.health);real(p.control.charge);real(p.control.available);word(p.control.player_state);word(w.rules.scores[side].points);word(p.combo_state.best_hits);}}
-    if(probe->world&&(rollback.LocalChargePriority()||(probe->session&&probe->session->charge_replay.enabled)||
+    if(!probe->in_title&&probe->world&&(rollback.LocalChargePriority()||(probe->session&&probe->session->charge_replay.enabled)||
        (spectator_mode&&probe->charge_frames[0].enabled))){
         for(const auto& field:probe->world->battle->fields){const auto& pending=field.player->pending_charge;
             word(pending.count);word(pending.invalid);for(u32 i=0;i<pending.count;++i)real(pending.values[i]);}
@@ -1092,6 +1092,15 @@ TH09_EXPORT("th09_probe_charge_bridges") u32 th09_probe_charge_bridges(){
 }
 TH09_EXPORT("th09_probe_replay") u32 th09_probe_replay(u32 size,u32 stage){if(!probe||size>probe->import_bytes.size())return 0;ReplayFile f;if(!f.decode(probe->import_bytes.data(),size))return 0;probe->title_play_replay(f,stage,"");probe->launch_pending=false;probe->in_title=false;return probe->start();}
 TH09_EXPORT("th09_probe_return_title") u32 th09_probe_return_title(u32 score){if(!probe)return 0;if(probe->session)probe->session->finish();return probe->return_title(score!=0);}
+TH09_EXPORT("th09_probe_menu_hash_isolation") u32 th09_probe_menu_hash_isolation(){
+    if(!probe||!probe->in_title||!probe->world)return 0;
+    auto& pending=probe->world->battle->fields[0].player->pending_charge;
+    const auto saved=pending;const auto savedMode=spectator_mode;const auto savedEnabled=probe->charge_frames[0].enabled;
+    spectator_mode=true;probe->charge_frames[0].enabled=true;
+    const auto before=th09_network_hash();pending.count=1;pending.invalid^=1;pending.values[0]=123.5f;
+    const auto after=th09_network_hash();pending=saved;spectator_mode=savedMode;probe->charge_frames[0].enabled=savedEnabled;
+    return before==after;
+}
 TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 difficulty){TH09_PERF_SCOPE(open_cost,GameOpen);probe=std::make_unique<Application>();if(!probe->open(a,b,mode,difficulty)){failure=probe->error;return 0;}return 1;}
 #endif
 #if TH09_DEVELOPMENT_HARNESS

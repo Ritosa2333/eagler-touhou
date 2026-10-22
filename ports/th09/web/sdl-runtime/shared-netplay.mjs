@@ -114,6 +114,8 @@ export class SharedNetplay {
     this.prepared = this.acknowledged = false;
     delete globalThis.__eaglerNetplayTiming;
     delete globalThis.__eaglerNetplayInputDelayFrames;
+    delete globalThis.__eaglerNetplayInputRepairs;
+    delete globalThis.__eaglerNetplayMissingInputs;
     globalThis.__eaglerNetplayLanActive = false;
     globalThis.__eaglerNetplayTransport = 'connecting';
     const encoded = new TextEncoder().encode(url.href);
@@ -597,6 +599,11 @@ export class SharedNetplay {
     globalThis.__eaglerNetplayLanConfirmed = this.spectator ? frame : stats[1];
     globalThis.__eaglerNetplayLanRollback = this.spectator ? 0 : stats[2];
     globalThis.__eaglerNetplayLanResimulated = this.spectator ? 0 : stats[3];
+    if(!this.spectator){
+      globalThis.__eaglerNetplayInputRepairs=stats[5];
+      const pacing=this.core._th09_network_pacing_info()/4;
+      globalThis.__eaglerNetplayMissingInputs=this.core.HEAPU32[pacing+1];
+    }
     if (this.spectator && this.spectatorEnded && frame >= this.spectatorFrame &&
         (!this.timelineExperiment||((this.disconnected||this.roomSessionRetired)&&!this.spectatorPaused()&&!this.spectatorTape.peek()))) {
       this.finished = true;

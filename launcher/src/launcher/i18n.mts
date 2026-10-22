@@ -602,6 +602,7 @@ const entries = [
   ["diagnostics.spectatorRollback", "旁观只消费全员确认帧 - 无预测 / 无回滚 / 无本地输入", "Spectator consumes confirmed frames only - no prediction / rollback / local input"],
   ["diagnostics.rollback", "回滚 {rollback} - 重模拟 {resimulated} - lead {advantage} - pace {pacing}", "Rollback {rollback} - resimulated {resimulated} - lead {advantage} - pace {pacing}"],
   ["diagnostics.quality", "质量 RTT {rtt} - 波动 {variation} - 输入停顿 {stall}", "Quality RTT {rtt} - variation {variation} - input stalls {stall}"],
+  ["diagnostics.inputRecovery", "输入缺帧 {missing}f | 修复发送 {repairs}", "Missing inputs {missing}f | repair sends {repairs}"],
   ["diagnostics.roundTripLatency", "往返延迟", "Round-trip latency"],
   ["diagnostics.latencyVariation", "延迟波动（抖动）", "Latency variation (jitter)"],
   ["diagnostics.peerReconnecting", "重连中", "reconnecting"],

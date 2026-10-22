@@ -18,6 +18,8 @@ import {
 } from './relay-abuse-guard.mjs';
 import {
   RELAY_LIMITS,
+  TH09_SPECTATOR_HISTORY_LIMITS,
+  closeTh09HistoryAdmission,
   createRelayMessageGate,
   acceptRelayMessage,
   createBoundedRelaySender,
@@ -1677,6 +1679,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
   if (
     !room ||
     !run ||
+    run.spectatorHistoryUnavailable ||
     run.playerCount !== playerCount ||
     !run.admittedSpectators.has(spectatorId)
   ) {
@@ -1984,7 +1987,7 @@ server.on('connection', (socket, request) => {
       if (player !== 0) return;
       const payload = incoming.subarray(1);
       if (acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload)) return;
-      if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0) return;
+      if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0 && !run.spectatorHistoryUnavailable) return;
       const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
       const ending =
         th09Stream &&
@@ -2027,6 +2030,11 @@ server.on('connection', (socket, request) => {
         // the same player connections keep running through native Retry.
         run.spectatorHistory = run.spectatorTiming ? [run.spectatorTiming] : [];
         run.spectatorHistoryBytes = run.spectatorTiming?.length || 0;
+        if (run.spectatorHistoryUnavailable) {
+          run.spectatorHistoryUnavailable = false;
+          run.spectatorAdmissionOpen = true;
+          run.onSpectatorAvailabilityChange?.();
+        }
       }
       if (th09Stream && (payload.length === 46 || payload.length === 126 || ending || roundStart)) {
         const frame = payload.readUInt32LE(8),
@@ -2059,11 +2067,13 @@ server.on('connection', (socket, request) => {
           run,
           payload,
           run.spectatorTimeline
-            ? { ...RELAY_LIMITS, historyFrames: 32401, historyBytes: 2 * 1024 * 1024 }
+            ? TH09_SPECTATOR_HISTORY_LIMITS
             : RELAY_LIMITS,
+          th09Stream && run.spectatorTimeline ? closeTh09HistoryAdmission : stopSpectatorStream,
         )
-      )
-        return;
+      ) {
+        if (run.spectatorStopped) return;
+      }
       for (const [spectatorId, target] of run.spectatorClients)
         if (!target.spectatorReplaying)
           sendSpectatorPayload(target, payload, roomId, runId, spectatorId);

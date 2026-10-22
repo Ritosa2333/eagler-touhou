@@ -43,6 +43,12 @@ npm --prefix launcher run dev:workspace
 
 ## 房间菜单返回
 
+联机诊断同时展示 RTT、波动、输入停顿、当前缺少的远端输入帧与累计修复发送数。输入缺帧和修复活动帮助识别延迟平稳时的输入交付问题，回滚及重模拟计数展示本地恢复工作量。
+
+旁观按当前局保留 Replay 输入，进入下一局后释放已播放的旧局。20 分钟对局与暂停、回放共享同一完整前缀，原生队列可容纳 131072 帧输入。返回房间后，选角同步校验只包含当前菜单状态，蓄力释放队列在进入实际对局后参与校验。
+
+`tests/multiplayer/in-game-selection-browser.mjs --relay --reentry-only` 连续执行五轮返回房间与开局，并比较每轮双方的已确认帧 hash。开发构建的 `tests/multiplayer/menu-hash-isolation-browser.mjs` 验证菜单 hash 与旧世界蓄力队列隔离。Relay 的 `TH09_TIMELINE_STRESS=1 TH09_TIMELINE_STRESS_FRAMES=72000 node services/relay/tests/test-th09-spectator-timeline.mjs` 验证 20 分钟输入量的归档、已有连接和中途加入。
+
 正式 Runtime 导出 `th09_room_return`，结束当前对局、清理旁观状态与待退出标记，回到原生标题菜单。Launcher 保留同一 iframe、Module 和已加载资源，菜单呈现后完成 `return-room` 响应。普通版与多人版共用该生产接口，构建时核对导出存在；连续旁观往返核对菜单持续刷新与再次开局。
 
 ## 回滚蓄力与 Replay

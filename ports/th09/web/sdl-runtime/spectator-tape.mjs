@@ -21,7 +21,7 @@ export class SpectatorTape {
     this.round=round;
   }
   append(packet) {
-    if(this.packets.length-this.frontier>=32404||this.bytes+packet.length>32404*126)
+    if(this.packets.length-this.frontier>=262144||this.bytes+packet.length>16*1024*1024)
       throw Error('TH09 待播放对局积压超限，请重新加入观战；玩家对局继续');
     const saved=packet.slice(),frame=new DataView(saved.buffer).getUint32(8,true);
     if(isBegin(saved)) {
@@ -53,8 +53,14 @@ export class SpectatorTape {
     if(isBegin(packet)){--this.begins;this.current=this.matches.find(match=>match.index===this.head)??null;}
     if(this.head>=this.frontier){this.bytes-=packet.length;this.frontier=this.head+1;}
     ++this.head;
-    // Retain confirmed packets until this viewer leaves. Network admission is
-    // bounded by the unread frontier, independently of local replay/rewind.
+    // Replay within the current match remains available. Starting the next
+    // match releases the completed prefix instead of growing across games.
+    if(isBegin(packet)&&this.current?.index>0){
+      const count=this.current.index;
+      this.packets.splice(0,count);this.head-=count;this.frontier=Math.max(0,this.frontier-count);
+      this.matches=this.matches.filter(match=>match.index>=count);
+      for(const match of this.matches)match.index-=count;
+    }
   }
   timeline(played,delay=90) {
     const current=this.current,last=this.matches.at(-1);
