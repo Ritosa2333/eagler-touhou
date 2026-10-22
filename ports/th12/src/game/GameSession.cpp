@@ -148,6 +148,10 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial, const Se
   lastSpawnedEnemyId = 0;
   resetItemPresentation();
   consumeUfoPresentation();
+  // 41d8ea..41d91e: the first stage's HUD creates front51, including
+  // children49/50. Replay (GameScene+74) and Continue (4b0cc4) omit it.
+  if (stageNumber == 1 && !replayInitial && !practice::replay() && replayStageGlobals[0] == 0)
+    bindScreenAnimation(7, 51);
   initializeStageAnimations();
   initializePlayerAnimation();
   // Restore selected token-side / real transition damage ownership before

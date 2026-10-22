@@ -38,7 +38,7 @@ test('Continue resources match selected original constructor and continue arithm
   for(const n of native.stageRngBoundary){assert.equal(n.seed,n.recordedSeed);assert.equal(n.calls,0);}
 });
 
-test('retail post-boss MSG retires subtitles while Stage Clear keeps player and bullets moving',{skip:!process.env.TH12_TEST_ASSETS},()=>{
+test('retail collection line follows stage/replay/Continue gates and post-boss MSG keeps Stage Clear moving',{skip:!process.env.TH12_TEST_ASSETS},()=>{
   const r=spawnSync(process.execPath,[runner,path.resolve(process.env.TH12_TEST_ASSETS)],{cwd:root,encoding:'utf8'});
   assert.equal(r.status,0,r.stderr||r.stdout);
 });

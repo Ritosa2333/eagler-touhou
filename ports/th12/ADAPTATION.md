@@ -252,3 +252,9 @@
 - UI：手机高级状态信息按完整窗口高度贴底，折叠与展开均保留5逻辑像素边距；触控复用TH15的只读面板点击／滑动分流，补发原始按下坐标。
 - FLOW：不参与排行的Story及Extra通关也展示Score Ranking，保留成绩写入规则及后续Replay／结果菜单。
 - CHECK：[验证入口与行为边界](../../docs/adaptation/th12-mobile-information-20261020.md)。
+
+### 2026-10-22：第一关开场收点线
+
+- PRESENTATION：按原版41d8ea..41d91e的HUD初始化条件创建front51及49／50子动画，使用原资源的展开、闪烁和退出时序；第一关非录像且续关计数为0时显示。
+- CHECK：Stage Flow的零售ANM回归覆盖首次进入、动画退出、第二关、续关、普通录像、THPrac录像和第一关Practice。
+- RENDER：生产Wasm与WebGL渲染器核对第0／65／76／200帧，收点线和两侧子动画位于原版y=144，展开完成后显示，退出后清除。
