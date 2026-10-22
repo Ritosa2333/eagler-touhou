@@ -375,6 +375,6 @@ export class TitleScenes {
     }else if(afterName==='result-menu')this.openResultMenu(result,{fromName:true,nameContext});
     else this.openReplaySave(result,name);
   }
-  openReplaySave(result,name) {if(result.canSaveReplay===false){this.returnTitle();return;}const nameContext=this.state.nameContext??'title';this.enter('replay-save',this.remember.replaySave,{result,name,nameContext,readyAt:nameContext==='pause'?11:7});}
+  openReplaySave(result,name,nameContext=this.state.nameContext??'title') {if(result.canSaveReplay===false){this.returnTitle();return;}this.enter('replay-save',this.remember.replaySave,{result,name,nameContext,readyAt:nameContext==='pause'?11:7});}
   view() {return {...this.state,choices:this.state.choices.map(c=>({...c})),settings:clone(this.settings),run:{...this.run}};}
 }

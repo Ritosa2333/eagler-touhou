@@ -21,6 +21,7 @@ std::array<uint64_t, 7> spellAnimationKeys{};
 // Native MSG handles +40/+44/+48/+4c/+50/+54/+58/+5c. Clearing a
 // handle preserves a VM that is still playing its exit animation.
 std::array<uint64_t, 8> messageAnimationKeys{};
+std::vector<uint64_t> messageAnimationOwners;
 std::vector<MessageEvent> messageEvents;
 std::array<u32, 1024> unsupported{};
 std::unordered_map<u32, u32> animationUnsupported;
