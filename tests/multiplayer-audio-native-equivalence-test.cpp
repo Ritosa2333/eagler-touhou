@@ -19,6 +19,12 @@ struct Observed final:AudioCommandSink {
         values.push_back("m:"+std::to_string(kind)+":"+std::to_string(argument)+":"+name);
     }
 };
+struct HistoricalEffects final:AudioCommandSink {
+    void capture_effect(i32,i32,const SoundDefinition*) noexcept override {}
+    void capture_stop(i32) noexcept override {}
+    void capture_music(i32,i32,const char*) override { assert(false); }
+    bool captures_music() const noexcept override { return false; }
+};
 struct DigestOracle final:AudioCommandSink {
     u32 digest=2166136261u,effects=0,stops=0,music=0;
     void word(u32 value){for(u32 shift=0;shift<32;shift+=8){digest^=(value>>shift)&255u;digest*=16777619u;}}
@@ -70,6 +76,17 @@ int main(){
         assert(candidate.StopsCommitted()==digest_oracle.stops);
         assert(candidate.MusicCommitted()==digest_oracle.music);
     }
+    // A read-only seek silences historical shots and preserves the original
+    // load/play/fade/stop sequence in the native music queue.
+    AudioManager historical{}, music_native{}; HistoricalEffects quiet;
+    initialize(historical); initialize(music_native); historical.command_sink=&quiet;
+    historical.queue_effect(3,0,definitions); historical.stop_effect(4);
+    for(i32 kind: {2,3,5,1}) {
+        historical.queue_music(kind,2,"stage.wav");
+        music_native.queue_music(kind,2,"stage.wav");
+    }
+    equal_native(historical,music_native);
+    std::puts("historical spectator effects silent, native music queue preserved");
     std::puts("204800 mixed calls: native bytes, logical digest and counters identical across 200 unflushed frames");
 
     // All previous maximum-size music records still fit the original budget.

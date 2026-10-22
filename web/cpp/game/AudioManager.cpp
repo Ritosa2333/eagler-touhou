@@ -26,7 +26,7 @@ void AudioManager::stop_effect(i32 effect) noexcept {
 }
 void AudioManager::queue_music(i32 kind,i32 argument,const char* filename){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(command_sink){command_sink->capture_music(kind,argument,filename);return;}
+    if(command_sink&&command_sink->captures_music()){command_sink->capture_music(kind,argument,filename);return;}
 #endif
     for(u32 slot=0;slot<31;++slot)if(!commands[slot].kind){auto& command=commands[slot];command.kind=kind;command.argument=argument;std::strcpy(command.filename,filename);command.step=0;return;}
 }
