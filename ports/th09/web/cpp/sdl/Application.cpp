@@ -114,6 +114,7 @@ double probe_tick_cost[2]{}; // Update/UI and semantic Draw; diagnostic only.
 bool probe_full_sprite_geometry=false;
 std::array<u8,80> probe_charge_reference_bytes;
 bool probe_charge_reference=false;
+std::array<u32,2> probe_stop_boundary_waits{};
 #endif
 struct SpectatorFrame { u32 frame=0;u16 keys[2]{};NetworkInput::Motion motion[2];bool localCharge=false;std::array<ChargeSample,2> charges; };
 std::array<u8,80> spectator_charge_buffer;
@@ -138,7 +139,6 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     std::unique_ptr<GameSession> session;GameWorld* world=nullptr;WorldConfiguration configuration;InputFrame device;
     ReplayFile pending_replay;u32 replay_stage=0;bool replay_pending=false,demo_pending=false;u32 ending_image=0,ending_width=640,ending_height=480;
     bool paused=false,over=false,complete=false;u32 frames=0;std::string error;Vec2 shake[3]{};
-    u32 stop_resume_frame=Netplay::INVALID_FRAME;
     u32 stop_state()const{
         if(!world||in_title)return 0;const auto& battle=*world->battle;
         return (battle.state.flags&0x1800u)|((battle.fields[0].script.flags&1u)<<16)|((battle.fields[1].script.flags&1u)<<17);
@@ -216,7 +216,6 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
     bool start(){
         TH09_PERF_SCOPE(start_cost,StartMatch);
-        stop_resume_frame=Netplay::INVALID_FRAME;
         presentation.renderer.flush();presentation.world=nullptr;world=nullptr;session.reset();executor.invalid=false;
         session=std::make_unique<GameSession>(state,resources,executor,presentation,*this,records);
         local_charge.clear();if(!network.active&&!spectator_mode)charge_frames={};session->charge_frames=charge_frames;
@@ -309,7 +308,6 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void title_exit()override{title_save_records();save_configuration();requested_transition=0;}
     void sync_records(){settings.versus_unlocked=records.versus_unlocked;settings.story_unlocked=records.story_unlocked;settings.extra_unlocked=records.extra_unlocked;settings.music_unlocked=records.music_unlocked;}
     bool return_title(bool score){
-        stop_resume_frame=Netplay::INVALID_FRAME;
         clear_charge();
         presentation.renderer.flush();const bool was_network=network.active;if(was_network)release_network();sync_records();title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);if(!title->initialize()){error=title->error;return false;}
         title->leaving=false;in_title=true;paused=over=complete=false;pause_audio(false);
@@ -882,7 +880,10 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         if(record.captured){if(!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}TH09_PERF_COUNT(SealedCheckpoints,1);}
         if(!ok)return 0;
         const auto afterStop=probe->stop_state();
-        if(speculative&&(priorStop!=afterStop||f==probe->stop_resume_frame)){
+        if(speculative&&priorStop!=afterStop){
+#if TH09_DEVELOPMENT_HARNESS
+            ++probe_stop_boundary_waits[priorStop!=afterStop?0:1];
+#endif
             // Keep authored Draw side effects in the checkpoint, but publish
             // stop transitions only after their input history is reconciled.
             probe->presentation.renderer.flush();probe->graphics.backend.flush();
@@ -891,8 +892,6 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         }
         if(!rollback.CommitChargeFrame(f,samples)){probe->error=rollback.Error();return 0;}
         if(!rollback.Complete(decision,forwardOnly)){probe->error=rollback.Error();return 0;}
-        if(priorStop&&!afterStop&&!probe->in_title)probe->stop_resume_frame=f+1;
-        else if(f==probe->stop_resume_frame)probe->stop_resume_frame=Netplay::INVALID_FRAME;
         if(deferPresent)probe->graphics.present();
         // Historical replay stays silent. Fresh forward feedback need not
         // wait for remote confirmation; its later publication is deduplicated.
@@ -1061,6 +1060,7 @@ TH09_EXPORT("th09_title_status") const i32* th09_title_status(){static i32 value
 TH09_EXPORT("th09_probe_title_details") const i32* th09_probe_title_details(){static i32 v[12]{};if(!probe||!probe->title)return v;auto& p=*probe;v[0]=p.background_image;v[1]=p.title_images["title00.png"];v[2]=p.title_images["select00.png"];v[3]=p.title->animations.size()>2?p.title->animations[2].color1.d3dColor:0;v[4]=p.settings.extra_lives;v[5]=p.settings.frameskip;v[6]=p.settings.extra_unlocked[12];return v;}
 TH09_EXPORT("th09_probe_save_replay") u32 th09_probe_save_replay(){return probe&&probe->title_save_replay("replay/th9_25.rpy","TEST");}
 TH09_EXPORT("th09_probe_world") const i32* th09_probe_world(){return probe?audit::snapshot(probe->world,probe->state):nullptr;}
+TH09_EXPORT("th09_probe_stop_boundary_waits") const u32* th09_probe_stop_boundary_waits(){return probe_stop_boundary_waits.data();}
 TH09_EXPORT("th09_probe_stop_draw") const u32* th09_probe_stop_draw(){
     static u32 words[9]{};if(probe&&probe->world&&!probe->in_title){words[8]=probe->stop_state();
         for(u32 side=0;side<2;++side){const auto& p=*probe->world->battle->fields[side].player;

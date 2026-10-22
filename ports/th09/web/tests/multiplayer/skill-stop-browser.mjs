@@ -21,6 +21,7 @@ const limit=Number(process.env.FRAMES||7200),delay=Number(process.env.PACKET_DEL
 const jitter=Number(process.env.PACKET_JITTER||0),warmup=Number(process.env.SKILL_WARMUP||0);
 const chained=process.env.CHAINED_SKILLS==='1';
 const localCharge=process.env.LOCAL_CHARGE==='1',expectRegression=process.env.EXPECT_REGRESSION==='1';
+const expectResumeWait=process.env.EXPECT_RESUME_WAIT==='1';
 assert.ok(Number.isInteger(limit)&&limit>=2400&&limit<=24000);
 assert.ok(Number.isInteger(delay)&&delay>=1&&Number.isInteger(jitter)&&jitter>=0&&delay+jitter<=7);
 assert.ok(Number.isInteger(warmup)&&warmup>=0&&warmup<2400);
@@ -125,6 +126,7 @@ try{
       if(peers.every(w=>status(w)[0]===limit&&status(w)[1]===limit))break;
     }
     for(const w of peers)w.core._th09_loop_stop();
+    const stopWaits=peers.map(w=>w.core._th09_probe_stop_boundary_waits?values(w,'_th09_probe_stop_boundary_waits',2):null);
     const capturesComplete=captured.every(t=>t.length===limit&&Array.from({length:limit},(_,f)=>Number.isInteger(t[f])).every(Boolean));
     if(!capturesComplete)throw Error('Captured input gap');
     // The physical keyboard adapter can retain a brief stroke during a wait.
@@ -185,13 +187,16 @@ try{
     }
     const captureDifferences=captured.map((t,side)=>({length:t.length,
       different:t.flatMap((bits,f)=>bits===tapes[side][f]?[]:[{frame:f,planned:tapes[side][f],captured:bits}]).slice(0,20)}));
-    return {clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,
+    return {clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,
       capturesMatch:captured.every((t,side)=>t.length===limit&&t.every((bits,f)=>bits===tapes[side][f]))};
   },{limit,delay,jitter,warmup,chained,localCharge,expectRegression});
-  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression},browser:await browser.version(),
+  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait},browser:await browser.version(),
     scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Both submitted poses on every global cut-in stop, field time-stop transition and first displayed resume versus exact captured commands. Sakuya can move during field time-stop; ordinary prediction remains active between transitions. Unreceived-release prediction differences remain in unseenStopFrames/unseenMaxPose. This is not device performance evidence.',result,errors};
   writeFileSync(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   assert.deepEqual(errors,[]);
+  assert.ok(result.stopWaits.every(Boolean),'Native boundary observations required');
+  if(expectResumeWait)assert.ok(result.stopWaits.some(row=>row[1]>0),'Baseline repeats confirmation after a completed stop');
+  else assert.ok(result.stopWaits.every(row=>row[1]===0),'A completed stop adds no confirmation fence to the following ordinary frame');
   assert.ok(result.capturesComplete,'Every captured input retained on the wire');
   for(const state of result.summary){assert.equal(state[0],limit);assert.equal(state[1],limit);assert.equal(state[4],limit,'One physical input capture per logical frame');assert.ok(state[2]>0&&state[3]>0);}
   assert.equal(new Set(result.hashes).size,1,'Both final worlds match exact input');
@@ -211,7 +216,7 @@ try{
     assert.ok(result.metrics.every(m=>m.maxBullets>=100),'Dense authored bullet workload exercised');
   }
   assert.equal(sha(resolve(build,'th09-presentation.wasm')),identity.wasm,'Build stayed frozen');
-  console.log(JSON.stringify({passed:true,identity,parameters:report.parameters,pairs:result.pairs,shortGaps:result.shortGaps,metrics:result.metrics}));
+  console.log(JSON.stringify({passed:true,identity,parameters:report.parameters,pairs:result.pairs,shortGaps:result.shortGaps,stopWaits:result.stopWaits,metrics:result.metrics}));
 }finally{
   await browser.close();host.netplay.close();await new Promise(r=>host.server.close(r));
 }

@@ -16,6 +16,8 @@ Adonis 在实际游戏输入通道上测量 RTT，协商输入延迟 `D` 与预�
 
 Launcher 房间回报和 UI 状态展示测量结果；Native Runtime 在本地同一输入通道上验证、协商和固定运行参数。Replay/观战流收到的已确认逻辑帧按其协议时序播放，不重复应用玩家输入延迟。
 
+大厅网络检测中的 TURN 延迟是单个客户端到 TURN 服务的往返估计，通过同浏览器双端中转回环的实际 DataChannel 回显折算。游戏右下角延迟读取当前玩家间 ICE 候选对的完整往返时间；双方经同一 TURN 节点中转时，完整往返约为双方到节点的往返时间之和。
+
 标题连接到 Adonis 的入口：
 
 - TH08/10/11/15 通过各自 `NetplayRuntime` 持有 `AdonisConnection`；详见 [TH08](../../ports/th08-mp/web/cpp/multiplayer/NetworkConnection.cpp)、[TH10](../../ports/th10-mp/web/cpp/multiplayer/NetplayRuntime.cpp)、[TH11](../../ports/th11-mp/web/cpp/multiplayer/NetplayRuntime.cpp)、[TH15](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp)。

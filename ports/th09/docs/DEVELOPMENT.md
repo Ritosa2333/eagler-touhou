@@ -68,6 +68,8 @@ npm --prefix launcher run dev:workspace
 
 Runtime 在 HELLO 前完成配置，并将蓄力规则纳入 gameplay ABI，核对双方的规则身份。纯延迟模式使用原版蓄力逻辑。技能停顿边界确认独立于蓄力开关，两种设置均生效。
 
+技能停顿的开始、结束与状态切换在对应边界帧确认，结束后的普通帧恢复预测推进。浏览器技能回归同时记录边界等待与恢复后等待，并核对双方位置、蓄力 HUD、原生 Replay 和最终画面。
+
 ### 蓄力同步与旁观
 
 `LocalChargePlanner` 复用 `ShotControl::update` 接受本机进度。每帧结果经 `ChargeHistory` 的 `T9CP` 记录同步，`T9CA` 独立确认接收进度。已接受结果在重传与回滚中保持不变；待释放技能属于 Player 的回滚状态。资源重建边界使用已确认输入，新世界随后恢复本地优先。
