@@ -1,5 +1,7 @@
 # 历史与迁移
 
+[2026-10-23 普通版到 MP 全量同步](port-sync-20261023.md)记录四组真实合并、66 个普通版侧提交与逐项验证。四个普通版历史分支均已成为各自 MP 分支的祖先。
+
 monorepo 的原仓库来源与导入提交记录在 [import-sources.json](../migration/import-sources.json) 和 [move-sources-20261018.json](../migration/move-sources-20261018.json)。当前开发目录见[工作区](../../WORKSPACE.md)。
 
 原仓库提交保留为当前仓库的祖先，可以按原提交查看作者、时间、说明和差异。普通版与 MP 的真实来源提交和共同祖先接入[目录监控与同步历史](../adaptation/port-sync.md)，`log <game> --original` 展示原提交图。工作区未提交修改与已提交历史分别保存。

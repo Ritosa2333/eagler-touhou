@@ -10,7 +10,7 @@
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
       "history": [
         {
           "kind": "manual",
@@ -18,6 +18,15 @@
           "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
           "integration": "working-tree",
           "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+        },
+        {
+          "kind": "git-merge",
+          "source": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "targetHead": "e4b1247a9f8657693c7c8ba8523537cdf2a06684",
+          "integration": "committed",
+          "normalHistory": "f363ffa54301b9437d2dd1bfcbc2e1f23cfe207b",
+          "multiplayerHistory": "c552a75020cc3839645e71eaa7f34f101030a79b",
+          "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
         }
       ],
       "origin": {
@@ -31,7 +40,7 @@
     "th10": {
       "normal": "ports/th10",
       "multiplayer": "ports/th10-mp",
-      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
       "history": [
         {
           "kind": "manual",
@@ -46,6 +55,15 @@
           "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
           "integration": "working-tree",
           "note": "PR #125 神德难度范围、默认值、同难度保留和 Extra 返回规则已迁入 MP，保留历史录像参数。"
+        },
+        {
+          "kind": "git-merge",
+          "source": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "targetHead": "04db8a803bcbd21b627e282270b5cb05d647c693",
+          "integration": "committed",
+          "normalHistory": "d71bd3fac1f652ecd763ee5c5720dbe3a0662245",
+          "multiplayerHistory": "680850bc56daf6f5b8c2eefaa3ce8b065e21da06",
+          "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
         }
       ],
       "origin": {
@@ -64,7 +82,7 @@
             "portable/check-th10-practice.mjs",
             "portable/check-th10-thprac.cpp"
           ],
-          "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
           "history": [
             {
               "kind": "manual",
@@ -79,6 +97,15 @@
               "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
               "integration": "working-tree",
               "note": "PR #125 神德难度范围、默认值、同难度保留和 Extra 返回规则已迁入 MP，保留历史录像参数。"
+            },
+            {
+              "kind": "git-merge",
+              "source": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+              "targetHead": "04db8a803bcbd21b627e282270b5cb05d647c693",
+              "integration": "committed",
+              "normalHistory": "d71bd3fac1f652ecd763ee5c5720dbe3a0662245",
+              "multiplayerHistory": "680850bc56daf6f5b8c2eefaa3ce8b065e21da06",
+              "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
             }
           ]
         }
@@ -87,7 +114,7 @@
     "th11": {
       "normal": "ports/th11",
       "multiplayer": "ports/th11-mp",
-      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
       "history": [
         {
           "kind": "manual",
@@ -95,6 +122,15 @@
           "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
           "integration": "working-tree",
           "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+        },
+        {
+          "kind": "git-merge",
+          "source": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "targetHead": "3025d4162b3435d6d371398964e20bfb81fc97f3",
+          "integration": "committed",
+          "normalHistory": "6836906c528d25d95a725b7f912bc29ad4829b49",
+          "multiplayerHistory": "aef010e29507271de89512a2b2b32609c7857b36",
+          "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
         }
       ],
       "origin": {
@@ -108,7 +144,7 @@
     "th15": {
       "normal": "ports/th15",
       "multiplayer": "ports/th15-mp",
-      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
       "history": [
         {
           "kind": "manual",
@@ -116,6 +152,15 @@
           "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
           "integration": "working-tree",
           "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+        },
+        {
+          "kind": "git-merge",
+          "source": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "targetHead": "c974e87c93c0fadba24aa4caf58a421914c4a0c0",
+          "integration": "committed",
+          "normalHistory": "838da509cc579e59092ee73f7e87e225932b1d19",
+          "multiplayerHistory": "f99749bb17540df82f5e6ac6a4d2a9fe617c9025",
+          "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
         }
       ],
       "origin": {
@@ -130,7 +175,7 @@
           "paths": [
             "web/cpp/sdl/ThpracUi.cpp"
           ],
-          "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
           "history": [
             {
               "kind": "manual",
@@ -138,6 +183,15 @@
               "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
               "integration": "working-tree",
               "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+            },
+            {
+              "kind": "git-merge",
+              "source": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+              "targetHead": "c974e87c93c0fadba24aa4caf58a421914c4a0c0",
+              "integration": "committed",
+              "normalHistory": "838da509cc579e59092ee73f7e87e225932b1d19",
+              "multiplayerHistory": "f99749bb17540df82f5e6ac6a4d2a9fe617c9025",
+              "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
             }
           ]
         }
