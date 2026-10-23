@@ -36,9 +36,9 @@ MP-RULE-01 至 MP-RULE-05 是合作模式规则，只用于产品目录中 `mult
 
 原生道具验证分别使用 th07 的 `tests/item-collection-browser.py`、th08 的 `portable/multiplayer/check-cooperation.py --case nearest_power_routing`、th10 的 `portable/check-multiplayer-rules.mjs --suite item-ownership`、th11 的 `portable/multiplayer/native-test.mjs --cooperative` 与 th15 的 `portable/multiplayer/native-test.mjs --items-only`。th15 的原生检查与正式构建使用同一公共头文件目录，按当前房间人数核对小 P 数值。
 
-六个合作作品同步更新玩法身份：th06 为 18、th07 为 16、th08 为 `0x08000018`、th10 为 `0x1000000e`、th11 为 4、th15 为 20。房间握手、旁观与多人 Replay 按对应身份选择同一套道具规则；th15 同时统一分关幽灵演算的初始化。
+六个合作作品同步更新玩法身份：th06 为 18、th07 为 16、th08 为 `0x08000019`、th10 为 `0x1000000e`、th11 为 4、th15 为 20。房间握手、旁观与多人 Replay 按对应身份选择同一套道具规则；th15 同时统一分关幽灵演算的初始化。
 
-th08 同时支持 `0x08000017` 版本录制的多人回放，播放时保留该版本的跨面补弹行为。
+th08 同时支持 `0x08000017`/`0x08000018` 版本录制的多人回放，播放时保留录制时的即时恢复行为，`0x08000017` 另保留该版本的跨面补弹行为。
 
 ## 逐项检查
 

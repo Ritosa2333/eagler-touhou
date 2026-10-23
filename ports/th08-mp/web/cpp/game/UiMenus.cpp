@@ -33,13 +33,18 @@ void UiMenus::draw_presented(AnmVm& source,const PresentationVm& before,bool val
     }
     if(force_no_z)draw.zWriteDisabled=true;renderer.draw_no_rotation(draw);
 }
-i32 UiMenus::update_pause(){
+i32 UiMenus::update_pause(bool synchronized_resume){
     auto& s=ascii.pause;auto& c=context;auto* vm=s.sprites;
     snapshot_pause();
+    // state 11 is the synchronized resume countdown; menu input stays locked
+    // until every endpoint has counted down the same canonical frames.
+    // Issue #93 asks for ~3 seconds; keep the total in sync with
+    // TOTAL_FRAMES in web/sdl-runtime/resume-countdown.mjs.
+    constexpr u8 resume_countdown_frames=180;
     auto close=[&](u32 next){actions.sound(10);s.state=next;for(i32 i=0;i<10;++i)if(vm[i].visible)vm[i].pendingInterrupt=2;s.frames=0;};
-    if(c.pressed(escape)&&s.state!=4){close(4);s.background.pendingInterrupt=1;}
-    if(c.pressed(quit)&&s.state!=9)close(9);
-    if(!c.replay()&&c.pressed(restart)&&s.state!=9)close(10);
+    if(c.pressed(escape)&&s.state!=4&&s.state!=11){close(4);s.background.pendingInterrupt=1;}
+    if(c.pressed(quit)&&s.state!=9&&s.state!=11)close(9);
+    if(!c.replay()&&c.pressed(restart)&&s.state!=9&&s.state!=11)close(10);
     switch(s.state){
     case 0:
         for(i32 i=0;i<10;++i)start(vm[i],ascii.ascii,i+12);
@@ -61,7 +66,24 @@ i32 UiMenus::update_pause(){
         }break;
     }
     case 4:
-        if(s.frames>=20){s.state=0;c.pause_state=0;for(i32 i=0;i<10;++i)vm[i].visible=false;actions.music(MenuMusic::Resume);c.system_time=actions.now();}break;
+        if(s.frames>=20){
+            if(synchronized_resume){
+                // Multiplayer resume keeps the shared world frozen behind a
+                // canonical countdown (osu!-style resume buffer) instead of
+                // snapping back for whoever pressed resume first.
+                c.resume_countdown=resume_countdown_frames;
+                s.state=11;s.frames=0;for(i32 i=0;i<10;++i)vm[i].visible=false;break;
+            }
+            s.state=0;c.pause_state=0;for(i32 i=0;i<10;++i)vm[i].visible=false;actions.music(MenuMusic::Resume);c.system_time=actions.now();
+        }break;
+    case 11:
+        // Ticks once per canonical frame while pause_state stays open, so all
+        // seats and spectators reach zero on the same world frame. Gameplay
+        // resumes (and music restarts) only from here.
+        if(!c.resume_countdown||--c.resume_countdown==0){
+            c.resume_countdown=0;s.state=0;c.pause_state=0;
+            actions.music(MenuMusic::Resume);c.system_time=actions.now();
+        }break;
     case 5:case 7:
         choose(vm[5],vm[6],true);
         if(s.frames>=4){if(c.pressed(up)||c.pressed(down)){s.state=s.state==5?6:8;actions.sound(0);}
@@ -142,7 +164,9 @@ i32 UiMenus::update_retry(){
 }
 void UiMenus::draw_pause(){
     auto& s=ascii.pause;if(!context.pause_state)return;viewport();
-    if(context.lockable_backbuffer&&s.state!=0)draw_presented(s.background,pause_background,pause_presentation_valid,true);
+    // During the countdown (state 11) the menu and its dimmed snapshot are
+    // gone; the frozen live scene shows through under the overlay.
+    if(context.lockable_backbuffer&&s.state!=0&&s.state!=11)draw_presented(s.background,pause_background,pause_presentation_valid,true);
     for(size_t i=0;i<10;++i)if(s.sprites[i].visible)draw_presented(s.sprites[i],pause_previous[i],pause_presentation_valid);
 }
 void UiMenus::draw_retry(){

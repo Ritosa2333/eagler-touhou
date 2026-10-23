@@ -9,6 +9,7 @@ namespace th08::multiplayer {
 struct ReplayDescription {
     SessionSetup setup{};
     bool legacy_stage_bombs=false;
+    bool legacy_resume_countdown=false;
     GameConfiguration configuration{};
     u32 score=0,last_stage=0;
     u32 stage_scores[9]{};

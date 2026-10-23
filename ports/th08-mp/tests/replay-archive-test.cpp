@@ -50,6 +50,40 @@ static void previous_general_rules_are_rejected(const ReplayArchive& current,con
         th08::ReplayMetadata preview{};assert(!ReplayArchive::Preview(bytes.data(),bytes.size(),preview));
     }
 }
+// The 0x18 era predates only the countdown; the 0x17 era predates it and the
+// stage-bomb fix. Both load read-only with instant resumes; nothing else does.
+static void legacy_resume_countdown_rungs(const ReplayArchive& current,const std::vector<std::uint8_t>& valid){
+    const auto& d=current.Description();const auto count=d.setup.player_count;
+    const std::uint32_t eras[]{replay_contract_before_resume_countdown(d.setup),replay_contract_before_stage_bomb_fix(d.setup)};
+    for(unsigned era=0;era<2;++era){
+        auto bytes=valid;
+        auto old_config=current.Info().config;old_config.gameplayAbi=eras[era];
+        assert(old_config.gameplayAbi!=current.Info().config.gameplayAbi);
+        Netplay::InputReplay legacy;assert(legacy.Begin(old_config));
+        Netplay::InputReplay::Frame inputs{};assert(legacy.Append(0,1,inputs.data(),count));
+        std::vector<std::uint8_t> tape;assert(legacy.Encode(&tape));
+        bytes.resize(ReplayArchive::HeaderBytes+sizeof(th08::GameConfiguration)+current.BootScore().size());
+        bytes.insert(bytes.end(),tape.begin(),tape.end());
+        for(unsigned i=0;i<4;++i)bytes[8+i]=std::uint8_t(tape.size()>>(8*i));repair(bytes);
+        ReplayArchive loaded;assert(loaded.Load(bytes.data(),bytes.size()));
+        assert(loaded.Description().legacy_resume_countdown);
+        assert(loaded.Description().legacy_stage_bombs==(era==1));
+        th08::ReplayMetadata preview{};assert(ReplayArchive::Preview(bytes.data(),bytes.size(),preview));
+        // A legacy tape is read-only: it can never seed a fresh recording.
+        ReplayArchive destination;assert(!destination.Begin(loaded.Description(),{}));
+    }
+    auto bytes=valid;
+    auto stranger_config=current.Info().config;stranger_config.gameplayAbi=gameplay_contract(d.setup)+1;
+    Netplay::InputReplay stranger;assert(stranger.Begin(stranger_config));
+    Netplay::InputReplay::Frame inputs{};assert(stranger.Append(0,1,inputs.data(),count));
+    std::vector<std::uint8_t> tape;assert(stranger.Encode(&tape));
+    bytes.resize(ReplayArchive::HeaderBytes+sizeof(th08::GameConfiguration)+current.BootScore().size());
+    bytes.insert(bytes.end(),tape.begin(),tape.end());
+    for(unsigned i=0;i<4;++i)bytes[8+i]=std::uint8_t(tape.size()>>(8*i));repair(bytes);
+    ReplayArchive destination;assert(destination.Begin(d,{}));
+    assert(!destination.Load(bytes.data(),bytes.size())&&destination.Recording());
+    th08::ReplayMetadata preview{};assert(!ReplayArchive::Preview(bytes.data(),bytes.size(),preview));
+}
 static bool save(void* count,const char*,const std::uint8_t* data,std::uint32_t size){
     ReplayArchive copy;assert(copy.Load(data,size));++*static_cast<unsigned*>(count);return true;
 }
@@ -73,7 +107,7 @@ static void roundtrip(unsigned count,unsigned local,bool delayed=false,unsigned 
     }
     assert(saves==1&&archive.Cursor()==6&&archive.StageFrame(1)==3);
     std::vector<std::uint8_t> bytes;assert(archive.Encode(bytes));
-    previous_general_rules_are_rejected(archive,bytes);ReplayArchive loaded;
+    previous_general_rules_are_rejected(archive,bytes);legacy_resume_countdown_rungs(archive,bytes);ReplayArchive loaded;
     assert(loaded.Load(bytes.data(),bytes.size()));assert(loaded.BootScore()==boot);
     assert(loaded.Description().setup.local_player==local&&loaded.StageFrame(1)==3);
     assert(loaded.Description().setup.challenge_mode==challenge);
@@ -133,4 +167,4 @@ int main(){timing_metadata_roundtrip();
   for(unsigned mode:{0u,1u,2u})roundtrip(count,local,true,mode,true,true);
  }
  corrected_frames_replace_speculative_save_requests();
- std::puts("TH08 confirmed all-seat Replay, boot files, readonly playback, bounds and atomic rejection: PASS");}
+ std::puts("TH08 confirmed all-seat Replay, boot files, readonly playback, bounds, atomic rejection and legacy resume admission: PASS");}

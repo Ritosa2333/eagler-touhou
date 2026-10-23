@@ -58,6 +58,7 @@ function makeFixture() {
   write('web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
   write('third_party/eagler-common/browser/adonis-calibration.mjs', 'export const calibration = true;');
   write('web/sdl-runtime/multiplayer-host.mjs', 'export const multiplayer = true;');
+  write('web/sdl-runtime/resume-countdown.mjs', 'export const createResumeCountdown = () => () => {};');
   write('web/sdl-runtime/save-storage.mjs', 'export const storage = true;');
   write('web/sdl-runtime/practice.mjs', 'export const practice = true;');
   write('web/sdl-runtime/practice-config.mjs', 'export const practiceConfig = true;');
@@ -157,6 +158,11 @@ test('ordinary, multiplayer and diagnostic packages retain their manifests and f
     }
     assert(existsSync(resolve(normal.out, 'save-storage.mjs')));
     assert(existsSync(resolve(multiplayer.out, 'save-storage.mjs')));
+    // shell.mjs imports this statically in every variant that ships it; dropping
+    // it from runtimeNames would 404 the whole shell at runtime.
+    assert(existsSync(resolve(normal.out, 'resume-countdown.mjs')));
+    assert(existsSync(resolve(multiplayer.out, 'resume-countdown.mjs')));
+    assert(existsSync(resolve(lab.out, 'resume-countdown.mjs')));
     for (const name of ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs']) {
       assert(existsSync(resolve(multiplayer.out, name)), name);
     }
@@ -167,6 +173,18 @@ test('ordinary, multiplayer and diagnostic packages retain their manifests and f
   } finally {
     dispose();
   }
+});
+
+test('resume countdown overlay keeps the native frame budget', () => {
+  const root = resolve(import.meta.dirname, '..');
+  const overlay = readFileSync(resolve(root, 'web/sdl-runtime/resume-countdown.mjs'), 'utf8');
+  const native = readFileSync(resolve(root, 'web/cpp/game/UiMenus.cpp'), 'utf8');
+  const frames = overlay.match(/TOTAL_FRAMES = (\d+), FRAMES_PER_DIGIT = (\d+)/);
+  const budget = native.match(/resume_countdown_frames\s*=\s*(\d+)/);
+  assert(frames, 'overlay frame constants');
+  assert(budget, 'native countdown budget');
+  assert.equal(frames[1], budget[1], 'TOTAL_FRAMES must equal resume_countdown_frames');
+  assert.equal(Number(frames[1]) % Number(frames[2]), 0, 'digit pacing must divide the frame budget');
 });
 
 test('packaging rejects build-variant, export-inventory and binary-hash mismatches before output', () => {

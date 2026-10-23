@@ -324,7 +324,16 @@ JobResult GameplayScene::draw_players(bool impacts){
 #endif
 }
 JobResult GameplayScene::update_ascii(){
-    ascii.tick_popups(ascii_context,player.timing);if(menus.context.pause_state)menus.update_pause();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A configured multiplayer session swaps the instant resume for the
+    // synchronized canonical countdown, except replays admitted under the
+    // countdown-free contract, which keep their recorded pause timing.
+    const bool synchronized_resume=session.multiplayer_session.configured&&
+        !(session.netplay.Playback()&&session.replay_legacy_resume_countdown);
+#else
+    const bool synchronized_resume=false;
+#endif
+    ascii.tick_popups(ascii_context,player.timing);if(menus.context.pause_state)menus.update_pause(synchronized_resume);
     const bool had_retry=menus.context.show_retry!=0;
     if(had_retry)menus.update_retry();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
