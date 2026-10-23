@@ -25,6 +25,7 @@ bool BrowserRuntime::prepare_replay(const u8* bytes,u32 size,u32 stage){
         app.session.multiplayer_session=setup;
     }
     if(!app.session.netplay.BeginPlayback())return false;
+    app.session.replay_legacy_stage_bombs=candidate.Description().legacy_stage_bombs;
     replay_archive=std::move(candidate);replay_viewer=true;replay_finished=false;replay_seek_target=target;
     replay_shadow_files["score.dat"]=replay_archive.BootScore();
     const auto& config=replay_archive.Description().configuration;
