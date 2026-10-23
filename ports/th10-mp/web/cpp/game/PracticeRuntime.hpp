@@ -11,6 +11,8 @@ void update_practice(browser::World&,browser::GameState&);
 // original decrement/hit-test sites instead of this module editing arrays.
 bool practice_invincible(const PracticeState&);      // F1: skip the player hit test
 bool practice_infinite_lives(const PracticeState&);  // F2: block life loss
+bool practice_hold_life(const PracticeState&,i32 lives);
+bool practice_enemy_invincible(const PracticeState&); // U: skip health subtraction only
 bool practice_infinite_power(const PracticeState&);  // F3: block power loss
 bool practice_time_lock(const PracticeState&);       // F4: block timeout decrements
 bool practice_auto_bomb(const PracticeState&);       // F5: inject the bomb bit

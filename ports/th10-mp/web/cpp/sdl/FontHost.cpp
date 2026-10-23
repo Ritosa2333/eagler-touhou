@@ -1,6 +1,7 @@
 #include "../platform/Fonts.hpp"
 #ifdef TH_ENABLE_THCRAP
 #include "../game/Localization.hpp"
+#include "ThcrapLayout.hpp"
 #endif
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -16,11 +17,19 @@ using namespace th10;
 namespace {
 struct Object {
     enum Kind{Bitmap,Context,Font} kind;u32 font=0,bitmap=0,color=0,mode=2,charset=0;
-    int width=0,height=0,pitch=0,bpp=0;std::vector<u8> pixels;TTF_Font* face=nullptr;SDL_Surface* raster=nullptr;TTF_Font* raster_face=nullptr;bool packed=false;std::string text;
+    int width=0,height=0,pitch=0,bpp=0;std::vector<u8> pixels;TTF_Font* face=nullptr;SDL_Surface* raster=nullptr;TTF_Font* raster_face=nullptr;TTF_FontStyleFlags raster_style=TTF_STYLE_NORMAL;bool packed=false;std::string text;
     ~Object(){if(raster)SDL_DestroySurface(raster);if(face)TTF_CloseFont(face);}
 };
 std::map<u32,std::unique_ptr<Object>> objects;u32 next=1,failures=0;
 std::vector<u8> blend,codepages;bool initialized=false;
+#ifdef TH_ENABLE_THCRAP
+std::vector<int> layout_tabs;
+TTF_FontStyleFlags layout_style(const std::string& commands){
+    TTF_FontStyleFlags flags=TTF_STYLE_NORMAL;
+    for(char c:commands){if(c=='b')flags|=TTF_STYLE_BOLD;else if(c=='i')flags|=TTF_STYLE_ITALIC;else if(c=='u')flags|=TTF_STYLE_UNDERLINE;}
+    return flags;
+}
+#endif
 Object& get(u32 id){auto it=objects.find(id);if(it==objects.end())std::abort();return *it->second;}
 u32 add(Object::Kind kind){const auto id=next++;auto value=std::make_unique<Object>();value->kind=kind;objects[id]=std::move(value);return id;}
 bool load(const char* name,std::vector<u8>& output){size_t size=0;void* bytes=SDL_LoadFile(name,&size);if(!bytes)return false;output.assign(static_cast<u8*>(bytes),static_cast<u8*>(bytes)+size);SDL_free(bytes);return true;}
@@ -106,12 +115,28 @@ void fonts_text(u32 id,i32 x,i32 y,const char* bytes,u32 length){auto& dc=get(id
     }
 #endif
     if(!face)return;
+#ifdef TH_ENABLE_THCRAP
+    th10::sdl::LayoutLine line;
+    if(Localization::Active()&&utf8_valid(reinterpret_cast<const u8*>(bytes),length)){
+        line=th10::sdl::thcrap_layout(value,layout_tabs,b.width,[&](const std::string& run,const std::string& commands){
+            TTF_SetFontStyle(face,layout_style(commands));int width=0,height=0;
+            if(!run.empty()&&!TTF_GetStringSize(face,run.c_str(),run.size(),&width,&height))++failures;
+            return width;
+        });
+        TTF_SetFontStyle(face,TTF_STYLE_NORMAL);
+    }else line.runs.push_back({value,"",0});
+    for(const auto& run:line.runs){
+    const auto& value=run.text;const auto draw_x=x+run.x;
+    const auto style=layout_style(run.commands);TTF_SetFontStyle(face,style);
+#else
+    const auto draw_x=x;const auto style=TTF_STYLE_NORMAL;
+#endif
     // Shadow and foreground use identical coverage. Keep only the most recent
     // run per font+face, so those two original draws share one TTF rasterization.
-    if(!f.raster||f.text!=value||f.raster_face!=face){const SDL_Color white{255,255,255,255};auto* original=TTF_RenderText_Blended(face,value.c_str(),value.size(),white);if(!original){failures++;return;}auto* raster=SDL_ConvertSurface(original,SDL_PIXELFORMAT_RGBA32);SDL_DestroySurface(original);if(!raster){failures++;return;}if(f.raster)SDL_DestroySurface(f.raster);f.raster=raster;f.text=value;f.raster_face=face;}
+    if(!f.raster||f.text!=value||f.raster_face!=face||f.raster_style!=style){const SDL_Color white{255,255,255,255};auto* original=TTF_RenderText_Blended(face,value.c_str(),value.size(),white);if(!original){TTF_SetFontStyle(face,TTF_STYLE_NORMAL);failures++;return;}auto* raster=SDL_ConvertSurface(original,SDL_PIXELFORMAT_RGBA32);SDL_DestroySurface(original);if(!raster){TTF_SetFontStyle(face,TTF_STYLE_NORMAL);failures++;return;}if(f.raster)SDL_DestroySurface(f.raster);f.raster=raster;f.text=value;f.raster_face=face;f.raster_style=style;}
     const auto* raster=f.raster;
     const auto r=dc.color&255,g=(dc.color>>8)&255,blue=(dc.color>>16)&255;const auto* pixels=static_cast<const u8*>(raster->pixels);
-    for(int j=0;j<raster->h;j++){const int row=y+j;if(row<0||row>=b.height)continue;for(int i=0;i<raster->w;i++){const int column=x+i;if(column<0||column>=b.width)continue;const u32 coverage=pixels[j*raster->pitch+i*4+3];if(!coverage)continue;
+    for(int j=0;j<raster->h;j++){const int row=y+j;if(row<0||row>=b.height)continue;for(int i=0;i<raster->w;i++){const int column=draw_x+i;if(column<0||column>=b.width)continue;const u32 coverage=pixels[j*raster->pitch+i*4+3];if(!coverage)continue;
         auto* target=b.pixels.data()+row*b.pitch+column*2;const u32 before=target[0]|(u32(target[1])<<8);
         // The original GDI target is A4R4G4B4. TextOut writes antialiased RGB
         // into the low 12 bits and clears the alpha nibble on touched pixels;
@@ -120,10 +145,15 @@ void fonts_text(u32 id,i32 x,i32 y,const char* bytes,u32 length){auto& dc=get(id
         // the visible red/green/blue fringe around otherwise white text.
         const u16 result=u16((blend_channel_4444((before>>8)&15,r,coverage)<<8)|(blend_channel_4444((before>>4)&15,g,coverage)<<4)|blend_channel_4444(before&15,blue,coverage));target[0]=u8(result);target[1]=u8(result>>8);
     }}
+#ifdef TH_ENABLE_THCRAP
+    TTF_SetFontStyle(face,TTF_STYLE_NORMAL);
+    }
+#endif
 }
 __attribute__((export_name("sdl_fonts_errors"))) u32 sdl_fonts_errors(){return failures;}
 __attribute__((export_name("sdl_fonts_shutdown"))) void sdl_fonts_shutdown(){objects.clear();blend.clear();codepages.clear();
 #ifdef TH_ENABLE_THCRAP
+    layout_tabs.clear();
     for(auto& face:fallback_faces)if(face.second)TTF_CloseFont(face.second);fallback_faces.clear();
 #endif
     if(initialized)TTF_Quit();initialized=false;}

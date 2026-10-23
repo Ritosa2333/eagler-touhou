@@ -41,68 +41,7 @@ u32 display_columns(const char* text){
 #endif
     return u32(size);
 }
-#ifdef TH_ENABLE_THCRAP
-// Ported from TH07's TextHelper.cpp layout_match/layout_tokenize. A command
-// token is "<cmd$arg$...>", where [cmd] holds option characters (s=hide,
-// t=tabstop, l/c/r=alignment, b/i/u=font styles). TH10 rasterizes a whole
-// string at a time, so the fragments are flattened and the last alignment
-// option wins. Returns false when [input] contains no layout command so the
-// caller can keep the original text untouched.
-bool match_layout_token(const char* text,std::size_t length,std::size_t& consumed,
-                        std::size_t& command_begin,std::size_t& command_end,
-                        std::size_t& argument_begin,std::size_t& argument_end,int& parameters){
-    if(length==0||text[0]!='<')return false;
-    std::size_t index=1,start=1;int nesting=0;parameters=0;
-    for(;index<length&&nesting>=0;++index){
-        const char character=text[index];
-        nesting+=(character=='<');
-        nesting-=(character=='>');
-        if((nesting==0&&character=='$')||(nesting==-1&&character=='>')){
-            if(parameters==0){command_begin=start;command_end=index;}
-            else if(parameters==1){argument_begin=start;argument_end=index;}
-            ++parameters;start=index+1;
-        }
-    }
-    consumed=start;
-    return parameters>1;
-}
-bool extract_layout_text(const char* input,char* output,std::size_t capacity,TextAlignment& alignment){
-    if(input==nullptr||capacity==0)return false;
-    const std::size_t length=std::strlen(input);
-    bool found=false;std::size_t written=0,index=0;
-    const auto append=[&](std::size_t begin,std::size_t end){
-        while(begin<end){
-            if(written+1>=capacity)return false;
-            output[written++]=input[begin++];
-        }
-        return true;
-    };
-    while(index<length){
-        std::size_t consumed=length-index,command_begin=0,command_end=0,argument_begin=0,argument_end=0;int parameters=0;
-        if(match_layout_token(input+index,length-index,consumed,command_begin,command_end,argument_begin,argument_end,parameters)&&consumed<=length-index){
-            found=true;bool hidden=false;
-            for(std::size_t position=index+command_begin;position<index+command_end;++position){
-                switch(input[position]){
-                case 's':hidden=true;break;
-                case 'c':alignment=TextAlignment::Center;break;
-                case 'r':alignment=TextAlignment::Right;break;
-                case 'l':alignment=TextAlignment::Left;break;
-                default:break;
-                }
-            }
-            if(!hidden&&!append(index+argument_begin,index+argument_end))return false;
-            index+=consumed;
-            continue;
-        }
-        const char* next=std::strchr(input+index+1,'<');
-        const std::size_t end=next==nullptr?length:static_cast<std::size_t>(next-input);
-        if(end>index&&!append(index,end))return false;
-        index=end;
-    }
-    output[written]='\0';
-    return found;
-}
-#endif
+
 }
 // 0x4479d0. Sprite coordinates are converted separately, with truncation.
 void AnmText::draw_sprite(const AnmSprite& sprite,void* texture,i32 offset,i32 size,u32 color,const char* text,bool flat,AnmTextEnvironment& env){
@@ -114,11 +53,8 @@ void AnmText::draw_sprite(const AnmSprite& sprite,void* texture,i32 offset,i32 s
 // encoded byte length, as in the original Japanese and translated builds.
 void AnmText::draw(AnmVm& vm,u32 color,const char* text,TextAlignment alignment,AnmTextEnvironment& env){
 #ifdef TH_ENABLE_THCRAP
-    char stripped[512];
-    if(Localization::Active()){
-        TextAlignment parsed=alignment;
-        if(extract_layout_text(text,stripped,sizeof(stripped),parsed)){text=stripped;alignment=parsed;}
-    }
+    // Keep layout commands intact for the font host. Their alignment applies
+    // to individual runs and persistent tabstops, never to the whole string.
 #endif
     i32 size=vm.text_settings[0],offset=0;
     if(alignment!=TextAlignment::Left){
