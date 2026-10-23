@@ -23,6 +23,7 @@
 #include "../game/WorldRollback.hpp"
 #include "../game/RollbackCapture.hpp"
 #include "../multiplayer/FrameSchedule.hpp"
+#include <eagler/netplay/WriteJournal.hpp>
 #endif
 #include "../game/FrameStatistics.hpp"
 #include "../game/AnmRenderer.hpp"
@@ -135,9 +136,12 @@ struct Application:StageResourceEffects {
         renderer.invalidate();renderer.multiplayer_animations=nullptr;renderer.multiplayer_hud_background=nullptr;renderer.multiplayer_opacity.fill(255);
         session.multiplayer_active=false;session.animations.rate=1;
         if(!session.open_title(resources,false,TitleScreen::Replays)){error=session.error;return false;}
-        session.title->multiplayer_replay_menu=true;
-        session.title->replay_files.resize(std::max<size_t>(100,(multiplayer_replay_index/25+1)*25));
-        session.title->last_replay=int(multiplayer_replay_index);
+        {
+            TH11_GAME_SCOPE;
+            session.title->multiplayer_replay_menu=true;
+            session.title->replay_files.resize(std::max<size_t>(100,(multiplayer_replay_index/25+1)*25));
+            session.title->last_replay=int(multiplayer_replay_index);
+        }
         clear_inputs();audio.effects.reset();return tick(0);
     }
     bool multiplayer_load_replay(const u8* bytes,u32 size,u32 stage=0){
@@ -157,6 +161,7 @@ struct Application:StageResourceEffects {
         multiplayer_seek_target=target;return true;
     }
     bool multiplayer_menu_metadata(){
+        TH11_GAME_SCOPE;
         if(session.title&&session.title->replay_scan_requested)scan_replays();
         if(session.title&&session.title->screen==TitleScreen::ReplaySave){auto& menu=*session.title;
             if(menu.substate==3&&!menu.pending_replay){
@@ -221,6 +226,9 @@ struct Application:StageResourceEffects {
         refresh_multiplayer_touch_frontier();return true;
     }
     bool multiplayer_capture_spectator_checkpoint(u32 frame,u32& stage,std::vector<u8>& initializer){
+        // The published initializer belongs to the host transport, including
+        // when captured from inside a game-scope callback.
+        TH11_SYSTEM_SCOPE;
         const bool stable=session.state.phase==GameSessionPhase::stage&&session.battle&&session.battle->stage_active;
         u32 previous=0;
         if(stable||!frame||!netplay.SpectatorRecordedStage(frame-1,previous))stage=session.state.stage;
@@ -335,7 +343,7 @@ struct Application:StageResourceEffects {
         auto measured=rollback_timer(10);
         multiplayer_advanced=false;
         if(historical){
-            if(!netplay.CanReplayConfirmed()||!rollback_frames.empty()||rollback_journal.FrameCount()){
+            if(!netplay.CanReplayConfirmed()||!rollback_frames.empty()||rollback_journal.FrameCount()||Netplay::WriteJournal::FrameCount()){
                 error="TH11 confirmed history still owns speculative checkpoints";return false;
             }
         }else if((rollback_callback_ms<0&&!multiplayer_pump())||!multiplayer_world)return error.empty();
@@ -522,7 +530,7 @@ struct Application:StageResourceEffects {
     }
     bool prepare(StageResources& stage)override{
         renderer.flush();
-        for(auto* file:{&stage.background,&stage.logo,&stage.enemies})if(!graphics.preload(*file)){error=graphics.error;return false;}
+        for(auto* file:{&stage.background,&stage.logo,&stage.enemies})if(!graphics.preload(*file)){TH11_SYSTEM_SCOPE;error=graphics.error;return false;}
         return true;
     }
     void release(StageResources& stage)override{
@@ -578,6 +586,18 @@ struct Application:StageResourceEffects {
     }
     bool initialize() {
         if(initialized){if(!audio.initialize(resources)){error=audio.error;return false;}return true;}
+#ifdef TH11_MULTIPLAYER
+        if(!Netplay::WriteJournal::Ready()){
+            if(!Netplay::WriteJournal::Initialize(&session,sizeof(session))){error=Netplay::WriteJournal::Error();return false;}
+            // Static construction predates the simulation heap. Reconstruct the
+            // root in place so every initial container is game-owned as well.
+            const bool hitbox=session.always_hitbox,mp_hitbox=session.multiplayer_always_hitbox;
+            const bool visibility=session.multiplayer_local_visibility;
+            { TH11_GAME_SCOPE; session.~GameSession(); new(&session) GameSession(); }
+            session.resources.effects=this;session.always_hitbox=hitbox;
+            session.multiplayer_always_hitbox=mp_hitbox;session.multiplayer_local_visibility=visibility;
+        }
+#endif
         if(!prepare_platform())return false;
         if(!audio.initialize(resources)){error=audio.error;return false;}
         if(!fonts.initialize()){error=fonts.error;return false;}
@@ -679,6 +699,7 @@ struct Application:StageResourceEffects {
         audio.effects.reset();return true;
     }
     void scan_replays(){
+        TH11_GAME_SCOPE;
         if(!session.title&&!session.pause_menu)return;
 #ifdef TH11_MULTIPLAYER
         if(session.title)session.title->clear_replays();else session.pause_menu->replay_files.fill(nullptr);

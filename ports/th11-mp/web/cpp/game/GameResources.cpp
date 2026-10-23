@@ -1,5 +1,6 @@
 #include "GameResources.hpp"
 #include "PracticePatcher.hpp"
+#include "RollbackHooks.hpp"
 #include <functional>
 #include <algorithm>
 #include <cstdio>
@@ -10,6 +11,7 @@
 namespace th11 {
 
 bool GameResources::fail(const char* message) {
+    TH11_SYSTEM_SCOPE;
     last_error = message ? message : "resource error";
     return false;
 }
@@ -91,7 +93,7 @@ bool GameResources::load_practice_stage(u32 stage,StageResources& output,const P
     std::snprintf(name,sizeof(name),"stage%02u.anm",stage);const std::string background_name=name;
     if(!read(name,buffers.background))return false;
     const auto originals=buffers.ecl;std::string error;
-    if(!patch_practice_buffers(buffers,config,error)){last_error=error;return false;}
+    if(!patch_practice_buffers(buffers,config,error)){TH11_SYSTEM_SCOPE;last_error=error;return false;}
     for(size_t i=0;i<names.size();++i)practice_ecl.emplace(names[i],PracticeFile{originals[i],std::move(buffers.ecl[i])});
     practice_auxiliary.emplace(scene_name,std::move(buffers.scene));
     practice_auxiliary.emplace(background_name,std::move(buffers.background));
@@ -117,6 +119,7 @@ bool GameResources::open_sht(const std::string& name, ShtResource& output) {
 bool GameResources::load_ecl(const std::string& name, EclProgram& output) {
     output.files.clear(); output.definitions.clear(); output.error.clear();
     if (!output.load(name, *this)) {
+        TH11_SYSTEM_SCOPE;
         last_error = output.error.empty() ? "invalid ECL resource" : output.error;
         return false;
     }
@@ -130,7 +133,7 @@ bool GameResources::load_stage(u32 stage, StageResources& output) {
     std::snprintf(name, sizeof name, "stage%02u.std", stage);
     if (!read(name, scene))return false;
     const bool scene_ok=practice_scene_original.empty()?output.scene.open(scene.data(),u32(scene.size())):output.scene.open_practice(practice_scene_original,scene);
-    if (!scene_ok) {last_error="invalid STD resource: "+output.scene.error;return false;}
+    if (!scene_ok) {TH11_SYSTEM_SCOPE;last_error="invalid STD resource: "+output.scene.error;return false;}
     std::snprintf(name, sizeof name, "stage%02u.anm", stage);
     if (!open_anm(name, output.background)) return false;
     std::snprintf(name, sizeof name, "st%02ulogo.anm", stage);
@@ -155,7 +158,7 @@ bool GameResources::load_stage(u32 stage, StageResources& output) {
 
 bool GameResources::animation(u32 slot, const std::string& name) {
     if (slot >= animations.size() || !has(name)) return fail("missing ECL animation");
-    animations[slot] = name;
+    {TH11_SYSTEM_SCOPE;animations[slot] = name;}
     return true;
 }
 

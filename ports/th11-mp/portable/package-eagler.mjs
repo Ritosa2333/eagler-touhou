@@ -46,7 +46,8 @@ export function validateBuildManifest(build, plan) {
   if (plan.multiplayer) {
     if (build.features?.multiplayer !== true || build.features?.thprac !== false ||
         build.netplay?.prediction !== true || build.netplay?.rollback !== true || build.netplay?.predictionLimit !== 12 ||
-        build.netplay?.measuredStartup !== true || build.commonRevision !== COMMON_REVISION)
+        build.netplay?.measuredStartup !== true || build.commonRevision !== COMMON_REVISION ||
+        build.netplay?.stateBackend !== 'write-journal-32' || build.netplay?.instrumentation !== 0x52424a31)
       throw Error('TH11 MP requires the recorded shared source, measured startup and bounded 12-frame rollback.');
   } else if (build.features?.multiplayer === true || build.commonRevision || build.netplay) {
     throw Error('Ordinary TH11 cannot package a multiplayer build.');
@@ -69,6 +70,10 @@ export function validateNativeCapabilities(module, build, plan) {
   if (plan.multiplayer) {
     for (const name of MULTIPLAYER_EXPORTS)
       if (!exported.has(name)) throw Error('Multiplayer binary is missing ' + name);
+    for (const name of ['eagler_rb_touch','eagler_rb_config_address','eagler_rb_instrumented'])
+      if (!exported.has(name)) throw Error('Write-journal binary is missing ' + name);
+    if (WebAssembly.Module.customSections(module,'eagler.write-journal.v1').length !== 1)
+      throw Error('Write-journal binary has no unique instrumentation attestation.');
     if (practice) throw Error('TH11 MP cannot contain THPrac.');
   } else {
     if ([...exported].some(name => name.startsWith('th11_mp_')) ||

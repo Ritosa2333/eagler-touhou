@@ -2,6 +2,7 @@
 #include "RuntimeCost.hpp"
 #include "Localization.hpp"
 #include "GameSession.hpp"
+#include "RollbackHooks.hpp"
 #include <algorithm>
 
 namespace th11 {
@@ -132,7 +133,7 @@ bool GameBattle::stage_result_animation(){
 }
 bool GameBattle::next_stage(GameResources& source,u32 number){
 #ifdef TH11_MULTIPLAYER
-    if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+    if(animations.RollbackFrameActive()||TH11_ROLLBACK_FRAME_OPEN()){mp_rollback_boundary_requested=true;return false;}
 #endif
     if(transitioning||number<2||number>6)return false;
     // 41fe10 retains the player, bullet/item/laser pools and HUD. Stage-local
@@ -204,7 +205,7 @@ bool GameBattle::stage_control(){
     if(!completion.result_delay_elapsed())return true;
     if(!transition_started){
 #ifdef TH11_MULTIPLAYER
-        if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+        if(animations.RollbackFrameActive()||TH11_ROLLBACK_FRAME_OPEN()){mp_rollback_boundary_requested=true;return false;}
 #endif
         enemy_animations.interrupt(result_animation,1);
         completion.state.hud_flags&=~0x200u;completion.state.result_timer.set(0,&animations.rate);
@@ -212,13 +213,13 @@ bool GameBattle::stage_control(){
         outgoing_stage->fade_out(fades);stage->resume_background();transition_started=true;
     }else if(transition_timer.current==30&&!stage_active){
 #ifdef TH11_MULTIPLAYER
-        if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+        if(animations.RollbackFrameActive()||TH11_ROLLBACK_FRAME_OPEN()){mp_rollback_boundary_requested=true;return false;}
 #endif
         if(!activate_stage())return false;
     }
     if(outgoing_stage&&(outgoing_stage->state.draw_flags&8)){
 #ifdef TH11_MULTIPLAYER
-        if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+        if(animations.RollbackFrameActive()||TH11_ROLLBACK_FRAME_OPEN()){mp_rollback_boundary_requested=true;return false;}
 #endif
         if(resources.previous_stage)animations.retire_resource(resources.previous_stage->background);
         outgoing_stage.reset();
@@ -371,7 +372,7 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
         auto* old=resources.previous_stage.get();
         if(!old||(!animations.references(old->background)&&!animations.references(old->logo)&&!animations.references(old->enemies))){
 #ifdef TH11_MULTIPLAYER
-            if(animations.RollbackFrameActive()){mp_rollback_boundary_requested=true;return false;}
+            if(animations.RollbackFrameActive()||TH11_ROLLBACK_FRAME_OPEN()){mp_rollback_boundary_requested=true;return false;}
 #endif
             resources.retire_previous();transitioning=false;
         }

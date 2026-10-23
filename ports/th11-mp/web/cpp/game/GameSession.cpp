@@ -38,6 +38,7 @@ void GameSession::reset_state() noexcept {
 }
 
 bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32 stage,bool demo){
+    TH11_GAME_SCOPE;
     if(!playback.open(data,size))return fail(playback.error().c_str());
     if(!stage)for(u32 n=1;n<=7;++n)if(playback.stage(n)){stage=n;break;}
     if(!playback.stage(stage))return fail("stage absent from replay");
@@ -46,6 +47,7 @@ bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32
 }
 bool GameSession::begin(GameResources& source, u32 stage, i32 character,
                         i32 subtype, i32 difficulty, bool demo,bool replay,bool practice,const PracticeConfig* parameters) {
+    TH11_GAME_SCOPE;
     PracticeConfig requested;if(parameters)requested=*parameters;
     if(title){menu_selection=title->selection;config=title->config;scores.read_records(spell_records,clear_records);}
     reset_state();
@@ -85,6 +87,7 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
 }
 
 bool GameSession::start_stage(GameResources& source, u32 stage) {
+    TH11_GAME_SCOPE;
     if(stage<1||stage>7) return fail("TH11 stage outside 1..7");
     battle.reset();
     if(!clear_animations(animations)) return fail("ANM stage transition failed");
@@ -199,6 +202,7 @@ bool GameSession::save_replay(const char* name,std::vector<u8>& output,bool term
 }
 
 bool GameSession::update(const GameSessionInput& input) {
+    TH11_GAME_SCOPE;
 #ifdef TH11_MULTIPLAYER
     if(multiplayer_active)return fail("MP requires a confirmed input frame");
 #endif
@@ -327,6 +331,7 @@ bool GameSession::update(const GameSessionInput& input) {
 }
 
 bool GameSession::pause() {
+    TH11_GAME_SCOPE;
     if(state.phase!=GameSessionPhase::stage) return false;
     pause_menu=std::make_unique<PauseMenu>(animations,resources.core.text,resources.core.front,scores);
     pause_menu->selection=state.character*3+state.subtype;pause_menu->difficulty=state.difficulty;pause_menu->stage=state.stage;pause_menu->practice=state.practice;
@@ -375,6 +380,7 @@ bool GameSession::restart_run(bool continuation){
 }
 
 bool GameSession::resume() {
+    TH11_GAME_SCOPE;
     if(state.phase!=GameSessionPhase::paused) return false;
     if(pause_menu){for(const auto id:{pause_menu->background_animation,pause_menu->menu_animation})if(auto* vm=animations.find(id)){
         vm->pending_interrupt=1;if(!vm->child.previous)for(auto* n=vm->child.next;n;n=n->next)n->value->pending_interrupt=1;
@@ -385,6 +391,7 @@ bool GameSession::resume() {
 }
 
 bool GameSession::return_to_title() {
+    TH11_GAME_SCOPE;
     if(state.phase==GameSessionPhase::title) return true;
     if(!source)return fail("title source missing");
     const bool demo=state.demo;const auto screen=state.replay&&!demo?TitleScreen::Replays:TitleScreen::Main;
@@ -393,6 +400,7 @@ bool GameSession::return_to_title() {
 }
 
 bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
+    TH11_GAME_SCOPE;
     if(!title)scores.write_records(spell_records,clear_records);
     reset_state();source=&data;interactive=true;
 #ifdef TH_ENABLE_THPRAC
@@ -412,6 +420,7 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
 }
 
 bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
+    TH11_GAME_SCOPE;
     if(battle)battle->always_hitbox=always_hitbox;
 #ifdef TH11_MULTIPLAYER
     if(multiplayer_active&&battle){battle->mp_always_hitbox=always_hitbox||multiplayer_always_hitbox;battle->mp_local_visibility=multiplayer_local_visibility;battle->mp_prepare_presentation(renderer);}

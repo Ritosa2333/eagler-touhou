@@ -9,6 +9,10 @@ import {
 } from '../package-eagler.mjs';
 
 import {COMMON_REVISION as revision} from '../common-revision.mjs';
+const WRITE_JOURNAL_EXPORTS = ['eagler_rb_touch', 'eagler_rb_config_address', 'eagler_rb_instrumented'];
+const WRITE_JOURNAL_SECTION = 'eagler.write-journal.v1';
+const WRITE_JOURNAL_MAGIC = 0x52424a31;
+const MP_NATIVE_EXPORTS = ['th11_initialize', ...MULTIPLAYER_EXPORTS, ...WRITE_JOURNAL_EXPORTS];
 const leb = value => {
   const bytes = [];
   do { const part = value & 127; value >>>= 7; bytes.push(part | (value ? 128 : 0)); } while (value);
@@ -16,14 +20,21 @@ const leb = value => {
 };
 const string = value => [...leb(Buffer.byteLength(value)), ...Buffer.from(value)];
 const section = (id, bytes) => [id, ...leb(bytes.length), ...bytes];
-function wasm(names, importName = null) {
+function wasm(names, importName = null, customSections = []) {
   const types = section(1, [1, 0x60, 0, 0]);
   const imports = importName ? section(2, [1, ...string('env'), ...string(importName), 0, 0]) : [];
   const functions = section(3, [...leb(names.length), ...names.map(() => 0)]);
   const exports = section(7, [...leb(names.length),
     ...names.flatMap((name, i) => [...string(name), 0, ...leb(i + (importName ? 1 : 0))])]);
   const code = section(10, [...leb(names.length), ...names.flatMap(() => [2, 0, 0x0b])]);
-  return Buffer.from([0, 97, 115, 109, 1, 0, 0, 0, ...types, ...imports, ...functions, ...exports, ...code]);
+  const custom = customSections.flatMap(([name, bytes]) => section(0, [...string(name), ...bytes]));
+  return Buffer.from([0, 97, 115, 109, 1, 0, 0, 0, ...types, ...imports, ...functions, ...exports, ...code, ...custom]);
+}
+function multiplayerWasm({names = MP_NATIVE_EXPORTS, attestations = [WRITE_JOURNAL_SECTION]} = {}) {
+  // These minimal modules exercise packaging's capability and section gates;
+  // instruction rewriting and runtime marker values are tested by the instrumenter.
+  const report = Buffer.from(JSON.stringify({schema: WRITE_JOURNAL_SECTION, magic: WRITE_JOURNAL_MAGIC}));
+  return wasm(names, null, attestations.map(name => [name, report]));
 }
 function buildFor(bytes, multiplayer = false) {
   const sourceFiles = {'source.cpp': sha256('// source\n')};
@@ -33,7 +44,8 @@ function buildFor(bytes, multiplayer = false) {
     version: 'test', builtAt: '2026-10-09T00:00:00.000Z', kind: 'cpp-sdl3',
     features: {thprac: false, languages: true, ...(multiplayer ? {multiplayer: true} : {})},
     ...(multiplayer ? {commonRevision: revision,
-      netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true},
+      netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true,
+        stateBackend: 'write-journal-32', instrumentation: WRITE_JOURNAL_MAGIC},
       } : {}),
     runtimeSourceFiles:{'direct-input-bridge.mjs':sha256('// input bridge\n'),
       ...(multiplayer?{'adonis-calibration.mjs':sha256('// calibration\n')}:{})},
@@ -48,7 +60,7 @@ function withFixture(multiplayer, body) {
   const put = (name, value) => {
     const path = resolve(root, name); mkdirSync(dirname(path), {recursive: true}); writeFileSync(path, value);
   };
-  const binary = wasm(['th11_initialize', ...(multiplayer ? MULTIPLAYER_EXPORTS : [])]);
+  const binary = multiplayer ? multiplayerWasm() : wasm(['th11_initialize']);
   const build = buildFor(binary, multiplayer);
   const buildDir = 'web/artifacts/' + plan.profile + '/';
   put('source.cpp', '// source\n');
@@ -85,7 +97,7 @@ test('ordinary and MP plans use separate binary, object-profile and package dire
 
 test('MP attestation requires bounded rollback, the recorded common source and an isolated variant', () => {
   const plan = resolvePackagePlan('/workspace/title', ['--multiplayer']);
-  const build = buildFor(wasm(MULTIPLAYER_EXPORTS), true);
+  const build = buildFor(multiplayerWasm(), true);
   validateBuildManifest(build, plan);
   for (const netplay of [
     {...build.netplay, prediction: false}, {...build.netplay, rollback: false}, {...build.netplay, predictionLimit: 8},
@@ -96,9 +108,24 @@ test('MP attestation requires bounded rollback, the recorded common source and a
   assert.throws(() => validateBuildManifest({...build, sourceDigest: '0'.repeat(64)}, plan), /inventory/);
 });
 
+test('MP build manifests require the write-journal backend and current instrumentation version', () => {
+  const plan = resolvePackagePlan('/workspace/title', ['--multiplayer']);
+  const build = buildFor(multiplayerWasm(), true);
+  validateBuildManifest(build, plan);
+  for (const [field, values] of Object.entries({
+    stateBackend: [undefined, 'write-journal-64'],
+    instrumentation: [undefined, 0, WRITE_JOURNAL_MAGIC + 1, String(WRITE_JOURNAL_MAGIC)],
+  })) for (const value of values) {
+    const netplay = {...build.netplay, [field]: value};
+    if (value === undefined) delete netplay[field];
+    assert.throws(() => validateBuildManifest({...build, netplay}, plan), /TH11 MP requires/,
+      `${field}=${value} must not attest a write-journal build`);
+  }
+});
+
 test('actual WASM prevents export-list forgery, MP leakage and diagnostic shipping', () => {
   const normal = resolvePackagePlan('/workspace/title'), mp = resolvePackagePlan('/workspace/title', ['--multiplayer']);
-  const mpBytes = wasm(MULTIPLAYER_EXPORTS), mpBuild = buildFor(mpBytes, true);
+  const mpBytes = multiplayerWasm(), mpBuild = buildFor(mpBytes, true);
   validateNativeCapabilities(new WebAssembly.Module(mpBytes), mpBuild, mp);
   assert.throws(() => validateNativeCapabilities(new WebAssembly.Module(mpBytes),
     {...mpBuild, exports: []}, mp), /actual WASM/);
@@ -110,13 +137,27 @@ test('actual WASM prevents export-list forgery, MP leakage and diagnostic shippi
   const probeBytes = wasm(['th11_initialize', 'th11_probe_mutate']);
   assert.throws(() => validateNativeCapabilities(new WebAssembly.Module(probeBytes),
     buildFor(probeBytes), normal), /diagnostic/);
-  const incomplete = wasm(MULTIPLAYER_EXPORTS.slice(1));
+  const incomplete = multiplayerWasm({names: MP_NATIVE_EXPORTS.filter(name => name !== 'th11_mp_configure')});
   assert.throws(() => validateNativeCapabilities(new WebAssembly.Module(incomplete),
     buildFor(incomplete, true), mp), /missing th11_mp_configure/);
 });
 
+test('MP native capabilities require every write-journal export and exactly one attestation section', () => {
+  const plan = resolvePackagePlan('/workspace/title', ['--multiplayer']);
+  for (const name of WRITE_JOURNAL_EXPORTS) {
+    const bytes = multiplayerWasm({names: MP_NATIVE_EXPORTS.filter(exported => exported !== name)});
+    assert.throws(() => validateNativeCapabilities(new WebAssembly.Module(bytes), buildFor(bytes, true), plan),
+      {message: 'Write-journal binary is missing ' + name});
+  }
+  for (const attestations of [[], ['eagler.write-journal.v2'], [WRITE_JOURNAL_SECTION, WRITE_JOURNAL_SECTION]]) {
+    const bytes = multiplayerWasm({attestations});
+    assert.throws(() => validateNativeCapabilities(new WebAssembly.Module(bytes), buildFor(bytes, true), plan),
+      /no unique instrumentation attestation/);
+  }
+});
+
 test('package identity keeps base resources th11 and identifies the MP product explicitly', () => {
-  const build = buildFor(wasm(MULTIPLAYER_EXPORTS), true);
+  const build = buildFor(multiplayerWasm(), true);
   const manifest = createRuntimeManifest(build, resolvePackagePlan('/workspace/title', ['--multiplayer']));
   assert.equal(manifest.game, 'th11');
   assert.equal(manifest.product, 'th11mp');
@@ -163,6 +204,34 @@ test('bad hashes, stale sources, calibration and shell mismatches leave existing
     assert.throws(() => fixture.package(), /identity mismatch|modified source|calibration module|input bridge|factory marker/);
     assert.equal(readFileSync(resolve(fixture.plan.out, 'manifest.json'), 'utf8'), 'previous generation');
     assert.deepEqual(readdirSync(fixture.plan.out), ['manifest.json']);
+  });
+});
+
+test('missing write-journal attestations leave the previous package and inventory untouched', () => {
+  const previous = {'manifest.json': 'previous manifest', 'runtime-files.json': 'previous inventory',
+    'th11-sdl.wasm': 'previous binary'};
+  for (const {netplay, binary, error} of [
+    {netplay: {stateBackend: undefined}, error: /TH11 MP requires/},
+    {netplay: {instrumentation: undefined}, error: /TH11 MP requires/},
+    {binary: multiplayerWasm({names: MP_NATIVE_EXPORTS.filter(name => name !== 'eagler_rb_instrumented')}),
+      error: /missing eagler_rb_instrumented/},
+    {binary: multiplayerWasm({attestations: []}), error: /no unique instrumentation attestation/},
+    {binary: multiplayerWasm({attestations: [WRITE_JOURNAL_SECTION, WRITE_JOURNAL_SECTION]}),
+      error: /no unique instrumentation attestation/},
+  ]) withFixture(true, fixture => {
+    for (const [name, contents] of Object.entries(previous)) fixture.put('build-eagler-multiplayer/' + name, contents);
+    const build = {...fixture.build, netplay: {...fixture.build.netplay, ...netplay}};
+    if (binary) {
+      fixture.put('web/artifacts/multiplayer/th11-sdl.wasm', binary);
+      // Keep the manifest honest so rejection reaches the native attestation gate.
+      build.sha256 = sha256(binary);
+      build.exports = WebAssembly.Module.exports(new WebAssembly.Module(binary));
+    }
+    fixture.put('web/artifacts/multiplayer/build.json', JSON.stringify(build));
+    assert.throws(() => fixture.package(), error);
+    assert.deepEqual(readdirSync(fixture.plan.out).sort(), Object.keys(previous).sort());
+    for (const [name, contents] of Object.entries(previous))
+      assert.equal(readFileSync(resolve(fixture.plan.out, name), 'utf8'), contents);
   });
 });
 

@@ -1,11 +1,12 @@
 #include "AnmManager.hpp"
+#include "RollbackHooks.hpp"
 #include <cstdlib>
 namespace th11 {
 AnmManager::~AnmManager(){
 #ifdef TH11_MULTIPLAYER
     for(auto& entry:geometry_sizes)entry.first->geometry=nullptr;
 #else
-    for(auto& [vm,size]:geometry_sizes){std::free(vm->geometry);vm->geometry=nullptr;}
+    for(auto& [vm,size]:geometry_sizes){TH11_GAME_FREE(vm->geometry);vm->geometry=nullptr;}
 #endif
 }
 AnmVm* AnmManager::find(u32 id)noexcept{auto it=active.find(id);return it==active.end()?nullptr:it->second;}
@@ -111,13 +112,13 @@ bool AnmManager::update(bool overlay){
     }return true;
 }
 bool AnmManager::allocate_geometry(AnmVm& vm,u32 bytes){
-    if(!bytes||bytes>16*1024*1024)return false;void* p=std::calloc(1,bytes);if(!p)return false;
+    if(!bytes||bytes>16*1024*1024)return false;void* p=TH11_GAME_CALLOC(1,bytes);if(!p)return false;
 #ifdef TH11_MULTIPLAYER
     preserve_rollback_slot(vm);
-    geometry_sizes[&vm]={std::shared_ptr<void>(p,&std::free),bytes};
+    geometry_sizes[&vm]={std::shared_ptr<void>(p,[](void* memory){TH11_GAME_FREE(memory);}),bytes};
     vm.geometry=p;return true;
 #else
-    if(geometry_sizes.find(&vm)!=geometry_sizes.end())std::free(vm.geometry);vm.geometry=p;geometry_sizes[&vm]=bytes;return true;
+    if(geometry_sizes.find(&vm)!=geometry_sizes.end())TH11_GAME_FREE(vm.geometry);vm.geometry=p;geometry_sizes[&vm]=bytes;return true;
 #endif
 }
 void AnmManager::release_geometry(AnmVm& vm){
@@ -125,7 +126,7 @@ void AnmManager::release_geometry(AnmVm& vm){
 #ifdef TH11_MULTIPLAYER
     preserve_rollback_slot(vm);
 #else
-    std::free(vm.geometry);
+    TH11_GAME_FREE(vm.geometry);
 #endif
     vm.geometry=nullptr;geometry_sizes.erase(it);
 }

@@ -10,6 +10,12 @@ Launcher 手柄动作通过共用浏览器桥同步进入本地原生采样，�
 
 需要 Node.js 22.18 以上、Python 3、Emscripten SDK 6.0.9 和 `ffmpeg`。原版目录需含 `th11.dat`、`thbgm.dat`；`EAGLER_FONT_ROOT` 指向含 `cp932.bin` 的目录。
 
+MP 构建使用[Wasm 写入日志插桩](../../../tools/rollback/README.md)。首次构建执行 `npm --prefix tools/rollback ci --ignore-scripts`。构建器在最终链接后自动插桩并核验标志，源码清单包含插桩器、锁文件与模拟堆分配器；打包时继续核对最终 Wasm 身份。
+
+游戏状态及分配器元数据位于独立的 192 MiB 模拟堆，每个逻辑帧记录 32 字节块的首次写入。`GameScope` 为游戏对象分配内存，`SystemScope` 为字体、图形、网络和长期缓存分配内存。纹理像素与渲染状态继续通过原有事务恢复；暂停、资源更替和关卡退出沿用确认帧边界。音效和 Replay 在确认后发布，纠正过程重新生成对应输出。
+
+运行 `node --test tools/rollback/instrument.test.mjs` 验证真实 Wasm 写入覆盖；设置 `EMSDK` 后运行 `node tools/rollback/memory-test.mjs` 验证分配器、容器、重复回滚及范围边界。两者与完整游戏浏览器验收分别执行、分别记录。该后端由 MP 构建显式启用，普通版继续使用自己的源码与构建入口。
+
 ```powershell
 npm --prefix launcher ci --ignore-scripts # 仅首次安装
 node launcher/scripts/prepare-th11-content.mjs --original='C:\Games\TH11' --output='ports/th11/assets-ogg'

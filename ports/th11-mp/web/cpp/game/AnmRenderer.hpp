@@ -2,6 +2,7 @@
 #include "AnmGeometry.hpp"
 #include "AnmProjection.hpp"
 #include "ZunGraphics.hpp"
+#include "RollbackHooks.hpp"
 #include "SceneCamera.hpp"
 #include <vector>
 #ifdef TH11_MULTIPLAYER
@@ -13,7 +14,7 @@ class AnmManager;
 #endif
 class AnmRenderer {
 public:
-    explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(6144);}
+    explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){TH11_SYSTEM_SCOPE;vertices.reserve(6144);}
     Vec2 offset{};
     GraphicsViewport viewport;
     AnmCamera camera;
@@ -40,14 +41,14 @@ public:
     void solid_rectangle(float left,float top,float right,float bottom,u32 color);
     void flush();
     void invalidate();
-    touhou::graphics::PipelineState& pipeline(){flush();return graphics.pipeline();}
+    touhou::graphics::PipelineState& pipeline(){TH11_SYSTEM_SCOPE;flush();return graphics.pipeline();}
     // Preserve queued vertices under their original state. Repeated Stage
     // fog/depth requests need not split an otherwise identical screen batch.
-    void set_fog(bool value){if(graphics.pipeline().fog!=value){flush();graphics.pipeline().fog=value;}}
-    void set_depth_write(bool value){if(graphics.pipeline().depthWrite!=value){flush();graphics.pipeline().depthWrite=value;}}
-    bool select_target(const AnmResource* file,u32 index){invalidate();return graphics.select_target(file,index);}
-    bool clear_target(u32 color,const GraphicsViewport* rect=nullptr){flush();return graphics.clear_target(color,rect);}
-    void set_viewport(const GraphicsViewport& value){flush();viewport=value;graphics.set_viewport(value);
+    void set_fog(bool value){TH11_SYSTEM_SCOPE;if(graphics.pipeline().fog!=value){flush();graphics.pipeline().fog=value;}}
+    void set_depth_write(bool value){TH11_SYSTEM_SCOPE;if(graphics.pipeline().depthWrite!=value){flush();graphics.pipeline().depthWrite=value;}}
+    bool select_target(const AnmResource* file,u32 index){TH11_SYSTEM_SCOPE;invalidate();return graphics.select_target(file,index);}
+    bool clear_target(u32 color,const GraphicsViewport* rect=nullptr){TH11_SYSTEM_SCOPE;flush();return graphics.clear_target(color,rect);}
+    void set_viewport(const GraphicsViewport& value){TH11_SYSTEM_SCOPE;flush();viewport=value;graphics.set_viewport(value);
 #ifdef TH11_MULTIPLAYER
         camera_state_valid=false;
 #endif

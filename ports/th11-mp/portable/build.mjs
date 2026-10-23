@@ -1,7 +1,7 @@
 import {printingRuntimeInputs, printRuntimeInputs, headerInputs} from '../../../tools/build/runtime-inputs.mjs';
 // TH11 ordinary and multiplayer builds have separate objects, binaries and attestations.
 import {spawn, execFileSync} from 'node:child_process';
-import {readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync} from 'node:fs';
+import {readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, renameSync} from 'node:fs';
 import {resolve, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
@@ -46,7 +46,7 @@ const flags = [
   '--use-port=sdl3', '--use-port=sdl3_ttf',
 ];
 if (multiplayer) flags.push('-DTH11_MULTIPLAYER=1', '-I' + resolve(root, 'cpp/multiplayer'),
-  '-I' + resolve(netplayRoot, 'include'));
+  '-DEAGLER_WRITE_JOURNAL=1', '-I' + resolve(netplayRoot, 'include'));
 if (!multiplayer) flags.push('-I' + resolve(netplayRoot, 'include'));
 const files = dir => existsSync(dir) ? readdirSync(dir, {withFileTypes: true}).flatMap(entry =>
   entry.isDirectory() ? files(resolve(dir, entry.name)) :
@@ -59,7 +59,7 @@ source.push(...['imgui.cpp', 'imgui_draw.cpp', 'imgui_freetype.cpp', 'imgui_tabl
 if (multiplayer) {
   source.push(...files(resolve(root, 'cpp/multiplayer')));
   source.push(...['NetplayProtocol', 'NetplayCore', 'NetplaySession', 'WebSocketTransport',
-    'BrowserPeerTransport', 'SessionChannel', 'InputReplay', 'RollbackJournal']
+    'BrowserPeerTransport', 'SessionChannel', 'InputReplay', 'RollbackJournal', 'WriteJournal', 'SimulationHeap']
     .map(name => resolve(netplayRoot, 'src/netplay', name + '.cpp')));
 }
 const exported = [
@@ -78,7 +78,13 @@ const linkFlags = multiplayer ? ['-lwebsocket'] : [];
 // export names stable when it is linked. Do not set private compiler options
 // or use DECLARE_ASM_MODULE_EXPORTS=0 (which changes module scoping).
 if(lto)linkFlags.push('-lexports.js');
-await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input')),flags});
+const instrumentationInputs=multiplayer?[
+  resolve(workspace,'../../tools/rollback/instrument.mjs'),
+  resolve(workspace,'../../tools/rollback/package.json'),
+  resolve(workspace,'../../tools/rollback/package-lock.json'),
+  resolve(netplayRoot,'third_party/dlmalloc/dlmalloc.inc'),
+]:[];
+await printRuntimeInputs({workspace,root,sources:source,headers:[...headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input')),...instrumentationInputs],flags});
 if (printPlan) {
   console.log(JSON.stringify({game: 'th11', profile, variant, outputDirectory: out,
     packageDirectory: resolve(workspace, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
@@ -110,7 +116,11 @@ const headerFiles = dir => readdirSync(dir, {withFileTypes: true}).flatMap(entry
 const headers = [...headerFiles(resolve(root, 'cpp')),...headerFiles(imgui), ...headerFiles(resolve(workspace, 'portable/sdl')),
   ...headerFiles(resolve(workspace, 'portable/input')), resolve(netplayRoot, 'include/eagler/input/DialogueGesture.hpp'),
   ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [resolve(netplayRoot,'include/eagler/text/RuntimeFontRaster.hpp')])].sort();
-const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));
+// Instrumenter changes require a fresh link/pass/receipt, not recompilation of
+// unrelated C++ units. The embedded allocator source is a real header input.
+const headerHash = sha([...headers,...(multiplayer?[resolve(netplayRoot,'third_party/dlmalloc/dlmalloc.inc')]:[])]
+  .map(path => path + sha(readObserved(path))).join('\n'));
+for(const path of instrumentationInputs)readObserved(path);
 readObserved(fileURLToPath(import.meta.url));
 readObserved(resolve(workspace, 'portable/response-file.mjs'));
 readObserved(resolve(workspace, 'portable/common-revision.mjs'));
@@ -171,6 +181,15 @@ await run([...flags, ...linkFlags, '--emit-symbol-map', '--no-entry', '-sDEFAULT
   '-sINVOKE_RUN=0', '-sEXIT_RUNTIME=0', '-sMIN_WEBGL_VERSION=2', '-sMAX_WEBGL_VERSION=2',
   '-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0', '-sEXPORTED_FUNCTIONS=' + exported.join(','),
   ...objectsBuilt, '-o', loader]);
+if(multiplayer){
+  // The artifact digest always describes the instrumented module. A missing
+  // pass cannot produce a usable rollback build or a valid build receipt.
+  const instrument=resolve(workspace,'../../tools/rollback/instrument.mjs');
+  const wasmPath=loader.replace('.mjs','.wasm'),instrumentedPath=loader.replace('.mjs','.journal.wasm');
+  execFileSync(process.execPath,[instrument,wasmPath,instrumentedPath],{stdio:'inherit'});
+  execFileSync(process.execPath,[instrument,'--verify',instrumentedPath],{stdio:'inherit'});
+  renameSync(instrumentedPath,wasmPath);
+}
 const wasm = readFileSync(loader.replace('.mjs', '.wasm')), module = new WebAssembly.Module(wasm);
 for (const [path, expected] of observed) if (sha(readFileSync(path)) !== expected)
   throw Error('Source changed during compilation; refuse mixed build: ' + path);
@@ -188,7 +207,8 @@ const report = {
   features: {thprac, languages: true, focusHitbox: false, ...(multiplayer ? {multiplayer: true} : {})},
   runtimeSourceFiles,
   ...(multiplayer ? {commonRevision: observedCommonRevision, commonCommit: COMMON_COMMIT, commonSourcePath: COMMON_SOURCE_PATH,
-    netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true}} : {}),
+    netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true,
+      stateBackend:'write-journal-32',instrumentation:0x52424a31,simulationHeapBytes:192*1024*1024}} : {}),
   architecture: {loop: multiplayer ? 'cpp-fixed-60hz-bounded-rollback' : 'cpp-fixed-60hz-bounded-catchup',
     audio: 'cpp-miniaudio-vorbis-sdl3-stream', renderer: 'cpp-gles-semantic-batched',
     graphicsInterface: 'semantic-state-texture-matrix', vertexUpload: 'web-bufferData-direct-game-batches-cached-vao',

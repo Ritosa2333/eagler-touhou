@@ -6,13 +6,14 @@
 #endif
 namespace th11 {
 using namespace touhou::graphics;
-void AnmRenderer::flush(){if(vertices.empty())return;auto& p=graphics.pipeline();p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);graphics.triangles(vertices.size()/3,vertices.data(),sizeof(AnmVertex));vertices.clear();}
-void AnmRenderer::invalidate(){flush();texture_handle=blend_mode=filter=~0u;uv_sprite=nullptr;
+void AnmRenderer::flush(){TH11_SYSTEM_SCOPE;if(vertices.empty())return;auto& p=graphics.pipeline();p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);graphics.triangles(vertices.size()/3,vertices.data(),sizeof(AnmVertex));vertices.clear();}
+void AnmRenderer::invalidate(){TH11_SYSTEM_SCOPE;flush();texture_handle=blend_mode=filter=~0u;uv_sprite=nullptr;
 #ifdef TH11_MULTIPLAYER
     camera_state_valid=false;
 #endif
 }
 void AnmRenderer::solid_rectangle(float left,float top,float right,float bottom,u32 color){
+    TH11_SYSTEM_SCOPE;
     // 447f70 draws directly, then invalidates the ANM material cache.
     flush();auto& p=graphics.pipeline();p.alpha.operation=p.color.operation=ColorOperation::First;
     p.alpha.first=p.color.first={ArgumentSource::Diffuse};p.destinationBlend=BlendFactor::InverseSourceAlpha;
@@ -23,6 +24,7 @@ void AnmRenderer::solid_rectangle(float left,float top,float right,float bottom,
     p.alpha.operation=p.color.operation=ColorOperation::Multiply;p.alpha.first=p.color.first={ArgumentSource::Texture};
 }
 void AnmRenderer::set_camera(SceneCamera& value,bool screen){
+    TH11_SYSTEM_SCOPE;
 #ifdef TH11_MULTIPLAYER
     // Keep every authored camera calculation and mutation. The only removed
     // operation is a submission boundary when GL matrices/viewport are exact
@@ -61,6 +63,7 @@ u32 AnmRenderer::multiplayer_tint(u32 value,unsigned owner)const noexcept{
     u32 color=0;for(unsigned shift=0;shift<32;shift+=8){const unsigned source=(value>>shift)&255;const unsigned mixed=(source*opacity+128*(255-opacity)+127)/255;color|=mixed<<shift;}return color;
 }
 void AnmRenderer::multiplayer_geometry(const AnmVm& vm,Topology topology,u32 count,const AnmVertex* source){
+    TH11_SYSTEM_SCOPE;
     const auto owner=multiplayer_animations?multiplayer_animations->multiplayer_tag(vm):0;
     if(!owner||owner>=multiplayer_opacity.size()||multiplayer_opacity[owner]==255){graphics.primitives(topology,count,source,sizeof(AnmVertex));return;}
     // Draw-only copies preserve native ring/ripple/distortion vertices and RNG.
@@ -70,6 +73,7 @@ void AnmRenderer::multiplayer_geometry(const AnmVm& vm,Topology topology,u32 cou
 }
 #endif
 void AnmRenderer::material(const AnmVm& vm){
+    TH11_SYSTEM_SCOPE;
     const auto handle=graphics.texture(*vm.resource,vm.sprite->texture);if(handle!=texture_handle){flush();texture_handle=handle;graphics.bind_texture(handle);}
     u32 blend=(vm.flags>>4)&7;
 #ifdef TH11_MULTIPLAYER
@@ -100,6 +104,7 @@ u32 AnmRenderer::fog_color(u32 value,float amount,bool fade_alpha)const noexcept
     return out|(fade_alpha?u32(u8(i32(double(value>>24)*(1.-amount))))<<24:value&0xff000000);
 }
 int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32* colors,bool preserve_subpixel){
+    TH11_SYSTEM_SCOPE;
     for(auto& p:positions){p.x=float(double(p.x)+offset.x);p.y=float(double(p.y)+offset.y);}
     // Preserve the D3D half-pixel convention without quantizing continuous
     // bullet coordinates. Authoritative VM values remain untouched.

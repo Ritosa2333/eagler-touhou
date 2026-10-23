@@ -7,7 +7,9 @@ import {pathToFileURL} from 'node:url';
 export async function loadPlaywright({preferPython = false} = {}) {
   try {if (!preferPython) {
     const require = createRequire(new URL('../../launcher/package.json',import.meta.url));
-    return await import(pathToFileURL(require.resolve('playwright')).href);
+    const imported = await import(pathToFileURL(require.resolve('playwright')).href);
+    // Recent CommonJS bundles expose the driver through the default export.
+    return imported.chromium ? imported : imported.default;
   }}
   catch (error) {if (!['ERR_MODULE_NOT_FOUND','MODULE_NOT_FOUND'].includes(error.code)) throw error;}
   const module = execFileSync(process.env.PYTHON || 'python', ['-c',

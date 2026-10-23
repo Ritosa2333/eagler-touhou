@@ -2,8 +2,9 @@
 // One complete transaction owns Update, text pixels, authored Draw and Seal.
 struct MultiplayerRollbackTick {
     u32 frame=0,stage=0,score=0;bool completed=false;
-    std::unique_ptr<WorldRollbackFrame> world;
+    bool captured=false;
     std::unique_ptr<TextureRollbackFrame> texture;
+    std::map<u32,unsigned> hitbox_owners;
     std::vector<BattleEvent> sounds;
 };
 Netplay::RollbackJournal rollback_journal;
@@ -30,6 +31,7 @@ struct RollbackTimer {
 };
 RollbackTimer rollback_timer(unsigned bin){return RollbackTimer(rollback_profile_enabled?&rollback_profile[bin]:nullptr);}
 bool rollback_fail(const char* message){
+    if(Netplay::WriteJournal::FrameOpen())Netplay::WriteJournal::EndFrame();
     if(rollback_world)rollback_world->EndRollbackFrame();
     graphics.EndTextureRollbackFrame();graphics.CancelTextureRollbackRestore();
     graphics.backend.cancel_present();
@@ -44,7 +46,7 @@ void rollback_release(){
     graphics.backend.cancel_present();
     // All raw records disappear before leases. Never leave raw undo pointers
     // alive while destroying the typed frame that keeps their storage alive.
-    rollback_journal.Clear();rollback_frames.clear();rollback_world.reset();
+    Netplay::WriteJournal::Clear();rollback_journal.Clear();rollback_frames.clear();rollback_world.reset();
     rollback_barrier=Netplay::INVALID_FRAME;rollback_published=0;
     multiplayer_touch_valid=false;rollback_network_wait=rollback_cpu_wait=false;
     rollback_restores=rollback_history_ticks=rollback_peak_depth=0;
@@ -55,6 +57,7 @@ void rollback_release(){
 bool rollback_initialize(){
     rollback_release();
     if(!netplay.AllowsRollback()||netplay.ReadOnly())return true;
+    if(!Netplay::WriteJournal::Ready())return rollback_fail(Netplay::WriteJournal::Error());
     if(!rollback_journal.Reset({14,32*1024*1024,65536,true,true}))
         return rollback_fail("TH11 rollback history allocation failed");
     graphics.backend.residentUploads=true;
@@ -88,11 +91,11 @@ bool rollback_capture_renderer(){
 bool rollback_restore(u32 first){
     auto measured=rollback_timer(3);
     const auto begin=std::find_if(rollback_frames.begin(),rollback_frames.end(),[&](const auto& frame){return frame->frame==first;});
-    if(begin==rollback_frames.end()||!(*begin)->world||first<rollback_published)
+    if(begin==rollback_frames.end()||!(*begin)->captured||first<rollback_published)
         return rollback_fail("TH11 correction has no retained checkpoint");
     std::vector<const TextureRollbackFrame*> textures;
     for(auto it=begin;it!=rollback_frames.end();++it){
-        if(!(*it)->world||!rollback_world->ValidateRollbackFrame(*(*it)->world,(*it)->frame))
+        if(!(*it)->captured)
             return rollback_fail("TH11 rollback resource identity changed");
         textures.push_back((*it)->texture.get());
     }
@@ -100,10 +103,16 @@ bool rollback_restore(u32 first){
     if(!graphics.PrepareTextureRollbackRestore(textures.data(),textures.size(),first))
         return rollback_fail("TH11 texture restore preflight failed");
     u32 restored=Netplay::INVALID_FRAME;
-    if(!rollback_journal.UndoTo(first,&restored)||restored!=first||
-       !rollback_world->RestoreRollbackFrame(*(*begin)->world,restored)||
+    const bool hitbox=session.always_hitbox,mp_hitbox=session.multiplayer_always_hitbox;
+    const bool visibility=session.multiplayer_local_visibility;
+    if(!Netplay::WriteJournal::RestoreTo(first)||
+       !rollback_journal.UndoTo(first,&restored)||restored!=first||
        !graphics.FinishTextureRollbackRestore())
         return rollback_fail("TH11 complete world restore failed");
+    session.always_hitbox=hitbox;session.multiplayer_always_hitbox=mp_hitbox;
+    session.multiplayer_local_visibility=visibility;
+    renderer.multiplayer_hitbox_owners=(*begin)->hitbox_owners;
+    renderer.multiplayer_hidden_hitboxes.clear();
     // invalidate() flushes. Both queues are already empty, so this cannot
     // submit vertices whose owner was just rewound.
     renderer.invalidate();
@@ -120,7 +129,8 @@ bool rollback_commit(bool reconciled_prefix=false){
     // Fresh one-tick checkpoints only. Retire raw records before typed leases,
     // then grant the publication watermark. No output can rewind afterwards.
     rollback_journal.DiscardBefore(through+1);
-    for(auto& frame:rollback_frames)if(frame->frame<=through){frame->world.reset();frame->texture.reset();}
+    Netplay::WriteJournal::DiscardBefore(through+1);
+    for(auto& frame:rollback_frames)if(frame->frame<=through){frame->captured=false;frame->texture.reset();}
     if(!(reconciled_prefix?netplay.CommitReconciledPrefix(through):netplay.SetCommitLimit(through)))return rollback_fail("TH11 confirmed output watermark rejected");
     while(!rollback_frames.empty()&&rollback_frames.front()->frame<=through){
         const auto& frame=*rollback_frames.front();
@@ -152,18 +162,19 @@ bool rollback_commit(bool reconciled_prefix=false){
 }
 bool rollback_seal(MultiplayerRollbackTick& frame){
     auto measured=rollback_timer(8);
-    if(!frame.world)return true;
-    rollback_world->EndRollbackFrame();
+    if(!frame.captured)return true;
+    const bool memory=Netplay::WriteJournal::EndFrame();
     const bool textures=graphics.EndTextureRollbackFrame();
     const bool sealed=rollback_journal.EndFrame();
-    if(!textures||!sealed||rollback_journal.Failed())return rollback_fail("TH11 rollback checkpoint capacity or ownership failure");
-    rollback_peak_bytes=std::max(rollback_peak_bytes,u32(rollback_journal.BytesForFrame(frame.frame)));
-    rollback_peak_blocks=std::max(rollback_peak_blocks,u32(rollback_journal.BlocksForFrame(frame.frame)));
+    if(!memory||!textures||!sealed||rollback_journal.Failed())return rollback_fail("TH11 rollback checkpoint capacity or ownership failure");
+    const auto memory_blocks=Netplay::WriteJournal::Stats().last_blocks;
+    rollback_peak_bytes=std::max(rollback_peak_bytes,u32(rollback_journal.BytesForFrame(frame.frame))+memory_blocks*32);
+    rollback_peak_blocks=std::max(rollback_peak_blocks,u32(rollback_journal.BlocksForFrame(frame.frame))+memory_blocks);
     return true;
 }
 bool rollback_abort(u32 frame,const char* reason){
     const bool boundary=rollback_world->BoundaryRequested()||graphics.TextureRollbackBoundaryRequested();
-    if(!boundary||rollback_frames.empty()||!rollback_frames.back()->world)
+    if(!boundary||rollback_frames.empty()||!rollback_frames.back()->captured)
         return rollback_fail(reason);
     if(!rollback_seal(*rollback_frames.back())||!rollback_restore(frame))return false;
     // The current frame has not been MarkSimulated. Only undo its title state;
@@ -186,17 +197,24 @@ bool rollback_run_frame(bool historical){
     const bool capture=true;
     if(capture){
         auto measured=rollback_timer(4);
-        record->world=std::make_unique<WorldRollbackFrame>();record->texture=std::make_unique<TextureRollbackFrame>();
+        record->texture=std::make_unique<TextureRollbackFrame>();
+        record->hitbox_owners=renderer.multiplayer_hitbox_owners;
         renderer.flush();graphics.backend.flush();
+        session.multiplayer_rollback_boundary_requested=false;
+        if(session.battle)session.battle->mp_rollback_boundary_requested=false;
         if(!rollback_journal.BeginFrame(frame)||
-           !rollback_world->BeginRollbackFrame(rollback_journal,*record->world)||
            !graphics.BeginTextureRollbackFrame(rollback_journal,*record->texture)||
-           !rollback_capture_renderer())return rollback_fail("TH11 complete checkpoint capture failed");
+           !rollback_capture_renderer()||!Netplay::WriteJournal::BeginFrame(frame))return rollback_fail("TH11 complete checkpoint capture failed");
+        record->captured=true;
     }
     rollback_frames.push_back(std::move(record));auto& current=*rollback_frames.back();
     {auto measured=rollback_timer(5);
     if(!session.update_multiplayer(input,[&]{if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);}))return rollback_abort(frame,"TH11 rollback native Update failed");}
-    current.sounds=std::move(session.battle->events);session.battle->events.clear();
+    // Output records outlive speculative allocations. Copy into their system
+    // storage; moving a game vector would let its host destructor free memory
+    // after the allocator had already been rewound.
+    current.sounds.assign(session.battle->events.begin(),session.battle->events.end());
+    session.battle->events.clear();
     {auto measured=rollback_timer(6);
     if(!text_events())return rollback_abort(frame,"TH11 rollback text raster failed");}
     if(!historical)frame_statistics.sample(double(SDL_GetTicks())*.001,true);

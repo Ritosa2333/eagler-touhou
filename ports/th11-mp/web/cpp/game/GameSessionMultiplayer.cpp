@@ -1,13 +1,15 @@
 #ifdef TH11_MULTIPLAYER
 #include "GameSession.hpp"
+#include "RollbackHooks.hpp"
 #include <cmath>
 namespace th11 {
 namespace {u32 menu_keys(u32 held){return (held&~256u)|((held&256u)?0x80000u:0u);}}
 bool GameSession::multiplayer_rollback_boundary(){
-    if(!animations.RollbackFrameActive())return false;
+    if(!animations.RollbackFrameActive()&&!TH11_ROLLBACK_FRAME_OPEN())return false;
     multiplayer_rollback_boundary_requested=true;return true;
 }
 bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions& options,const std::array<ReplayStageState,3>* stream){
+    TH11_GAME_SCOPE;
     if(!options.valid())return fail("Invalid TH11 multiplayer options");
     multiplayer_stream_pending=stream!=nullptr;if(stream)multiplayer_stream_entries=*stream;
     multiplayer_active=true;multiplayer_options=options;multiplayer_frame=0;multiplayer_pause_held={};
@@ -28,6 +30,7 @@ bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions
     multiplayer_frame=0;return true;
 }
 bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& inputs,const std::function<void()>& replay_entry){
+    TH11_GAME_SCOPE;
     if(!multiplayer_active||!battle||!error.empty())return false;
     bool pause_edge=false;
     for(unsigned i=0;i<multiplayer_options.seat_count;++i){const auto& in=inputs[i];if(in.touch_mode<0||in.touch_mode>3||!std::isfinite(in.touch_x)||!std::isfinite(in.touch_y))return fail("Invalid MP movement input");pause_edge|=in.pause&&!multiplayer_pause_held[i];multiplayer_pause_held[i]=in.pause;}

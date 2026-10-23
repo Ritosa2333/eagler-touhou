@@ -43,11 +43,13 @@ u16 blend_pixel(u16 before,u32 color,u8 alpha){
 }
 #endif
 FontDevice::~FontDevice(){
+    TH11_SYSTEM_SCOPE;
 #if defined(TH_ENABLE_THCRAP)
     for(auto* font:localized)if(font)TTF_CloseFont(font);
 #endif
 }
 bool FontDevice::initialize(){
+    TH11_SYSTEM_SCOPE;
     if(ready)return true;
     size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile("/fonts/cp932.bin",&size));
     const bool valid=data&&runtimeFonts.initialize(data,size);SDL_free(data);
@@ -115,6 +117,9 @@ bool FontDevice::write_unicode(TextureImage& output,const ImageRect& rect,const 
 }
 #endif
 bool FontDevice::text(AnmVm& vm,const DialogueText& request){
+    // Glyph/layout caches and raster scratch outlive game checkpoints. The
+    // texture observer below preserves pixels, while VM writes stay tracked.
+    TH11_SYSTEM_SCOPE;
     if(!ready||!vm.sprite||!vm.resource){error="Missing text animation";return false;}
     const u32 handle=graphics.texture(*vm.resource,vm.sprite->texture);auto* image=graphics.pixels(handle);if(!image){error="Missing text texture";return false;}
     const auto& s=*vm.sprite;TextStyle style;style.offset=request.offset;style.height=vm.rectangle_columns?vm.rectangle_columns:17;style.font=request.style;

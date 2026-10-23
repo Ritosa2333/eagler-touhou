@@ -1,4 +1,5 @@
 #include "EnemyScript.hpp"
+#include "RollbackHooks.hpp"
 #include "EnemyAnimations.hpp"
 #include "EnemyManager.hpp"
 #include "SpellController.hpp"
@@ -30,12 +31,12 @@ void* EnemyScriptServices::allocate(u32 bytes){
 #ifdef TH11_MULTIPLAYER
     if(rollback_allocator_)return rollback_allocator_->allocate(bytes);
 #endif
-    return std::calloc(1,bytes);
+    return TH11_GAME_CALLOC(1,bytes);
 }
 void EnemyScriptServices::release(void* p){
 #ifdef TH11_MULTIPLAYER
     if(rollback_allocator_){rollback_allocator_->release(p);return;}
 #endif
-    std::free(p);
+    TH11_GAME_FREE(p);
 }
 }

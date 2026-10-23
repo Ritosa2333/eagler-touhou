@@ -1,4 +1,5 @@
 #include "EnemyManager.hpp"
+#include "RollbackHooks.hpp"
 #ifdef TH11_MULTIPLAYER
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <cstdlib>
@@ -16,9 +17,9 @@ void* EclRollbackAllocator::allocate(u32 bytes){
     else index=state_.logical_sizes[bytes]++;
     auto& storage=storage_[bytes];
     if(index==storage.size()){
-        void* raw=std::calloc(1,bytes);
+        void* raw=TH11_GAME_CALLOC(1,bytes);
         if(!raw){--state_.logical_sizes[bytes];return nullptr;}
-        storage.emplace_back(raw,std::free);
+        storage.emplace_back(raw,[](void* memory){TH11_GAME_FREE(memory);});
     }
     auto memory=storage[index];
     // Capture before calloc-equivalent zeroing. Journal failure deliberately

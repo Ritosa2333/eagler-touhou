@@ -288,7 +288,19 @@ export async function instrumentWasm(input, options = {}) {
       configAddress: cfg, markerAddress, functions: 0, stores: 0, copies: 0, fills: 0, inits: 0, maxWriteDepth: 0,
     };
     const functions = [];
-    for (let n = 0; n < module.getNumFunctions(); n++) functions.push(b.getFunctionInfo(module.getFunctionByIndex(n)));
+    const originalStart = module.getStart();
+    const startName = originalStart ? b.getFunctionInfo(originalStart).name : null;
+    for (let n = 0; n < module.getNumFunctions(); n++) {
+      const fn = module.getFunctionByIndex(n);
+      const info = b.getFunctionInfo(fn);
+      info.localNames = [];
+      if (info.body) {
+        const locals = b.expandType(info.params).length + info.vars.length;
+        for (let index = 0; index < locals; index++)
+          if (b.Function.hasLocalName(fn, index)) info.localNames.push([index, b.Function.getLocalName(fn, index)]);
+      }
+      functions.push(info);
+    }
     for (const info of functions) {
       if (info.base || !info.body || excluded.has(info.name)) continue;
       const writes = collectWrites(module, info.body, info.name);
@@ -355,12 +367,21 @@ export async function instrumentWasm(input, options = {}) {
       }
       // Locals are private to a call and a nesting depth, including recursive
       // calls. Reusing a depth across sibling stores keeps large functions small.
-      module.removeFunction(info.name);
-      module.addFunction(info.name, info.params, info.results, vars, info.body);
+      info.vars = vars;
       report.functions++;
     }
     if (!(report.stores + report.copies + report.fills + report.inits)) fail('no memory writes were instrumented');
-    b.Function.setBody(marker.fn, module.i32.const(INSTRUMENTATION_MAGIC));
+    // The JS API appends locals by replacing a function. Replacing only changed
+    // functions moves them after skipped hooks and breaks Emscripten's external
+    // function-index symbol map. Rebuild the complete defined-function suffix
+    // once, in its original order; imports retain their original index prefix.
+    for (const info of functions) if (info.body) module.removeFunction(info.name);
+    for (const info of functions) if (info.body) {
+      const fn = module.addFunction(info.name, info.params, info.results, info.vars, info.body);
+      for (const [index, name] of info.localNames) b.Function.setLocalName(fn, index, name);
+    }
+    if (startName !== null) module.setStart(module.getFunction(startName));
+    b.Function.setBody(module.getFunction(marker.name), module.i32.const(INSTRUMENTATION_MAGIC));
     module.addCustomSection(INSTRUMENTATION_SECTION, new TextEncoder().encode(JSON.stringify(report)));
     if (!module.validate()) fail('instrumented module failed validation');
     const bytes = initializeMarkerWord(module.emitBinary(), markerAddress);

@@ -16,11 +16,13 @@ void GraphicsDevice::rollback_dirty(void* owner,u32 handle){
     if(found!=device.textures.end())++found->second.revision;
 }
 bool GraphicsDevice::BeforeTextureWrite(u32 handle,TextureImage& image){
+    TH11_SYSTEM_SCOPE;
     if(!texture_rollback_.BeforeWrite(handle,image)){texture_boundary_requested_=true;error=texture_rollback_.error();return false;}
     // Flush old submissions before mutating their CPU texture source.
     backend.flush_raster();backend.flush();return true;
 }
 bool GraphicsDevice::PrepareTextureRollbackRestore(const TextureRollbackFrame* const* frames,std::size_t count,u32 restored_frame){
+    TH11_SYSTEM_SCOPE;
     if(!texture_rollback_.PrepareRollbackRestore(frames,count,restored_frame)){error=texture_rollback_.error();return false;}
     // The raster tape owns copies of all vertex bytes and render state. A
     // CPU-only rewind cannot invalidate those commands while this validated
@@ -32,6 +34,7 @@ bool GraphicsDevice::PrepareTextureRollbackRestore(const TextureRollbackFrame* c
     backend.flush();return true;
 }
 bool GraphicsDevice::FinishTextureRollbackRestore(){
+    TH11_SYSTEM_SCOPE;
     if(!texture_rollback_.FinishRollbackRestore()){error=texture_rollback_.error();return false;}return true;
 }
 #endif
@@ -103,6 +106,7 @@ touhou::sdl::Surface GraphicsDevice::resolve(void* owner,u32 id){
     auto& t=it->second;auto& image=t.image;return {id,image.width,image.height,image.format,image.pitch,image.pixels.data(),u32(image.pixels.size()),t.revision};
 }
 void GraphicsDevice::draw_startup_branding(u32 tint){
+    TH11_SYSTEM_SCOPE;
 #ifdef TH11_MULTIPLAYER
     if(!startup_credit&&!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Startup texture allocation requires confirmed rollback boundary";return;}
 #endif
@@ -112,12 +116,14 @@ void GraphicsDevice::draw_startup_branding(u32 tint){
     touhou::sdl::startup_branding::draw(backend,startup_credit,screen,tint);
 }
 void GraphicsDevice::release_startup_branding(){
+    TH11_SYSTEM_SCOPE;
 #ifdef TH11_MULTIPLAYER
     if(startup_credit&&!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Startup texture release requires confirmed rollback boundary";return;}
 #endif
     if(startup_credit){backend.release(startup_credit);textures.erase(startup_credit);startup_credit=0;}
 }
 bool GraphicsDevice::initialize(){
+    TH11_SYSTEM_SCOPE;
 #ifdef TH11_MULTIPLAYER
     if(!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Graphics initialization requires confirmed rollback boundary";return false;}
 #endif
@@ -127,6 +133,7 @@ bool GraphicsDevice::initialize(){
     if(!backend.initialize()){error=backend.error();return false;}SDL_SetWindowTitle(SDL_GL_GetCurrentWindow(),"Touhou 11");backend.state.target=screen;backend.state.depth=depth;initialize_game_pipeline();return true;
 }
 bool GraphicsDevice::preload(AnmResource& file,bool low_color){
+    TH11_SYSTEM_SCOPE;
     if(resources.find(&file)!=resources.end())return true;
 #ifdef TH11_MULTIPLAYER
     if(!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Texture preload requires confirmed rollback boundary";return false;}
@@ -145,15 +152,18 @@ bool GraphicsDevice::preload(AnmResource& file,bool low_color){
     resources.emplace(&file,std::move(handles));return true;
 }
 void GraphicsDevice::unload(const AnmResource& file){
+    TH11_SYSTEM_SCOPE;
 #ifdef TH11_MULTIPLAYER
     if(resources.find(&file)!=resources.end()&&!TextureResourceChangeAllowed()){texture_boundary_requested_=true;error="Texture unload requires confirmed rollback boundary";return;}
 #endif
     auto it=resources.find(&file);if(it==resources.end())return;backend.flush();for(u32 id:it->second){backend.release(id);textures.erase(id);}resources.erase(it);
 }
 u32 GraphicsDevice::texture(const AnmResource& file,u32 index){
+    TH11_SYSTEM_SCOPE;
     const auto it=resources.find(&file);if(it==resources.end()||index>=it->second.size()){error="ANM texture was not preloaded";return 0;}return it->second[index];
 }
 bool GraphicsDevice::select_target(const AnmResource* file,u32 index){
+    TH11_SYSTEM_SCOPE;
     const u32 handle=file?texture(*file,index):screen;if(!handle)return false;
     backend.flush();backend.state.target=handle;
     // The original target switch resets the device viewport to the surface.
@@ -162,6 +172,7 @@ bool GraphicsDevice::select_target(const AnmResource* file,u32 index){
     backend.viewport({0,0,image.width,image.height,0,1});return true;
 }
 bool GraphicsDevice::clear_target(u32 color,const GraphicsViewport* rect){
+    TH11_SYSTEM_SCOPE;
     if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};backend.clear(3,color,1,0,box,1);}
     else backend.clear(3,color,1,0);
     return true;

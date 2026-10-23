@@ -1,4 +1,5 @@
 #include "ImageResample.hpp"
+#include "RollbackHooks.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -10,6 +11,7 @@ Channels channels(touhou::graphics::PixelFormat p){using touhou::graphics::Pixel
 struct Weight {u32 destination;float value;};
 using Weights=std::vector<std::vector<Weight>>;
 const Weights& weights(u32 source,u32 destination){
+    TH11_SYSTEM_SCOPE;
     static std::map<std::pair<u32,u32>,Weights> cache;const auto key=std::make_pair(source,destination);auto found=cache.find(key);if(found!=cache.end())return found->second;
     if(cache.size()>=16)cache.clear();Weights result(source);const float scale=float(destination)/float(source),half_step=.5f/scale;u32 last=0;float accumulated=0;
     for(u32 sample=0;sample<source;++sample){const auto emit=[&](){if(accumulated>.000009999999747378752f)result[sample].push_back({last,accumulated});};
