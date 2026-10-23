@@ -70,6 +70,10 @@ Runtime 在 HELLO 前完成配置，并将蓄力规则和批次协议纳入 game
 
 技能切入、停顿和恢复沿用可回滚世界帧推进，恢复工作安排在画面提交之后。历史窗口和资源重建决定确认等待边界。浏览器技能回归记录画面推进间隔、预测位置差异与蓄力 HUD，并以完整确认输入核对原生 Replay、最终世界和画面；`DELAY_CONTROL=1` 同时覆盖输入与控制包延迟，`AUDIT_PREDICTION=1` 单独报告预测画面与确认画面的差异。
 
+恢复重算到原显示帧时，立即提交该帧的完整画面。技能停顿和等待输入期间，已到达的输入可以及时更新人物、弹幕和 HUD 的显示。端点绘制复用最后一次历史 tick 的 Draw，逻辑时钟、物理输入采样和音效保持各自原有节奏；跨回调的中间恢复状态继续保留上一张完整画面。
+
+`AUDIT_RECOVERY_REFRESH=1` 在恢复计时器前后读取画面提交数、人物状态和实际 canvas，核对同帧刷新、采样前沿及最终 Replay。`EXPECT_STALE_RECOVERY=1` 使用保留基线验证旧画面复现场景。
+
 调度参考 HiganRTool 的 [input_point 与 post_present](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/core/src/rollback.rs) 和 [tick 边界判定](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/dll/src/rollback_play.rs)。技能停顿继续运行网络输入与回滚时钟；全局切入和咲夜场地时停由世界自身控制对象更新。预测画面差异单独记录，已确认世界与最终回放保持精确核对。`EXPECT_CONTINUOUS=1` 验证固定延迟场景逐次画面推进，`AUDIT_PREDICTION=0` 可复查旧版逐帧确认屏障的表现。
 
 `skill-stop-browser.mjs` 按输入和可靠控制两条通道分别注入交付条件。`INPUT_DROP_EVERY=N` 丢弃每第 N 个输入消息；`CONTROL_STALL_AT` 与 `CONTROL_STALL_TICKS` 设置可靠控制通道开始等待的逻辑 tick 和等待长度，后续控制消息保持发送顺序。报告保留两条通道的发送、丢弃和等待位置，并以采样输入与不可变蓄力记录核对最终世界、录像和画面。

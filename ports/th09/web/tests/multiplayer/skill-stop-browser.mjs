@@ -25,6 +25,7 @@ const localCharge=process.env.LOCAL_CHARGE==='1',expectRegression=process.env.EX
 const expectResumeWait=process.env.EXPECT_RESUME_WAIT==='1';
 const auditPrediction=process.env.AUDIT_PREDICTION!=='0',delayControl=process.env.DELAY_CONTROL==='1';
 const expectContinuous=process.env.EXPECT_CONTINUOUS==='1';
+const auditRefresh=process.env.AUDIT_RECOVERY_REFRESH==='1',expectStaleRecovery=process.env.EXPECT_STALE_RECOVERY==='1';
 const inputDropEvery=Number(process.env.INPUT_DROP_EVERY||0),controlStallAt=Number(process.env.CONTROL_STALL_AT||900),controlStallTicks=Number(process.env.CONTROL_STALL_TICKS||0);
 assert.ok([inputDropEvery,controlStallAt,controlStallTicks].every(n=>Number.isInteger(n)&&n>=0));
 assert.ok(Number.isInteger(limit)&&limit>=2400&&limit<=24000);
@@ -38,9 +39,10 @@ const browser=await puppeteer.launch({headless:true,executablePath:process.env.B
 const errors=[];
 try{
   const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(host.url);
-  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks})=>{
+  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks,auditRefresh})=>{
     const windows=[],pending=[],tapes=[[],[]],captured=[[],[]],presented=[[],[]],exact=[],exactDraw=[],charges=[[],[]];
     let clock=0;
+    const refreshAudit={corrections:0,stale:0,stopCorrections:0,pixelChanges:0,examples:[]};
     const wire=[0,1].map(()=>({input:0,dropped:0,control:0,stallAt:null})),controlDue=[0,0];let packetSerial=0;
     for(let side=0;side<3;++side){
       const frame=document.createElement('iframe');frame.src='/';document.body.append(frame);
@@ -119,15 +121,18 @@ try{
       }
       if(!ref.core._th09_probe_rollback_step(tapes[0][f],tapes[1][f],0))throw Error('Reference '+ref.probeError());
     }
+    const observers=[],visibleFrames=[0,0];
     for(let side=0;side<2;++side){
       const w=peers[side];w.queue=[];w.requestAnimationFrame=cb=>{w.queue.push(cb);return w.queue.length;};
       let lastPresent=presentations(w);
       w.core.onGameFrame=ok=>{
         if(!ok)throw Error('Native loop '+w.probeError()+' '+JSON.stringify({side,clock,status:status(w)}));
         const count=presentations(w);if(count===lastPresent)return;lastPresent=count;
+        visibleFrames[side]=status(w)[0];
         presented[side].push({clock,frame:status(w)[0],confirmed:status(w)[1],world:world(w),load:load(w),draw:draw(w),
           visual:w.core._th09_probe_charge_visual?values(w,'_th09_probe_charge_visual',8):null});
       };
+      observers.push(()=>w.core.onGameFrame(1));
       w.core._th09_loop_start();
     }
     const setKeys=(w,bits)=>{for(const [bit,scan] of [[1,44],[2,45],[4,42],[64,203],[128,205],[256,29]])w.core._th09_key(scan,Number(!!(bits&bit)));};
@@ -142,7 +147,23 @@ try{
         const callback=w.queue.shift();if(callback)callback(clock*1000/60);
       }
       // Deliver the real native post-Present timer between manual rAF callbacks.
+      // Read the actual canvas around recovery without forcing another Draw.
+      // Logical/capture frontiers must stay put when an endpoint is repainted.
+      const beforeRecovery=auditRefresh?peers.map((w,side)=>({info:status(w),visibleFrame:visibleFrames[side],draw:draw(w),presentations:presentations(w),
+        image:refreshAudit.pixelChanges<4&&(draw(w)[8]&0x1800)?w.document.querySelector('canvas').toDataURL():null})):null;
       await new Promise(r=>setTimeout(r,0));
+      if(auditRefresh)for(let side=0;side<2;++side){
+        const w=peers[side],a=beforeRecovery[side],info=status(w),picture=draw(w),count=presentations(w);
+        if(info[4]!==a.info[4])throw Error('Recovery captured fresh physical input');
+        if(count!==a.presentations&&info[0]!==a.visibleFrame)throw Error('Presented an incomplete recovery frontier');
+        observers[side]();
+        if(info[3]<=a.info[3]||info[0]!==a.info[0]||!picture.some((n,i)=>n!==a.draw[i]))continue;
+        ++refreshAudit.corrections;const stale=count===a.presentations,stopped=!!((picture[8]|a.draw[8])&0x1800);
+        if(stale)++refreshAudit.stale;if(stopped)++refreshAudit.stopCorrections;
+        if(!stale&&a.image&&a.image!==w.document.querySelector('canvas').toDataURL())++refreshAudit.pixelChanges;
+        if(refreshAudit.examples.length<12||stopped)refreshAudit.examples.push({side,clock,frame:info[0],stopped,stale,
+          presentations:count-a.presentations,before:a.draw,after:picture});
+      }
       if(peers.every(w=>status(w)[0]===limit&&status(w)[1]===limit))break;
     }
     for(const w of peers)w.core._th09_loop_stop();
@@ -210,13 +231,21 @@ try{
     }
     const captureDifferences=captured.map((t,side)=>({length:t.length,
       different:t.flatMap((bits,f)=>bits===tapes[side][f]?[]:[{frame:f,planned:tapes[side][f],captured:bits}]).slice(0,20)}));
-    return {clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,wire,
+    return {refreshAudit,clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,wire,
       capturesMatch:captured.every((t,side)=>t.length===limit&&t.every((bits,f)=>bits===tapes[side][f]))};
-  },{limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks});
-  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait,auditPrediction,delayControl,expectContinuous,inputDropEvery,controlStallAt,controlStallTicks},browser:await browser.version(),
-    scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Presentation cadence, predicted poses and confirmed worlds across global cut-ins, field time-stop and resume. Exact final worlds and framebuffer use captured inputs and immutable charge records as the replay oracle. This is not device performance evidence.',result,errors};
+  },{limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks,auditRefresh});
+  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait,auditPrediction,delayControl,expectContinuous,inputDropEvery,controlStallAt,controlStallTicks,auditRefresh,expectStaleRecovery},browser:await browser.version(),
+    scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Presentation cadence, predicted poses and confirmed worlds across global cut-ins, field time-stop and resume. Recovery refresh auditing reads actual canvas pixels without an extra Draw. Exact final worlds and framebuffer use captured inputs and immutable charge records as the replay oracle. This is not device performance evidence.',result,errors};
   writeFileSync(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   assert.deepEqual(errors,[]);
+  if(auditRefresh){
+    assert.ok(result.refreshAudit.corrections>0&&result.refreshAudit.stopCorrections>0,'Completed corrections exercised during skill stops');
+    if(expectStaleRecovery)assert.ok(result.refreshAudit.stale>0,'Baseline leaves corrected state unpresented');
+    else{
+      assert.equal(result.refreshAudit.stale,0,'Every completed changed frontier is repainted');
+      assert.ok(result.refreshAudit.pixelChanges>0,'Actual stopped canvas changes without a new logical tick');
+    }
+  }
   assert.ok(result.stopWaits.every(Boolean),'Native boundary observations required');
   if(expectResumeWait)assert.ok(result.stopWaits.some(row=>row[1]>0),'Baseline repeats confirmation after a completed stop');
   else assert.ok(result.stopWaits.every(row=>row[1]===0),'A completed stop adds no confirmation fence to the following ordinary frame');
@@ -244,7 +273,7 @@ try{
     assert.ok(result.metrics.every(m=>m.maxBullets>=100),'Dense authored bullet workload exercised');
   }
   assert.equal(sha(resolve(build,'th09-presentation.wasm')),identity.wasm,'Build stayed frozen');
-  console.log(JSON.stringify({passed:true,identity,parameters:report.parameters,pairs:result.pairs,shortGaps:result.shortGaps,stopWaits:result.stopWaits,metrics:result.metrics}));
+  console.log(JSON.stringify({passed:true,identity,parameters:report.parameters,pairs:result.pairs,shortGaps:result.shortGaps,stopWaits:result.stopWaits,refreshAudit:result.refreshAudit,metrics:result.metrics}));
 }finally{
   await browser.close();host.netplay.close();await new Promise(r=>host.server.close(r));
 }
