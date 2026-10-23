@@ -10,7 +10,7 @@ bool RunCompletion::all_clear_bonus()const{const auto* p=scene.battle.enemy_worl
 bool RunCompletion::synchronize_clear_score(){scene.hud.displayed_score=scene.battle.score.score;return true;}
 bool RunCompletion::finish_player_options(){
 #if TH15_MULTIPLAYER
- if(scene.battle.mp_enabled){for(unsigned seat=0;seat<scene.battle.mp_options.seat_count;++seat){auto& pilot=*scene.battle.pilots[seat];if(!pilot.ghost&&!pilot.player->finish_stage_options())return fail(pilot.player->error);}return true;}
+ if(scene.battle.mp_enabled&&!scene.battle.mp_options.replay_legacy_stage_flow){for(unsigned seat=0;seat<scene.battle.mp_options.seat_count;++seat){auto& pilot=*scene.battle.pilots[seat];if(!pilot.ghost&&!pilot.player->finish_stage_options())return fail(pilot.player->error);}return true;}
 #endif
  return scene.battle.player->finish_stage_options()||fail(scene.battle.player->error);
 }
