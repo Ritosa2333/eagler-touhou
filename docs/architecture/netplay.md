@@ -28,6 +28,12 @@ Launcher 房间回报和 UI 状态展示测量结果；Native Runtime 在本地�
 
 专用探测通道兼容旧版房间的延迟回显，房间内不同前端版本可继续交换延迟样本。双向丢包测试由支持该协议的两端完成。
 
+## 房间目录与成员
+
+公开目录展示至少有一个席位成员或在线旁观者的房间。旧对局保留的 Runtime、信令或旁观传输连接按自身生命周期退休；列表展示与这些连接的保留分开管理。席位与旁观均为空时，房间从公开列表移除；成员重新入席后恢复展示。短暂断线保留的席位和有旁观者的回放房间继续按原有成员状态展示。
+
+服务端 [`room-directory.mjs`](../../services/relay/src/room-directory.mjs) 按成员生成公开快照，启动器 [`lobby-directory.ts`](../../launcher/app/services/lobby-directory.ts) 同时过滤旧服务下发的空房间，并同步修正列表总数。自己的房间恢复入口继续由独立的 membership 信息提供。
+
 标题连接到 Adonis 的入口：
 
 - TH08/10/11/15 通过各自 `NetplayRuntime` 持有 `AdonisConnection`；详见 [TH08](../../ports/th08-mp/web/cpp/multiplayer/NetworkConnection.cpp)、[TH10](../../ports/th10-mp/web/cpp/multiplayer/NetplayRuntime.cpp)、[TH11](../../ports/th11-mp/web/cpp/multiplayer/NetplayRuntime.cpp)、[TH15](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp)。
