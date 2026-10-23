@@ -1,0 +1,11 @@
+{
+  "name": "eagler-touhou-rollback-tools",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "test": "node --test instrument.test.mjs",
+    "test:memory": "node memory-test.mjs"
+  },
+  "dependencies": { "binaryen": "132.0.0" }
+}

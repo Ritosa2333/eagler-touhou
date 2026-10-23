@@ -1,0 +1,114 @@
+#include <eagler/netplay/WriteJournal.hpp>
+#include <algorithm>
+#include <array>
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <string>
+#include <vector>
+#include <emscripten.h>
+
+namespace J=Netplay::WriteJournal;
+struct Object { std::uint32_t number=17; std::string text="a simulation-owned string longer than SSO"; };
+struct State {
+    std::uint32_t value=11;
+    std::vector<std::uint32_t> values;
+    std::unique_ptr<Object> object;
+    std::array<std::uint8_t,47> tail{};
+};
+struct alignas(32) Root {
+    std::uint64_t hostBefore=0x1122334455667788ull;
+    State state;
+    std::uint64_t hostAfter=0x8877665544332211ull;
+} root;
+
+static bool initialize() {
+    if (!J::Initialize(&root.state,sizeof(root.state),8*1024*1024)) return false;
+    { J::GameScope game;
+      root.state.~State(); new(&root.state) State();
+      root.state.values={1,2,3}; root.state.object=std::make_unique<Object>(); }
+    assert(J::OwnedByGameHeap(root.state.values.data()));
+    assert(J::OwnedByGameHeap(root.state.object.get()));
+    return true;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
+    if (scenario<0) return initialize()?1:0;
+    assert(initialize());
+    if (scenario==0) {
+        auto* original=root.state.object.get();
+        const auto originalText=root.state.object->text;
+        assert(J::BeginFrame(10));
+        { J::GameScope game;
+          root.state.value=21;
+          root.state.values.resize(4000,0x11223344);
+          root.state.object->text.assign(400,'x');
+          std::memset(root.state.tail.data()+1,0x75,45); }
+        assert(J::EndFrame());
+        const auto* firstVector=root.state.values.data();
+        assert(J::BeginFrame(11));
+        { J::GameScope game;
+          root.state.object.reset();
+          root.state.object=std::make_unique<Object>();
+          root.state.object->number=99;
+          root.state.values.assign(12000,0x55667788); }
+        assert(J::EndFrame());
+        root.hostBefore=0x1234; root.hostAfter=0x5678;
+        assert(J::RestoreTo(10));
+        assert(root.state.value==11&&root.state.values==std::vector<std::uint32_t>({1,2,3}));
+        assert(root.state.object.get()==original&&root.state.object->number==17);
+        assert(root.state.object->text==originalText);
+        assert(std::all_of(root.state.tail.begin(),root.state.tail.end(),[](auto v){return v==0;}));
+        assert(root.hostBefore==0x1234&&root.hostAfter==0x5678);
+        assert(J::FrameCount()==0);
+        // Replaying the allocation must return the same address: restoring only
+        // objects but not allocator free lists cannot pass this check.
+        assert(J::BeginFrame(10));
+        { J::GameScope game; root.state.values.resize(4000,0x11223344); }
+        assert(root.state.values.data()==firstVector);
+        assert(J::EndFrame()&&J::RestoreTo(10));
+    } else if (scenario==1) {
+        // Repeated branch/replay/discard traverses both the frame ring and the
+        // 8-bit first-write generation wrap, including an empty checkpoint.
+        for (std::uint32_t frame=0;frame<1100;++frame) {
+            const auto before=root.state.value;
+            assert(J::BeginFrame(frame));
+            // Empty bulk writes must not disable tracking for later stores.
+            eagler_rb_touch(std::uint32_t(reinterpret_cast<std::uintptr_t>(&root.state)),0);
+            root.state.value=before+1;
+            root.state.value=before+2;
+            assert(J::EndFrame());
+            assert(J::RestoreTo(frame));
+            assert(root.state.value==before);
+            assert(J::BeginFrame(frame)); root.state.value=before+1;
+            assert(J::EndFrame()); J::DiscardBefore(frame+1);
+            assert(J::FrameCount()==0&&J::Stats().used_bytes==0);
+        }
+        assert(root.state.value==1111);
+        assert(J::BeginFrame(1100)&&J::EndFrame()&&J::RestoreTo(1100));
+    } else if (scenario==2) {
+        std::vector<int> host;
+        assert(J::BeginFrame(0));
+        { J::GameScope game;
+          auto a=std::make_unique<Object>();
+          assert(J::OwnedByGameHeap(a.get()));
+          { J::SystemScope system; host.assign(1000,42); assert(!J::OwnedByGameHeap(host.data())); }
+          auto b=std::make_unique<Object>();
+          assert(J::OwnedByGameHeap(b.get()));
+          root.state.object=std::move(b); }
+        assert(J::EndFrame()&&J::RestoreTo(0));
+        assert(host.size()==1000&&host[999]==42);
+        assert(root.state.object->number==17);
+    } else if (scenario==3) {
+        assert(J::BeginFrame(0));root.state.value=100;assert(J::EndFrame());
+        assert(J::BeginFrame(2));root.state.value=200;assert(J::EndFrame());
+        // A missing exact target must fail before touching state/history.
+        assert(!J::RestoreTo(1)&&J::Failed());
+        assert(root.state.value==200&&J::FrameCount()==2);
+        J::Clear();assert(!J::Ready()&&!J::BeginFrame(3));
+    } else return 0;
+    std::printf("write-journal scenario %d passed\n",scenario);
+    return 1;
+}
