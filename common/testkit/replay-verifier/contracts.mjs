@@ -79,8 +79,10 @@ export function validateRunStart(record) {
   for (const key of ['replaySha256', 'executableSha256', 'resourceSha256'])
     sha256(record.comparisonIdentity[key], `comparisonIdentity.${key}`);
   object(record.coverage, 'run-start coverage');
-  stringArray(record.coverage.requiredCategories, 'coverage.requiredCategories');
-  stringArray(record.coverage.optionalCategories ?? [], 'coverage.optionalCategories');
+  const required = stringArray(record.coverage.requiredCategories, 'coverage.requiredCategories');
+  const optional = stringArray(record.coverage.optionalCategories ?? [], 'coverage.optionalCategories');
+  const overlap = required.find(category => optional.includes(category));
+  if (overlap) throw new TypeError(`coverage category ${overlap} cannot be both required and optional`);
   object(record.provenance, 'run-start provenance');
   nonEmptyString(record.provenance.provider, 'provenance.provider');
   return record;
@@ -94,6 +96,14 @@ export function validateRecord(record) {
   if (record.type === RECORD_TYPE.RUN_END) {
     nonEmptyString(record.reason, 'run-end.reason');
     if (typeof record.complete !== 'boolean') throw new TypeError('run-end.complete must be boolean');
+    if (Object.hasOwn(record, 'summary')) {
+      object(record.summary, 'run-end.summary');
+      const keys = Object.keys(record.summary).sort();
+      if (keys.length !== 2 || keys[0] !== 'segments' || keys[1] !== 'ticks')
+        throw new TypeError('run-end.summary must contain exactly segments and ticks');
+      nonNegativeInteger(record.summary.segments, 'run-end.summary.segments');
+      nonNegativeInteger(record.summary.ticks, 'run-end.summary.ticks');
+    }
     return record;
   }
   nonEmptyString(record.segmentId, `${record.type}.segmentId`);

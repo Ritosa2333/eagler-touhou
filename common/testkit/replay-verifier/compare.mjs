@@ -50,7 +50,7 @@ function validateSequence(record, expectedSequence, side) {
   return null;
 }
 
-function traceState() { return {activeSegment: null, nextTick: 0, segments: 0}; }
+function traceState() { return {activeSegment: null, nextTick: 0, segments: 0, ticks: 0}; }
 
 function validateProgress(record, state, side) {
   if (record.type === RECORD_TYPE.RUN_START)
@@ -64,7 +64,7 @@ function validateProgress(record, state, side) {
       return result(RESULT_STATUS.INCOMPLETE, {reason: 'tick-outside-segment', side, firstDifference: location(record)});
     if (record.logicalTick !== state.nextTick)
       return result(RESULT_STATUS.INCOMPLETE, {reason: 'logical-tick-discontinuity', side, expectedLogicalTick: state.nextTick, actualLogicalTick: record.logicalTick, firstDifference: location(record)});
-    state.nextTick++;
+    state.nextTick++; state.ticks++;
   } else if (record.type === RECORD_TYPE.SEGMENT_END) {
     if (state.activeSegment !== record.segmentId)
       return result(RESULT_STATUS.INCOMPLETE, {reason: 'segment-end-without-start', side, firstDifference: location(record)});
@@ -74,6 +74,9 @@ function validateProgress(record, state, side) {
   } else if (record.type === RECORD_TYPE.RUN_END) {
     if (state.activeSegment !== null || state.segments === 0)
       return result(RESULT_STATUS.INCOMPLETE, {reason: 'invalid-run-end-lifecycle', side, activeSegment: state.activeSegment, segments: state.segments, firstDifference: location(record)});
+    if (record.summary && (record.summary.segments !== state.segments || record.summary.ticks !== state.ticks))
+      return result(RESULT_STATUS.INCOMPLETE, {reason: 'run-end-summary-mismatch', side,
+        expectedSummary: {segments: state.segments, ticks: state.ticks}, actualSummary: record.summary, firstDifference: location(record)});
   }
   return null;
 }
@@ -120,11 +123,22 @@ export async function compareTraces(expectedRecords, actualRecords, {requiredCat
   } catch (error) { return result(RESULT_STATUS.ERROR, {reason: 'invalid-run-start', message: error.message}); }
   if (!equal(expectedStart.comparisonIdentity, actualStart.comparisonIdentity))
     return result(RESULT_STATUS.INCOMPATIBLE, {reason: 'comparison-identity', difference: firstDifference(expectedStart.comparisonIdentity, actualStart.comparisonIdentity)});
-  const categories = requiredCategories ?? expectedStart.coverage.requiredCategories;
-  for (const category of categories) {
-    if (!expectedStart.coverage.requiredCategories.includes(category) || !actualStart.coverage.requiredCategories.includes(category))
-      return result(RESULT_STATUS.INCOMPATIBLE, {reason: 'coverage', category});
+  const coverageLists = ['requiredCategories', 'optionalCategories'];
+  for (const field of coverageLists) {
+    const expectedCategories = expectedStart.coverage[field] ?? [];
+    const actualCategories = actualStart.coverage[field] ?? [];
+    if (!equal([...expectedCategories].sort(), [...actualCategories].sort()))
+      return result(RESULT_STATUS.INCOMPATIBLE, {reason: 'coverage', field,
+        expected: [...expectedCategories].sort(), actual: [...actualCategories].sort()});
   }
+  const requested = requiredCategories ?? [];
+  if (!Array.isArray(requested) || requested.some(category => typeof category !== 'string' || !category) || new Set(requested).size !== requested.length)
+    return result(RESULT_STATUS.ERROR, {reason: 'invalid-required-categories'});
+  const declared = new Set([...expectedStart.coverage.requiredCategories, ...(expectedStart.coverage.optionalCategories ?? [])]);
+  for (const category of requested) {
+    if (!declared.has(category)) return result(RESULT_STATUS.INCOMPATIBLE, {reason: 'coverage', category});
+  }
+  const categories = [...new Set([...expectedStart.coverage.requiredCategories, ...requested])];
 
   while (true) {
     const expectedResult = await next(expectedIterator), actualResult = await next(actualIterator);
@@ -153,7 +167,7 @@ export async function compareTraces(expectedRecords, actualRecords, {requiredCat
       const difference = compareTick(expected, actual, categories);
       if (difference)
         return result(RESULT_STATUS.DIVERGED, {reason: difference.reason, firstDifference: {...location(expected), ...difference}, comparedTicks: expectedCount});
-      for (const category of expectedStart.coverage.optionalCategories) {
+      for (const category of expectedStart.coverage.optionalCategories ?? []) {
         if (expected.categories[category] !== actual.categories[category] && optionalDifferences.length < 32)
           optionalDifferences.push({...location(expected), category, expected: expected.categories[category], actual: actual.categories[category]});
       }
@@ -163,7 +177,7 @@ export async function compareTraces(expectedRecords, actualRecords, {requiredCat
     if (expected.type === RECORD_TYPE.RUN_END) {
       if (!expected.complete || !actual.complete)
         return result(RESULT_STATUS.INCOMPLETE, {reason: 'run-not-complete', expected: {complete: expected.complete, reason: expected.reason}, actual: {complete: actual.complete, reason: actual.reason}, comparedTicks: expectedCount});
-      const difference = firstDifference({reason: expected.reason, summary: expected.summary}, {reason: actual.reason, summary: actual.summary});
+      const difference = firstDifference({reason: expected.reason}, {reason: actual.reason});
       if (difference)
         return result(RESULT_STATUS.DIVERGED, {reason: 'run-end', firstDifference: {...location(expected), difference}, comparedTicks: expectedCount});
       const expectedTail = await next(expectedIterator), actualTail = await next(actualIterator);

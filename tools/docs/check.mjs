@@ -10,7 +10,7 @@ const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const INDEX_PATH = 'docs/INDEX.md';
 const CHECKLIST_PATH = 'docs/adaptation/checklist.json';
 const CAPABILITIES_PATH = 'launcher/src/contracts/adapter-capabilities.mts';
-const REQUIRED_MANUAL_CHECKS = [
+const REQUIRED_FOUNDATION_CHECKS = [
   ...Array.from({ length: 6 }, (_, index) => `BUILD-${String(index + 1).padStart(2, '0')}`),
   ...Array.from({ length: 6 }, (_, index) => `RUNTIME-${String(index + 1).padStart(2, '0')}`),
   ...Array.from({ length: 5 }, (_, index) => `MP-RULE-${String(index + 1).padStart(2, '0')}`),
@@ -200,7 +200,7 @@ export function validateChecklistContractMap(checklist, requiredContracts, expec
     if (!requiredContracts.has(contract)) issues.push(`适配清单引用未知能力契约：${contract}`);
   }
   if (expectedCount === undefined) {
-    for (const id of REQUIRED_MANUAL_CHECKS) {
+    for (const id of REQUIRED_FOUNDATION_CHECKS) {
       if (!ids.has(id)) issues.push(`适配清单缺少基础流程项：${id}`);
     }
   }
@@ -244,6 +244,33 @@ function parseAdaptationTables(markdown) {
 function usefulReason(text) {
   const normalized = text.replace(/[`*_]/g, '').trim();
   return normalized.length > 0 && !/^(?:[—–-]|n\/?a)$/i.test(normalized);
+}
+
+/** Require a visible, reviewable method for each checklist ID; content quality is reviewed with the test change. */
+export function validateAcceptanceMethods(checklist, guides) {
+  const issues = [], definitions = new Map(checklist.checks.map(check => [check.id, check]));
+  const sections = new Map(checklist.sections.map(section => [section.id, section]));
+  const seen = new Set();
+  for (const section of checklist.sections) {
+    const source = guides[section.file];
+    if (typeof source !== 'string') { issues.push(`缺少验收方法指南：${section.file}`); continue; }
+    const visible = stripCodeAndComments(source, '.md', false);
+    const headings = [...visible.matchAll(/^#{1,3} +(.+)$/gm)];
+    for (const [index, heading] of headings.entries()) {
+      const match = heading[0].match(/^### +([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)(?:\s|$)/);
+      if (!match) continue;
+      const id = match[1], definition = definitions.get(id);
+      if (!definition) { issues.push(`${section.file} 包含未登记的验收方法：${id}`); continue; }
+      if (seen.has(id)) issues.push(`验收方法重复：${id}`);
+      seen.add(id);
+      if (definition.section !== section.id) issues.push(`${id} 验收方法应位于 ${sections.get(definition.section)?.file}`);
+      const body = visible.slice(heading.index + heading[0].length, headings[index + 1]?.index ?? visible.length);
+      if (!/反例：[^\S\r\n]*\S[^\r\n]*/.test(body)) issues.push(`${id} 缺少具体反例说明`);
+      if (!/(?:当前)?入口(?:与覆盖|\/边界)?：[^\S\r\n]*\S[^\r\n]*/.test(body)) issues.push(`${id} 缺少当前入口及覆盖说明`);
+    }
+  }
+  for (const check of checklist.checks) if (!seen.has(check.id)) issues.push(`缺少逐项验收方法：${check.id}`);
+  return issues;
 }
 
 export function validateAdaptationMarkdown(markdown, { port, checklist, notApplicableFor = notApplicable, evidence }) {
@@ -860,6 +887,9 @@ export function runChecks({ root = PROJECT_ROOT, writeIndex: shouldWriteIndex = 
   const state = repositoryState(root);
   const { checklist, requiredContracts } = checklistData(root);
   issues.push(...validateChecklistContractMap(checklist, requiredContracts));
+  const guides = Object.fromEntries(checklist.sections.map(section => [section.file,
+    readRepositoryFile(root, `docs/adaptation/${section.file}`, state.allPaths)]));
+  issues.push(...validateAcceptanceMethods(checklist, guides));
 
   if (shouldWriteIndex) {
     const documents = collectDocuments(root, state.allPaths);

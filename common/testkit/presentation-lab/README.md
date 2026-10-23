@@ -12,7 +12,7 @@ node --test common/testkit/presentation-lab/controller-core.test.mjs common/test
 
 ## 接入游戏
 
-实现 [`CONTRACT.md`](CONTRACT.md) 规定的 `RuntimeDriverV1` 与 `ObservationAdapterV1`，然后从标题专属审计配置启动工作台。适配层提供 `/lab-config.mjs`，说明固定步更新、绘制、输入、状态覆盖和 Replay 导航。
+实现 [`CONTRACT.md`](CONTRACT.md) 规定的 `RuntimeDriverV1` 与 `ObservationAdapterV1`，然后从标题专属审计配置启动工作台。适配层提供 `/lab-config.mjs`，说明固定步更新、绘制、输入、状态覆盖和 Replay 导航。纯度适配使用 `defineStateAuthority({groupFields, domains})` 声明真实摘要字段与十个共享责任域；common 比较器拒绝缺域、漏字段、漏组与映射漂移。
 
 首次支持的游戏是 TH08 与 TH10。是否支持由该游戏自己的绘制纯度证据决定；common 测试通过不代替游戏适配检查。
 
@@ -22,5 +22,6 @@ node --test common/testkit/presentation-lab/controller-core.test.mjs common/test
 - `analyzer.mjs`、`report-core.mjs`：标准化观察数据分类与报告。
 - `workbench.html`、`workbench.mjs`、`workbench.css`：浏览器工作台。
 - `contracts.mjs`、`contracts.d.ts`：运行时与 TypeScript 契约。
+- `state-authority.mjs`：跨作品的必需权威域和 fail-closed 状态映射校验。
 
 下一步：[公共开发入口](../../../docs/README.md)。

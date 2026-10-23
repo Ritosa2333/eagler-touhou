@@ -44,17 +44,16 @@ export function notApplicable(check, game, variant) {
   if (check.profile === 'midi' && !product.musicCapabilities?.midi) return '本作使用 OGG 音乐';
   if (check.profile === 'thprac' && build.features.thprac === false) return '该构建未提供 thprac';
   if (check.profile === 'language' && !product.features.languages) return '本作使用内置原文';
-  if (check.id === 'RUNTIME-06' && product.features.focusHitbox === false) return '本作未声明判定点显示';
   return null;
 }
 
 export function adaptationMarkdown(port, {evidence = {}} = {}) {
   const lines = [`# ${port.game}${port.variants.length === 1 && port.variants[0] === 'multiplayer' ? ' MP' : ''} 适配检查`, '',
-    '[开发入口](README.md) · [检查方法](../../docs/adaptation/README.md) · [全部作品](../README.md)', '',
+    '[开发入口](README.md) | [检查方法](../../docs/adaptation/README.md) | [全部作品](../README.md)', '',
     `源码目录：\`${port.directory}\`。构建模式：${port.variants.map(value => `\`${value}\``).join('、')}。`, '',
     '实现情况与实际验收分别记录。源码接口和模块检查通过后记为“已实现”；完成对应操作并附执行记录后记为“已验证”。', '',
     '状态：`待核对`、`进行中`、`待验证`、`已实现`、`已验证`、`检查失败`、`不适用`。', '',
-    '[自动检查结果与源码身份](../../docs/adaptation/status.json) · `npm run ports:check -- --game=' + port.game + ' --variant=both`', ''];
+    '[自动检查结果与源码身份](../../docs/adaptation/status.json) | `npm run ports:check -- --game=' + port.game + ' --variant=both`', ''];
   for (const section of spec.sections) {
     const checks = spec.checks.filter(check => check.section === section.id);
     if (!checks.length) continue;

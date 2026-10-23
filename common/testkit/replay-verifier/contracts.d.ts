@@ -6,7 +6,7 @@ export interface ComparisonIdentity {
 }
 export interface RunStart {
   type: 'run-start'; schema: 'eagler/replay-trace/v1'; comparisonIdentity: ComparisonIdentity;
-  coverage: {requiredCategories: string[]; optionalCategories: string[]};
+  coverage: {requiredCategories: string[]; optionalCategories?: string[]};
   provenance: {provider: string; [key: string]: CanonicalValue};
 }
 export interface SegmentStart {type: 'segment-start'; sequence: number; segmentId: string; [key: string]: CanonicalValue;}
@@ -16,7 +16,7 @@ export interface TickRecord {
   scalars: {[key: string]: CanonicalValue}; categories: {[key: string]: string};
 }
 export interface SegmentEnd {type: 'segment-end'; sequence: number; segmentId: string; logicalTick: number; reason: string; complete: boolean;}
-export interface RunEnd {type: 'run-end'; sequence: number; reason: string; complete: boolean; summary?: CanonicalValue;}
+export interface RunEnd {type: 'run-end'; sequence: number; reason: string; complete: boolean; summary?: {segments: number; ticks: number};}
 export type TraceRecord = RunStart | SegmentStart | TickRecord | SegmentEnd | RunEnd;
 export interface ReplayVerifierAdapter {
   describe(): {adapterApiVersion: 1; game: string; adapterVersion: string; features: {original?: boolean; [key: string]: boolean};};

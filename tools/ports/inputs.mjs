@@ -1,26 +1,43 @@
 import {existsSync, readFileSync, readdirSync} from 'node:fs';
 import {resolve, relative, sep} from 'node:path';
-import {execFileSync} from 'node:child_process';
+import {execFile} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {sourceIdentity as gitSourceIdentity} from '../../launcher/lib/release-manifest.mjs';
+import {promisify} from 'node:util';
+import {expectedRuntimeBuildSources, expectedRuntimeBuildSubmodules} from '../../launcher/lib/runtime-build-evidence.mjs';
 
 export const root = resolve(import.meta.dirname, '../..');
+export const INPUT_INSPECTION_TIMEOUT_MS = 30_000;
+export const INPUT_INSPECTION_MAX_BUFFER_BYTES = 8*1024*1024;
+const execFileAsync=promisify(execFile);
 export const layout = JSON.parse(readFileSync(resolve(root, 'launcher/config/workspace.json'), 'utf8'));
 export const builds = JSON.parse(readFileSync(resolve(root, 'launcher/config/runtime-builds.json'), 'utf8'));
 export const slash = value => value.split(sep).join('/');
-export function dependencyRevision(path, revision, actual) {
-  if (actual && actual.revision!==revision) throw new Error(`${path}: dependency checkout differs from its Git pin`);
-  return {path,revision,...(actual?.dirty ? {workingTree:actual.sha256} : {})};
+export function dependencyRevision(path, revision) {
+  return {path,revision};
 }
-export async function sourceDependencies(target) {
-  if (target.recipe.kind!=='cmake') return [];
-  const rows=execFileSync('git',['ls-files','--stage','-z','--',target.directory],
-    {cwd:root,encoding:'utf8',windowsHide:true}).split('\0').filter(row=>row.startsWith('160000 '));
-  return Promise.all(rows.map(async row=>{
-    const [meta,path]=row.split('\t'),revision=meta.split(' ')[1],directory=resolve(root,path);
-    const actual=existsSync(resolve(directory,'.git')) ? await gitSourceIdentity(directory) : null;
-    return dependencyRevision(path,revision,actual);
-  }));
+
+// Pair required module pins with the exact source files captured by the Runtime build inventory.
+export function runtimeDependencyInputs(requiredSubmodules, sourceFiles, repository=root) {
+  if (!Array.isArray(requiredSubmodules) || !Array.isArray(sourceFiles))
+    throw new Error('Runtime dependency inputs require captured submodules and source files');
+  const dependencies=[],inputFiles=new Set();
+  for (const module of requiredSubmodules) {
+    if (!module || typeof module.path!=='string' || typeof module.commit!=='string')
+      throw new Error('Invalid required Runtime submodule identity');
+    const prefix=`${module.path}/`;
+    const files=sourceFiles.filter(file=>typeof file?.path==='string'&&file.path.startsWith(prefix));
+    if (!files.length) throw new Error(`Required Runtime submodule has no captured source files: ${module.path}`);
+    dependencies.push(dependencyRevision(module.path,module.commit));
+    for (const file of files) inputFiles.add(resolve(repository,file.path));
+  }
+  return {dependencies,inputFiles:[...inputFiles]};
+}
+
+export function sourceDependencies(target) {
+  if (target.recipe.kind!=='cmake') return {dependencies:[],inputFiles:[]};
+  const requiredSubmodules=expectedRuntimeBuildSubmodules(target.game,target.variant,root);
+  const sourceFiles=expectedRuntimeBuildSources(target.game,target.variant,root);
+  return runtimeDependencyInputs(requiredSubmodules,sourceFiles,root);
 }
 export function targets({game, variant = 'both'} = {}) {
   if (game && !builds.games[game]) throw new Error(`Unknown game: ${game}`);
@@ -45,8 +62,24 @@ function headers(directory) {
   });
 }
 
-export function inspectInputs(target) {
-  const owner = resolve(root, target.directory);
+function commandEnvironment(environment) {
+  const child = {...environment};
+  // Input inspection is a standalone manifest query, not a nested debugger/test session.
+  delete child.NODE_OPTIONS;
+  delete child.NODE_TEST_CONTEXT;
+  return child;
+}
+
+function capturedOutput(value) {
+  if (value === undefined || value === null) return '<empty>';
+  const text = Buffer.isBuffer(value) ? value.toString('utf8') : String(value);
+  return JSON.stringify(text.length > 2000 ? `${text.slice(0,2000)}…[truncated]` : text);
+}
+
+export async function inspectInputs(target, {
+  repositoryRoot=root, timeoutMs=INPUT_INSPECTION_TIMEOUT_MS, environment=process.env,
+}={}) {
+  const owner = resolve(repositoryRoot, target.directory);
   if (target.recipe.kind === 'cmake') {
     const cmake = readFileSync(resolve(owner, 'CMakeLists.txt'), 'utf8');
     const names = [...new Set([...cmake.matchAll(/\bsrc\/[A-Za-z0-9_./-]+\.(?:cpp|c)\b/g)].map(match => match[0]))].sort();
@@ -60,9 +93,36 @@ export function inspectInputs(target) {
   const args = [...target.recipe.build];
   if (target.definition.features.thprac === true && target.recipe.practiceFlag) args.push(target.recipe.practiceFlag);
   const command = [process.execPath, ...args, '--print-inputs'];
-  const source = execFileSync(command[0], command.slice(1), {cwd:owner, encoding:'utf8', windowsHide:true, maxBuffer:8*1024*1024});
-  const report = JSON.parse(source);
-  if (report.schema !== 'eagler-touhou/runtime-inputs/1') throw new Error('Unexpected runtime input schema');
+  const commandEvidence=JSON.stringify(command),targetEvidence=`${target.game??'<unknown>'}/${target.variant??'<unknown>'} (${owner})`;
+  if (!Number.isSafeInteger(timeoutMs)||timeoutMs<1)
+    throw new Error(`Invalid input-inspection timeout for ${targetEvidence}: ${timeoutMs}`);
+  const context=`target=${targetEvidence} command=${commandEvidence} timeoutMs=${timeoutMs}`;
+  let source,elapsedMs;
+  const started=performance.now();
+  try {
+    ({stdout:source}=await execFileAsync(command[0],command.slice(1),{cwd:owner,env:commandEnvironment(environment),encoding:'utf8',
+      windowsHide:true,stdio:['ignore','pipe','pipe'],maxBuffer:INPUT_INSPECTION_MAX_BUFFER_BYTES,
+      timeout:timeoutMs,killSignal:'SIGKILL'}));
+    elapsedMs=Math.round(performance.now()-started);
+  } catch(error) {
+    elapsedMs=Math.round(performance.now()-started);
+    const outputLimit=error.code==='ERR_CHILD_PROCESS_STDIO_MAXBUFFER';
+    const timedOut=!outputLimit&&(error.code==='ETIMEDOUT'||(error.killed===true&&error.signal==='SIGKILL'));
+    const failure=outputLimit?'exceeded the output limit':timedOut?'timed out':'failed';
+    const exitCode=Number.isInteger(error.code)?error.code:error.status;
+    throw new Error(`Runtime input inspection ${failure}: ${context} maxBufferBytes=${INPUT_INSPECTION_MAX_BUFFER_BYTES} `+
+      `elapsedMs=${elapsedMs} childError=${error.code??'<none>'} exitCode=${exitCode??'<none>'} signal=${error.signal??'<none>'} `+
+      `killed=${error.killed===true} `+
+      `stdout=${capturedOutput(error.stdout)} stderr=${capturedOutput(error.stderr)}`,{cause:error});
+  }
+  let report;
+  try { report=JSON.parse(source); }
+  catch(error) {
+    throw new Error(`Runtime input inspection returned invalid JSON: ${context} elapsedMs=${elapsedMs} exitCode=0 `+
+      `stdout=${capturedOutput(source)}`,{cause:error});
+  }
+  if (report?.schema !== 'eagler-touhou/runtime-inputs/1'||!report.inputs||typeof report.inputs!=='object'||Array.isArray(report.inputs))
+    throw new Error(`Unexpected runtime input manifest: ${context} elapsedMs=${elapsedMs} exitCode=0`);
   return {...report, selection:'build-entrypoint', inputFiles:Object.keys(report.inputs).map(name => resolve(owner, name)),
     command:['node', ...args, '--print-inputs']};
 }
@@ -72,8 +132,10 @@ export function sourceIdentity(files, extra = {}) {
   const hash = createHash('sha256').update(JSON.stringify(extra));
   for (const path of [...new Set(files)].sort((a, b) => slash(relative(root,a)).localeCompare(slash(relative(root,b)), 'en'))) {
     const name = slash(relative(root, path));
-    const text = readFileSync(path).toString('latin1').replaceAll('\r\n', '\n');
-    hash.update(name).update('\0').update(text,'latin1').update('\0');
+    const bytes=readFileSync(path);
+    const binary=bytes.subarray(0,Math.min(bytes.length,8000)).includes(0);
+    const content=binary?bytes:Buffer.from(bytes.toString('latin1').replaceAll('\r\n','\n'),'latin1');
+    hash.update(name).update('\0').update(content).update('\0');
   }
   return hash.digest('hex');
 }

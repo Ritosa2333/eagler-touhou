@@ -37,4 +37,17 @@ test('fast stepping executes every complete fixed tick',()=>{
 test('sweep samples stable alpha endpoints without advancing simulation',()=>{
   const {controller,counts}=fixture();const report=controller.sweep({images:true});
   assert.equal(counts().ticks,0);assert.equal(counts().draws,8);assert.equal(report.images.length,5);
+  assert.equal(report.readVerification.receipts.length,9);
+  assert.equal(report.readVerification.receipts.flatMap(item=>item.reads).length,18);
+  assert.deepEqual(report.readVerification.receipts.map(item=>item.alpha),[null,0,.25,.5,.75,1,.5,.5,1]);
+});
+test('sweep retains every second actual state read rather than manufacturing duplicate receipts',()=>{
+  const {controller}=fixture();let reads=0,analyzed;
+  controller.observer.readStateEvidence=()=>({sequence:++reads});
+  controller.observer.analyze=input=>{analyzed=input;return {objects:[],purity:false};};
+  const report=controller.sweep();
+  assert.equal(reads,18);
+  assert.deepEqual(report.readVerification.receipts.flatMap(item=>item.reads.map(read=>read.sequence)),Array.from({length:18},(_,index)=>index+1));
+  assert.equal(analyzed.stateBefore.sequence,1);
+  assert.deepEqual(analyzed.statesAfter.map(read=>read.sequence),Array.from({length:17},(_,index)=>index+2));
 });

@@ -18,6 +18,7 @@ export class PresentationLabControllerCore {
     this.identity = {...identity, game: this.capabilities.game,
       adapterVersion: this.capabilities.adapterVersion,
       nativeAbi: this.capabilities.nativeAbi};
+    if(typeof this.observer.bindSessionIdentity==='function')this.observer.bindSessionIdentity(this.identity);
     this.history = [];
     this.last = null;
     this.running = false;
@@ -87,16 +88,27 @@ export class PresentationLabControllerCore {
   sweep({label = '', negativeControl = false, images = false, world = !this.observer.worldFrozen()} = {}) {
     this.freeze();
     const {previous, current} = this.references();
-    const stateBefore = this.state(), traceBefore = this.trace();
+    // Keep both actual reads at every boundary. A digest summary cannot prove
+    // that a second observation was read-only, or that all domains were read.
+    const receipts = [];
+    const readPair = (phase, alpha = null) => {
+      const reads = [this.state(), this.state()];
+      receipts.push({phase, alpha, reads});
+      return reads;
+    };
+    const initial = readPair('before');
+    const stateBefore = initial[0], traceBefore = this.trace();
     const samples = [], statesAfter = [], pictures = [];
+    statesAfter.push(initial[1]);
     for (const alpha of [0, .25, .5, .75, 1, .5, .5, 1]) {
       const frame = this.preview(alpha, {world, negativeControl});
       samples.push({...frame, alpha});
-      statesAfter.push(this.state());
+      statesAfter.push(...readPair('after-draw', alpha));
       if (images && pictures.length < 5) pictures.push(this.observer.captureImage(frame, alpha));
     }
     const report = this.observer.analyze({previous, current, samples, stateBefore, statesAfter,
       worldFrozen: !world, gate: this.observer.readGate(), build: this.identity, label, negativeControl});
+    report.readVerification = {schema: 'eagler-presentation/sweep-reads/1', receipts};
     report.traceBefore = traceBefore;
     report.traceAfter = this.trace();
     report.scene = this.observer.readScene();

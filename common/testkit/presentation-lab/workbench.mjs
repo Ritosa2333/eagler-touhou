@@ -1,3 +1,4 @@
+import {presentationWindowHealth} from './analyzer.mjs';
 const $=id=>document.getElementById(id);
 const config=(await import('/lab-config.mjs')).default;
 const identity=await fetch('/build.json').then(response=>{
@@ -61,9 +62,9 @@ function render(value){
   report=value;$('window').textContent=`逻辑帧 ${value.previousTick??'?'} → ${value.tick??'?'}`;
   $('observed').textContent=value.totalObjects??value.objects?.length??0;
   $('suspects').textContent=value.issueGroups?.length??value.objects?.filter(object=>severity(object)>=3).length??0;
-  const purity=value.purityStatus??(value.purity===false?'fail':value.purity===true?'pass':'unknown');
-  $('health').className=purity==='fail'?'error':purity==='unknown'?'warn':'';
-  $('health').textContent=purity==='fail'?'重画改变了已覆盖状态；本窗口不可作为纯 presentation 证据。':purity==='unknown'?'状态覆盖不完整；对象插值结果可查看，但纯度保持未知。':'已覆盖状态在重复重画前后保持一致。';
+  const health=presentationWindowHealth(value);
+  $('health').className=health.status==='error'?'error':health.status==='warn'?'warn':'';
+  $('health').textContent=health.message;
   const body=$('rows');body.replaceChildren();
   for(const object of (value.objects||[]).slice(0,250)){
     const row=document.createElement('tr'),name=document.createElement('td'),state=document.createElement('td'),fields=document.createElement('td');

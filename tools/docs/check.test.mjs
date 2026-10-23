@@ -14,6 +14,7 @@ import {
   renderDocumentIndex,
   validateAdaptationMarkdown,
   validateChecklistContractMap,
+  validateAcceptanceMethods,
   documentCategory,
   validateDocumentIndex,
 } from './check.mjs';
@@ -22,6 +23,32 @@ const checklist = JSON.parse(readFileSync(new URL('../../docs/adaptation/checkli
 const capabilitySource = readFileSync(new URL('../../launcher/src/contracts/adapter-capabilities.mts', import.meta.url), 'utf8');
 const requiredContracts = extractRequiredBehaviorContracts(capabilitySource);
 const port = portDefinitions().find(item => item.game === 'th06');
+
+test('every checklist ID has a visible method, counterexample and current entry scope', () => {
+  const guides = Object.fromEntries(checklist.sections.map(section => [section.file,
+    readFileSync(new URL(`../../docs/adaptation/${section.file}`, import.meta.url), 'utf8')]));
+  assert.deepEqual(validateAcceptanceMethods(checklist, guides), []);
+  const added = {...checklist, checks:[...checklist.checks,{id:'INPUT-NEW',section:'input'}]};
+  assert.ok(validateAcceptanceMethods(added, guides).some(issue => issue.includes('缺少逐项验收方法：INPUT-NEW')));
+});
+
+test('method inventory rejects copied, misplaced and hidden placeholder methods', () => {
+  const spec = {sections:[{id:'input',file:'input.md'},{id:'storage',file:'storage.md'}],
+    checks:[{id:'INPUT-01',section:'input'}]};
+  const method = '### INPUT-01 · Direction\n\n操作：按下并释放方向键。\n反例：松开后仍移动。\n当前入口：Runtime 方向场景。\n';
+  assert.deepEqual(validateAcceptanceMethods(spec, {'input.md':method,'storage.md':''}), []);
+  assert.ok(validateAcceptanceMethods(spec, {'input.md':method+method,'storage.md':''}).some(issue => issue.includes('重复')));
+  assert.ok(validateAcceptanceMethods(spec, {'input.md':'','storage.md':method}).some(issue => issue.includes('应位于 input.md')));
+  for (const hidden of ['```md\n'+method+'```\n','<!--\n'+method+'-->\n']) {
+    assert.ok(validateAcceptanceMethods(spec, {'input.md':hidden,'storage.md':''}).some(issue => issue.includes('缺少逐项')));
+  }
+  const incomplete = method.replace('松开后仍移动。','').replace('Runtime 方向场景。','');
+  const failures = validateAcceptanceMethods(spec, {'input.md':incomplete,'storage.md':''});
+  assert.ok(failures.some(issue => issue.includes('具体反例')));
+  assert.ok(failures.some(issue => issue.includes('当前入口')));
+  assert.ok(validateAcceptanceMethods(spec, {'input.md':method.replace('INPUT-01','INPUT-02'),'storage.md':''})
+    .some(issue => issue.includes('未登记')));
+});
 
 test('license inventory includes license directories and excludes notice code and generated HTML', () => {
   for (const path of ['ports/th09/web/licenses/FreeType.txt', 'ports/th09/web/cpp/licenses/th08-reference-MIT.txt',
@@ -82,6 +109,12 @@ test('cooperative multiplayer rules do not apply to TH09 versus mode', () => {
     assert.equal(notApplicable(check, 'th08', 'multiplayer'), null);
     assert.equal(notApplicable(check, 'th09', 'normal'), '单人模式');
   }
+});
+
+test('an optional hitbox display cannot exempt the required restart behavior', () => {
+  const check=checklist.checks.find(item=>item.id==='RUNTIME-06');
+  for(const port of portDefinitions())for(const variant of port.variants)
+    assert.equal(notApplicable(check,port.game,variant),null,`${port.game}/${variant}`);
 });
 
 test('a missing checklist row fails', () => {

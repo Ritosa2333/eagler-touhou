@@ -1,0 +1,23 @@
+/** TH10's actual prompt, main and difficulty menu consumers. */
+export const TH10_MENU_CONTRACT=Object.freeze({
+  statusExport:'th10_menu_state_v1',titleScene:4,
+  fields:{scene:0,screen:1,cursor:2,phase:3,stateTimer2:4,confirmationReady:5,currentInput:6,previousInput:7,startupElapsed:8},
+  signedFields:['scene','screen','cursor','phase','stateTimer2','startupElapsed'],
+  identity:{export:'th10_runtime_identity_v1',wordCount:8,magic:0x54493130,version:1,fields:{generation:5,pointer:6,epoch:7}},
+  expected:{startScreen:2,startCursor:0,difficultyScreen:6,readyPhase:2,startPhase:2,difficultyCount:4,confirmTransitionPhase:4},
+  startup:{schema:'eagler-touhou/title-startup-navigation/1',nativeScenes:[-2,0,4],screens:[-2,0,1,2],
+    titleScene:4,promptScreen:1,promptReadyPhase:2,promptTransitionPhase:4,loadingScreen:-2,
+    ticks:96,physicalWaitMs:2050,minimumStartupFrames:2,
+    source:'ports/th10/web/cpp/platform/Title.hpp | MenuResources::startup_presentation_complete; game/TitleMain.cpp | update_prompt'},
+  inputMasks:{confirm:1,up:16,down:32,cancel:2},touchCancelMask:8,
+  keys:{confirm:'KeyZ',up:'ArrowUp',down:'ArrowDown',cancel:'KeyX',skip:'ControlLeft'},
+  gamepad:{confirm:0,cancel:1,up:12,down:13,skip:5},
+  geometry:{pointerId:9501,cancelPointerId:9502,start:{x:.5,y:.5},swipeFrom:{x:.5,y:.45},swipeTo:{x:.5,y:.6},
+    cancelPoint:{x:.4,y:.5},cancelSecondPoint:{x:.6,y:.5},width:640,height:480,swipeThresholdPx:24,swipeHoldTicks:40,
+    source:'ports/th10/portable/input/TouchController.hpp | sample_menu and one-gesture navigation latch'},
+  sources:{titleState:'ports/th10/web/cpp/sdl/GameHost.cpp | th10_menu_state_v1',
+    navigation:'ports/th10/web/cpp/game/TitleMain.cpp and TitleSelection.cpp | actual raw_pressed/raw_repeat',
+    cancel:'ports/th10/web/cpp/game/TitleSelection.cpp | difficulty phase 4'},
+  budgets:{readyTicks:16,transitionTicks:32,inputReleaseTicks:3,
+    source:'ports/th10/web/cpp/game/TitleMain.cpp | 11/20 tick gates; TitleSelection.cpp | 7/6 tick gates'},
+});

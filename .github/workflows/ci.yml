@@ -1,8 +1,14 @@
 name: CI
 'on':
-  push: null
+  push:
+    branches:
+    - main
+    tags:
+    - '*'
   pull_request: null
   workflow_dispatch: null
+  schedule:
+  - cron: '23 4 * * *'
 permissions:
   contents: read
 concurrency:
@@ -13,13 +19,16 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       affected: ${{ steps.scope.outputs.affected }}
-      checkout: ${{ steps.scope.outputs.checkout }}
       node-builds: ${{ steps.scope.outputs.node-builds }}
+      source-contracts: ${{ steps.scope.outputs.source-contracts }}
+      port-adaptation: ${{ steps.scope.outputs.port-adaptation }}
     steps:
     - uses: actions/checkout@v7
       with:
         fetch-depth: 0
         sparse-checkout: 'tools/ci
+
+          .github/workflows
 
           launcher/config'
     - uses: actions/setup-node@v7
@@ -29,7 +38,7 @@ jobs:
     - id: scope
       run: node tools/ci/affected-components.mjs
       env:
-        EAGLER_CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        EAGLER_CI_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') && github.event.before) || '' }}
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -40,7 +49,19 @@ jobs:
 
           tools/browser
 
+          tools/testing
+
+          tools/build
+
+          tools/ports
+
+          ports/th08/portable
+
           common/contracts
+
+          common/cmake
+
+          tests
 
           services'
     - uses: actions/setup-node@v7
@@ -72,9 +93,13 @@ jobs:
 
           tools/browser
 
+          tools/testing
+
           common/contracts
 
-          services/relay'
+          services/relay
+
+          tests'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
@@ -101,11 +126,17 @@ jobs:
       with:
         sparse-checkout: 'launcher/host/lib
 
+          tools/testing
+
           launcher/tests'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
     - run: node launcher/tests/test-node-environment.mjs
+    - run: node --test tools/testing/runner.test.mjs
   source-publication:
     runs-on: ubuntu-latest
     steps:
@@ -120,20 +151,45 @@ jobs:
     - run: node launcher/scripts/audit-publication.mjs --workspace
   source-contracts:
     needs: scope
-    if: ${{ needs.scope.outputs.affected != '["launcher"]' }}
+    if: ${{ needs.scope.outputs.source-contracts == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
       with:
-        sparse-checkout: ${{ needs.scope.outputs.checkout }}
+        submodules: false
     - uses: actions/setup-node@v7
       with:
         node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+    - run: npm --prefix launcher ci --ignore-scripts
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/eagler-wasi-sdk-34.deb
+        key: wasi-sdk-34-09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a
+    - name: Prepare pinned wasm32 test compiler
+      shell: bash
+      run: |
+        set -euo pipefail
+        package="$HOME/.cache/eagler-wasi-sdk-34.deb"
+        mkdir -p "$HOME/.cache" "$RUNNER_TEMP/eagler-wasi-sdk"
+        if [ ! -f "$package" ]; then
+          curl --fail --location --retry 2 --max-time 300 --output "$package" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb
+        fi
+        echo "09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package" | sha256sum --check
+        dpkg-deb --extract "$package" "$RUNNER_TEMP/eagler-wasi-sdk"
+        echo "WASI_SDK_PATH=$RUNNER_TEMP/eagler-wasi-sdk/opt/wasi-sdk" >> "$GITHUB_ENV"
     - run: node tools/ci/validate-source-entries.mjs
       env:
         EAGLER_CI_AFFECTED: ${{ needs.scope.outputs.affected }}
-    - run: node --test tools/build/compiler-arguments.test.mjs tools/build/source-dependencies.test.mjs tools/build/source-object.test.mjs tools/build/runtime-inputs.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
+    - run: node tests/run.mjs --suite=tooling
+    - run: node tests/run.mjs --suite=ports-touch-wasi --output=artifacts/validation/ports-touch-wasi
   port-adaptation:
+    needs: scope
+    if: ${{ needs.scope.outputs.port-adaptation == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -149,6 +205,10 @@ jobs:
         node-version: 24
         cache: npm
         cache-dependency-path: launcher/package-lock.json
+    - run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th06,th07 --variant=normal
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
     - uses: msys2/setup-msys2@v2
       if: runner.os == 'Windows'
       id: msys
@@ -159,13 +219,17 @@ jobs:
       shell: pwsh
       run: Add-Content -LiteralPath $env:GITHUB_PATH -Value '${{ steps.msys.outputs.msys2-location }}/ucrt64/bin'
     - run: npm --prefix launcher ci --ignore-scripts
+    - run: npm --prefix ports/th09/web ci --ignore-scripts
     - run: node --test tools/ports/check.test.mjs
     - run: npm run ports:check -- --all --check-status
+    - run: node tests/run.mjs --suite=ports-unit --output=artifacts/validation/ports-unit
     - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: port-adaptation-${{ matrix.os }}
-        path: artifacts/validation/ports/
+        path: |
+          artifacts/validation/ports/
+          artifacts/validation/ports-unit/
   port-source-build:
     needs: scope
     if: ${{ needs.scope.outputs.node-builds != '[]' }}
@@ -191,6 +255,7 @@ jobs:
         cache: npm
         cache-dependency-path: launcher/package-lock.json
     - run: npm --prefix launcher ci --ignore-scripts
+    - run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=${{ matrix.game }} --variant=${{ matrix.variant }}
     - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
         version: 6.0.9
@@ -251,10 +316,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th06 --variant=normal
     - name: Compile and run core behavior tests
       run: bash scripts/run-core-tests.sh
     needs:
@@ -284,10 +354,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th06/vendored/SDL ports/th06/vendored/SDL_image ports/th06/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th06 --variant=normal
     - name: Set up Emscripten
       uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
@@ -325,10 +400,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th07 --variant=normal
     - name: Check Python and integration script syntax
       shell: bash
       run: "python3 -m py_compile tests/*.py audit/source-contracts/*.py scripts/convert_bgm_ogg.py\nfor file in tests/*.cjs;\
@@ -362,10 +442,15 @@ jobs:
 
           common
 
+          launcher
+
           tools/build'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
     - name: Prepare selected SDL dependencies
       working-directory: .
-      run: git submodule update --init --recursive -- ports/th07/vendored/SDL ports/th07/vendored/SDL_image ports/th07/vendored/SDL_ttf
+      run: node launcher/scripts/prepare-runtime-dependencies.mjs --game=th07 --variant=normal
     - name: Set up Emscripten
       uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
@@ -816,14 +901,47 @@ jobs:
     env:
       EAGLER_COMMON_ROOT: ${{ github.workspace }}/common
       EAGLER_COMMON_NETPLAY_ROOT: ${{ github.workspace }}/common
+  browser-shell-runtime:
+    name: Runtime Shell / Chromium wiring
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: false
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: launcher/tests/requirements-browser.txt
+    - run: npm --prefix launcher ci --ignore-scripts
+    - run: python -m pip install --requirement launcher/tests/requirements-browser.txt
+    - run: python -m playwright install --with-deps chromium
+    - name: Run shared input, audio output and Runtime Shell contracts
+      run: node tests/run.mjs --suite=browser-shell --output=artifacts/test-results/browser-shell-runtime
+    - uses: actions/upload-artifact@v4
+      if: ${{ always() }}
+      with:
+        name: browser-shell-runtime
+        path: artifacts/test-results/browser-shell-runtime
+        if-no-files-found: error
   checks:
     name: Checks
     if: ${{ always() }}
     needs:
     - scope
     - check
+    - ui-behavior
+    - host-bootstrap-windows
     - source-contracts
     - source-publication
+    - port-adaptation
+    - port-source-build
     - common_ci_native
     - ports_th06_eagler_ci_core-tests
     - ports_th06_eagler_ci_web-build
@@ -843,27 +961,40 @@ jobs:
     - relay
     - telemetry
     - turn
+    - browser-shell-runtime
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'tools/ci
+
+          .github/workflows
+
+          launcher/config'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
     - name: Require completed checks
       env:
         EAGLER_RESULTS: ${{ toJSON(needs) }}
-      run: node -e "const jobs=JSON.parse(process.env.EAGLER_RESULTS); const failed=Object.entries(jobs).filter(([,job])=>['failure','cancelled'].includes(job.result));
-        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||failed.length)process.exit(1); console.log('Applicable
-        checks completed');"
+        EAGLER_AFFECTED: ${{ needs.scope.outputs.affected }}
+        EAGLER_NODE_BUILDS: ${{ needs.scope.outputs.node-builds }}
+        EAGLER_SOURCE_CONTRACTS_REQUIRED: ${{ needs.scope.outputs.source-contracts }}
+        EAGLER_PORT_ADAPTATION_REQUIRED: ${{ needs.scope.outputs.port-adaptation }}
+      run: node tools/ci/required-checks.mjs --verify
   relay:
     name: services/relay
     needs:
     - scope
     if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/relay') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
     - uses: actions/checkout@v7
       with:
         sparse-checkout: 'services/relay
+
+          tools/testing
 
           common/contracts'
     - uses: actions/setup-node@v7
@@ -886,6 +1017,7 @@ jobs:
     - scope
     if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/telemetry') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v7
       with:
@@ -905,16 +1037,19 @@ jobs:
     - scope
     if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'services/turn') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v7
       with:
         sparse-checkout: 'services/turn
 
+          tools/testing
+
           common/contracts'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-    - run: node tests/test-netplay-service-config.mjs
+    - run: node scripts/check.mjs
     defaults:
       run:
         working-directory: services/turn
