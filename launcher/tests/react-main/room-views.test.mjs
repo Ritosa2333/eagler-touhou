@@ -80,6 +80,8 @@ function syntheticNetwork() {
   return {subscribe(fn) {listeners.add(fn); return () => listeners.delete(fn);}, getSnapshot: () => revision,
     metric: (peer, lane) => values.get(`${peer}:${lane}`) || {state: 'checking', rtt: null, jitter: null}, capabilities: () => capabilities,
     retry(peer) {retries.push(peer);}, retries, values, flags: capabilities, get subscriberCount() {return listeners.size;},
+    testLoss() {retries.push('loss');}, lossReady: () => true,
+    loss: (peer,lane) => values.get(`loss:${peer}:${lane}`) || {state:'idle',sent:0},
     async publish() {await act(() => {revision++; for (const fn of listeners) fn();});}};
 }
 function fixture({product = 'th06mp', locale = 'en', created = true, checkGame = null} = {}) {
@@ -125,7 +127,7 @@ test('TH09 local charge rule defaults on, restores native Replay by room agreeme
   const toggle=n('#mpDisableLocalChargePriority');
   assert.equal(toggle.getAttribute('aria-checked'),'false');
   assert.equal(toggle.getAttribute('aria-label'),'关闭本地优先的蓄力条进度');
-  assert.equal(n('#mpLocalChargeReplayHint').textContent,'启用该选项后可以得到兼容原版的 Replay，但蓄力条的显示可能是不准确的');
+  assert.equal(n('#mpLocalChargeReplayHint').textContent,'默认启用本地优先蓄力。勾选该选项后，使用原版蓄力逻辑和即时显示。');
   assert.equal(f.service.runtimeOptions().netplayDisableLocalChargePriority,false);
   await click('#mpDisableLocalChargePriority');
   assert.equal(f.socket.sent.findLast(m=>m.type==='settings').disableLocalChargePriority,true);
@@ -309,6 +311,25 @@ test('Nickname preserves focused draft, commits native change/blur with normaliz
   await act(() => f.service.setDisplayName('Restored')); assert.equal(input.value, 'Restored');
 });
 
+test('own card panel manually tests packet loss, renders both paths and directions, and stays lobby-only', async () => {
+  const f = await fixture({locale:'zh-CN'}).live({seats:[{clientId:'placeholder',name:'A',loadout:0},{clientId:'peer12345',name:'B',loadout:1}]});
+  await f.receive({seats:[{clientId:f.id,name:'A',loadout:0},{clientId:'peer12345',name:'B',loadout:1}]});
+  const {m} = await mountRoom(f, {panel:{kind:'personal'}});
+  assert.ok(n('#mpPacketLossTest').closest('[data-room-panel="personal"]'));
+  assert.equal(n('#mpPacketLossTest').disabled,false);
+  await click('#mpPacketLossTest'); assert.deepEqual(f.network.retries,['loss']);
+  f.network.values.set('loss:peer12345:direct',{state:'running',sent:150}); await f.network.publish();
+  assert.equal(n('#mpPacketLossTest').disabled,true);
+  const direction=(lost)=>({sent:300,received:300-lost,lost,percent:lost/3,reordered:0});
+  f.network.values.set('loss:peer12345:direct',{state:'complete',sent:300,outgoing:direction(30),incoming:direction(15)});
+  f.network.values.set('loss:peer12345:turn',{state:'complete',sent:300,outgoing:direction(0),incoming:direction(0)});
+  await f.network.publish();
+  assert.match(n('[data-loss-lane="direct"]').textContent,/10\.0%.*5\.0%/);
+  assert.match(n('[data-loss-lane="turn"]').textContent,/0\.0%.*0\.0%/);
+  await f.receive({phase:'running',seats:[{clientId:f.id,name:'A',loadout:0},{clientId:'peer12345',name:'B',loadout:1}]});
+  assert.equal(env.document.querySelector('#mpPacketLossTest'),null);
+  await m.unmount();
+});
 for (const locale of ['zh-CN', 'en']) test(`Synthetic network metrics match executed original ${locale} RTT/jitter/quality, selected peer, empty states and retry ports`, async () => {
   const f = await fixture({locale}).live({seats: null});
   const seats = [{clientId: f.id, name: 'A', loadout: 0}, {clientId: 'peer12345', name: 'B', loadout: 2}, {clientId: 'peer67890', name: 'C', loadout: 3}];

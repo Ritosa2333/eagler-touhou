@@ -26,7 +26,7 @@ globalThis.window = { setInterval: callback => { interval = callback; return 1; 
 globalThis.clearInterval = () => { interval = null; };
 class FakePC {
   constructor(config) { this.config=config; pcs.push(this); }
-  createDataChannel() { return this.channel = { readyState:'connecting', send: value => { this.lastPing=value; }, close: () => { this.channel.readyState='closed'; } }; }
+  createDataChannel(label, options) { const channel = {label, options, readyState:'connecting', bufferedAmount:0, send: value => { this.lastPing=value; }, close: () => { channel.readyState='closed'; }}; if(label==='room-latency')this.channel=channel; else this.lossChannel=channel; return channel; }
   async createOffer() { return {type:'offer',sdp:'test'}; }
   async createAnswer() { return {type:'answer',sdp:'test'}; }
   async setLocalDescription(value) { this.localDescription = {toJSON:()=>value}; }
@@ -46,6 +46,11 @@ try {
   assert.deepEqual(pcs[0].config.iceServers[0].urls,['stun:example.test']);
   assert.equal(pcs[1].config.iceTransportPolicy,'relay');
   assert.deepEqual(pcs[1].config.iceServers[0].urls,['turn:example.test']);
+  assert.deepEqual(pcs[0].lossChannel.options,{ordered:false,maxRetransmits:0},'loss probes never hide loss with retransmission');
+  assert.equal(network.loss('b','direct').state,'idle','room entry does not start loss tests');
+  pcs[0].lossChannel.readyState='open';
+  pcs[0].lossChannel.onmessage({data:'ping:legacy'});
+  assert.equal(pcs[0].lastPing,'pong:legacy','old clients keep latency probes on their last incoming channel');
   const echo=sent.find(message=>message.lane==='relay').echo;
   now=42; await network.receive({type:'room-probe',from:'b',lane:'relay',echo:echo.replace('ping:','pong:')});
   assert.equal(network.metric('b','relay').rtt,42);
