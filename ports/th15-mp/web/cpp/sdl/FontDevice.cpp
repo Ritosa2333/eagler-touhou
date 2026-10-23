@@ -1,10 +1,12 @@
+#include "RollbackHooks.hpp"
 #include "FontDevice.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <utility>
 namespace th15::sdl {
 #include "FontLocalization.inc"
-bool FontDevice::initialize(){
+void FontDevice::restore_layout(const std::vector<int>& tabs){TH15_SYSTEM_SCOPE;layout_tabs=tabs;error.clear();}
+bool FontDevice::initialize(){TH15_SYSTEM_SCOPE;
  if(!fontsReady){
   size_t size=0;auto* bytes=static_cast<u8*>(SDL_LoadFile("/fonts/cp932.bin",&size));
   const bool valid=bytes&&runtimeFonts.initialize(bytes,size);SDL_free(bytes);
@@ -17,8 +19,8 @@ bool FontDevice::initialize(){
 #endif
  return true;
 }
-bool FontDevice::preload(i32){return initialize();}
-i32 FontDevice::extent(const std::string& value,i32 font){
+bool FontDevice::preload(i32){TH15_SYSTEM_SCOPE;return initialize();}
+i32 FontDevice::extent(const std::string& value,i32 font){TH15_SYSTEM_SCOPE;
 #if defined(TH_ENABLE_THCRAP)
  if(font>=0&&font<9&&value.size()<=4096&&initialize()&&localized[font]&&valid_utf8(value)){
   const auto saved=layout_tabs;const auto width=layout(value,font).width;layout_tabs=saved;return width;
@@ -26,7 +28,7 @@ i32 FontDevice::extent(const std::string& value,i32 font){
 #endif
  return -1;
 }
-bool FontDevice::text(AnmVm& vm,const DialogueText& request){
+bool FontDevice::text(AnmVm& vm,const DialogueText& request){TH15_SYSTEM_SCOPE;
     TextLayout paint;if(!TextLayout::dialogue(vm,request,fallback,paint)){error="Missing text animation or style";return false;}if(!initialize())return false;const u32 handle=graphics.texture(*paint.resource,paint.texture);auto* image=graphics.pixels(handle);if(!image){error="Text texture was not prepared";return false;}
     bool written=false;
 #if defined(TH_ENABLE_THCRAP)

@@ -1,3 +1,4 @@
+#include "RollbackHooks.hpp"
 #include "PresentationFrame.hpp"
 #include "PresentationUv.hpp"
 #include "PresentationCamera.hpp"
@@ -11,16 +12,37 @@ bool same(Vec2 a,Vec2 b){return a.x==b.x&&a.y==b.y;}
 float mix(float a,float b,float alpha){return a+(b-a)*alpha;}
 u32 color(u32 a,u32 b,float alpha,u32 mask){u32 out=b;for(u32 shift=0;shift<32;shift+=8)if(mask&(1u<<(shift/8))){const auto channel=u32(std::clamp(mix(float(a>>shift&255),float(b>>shift&255),alpha),0.f,255.f));out=(out&~(255u<<shift))|(channel<<shift);}return out;}
 }
-void PresentationFrame::begin(){
- if(!enabled){reset();return;}previous.swap(current);written=0;pending.clear();occurrences.clear();endpoints.clear();
- for(u32 i=0;i<previous.size();++i)for(u32 j=0;j<previous[i].samples.size();++j)endpoints.push_back({previous[i].samples[j].key,{i,j}});
+void PresentationFrame::finish(){TH15_SYSTEM_SCOPE;
+ current.resize(written);recording=false;ready=enabled&&written>0;
+ if(retain_authored){
+  // Keep only the exact GPU transaction. Interpolation metadata and live
+  // animation owners are unnecessary when rebuilding a restored predecessor.
+  auto next=std::make_shared<std::vector<Command>>();next->reserve(current.size());
+  for(const auto& c:current){Command out;out.state=c.state;out.clear=c.clear;out.direct=c.direct;out.camera=c.camera;
+   out.topology=c.topology;out.count=c.count;out.stride=c.stride;out.flags=c.flags;out.color=c.color;out.bytes=c.bytes;out.rect=c.rect;next->push_back(std::move(out));}
+  authored=std::move(next);
+ }
+}
+PresentationFrame::Snapshot PresentationFrame::snapshot()const{TH15_SYSTEM_SCOPE;return authored;}
+void PresentationFrame::restore(Snapshot&& frame,touhou::sdl::Renderer& renderer){TH15_SYSTEM_SCOPE;
+ reset();authored=std::move(frame);if(!authored)return;const auto saved=renderer.state;
+ for(const auto& c:*authored){renderer.state=c.state;
+  if(c.clear)renderer.clear(c.flags,c.color,1,0,c.rect.empty()?nullptr:c.rect.data(),c.rect.empty()?0:1);
+  else if(c.direct)renderer.draw_batch(c.count,c.bytes.data(),c.stride);
+  else renderer.draw(c.topology,c.count,c.bytes.data(),c.stride);
+ }
+ renderer.flush();renderer.state=saved;
+}
+void PresentationFrame::begin(){TH15_SYSTEM_SCOPE;
+ if(!enabled&&!retain_authored){reset();return;}if(enabled)previous.swap(current);else previous.clear();written=0;pending.clear();occurrences.clear();endpoints.clear();
+ if(enabled)for(u32 i=0;i<previous.size();++i)for(u32 j=0;j<previous[i].samples.size();++j)endpoints.push_back({previous[i].samples[j].key,{i,j}});
  std::sort(endpoints.begin(),endpoints.end(),[](const auto& a,const auto& b){return a.first<b.first;});recording=true;ready=false;
 }
-PresentationFrame::Command& PresentationFrame::next(){
+PresentationFrame::Command& PresentationFrame::next(){TH15_SYSTEM_SCOPE;
  if(written==current.size())current.emplace_back();auto& c=current[written++];c.clear=c.direct=c.camera=false;c.bytes.clear();c.samples.clear();c.rect.clear();return c;
 }
-void PresentationFrame::range(const AnmVm& vm,u32 first,u32 count,u32 instance){
- if(!recording)return;
+void PresentationFrame::range(const AnmVm& vm,u32 first,u32 count,u32 instance){TH15_SYSTEM_SCOPE;
+ if(!recording||!enabled)return;
  const auto& v=vm.visual;const auto& curves=vm.interpolators;instance^=vm.presentation_part<<16;
  Sample s;s.first=first;s.count=count;s.script=vm.source_script;s.sprite=v.sprite;s.age=vm.age.current;s.flags=v.flags;s.resource=uintptr_t(vm.sprite_resource?vm.sprite_resource:vm.resource);
  u64 generation=vm.presentation_generation;s.offset=offset;
@@ -39,14 +61,14 @@ void PresentationFrame::range(const AnmVm& vm,u32 first,u32 count,u32 instance){
  s.position={vm.variables.position.x+v.translation.x+v.child_anchor.x,vm.variables.position.y+v.translation.y+v.child_anchor.y,vm.variables.position.z+v.translation.z+v.child_anchor.z};s.rotation=vm.variables.rotation;s.scale={v.scale.x*v.secondary_scale.x,v.scale.y*v.secondary_scale.y};s.size=v.sprite_size;
  pending.push_back(s);
 }
-void PresentationFrame::draw(const touhou::sdl::State& state,touhou::graphics::Topology topology,u32 count,const void* bytes,u32 stride,bool direct){
+void PresentationFrame::draw(const touhou::sdl::State& state,touhou::graphics::Topology topology,u32 count,const void* bytes,u32 stride,bool direct){TH15_SYSTEM_SCOPE;
  if(!recording)return;auto& c=next();c.state=state;c.topology=topology;c.count=count;c.stride=stride;c.direct=direct;c.camera=camera;
  const u32 length=touhou::graphics::vertex_count(topology,count)*stride;const auto* data=static_cast<const u8*>(bytes);c.bytes.assign(data,data+length);c.samples.swap(pending);pending.clear();
 }
-void PresentationFrame::clear(const touhou::sdl::State& state,u32 flags,u32 value,const i32* rect){
+void PresentationFrame::clear(const touhou::sdl::State& state,u32 flags,u32 value,const i32* rect){TH15_SYSTEM_SCOPE;
  if(!recording)return;auto& c=next();c.state=state;c.clear=true;c.flags=flags;c.color=value;if(rect)c.rect.assign(rect,rect+4);
 }
-bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool frozen,bool background_interpolation){
+bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool frozen,bool background_interpolation){TH15_SYSTEM_SCOPE;
  if(!ready||!std::isfinite(alpha)||alpha<0||alpha>1)return false;
  if(negative_control)alpha=1;
  using namespace touhou::graphics;
@@ -86,7 +108,7 @@ bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool
 }
 
 namespace th15::sdl {
-std::array<float,5> PresentationFrame::reference(uintptr_t identity){
+std::array<float,5> PresentationFrame::reference(uintptr_t identity){TH15_SYSTEM_SCOPE;
  observed=identity;std::array<float,5> result{};
  for(const auto& c:current)for(const auto& s:c.samples)if(std::get<0>(s.key)==identity&&s.first*c.stride+4<=c.bytes.size()){
   std::memcpy(&result[1],c.bytes.data()+s.first*c.stride,4);result[2]=last_x;result[3]=float(std::get<1>(s.key));
@@ -94,7 +116,7 @@ std::array<float,5> PresentationFrame::reference(uintptr_t identity){
 }return result;
 }
 #if TH15_DEVELOPMENT_HARNESS
-std::array<float,6> PresentationFrame::background_diagnostics()const{
+std::array<float,6> PresentationFrame::background_diagnostics()const{TH15_SYSTEM_SCOPE;
  std::array<float,6> result{};
  for(const auto& c:current)if(c.camera&&!c.clear){
   ++result[0];if(c.samples.size()>1)++result[1];

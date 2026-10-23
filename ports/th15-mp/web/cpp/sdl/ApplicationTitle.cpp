@@ -16,18 +16,22 @@ i32 ApplicationState::practice_overlay_action(i32& stage){
  if(!practice.configured.valid(difficulty))return 0;
  stage=practice.configured.stage;return 1;
 }
-bool ApplicationState::sound(i32 id){return audio_device.effects.enqueue(id)||fail(audio_device.effects.error);}
+bool ApplicationState::sound(i32 id){if(rollback::Emit(rollback::AudioKind::Sound,id))return id>=0&&id<77;TH15_SYSTEM_SCOPE;return audio_device.effects.enqueue(id)||fail(audio_device.effects.error);}
 bool ApplicationState::text(AnmVm& vm,const DialogueText& value){return fonts.text(vm,value)||fail(fonts.error);}
 bool ApplicationState::hud_text(const HudTextDraw& value){return captions.enqueue(value,0,value.style.shadow)||fail(captions.error);}
 bool ApplicationState::keyboard(TitleKeyboard& value){value=keyboard_state;return true;}
 bool ApplicationState::calendar(i64 stamp,ReplayCalendar& value){const time_t time=stamp;const auto* tm=std::localtime(&time);if(!tm)return fail("Replay timestamp outside calendar range");value={tm->tm_year+1900,tm->tm_mon+1,tm->tm_mday,tm->tm_hour,tm->tm_min};return true;}
-bool ApplicationState::seconds(double& value){value=double(SDL_GetTicksNS())/1e9;return true;}
+bool ApplicationState::seconds(double& value){
+#if TH15_MULTIPLAYER
+ if(multiplayer){value=double(frames)/60.;return true;}
+#endif
+ value=double(SDL_GetTicksNS())/1e9;return true;}
 bool ApplicationState::capture_score_details(PauseScoreDetails& value){const auto time=i64(std::time(nullptr));value={{signed_bits(u32(time)),signed_bits(u32(u64(time)>>32))},double(frames),double(frames)};return true;}
 bool ApplicationState::music(const std::string& name){return request_music(0,1,0,name.size()>=4&&name.compare(name.size()-4,4,".wav")==0?name:name+".wav");}
 bool ApplicationState::music(const std::string& name,i32 track){return music(name)&&music_command(2)&&records.unlock_music(track);}
 bool ApplicationState::music_command(i32 code){return request_music(0,code,0,"dummy");}
 bool ApplicationState::start_title_music(){return music_command(2)&&records.unlock_music(0);}
-bool ApplicationState::volume(i32 music,i32 sound,i32){audio_device.music_volume=music;audio_device.effects.master_volume=sound;audio_device.refresh_volume();return true;}
+bool ApplicationState::volume(i32 music,i32 sound,i32){if(rollback::Emit(rollback::AudioKind::Volume,music,sound))return true;TH15_SYSTEM_SCOPE;audio_device.music_volume=music;audio_device.effects.master_volume=sound;audio_device.refresh_volume();return true;}
 bool ApplicationState::save(const TitleControllerSettings& value){controller=value;return save_settings();}
 bool ApplicationState::checkpoint_available(i32 character,i32 difficulty,bool& value){CheckpointHeader header;bool present=false;if(!files.checkpoint_header(character,difficulty,header,present))return fail(files.error);value=present&&header.compatible(character,difficulty,0)&&header.stage()>=1&&header.stage()<=7;return true;}
 bool ApplicationState::checkpoint_stage(i32 character,i32 difficulty,i32& stage){CheckpointHeader header;bool present=false;if(!files.checkpoint_header(character,difficulty,header,present))return fail(files.error);if(!present||!header.compatible(character,difficulty,0)||header.stage()<1||header.stage()>7)return fail("Selected Pointdevice checkpoint is unavailable");stage=header.stage();return true;}
@@ -62,6 +66,7 @@ bool ApplicationState::prepare_live_replay(bool cleared){
  if(!replay||!replay->live())return fail("No live recording to save");if(!completed_recording){replay->live()->finish(i64(std::time(nullptr)),progress.stage,cleared);completed_recording=true;}live_description=replay->live()->description();if(title)title->live=replay->live();return true;
 }
 bool ApplicationState::save_slot(i32 slot,const std::array<char,9>& name){
+ if(!rollback::RequireConfirmed())return false;
 #if TH15_MULTIPLAYER
  if(multiplayer)return multiplayer_replay_save&&multiplayer_replay_save(slot,name);
 #endif

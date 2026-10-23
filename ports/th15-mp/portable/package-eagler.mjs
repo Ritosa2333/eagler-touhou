@@ -2,6 +2,7 @@
 import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync} from 'node:fs';
 import {resolve,dirname,relative} from 'node:path';
 import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
 const root=resolve(import.meta.dirname,'..'),game='th15';
 const multiplayer=process.argv.includes('--multiplayer');
 const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):resolve(root,multiplayer?'build-eagler-multiplayer':'build-eagler');
@@ -18,6 +19,10 @@ for(const [path,expected] of Object.entries({...build.sources,...build.headers})
 }
 const wasm=readFileSync(resolve(buildRoot,'th15.wasm'));
 if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
+if(multiplayer){
+ if(build.netplay?.stateBackend!=='write-journal-32'||build.netplay.instrumentation!==0x52424a31||build.netplay.predictionLimit!==12||build.netplay.rollback!==true)throw Error('Rebuild TH15 with the write-journal state owner');
+ execFileSync(process.execPath,[resolve(root,'../../tools/rollback/instrument.mjs'),'--verify',resolve(buildRoot,'th15.wasm')],{stdio:'inherit'});
+}
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th15_probe|th15_spectator_lab_|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);
 const fontNames=['cp932.bin'];
@@ -45,7 +50,7 @@ put('th15.mjs',loader);put('th15.wasm',wasm);
 const resources=fontNames.map(name=>{const bytes=readFileSync(resolve(fonts,name));put('fonts/'+name,bytes);return {path:'/fonts/'+name,url:'./fonts/'+name,bytes:bytes.length};});
 put('resources.json',JSON.stringify({schema:'eagler-sdl-resources/1',game,resources},null,2)+'\n');
 const features={multiplayer,thprac:build.features?.thprac===true,languages:true,focusHitbox:false};
-put('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',product:multiplayer?'th15mp':game,variant:multiplayer?'multiplayer':'normal',profile:multiplayer?'multiplayer':'production',builtAt:build.builtAt,version,features,music:['ogg-stream','ogg-full','none'],execution:{kind:build.kind,sha256:build.sha256,loaderSha256:hash(loader),architecture:build.architecture}},null,2)+'\n');
+put('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',product:multiplayer?'th15mp':game,variant:multiplayer?'multiplayer':'normal',profile:multiplayer?'multiplayer':'production',builtAt:build.builtAt,version,features,...(multiplayer?{netplay:build.netplay}:{}),music:['ogg-stream','ogg-full','none'],execution:{kind:build.kind,sha256:build.sha256,loaderSha256:hash(loader),architecture:build.architecture}},null,2)+'\n');
 const files=Object.fromEntries(names.map(name=>{const bytes=readFileSync(resolve(out,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];}));
 put('runtime-files.json',JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game,files},null,2)+'\n');
 console.log(JSON.stringify({out,version,files:names.length,wasm:build.sha256}));

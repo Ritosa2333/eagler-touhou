@@ -27,10 +27,12 @@ struct State {
 };
 class Renderer : public StateCommands {
 public:
+    struct SurfacePixels {u32 handle=0,width=0,height=0;std::vector<u8> rgba;};
+    using SurfaceCheckpoint=std::vector<SurfacePixels>;
     using Resolve=Surface(*)(void*,u32);
     Statistics stats{};State state{};bool defer=false,flip_present_y=false;
     Renderer(int version,Resolve,void*);~Renderer();
-    bool initialize();void flush();void discard();bool commit();
+    bool initialize();void flush();void discard();void cancel_present(){discard();pending=0;}bool commit();
 #if TH_ENABLE_THPRAC
     void render_imgui(const struct ::ImDrawData*,u32);
     u32 create_imgui_texture(u32 width,u32 height,const u8* rgba);
@@ -44,6 +46,8 @@ public:
     void copy(u32 source,const i32* rect,u32 target,const i32* point);
     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
     void changed(u32,u32,const std::array<u32,4>&);void read(u32);void release(u32);void present(u32);void prepare(u32);
+    SurfaceCheckpoint save_surfaces(const std::vector<u32>&);
+    void restore_surfaces(const SurfaceCheckpoint&);
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:

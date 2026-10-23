@@ -4,7 +4,7 @@
 #include <ctime>
 #include <SDL3/SDL.h>
 namespace th15::sdl {
-bool ApplicationState::audio(i32 id,float pan,PlayerShots::SoundAction action,bool){if(action==PlayerShots::SoundAction::pan){if(id<0||id>=77)return fail("Sound pan voice outside range");audio_device.sound_pan(u32(id),truncate_int(float(float(pan*1000.f)/192.f)));return true;}if(action==PlayerShots::SoundAction::stop)return audio_device.effects.stop(id)||fail(audio_device.effects.error);return audio_device.effects.positioned(id,pan)||fail(audio_device.effects.error);}
+bool ApplicationState::audio(i32 id,float pan,PlayerShots::SoundAction action,bool){if(action==PlayerShots::SoundAction::pan){if(id<0||id>=77)return fail("Sound pan voice outside range");audio_device.sound_pan(u32(id),truncate_int(float(float(pan*1000.f)/192.f)));return true;}if(action==PlayerShots::SoundAction::stop){if(rollback::Emit(rollback::AudioKind::Stop,id))return id<77;TH15_SYSTEM_SCOPE;return audio_device.effects.stop(id)||fail(audio_device.effects.error);}if(rollback::Emit(rollback::AudioKind::Positioned,id,0,pan))return id>=0&&id<77;TH15_SYSTEM_SCOPE;return audio_device.effects.positioned(id,pan)||fail(audio_device.effects.error);}
 bool ApplicationState::life_hud(i32 stock,i32 pieces){return scene()&&scene()->hud.life(stock,pieces)||fail(scene()?scene()->hud.error:"Life HUD has no scene");}
 bool ApplicationState::bomb_hud(i32 stock,i32 pieces){return scene()&&scene()->hud.bombs(stock,pieces)||fail(scene()?scene()->hud.error:"Bomb HUD has no scene");}
 bool ApplicationState::game_over(){return pause&&pause->open(PauseEntrance::GameOver)||fail(pause?pause->error:"Game-over menu has no owner");}
@@ -67,17 +67,18 @@ bool ApplicationState::retire_reward(){if(!scene())return fail("Chapter reward h
 bool ApplicationState::retire_message(){return scene()&&scene()->messages.release()||fail(scene()?scene()->messages.error:"Message retirement has no scene");}
 bool ApplicationState::retire_scene_effect(){return animations.retire(restart_effect_handle)||fail(animations.error);}
 bool ApplicationState::reset_gui(){return scene()&&scene()->hud.reset_for_retry()||fail(scene()?scene()->hud.error:"GUI reset has no scene");}
-bool ApplicationState::stop_sounds(){audio_device.effects.suspend();return true;}
+bool ApplicationState::stop_sounds(){if(!rollback::Emit(rollback::AudioKind::Suspend)){TH15_SYSTEM_SCOPE;audio_device.effects.suspend();}return true;}
 bool ApplicationState::begin_restart_effect(){graphics.presentation.reset();if(!assets())return fail("Chapter restart effect has no stage resource");animations.retire(restart_effect_handle);restart_effect_handle=animations.create_overlay(assets()->effect,0);auto* vm=animations.registry.find(restart_effect_handle);if(!vm||(!vm->geometry.overlay&&(!animations.effect||!animations.effect(*vm,0))))return fail(animations.error.empty()?"Chapter restart effect unavailable":animations.error);return animations.interrupt(restart_effect_handle,9)||fail(animations.error);}
 bool ApplicationState::begin_restart_overlay(){return restart_overlay(250);}
 bool ApplicationState::checkpoint_file(bool restoring){
+ if(!rollback::RequireConfirmed())return false;
  if(!scene())return fail("Pointdevice checkpoint has no scene");auto& saved=scene()->checkpoint;
  if(restoring){const auto header=saved.file_header(i64(std::time(nullptr)),0);if(checkpoint_encoder){checkpoint_header=header;return true;}if(checkpoint_bytes.empty()||!CheckpointFile::update_header(checkpoint_bytes,header))return fail("Retry metadata has no captured checkpoint file");}
  else {CheckpointFile file;if(!saved.prepare_file(file,i64(std::time(nullptr)),0)||!file.payload(checkpoint_payload))return fail(saved.error.empty()?file.error:saved.error);checkpoint_header=file.header;checkpoint_encoder=std::make_unique<Lzss>();checkpoint_encoder->begin_encode(checkpoint_payload.data(),u32(checkpoint_payload.size()));return true;}
  return files.save_checkpoint(progress.character,progress.difficulty,checkpoint_bytes)||fail(files.error);
 }
 bool ApplicationState::pump_checkpoint(u32 budget){
- if(!checkpoint_encoder)return true;
+ if(!checkpoint_encoder)return true;if(!rollback::RequireConfirmed())return false;
  const auto start=SDL_GetTicksNS();bool done=false;
  do{const u32 chunk=std::min(budget,4096u);done=checkpoint_encoder->step_encode(chunk);budget-=chunk;}
  while(!done&&budget&&(budget>131072||SDL_GetTicksNS()-start<1000000));
@@ -94,6 +95,7 @@ bool ApplicationState::load_scene(bool&){return fail("Scene loading bypassed the
 bool ApplicationState::activate_scene(){return fail("Scene activation bypassed the RunSession entrance controller");}
 bool ApplicationState::release_background(){display->release_previous();return true;}
 bool ApplicationState::load_checkpoint_file(bool& restored){
+ if(!rollback::RequireConfirmed())return false;
  graphics.presentation.reset();
  restored=false;if(!scene())return fail("Pointdevice checkpoint loading has no scene");bool present=false;if(!files.checkpoint(progress.character,progress.difficulty,checkpoint_bytes,present))return fail(files.error);if(!present)return true;
  auto& saved=scene()->checkpoint;if(!saved.read_file(checkpoint_bytes.data(),checkpoint_bytes.size(),0)||!saved.restore())return fail(saved.error);restored=true;return true;
@@ -133,7 +135,7 @@ bool ApplicationState::clear_session_links(){return true;}
 bool ApplicationState::reset_transition(){if(display->screen())display->screen()->replacement={};return true;}
 bool ApplicationState::disable_pause_callbacks(){if(pause)pause->disable();return true;}
 bool ApplicationState::queue_exit_music(i32 code){return request_music(PracticeMusic::stop_addr,code,0,"dummy");}
-bool ApplicationState::reset_audio_slots(){audio_device.effects.suspend();return true;}
+bool ApplicationState::reset_audio_slots(){if(!rollback::Emit(rollback::AudioKind::Suspend)){TH15_SYSTEM_SCOPE;audio_device.effects.suspend();}return true;}
 bool ApplicationState::suspend_music(){if(!suppress_practice_music(PracticeMusic::pause_addr,0))audio_device.pause_music(true);return true;}
 bool ApplicationState::finish_audio_requests(){return audio_device.finish_music_requests()||fail(audio_device.error);}
 bool ApplicationState::capture_background(StageGameplay&,AnmManager&,u32& handle,bool field){return display->capture(handle,!field)||fail(display->error);}
@@ -153,7 +155,7 @@ bool ApplicationState::open_options(float offset){
 bool ApplicationState::options_finished()const{return pause_manual&&pause_manual->finished;}
 bool ApplicationState::close_options(){scheduler.remove(manual_update);if(pause_manual){for(auto handle:pause_manual->choices)animations.retire(handle);animations.retire(pause_manual->page);pause_manual.reset();pending_page=-1;}return true;}
 i32 ApplicationState::scene_destination()const{return current_destination;}
-bool ApplicationState::resume_looping_sounds(){audio_device.effects.resume();return true;}
+bool ApplicationState::resume_looping_sounds(){if(!rollback::Emit(rollback::AudioKind::Resume)){TH15_SYSTEM_SCOPE;audio_device.effects.resume();}return true;}
 bool ApplicationState::resume_music(){if(!suppress_practice_music(PracticeMusic::resume_addr,0))audio_device.pause_music(false);return true;}
 bool ApplicationState::resume_saved_music(const std::string& wave,double position){return music(wave)&&music_command(2)&&seek_stage_music(position);}
 bool ApplicationState::destination(PauseDestination value){pending_destination=i32(value);return true;}

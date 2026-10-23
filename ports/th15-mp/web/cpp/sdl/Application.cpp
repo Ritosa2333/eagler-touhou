@@ -13,7 +13,13 @@ extern "C" EMSCRIPTEN_KEEPALIVE const double* th15_probe_performance(){return fr
 #define PROFILE_AT(slot)
 #endif
 namespace th15::sdl {
-Application::Application():state(std::make_unique<ApplicationState>()){}
+std::unique_ptr<ApplicationState> make_application_state(){
+#if TH15_MULTIPLAYER && TH15_WRITE_JOURNAL
+ if(!Netplay::WriteJournal::Initialize(nullptr,0))return {};
+#endif
+ TH15_GAME_SCOPE;return std::make_unique<ApplicationState>();
+}
+Application::Application():state(make_application_state()){}
 Application::~Application()=default;
 bool Application::initialize(bool device){return state->initialize(device);}
 bool Application::step(u32 held,u32 pressed,u32 repeated,float fps,bool focus){return state->step(held,pressed,repeated,fps,focus);}
@@ -24,6 +30,7 @@ bool ApplicationState::read(const std::string& name,std::vector<u8>& bytes){
  const auto at=name.find_last_of("/\\");const auto base=name.substr(at==std::string::npos?0:at+1);
  if(base.empty()||base=="."||base=="..")return fail("Invalid game asset name");
  const auto found=resource_cache.find(base);if(found!=resource_cache.end()){bytes=found->second;return true;}
+ if(!rollback::RequireConfirmed())return false;
 #if defined(TH_ENABLE_THCRAP)
  // Same per-title prepared-resource override as TH10/11. Never fetch patches here.
  const bool message=base.size()>4&&base.substr(base.size()-4)==".msg";
@@ -31,13 +38,19 @@ bool ApplicationState::read(const std::string& name,std::vector<u8>& bytes){
  // This Runtime reconstructs JP 1.00b. Never mount the 1.00a text bank on it.
  const bool text_bank=base=="text.anm";
  if(message||help||text_bank){size_t size=0;auto* patched=static_cast<u8*>(SDL_LoadFile(("/thcrap/th15/"+(text_bank?std::string("text.v1.00b.anm"):base)).c_str(),&size));
-  if(patched){if(size>16u*1024u*1024u){SDL_free(patched);return fail("THCRAP resource outside allowed size");}bytes.assign(patched,patched+size);SDL_free(patched);resource_cache.emplace(base,bytes);return true;}}
+  if(patched){if(size>16u*1024u*1024u){SDL_free(patched);return fail("THCRAP resource outside allowed size");}bytes.assign(patched,patched+size);SDL_free(patched);{TH15_SYSTEM_SCOPE;resource_cache.emplace(base,bytes);}return true;}}
 #endif
- if(!archive_bytes.empty()){const auto entry=archive_names.find(base);if(entry==archive_names.end()||!archive.read(entry->second,bytes))return fail("Missing or invalid archive entry: "+base);if(bytes.size()<=1024*1024&&base.size()>=4&&base.substr(base.size()-4)!=".wav"&&base.substr(base.size()-4)!=".anm")resource_cache.emplace(base,bytes);return true;}
+ if(!archive_bytes.empty()){
+  const auto entry=archive_names.find(base);if(entry==archive_names.end())return fail("Missing archive entry: "+base);
+  std::vector<u8> decoded;{TH15_SYSTEM_SCOPE;if(!archive.read(entry->second,decoded))return fail("Invalid archive entry: "+base);}
+  bytes.assign(decoded.begin(),decoded.end());
+  if(bytes.size()<=1024*1024&&base.size()>=4&&base.substr(base.size()-4)!=".wav"&&base.substr(base.size()-4)!=".anm"){TH15_SYSTEM_SCOPE;resource_cache.emplace(base,bytes);}return true;
+ }
  size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile(("/assets/"+base).c_str(),&size));if(!data)return fail("Missing game asset: "+base);
- bytes.assign(data,data+size);SDL_free(data);if(bytes.size()<=1024*1024&&base.size()>=4&&base.substr(base.size()-4)!=".wav"&&base.substr(base.size()-4)!=".anm")resource_cache.emplace(base,bytes);return true;
+ bytes.assign(data,data+size);SDL_free(data);if(bytes.size()<=1024*1024&&base.size()>=4&&base.substr(base.size()-4)!=".wav"&&base.substr(base.size()-4)!=".anm"){TH15_SYSTEM_SCOPE;resource_cache.emplace(base,bytes);}return true;
 }
 bool ApplicationState::prepare_platform(){
+ TH15_SYSTEM_SCOPE;
  if(platform_prepared)return true;
  if(SDL_GetPathInfo("/th15.dat",nullptr)){
  // Read directly into the archive owner: SDL_LoadFile plus assign kept two
@@ -52,6 +65,7 @@ bool ApplicationState::prepare_platform(){
  if(!graphics.initialize())return fail(graphics.error);platform_prepared=true;return true;
 }
 bool ApplicationState::prepare_loading(){
+ TH15_GAME_SCOPE;
  if(!prepare_platform())return false;std::vector<u8> bytes;
  loading_environment.resolution_scale=1;loading_environment.raster_scale=float(graphics.render_scale);
  for(const auto& bank:std::array<std::pair<const char*,i32>,2>{{{"sig.anm",1},{"ascii.anm",2}}}){
@@ -61,6 +75,7 @@ bool ApplicationState::prepare_loading(){
 }
 bool ApplicationState::loading_waiting()const{return loading_startup||pending_load!=0;}
 bool ApplicationState::draw_loading(bool signature){
+ TH15_GAME_SCOPE;if(!rollback::RequireConfirmed())return false;
  graphics.presentation.reset();
  if(!loading_animations.retire(loading_signature)||!loading_animations.retire(loading_prayer))return fail(loading_animations.error);
  if(signature){loading_signature=loading_animations.create(1,0);if(!loading_signature)return fail(loading_animations.error);}
@@ -69,6 +84,7 @@ bool ApplicationState::draw_loading(bool signature){
  return render_loading();
 }
 bool ApplicationState::render_loading(){
+ TH15_GAME_SCOPE;
  renderer.invalidate();graphics.backend.pipeline()=touhou::graphics::PipelineState{};graphics.configure_game(1);
  if(!graphics.select_target(nullptr,0)||!graphics.clear_target(0xff000000,nullptr))return fail(graphics.error);
  ScreenViews loading_views{renderer,loading_environment};if(!loading_views.camera(DrawCamera::Fullscreen,false))return fail("Loading camera unavailable");
@@ -81,6 +97,7 @@ bool ApplicationState::render_loading(){
  return true;
 }
 bool ApplicationState::render_loading(bool signature,unsigned frames){
+ TH15_GAME_SCOPE;
  (void)signature;
  for(unsigned frame=0;frame<std::min(frames,120u);++frame){
   if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
@@ -89,6 +106,7 @@ bool ApplicationState::render_loading(bool signature,unsigned frames){
  return render_loading();
 }
 bool ApplicationState::advance_loading(double delta){
+ TH15_GAME_SCOPE;
  // Native title worker 46052a waits for owner +644 == 180. Advance only
  // the isolated loading ANM clock at 60Hz, never gameplay or replay clocks.
  loading_debt+=std::clamp(delta,0.,.1);
@@ -102,9 +120,10 @@ bool ApplicationState::advance_loading(double delta){
  return true;
 }
 bool ApplicationState::initialize(bool device){
+ TH15_GAME_SCOPE;
  if(initialized)return fail("Application already initialized");if(!prepare_platform())return false;if(!loading_animations.resource(2)&&!prepare_loading())return false;
  if(!fonts.initialize()||!audio_device.initialize(*this,device))return fail(fonts.error.empty()?audio_device.error:fonts.error);
- audio_device.initial_music_byte_offset=[this](){return practice.enabled&&scene()?scene()->practice_music_start_offset():0u;};
+ {TH15_SYSTEM_SCOPE;audio_device.initial_music_byte_offset=[this](){return practice.enabled&&scene()?scene()->practice_music_start_offset():0u;};}
  // Restart overlays draw their patterned fifth panel when the screen has alpha.
  // Derive this from the actual SDL surface, as the original format check does.
  environment.raster_scale=float(graphics.render_scale);
@@ -130,7 +149,7 @@ bool ApplicationState::initialize(bool device){
  initialized=true;return begin_title(0);
 }
 ApplicationState::~ApplicationState(){title.reset();ending.reset();release_run();for(auto& c:animation_updates)scheduler.remove(c);fades.clear();display.reset();scene_effects.reset();animations.resource_release=nullptr;}
-bool ApplicationState::save_settings(){if(!finish_checkpoint())return false;config.bytes[0x22]=u8(volumes.music_volume);config.bytes[0x23]=u8(volumes.sound_volume);config.bytes[0x24]=volumes.controller_option;std::memcpy(config.bytes.data()+4,controller.values.data(),20);return files.save(records,config)||fail(files.error);}
+bool ApplicationState::save_settings(){TH15_GAME_SCOPE;if(!rollback::RequireConfirmed()||!finish_checkpoint())return false;config.bytes[0x22]=u8(volumes.music_volume);config.bytes[0x23]=u8(volumes.sound_volume);config.bytes[0x24]=volumes.controller_option;std::memcpy(config.bytes.data()+4,controller.values.data(),20);return files.save(records,config)||fail(files.error);}
 void ApplicationState::release_run(){
  graphics.presentation.reset();
  const bool had_run=run!=nullptr;close_options();motion.clear();if(display)display->detach();pause.reset();flow.reset();initialization.reset();session.reset();
@@ -140,6 +159,7 @@ void ApplicationState::release_run(){
  environment.paused=false;environment.screen_translation={};environment.background_delta={};environment.screen_offsets={320,16,320,16};environment.playfield_origin={128,16};views.configure(environment);renderer.invalidate();graphics.backend.pipeline()=touhou::graphics::PipelineState{};graphics.configure_game(1);
 }
 bool ApplicationState::begin_title(i32 reason){
+ TH15_GAME_SCOPE;if(!rollback::RequireConfirmed())return false;
  remember_title();ending.reset();title.reset();release_run();current_destination=4;
  title=std::make_unique<TitleScene>(progress,selection_player,selection_score,records,selection,volumes,controller,comments,animations,*this,scheduler,TitleSceneResources{16,17,2,0,19});
  title->frame.demo_idle=title_demo_idle;title->frame.demo_index=title_demo_index;title->frame.saved_difficulty=title_saved_difficulty;title->saved_replay_selection=title_saved_replay_selection;
@@ -155,6 +175,7 @@ bool ApplicationState::bind_run_display(){
  return display->attach(*scene(),progress,records,*this,*this,pause.get(),&live_description)||fail(display->error);
 }
 bool ApplicationState::begin_run(const std::array<ReplayStageSnapshot,3>* stream){
+ TH15_GAME_SCOPE;if(!rollback::RequireConfirmed())return false;
  if(!save_settings())return false;remember_title();title.reset();ending.reset();release_run();scene_effects.reset();for(auto& callback:animation_updates)callback.enabled=false;
  replay=std::make_unique<SessionReplay>(config,environment.game_rng,visual);
  progress.stage=selected_stage;progress.starting_stage=selected_stage;progress.scene_flags=0;progress.restart_frames=0;progress.rate=1;
@@ -192,6 +213,7 @@ bool ApplicationState::begin_ending(){
 }
 bool ApplicationState::apply_destination(){
  if(pending_destination<0)return true;
+ if(!rollback::RequireConfirmed())return false;
 #if TH15_MULTIPLAYER
  if(multiplayer&&pending_destination!=13&&pending_destination!=15&&pending_destination!=16){completed_recording=pending_destination==15||pending_destination==16;pending_destination=-1;exiting=true;return save_settings();}
 #endif
@@ -214,6 +236,7 @@ bool ApplicationState::apply_destination(){
  if(next==3){exiting=true;return save_settings();}return fail("Unrecognized application destination: "+std::to_string(next));
 }
 bool ApplicationState::complete_loading(){
+ TH15_GAME_SCOPE;if(pending_load&&!rollback::RequireConfirmed())return false;
  if(pending_load){const unsigned task=pending_load;pending_load=0;
   if(task==1){if(!apply_destination())return false;}
   else if(task==2){if(!display->retain_background(*scene(),*this))return fail(display->error);pause.reset();current_destination=12;if(!flow->advance()||!preload_run()||!bind_run_display())return fail(flow->error);}
@@ -221,6 +244,7 @@ bool ApplicationState::complete_loading(){
  return true;
 }
 bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool lost_focus){
+ TH15_GAME_SCOPE;
  if(!initialized||exiting||!failure.empty())return false;
  if(!complete_loading())return false;
  PROFILE_BEGIN;
@@ -235,7 +259,7 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   if(!session->step(input))return fail(session->error.empty()?scene()->error:session->error);
  }else return fail("Application has no active scene");
  PROFILE_AT(0);
- audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);
+ if(!rollback::Emit(rollback::AudioKind::Update)){audio_device.update();if(!audio_device.error.empty())return fail(audio_device.error);}
  PROFILE_AT(1);
  if(!display->draw())return fail(display->error);
  PROFILE_AT(2);
@@ -244,7 +268,7 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   if(clock.needs_sample(battle.spell.flags)){
    double now=0;
 #if TH15_MULTIPLAYER
-   // step() advances only on confirmed frames, including replay/spectators.
+   // Simulation clocks are identical in forward ticks and correction ticks.
    // Wall time would include network stalls and differ between peers.
    if(multiplayer)now=double(frames)/60.0;else
 #endif
@@ -258,7 +282,7 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
    }
   }
  }
- audio_device.pump();frames++;
+ if(!rollback::Emit(rollback::AudioKind::Pump))audio_device.pump();frames++;
  if(!pump_checkpoint())return false;
  // Inter-stage flow retains the departing STD for the native transition.
  // Keep the completed composite visible while preparing the next scene;

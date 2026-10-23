@@ -19,7 +19,7 @@ bool ReplayArchive::Metadata(const Netplay::InputReplayInfo& info,SessionSetup& 
     if(c.gameId!=15||d.size()!=DescriptionBytes||get(d.data())!=Magic||get(d.data()+4)!=Version||
        (get(d.data()+8)!=20&&get(d.data()+8)!=SessionSetup::GameplayVersion)||get(d.data()+12)>9||(get(d.data()+28)&~3u))return false;
     std::array<std::uint32_t,SessionSetup::Words> words{};for(unsigned i=0;i<words.size();++i)words[i]=get(d.data()+40+i*4);
-    SessionSetup next;if(!DecodeSessionSetup(next,words.data(),words.size()))return false;next.input_delay=get(d.data()+12);
+    SessionSetup next;if(!DecodeSessionSetup(next,words.data(),words.size()))return false;next.input_delay=get(d.data()+12);if(!next.valid())return false;
     if(get(d.data()+8)!=(next.version==SessionSetup::LegacyVersion?20:SessionSetup::GameplayVersion))return false;
     if(c.playerCount!=next.player_count||c.recordedPlayer!=next.local_player||c.gameplayAbi!=GameplayAbi(next))return false;
     for(unsigned i=0;i<info.chapterCount;++i)if(info.chapters[i].label<1||info.chapters[i].label>7||

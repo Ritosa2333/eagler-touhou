@@ -1,4 +1,5 @@
 #include "Localization.hpp"
+#include "../sdl/RollbackHooks.hpp"
 #include <algorithm>
 #include <cstring>
 #include <unordered_map>
@@ -22,7 +23,7 @@ class Table {
     bool loaded=false,available=false;
     std::unordered_map<u64,std::string> entries;
 public:
-    const char* lookup(const char* name,u32 key,u16 line,const char* fallback,bool blank_missing=false){
+    const char* lookup(const char* name,u32 key,u16 line,const char* fallback,bool blank_missing=false){TH15_SYSTEM_SCOPE;
         if(!loaded){
             loaded=true;const auto bytes=load(name);
             if(bytes.size()>=8&&!std::memcmp(bytes.data(),"ETL1",4)){
@@ -74,7 +75,7 @@ class Strings {
         return true;
     }
 public:
-    const char* lookup(const char* id,const char* fallback){
+    const char* lookup(const char* id,const char* fallback){TH15_SYSTEM_SCOPE;
         if(!loaded){
             loaded=true;const auto bytes=load("strings.etl");
             if(bytes.size()>=8&&!std::memcmp(bytes.data(),"EST1",4)){
@@ -94,7 +95,7 @@ public:
         }
         const auto found=entries.find(id?id:"");return found==entries.end()?fallback:found->second.c_str();
     }
-    const char* format(const char* id,const char* fallback,bool layout=false){
+    const char* format(const char* id,const char* fallback,bool layout=false){TH15_SYSTEM_SCOPE;
         if(!id||!fallback)return fallback;
         const char* source=lookup(id,fallback);
         if(source==fallback)return fallback;

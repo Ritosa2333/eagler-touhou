@@ -4,6 +4,7 @@
 #include "FontDevice.hpp"
 #include "AudioDevice.hpp"
 #include "FileStore.hpp"
+#include "RollbackHooks.hpp"
 #include "../game/Archive.hpp"
 #include "../game/Lzss.hpp"
 #include "../game/TitleScene.hpp"
@@ -14,20 +15,29 @@
 #include "../game/Manual.hpp"
 #include "../game/ScreenMotionFrame.hpp"
 namespace th15::sdl {
+// Browser/device handles and immutable source data have a lifetime independent
+// of simulation frames. Game owners retain stable references to these services.
+struct ApplicationSystem {
+ GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;
+ Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
+ std::unordered_map<std::string,std::vector<u8>> resource_cache;
+};
+inline std::unique_ptr<ApplicationSystem> make_application_system(){TH15_SYSTEM_SCOPE;return std::make_unique<ApplicationSystem>();}
 struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGameplayServices,SessionGameplayServices,SessionEntryServices,RunConstructionServices,RunCompletionServices,RunStageExitServices,RunPausePlatform,StageDrawServices,AssetSource {
- GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;FileStore files;
+ std::unique_ptr<ApplicationSystem> system=make_application_system();
+ GraphicsDevice& graphics=system->graphics;FontDevice& fonts=system->fonts;AudioDevice& audio_device=system->audio_device;FileStore files;
  Rng visual;AnmEnvironment environment;AnmManager animations{visual,environment};AnmRenderer renderer{graphics};ScreenViews views{renderer,environment};AsciiText captions{animations,environment};FrameScheduler scheduler;
  Rng loading_random;AnmEnvironment loading_environment;AnmManager loading_animations{loading_random,loading_environment};bool platform_prepared=false;u32 loading_signature=0,loading_prayer=0;unsigned pending_load=0,loading_frames=0;bool loading_startup=false;double loading_debt=0;
  bool loading_waiting()const;bool complete_loading();bool render_loading();bool advance_loading(double);
  GameConfig config;SessionState progress;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings selection;TitleAudioSettings volumes;TitleControllerSettings controller;MusicComments comments;TitleKeyboard keyboard_state;
- std::unordered_map<std::string,i32> shared;std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<SceneDisplay> display;std::array<FrameCallback,2> animation_updates;
+ std::unordered_map<std::string,i32> shared;std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<SceneDisplay> display;std::array<FrameCallback,2> animation_updates;FrameCallback fps_drawing;
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<SessionReplay> replay;std::unique_ptr<RunSession> session;std::unique_ptr<RunInitialization> initialization;std::unique_ptr<RunStageFlow> flow;std::unique_ptr<RunPause> pause;
- std::vector<std::unique_ptr<ScreenFade>> fades;std::vector<std::unique_ptr<ScreenMotionFrame>> motion;std::unique_ptr<Manual> pause_manual;FrameCallback manual_update;u32 manual_pressed=0,manual_repeated=0;StageCamera camera;std::array<u8,0xa4> live_description{};std::vector<u8> selected_replay,pending_png,pending_animation;std::string pending_animation_name;std::unordered_map<std::string,std::vector<u8>> resource_cache;
+ std::vector<std::unique_ptr<ScreenFade>> fades;std::vector<std::unique_ptr<ScreenMotionFrame>> motion;std::unique_ptr<Manual> pause_manual;FrameCallback manual_update;u32 manual_pressed=0,manual_repeated=0;StageCamera camera;std::array<u8,0xa4> live_description{};std::vector<u8> selected_replay,pending_png,pending_animation;std::string pending_animation_name;std::unordered_map<std::string,std::vector<u8>>& resource_cache=system->resource_cache;
  i32 pending_destination=-1,selected_stage=1,pending_page=-1,pending_bank=-1,frame_skip=0,current_destination=13;u32 transition_overlay=0,restart_handle=0,restart_effect_handle=0,frames=0;bool initialized=false,exiting=false,completed_recording=false;std::array<i32,16> projected{};std::string failure;
  std::vector<u8> checkpoint_bytes;
  std::unique_ptr<Lzss> checkpoint_encoder;std::vector<u8> checkpoint_payload;CheckpointHeader checkpoint_header;
  bool pump_checkpoint(u32 budget=131072);bool finish_checkpoint();
- Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
+ Archive& archive=system->archive;std::vector<u8>& archive_bytes=system->archive_bytes;std::unordered_map<std::string,u32>& archive_names=system->archive_names;
  PlayerTouch touch;u32 controller_buttons=0;i32 numbered_chapter=0;
 #if TH15_MULTIPLAYER
  MultiplayerOptions mp_options;bool multiplayer=false;
@@ -83,4 +93,5 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool background_fade(i32,i32,i32)override;
  bool read_message(const std::string&,MessageProgram&)override;bool request_animation(i32,const std::string&)override;bool prepare_animation(AnmResource&)override;bool cancel_animation_request()override;bool loading_overlay()override;bool end_loading_overlay()override;bool prepare_music(const std::string&)override;bool start_music(i32)override;bool fade_music(i32)override;bool shake(i32,i32)override;bool reset_caption_state()override;bool ending_destination(i32)override;
 };
+std::unique_ptr<ApplicationState> make_application_state();
 }

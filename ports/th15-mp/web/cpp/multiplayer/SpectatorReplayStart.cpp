@@ -1,5 +1,6 @@
 #include "SpectatorReplayStart.hpp"
 #include "../sdl/ApplicationState.hpp"
+#include "../sdl/RollbackHooks.hpp"
 #include "../game/MultiplayerPilot.hpp"
 namespace th15::multiplayer {
 bool SpectatorReplayStart::Boundary(const sdl::ApplicationState& app){
@@ -30,7 +31,8 @@ bool SpectatorReplayStart::Restore(sdl::ApplicationState& app,const SessionSetup
     for(unsigned i=0;i<s.seats;++i)if(!entries[i].read(s.headers[i].data(),0x238))return false;
     if(!app.begin_run(&entries)||!app.scene()||!app.session||!app.session->driver()){error=app.failure;return false;}
     // Run the native Replay entrance once, before consuming input frame F.
-    if(!app.session->enter_replay_stage()){error=app.session->error;return false;}
+    bool entered=false;{TH15_GAME_SCOPE;entered=app.session->enter_replay_stage();}
+    if(!entered){error=app.session->error;return false;}
     // This Application clock drives multiplayer spell timing as well as the
     // native frame telemetry. A rewind or independent late-stage join starts
     // at the confirmed stream's frame, independently of prior local playback.

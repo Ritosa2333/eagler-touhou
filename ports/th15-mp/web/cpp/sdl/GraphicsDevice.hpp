@@ -4,11 +4,13 @@
 #include "../../../portable/sdl/Renderer.hpp"
 #include <map>
 #include "PresentationFrame.hpp"
+#include "RollbackHooks.hpp"
 namespace th15::sdl {
 class GraphicsDevice final:public ZunGraphics {
-    struct Texture {TextureImage image;u32 revision=0,renderScale=1;};
+    struct Texture {TextureImage image;u32 revision=0,renderScale=1;bool render_target=false;};
     std::map<u32,Texture> textures;
     std::map<const AnmResource*,std::vector<u32>> resources;
+    touhou::sdl::Renderer::SurfaceCheckpoint rollback_base;
     u32 next_handle=3,startup_credit=0;
     static touhou::sdl::Surface resolve(void*,u32);
 public:
@@ -22,13 +24,15 @@ public:
     void presentation_range(const AnmVm& vm,u32 first,u32 count,u32 instance=0)override{presentation.range(vm,first,count,instance);}
     void presentation_camera(bool enabled)override{presentation.camera=enabled;}
     bool initialize();
+    void clear_rollback_history(){TH15_SYSTEM_SCOPE;rollback_base.clear();presentation.clear_authored();presentation.retain_authored=false;}
+    void rollback_restore(bool restore_base=false);
     void draw_startup_branding(u32 tint);
     void release_startup_branding();
     bool preload(AnmResource&,bool low_color=false);
     void unload(const AnmResource&);
     u32 texture(const AnmResource&,u32)override;
     TextureImage* pixels(u32 handle){auto it=textures.find(handle);return it==textures.end()?nullptr:&it->second.image;}
-    void changed(u32 handle,std::array<u32,4> region={}){auto it=textures.find(handle);if(it!=textures.end()){backend.flush();backend.changed(handle,it->second.revision,region);++it->second.revision;}}
+    void changed(u32 handle,std::array<u32,4> region={}){TH15_SYSTEM_SCOPE;auto it=textures.find(handle);if(it!=textures.end()){backend.flush();backend.changed(handle,it->second.revision,region);++it->second.revision;}}
     void bind_texture(u32 handle)override{backend.state.texture=handle;}
     touhou::graphics::PipelineState& pipeline()override{return backend.pipeline();}
     void set_layout(touhou::graphics::VertexLayout layout)override{backend.state.layout=touhou::graphics::attributes(layout);}
