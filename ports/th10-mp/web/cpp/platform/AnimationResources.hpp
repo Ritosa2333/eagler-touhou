@@ -8,6 +8,9 @@ namespace th10::browser {
 struct AnimationResources final:AnmResourceEnvironment,AnmTextureEnvironment {
     FileSystem& files;GraphicsDevice& device;AnmManager& manager;u32 loading=0,display=0;Textures textures;
     i32 last_error=-1;
+#ifdef TH_ENABLE_THPRAC
+    std::map<const void*,u32> practice_animation_sizes;
+#endif
     AnimationResources(FileSystem& files,GraphicsDevice& device,AnmManager& manager,u32 display_flags=0);
     ~AnimationResources();
     AnmFile* allocate_file() override;

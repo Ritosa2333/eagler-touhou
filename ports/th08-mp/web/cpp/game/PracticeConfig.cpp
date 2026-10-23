@@ -1,28 +1,40 @@
 #include "PracticeConfig.hpp"
 #include "PracticeSections.hpp"
+#include "PracticeVersion.hpp"
 #include <cmath>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 namespace th08 {
+i32 practice_runtime_stage(const PracticeConfig& p){
+    if(p.stage!=9)return p.stage;
+    constexpr i32 stages[]{0,1,2,5,6,7,8,5,8,3,4,3,3,3,3,3,3};
+    const i32 index=p.section-TH08_LW_1;return index>=0&&index<17?stages[index]:-1;
+}
 void PracticeConfig::reset(){std::memset(this,0,sizeof(*this));}
+bool practice_last_word_matches(const PracticeConfig& p,i32 stage,i32 spell){
+    return p.stage==9&&p.valid()&&practice_runtime_stage(p)==stage&&spell==p.section-TH08_LW_1+205;
+}
 bool PracticeConfig::valid()const {
-    if(mode<0||mode>1||stage<0||stage>8||warp<0||warp>7||phase<0||phase>6||frame<0||dlg<0||dlg>1)return false;
-    if(section>=10000){constexpr int portions[]{2,4,3,6,6,5,2,2,7};if((section-10000)/100!=stage+1||(section%100)<1||(section%100)>portions[stage])return false;}
+    if(sp1_pts<0||sp1_pts>1||(sp1_pts&&(bsX< -160||bsX>160||bsY<48||bsY>128)))return false;
+    if(mode<0||mode>1||stage<0||stage>9||warp<0||warp>7||phase<0||phase>6||frame<0||dlg<0||dlg>1)return false;
+    if(stage==9&&practice_runtime_stage(*this)<0)return false;
+    if(section>=10000){constexpr int portions[]{2,4,3,6,6,5,2,2,7};if(stage==9||(section-10000)/100!=stage+1||(section%100)<1||(section%100)>portions[stage])return false;}
     else if(section<0||u32(section)>=sizeof(practice_sections)/sizeof(*practice_sections)||(section&&practice_sections[section].stage!=stage))return false;
     if(score<0||score>9999999990LL||life<0||life>8||bomb<0||bomb>8||power<0||power>128||gauge< -10000||gauge>10000)return false;
     return graze>=0&&point>=0&&point<=9999&&point_total>=0&&point_total<=9999&&point_stage>=0&&point_stage<=9999&&time>=0&&value>=0&&value<=9999999&&night>=0&&night<=11&&familiar>=0&&familiar<=2000&&rank>=8&&rank<=99&&rankLock>=0&&rankLock<=1;
 }
 void PracticeConfig::encode(double* w)const {
-    const double values[]{double(mode),double(stage),double(warp),double(section),double(phase),double(frame),double(dlg),double(score),double(life),double(bomb),double(power),double(gauge),double(graze),double(point),double(point_total),double(point_stage),double(time),double(value),double(night),double(familiar),double(rank),double(rankLock),1};
+    const double values[]{double(mode),double(stage),double(warp),double(section),double(phase),double(frame),double(dlg),double(score),double(life),double(bomb),double(power),double(gauge),double(graze),double(point),double(point_total),double(point_stage),double(time),double(value),double(night),double(familiar),double(rank),double(rankLock),1,double(sp1_pts),double(bsX),double(bsY)};
     std::copy(values,values+word_count,w);
 }
 bool PracticeConfig::decode(const double* w,u32 count){
-    if(!w||count!=word_count||w[22]!=1)return false;
+    if(!w||(count!=word_count&&count!=23)||w[22]!=1)return false;
     for(u32 i=0;i<count;i++)if(!std::isfinite(w[i])||std::trunc(w[i])!=w[i]||(i!=7&&(w[i]<-2147483648.0||w[i]>2147483647.0)))return false;
     if(w[7]<0||w[7]>9999999990.0)return false;
     PracticeConfig p;p.mode=i32(w[0]);p.stage=i32(w[1]);p.warp=i32(w[2]);p.section=i32(w[3]);p.phase=i32(w[4]);p.frame=i32(w[5]);p.dlg=i32(w[6]);p.score=i64(w[7]);p.life=i32(w[8]);p.bomb=i32(w[9]);p.power=i32(w[10]);p.gauge=i32(w[11]);p.graze=i32(w[12]);p.point=i32(w[13]);p.point_total=i32(w[14]);p.point_stage=i32(w[15]);p.time=i32(w[16]);p.value=i32(w[17]);p.night=i32(w[18]);p.familiar=i32(w[19]);p.rank=i32(w[20]);p.rankLock=i32(w[21]);
+    if(count==word_count){p.sp1_pts=i32(w[23]);p.bsX=i32(w[24]);p.bsY=i32(w[25]);}
     if(!p.valid())return false;*this=p;return true;
 }
 namespace {
@@ -52,7 +64,7 @@ std::string practice_replay_json(const PracticeConfig& p){
     // set; point is a live-only field and never serialized upstream.
     if(!p.valid())return {};
     char buffer[1024];
-    int length=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"2.3.0.3\",\"game\":\"th08\",\"mode\":%d,\"stage\":%d",p.mode,p.stage);
+    int length=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"%s\",\"game\":\"th08\",\"mode\":%d,\"stage\":%d",p.legacy_blue_replay?"2.3.0.3":practice_source_version,p.mode,p.stage);
     if(length<=0||static_cast<std::size_t>(length)>=sizeof(buffer))return {};
     auto append=[&](const char* fmt,auto... args){
         const int written=std::snprintf(buffer+length,sizeof(buffer)-static_cast<std::size_t>(length),fmt,args...);
@@ -63,6 +75,7 @@ std::string practice_replay_json(const PracticeConfig& p){
     if(p.phase&&!append(",\"phase\":%d",p.phase))return {};
     if(p.frame&&!append(",\"frame\":%d",p.frame))return {};
     if(p.dlg&&!append(",\"dlg\":true"))return {};
+    if(p.sp1_pts&&!append(",\"sp1_pts\":true,\"bsX\":%d,\"bsY\":%d",p.bsX,p.bsY))return {};
     if(!append(",\"life\":%d,\"bomb\":%d,\"power\":%d,\"gauge\":%d,\"score\":%lld,\"graze\":%d,"
                "\"point_total\":%d,\"point_stage\":%d,\"time\":%d,\"value\":%d,\"night\":%d,"
                "\"familiar\":%d,\"rank\":%d,\"rankLock\":%s}",
@@ -82,11 +95,14 @@ bool practice_replay_parse(const char* json,u32 size,PracticeConfig& out){
     // THPracParam::ReadJson() Reset()s (memset) before parsing: missing keys
     // stay zero and never inherit Practice menu defaults.
     p.reset();
+    p.legacy_blue_replay=text.find("\"version\":\"2.3.0.3\"")!=std::string::npos;
     p.mode=i32(json_number(text,"mode",0));
     p.stage=i32(json_number(text,"stage",0));
     p.section=i32(json_number(text,"section",0));
     p.phase=i32(json_number(text,"phase",0));
     p.dlg=json_bool(text,"dlg",false)?1:0;
+    p.sp1_pts=json_bool(text,"sp1_pts",false)?1:0;
+    p.bsX=i32(json_number(text,"bsX",0));p.bsY=i32(json_number(text,"bsY",0));
     p.frame=i32(json_number(text,"frame",0));
     p.life=i32(json_number(text,"life",0));
     p.bomb=i32(json_number(text,"bomb",0));
@@ -106,7 +122,7 @@ bool practice_replay_parse(const char* json,u32 size,PracticeConfig& out){
     // Upstream applies whatever it parsed; this port can only apply configs
     // that pass the same validation the live menu enforces, so anything else
     // degrades to an Original replay instead of a broken startup.
-    if(!p.valid())return false;
+    if(!p.valid()||(p.legacy_blue_replay&&(p.stage==9||p.sp1_pts)))return false;
     out=p;return true;
 }
 std::vector<u8> practice_replay_block(const PracticeConfig& p){

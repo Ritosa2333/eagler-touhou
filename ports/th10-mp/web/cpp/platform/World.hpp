@@ -128,6 +128,9 @@ struct World final:HudActions,CallbackReceiver {
 #else
     std::map<const EnemyLaser*,LaserPresentation> laser_presentation;
 #endif
+#ifdef TH_ENABLE_THPRAC
+    std::map<const void*,u32> practice_script_sizes;
+#endif
     struct PopupPresentation {Vec3 position{};float elapsed=0;i32 timer=-2;u8 active=0,length=0;};
     PopupPresentation popup_presentation[723]{};
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

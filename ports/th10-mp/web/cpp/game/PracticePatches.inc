@@ -1,4 +1,4 @@
-// Generated from thprac (MIT), sha256 4d4907927992be0e094f0c253e2b6035d89911ee0812ff29eb11197da2491352.
+// Generated from thprac (MIT), sha256 5d1691429d58f3005f3c15f68bba66d8fe25a38842cffe356869d48c86ad603a.
 // Regenerate with portable/generate-thprac.mjs; included inside PracticePatcher.
     void THStageWarp(ECLHelper& ecl, int stage, int portion)
     {
@@ -167,6 +167,10 @@
                 ECLJump(ecl, 0x14a64, 0x14a84, 0);
                 ECLJump(ecl, 0xf900, 0x12e00, 1610);
                 st4_boss_timeskip(7400);
+                if (thPracParam.phase == 1) {
+                    ECLJump(ecl, 0x12EC0, 0x12E00, 1470);
+                    ecl << pair(0x14AB4,(int32_t) 99999999);// avoid boss
+                }
                 break;
             default:
                 break;
@@ -363,6 +367,12 @@
             THStage4STD(3600);
             ECLJump(ecl, 0x14a64, 0x14a84, 3600);
             ECLJump(ecl, 0xf8ec, 0xf900, 3600);
+            if (thPracParam.phase == 1) {
+                ecl << pair { 0xF934, (int16_t)83 };
+                ecl << pair { 0xF940, (int32_t)9999999 };// disable main latter
+                ecl << pair { 0xD2EC, (int32_t)9999999 };// boss time
+                ecl << pair { 0x14AB4, (int32_t)9999999 };// boss time
+            }
             break;
         case TH10_ST4_BOSS1:
             THStage4ANM(8688);
@@ -416,7 +426,8 @@
 
             ecl << pair{0x47e8, 99999999};
             break;
-        case TH10_ST4_BOSS7: {
+        case TH10_ST4_BOSS7:
+            {
             constexpr unsigned int st4PreMainSub = 0x14a64;
             constexpr unsigned int st4BossCreate = 0x14aa4;
             constexpr unsigned int st4BossDialogRead = 0x14ae4;
@@ -435,16 +446,17 @@
 
             THStage4ANM(8688);
             THStage4STD(8688);
-            ECLJump(ecl, st4PreMainSub, st4BossCreate, 8600); //skip stage
-            ECLJump(ecl, st4BossDialogRead, st4BossDeathWait, 8601); //skip dialogue
+            ECLJump(ecl, st4PreMainSub, st4BossCreate, 8600); // skip stage
+            ECLJump(ecl, st4BossDialogRead, st4BossDeathWait, 8601); // skip dialogue
             ecl << pair { st4BossNonSubCallOrd, (int8_t)0x33 }; // set to non 3
-            ECLJump(ecl, st4Boss3DropStart, st4Boss3DropEnd, 120); //skip non drops
+            ECLJump(ecl, st4Boss3DropStart, st4Boss3DropEnd, 120); // skip non drops
             ecl << pair { st4Boss3LifeSetE, 2300 } // set health to spell transition amt
-                << pair { st4Boss3LifeSetNHL, 0 } //set health to spell transition amt
+                << pair { st4Boss3LifeSetNHL, 0 } // set health to spell transition amt
                 << pair { st4Boss3InterruptNHL, (int8_t)0x34 }; // set to sp4
             ECLJump(ecl, st4BossSp4MovePos, st4BossSp4PostMove, 0);
             break;
-        } case TH10_ST5_MID1:
+        }
+        case TH10_ST5_MID1:
             ECLJump(ecl, 0x14ba0, 0x14bc0, 3800);
             ECLJump(ecl, 0x143d0, 0x143e4, 3800);
             break;

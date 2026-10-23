@@ -27,3 +27,9 @@ npm --prefix launcher run dev:workspace
 ## 源码与验证
 
 `web/cpp/` 是游戏和 SDL 宿主；`portable/multiplayer/` 是合作玩法和网络接入；`portable/browser/`、`portable/input/`、`portable/sdl/` 提供浏览器端代码。源码检查从 `ports/th08-mp/` 运行：`node portable/check-multiplayer-cooperation.mjs` 和 `node portable/check-high-refresh-contract.mjs`。
+
+## 普通版修改同步
+
+普通版目录历史通过真实 Git 合并接入 MP，来源与接收范围见[普通版与多人版同步](../../../docs/adaptation/port-sync.md)。通用功能、练习源码和专项检查沿普通版更新，MP 保留席位输入、回滚、旁观与多人录像所有权。构建配方继续选择对应模式。
+
+练习按键监视器使用独立内容快照，回滚复制容器内容；练习标量状态继续进入日志与校验。

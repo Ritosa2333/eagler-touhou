@@ -23,6 +23,8 @@ for(const anchor of ["case 'thprac-mouse'",'practice=createPractice','practice?.
 const practice=readFileSync(resolve(import.meta.dirname,'../web/sdl-runtime/practice.mjs'),'utf8');
 assert(!practice.includes("emit('thprac-session'"),'TH10 must keep live practice state Runtime-owned');
 const ui=readFileSync(resolve(import.meta.dirname,'../web/cpp/sdl/ThpracUi.cpp'),'utf8');
+assert(ui.includes('p.update_menu_difficulty(difficulty,previous_menu_difficulty)'),'practice menu must apply purple difficulty defaults');
+assert(ui.includes('&p.st6_boss9_spd,0,PracticeConfig::divine_virtues_delay_max(difficulty)'),'Divine Virtues slider must use the difficulty limit');
 assert(ui.includes('Module.eaglerOptions?.thpracEnabled?1:0'),'disabled thprac must not initialize ImGui or require the optional Unicode font');
 assert(/AddFontFromFileTTF\("\/unifont\.otf",16,&config,(?:range|ranges\.Data)\)/.test(ui),'thprac UI must always use the Unicode font');
 assert(!ui.includes('AddFontFromFileTTF("/fonts/msgothic.ttc",16,&config,range)'),'thprac UI must not fall back to MS Gothic');

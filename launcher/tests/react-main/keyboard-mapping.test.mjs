@@ -10,6 +10,16 @@ before(async()=>{
 const event=(code,extra={})=>({type:'keydown',code,key:'',keyCode:0,location:0,...extra});
 const context=()=>({target:{},game:'th06',epoch:1,launched:true,ready:true,spectator:false});
 const compact=changes=>changes?.map(e=>[e.code,e.down]);
+
+test('numeric editing preserves top-row, keypad, punctuation and edit keys',()=>{
+  for(const code of [...Array.from({length:10},(_,i)=>'Digit'+i),...Array.from({length:10},(_,i)=>'Numpad'+i),
+    'Minus','Period','NumpadSubtract','NumpadDecimal','Delete','Insert','Home','End','PageUp','PageDown','Backspace','Enter']){
+    const owner=new KeyboardMapping(),ctx=context();
+    assert.equal(owner.supports(code),true,code);
+    assert.deepEqual(compact(owner.map(event(code),true,'physical','standard',ctx)),[[code,true]],code);
+    assert.deepEqual(compact(owner.map(event(code),false,'physical','standard',ctx)),[[code,false]],code);
+  }
+});
 test('the default mapping preserves original keys without adding WASD aliases',()=>{
   for(const code of ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','Space']){
     const owner=new KeyboardMapping(),ctx=context();

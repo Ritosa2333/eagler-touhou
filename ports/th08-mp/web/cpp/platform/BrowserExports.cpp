@@ -37,7 +37,7 @@ EX("practice_cheats") bool browser_practice_cheats(BrowserRuntime* r,u32 mask){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(r&&r->app.session.netplay.Configured())return false;
 #endif
-    if(!r||!r->app.in_game()||!r->app.session.practice.enabled||r->app.session.practice.replay||mask>63)return false;auto& p=r->app.session.practice;p.cheats=mask;if(mask)p.assisted=true;return true;
+    if(!r||!r->app.in_game()||!r->app.session.practice.enabled||r->app.session.practice.replay||mask>127)return false;auto& p=r->app.session.practice;p.cheats=mask;if(mask)p.assisted=true;return true;
 }
 EX("resident_hits") u32 browser_resident_hits(BrowserRuntime* r){return r->app.library.resident_hits();}
 EX("preload_stats") const u32* browser_preload_stats(BrowserRuntime* r){static u32 out[2];out[0]=r->app.library.preload_count();out[1]=r->app.library.preload_hits();return out;}

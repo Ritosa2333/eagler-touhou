@@ -10,5 +10,8 @@ struct EnemyPhaseState {
     i32* spell_elapsed;
     i32* spell_bonus;
     u32* spell_animation_flags[7];
+#ifdef TH_ENABLE_THPRAC
+    bool* lock_timer_pending=nullptr;
+#endif
 };
 }

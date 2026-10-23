@@ -7,6 +7,7 @@
 #include "PurpleLabels.hpp"
 
 #ifdef TH_ENABLE_THPRAC
+#include <eagler/thprac/PracticeSdlKeyboard.hpp>
 
 #include "Controller.hpp"
 #include "FileSystem.hpp"
@@ -710,6 +711,8 @@ void BeginFrame(float deltaSeconds)
     io.DeltaTime = std::max(deltaSeconds, 1.0f / 1000.0f);
     ApplyGameInput();
     ApplyMouseInput();
+    eagler::thprac::sdl_keyboard_frame(io);
+    io.ConfigDragClickToInputText = true;
     ImGui::NewFrame();
     g_FrameOpen = true;
 }

@@ -28,3 +28,7 @@ npm --prefix launcher run dev:workspace
 ## 源码与验证
 
 多人源码在 `web/cpp/multiplayer/` 和 `portable/multiplayer/`；共享 GLES、输入接口在 `portable/`。从 `ports/th10-mp/` 运行 `node portable/check-high-refresh-contract.mjs --multiplayer` 和 `node portable/check-presentation-purity.mjs --multiplayer`；纯度报告以 `unknown` 标记尚待归类的结果。
+
+## 普通版修改同步
+
+普通版目录历史通过真实 Git 合并接入 MP，来源与接收范围见[普通版与多人版同步](../../../docs/adaptation/port-sync.md)。通用功能、练习源码和专项检查沿普通版更新，MP 保留席位输入、回滚、旁观与多人录像所有权。构建配方继续选择对应模式。
