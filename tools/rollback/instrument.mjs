@@ -218,9 +218,10 @@ function initializeMarkerWord(binary, address) {
 }
 
 function optionsWithDefaults(options) {
-  const out = { ...DEFAULT_EXPORTS, ...options };
+  const out = { nativeFilter: false, ...DEFAULT_EXPORTS, ...options };
   for (const key of ['touch', 'marker']) if (typeof out[key] !== 'string' || !out[key]) fail(`invalid ${key} export name`);
   if (out.config !== null && (typeof out.config !== 'string' || !out.config)) fail('invalid config export name');
+  if (typeof out.nativeFilter !== 'boolean' || (out.nativeFilter && out.config === null)) fail('native-filter requires a configuration export');
   return out;
 }
 
@@ -286,6 +287,7 @@ export async function instrumentWasm(input, options = {}) {
       schema: INSTRUMENTATION_SECTION, magic: INSTRUMENTATION_MAGIC,
       exports: { touch: opts.touch, config: opts.config, marker: opts.marker },
       configAddress: cfg, markerAddress, functions: 0, stores: 0, copies: 0, fills: 0, inits: 0, maxWriteDepth: 0,
+      rangeFilter: opts.nativeFilter ? 'native-hook' : 'wasm',
     };
     const functions = [];
     const originalStart = module.getStart();
@@ -329,7 +331,8 @@ export async function instrumentWasm(input, options = {}) {
         // Most simulation writes are inside the heap. Short-circuit both the
         // unusual crossing case and the external root instead of eagerly
         // reading both complete range predicates for every scalar store.
-        if (config) call = module.if(cfgLoad(0), module.if(module.i32.ne(length(), c(0)),
+        if (opts.nativeFilter) call = module.if(cfgLoad(0), module.if(module.i32.ne(length(), c(0)), call));
+        else if (config) call = module.if(cfgLoad(0), module.if(module.i32.ne(length(), c(0)),
           module.if(module.if(overlaps(address, length, 1), c(1), overlaps(address, length, 3)), call)));
         else call = module.if(module.i32.ne(length(), c(0)), call);
         // Wasm memarg offsets are added without wrapping. A trapping effective
@@ -417,6 +420,7 @@ async function main(args) {
   for (const arg of args) {
     if (arg === '--verify') verify = true;
     else if (arg === '--no-config') options.config = null;
+    else if (arg === '--native-filter') options.nativeFilter = true;
     else if (/^--(touch|config|marker)=.+/.test(arg)) { const at = arg.indexOf('='); options[arg.slice(2, at)] = arg.slice(at + 1); }
     else if (arg.startsWith('-')) fail(`unknown option ${arg}`);
     else positional.push(arg);

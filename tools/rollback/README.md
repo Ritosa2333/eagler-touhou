@@ -15,7 +15,9 @@ node --test tools/rollback/instrument.test.mjs
 
 插桩保留原有函数索引顺序，Emscripten 输出的函数索引 symbol map 可继续用于崩溃与性能采样。增加局部变量时，工具按原始顺序一次重建完整函数列表，并保留导出、间接调用表和 start 函数的绑定。
 
-热路径先判断模拟堆命中，按需检查跨界写入和外部 root；函数内优化清除常量判断与多余局部变量，并保持函数索引。C++ trampoline 对同帧已记录的标量写入直接返回，未对齐写入同时检查首尾两个块。
+默认模式在 Wasm 写入位置判断模拟堆与外部 root 的范围交集。正式游戏构建使用 `--native-filter`，在写入位置只检查追踪开关与非零长度，把范围判断集中到不参与插桩的 C++ trampoline，减少重复的 Wasm 指令。两种模式均保留有效地址溢出检查。函数内优化清除常量判断与多余局部变量，并保持函数索引。
+
+C++ trampoline 对状态区之外的写入直接返回；对同帧已记录的标量写入也直接返回，未对齐写入同时检查首尾两个块。这些快速判断只读取内存；需要保存首次写入内容时，先关闭追踪再调用日志辅助函数。`--native-filter` 要求使用具备完整范围裁剪与递归保护的后端，并保留配置导出。
 
 ## C++ 导出约定
 
@@ -37,7 +39,7 @@ touch、config、marker 三个函数本身不插桩。touch 在进入日志辅�
 
 测试实例化真实 Wasm，比较插桩前后的内存结果，并用独立日志恢复已跟踪区域。覆盖标志检查、标量宽度、向量存储、两个状态区、未对齐跨块、两端跨界、嵌套操作数求值、递归、被动数据段初始化、数据段释放及原始陷阱行为。
 
-`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后执行同一个插桩步骤。测试先验证原始模块拒绝初始化，再为每个场景创建独立实例，检查容器与分配器元数据恢复、外部 root 邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域和失败状态。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
+`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后分别使用默认模式和 `--native-filter` 插桩。测试先验证原始模块拒绝初始化，再为每种模式的五个场景创建独立实例，检查容器与分配器元数据恢复、跨越外部 root 两端的写入及邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域、失败状态，以及同时覆盖已记录块和未记录块的非对齐标量写入。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
 
 构建限定为单个、非共享 wasm32 线性内存。原子操作、SIMD lane 内存操作、memory64、多内存和未知指令形态会明确中止插桩。宿主 JavaScript 直接写入线性内存需要在对应桥接处接入 touch，或使用系统区域承载这些写入；Wasm 指令插桩覆盖的是模块内部执行的写入。
 

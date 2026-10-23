@@ -58,17 +58,21 @@ async function main() {
   assert.equal(uninstrumented._eagler_write_journal_test(-1), 0, 'raw Wasm must reject journal initialization');
   console.log('Uninstrumented module correctly rejects journal initialization');
 
-  const { bytes, report } = await instrumentWasm(raw);
+const profiles = [];
+for (const nativeFilter of [false, true]) {
+  const name = nativeFilter ? 'native-hook' : 'wasm';
+  const { bytes, report } = await instrumentWasm(raw, { nativeFilter });
   await verifyInstrumentedWasm(bytes);
-  await writeFile(join(output, 'fixture.instrumented.wasm'), bytes);
-  await writeFile(join(output, 'instrumentation.json'), `${JSON.stringify(report, null, 2)}\n`);
-  for (const scenario of [0, 1, 2, 3]) {
+  await writeFile(join(output, `fixture.${name}.wasm`), bytes);
+  for (const scenario of [0, 1, 2, 3, 4]) {
     const instance = await createModule({ wasmBinary: bytes });
     assert.equal(instance._eagler_rb_instrumented(), INSTRUMENTATION_MAGIC, 'patched marker is callable through the compiled loader');
-    assert.equal(instance._eagler_write_journal_test(scenario), 1, `C++ journal scenario ${scenario}`);
+    assert.equal(instance._eagler_write_journal_test(scenario), 1, `C++ journal ${name} scenario ${scenario}`);
   }
-  await writeFile(join(output, 'result.json'), `${JSON.stringify({ success: true, uninstrumentedRejected: true, scenarios: [0, 1, 2, 3], report }, null, 2)}\n`);
-  console.log(`C++ Wasm journal fixture passed (raw rejection + 4 scenarios). Artifacts: ${output}`);
+  profiles.push({ name, scenarios: [0, 1, 2, 3, 4], report });
+}
+await writeFile(join(output, 'result.json'), `${JSON.stringify({ success: true, uninstrumentedRejected: true, profiles }, null, 2)}\n`);
+console.log(`C++ Wasm journal fixture passed (raw rejection + 5 scenarios in both profiles). Artifacts: ${output}`);
 }
 
 try { await main(); }

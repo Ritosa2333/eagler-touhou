@@ -6,6 +6,8 @@ export function installFramebufferProof(){
  if(w.__framebufferProof)return;
  const bind=gl.bindFramebuffer,blit=gl.blitFramebuffer;
  let read=gl.getParameter(gl.READ_FRAMEBUFFER_BINDING),draw=gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING),last=null;
+ const samples=new Map(),sampleLimit=16,readbackLimit=64;
+ let presentation=0,sampledPresentation=0,sampleReadbacks=0,sampling=true;
  gl.bindFramebuffer=function(target,value){
   const result=bind.call(this,target,value);
   if(target===gl.FRAMEBUFFER||target===gl.READ_FRAMEBUFFER)read=value;
@@ -15,10 +17,10 @@ export function installFramebufferProof(){
  gl.blitFramebuffer=function(...args){
   const result=blit.apply(this,args);
   if(!draw&&read&&(args[8]&gl.COLOR_BUFFER_BIT)&&args[0]===0&&args[1]===0)
-   last={framebuffer:read,width:args[2],height:args[3]};
+   last={framebuffer:read,width:args[2],height:args[3],presentation:++presentation};
   return result;
  };
- w.__framebufferProof={read(){
+ function snapshot(){
   if(!last||last.width!==640||last.height!==480)throw Error('Missing real 640x480 presentation framebuffer');
   if(gl.getParameter(gl.PIXEL_PACK_BUFFER_BINDING))throw Error('Unexpected pixel pack buffer binding');
   const before=read,alignment=gl.getParameter(gl.PACK_ALIGNMENT),bytes=new Uint8Array(last.width*last.height*4);
@@ -27,9 +29,32 @@ export function installFramebufferProof(){
    gl.readPixels(0,0,last.width,last.height,gl.RGBA,gl.UNSIGNED_BYTE,bytes);
    const error=gl.getError();if(error!==gl.NO_ERROR)throw Error('Framebuffer readback GL error '+error);
   }finally{gl.bindFramebuffer(gl.READ_FRAMEBUFFER,before);gl.pixelStorei(gl.PACK_ALIGNMENT,alignment);}
-  let binary='';for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
-  return {width:last.width,height:last.height,format:'RGBA8 bottom-left',base64:btoa(binary)};
- }};
+  return {width:last.width,height:last.height,format:'RGBA8 bottom-left',bytes};
+ }
+ function encode(value){
+  const {bytes,...metadata}=value;let binary='';
+  for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
+  return {...metadata,base64:btoa(binary)};
+ }
+ w.__framebufferProof={
+  read(){return encode(snapshot());},
+  // Called in the same post-draw observer as the confirmed native fields.
+  // Keep owned pixels: the renderer reuses the framebuffer on later frames.
+  capture(key){
+   if(samples.has(key))return {key,presentation:samples.get(key).presentation};
+   if(!sampling||sampleReadbacks>=readbackLimit||!last||last.presentation===sampledPresentation)return null;
+   const value={...snapshot(),presentation:last.presentation};
+   sampledPresentation=last.presentation;++sampleReadbacks;samples.set(key,value);
+   if(samples.size>sampleLimit)samples.delete(samples.keys().next().value);
+   return {key,presentation:value.presentation};
+  },
+  sampleKeys(){return [...samples.keys()];},
+  readSample(key){const value=samples.get(key);return value?{key,...encode(value)}:null;},
+  stopSampling(){
+   sampling=false;const result={sampleReadbacks,retainedSamples:samples.size,sampleLimit,readbackLimit};
+   samples.clear();return result;
+  },
+ };
 }
 
 // The playfield is the native 384x448 viewport at (32,16). Keep the complete

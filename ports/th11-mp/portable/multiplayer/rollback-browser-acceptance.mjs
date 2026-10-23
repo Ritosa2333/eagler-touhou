@@ -216,8 +216,11 @@ function installProbe(config){
           // Exact snapshots are observed only after native correction has completed
           // and every input through this post-tick state is confirmed.
           if(state.phase==='drain'&&game.length===56&&game[3]===2&&net[4]!==0xffffffff&&net[4]+1>=game[4]&&
-             !rollback[3]&&!rollback[23]&&rollback[0]===1)
+             !rollback[3]&&!rollback[23]&&rollback[0]===1){
+            if(globalThis.__framebufferProof)
+              sample.pixelSample=globalThis.__framebufferProof.capture(net[12]+':'+game[4]);
             push(state.tail,sample,1200);
+          }
         }
         if(row)row.observerMs+=performance.now()-entry;
       };
@@ -350,7 +353,7 @@ try{
   }
   if(replayOracle){const f=fileIdentity(resolve(import.meta.dirname,'replay-prefix-oracle.mjs'));report.identity.replayOracle=f;pinned.set(f.path,f.sha256);}
   if(replayOracle){const f=fileIdentity(resolve(import.meta.dirname,'framebuffer-proof.mjs'));report.identity.framebufferProof=f;pinned.set(f.path,f.sha256);}
-  report.pixelOracle={requested:pixelOracle,readbackPhase:'after measurement, confirmed pause boundary and exact Replay only',performanceWindowReadbacks:0};
+  report.pixelOracle={requested:pixelOracle,readbackPhase:'bounded confirmed post-draw pause samples after measurement; exact Replay after seek',performanceWindowReadbacks:0};
   let referenceInventory=null;
   if(referenceRuntime){
     const manifestFile=resolve(referenceRuntime,'manifest.json'),inventoryFile=resolve(referenceRuntime,'runtime-files.json');
@@ -585,14 +588,32 @@ try{
   report.pauseLifecycle.events.push({action:'managed-escape-up',checkerMs:performance.now()});
   // Read only small tail metadata until a common, fully-confirmed post-tick
   // owner snapshot exists. Keep native loops/network alive during this phase.
-  let common=null;const tailDeadline=Date.now()+10000;
+  let common=null,boundaryPixels=null;const tailDeadline=Date.now()+10000;
   while(!common){
-    const tails=await Promise.all(pages.map(p=>p.evaluate(()=>document.querySelector('iframe').contentWindow.__rollbackAcceptance.state.tail.slice(-180))));
+    const tails=await Promise.all(pages.map(p=>p.evaluate(pixels=>{
+      const w=document.querySelector('iframe').contentWindow,tail=w.__rollbackAcceptance.state.tail.slice(-180);
+      if(!pixels)return tail;
+      const keys=new Set(w.__framebufferProof.sampleKeys());
+      return tail.filter(sample=>sample.pixelSample&&keys.has(sample.pixelSample.key));
+    },pixelOracle)));
     const right=new Map(tails[1].map(s=>[s.net[12]+':'+s.game[4],s]));
-    for(const a of tails[0]){const b=right.get(a.net[12]+':'+a.game[4]);if(b){assert.deepEqual(canonical(a),canonical(b),'Same confirmed frame full exported native fields differ');common={frame:a.game[4],generation:a.net[12],left:a,right:b};}}
+    let candidate=null;
+    for(const a of tails[0]){const b=right.get(a.net[12]+':'+a.game[4]);if(b){assert.deepEqual(canonical(a),canonical(b),'Same confirmed frame full exported native fields differ');candidate={frame:a.game[4],generation:a.net[12],left:a,right:b};}}
+    if(candidate&&pixelOracle){
+      const key=candidate.generation+':'+candidate.frame;
+      const selected=await Promise.all(pages.map(p=>p.evaluate(key=>document.querySelector('iframe').contentWindow.__framebufferProof.readSample(key),key)));
+      // A bounded ring may retire a candidate between the metadata query and
+      // transfer. Select another common captured frame while both probes run.
+      if(selected.every(Boolean)){common=candidate;boundaryPixels=selected;}
+    }else if(candidate)common=candidate;
     if(common)break;const s=await smalls();for(const x of s)assert.ok(!x.error&&!x.shellError,JSON.stringify(x));
     if(Date.now()>tailDeadline)throw Error('No common fully-confirmed non-correcting native-field boundary; preserve uncovered result');
     await pause(50);
+  }
+  if(pixelOracle){
+    const sampling=await Promise.all(pages.map(p=>p.evaluate(()=>document.querySelector('iframe').contentWindow.__framebufferProof.stopSampling())));
+    report.pixelOracle.liveBoundary={frame:common.frame,generation:common.generation,
+      samples:boundaryPixels.map(({key,presentation,width,height,format},seat)=>({seat,key,presentation,width,height,format,...sampling[seat]}))};
   }
   report.confirmedBoundary=common;report.correctness={exportedNativeFieldsEqual:true,frame:common.frame,
     fullWorldBrowserOracle:false,exactWorldComponentEvidence:'world-oracle-01: 8 cases / 150373 checks / 1124 Update+Draw; see source-identified independent receipt',
@@ -660,7 +681,8 @@ try{
     for(let seat=0;seat<2;++seat){
       const proof=await replayPrefixOracle({browser:browsers[seat],livePage:pages[seat],origin:base,
         expected:seat?report.confirmedBoundary.right:report.confirmedBoundary.left,out,seat,
-        runtimePath:referenceRuntime?'/reference-runtime/':'/runtime/',pixels:pixelOracle});
+        runtimePath:referenceRuntime?'/reference-runtime/':'/runtime/',pixels:pixelOracle,
+        livePixels:boundaryPixels?.[seat],sharedResources});
       report.replayOracle.push(proof);save();
     }
     mark('exact-replay-oracle-complete');

@@ -186,7 +186,7 @@ if(multiplayer){
   // pass cannot produce a usable rollback build or a valid build receipt.
   const instrument=resolve(workspace,'../../tools/rollback/instrument.mjs');
   const wasmPath=loader.replace('.mjs','.wasm'),instrumentedPath=loader.replace('.mjs','.journal.wasm');
-  execFileSync(process.execPath,[instrument,wasmPath,instrumentedPath],{stdio:'inherit'});
+  execFileSync(process.execPath,[instrument,wasmPath,instrumentedPath,'--native-filter'],{stdio:'inherit'});
   execFileSync(process.execPath,[instrument,'--verify',instrumentedPath],{stdio:'inherit'});
   renameSync(instrumentedPath,wasmPath);
 }

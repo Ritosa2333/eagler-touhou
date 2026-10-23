@@ -40,7 +40,14 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
     if (scenario==0) {
         auto* original=root.state.object.get();
         const auto originalText=root.state.object->text;
+        std::array<std::uint8_t,sizeof(State)> beforeRoot{};
+        std::memcpy(beforeRoot.data(),&root.state,sizeof(State));
         assert(J::BeginFrame(10));
+        const std::array<std::uint8_t,4> crossing{0x93,0xa7,0x18,0x4b};
+        auto* rootBytes=reinterpret_cast<std::uint8_t*>(&root);
+        const auto stateOffset=reinterpret_cast<std::uintptr_t>(&root.state)-reinterpret_cast<std::uintptr_t>(&root);
+        std::memcpy(rootBytes+stateOffset-2,crossing.data(),crossing.size());
+        std::memcpy(rootBytes+stateOffset+sizeof(State)-2,crossing.data(),crossing.size());
         { J::GameScope game;
           root.state.value=21;
           root.state.values.resize(4000,0x11223344);
@@ -57,6 +64,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(J::EndFrame());
         root.hostBefore=0x1234; root.hostAfter=0x5678;
         assert(J::RestoreTo(10));
+        assert(std::memcmp(beforeRoot.data(),&root.state,sizeof(State))==0);
         assert(root.state.value==11&&root.state.values==std::vector<std::uint32_t>({1,2,3}));
         assert(root.state.object.get()==original&&root.state.object->number==17);
         assert(root.state.object->text==originalText);
@@ -108,6 +116,17 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(!J::RestoreTo(1)&&J::Failed());
         assert(root.state.value==200&&J::FrameCount()==2);
         J::Clear();assert(!J::Ready()&&!J::BeginFrame(3));
+    } else if (scenario==4) {
+        std::uint8_t* buffer=nullptr;
+        { J::GameScope game; buffer=static_cast<std::uint8_t*>(J::AllocateAligned(32,96)); }
+        std::memset(buffer,0x32,96);
+        assert(J::BeginFrame(0));
+        buffer[0]=0x77; // Only the first block is already dirty.
+        const std::uint64_t value=0x123456789abcdef0ull;
+        std::memcpy(buffer+31,&value,sizeof(value));
+        assert(J::EndFrame()&&J::RestoreTo(0));
+        assert(std::all_of(buffer,buffer+96,[](auto byte){return byte==0x32;}));
+        J::Release(buffer);
     } else return 0;
     std::printf("write-journal scenario %d passed\n",scenario);
     return 1;

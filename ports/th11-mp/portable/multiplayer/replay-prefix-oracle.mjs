@@ -7,28 +7,34 @@ import {createHash} from 'node:crypto';
 import {installFramebufferProof,comparePlayfield} from './framebuffer-proof.mjs';
 
 const fields=game=>[...game.slice(1,5),...game.slice(8)];
-export async function replayPrefixOracle({browser,livePage,origin,expected,out,seat,runtimePath='/runtime/',pixels=false}){
-  const captured=await livePage.evaluate(pixels=>{
+export async function replayPrefixOracle({browser,livePage,origin,expected,out,seat,runtimePath='/runtime/',pixels=false,livePixels=null,sharedResources=[]}){
+  if(pixels){
+    assert.ok(livePixels,'Pixel oracle requires an immutable confirmed-boundary sample');
+    assert.equal(livePixels.key,expected.net[12]+':'+expected.game[4],'Live pixels belong to the exact native-field boundary');
+  }
+  const captured=await livePage.evaluate(()=>{
     const w=document.querySelector('iframe').contentWindow,c=w.core;
     const bytes=c.th11_mp_replay_size();
     if(!bytes||bytes>4*1024*1024)throw Error('Missing/bounded native Replay export');
     const view=new Uint8Array(c.memory.buffer,c.th11_mp_replay_data(),bytes);
     let binary='';for(let i=0;i<view.length;i+=32768)binary+=String.fromCharCode(...view.subarray(i,i+32768));
-    return {base64:btoa(binary),pixels:pixels?w.__framebufferProof.read():null,recovery:typeof c.th11_mp_recovery_statistics==='function'?
+    return {base64:btoa(binary),recovery:typeof c.th11_mp_recovery_statistics==='function'?
       Array.from(new Uint32Array(c.memory.buffer,c.th11_mp_recovery_statistics(),8)):[]};
-  },pixels);
+  });
   const bytes=Buffer.from(captured.base64,'base64'),file=resolve(out,`peer-${seat}-actual-inputs.rpy`);
   writeFileSync(file,bytes,{flag:'wx'});
   const result={seat,file,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),
     frame:expected.game[4],liveRecovery:captured.recovery,passed:false,runtimePath,
-    scope:'Exact production playback vs corrected live exported native fields at the same recorded frame. Not full-world or pixel equality; 1x correctness lane only.'};
+    scope:pixels?'Exact production playback vs corrected live native fields and complete playfield pixels at the same confirmed post-draw frame; 1x correctness lane.':
+      'Exact production playback vs corrected live exported native fields at the same recorded frame. Not a full-world comparison; 1x correctness lane only.',
+    ...(pixels?{livePixelSample:{key:livePixels.key,presentation:livePixels.presentation}}:{})};
   const context=await browser.newContext({viewport:{width:660,height:510},serviceWorkers:'block'});
   try{
     const page=await context.newPage();const cdp=await context.newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});
     await page.goto(origin);await page.evaluate(path=>host.open(path),runtimePath);
     await page.waitForFunction(()=>host.ready(),null,{timeout:60000});
-    await page.evaluate(async()=>{await host.configure({replayViewer:true});await host.launch();});
+    await page.evaluate(async resources=>{await host.configure({replayViewer:true},resources);await host.launch();},sharedResources);
     if(pixels)await page.evaluate(installFramebufferProof);
     await page.evaluate(({base64,frame})=>{
       const w=document.querySelector('iframe').contentWindow,c=w.core;
@@ -58,7 +64,7 @@ export async function replayPrefixOracle({browser,livePage,origin,expected,out,s
     assert.deepEqual(fields(proof.actual),fields(expected.game),'Exact Replay and corrected live prefix disagree');
     if(pixels){
       const replay=await page.evaluate(()=>document.querySelector('iframe').contentWindow.__framebufferProof.read());
-      const liveBytes=Buffer.from(captured.pixels.base64,'base64'),replayBytes=Buffer.from(replay.base64,'base64');
+      const liveBytes=Buffer.from(livePixels.base64,'base64'),replayBytes=Buffer.from(replay.base64,'base64');
       for(const [kind,data]of [['live',liveBytes],['replay',replayBytes]])
         writeFileSync(resolve(out,`peer-${seat}-${kind}.rgba`),data,{flag:'wx'});
       result.pixels={...comparePlayfield(liveBytes,replayBytes),

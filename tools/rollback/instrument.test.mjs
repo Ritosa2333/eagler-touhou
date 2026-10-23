@@ -135,6 +135,27 @@ test('scalar store widths, integer/floating types and Wasm marker execute correc
   assert.equal(JSON.parse(new TextDecoder().decode(sections[0])).stores, 8);
 });
 
+test('native-filter delegates clipping while preserving tracking, bulk writes and traps', async () => {
+  const bytes = fixture(SCALAR_FUNCTIONS + BULK_FUNCTIONS);
+  const a = await running(bytes, { options: { nativeFilter: true } });
+  const baseline = await running(bytes, { instrumented: false });
+  const before = a.heap.slice();
+  for (const [name, args] of [['s32', [254, 0x12345678]], ['s64', [316, 0x123456789abcdefn]],
+    ['s32', [900, 0x332211]], ['fill', [510, 0x47, 8]], ['init', [300, 1, 4]], ['copy', [570, 260, 8]]]) {
+    a.f[name](...args); baseline.f[name](...args);
+  }
+  sameExecutionMemory(a.heap, baseline.heap);
+  assert(a.trace.some(row => row[1] === 900), 'the native hook owns range rejection');
+  a.restore(); sameTracked(a.heap, before);
+  a.clear(); a.tracking(false); a.f.s32(260, 42); assert.deepEqual(a.trace, []);
+  a.tracking(true); a.f.fill(256, 0, 0); assert.deepEqual(a.trace, []);
+  assert.throws(() => a.f.offset(0xfffffffc, 1n), WebAssembly.RuntimeError);
+  assert.deepEqual(a.trace, [], 'overflowing offsets never wrap into a native hook');
+  assert.equal(a.report.rangeFilter, 'native-hook');
+  assert.deepEqual(exportedFunctionIndices(a.bytes), exportedFunctionIndices(bytes));
+  await assert.rejects(instrumentWasm(bytes, { nativeFilter: true, config: null }), /requires a configuration/);
+});
+
 test('SIMD v128 whole stores are journaled with all 16 bytes', async () => {
   const bytes = fixture(`(func (export "vector") (param i32)
     (v128.store align=1 (local.get 0) (v128.const i32x4 1 2 3 4)))`);
