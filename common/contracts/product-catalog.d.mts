@@ -684,7 +684,8 @@ export declare const PRODUCT_GAMES: Readonly<{
             titleKey: "game.title.th15mp";
             gameplay: "cooperative";
             inputTiming: Readonly<{
-                rollbackLimit: 0;
+                rollbackLimit: 12;
+                sendPredictionLimit: 12;
                 measuredStartup: true;
                 manualDelayLimit: 9;
             }>;
@@ -1539,7 +1540,8 @@ export declare function createLocalProductManifest(): {
                 titleKey: "game.title.th15mp";
                 gameplay: "cooperative";
                 inputTiming: Readonly<{
-                    rollbackLimit: 0;
+                    rollbackLimit: 12;
+                    sendPredictionLimit: 12;
                     measuredStartup: true;
                     manualDelayLimit: 9;
                 }>;

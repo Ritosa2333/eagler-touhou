@@ -189,12 +189,22 @@ jobs:
       with:
         node-version: 24
         cache: npm
-        cache-dependency-path: launcher/package-lock.json
+        cache-dependency-path: |
+          launcher/package-lock.json
+          tools/rollback/package-lock.json
     - run: npm --prefix launcher ci --ignore-scripts
+    - name: Install write-journal instrumentation
+      if: matrix.variant == 'multiplayer' && (matrix.game == 'th11' || matrix.game == 'th15')
+      run: npm --prefix tools/rollback ci --ignore-scripts
     - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
         version: 6.0.9
         actions-cache-folder: emsdk-cache
+    - name: Verify write-journal Wasm and allocator
+      if: matrix.variant == 'multiplayer' && (matrix.game == 'th11' || matrix.game == 'th15')
+      run: |
+        node --test tools/rollback/instrument.test.mjs
+        node tools/rollback/memory-test.mjs
     - name: Compile selected source and verify provenance
       shell: bash
       run: node launcher/scripts/build-runtime.mjs --game=${{ matrix.game }} --variant=${{ matrix.variant }} --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
