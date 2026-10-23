@@ -30,9 +30,9 @@ int main(){
  assert(multiplayer_transfer_feedback(true,0,false,2).kind==Feedback::none);
  assert(multiplayer_transfer_feedback(true,0,false,3).value==3);
  assert(multiplayer_transfer_feedback(true,0,false,4).kind==Feedback::power);
- assert(multiplayer_transfer_feedback(true,45,true,4).kind==Feedback::life);
- assert(multiplayer_transfer_feedback(true,45,true,4).value==50);
- assert(multiplayer_transfer_feedback(true,100,true,0).value==100);
+ assert(multiplayer_transfer_feedback(true,120,true,4).kind==Feedback::life);
+ assert(multiplayer_transfer_feedback(true,120,true,4).value==3);
+ assert(multiplayer_transfer_feedback(true,152,true,0).value==4);
  assert(multiplayer_transfer_feedback(true,45,false,0).kind==Feedback::none);
  assert(multiplayer_transfer_feedback(false,45,true,4).kind==Feedback::none);
  assert(multiplayer_chapter_threshold(1)==1000000);

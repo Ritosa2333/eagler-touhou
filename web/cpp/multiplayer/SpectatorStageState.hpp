@@ -1,47 +1,31 @@
 #pragma once
-#if !TH15_MULTIPLAYER
-#error Cooperative spectator state is an MP-only owner
-#endif
-#include "SessionSetup.hpp"
-#include "../game/GameBattle.hpp"
-#include "../game/GameInput.hpp"
+#include "../game/ReplayStageSnapshot.hpp"
 #include <eagler/netplay/SpectatorStageScalars.hpp>
-
 namespace th15::multiplayer {
-// Portable state at a native stage-construction boundary. Restore writes
-// named values into freshly constructed owners and preserves their callbacks.
-struct SpectatorPilotState {
-    PlayerLifeSession resources;
-    PlayerMotion motion;
-    GameInput keys;
-    MultiplayerInput input;
-    Timer life_age,invulnerability,input_age,ready_age,shot_age,continuous_age;
-    Vec3 last_death_position;
-    i32 life_state=0,base_bombs=0,power_level=0,shoot_auxiliary=0,life_piece_tier=0;
-    bool shoot_auxiliary_active=false,ghost=false,spell_startup_bomb=false,life_latched=false;
-    u32 ghost_clock=0,ghost_random=0,life_hold=0,power_taps=0,power_gap=0;
-    i32 ghost_dx=0,ghost_dy=0;
-    std::array<float,8> option_angles{};
-    std::array<i32,9> laser_power{};
-    std::array<i32,3> reward_counters{};
-};
+// Native t15r stage headers, one per seat. Each header is 0x238 file bytes.
 struct SpectatorStageState {
-    static constexpr u32 Schema=1;
-    SessionSetup setup;
-    SessionState progress;
-    ItemScoreState score;
-    EnemyWorldState enemy;
-    Rng game_random,visual_random;
-    GameInput menu;
-    std::array<SpectatorPilotState,3> pilots;
-    u32 frame=0,application_frames=0;
-    i32 fragments=0;
+    static constexpr u32 Schema=2;
+    u32 frame=0,stage=0,seats=0;
+    std::array<std::array<u8,0x238>,3> headers{};
 };
-bool EncodeSpectatorStageState(const SpectatorStageState&,std::vector<u8>&);
-bool DecodeSpectatorStageState(const std::vector<u8>&,SpectatorStageState&);
-void CaptureSpectatorPilot(const MultiplayerPilot&,SpectatorPilotState&);
-bool RestoreSpectatorPilot(const SpectatorPilotState&,MultiplayerPilot&);
-bool RestoreSpectatorEnemyScalars(const EnemyWorldState&,EnemyWorldState&);
-// Input to this predicate is a decoded capsule, before touching native owners.
-bool ValidSpectatorStageState(const SpectatorStageState&);
+inline bool EncodeSpectatorStageState(const SpectatorStageState& s,std::vector<u8>& out){
+    if(s.stage<1||s.stage>7||s.seats<2||s.seats>3)return false;
+    Netplay::SpectatorScalars::Writer writer;
+    if(!writer.Values(SpectatorStageState::Schema,s.frame,s.stage,s.seats))return false;
+    for(unsigned i=0;i<s.seats;++i){ReplayStageSnapshot header;
+        if(u32(s.headers[i][0])+(u32(s.headers[i][1])<<8)!=s.stage||
+           !header.read(s.headers[i].data(),u32(s.headers[i].size()))||!writer.Array(s.headers[i]))return false;
+    }
+    out=writer.Bytes();return writer.Good();
+}
+inline bool DecodeSpectatorStageState(const std::vector<u8>& bytes,SpectatorStageState& out){
+    SpectatorStageState s;u32 schema=0;Netplay::SpectatorScalars::Reader reader(bytes);
+    if(!reader.Values(schema,s.frame,s.stage,s.seats)||schema!=SpectatorStageState::Schema||
+       s.stage<1||s.stage>7||s.seats<2||s.seats>3)return false;
+    for(unsigned i=0;i<s.seats;++i){ReplayStageSnapshot header;
+        if(!reader.Array(s.headers[i])||!header.read(s.headers[i].data(),u32(s.headers[i].size())))return false;
+        if(u32(s.headers[i][0])+(u32(s.headers[i][1])<<8)!=s.stage)return false;
+    }
+    if(!reader.Done())return false;out=s;return true;
+}
 }

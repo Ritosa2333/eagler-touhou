@@ -53,3 +53,32 @@ void ghost_rules(RetailAssets& files){
   require(twin.ghost_random==ghost.ghost_random&&twin.player->motion.position_fixed.x==ghost.player->motion.position_fixed.x&&twin.player->motion.position_fixed.y==ghost.player->motion.position_fixed.y,"Ghost drift depends on local seat");
  }
 }
+
+// A retained live pilot and a fresh Replay pilot must begin each stage with
+// the same private drift stream, including another death after revival.
+void ghost_stage_rules(RetailAssets& files){
+ for(unsigned count:{2u,3u})for(unsigned seat=0;seat<count;++seat){
+  World retained(files,count,0,{0,1,3}),fresh(files,count,count-1,{0,1,3});
+  auto& old=*retained.battle->pilots[seat];
+  require(old.game_over(),retained.battle->error);
+  for(unsigned n=0;n<331;++n)require(old.tick(),retained.battle->error);
+  StageAssets left(files,retained.animations,&retained.assets),right(files,fresh.animations,&fresh.assets);
+  require(left.load(2,0),left.error);require(right.load(2,0),right.error);
+  retained.progress.stage=fresh.progress.stage=2;
+  require(retained.battle->replace_stage(left.scripts,left.enemy_banks,left.spell_resources(0)),retained.battle->error);
+  require(fresh.battle->replace_stage(right.scripts,right.enemy_banks,right.spell_resources(0)),fresh.battle->error);
+  auto& twin=*fresh.battle->pilots[seat];
+  for(auto* pilot:{&old,&twin}){
+   pilot->player->motion.position={0,400,0};pilot->player->motion.position_fixed={0,51200};
+   require(pilot->game_over(),pilot->world.error);
+  }
+  const auto seed=retained.environment.game_rng.seed;const auto calls=retained.environment.game_rng.calls;
+  for(unsigned n=0;n<720;++n){
+   require(old.tick(),retained.battle->error);require(twin.tick(),fresh.battle->error);
+   require(old.player->motion.position_fixed.x==twin.player->motion.position_fixed.x&&old.player->motion.position_fixed.y==twin.player->motion.position_fixed.y,
+     "Retained ghost diverged from a fresh Replay pilot after stage transition at "+std::to_string(n));
+  }
+  require(retained.environment.game_rng.seed==seed&&retained.environment.game_rng.calls==calls,"Ghost stage reset consumed gameplay RNG");
+ }
+ std::puts("PASS: 2P/3P retained and fresh Replay ghost drift agrees for 720 frames after stage transition");
+}
