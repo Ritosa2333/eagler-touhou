@@ -15,7 +15,9 @@ extern "C" EMSCRIPTEN_KEEPALIVE const double* th15_probe_performance(){return fr
 namespace th15::sdl {
 std::unique_ptr<ApplicationState> make_application_state(){
 #if TH15_MULTIPLAYER && TH15_WRITE_JOURNAL
- if(!Netplay::WriteJournal::Initialize(nullptr,0))return {};
+ // TH15 retains native title ANM data alongside all multiplayer pilots and
+ // both scene owners during a stage transition.
+ if(!Netplay::WriteJournal::Initialize(nullptr,0,384u*1024u*1024u))return {};
 #endif
  TH15_GAME_SCOPE;return std::make_unique<ApplicationState>();
 }
