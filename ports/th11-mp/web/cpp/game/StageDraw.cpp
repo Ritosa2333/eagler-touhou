@@ -1,5 +1,6 @@
 #include "Stage.hpp"
 #include "AnmRenderer.hpp"
+#include "RollbackHooks.hpp"
 #include "ScreenFade.hpp"
 namespace th11 {
 namespace {
@@ -76,6 +77,9 @@ bool Stage::draw_foreground(AnmRenderer& renderer,SceneCamera& camera){
     auto& p=renderer.pipeline();p.depthWrite=false;p.depthCompare=Compare::Always;p.fog=false;return true;
 }
 bool stage_visible(const StageObject& object,Vec3 instance,const SceneCamera& camera,float maximum) noexcept {
+    // Geometry intermediates are local stack values; the scalar result and
+    // read-only inputs cannot write through a caller-owned return buffer.
+    TH11_HOST_SCOPE;
     const auto add=[](Vec3 a,Vec3 b){return Vec3{float(double(a.x)+b.x),float(double(a.y)+b.y),float(double(a.z)+b.z)};};
     const auto sub=[](Vec3 a,Vec3 b){return Vec3{float(double(a.x)-b.x),float(double(a.y)-b.y),float(double(a.z)-b.z)};};
     const Vec3 distance=sub(add(object.position,instance),add(camera.position,camera.eye_offset));

@@ -200,6 +200,7 @@ Statistics Stats() {
     if (heap) result.heap_used_kib=std::uint32_t(eagler_sim_used(heap)/1024);
     return result;
 }
+std::uint32_t LastFrameBlocks() { return statistics.last_blocks; }
 void Touch(void* pointer, std::size_t bytes) {
     if (!open || failed || !bytes) return;
     eagler_rb_config[0]=0;
@@ -222,6 +223,12 @@ EMSCRIPTEN_KEEPALIVE __attribute__((noinline)) std::uint32_t eagler_rb_instrumen
     // so calls inlined by wasm-opt read the same instrumentation version.
     static volatile std::uint32_t marker=0;
     return marker;
+}
+// An exported cold entry keeps wasm-opt from folding the complete capture loop
+// into the frequently called trampoline. Its caller has already disabled
+// tracing; retaining this symbol also preserves the engine's small hot body.
+EMSCRIPTEN_KEEPALIVE __attribute__((noinline)) void eagler_rb_capture(std::uint32_t address, std::uint32_t bytes) {
+    Netplay::WriteJournal::Touch(reinterpret_cast<void*>(std::uintptr_t(address)),bytes);
 }
 EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t bytes) {
     // This exported trampoline is excluded by the instrumentation pass. Disable
@@ -254,7 +261,7 @@ EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t b
         if (contained && tags[first]==tag && tags[last]==tag) return;
     }
     eagler_rb_config[0]=0;
-    Netplay::WriteJournal::Touch(reinterpret_cast<void*>(std::uintptr_t(address)),bytes);
+    eagler_rb_capture(address,bytes);
 }
 }
 

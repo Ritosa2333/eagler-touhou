@@ -167,7 +167,7 @@ bool rollback_seal(MultiplayerRollbackTick& frame){
     const bool textures=graphics.EndTextureRollbackFrame();
     const bool sealed=rollback_journal.EndFrame();
     if(!memory||!textures||!sealed||rollback_journal.Failed())return rollback_fail("TH11 rollback checkpoint capacity or ownership failure");
-    const auto memory_blocks=Netplay::WriteJournal::Stats().last_blocks;
+    const auto memory_blocks=Netplay::WriteJournal::LastFrameBlocks();
     rollback_peak_bytes=std::max(rollback_peak_bytes,u32(rollback_journal.BytesForFrame(frame.frame))+memory_blocks*32);
     rollback_peak_blocks=std::max(rollback_peak_blocks,u32(rollback_journal.BlocksForFrame(frame.frame))+memory_blocks);
     return true;

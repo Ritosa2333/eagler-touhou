@@ -7,7 +7,7 @@ struct AdonisSpectatorTiming {
     std::uint64_t sessionId=0;std::uint32_t gameplayAbi=0,rttP95Us=0,lost=0,samples=0;
     bool automatic=false;
     bool Valid()const{
-        return (game==8||game==10||game==11||game==15)&&(mode==1||mode==2)&&(game!=15||mode==1)&&sessionId&&gameplayAbi&&delay<=9&&prediction<=2&&
+        return (game==8||game==10||game==11||game==15)&&(mode==1||mode==2)&&sessionId&&gameplayAbi&&delay<=9&&prediction<=2&&
             rttP95Us>0&&rttP95Us<=1'000'000&&samples>=96&&samples<=120&&lost<=72&&
             fullDelay==std::max(1u,((rttP95Us/2)*60+999999)/1000000)&&
             (mode!=1||!prediction)&&prediction<=fullDelay-(automatic?1u:0u)&&

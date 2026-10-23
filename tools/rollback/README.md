@@ -19,6 +19,8 @@ node --test tools/rollback/instrument.test.mjs
 
 C++ trampoline 对状态区之外的写入直接返回；对同帧已记录的标量写入也直接返回，未对齐写入同时检查首尾两个块。这些快速判断只读取内存；需要保存首次写入内容时，先关闭追踪再调用日志辅助函数。`--native-filter` 要求使用具备完整范围裁剪与递归保护的后端，并保留配置导出。
 
+原生后端另保留 `eagler_rb_capture` 冷路径导出，避免链接优化把完整的捕获循环重新内联到高频 trampoline；插桩器的必需导出约定保持下表三项。封帧通过 `LastFrameBlocks()` 读取已维护的块数，完整 `Stats()` 的分配器遍历用于诊断查询。
+
 ## C++ 导出约定
 
 | Wasm 导出 | 签名 | 作用 |
