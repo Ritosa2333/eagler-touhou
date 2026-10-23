@@ -57,8 +57,22 @@ i32 draw_frame_rate(void*){
  return app->captions.enqueue({{588,470,0},style,text})?1:5;
 }
 void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystick(id);}
-// Keep the prior sample on stage loads so held Bomb/Pause keys gain no new edge.
-void clear_inputs(bool preserve_keyboard=false){practice_pointers.reset();if(!preserve_keyboard)th15_browser_keyboard_reset();ThpracUi::reset_input();EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});for(auto& key:keyboard_map)if(!preserve_keyboard)key.hosted=false;SDL_ResetKeyboard();gestures.reset();if(!preserve_keyboard)controls={};if(app){app->practice.input.reset();app->keyboard_state={};app->touch={};if(app->scene())app->scene()->battle.player->motion.touch={};}}
+// Stage loads retain physical holds and their edge history.
+void clear_inputs(bool preserve_keyboard=false){
+ practice_pointers.reset();gestures.reset();
+ if(!preserve_keyboard){
+  th15_browser_keyboard_reset();ThpracUi::reset_input();
+  for(auto& key:keyboard_map)key.hosted=false;
+  controls={};
+ }else ThpracUi::cancel_pointer();
+ EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});
+ SDL_ResetKeyboard();
+ if(app){
+  if(!preserve_keyboard)app->practice.input.reset();
+  app->keyboard_state={};app->touch={};
+  if(app->scene())app->scene()->battle.player->motion.touch={};
+ }
+}
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->session)return value;
@@ -149,7 +163,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
  // The shared shell already rendered its two-second startup animation while
  // initialization ran. Do not add another native loading hold after it.
  if(app->loading_frames>=120){app->loading_startup=false;app->loading_debt=0;}
- if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
+ if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;loading_held=loading_preserve_keyboard=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended){cadence.reset();presentation.reset();app->graphics.presentation.reset();return EM_TRUE;}
