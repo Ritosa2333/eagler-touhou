@@ -26,6 +26,25 @@ test('explicit cancellation and disabling touch still release toggled focus',()=
   const touch=input();touch.cancel();assert.equal(touch.sample(game()).held&8,0);
   touch.controls(snapshot(),game());touch.configure({touchEnabled:false});assert.equal(touch.focus,false);
 });
+test('pause and confirmation retain the toggle but release contacts, Bomb and axes',()=>{
+  const touch=input();touch.pointer({id:1,type:'down',x:100,y:200},game(),0);
+  touch.pending=2;touch.axes=[1,1];touch.cancel({preserveFocus:true});
+  for(const scene of ['pause','pause-confirm','pause']){
+    const state={key:scene,kind:'menu',paused:true,instance:'1:1',ready:false};
+    assert.deepEqual(touch.sample(state),{held:0,pressed:0,motion:null});
+    assert.equal(touch.focus,true);assert.equal(touch.points.size,0);
+  }
+  touch.cancel({preserveFocus:true});assert.deepEqual(touch.sample(game()),{held:9,pressed:0,motion:null});
+});
+test('leaving a pause for title or another run releases toggle focus',()=>{
+  for(const state of [{key:'title',kind:'menu',instance:'',ready:true},game('2:1')]){
+    const touch=input();touch.sample({key:'pause',kind:'menu',paused:true,instance:'1:1',ready:false});
+    touch.sample(state);assert.equal(touch.focus,false);
+  }
+});
+for(const mode of ['hold-button','two-finger'])test(`${mode} releases on pause even when preserving toggle focus`,()=>{
+  const touch=input(mode);touch.cancel({preserveFocus:true});assert.equal(touch.focus,false);
+});
 for(const mode of ['hold-button','two-finger'])test(`${mode} does not acquire a persistent focus latch on respawn`,()=>{
   const touch=input(mode);assert.equal(touch.sample(game('1:2')).held&8,0);
 });

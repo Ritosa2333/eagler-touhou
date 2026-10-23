@@ -48,7 +48,7 @@ test('renderer snapshots only the current background pass, copies Main81 once an
  assert.equal(events[mainAt][14],3,'native main81 uses ONE/ZERO copy blend');
  assert.deepEqual(events.filter(e=>e[0]==='scissor').map(e=>e.slice(1)),[[13,0,422,480],[32,16,384,448]],
   'original destination viewport clears before the saved draw clip is restored');
- assert.deepEqual(renderer.textures.get('text:2'),{texture:'native-background',w:640,h:480,defaultWrap:7,flipY:true,available:true});
+ assert.deepEqual(renderer.textures.get('text:2'),{texture:'native-background',w:640,h:480,defaultWrap:7,flipY:true,available:true,surfaceInitialized:true});
 });
 test('copied background strips invert framebuffer V once while ordinary image atlases preserve their V',()=>{
  const renderer=Object.create(Renderer.prototype),capture={texture:{},w:640,h:480,flipY:true};
@@ -101,4 +101,13 @@ test('opaque RGB drawing buffer rejects RGBA capture while failed copies never c
    assert.equal(renderer.stageSurfaceAvailable,true,'native STD17 texture remains available after a compatible RGB copy');
   }
  }
+});
+test('subsequent background frames reuse verified RGB storage without synchronous error queries',()=>{
+ const renderer=Object.create(Renderer.prototype),calls=[];renderer.textures=new Map();
+ renderer.gl={TEXTURE_2D:1,RGB:2,NO_ERROR:0,createTexture:()=>({}),bindTexture:()=>{},texParameteri:()=>{},enable:()=>{},disable:()=>{},scissor:()=>{},clearColor:()=>{},clear:()=>{},
+  getError:()=>{calls.push('error');return 0;},copyTexImage2D:()=>calls.push('allocate'),copyTexSubImage2D:(...args)=>calls.push(args)};
+ renderer.flush=()=>{};renderer.region=()=>{};
+ for(let i=0;i<2;i++){renderer.stageSurfaceCopied=renderer.stageSurfaceComposited=renderer.stageSurfaceAvailable=false;renderer.stageSurface(14);}
+ assert.deepEqual(calls,['allocate','error',[1,0,0,0,0,0,640,480]]);
+ assert.equal(renderer.stageSurfaceAvailable,true);
 });

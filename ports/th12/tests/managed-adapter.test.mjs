@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {PresentationCadence} from '../src/presentation-cadence.mjs';
 import {installManagedShell,runtimeOptions} from '../src/managed-shell.mjs';
 import {ManagedInput} from '../src/managed-input.mjs';
 
@@ -47,7 +48,7 @@ test('managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and
   assert.ok(start>=0&&end>start);
   for(const hz of [60,120,144]){
     let ticks=0,draws=0;
-    const context={terminated:false,backgrounded:false,fatalError:false,last:0,lastPresentation:0,accumulator:0,
+    const context={terminated:false,backgrounded:false,fatalError:false,last:0,lastPresentation:0,accumulator:0,presentationInterval:1000/60,presentationCadence:new PresentationCadence(),
       runtimeOptions:{limitPresentationTo60:false},TICK:1000/60,meter:{frame(){}},loadingScreen:{advance(){},renderOverlay(){}},
       ready:true,busy:false,session:null,model:{actions:[],state:{scene:'playing'}},profile:{settings:{keyMap:{}}},
       keyDown:()=>false,previousPadUI:0,logicalStep:1000/60,captureThisTick:false,launched:false,
@@ -55,6 +56,7 @@ test('managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and
     runInNewContext(source.slice(start,end)+';globalThis.frame=frame;',context);
     for(let index=1;index<=hz*10;index++)context.frame(index*1000/hz);
     assert.ok(Math.abs(ticks-600)<=1,`${hz} Hz: ${ticks} logic steps`);assert.equal(draws,hz*10);
+    assert.equal(context.presentationCadence.fastFrames,hz===60?0:4);
     context.backgrounded=true;context.frame(20_000);assert.equal(context.accumulator,0);
     context.backgrounded=false;context.frame(20_001);assert.ok(Math.abs(ticks-600)<=1);
   }

@@ -39,14 +39,15 @@ void playerMissCollision() {
   if (invuln || playerState != 1)
     return;
   sound_system::queue.play(2, 0, false);
+  // 438370 precedes Purple's43837f patch: invulnerability prevents death,
+  // not the collision's loss of spell-capture eligibility.
+  spellState.onMiss(playerBomb.active);
   // Purple patches43837f to state1 and bypasses the death-effect birth,
   // while retaining4384fd's miss sound and438546's six invulnerability ticks.
   if (practice::tool(practice::Invulnerable)) {
     invuln = 6;
     return;
   }
-  // 438370 loses capture eligibility on collision, before the deathbomb window.
-  spellState.onMiss(playerBomb.active);
   playerState = 4;
   // 43839e..438498 creates79 then32 copies of80. Original ANM80's
   // first tick owns its four random samples; presentation never creates them.

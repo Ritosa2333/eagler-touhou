@@ -48,7 +48,7 @@ exports.push('_th12_score_popups','_th12_score_popups_ptr','_th12_score_popups_s
 exports.push('_th12_score_stored');
 exports.push('_th12_start_full_game','_th12_set_full_game_mode','_th12_start_next_stage','_th12_continue_game','_th12_stage_flow','_th12_stage_flow_size');
 exports.push('_th12_motion','_th12_motion_result','_th12_player_state','_th12_player_instance','_th12_player_speed');
-exports.push('_th12_presentation_motion','_th12_presentation_motion_size');
+exports.push('_th12_presentation_motion','_th12_presentation_motion_size','_th12_presentation_motion_binary');
 exports.push('_th12_practice_enabled','_th12_practice_reset','_th12_practice_configure','_th12_practice_start','_th12_practice_prepare_replay','_th12_practice_replay','_th12_practice_tools','_th12_practice_speed','_th12_practice_interval','_th12_practice_state','_th12_practice_state_size','_th12_practice_boss_music','_th12_practice_everlasting_bgm');
 exports.push('_th12_practice_input');
 exports.push('_th12_practice_damage_begin','_th12_practice_damage_reset','_th12_practice_damage_transition','_th12_practice_damage_load','_th12_practice_damage_stage','_th12_practice_damage_stage_words','_th12_practice_damage_state','_th12_practice_damage_state_size');

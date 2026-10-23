@@ -29,11 +29,14 @@ import {prepareLocalization,isLocalizationResourcePath} from '../src/localizatio
 import {PracticeBridge,createPracticeMetadata} from '../src/practice/bridge.mjs';
 import {PracticeOverlay} from '../src/practice/overlay.mjs';
 import {DamageSourceBridge} from '../src/practice/damage-sources.mjs';
+import {needsPresentationInterpolation,PresentationCadence} from '../src/presentation-cadence.mjs';
 
 const $=id=>document.getElementById(id),canvas=$('screen'),keys=new Set(),hostKeys=new Set(),meter=createFrameRateMeter(),TICK=1000/60;
 const assets=new RuntimeAssets(),keyDown=code=>keys.has(code)||hostKeys.has(code);
 const managedInput=new ManagedInput(),touch=new TouchInput();
 let previousPresentation=null,currentPresentation=null;
+let presentationInterval=TICK;
+const presentationCadence=new PresentationCadence();
 let replayWorkspace=null,viewerMusic={id:null,ticks:0};
 let practiceBridge=null,practiceUI=null,damageSources=null,practiceCaptured=false,logicalStep=TICK,captureThisTick=true,localization=null;
 let emit=()=>{},launched=false,terminated=false,runtimeMusic='ogg',runtimeOptions={limitPresentationTo60:false},firstFrame=false,lastPresentation=0,renderedFrames=0,healthAt=0,maxFrameGap=0,backgrounded=document.hidden;
@@ -45,11 +48,12 @@ const hud=()=>[...new Float32Array(core.HEAPU8.buffer,core._th12_hud(),core._th1
 async function bytes(url){const r=await assets.fetch(url);if(!r.ok)throw Error('资源加载失败 '+url);return new Uint8Array(await r.arrayBuffer());}
 function notice(text=''){$('notice').textContent=text;}
 function fail(error){if(fatalError)return;fatalError=true;busy=true;audio.musicPaused=true;audio.pendingTrack=null;++audio.request;audio.music?.stop();audio.effects?.stop();clearKeys();notice('运行中断：'+error.message);console.error(error);emit({event:'error',message:error.message});}
-function clearKeys({touchToo=true,practiceToo=true}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel();if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);resetGamePresentation();}
+function clearKeys({touchToo=true,practiceToo=true,preserveFocus=false}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel({preserveFocus});if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);resetGamePresentation();}
 function resetGamePresentation(){previousPresentation=currentPresentation=null;renderer?.resetPresentation();}
-function gamePresentationOptions(){return {currentFps:meter.value,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
+function interpolateGamePresentation(){return !runtimeOptions.limitPresentationTo60&&presentationCadence.fastFrames===4&&needsPresentationInterpolation(presentationInterval,logicalStep);}
+function gamePresentationOptions(){return {presentationContinuity:interpolateGamePresentation(),currentFps:meter.value,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
 function captureGamePresentation(){if(!session||!ready)return;previousPresentation=currentPresentation;currentPresentation=renderer.capturePresentation(core,gamePresentationOptions());}
-function drawGamePresentation(interpolate=false){if(!currentPresentation)captureGamePresentation();if(currentPresentation)renderer.renderPresentation(previousPresentation,currentPresentation,interpolate&&!runtimeOptions.limitPresentationTo60?Math.min(1,accumulator/logicalStep):1);}
+function drawGamePresentation(interpolate=false){if(!currentPresentation)captureGamePresentation();if(currentPresentation)renderer.renderPresentation(previousPresentation,currentPresentation,interpolate&&interpolateGamePresentation()?Math.min(1,accumulator/logicalStep):1);}
 function updatePracticeUI(){
   if(!practiceUI||!model)return;
   practiceUI.update({scene:model.state.scene,replay:!!session?.replay,menu:model.state.scene==='practice'?model.practiceMenu:null,menuReady:model.ready()});
@@ -69,10 +73,11 @@ function initializeReplayStage(replay,part){
 }
 function touchState(){
   const scene=model?.state.scene,playing=ready&&!busy&&session&&scene==='playing';
+  const paused=!!(ready&&!busy&&session&&!session.replay&&['pause','pause-confirm'].includes(scene));
   const h=playing?hud():null,message=playing?readJSON('message'):null;
   const kind=playing?(session.replay?'replay':message?.active&&(message.flags&1||message.wait>0)?'dialogue':'game'):'menu';
-  const instance=playing?`${session.stage}:${core._th12_player_instance()}`:'';
-  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,ready:!!playing&&core._th12_player_state()===1,
+  const instance=playing||paused?`${session.stage}:${core._th12_player_instance()}`:'';
+  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,paused,ready:!!playing&&core._th12_player_state()===1,
     x:h?Math.round(h[1]*128):0,y:h?Math.round(h[2]*128):0,
     fast:playing?core._th12_player_speed(0):0,slow:playing?core._th12_player_speed(1):0,keyFocused:ready&&keyDown(profile.settings.keyMap.focus)};
 }
@@ -372,7 +377,7 @@ async function actions(){
     else if(action.type==='sound')effect({id:action.id});
     else if(action.type==='titleLogo')presentation.titleLogo(action.interrupt);
     else if(action.type==='fadeMusic')fadeMusic(action.seconds);
-    else if(action.type==='resume'){clearKeys();await resumeAudio();}
+    else if(action.type==='resume'){clearKeys({preserveFocus:true});await resumeAudio();}
     else if(action.type==='settings'){await profile.saveSettings(action.settings);audio.music?.setVolume(runtimeMusic==='none'?0:nativeMusicGain(profile.settings.bgmVolume));audio.effects?.setVolume(profile.settings.seVolume);if(!audio.music?.source&&audio.track&&!audio.musicPaused&&!audio.pendingTrack)await playMusic(audio.track,{authorized:true});}
     else if(action.type==='practiceReset'){practiceBridge.reset();damageSources.reset();}
     else if(action.type==='saveName')await recordRunOnce(action.result,action.name);
@@ -417,7 +422,7 @@ function tick(){
   if(practiceCaptured){if(['playing','demo'].includes(model.state.scene)){gameTick({held:0});if(captureThisTick)captureGamePresentation();}else{model.tick({held:0,pressed:0});presentation.tick(model.state);}updatePracticeUI();return;}
   const ui=sampled.ui|pad|touched.held,pressed=sampled.pressed|(pad&~previousPadUI)|touched.pressed;previousPadUI=pad;
   if(ending){ending.tick({held:ui,pressed});if(ending.finished){profile.recordEndingSeen(ending.message.id);profile.save().catch(fail);ending=null;model.finish({kind:'clear',...pendingResult});}return;}
-  if(model.state.scene==='playing'&&(pressed&(256|0x200000))){model.openPause(resultData(false));clearKeys();if(pressed&0x200000)model.tick({held:0x200000,pressed:0x200000});presentation.tick(model.state);return;}
+  if(model.state.scene==='playing'&&(pressed&(256|0x200000))){model.openPause(resultData(false));clearKeys({preserveFocus:true});if(pressed&0x200000)model.tick({held:0x200000,pressed:0x200000});presentation.tick(model.state);return;}
   model.tick({held:ui,pressed});presentation.tick(model.state);
   // A scene may queue start/continue/retry/resume before the async action
   // worker has replaced or reinitialised the session. Never tick that old
@@ -431,6 +436,8 @@ function frame(now){
   if(runtimeOptions.limitPresentationTo60&&now-lastPresentation<TICK-.5){requestAnimationFrame(frame);return;}
   lastPresentation=now;
   const elapsed=Math.max(0,Math.min(250,now-last));last=now;meter.frame(now);
+  presentationInterval=elapsed;
+  presentationCadence.observe(elapsed,logicalStep);
   try{if(!fatalError){
     loadingScreen?.advance(elapsed);
     if(loadingScreen?.startup||loadingScreen?.waiting){loadingScreen.renderBase(meter.value);}

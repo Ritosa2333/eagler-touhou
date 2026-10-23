@@ -6,7 +6,7 @@ import {readCoreUfo,ufoTextPoses,ufoTextRenderPriority} from './ufo-presentation
 import {asciiGlyphs} from './ascii-presentation.mjs';
 import {fpsTextDescriptors} from './fps-presentation.mjs';
 import {stageClearText,stageTransitionPose} from './stage-clear-presentation.mjs';
-import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
+import {readCoreDrawSchedule,orderPresentation,animationLayerPriority} from './draw-scheduler.mjs';
 import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
 import {thcrapLayout} from './localization/layout.mjs';
 import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
@@ -27,6 +27,14 @@ export function bossHealthRectangles(s){
   return rectangles;
 }
 export function animationBankName(bank,stage=1){const suffix=String(stage).padStart(2,'0');return ['bullet','enemy','stgenm'+suffix,'stgenm'+suffix+'m','pl00','pl01','pl02','front','text','st'+suffix+'logo','stage'+suffix,'ascii'][bank]??null;}
+export function alwaysHitboxPoses(sampler,frame,x,y){
+  // Use the complete settled77 ->76 marker, not the shrinking birth frame's
+  // first quad. This display-only track never creates core VMs or consumes RNG.
+  return sampler.sampleAll('bullet',77,Math.max(18,frame),null,{entityId:'always-hitbox',seed:0x1234})
+    .filter(a=>a.visible&&a.sprite>=0&&a.alpha>0).map((a,index)=>({
+      owner:0xffff0000,presentationKey:'player-hitbox:'+index,x,y,angle:0,scale:1,alpha:1,
+      drawPriority:animationLayerPriority(16),clip:2,order:index,a}));
+}
 function originalMessageHex(hex){if(typeof hex!=='string'||hex.length%2||!/^[0-9a-f]*$/i.test(hex))throw Error('对话字符数据无效');return new TextDecoder('shift-jis').decode(Uint8Array.from(hex.match(/../g)??[],v=>parseInt(v,16)));}
 export function decodeMessageHex(hex){return localizedHex('dialogue',hex)?.text??originalMessageHex(hex);}
 export function readCoreMessage(core){if(!core._th12_message||!core._th12_message_size)return null;const ptr=core._th12_message(),size=core._th12_message_size();if(!Number.isInteger(size)||size<0||size>1024*1024||ptr<0||ptr+size>core.HEAPU8.byteLength)throw Error('对话状态记录无效');if(!size)return null;return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)).replace(/\0+$/,''));}
@@ -41,6 +49,7 @@ export function readCoreBackground(core){
   return state;
 }
 const argbRgba=(argb,alpha=1)=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255*alpha];
+const quadIndices=[0,1,2,0,2,3];
 export function beamSegmentVertices(x,y,angle,length,width,start,end){const dx=Math.cos(angle)*length/2,dy=Math.sin(angle)*length/2,nx=-Math.sin(angle)*width/2,ny=Math.cos(angle)*width/2;return [{x:x-dx-nx,y:y-dy-ny,color:start},{x:x-dx+nx,y:y-dy+ny,color:start},{x:x+dx+nx,y:y+dy+ny,color:end},{x:x+dx-nx,y:y+dy-ny,color:end}];}
 export function dialogueMetrics(width=354,height=17){return {width,height,sourceWidth:Math.min(1024,2*width+22),sourceHeight:36};}
 export function messageTextPoses(message,logicalPoses,atlases,{logicalText=false}={}){
@@ -213,7 +222,7 @@ export class Renderer {
     const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
     const uv=[[sx/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,endY/texture.h+dv],[sx/texture.w+du,endY/texture.h+dv]];
     const offset=options.presentationOffset??[0,0];
-    for(const i of [0,1,2,0,2,3])this.batch.push(corners[i][0]+offset[0],corners[i][1]+offset[1],uv[i][0],texture.flipY?1-uv[i][1]:uv[i][1],...tint,alpha,1,0);
+    for(const i of quadIndices)this.batch.push(corners[i][0]+offset[0],corners[i][1]+offset[1],uv[i][0],texture.flipY?1-uv[i][1]:uv[i][1],tint[0],tint[1],tint[2],alpha,1,0);
   }
   texture(texture,point=false,addressFlags=null){const g=this.gl,wrapU=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&1?g.REPEAT:g.CLAMP_TO_EDGE,wrapV=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&2?g.REPEAT:g.CLAMP_TO_EDGE;if(this.current!==texture||this.point!==point||this.wrapU!==wrapU||this.wrapV!==wrapV){this.flush();this.current=texture;this.point=point;this.wrapU=wrapU;this.wrapV=wrapV;g.bindTexture(g.TEXTURE_2D,texture.texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,wrapU);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,wrapV);}}
   mesh(p){
@@ -238,8 +247,16 @@ export class Renderer {
       //The renderer's alpha:false back buffer is RGB. Copying it to RGBA
       //attempts to add an absent component and can fail INVALID_OPERATION.
       //The original @R uses the opaque display format; RGB also samples A=1.
-      g.bindTexture(g.TEXTURE_2D,texture.texture);g.copyTexImage2D(g.TEXTURE_2D,0,g.RGB,0,0,640,480,0);
-      this.surfaceCopyError=g.getError?.()??0;
+      g.bindTexture(g.TEXTURE_2D,texture.texture);
+      if(texture.surfaceInitialized&&g.copyTexSubImage2D){
+        // Reuse verified640x480 RGB storage. Reallocation and synchronous
+        // getError on every frame force avoidable mobile driver round trips.
+        g.copyTexSubImage2D(g.TEXTURE_2D,0,0,0,0,0,640,480);this.surfaceCopyError=0;
+      }else{
+        g.copyTexImage2D(g.TEXTURE_2D,0,g.RGB,0,0,640,480,0);
+        this.surfaceCopyError=g.getError?.()??0;
+        texture.surfaceInitialized=this.surfaceCopyError===(g.NO_ERROR??0);
+      }
       texture.available=this.surfaceCopyError===(g.NO_ERROR??0);
       this.current=null;this.point=null;this.stageSurfaceCopied=true;
       this.stageSurfaceAvailable=texture.available;
@@ -443,16 +460,15 @@ export class Renderer {
     add('front',69+h[19],frame,0,0,0,1,null,{alpha:1,clipped:false});
     const nativeMotion=fps.presentationContinuity===false?null:readCorePresentationMotion(core),playerState=core._th12_player_state?.()??nativeMotion?.playerState;
     if(fps.alwaysHitbox&&playerState===1&&!logicalPoses.some(p=>p.owner===0xffff0020)){
-      // Sample only at the fixed capture boundary, at a static authored age.
-      // No core focus VM is created, focused input is not changed, and the
-      // original focus77 -> child76 sprite supplies the visible marker.
-      const visible=a=>a.visible&&a.sprite>=0,marker=this.animations.sampleAll('bullet',77,0,null,{entityId:'always-hitbox-static',seed:0x1234}).find(visible)
-        ??this.animations.sampleAll('bullet',76,0,null,{entityId:'always-hitbox-child-static',seed:0x1234}).find(visible);
-      if(marker)poses.push({owner:0xffff0000,presentationKey:'player-hitbox',x:h[1]+224,y:h[2]+16,angle:0,scale:1,alpha:1,drawPriority:24,clip:2,order:poses.length,a:{...marker,x:0,y:0,alpha:1}});
+      poses.push(...alwaysHitboxPoses(this.animations,frame,h[1]+224,h[2]+16));
     }
     const ordered=orderPresentation(poses,schedule);
     this.animations.endFrame();
-    return {epoch:this.presentationEpoch,frame,stage,hud:h,background,logicalBackground,nativeMotion,backgroundVisible,screenShake,hasStageSurface:!!logicalBackground?.loaded,poses:ordered,records,motion:capturePresentationOwners(h,records,ordered)};
+    // Modern cores already publish authoritative owner/lineage data. Do not
+    // build a second legacy owner graph that their interpolation never uses;
+    // a locked60 Hz endpoint needs neither graph.
+    const motion=fps.presentationContinuity===false||nativeMotion?null:capturePresentationOwners(h,records,ordered);
+    return {epoch:this.presentationEpoch,frame,stage,hud:h,background,logicalBackground,nativeMotion,backgroundVisible,screenShake,hasStageSurface:!!logicalBackground?.loaded,poses:ordered,records,motion};
   }
   render(core,fps={}){
     // Ordinary 60 Hz callers retain current-endpoint rendering.

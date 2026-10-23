@@ -886,6 +886,19 @@ State& VM::control() {
   return state_;
 }
 
+uint32_t VM::continuousFields() const {
+  uint32_t mask=0;
+  if(rotationVelocity_[0]||rotationVelocity_[1]||rotationVelocity_[2])mask|=2;
+  if(scaleVelocity_[0]||scaleVelocity_[1])mask|=4;
+  if(scrollVelocity_[0]||scrollVelocity_[1])mask|=8;
+  for(const auto& track:interpolations_)if(track.active)for(const auto field:track.fields){
+    if(field<=Z)mask|=1;else if(field<=RZ)mask|=2;
+    else if(field<=SY)mask|=4;else if(field<=VVEL)mask|=8;
+    else if(field<=BLUE2)mask|=16;else if(field<=VSCALE)mask|=32;
+  }
+  return mask;
+}
+
 Diagnostic VM::diagnostics() const {
   Diagnostic result;
   result.pc = pc_;

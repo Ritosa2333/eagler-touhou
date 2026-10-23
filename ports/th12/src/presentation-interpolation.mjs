@@ -6,12 +6,45 @@ const itemId=owner=>(owner&0x0fffffff);
 const finitePoint=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y);
 const near=(a,b)=>Math.abs(a-b)<.002;
 const clampAlpha=alpha=>Number.isFinite(alpha)?Math.max(0,Math.min(1,alpha)):1;
+const ownerKinds=['player','enemy','projectile','item','bomb'];
+const meshKinds=['','stage-grid','ufo-trail','ufo-summon','laser','spell-ring','ufo-fill','leaf'];
+const appearanceFields=['name','sprite','layer','mode','blend','anchorX','anchorY','point','visible','geometryCount'];
+
+function readBinaryPresentationMotion(core){
+  const ptr=core._th12_presentation_motion_binary(),heap=core.HEAPU8;
+  const range=(p,n,stride,max=65536)=>{if(!Number.isSafeInteger(p)||p<0||p%4||!Number.isSafeInteger(n)||n<0||n>max||p+n*stride>heap.byteLength)throw Error('展示二进制记录范围无效');};
+  range(ptr,17,4);const view=new DataView(heap.buffer,heap.byteOffset,heap.byteLength),u=p=>view.getUint32(p,true),f=p=>view.getFloat32(p,true);
+  if(u(ptr)!==2)throw Error('展示二进制记录版本无效');
+  const state={version:1,epoch:u(ptr+4),frame:u(ptr+8),playerState:u(ptr+12),focusId:u(ptr+16),backgroundRevision:u(ptr+20),owners:[],nodes:[],lasers:[]};
+  const owners=u(ptr+24),ownerCount=u(ptr+28),nodes=u(ptr+36),nodeCount=u(ptr+40),lasers=u(ptr+48),laserCount=u(ptr+52),lineages=u(ptr+60),lineageCount=u(ptr+64);
+  if(u(ptr+32)!==24||u(ptr+44)!==64||u(ptr+56)!==40)throw Error('展示二进制记录步长无效');
+  range(owners,ownerCount,24);range(nodes,nodeCount,64);range(lasers,laserCount,40);range(lineages,lineageCount,4,65536*34);
+  for(let i=0;i<ownerCount;i++){
+    const p=owners+i*24,kind=ownerKinds[u(p+8)];if(kind===undefined)throw Error('展示 owner 类型无效');
+    state.owners.push({id:u(p),revision:u(p+4),kind,position:[f(p+12),f(p+16),f(p+20)]});
+  }
+  for(let i=0;i<nodeCount;i++){
+    const p=nodes+i*64,meshKind=meshKinds[u(p+52)],offset=u(p+56),count=u(p+60);
+    if(meshKind===undefined||count<2||count>34||count%2||offset+count>lineageCount)throw Error('展示节点链记录无效');
+    const lineage=[];for(let j=0;j<count;j++)lineage.push(u(lineages+(offset+j)*4));
+    state.nodes.push({id:u(p),owner:u(p+4),motionOwner:u(p+8),parent:u(p+12),local:[f(p+16),f(p+20),f(p+24)],engine:[f(p+28),f(p+32),f(p+36)],mask:u(p+40),flags:u(p+44),stageSlot:view.getInt32(p+48,true),meshKind,lineage});
+  }
+  for(let i=0;i<laserCount;i++){
+    const p=lasers+i*40;
+    state.lasers.push({owner:u(p),revision:u(p+4),topology:u(p+8),kind:u(p+12),phase:u(p+16),cursor:view.getInt32(p+20,true),nodes:u(p+24),followOwner:u(p+28),followRevision:u(p+32),age:f(p+36)});
+  }
+  return state;
+}
 
 export function readCorePresentationMotion(core){
-  if(!core._th12_presentation_motion||!core._th12_presentation_motion_size)return null;
-  const ptr=core._th12_presentation_motion(),size=core._th12_presentation_motion_size(),heap=core.HEAPU8;
-  if(!Number.isSafeInteger(ptr)||!Number.isSafeInteger(size)||ptr<0||size<2||size>32*1024*1024||ptr+size>heap.byteLength)throw Error('展示连续性记录范围无效');
-  const state=JSON.parse(new TextDecoder().decode(heap.subarray(ptr,ptr+size)));
+  let state;
+  if(core._th12_presentation_motion_binary)state=readBinaryPresentationMotion(core);
+  else{
+    if(!core._th12_presentation_motion||!core._th12_presentation_motion_size)return null;
+    const ptr=core._th12_presentation_motion(),size=core._th12_presentation_motion_size(),heap=core.HEAPU8;
+    if(!Number.isSafeInteger(ptr)||!Number.isSafeInteger(size)||ptr<0||size<2||size>32*1024*1024||ptr+size>heap.byteLength)throw Error('展示连续性记录范围无效');
+    state=JSON.parse(new TextDecoder().decode(heap.subarray(ptr,ptr+size)));
+  }
   if(state?.version!==1||!Number.isInteger(state.epoch)||!Number.isInteger(state.frame)||
     !Array.isArray(state.owners)||!Array.isArray(state.nodes)||!Array.isArray(state.lasers)||
     state.nodes.length>65536||state.owners.length>65536||state.lasers.length>65536)throw Error('展示连续性记录版本无效');
@@ -45,8 +78,7 @@ function poseIdentity(p){
 function sameAppearance(a,b){
   if(!a||!b||a.owner!==b.owner||a.logical!==b.logical||a.mesh!==b.mesh||
     a.drawPriority!==b.drawPriority||a.clip!==b.clip)return false;
-  const fields=['name','sprite','layer','mode','blend','anchorX','anchorY','point','visible','geometryCount'];
-  if(!fields.every(key=>a.a?.[key]===b.a?.[key]))return false;
+  for(const key of appearanceFields)if(a.a?.[key]!==b.a?.[key])return false;
   if(a.mesh&&(a.primitive!==b.primitive||a.renderPass!==b.renderPass||a.untextured!==b.untextured||
     a.filter!==b.filter||a.addressFlags!==b.addressFlags||a.vertices.length!==b.vertices.length||a.a.entry!==b.a.entry))return false;
   return true;
@@ -124,10 +156,11 @@ function translatePose(p,offset){
 export function interpolatePresentation(previous,current,alpha=1){
   if(!current)throw Error('缺少当前展示端点');
   alpha=clampAlpha(alpha);
-  if(alpha===1||!previous||previous===current||!previous.motion||!current.motion||
+  if(alpha===1||!previous||previous===current||
     previous.epoch!==current.epoch||previous.stage!==current.stage||
     current.frame!==previous.frame+1)return current;
   if(previous.nativeMotion&&current.nativeMotion)return interpolateNative(previous,current,alpha);
+  if(!previous.motion||!current.motion)return current;
   const offsets=new Map();
   for(const group of current.motion.groups.keys()){
     const offset=groupOffset(previous,current,group,alpha);
@@ -150,6 +183,20 @@ function nativeOwner(p,state){
   return {node,owner,source:state.ownerMap.get(owner)};
 }
 function nativeKey(p){return poseIdentity(p)??(p.nativeText&&p.presentationKey?String(p.presentationKey):null);}
+const nativeIndices=new WeakMap();
+function nativeIndex(endpoint){
+  let index=nativeIndices.get(endpoint);if(index)return index;
+  const poses=new Map(),laserGroups=new Map();
+  for(const p of endpoint.poses){
+    const key=nativeKey(p);if(key!==null)poses.set(key,p);
+    if(endpoint.nativeMotion.laserMap.has(p.owner)){
+      if(!laserGroups.has(p.owner))laserGroups.set(p.owner,[]);
+      laserGroups.get(p.owner).push(p);
+    }
+  }
+  // Published endpoints are immutable; the WeakMap does not retain old frames.
+  index={poses,groups:nativeGroups(endpoint),laserGroups};nativeIndices.set(endpoint,index);return index;
+}
 function nativeGroups(endpoint){
   const result=new Map();
   for(const p of endpoint.poses){
@@ -170,26 +217,24 @@ function resolvedEngine(node,state){
 }
 function nativeScalars(p,old,node,oldNode,alpha){
   if(!p.a||!old.a||!sameNode(oldNode,node))return p;
-  const mask=node.mask|oldNode.mask,a={...p.a};let changed=false;
-  const fields=(keys,wrap=0)=>{for(const key of keys){const x=old.a[key],y=p.a[key];if(!Number.isFinite(x)||!Number.isFinite(y))continue;let delta=y-x;if(wrap)delta=((delta+wrap/2)%wrap+wrap)%wrap-wrap/2;a[key]=x+delta*alpha;changed=true;}};
+  const mask=node.mask|oldNode.mask;if(!(mask&62))return p;
+  let a=null;
+  const fields=(keys,wrap=0)=>{for(const key of keys){const x=old.a[key],y=p.a[key];if(!Number.isFinite(x)||!Number.isFinite(y))continue;let delta=y-x;if(wrap)delta=((delta+wrap/2)%wrap+wrap)%wrap-wrap/2;const value=x+delta*alpha;if(value===y)continue;a??={...p.a};a[key]=value;}};
   if(mask&2)fields(['rx','ry','rotation'],Math.PI*2);
   if(mask&4)fields(['sx','sy']);
   if(mask&8)fields(['u','v'],1);
   if(mask&32)fields(['uvScaleX','uvScaleY']);
   if(mask&16){fields(['r','g','b','alpha','r2','g2','b2','alpha2']);
-    if(Array.isArray(old.a.primaryColor)&&Array.isArray(a.primaryColor))a.primaryColor=a.primaryColor.map((v,i)=>lerp(old.a.primaryColor[i],v,alpha));}
-  return changed?{...p,a}:p;
+    if(Array.isArray(old.a.primaryColor)&&Array.isArray(p.a.primaryColor)&&old.a.primaryColor.some((v,i)=>v!==p.a.primaryColor[i])){
+      a??={...p.a};a.primaryColor=p.a.primaryColor.map((v,i)=>lerp(old.a.primaryColor[i],v,alpha));}}
+  return a?{...p,a}:p;
 }
 function interpolateNative(previous,current,alpha){
   const before=previous.nativeMotion,after=current.nativeMotion;
   if(before.epoch!==after.epoch||before.frame!==previous.frame||after.frame!==current.frame)return current;
-  const previousPoses=new Map(previous.poses.map(p=>[nativeKey(p),p]).filter(([key])=>key!==null)),
-    oldGroups=nativeGroups(previous),newGroups=nativeGroups(current),continuousOwners=new Set(),continuousLasers=new Set();
-  const laserGroups=endpoint=>{
-    const groups=new Map();for(const p of endpoint.poses)if(endpoint.nativeMotion.laserMap.has(p.owner)){
-      if(!groups.has(p.owner))groups.set(p.owner,[]);groups.get(p.owner).push(p);
-    }return groups;
-  },oldLaserGroups=laserGroups(previous),newLaserGroups=laserGroups(current);
+  const oldIndex=nativeIndex(previous),newIndex=nativeIndex(current),previousPoses=oldIndex.poses,
+    oldGroups=oldIndex.groups,newGroups=newIndex.groups,continuousOwners=new Set(),continuousLasers=new Set(),
+    oldLaserGroups=oldIndex.laserGroups,newLaserGroups=newIndex.laserGroups;
   for(const [owner,laser]of after.laserMap){
     const oldLaser=before.laserMap.get(owner);
     if(!oldLaser||!['revision','topology','kind','phase','cursor','nodes','followOwner','followRevision'].every(k=>oldLaser[k]===laser[k]))continue;

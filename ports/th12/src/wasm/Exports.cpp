@@ -37,6 +37,7 @@ int th12_practice_damage_stage_words(int stage) { return int(th12::practice::dam
 const char* th12_practice_damage_state() { return th12::practice::damage::snapshot().c_str(); }
 int th12_practice_damage_state_size() { return th12::practice::damage::snapshotSize(); }
 const char* th12_presentation_motion() { return th12::capturePresentationMotion().c_str(); }
+const void* th12_presentation_motion_binary() { return th12::capturePresentationMotionBinary().data(); }
 int th12_presentation_motion_size() { return int(th12::presentationMotionBuffer.size()); }
 void th12_motion(int mode,int x,int y) {
   if(mode<0||mode>4||std::abs(int64_t(x))>0x100000||std::abs(int64_t(y))>0x100000)mode=0;
