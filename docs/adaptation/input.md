@@ -158,6 +158,7 @@ th10 的 [SDL 触控入口](../../ports/th10/web/cpp/sdl/GameHost.cpp#L164) 接�
 Headless 场景记录页面关闭、崩溃、上下文关闭和浏览器断开事件，附目标、epoch、输入清理或导航阶段与清理归属。预期的上下文和浏览器退休带有明确标记；场景中意外关闭或任意崩溃阻断通过，并保留最早事件。
 
 - 操作：分别以键盘和生产手柄映射运行 `runOriginalMenuInputScene`。从已就绪的标题起始项确认进入难度菜单，依次下移、上移各一项，再取消返回标题；触控路径点击起始项、单次滑动并以双指静止手势返回。另以 `runLoadedDialogueSkipScene` 在实际加载的对话 Wait 中发送 Skip。
+- 前置：共享菜单入口在生产时钟上有界等待本作原生标题场景，再取得手动逻辑时钟。逐次状态、等待范围和 Runtime 身份写入 `titleReadiness`，菜单确认门槛由后续逻辑步检查。首帧消息与原生标题就绪分别观察。取得时钟前后核对同一 Runtime 实例，场景身份绑定接管后的循环 epoch，并在整段操作结束时复核。
 - 观察与独立预期：原生标题状态来自 `BrowserRuntime::status` 的 screen、cursor、phase、confirmation-ready 和 current/previous input；共享场景将这些消费者的源码锚点写入原始证据，汇总器与作品适配器逐项核对。对话候选来自当前已加载 ECL/MessageProgram，Skip 由 `GuiFlow::update` 的消费回执及 MessageProgram 游标共同确认。
 - 判定：菜单输入产生一个新边沿并只移动一项，上下操作相互恢复原游标，确认进入登记的下一菜单，取消返回原始标题项；对话 Skip 位被真实 Dialogue consumer 消费且游标前进，confirm 位保持独立。
 - 反例：输入只得到传输确认但原生状态未变化、单次导航跨越多项、取消离开合法标题流、输入源与声明不符、对话缺少真实 Skip 消费或把 Skip 误识为确认，均不能通过。

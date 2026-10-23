@@ -39,7 +39,7 @@ import {deathbombRequest,readDeathbombState,requestDeathbombHit} from '../../tes
 import {runTouchDeathbombScene} from './touch-deathbomb-scenes.mjs';
 import {dialogueTouchSceneRequest,readDialogueTouchWords,normalizeDialogueTouchManifest,normalizeDialogueTouchObservation,requestDialogueTouchMessage} from '../../tests/adaptation/adapters/dialogue.mjs';
 import {runTouchDialogueFreshConfirmScene} from './touch-dialogue-confirm-scenes.mjs';
-import {runOriginalMenuInputScene} from './original-menu-input-scenes.mjs';
+import {runOriginalMenuInputScene,waitForOriginalMenuScene} from './original-menu-input-scenes.mjs';
 import {runLoadedDialogueSkipScene} from './loaded-dialogue-skip-scenes.mjs';
 import {readOriginalMenuState} from '../../tests/adaptation/adapters/menu.mjs';
 import {runLauncherTouchScenes} from './launcher-touch-scenes.mjs';
@@ -1147,10 +1147,18 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           let clock=null,failure=null;
           try{
             if(ingress==='gamepad')await bindProtocolHostGamepad(page,target.game,activeEpoch);
+            const readTitle=()=>frame.evaluate(readOriginalMenuState,{contract:{...menu,runtime:adapter.runtime}});
+            const readinessBinding=await inputFrameBinding(readTitle);
+            const titleReadiness=await waitForOriginalMenuScene({readTitle,wait:ms=>page.waitForTimeout(ms)},
+              {contract:menu,runtime:readinessBinding.nativeRuntime});
+            if(!titleReadiness.ready)return{checkStatus:'incomplete',reason:titleReadiness.reason,titleReadiness,ingress,transition,readinessBinding};
             clock=await frame.evaluate(controlTouchMotionClock,{...clockRequest,action:'begin'});
             if(clock.mode!=='native-manual')return{checkStatus:'incomplete',reason:'Original-menu scene requires the production manual clock'};
-            const readTitle=()=>frame.evaluate(readOriginalMenuState,{contract:{...menu,runtime:adapter.runtime}});
+            // Stopping the native loop advances its loop epoch. Bind the trial
+            // after takeover, while the Runtime instance and Host remain fixed.
             const frameBinding=await inputFrameBinding(readTitle);
+            for(const field of ['generation','pointer'])assert.equal(frameBinding.nativeRuntime[field],readinessBinding.nativeRuntime[field],
+              `Manual clock takeover replaced native Runtime ${field}`);
             const result=await runOriginalMenuInputScene({
               readTitle,
               waitPhysical:async requestedMs=>{const startedAtMs=performance.now();await new Promise(resolve=>setTimeout(resolve,requestedMs));return{requestedMs,startedAtMs,completedAtMs:performance.now()};},
@@ -1159,7 +1167,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             },{...menu,ingress,inputMasks:{...menu.inputMasks,...(ingress==='touch'?{cancel:menu.touchCancelMask}:{})}});
             const frameBindingAfter=await inputFrameBinding(readTitle);
             assert.deepEqual(frameBindingAfter,frameBinding,'Original menu replaced its native Runtime during input');
-            return{...result,ingress,epoch:activeEpoch,transition,clock,frameBinding,frameBindingAfter};
+            return{...result,ingress,epoch:activeEpoch,transition,titleReadiness,readinessBinding,clock,frameBinding,frameBindingAfter};
           }catch(error){failure=error;throw error;}finally{
             await finishInputScene([
               ['mapped-device-release',()=>page.evaluate(()=>{window.acceptanceGamepadService?.dispose();window.acceptanceGamepadService=null;

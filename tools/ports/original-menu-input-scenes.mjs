@@ -76,6 +76,40 @@ function assertEdge(title,mask,label){
   assert.notEqual(title.input.current&mask,0,`${label}: native title consumer did not receive the requested input`);
   assert.equal(title.input.previous&mask,0,`${label}: input was held before the requested fresh edge`);
 }
+
+/** Wait on the production clock before a menu trial takes manual tick ownership. */
+export async function waitForOriginalMenuScene(io,{contract,runtime,timeoutMs=5000}={}){
+  assert.equal(typeof io?.readTitle,'function');assert.equal(typeof io?.wait,'function');
+  assert.ok(Number.isFinite(timeoutMs)&&timeoutMs>0&&timeoutMs<=30000);
+  assert.ok(Number.isSafeInteger(contract?.titleScene),'Declare the native title scene');
+  for(const key of ['generation','pointer','epoch'])
+    assert.ok(Number.isSafeInteger(runtime?.[key])&&runtime[key]>=(key==='epoch'?0:1),'Title readiness needs native Runtime identity');
+  const started=performance.now(),evidence={ready:false,timeoutMs,samples:[]};
+  do{
+    const value=await io.readTitle();
+    evidence.samples.push({elapsedMs:performance.now()-started,value:structuredClone(value)});
+    if(performance.now()-started>timeoutMs)break;
+    if(value?.available===true){
+      assert.deepEqual(value.runtime,runtime,'Title initialization crossed native Runtime identity');
+      assert.ok(Number.isSafeInteger(value.nativeScene),'Title readiness lacks the native scene owner');
+      assert.equal(value.scene,value.nativeScene===contract.titleScene?'title':'other','Title scene label differs from native owner');
+      if(value.nativeScene===contract.titleScene){
+        // A declared startup flow owns loading/prompt screens before the start menu.
+        if(!contract.startup){
+          assert.equal(value.title?.screen,contract.expected.startScreen,'Title initialization reached another menu');
+          assert.equal(value.title?.cursor,contract.expected.startCursor,'Title initialization reached another cursor');
+        }
+        evidence.ready=true;break;
+      }
+    }
+    const remaining=timeoutMs-(performance.now()-started);
+    if(remaining<=0)break;
+    await io.wait(Math.min(25,remaining));
+  }while(performance.now()-started<timeoutMs);
+  evidence.durationMs=performance.now()-started;
+  if(!evidence.ready)evidence.reason='Native title scene did not initialize within its bounded production-clock wait';
+  return evidence;
+}
 /**
  * Exercise the production title menu with keyboard, mapped gamepad or touch.
  * `send` is a transport only; native title status supplies every verdict.

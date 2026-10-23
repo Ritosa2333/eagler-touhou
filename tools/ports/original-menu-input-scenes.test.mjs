@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {runOriginalMenuInputScene} from './original-menu-input-scenes.mjs';
+import {runOriginalMenuInputScene,waitForOriginalMenuScene} from './original-menu-input-scenes.mjs';
 import {TH10_MENU_CONTRACT} from '../../tests/adaptation/adapters/titles/th10-menu.mjs';
 import {assertMenuStartupEvidence} from '../../tests/adaptation/adapters/menu-startup.mjs';
 import {readOriginalMenuState} from '../../tests/adaptation/adapters/menu.mjs';
@@ -78,6 +78,29 @@ for(const ingress of ['keyboard','gamepad','touch'])test(`${ingress} drives a re
 test('an acknowledged swipe that does not reach the native title consumer fails',async()=>{
   await assert.rejects(runOriginalMenuInputScene(makeIO({ignoreDown:true}),options('keyboard')),
     /native title consumer did not receive/);
+});
+
+test('title initialization waits on actual scene ownership before manual clock takeover',async()=>{
+  const contract={...options('keyboard'),titleScene:1},runtime={generation:1,pointer:0x1234,epoch:2};
+  const ready={available:true,runtime,nativeScene:1,scene:'title',title:{screen:0,cursor:0}};
+  let reads=0,waits=0;
+  const receipt=await waitForOriginalMenuScene({readTitle:async()=>++reads===1?{...ready,nativeScene:0,scene:'other'}:ready,
+    wait:async()=>{waits++;}},{contract,runtime});
+  assert.equal(receipt.ready,true);assert.equal(waits,1);assert.deepEqual(receipt.samples.map(r=>r.value.nativeScene),[0,1]);
+  const immediate=await waitForOriginalMenuScene({readTitle:async()=>ready,wait:async()=>{assert.fail('Ready scene must not wait');}},{contract,runtime});
+  assert.equal(immediate.samples.length,1);
+  for(const changed of [{...ready,runtime:{...runtime,epoch:3}},{...ready,nativeScene:2},
+    {...ready,title:{screen:4,cursor:0}},{...ready,title:{screen:0,cursor:1}}])
+    await assert.rejects(waitForOriginalMenuScene({readTitle:async()=>changed,wait:async()=>{}},{contract,runtime}));
+});
+
+test('unavailable or permanently inactive title state cannot pass the bounded readiness wait',async()=>{
+  const runtime={generation:1,pointer:0x1234,epoch:2},contract={...options('keyboard'),titleScene:1};
+  for(const value of [{available:false},{available:true,runtime,nativeScene:0,scene:'other'}]){
+    const receipt=await waitForOriginalMenuScene({readTitle:async()=>value,wait:ms=>new Promise(resolve=>setTimeout(resolve,ms))},
+      {contract,runtime,timeoutMs:2});
+    assert.equal(receipt.ready,false);assert.ok(receipt.samples.length>=1);assert.match(receipt.reason,/did not initialize/);
+  }
 });
 
 test('a native readiness wait retains distinct samples and a numeric interaction budget',async()=>{
