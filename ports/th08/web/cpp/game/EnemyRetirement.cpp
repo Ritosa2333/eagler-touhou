@@ -3,6 +3,7 @@
 #include "AsciiManager.hpp"
 #include "EffectState.hpp"
 #include "PlayerFrame.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
 void cancel_enemy_async(EclVm& enemy)noexcept{for(u32 i=0;i<4;++i){enemy.asynchronous[i].reset();++enemy.asynchronous_generations[i];}}
 bool retire_enemy_effects(EclVm& enemy)noexcept{
@@ -11,6 +12,7 @@ bool retire_enemy_effects(EclVm& enemy)noexcept{
     enemy.effect_count=0;return true;
 }
 bool retire_enemy(EclVm& enemy,EclGlobals& globals,u16& replay_flags){
+    TH08_AUDIT_RETIRED(Enemy,&enemy);
     if(globals.phase_actions)globals.phase_actions->clear_familiars(enemy,false);
     else if(enemy.parent||enemy.next_familiar){enemy.invalid=true;return false;}
     if(enemy.invalid)return false;

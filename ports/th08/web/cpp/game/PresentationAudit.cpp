@@ -7,14 +7,22 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <unordered_map>
 #include <vector>
 namespace th08::audit {
 namespace {
 constexpr uint32_t capacity=8192;
+constexpr uint32_t lifecycle_capacity=16384;
+struct ObjectIdentity {uint32_t owner=0,object=0,generation=0,flags=0;};
 std::vector<Record> records;
 std::vector<Record> references[2];
+std::unordered_map<uint64_t,ObjectIdentity> identities;
+std::array<LifecycleEvent,lifecycle_capacity> lifecycle{};
+uint32_t lifecycle_next=0,lifecycle_size=0,lifecycle_overflow=0;
+uint32_t lifecycle_epoch=0;
+LifecycleCursor reference_lifecycle[2]{};
 uint32_t reference_ticks[2]{},reference_dropped[2]{};
-bool enabled=false;
+bool enabled=false,inject_audio=false;
 uint32_t owner=0,object=0,part=0,ordinal=0,scope_flags=0,tick=0,dropped=0,pass=0;
 int32_t age=0; float alpha=1;
 float channel(uint32_t color,unsigned shift){return float((color>>shift)&255)/255.f;}
@@ -24,9 +32,43 @@ Scope::Scope(Owner o,const void* p,int32_t a,uint32_t sub,uint32_t flags)
     owner=uint32_t(o);object=uint32_t(reinterpret_cast<uintptr_t>(p));part=sub;age=a;ordinal=0;scope_flags|=flags;
 }
 Scope::~Scope(){owner=saved_owner;object=saved_object;part=saved_part;ordinal=saved_ordinal;scope_flags=saved_flags;age=saved_age;}
-void enable(bool value){enabled=value;records.clear();for(auto& r:references)r.clear();reference_ticks[0]=reference_ticks[1]=0;if(enabled){records.reserve(capacity);for(auto& r:references)r.reserve(capacity);}}
+void enable(bool value){enabled=value;records.clear();for(auto& r:references)r.clear();reference_ticks[0]=reference_ticks[1]=0;reference_dropped[0]=reference_dropped[1]=0;reference_lifecycle[0]=reference_lifecycle[1]={};identities.clear();lifecycle_next=lifecycle_size=lifecycle_overflow=0;inject_audio=false;if(enabled){if(++lifecycle_epoch==0)++lifecycle_epoch;records.reserve(capacity);for(auto& r:references)r.reserve(capacity);}}
+namespace {
+void lifecycle_event(uint32_t own,uint32_t ptr,uint32_t generation,uint32_t operation){
+    if(lifecycle_size==lifecycle_capacity)++lifecycle_overflow;
+    lifecycle[lifecycle_next]={own,ptr,generation,tick,operation};
+    lifecycle_next=(lifecycle_next+1)%lifecycle_capacity;
+    lifecycle_size=std::min(lifecycle_size+1,lifecycle_capacity);
+}
+ObjectIdentity* identity(uint32_t own,uint32_t ptr){
+    return &identities[(uint64_t(own)<<32)|ptr];
+}
+}
+void object_born(Owner own,const void* ptr){
+    if(!enabled||!ptr)return;const auto owner_id=uint32_t(own),object_id=uint32_t(reinterpret_cast<uintptr_t>(ptr));
+    auto* entry=identity(owner_id,object_id);if(!entry){++lifecycle_overflow;lifecycle_event(owner_id,object_id,0,5);return;}
+    const bool duplicate=entry->generation&&entry->flags&2;entry->owner=owner_id;entry->object=object_id;
+    entry->generation=entry->generation==0xffffffffu?1u:entry->generation+1u;entry->flags=3u|(duplicate?4u:0u);
+    lifecycle_event(owner_id,object_id,entry->generation,duplicate?3u:1u);
+}
+void object_retired(Owner own,const void* ptr){
+    if(!enabled||!ptr)return;const auto owner_id=uint32_t(own),object_id=uint32_t(reinterpret_cast<uintptr_t>(ptr));
+    const auto found=identities.find((uint64_t(owner_id)<<32)|object_id);if(found==identities.end()){lifecycle_event(owner_id,object_id,0,4);return;}auto* entry=&found->second;
+    if(!(entry->flags&2)){entry->flags|=4u;lifecycle_event(owner_id,object_id,entry->generation,4);return;}
+    entry->flags=1u;lifecycle_event(owner_id,object_id,entry->generation,2u);
+}
+uint32_t object_generation(Owner own,const void* ptr,uint32_t* flags){
+    if(flags)*flags=0;if(!ptr)return 0;const auto owner_id=uint32_t(own),object_id=uint32_t(reinterpret_cast<uintptr_t>(ptr));
+    const auto found=identities.find((uint64_t(owner_id)<<32)|object_id);if(found==identities.end())return 0;if(flags)*flags=found->second.flags;return found->second.generation;
+}
+void inject_audio_pump(bool value){inject_audio=value;}
+bool audio_pump_injected(){return inject_audio;}
+const LifecycleEvent* lifecycle_records(){return lifecycle.data();}
+uint32_t lifecycle_count(){return lifecycle_size;}
+uint32_t lifecycle_cursor(){return lifecycle_next;}
+uint32_t lifecycle_dropped(){return lifecycle_overflow;}
 uint32_t tick_id(){return tick;}
-void end_frame(){if(enabled&&!pass){references[0].swap(references[1]);references[1]=records;reference_ticks[0]=reference_ticks[1];reference_ticks[1]=tick;reference_dropped[0]=reference_dropped[1];reference_dropped[1]=dropped;}}
+void end_frame(){if(enabled&&!pass){references[0].swap(references[1]);references[1]=records;reference_ticks[0]=reference_ticks[1];reference_ticks[1]=tick;reference_dropped[0]=reference_dropped[1];reference_dropped[1]=dropped;reference_lifecycle[0]=reference_lifecycle[1];reference_lifecycle[1]={lifecycle_size,lifecycle_next,lifecycle_overflow,lifecycle_epoch};}}
 void begin_frame(bool only,float a){
     if(!only)++tick;
     if(!enabled)return;
@@ -36,10 +78,10 @@ void capture(const AnmVm& vm,const SpriteVertex* v,uint32_t n,uint32_t kind,cons
     if(!enabled||!v||!n)return;
     const uint32_t sub=ordinal++;
     if(records.size()>=capacity){++dropped;return;}
-    Record r;
+    Record r;uint32_t identity_flags=0;const uint32_t generation=object_generation(static_cast<Owner>(owner),reinterpret_cast<const void*>(uintptr_t(object)),&identity_flags);
     const auto texture=vm.loadedSprite?vm.loadedSprite->texture:0;
     const uint32_t metadata[]={owner,object,part,sub,kind,uint32_t(int32_t(vm.anmFileIndex)),uint32_t(int32_t(vm.scriptIndex)),uint32_t(int32_t(vm.activeSpriteIndex)),uint32_t(age),texture,n,(!owner?1u:0u)|(n>16?2u:0u)|(scope_flags&DiscreteMotion?1u<<21:0u)};
-    std::copy(metadata,metadata+12,r.meta);
+    std::copy(metadata,metadata+12,r.meta);r.meta[12]=generation;r.meta[13]=identity_flags;
     // Explicit color-channel ownership; the unused secondary color is not
     // evidence of a visible fade. Bit 19 distinguishes this from old captures.
     r.meta[11]|=1u<<19;if(vm.flag17)r.meta[11]|=1u<<18;
@@ -117,7 +159,6 @@ void capture_world(const AnmVm& vm,AnmRenderer& renderer,const Matrix4& world){
     }
 }
 extern "C" {
-__attribute__((export_name("audit_fault"))) void audit_fault(uint32_t hold){th08::presentation::audit_hold_interpolation=hold!=0;}
 __attribute__((export_name("audit_enable"))) void audit_enable(uint32_t on){enable(on!=0);}
 __attribute__((export_name("audit_records"))) const Record* audit_records(){return records.data();}
 __attribute__((export_name("audit_count"))) uint32_t audit_count(){return records.size();}
@@ -126,10 +167,21 @@ __attribute__((export_name("audit_dropped"))) uint32_t audit_dropped(){return dr
 __attribute__((export_name("audit_tick_id"))) uint32_t audit_tick_id(){return tick;}
 __attribute__((export_name("audit_pass"))) uint32_t audit_pass(){return pass;}
 __attribute__((export_name("audit_alpha"))) float audit_alpha(){return alpha;}
+__attribute__((export_name("audit_lifecycle_records"))) const LifecycleEvent* audit_lifecycle_records(){return lifecycle_records();}
+__attribute__((export_name("audit_lifecycle_count"))) uint32_t audit_lifecycle_count(){return lifecycle_count();}
+__attribute__((export_name("audit_lifecycle_next"))) uint32_t audit_lifecycle_next(){return lifecycle_cursor();}
+__attribute__((export_name("audit_lifecycle_capacity"))) uint32_t audit_lifecycle_capacity_value(){return lifecycle_capacity;}
+__attribute__((export_name("audit_lifecycle_dropped"))) uint32_t audit_lifecycle_dropped(){return lifecycle_dropped();}
+__attribute__((export_name("audit_lifecycle_epoch"))) uint32_t audit_lifecycle_epoch(){return lifecycle_epoch;}
+__attribute__((export_name("audit_fault"))) void audit_fault(uint32_t flags){th08::presentation::audit_hold_interpolation=(flags&1u)!=0;inject_audio_pump((flags&2u)!=0);}
 __attribute__((export_name("audit_reference"))) const Record* audit_reference(uint32_t which){return references[which?1:0].data();}
 __attribute__((export_name("audit_reference_count"))) uint32_t audit_reference_count(uint32_t which){return references[which?1:0].size();}
 __attribute__((export_name("audit_reference_tick"))) uint32_t audit_reference_tick(uint32_t which){return reference_ticks[which?1:0];}
 __attribute__((export_name("audit_reference_dropped"))) uint32_t audit_reference_dropped(uint32_t which){return reference_dropped[which?1:0];}
+__attribute__((export_name("audit_reference_lifecycle_count"))) uint32_t audit_reference_lifecycle_count(uint32_t which){return reference_lifecycle[which?1:0].count;}
+__attribute__((export_name("audit_reference_lifecycle_next"))) uint32_t audit_reference_lifecycle_next(uint32_t which){return reference_lifecycle[which?1:0].next;}
+__attribute__((export_name("audit_reference_lifecycle_dropped"))) uint32_t audit_reference_lifecycle_dropped(uint32_t which){return reference_lifecycle[which?1:0].dropped;}
+__attribute__((export_name("audit_reference_lifecycle_epoch"))) uint32_t audit_reference_lifecycle_epoch(uint32_t which){return reference_lifecycle[which?1:0].epoch;}
 }
 }
 #endif

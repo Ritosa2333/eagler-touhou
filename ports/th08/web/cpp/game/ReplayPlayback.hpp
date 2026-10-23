@@ -18,6 +18,9 @@ public:
     bool has_stage(i32 stage)const{return loaded&&u32(stage)<9&&(stage_mask_&(1u<<stage));}
     u32 stage_mask()const{return stage_mask_;}
     const ReplayMetadata& metadata()const{return metadata_;}
+#if defined(TH_PRESENTATION_AUDIT)
+    const std::vector<u8>& audit_decoded_payload()const noexcept{return file.decoded();}
+#endif
     bool snapshot(i32 stage,ReplayStage& out)const;
     bool update(u32 flags,bool slow_mode);
     JobResult after_update(u32 flags,i32 mode,bool dialogue,bool dialogue_waiting,bool boss_present)const;

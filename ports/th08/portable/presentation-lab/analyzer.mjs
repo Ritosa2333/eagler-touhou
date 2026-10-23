@@ -1,6 +1,6 @@
 import {defaultSeverity,groupFindings as groupFindingsCore,compactReport,mergeIssueGroups as mergeIssueGroupsCore} from '../../../../common/testkit/presentation-lab/report-core.mjs';
 import {compareStateEvidence} from '../../../../common/testkit/presentation-lab/analyzer.mjs';
-import {OWNERS,STATE_GROUPS,WORLD_OWNER_IDS,MOTION_OWNER_IDS} from './owners.mjs';
+import {OWNERS,STATE_GROUPS,WORLD_OWNER_IDS,MOTION_OWNER_IDS,LIFECYCLE_TRACKED_OWNER_IDS} from './owners.mjs';
 export {OWNERS,STATE_GROUPS} from './owners.mjs';
 
 // Pure classifier used by both the browser inspector and tests. TH08 policy
@@ -12,7 +12,7 @@ export const STATUS = {
   'missing-interpolation': '连续属性没有中间值', 'held-review': '保持当前值，需核对离散语义',
   'endpoint-mismatch': '显示端点不等于原始绘制', 'non-idempotent': '相同 α 重画结果不同',
   'downstream-held': '属性已变化，但对应提交数据不变',
-  'static': '本窗口无可测变化', 'lifecycle': '生命周期边界，不作插值判定',
+  'static': '本窗口无可测变化', 'lifecycle': '生命周期边界，不作插值判定','identity-uncertain':'对象代次未由完整生命周期证据确认',
   'unobserved': '样本不足', 'unscoped': '对象身份未接入', 'ambiguous': '对象键冲突',
   'frozen': '世界被原作暂停', 'sprite-change': '贴图/几何换帧，需单独核对',
   'nonfinite': '出现非有限数值', 'offscreen': '未进入屏幕区域',
@@ -24,17 +24,38 @@ export const STATUS = {
 const TAU = Math.PI * 2;
 const worldOwners = WORLD_OWNER_IDS;
 const motionOwners = MOTION_OWNER_IDS;
-export function keyOf(r) { return [r.meta[0],r.meta[1],r.meta[2],r.meta[3],r.meta[4]].join(':'); }
-export function decodeRecords(buffer, pointer, count, stride = 752) {
-  if (stride !== 752 || !Number.isInteger(count) || count < 0 || count > 8192 || !Number.isInteger(pointer) || pointer%4 || pointer < 0 || pointer + count*stride > buffer.byteLength) throw Error('Invalid presentation audit buffer');
+export function keyOf(r) { return [r.meta[0],r.meta[1],LIFECYCLE_TRACKED_OWNER_IDS.has(r.meta[0])?r.meta[12]:0,r.meta[2],r.meta[3],r.meta[4]].join(':'); }
+export function decodeRecords(buffer, pointer, count, stride = 760) {
+  if (stride !== 760 || !Number.isInteger(count) || count < 0 || count > 8192 || !Number.isInteger(pointer) || pointer%4 || pointer < 0 || pointer + count*stride > buffer.byteLength) throw Error('Invalid presentation audit buffer');
   const result=[];
   for(let i=0;i<count;i++) {
     const at=pointer+i*stride;
-    const meta=Array.from(new Uint32Array(buffer,at,12));
-    result.push({meta,values:Array.from(new Float32Array(buffer,at+48,32)),vertices:Array.from(new Float32Array(buffer,at+176,Math.min(meta[10],16)*9)),
-      spriteIdentity:meta[11]&(1<<20)?new Uint32Array(buffer,at+48+29*4,1)[0]:null});
+    const meta=Array.from(new Uint32Array(buffer,at,14));
+    result.push({meta,values:Array.from(new Float32Array(buffer,at+56,32)),vertices:Array.from(new Float32Array(buffer,at+184,Math.min(meta[10],16)*9)),
+      spriteIdentity:meta[11]&(1<<20)?new Uint32Array(buffer,at+56+29*4,1)[0]:null});
   }
   return result;
+}
+function indexLifecycle(evidence) {
+  if(!evidence?.available||!Array.isArray(evidence.events)||evidence.dropped!==0)
+    return {available:false,active:new Map(),born:new Set(),retired:new Set(),invalid:new Set()};
+  const active=new Map(),born=new Set(),retired=new Set(),invalid=new Set();
+  for(const event of evidence.events){
+    const key=`${event.owner}:${event.object}`,gen=`${key}:${event.generation}`,current=active.get(key);
+    if(event.operation===1){if(current!==undefined)invalid.add(key);active.set(key,event.generation);born.add(gen);retired.delete(gen);}
+    else if(event.operation===2){if(current!==event.generation)invalid.add(key);else {active.delete(key);retired.add(gen);}}
+    else invalid.add(key);
+  }
+  return {available:true,active,born,retired,invalid};
+}
+function identityProven(record,lifecycle,allowRetired=false) {
+  const owner=record.meta[0];
+  if(!LIFECYCLE_TRACKED_OWNER_IDS.has(owner))return true;
+  const generation=record.meta[12],flags=record.meta[13],key=`${owner}:${record.meta[1]}`;
+  const generationKey=`${key}:${generation}`;
+  return lifecycle.available&&generation>0&&(flags&3)===3&&!(flags&4)&&
+    !lifecycle.invalid.has(key)&&lifecycle.born.has(generationKey)&&
+    (lifecycle.active.get(key)===generation||(allowRetired&&lifecycle.retired.has(generationKey)));
 }
 function indexed(records) {
   const map=new Map(),duplicates=new Set();
@@ -85,23 +106,27 @@ function classifyField(f,previous,current,samples) {
   return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?'interpolated':'responsive'};
 }
 export const severity = defaultSeverity;
-export function analyzeWindow({previous,current,samples,stateBefore=null,statesAfter=[],worldFrozen=false,gate=true,build={},label='',negativeControl=false}) {
+export function analyzeWindow({previous,current,samples,stateBefore=null,statesAfter=[],worldFrozen=false,gate=true,build={},label='',negativeControl=false,lifecycle=null}) {
   if(!previous||!current||!Array.isArray(samples)||samples.length<3)throw Error('Need two authoritative draws and at least three alpha samples');
   if(samples.some(s=>!Number.isFinite(s.alpha)||s.alpha<0||s.alpha>1))throw Error('Invalid alpha');
   const before=indexed(previous.records),now=indexed(current.records),sampleMaps=samples.map(s=>({...s,...indexed(s.records)}));
   const consecutive=previous.tick+1===current.tick;
   const state=compareStateEvidence(stateBefore,statesAfter);
+  const lifecycleIndex=indexLifecycle(lifecycle);
   const report={schema:SCHEMA,build,label,negativeControl,tick:current.tick,previousTick:previous.tick,consecutive,
-    gate:!!gate,worldFrozen,alphas:samples.map(s=>s.alpha),purityStatus:state.status,stateChanges:state.changes,objects:[],counts:{},coverage:{},
+    gate:!!gate,worldFrozen,alphas:samples.map(s=>s.alpha),purityStatus:state.status,stateChanges:state.changes,stateAuthority:state.authorityCoverage,objects:[],counts:{},coverage:{},
     sampledGeometry:true,dropped:(previous.dropped||0)+(current.dropped||0)+samples.reduce((n,s)=>n+(s.dropped||0),0),
-    limitations:['screen geometry is not an occlusion/pixel visibility proof','unmarked owners and unvisited scenes are not counted as passed','state hashes cover named fields, not the complete simulation','geometry over 16 vertices is sampled; no interpolated GPU command replay','CPU-projected 3D UV/fog/color shader output is unobserved']};
+    lifecycle:{available:!!lifecycle?.available,capacity:lifecycle?.capacity??0,events:lifecycle?.count??0,dropped:lifecycle?.dropped??0,
+      invalidObjects:lifecycleIndex.invalid.size,unprovenObjects:0,status:'incomplete'},
+    limitations:['screen geometry is not an occlusion/pixel visibility proof','unmarked owners and unvisited scenes are not counted as passed','state hashes cover the named fields and the reported missing groups, not the complete simulation','dynamic object identity is proven only when generation hooks and the bounded event ring are complete','geometry over 16 vertices is sampled; no interpolated GPU command replay','CPU-projected 3D UV/fog/color shader output is unobserved','audio purity covers synchronous operation counters at the draw boundary, not asynchronous queue/device output']};
   for(const [key,c] of now.map){
     const p=before.map.get(key),selected=sampleMaps.map(s=>({alpha:s.alpha,record:s.map.get(key)}));
     const bomb=c.meta[0]===16,rawPart=c.meta[2];
-    const row={key,owner:OWNERS[c.meta[0]]||'未标记',ownerId:c.meta[0],object:c.meta[1],part:bomb?(rawPart&255):rawPart,lifecycleState:bomb?(rawPart>>>8):null,draw:c.meta[3],kind:c.meta[4],anm:c.meta[5]|0,script:c.meta[6]|0,sprite:c.meta[7]|0,age:c.meta[8]|0,
+    const row={key,owner:OWNERS[c.meta[0]]||'未标记',ownerId:c.meta[0],object:c.meta[1],generation:c.meta[12]||0,identityFlags:c.meta[13]||0,part:bomb?(rawPart&255):rawPart,lifecycleState:bomb?(rawPart>>>8):null,draw:c.meta[3],kind:c.meta[4],anm:c.meta[5]|0,script:c.meta[6]|0,sprite:c.meta[7]|0,age:c.meta[8]|0,
       bounds:c.values.slice(21,25),sampled:!!(c.meta[11]&2),projected:!!(c.meta[11]&8),fields:[],status:'static'};
     let skip='';
     if(!c.meta[0])skip='unscoped';
+    else if(!identityProven(c,lifecycleIndex)||p&&keyOf(p)===key&&!identityProven(p,lifecycleIndex)||selected.some(s=>s.record&&!identityProven(s.record,lifecycleIndex)))skip='identity-uncertain';
     else if(now.duplicates.has(key)||before.duplicates.has(key)||sampleMaps.some(s=>s.duplicates.has(key)))skip='ambiguous';
     else if(!consecutive||!p||selected.some(s=>!s.record))skip='unobserved';
     else if(p.meta[5]!==c.meta[5]||p.meta[6]!==c.meta[6]||(c.meta[8]|0)<(p.meta[8]|0))skip='lifecycle';
@@ -161,16 +186,24 @@ export function analyzeWindow({previous,current,samples,stateBefore=null,statesA
       if(row.status==='static'&&row.fields.some(f=>f.status==='interpolated'))row.status='interpolated';
     }
     row.severity=severity(row.status);report.objects.push(row);
+    if(row.status==='identity-uncertain')report.lifecycle.unprovenObjects++;
     report.counts[row.status]=(report.counts[row.status]||0)+1;
     const group=report.coverage[row.owner]??={observed:0,changing:0,issues:0,unresolved:0};group.observed++;
     if(row.fields.some(f=>f.motion>f.tolerance*2))group.changing++;
     if(row.severity>=3)group.issues++;
-    if(['unobserved','unscoped','ambiguous','lifecycle','offscreen'].includes(row.status))group.unresolved++;
+    if(['unobserved','unscoped','identity-uncertain','ambiguous','lifecycle','offscreen'].includes(row.status))group.unresolved++;
   }
-  report.disappeared=[...before.map].filter(([key])=>!now.map.has(key)).map(([key,r])=>({key,ownerId:r.meta[0],script:r.meta[6]|0,status:'lifecycle'}));
+  report.disappeared=[...before.map].filter(([key])=>!now.map.has(key)).map(([key,r])=>{
+    const proven=identityProven(r,lifecycleIndex,true);if(LIFECYCLE_TRACKED_OWNER_IDS.has(r.meta[0])&&!proven)report.lifecycle.unprovenObjects++;
+    return {key,ownerId:r.meta[0],object:r.meta[1],generation:r.meta[12]||0,identityFlags:r.meta[13]||0,
+      part:r.meta[2],draw:r.meta[3],kind:r.meta[4],anm:r.meta[5]|0,script:r.meta[6]|0,
+      sprite:r.meta[7]|0,age:r.meta[8]|0,bounds:r.values.slice(21,25),
+      status:proven?'lifecycle':'identity-uncertain'};
+  });
+  report.lifecycle.status=lifecycleIndex.available&&report.lifecycle.dropped===0&&!report.lifecycle.invalidObjects&&!report.lifecycle.unprovenObjects?'complete':'incomplete';
   report.objects.sort((a,b)=>b.severity-a.severity||a.ownerId-b.ownerId||a.key.localeCompare(b.key));
   report.purity=report.purityStatus==='pass';
-  report.valid=consecutive&&report.dropped===0&&samples.every(s=>s.tick===undefined||s.tick===current.tick)&&samples.some(s=>s.alpha===0)&&samples.some(s=>s.alpha===1)&&samples.filter(s=>s.alpha===.5).length>=2;
+  report.valid=consecutive&&report.dropped===0&&lifecycleIndex.available&&report.lifecycle.dropped===0&&samples.every(s=>s.tick===undefined||s.tick===current.tick)&&samples.some(s=>s.alpha===0)&&samples.some(s=>s.alpha===1)&&samples.filter(s=>s.alpha===.5).length>=2;
   report.issueGroups=groupFindings([report]);
   return report;
 }

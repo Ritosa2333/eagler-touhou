@@ -1,5 +1,8 @@
 #include "SoundEffects.hpp"
 namespace th08 {
+#if defined(TH_SDL3) && defined(__EMSCRIPTEN__)
+extern "C" void th08_sfx_latency_event(u32 index,u32 handle);
+#endif
 const SoundDefinition sound_definitions[46]={
  {0,-1900,0},{0,-2100,0},{1,-1200,5},{1,-1500,5},{2,-1100,100},{3,-700,100},
  {4,-700,100},{5,-1900,50},{6,-2200,50},{7,-2400,50},{8,-1100,100},{9,-1100,100},
@@ -42,7 +45,12 @@ void SoundEffects::process(){
         for(i32 j=0;j<count;++j)sum=wrapping_add(sum,state.pans[i][j]);sum/=count;state.counts[i]=0;
         if(index>=46||!buffers[index])continue;const auto buffer=buffers[index];
         output.stop(buffer);output.position(buffer,0);output.pan(buffer,sum);
-        output.volume(buffer,adjusted_volume(sound_definitions[index].volume,master_volume,false));output.play(buffer,0,0);
+        output.volume(buffer,adjusted_volume(sound_definitions[index].volume,master_volume,false));
+#if defined(TH_SDL3) && defined(__EMSCRIPTEN__)
+        // Observe the actual deduplicated production play, after its controls.
+        th08_sfx_latency_event(static_cast<u32>(index),buffer);
+#endif
+        output.play(buffer,0,0);
     }
 }
 i32 AudioFades::volume(i32 level){return buffer?output.volume(buffer,SoundEffects::adjusted_volume(level,master_volume,true)):i32(0x800401f0u);}

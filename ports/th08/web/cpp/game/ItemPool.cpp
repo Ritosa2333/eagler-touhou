@@ -15,10 +15,10 @@ ItemState* ItemPool::spawn(const Vec3& position,i32 type,i32 mode,i32 power,i8 p
         else if(mode==3||mode==5){item->velocity.y=(number(-2)-rng.range(.2f)).to_float();item->velocity.x=rng.signed_range(.6f).to_float();
             if(player_state==2){item->state=0;item->velocity={0,-.9f,0};}}
         actions.animation(item->animation,wrapping_add(type,61));item->animation.color1.d3dColor=-1;item->animation.zWriteDisabled=true;item->max_value=0;item->onscreen=1;
-        state.tail->next=item;item->previous=state.tail;item->next=nullptr;state.tail=item;return item;
+        state.tail->next=item;item->previous=state.tail;item->next=nullptr;state.tail=item;TH08_AUDIT_BORN(Item,item);return item;
     }return overflow;
 }
-void ItemPool::remove(ItemState& item){item.active=0;item.previous->next=item.next;if(item.next)item.next->previous=item.previous;if(state.tail==&item)state.tail=item.previous;}
+void ItemPool::remove(ItemState& item){TH08_AUDIT_RETIRED(Item,&item);item.active=0;item.previous->next=item.next;if(item.next)item.next->previous=item.previous;if(state.tail==&item)state.tail=item.previous;}
 void ItemPool::collect_all(){for(auto* p=state.head.next;p;p=p->next){p->state=1;p->velocity={0,-.5f,0};}}
 void ItemPool::cancel_homing(){for(auto* p=state.head.next;p;p=p->next)if(p->state==1){p->state=0;p->velocity={0,-.9f,0};}}
 void ItemPool::convert_power(ItemState* except){

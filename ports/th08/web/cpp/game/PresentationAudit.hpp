@@ -5,7 +5,7 @@ namespace th08 { struct AnmVm; struct EffectState; struct Vec2; struct SpriteVer
 namespace th08::audit {
 enum class Owner : uint32_t { Unknown, Title, TitleHelp, Pause, Retry, Bullet, Laser,
     Effect, Enemy, Item, Gui, Background, Spell, Player, PlayerShot, Ascii, PlayerBomb, PlayerOption, AsciiText,
-    AsciiScorePopup,AsciiTimePopup };
+    AsciiScorePopup,AsciiTimePopup,ScreenEffect };
 #if defined(TH_PRESENTATION_AUDIT)
 enum ScopeFlag : uint32_t { DiscreteMotion=1 };
 struct Scope {
@@ -16,11 +16,25 @@ struct Scope {
 private:
     uint32_t saved_owner,saved_object,saved_part,saved_ordinal,saved_flags; int32_t saved_age;
 };
-// Binary wire layout: 12 metadata words, 32 property floats, 16 sampled vertices
+// Binary wire layout: 14 metadata words, 32 property floats, 16 sampled vertices
 // of XYZ/UV/RGBA. Geometry above 16 vertices is explicitly marked sampled.
-struct Record { uint32_t meta[12]{}; float values[32]{}; float vertices[16*9]{}; };
-static_assert(sizeof(Record)==752);
+struct Record { uint32_t meta[14]{}; float values[32]{}; float vertices[16*9]{}; };
+static_assert(sizeof(Record)==760);
+struct LifecycleEvent { uint32_t owner=0,object=0,generation=0,tick=0,operation=0; };
+static_assert(sizeof(LifecycleEvent)==20);
+// Captured with each authoritative Draw reference, not inferred from the
+// event's update-side tick. Presentation-only draws leave this prefix fixed.
+struct LifecycleCursor { uint32_t count=0,next=0,dropped=0,epoch=0; };
 void enable(bool);
+void object_born(Owner,const void*);
+void object_retired(Owner,const void*);
+uint32_t object_generation(Owner,const void*,uint32_t* flags=nullptr);
+void inject_audio_pump(bool);
+bool audio_pump_injected();
+const LifecycleEvent* lifecycle_records();
+uint32_t lifecycle_count();
+uint32_t lifecycle_cursor();
+uint32_t lifecycle_dropped();
 void begin_frame(bool presentation_only,float alpha);
 void end_frame();
 void capture(const AnmVm&,const SpriteVertex*,uint32_t count,uint32_t kind,const Vec2* screen_shake=nullptr);
@@ -38,6 +52,8 @@ uint32_t tick_id();
 #define TH08_AUDIT_EFFECT(effect,vertices,count) ::th08::audit::capture_effect(effect,vertices,count)
 #define TH08_AUDIT_FAN(vm,vertices,count) ::th08::audit::capture_fan(vm,vertices,count)
 #define TH08_AUDIT_WORLD(vm,renderer,world) ::th08::audit::capture_world(vm,renderer,world)
+#define TH08_AUDIT_BORN(owner,ptr) ::th08::audit::object_born(::th08::audit::Owner::owner,ptr)
+#define TH08_AUDIT_RETIRED(owner,ptr) ::th08::audit::object_retired(::th08::audit::Owner::owner,ptr)
 #define TH08_AUDIT_FRAME(only,alpha) ::th08::audit::begin_frame(only,alpha)
 #define TH08_AUDIT_END() ::th08::audit::end_frame()
 #else
@@ -48,6 +64,8 @@ uint32_t tick_id();
 #define TH08_AUDIT_EFFECT(effect,vertices,count) ((void)0)
 #define TH08_AUDIT_FAN(vm,vertices,count) ((void)0)
 #define TH08_AUDIT_WORLD(vm,renderer,world) ((void)0)
+#define TH08_AUDIT_BORN(owner,ptr) ((void)0)
+#define TH08_AUDIT_RETIRED(owner,ptr) ((void)0)
 #define TH08_AUDIT_FRAME(only,alpha) ((void)0)
 #define TH08_AUDIT_END() ((void)0)
 #endif

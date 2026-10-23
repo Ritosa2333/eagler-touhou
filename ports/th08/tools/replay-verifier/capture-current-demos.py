@@ -17,7 +17,9 @@ BOOTSTRAP = r'''async fixture => {
   await presentationLab.boot({replayBytes});
   const controller=presentationLab.controller;
   controller.freeze();
-  const core=controller.core,runtime=controller.runtime,state={previous:null,rows:[],tail:[],applicationTicks:0,stopOnTitle:false,done:false};
+  const replayDigest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(bytes)))).map(value=>value.toString(16).padStart(2,'0')).join('');
+  const replay={bytes:replayBytes.length,sha256:await replayDigest(replayBytes),path:`input/demo${fixture}.rpy`};
+  const core=controller.core,runtime=controller.runtime,state={previous:null,rows:[],tail:[],applicationTicks:0,started:false,done:false,stopReason:null,terminalScene:null};
   const capture=()=>{
     const pointer=core.trace(runtime.app),u32=new Uint32Array(core.memory.buffer,pointer,68),f32=new Float32Array(core.memory.buffer,pointer,68);
     const diagnostics=new Int32Array(core.memory.buffer,core.diagnostics(runtime.app),16);
@@ -31,12 +33,14 @@ BOOTSTRAP = r'''async fixture => {
   };
   const tick=()=>{
     const receipt=controller.driver.advanceOneTick();state.applicationTicks++;
+    const scene=core.status(runtime.app,0);
     const trace=Array.from(new Uint32Array(core.memory.buffer,core.trace(runtime.app),11));
     const diagnostics=Array.from(new Int32Array(core.memory.buffer,core.diagnostics(runtime.app),16));
-    state.tail.push({applicationTick:state.applicationTicks,receipt,scene:core.status(runtime.app,0),trace,diagnostics});
+    state.tail.push({applicationTick:state.applicationTicks,receipt,scene,trace,diagnostics});
     if(state.tail.length>32)state.tail.shift();
-    if(receipt.status==='advanced')capture();else state.done=true;
-    if(state.stopOnTitle&&core.status(runtime.app,0)===1)state.done=true;
+    if(receipt.status==='advanced')capture();
+    if(state.started&&scene===1){state.done=true;state.stopReason='returned-to-title';state.terminalScene=scene;}
+    else if(receipt.status!=='advanced'){state.done=true;state.stopReason=state.started?'driver-not-advanced':'driver-not-advanced-before-playback';state.terminalScene=scene;}
     return receipt;
   };
   const step=count=>{for(let i=0;i<count&&!state.done;i++)tick();};
@@ -47,14 +51,14 @@ BOOTSTRAP = r'''async fixture => {
   for(let i=0;i<5&&core.status(runtime.app,0)!==2;i++){press('KeyZ');navigation.push([core.status(runtime.app,0),core.status(runtime.app,8),core.status(runtime.app,9)]);}
   if(core.status(runtime.app,0)!==2||!(new Uint32Array(core.memory.buffer,core.trace(runtime.app),5)[4]&8))
     throw Error('Real Replay playback did not start: '+JSON.stringify(navigation));
-  state.stopOnTitle=true;
+  state.started=true;
   controller.clearKeys();
   window.replayVerifierCapture={
-    run(count){state.rows=[];step(count);if(core.status(runtime.app,0)===1)state.done=true;return {rows:state.rows,done:state.done,scene:core.status(runtime.app,0),tail:state.tail};},
+    run(count){state.rows=[];step(count);return {rows:state.rows,done:state.done,stopReason:state.stopReason,terminalScene:state.terminalScene,scene:core.status(runtime.app,0),tail:state.tail};},
     navigation,
   };
   const rows=state.rows;state.rows=[];
-  return {rows,navigation,build:presentationLab.identity};
+  return {rows,navigation,replay,build:presentationLab.identity};
 }'''
 
 
@@ -84,28 +88,37 @@ def main():
                 rows = initial['rows']
                 done = False
                 tail = []
+                stop_reason = None
+                terminal_scene = None
                 while not done and len(rows) < args.max_ticks:
                     batch = page.evaluate('count => replayVerifierCapture.run(count)', 300)
                     rows.extend(batch['rows'])
                     done = batch['done']
                     tail = batch['tail']
+                    stop_reason = batch['stopReason']
+                    terminal_scene = batch['terminalScene']
                     if len(rows) and len(rows) % 3000 < len(batch['rows']):
                         print(json.dumps({'fixture': fixture, 'captured': len(rows), 'lastFrame': rows[-1]['frame']}), flush=True)
+                if not done:
+                    stop_reason = 'maximum-ticks'
+                    terminal_scene = page.evaluate('() => presentationLab.controller.core.status(presentationLab.controller.runtime.app,0)')
+                complete = done and stop_reason == 'returned-to-title' and terminal_scene == 1 and not errors
                 result = {
-                    'schema': 'th08/current-replay-capture/v1', 'fixture': fixture,
-                    'complete': done, 'errors': errors, 'navigation': initial['navigation'],
+                    'schema': 'th08/current-replay-capture/v2', 'fixture': fixture,
+                    'complete': complete, 'stopReason': stop_reason, 'terminalScene': terminal_scene,
+                    'replay': initial['replay'], 'errors': errors, 'navigation': initial['navigation'],
                     'build': initial['build'], 'tail': tail, 'rows': rows,
                 }
                 path = args.output / f'demo{fixture}.json'
                 path.write_text(json.dumps(result, separators=(',', ':')), encoding='utf-8')
-                suite.append({'fixture': fixture, 'complete': done, 'ticks': len(rows), 'errors': errors, 'file': path.name})
+                suite.append({'fixture': fixture, 'complete': complete, 'stopReason': stop_reason, 'ticks': len(rows), 'errors': errors, 'file': path.name})
                 print(json.dumps(suite[-1]), flush=True)
                 context.close()
-                if errors or not done:
-                    raise RuntimeError(f'Demo {fixture} did not complete cleanly')
+                if not complete:
+                    raise RuntimeError(f'Demo {fixture} did not return naturally to the title')
         finally:
             browser.close()
-    (args.output / 'results.json').write_text(json.dumps({'schema': 'th08/current-replay-capture-suite/v1', 'passed': True, 'fixtures': suite}, indent=2), encoding='utf-8')
+    (args.output / 'results.json').write_text(json.dumps({'schema': 'th08/current-replay-capture-suite/v2', 'passed': all(item['complete'] for item in suite), 'fixtures': suite}, indent=2), encoding='utf-8')
 
 
 if __name__ == '__main__':

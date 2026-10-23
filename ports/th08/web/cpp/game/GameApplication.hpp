@@ -18,6 +18,11 @@ struct ApplicationPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay,FrameCloc
     virtual bool load_motion(const u8*,u32){return true;}
     virtual i32 replay_touch_points(ReplayTouchPoint*,i32){return 0;}
     virtual bool cheat_movement_used()const{return false;}
+    // Controlled input scenes are armed by the host before title navigation.
+    // The request is consumed by the next world entry and reported after load.
+    virtual bool take_validation_scene_request(){return false;}
+    virtual void finish_validation_scene_request(bool,bool){}
+    virtual void validation_scene_load_scope(bool){}
     virtual std::vector<u8> read_prefix(const char*,u32 size)=0;
     virtual bool write(const char*,const u8*,u32)=0;
     virtual std::vector<std::string> user_replays()=0;

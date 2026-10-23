@@ -10,47 +10,9 @@
 #include "Chain.hpp"
 #include "SpellProgress.hpp"
 #include "PracticeConfig.hpp"
+#include "TitleMenuState.hpp"
 #include <string>
 namespace th08 {
-enum TitleCurrentScreen
-{
-    TitleCurrentScreen_StartMenu = 0,
-    TitleCurrentScreen_Option = 2,
-    TitleCurrentScreen_KeyConfig = 3,
-    TitleCurrentScreen_DifficultySelect = 4,
-    TitleCurrentScreen_CharacterSelect = 5,
-    TitleCurrentScreen_ShotSelect = 6, /* Leftover from PCB */
-    TitleCurrentScreen_Replay = 7,
-    TitleCurrentScreen_DifficultySelectPractice = 8,
-    TitleCurrentScreen_CharacterSelectPractice = 9,
-    TitleCurrentScreen_ShotSelectPractice = 10, /* Leftover from PCB */
-    TitleCurrentScreen_PracticeStageSelect = 11,
-    TitleCurrentScreen_DifficultySelectExtra = 12,
-    TitleCurrentScreen_CharacterSelectExtra = 13,
-    TitleCurrentScreen_ShotSelectExtra = 14,      /* Leftover from PCB */
-    TitleCurrentScreen_CharacterSelectSpell = 15, /* Seems to be an earlier feature, the current scene
-                                                   * is never set to this value, but it checks against
-                                                   * this value.
-                                                   */
-    TitleCurrentScreen_SpellStageSelect = 16,
-    TitleCurrentScreen_SpellCardSelect = 17,
-};
-
-enum TitleScreenState
-{
-    TitleScreenState_Ready = 0,
-    TitleScreenState_Loading = 1,
-    TitleScreenState_Close = 2,
-};
-
-enum TitleCurrentScreenState
-{
-    TitleCurrentScreenState_Init = 0,
-    TitleCurrentScreenState_Ready = 1,
-    TitleCurrentScreenState_Exit = 2,
-    TitleCurrentScreenState_Changing = 3,
-};
-
 
 struct TitleControllerMapping {
     i16 shotButton,bombButton,focusButton,menuButton,upButton,downButton,leftButton,rightButton,skipButton;

@@ -4,9 +4,11 @@
 #include "Localization.hpp"
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
+#include <eagler/diagnostics/LanguageTrace.hpp>
 #include <cmath>
 #include <cstdio>
 #include <cstdarg>
+#include <cstdint>
 #include <cstring>
 #include <algorithm>
 #include <string>
@@ -16,6 +18,9 @@ namespace {
 float add(float a,float b){return Scalar::add(a,b);}
 float sub(float a,float b){return Scalar::sub(a,b);}
 float mul(float a,float b){return Scalar::mul(a,b);}
+#if defined(TH_PRESENTATION_AUDIT)
+template<typename Owner,typename Object>void retire_tracked(Owner owner,Object* object){u32 flags=0;if(audit::object_generation(owner,object,&flags)&&(flags&2u))audit::object_retired(owner,object);}
+#endif
 Extended integer(i32 x){return Extended::from_int(x);}
 i32 popup_alpha(const Vec3& player,const Vec3& position){
     const float x=sub(player.x,position.x),y=sub(player.y,position.y);
@@ -115,6 +120,11 @@ void AsciiManager::direct_sprite(AnmVm& vm,i32 sprite){
 }
 void AsciiManager::reset(){
     auto& s=state;
+#if defined(TH_PRESENTATION_AUDIT)
+    for(i32 i=0;i<256;++i)retire_tracked(audit::Owner::AsciiText,&s.strings[i]);
+    for(auto& popup:s.score_popups)if(popup.in_use)retire_tracked(audit::Owner::AsciiScorePopup,&popup);
+    for(auto& popup:s.time_popups)if(popup.in_use)retire_tracked(audit::Owner::AsciiTimePopup,&popup);
+#endif
     presentation_state=PresentationState{};
     std::memset(score_popup_previous,0,sizeof(score_popup_previous));for(auto& p:score_popup_previous)p.timer=-2;
 #if defined(TH_PRESENTATION_AUDIT)
@@ -154,8 +164,16 @@ void AsciiManager::set_gauge_interrupt(i32 interrupt){
 void AsciiManager::tick_popups(const AsciiContext& c,const FrameTiming& timing){
     if(c.paused||c.retry||c.freeze_popups)return;
     const bool snapshot=popup_marker.capture();
-    for(u32 i=0;i<723;++i){auto& p=state.score_popups[i];if(snapshot)score_popup_previous[i]={p.position,p.timer.current,p.in_use,p.characters};if(p.in_use){p.position.y=(number(p.position.y)-number(.5f)*number(timing.rate)).to_float();p.timer.tick(timing);if(p.timer.current>60)p.in_use=0;}}
-    for(auto& p:state.time_popups)if(p.in_use){p.timer.tick(timing);if(p.timer.current>90)p.in_use=0;}
+    for(u32 i=0;i<723;++i){auto& p=state.score_popups[i];if(snapshot)score_popup_previous[i]={p.position,p.timer.current,p.in_use,p.characters};if(p.in_use){p.position.y=(number(p.position.y)-number(.5f)*number(timing.rate)).to_float();p.timer.tick(timing);if(p.timer.current>60){
+#if defined(TH_PRESENTATION_AUDIT)
+        retire_tracked(audit::Owner::AsciiScorePopup,&p);
+#endif
+        p.in_use=0;}}}
+    for(auto& p:state.time_popups)if(p.in_use){p.timer.tick(timing);if(p.timer.current>90){
+#if defined(TH_PRESENTATION_AUDIT)
+        retire_tracked(audit::Owner::AsciiTimePopup,&p);
+#endif
+        p.in_use=0;}}
 }
 void AsciiManager::tick_vms(bool demo){
     auto& s=state;
@@ -169,7 +187,11 @@ bool AsciiManager::add_string(const Vec3& position,const char* text,bool softwar
     // reproducing strcpy's overwrite of adjacent game state for external text.
     if(std::strlen(text)>=64)return false;
     auto& next=state.strings[state.string_count++];std::strcpy(next.text,text);
-    next.position=position;next.color=state.color;next.scale_x=state.scale_x;next.scale_y=state.scale_y;next.gui=state.gui;next.selected=software_texturing?state.selected:0;return true;
+    next.position=position;next.color=state.color;next.scale_x=state.scale_x;next.scale_y=state.scale_y;next.gui=state.gui;next.selected=software_texturing?state.selected:0;
+#if defined(TH_PRESENTATION_AUDIT)
+    if(!presentation::render_only){retire_tracked(audit::Owner::AsciiText,&next);TH08_AUDIT_BORN(AsciiText,&next);}
+#endif
+    return true;
 }
 i32 AsciiManager::add_format(const Vec3& position,bool software,const char* format,...){
     char buffer[512];va_list args;va_start(args,format);
@@ -183,7 +205,11 @@ i32 AsciiManager::add_format(const Vec3& position,bool software,const char* form
 void AsciiManager::create_score(const Vec3& position,i32 value,u32 color,const AsciiContext& c,bool player){
     auto& s=state;auto& next=player?s.next_player:s.next_score;const i32 capacity=player?3:720;
     if(next>=capacity||next<0)next=0;
-    const i32 index=(player?720:0)+next++;auto& p=s.score_popups[index];score_popup_previous[index]={};score_popup_previous[index].timer=-2;p.in_use=1;
+    const i32 index=(player?720:0)+next++;auto& p=s.score_popups[index];
+#if defined(TH_PRESENTATION_AUDIT)
+    if(p.in_use)retire_tracked(audit::Owner::AsciiScorePopup,&p);
+#endif
+    score_popup_previous[index]={};score_popup_previous[index].timer=-2;p.in_use=1;
 #if defined(TH_PRESENTATION_AUDIT)
     score_popup_generation[index]=wrapping_add(score_popup_generation[index],1u);
 #endif
@@ -191,10 +217,17 @@ void AsciiManager::create_score(const Vec3& position,i32 value,u32 color,const A
     if(value>=0){while(value){p.text[count++]=u8(value%10);value/=10;}}else p.text[count++]=10;
     if(!count)p.text[count++]=0;p.characters=u8(count);p.color=color;p.timer.set(0);p.position=position;
     p.position.x=add(p.position.x,c.arcade_origin.x);p.position.y=add(p.position.y,c.arcade_origin.y);
+#if defined(TH_PRESENTATION_AUDIT)
+    TH08_AUDIT_BORN(AsciiScorePopup,&p);
+#endif
 }
 void AsciiManager::create_time(const Vec3& position,i32 value,i32 multiplier,u32 color,const AsciiContext& c,bool familiar){
     auto& s=state;if(s.next_time>=128||s.next_time<0)s.next_time=0;
-    const i32 index=s.next_time++;auto& p=s.time_popups[index];p.in_use=1;i32 count=0;
+    const i32 index=s.next_time++;auto& p=s.time_popups[index];
+#if defined(TH_PRESENTATION_AUDIT)
+    if(p.in_use)retire_tracked(audit::Owner::AsciiTimePopup,&p);
+#endif
+    p.in_use=1;i32 count=0;
 #if defined(TH_PRESENTATION_AUDIT)
     time_popup_generation[index]=wrapping_add(time_popup_generation[index],1u);
 #endif
@@ -206,18 +239,35 @@ void AsciiManager::create_time(const Vec3& position,i32 value,i32 multiplier,u32
     p.characters=u8(count);p.color=color;p.timer.set(familiar?88:0);p.position=position;
     p.position.x=((familiar?number(3.5f)*integer(count)+number(c.arcade_origin.x):number(c.arcade_origin.x))+number(p.position.x)).to_float();
     p.position.y=add(p.position.y,c.arcade_origin.y);p.scale_x=s.scale_x;p.scale_y=s.scale_y;
+#if defined(TH_PRESENTATION_AUDIT)
+    TH08_AUDIT_BORN(AsciiTimePopup,&p);
+#endif
 }
 void AsciiManager::draw_strings(const AsciiContext& c){
     auto& s=state;AnmVm text_copy;if(presentation::render_only)text_copy=s.large_text;auto& vm=presentation::render_only?text_copy:s.large_text;vm.visible=true;vm.anchor=3;bool gui=true;
     Vec3 presented_player=c.player;if(presentation::active&&presentation_state.valid){const float dx=c.player.x-presentation_state.player.x,dy=c.player.y-presentation_state.player.y;if(dx*dx+dy*dy<16384.0f)presented_player={presentation::lerp_world(presentation_state.player.x,c.player.x),presentation::lerp_world(presentation_state.player.y,c.player.y),presentation::lerp_world(presentation_state.player.z,c.player.z)};}
     auto viewport=[&](bool arcade){auto v=renderer.viewport;v.x=arcade?u32(Scalar::truncate(c.arcade_origin.x)):0;v.y=arcade?u32(Scalar::truncate(c.arcade_origin.y)):0;
         v.width=arcade?u32(Scalar::truncate(c.arcade_size.x)):640;v.height=arcade?u32(Scalar::truncate(c.arcade_size.y)):480;renderer.set_viewport(v);};
+    auto& language_trace=eagler::diagnostics::language_trace();
     for(i32 i=0;i<s.string_count&&i<256;++i){const auto& str=s.strings[i];vm.pos=str.position;vm.scale={str.scale_x,str.scale_y};const float space=(integer(s.space_width)*number(str.scale_x)).to_float();
+        std::size_t text_length=0;bool ascii_submitted=false;
+        if(language_trace.enabled())while(text_length<sizeof(str.text)&&str.text[text_length])++text_length;
         if(gui!=bool(str.gui)){gui=str.gui;viewport(gui);}
         for(const auto* p=reinterpret_cast<const u8*>(str.text);p<reinterpret_cast<const u8*>(str.text)+64&&*p;++p){
             if(*p=='\n'){vm.pos.y=(number(vm.pos.y)+number(16)*number(str.scale_y)).to_float();vm.pos.x=str.position.x;}
-            else {if(*p!=' '){direct_sprite(vm,*p+(str.selected?138:-1));vm.color1.d3dColor=str.selected?0xffffffff:str.color;const u32 glyph=u32(p-reinterpret_cast<const u8*>(str.text));TH08_AUDIT_SCOPE(AsciiText,&str,0,glyph);renderer.draw_no_rotation(vm);}vm.pos.x=add(vm.pos.x,space);}
+            else {if(*p!=' '){const i32 requested_sprite=i32(*p)+(str.selected?138:-1);direct_sprite(vm,requested_sprite);
+                if(language_trace.enabled()){
+                    i32 actual=-1;bool actual_glyph=false;
+                    if(state.ascii&&vm.loadedSprite){const auto base=reinterpret_cast<std::uintptr_t>(state.ascii->sprites);const auto pointer=reinterpret_cast<std::uintptr_t>(vm.loadedSprite);const auto bytes=std::uintptr_t(state.ascii->spriteCount)*sizeof(AnmLoadedSprite);
+                        if(pointer>=base&&pointer-base<bytes&&(pointer-base)%sizeof(AnmLoadedSprite)==0){const i32 index=i32((pointer-base)/sizeof(AnmLoadedSprite));actual=index-(str.selected?138:-1);actual_glyph=true;}}
+                    const bool requested_glyph=state.ascii&&requested_sprite>=0&&u32(requested_sprite)<state.ascii->spriteCount;
+                    language_trace.glyph(0,0,*p,actual,actual_glyph?eagler::diagnostics::LanguageTrace::GlyphSource::AsciiAtlas:eagler::diagnostics::LanguageTrace::GlyphSource::None,
+                        requested_glyph,false,false,false,actual_glyph&&actual!=*p,actual_glyph);
+                    ascii_submitted|=actual_glyph;
+                }
+                vm.color1.d3dColor=str.selected?0xffffffff:str.color;const u32 glyph=u32(p-reinterpret_cast<const u8*>(str.text));TH08_AUDIT_SCOPE(AsciiText,&str,0,glyph);renderer.draw_no_rotation(vm);}vm.pos.x=add(vm.pos.x,space);}
         }
+        if(ascii_submitted)language_trace.raster(reinterpret_cast<const u8*>(str.text),text_length,eagler::diagnostics::LanguageTrace::Encoding::Raw,0,0);
     }
     if(gui)viewport(false);
     for(u32 i=0;i<4;++i){auto& source=s.boss_markers[i];if(source.pos.x<56||source.pos.x>392)continue;AnmVm marker_copy;if(presentation::render_only)marker_copy=source;auto& marker=presentation::render_only?marker_copy:source;

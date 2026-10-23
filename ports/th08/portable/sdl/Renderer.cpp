@@ -1,4 +1,5 @@
 #include "Renderer.hpp"
+#include "RendererContextLifecycle.hpp"
 #include "Shaders.hpp"
 #include "ResampleShader.hpp"
 #include <emscripten.h>
@@ -58,7 +59,10 @@ Renderer* current(){return active;}void set_current(Renderer* r){active=r;}
 State::State(){for(auto& m:matrix)m=identity;}
 Renderer::Renderer(int v,Resolve r,void* p):version(v),resolve(r),owner(p){}
 bool Renderer::initialize(){
- if(!SDL_Init(SDL_INIT_VIDEO|SDL_INIT_EVENTS)){failure=SDL_GetError();return false;}
+ const SDL_InitFlags rendererSubsystems=SDL_INIT_VIDEO|SDL_INIT_EVENTS;
+ if(!detail::initialize_missing_subsystems(rendererSubsystems,
+  [](SDL_InitFlags flags){return SDL_WasInit(flags);},
+  [](SDL_InitFlags flags){return SDL_Init(flags);})){failure=SDL_GetError();return false;}
  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_ES);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,0);
  SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,0);SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
  window=SDL_CreateWindow(version==8?"Touhou 08":"Touhou 10",640,480,SDL_WINDOW_OPENGL);if(!window){failure=SDL_GetError();return false;}
@@ -80,7 +84,29 @@ bool Renderer::initialize(){
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+Renderer::~Renderer(){
+ discard();
+ if(context){
+  const bool released=detail::release_with_current_context(window,context,
+   [](SDL_Window* ownerWindow,SDL_GLContext ownerContext){return SDL_GL_MakeCurrent(ownerWindow,ownerContext);},[&]{
+    for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}
+    for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);
+    for(auto& [k,p]:programs)glDeleteProgram(p.id);
+    glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);
+    glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);
+    glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);
+    glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);
+   });
+  if(!released){std::fprintf(stderr,"SDL renderer: could not make its GL context current before releasing resources: %s\n",SDL_GetError());std::abort();}
+  if(!SDL_GL_DestroyContext(context)){std::fprintf(stderr,"SDL renderer: GL context destruction failed: %s\n",SDL_GetError());std::abort();}
+  context=nullptr;
+ }
+ if(window){SDL_DestroyWindow(window);window=nullptr;}
+ if(active==this)active=nullptr;
+ // SDL's video/events subsystems outlive a renderer session: the shell can
+ // close and launch a game again in the same Wasm module. The renderer owns
+ // its window/context, not the process-wide SDL subsystem lifetime.
+}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
 void Renderer::bind_framebuffer(GLenum target,GLuint id){
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;

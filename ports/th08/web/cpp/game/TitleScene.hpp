@@ -40,6 +40,7 @@ public:
     bool modal()const{return information.active;}
     bool active()const{return chain!=nullptr;}
     bool invalid()const{return failed||animations.invalid;}
+    bool confirmation_ready()const{return active()&&!modal()&&!pending_load&&!invalid()&&title_confirmation_ready(menus.state.currentScreen,menus.state.currentScreenState,menus.state.stateTimer2);}
     void input(const InputFrame& input,const FrameTiming& timing){context.input=input;animations.timing=timing;}
 };
 }

@@ -5,7 +5,6 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$workspace = (Resolve-Path (Join-Path $root '..')).Path
 $node = (Get-Command node -ErrorAction Stop).Source
 $url = "http://127.0.0.1:$Port/"
 $output = Join-Path $root 'artifacts/presentation-lab'
@@ -14,8 +13,6 @@ New-Item -ItemType Directory -Force -Path $output | Out-Null
 Push-Location $root
 try {
     if ($Build) {
-        if (!$env:EMSDK) { $env:EMSDK = Join-Path $workspace 'toolchains/emsdk' }
-        if (!$env:EAGLER_FONT_ROOT) { $env:EAGLER_FONT_ROOT = Join-Path $workspace 'th08-eagler/build-eagler/fonts' }
         & $node portable/build.mjs --th08 --presentation-lab
         if ($LASTEXITCODE) { throw "Lab compilation failed: $LASTEXITCODE" }
         & $node portable/package-eagler.mjs --presentation-lab

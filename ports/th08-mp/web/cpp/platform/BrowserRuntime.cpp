@@ -122,6 +122,37 @@ bool BrowserRuntime::player_motion(const PlayerMovementState& state,float speed,
     }
     motion.record(g.globals.stage,enabled,x,y);return enabled;
 }
+void BrowserRuntime::record_player_motion(eagler::input::TouchMotionTraceBank::Sample sample){
+    using Bank=eagler::input::TouchMotionTraceBank;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& session=app.session;auto& net=session.netplay;
+    if(net.Configured()){
+        sample.frame=net.NextFrame();
+        if(net.Correcting())sample.execution_kind=Bank::resimulation;
+        else if(net.Playback()||net.ReadOnly())sample.execution_kind=Bank::replay;
+        else if(session.network_frame_open&&sample.seat<session.player_count&&
+                (session.network_frame.predictedMask&(1u<<sample.seat)))sample.execution_kind=Bank::speculative;
+        else sample.execution_kind=Bank::forward;
+        if(!session.network_frame_open)sample.flags|=Bank::flag_frame_unknown;
+    }else{
+        if(app.game.control.state.play_frames>=0)sample.frame=static_cast<u32>(app.game.control.state.play_frames);
+        else sample.flags|=Bank::flag_frame_unknown;
+        sample.execution_kind=(app.game.globals.game_flags&8)?Bank::replay:Bank::forward;
+    }
+    if(sample.mode!=Bank::mode_neutral){
+        const bool local_forward=sample.execution_kind==Bank::forward&&
+            (!net.Configured()||sample.seat==session.local_player);
+        if(local_forward)sample.sensitivity=touch_sensitivity;
+        else{sample.sensitivity=1.f;sample.flags|=Bank::flag_sensitivity_unknown;}
+    }
+#else
+    if(app.game.control.state.play_frames>=0)sample.frame=static_cast<u32>(app.game.control.state.play_frames);
+    else sample.flags|=Bank::flag_frame_unknown;
+    sample.execution_kind=(app.game.globals.game_flags&8)?Bank::replay:Bank::forward;
+    if(sample.mode!=Bank::mode_neutral)sample.sensitivity=touch_sensitivity;
+#endif
+    eagler::input::GlobalTouchMotionTraceBank().append(sample);
+}
 i32 BrowserRuntime::replay_touch_points(ReplayTouchPoint* points,i32 capacity){
     if(!points||capacity<=0)return 0;touhou::input::MotionTrack::TouchPoint source[10];const i32 limit=std::min<i32>(capacity,10),count=motion.replay_points(source,limit);
     for(i32 i=0;i<count;++i)points[i]={source[i].x,source[i].y};return count;

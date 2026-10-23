@@ -63,6 +63,9 @@ EX("texture") const BrowserTexture* browser_texture(BrowserRuntime* r,u32 h){ret
 EX("backbuffer") u32 browser_backbuffer(BrowserRuntime* r){return r?r->backbuffer():0;}
 EX("initialize") bool browser_initialize(BrowserRuntime* r){return r&&r->initialize();}
 EX("step") bool browser_step(BrowserRuntime* r,bool render){return r&&r->step(render);}
+EX("th08_touch_motion_trace_v2") const u32* browser_touch_motion_trace_v2(BrowserRuntime*,u32 seat,u32 execution_kind){
+    return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);
+}
 EX("audio_tick") bool browser_audio_tick(BrowserRuntime* r,u32 now){return r&&r->audio_tick(now);}
 EX("status") i32 browser_status(BrowserRuntime* r,i32 k){return r?r->status(k):-1;}
 EX("keyboard") u8* browser_keyboard(BrowserRuntime* r){return r?r->keyboard_state():nullptr;}

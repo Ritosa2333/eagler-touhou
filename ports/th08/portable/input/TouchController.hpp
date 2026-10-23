@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstdint>
 #include <set>
+#include <cstddef>
+#include <cstdint>
 #include <eagler/input/DialogueGesture.hpp>
 // Shared gesture policy, adapted from eagler-th07 Touch.cpp (CC0). Only the
 // adapter supplies game state and consumes movement; no score or stage rule
@@ -11,7 +13,7 @@ namespace touhou::input {
 struct TouchState {int context=0,instance=0;bool ready=false,choice=false;float x=0,y=0,fast=0,slow=0,min_x=0,min_y=0,max_x=640,max_y=480;};
 struct TouchSample {bool keys[256]{};int motion=0;float x=0,y=0;};
 class TouchController {
-    struct Gesture {bool active=false;int id=0,count=0;float x=0,y=0,last_x=0,last_y=0;std::uint64_t start=0;};
+    struct Gesture {bool active=false;int id=0,count=0;float x=0,y=0,last_x=0,last_y=0;std::uint64_t start=0;bool navigated=false;};
     Gesture menu,tap;eagler::input::DialogueGesture dialogue;std::set<int> fingers;int primary=0,instance=0,context=-1;
     bool dragging=false,motion_blocked=false,tap_armed=false,tap_moved=false;
     bool capture_begin=false,capture_rebase=false;
@@ -27,6 +29,17 @@ class TouchController {
 public:
     bool enabled=true,unlimited=false,fire=false,focus=false,two_finger=false,double_tap=false;
     float sensitivity=1,stick_x=0,stick_y=0;int mode=0;
+#if defined(TH_PRESENTATION_AUDIT)
+    void audit_state(std::uint32_t& hash)const{
+        const auto add=[&](const auto& value){const auto* bytes=reinterpret_cast<const std::uint8_t*>(&value);for(std::size_t i=0;i<sizeof(value);++i)hash=(hash^bytes[i])*16777619u;};
+        const auto gesture=[&](const Gesture& g){add(g.active);add(g.id);add(g.count);add(g.x);add(g.y);add(g.last_x);add(g.last_y);add(g.start);add(g.navigated);};
+        gesture(menu);gesture(tap);dialogue.audit_state(hash);add(fingers.size());for(const auto id:fingers)add(id);
+        add(primary);add(instance);add(context);add(dragging);add(motion_blocked);add(tap_armed);add(tap_moved);
+        add(capture_begin);add(capture_rebase);add(previous_x);add(previous_y);add(target_x);add(target_y);add(captured_x);add(captured_y);add(tap_x);add(tap_y);add(tap_time);
+        add(confirm_ticks);add(bomb_ticks);add(escape_ticks);add(bomb_serial);add(escape_serial);
+        add(enabled);add(unlimited);add(fire);add(focus);add(two_finger);add(double_tap);add(sensitivity);add(stick_x);add(stick_y);add(mode);
+    }
+#endif
     void clear_motion(){dragging=false;motion_blocked=capture_begin=capture_rebase=false;primary=instance=0;}
     void cancel(){clear_motion();fingers.clear();menu={};dialogue.clear();tap={};tap_armed=false;}
     // Clear input owned by a transient browser gesture. The fire button is a
@@ -47,7 +60,7 @@ public:
         if(type==0&&fingers.count(id)){fingers.erase(id);if(primary==id)clear_motion();if(menu.id==id)menu={};dialogue.erase(id);}
         if(type==2){fingers.erase(id);
             if(s.context==2&&dialogue.end(id,px,py,now,s.choice))confirm_ticks=3;else dialogue.erase(id);
-            if(menu.active&&(menu.id==id||menu.count>=2)){if(std::abs(menu.last_x-menu.x)<=24&&std::abs(menu.last_y-menu.y)<=24){if(menu.count>=2)escape_ticks=3;else confirm_ticks=3;}menu={};}
+            if(menu.active&&(menu.id==id||menu.count>=2)){if(!menu.navigated&&std::abs(menu.last_x-menu.x)<=24&&std::abs(menu.last_y-menu.y)<=24){if(menu.count>=2)escape_ticks=3;else confirm_ticks=3;}menu={};}
             if(tap.active&&tap.id==id){const float dx=px-tap.x,dy=py-tap.y;tap_armed=double_tap&&s.context==1&&now-tap.start<=220&&!tap_moved&&dx*dx+dy*dy<=576;tap_x=px;tap_y=py;tap_time=now;tap={};}
             if(primary==id)clear_motion();return;
         }
@@ -80,7 +93,7 @@ public:
         if(!enabled)return out;
         if(s.context==2){if(s.choice){const int key=dialogue.navigate();if(key)out.keys[key]=true;}
             else if(dialogue.skip(now))out.keys[17]=true;}
-        if(s.context!=1&&menu.active){const float dx=menu.last_x-menu.x,dy=menu.last_y-menu.y;if(std::abs(dx)>24||std::abs(dy)>24){if(std::abs(dx)>std::abs(dy))out.keys[dx>0?39:37]=true;else out.keys[dy>0?40:38]=true;}}
+        if(s.context!=1&&menu.active&&!menu.navigated){const float dx=menu.last_x-menu.x,dy=menu.last_y-menu.y;if(std::abs(dx)>24||std::abs(dy)>24){if(std::abs(dx)>std::abs(dy))out.keys[dx>0?39:37]=true;else out.keys[dy>0?40:38]=true;menu.navigated=true;}}
         if(s.context==1||s.context==2){out.keys[90]=(s.context==1&&fire)||out.keys[90];out.keys[16]=focus||(two_finger&&fingers.size()>1);out.keys[88]=s.context==1&&bomb;
           if(s.ready){
             if(!arrows&&mode==3&&(stick_x||stick_y)){const float speed=key_slow||out.keys[16]?s.slow:s.fast;out.motion=1;out.x=s.x+stick_x*speed;out.y=s.y+stick_y*speed;}

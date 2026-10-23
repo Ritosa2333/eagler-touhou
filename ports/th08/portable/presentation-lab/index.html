@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TH08 · 帧间显微镜</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="fullscreen.css"><style>#reportFrame{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}</style></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TH08 · 帧间显微镜</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="fullscreen.css"><style>#reportFrame{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}#reviewMaterials{margin:0;padding:8px 18px;list-style:none}#reviewMaterials li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}.review-group{display:flex;gap:8px;align-items:center;padding:12px 18px;color:var(--text)}</style></head>
 <body>
 <header><div><span class="eyebrow">PRESENTATION LAB / TH08</span><h1>帧间显微镜 <span class="badge">隔离测试树</span></h1><p>观察真实绘制，不靠帧率数字猜测。游戏逻辑仍按原作 60 Hz 更新。</p></div><div id="build" class="build">读取构建标识…</div></header>
 <section class="setup"><button id="boot" class="primary">启动实验</button><label class="file">选择自己的 th08.dat<input id="data" type="file" accept=".dat"></label><label class="file">导入 Replay<input id="replay" type="file" accept=".rpy,.rpyx"></label><label class="file">打开诊断报告<input id="import" type="file" accept=".json"></label><span id="status" role="status">准备中…</span></section>
@@ -14,9 +14,9 @@
  <div class="controls"><button id="play" disabled>继续游玩</button><button id="inspect" disabled class="primary">冻结并检查</button><button id="step" disabled>推进 1 帧</button><button id="step10" disabled>推进 10 帧</button><button id="stage1" disabled>测试进入一面</button></div>
  <div class="viewport" id="gameViewport"><button id="fullscreen" class="fullscreen" type="button" aria-label="进入全屏" title="进入全屏（Alt+Enter）">⛶</button><div id="stage"><iframe id="runtime" title="TH08 diagnostic runtime" allow="autoplay; fullscreen" tabindex="0"></iframe><img id="reportFrame" alt="报告中保存的帧间采样画面" hidden><svg id="overlay" viewBox="0 0 640 480" aria-label="对象定位层" hidden></svg><div id="empty">启动后可正常操作游戏。<br>感觉不对时，点「冻结并检查」。</div></div></div>
  <div class="slider"><label for="alpha">帧间进度 α <output id="alphaValue">1.00</output></label><input id="alpha" type="range" min="0" max="1" step="0.01" value="1" disabled><div class="ends"><span>上一逻辑帧 · 0</span><span>当前逻辑帧 · 1</span></div></div>
- <div class="controls"><label>放大 <select id="zoom"><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><label><input type="checkbox" id="boxes" checked> 对象框</label><label><input type="checkbox" id="negative"> 负对照：让现有 lerp 保持当前值</label></div>
+ <div class="controls"><label>放大 <select id="zoom"><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><label><input type="checkbox" id="boxes" checked> 对象框</label><label><input type="checkbox" id="negative"> 负对照：注入画面与声音副作用</label></div>
  <div class="controls"><button id="scan" disabled>扫描接下来 180 个逻辑帧</button><button id="cancel" disabled>停止扫描</button><button id="export" disabled>导出报告</button><button id="frames" disabled>导出报告＋5 张帧间图</button></div>
- <details><summary>怎么观察？</summary><p>冻结检查后，拖动 α。点击对象框或列表，右侧会显示具体属性和最终几何。框表示绘制提交区域，不保证对象没有被其他图层遮挡。</p><p>方向键、Z、X、Shift、Esc 仍由游戏处理。检查器冻结不是原作暂停。扫描会推进真实游戏逻辑，可能影响本局成绩；所有存档都在独立的测试页面中。</p><p>负对照只故意破坏诊断显示中的 lerp，用来检验检测器会不会报警；它不是修复方案。取消它即可恢复。</p></details>
+ <details><summary>怎么观察？</summary><p>冻结检查后，拖动 α。点击对象框或列表，右侧会显示具体属性和最终几何。框表示绘制提交区域，不保证对象没有被其他图层遮挡。</p><p>方向键、Z、X、Shift、Esc 仍由游戏处理。检查器冻结不是原作暂停。扫描会推进真实游戏逻辑，可能影响本局成绩；所有存档都在独立的测试页面中。</p><p>负对照让额外绘制保持对象当前位置并触发音频处理，用于确认自动检查能发现画面和声音副作用。取消后恢复正常诊断。</p></details>
 </section>
 <section class="results panel">
  <div class="section-head"><h2>对象与证据</h2><span id="window">未采样</span></div>
@@ -26,6 +26,27 @@
  <div class="table-scroll"><table><thead><tr><th>对象 / 脚本</th><th>观测结论</th><th>属性</th></tr></thead><tbody id="rows"><tr><td colspan="3">等待冻结检查</td></tr></tbody></table></div>
  <section id="detail"><h3>选择一个对象</h3><p>无需描述“那个大环”。报告保留所属模块、对象身份、脚本与具体属性。</p></section>
  <details><summary>按模块查看覆盖范围</summary><pre id="coverage">尚无数据</pre></details>
+</section>
+<section class="panel visual-review" style="grid-column:1/-1">
+ <div class="section-head"><h2>人工视觉复核</h2><span>结论范围：本次素材集</span></div>
+ <p class="review-help">正常游玩并在不同场景冻结，反复加入窗口素材。所有素材使用同一 Runtime 与输入身份；收集完成后填写一次审查者、环境和整组结论。</p>
+ <div class="review-fields">
+  <label>审查者<input id="reviewer" autocomplete="name"></label>
+  <label>显示设备<input id="reviewDisplay" placeholder="型号与连接方式"></label>
+  <label>系统设置的刷新率（Hz，人工确认）<input id="reviewHz" type="number" min="1" step="any"></label>
+  <label>浏览器名称<input id="reviewBrowser"></label>
+  <label>浏览器版本<input id="reviewBrowserVersion"></label>
+  <label>操作系统<input id="reviewOS"></label>
+  <label>系统版本<input id="reviewOSVersion"></label>
+ </div>
+ <label class="review-group"><input id="reviewGroup" type="checkbox"> 显示场景集 | 连续运动与限帧、对象边界与暂停（DISPLAY-02／04／05／06／08）</label>
+ <div class="review-help">编号只作素材归档关联。新增、移除窗口或更改关联范围后，需重新选择整组结论。</div>
+ <div class="table-scroll review-table"><ul id="reviewMaterials" aria-label="已准备的场景窗口素材"><li>暂无窗口素材</li></ul></div>
+ <div class="review-fields">
+  <label>整组结论<select id="reviewVerdict"><option value="">请选择</option><option value="passed">这组素材通过</option><option value="failed">发现问题</option><option value="inconclusive">素材不足或需要继续核对</option></select></label>
+  <label class="review-notes">问题说明（发现问题时填写对象、时间和现象）<textarea id="reviewNotes" rows="3" placeholder="通过时可留空"></textarea></label>
+ </div>
+  <div class="controls"><button id="reviewExport" disabled>导出整组复核记录</button><span id="reviewStatus">先准备多个场景窗口，再选择一次整组结论。</span></div>
 </section>
 </main>
 <footer>诊断结果只覆盖实际采样的场景和属性，不代表全游戏零遗漏或真实显示器呈现质量。未访问场景、未标记对象、抽样的大型几何均保留为未验证。</footer>

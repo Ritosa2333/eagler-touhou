@@ -6,8 +6,10 @@
 #include "PlatformDevices.hpp"
 #include "GameAudioManager.hpp"
 #include "../game/Presentation.hpp"
+#include <eagler/diagnostics/LanguageTrace.hpp>
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #ifdef TH_SDL3
 #include "../sdl/GraphicsHost.hpp"
 #endif
@@ -16,6 +18,7 @@
 #endif
 namespace th08 {
 namespace {
+static_assert(sizeof(float)==sizeof(u32));
 u32 ptr(const void* p){return reinterpret_cast<uintptr_t>(p);}
 PixelSurface surface(TextureRecord& r){auto& i=r.image;return {i.format,i.width,i.height,i.width*TexturePixels::describe(i.format).bytes,i.pixels.data()};}
 }
@@ -37,26 +40,68 @@ std::vector<u8> BrowserRuntime::read(const char* p){return resources_.read(p);}
 std::vector<u8> BrowserRuntime::read_prefix(const char* p,u32 size){return resources_.read_prefix(p,size);}
 const std::vector<u8>& BrowserRuntime::file(const char* p){return resources_.file(p);}
 bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
-    const auto name=path(p);std::vector<u8> extended;
-    // Upstream th08_save_replay appends the thprac 'USER'/'PRAC' block right
-    // after the vanilla file; the touch movement trailer stays last so .rpyx
-    // detection keeps working. Upstream saves whenever thPracParam.mode is set
-    // (advanced practice), with no assist/cheat gate, so assisted runs still
-    // carry their parameters. Original-mode runs carry no PRAC block, and a
-    // config that cannot be serialized simply saves a vanilla replay.
-    if(name.find("replay/")==0&&name.size()>4&&name.substr(name.size()-4)==".rpy"&&app.session.practice.active&&!app.session.practice.replay){
-        const auto tail=practice_replay_block(app.session.practice.run);
-        if(!tail.empty()){extended.assign(b,b+size);extended.insert(extended.end(),tail.begin(),tail.end());b=extended.data();size=extended.size();}
-    }
-    if(name.find("replay/")==0&&name.size()>4&&name.substr(name.size()-4)==".rpy"&&motion.used()&&!motion.playing){
-        const auto tail=motion.trailer(8);if(tail.empty())return false;
-        if(extended.empty())extended.assign(b,b+size);extended.insert(extended.end(),tail.begin(),tail.end());b=extended.data();size=extended.size();
-    }
-    if(!put(p,b,size))return false;return file_device().save(p,b,size);
+#if defined(TH_PRESENTATION_AUDIT)
+    ++audit_write_attempts;
+#endif
+    const auto name=path(p);
+    return validation_scene_writes.write(size,name=="score.dat",[&]{
+        std::vector<u8> extended;const u8* saved_bytes=b;u32 saved_size=size;
+        // thprac's USER/PRAC block precedes the touch trailer in saved replays.
+        if(name.find("replay/")==0&&name.size()>4&&name.substr(name.size()-4)==".rpy"&&app.session.practice.active&&!app.session.practice.replay){
+            const auto tail=practice_replay_block(app.session.practice.run);
+            if(!tail.empty()){extended.assign(saved_bytes,saved_bytes+saved_size);extended.insert(extended.end(),tail.begin(),tail.end());saved_bytes=extended.data();saved_size=extended.size();}
+        }
+        if(name.find("replay/")==0&&name.size()>4&&name.substr(name.size()-4)==".rpy"&&motion.used()&&!motion.playing){
+            const auto tail=motion.trailer(8);if(tail.empty())return false;
+            if(extended.empty())extended.assign(saved_bytes,saved_bytes+saved_size);extended.insert(extended.end(),tail.begin(),tail.end());saved_bytes=extended.data();saved_size=extended.size();
+        }
+        if(!put(p,saved_bytes,saved_size))return false;
+        const bool saved=file_device().save(p,saved_bytes,saved_size);
+#if defined(TH_PRESENTATION_AUDIT)
+        if(saved){++audit_write_success;audit_write_bytes+=saved_size;u32 digest=2166136261u;for(u32 i=0;i<saved_size;++i)digest=(digest^saved_bytes[i])*16777619u;audit_saved_payloads[name]={saved_size,digest};}
+#endif
+        return saved;
+    },[&]{return put(p,b,size);});
+}
+bool BrowserRuntime::take_validation_scene_request(){
+    if(!validation_scene_request_pending)return false;
+    validation_scene_request_pending=false;validation_scene_request_status=3;
+    validation_scene_used=true;validation_scene_writes.arm();
+    validation_scene_accepted_before_first_update=false;return true;
+}
+void BrowserRuntime::finish_validation_scene_request(bool accepted,bool before_first_update){
+    validation_scene_request_status=accepted?2:3;
+    validation_scene_accepted_before_first_update=accepted&&before_first_update;
+    if(accepted)app.session.practice.assisted=true;
 }
 bool BrowserRuntime::player_motion(const PlayerMovementState& state,float speed,const FrameTiming& timing,float& x,float& y){
     const auto& g=app.game;if((g.globals.game_flags&516)!=4)return false;
-    if(motion.playing)return motion.playback(g.globals.stage,x,y);
+    const bool overlay_replay=motion.playing;
+    pending_touch_trace={};
+    pending_touch_trace.seat=0;
+    const bool valid_stage=g.globals.stage>=0&&g.globals.stage<9;
+    pending_touch_trace.frame=valid_stage?motion.ticks[g.globals.stage]:0;
+    pending_touch_trace.execution_kind=(overlay_replay||(g.globals.game_flags&8))?
+        eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward;
+    const bool gameplay_tick=app.in_game()&&!app.loading_game()&&g.ready()&&
+        (g.globals.game_flags&516)==4&&!(g.globals.game_flags&0x60)&&
+        !g.paused&&!g.menus.context.pause_state&&!g.player_state.context.game_over;
+    if(gameplay_tick)pending_touch_trace.flags|=eagler::input::TouchMotionTraceBank::flag_gameplay_tick;
+    if(g.player_state.motion.form.focused)pending_touch_trace.flags|=eagler::input::TouchMotionTraceBank::flag_focused;
+    if(!valid_stage)pending_touch_trace.flags|=eagler::input::TouchMotionTraceBank::flag_frame_unknown;
+    pending_touch_trace.before_x=state.position.x;pending_touch_trace.before_y=state.position.y;
+    pending_touch_trace.target_x=overlay_replay?state.position.x:(motion.active?motion.target_x:state.position.x);
+    pending_touch_trace.target_y=overlay_replay?state.position.y:(motion.active?motion.target_y:state.position.y);
+    pending_touch_trace.speed=speed;pending_touch_trace.scale_x=state.multiplier.x*timing.rate;
+    pending_touch_trace.scale_y=state.multiplier.y*timing.rate;pending_touch_trace.sensitivity=touch_sensitivity;
+    if(overlay_replay)pending_touch_trace.flags|=eagler::input::TouchMotionTraceBank::flag_mode_unknown|
+        eagler::input::TouchMotionTraceBank::flag_target_unknown|
+        eagler::input::TouchMotionTraceBank::flag_sensitivity_unknown;
+    else pending_touch_trace.mode=motion.active?(motion.unlimited?
+        eagler::input::TouchMotionTraceBank::mode_unlimited:eagler::input::TouchMotionTraceBank::mode_limited):
+        eagler::input::TouchMotionTraceBank::mode_neutral;
+    ++touch_trace_callbacks;
+    if(overlay_replay)return motion.playback(g.globals.stage,x,y);
     // Keyboard movement continues during dialogue, even while shooting is
     // blocked. Keep direct touch movement consistent with that behavior.
     const bool enabled=motion.active&&!g.paused&&!g.menus.context.pause_state&&!g.player_state.context.game_over;
@@ -81,13 +126,17 @@ u16 BrowserRuntime::poll_input(){
     auto& p=app.session.practice;
     if(p.enabled&&!p.replay&&app.in_game()){
 #ifdef TH_NATIVE_PLATFORM
-        if(ThpracUi::captures_game_input())return result;
+        if(ThpracUi::captures_game_input()){
+            if(replay_trace_enabled_){++replay_trace_poll_sequence_;replay_trace_last_live_input_=result;}
+            return result;
+        }
 #endif
         u8 filtered[256]{};filtered[90]=(result&Shoot)?128:0;filtered[88]=(result&Bomb)?128:0;filtered[160]=filtered[161]=(result&Focus)?128:0;filtered[27]=(result&Menu)?128:0;filtered[82]=(result&Reset)?128:0;
         p.input.apply(filtered);
         result=u16((result&~(Shoot|Bomb|Focus|Menu|Reset))|(filtered[90]?Shoot:0)|(filtered[88]?Bomb:0)|((filtered[160]||filtered[161])?Focus:0)|(filtered[27]?Menu:0)|(filtered[82]?Reset:0));
         if(p.input.disable_xkey||p.input.disable_zkey||p.input.disable_shiftkey||p.input.force_shiftkey||p.input.enable_fast_retry)p.assisted=true;
     }
+    if(replay_trace_enabled_){++replay_trace_poll_sequence_;replay_trace_last_live_input_=result;}
     return result;
 }
 void BrowserRuntime::Graphics::bind_texture(u32 h){graphics_device().texture(h);}
@@ -127,8 +176,14 @@ bool BrowserRuntime::present(){
 #ifdef TH_NATIVE_PLATFORM
     if(auto* renderer=touhou::sdl::current())ThpracUi::render(*this,*renderer);
 #endif
-    if(presentation::render_only)return graphics_device().present(back)&&!capture_failed;
-    captured=false;const bool presented=graphics_device().present(back);finish_capture();return presented&&!capture_failed;
+    bool presented=false;
+    if(presentation::render_only)presented=graphics_device().present(back)&&!capture_failed;
+    else{captured=false;const bool swapped=graphics_device().present(back);finish_capture();presented=swapped&&!capture_failed;}
+    if(presented){auto& trace=eagler::diagnostics::language_trace();if(trace.enabled()){
+        const auto scene=app.supervisor.state.active;trace.set_phase(eagler::diagnostics::LanguageTrace::Phase::Runtime);trace.set_scene(scene);
+        trace.present(++language_present_sequence,scene);
+    }}
+    return presented;
 }
 void BrowserRuntime::discard_graphics(){app.renderer.clear();graphics_device().discard();}
 void BrowserRuntime::reset_device(){
@@ -209,10 +264,96 @@ bool BrowserRuntime::initialize(){
     if(!audio->prepare_formats())return false;
     if(!back){TexturePixels pixels;if(!pixels.create(640,480,22))return false;back=app.textures.insert(std::move(pixels),0,true);}
     reset_device();if(!audio->prepare_samples())return false;
-    prepared=true;if(!app.initialize(1000000))return false;reset_device();return true;
+    prepared=true;if(!app.initialize(1000000))return false;auto& trace=eagler::diagnostics::language_trace();trace.set_phase(eagler::diagnostics::LanguageTrace::Phase::Runtime);trace.set_scene(app.supervisor.state.active);reset_device();return true;
 }
-bool BrowserRuntime::step(bool render){return prepared&&app.update()&&(!render||app.draw())&&!capture_failed;}
-i32 BrowserRuntime::status(i32 field)const{switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();default:return -1;}}
+bool BrowserRuntime::step(bool render){
+    touch_trace_callbacks=0;
+    if(!prepared)return false;auto& language_trace=eagler::diagnostics::language_trace();if(language_trace.enabled())language_trace.set_scene(app.supervisor.state.active);
+    if(!app.update())return false;
+    if(language_trace.enabled())language_trace.set_scene(app.supervisor.state.active);
+    if(touch_trace_callbacks){
+        const auto& position=app.game.player_state.motion.movement.position;
+        pending_touch_trace.after_x=position.x;pending_touch_trace.after_y=position.y;
+        if(touch_trace_callbacks!=1)pending_touch_trace.flags|=eagler::input::TouchMotionTraceBank::flag_multiple_callbacks;
+        touch_trace.append(pending_touch_trace);
+    }
+    append_replay_trace();
+    return (!render||app.draw())&&!capture_failed;
+}
+bool BrowserRuntime::replay_trace_control(u32 enabled,u32 reset){
+    if(enabled>1||reset>1)return false;
+    if(reset){
+        replay_trace_={};replay_trace_next_sequence_=1;replay_trace_count_=0;
+        replay_trace_poll_sequence_=0;replay_trace_last_live_input_=0;
+    }
+    replay_trace_enabled_=enabled!=0;return true;
+}
+void BrowserRuntime::append_replay_trace(){
+    if(!replay_trace_enabled_)return;
+    const u32 sequence=replay_trace_next_sequence_++;
+    auto& words=replay_trace_[(sequence-1)%replay_trace_capacity].words;
+    words={};
+    const i32 stage=app.game.globals.stage;
+    const bool playback_loaded=stage>=0&&stage<9&&app.game.playback.has_stage(stage);
+    const i32 recording_stage=app.game.recording.current();
+    const auto* recorded=recording_stage>=0?app.game.recording.stage(recording_stage):nullptr;
+    const auto& track=this->motion;
+    const bool motion_stage=stage>=0&&stage<9;
+    const auto* actions=app.game.touch_actions().data();
+    words={sequence,1,u32(stage),app.game.globals.game_flags,
+        replay_trace_poll_sequence_,replay_trace_last_live_input_,
+        u32(recorded&&recorded->present),u32(recording_stage),recorded?u32(recorded->stream.frame):0,
+        recorded?recorded->stream.input_cursor:0,recorded?u32(app.game.recording.input.physical):0,
+        u32(playback_loaded),u32(stage),playback_loaded?u32(app.game.playback.stream.frame):0,
+        playback_loaded?app.game.playback.stream.input_cursor:0,
+        playback_loaded?u32(app.game.playback.input.current):0,playback_loaded?u32(app.game.playback.input.previous):0,
+        u32(track.playing),motion_stage?u32(stage):0xffffffffu,motion_stage?track.ticks[stage]:0,
+        motion_stage?track.cursors[stage]:0,motion_stage?u32(track.stages[stage].size()):0,
+        motion_stage?track.touch_cursors[stage]:0,motion_stage?u32(track.touch_stages[stage].size()):0,
+        u32(track.playback_points.size()),actions[2],actions[1],actions[3],actions[4],actions[5],actions[6],actions[7]};
+    words[32]=0xffffffffu;
+    if(!track.playback_points.empty()){
+        const auto& point=track.playback_points.begin()->second;
+        words[32]=u32(point.id);std::memcpy(&words[33],&point.x,sizeof(point.x));
+        std::memcpy(&words[34],&point.y,sizeof(point.y));words[35]=u32(point.released);
+    }
+    if(replay_trace_count_<replay_trace_capacity)++replay_trace_count_;
+}
+i32 BrowserRuntime::status(i32 field)const{switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();case 11:return app.title.menus.state.currentScreenState;
+    // ReplayStream has no declared total. These read-only fields expose its
+    // actual successful-consumption counters; zero means no selected block.
+    case 12:return app.game.playback.has_stage(app.game.globals.stage)?1:0;
+    case 13:return app.game.playback.has_stage(app.game.globals.stage)?app.game.playback.stream.frame:0;
+    case 14:return app.game.playback.has_stage(app.game.globals.stage)?app.game.playback.stream.input_cursor:0;
+    case 15:return app.game.playback.has_stage(app.game.globals.stage)?i32(app.game.playback.stream.input.size()):0;
+    case 16:return app.game.playback.has_stage(app.game.globals.stage)?app.game.playback.stream.timing_cursor:0;
+    case 17:return app.game.playback.has_stage(app.game.globals.stage)?i32(app.game.playback.stream.timing.size()):0;
+    case 18:return app.game.playback.has_stage(app.game.globals.stage)?(app.game.playback.metadata().header.unknown6?6:2):0;
+    case 19:return app.game.globals.game_flags;
+    case 20:return app.in_game();
+    case 21:return app.game.globals.stage;
+    case 29:return 2; // Replay trace ABI schema v2; querying is read-only.
+    case 30:return i32(replay_trace_next_sequence_);
+    case 31:return i32(replay_trace_next_sequence_-replay_trace_count_);
+    case 32:return i32(replay_trace_count_);
+    case 33:return i32(replay_trace_capacity);
+    case 25:return app.supervisor.state.active==1&&app.active()&&!app.loading_game()&&app.title.confirmation_ready();
+    case 26:return app.title.menus.state.stateTimer2;
+    case 27:return app.title.context.input.current;
+    case 28:return app.title.context.input.previous;
+#if defined(TH_PRESENTATION_AUDIT)
+    case 22:return i32(audit_write_attempts);
+    case 23:return i32(audit_write_success);
+    case 24:return i32(audit_write_bytes);
+#endif
+    default:break;}
+    if(field>=34){
+        const u32 offset=u32(field-34),sample_index=offset/replay_trace_word_count,word=offset%replay_trace_word_count;
+        if(sample_index>=replay_trace_count_)return -1;
+        const u32 sequence=replay_trace_next_sequence_-replay_trace_count_+sample_index;
+        return i32(replay_trace_[(sequence-1)%replay_trace_capacity].words[word]);
+    }
+    return -1;}
 void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){audio->sound(i,m,x,p);}
 bool BrowserRuntime::play_music(i32 i,i32 s){return audio->play_music(i,s);}
 void BrowserRuntime::load_music(i32 i,const char* p){audio->load_music(i,p);}

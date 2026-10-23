@@ -162,12 +162,14 @@ const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...f
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
 let practice;
 const keyboard=createBrowserKeyboard({
+ hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!closing,reset:clearKeyboard,},
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
 });
 function clearKeyboard(){keyboard.clear();core?.sdl_keys_clear();}
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null;
-const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
+function acceptsTouch(){return !!core&&!!app&&launched&&!closing&&!document.hidden&&!!options.touchEnabled;}
+const cancelTouches=bindOutsideTouches(document,canvas,()=>core,acceptsTouch);
 const error=reason=>{const message=reason?.stack||String(reason);document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.deallocate(p);}};
@@ -265,6 +267,9 @@ async function launch(){
   catch{console.warn('th08: /unifont.otf unavailable; CJK glyph fallback disabled');}
  }
  const mode=Module.touhouMusicMode||'none';music=mode!=='none';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');core.sdl_music_source?.(mode==='midi'?2:1);
+ // Configure completes every Runtime resource mount before launch; native OGG
+ // failures can now distinguish a missing/corrupt file from ordinary loading.
+ core.sdl_music_resources_complete?.(mode==='ogg'?1:0);
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
  if(!core.sdl_prepare_loading()||!core.sdl_draw_loading(0))throw Error('开头加载画面初始化失败');
  // Two RAF boundaries let the original frame reach the compositor before
@@ -284,8 +289,8 @@ async function command(message){
  case 'thprac-mouse':practice?.mouse(message);return {};
  case 'keyboard-clear':clearKeyboard();return {};
  case 'touch-cancel':cancelTouches();return {};
- case 'direct-touch':directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
- case 'touch-controls':touchControls(core,options,message,Module);return {};
+ case 'direct-touch':if(acceptsTouch())directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
+ case 'touch-controls':if(acceptsTouch())touchControls(core,options,message,Module);return {};
  case 'playback':if(!launched||options.replayViewer!==true)throw Error('请先打开录像管理器');return localReplay.command(message);
  case 'launch':await launch();return {};
  case 'sync':await save();return {};
@@ -305,7 +310,7 @@ window.addEventListener('message',event=>{
  const m=event.data;if(!validEpoch||event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||m.epoch!==epoch||typeof m.command!=='string')return;
  // Device events must not wait behind filesystem/resource operations. Their
  // synchronous command bodies observe the current owner and lifecycle now.
- if(m.command==='keyboard'||m.command==='keyboard-clear'){void dispatchCommand(m);return;}
+ if(['keyboard','keyboard-clear','direct-touch','touch-controls','touch-cancel'].includes(m.command)){void dispatchCommand(m);return;}
  queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
 });
 document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(persist).catch(error);}else void resumeForegroundAudio(true);});
@@ -316,6 +321,7 @@ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearK
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(!core||!launched||closing||document.hidden)return;
+ if(keyboard.mapNative(event,name==='keydown')){event.preventDefault();event.stopImmediatePropagation();return;}
  const handled=keyboard.event(event,name==='keydown');
  if(handled&&options.thpracEnabled&&/^(Backspace|Tab|F[1-7]|F12)$/.test(event.code))event.preventDefault();
 },{capture:true});
@@ -336,7 +342,7 @@ const initialized=(async()=>{
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}
  };
  Module.runtimeFileChanged=()=>{if(saveTimer!==null)return;saveTimer=setTimeout(()=>{saveTimer=null;queue=queue.then(()=>sync(false)).catch(error);},0);};
- Module.runtimeStopped=()=>{};Module.runtimeNotice=message=>emit('notice',{message});Module.runtimeMidi=(op,data)=>{if(op===62&&music&&Module.touhouMusicMode==='midi')window.dispatchEvent(new CustomEvent('touhou-midi',{detail:{bytes:Array.from(data||[])}}));if(op===61)window.dispatchEvent(new CustomEvent('touhou-midi-close'));};Module.callMain=launch;
+ Module.runtimeStopped=()=>{};Module.runtimeNotice=message=>emit('notice',{message});Module.runtimeMidi=(op,data,time)=>{if(op===62&&music&&Module.touhouMusicMode==='midi')window.dispatchEvent(new CustomEvent('touhou-midi',{detail:{bytes:Array.from(data||[]),time:Number(time)||0}}));if(op===61)window.dispatchEvent(new CustomEvent('touhou-midi-close'));};Module.callMain=launch;
  window.__th08Runtime={core,Module,get app(){return app;},status,launch,stop,command};
  emit('ready');
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});

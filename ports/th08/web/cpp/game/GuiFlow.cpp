@@ -6,7 +6,7 @@ constexpr const char* stage_text[]={"stg1txt.anm","stg2txt.anm","stg3txt.anm","s
 constexpr const char* messages[9][4]={{"msg1a.dat","msg1b.dat","msg1c.dat","msg1d.dat"},{"msg2a.dat","msg2b.dat","msg2c.dat","msg2d.dat"},{"msg3a.dat","msg3b.dat","msg3c.dat","msg3d.dat"},{"msg4dm.dat","msg4ab.dat","msg4ac.dat","msg4dm.dat"},{"msg4ba.dat","msg4dm.dat","msg4dm.dat","msg4bd.dat"},{"msg5a.dat","msg5b.dat","msg5c.dat","msg5d.dat"},{"msg6a.dat","msg6b.dat","msg6c.dat","msg6d.dat"},{"msg7a.dat","msg7b.dat","msg7c.dat","msg7d.dat"},{"msg8a.dat","msg8b.dat","msg8c.dat","msg8d.dat"}};
 }
 bool GuiFlow::setup(){
-    auto& c=controller;auto& g=c.gui;auto& d=c.display;const auto& s=c.scene;const bool spell=s.flags&0x4000;
+    consumer_receipt.reset();auto& c=controller;auto& g=c.gui;auto& d=c.display;const auto& s=c.scene;const bool spell=s.flags&0x4000;
     if(s.stage<0||s.stage>=9||s.character<0||s.character>=12)return false;
     if(context.initial){
         g.implementation=&d;
@@ -35,10 +35,10 @@ bool GuiFlow::setup(){
     if(!c.start(d.stage_rank,s.ascii,3))return false;c.scene.hud_redraw=16;d.clear_clock_display=0;return true;
 }
 void GuiFlow::release(){
-    if(!context.keep_resources){resources.release(13);controller.gui.stage_text=nullptr;}dialogue.release();
+    consumer_receipt.invalidate();if(!context.keep_resources){resources.release(13);controller.gui.stage_text=nullptr;}dialogue.release();
     if(context.release_resources){for(i32 slot:{10,12,11,14})resources.release(slot);controller.gui.front=controller.gui.loading_portrait=controller.gui.times=nullptr;controller.gui.implementation=nullptr;}
 }
-void GuiFlow::update(){auto& c=controller;c.snapshot_presentation();if(c.context.time_stopped)return;c.update_stage();dialogue.update();if((c.context.input&256)&&c.scene.hud_redraw<8)c.scene.hud_redraw=8;++c.gui.frame;}
+void GuiFlow::update(){auto& c=controller;c.snapshot_presentation();if(c.context.time_stopped){consumer_receipt.invalidate();return;}c.update_stage();if(c.display.dialogue.message>=0){const u16 consumed_current=c.scene.input,consumed_previous=c.scene.previous_input;consumer_receipt.consume(consumed_current,consumed_previous,[&]{dialogue.update();});}else{consumer_receipt.invalidate();dialogue.update();}if((c.context.input&256)&&c.scene.hud_redraw<8)c.scene.hud_redraw=8;++c.gui.frame;}
 void GuiFlow::draw(){auto& c=controller;if(c.display.clear_frames)c.draw_clear();dialogue.draw();c.draw_stage();c.draw_hud();c.draw_popups();}
 bool GuiFlow::attach(Chain& owner){
     detach();chain=&owner;if(context.initial){controller.gui={};controller.gui.implementation=&controller.display;}

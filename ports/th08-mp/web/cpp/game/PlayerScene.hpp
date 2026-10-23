@@ -3,6 +3,7 @@
 #include "BulletSystem.hpp"
 #include "BackgroundScript.hpp"
 #include "PracticeConfig.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #ifdef TH_MULTIPLAYER_FIXTURES
 #include "../multiplayer/MotionCadenceProbe.hpp"
 #endif
@@ -17,6 +18,7 @@ struct PlayerScenePlatform {
     virtual std::vector<u8> read(const char* path)=0;
     virtual void sound(i32 index,i32 mode,float position,bool panned)=0;
     virtual bool player_motion(const PlayerMovementState&,float,const FrameTiming&,float&,float&){return false;}
+    virtual void record_player_motion(eagler::input::TouchMotionTraceBank::Sample){}
 };
 struct PlayerSceneWorld {
     EffectSystem& effects;ItemSystem& items;EnemySystem& enemies;BulletSystem& bullets;
@@ -54,16 +56,67 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
     }
     struct Motion:PlayerMotionActions {
         PlayerScene& s;explicit Motion(PlayerScene& s):s(s){}
+        eagler::input::TouchMotionTraceBank::Sample trace{};bool trace_ready=false;
         void animation(AnmVm& vm,i32 id)override{s.animation(vm,id);}
         void animation(i32 id)override{s.animation(id);}
         void pose(i32 id)override{s.animation(id);}
         bool movement(const PlayerMovementState& state,float speed,const FrameTiming& timing,float& x,float& y)override{
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-            if(!s.world||(s.world->ecl.game_flags&516)!=4||s.state.input.gui_blocked){s.state.touch_remainder={};return false;}
-            return multiplayer::ResolveAnalogMovement(s.state.analog,s.state.touch_remainder,state,
+            trace={};trace_ready=true;trace.flags=eagler::input::TouchMotionTraceBank::flag_gameplay_tick;
+            if(s.state.motion.form.focused)trace.flags|=eagler::input::TouchMotionTraceBank::flag_focused;
+            trace.seat=static_cast<u32>(s.seat);trace.frame=static_cast<u32>(s.state.stage_play_frames);
+            trace.before_x=state.position.x;trace.before_y=state.position.y;
+            trace.speed=speed;trace.scale_x=state.multiplier.x*timing.rate;trace.scale_y=state.multiplier.y*timing.rate;
+            if(!s.world||(s.world->ecl.game_flags&516)!=4||s.state.input.gui_blocked){
+                s.state.touch_remainder={};trace.mode=eagler::input::TouchMotionTraceBank::mode_neutral;
+                trace.target_x=state.position.x;trace.target_y=state.position.y;return false;
+            }
+            const auto& analog=s.state.analog;
+            const auto direct=static_cast<u8>(Netplay::AnalogMode::DirectTouch);
+            const auto delta=static_cast<u8>(Netplay::AnalogMode::DirectTouchDelta);
+            const auto begin=static_cast<u8>(Netplay::AnalogMode::DirectTouchBegin);
+            if(analog.mode==static_cast<u8>(Netplay::AnalogMode::None)){
+                trace.mode=eagler::input::TouchMotionTraceBank::mode_neutral;
+                trace.target_x=state.position.x;trace.target_y=state.position.y;
+            }else{
+                trace.mode=analog.unlimited?eagler::input::TouchMotionTraceBank::mode_unlimited:
+                                             eagler::input::TouchMotionTraceBank::mode_limited;
+                if(analog.mode==direct){
+                    trace.target_x=Scalar::add(state.position.x,analog.x);
+                    trace.target_y=Scalar::add(state.position.y,analog.y);
+                }else if(analog.mode==delta||analog.mode==begin){
+                    // ResolveAnalogMovement updates this rewindable remainder
+                    // before limiting the per-tick velocity.
+                    const bool moved=multiplayer::ResolveAnalogMovement(analog,s.state.touch_remainder,state,
+                        s.state.input.minimum,s.state.input.extent,speed,timing,x,y);
+                    trace.target_x=Scalar::add(state.position.x,s.state.touch_remainder.x);
+                    trace.target_y=Scalar::add(state.position.y,s.state.touch_remainder.y);
+                    return moved;
+                }else if(analog.mode==static_cast<u8>(Netplay::AnalogMode::Joystick)){
+                    const float raw_x=Scalar::mul(analog.x,speed);
+                    const float raw_y=Scalar::mul(analog.y,speed);
+                    trace.target_x=Scalar::add(state.position.x,Scalar::mul(Scalar::mul(raw_x,state.multiplier.x),timing.rate));
+                    trace.target_y=Scalar::add(state.position.y,Scalar::mul(Scalar::mul(raw_y,state.multiplier.y),timing.rate));
+                }else{
+                    trace.flags|=eagler::input::TouchMotionTraceBank::flag_mode_unknown|
+                                 eagler::input::TouchMotionTraceBank::flag_target_unknown;
+                    trace.target_x=state.position.x;trace.target_y=state.position.y;
+                }
+            }
+            return multiplayer::ResolveAnalogMovement(analog,s.state.touch_remainder,state,
                 s.state.input.minimum,s.state.input.extent,speed,timing,x,y);
 #else
             return s.platform.player_motion(state,speed,timing,x,y);
+#endif
+        }
+        void movement_completed(const Vec3& before,const PlayerMovementState& after)override{
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+            if(!trace_ready)return;trace_ready=false;
+            trace.before_x=before.x;trace.before_y=before.y;
+            trace.after_x=after.position.x;trace.after_y=after.position.y;
+            s.platform.record_player_motion(trace);
+#else
+            (void)before;(void)after;
 #endif
         }
         void effect(i32 id,const Vec3& p,u32 color)override{s.effect(id,p,1,color);}

@@ -37,10 +37,10 @@ const shared=resolve(workspace,'portable/sdl'),numeric=resolve(workspace,'portab
 function headers(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headers(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);}
 const capturedInputs=new Map();
 function observed(path){const bytes=readFileSync(path),digest=createHash('sha256').update(bytes).digest('hex');if(capturedInputs.has(path)&&capturedInputs.get(path)!==digest)throw Error('Source changed during build; rebuild: '+path);capturedInputs.set(path,digest);return bytes;}
-const dialogueHeaders=[resolve(process.env.EAGLER_COMMON_ROOT||resolve(workspace,'../../common'),'include/eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp')];
+const dialogueHeaders=[...headerInputs(resolve(commonInclude,'eagler/input')),resolve(commonInclude,'eagler/audio/WebSfx.hpp'),resolve(commonInclude,'eagler/diagnostics/LanguageTrace.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(imgui),...headers(shared),...headers(numeric),...headers(input),...commonThpracHeaders,...dialogueHeaders].sort())hash.update(path).update(observed(path));
 const flags=[...common,...(thcrap?['-DTH_ENABLE_THCRAP=1']:[]),'-std=c++17','-fno-exceptions','-fno-rtti'],prefix=JSON.stringify([flags,hash.digest('hex')]);
-await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:[...headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input')),...dialogueHeaders,...commonThpracHeaders],flags});
 const objects=resolve(out,'objects');if(!printingRuntimeInputs)mkdirSync(objects,{recursive:true});
 async function compile(source,c=false){const object=sourceObjectPath(objects,workspace,source),key=createHash('sha256').update(prefix).update(observed(source)).digest('hex');if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;
  await run([...(c?[...common,'-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5']:flags),'-c',source,'-o',object]);writeFileSync(object+'.key',key);return object;
@@ -51,7 +51,14 @@ const rendererObject=await compile(renderer);
 const soft=resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c'),softObject=await compile(soft,true);
 const outputs=new Array(sources.length);let next=0,done=0;
 const buildJobs=Math.max(1,Math.min(16,Number.parseInt(process.env.TH_BUILD_JOBS||'4',10)||4));
-await Promise.all(Array.from({length:buildJobs},async()=>{while(next<sources.length){const i=next++;outputs[i]=await compile(resolve(root,sources[i]));if(++done%40===0)console.log(done+'/'+sources.length+' translation units');}}));
+let compileFailure=null;
+// Stop scheduling after failure, then drain all compilers already started.
+// The process queue can therefore retire this build without orphan children.
+await Promise.all(Array.from({length:buildJobs},async()=>{while(!compileFailure&&next<sources.length){
+ const i=next++;try{outputs[i]=await compile(resolve(root,sources[i]));if(++done%40===0)console.log(done+'/'+sources.length+' translation units');}
+ catch(error){compileFailure??=error;}
+}}));
+if(compileFailure)throw compileFailure;
 const output=resolve(out,game+'-sdl.mjs');
 const hostImports=[];
 const library=resolve(out,'browser-services.js');writeFileSync(library,'addToLibrary({\n'+hostImports.map(i=>`${JSON.stringify(i.name)}: function() { return Module['services'][${JSON.stringify(i.module)}][${JSON.stringify(i.name)}].apply(null, arguments); }`).join(',\n')+'\n});\n');

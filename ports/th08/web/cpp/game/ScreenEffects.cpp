@@ -1,5 +1,6 @@
 #include "ScreenEffects.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 #include <algorithm>
 namespace th08 {
 namespace {Extended integer(i32 value){return Extended::from_int(value);}}
@@ -62,12 +63,23 @@ JobResult ScreenEffects::draw(ScreenEffectState& s){
     const u32 color=(u32(draw_alpha)<<24)|(s.type==ScreenEffectType::Flash?u32(s.b)&0xffffff:u32(s.a));
     const u32 colors[4]{color,color,color,color};renderer.draw_rectangle(full?0:32,full?0:16,full?640:416,full?480:464,colors);return JobResult::Continue;
 }
+#if defined(TH_PRESENTATION_AUDIT)
+u32 ScreenEffects::audit_state_fingerprint()const noexcept{
+    u32 hash=2166136261u;const auto add=[&](const auto& value){const auto* bytes=reinterpret_cast<const u8*>(&value);for(size_t i=0;i<sizeof(value);++i){hash^=bytes[i];hash*=16777619u;}};
+    add(context.timing.rate);add(context.timing.force_step);add(context.paused);add(context.retry);add(context.frozen);
+    add(context.shake_disabled);add(context.terminating);add(context.transition_state);
+    const u32 count=u32(active.size());add(count);
+    for(const auto* instance:active){const auto& state=instance->state;add(state.type);add(state.alpha);add(state.duration);add(state.a);add(state.b);add(state.c);add(state.phase);
+        add(state.timer.previous);add(state.timer.fraction);add(state.timer.current);}
+    return hash;
+}
+#endif
 ScreenEffectState* ScreenEffects::create(ScreenEffectType type,i32 duration,i32 a,i32 b,i32 c,i32 priority){
     if(u32(type)>7)return nullptr;
     auto* instance=new Instance();instance->owner=this;auto& s=instance->state;s.type=type;s.duration=duration;s.a=a;s.b=b;s.c=c;
     auto* calc=Chain::create(calculate_callback);calc->argument=instance;calc->added=added_callback;calc->deleted=deleted_callback;
     ChainElement* draw=nullptr;if(type!=ScreenEffectType::Shake&&type!=ScreenEffectType::EnvelopeShake){draw=Chain::create(draw_callback);draw->argument=instance;}
-    active.push_back(instance);chain.add(calc,3);if(draw)chain.add(draw,priority,true);s.calculation=calc;s.drawing=draw;return &s;
+    active.push_back(instance);chain.add(calc,3);if(draw)chain.add(draw,priority,true);s.calculation=calc;s.drawing=draw;TH08_AUDIT_BORN(ScreenEffect,&s);return &s;
 }
 void ScreenEffects::remove(ScreenEffectState* state){if(state)chain.cut(state->calculation);}
 JobResult ScreenEffects::calculate_callback(void* p){auto& i=*static_cast<Instance*>(p);return i.owner->calculate(i.state);}
@@ -77,6 +89,6 @@ i32 ScreenEffects::deleted_callback(void* p){
     auto* i=static_cast<Instance*>(p);auto& owner=*i->owner;i->state.calculation->deleted=nullptr;
     owner.presentation_previous.erase(&i->state);
     owner.chain.cut(i->state.drawing);i->state.drawing=nullptr;
-    owner.active.erase(std::remove(owner.active.begin(),owner.active.end(),i),owner.active.end());delete i;return 0;
+    TH08_AUDIT_RETIRED(ScreenEffect,&i->state);owner.active.erase(std::remove(owner.active.begin(),owner.active.end(),i),owner.active.end());delete i;return 0;
 }
 }

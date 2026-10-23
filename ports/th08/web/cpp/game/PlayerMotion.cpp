@@ -13,14 +13,15 @@ void update_player_motion(PlayerMotionState& s,PlayerMotionInput& input,Timer& s
     update_player_gauge(s.gauge,s.form,shooting,gauge,input.gui_blocked,input.bomb,s.movement.position,timing,actions);
     record_player_position(s.movement);
 }
-void draw_player_motion(PlayerMotionState& s,const Vec2& offset,bool game_over,PlayerMotionActions& actions){
+void draw_player_motion(PlayerMotionState& s,const Vec2& offset,bool game_over,PlayerMotionActions& actions,
+                        [[maybe_unused]] const PlayerMotionState* authoritative){
     if(!game_over){
-        TH08_AUDIT_SCOPE(Player,&s.animation,s.animation.currentTimeInScript.current,0);
+        TH08_AUDIT_SCOPE(Player,&(authoritative?*authoritative:s).animation,s.animation.currentTimeInScript.current,0);
         s.animation.pos={Scalar::add(offset.x,s.movement.position.x),Scalar::add(offset.y,s.movement.position.y),.1f};actions.draw_player(s.animation);
     }
     PlayerOptionContext context;PlayerOptions options(context);options.actions=&actions;
     for(u32 i=0;i<4;++i){auto& option=s.options[i];if(!option.draw)continue;
-        TH08_AUDIT_SCOPE(PlayerOption,&option,option.animation.currentTimeInScript.current,i);
+        TH08_AUDIT_SCOPE(PlayerOption,&(authoritative?*authoritative:s).options[i],option.animation.currentTimeInScript.current,i);
         options.draw(option,offset);
     }
 }

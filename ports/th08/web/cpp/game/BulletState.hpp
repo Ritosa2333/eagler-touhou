@@ -23,10 +23,12 @@ struct LaserState {
 };
 static_assert(sizeof(LaserState)==0x59c);
 struct BulletManagerState {
-    BulletTemplates templates;BulletState bullets[1537];LaserState lasers[256];
+    static constexpr u32 bullet_slot_count=1536;
+    BulletTemplates templates;BulletState bullets[bullet_slot_count+1];LaserState lasers[256];
     i32 active_count=0,cancel_frames=0;Timer timer;i32 unknown_counter=0;const char* filename=nullptr;
     BulletState* layers[6]{};BulletState* next_slot=nullptr;i32 bonus_item=0;AnmLoaded* animation=nullptr;
     void reset()noexcept;
+    u32 live_bullet_count()const noexcept;
 };
 static_assert(sizeof(BulletManagerState)==0x6ba578&&offsetof(BulletManagerState,bullets)==0x1a880&&offsetof(BulletManagerState,next_slot)==0x6ba56c);
 }

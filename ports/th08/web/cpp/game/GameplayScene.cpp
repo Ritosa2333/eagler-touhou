@@ -23,6 +23,28 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     projectile_pool.reset();hud.implementation=&display;globals.gui=&hud;globals.live_values=this;enemies.bind_native(native_scene);player_services.bind(player_world);
 }
 GameplayScene::~GameplayScene(){unload();}
+void GameplayScene::capture_practice_initial_snapshot(){
+    auto* out=practice_initial_snapshot_words;
+    for(u32 i=0;i<practice_initial_snapshot_word_count;i++)out[i]=0;
+    out[0]=1.0;
+    const auto& p=session.practice;
+    if(!p.active||p.run.mode!=1)return;
+    const auto& n=session.numbers;
+    out[1]=1u|(playing_replay?2u:0u);
+    out[2]=globals.stage;out[3]=globals.game_flags;out[4]=globals.difficulty;out[5]=globals.shot;
+    out[6]=playback.stage_mask();out[7]=playback.stream.frame;out[8]=playback.stream.input_cursor;
+    out[9]=playback.stream.timing_cursor;out[10]=playback.stream.input.size();out[11]=playback.stream.timing.size();
+    out[12]=playback.stream.input_end;out[13]=playback.stream.timing_end;
+    p.run.encode(out+16);
+    out[42]=n.score;out[43]=n.display_score;out[44]=n.lives;out[45]=n.bombs;out[46]=n.power;
+    out[47]=n.gauge;out[48]=n.gauge_copy;out[49]=n.graze;out[50]=n.graze_stage;
+    out[51]=n.points;out[52]=n.points_stage;out[53]=n.time_orbs;out[54]=n.total_time_orbs;
+    out[55]=n.point_value;out[56]=n.clock_time;out[57]=session.rank.value;
+    out[58]=session.rank.minimum;out[59]=session.rank.maximum;
+    out[60]=enemies.population.practice_familiar;out[61]=enemies.state.frames;out[62]=control.state.frames;
+    out[63]=u8(player_state.life.state);out[64]=p.familiar_pending;out[65]=p.cheats;
+    out[66]=p.everlasting_bgm;out[67]=globals.stage;out[68]=globals.difficulty;out[69]=globals.shot;
+}
 bool GameplayScene::ControlActions::replay_stage(i32 stage){return scene.replay_stage_mask&(1u<<stage);}
 void GameplayScene::ControlActions::update_enemy_name(){auto& g=scene.globals;
     // A thprac boss warp already pinned the boss name (MSGNameFix, mirroring
@@ -123,7 +145,27 @@ void GameplayScene::synchronize(){
     presentation.context.game_flags=globals.game_flags;presentation.context.current_spell=globals.current_spell;
 }
 JobResult GameplayScene::boundary(i32 phase){if(phase==11)session.stall_frames=enemies.state.frames;if(phase==15)publish_dialogue();synchronize();return invalid()?JobResult::Error:JobResult::Continue;}
-JobResult GameplayScene::update_player(){player_state.input.always_hitbox=always_hitbox;if(!player_services.prepare()||!player.update())return JobResult::Error;player_services.finish();synchronize();return invalid()?JobResult::Error:JobResult::Continue;}
+void GameplayScene::publish_touch_action_state(){
+    const auto& input=player.consumed_input();
+    if(input.completed&&input.valid){
+        u32 active_shots=0;for(const auto& shot:player_state.shots.shots)active_shots+=shot.state!=0;
+        touch_action_state.publish_consumer(input.sequence,u32(control.state.frames),u32(globals.stage),
+            input.current,input.previous,u32(player_state.motion.form.focused!=0),
+            u32(player_state.shots.shooting_timer.current),u32(player_state.shots.shooting_timer.previous),
+            active_shots,u32(player_state.bomb.active),u32(player_state.bomb.triggered),u32(player_state.bomb.type),
+            u32(player_state.bomb.timer.current),u32(number(session.numbers.bombs).truncate_int()),
+            u32(number(session.numbers.bombs_used).truncate_int()),u32(number(session.numbers.bombs_used_stage).truncate_int()),
+            u32(u8(player_state.life.state)));
+    }else if(input.completed&&input.paused){
+        touch_action_state.publish_paused(u32(control.state.frames),u32(globals.stage),u32(u8(player_state.life.state)));
+    }else touch_action_state.reset();
+}
+JobResult GameplayScene::update_player(){
+    player_state.input.always_hitbox=always_hitbox;
+    if(!player_services.prepare()||!player.update())return JobResult::Error;
+    player_services.finish();synchronize();if(invalid())return JobResult::Error;
+    publish_touch_action_state();return JobResult::Continue;
+}
 JobResult GameplayScene::update_ascii(){
     ascii.tick_popups(ascii_context,player.timing);if(menus.context.pause_state)menus.update_pause();if(menus.context.show_retry)menus.update_retry();
     globals.game_flags=menus.context.flags;globals.stage_completion=menus.context.show_retry;synchronize();ascii.tick_vms(ascii_context.demo);return animations.invalid?JobResult::Error:JobResult::Continue;
@@ -172,6 +214,8 @@ void GameplayScene::bind_jobs(){
 }
 bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     if(loaded||wanted.stage<0||wanted.stage>=9||wanted.character<0||wanted.character>=12||wanted.difficulty<0||wanted.difficulty>4||((wanted.flags&0x4000)&&(wanted.spell<0||wanted.spell>=222)))return false;
+    touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=0;
+    practice_initial_snapshot_words[0]=1.0;
     const bool retain_counters=!wanted.initial&&!(wanted.flags&0x4001)&&wanted.difficulty<4;
     const i32 previous_frames=enemies.state.frames,previous_human=enemies.state.unfocused_frames,previous_active=enemies.state.active_frames;
     failed=false;animations.invalid=false;player_services.reset();request=wanted;previous_input=0;player.timing={1,false};animations.timing=player.timing;
@@ -224,6 +268,7 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     globals.frame_count_value=&enemies.state.frames;session.stall_frames=enemies.state.frames;
     if(initialize_values){
         if(!apply_practice(*this,session)){unload();return false;}
+        capture_practice_initial_snapshot();
         // GuiFlow creates the stage-entry clock before thprac restores the
         // configured night value. Refresh that already-created VM so the
         // entrance graphic and the later result screen use the same clock.
@@ -233,6 +278,8 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
 }
 void GameplayScene::unload(bool keep,bool release_all){
     if(loaded&&recording_game)recording.stop();
+    touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=0;
+    practice_initial_snapshot_words[0]=1.0;
     loaded=false;background_flow.context.keep_resources=keep;bullet_flow.context.release_resources=release_all;enemy_flow.context.keep_resources=keep;enemy_flow.context.release_resources=release_all;
     effect_flow.context.keep_resources=keep;gui_flow.context.keep_resources=keep;gui_flow.context.release_resources=release_all;spell_flow.context.keep_resources=keep;spell_flow.context.release_resources=release_all;
     background_flow.detach();bullet_flow.detach();enemy_flow.detach();effect_flow.detach();gui_flow.detach();spell_flow.detach();screen.clear();

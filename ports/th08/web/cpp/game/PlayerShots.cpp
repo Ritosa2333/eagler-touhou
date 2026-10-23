@@ -1,5 +1,6 @@
 #include "PlayerShots.hpp"
 #include "GameMath.hpp"
+#include "PresentationAudit.hpp"
 #include <cmath>
 namespace th08 {
 void PlayerShots::direction(PlayerShot& shot,float angle,float speed){
@@ -50,7 +51,7 @@ u32 PlayerShots::emit(const ShotStream& stream,i32 frame){
     for(auto& shot:state.shots){if(shot.state)continue;
         while(index<stream.shots.size()){
             const auto& d=stream.shots[index++];const bool made=create(shot,frame,d);if(failure!=Failure::None)return count;
-            if(made){shot.animation.flags|=0x2000;shot.state=1;shot.definition=&d;shot.update=d.update;shot.draw=d.draw;shot.hit=d.hit;++count;}
+            if(made){shot.animation.flags|=0x2000;shot.state=1;shot.definition=&d;shot.update=d.update;shot.draw=d.draw;shot.hit=d.hit;TH08_AUDIT_BORN(PlayerShot,&shot);++count;}
             if(index==stream.shots.size())return count;if(made)break;
         }
     }

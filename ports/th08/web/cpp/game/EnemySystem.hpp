@@ -84,6 +84,8 @@ public:
     void bind_native(EnemyNativeScene& scene){native_scene=&scene;native_services.timing=&scene.timing;native_services.actions=this;native_services.projectiles=&projectiles;native_services.screen_effect_counter_value=&scene.screen_effect_counter;globals.native_services=&native_services;scene.spell_presentation.bind_redraw(scene.hud_redraw);}
     EclNativeServices& native_state()noexcept{return native_services;}
     void reset();
+    ValidationSceneGate& validation_scene()noexcept{return input.validation;}
+    const ValidationSceneGate& validation_scene()const noexcept{return input.validation;}
     EnemySpawnResult spawn(const TimelineSpawn&);
     JobResult update();
     bool draw(i32 first=0,i32 last=4);
