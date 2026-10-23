@@ -144,6 +144,8 @@ OGG 重启前的观测单独记录原生 playing／ready／paused 状态、当�
 
 音效直接输出由[共享队列检查](../../tools/ports/sfx-queue-invariants.mjs)约束：执行生产 `WebSfx.hpp` 的 JavaScript 音频图，在已有 3072／6144 帧混合 PCM 时渲染已知音效，要求首个输出样本已经包含该音效。把播放排到队尾的反例必须产生延迟并被拒绝。`browser-shell` 集合与 CI 同用这个入口，并从产品目录与工作区映射核对普通版、MP 的音频消费者。独立检查逐项执行、汇总失败，报告分别保存组件输出、消费者源码接线和使用其他音频路径的产品。
 
+同一入口运行[受控增益校准](../../tools/ports/presentation-gain-calibration.mjs)：在离线 AudioContext 开始渲染前，把四次同刻增益操作和声源安排到固定未来帧。独立预期逐点核对完整输出、左右声道、首帧及 AudioParam 的 float32 参数转换；一个 ULP 的改动也会失败。
+
 正式包的精确时序通过 `--suite=audio-latency` 执行。th08 普通版的场景由[音频适配器](../../tests/adaptation/adapters/audio.mjs)锚定到生产音效表、成功上传的 buffer 和标题菜单；[共享判据](../../tools/ports/sfx-latency-contract.mjs)检查实际 PCM。
 
 该组在无界面 Chromium 中运行正式包和真实 AudioContext／AudioWorklet，按原生时钟采样，适合进入自动队列。窗口前后台行为由专门的桌面生命周期场景验证，实体声音设备的延迟由设备会话记录。
@@ -207,7 +209,17 @@ AudioWorklet 的 `markerReceivedAtFrame` 记录标记消息被处理的渲染块
 - 反例：仅提升显示刷新率便使一次击中发出多次声音，应失败。
 - 当前入口/边界：共用 paired Replay 场景以生产帧回调分别运行 60／120／144 Hz 时间序列，逐逻辑帧核对真实 SFX 事件与输出路由的身份、顺序和数量，并检查额外绘制产生零次音效事件、路由或上传。报告记录本次事件窗口与实际回滚窗口；普通单机刷新率场景生成事件对照证据，MP 回滚由对应联机旅程记录。
 
-原始音频证据使用 `audio-output/4`，将声源观察编号、采样槽代次、开始／停止／结束边界和 source／merge 两路 PCM 回执关联。采样槽在原声源结束且原始回执完成后复用；每个逻辑步等待本步采样完成，再推进下一步。判定器核对同一 voice 的窗口独占性、停止操作的时钟边界及每代回执，直接定位槽位竞争与来源缺口。增益预期按实际 AudioParam 操作计算，首窗承担输出判定，静音续段承担故障定位。
+原始音频证据使用 `audio-output/4`，将声源观察编号、采样槽代次、开始／停止／结束边界和 source／merge 两路 PCM 回执关联。采样槽在原声源结束且原始回执完成后复用；每个逻辑步等待本步采样完成，再推进下一步。判定器核对同一 voice 的窗口独占性、停止操作的时钟边界及每代回执，直接定位槽位竞争与来源缺口。每个事件要求连续、同代且可归属的非静音输出；全静音、断连、额外声源、重复事件与额外绘制发声均使该项失败。
+
+音频验证按要求分工：
+
+| 要求 | 实际观察与独立预期 |
+| --- | --- |
+| AUDIO-06 | 相同 Replay 的事件序列与次数一致，每个事件对应一个实际声源及非静音输出，额外绘制零事件。 |
+| AUDIO-02 | 正式包输出 PCM 起点早于实测混合队尾下界，延迟反例由同一判据拒绝。 |
+| 增益模型 | 受控未来帧离线渲染逐点等于独立的 float32 增益方程。 |
+
+判定报告使用 `audio-assessment/2`，明确标记事件／声源／输出守恒职责。即时游戏调用的增益方程对照保存在 `gainTimelineDiagnostic`，逐项记录匹配数量和首个差异帧，原始 PCM 随报告保留。[AudioContext 时钟](https://www.w3.org/TR/webaudio/#dom-baseaudiocontext-currenttime)按渲染块推进，主线程调用前后时钟描述调用区间；渲染线程决定实际生效采样点。该诊断与事件守恒、实测延迟和受控增益校准分别记录。静音续段承担故障定位，首窗保留实际输出要求。
 
 配对样本的 `audio.events` 保存音效编号整数序列，完整原生事件由 `audioOutput.raw.native.events` 保存。增益操作记录使用 `gainMutations.args:[value,time]`，与 `gainCalls` 的参数及调用前后时钟逐项对应。每次 `voice-pool-stop` 都保留回执，`nodePresent:false` 表示本次调用没有活动声源，节点停止与结束由各自的代次记录证明。
 

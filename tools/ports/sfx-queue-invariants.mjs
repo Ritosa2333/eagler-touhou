@@ -10,6 +10,7 @@ import {createFixtureServer} from '../browser/fixture-server.mjs';
 import {MUSIC_PCM_PROBE_SOURCE} from './music-browser-helpers.mjs';
 import {DESKTOP_AUDIO_PROBE_ADAPTER_SOURCE,mapDesktopSfxStartJournal} from './runtime-desktop-audio.mjs';
 import {correlateInputSfxWindow} from './runtime-desktop-readiness.mjs';
+import {capturePresentationGainCalibration,assertPresentationGainCalibration} from './presentation-gain-calibration.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const sourcePath='common/include/eagler/audio/WebSfx.hpp';
@@ -184,7 +185,8 @@ function makeProbeActionWindow(start,capture,end){
     released:{available:true,complete:true,phase:'consumer-run',sequence:3,stage:0,activePlayerShots:1,consumed:{fire:false}}};
   return{source:'SDL3.audioContext.currentTime',game:'th08',variant:'normal',code:'KeyZ',sessionId:start.sessionId,
     startContextTime:start.clock.currentTime,endContextTime:end.currentTime,contextIndex:start.clock.contextIndex,sampleRate:start.clock.sampleRate,
-    inputCapture:capture,clockEvidence:{start:start.clock,end:{...end,source:'SDL3.audioContext.currentTime'}},releaseEvidence:{source:'readRuntimeObservation.input',baselineValue:0,consumedValue:1,
+    inputCapture:capture,historyReadiness:start.historyReadiness,
+    clockEvidence:{start:start.clock,end:{...end,source:'SDL3.audioContext.currentTime'}},releaseEvidence:{source:'readRuntimeObservation.input',baselineValue:0,consumedValue:1,
       nativeValue:0,contextIndex:end.contextIndex,currentTime:end.currentTime,consumer}};
 }
 
@@ -391,6 +393,8 @@ export async function runSfxQueueInvariant({output}){
         const delayed=await renderScenario(page,mutation,frames,'queue-tail-negative-control');
         assertMutationWaitsForTail(delayed);negativeControls.push(delayed);
       }
+      const gainCalibrationCapture=await capturePresentationGainCalibration(page);
+      const gainCalibration=assertPresentationGainCalibration(gainCalibrationCapture);
       const liveWebAudioProbe=await runLiveWebAudioProbe(browser,evidence.body);
       const postflight=await sourceEvidence();
       assert.equal(postflight.headerHash,evidence.headerHash,'WebSfx production source changed during rendering');
@@ -407,7 +411,8 @@ export async function runSfxQueueInvariant({output}){
             expected:'SFX samples begin at the prequeued PCM tail and fail the overlap assertion'}},
         consumerSourceWiring:{coverage:'static source wiring only; does not prove in-game audible output',
           products:evidence.consumers,sourceSha256:evidence.hashes,otherAudioProducts:evidence.otherAudioProducts},
-        productionRender:baseline,queueTailMutationRender:negativeControls,liveWebAudioProbe});
+        productionRender:baseline,queueTailMutationRender:negativeControls,
+        gainCalibration:{...gainCalibration,capture:gainCalibrationCapture},liveWebAudioProbe});
       result.status='passed';await save();
     }finally{await browser.close();}
   });

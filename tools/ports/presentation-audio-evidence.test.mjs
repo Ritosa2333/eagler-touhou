@@ -155,6 +155,32 @@ function sourceInsideMergeWindowFixture(){
     stopUpperFrame:Math.ceil(Math.max(requestedTime,afterTime)*rate),beforeTime,afterTime});
   return {raw,expected};
 }
+function gainFirstSampleDifferenceFixture(){
+  const {raw,expected}=fixture(),row=raw.pcm[0];
+  for(const call of raw.gainCalls){call.value=.25;call.volume=.25;}
+  raw.gainMutations=raw.gainCalls.map(gainMutation);
+  for(const block of row.blocks)for(const side of ['leftWords','rightWords']){
+    const words=Uint32Array.from(block[side]),samples=new Float32Array(words.buffer);
+    for(let index=0;index<samples.length;index++)samples[index]*=.5;
+    block[side]=Array.from(words);
+  }
+  const firstBlock=row.blocks[0],firstIndex=row.startFrame-firstBlock.frame+firstBlock.validOffset;
+  for(const side of ['leftWords','rightWords']){
+    const words=Uint32Array.from(firstBlock[side]),samples=new Float32Array(words.buffer);samples[firstIndex]*=2;firstBlock[side]=Array.from(words);
+  }
+  return {raw,expected};
+}
+function silentFirstOutputBlockPrefixFixture(){
+  const {raw,expected}=fixture(),row=raw.pcm[0],block=row.blocks[0],
+    first=Math.max(row.startFrame,block.frame+block.validOffset),last=Math.min(row.endFrame,block.frame+block.validOffset+block.quantumFrames);
+  assert.ok(first<last&&last<row.endFrame,'The silent prefix must stop before this same window ends');
+  for(const side of ['leftWords','rightWords']){
+    const words=Uint32Array.from(block[side]),samples=new Float32Array(words.buffer);
+    for(let frame=first;frame<last;frame++)samples[frame-block.frame-block.validOffset]=0;
+    block[side]=Array.from(words);
+  }
+  return {raw,expected};
+}
 function verdict(mutate=()=>{}){const {raw,expected}=fixture();mutate(raw,expected);return assessPresentationAudioOutput(seal(raw),expected);}
 
 test('installer validates the actual Runtime realm Map without accepting a parent-realm replacement',async()=>{
@@ -169,7 +195,9 @@ test('installer validates the actual Runtime realm Map without accepting a paren
 });
 
 test('synthetic classifier fixture binds native play, actual source, gain and both PCM paths',()=>{
-  const result=verdict();assert.equal(result.status,'passed',result.reason);assert.equal(result.comparedPcmFrames,128);
+  const result=verdict();assert.equal(result.status,'passed',result.reason);assert.equal(result.observedPcmFrames,128);
+  assert.equal(Object.hasOwn(result,'comparedPcmFrames'),false);
+  assert.equal(result.gainTimelineDiagnostic.status,'matched');assert.equal(result.gainTimelineDiagnostic.normative,false);
   assert.equal(result.captureLedger.gainMutations,8);assert.equal(result.captureLedger.voiceStopRecords,0);
   const failed=verdict(raw=>{raw.gaps.push({eventSerial:47,reason:'test-gap'});});
   assert.equal(failed.status,'failed');assert.equal(failed.captureLedger.sourceSlotCapacityGaps,0);
@@ -296,14 +324,36 @@ test('scheduled source and native route without real PCM cannot pass',()=>{
   assert.equal(verdict(raw=>{raw.sourcePcm=[];}).status,'failed');
   assert.equal(verdict(raw=>{raw.starts=[];}).status,'failed');
 });
-test('actual silence, disconnected output and wrong gain fail while source remains nonzero',()=>{
-  for(const mode of ['silence','disconnect','gain']){
-    const result=verdict(raw=>{for(const block of raw.pcm[0].blocks){if(mode==='disconnect')block.inputChannels=0;
-      for(const side of ['leftWords','rightWords']){const words=Uint32Array.from(block[side]),samples=new Float32Array(words.buffer);
-        for(let i=0;i<samples.length;i++)samples[i]=mode==='gain'?samples[i]*.25:0;block[side]=Array.from(words);}}});
-    assert.equal(result.status,'failed',mode);
-    if(mode==='gain')assert.match(result.reason,/Native audio event 47 \(logicalIndex 0\), left channel: Actual output PCM.*frame/);
-  }
+test('actual silence and disconnected output remain core failures',()=>{
+  const silent=verdict(raw=>{for(const block of raw.pcm[0].blocks)for(const side of ['leftWords','rightWords']){
+    block[side]=Array.from(new Uint32Array(block[side].length));}});
+  assert.equal(silent.status,'failed');assert.match(silent.reason,/Actual output PCM is silent/);
+  assert.equal(silent.gainTimelineDiagnostic.status,'differs');
+  const disconnected=verdict(raw=>{raw.bindings[0].graph.outputTapConnected=false;});
+  assert.equal(disconnected.status,'failed');assert.match(disconnected.reason,/Production source\/gain\/output tap graph/);
+});
+test('first output sample with the old gain is retained as non-normative timeline diagnostic',()=>{
+  const {raw,expected}=gainFirstSampleDifferenceFixture(),result=assessPresentationAudioOutput(seal(raw),expected),diagnostic=result.gainTimelineDiagnostic;
+  assert.equal(result.status,'passed',result.reason);assert.equal(result.observedPcmFrames,128);
+  assert.equal(diagnostic.status,'differs');assert.equal(diagnostic.normative,false);
+  assert.match(diagnostic.reason,/not an AUDIO-06 decision/);
+  assert.equal(diagnostic.counts.eventWindows,1);assert.equal(diagnostic.counts.channelComparisons,2);
+  assert.equal(diagnostic.counts.matchedChannels,0);assert.equal(diagnostic.counts.differingChannels,2);
+  assert.deepEqual(diagnostic.extent.eventWindows,[{eventSerial:47,logicalIndex:0,startFrame:raw.pcm[0].startFrame,endFrame:raw.pcm[0].endFrame}]);
+  assert.equal(diagnostic.context.length,2);
+  assert.deepEqual(diagnostic.context.map(row=>[row.eventSerial,row.logicalIndex,row.side,row.firstDivergentFrame]),[
+    [47,0,'left',raw.pcm[0].startFrame],[47,0,'right',raw.pcm[0].startFrame]]);
+});
+test('a silent prefix in one worklet block cannot substitute for a fully silent output window',()=>{
+  const {raw,expected}=silentFirstOutputBlockPrefixFixture(),window=raw.pcm[0],firstBlock=window.blocks[0],
+    prefixStart=window.startFrame-firstBlock.frame+firstBlock.validOffset,
+    prefixEnd=Math.min(window.endFrame,firstBlock.frame+firstBlock.validOffset+firstBlock.quantumFrames)-firstBlock.frame-firstBlock.validOffset;
+  assert.ok(prefixEnd>prefixStart);assert.equal(firstBlock.leftWords.slice(prefixStart,prefixEnd).every(word=>word===0),true);
+  assert.ok(window.blocks[1].leftWords.some(word=>word!==0),'Later samples in the same event window remain attributable and nonzero');
+  const result=assessPresentationAudioOutput(seal(raw),expected);
+  assert.equal(result.status,'passed',result.reason);assert.equal(result.observedPcmFrames,128);
+  assert.equal(result.gainTimelineDiagnostic.status,'differs');assert.equal(result.gainTimelineDiagnostic.normative,false);
+  assert.equal(result.gainTimelineDiagnostic.extent.observedPcmFrames,128);
 });
 test('AudioParam API converts its float argument before rendered multiplication',()=>{
   const gain=.1039920172913118,source=Float32Array.from([.7674566507339478,-.049142589]),
@@ -319,10 +369,12 @@ test('source, voice gain and output tap identities are cross-bound to one produc
   assert.equal(verdict(raw=>{raw.gainMutations[0].method='linearRampToValueAtTime';}).status,'failed');
   assert.equal(verdict(raw=>{raw.gainMutations.push({method:'value',voiceKey:'100',side:'left',value:0});}).status,'failed');
 });
-test('raw SHA and semantic checks both reject tampered PCM',()=>{
+test('raw SHA rejects a stale capture while resealed gain-only changes remain diagnostic',()=>{
   const {raw,expected}=fixture(),output=seal(raw);raw.pcm[0].blocks[0].leftWords[16]++;
   assert.match(assessPresentationAudioOutput(output,expected).reason,/hash/);
-  assert.equal(assessPresentationAudioOutput(seal(raw),expected).status,'failed');
+  const resealed=assessPresentationAudioOutput(seal(raw),expected);
+  assert.equal(resealed.status,'passed',resealed.reason);assert.equal(resealed.gainTimelineDiagnostic.status,'differs');
+  assert.equal(resealed.gainTimelineDiagnostic.context[0].firstDivergentFrame,raw.pcm[0].startFrame);
 });
 test('native events, route, uploaded key, actual source and interval order are independent obligations',()=>{
   for(const mutate of [raw=>{raw.hookEvents[0].logicalIndex=4;},raw=>{raw.native.events[0].handle=2;},
@@ -412,7 +464,7 @@ test('bounded equality keeps strict deep semantics without constructing a giant 
   assert.throws(()=>assertPresentationAudioEqual(left,right,'native rows'),error=>error.message==='native rows: retained values differ'&&error.message.length<100);
   assertPresentationAudioEqual(left,clone(left),'same');
 });
-test('gain transitions must follow the exact observed timing bracket and cannot reverse or drift',()=>{
+test('gain-timeline diagnostic comparator preserves exact timing-bracket negative controls',()=>{
   const source=Float32Array.from([1,1,1,1]),call={value:.5,time:2/48000,beforeTime:2/48000,afterTime:2/48000,hadActiveSource:true,controlStoppedActive:true};
   assertPresentationGainPcm({source,output:Float32Array.from([1,1,.5,.5]),startFrame:0,sampleRate:48000,baseline:1,calls:[call],firstPullFrame:0});
   for(const output of [[1,1,1,1],[.5,.5,1,1],[1,.5,.5,.5],[1,1,.5,.49]])assert.throws(()=>assertPresentationGainPcm({source,

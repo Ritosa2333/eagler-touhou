@@ -63,7 +63,7 @@ export function readPresentationPcmWindow(row,plan,label){
   return {left,right,firstBlockFrame:blocks[0].frame};
 }
 
-/** All allowed times arise from actual setValueAtTime calls and an explicit idle first pull. */
+/** Strict diagnostic comparison; a main-thread clock bracket does not establish a rendered apply frame. */
 export function assertPresentationGainPcm({source,output,startFrame,sampleRate,baseline,calls,firstPullFrame}){
   requireValue(source.length===output.length&&source.length>0,'Gain comparison has no exact sample interval');
   requireValue(finite(baseline)&&baseline>=0,'Missing actual gain baseline');
@@ -103,6 +103,41 @@ export function assertPresentationGainPcm({source,output,startFrame,sampleRate,b
   return {samples:source.length,indistinguishableFinalStates:states.size};
 }
 
+function createGainTimelineDiagnostic(){
+  return {windows:[],matchedChannels:0,differingChannels:0,context:[]};
+}
+
+function observeGainTimeline({diagnostic,source,output,startFrame,sampleRate,baseline,calls,firstPullFrame,event,side,outputRow}){
+  try{
+    assertPresentationGainPcm({source,output,startFrame,sampleRate,baseline,calls,firstPullFrame});
+    diagnostic.matchedChannels++;
+  }catch(error){
+    const reason=String(error?.message??error),frameMatch=/Actual output PCM does not match the ordered production gain timeline at frame (\d+)/u.exec(reason);
+    if(!frameMatch)throw error;
+    diagnostic.differingChannels++;
+    diagnostic.context.push({eventSerial:event.serial,logicalIndex:event.logicalIndex,side,firstDivergentFrame:Number(frameMatch[1]),
+      window:{startFrame:outputRow.startFrame,endFrame:outputRow.endFrame},reason});
+  }
+}
+
+function finishGainTimelineDiagnostic(diagnostic){
+  const channelComparisons=diagnostic.matchedChannels+diagnostic.differingChannels;
+  if(channelComparisons===0)return {schema:'eagler-presentation/gain-timeline-diagnostic/1',status:'not-assessed',normative:false,
+    method:'assertPresentationGainPcm',source:'AudioParam gain calls and their main-thread currentTime brackets',
+    reason:'No structurally valid event window reached the diagnostic comparison',counts:{eventWindows:0,channelComparisons:0,
+      matchedChannels:0,differingChannels:0,observedPcmFrames:0},extent:null,context:[]};
+  const startFrame=Math.min(...diagnostic.windows.map(row=>row.startFrame)),endFrame=Math.max(...diagnostic.windows.map(row=>row.endFrame)),
+    observedPcmFrames=diagnostic.windows.reduce((sum,row)=>sum+row.frames,0),differs=diagnostic.differingChannels>0;
+  return {schema:'eagler-presentation/gain-timeline-diagnostic/1',status:differs?'differs':'matched',normative:false,
+    method:'assertPresentationGainPcm',source:'AudioParam gain calls and their main-thread currentTime brackets',
+    reason:differs?'The diagnostic gain timeline differs from sampled output; this is not an AUDIO-06 decision because the main-thread currentTime bracket does not establish the first rendered sample affected.':
+      'The sampled output matches this diagnostic gain timeline; the result does not independently establish the rendered apply sample.',
+    counts:{eventWindows:diagnostic.windows.length,channelComparisons,matchedChannels:diagnostic.matchedChannels,
+      differingChannels:diagnostic.differingChannels,observedPcmFrames},
+    extent:{firstFrame:startFrame,endFrame,observedPcmFrames,eventWindows:diagnostic.windows.map(({eventSerial,logicalIndex,startFrame,endFrame})=>
+      ({eventSerial,logicalIndex,startFrame,endFrame}))},context:diagnostic.context};
+}
+
 function logicalAudio(rows){return {events:rows.events.map(row=>row.logicalIndex),
   routes:rows.routes.map(row=>({logicalIndex:row.logicalIndex,direct:row.direct,fallback:row.fallback,
     fallbackStarted:row.fallbackStarted,pending:row.pending})),uploads:rows.uploads.length,errors:rows.errors.length};}
@@ -121,7 +156,7 @@ function audioCaptureLedgerSummary(raw){
       sourceNonzero:pcmNonzero(row.source),outputNonzero:pcmNonzero(row.output)}))};
 }
 
-function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickIntervals,startNativeSequence,expectedEvents}={}){
+function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickIntervals,startNativeSequence,expectedEvents}={},gainTimeline){
   requireValue(output?.schema===PRESENTATION_AUDIO_SCHEMA,'Actual source and output PCM evidence is missing or uses an unsupported schema');
   const raw=output.raw,contract=TH08_PRESENTATION_AUDIO_CONTRACT;
   requireValue(raw&&/^[a-f0-9]{64}$/.test(output.rawSha256??'')&&sha(raw)===output.rawSha256,'Actual audio raw hash differs');
@@ -253,7 +288,7 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickInter
     mutation.afterTime>=mutation.beforeTime&&mutation.beforeTime===raw.gainCalls[index].beforeTime&&
     mutation.afterTime===raw.gainCalls[index].afterTime),
   'A production gain was changed by an unmodeled AudioParam method or direct value assignment');
-  const priorStartByKey=new Map();let previousEvent=window.startNativeSequence,totalPcmSamples=0;
+  const priorStartByKey=new Map();let previousEvent=window.startNativeSequence,observedPcmFrames=0;
   requireValue(array(raw.markReceipts,'Actual mark acknowledgements').length===events.length*2,'Source/output markers did not all reach their actual Worklets');
   const latestGenerationByTap=new Map(),receiptSequenceSet=new Set();
   for(let index=0;index<events.length;index++){
@@ -333,6 +368,8 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickInter
       outputRow.sourceId===start.sourceId&&outputRow.slotGeneration===start.sourceSlotGeneration&&outputRow.voiceKey===event.voiceKey&&
       outputRow.startFrame===sourceRow.onsetFrame&&outputRow.endFrame===sourceRow.endFrame&&outputRow.onsetFrame===null,'Output PCM does not cover the same absolute source sample interval');
     const outputPcm=readPresentationPcmWindow(outputRow,plan,'Output PCM');
+    gainTimeline.windows.push({eventSerial:event.serial,logicalIndex:event.logicalIndex,startFrame:outputRow.startFrame,
+      endFrame:outputRow.endFrame,frames:outputPcm.left.length});
     for(const other of raw.starts){
       if(other.id===start.id||other.voiceKey!==start.voiceKey)continue;
       const otherStartFrame=Math.ceil(Math.max(other.when??0,other.beforeTime)*rate);
@@ -346,7 +383,6 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickInter
     }
     requireValue(sourceRow.endFrame<=tapById.get(start.sourceTap).final.previousEnd&&outputRow.endFrame<=tapById.get(start.outputTap).final.previousEnd,
       'PCM packet exceeds its actual final worklet checkpoint');
-    requireValue(outputPcm.left.some((value,i)=>value!==0||outputPcm.right[i]!==0),'Actual output PCM is silent');
     const prior=priorStartByKey.get(start.voiceKey),floor=prior?.gainSequence??0;
     for(const side of ['left','right']){
       const previousCalls=raw.gainCalls.filter(call=>call.voiceKey===start.voiceKey&&call.side===side&&call.sequence<=floor);
@@ -354,23 +390,24 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickInter
       const calls=raw.gainCalls.filter(call=>call.voiceKey===start.voiceKey&&call.side===side&&call.sequence>floor&&call.sequence<=start.gainSequence);
       requireValue(calls.length===contract.gainCallsPerChannel,
         'TH08 played event does not retain the four production AudioHost/WebSfx gain calls per channel');
-      try{assertPresentationGainPcm({source:source[side].subarray(firstNonzero),output:outputPcm[side],startFrame:sourceRow.onsetFrame,
-        sampleRate:rate,baseline,calls,firstPullFrame:outputPcm.firstBlockFrame});}
-      catch(error){throw Error(`Native audio event ${event.serial} (logicalIndex ${event.logicalIndex}), ${side} channel: ${error.message}`);}
+      observeGainTimeline({diagnostic:gainTimeline,source:source[side].subarray(firstNonzero),output:outputPcm[side],startFrame:sourceRow.onsetFrame,
+        sampleRate:rate,baseline,calls,firstPullFrame:outputPcm.firstBlockFrame,event,side,outputRow});
     }
-    priorStartByKey.set(start.voiceKey,start);totalPcmSamples+=outputPcm.left.length;
+    requireValue(outputPcm.left.some((value,i)=>value!==0||outputPcm.right[i]!==0),'Actual output PCM is silent');
+    priorStartByKey.set(start.voiceKey,start);observedPcmFrames+=outputPcm.left.length;
   }
   requireValue(receiptSequenceSet.size===events.length&&Array.from({length:events.length},(_,index)=>index+1).every(sequence=>receiptSequenceSet.has(sequence)),
     'Source-slot receipt sequence is incomplete');
   return {status:'passed',epoch,rateHz,nativeEvents:events.length,actualStarts:raw.starts.length,actualSourceWindows:raw.sourcePcm.length,
-    actualOutputWindows:raw.pcm.length,comparedPcmFrames:totalPcmSamples,rawSha256:output.rawSha256,
+    actualOutputWindows:raw.pcm.length,observedPcmFrames,gainTimelineDiagnostic:finishGainTimelineDiagnostic(gainTimeline),rawSha256:output.rawSha256,
     captureLedger:audioCaptureLedgerSummary(raw),clockSchema:plan.schema,clockEndTime:plan.endTime,clockHorizonSeconds:plan.segments*plan.segmentSeconds};
 }
 
 export function assessPresentationAudioOutput(output,expected){
-  try{return assessOutputCore(output,expected);}catch(error){return {status:output?'failed':'incomplete',epoch:expected?.epoch??null,
+  const gainTimeline=createGainTimelineDiagnostic();
+  try{return assessOutputCore(output,expected,gainTimeline);}catch(error){return {status:output?'failed':'incomplete',epoch:expected?.epoch??null,
     rateHz:expected?.rateHz??null,reason:String(error?.message??error).slice(0,1000),rawSha256:output?.rawSha256??null,
-    captureLedger:audioCaptureLedgerSummary(output?.raw)};}
+    gainTimelineDiagnostic:finishGainTimelineDiagnostic(gainTimeline),captureLedger:audioCaptureLedgerSummary(output?.raw)};}
 }
 
 export function assessPresentationAudioRun(run,{requiredTicks=600}={}){
@@ -392,12 +429,12 @@ export function assessPresentationAudioEvidence(runs,{requiredTicks=600,ratesHz=
       comparison.checks.some(check=>check.id==='AUDIO-06'&&check.evidence?.sameLogicalEventRouteSequence==='passed');
     const status=results.some(result=>result.status==='failed')||comparison.status==='failed'?'failed':
       logicalPassed&&results.length===ratesHz.length&&results.every(result=>result.status==='passed')?'passed':'incomplete';
-    return {schema:'eagler-presentation/audio-assessment/1',status,complete:status==='passed',machineComplete:status==='passed',scope,
+    return {schema:'eagler-presentation/audio-assessment/2',acceptance:'event-source-output-conservation',status,complete:status==='passed',machineComplete:status==='passed',scope,
       requiredTicks,ratesHz:[...ratesHz],runs:results,logicalComparisonStatus:comparison.status,
-      reason:status==='passed'?null:'Complete native event/route, source.start, ordered gains and actual source/output PCM are required for every cadence',
-      extent:'Actual production SFX source and post-gain output prefixes at equal sample frames; no physical speaker or multiplayer rollback claim',
+      reason:status==='passed'?null:'Complete native event/route, source.start, gain mutation ledger and actual source/output PCM are required for every cadence',
+      extent:'Native played-event conservation, actual source ownership and attributed nonzero output at each declared cadence; gain timeline diagnostics are retained separately',
       rollbackAudioVerified:false,physicalAudioDeviceVerified:false};
-  }catch(error){return {schema:'eagler-presentation/audio-assessment/1',status:'failed',complete:false,machineComplete:false,
+  }catch(error){return {schema:'eagler-presentation/audio-assessment/2',acceptance:'event-source-output-conservation',status:'failed',complete:false,machineComplete:false,
     reason:String(error?.message??error).slice(0,1000),runs:[],scope,requiredTicks,ratesHz:[...ratesHz]};}
 }
 
