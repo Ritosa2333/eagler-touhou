@@ -1,5 +1,8 @@
 // Adapted from apeirs/th11, th11-rollback (GPL-3.0), whole-state journal.
 // https://github.com/apeirs/th11/tree/324fb143e78560ae34f5930a19048e34035eb2f8
+// Some consumers discover common sources by directory. Allocator replacement
+// belongs only to products that explicitly enable this backend.
+#if defined(EAGLER_WRITE_JOURNAL) && EAGLER_WRITE_JOURNAL
 #include <eagler/netplay/WriteJournal.hpp>
 #include <algorithm>
 #include <cstdlib>
@@ -282,3 +285,4 @@ void operator delete(void* p,std::align_val_t) noexcept { Netplay::WriteJournal:
 void operator delete[](void* p,std::align_val_t) noexcept { Netplay::WriteJournal::Release(p); }
 void operator delete(void* p,std::size_t,std::align_val_t) noexcept { Netplay::WriteJournal::Release(p); }
 void operator delete[](void* p,std::size_t,std::align_val_t) noexcept { Netplay::WriteJournal::Release(p); }
+#endif // EAGLER_WRITE_JOURNAL

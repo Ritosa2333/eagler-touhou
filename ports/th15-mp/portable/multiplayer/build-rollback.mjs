@@ -26,7 +26,7 @@ source=source.replace(/#include "([^"]+)"/g,(_,p)=>'#include "'+resolve(root,'we
 writeFileSync(resolve(dir,'fixture.cpp'),source);
 const flags=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti',
  '-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1','-DTH15_DEVELOPMENT_HARNESS=0','-DTH15_PRESENTATION_LAB=0',
- '-DTH_ENABLE_THPRAC=0','-DTH15_MULTIPLAYER=1','-DTH15_WRITE_JOURNAL=1','--use-port=sdl3','--use-port=sdl3_ttf',
+ '-DTH_ENABLE_THPRAC=0','-DTH15_MULTIPLAYER=1','-DTH15_WRITE_JOURNAL=1','-DEAGLER_WRITE_JOURNAL=1','--use-port=sdl3','--use-port=sdl3_ttf',
  '-I'+resolve(common,'include'),'-I'+resolve(root,'web/cpp/multiplayer'),
  '--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker',
  '-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824',

@@ -36,6 +36,7 @@ common.push(`-DTH15_PRESENTATION_LAB=${lab?1:0}`);
 common.push(`-DTH_ENABLE_THPRAC=${thprac?1:0}`);
 common.push(`-DTH15_MULTIPLAYER=${multiplayer?1:0}`);
 common.push(`-DTH15_WRITE_JOURNAL=${multiplayer?1:0}`);
+if(multiplayer)common.push('-DEAGLER_WRITE_JOURNAL=1');
 if(multiplayer){
  // The ordinary common tree also has netplay headers. The MP source set must
  // compile against its own dependency instead of silently shadowing that pin.
