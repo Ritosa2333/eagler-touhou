@@ -6,6 +6,11 @@
 #include "FrameCadence.hpp"
 #include "PresentationCadence.hpp"
 #include "Renderer.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "ThpracUi.hpp"
+#include <eagler/thprac/PracticeSpeed.hpp>
+#include "../game/PracticeCadence.hpp"
+#endif
 #include "../game/PresentationAudit.hpp"
 #include <algorithm>
 #include <cstddef>
@@ -191,7 +196,13 @@ struct CallbackTiming {
         add_at(pending,start,end);publish(reason,-1,false,end);
     }
 };
+#ifdef TH_ENABLE_THPRAC
+th10::PracticeCadence practice_cadence;
+#endif
 void reset_cadence(){
+#ifdef TH_ENABLE_THPRAC
+    practice_cadence.reset();
+#endif
     cadence.reset();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     network_schedule.reset();network_identity_valid=false;
@@ -345,12 +356,24 @@ EM_BOOL frame(double timestamp,void* epoch){
     // Capture the input-information scale here, not after step/repair and not
     // the possibly larger peer phase scale folded into IntervalScale().
     const double scheduled_input_gap_scale=rollback_clock?runtime.InputGapScale():1.;
-    const unsigned offered=rollback_clock?network_schedule.advance(delta/runtime.IntervalScale(),true):
+    unsigned offered=rollback_clock?network_schedule.advance(delta/runtime.IntervalScale(),true):
         cadence.advance(simulation_delta,live);
     if(!presentation.high_refresh||(!rollback_clock&&!fast))presentation_primed=false;
 #else
-    const unsigned offered=cadence.advance(simulation_delta);
+    unsigned offered=cadence.advance(simulation_delta);
     if(!presentation.high_refresh||!fast)presentation_primed=false;
+#endif
+#ifdef TH_ENABLE_THPRAC
+    bool practice_clock=true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    practice_clock=!application->multiplayer_active();
+#endif
+    if(practice_clock){
+        const double period=th10::browser::ThpracUi::simulation_interval(*application);
+        if(period!=practice_cadence.period){practice_cadence.period=period;practice_cadence.reset();}
+        if(std::abs(period-1./60.)>1e-12){offered=practice_cadence.advance(delta);presentation.reset();presentation_primed=false;}
+        else practice_cadence.reset();
+    }
 #endif
     const bool tick_due=offered!=0;
     int result=0;unsigned completed=0;bool completed_after_correction=false;

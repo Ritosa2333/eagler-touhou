@@ -25,7 +25,7 @@ i32 GameSessionResources::load_step(Progress& progress){auto& env=environment;au
     if(*env.new_game){
 #ifdef TH_ENABLE_THPRAC
         // thprac_th10.cpp:2266 (0x41798C) zeroes TrackerInfo on entering a game.
-        if(env.practice){env.practice->tracker_misses=0;env.practice->tracker_bombs=0;}
+        if(env.practice){env.practice->tracker_misses=0;env.practice->tracker_bombs=0;env.practice->tracker_white=0;env.practice->tracker_yellow=0;}
 #endif
         if(game.stage==7)game.difficulty=4;
         auto& character=(*env.scores)->characters[game.character*3+game.shot_type];const auto& high=character.high_scores[game.difficulty][0];game.high_score=high.score;game.high_score_units=static_cast<std::int8_t>(high.score_units);
