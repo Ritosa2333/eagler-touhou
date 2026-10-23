@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <deque>
 #include <map>
+#include <cstddef>
 
 namespace eagler::input {
 // Dialogue recognition runs alongside movement, independently for each finger.
@@ -23,6 +24,13 @@ class DialogueGesture {
         }
     }
 public:
+#if defined(TH_PRESENTATION_AUDIT)
+    void audit_state(std::uint32_t& hash)const{
+        const auto add=[&](const auto& value){const auto* bytes=reinterpret_cast<const std::uint8_t*>(&value);for(std::size_t i=0;i<sizeof(value);++i)hash=(hash^bytes[i])*16777619u;};
+        add(points.size());for(const auto& [id,p]:points){add(id);add(p.x);add(p.y);add(p.last_x);add(p.last_y);add(p.start);add(p.moved);add(p.navigated);}
+        add(directions.size());for(const auto key:directions)add(key);
+    }
+#endif
     void clear(){points.clear();directions.clear();}
     void erase(std::int64_t id){points.erase(id);}
     void begin(std::int64_t id,float x,float y,std::uint64_t now){points[id]={x,y,x,y,now};}

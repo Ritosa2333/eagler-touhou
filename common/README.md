@@ -10,12 +10,12 @@ C++ 手柄输入可包含 `<eagler/input/BrowserGamepad.hpp>`，同步读取 Lau
 
 ## 开始
 
-需要 CMake 3.20、C++17 编译器；安装 Node.js 后，CTest 也会运行可用的 JavaScript 测试。从仓库根目录执行：
+需要 CMake 3.20、C++17 编译器与 Node.js。CTest 统一运行 C++ 与 JavaScript 行为测试，配置阶段核对必需工具。从仓库根目录执行：
 
 ```sh
 cmake -S common -B build/common -DEAGLER_COMMON_BUILD_TESTS=ON
 cmake --build build/common --config Release
-ctest --test-dir build/common -C Release --output-on-failure
+ctest --test-dir build/common -C Release --no-tests=error --output-on-failure
 ```
 
 ## 组件位置
