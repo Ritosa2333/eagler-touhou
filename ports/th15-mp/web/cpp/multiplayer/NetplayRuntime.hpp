@@ -12,9 +12,8 @@
 #include <deque>
 #include <string>
 namespace th15::multiplayer {
-// Title adapter over shared network authorities. The common history object is
-// used with prediction disabled. No title snapshot, undo or resimulation owner
-// exists in the TH15 multiplayer source set.
+// Admission, physical captures and confirmed publication stay outside restored
+// game memory. The driver restores first, then rewinds this simulation cursor.
 class NetplayRuntime {
 public:
     bool Reset(const SessionSetup&);
@@ -37,6 +36,22 @@ public:
     Netplay::FrameDecision Prepare(std::uint32_t)const;
     bool MarkSimulated(std::uint32_t,const Netplay::FrameDecision&);
     bool ConfirmedInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
+    bool AllowsRollback()const{return configured_&&!ReadOnly()&&setup_.mode!=1;}
+    bool WorldReady()const{return world_ready_;}
+    bool SetWorldReady(bool);
+    bool Correcting()const{return correction_end_!=Netplay::INVALID_FRAME;}
+    std::uint32_t CorrectionEnd()const{return correction_end_;}
+    std::uint32_t RollbackFrame()const{return core_.RollbackFrame();}
+    std::uint32_t LastFrame()const{return core_.LastSimulatedFrame();}
+    bool BeginCorrection(std::uint32_t first);
+    bool RestartCorrection(std::uint32_t first);
+    bool EndCorrection(bool lifecycleBoundary=false);
+    bool InputsReconciledBeforeNext()const;
+    bool SetCommitLimit(std::uint32_t through);
+    bool CommitReconciledPrefix(std::uint32_t through);
+    bool CommittedPrefixInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
+    std::uint32_t CommittedThrough()const{return commit_limit_;}
+    void PublishAfterReconcile(){if(!Correcting()&&!core_.HasRollbackRequest())Publish();}
     void RecordSpectatorFrame(Netplay::SpectatorStagePublisher::Frame);
     bool StagePlaybackReady()const{return spectator_&&stage_received_&&stage_playback_.Ready();}
     Netplay::SpectatorStagePlayback& StagePlayback(){return stage_playback_;}
@@ -68,7 +83,7 @@ public:
     void MarkLocalReady(){gate_.MarkLocalReady();}
     Netplay::RemoteInputResult SubmitRemote(unsigned s,std::uint32_t f,const Netplay::FrameInput& i){return core_.SubmitRemoteInput(std::uint8_t(s),f,i);}
 private:
-    bool Configure(const SessionSetup&,unsigned delay);
+    bool Configure(const SessionSetup&,unsigned delay,bool read_only=false);
     bool Feed(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool DrainSpectator();
     void Publish();
@@ -87,6 +102,8 @@ private:
     Netplay::SessionChannel channel_{calibration_};
     std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0,publish_deadline_=0;
     bool configured_=false,network_=false,playback_=false,spectator_=false,retired_=false;
+    bool world_ready_=false;
+    std::uint32_t next_=0,correction_end_=Netplay::INVALID_FRAME,commit_limit_=Netplay::INVALID_FRAME;
     bool timing_ready_=false,timing_sent_=false,publish_failed_=false;
     std::uint32_t generation_=0,publish_frame_=0,receive_frame_=0;
     double phase_debt_ms_=0;

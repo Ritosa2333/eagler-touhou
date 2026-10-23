@@ -17,8 +17,8 @@ std::uint64_t clock_us(){
     return std::uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());
 #endif
 }
-Netplay::SessionChannelConfig channel_policy(){
-    Netplay::SessionChannelConfig p;p.adonisPhase=true;p.adonisPredictionFrames=0;p.inputResendMs=16;return p;
+Netplay::SessionChannelConfig channel_policy(unsigned mode,unsigned prediction=0){
+    Netplay::SessionChannelConfig p;p.adonisPhase=mode!=0;p.adonisPredictionFrames=p.adonisPhase?prediction:0;p.inputResendMs=16;return p;
 }
 }
 bool NetplayRuntime::Fail(const char* reason){if(error_.empty())error_=reason;return false;}
@@ -31,17 +31,19 @@ const char* NetplayRuntime::Error()const{
     if(channel_.Error()!=Netplay::SessionChannel::Failure::None)return channel_.ErrorText();
     if(transport_.Failed())return transport_.LastError().c_str();return "";
 }
-bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay){
+bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay,bool read_only){
     if(!setup.valid()||delay>9)return Fail("Invalid TH15 multiplayer setup");
     Netplay::SessionConfig gate;gate.sessionId=setup.session_id;gate.seed=setup.seed;gate.gameplayAbi=GameplayAbi(setup);
     gate.gameId=15;gate.playerCount=std::uint8_t(setup.player_count);gate.localPlayer=std::uint8_t(setup.local_player);
     Netplay::CoreConfig core;core.sessionId=setup.session_id;core.playerCount=gate.playerCount;core.localPlayer=gate.localPlayer;
-    core.inputDelay=std::uint8_t(delay);core.allowPrediction=false;
-    // Common core requires a positive retained-decision window even in
-    // lockstep. This is input/ACK history only, never a prediction allowance.
-    core.maxRollbackFrames=12;core.predictableButtons=0;core.maxDirectionPredictionFrames=0;core.directTouchIsAbsolute=true;
-    if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH15 lockstep core rejected setup");
-    setup_=setup;configured_=true;retired_=false;
+    core.inputDelay=std::uint8_t(delay);core.allowPrediction=!read_only&&setup.mode!=1;
+    core.maxRollbackFrames=SessionSetup::MaxRollbackFrames;
+    // Shot, focus and short direction holds may be predicted. Bomb, pause,
+    // transfer and menu actions are supplied only by actual remote input.
+    core.predictableButtons=0xf9;core.directionButtons=0xf0;core.maxDirectionPredictionFrames=3;core.directTouchIsAbsolute=true;
+    if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH15 input core rejected setup");
+    setup_=setup;configured_=true;retired_=world_ready_=false;
+    next_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
     next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;return true;
 }
 void NetplayRuntime::Clear(){
@@ -51,23 +53,29 @@ void NetplayRuntime::Clear(){
     configured_=network_=playback_=spectator_=retired_=false;timing_ready_=timing_sent_=publish_failed_=false;
     setup_={};base_session_=now_ms_=initial_wait_=spectator_deadline_=publish_deadline_=0;generation_=publish_frame_=receive_frame_=0;
     phase_debt_ms_=0;error_.clear();spectator_frames_.clear();publish_tail_.clear();status_.fill(0);
+    world_ready_=false;next_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
 }
 bool NetplayRuntime::Reset(const SessionSetup& setup){Clear();base_session_=setup.session_id;return Configure(setup,setup.input_delay);}
 bool NetplayRuntime::Connect(const char* url){
     if(!configured_||network_||ReadOnly()||!url||!*url)return Fail("Invalid TH15 player connection");
     if(!transport_.Connect(url,std::uint8_t(setup_.local_player),std::uint8_t(setup_.player_count),true))return Fail("TH15 transport could not connect");
     now_ms_=clock_us()/1000;network_=true;
-    calibration_.Prepare(gate_.Config(),Netplay::AdonisMode::Delay,setup_.automatic,setup_.requested_delay,setup_.prediction_reserve);return true;
+    if(setup_.mode==0){
+        if(!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(0)))return Fail("TH15 direct session bootstrap failed");
+        timing_ready_=true;
+    }else calibration_.Prepare(gate_.Config(),Netplay::AdonisMode(setup_.mode),setup_.automatic,setup_.requested_delay,setup_.prediction_reserve);
+    return true;
 }
 bool NetplayRuntime::ConnectSpectator(const char* url,const char* id){
     if(!configured_||network_||!url||!*url||!id||!*id)return Fail("Invalid TH15 spectator admission");
+    if(!Configure(setup_,0,true))return false;
     if(!transport_.ConnectSpectator(url,id,std::uint8_t(setup_.player_count),true))return Fail("TH15 spectator could not connect");
-    spectator_=network_=true;now_ms_=clock_us()/1000;spectator_deadline_=now_ms_+90'000;return true;
+    spectator_=network_=true;timing_ready_=setup_.mode==0;now_ms_=clock_us()/1000;spectator_deadline_=now_ms_+90'000;return true;
 }
-bool NetplayRuntime::BeginPlayback(const SessionSetup& setup){Clear();if(!Configure(setup,0))return false;playback_=timing_ready_=true;return true;}
+bool NetplayRuntime::BeginPlayback(const SessionSetup& setup){Clear();if(!Configure(setup,0,true))return false;playback_=timing_ready_=true;return true;}
 bool NetplayRuntime::CanStart()const{return configured_&&error_.empty()&&(playback_||(spectator_?timing_ready_:!calibration_.Waiting()&&gate_.CanStart()));}
-std::uint32_t NetplayRuntime::NextFrame()const{if(spectator_&&stage_received_)return stage_playback_.Position();const auto f=core_.LastSimulatedFrame();return f==Netplay::INVALID_FRAME?0:f+1;}
-bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&
+std::uint32_t NetplayRuntime::NextFrame()const{if(spectator_&&stage_received_)return stage_playback_.Position();return next_;}
+bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&!Correcting()&&
     capture_clock_.CanCapture(next_capture_,NextFrame(),capture_ui_,capture_now_us_)&&!core_.HasLocalCapture(next_capture_);}
 bool NetplayRuntime::Capture(std::uint32_t frame,const Netplay::FrameInput& input){
     if(!NeedsCapture()||frame!=next_capture_||
@@ -90,9 +98,9 @@ bool NetplayRuntime::Pump(bool ready){
     if(!calibration_.Pump(clock_us(),ready))return Fail(calibration_.Error());
     if(calibration_.NeedsApply()){
         const auto choice=calibration_.Startup().Selected();
-        if(choice.prediction||choice.delay>9||NextFrame()!=0)return Fail("TH15 received a non-lockstep calibration result");
-        auto setup=setup_;setup.input_delay=choice.delay;
-        if(!Configure(setup,choice.delay)||!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy()))return Fail("TH15 calibration commit failed");
+        if(setup_.mode==0||(setup_.mode==1&&choice.prediction)||choice.prediction>2||choice.delay>9||NextFrame()!=0||next_capture_)return Fail("TH15 received an invalid calibration result");
+        auto setup=setup_;setup.input_delay=choice.delay;setup.measured_prediction=choice.prediction;
+        if(!Configure(setup,choice.delay)||!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(setup.mode,choice.prediction)))return Fail("TH15 calibration commit failed");
         calibration_.Applied();timing_ready_=true;
     }
     if(calibration_.Waiting())return true;
@@ -105,13 +113,63 @@ bool NetplayRuntime::Pump(bool ready){
     Publish();return error_.empty();
 }
 Netplay::FrameDecision NetplayRuntime::Prepare(std::uint32_t frame)const{
-    return CanStart()&&InitialInputsReady()&&!retired_?core_.PrepareFrame(frame):Netplay::FrameDecision{};
+    if(!CanStart()||!InitialInputsReady()||retired_||frame!=next_||frame==Netplay::INVALID_FRAME||core_.HasRollbackRequest())return {};
+    const auto confirmed=Confirmed();
+    if(AllowsRollback()&&!world_ready_&&(confirmed==Netplay::INVALID_FRAME||frame>confirmed))return {};
+    return core_.PrepareFrame(frame);
 }
 bool NetplayRuntime::MarkSimulated(std::uint32_t frame,const Netplay::FrameDecision& d){
-    if(!CanStart()||!d.canAdvance||d.predictedMask||!core_.MarkSimulated(frame,d)||core_.HasRollbackRequest())return Fail("TH15 attempted an unconfirmed logical frame");
+    const auto expected=Prepare(frame);
+    if(!expected.canAdvance||!d.canAdvance||expected.predictedMask!=d.predictedMask||expected.inputs!=d.inputs||
+       !core_.MarkSimulated(frame,d))return Fail("TH15 logical frame decision changed before commit");
+    ++next_;
+    if(!AllowsRollback()&&!SetCommitLimit(frame))return Fail("TH15 exact output frontier rejected");
     Publish();return true;
 }
-bool NetplayRuntime::ConfirmedInputs(std::uint32_t f,std::array<Netplay::FrameInput,3>& out)const{return core_.ConfirmedInputs(f,&out);}
+bool NetplayRuntime::ConfirmedInputs(std::uint32_t f,std::array<Netplay::FrameInput,3>& out)const{
+    return CanStart()&&!Correcting()&&!core_.HasRollbackRequest()&&commit_limit_!=Netplay::INVALID_FRAME&&f<=commit_limit_&&core_.ConfirmedInputs(f,&out);
+}
+bool NetplayRuntime::InputsReconciledBeforeNext()const{
+    const auto confirmed=Confirmed();return CanStart()&&!core_.HasRollbackRequest()&&(next_==0||(confirmed!=Netplay::INVALID_FRAME&&confirmed>=next_-1));
+}
+bool NetplayRuntime::SetWorldReady(bool ready){
+    if(!configured_||Correcting()||core_.HasRollbackRequest()||(ready&&!AllowsRollback())||(!ready&&!InputsReconciledBeforeNext()))return false;
+    world_ready_=ready;return true;
+}
+bool NetplayRuntime::BeginCorrection(std::uint32_t first){
+    if(!AllowsRollback()||!CanStart()||!world_ready_||Correcting()||first!=core_.RollbackFrame()||first>=next_||
+       next_-first>SessionSetup::MaxRollbackFrames||(commit_limit_!=Netplay::INVALID_FRAME&&first<=commit_limit_))return false;
+    const auto end=next_;if(!core_.RewindSimulationTo(first))return false;
+    correction_end_=end;next_=first;return true;
+}
+bool NetplayRuntime::RestartCorrection(std::uint32_t first){
+    if(!AllowsRollback()||!CanStart()||!world_ready_||!Correcting()||first!=core_.RollbackFrame()||first>=next_||
+       next_>correction_end_||correction_end_-first>SessionSetup::MaxRollbackFrames||
+       (commit_limit_!=Netplay::INVALID_FRAME&&first<=commit_limit_))return false;
+    if(!core_.RewindSimulationTo(first))return false;next_=first;return true;
+}
+bool NetplayRuntime::EndCorrection(bool lifecycleBoundary){
+    if(!Correcting()||core_.HasRollbackRequest()||next_>correction_end_||
+       (lifecycleBoundary?!InputsReconciledBeforeNext():next_!=correction_end_))return false;
+    correction_end_=Netplay::INVALID_FRAME;return true;
+}
+bool NetplayRuntime::SetCommitLimit(std::uint32_t through){
+    const auto last=core_.LastSimulatedFrame();
+    if(!CanStart()||Correcting()||core_.HasRollbackRequest()||through==Netplay::INVALID_FRAME||last==Netplay::INVALID_FRAME||through>last||
+       (commit_limit_!=Netplay::INVALID_FRAME&&through<commit_limit_))return false;
+    std::array<Netplay::FrameInput,3> exact;if(!core_.ConfirmedInputs(through,&exact))return false;
+    commit_limit_=through;return true;
+}
+bool NetplayRuntime::CommitReconciledPrefix(std::uint32_t through){
+    if(!Correcting())return SetCommitLimit(through);
+    if(!AllowsRollback()||!InputsReconciledBeforeNext()||!next_||next_>correction_end_||through!=next_-1||through!=core_.LastSimulatedFrame()||
+       (commit_limit_!=Netplay::INVALID_FRAME&&through<commit_limit_))return false;
+    std::array<Netplay::FrameInput,3> exact;if(!core_.ConfirmedInputs(through,&exact))return false;
+    commit_limit_=through;return true;
+}
+bool NetplayRuntime::CommittedPrefixInputs(std::uint32_t frame,std::array<Netplay::FrameInput,3>& out)const{
+    return CanStart()&&!core_.HasRollbackRequest()&&commit_limit_!=Netplay::INVALID_FRAME&&frame<=commit_limit_&&core_.ConfirmedInputs(frame,&out);
+}
 bool NetplayRuntime::Feed(std::uint32_t frame,const Netplay::FrameInput* inputs,unsigned count){
     if(frame!=NextFrame()||count!=setup_.player_count||!inputs)return Fail("Invalid TH15 recorded frame");
     for(unsigned s=0;s<count;++s)if(!Netplay::IsValidFrameInput(inputs[s]))return Fail("Invalid TH15 recorded input");
@@ -126,9 +184,9 @@ bool NetplayRuntime::DrainSpectator(){
         if(Netplay::AdonisSpectatorTiming::IsPacket(bytes.data(),bytes.size())){
             Netplay::AdonisSpectatorTiming timing;
             if(timing_ready_||receive_frame_||!Netplay::AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),timing)||
-               timing.game!=15||timing.mode!=1||timing.prediction||timing.sessionId!=setup_.session_id||timing.automatic!=setup_.automatic)return Fail("Invalid TH15 spectator timing");
-            auto setup=setup_;setup.input_delay=timing.delay;
-            if(GameplayAbi(setup)!=timing.gameplayAbi||!Configure(setup,0))return Fail("TH15 spectator contract mismatch");
+               timing.game!=15||timing.mode!=setup_.mode||(setup_.mode==1&&timing.prediction)||timing.prediction>2||timing.sessionId!=setup_.session_id||timing.automatic!=setup_.automatic)return Fail("Invalid TH15 spectator timing");
+            auto setup=setup_;setup.input_delay=timing.delay;setup.measured_prediction=timing.prediction;
+            if(GameplayAbi(setup)!=timing.gameplayAbi||!Configure(setup,0,true))return Fail("TH15 spectator contract mismatch");
             timing_ready_=true;spectator_deadline_=now_ms_+15'000;continue;
         }
         if(Netplay::IsSpectatorStageEvent(bytes.data(),bytes.size())){
@@ -182,24 +240,25 @@ void NetplayRuntime::RecordSpectatorFrame(Netplay::SpectatorStagePublisher::Fram
     if(!stage_publisher_.Record(std::move(frame))){std::fprintf(stderr,"TH15 spectator journal rejected frame %u after %u\n",recorded_frame,stage_publisher_.Published());publish_failed_=true;transport_.StopSpectators();}
 }
 void NetplayRuntime::Publish(){
+    if(Correcting()||core_.HasRollbackRequest()||commit_limit_==Netplay::INVALID_FRAME)return;
     if(stage_publication_){
         if(!network_||ReadOnly()||setup_.local_player||publish_failed_)return;
         if(transport_.SpectatorState()<0){publish_failed_=true;transport_.StopSpectators();return;}
-        if(!timing_sent_){
+        if(!timing_sent_&&setup_.mode!=0){
             auto timing=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
             if(timing.empty()){std::fprintf(stderr,"TH15 spectator timing could not be encoded\n");publish_failed_=true;transport_.StopSpectators();return;}
             if(!transport_.SendSpectator(timing.data(),timing.size()))return;timing_sent_=true;
         }
         const auto begin=clock_us();
-        stage_publisher_.Publish(core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
+        stage_publisher_.Publish(core_.ConfirmedThroughAllRemotes(),commit_limit_,
           [&](auto frame,auto& inputs){return core_.ConfirmedInputs(frame,&inputs);},
           [&](const auto& wire){return clock_us()-begin<2000&&transport_.SendSpectator(wire.data(),wire.size());});
         return;
     }
     if(!network_||ReadOnly()||generation_||setup_.local_player||publish_failed_||!transport_.HasSpectators())return;
-    const auto through=core_.LastSimulatedFrame();if(through==Netplay::INVALID_FRAME)return;
+    const auto through=commit_limit_;
     if(transport_.SpectatorState()<0||(through>=publish_frame_&&through-publish_frame_>=Netplay::INPUT_HISTORY_SIZE)){publish_failed_=true;transport_.StopSpectators();return;}
-    if(!timing_sent_){
+    if(!timing_sent_&&setup_.mode!=0){
         auto bytes=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
         if(bytes.empty()){std::fprintf(stderr,"TH15 legacy spectator timing could not be encoded\n");publish_failed_=true;transport_.StopSpectators();return;}
         if(!transport_.SendSpectator(bytes.data(),bytes.size()))return;timing_sent_=true;
@@ -213,9 +272,10 @@ void NetplayRuntime::Publish(){
     }
 }
 void NetplayRuntime::FreezePublicationTail(){
+    if(Correcting()||core_.HasRollbackRequest()||commit_limit_==Netplay::INVALID_FRAME)return;
     if(stage_publication_){
         if(ReadOnly()||setup_.local_player||publish_failed_)return;
-        const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return;
+        const auto last=commit_limit_;
         const auto retain=[&](const auto& wire){publish_tail_.push_back(wire);return true;};
         const bool complete=stage_publisher_.Publish(core_.ConfirmedThroughAllRemotes(),last,
           [&](auto frame,auto& inputs){return core_.ConfirmedInputs(frame,&inputs);},retain);
@@ -223,10 +283,10 @@ void NetplayRuntime::FreezePublicationTail(){
         publish_deadline_=now_ms_+15'000;DrainPublicationTail();return;
     }
     if(ReadOnly()||generation_||setup_.local_player||publish_failed_||!transport_.HasSpectators())return;
-    const auto through=core_.LastSimulatedFrame();if(through==Netplay::INVALID_FRAME)return;
+    const auto through=commit_limit_;
     const auto fail=[&](){publish_failed_=true;publish_tail_.clear();publish_deadline_=0;transport_.StopSpectators();};
     if(through>=publish_frame_&&through-publish_frame_>=Netplay::INPUT_HISTORY_SIZE){fail();return;}
-    if(!timing_sent_){
+    if(!timing_sent_&&setup_.mode!=0){
         auto timing=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
         if(timing.empty()){fail();return;}publish_tail_.push_back(std::move(timing));timing_sent_=true;
     }
@@ -256,11 +316,13 @@ void NetplayRuntime::DrainPublicationTail(){
 }
 bool NetplayRuntime::Finish(){
     if(retired_)return true;
+    if(Correcting()||core_.HasRollbackRequest())return false;
     if(spectator_&&stage_received_){
         if(!stage_playback_.History().Ended()||stage_playback_.Paused()||stage_playback_.Position()<stage_playback_.History().Received())return false;
         retired_=true;return true;
     }const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return false;
     if(ReadOnly()){retired_=true;return true;}
+    if(commit_limit_!=last||!InputsReconciledBeforeNext())return false;
     if(network_){if(!channel_.FlushRetirementFence(core_,last,now_ms_))return Fail("TH15 retirement input flush failed");
         if(!channel_.CanRetire(core_,last))return false;
         if(!channel_.Retire(core_,last,now_ms_))return Fail("TH15 retirement failed");}
@@ -269,9 +331,13 @@ bool NetplayRuntime::Finish(){
 bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
     if(!retired_||ReadOnly()||seed>65535||generation_==0xffffffffu)return Fail("Invalid TH15 next generation");
     const auto previous=gate_.Config();
-    auto setup=setup_;setup.seed=seed;setup.input_delay=setup.requested_delay;setup.session_id=base_session_^(std::uint64_t(generation_+1)*0x9e3779b97f4a7c15ull);
+    auto setup=setup_;setup.seed=seed;setup.input_delay=setup.requested_delay;setup.measured_prediction=0;setup.session_id=base_session_^(std::uint64_t(generation_+1)*0x9e3779b97f4a7c15ull);
     if(!Configure(setup,setup.input_delay))return false;++generation_;phase_debt_ms_=0;initial_wait_=0;timing_ready_=timing_sent_=false;publish_frame_=0;
-    if(network_)calibration_.Prepare(gate_.Config(),Netplay::AdonisMode::Delay,setup.automatic,setup.requested_delay,setup.prediction_reserve,&previous);return true;
+    stage_publisher_={};stage_playback_.Clear();stage_view_.Clear();stage_publication_=stage_received_=false;spectator_frames_.clear();receive_frame_=0;
+    if(network_){
+        if(setup.mode==0){if(!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(0)))return Fail("TH15 direct next-generation bootstrap failed");timing_ready_=true;}
+        else calibration_.Prepare(gate_.Config(),Netplay::AdonisMode(setup.mode),setup.automatic,setup.requested_delay,setup.prediction_reserve,&previous);
+    }return true;
 }
 double NetplayRuntime::PacedElapsed(double elapsed){
     if(!std::isfinite(elapsed)||elapsed<0)return 0;if(!network_||ReadOnly())return elapsed;
@@ -279,7 +345,7 @@ double NetplayRuntime::PacedElapsed(double elapsed){
 }
 const std::uint32_t* NetplayRuntime::Status(){
     status_.fill(0);status_[0]=1;status_[1]=configured_;status_[2]=CanStart();status_[3]=NextFrame();status_[4]=Confirmed();
-    status_[5]=setup_.player_count;status_[6]=setup_.local_player;status_[7]=setup_.input_delay;status_[8]=0;status_[9]=network_;
+    status_[5]=setup_.player_count;status_[6]=setup_.local_player;status_[7]=setup_.input_delay;status_[8]=AllowsRollback()?SessionSetup::MaxRollbackFrames:0;status_[9]=network_;
     status_[10]=spectator_;status_[11]=playback_;status_[12]=generation_;status_[13]=retired_;status_[14]=unsigned(spectator_?spectator_frames_.size():publish_tail_.size());
     status_[15]=channel_.PacketsSent();status_[16]=channel_.PacketsReceived();status_[17]=channel_.RepairsSent();status_[18]=channel_.PacketsIgnored();
     status_[19]=transport_.IsOpen();const std::string mode=transport_.Mode();status_[20]=mode=="rtc"?1:mode=="relay"?2:spectator_?3:0;

@@ -8,7 +8,9 @@
 
 namespace th15::multiplayer {
 struct SessionSetup {
-    static constexpr std::uint32_t Version=6, Words=23, GameplayVersion=20;
+    static constexpr std::uint32_t Version=7, LegacyVersion=6, Words=23, GameplayVersion=21, MaxRollbackFrames=12;
+    // Version 6 recordings retain their exact delay-only gameplay identity.
+    std::uint32_t version=LegacyVersion,mode=1,measured_prediction=0;
     std::uint64_t session_id=0;
     std::uint32_t player_count=2,local_player=0,difficulty=1,seed=1;
     std::uint32_t requested_delay=0,input_delay=0,prediction_reserve=2;

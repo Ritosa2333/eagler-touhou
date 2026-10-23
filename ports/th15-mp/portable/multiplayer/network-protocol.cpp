@@ -63,7 +63,7 @@ std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=fals
   CHECK(viewer.Finish());CHECK(!viewer.BeginNextRun(418));
   CHECK(players[s].BeginNextRun(418));CHECK(players[s].Generation()==1);CHECK(players[s].NextFrame()==0);CHECK(!players[s].CanStart());
   auto corrupt=bytes;corrupt.back()^=1;CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
-  for(unsigned old=1;old<SessionSetup::GameplayVersion;++old){corrupt=bytes;corrupt[Netplay::InputReplay::HeaderBytes+8]=old;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));} // previous economies
+  for(unsigned old=1;old<20;++old){corrupt=bytes;corrupt[Netplay::InputReplay::HeaderBytes+8]=old;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));} // previous economies
   corrupt=bytes;corrupt[12]=10;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   corrupt=bytes;corrupt[21]=static_cast<unsigned char>((s+1)%count);checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));
   corrupt=bytes;corrupt[136]=2;checksum(corrupt);CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size())); // measured mode word
@@ -74,6 +74,39 @@ std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=fals
  for(unsigned s=0;s<count;++s){CHECK(players[s].Setup().seed==418);CHECK(players[s].Setup().challenge==challenge);}
  return bytes;
 }
+void rollback(unsigned count,unsigned mode){
+ std::array<NetplayRuntime,3> players;
+ for(unsigned seat=0;seat<count;++seat){auto s=setup(count,seat,0);s.version=SessionSetup::Version;s.mode=mode;CHECK(players[seat].Reset(s));}
+ link(players,count);auto& r=players[0];
+ CHECK(r.AllowsRollback()&&!r.WorldReady());
+ Netplay::FrameInput initial(0x81),late(0x12),later(0x28);
+ CHECK(r.Capture(0,initial));CHECK(!r.Prepare(0).canAdvance);
+ for(unsigned seat=1;seat<count;++seat)CHECK(r.SubmitRemote(seat,0,initial)==Netplay::RemoteInputResult::Accepted);
+ auto d=r.Prepare(0);CHECK(d.canAdvance&&!d.predictedMask);CHECK(r.MarkSimulated(0,d));
+ std::array<Netplay::FrameInput,3> exact;
+ CHECK(!r.ConfirmedInputs(0,exact));CHECK(!r.Finish());
+ CHECK(r.SetCommitLimit(0));CHECK(r.ConfirmedInputs(0,exact));CHECK(r.SetWorldReady(true));
+ for(unsigned frame=1;frame<6;++frame){CHECK(r.NeedsCapture());CHECK(r.Capture(frame,initial));d=r.Prepare(frame);CHECK(d.canAdvance&&d.predictedMask);CHECK(r.MarkSimulated(frame,d));}
+ CHECK(r.NextFrame()==6&&r.CaptureFrame()==6);CHECK(!r.SetWorldReady(false));CHECK(!r.SetCommitLimit(5));
+ for(unsigned seat=1;seat<count;++seat)CHECK(r.SubmitRemote(seat,1,late)==Netplay::RemoteInputResult::RollbackRequired);
+ CHECK(r.RollbackFrame()==1&&!r.Prepare(6).canAdvance);CHECK(!r.ConfirmedInputs(1,exact));
+ CHECK(!r.BeginCorrection(0));CHECK(r.BeginCorrection(1));CHECK(r.Correcting()&&r.CorrectionEnd()==6&&r.NextFrame()==1);
+ CHECK(r.CaptureFrame()==6&&!r.NeedsCapture());
+ d=r.Prepare(1);CHECK(d.canAdvance&&!d.predictedMask);CHECK(r.MarkSimulated(1,d));
+ CHECK(r.CommitReconciledPrefix(1));CHECK(r.CommittedPrefixInputs(1,exact));CHECK(exact[1]==late);
+ for(unsigned frame=2;frame<5;++frame){d=r.Prepare(frame);CHECK(d.canAdvance&&d.predictedMask);CHECK(r.MarkSimulated(frame,d));}
+ for(unsigned seat=1;seat<count;++seat)CHECK(r.SubmitRemote(seat,2,later)==Netplay::RemoteInputResult::RollbackRequired);
+ CHECK(!r.EndCorrection());CHECK(!r.RestartCorrection(1));CHECK(r.RestartCorrection(2));CHECK(r.CorrectionEnd()==6&&r.NextFrame()==2);
+ for(unsigned frame=3;frame<6;++frame)for(unsigned seat=1;seat<count;++seat){const auto result=r.SubmitRemote(seat,frame,later);CHECK(result==Netplay::RemoteInputResult::Accepted);}
+ for(unsigned frame=2;frame<6;++frame){d=r.Prepare(frame);CHECK(d.canAdvance&&!d.predictedMask);CHECK(d.inputs[0]==initial&&d.inputs[1]==later);CHECK(r.MarkSimulated(frame,d));}
+ CHECK(r.EndCorrection());CHECK(!r.ConfirmedInputs(5,exact));CHECK(r.SetCommitLimit(5));CHECK(r.ConfirmedInputs(5,exact));
+ CHECK(!r.SetCommitLimit(4));CHECK(r.CaptureFrame()==6&&r.NeedsCapture());CHECK(r.SetWorldReady(false));CHECK(r.Finish());
+ CHECK(r.BeginNextRun(418));CHECK(r.NextFrame()==0&&r.CaptureFrame()==0&&!r.WorldReady());
+ ReplayArchive recording;auto s=setup(count,0,0);s.version=SessionSetup::Version;s.mode=mode;s.measured_prediction=mode==2?2:0;CHECK(recording.Begin(s,1723456789));
+ exact={initial,later,count==3?later:Netplay::FrameInput{}};CHECK(recording.Append(0,1,exact.data(),count));std::vector<unsigned char> bytes;CHECK(recording.Encode(bytes,"ROLLBACK",123,false));
+ ReplayArchive loaded;CHECK(loaded.Load(bytes.data(),bytes.size()));CHECK(loaded.Setup().mode==mode&&loaded.Setup().version==SessionSetup::Version);CHECK(*loaded.FrameAt(0)==exact);
+ NetplayRuntime viewer;CHECK(viewer.BeginPlayback(loaded.Setup()));CHECK(!viewer.AllowsRollback());CHECK(viewer.FeedPlayback(0,loaded.FrameAt(0)->data(),count));d=viewer.Prepare(0);CHECK(d.canAdvance&&!d.predictedMask);CHECK(viewer.MarkSimulated(0,d));CHECK(viewer.Finish());
+}
 }
 extern "C" {
 __attribute__((export_name("network_allocate"))) void* network_allocate(unsigned bytes){return std::malloc(bytes);}
@@ -81,6 +114,7 @@ __attribute__((export_name("network_free"))) void network_free(void* pointer){st
 __attribute__((export_name("network_validate"))) int network_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
 }
 int main(int argc,char** argv){
+ for(unsigned count:{2u,3u})for(unsigned mode:{0u,2u})rollback(count,mode);
  for(unsigned count:{2u,3u}){
   std::array<NetplayRuntime,3> players;
   for(unsigned seat=0;seat<count;++seat)CHECK(players[seat].Reset(setup(count,seat,0)));

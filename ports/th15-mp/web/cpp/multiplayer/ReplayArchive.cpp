@@ -9,7 +9,7 @@ void put(std::uint8_t* p,std::uint32_t n){for(unsigned i=0;i<4;++i)p[i]=std::uin
 }
 std::vector<std::uint8_t> ReplayArchive::Description(const char* name,std::uint32_t score,bool completed,bool cheat)const{
     std::vector<std::uint8_t> d(DescriptionBytes);
-    put(d.data(),Magic);put(d.data()+4,Version);put(d.data()+8,SessionSetup::GameplayVersion);put(d.data()+12,setup_.input_delay);
+    put(d.data(),Magic);put(d.data()+4,Version);put(d.data()+8,setup_.version==SessionSetup::LegacyVersion?20:SessionSetup::GameplayVersion);put(d.data()+12,setup_.input_delay);
     put(d.data()+16,std::uint32_t(timestamp_));put(d.data()+20,std::uint32_t(timestamp_>>32));put(d.data()+24,score);
     put(d.data()+28,unsigned(completed)|(unsigned(cheat)<<1));if(name)std::memcpy(d.data()+32,name,std::min<std::size_t>(std::strlen(name),8));
     const auto words=EncodeSessionSetup(setup_);for(unsigned i=0;i<words.size();++i)put(d.data()+40+i*4,words[i]);return d;
@@ -17,9 +17,10 @@ std::vector<std::uint8_t> ReplayArchive::Description(const char* name,std::uint3
 bool ReplayArchive::Metadata(const Netplay::InputReplayInfo& info,SessionSetup& setup,std::uint64_t& timestamp,std::uint32_t& score,bool& completed,std::string& name){
     const auto& c=info.config;const auto& d=c.description;
     if(c.gameId!=15||d.size()!=DescriptionBytes||get(d.data())!=Magic||get(d.data()+4)!=Version||
-       get(d.data()+8)!=SessionSetup::GameplayVersion||get(d.data()+12)>9||(get(d.data()+28)&~3u))return false;
+       (get(d.data()+8)!=20&&get(d.data()+8)!=SessionSetup::GameplayVersion)||get(d.data()+12)>9||(get(d.data()+28)&~3u))return false;
     std::array<std::uint32_t,SessionSetup::Words> words{};for(unsigned i=0;i<words.size();++i)words[i]=get(d.data()+40+i*4);
     SessionSetup next;if(!DecodeSessionSetup(next,words.data(),words.size()))return false;next.input_delay=get(d.data()+12);
+    if(get(d.data()+8)!=(next.version==SessionSetup::LegacyVersion?20:SessionSetup::GameplayVersion))return false;
     if(c.playerCount!=next.player_count||c.recordedPlayer!=next.local_player||c.gameplayAbi!=GameplayAbi(next))return false;
     for(unsigned i=0;i<info.chapterCount;++i)if(info.chapters[i].label<1||info.chapters[i].label>7||
         (i&&info.chapters[i].label<=info.chapters[i-1].label))return false;
