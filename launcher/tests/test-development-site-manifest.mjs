@@ -61,8 +61,8 @@ for (const [game, entry] of Object.entries(manifest.games)) {
   assert.match(entry.gameData.layout, /^sha256-[a-f0-9]{64}$/i);
 }
 const multiplayerRuntimeOwners = {
-  th06: "../ports/th06/build/web/multiplayer/th06.html",
-  th07: "../ports/th07/build/web/multiplayer/th07.html",
+  th06: "../ports/th06/build-eagler/multiplayer/th06.html",
+  th07: "../ports/th07/build-eagler/multiplayer/th07.html",
   th075: "../ports/th075-mp/build-eagler-multiplayer/th075.html",
   th08: "../ports/th08-mp/build-eagler-multiplayer/th08.html",
   th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
@@ -79,12 +79,20 @@ for (const [game, owner] of Object.entries(multiplayerRuntimeOwners)) {
     `${game}: development multiplayer Runtime must point to its owning port build`);
 }
 for (const [game, owner] of Object.entries({
-  th06: "../ports/th06/build/web/normal/th06.html",
-  th07: "../ports/th07/build/web/normal/th07.html",
+  th06: "../ports/th06/build-eagler/normal/th06.html",
+  th07: "../ports/th07/build-eagler/normal/th07.html",
 })) {
   assert.equal(resolve(project, manifest.games[game].runtime.split("?")[0]), resolve(project, owner),
     `${game}: normal development Runtime must use the root recipe default output`);
 }
+assert.equal(DEVELOPMENT_CONTENT.games.th06.data.source, "../ports/th06/build/web/normal/th06.data",
+  "th06 DATA remains mapped to the CMake output consumed by the hosted preload");
+assert.equal(DEVELOPMENT_CONTENT.games.th06.data.runtimeScript, "../ports/th06/build/web/normal/th06.js",
+  "th06 preload script remains paired with the raw CMake DATA output");
+assert.equal(DEVELOPMENT_CONTENT.games.th07.data.source, "../ports/th07/build/web/normal/th07.data",
+  "th07 DATA remains mapped to the CMake output consumed by the hosted preload");
+assert.equal(DEVELOPMENT_CONTENT.games.th07.data.runtimeScript, "../ports/th07/build/web/normal/th07.js",
+  "th07 preload script remains paired with the raw CMake DATA output");
 // Prepared content outside the Launcher tree must still produce HTTP URLs,
 // rather than Windows drive schemes or Unix filesystem-root URLs.
 for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {

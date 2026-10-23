@@ -94,6 +94,13 @@ const buildProfile = args.profile;
 const buildAuthority = classifyBuildProfile(buildProfile);
 if (!buildAuthority || buildProfile === "web-development") throw new Error("packaging requires an explicit web-validation-* or web-release-* --profile=NAME");
 const publicationBuild = buildAuthority === BUILD_AUTHORITY_PUBLICATION;
+const runtimeVariants = args["runtime-variants"] || "both";
+if (!["both", "normal"].includes(runtimeVariants)) {
+  throw new Error("--runtime-variants must be both or normal");
+}
+if (runtimeVariants === "normal" && publicationBuild) {
+  throw new Error("--runtime-variants=normal is restricted to web-validation-* packaging");
+}
 const gameIds = normalizeProductSelection(args.games);
 const languageGames = gameIds.filter(game => PRODUCT_GAMES[game].features.languages);
 const thpracGames = gameIds.filter(game => PRODUCT_GAMES[game].features.thprac);
@@ -130,7 +137,7 @@ const builds = Object.fromEntries(gameIds.flatMap(game => [
   [game, runtimeRelease
     ? resolve(runtimeReleaseRoot, runtimeRelease.games[game].runtime.root)
     : required(`${game}-build`)],
-  ...(PRODUCT_GAMES[game].multiplayerRuntime
+  ...(runtimeVariants === "both" && PRODUCT_GAMES[game].multiplayerRuntime
     ? [[`${game}Multiplayer`, runtimeRelease
       ? resolve(runtimeReleaseRoot, runtimeRelease.games[game].multiplayerRuntime.root)
       : required(`${game}-multiplayer-build`)]]
@@ -411,7 +418,8 @@ async function copyFrontend() {
   }
   await writeSiteMetadata(frontend, siteUrl);
   const copiedHostAssets = [];
-  const artworkNames = hostArtworkFiles(gameIds);
+  // Runtime selection does not limit the Launcher catalog shown for importing games.
+  const artworkNames = hostArtworkFiles(Object.keys(PRODUCT_GAMES));
   const requiredArtwork = publicationBuild ? new Set(artworkNames) : new Set();
   if (artworkDir) {
     for (const name of artworkNames) {
@@ -584,6 +592,9 @@ if (externalRecoveryRequest) {
   };
 }
 manifest.games = selectProductEntries(manifest.games, gameIds);
+if (runtimeVariants === "normal") {
+  for (const game of gameIds) delete manifest.games[game].multiplayerRuntime;
+}
 manifest.schema = SITE_MANIFEST_SCHEMA;
 manifest.profile = buildProfile;
 manifest.shared = {
@@ -626,7 +637,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   }
   await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: declared }, null, 2));
   entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
-  if (product.multiplayerRuntime) {
+  if (runtimeVariants === "both" && product.multiplayerRuntime) {
     const multiplayerBuild = builds[`${game}Multiplayer`];
     const multiplayerDeclared = runtimeRelease?.games[game]?.multiplayerRuntime?.files ||
       JSON.parse(await readFile(resolve(multiplayerBuild, "runtime-files.json"), "utf8")).files;

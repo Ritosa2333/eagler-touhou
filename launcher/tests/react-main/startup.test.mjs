@@ -23,19 +23,19 @@ afterEach(() => {for (const x of active) x.owner.dispose(); active = []; env.doc
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function deferred() {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};}
-function fixture({path = '/', shown = false, continueVisit = true, warning = null, firstUse = null, directory = null, decode = null} = {}) {
+function fixture({path = '/', shown = false, continueVisit = true, warning = null, firstUse = null, directory = null, decode = null, online = true} = {}) {
   const events = [], fonts = [], decoded = [], timers = new Map(), frames = new Map(); let serial = 0, clock = 0;
   Object.defineProperty(env.document, 'fonts', {configurable: true, value: {load(font, text) {fonts.push([font, text]); return Promise.resolve([]);}}});
   const window = {performance: {now: () => clock}, addEventListener: env.window.addEventListener.bind(env.window), removeEventListener: env.window.removeEventListener.bind(env.window), innerHeight: 800, setTimeout(fn, delay) {const id = ++serial; timers.set(id, {fn, delay}); return id;}, clearTimeout(id) {timers.delete(id);},
     requestAnimationFrame(fn) {const id = ++serial; frames.set(id, fn); return id;}, cancelAnimationFrame(id) {frames.delete(id);}};
   const owner = createStartupController({document: env.document, window, baseUrl: 'https://launcher.invalid/mount/',
-    decodeImage(source) {decoded.push(source); return decode?.promise ?? Promise.resolve();}});
+    isOnline: () => online, decodeImage(source) {decoded.push(source); return decode?.promise ?? Promise.resolve();}});
   const ports = {context: path.startsWith('/lobby') ? 'lobby' : 'library', url: `https://launcher.invalid${path}`,
     boot: {ready() {events.push('ready');}}, async waitDirectoryRendered() {events.push('directory'); if (directory) await directory.promise;},
     async warnDiscouragedBrowser(isCurrent) {events.push('warning'); if (warning) await warning.promise; events.push(`warning-current:${isCurrent()}`); return continueVisit;},
     async showFirstUseAutomatically() {events.push('first-use'); if (firstUse) await firstUse.promise; return shown;},
     async loadSiteNotice() {events.push('site');}, onError(error) {events.push(error);}};
-  const f = {owner, ports, events, fonts, decoded, timers, frames,
+  const f = {owner, ports, events, fonts, decoded, timers, frames, setOnline(value) {online = value;},
     raf() {const callbacks = [...frames.values()]; frames.clear(); for (const fn of callbacks) fn();},
     timeout(delay) {clock += delay; for (const [id, entry] of [...timers]) if (entry.delay === delay) {timers.delete(id); entry.fn();}},
   }; active.push(f); return f;
@@ -165,6 +165,16 @@ test('library deferred fonts load only on first interaction and never duplicate'
   env.window.dispatchEvent(new env.window.Event('keydown'));
   assert.equal(env.document.querySelectorAll('link[data-deferred-ui-fonts]').length, 1);
   assert.equal(env.document.querySelector('link[data-deferred-ui-fonts]').href, 'https://launcher.invalid/mount/ui-fonts-deferred.css');
+});
+test('library cold-offline interaction keeps critical font path and loads deferred font after reconnect', async () => {
+  env.document.querySelectorAll('link[data-deferred-ui-fonts]').forEach(node => node.remove());
+  const f = fixture({online: false}); f.owner.attach(f.ports); await tick();
+  env.window.dispatchEvent(new env.window.Event('pointerdown'));
+  assert.equal(env.document.querySelectorAll('link[data-deferred-ui-fonts]').length, 0, 'offline interaction does not request deferred CSS');
+  f.setOnline(true); env.window.dispatchEvent(new env.window.Event('online'));
+  assert.equal(env.document.querySelectorAll('link[data-deferred-ui-fonts]').length, 1, 'pending interaction loads deferred CSS once online');
+  env.window.dispatchEvent(new env.window.Event('keydown')); env.window.dispatchEvent(new env.window.Event('online'));
+  assert.equal(env.document.querySelectorAll('link[data-deferred-ui-fonts]').length, 1);
 });
 
 test('lobby notice completion cannot consume interrupted library first-use on return', async () => {

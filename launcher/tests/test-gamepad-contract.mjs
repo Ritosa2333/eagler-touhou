@@ -1,46 +1,115 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import { runNativeCpp } from "./support/native-cpp.mjs";
 
-// Gamepad is a required adapter capability. Physical device button indices are
-// not a stable product contract, so every Runtime must normalize controllers
-// before KeyConfig/gameplay consumes them.
-const sources = {
-  th06: await readFile(workspacePath("th06", "src", "Controller.cpp"), "utf8"),
-  th07: await readFile(workspacePath("th07", "src", "Controller.cpp"), "utf8"),
-  th08: await readFile(workspacePath("th08", "web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
-  th09: await readFile(workspacePath("th09", "web", "cpp", "sdl", "Application.cpp"), "utf8"),
-  th10: await readFile(workspacePath("th10", "web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
-};
-const th08Runtime = await readFile(workspacePath("th08", "web", "cpp", "platform", "BrowserRuntime.hpp"), "utf8");
-const runtimeShells = {
-  th06: await readFile(workspacePath("th06", "resources", "shell.html"), "utf8"),
-  th07: await readFile(workspacePath("th07", "resources", "shell.html"), "utf8"),
-  th08: await readFile(workspacePath("th08", "web", "sdl-runtime", "shell.mjs"), "utf8"),
-  th09: await readFile(workspacePath("th09", "web", "sdl-runtime", "managed.mjs"), "utf8"),
-  th10: await readFile(workspacePath("th10", "web", "sdl-runtime", "shell.mjs"), "utf8"),
-};
-for (const game of ['th08','th09','th10'])
-  runtimeShells[game] += '\n' + await readFile(workspacePath(game, `web/sdl-runtime/directory-keyboard.mjs`), 'utf8');
-const browserGames = ['th11', 'th15', 'th20'];
-assert.deepEqual([...Object.keys(sources), ...browserGames].sort(), Object.keys(PRODUCT_GAMES).sort(),
-  "required gamepad verification must be updated when a formal game adapter is registered");
-
-for (const game of Object.keys(sources)) {
-  assert.match(sources[game], /SDL_GetGamepadButton/,
-    `${game}: required physical gamepad button path is missing`);
-  assert.match(sources[game], /SDL_GetGamepadAxis/,
-    `${game}: required physical gamepad axis path is missing`);
+const runtimeBuilds = JSON.parse(await readFile(workspacePath("launcher", "config", "runtime-builds.json"), "utf8"));
+const hostCandidates = [
+  "src/Controller.cpp",
+  "web/cpp/sdl/GameHost.cpp",
+  "web/cpp/sdl/Application.cpp",
+  "web/cpp/sdl/BrowserRuntime.cpp",
+  "web/cpp/sdl/InputHost.cpp",
+];
+function codeOnly(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\r\n]*/g, "");
 }
-for (const game of ["th08", "th09", "th10"]) {
-  assert.match(sources[game], /SDL_OpenGamepad/,
-    `${game}: controller opening must use SDL Gamepad normalization`);
-  assert.match(sources[game], /SDL_GetGamepads/,
-    `${game}: controller discovery must use SDL Gamepad normalization`);
-  assert.doesNotMatch(sources[game], /SDL_(?:Open|Get|Close)Joystick|SDL_JoystickConnected|SDL_GetJoysticks/,
-    `${game}: raw SDL Joystick identity/button paths must not define game bindings`);
+const formalVariants = product => product.multiplayer ? ["normal", "multiplayer"] : ["normal"];
+const expectedIds = Object.entries(PRODUCT_GAMES).flatMap(([game, product]) =>
+  formalVariants(product).map(variant => `${game}-${variant}`)).sort();
+const catalogIds = Object.entries(runtimeBuilds.games).flatMap(([game, definition]) =>
+  Object.keys(definition.variants).filter(variant => variant === "normal" || variant === "multiplayer")
+    .map(variant => `${game}-${variant}`)).sort();
+assert.deepEqual(catalogIds, expectedIds,
+  "runtime-builds and Product Catalog must expose the same formal gamepad variants");
+
+const variants = [];
+for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+  const definition = runtimeBuilds.games[game];
+  assert.ok(definition, `${game}: missing Runtime build registration`);
+  for (const variant of formalVariants(product)) {
+    const build = definition.variants[variant];
+    assert.ok(build, `${game}/${variant}: missing Runtime build variant`);
+    const repository = build.workspaceRepository ?? definition.workspaceRepository;
+    const matches = [];
+    for (const path of hostCandidates) {
+      const absolute = workspacePath(repository, ...path.split("/"));
+      if (!existsSync(absolute)) continue;
+      const source = await readFile(absolute, "utf8");
+      if (/eagler::input::BrowserGamepadState\s*\(/.test(codeOnly(source))) matches.push({path, absolute, source});
+    }
+    assert.equal(matches.length, 1,
+      `${game}/${variant}: expected one native input owner under ${repository}, found ${matches.map(item => item.path).join(", ") || "none"}`);
+    const host = matches[0];
+    variants.push({id:`${game}-${variant}`, game, variant, repository, path:host.path,
+      source:host.source});
+  }
+}
+assert.deepEqual(variants.map(target => target.id).sort(), expectedIds,
+  "every formal Runtime variant must resolve to its configured source owner");
+
+function assertNativeSampling(target, originalSource = target.source) {
+  const source = codeOnly(originalSource);
+  assert.match(source, /eagler::input::BrowserGamepadState\s*\(/,
+    `${target.id}: native input must sample the Launcher gamepad bridge`);
+
+  if (target.path === "src/Controller.cpp") {
+    assert.match(source, /const\s+int\s+mapped\s*=\s*eagler::input::BrowserGamepadState\s*\(\)\s*;[\s\S]*?if\s*\(mapped\s*>=\s*0\)[\s\S]*?buttons\s*\|=/,
+      `${target.id}: normalized Launcher actions must reach the title input state`);
+    assert.match(source, /if\s*\(eagler::input::BrowserGamepadOwned\s*\(\)\)\s*return\s+g_ControllerData/,
+      `${target.id}: Launcher-owned mappings must not be captured as physical SDL bindings`);
+    return;
+  }
+
+  if (target.game === "th09") {
+    assert.match(source, /launcher_gamepad\[seat\]\s*=\s*eagler::input::BrowserGamepadState\s*\(seat\)/,
+      `${target.id}: per-seat Launcher actions must be sampled`);
+    assert.match(source, /launcher_gamepad\[side\]\s*>=\s*0[\s\S]*?ApplyGamepadVirtualKeys\([^,]+,\s*launcher_gamepad\[side\]\)/,
+      `${target.id}: TH09 gameplay must consume the normalized per-seat actions`);
+    assert.match(source, /BrowserGamepadOwned\s*\(\)[\s\S]*?return\s+32/,
+      `${target.id}: Launcher-owned mappings must not be recaptured as physical bindings`);
+    return;
+  }
+
+  if (target.path === "web/cpp/sdl/InputHost.cpp") {
+    assert.match(source, /launcher_gamepad\s*=\s*eagler::input::BrowserGamepadState\s*\(\)/,
+      `${target.id}: native frame sampling must read the Launcher gamepad state`);
+    assert.match(source, /ApplyGamepadVirtualKeys\([^,]+,\s*launcher_gamepad\)/,
+      `${target.id}: virtual actions must reach the game input path`);
+    assert.match(source, /ApplyGamepadScanKeys\([^,]+,\s*launcher_gamepad\)/,
+      `${target.id}: scan-code actions must reach the game input path`);
+    return;
+  }
+
+  assert.match(source, /const\s+int\s+mappedPad\s*=\s*eagler::input::BrowserGamepadState\s*\(\)/,
+    `${target.id}: the sampled Launcher mapping must have a local owner`);
+  assert.match(source, /ApplyGamepadVirtualKeys\([^,]+,\s*mappedPad\)/,
+    `${target.id}: normalized actions must enter the title's keyboard path`);
+  assert.match(source, /mappedPad\s*<\s*0/,
+    `${target.id}: native SDL input must remain the fallback when Launcher mapping is unowned`);
+}
+
+for (const target of variants) assertNativeSampling(target);
+
+// Keep the legacy SDL Gamepad boundary checks grouped by actual source owner.
+const uniqueTargets = [...new Map(variants.map(target => [`${target.repository}/${target.path}`, target])).values()];
+for (const target of uniqueTargets) {
+  const source = codeOnly(target.source);
+  if (target.game === "th06" || target.game === "th07") {
+    assert.match(source, /SDL_GetGamepadButton/, `${target.repository}: normalized SDL Gamepad buttons are required`);
+    assert.match(source, /SDL_GetGamepadAxis/, `${target.repository}: normalized SDL Gamepad axes are required`);
+    continue;
+  }
+  if (["th08", "th09", "th10"].includes(target.game)) {
+    assert.match(source, /SDL_GetGamepadButton/, `${target.repository}: normalized SDL Gamepad buttons are required`);
+    assert.match(source, /SDL_GetGamepadAxis/, `${target.repository}: normalized SDL Gamepad axes are required`);
+    assert.match(source, /SDL_OpenGamepad/, `${target.repository}: controllers must open through SDL Gamepad`);
+    assert.match(source, /SDL_GetGamepads/, `${target.repository}: controllers must be discovered through SDL Gamepad`);
+    assert.doesNotMatch(source, /SDL_(?:Open|Get|Close)Joystick|SDL_JoystickConnected|SDL_GetJoysticks/,
+      `${target.repository}: raw SDL Joystick identity/button paths must not define game bindings`);
+  }
 }
 
 const expectedSlots = [
@@ -53,60 +122,61 @@ function normalizedSlots(source, declaration) {
   const body = source.slice(start, source.indexOf("};", start));
   return [...body.matchAll(/SDL_GAMEPAD_BUTTON_([A-Z_]+)/g)].map(match => match[1]);
 }
-assert.deepEqual(normalizedSlots(sources.th07, "g_DIToSDLButton[]"), expectedSlots,
+const th07 = variants.find(target => target.game === "th07" && target.variant === "normal");
+assert.deepEqual(normalizedSlots(codeOnly(th07.source), "g_DIToSDLButton[]"), expectedSlots,
   "TH07 canonical DirectInput-style logical slots changed unexpectedly");
-for (const game of ["th08", "th09", "th10"]) {
-  assert.deepEqual(normalizedSlots(sources[game], "gamepad_slots[]"), expectedSlots,
-    `${game}: KeyConfig logical slots must match the proven TH07 normalized mapping`);
+for (const target of uniqueTargets.filter(target => ["th08", "th09", "th10"].includes(target.game))) {
+  assert.deepEqual(normalizedSlots(codeOnly(target.source), "gamepad_slots[]"), expectedSlots,
+    `${target.id}: KeyConfig logical slots must match the proven TH07 normalized mapping`);
 }
 
-assert.match(th08Runtime, /InputController::bindings\(pad,app\.title\.context\.controller_state\)/,
-  "TH08 KeyConfig must sample the same normalized controller snapshot as gameplay");
-
-for (const game of ["th06", "th07"]) {
-  const options = await readFile(workspacePath(game, "src", "EaglerOptions.hpp"), "utf8");
-  assert.match(options, /BrowserGamepadDirectionBits\(\)/,
-    `${game}: mobile keyboard-like Gamepad D-pad fallback is missing`);
+for (const target of uniqueTargets.filter(target => ["th06", "th07"].includes(target.game))) {
+  const options = codeOnly(await readFile(workspacePath(target.repository, "src", "EaglerOptions.hpp"), "utf8"));
+  assert.match(options, /BrowserGamepadDirectionBits\s*\(\)/,
+    `${target.repository}: mobile keyboard-like Gamepad D-pad fallback is missing`);
   assert.match(options, /keyboard\|\\bkb\\b/i,
-    `${game}: Gamepad D-pad fallback must be restricted to keyboard-like devices`);
+    `${target.repository}: Gamepad D-pad fallback must be restricted to keyboard-like devices`);
   assert.match(options, /pad\.buttons\[12\].*pad\.buttons\[13\].*pad\.buttons\[14\].*pad\.buttons\[15\]/s,
-    `${game}: keyboard-like Gamepad fallback must use the standard D-pad buttons only`);
-}
-for (const game of ["th08", "th09", "th10"]) {
-  assert.match(sources[game], new RegExp(`${game}_keyboard_gamepad_dpad`),
-    `${game}: mobile keyboard-like Gamepad D-pad fallback is missing`);
-  assert.match(sources[game], /keyboard\|\\bkb\\b/i,
-    `${game}: Gamepad D-pad fallback must be restricted to keyboard-like devices`);
-  assert.match(sources[game], /pad\.buttons\[12\].*pad\.buttons\[13\].*pad\.buttons\[14\].*pad\.buttons\[15\]/s,
-    `${game}: keyboard-like Gamepad fallback must use the standard D-pad buttons only`);
-  assert.match(runtimeShells[game], /function runtimeKeyboardCode\(\w+\)/,
-    `${game}: hosted mobile keyboard messages need Runtime-side normalization`);
-  assert.match(runtimeShells[game], /(?:message|event)\.key.*(?:message|event)\.keyCode/s,
-    `${game}: Runtime keyboard normalization must preserve key/keyCode fallback`);
-  assert.match(runtimeShells[game], /Unidentified/,
-    `${game}: Runtime keyboard normalization must handle mobile Unidentified code events`);
+    `${target.repository}: keyboard-like Gamepad fallback must use the standard D-pad buttons only`);
 }
 
-for (const game of ["th06", "th07"]) {
-  assert.match(runtimeShells[game], /keyboardBitForEvent/,
-    `${game}: mature hosted keyboard normalization must remain present`);
-  assert.match(runtimeShells[game], /event\.key.*event\.keyCode/s,
-    `${game}: hosted keyboard normalization must preserve key/keyCode fallback`);
+for (const target of uniqueTargets.filter(target => ["th08", "th09", "th10"].includes(target.game))) {
+  const source = codeOnly(target.source);
+  const symbol = target.game === "th08" ? "th08_keyboard_gamepad_dpad" : `${target.game}_keyboard_gamepad_dpad`;
+  assert.match(source, new RegExp(symbol), `${target.id}: mobile keyboard-like Gamepad D-pad fallback is missing`);
+  assert.match(source, /keyboard\|\\bkb\\b/i,
+    `${target.id}: Gamepad D-pad fallback must be restricted to keyboard-like devices`);
+  assert.match(source, /pad\.buttons\[12\].*pad\.buttons\[13\].*pad\.buttons\[14\].*pad\.buttons\[15\]/s,
+    `${target.id}: keyboard-like Gamepad fallback must use the standard D-pad buttons only`);
+  const shellPath = target.game === "th09" ? "web/sdl-runtime/managed.mjs" : "web/sdl-runtime/shell.mjs";
+  const shell = codeOnly(await readFile(workspacePath(target.repository, ...shellPath.split("/")), "utf8") +
+    "\n" + await readFile(workspacePath(target.repository, "web/sdl-runtime/directory-keyboard.mjs"), "utf8"));
+  assert.match(shell, /function runtimeKeyboardCode\(\w+\)/,
+    `${target.id}: hosted mobile keyboard messages need Runtime-side normalization`);
+  assert.match(shell, /(?:message|event)\.key.*(?:message|event)\.keyCode/s,
+    `${target.id}: Runtime keyboard normalization must preserve key/keyCode fallback`);
+  assert.match(shell, /Unidentified/,
+    `${target.id}: Runtime keyboard normalization must handle mobile Unidentified code events`);
 }
 
-for (const game of browserGames) {
-  const hostPath = game === 'th11' ? 'Application.cpp' : game === 'th15' ? 'BrowserRuntime.cpp' : 'InputHost.cpp';
-  const directory = workspacePath(game, `web/cpp/sdl`);
-  const host = await readFile(workspacePath(game, `web/cpp/sdl`, hostPath), 'utf8');
-  assert.match(host, /BrowserGamepadState\(/, `${game}: sample the Launcher-owned normalized controller`);
-  assert.match(host, /ApplyGamepadVirtualKeys\(/, `${game}: deliver logical actions to gameplay`);
-  await runNativeCpp(`#include "browser-gamepad-input.hpp"
+// A missing production sampler must fail the same owner-path contract.
+const th08Normal = variants.find(target => target.id === "th08-normal");
+const disconnected = th08Normal.source.replace(
+  "const int mappedPad=eagler::input::BrowserGamepadState();",
+  "const int mappedPad=-1;",
+);
+assert.notEqual(disconnected, th08Normal.source, "negative control must disconnect the actual TH08 normal sampler");
+assert.throws(() => assertNativeSampling(th08Normal, disconnected), /native input must sample the Launcher gamepad bridge/,
+  "a production host with its Launcher sample removed must fail the native wiring contract");
+
+await runNativeCpp(`#include <eagler/input/BrowserGamepad.hpp>
 #include <array>
 #include <cassert>
 using namespace eagler::input;
 int main(){
   constexpr unsigned vk[]={90,88,16,27,38,40,37,39,17,13,67,82};
   constexpr unsigned scans[]={44,45,42,1,200,208,203,205,29,28,46,19};
+  assert(BrowserGamepadState()==-1);
   for(unsigned bit=0;bit<12;++bit){
     std::array<unsigned char,256> keys{}, scan{};
     ApplyGamepadVirtualKeys(keys,1<<bit); ApplyGamepadScanKeys(scan,1<<bit);
@@ -119,6 +189,6 @@ int main(){
   std::array<unsigned char,256> keys{};keys[90]=128;
   ApplyGamepadVirtualKeys(keys,-1);assert(keys[90]==128);
   ApplyGamepadVirtualKeys(keys,0);assert(keys[90]==128);
-}`, {includes:[directory]});
-}
-console.log(`All-game normalized gamepad/KeyConfig contract: PASS (SDL slots: ${Object.keys(sources).join('/')}; native browser ABI: ${browserGames.join('/')})`);
+}`, {includes:[workspacePath("common", "include")]});
+
+console.log(`All-game normalized gamepad contract: PASS (${variants.length} Runtime variants; SDL owners: ${uniqueTargets.filter(target => ["th06", "th07", "th08", "th09", "th10"].includes(target.game)).map(target => target.repository).join("/")}; shared native bridge helper and broken-wiring negative control passed)`);

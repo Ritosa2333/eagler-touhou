@@ -24,8 +24,10 @@ function envText(name, legacyName, { required = false } = {}) {
 
 function envInt(name, legacyName, fallback, min, max) {
   const raw = envRaw(name, legacyName).trim();
-  const value = raw ? Number.parseInt(raw, 10) : fallback;
-  if (!Number.isInteger(value) || value < min || value > max)
+  if (!raw) return fallback;
+  if (!/^\d+$/.test(raw)) fail(`${name} must be an integer in ${min}..${max}`);
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < min || value > max)
     fail(`${name} must be an integer in ${min}..${max}`);
   return value;
 }

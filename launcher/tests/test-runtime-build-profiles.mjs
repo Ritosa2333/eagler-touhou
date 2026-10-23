@@ -57,6 +57,10 @@ for (const game of cmakeGames) {
     const encoded = typeof value === "boolean" ? (value ? "ON" : "OFF") : value;
     assert(normal.cmakeArguments.includes(`-D${key}=${encoded}`), `${game}: missing normal CMake cache ${key}`);
   }
+  for (const [key, value] of Object.entries(entry.sourceBuild?.cmakeCache ?? {})) {
+    const encoded = typeof value === "boolean" ? (value ? "ON" : "OFF") : value;
+    assert(normal.cmakeArguments.includes(`-D${key}=${encoded}`), `${game}: missing recipe CMake cache ${key}`);
+  }
 
   if (entry.variants.multiplayer) {
     const definition = entry.variants.multiplayer;
@@ -75,6 +79,10 @@ for (const game of cmakeGames) {
     for (const [key, value] of Object.entries(definition.cache)) {
       const encoded = typeof value === "boolean" ? (value ? "ON" : "OFF") : value;
       assert(multiplayer.cmakeArguments.includes(`-D${key}=${encoded}`), `${game}: missing multiplayer CMake cache ${key}`);
+    }
+    for (const [key, value] of Object.entries(entry.sourceBuild?.cmakeCache ?? {})) {
+      const encoded = typeof value === "boolean" ? (value ? "ON" : "OFF") : value;
+      assert(multiplayer.cmakeArguments.includes(`-D${key}=${encoded}`), `${game}: missing recipe CMake cache ${key}`);
     }
     assert(multiplayer.cmakeArguments.includes("-DTH_RUNTIME_EXTENSION_CMAKE="));
   }

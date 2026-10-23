@@ -61,8 +61,13 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
       ))));
       const q=selector=>{const node=container.querySelector(selector);assert.ok(node,selector);return node;};
       assert.equal(container.querySelectorAll('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,native?0:4);
-      assert.deepEqual([...container.querySelectorAll('[data-mp-difficulty]')].map(node=>node.textContent),
-        native?[]:owners.multiplayerConfigForProduct(product).difficulties);
+      const difficultyButtons=[...container.querySelectorAll('[data-mp-difficulty]')];
+      assert.deepEqual(difficultyButtons.map(button=>({value:button.dataset.mpDifficulty,label:button.textContent})),
+        native?[]:owners.multiplayerConfigForProduct(product).difficulties.map((label,index)=>({value:String(index),label})));
+      if(!native){
+        assert.deepEqual(difficultyButtons.filter(button=>button.getAttribute('aria-pressed')==='true').map(button=>button.dataset.mpDifficulty),['1']);
+        assert.ok(difficultyButtons.every(button=>!button.disabled),'the lobby host can select every supported difficulty');
+      }
       assert.equal(q('#difficultySelect').disabled,native);
       assert.equal(q('#difficultySelect').closest('label').hidden,native);
       if(native){

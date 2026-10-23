@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   REQUIRED_ADAPTER_CAPABILITIES,
@@ -173,6 +173,24 @@ assert.deepEqual(titleSpecificRuntimeAssetParameters, ["Th06AssetDirectory", "Th
 const repositoryGates = new Set(REPOSITORY_NODE_TESTS);
 const workspaceGates = new Set(WORKSPACE_NODE_TESTS);
 const relayGates = new Set(RELAY_NODE_TESTS);
+const launcherRoot = resolve(import.meta.dirname, "..");
+const launcherScripts = JSON.parse(readFileSync(resolve(launcherRoot, "package.json"), "utf8")).scripts;
+function packageScriptInvokes(path) {
+  return Object.entries(launcherScripts).some(([name, command]) => {
+    if (!name.startsWith("test:") || !name.endsWith(":browser")) return false;
+    const tokens = command.replaceAll("\\", "/").split(/[\s;&|]+/).map(token => token.replace(/^['"]|['"]$/g, ""));
+    return tokens.includes(path);
+  });
+}
+function assertBrowserGate(item, gate) {
+  const path = gate.slice("browser:".length).replaceAll("\\", "/");
+  assert.match(path, /^tests\/[A-Za-z0-9_./-]+\.(?:mjs|js|py)$/, `${item.id}: malformed browser test path ${gate}`);
+  assert.ok(path.split("/").slice(1).every(part => part && part !== "." && part !== ".."),
+    `${item.id}: browser test path must stay within tests/: ${path}`);
+  const file = resolve(launcherRoot, path);
+  assert.ok(existsSync(file) && statSync(file).isFile(), `${item.id}: browser test file does not exist: ${path}`);
+  assert.ok(packageScriptInvokes(path), `${item.id}: browser test has no stable package command: ${path}`);
+}
 for (const item of REQUIRED_ADAPTER_CAPABILITIES) {
   assert.equal(item.declaration, undefined, `${item.id}: required capability must not become a product opt-out`);
   assert.ok(Array.isArray(item.verification) && item.verification.length > 0, `${item.id}: required capability needs named verification ownership`);
@@ -184,6 +202,7 @@ for (const item of REQUIRED_ADAPTER_CAPABILITIES) {
     if (scope === "repository") assert.ok(repositoryGates.has(name), `${item.id}: repository gate is not scheduled: ${name}`);
     if (scope === "workspace") assert.ok(workspaceGates.has(name), `${item.id}: workspace gate is not scheduled: ${name}`);
     if (scope === "relay") assert.ok(relayGates.has(name), `${item.id}: standalone relay gate is not scheduled: ${name}`);
+    if (scope === "browser") assertBrowserGate(item, gate);
   }
 }
 for (const item of OPTIONAL_PRODUCT_CAPABILITIES) {
@@ -200,6 +219,7 @@ for (const item of OPTIONAL_PRODUCT_CAPABILITIES) {
     if (scope === "repository") assert.ok(repositoryGates.has(name), `${item.id}: repository gate is not scheduled: ${name}`);
     if (scope === "workspace") assert.ok(workspaceGates.has(name), `${item.id}: workspace gate is not scheduled: ${name}`);
     if (scope === "relay") assert.ok(relayGates.has(name), `${item.id}: standalone relay gate is not scheduled: ${name}`);
+    if (scope === "browser") assertBrowserGate(item, gate);
   }
 }
 assert.deepEqual(

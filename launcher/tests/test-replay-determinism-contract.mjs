@@ -1,8 +1,10 @@
 import fs from "node:fs";
-import path from "node:path";
+import {workspacePath} from "../lib/workspace-layout.mjs";
 
-const root = path.resolve(import.meta.dirname, "..", "..");
-const read = rel => fs.readFileSync(path.join(root, rel), "utf8");
+const read = rel => {
+  const [owner, ...segments] = rel.split("/");
+  return fs.readFileSync(workspacePath(owner.replace(/-eagler$/, ""), ...segments), "utf8").replaceAll("\r\n", "\n");
+};
 const requireText = (source, needle, label) => {
   if (!source.includes(needle)) throw new Error(`missing ${label}: ${needle}`);
 };
@@ -23,7 +25,8 @@ requireText(th06Replay, "g_GameManager.livesRemaining = replayData->livesRemaini
 requireText(th06Replay, "g_GameManager.bombsRemaining = replayData->bombsRemaining", "TH06 bombs restore");
 requireText(th06Replay, "g_GameManager.currentPower = replayData->power", "TH06 power restore");
 requireText(th06Window, "const bool preserveReplayCadence = g_GameManager.isInReplay != 0;", "TH06 original-style replay presentation cadence");
-requireText(th06Window, "if (limitPresentationTo60 || preserveReplayCadence)", "TH06 replay cannot multi-tick catch up inside one presentation callback");
+requireMatch(th06Window, /if \(\(limitPresentationTo60 \|\| preserveReplayCadence\) && targetDt\s*==\s*baseTargetDt\)/,
+  "th06 normal-speed replay uses the one-tick presentation branch");
 
 const th07Replay = read("th07-eagler/src/ReplayManager.cpp");
 const th07Window = read("th07-eagler/src/GameWindow.cpp");

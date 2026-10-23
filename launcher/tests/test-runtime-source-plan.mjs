@@ -2,8 +2,9 @@
 // game data is executed. Covers all registered normal/multiplayer source owners.
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile, readdir } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { dirname, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 import { loadRuntimeBuildConfig } from "../lib/runtime-build-profiles.mjs";
 import { WORKSPACE_REPOSITORIES } from "../lib/workspace-layout.mjs";
 import { loadSourceLayout } from "../lib/source-layout.mjs";
@@ -13,6 +14,25 @@ const root = await mkdtemp(resolve(tmpdir(), "eagler-runtime-plans-"));
 async function put(path, text = "fixture") {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, text);
+}
+function git(cwd, ...args) {
+  execFileSync("git", args, { cwd, windowsHide: true, stdio: "ignore" });
+}
+async function gitModule(path, children = []) {
+  await mkdir(path, { recursive: true });
+  git(path, "init", "--quiet");
+  git(path, "config", "user.name", "Runtime plan test");
+  git(path, "config", "user.email", "runtime-plan@example.invalid");
+  await put(resolve(path, "module.c"), "int runtime_module_fixture;\n");
+  git(path, "add", "module.c");
+  git(path, "commit", "--quiet", "-m", "fixture module");
+  for (const child of children) {
+    const childPath = resolve(path, child.path);
+    const childCommit = await gitModule(childPath);
+    git(path, "update-index", "--add", "--cacheinfo", `160000,${childCommit},${child.path}`);
+  }
+  if (children.length) git(path, "commit", "--quiet", "-m", "pin nested modules");
+  return execFileSync("git", ["rev-parse", "HEAD"], { cwd: path, encoding: "utf8" }).trim();
 }
 try {
   const web = resolve(root, "launcher/web");
@@ -29,6 +49,18 @@ try {
   await put(resolve(layout.path("common"), "include/eagler/netplay/SessionChannel.hpp"));
   await put(resolve(layout.path("common"), "include/eagler/text/RuntimeFontRaster.hpp"));
   await put(resolve(layout.path("dependencies"), "unifont-15.1.05/unifont-15.1.05.otf"));
+  git(root, "init", "--quiet");
+  git(root, "config", "user.name", "Runtime plan test");
+  git(root, "config", "user.email", "runtime-plan@example.invalid");
+  for (const game of ["th06", "th07"]) {
+    const source = layout.path(game), declarations = config.games[game].sourceBuild.requiredSubmodules;
+    for (const declaration of declarations) {
+      const modulePath = resolve(source, declaration.path);
+      const commit = await gitModule(modulePath, declaration.requiredSubmodules ?? []);
+      const repositoryPath = relative(root, modulePath).replaceAll("\\", "/");
+      git(root, "update-index", "--add", "--cacheinfo", `160000,${commit},${repositoryPath}`);
+    }
+  }
   const context = { layout, config, environment: {} };
   const plans = [];
   for (const [game, entry] of Object.entries(config.games)) {
@@ -57,6 +89,10 @@ try {
         assert(plan.steps[0].args.includes("-DTH_EXTERNAL_ASSETS=ON"));
         assert(plan.steps[0].args.includes(`-DEAGLER_COMMON_ROOT=${layout.path("common")}`));
         assert(plan.steps[0].args.includes(`-B`));
+        if (game === "th06" || game === "th07") {
+          assert(plan.steps[0].args.includes("-DSDLIMAGE_VENDORED=ON"));
+          assert.equal(plan.requiredSubmodules.length, 8);
+        }
       } else assert.equal(plan.steps[0].args[0], resolve(source, recipe.build[0]));
       plans.push(plan);
     }
@@ -71,6 +107,12 @@ try {
   const th20 = plans.find(plan => plan.game === "th20");
   assert.equal(th20.features.thcrap, false);
   assert.equal(th20.features.thprac, false);
+  const th09Normal=plans.find(plan=>plan.game==='th09'&&plan.variant==='normal');
+  const th09Multiplayer=plans.find(plan=>plan.game==='th09'&&plan.variant==='multiplayer');
+  assert.equal(th09Normal.execution,resolve(layout.path('th09'),'web/artifacts/sdl-release/th09.wasm'));
+  assert.equal(th09Normal.environment.TH09_OUTPUT,'artifacts/sdl-release');
+  assert.equal(th09Multiplayer.execution,resolve(layout.path('th09'),'web/artifacts/sdl-multiplayer/th09.wasm'));
+  assert.equal(th09Multiplayer.environment.TH09_OUTPUT,'artifacts/sdl-multiplayer');
   const pinned = resolve(layout.path("th09"), "third_party/eagler-common");
   await put(resolve(pinned, "include/eagler/input/DialogueGesture.hpp"));
   assert.equal((await planRuntimeSourceBuild({ game: "th09", emsdk: sdk }, context)).common, layout.path("common"),

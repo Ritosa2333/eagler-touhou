@@ -20,6 +20,12 @@
 
 交互预览挂载真实设置抽屉与共用设置模型，房间人数、难度和规则会更新展示状态，输入延迟遵循作品目录声明的能力。成员菜单与快捷发言使用同一浮层组件，覆盖展开、收起、键盘返回和减少动态效果。
 
+会建立临时 Git 仓库、索引和子模块的构建凭据测试共用 `runtime-git-fixture` 资源锁。它们仍可与其他测试并行，但彼此串行，避免 Git 夹具同时运行争用磁盘与 Git 子进程资源。资源归属集中声明在测试计划中。
+
+依赖凭据夹具分别验证完整的八个必需子模块，以及带一个真实 pin 的增量执行。前者检查必需／可选输入和身份变化，后者检查编译步骤、输出刷新和复用边界。
+
+跨作品 Runtime 协议 L0 (`node tests/test-runtime-protocol-contract.mjs`) 从 `runtime-builds.json` 枚举 normal/MP 变体，按声明的源码归属核对命令、事件与触控范围。
+
 旧界面的对照输入保存在 [`fixtures/ui-history/`](fixtures/ui-history/README.md)，按固定 SHA-256 校验；完整检出与稀疏检出使用同一组输入。Python 场景比较通过标准输入接收检查脚本，支持 Windows 下的大份历史输入。
 
 `npm test` 最后会运行 [`site-notice.run.mjs`](react-main/site-notice.run.mjs)。该检查把临时 bundle 与源目录分开构建，历史输入仍由 [`ui-history.mjs`](support/ui-history.mjs) 从固定夹具读取并校验。
@@ -29,6 +35,8 @@
 `react-main/browser-session-mounted.test.mjs` 通过生产页面、房间服务与 Runtime 协议边界检查入房、准备、开局、退出和原生返回菜单。旁观覆盖七部作品各连续三次进入和退出，验证房间身份、同一原生实例及 DATA 的保留和按次解除的加载遮罩；`multiplayer-services.test.mjs` 同时覆盖晚加入旁观的程序版本匹配与本地 Relay 交互。真实游戏画面、输入同步和多设备链路按对应作品的浏览器验收入口运行。
 
 ## 浏览器环境
+
+`react-main/netplay-security.test.mjs` 从房主大厅实际打开共用操作菜单，核对移到观众席、移除入口的顺序、目标身份及选择后的关闭，同时检查游戏中和访客状态的权限。`th09-in-game-selection.test.mjs` 核对游戏内选人与大厅选项的分工，并通过共用难度按钮检查支持值、当前选择和设置操作。
 
 `npm run test:room-runtime-retention:browser` 使用真实 th06 或 th07 多人 Wasm、两名玩家、一名旁观者和本地 Relay，连续三次从旁观回到原生菜单并重进同一局。显式设置 `ROOM_RUNTIME_GAME`、`ROOM_RUNTIME_ROOT`、`ROOM_RUNTIME_DATA`、`EAGLER_SHARED_GOTHIC` 和 `EAGLER_SHARED_UNIFONT`；结果与截图位于 `.cache/native-room-retention/<game>/`。
 
@@ -40,6 +48,14 @@ Python 浏览器测试使用锁定依赖：
 python -m pip install -r tests/requirements-browser.txt
 python -m playwright install chromium webkit
 ```
+
+Launcher 键盘映射回归通过 Chromium 运行当前 monorepo 的 Runtime Shell 与 Launcher 映射代码，覆盖 15 个 normal/MP 变体：
+
+```sh
+python tests/test-keyboard-mapping-browser.py
+```
+
+也可从 `launcher/` 运行 `npm run test:keyboard-mapping:browser`。`--variants th08-normal th10-multiplayer` 可选跑诊断子集，`--negative-control` 会切断 th10 MP 的 Shell 映射接线并确认行为断言失败。测试使用工作区的 Shell 页面、初始化、协议身份校验、键盘监听和 Launcher 映射，生成 WASM 模块由原生输入观察 sink 承接。
 
 Node 测试使用锁定的 `puppeteer-core`，通过 `EAGLER_CHROME_PATH` 或标准安装目录寻找 Chrome/Edge。需要 Firefox 的测试再安装 Firefox。
 

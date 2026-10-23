@@ -10,6 +10,7 @@ import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
+import {createMetadataRetry} from '../../app/services/metadata-retry.ts';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 let work, createMetadataService;
@@ -93,6 +94,54 @@ test('metadata: construction is side-effect free; concurrent initialize shares a
   const first = service.initialize(), second = service.initialize(); assert.equal(first, second);
   await first; assert.equal(net.calls.length, 2); assert.equal(service.getSnapshot().phase, 'ready');
   assert.ok(notifications >= 2); unsubscribe(); service.dispose();
+});
+test('metadata: cold offline skips remote documents, hydrates installed package and retries after online', async () => {
+  let online = false;
+  const net = network(), idb = readonlyIdb(); idb.generation = generation();
+  const service = fixture(net, {isOnline: () => online, indexedDBFactory: idb});
+  await service.initialize(); await flush();
+  assert.equal(service.getSnapshot().phase, 'ready');
+  assert.equal(service.getSnapshot().installed.get('th06')?.descriptor.revision, 'installed-r1');
+  assert.deepEqual(net.calls, [], 'offline initialization does not request release-catalog or site-manifest');
+  online = true;
+  await service.initialize();
+  assert.equal(net.calls.length, 2, 'online re-entry performs the normal metadata requests');
+  assert.ok(service.getSnapshot().siteManifest); assert.ok(service.getSnapshot().releaseCatalog);
+  service.dispose();
+});
+test('metadata retry: cold offline boot hydrates local packages and settles unavailable without an offline event', async () => {
+  let online = false;
+  const net = network(), idb = readonlyIdb(); idb.generation = generation();
+  const service = fixture(net, {isOnline: () => online, indexedDBFactory: idb});
+  const listeners = new Map(), remoteStates = [], shellChecks = [];
+  const win = {
+    addEventListener(type, listener) {listeners.set(type, listener);},
+    removeEventListener(type, listener) {listeners.delete(type);},
+    setTimeout() {return 1;}, clearTimeout() {},
+  };
+  const retry = createMetadataRetry({metadata: service, window: win, isOnline: () => online,
+    shell: {setRemoteState(...args) {remoteStates.push(args);}, async checkForUpdate() {shellChecks.push('check');}},
+    onSettled() {},
+  });
+  try {
+    await retry.initialize(); await flush();
+    assert.equal(listeners.has('offline'), true, 'no offline event is needed for the cold boot path');
+    assert.equal(service.getSnapshot().phase, 'ready');
+    assert.equal(service.getSnapshot().installed.get('th06')?.descriptor.revision, 'installed-r1');
+    assert.deepEqual(net.calls, [], 'offline retry initialization performs no remote fetch');
+    assert.equal(remoteStates.at(-1)?.[0], 'unavailable', 'empty offline metadata stays visibly unavailable');
+    assert.deepEqual(shellChecks, []);
+
+    online = true;
+    listeners.get('online')();
+    await service.initialize(); await flush();
+    assert.equal(net.calls.length, 2, 'online recovery performs the normal metadata fetches');
+    assert.equal(remoteStates.some(([state]) => state === 'retrying'), true);
+    assert.equal(remoteStates.at(-1)?.[0], 'ready');
+    assert.deepEqual(shellChecks, ['check']);
+  } finally {
+    retry.dispose(); service.dispose();
+  }
 });
 for (const fail of ['host', 'catalog', 'both']) test(`metadata: ${fail} failure preserves independent successful authority`, async () => {
   const net = network(fail === 'host' || fail === 'both' ? new Error('host offline') : host(),

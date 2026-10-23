@@ -51,6 +51,7 @@ export const REQUIRED_ADAPTER_CAPABILITIES = Object.freeze([
     verification: ["runtime:per-game quick/daily/oracle Replay verifier gates"],
     summary: "the title repository owns fixed-tick Demo and long-Replay equivalence gates backed by immutable original-derived golden traces, with oracle regeneration isolated as explicit maintenance" },
   { id: "normal-music-ogg", class: "required", owner: "launcher-runtime",
+    // The browser gate covers Launcher selection and local OGG resources through a Runtime protocol stub.
     verification: ["repository:tests/test-music-availability.mjs", "browser:tests/browser/test-music-selection.py", "runtime:per-game OGG/audio gates"],
     summary: "normal game music is available through the OGG path; no-music mode is also supported" },
   { id: "presentation-cadence", class: "required", owner: "launcher-runtime",
@@ -311,7 +312,7 @@ export const PROFILE_REQUIRED_CAPABILITIES = Object.freeze([
   { id: "language-runtime-application", class: "profile-required", owner: "launcher-runtime", when: "languages",
     summary: "a language-capable Runtime applies a validated language pack and falls back safely when optional content is unavailable" },
   { id: "midi-runtime-path", class: "profile-required", owner: "launcher-runtime", when: "midi-music",
-    verification: ["workspace:tests/test-midi-capability-contract.mjs", "browser:tests/browser/test-music-selection.py"],
+    verification: ["workspace:tests/test-midi-capability-contract.mjs", "runtime:tools/ports/music-browser.mjs (th08 normal MIDI-01..04 scenes via --suite=music)"],
     summary: "a MIDI-capable product actually produces music through the shared MIDI transport rather than exposing a silent option" },
 ] satisfies readonly AdapterCapabilityDefinition[]);
 
@@ -320,7 +321,7 @@ export const PROFILE_REQUIRED_CAPABILITIES = Object.freeze([
 // false or absent.
 export const OPTIONAL_PRODUCT_CAPABILITIES = Object.freeze([
   { id: "midi-music", class: "optional", owner: "product", declaration: "musicCapabilities.midi",
-    verification: ["workspace:tests/test-midi-capability-contract.mjs", "browser:tests/browser/test-music-selection.py"],
+    verification: ["workspace:tests/test-midi-capability-contract.mjs", "runtime:tools/ports/music-browser.mjs (th08 normal MIDI-01..04 scenes via --suite=music)"],
     summary: "MIDI playback in addition to normal OGG music" },
   { id: "thprac", class: "optional", owner: "product", declaration: "features.thprac",
     verification: ["repository:tests/test-integrations.mjs", "workspace:tests/test-shell-protocol.mjs"],

@@ -203,7 +203,7 @@ export function createPlayerTouch(options: PlayerTouchOptions) {
     on(button, 'click', event => {if (event.detail === 0 && allowed() && !(button === el.fire && heldMode())) activate();});
   }
   function cancelPointers() {
-    clearCustomActions(); functionOwner.cancel(); direct.cancel(false); joystick.reset(false); controls.focusEnabled = false; publish();
+    releaseHeldTouchFire(); clearCustomActions(); functionOwner.cancel(); direct.cancel(false); joystick.reset(false); controls.focusEnabled = false; publish();
     postTouchCancel(context()); syncControls();
   }
   function reset(notify = true) {

@@ -8,11 +8,11 @@ export interface DonationDialogProps extends MainDialogProps {
   closeDurationMs?: 0 | 220;
 }
 /** Exact intentionally untranslated main index.html804–816. */
-export function DonationDialog({assetUrl, onArtworkUnavailable, closeDurationMs, ...props}: DonationDialogProps) {
-  return <InformationalDialog {...props} id="donationDialog" titleId="donationTitle" closeId="donationClose"
+export function DonationDialog({assetUrl, onArtworkUnavailable, closeDurationMs, open, ...props}: DonationDialogProps) {
+  return <InformationalDialog {...props} open={open} id="donationDialog" titleId="donationTitle" closeId="donationClose"
     title="捐赠以支持服务器运行" closeLabel="关闭捐赠窗口" presentation={informationalDialogPresentation.artwork} immediateClose={closeDurationMs === 0}>
-    {({closeImmediately}) =>
+    {({closeImmediately}) => open ?
       <div className="donation-image-wrap"><p className="donation-scan-hint">使用微信扫码。</p><img id="donationImage" src={assetUrl('assets/donation.webp')} alt="Tenko 的赞赏码" decoding="async" onError={() => {closeImmediately(); onArtworkUnavailable();}}/></div>
-    }
+    : null}
   </InformationalDialog>;
 }
