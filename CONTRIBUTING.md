@@ -36,6 +36,8 @@ git switch -c your-change
 
 修改游戏时，打开该目录的 `ADAPTATION.md`，按[适配流程](docs/adaptation/README.md)找到对应项目。通用改动同时检查普通版与 MP；模式专属改动在记录中写明适用模式。
 
+普通版修改同时判断多人版的适用性，并将来源和多人版处理写入[同步历史](docs/adaptation/port-sync.md)。独立目录通过 `tools/ports/sync.mjs` 按各自基线进行三方同步，源码和历史一并提交。
+
 修改共用代码时，用[目录映射](launcher/config/workspace.json)和[构建配方](launcher/config/runtime-builds.json)找出受影响的游戏。接口定义、调用方和对应测试在同一改动中更新。
 
 ## 4. 检查

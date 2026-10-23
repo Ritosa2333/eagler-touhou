@@ -18,6 +18,9 @@ struct PracticeConfig {
     // Upstream THPracParam::Reset() clears every field. This is distinct from
     // the initialized Practice-menu defaults above.
     void reset();
+    // THGuiPrac::State(1): menu limits/defaults vary with difficulty.
+    static i32 divine_virtues_delay_max(i32 difficulty);
+    void update_menu_difficulty(i32 difficulty,i32& previous_difficulty);
     bool decode(const double* words,u32 count);
     void encode(double* words)const;
     bool valid()const;

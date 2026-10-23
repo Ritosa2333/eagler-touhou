@@ -1,6 +1,6 @@
 # 文档总表
 
-共 226 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 228 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -17,6 +17,7 @@
 | 适配指南 | [docs/adaptation/input.md](adaptation/input.md) | 键盘、手柄与触控 |
 | 适配指南 | [docs/adaptation/localization.md](adaptation/localization.md) | 语言与练习 |
 | 适配指南 | [docs/adaptation/multiplayer.md](adaptation/multiplayer.md) | 多人接入与规则 |
+| 适配指南 | [docs/adaptation/port-sync.md](adaptation/port-sync.md) | 普通版与多人版同步 |
 | 适配指南 | [docs/adaptation/presentation.md](adaptation/presentation.md) | 画面与声音 |
 | 适配指南 | [docs/adaptation/record-template.md](adaptation/record-template.md) | 验证记录模板 |
 | 适配指南 | [docs/adaptation/room-start-20261019.md](adaptation/room-start-20261019.md) | 房间预加载与首帧确认 ｜ 2026-10-19 |
@@ -32,7 +33,7 @@
 | 作品入口 | [ports/th075/README.md](../ports/th075/README.md) | 東方萃夢想 |
 | 作品入口 | [ports/th08-mp/README.md](../ports/th08-mp/README.md) | 東方永夜抄 TH08 多人版 |
 | 作品入口 | [ports/th08/README.md](../ports/th08/README.md) | 東方永夜抄 TH08 |
-| 作品入口 | [ports/th09/README.md](../ports/th09/README.md) | 東方花映塚 TH09 |
+| 作品入口 | [ports/th09/README.md](../ports/th09/README.md) | 東方花映塚 th09 |
 | 作品入口 | [ports/th10-mp/README.md](../ports/th10-mp/README.md) | 東方風神録 TH10 多人版 |
 | 作品入口 | [ports/th10/README.md](../ports/th10/README.md) | 東方風神録 TH10 |
 | 作品入口 | [ports/th11-mp/README.md](../ports/th11-mp/README.md) | 東方地霊殿 TH11 多人版 |
@@ -61,7 +62,7 @@
 | 作品源码文档 | [ports/th075/docs/DEVELOPMENT.md](../ports/th075/docs/DEVELOPMENT.md) | 萃梦想普通版开发 |
 | 作品源码文档 | [ports/th08-mp/docs/DEVELOPMENT.md](../ports/th08-mp/docs/DEVELOPMENT.md) | TH08 多人版开发指南 |
 | 作品源码文档 | [ports/th08/docs/DEVELOPMENT.md](../ports/th08/docs/DEVELOPMENT.md) | TH08 开发指南 |
-| 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | TH09 开发指南 |
+| 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | th09 开发指南 |
 | 作品源码文档 | [ports/th09/docs/NETPLAY-STOPS.md](../ports/th09/docs/NETPLAY-STOPS.md) | th09 联机技能停顿 |
 | 作品源码文档 | [ports/th09/web/reference/MIT-TH08-codec.txt](../ports/th09/web/reference/MIT-TH08-codec.txt) | MIT License |
 | 作品源码文档 | [ports/th10-mp/docs/DEVELOPMENT.md](../ports/th10-mp/docs/DEVELOPMENT.md) | TH10 多人版开发指南 |
@@ -135,6 +136,7 @@
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |
 | 历史记录 | [docs/history/README.md](history/README.md) | 历史与迁移 |
+| 历史记录 | [docs/history/port-sync-audit.md](history/port-sync-audit.md) | 普通版与 MP 提交对账 |
 | 历史记录 | [ports/th15-mp/web/CHANGELOG.txt](../ports/th15-mp/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
 | 历史记录 | [ports/th15/web/CHANGELOG.txt](../ports/th15/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
 | 许可证与声明 | [common/LICENSE](../common/LICENSE) | LICENSE |

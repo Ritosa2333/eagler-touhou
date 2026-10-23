@@ -1462,7 +1462,15 @@ static bool GuiConfirmFocusedItem()
 
 static bool GuiPauseButton(const char *label, const ImVec2 &size)
 {
-    return ImGui::Button(label, size) || GuiConfirmFocusedItem();
+    using Id = ThpracImGui::TextId;
+    const char *visible = label;
+    if (std::strcmp(label, "Resume") == 0) visible = ThpracImGui::Text(Id::Resume);
+    else if (std::strcmp(label, "Exit") == 0) visible = ThpracImGui::Text(Id::Exit);
+    else if (std::strcmp(label, "Restart") == 0) visible = ThpracImGui::Text(Id::Restart);
+    else if (std::strcmp(label, "Settings") == 0) visible = ThpracImGui::Text(Id::Settings);
+    // Keep the upstream focus/activation identity when the locale changes.
+    const std::string localized = std::string(visible) + "###" + label;
+    return ImGui::Button(localized.c_str(), size) || GuiConfirmFocusedItem();
 }
 
 template <typename T> struct GuiStepState
@@ -3305,8 +3313,8 @@ bool DebugSectionCatalogSelfTest()
     ThpracImGui::SetGameInput(0, true);
     ThpracImGui::BeginFrame(1.0f / 60.0f);
     ImGui::Begin("PauseConfirmSelfTest");
-    ImGui::Button("Resume", ImVec2(130.0f, 25.0f));
-    ImGui::SetItemFocusAlt("Resume", true);
+    GuiPauseButton("Resume", ImVec2(130.0f, 25.0f));
+    ImGui::SetItemFocusAlt("###Resume", true);
     ImGui::End();
     ThpracImGui::EndFrame();
 

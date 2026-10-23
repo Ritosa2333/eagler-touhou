@@ -1,0 +1,147 @@
+{
+  "schema": "eagler-touhou/port-sync/1",
+  "pairs": {
+    "th075": {
+      "normal": "ports/th075",
+      "multiplayer": "ports/th075-mp",
+      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "history": []
+    },
+    "th08": {
+      "normal": "ports/th08",
+      "multiplayer": "ports/th08-mp",
+      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "history": [
+        {
+          "kind": "manual",
+          "source": "cc764309213b95e58f16da8008571ccaf3ca9e64",
+          "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "integration": "working-tree",
+          "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+        }
+      ],
+      "origin": {
+        "normalCommit": "f81d08c0fec870d58ece6e1fb6e03ad7ca0ca543",
+        "multiplayerCommit": "ed28bff70dd7075d028944869b4b8083aff52db8",
+        "mergeBases": [
+          "48394852c196a48abc296305139327bf1f957c65"
+        ]
+      }
+    },
+    "th10": {
+      "normal": "ports/th10",
+      "multiplayer": "ports/th10-mp",
+      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "history": [
+        {
+          "kind": "manual",
+          "source": "cc764309213b95e58f16da8008571ccaf3ca9e64",
+          "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "integration": "working-tree",
+          "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+        },
+        {
+          "kind": "manual",
+          "source": "4527fa6166f23b4b4c4cbf5dde473be59240bb83",
+          "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "integration": "working-tree",
+          "note": "PR #125 神德难度范围、默认值、同难度保留和 Extra 返回规则已迁入 MP，保留历史录像参数。"
+        }
+      ],
+      "origin": {
+        "normalCommit": "abf87c4530d31b606a3b798695e6856e3f502d21",
+        "multiplayerCommit": "7715de406318eeffcabd433c0af32942e0f00359",
+        "mergeBases": [
+          "eb895d2e854d763570122cb1a9d655572501675f"
+        ]
+      },
+      "watches": {
+        "practice": {
+          "paths": [
+            "web/cpp/game/PracticeConfig.cpp",
+            "web/cpp/game/PracticeConfig.hpp",
+            "web/cpp/sdl/ThpracUi.cpp",
+            "portable/check-th10-practice.mjs",
+            "portable/check-th10-thprac.cpp"
+          ],
+          "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "history": [
+            {
+              "kind": "manual",
+              "source": "cc764309213b95e58f16da8008571ccaf3ca9e64",
+              "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+              "integration": "working-tree",
+              "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+            },
+            {
+              "kind": "manual",
+              "source": "4527fa6166f23b4b4c4cbf5dde473be59240bb83",
+              "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+              "integration": "working-tree",
+              "note": "PR #125 神德难度范围、默认值、同难度保留和 Extra 返回规则已迁入 MP，保留历史录像参数。"
+            }
+          ]
+        }
+      }
+    },
+    "th11": {
+      "normal": "ports/th11",
+      "multiplayer": "ports/th11-mp",
+      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "history": [
+        {
+          "kind": "manual",
+          "source": "cc764309213b95e58f16da8008571ccaf3ca9e64",
+          "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "integration": "working-tree",
+          "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+        }
+      ],
+      "origin": {
+        "normalCommit": "e56c615b017da907f6b4d88335f49a12580ee129",
+        "multiplayerCommit": "31087ffd4d7a69d9e33d4f22b93eda902795deb7",
+        "mergeBases": [
+          "79f22cb628446ac323f76ece84f4a42cb0150201"
+        ]
+      }
+    },
+    "th15": {
+      "normal": "ports/th15",
+      "multiplayer": "ports/th15-mp",
+      "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "history": [
+        {
+          "kind": "manual",
+          "source": "cc764309213b95e58f16da8008571ccaf3ca9e64",
+          "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "integration": "working-tree",
+          "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+        }
+      ],
+      "origin": {
+        "normalCommit": "a9e4432818548356731c6983ec72ff009c26f300",
+        "multiplayerCommit": "9288b48eef5aa1dfd51c3dffaba118b8f15f7cc7",
+        "mergeBases": [
+          "e96fcf8d7734a76f56eeb9b4a54334fc3b4e1baf"
+        ]
+      },
+      "watches": {
+        "practice-ui": {
+          "paths": [
+            "web/cpp/sdl/ThpracUi.cpp"
+          ],
+          "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+          "history": [
+            {
+              "kind": "manual",
+              "source": "cc764309213b95e58f16da8008571ccaf3ca9e64",
+              "targetHead": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+              "integration": "working-tree",
+              "note": "PR #124 数值键盘已接入普通版和 MP；th15 两侧使用相同可选依赖边界。"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

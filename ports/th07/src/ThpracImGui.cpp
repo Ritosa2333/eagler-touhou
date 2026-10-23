@@ -5,6 +5,7 @@
 #include <cmath>
 
 #ifdef TH_ENABLE_THPRAC
+#include <eagler/thprac/PracticeSdlKeyboard.hpp>
 
 #include "Controller.hpp"
 #include "FileSystem.hpp"
@@ -727,8 +728,11 @@ void BeginFrame(float deltaSeconds)
     io.DisplaySize = ImVec2(640.0f, 480.0f);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
     io.DeltaTime = std::max(deltaSeconds, 1.0f / 1000.0f);
-    ApplyGameInput();
     ApplyMouseInput();
+    eagler::thprac::sdl_keyboard_frame(io);
+    // Reaction tools retain the title-owned gamepad/touch input sample.
+    ApplyGameInput();
+    io.ConfigDragClickToInputText = true;
     ImGui::NewFrame();
     g_FrameOpen = true;
 }

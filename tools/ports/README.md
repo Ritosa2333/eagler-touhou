@@ -1,5 +1,11 @@
 # 各作源码检查
 
+普通版与多人版通过[同步基线和历史](../../docs/adaptation/port-sync.md)追踪来源与接收进度。`node tools/ports/sync.mjs status` 查看待同步提交，`log <game>` 阅读处理历史，`merge <game> --from <commit>` 预览 Git 三方合并。
+
+需要原生 ahead／behind 与分支合并时，使用 `project-history.py` 按原仓库来源投影目录历史。先在临时克隆验证内容树、祖先和同步往返；操作方法与已验证快照见上述文档。
+
+`audit-history.py` 对照目录历史分支，识别整提交、文件与修改块补丁对应，生成[历史对账表](../../docs/history/port-sync-audit.md)；MP 来源比较覆盖普通版完整历史；当前内容证据结合路径迁移检查，固定快照决定明确已接收、同次维护、共用目录接替和待同步范围。MP 逐项来源与合并节点也进入固定快照决定；待同步范围须通过来源新增与目标缺失证据检查。快照变化时保留历史决定并标明需要复核。
+
 命令先编译当前前端模块，再执行各项检查。
 
 从根目录运行 `npm run ports:check -- --all`，或用 `--game=th08 --variant=both` 选择一作。安装依赖使用 `npm --prefix launcher ci --ignore-scripts`，原生时钟组件检查使用 C++17 编译器（默认 `g++`，可设置 `CXX`）。
