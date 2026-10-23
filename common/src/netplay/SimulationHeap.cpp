@@ -1,5 +1,6 @@
 // An independent, fixed-base dlmalloc mspace. Its free lists and chunk headers
 // live in the journaled region, so restoring state also restores allocation.
+#if defined(EAGLER_WRITE_JOURNAL) && EAGLER_WRITE_JOURNAL
 #define ONLY_MSPACES 1
 #define MSPACES 1
 #define USE_LOCKS 0
@@ -33,3 +34,4 @@ size_t eagler_sim_used(void* space) {
     return mspace_mallinfo(static_cast<mspace>(space)).uordblks;
 }
 }
+#endif // EAGLER_WRITE_JOURNAL

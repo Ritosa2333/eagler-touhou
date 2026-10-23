@@ -19,18 +19,50 @@ async function main() {
   }
   const sdk = process.env.EMSDK || join(root, 'toolchains/emsdk');
   const compiler = options.emxx || process.env.EAGLER_EMXX || join(sdk, 'upstream/emscripten/em++');
+  const llvmNm = process.env.EAGLER_LLVM_NM || join(sdk, 'upstream/bin', process.platform === 'win32' ? 'llvm-nm.exe' : 'llvm-nm');
+  const environment = { ...process.env, EM_CONFIG: process.env.EM_CONFIG || join(sdk, '.emscripten') };
   const artifactParent = join(root, 'artifacts/rollback');
   await mkdir(artifactParent, { recursive: true });
   const output = options.output || await mkdtemp(join(artifactParent, 'memory-test-'));
   await mkdir(output, { recursive: true });
+  const backends = ['WriteJournal', 'SimulationHeap'];
+  const backendSource = name => join(root, 'common/src/netplay', `${name}.cpp`);
+  const inactiveIsolation = { success: false, profiles: [] };
+  const inactiveLog = [];
+  console.log('Checking that disabled journal sources define no Wasm symbols');
+  try {
+    for (const [name, definitions] of [['undefined', []], ['zero', ['-DEAGLER_WRITE_JOURNAL=0']]]) {
+      const objects = [];
+      for (const backend of backends) {
+        const object = `inactive-${name}-${backend}.o`;
+        const result = await run(compiler,
+          ['-std=c++20', '-O2', ...definitions, '-c', backendSource(backend), '-o', join(output, object)],
+          { cwd: root, env: environment, timeout: 180_000, maxBuffer: 8 * 1024 * 1024 });
+        inactiveLog.push(`${object} compile\n${result.stdout}${result.stderr}`);
+        const symbols = await run(llvmNm, ['--defined-only', '--format=posix', join(output, object)],
+          { cwd: root, env: environment, timeout: 30_000, maxBuffer: 8 * 1024 * 1024 });
+        inactiveLog.push(`${object} llvm-nm --defined-only\n${symbols.stdout}${symbols.stderr}`);
+        assert.equal(symbols.stdout.trim(), '', `${object} must not define allocator, hook, mspace, or other symbols`);
+        objects.push({ source: `common/src/netplay/${backend}.cpp`, object, definedSymbols: [] });
+      }
+      inactiveIsolation.profiles.push({ macro: name, objects });
+    }
+    inactiveIsolation.success = true;
+  } catch (error) {
+    inactiveLog.push(`${error.stdout || ''}${error.stderr || ''}${error.stack || error}`);
+    throw error;
+  } finally {
+    await writeFile(join(output, 'inactive-compile.log'), `${inactiveLog.join('\n')}\n`);
+    await writeFile(join(output, 'inactive-isolation.json'), `${JSON.stringify(inactiveIsolation, null, 2)}\n`);
+  }
+  console.log('Disabled journal isolation passed (4 real Wasm objects, zero defined symbols)');
   const modulePath = join(output, 'fixture.mjs');
   const exports = ['_eagler_write_journal_test', '_eagler_write_journal_trap', '_eagler_write_journal_abandon',
     '_eagler_rb_touch', '_eagler_rb_config_address', '_eagler_rb_instrumented'];
   const args = [
-    '-std=c++20', '-O2', '-UNDEBUG', '-I', join(root, 'common/include'),
+    '-std=c++20', '-O2', '-UNDEBUG', '-DEAGLER_WRITE_JOURNAL=1', '-I', join(root, 'common/include'),
     join(root, 'common/tests/write-journal-test.cpp'),
-    join(root, 'common/src/netplay/WriteJournal.cpp'),
-    join(root, 'common/src/netplay/SimulationHeap.cpp'),
+    ...backends.map(backendSource),
     '-sMODULARIZE=1', '-sEXPORT_ES6=1', '-sENVIRONMENT=node',
     '-sALLOW_MEMORY_GROWTH=1', '-sINVOKE_RUN=0', '-sASSERTIONS=1',
     '-sINCOMING_MODULE_JS_API=["wasmBinary"]',
@@ -40,7 +72,7 @@ async function main() {
   console.log(`Compiling optimized C++ journal fixture: ${output}`);
   try {
     const result = await run(compiler, args, {
-      cwd: root, env: { ...process.env, EM_CONFIG: process.env.EM_CONFIG || join(sdk, '.emscripten') },
+      cwd: root, env: environment,
       timeout: 180_000, maxBuffer: 8 * 1024 * 1024,
     });
     await writeFile(join(output, 'compile.log'), result.stdout + result.stderr);
@@ -80,8 +112,8 @@ for (const nativeFilter of [false, true]) {
   }
   profiles.push({ name, scenarios, trapScopes, report });
 }
-await writeFile(join(output, 'result.json'), `${JSON.stringify({ success: true, uninstrumentedRejected: true, profiles }, null, 2)}\n`);
-console.log(`C++ Wasm journal fixture passed (raw rejection + ${scenarios.length} scenarios + ${trapScopes.length} real trap cases in both profiles). Artifacts: ${output}`);
+await writeFile(join(output, 'result.json'), `${JSON.stringify({ success: true, inactiveIsolation, uninstrumentedRejected: true, profiles }, null, 2)}\n`);
+console.log(`C++ Wasm journal fixture passed (4 inactive objects + raw rejection + ${scenarios.length} scenarios + ${trapScopes.length} real trap cases in both profiles). Artifacts: ${output}`);
 }
 
 try { await main(); }

@@ -4,6 +4,8 @@
 
 ## 构建接入
 
+C++ 后端需要显式定义 `EAGLER_WRITE_JOURNAL=1`；CMake 消费者链接 `eagler::write_journal` 时由目标传入。未定义或值为 `0` 时，`WriteJournal.cpp` 与 `SimulationHeap.cpp` 不生成分配器、hook 或全局 `new` / `delete` 定义，兼容按目录收集公共源码的其他产品。TH11 MP、TH15 MP 和验收模块在各自构建入口启用该宏。
+
 ```sh
 npm --prefix tools/rollback ci --ignore-scripts
 node tools/rollback/instrument.mjs raw.wasm runtime.wasm
