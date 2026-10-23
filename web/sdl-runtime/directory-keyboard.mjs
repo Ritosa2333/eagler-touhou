@@ -1,4 +1,4 @@
-// Generated from eagler-common/browser/{keyboard-owners,directory-keyboard}.mjs.
+// Generated from eagler-common/browser/{keyboard-owners,keyboard-input-bridge,directory-keyboard}.mjs.
 // Generic browser ownership only. The adapter maps DOM events to logical bits.
 export function keyboardLocation(event) {
   const code = event.code || "";
@@ -29,6 +29,72 @@ export function updateKeyboardOwners(owners, event, bit, down) {
   if (!released.length && !code && !location) released = candidates;
   for (const [owner] of released) owners.delete(owner);
   return released.length > 0;
+}
+
+// The Launcher owns remapping. Runtime adapters synchronously consume the
+// resulting canonical key transitions before their next simulation sample.
+export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch,origin,ready,dispatch,reset,profile=()=> 'standard'}) {
+  const schema='eagler-touhou/keyboard-input/1',held=new Set();
+  function gamepadMapper(){
+    const value=target.__eaglerGamepadMapping;
+    return value&&value.schema==='eagler-touhou/gamepad-input/1'&&value.protocol===protocol&&value.game===game&&
+      value.epoch===epoch&&value.origin===origin&&typeof value.sample==='function'&&typeof value.clear==='function'&&typeof value.enabled==='function'?value:null;
+  }
+  target.__eaglerGamepadInputBridge=Object.freeze({schema:'eagler-touhou/gamepad-input/1',protocol,game,epoch,origin,
+    owned:()=>gamepadMapper()?.enabled()===true,
+    sample(seat){const owner=gamepadMapper();if(!owner)return -1;
+      if(!ready()){owner.clear();return 0;}
+      const bits=owner.sample(seat);return Number.isInteger(bits)&&bits>=-1&&bits<=4095?bits:0;
+    }});
+  function mapper() {
+    const value=target.__eaglerKeyboardMapping;
+    return value&&value.schema===schema&&value.protocol===protocol&&value.game===game&&
+      value.epoch===epoch&&value.origin===origin&&typeof value.map==='function'&&typeof value.clear==='function'&&typeof value.supports==='function'?value:null;
+  }
+  function apply(events) {
+    if(!Array.isArray(events)||events.some(e=>!e||typeof e.code!=='string'||!e.code||typeof e.down!=='boolean'||typeof e.key!=='string'||!Number.isInteger(e.keyCode)||!Number.isInteger(e.location)))
+      throw Error('Invalid canonical keyboard transitions');
+    for(const event of events){if(event.down)held.add(event.code);else held.delete(event.code);dispatch(event,event.down);}
+  }
+  let lastProfile;
+  function currentProfile(){const next=profile();if(lastProfile!==undefined&&lastProfile!==next){const owner=mapper();if(owner)apply(owner.clear());gamepadMapper()?.clear();}lastProfile=next;return next;}
+  function event(raw,down,source='physical') {
+    const owner=mapper();if(!owner||!ready())return false;
+    const editing=!!raw.launcherOwnsFocus||!!raw.target?.closest?.('input,textarea,select,[contenteditable="true"]');
+    if(source==='physical'&&down&&(raw.isComposing||editing))return false;
+    const events=owner.map({code:String(raw.code||''),key:String(raw.key||''),keyCode:Number(raw.keyCode)||0,
+      location:Number(raw.location)||0,repeat:!!raw.repeat,altKey:!!raw.altKey,metaKey:!!raw.metaKey,ctrlKey:!!raw.ctrlKey,
+      launcherOwnsFocus:editing},!!down,source,currentProfile());
+    if(events===null)return false;
+    apply(events);return true;
+  }
+  const bridge=Object.freeze({schema,protocol,game,epoch,origin,event,
+    profile:currentProfile,
+    sampleLocal(seat){const mode=currentProfile(),owner=mapper();if(mode!=='th09-local'||typeof owner?.sampleLocal!=='function')return -1;
+      if(!ready()){apply(owner.clear());return 0;}const bits=owner.sampleLocal(seat);return Number.isInteger(bits)&&bits>=-1&&bits<=4095?bits:0;},
+    active:()=>!!mapper(),keyDown:code=>held.has(code),
+    // SDL uses USB HID scancodes. Keep physical-only THPrac helpers on the
+    // same canonical keyboard without sampling or consuming gameplay pulses.
+    scancodeState(scan){
+      const owner=mapper();if(!owner)return -1;
+      const special={40:'Enter',41:'Escape',42:'Backspace',43:'Tab',44:'Space',45:'Minus',55:'Period',
+        73:'Insert',74:'Home',75:'PageUp',76:'Delete',77:'End',78:'PageDown',86:'NumpadSubtract',98:'Numpad0',99:'NumpadDecimal',
+        79:'ArrowRight',80:'ArrowLeft',81:'ArrowDown',82:'ArrowUp',88:'NumpadEnter',
+        224:'ControlLeft',225:'ShiftLeft',226:'AltLeft',227:'MetaLeft',228:'ControlRight',229:'ShiftRight',230:'AltRight',231:'MetaRight'};
+      const code=scan>=4&&scan<=29?'Key'+String.fromCharCode(65+scan-4):scan>=30&&scan<=38?'Digit'+(scan-29):scan===39?'Digit0':
+        scan>=58&&scan<=69?'F'+(scan-57):scan>=89&&scan<=97?'Numpad'+(scan-88):special[scan];
+      return code&&owner.supports?.(code)?Number(held.has(code)):-1;
+    },
+    clear(){const owner=mapper();if(owner)apply(owner.clear());held.clear();gamepadMapper()?.clear();},
+    submit(message){
+      if(!mapper()||!message||message.protocol!==protocol||message.game!==game||message.epoch!==epoch||message.request!=null)return false;
+      if(message.command==='keyboard-clear'){reset();return true;}
+      if(message.command!=='keyboard'||!ready()||typeof message.down!=='boolean'||typeof message.code!=='string')return false;
+      return event(message,message.down,message.inputSource==='physical'?'physical':'virtual');
+    }
+  });
+  target.__eaglerKeyboardInputBridge=bridge;
+  return bridge;
 }
 
 
@@ -79,7 +145,7 @@ export function runtimeKeyboardCode(event){
   return value;
 }
 
-export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{}}){
+export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{},hostContext}){
   const sources=new Map(),published=new Set();
   let generation=0;
   function publish(){
@@ -88,9 +154,12 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{}}){
     for(const code of next)if(!published.has(code))send(code,true);
     published.clear();for(const code of next)published.add(code);
   }
-  return {
+  let input;
+  const keyboard={
     get generation(){return generation;},
+    mapNative(event,down){return input?.event(event,down)??false;},
     event(event,down,source='native'){
+      if(source==='hosted'&&input?.event(event,down,event.inputSource==='physical'?'physical':'virtual'))return true;
       const code=runtimeKeyboardCode(event);if(!code||!accept(code))return false;
       let owners=sources.get(source);if(!owners){owners=new Map();sources.set(source,owners);}
       // Match releases using the actual event evidence, never the synthesized
@@ -104,7 +173,11 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{}}){
       publish();return true;
     },
     clear(){
+      input?.clear();
       ++generation;sources.clear();publish();onClear();
     }
   };
+  if(hostContext)input=createKeyboardInputBridge({...hostContext,
+    dispatch:(event,down)=>keyboard.event(event,down,'mapped'),reset:()=>hostContext.reset?hostContext.reset():keyboard.clear()});
+  return keyboard;
 }
