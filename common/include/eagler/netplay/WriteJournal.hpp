@@ -32,6 +32,20 @@ private:
     int previous_;
 };
 
+// For a reviewed, host-only call graph: it must not write or release game
+// memory, or invoke game callbacks. Keep ordinary SystemScope for mixed code.
+// Frame boundaries remain open; nested scopes restore their prior tracing state.
+class HostScope {
+public:
+    HostScope();
+    ~HostScope();
+    HostScope(const HostScope&) = delete;
+    HostScope& operator=(const HostScope&) = delete;
+private:
+    SystemScope allocation_;
+    std::uint32_t previous_;
+};
+
 void* Allocate(std::size_t bytes);
 void* AllocateZeroed(std::size_t count, std::size_t size);
 void* AllocateAligned(std::size_t alignment, std::size_t bytes);

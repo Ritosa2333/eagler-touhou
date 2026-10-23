@@ -50,17 +50,19 @@ public:
     bool FinishTextureRollbackRestore();
     void CancelTextureRollbackRestore()noexcept{texture_rollback_.CancelRollbackRestore();}
 #endif
-    void bind_texture(u32 handle)override{TH11_SYSTEM_SCOPE;backend.state.texture=handle;}
+    // These boundaries write only device state and owned render buffers. The
+    // resolver describes host textures; submitted game vertices stay read-only.
+    void bind_texture(u32 handle)override{TH11_HOST_SCOPE;backend.state.texture=handle;}
     touhou::graphics::PipelineState& pipeline()override{return backend.pipeline();}
-    void set_layout(touhou::graphics::VertexLayout layout)override{TH11_SYSTEM_SCOPE;backend.state.layout=touhou::graphics::attributes(layout);}
-    void set_matrix(touhou::graphics::MatrixKind kind,const Matrix4& matrix)override{TH11_SYSTEM_SCOPE;backend.transform(kind,matrix.m);}
-    void triangles(u32 count,const void* data,u32 stride)override{TH11_SYSTEM_SCOPE;backend.draw_batch(count,data,stride);}
-    void primitives(touhou::graphics::Topology kind,u32 count,const void* data,u32 stride)override{TH11_SYSTEM_SCOPE;backend.draw(kind,count,data,stride);}
+    void set_layout(touhou::graphics::VertexLayout layout)override{TH11_HOST_SCOPE;backend.state.layout=touhou::graphics::attributes(layout);}
+    void set_matrix(touhou::graphics::MatrixKind kind,const Matrix4& matrix)override{TH11_HOST_SCOPE;backend.transform(kind,matrix.m);}
+    void triangles(u32 count,const void* data,u32 stride)override{TH11_HOST_SCOPE;backend.draw_batch(count,data,stride);}
+    void primitives(touhou::graphics::Topology kind,u32 count,const void* data,u32 stride)override{TH11_HOST_SCOPE;backend.draw(kind,count,data,stride);}
     bool select_target(const AnmResource*,u32)override;
     bool clear_target(u32,const GraphicsViewport*)override;
-    void set_viewport(const GraphicsViewport& v)override{TH11_SYSTEM_SCOPE;viewport(v);}
-    void viewport(const GraphicsViewport& v){TH11_SYSTEM_SCOPE;backend.viewport({v.x,v.y,v.width,v.height,v.near_depth,v.far_depth});}
-    void clear(u32 color,bool clear_depth=true){TH11_SYSTEM_SCOPE;backend.clear(clear_depth?3:1,color,1,0);}
-    void present(){TH11_SYSTEM_SCOPE;backend.present(screen);}
+    void set_viewport(const GraphicsViewport& v)override{TH11_HOST_SCOPE;viewport(v);}
+    void viewport(const GraphicsViewport& v){TH11_HOST_SCOPE;backend.viewport({v.x,v.y,v.width,v.height,v.near_depth,v.far_depth});}
+    void clear(u32 color,bool clear_depth=true){TH11_HOST_SCOPE;backend.clear(clear_depth?3:1,color,1,0);}
+    void present(){TH11_HOST_SCOPE;backend.present(screen);}
 };
 }

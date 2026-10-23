@@ -35,11 +35,13 @@ touch、config、marker 三个函数本身不插桩。touch 在进入日志辅�
 
 导出名可以通过 `--touch=name --config=name --marker=name` 配置。`--no-config` 对每个非空写入调用 touch，范围与递归过滤由 touch 负责。
 
+`SystemScope` 只改变分配归属，仍记录游戏内存写入。`HostScope` 还会暂时关闭追踪，仅适用于已审查的纯宿主调用链：它不能写入或释放游戏内存，也不能回调游戏。嵌套调用恢复进入前的追踪状态，保留帧事务边界；发生终止性错误后不会重新启用追踪。
+
 ## 验证职责
 
 测试实例化真实 Wasm，比较插桩前后的内存结果，并用独立日志恢复已跟踪区域。覆盖标志检查、标量宽度、向量存储、两个状态区、未对齐跨块、两端跨界、嵌套操作数求值、递归、被动数据段初始化、数据段释放及原始陷阱行为。
 
-`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后分别使用默认模式和 `--native-filter` 插桩。测试先验证原始模块拒绝初始化，再为每种模式的五个场景创建独立实例，检查容器与分配器元数据恢复、跨越外部 root 两端的写入及邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域、失败状态，以及同时覆盖已记录块和未记录块的非对齐标量写入。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
+`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后分别使用默认模式和 `--native-filter` 插桩。测试先验证原始模块拒绝初始化，再为每种模式的七个场景创建独立实例，检查容器与分配器元数据恢复、跨越外部 root 两端的写入及邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域、失败状态，同时覆盖已记录块和未记录块的非对齐标量写入、无外部 root 的整堆恢复，以及宿主调用的嵌套追踪暂停与失败保护。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
 
 构建限定为单个、非共享 wasm32 线性内存。原子操作、SIMD lane 内存操作、memory64、多内存和未知指令形态会明确中止插桩。宿主 JavaScript 直接写入线性内存需要在对应桥接处接入 touch，或使用系统区域承载这些写入；Wasm 指令插桩覆盖的是模块内部执行的写入。
 

@@ -616,7 +616,7 @@ try{
       samples:boundaryPixels.map(({key,presentation,width,height,format},seat)=>({seat,key,presentation,width,height,format,...sampling[seat]}))};
   }
   report.confirmedBoundary=common;report.correctness={exportedNativeFieldsEqual:true,frame:common.frame,
-    fullWorldBrowserOracle:false,exactWorldComponentEvidence:'world-oracle-01: 8 cases / 150373 checks / 1124 Update+Draw; see source-identified independent receipt',
+    fullWorldBrowserOracle:false,exactWorldComponentEvidence:null,
     limitation:'56-word native status covers hash, stage/phase/frame and player values; it is not a complete body dump.'};
   mark('confirmed-boundary-checked');
   // Release must reach a real native frame before the second Escape edge.

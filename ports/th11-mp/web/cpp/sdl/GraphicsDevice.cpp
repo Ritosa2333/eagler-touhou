@@ -163,7 +163,7 @@ u32 GraphicsDevice::texture(const AnmResource& file,u32 index){
     const auto it=resources.find(&file);if(it==resources.end()||index>=it->second.size()){error="ANM texture was not preloaded";return 0;}return it->second[index];
 }
 bool GraphicsDevice::select_target(const AnmResource* file,u32 index){
-    TH11_SYSTEM_SCOPE;
+    TH11_HOST_SCOPE;
     const u32 handle=file?texture(*file,index):screen;if(!handle)return false;
     backend.flush();backend.state.target=handle;
     // The original target switch resets the device viewport to the surface.
@@ -172,7 +172,7 @@ bool GraphicsDevice::select_target(const AnmResource* file,u32 index){
     backend.viewport({0,0,image.width,image.height,0,1});return true;
 }
 bool GraphicsDevice::clear_target(u32 color,const GraphicsViewport* rect){
-    TH11_SYSTEM_SCOPE;
+    TH11_HOST_SCOPE;
     if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};backend.clear(3,color,1,0,box,1);}
     else backend.clear(3,color,1,0);
     return true;

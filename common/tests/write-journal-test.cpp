@@ -24,8 +24,8 @@ struct alignas(32) Root {
     std::uint64_t hostAfter=0x8877665544332211ull;
 } root;
 
-static bool initialize() {
-    if (!J::Initialize(&root.state,sizeof(root.state),8*1024*1024)) return false;
+static bool initialize(bool heapOnly=false) {
+    if (!J::Initialize(heapOnly?nullptr:&root.state,heapOnly?0:sizeof(root.state),8*1024*1024)) return false;
     { J::GameScope game;
       root.state.~State(); new(&root.state) State();
       root.state.values={1,2,3}; root.state.object=std::make_unique<Object>(); }
@@ -36,7 +36,7 @@ static bool initialize() {
 
 extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
     if (scenario<0) return initialize()?1:0;
-    assert(initialize());
+    assert(initialize(scenario==5));
     if (scenario==0) {
         auto* original=root.state.object.get();
         const auto originalText=root.state.object->text;
@@ -127,6 +127,63 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(J::EndFrame()&&J::RestoreTo(0));
         assert(std::all_of(buffer,buffer+96,[](auto byte){return byte==0x32;}));
         J::Release(buffer);
+    } else if (scenario==5) {
+        // TH15 tracks only its simulation heap. The external State and host
+        // containers must retain their writes while heap scalars and bulk
+        // mutations rewind, even when an untracked write precedes them.
+        const auto* config=reinterpret_cast<const volatile std::uint32_t*>(
+            std::uintptr_t(eagler_rb_config_address()));
+        assert(config[3]==0&&config[4]==0);
+        std::uint8_t* buffer=nullptr;
+        { J::GameScope game; buffer=static_cast<std::uint8_t*>(J::AllocateAligned(32,4096)); }
+        assert(J::OwnedByGameHeap(buffer));
+        for (std::size_t i=0;i<4096;++i) buffer[i]=std::uint8_t(i*17+3);
+        std::array<std::uint8_t,4096> before{};
+        std::memcpy(before.data(),buffer,before.size());
+        std::vector<std::uint8_t> host(128,0x44);
+        assert(!J::OwnedByGameHeap(host.data()));
+        assert(J::BeginFrame(0));
+        root.state.value=91;host[0]=0x71;
+        buffer[0]=0x77;
+        const std::uint64_t scalar=0xfedcba9876543210ull;
+        std::memcpy(buffer+31,&scalar,sizeof(scalar));
+        root.state.object->number=101;root.state.values[1]=0xaabbccdd;
+        host[64]=0x72;
+        std::memmove(buffer+128,buffer+16,1024);
+        std::memset(buffer+2048,0xb7,2048);
+        assert(J::EndFrame()&&J::RestoreTo(0));
+        assert(std::memcmp(buffer,before.data(),before.size())==0);
+        assert(root.state.object->number==17&&root.state.values[1]==2);
+        assert(root.state.value==91&&host[0]==0x71&&host[64]==0x72&&host[127]==0x44);
+        assert(J::Ready()&&J::FrameCount()==0);
+        J::Release(buffer);
+    } else if (scenario==6) {
+        const auto* config=reinterpret_cast<const volatile std::uint32_t*>(
+            std::uintptr_t(eagler_rb_config_address()));
+        std::vector<std::uint8_t> host;
+        { J::HostScope idle; assert(config[0]==0&&!J::FrameOpen()); }
+        assert(config[0]==0);
+        assert(J::BeginFrame(0));
+        { J::GameScope game;
+          root.state.value=73;
+          { J::HostScope outer;
+            assert(config[0]==0&&J::FrameOpen());
+            host.assign(4096,0x47);assert(!J::OwnedByGameHeap(host.data()));
+            { J::HostScope inner;host[12]=0x85;assert(config[0]==0&&J::FrameOpen()); }
+            assert(config[0]==0); }
+          assert(config[0]==1&&J::FrameOpen());
+          auto simulation=std::make_unique<Object>();assert(J::OwnedByGameHeap(simulation.get()));
+          root.state.object=std::move(simulation);root.state.object->number=102;
+          root.state.value=91; }
+        assert(J::EndFrame()&&J::RestoreTo(0));
+        assert(root.state.value==11&&root.state.object->number==17);
+        assert(host.size()==4096&&host[0]==0x47&&host[12]==0x85);
+        // A terminal failure inside a host operation cannot reactivate tracing
+        // when its scope exits, even though the failed frame is still open.
+        assert(J::BeginFrame(1));
+        { J::HostScope hostOperation;assert(!J::BeginFrame(2));assert(J::Failed()&&config[0]==0); }
+        assert(J::Failed()&&config[0]==0);
+        J::Clear();assert(!J::Ready()&&config[0]==0);
     } else return 0;
     std::printf("write-journal scenario %d passed\n",scenario);
     return 1;

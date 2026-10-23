@@ -108,6 +108,8 @@ GameScope::GameScope():previous_(allocationScope) { if (ready) allocationScope=1
 GameScope::~GameScope() { allocationScope=previous_; }
 SystemScope::SystemScope():previous_(allocationScope) { allocationScope=0; }
 SystemScope::~SystemScope() { allocationScope=previous_; }
+HostScope::HostScope():previous_(eagler_rb_config[0]) { eagler_rb_config[0]=0; }
+HostScope::~HostScope() { eagler_rb_config[0]=open&&!failed?previous_:0; }
 bool OwnedByGameHeap(const void* pointer) {
     const auto address=reinterpret_cast<std::uintptr_t>(pointer);
     return address>=heapLo && address<heapHi;
