@@ -13,14 +13,15 @@ const puppeteer=require('puppeteer-core');
 const root=resolve(game,'web'),out=resolve(root,'artifacts/thprac-browser');mkdirSync(out,{recursive:true});
 const sdk=process.env.EMSDK||resolve(workspace,'th08/tools/emsdk');
 const compiler=['install/emscripten/emcc.py','upstream/emscripten/emcc.py'].map(p=>resolve(sdk,p)).find(existsSync);
-const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,TEMP:out,TMP:out};
+const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:process.env.EMCC_CORES??'1',TEMP:out,TMP:out};
 const compile=args=>{const p=spawnSync('python',[compiler,...args],{env,encoding:'utf8',windowsHide:true});if(p.status!==0)throw Error(p.stdout+p.stderr);};
 const flags=['-O2','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1','-DTH_ENABLE_THPRAC=1','-DTH11_DEVELOPMENT_HARNESS=1','-DIMGUI_DISABLE_WIN32_FUNCTIONS','-I'+resolve(root,'cpp/third_party/imgui'),'--use-port=sdl3','--use-port=sdl3_ttf'];
+flags.push('-I'+resolve(process.env.EAGLER_COMMON_ROOT||resolve(game,'third_party/eagler-common'),'include'));
 const app=resolve(out,'application.o');compile([...flags,'-c',resolve(root,'cpp/sdl/Application.cpp'),'-o',app]);
 const objectRoot=resolve(root,'artifacts/sdl3/objects');
 const objects=readdirSync(objectRoot).filter(n=>n.endsWith('.o')&&!n.includes('Application_cpp')).map(n=>resolve(objectRoot,n));
 compile([...flags,'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=2097152','-sINITIAL_MEMORY=134217728','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8','-sEXPORTED_FUNCTIONS=_malloc,_free','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2',...objects,app,'-o',resolve(out,'probe.mjs')]);
-const files=new Map([['/probe.mjs',resolve(out,'probe.mjs')],['/probe.wasm',resolve(out,'probe.wasm')],['/th11.dat',resolve(workspace,'prepared/th11-content/th11.data')],['/unifont.otf',resolve(workspace,'prepared/th11-localization-site/shared/unifont.otf')]]);
+const files=new Map([['/probe.mjs',resolve(out,'probe.mjs')],['/probe.wasm',resolve(out,'probe.wasm')],['/th11.dat',resolve(process.env.TH11_RETAIL_DATA??resolve(workspace,'games/web-content/th11/th11.data'))],['/unifont.otf',resolve(process.env.TH11_UNIFONT_FILE??resolve(workspace,'dependencies/unifont-15.1.05/unifont-15.1.05.otf'))]]);
 files.set('/eagler-host.mjs',resolve(root,'sdl-runtime/eagler-host.mjs'));
 for(const name of ['font0.bin','font1.bin','font2.bin','font3.bin','cp932.bin','blend4444.bin'])files.set('/fonts/'+name,resolve(workspace,'th11/web/assets/sdl-native/fonts',name));
 const music=readdirSync(resolve(workspace,'prepared/th11-content/music')).filter(n=>n.endsWith('.ogg')).map(n=>'/music/'+n);for(const path of music)files.set(path,resolve(workspace,'prepared/th11-content',path.slice(1)));
@@ -36,6 +37,8 @@ try{
   await page.evaluate(async ({locale,music})=>{
    const {default:create}=await import('/probe.mjs');const c=window.core=window.Module=await create({canvas:document.querySelector('canvas'),instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('/probe.wasm'),imports).then(({instance,module})=>{window.native=instance.exports;ready(instance,module);return instance.exports;});}});c.eaglerOptions={thpracEnabled:true,thpracLocale:locale};c.eaglerControls={thpracKeyboardBits:0};
    for(const name of ['/th11.dat','/unifont.otf',...music,...['font0.bin','font1.bin','font2.bin','font3.bin','cp932.bin','blend4444.bin'].map(n=>'/fonts/'+n)]){c.FS.mkdirTree(name.slice(0,name.lastIndexOf('/'))||'/');c.FS.writeFile(name,new Uint8Array(await fetch(name).then(r=>r.arrayBuffer())));}
+   const {touchControls}=await import('/eagler-host.mjs');
+   window.hostControls=message=>touchControls(window.native,{touchEnabled:true,touchSensitivity:100},message,c);
    window.error=()=>{const p=c._th11_error();return new TextDecoder().decode(c.HEAPU8.subarray(p,c.HEAPU8.indexOf(0,p)));};
    window.step=(n=1)=>{for(let i=0;i<n;++i)if(!c._th11_probe_platform_tick())throw Error(error());};
    window.key=(scan,n=1)=>{c._th11_key(scan,1);step(n);c._th11_key(scan,0);step(2);};
@@ -55,7 +58,7 @@ try{
    await page.evaluate(async locale=>{
     const {directTouch}=await import('/eagler-host.mjs');const canvas=document.querySelector('canvas');canvas.style.width='min(100vw, calc(100vh * 4 / 3))';canvas.style.height='auto';native.sdl_touch_options(1,0,1);
     if(!core._th11_probe_practice_menu(0,0,1))throw Error(error());step(4);
-    const pending=()=>Array.from(new Float64Array(core.HEAPU8.buffer,core._th11_probe_practice_pending(),14));
+    const pending=()=>Array.from(new Float64Array(core.HEAPU8.buffer,core._th11_probe_practice_pending(),18));
     const initial=pending();initial[5]=9;initial[7]=80;const pointer=core._malloc(initial.length*8);try{new Float64Array(core.HEAPU8.buffer,pointer,initial.length).set(initial);if(!core._th11_practice_configure(pointer,initial.length))throw Error('Mobile test config rejected');}finally{core._free(pointer);}step(3);
     const touch=(type,x,y,id=-100)=>{const r=canvas.getBoundingClientRect();directTouch(native,canvas,{type,id,x:(r.left+x/640*r.width)/innerWidth,y:(r.top+y/480*r.height)/innerHeight},{width:innerWidth,height:innerHeight});step(2);};
     const left=locale==='en-US'?108:locale==='ja-JP'?138:158,top=locale==='en-US'?90:80;
@@ -85,13 +88,21 @@ try{
     step(3);key(44);step(120);const s=state();if(!s[15]||s[16]!==values[7]||s[2]!==values[2])throw Error('Native accept/run economy mismatch');
     // Original Pause -> R retry must preserve the run, not pending menu edits.
     key(1);step(20);key(19);step(20);if(!state()[15]||state()[5]!==7||state()[6]!==2)throw Error('Native pause retry lost practice parameters');
-    if(!core._th11_probe_practice_save())throw Error('Custom replay save failed');
+    // Enable and disable F1: assisted stays latched even with no active cheats.
+    if(shot===0){
+     const carrier=bits=>{core.eaglerControls.thpracKeyboardBits=bits;step();core.eaglerControls.thpracKeyboardBits=0;step(3);};
+     carrier(1);carrier(1<<1);if(!(state()[17]&1))throw Error('Assisted save fixture did not enable F1');
+     if(!core._th11_probe_practice_save())throw Error('Replay saving with active F1 was blocked');
+     carrier(1<<1);carrier(1);
+    }
+    if(!core._th11_probe_practice_save())throw Error('Custom/assisted replay save failed');
     const replay=core.HEAPU8.slice(core._th11_probe_practice_replay_data(),core._th11_probe_practice_replay_data()+core._th11_probe_practice_replay_size());if(!new TextDecoder().decode(replay).includes('PRAC'))throw Error('Saved replay omitted PRAC');
     if(!core._th11_probe_practice_play())throw Error(error());if(!state()[15]||state()[5]!==7)throw Error('Replay failed to restore practice owner');
     for(const [carrier,window,label] of [[1,1,'Backspace'],[1<<8,2,'Tab'],[1<<9,4,'F12']]){
      const before=core._th11_probe_practice_windows();core.eaglerControls.thpracKeyboardBits=carrier;step();core.eaglerControls.thpracKeyboardBits=0;step();
      if(!((before^core._th11_probe_practice_windows())&window))throw Error(label+' carrier did not toggle its native window');
     }
+    const misses=state()[19];if(core._th11_probe_tracker_death()!==0)throw Error('Replay death wrote live score event');if(state()[19]!==misses+1)throw Error('Replay death did not increment tracker');
     return s;
    },shot);
    await page.screenshot({path:resolve(out,locale+'-shot'+shot+'-overlays.png')});
@@ -99,6 +110,25 @@ try{
    await page.evaluate(()=>{core.eaglerControls.thpracKeyboardBits=1<<9;step();core.eaglerControls.thpracKeyboardBits=0;step();if(!core._th11_return_title())throw Error(error());step(3);if(state()[15])throw Error('Exit leaked live practice');});
   }
   await page.evaluate(()=>{
+   const tools=()=>Array.from(new Int32Array(core.HEAPU8.buffer,core._th11_probe_practice_tools(),12));
+   if(!core._th11_probe_practice_menu(0,0,1))throw Error(error());step(4);key(44);step(120);
+   const carrier=bits=>{core.eaglerControls.thpracKeyboardBits=bits;step();core.eaglerControls.thpracKeyboardBits=0;step(3);};
+   carrier(1);const uBefore=state()[17];carrier(1<<10);if((state()[17]^uBefore)!==32)throw Error('Mobile U carrier did not enable enemy invincibility');carrier(1<<10);carrier(1);
+   // The new mobile group is visibility state, not synthetic F-key input.
+   hostControls({thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true});step(4);
+   if(core._th11_probe_practice_windows()!==7)throw Error('Mobile group omitted a native panel');
+   const tap=(x,y)=>{native.sdl_thprac_mouse(1,x,y);step(2);native.sdl_thprac_mouse(2,x,y);step(3);};
+   tap(40,65); // collapsed advanced header at (10,48)
+   tap(40,22); // expanded advanced header at its original (0,0)
+   hostControls({thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:false});step(3);
+   if(core._th11_probe_practice_windows())throw Error('Mobile group did not hide native panels');
+   hostControls({});step(3);
+   carrier(1<<9);
+   const click=(x,y)=>{native.sdl_thprac_mouse(1,x,y);step(2);native.sdl_thprac_mouse(2,x,y);step(3);};
+   click(40,70);const initial=tools();click(16,118);if(tools()[0]===initial[0])throw Error('F12 touch disable-X checkbox did not change actual input owner');
+   click(16,118);if(tools()[0]!==initial[0])throw Error('F12 touch toggle did not restore input owner');
+   carrier(1<<9);if(!core._th11_return_title())throw Error(error());step(4);
+   console.log('F12 touch input-owner toggle and mobile U carrier passed');
    const pose=()=>Array.from(new Int32Array(core.HEAPU8.buffer,core._th11_probe_function_state(),5));
    const start=(character,partner)=>{
     native.sdl_touch_controls(0,0,0,0,0,0);
@@ -108,6 +138,11 @@ try{
     step(3);key(44);step(120);native.sdl_touch_options(1,0,1);native.sdl_touch_controls(1,0,0,0,0,0);step(4);
     if(!pose()[3]||pose()[4])throw Error('C test requires actual active boss and no dialogue');
    };
+   start(1,1);carrier(1<<9);click(16,330);
+   if(!tools()[9])throw Error('F12 touch formation-lock checkbox did not reach the live owner');carrier(1<<9);
+   key(46);if(pose()[2]!==0)throw Error('Purple formation lock failed to override the native C switch');
+   carrier(1<<9);click(16,330);if(tools()[9])throw Error('Formation lock did not turn off');carrier(1<<9);
+   if(!core._th11_return_title())throw Error(error());step(5);
    start(0,0);
    core._th11_probe_function_pose(0);key(46);if(pose()[1]>=99)throw Error('C must not teleport away from an edge');
    core._th11_probe_function_pose(-1);key(46);if(pose()[1]!==99)throw Error('C failed left native gap activation');
@@ -126,7 +161,7 @@ try{
    if(!core._th11_return_title())throw Error(error());step(5);
   });
   console.log(locale+': ordinary C input activates both edge gaps, switches Marisa B once and leaves other shots unchanged');
-  for(const [name,stage,phases] of [['TH11_ST6_MID1',5,1],['TH11_ST6_BOSS9',5,5],['TH11_ST7_END_S9',6,3],['TH11_ST7_END_S10',6,4]])for(let phase=0;phase<phases;++phase){
+  for(const [name,stage,phases] of [['TH11_ST6_MID1',5,1],['TH11_ST6_BOSS9',5,8],['TH11_ST7_END_S9',6,1],['TH11_ST7_END_S10',6,4],['TH11_ST5_MID3',4,4]])for(let phase=0;phase<phases;++phase){
    const section=sections.find(s=>s.key===name).id;
    await page.evaluate(({section,stage,phase})=>{
     if(!core._th11_probe_practice_menu(0,0,1))throw Error(error());step(3);const values=[1,stage,section,phase,0,9,0,80,0,0,50000,0,0,1],pointer=core._malloc(values.length*8);
@@ -136,4 +171,4 @@ try{
   }
   assert.deepEqual(errors,[]);console.log(locale+': original entry/cancel, six shots with boss/chapter warps, Pause-R retry, PRAC save/restore, overlays and all stage-six/Extra special phases passed');await page.close();
  }
-}finally{await browser?.close();await new Promise(r=>server.close(r));}
+}catch(error){const pages=await browser?.pages();if(pages?.length)await pages[pages.length-1].screenshot({path:resolve(out,'purple-failure.png')});throw error;}finally{await browser?.close();await new Promise(r=>server.close(r));}
