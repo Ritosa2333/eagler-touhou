@@ -9,6 +9,7 @@ import {launchBrowser} from '../../../../tools/browser/launch.mjs';
 const root=resolve(import.meta.dirname,'../..');
 const runtime=resolve(root,'web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer','rollback');
 const out=resolve(process.argv.find(v=>v.startsWith('--output='))?.slice(9)||runtime);await mkdir(out,{recursive:true});
+const lifecycleOnly=process.argv.includes('--lifecycle-only');
 const cp932=process.env.TH15_TEST_CP932_FONT||(process.env.EAGLER_FONT_ROOT&&resolve(process.env.EAGLER_FONT_ROOT,'cp932.bin'));
 const font=process.env.TH15_TEST_FONT,unicode=process.env.TH15_TEST_UNICODE_FONT;
 for(const [name,value] of Object.entries({TH15_TEST_ARCHIVE:process.env.TH15_TEST_ARCHIVE,cp932,TH15_TEST_FONT:font,TH15_TEST_UNICODE_FONT:unicode}))assert.ok(value,'Missing '+name);
@@ -39,13 +40,14 @@ let browser;const reports=[],errors=[];
 async function initialize(page,count,mode,scale){
  page.on('pageerror',error=>errors.push(String(error)));await page.setViewportSize({width:640*scale,height:480*scale});
  await page.goto(base+'/?scale='+scale);await page.evaluate(()=>moduleReady);
- await page.evaluate(({count,mode})=>{
+ await page.evaluate(({count,mode,lifecycleOnly})=>{
   const m=Module,text=p=>new TextDecoder().decode(m.HEAPU8.subarray(p,m.HEAPU8.indexOf(0,p)));
   const error=()=>text(m._th15_mp_error())||text(m._th15_spectator_lab_error());
   const check=(ok,label)=>{if(!ok)throw Error(label+': '+error());};
   check(m._th15_rollback_lab_begin(count,mode),'native begin');
   const words=(pointer,length)=>Array.from(m.HEAPU32.subarray(pointer>>>2,(pointer>>>2)+length));
   const status=()=>words(m._th15_mp_rollback_status(),20),details=()=>words(m._th15_rollback_lab_details(),10);
+  const lifecycle=()=>words(m._th15_rollback_lab_lifecycle(),8);
   let lastCapture=0,lastCommit=0;
   const audit=()=>{const s=status();check(s[3]>=lastCapture,'physical capture rewound');lastCapture=s[3];
    if(s[4]!==0xffffffff){check(s[4]>=lastCommit&&s[4]<s[2],'confirmed output watermark');lastCommit=s[4];}
@@ -53,6 +55,7 @@ async function initialize(page,count,mode,scale){
   const input=(frame,seat)=>{
    let held=1,motion=0,x=0,y=0;
    if(frame>=180)held|=((Math.floor(frame/24)+seat)%2?0x40:0x80);
+   if(lifecycleOnly)return [held,motion,x,y];
    if((frame>=240&&frame<248)||(frame>=600&&frame<608)){
     if(seat===1){motion=1;x=frame%2?132:-132;y=320+frame%3*12;held=1|(frame===244?2:0);}
    }
@@ -69,13 +72,13 @@ async function initialize(page,count,mode,scale){
   const drain=target=>{let attempts=0;while(status()[2]<target||status()[1]||details()[8]!==0xffffffff){
    const s=tick(status()[2],false);check(s[2]<=target,'correction passed saved frontier');check(++attempts<128,'correction stalled '+JSON.stringify({target,status:s,details:details()}));
   }return {...state(),status:audit(),details:details()};};
-  const snapshot=async pixels=>{const result={...state(),status:audit(),details:details()};
+  const snapshot=async pixels=>{const result={...state(),status:audit(),details:details(),lifecycle:lifecycle(),phase:m._th15_phase()};
    if(pixels){const p=m._th15_rollback_lab_pixels(),size=m._th15_rollback_lab_pixels_size();check(p&&size,'framebuffer readback');result.pixelBytes=size;result.pixelSha=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',m.HEAPU8.slice(p,p+size)))).map(v=>v.toString(16).padStart(2,'0')).join('');}
    return result;
   };
   const replay=()=>{const size=m._th15_rollback_lab_replay_size();check(size,'confirmed replay encode');return Array.from(m.HEAPU8.subarray(m._th15_rollback_lab_replay_bytes(),m._th15_rollback_lab_replay_bytes()+size));};
-  window.rollbackLab={count,mode,input,remote,tick,status,details,audit,state,forward,drain,snapshot,replay};
- },{count,mode});
+  window.rollbackLab={count,mode,input,remote,tick,status,details,lifecycle,audit,state,forward,drain,snapshot,replay};
+ },{count,mode,lifecycleOnly});
 }
 function compare(expected,actual,label){
  assert.deepEqual(actual.world,expected.world,label+' world');assert.deepEqual(actual.groups,expected.groups,label+' script/projectile groups');
@@ -90,14 +93,91 @@ async function pairedExact(exact,late,first,end,trajectory){
 }
 function replayFrames(bytes){const data=Uint8Array.from(bytes),view=new DataView(data.buffer),description=view.getUint32(24,true),chapters=view.getUint32(28,true),frames=view.getUint32(32,true);
  return {frames,score:view.getUint32(64,true),complete:view.getUint32(68,true),chapters:Array.from(data.subarray(40+description,40+description+chapters*8)),samples:Array.from(data.subarray(40+description+chapters*8))};}
+async function lifecycleAcceptance(exact,late,report){
+ await pairedExact(exact,late,0,200,report.trajectory);let frame=200;
+ const request=async name=>{for(const page of [exact,late])assert.equal(await page.evaluate(name=>Module[name](),name),1,name);};
+ const boundary=async(kind,reached)=>{
+  for(let attempts=0;attempts<600;++attempts,++frame){
+   const before=await late.evaluate(()=>rollbackLab.snapshot(false));
+   let expected=await exact.evaluate(async frame=>{rollbackLab.forward(frame);return rollbackLab.snapshot(false);},frame);
+   if(!reached(expected)){
+    const actual=await late.evaluate(async frame=>{rollbackLab.forward(frame);return rollbackLab.snapshot(false);},frame);
+    compare(expected,actual,kind+' before boundary '+frame);continue;
+   }
+   expected=await exact.evaluate(()=>rollbackLab.snapshot(true));
+   const blocked=await late.evaluate(frame=>{
+    const lab=rollbackLab;for(let seat=1;seat<lab.count-1;++seat)lab.remote(frame,seat);
+    lab.tick(frame);const waiting=lab.status();for(let n=0;n<3;++n)lab.tick(frame,false);
+    return {waiting,status:lab.status(),details:lab.details(),lifecycle:lab.lifecycle(),phase:Module._th15_phase()};
+   },frame);
+   assert.equal(blocked.status[2],frame,kind+' advanced without exact remote input');
+   assert.equal(blocked.status[4],frame-1,kind+' published unconfirmed output');
+   assert.equal(blocked.status[17],frame,kind+' did not retain confirmed boundary');
+   assert.equal(blocked.status[3],blocked.waiting[3],kind+' recaptured while waiting');
+   assert.equal(blocked.status[5],0,kind+' retained journal frame at boundary');
+   assert.equal(blocked.lifecycle[6],0,kind+' retained undo log at boundary');
+   assert.equal(blocked.details[3],before.details[3],kind+' changed loading state while waiting');
+   assert.equal(blocked.lifecycle[0],before.lifecycle[0],kind+' changed ending owner while waiting');
+   assert.equal(blocked.phase,before.phase,kind+' changed native phase while waiting');
+   const actual=await late.evaluate(async frame=>{rollbackLab.remote(frame,rollbackLab.count-1);rollbackLab.drain(frame+1);return rollbackLab.snapshot(true);},frame);
+   compare(expected,actual,kind+' confirmed boundary');
+   assert.deepEqual(actual.lifecycle,expected.lifecycle,kind+' native lifecycle state');
+   assert.equal(actual.phase,expected.phase,kind+' native phase');
+   report.checks.push({kind,frame,before,blocked,confirmed:actual});++frame;return;
+  }
+  throw Error(kind+' did not reach a native lifecycle boundary');
+ };
+ await request('_th15_rollback_lab_next_stage');
+ await boundary('stage-2-entry',state=>state.details[3]===2);
+ await pairedExact(exact,late,frame,frame+180,report.trajectory);frame+=180;
+ let state=await late.evaluate(()=>rollbackLab.snapshot(true));
+ assert.equal(state.details[5],2,'Native stage 2 was not constructed');assert.equal(state.details[3],0);assert.equal(state.phase,1);
+ compare(await exact.evaluate(()=>rollbackLab.snapshot(true)),state,'stage 2 active');
+ report.checks.push({kind:'stage-2-active',frame,state});
+ await request('_th15_rollback_lab_request_ending');
+ await boundary('ending-entry',state=>state.details[3]===1);
+ for(let attempts=0;attempts<180;++attempts){
+  await pairedExact(exact,late,frame,frame+1,report.trajectory);++frame;state=await late.evaluate(()=>rollbackLab.snapshot(false));
+  if(state.lifecycle[0]&&state.details[3]===0&&state.lifecycle[3]===0xffffffff)break;
+ }
+ assert.equal(state.lifecycle[0],1,'Native ending was not constructed');assert.equal(state.lifecycle[1],2,'Multiplayer ending history was not normalized');
+ assert.equal(state.phase,3);assert.equal(state.details[3],0);assert.equal(state.lifecycle[3],0xffffffff);
+ report.checks.push({kind:'ending-active',frame,state});
+ await request('_th15_rollback_lab_finish_ending');
+ await boundary('results-entry',state=>state.phase===0&&!state.lifecycle[0]);
+ const retired=[];
+ for(const page of [exact,late])retired.push(await page.evaluate(async()=>{
+  const lab=rollbackLab;lab.tick(lab.status()[2],false);const before=await lab.snapshot(false),replay=lab.replay();
+  for(let n=0;n<5;++n)lab.tick(lab.status()[2],false);
+  return {before,after:await lab.snapshot(true),replay};
+ }));
+ for(const record of retired){
+  assert.equal(record.after.lifecycle[7],1,'Transport did not retire at confirmed results');
+  for(const index of [2,3,4])assert.equal(record.after.status[index],record.before.status[index],'Retired netplay frontier advanced');
+  assert.equal(record.after.status[5],0);assert.equal(record.after.status[1],0);assert.equal(record.after.lifecycle[6],0);
+  assert.equal(record.after.details[8],0xffffffff);assert.equal(record.after.phase,0);assert.equal(record.after.status[19],1);
+  assert.equal(replayFrames(record.replay).frames,record.after.status[4]+1);assert.equal(replayFrames(record.replay).complete,1);
+ }
+ compare(retired[0].after,retired[1].after,'retired local results');
+ assert.deepEqual(replayFrames(retired[1].replay),replayFrames(retired[0].replay),'Lifecycle confirmed Replay differs from exact run');
+ await writeFile(resolve(out,report.label+'.rpy'),Uint8Array.from(retired[1].replay));
+ report.checks.push({kind:'retired-results',state:retired[1].after});
+ report.confirmedReplayFrames=replayFrames(retired[1].replay).frames;report.final=retired[1].after;
+ report.scope='Native stage completion and service-request ending/results lifecycle; story/staff script completion and live transport ACK retirement are separate acceptance cases.';
+}
 try{
  browser=await launchBrowser({...(process.env.EAGLER_CHROME_PATH?{executablePath:process.env.EAGLER_CHROME_PATH}:{}),
   args:[...(process.platform==='linux'&&process.getuid?.()===0?['--no-sandbox']:[]),'--enable-unsafe-swiftshader','--use-angle=swiftshader','--autoplay-policy=no-user-gesture-required']});
- const cases=[...([2,3].flatMap(count=>[0,2].map(mode=>({count,mode,scale:1})))),{count:3,mode:2,scale:2}];
- for(const config of cases){const {count,mode,scale}=config,label=`${count}p-mode${mode}-scale${scale}`,trajectory=[];
+ const cases=lifecycleOnly?[{count:3,mode:2,scale:2}]:[...([2,3].flatMap(count=>[0,2].map(mode=>({count,mode,scale:1})))),{count:3,mode:2,scale:2}];
+ for(const config of cases){const {count,mode,scale}=config,label=`${count}p-mode${mode}-scale${scale}${lifecycleOnly?'-lifecycle':''}`,trajectory=[];
   const exact=await browser.newPage(),late=await browser.newPage();await initialize(exact,count,1,scale);await initialize(late,count,mode,scale);
   const report={...config,label,oracle:'independent v7 pure-delay exact-input WASM',checks:[],trajectory};
   try{
+   if(lifecycleOnly){
+    await lifecycleAcceptance(exact,late,report);assert.deepEqual(errors,[]);report.status='PASS';reports.push(report);
+    await writeFile(resolve(out,label+'.json'),JSON.stringify(report,null,2)+'\n');
+    console.log('PASS '+label+' | confirmed stage 2, ending, results, immutable retired frontiers, completion Replay');continue;
+   }
    await pairedExact(exact,late,0,240,trajectory);
    // Eight speculative frames, then a second mismatch during bounded catchup.
    await exact.evaluate(()=>{for(let f=240;f<248;++f)rollbackLab.forward(f);});

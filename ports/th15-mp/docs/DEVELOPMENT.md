@@ -65,10 +65,13 @@ $env:EAGLER_FONT_ROOT='/path/to/fonts' # 含 cp932.bin
 $env:EAGLER_CHROME_PATH='/path/to/chrome'
 node ports/th15-mp/portable/multiplayer/build-rollback.mjs
 node ports/th15-mp/portable/multiplayer/rollback-browser.mjs
+node ports/th15-mp/portable/multiplayer/rollback-browser.mjs --lifecycle-only --output=/absolute/lifecycle-results
 node ports/th15-mp/portable/multiplayer/browser-test.mjs --rollback --output=/absolute/production-results
 ```
 
 `rollback-browser.mjs` 将模式 0／2 的两人、三人实例与独立的准确输入纯延迟实例比较，附加三人模式 2 的 2 倍渲染分辨率场景。比较包含 ECL 状态、角色资源与位置、子弹运动程序、道具归属、激光、随机流、完整分辨率像素和 Replay 全席位输入。嵌套回滚之后继续比较 600 帧，并专门触发迟到暂停、资源释放后的画面恢复及 12 帧等待边界。输入身份、逐段状态哈希、截图、Replay 和结果 JSON 位于 `web/artifacts/sdl-multiplayer/rollback/`；`--output` 可指定结果目录。
+
+`--lifecycle-only` 使用三人模式 2 和 2 倍分辨率，从原生关卡完成服务进入第二关，再通过原生服务请求进入结尾和结果界面。它在独立基准识别出的三个资源边界扣住最后一席输入，检查等待期间的模拟、提交和物理采样水位，补齐输入后比较状态与像素。结果界面退休后继续调用驱动，验证采样、模拟、提交和 Replay 长度保持不变。结尾由服务请求触发，完整剧情与 Staff 脚本播放、实时传输的结束 ACK 属于此入口之外的验收范围；生产 Runtime 场景另行检查真实传输、确认水位、旁观入场和离线回放。
 
 生产 Runtime 的 `_th15_mp_rollback_status` 和浏览器 `__eaglerNetplayDiagnostics` 提供模拟／采样／提交水位、保留帧数、实际恢复与重演计数、生命周期边界、日志和模拟堆用量。正式包通过 `node ports/th15-mp/portable/multiplayer/module-test.mjs --multiplayer-only` 检查配置与插桩身份。
 

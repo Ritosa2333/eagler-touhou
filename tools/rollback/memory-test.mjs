@@ -24,7 +24,8 @@ async function main() {
   const output = options.output || await mkdtemp(join(artifactParent, 'memory-test-'));
   await mkdir(output, { recursive: true });
   const modulePath = join(output, 'fixture.mjs');
-  const exports = ['_eagler_write_journal_test', '_eagler_rb_touch', '_eagler_rb_config_address', '_eagler_rb_instrumented'];
+  const exports = ['_eagler_write_journal_test', '_eagler_write_journal_trap', '_eagler_write_journal_abandon',
+    '_eagler_rb_touch', '_eagler_rb_config_address', '_eagler_rb_instrumented'];
   const args = [
     '-std=c++20', '-O2', '-UNDEBUG', '-I', join(root, 'common/include'),
     join(root, 'common/tests/write-journal-test.cpp'),
@@ -58,7 +59,7 @@ async function main() {
   assert.equal(uninstrumented._eagler_write_journal_test(-1), 0, 'raw Wasm must reject journal initialization');
   console.log('Uninstrumented module correctly rejects journal initialization');
 
-const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6];
+const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6], trapScopes = ['game', 'host'];
 for (const nativeFilter of [false, true]) {
   const name = nativeFilter ? 'native-hook' : 'wasm';
   const { bytes, report } = await instrumentWasm(raw, { nativeFilter });
@@ -69,10 +70,18 @@ for (const nativeFilter of [false, true]) {
     assert.equal(instance._eagler_rb_instrumented(), INSTRUMENTATION_MAGIC, 'patched marker is callable through the compiled loader');
     assert.equal(instance._eagler_write_journal_test(scenario), 1, `C++ journal ${name} scenario ${scenario}`);
   }
-  profiles.push({ name, scenarios, report });
+  for (const [hostScope, scope] of trapScopes.entries()) {
+    const instance = await createModule({ wasmBinary: bytes });
+    assert.throws(() => instance._eagler_write_journal_trap(hostScope),
+      error => error instanceof WebAssembly.RuntimeError && /out of bounds/.test(error.message),
+      `C++ journal ${name} ${scope} scope must trap in the real Wasm store`);
+    assert.equal(instance._eagler_write_journal_abandon(hostScope), 1,
+      `C++ journal ${name} ${scope} scope cannot reuse an abandoned transaction`);
+  }
+  profiles.push({ name, scenarios, trapScopes, report });
 }
 await writeFile(join(output, 'result.json'), `${JSON.stringify({ success: true, uninstrumentedRejected: true, profiles }, null, 2)}\n`);
-console.log(`C++ Wasm journal fixture passed (raw rejection + ${scenarios.length} scenarios in both profiles). Artifacts: ${output}`);
+console.log(`C++ Wasm journal fixture passed (raw rejection + ${scenarios.length} scenarios + ${trapScopes.length} real trap cases in both profiles). Artifacts: ${output}`);
 }
 
 try { await main(); }
