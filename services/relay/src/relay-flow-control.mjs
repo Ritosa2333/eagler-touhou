@@ -10,6 +10,27 @@ export const RELAY_LIMITS = Object.freeze({
   historyFrames: 8192,
 });
 
+// Retain the current th09 match, independently of native playback queue size.
+// 20 minutes of T9SP/2 charge inputs occupy about 9 MiB. This byte budget
+// leaves room for longer matches and metadata without a frame/time cutoff.
+export const TH09_SPECTATOR_HISTORY_LIMITS = Object.freeze({
+  ...RELAY_LIMITS,
+  historyFrames: 262144,
+  historyBytes: 16 * 1024 * 1024,
+});
+
+export function closeTh09HistoryAdmission(run) {
+  run.spectatorAdmissionOpen = false;
+  run.spectatorHistoryUnavailable = true;
+  run.onSpectatorAvailabilityChange?.();
+  // A viewer still replaying the prefix cannot bridge an unarchived gap.
+  // Live viewers keep consuming directly, without an archive dependency.
+  for (const socket of run.spectatorClients.values())
+    if (socket.spectatorReplaying) socket.close(1011, 'spectator history unavailable; live players continue');
+  run.spectatorHistory = [];
+  run.spectatorHistoryBytes = 0;
+}
+
 export function createRelayMessageGate({
   maxBytes,
   messagesPerSecond,
@@ -198,15 +219,15 @@ export function hasPendingSpectators(run) {
   return false;
 }
 
-export function appendSpectatorHistory(run, payload, limits = RELAY_LIMITS) {
+export function appendSpectatorHistory(run, payload, limits = RELAY_LIMITS, onOverflow = stopSpectatorStream) {
   if (run.spectatorStopped) return false;
   if (
     run.spectatorHistory.length >= limits.historyFrames ||
     (run.spectatorHistoryBytes || 0) + payload.length > limits.historyBytes
   ) {
     // Dropping old frames would make a new spectator start from incomplete
-    // history. Stop this optional stream explicitly while players continue.
-    stopSpectatorStream(run);
+    // history. Let the owner retire either this archive or the optional stream.
+    onOverflow(run);
     return false;
   }
   // Own an exact-sized allocation: a tiny view must not retain a large inbound

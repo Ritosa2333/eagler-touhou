@@ -3,6 +3,7 @@
 #include "GameInput.hpp"
 #include "ShotResource.hpp"
 namespace th09 {
+struct ChargeSample;struct PendingChargeRelease;
 struct ShotControlState {
     float charge=0,available=100;
     Timer full_charge{0,0,0},charged_fire{0,0,0},normal_fire{0,0,0},cooldown{0,0,0},charging_time{0,0,0},protection{0,0,0};
@@ -22,9 +23,12 @@ class ShotControl {
     ShotControlState& state;AttackAreas& areas;ShotControlActions& actions;
     void protect(i32 level,const Vec3&);
     void release(const ShotResource&,const Vec3&,const FrameTiming&);
+    void update_firing(const ShotResource&,const FrameTiming&);
 public:
     ShotControl(ShotControlState& s,AttackAreas& a,ShotControlActions& out):state(s),areas(a),actions(out){}
     void update(const GameInput&,bool automatic_focus,i32 side,const ShotResource&,const Vec3&,const FrameTiming&);
+    bool update_priority(const GameInput&,bool automatic_focus,i32 side,const ShotResource&,const Vec3&,
+                         const FrameTiming&,const ChargeSample&,PendingChargeRelease&,bool permitted);
     bool bomb(const GameInput&,bool scene_locked,const ShotResource&,const Vec3&);
     bool automatic_defence(const ShotResource&,const Vec3&);
 };

@@ -5,6 +5,7 @@
 #include "CpuPlayer.hpp"
 #include "Combo.hpp"
 #include "ChargeGauge.hpp"
+#include "LocalCharge.hpp"
 namespace th09 {
 namespace multiplayer { class WorldState; }
 struct PlayerActions:PlayerShotActions,ComboActions,CpuActions {
@@ -41,6 +42,7 @@ class Player:private PlayerLifeActions,private MotionEffects,private PlayerItemA
     EclWorldState& world;PlayerActions& actions;PlayerFrameContext frame;
     Combo combo_system(){return Combo(world,actions,frame.timing,frame.geometry[motion.player],frame.geometry[1-motion.player].width,i32(motion.player));}
     void synchronize_shots();
+    bool prioritized_charge(bool permitted);
     void play_sound(i32 id,i32 pan)override{actions.play_sound(id,pan);}
     void play_positioned_sound(i32 id,float x)override{actions.play_positioned_sound(id,x);}
     void begin_charge()override{actions.begin_charge();}
@@ -67,12 +69,15 @@ class Player:private PlayerLifeActions,private MotionEffects,private PlayerItemA
     void combo(const Vec3& p,i32 normal,i32 spirit,i32 character,i32 score)override{combo_system().add(combo_state,p,normal,spirit,character,score);}
 public:
     MotionSource* motion_source=nullptr;PlayerMotion motion;ShotControlState control;AnmVm body{};ShotResource resource;GameInput input;
+    ChargeFrame* charge_frame=nullptr;PendingChargeRelease pending_charge;u32 charge_generation=0;
     PlayerShots shots;PlayerItems items;PlayerHazards hazards;CpuState cpu;ComboState combo_state;PlayerLife life;
     Vec3 secondary_target{-999,-999,0};i32 target_priority=0,attack_levels[2]{1,1};bool initialized=false;
     Player(EclWorldState& w,PlayerActions& a):world(w),actions(a),shots(a),items(w.random,*this),life(motion,control,body,shots.areas,w.random,*this){}
     bool initialize(const u8* shot_data,u32 shot_size,u32 side,u32 character,i32 controller);
     void reset_round(i32 health,i32 difficulty,i32 round,float playfield_height=448);
     void update(const PlayerFrameContext&,DamageRules&);
+    void finish_charge_frame(){prioritized_charge(false);}
+    bool apply_charge_sample(const ChargeSample& sample){return !sample.active||ShotControl(control,shots.areas,*this).update_priority(input,frame.automatic_focus,i32(motion.player),resource,motion.position,frame.timing,sample,pending_charge,false);}
     void draw(bool fading=false);
     void charge(float amount)override;
     bool add_combo(const Vec3& p,i32 normal,i32 spirit,i32 character,i32 score){return combo_system().add(combo_state,p,normal,spirit,character,score);}

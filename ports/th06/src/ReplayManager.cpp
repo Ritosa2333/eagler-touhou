@@ -19,6 +19,7 @@
 #include "PracticeRuntime.hpp"
 #include "ReplayExtension.hpp"
 #include "ReplayManager.hpp"
+#include "ReplayStageStart.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "Multiplayer.hpp"
 #include "multiplayer/GameplaySession.hpp"
@@ -172,6 +173,11 @@ ZunResult ReplayManager::ValidateReplayData(ReplayHeader *data, i32 fileSize)
 
 ZunResult ReplayManager::RegisterChain(i32 isDemo, const char *replayFile)
 {
+#if defined(TH_ENABLE_NETPLAY) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    if(SpectatorReplayStart::applying)
+        return SpectatorReplayStart::Apply()?ZUN_SUCCESS:ZUN_ERROR;
+#endif
+
     ReplayManager *replayMgr;
 
     if (g_Supervisor.framerateMultiplier < 0.99f && !isDemo)
@@ -591,6 +597,9 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
     stageReplayData->pointItemsCollected = g_GameManager.pointItemsCollected;
     stageReplayData->randomSeed = g_GameManager.randomSeed;
     stageReplayData->powerItemCountForScore = g_GameManager.powerItemCountForScore;
+#if defined(TH_ENABLE_NETPLAY) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    SpectatorReplayStart::Record(*stageReplayData);
+#endif
     mgr->replayInputs = stageReplayData->replayInputs;
     mgr->replayInputEnd = stageReplayData->replayInputs + ARRAY_SIZE(stageReplayData->replayInputs);
     mgr->replayInputs->frameNum = 0;

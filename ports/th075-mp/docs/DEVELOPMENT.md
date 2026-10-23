@@ -19,3 +19,5 @@ node --test ports/th075-mp/tests/eagler/*.test.mjs
 真实双端标题预加载检查从 `launcher/` 运行 `node tests/browser/test-room-title-preload.mjs th075 0`，纯延迟模式用最后参数 `1`。通过 `ROOM_PREVIEW_RUNTIME`、`ROOM_PREVIEW_DATA`、`EAGLER_SHARED_GOTHIC`、`EAGLER_SHARED_UNIFONT` 显式提供当前 Runtime 和私有输入。测试比较不同等待时长后的对局状态、禁止 demo，并验证开局复用实例。
 
 历史验收按原始哈希核验，目录映射与普通版共用。原生协议、双端浏览器、手机设备和公网长时间对局按场景分别记录输入与结果。
+
+旁观沿原生对局入口重放全席位已确认输入。Relay 使用 th075 独立的 `EPTM` 与 `EPNP` 标记核验时序和输入，双端浏览器驱动同时比较旁观者、玩家的同帧状态与暂停／重开流程。

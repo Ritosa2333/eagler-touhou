@@ -51,7 +51,12 @@ i32 Player::update(PlayerFrameEnvironment& env){
         }
         if(state_timer.current<30){env.clear_bullets(false);env.clear_lasers(false);}move(*env.movement);
     }else if(state==4){
-        if(state_timer.current>=8)die(*env.lifecycle);
+        const i32 deathbomb_frames =
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            env.lifecycle->player_count > 1 ? 16 :
+#endif
+            8;
+        if(state_timer.current>=deathbomb_frames)die(*env.lifecycle);
         else if(env.bomb&&!env.bomb->active&&economy.power/20&&(*env.input_keys&2)){
             set_timer(state_timer,state_timer_flags,60,env.default_rate);set_timer(invulnerability,invulnerability_flags,200,env.default_rate);
             consume_bomb(*this,env);state=1;

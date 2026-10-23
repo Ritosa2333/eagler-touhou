@@ -9,7 +9,7 @@ const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.
   stdio:['ignore','pipe','pipe'],windowsHide:true});
 let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);
 const sockets=[];
-async function wait(test,label){const end=Date.now()+8000;while(!test()){if(Date.now()>end)throw Error(label+'\n'+log);await new Promise(r=>setTimeout(r,5));}}
+async function wait(test,label,timeout=8000){const end=Date.now()+timeout;while(!test()){if(Date.now()>end)throw Error(label+'\n'+log);await new Promise(r=>setTimeout(r,5));}}
 async function open(query){const ws=new WebSocket(`ws://127.0.0.1:${port}/?${query}`),s={ws,json:[],binary:[],closed:false};sockets.push(ws);ws.binaryType='arraybuffer';
   ws.addEventListener('message',e=>typeof e.data==='string'?s.json.push(JSON.parse(e.data)):s.binary.push(new Uint8Array(e.data)));
   ws.addEventListener('close',()=>s.closed=true);await wait(()=>ws.readyState===1||s.closed,'open');assert.equal(ws.readyState,1);return s;}
@@ -62,6 +62,32 @@ try{
   const next=await open(second.base+'&spectator=timeline_viewer&member=timeline_member_viewer');
   await wait(()=>flatten(next).length===5,'second match prefix');assert.deepEqual(flatten(next),[0,1,2,3,4]);
   assert.equal(host.closed,false);assert.equal(guest.closed,false);assert.equal(lobby.closed,false);
+  if (process.env.TH09_TIMELINE_STRESS === '1') {
+    // Exceed the former 2 MiB archive using the production charge wire format.
+    // Pace below the real gameplay gate rather than disabling rate limits.
+    const frames=Number(process.env.TH09_TIMELINE_STRESS_FRAMES||18000);
+    for (let n=5;n<frames;n++) {
+      const packet=Buffer.alloc(127);frame(n).copy(packet);packet[5]=2;
+      packet.writeFloatLE(-1,75);packet.writeFloatLE(-1,115);
+      second.h.ws.send(packet);
+      if(n%8===0)await new Promise(r=>setTimeout(r,20));
+    }
+    await wait(()=>next.binary.some(b=>b.length%126===0&&
+      new DataView(b.buffer,b.byteOffset+b.length-126,126).getUint32(8,true)===frames-1),'extended charge stream remains live');
+    assert.equal(next.closed,false);assert.equal(second.h.closed,false);assert.equal(second.g.closed,false);
+    const stressLobby=await open(`room=${room}&lobby=timeline_stress&member=timeline_member_stress`);
+    send(stressLobby,{type:'spectate'});
+    await wait(()=>stressLobby.json.some(m=>m.type==='spectator-start'),'late join after former byte limit');
+    const stress=await open(second.base+'&spectator=timeline_stress&member=timeline_member_stress');
+    await wait(()=>stress.binary.some(b=>b.length%126===0&&
+      new DataView(b.buffer,b.byteOffset+b.length-126,126).getUint32(8,true)===frames-1),'late viewer receives complete charged prefix',60000);
+    assert.equal(stress.closed,false);
+    const retained=stress.binary.filter(b=>b[0]===84&&b[1]===57&&b[2]===83&&b[3]===80)
+      .flatMap(b=>{const size=b[4]===2?126:46;assert.equal(b.length%size,0);
+        return Array.from({length:b.length/size},(_,i)=>new DataView(b.buffer,b.byteOffset+i*size,size).getUint32(8,true));});
+    assert.deepEqual(retained,Array.from({length:frames},(_,n)=>n),'every frame in the retained current match arrives once and in order');
+    console.log(`TH09 ${frames} charged frames: existing viewer, late admission and player sockets PASS`);
+  }
   second.h.ws.send(Buffer.from([0xe8,0x53,0x54,0x4f,0x50,1]));
   await wait(()=>directoryRoom()?.spectatable===false,'stopped spectator stream withdraws directory entry');
   assert.equal(second.h.closed,false);assert.equal(second.g.closed,false);

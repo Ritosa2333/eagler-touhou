@@ -1,7 +1,8 @@
 /** Lobby-only probes. These connections never carry input or join a Runtime run. */
+import {createPacketLossTest} from './room-packet-loss.mjs';
 export type ProbeLane = "direct" | "turn" | "relay";
 export interface ProbeMetric { rtt: number | null; jitter: number | null; state: "checking" | "connected" | "unavailable"; at: number }
-interface Link { pc: RTCPeerConnection; channel?: RTCDataChannel; token: string; pending: RTCIceCandidateInit[]; outbound: RTCIceCandidateInit[]; signaled: boolean; started: number }
+interface Link { pc: RTCPeerConnection; channel?: RTCDataChannel; lossChannel?: RTCDataChannel; loss: ReturnType<typeof createPacketLossTest>; token: string; pending: RTCIceCandidateInit[]; outbound: RTCIceCandidateInit[]; signaled: boolean; started: number }
 interface Peer { id: string; started: number; metrics: Record<ProbeLane, ProbeMetric>; links: Partial<Record<"direct" | "turn", Link>>; pings: Map<string, { lane: ProbeLane; at: number }> }
 const emptyMetric = (): ProbeMetric => ({ rtt: null, jitter: null, state: "checking", at: 0 });
 export function recordProbeSample(metric: ProbeMetric, elapsed: number, now: number): ProbeMetric {
@@ -18,7 +19,7 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
   const send = (to: string, lane: ProbeLane, payload: Record<string, unknown>) => options.send({ type: "room-probe", to, lane, ...payload });
   const current = (peer: Peer, lane: "direct" | "turn", link: Link) => enabled && peers.get(peer.id) === peer && peer.links[lane] === link;
   const closePeer = (peer: Peer) => {
-    for (const link of Object.values(peer.links)) { link.channel?.close(); link.pc.close(); }
+    for (const link of Object.values(peer.links)) { link.loss.dispose(); link.lossChannel?.close(); link.channel?.close(); link.pc.close(); }
     peer.pings.clear();
   };
   const clear = () => { clearInterval(timer); timer = 0; enabled = false; for (const peer of peers.values()) closePeer(peer); peers.clear(); };
@@ -37,10 +38,23 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
   };
   const bind = (peer: Peer, lane: "direct" | "turn", link: Link, channel: RTCDataChannel) => {
     if (!current(peer, lane, link)) { channel.close(); return; }
+    if (channel.label === 'room-packet-loss') {
+      link.lossChannel = channel;
+      channel.onmessage = event => {
+        if (!current(peer, lane, link)) return;
+        if (typeof event.data === 'string' && event.data.startsWith('loss1:')) link.loss.receiveProbe(event.data);
+        // Older room probes use their last incoming channel for latency.
+        // Keep those peers' ping/pong working until they refresh as well.
+        else received(peer, lane, event.data, value => channel.readyState === 'open' && channel.send(value));
+      };
+      channel.onopen = () => {if (current(peer, lane, link)) options.changed();};
+      channel.onclose = () => link.loss.interrupt();
+      return;
+    }
     link.channel = channel;
-    channel.onmessage = event => { if (current(peer, lane, link)) received(peer, lane, event.data, value => channel.readyState === "open" && channel.send(value)); };
+    channel.onmessage = event => { if (current(peer, lane, link) && !link.loss.receiveControl(event.data)) received(peer, lane, event.data, value => channel.readyState === "open" && channel.send(value)); };
     channel.onopen = () => tick();
-    channel.onclose = () => { if (current(peer, lane, link)) { peer.metrics[lane] = { ...emptyMetric(), state: "unavailable" }; options.changed(); } };
+    channel.onclose = () => { if (current(peer, lane, link)) { link.loss.interrupt(); peer.metrics[lane] = { ...emptyMetric(), state: "unavailable" }; options.changed(); } };
   };
   const signalDescription = (peer: Peer, lane: "direct" | "turn", link: Link) => {
     if (!current(peer, lane, link)) return;
@@ -61,9 +75,18 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
     if (typeof RTCPeerConnection !== "function" || (lane === "turn" && !iceServers.length)) {
       peer.metrics[lane].state = "unavailable"; return null;
     }
-    peer.links[lane]?.pc.close();
+    peer.links[lane]?.loss.dispose(); peer.links[lane]?.pc.close();
     const pc = new RTCPeerConnection({ iceServers, iceTransportPolicy: lane === "turn" ? "relay" : "all" });
-    const link: Link = { pc, token, pending: [], outbound: [], signaled: false, started: performance.now() };
+    const sendChannel = (channel: RTCDataChannel | undefined, value: string) => {
+      if (!channel || channel.readyState !== 'open' || channel.bufferedAmount > 8192) return false;
+      try {channel.send(value); return true;} catch {return false;}
+    };
+    const loss = createPacketLossTest({
+      control: value => sendChannel(link.channel, value), probe: value => sendChannel(link.lossChannel, value),
+      ready: () => current(peer, lane, link) && link.channel?.readyState === 'open' && link.lossChannel?.readyState === 'open',
+      visible: () => typeof document === 'undefined' || !document.hidden, changed: options.changed,
+    });
+    const link: Link = { pc, loss, token, pending: [], outbound: [], signaled: false, started: performance.now() };
     peer.links[lane] = link;
     pc.onicecandidate = event => {
       if (!event.candidate || !current(peer, lane, link)) return;
@@ -74,6 +97,7 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
     pc.ondatachannel = event => bind(peer, lane, link, event.channel);
     pc.onconnectionstatechange = () => {
       if (current(peer, lane, link) && ["failed", "disconnected", "closed"].includes(pc.connectionState)) {
+        link.loss.interrupt();
         peer.metrics[lane] = { ...emptyMetric(), state: "unavailable" }; options.changed();
       }
     };
@@ -84,6 +108,7 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
       const link = createLink(peer, lane, crypto.randomUUID());
       if (!link) return;
       bind(peer, lane, link, link.pc.createDataChannel("room-latency"));
+      bind(peer, lane, link, link.pc.createDataChannel('room-packet-loss', {ordered: false, maxRetransmits: 0}));
       await link.pc.setLocalDescription(await link.pc.createOffer());
       signalDescription(peer, lane, link);
     } catch { if (peers.get(peer.id) === peer) { peer.metrics[lane].state = "unavailable"; options.changed(); } }
@@ -174,6 +199,9 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
       rtcAvailable: typeof RTCPeerConnection === "function",
       turnConfigured: servers.some(server => (typeof server.urls === "string" ? [server.urls] : server.urls).some(url => /^turns?:/i.test(url))),
     }),
+    testLoss: () => {if (enabled) for (const peer of peers.values()) for (const link of Object.values(peer.links)) link.loss.start();},
+    loss: (id: string, lane: 'direct' | 'turn') => peers.get(id)?.links[lane]?.loss.snapshot() ?? {state: 'unavailable' as const, sent: 0},
+    lossReady: (id: string, lane: 'direct' | 'turn') => peers.get(id)?.links[lane]?.lossChannel?.readyState === 'open',
     metric: (id: string, lane: ProbeLane) => freshProbeMetric(peers.get(id)?.metrics[lane] ?? { ...emptyMetric(), state: supported ? "checking" : "unavailable" }, performance.now()),
   };
 }

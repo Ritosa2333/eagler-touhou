@@ -16,10 +16,10 @@ test('receive history preserves multiple complete matches in exact owned packet 
 });
 test('backlog has a fixed count/byte bound without silently evicting old input',()=>{
   const tape=new SpectatorTape(),frame=new Uint8Array(46);frame[8]=77;
-  for(let i=0;i<32404;i++)tape.append(frame);
+  for(let i=0;i<262144;i++)tape.append(frame);
   const bytes=tape.bytes;assert.throws(()=>tape.append(frame),/积压超限/);
   assert.equal(tape.bytes,bytes);assert.equal(tape.peek()[8],77);
-  for(let i=0;i<32404;i++)tape.shift();assert.equal(tape.bytes,0);
+  for(let i=0;i<262144;i++)tape.shift();assert.equal(tape.bytes,0);
 });
 test('round annotations preserve the input cursor and reset only on a new match',()=>{
   const tape=new SpectatorTape();tape.input(0);tape.roundStart(1,1);
@@ -30,17 +30,18 @@ test('round annotations preserve the input cursor and reset only on a new match'
 });
 
 const packet=(length,frame,round=0)=>{const bytes=new Uint8Array(length),data=new DataView(bytes.buffer);data.setUint32(8,frame,true);if(length===28)data.setUint32(24,round,true);return bytes;};
-test('played confirmed history remains seekable across matches without counting menu frame gaps',()=>{
+test('starting the next played match releases the old archive and keeps current-match seeking',()=>{
   const tape=new SpectatorTape();
   tape.append(packet(102,100));tape.append(packet(46,100));tape.append(packet(28,101,1));tape.append(packet(46,101));tape.append(packet(24,102));
   tape.append(packet(102,900));for(let n=900;n<1100;n++)tape.append(packet(46,n));
   while(tape.peek())tape.shift();
-  assert.equal(tape.bytes,0);assert.equal(tape.packets.length,206,'played input and complete initializers are retained');
-  const view=tape.timeline(950);assert.equal(view.min,0);assert.equal(view.position,52);assert.equal(view.edge,112);assert.equal(view.total,202);
-  assert.deepEqual(view.marks.map(({position,kind})=>[position,kind]),[[0,'match'],[1,'round'],[2,'match']]);
-  const target=tape.locate(1);assert.equal(target.frame,101);tape.restore(target.match);
-  assert.equal(tape.peek().length,46);assert.equal(tape.current.frame,100);assert.equal(tape.begins,1);assert.equal(tape.bytes,0,'rewind is local and does not charge unread-network quota');
-  assert.equal(tape.timeline(101).position,1);assert.equal(tape.timeline(101).edge,112,'live edge is independent of the native refill cursor');
+  assert.equal(tape.bytes,0);assert.equal(tape.packets.length,201,'only the current match is retained');
+  const view=tape.timeline(950);assert.equal(view.min,2);assert.equal(view.position,52);assert.equal(view.edge,112);assert.equal(view.total,202);
+  assert.deepEqual(view.marks.map(({position,kind})=>[position,kind]),[[2,'match']]);
+  assert.equal(tape.locate(1),null,'the previous match is released');
+  const target=tape.locate(3);assert.equal(target.frame,901);tape.restore(target.match);
+  assert.equal(tape.peek().length,46);assert.equal(tape.current.frame,900);assert.equal(tape.begins,0);assert.equal(tape.bytes,0,'rewind is local and does not charge unread-network quota');
+  assert.equal(tape.timeline(901).position,3);assert.equal(tape.timeline(901).edge,112,'live edge is independent of the native refill cursor');
   while(tape.peek())tape.shift();assert.equal(tape.bytes,0);assert.equal(tape.begins,0);
 });
 test('new input during rewind extends the archive exactly once and preserves its receive frontier',()=>{

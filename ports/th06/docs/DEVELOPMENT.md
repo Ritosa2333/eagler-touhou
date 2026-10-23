@@ -24,3 +24,5 @@ npm --prefix launcher run dev:workspace
 ## 源码与验证
 
 游戏逻辑在 `src/`，网络和多人代码在 `src/netplay/`、`src/multiplayer/`，浏览器适配在 `portable/`。核心检查从 `ports/th06/` 运行：`bash scripts/run-core-tests.sh`。CI CMake 预设位于 `CMakePresets.json`；它们是外置资源编译检查，不生成上面的含资源运行包。
+
+旁观以普通 Replay 节奏播放，进度积压由时间线操作定位。原生关卡与 Boss 音乐在重建中跟随场景切换。跨作持续播放检查位于 `ports/th07/tests/netplay-spectator-natural-browser.py`，传入作品、`--runtime-directory`、`--music-directory`、`--font`、`--relay` 和 `--output`；`--physical-input` 覆盖射击、方向、低速和 Bomb 输入。

@@ -71,6 +71,10 @@ export function formatNetplayDiagnostics(net: RuntimeNetplaySnapshot, context: N
     variation: variationValues.length ? `${Math.round(Math.max(...variationValues))}ms` : "--",
     stall: net.active && confirmedAgeMs != null ? `${(confirmedAgeMs / 1000).toFixed(1)}s` : "--",
   }) + ` - ICE ${iceStates.join("/") || "--"}`);
+  if(!net.spectator && net.inputRepairs != null && net.missingInputs != null)
+    setRuntimeDiagnostic('runtimeNetplayRecoveryDiag', t("diagnostics.inputRecovery", {
+      repairs: Math.max(0, Math.trunc(net.inputRepairs)), missing: Math.max(0, Math.trunc(net.missingInputs)),
+    }));
   setRuntimeDiagnostic('runtimeNetplayIceDiag', net.rtcPaths.length
     ? `ICE ${net.rtcPaths.map(entry => `P${Number(entry.peer) + 1} ${entry.path || "?"}/${String(entry.protocol || "?").toLowerCase()}/${entry.family || "?"}`).join(" - ")}`
     : net.transport === "relay" ? t("diagnostics.iceFallback") : t("diagnostics.iceCandidates"));

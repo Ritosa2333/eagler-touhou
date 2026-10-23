@@ -38,11 +38,11 @@ bool decode_session_setup(SessionSetup& current,const std::uint32_t* words,std::
     if(rules){if(words[22]>1)return false;next.challenge_mode=words[22]!=0;}
     next.configured=true;current=next;return true;
 }
-std::uint32_t gameplay_contract(const SessionSetup& setup) noexcept {
+namespace {
+std::uint32_t contract(const SessionSetup& setup,std::uint32_t revision) noexcept {
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
-    // Preserved rescue lives and spirit score extends, alongside challenge rules.
-    word(0x08000015u);word(setup.challenge_mode);
+    word(revision);word(setup.challenge_mode);
     // Fresh combined revisions bind the cooperation rules and each timing
     // envelope. Neither previous topic's recordings may run under this world.
     word(setup.version>=6?0x0800000fu:setup.version==5?0x0800000eu:setup.version==4?0x0800000du:0x0800000cu);
@@ -54,5 +54,12 @@ std::uint32_t gameplay_contract(const SessionSetup& setup) noexcept {
     }
     if(setup.version>=6){word(setup.input_delay_auto);word(setup.prediction_reserve);word(setup.measured_prediction);}
     return Netplay::AdonisGameplayAbi(hash,Netplay::AdonisMode(setup.adonis_mode),setup.input_delay);
+}
+}
+std::uint32_t gameplay_contract(const SessionSetup& setup) noexcept {
+    return contract(setup,0x08000018u);
+}
+std::uint32_t replay_contract_before_stage_bomb_fix(const SessionSetup& setup) noexcept {
+    return contract(setup,0x08000017u);
 }
 }

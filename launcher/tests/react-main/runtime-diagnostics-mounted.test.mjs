@@ -19,7 +19,7 @@ const pinned = path => readUiHistoryText('edee9633e5e3ee79cd2e1aa334f84f6caf7550
 const preferenceKey = 'eagler-touhou-runtime-diagnostics-v1';
 const runtimeIds = ['runtimeBrowserDiag', 'runtimeAudioDiag', 'runtimeRendererDiag', 'runtimeGapDiag'];
 const netplayIds = ['runtimeNetplaySessionDiag', 'runtimeNetplayInputDelayDiag', 'runtimeNetplayRouteDiag',
-  'runtimeNetplayFrameDiag', 'runtimeNetplayRollbackDiag', 'runtimeNetplayQualityDiag', 'runtimeNetplayIceDiag'];
+  'runtimeNetplayFrameDiag', 'runtimeNetplayRollbackDiag', 'runtimeNetplayQualityDiag', 'runtimeNetplayRecoveryDiag', 'runtimeNetplayIceDiag'];
 const diagnosticKeys = ['aria', 'browser', 'audio', 'graphics', 'frameShort', 'audioRobust', 'audioUnderruns'];
 const mounts = new Set(), originalMessages = new Map();
 let env, work, api, React, createRoot, originalAside;
@@ -139,17 +139,21 @@ for (const locale of ['zh-CN', 'en']) {
     expected.setAttribute('aria-label', originalText(locale, 'aria'));
     assert.equal(actual.tagName, 'ASIDE'); assert.deepEqual(attributes(actual), attributes(expected));
     assert.deepEqual([...actual.children].map(node => node.id), [...runtimeIds, ...netplayIds]);
-    assert.equal(actual.children.length, expected.children.length);
-    for (let index = 0; index < actual.children.length; index++) {
-      assert.equal(actual.children[index].tagName, expected.children[index].tagName);
-      assert.deepEqual(attributes(actual.children[index]), attributes(expected.children[index]));
+    assert.equal(actual.children.length, expected.children.length + 1);
+    for (const child of actual.children) {
+      if(child.id==='runtimeNetplayRecoveryDiag'){
+        assert.equal(child.tagName,'SPAN');assert.equal(child.hidden,true);continue;
+      }
+      const original=expected.querySelector(`#${child.id}`);
+      assert.equal(child.tagName, original.tagName);
+      assert.deepEqual(attributes(child), attributes(original));
     }
     assert.deepEqual(runtimeIds.map(id => element(id).textContent), [originalText(locale, 'browser', {value: 'Synthetic Browser 100'}),
       originalText(locale, 'audio', {value: '--'}), originalText(locale, 'graphics', {value: '--'}),
       `${originalText(locale, 'frameShort', {hz: '--', age: ''})} - C-- - P-- - gap -- - lock off`]);
     for (const id of netplayIds) {
       assert.equal(element(id).hidden, true);
-      assert.equal(element(id).textContent, originalAside.querySelector(`#${id}`).textContent);
+      assert.equal(element(id).textContent, originalAside.querySelector(`#${id}`)?.textContent ?? '输入 --');
     }
   });
 
@@ -196,7 +200,7 @@ for (const locale of ['zh-CN', 'en']) {
       await f.render({netplay: {[selected]: `Synthetic owner line: ${selected}`}});
       for (const id of netplayIds) {
         assert.equal(element(id).hidden, id !== selected, `Only ${selected} is shown`);
-        assert.equal(element(id).textContent, id === selected ? `Synthetic owner line: ${id}` : originalAside.querySelector(`#${id}`).textContent);
+        assert.equal(element(id).textContent, id === selected ? `Synthetic owner line: ${id}` : originalAside.querySelector(`#${id}`)?.textContent ?? '输入 --');
       }
     }
     const lines = Object.fromEntries(netplayIds.map(id => [id, `Synthetic owner line: ${id}`]));

@@ -6,6 +6,8 @@ namespace Netplay::SideEffects
 {
 void SetSpeculative(bool speculative);
 bool IsSpeculative();
+// Read-only Replay music commands follow the reconstructed native timeline.
+bool SuppressMusic();
 
 // Reconcile the final long-lived BGM selection after rollback while leaving
 // already-presented one-shot sounds suppressed during resimulation.

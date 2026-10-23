@@ -14,6 +14,9 @@ export interface RoomNetworkPresentation {
   metric(peer: string, lane: ProbeLane): ProbeMetric;
   capabilities(): ReturnType<ReturnType<typeof createRoomNetwork>['capabilities']>;
   retry(peer?: string): void;
+  testLoss(): void;
+  loss: ReturnType<typeof createRoomNetwork>['loss'];
+  lossReady: ReturnType<typeof createRoomNetwork>['lossReady'];
 }
 export interface RoomViewContext {
   transfer?: import('../../models/transfer').TransferSnapshot;

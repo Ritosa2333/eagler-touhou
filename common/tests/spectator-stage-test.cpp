@@ -82,11 +82,14 @@ int main() {
         }
         auto ready = initial; ready.kind = SpectatorEventKind::Bootstrap; ready.state.clear(); ready.frame = 999; ready.serial = 2;
         assert(!playback.Receive(ready)); ready.frame = 1000; assert(playback.Receive(ready));
-        assert(playback.Target() == 700 && !playback.Receive(ready));
+        assert(playback.Target() == 600 && !playback.FastForwarding() && !playback.Receive(ready));
         unsigned value = 0, restores = 0, ticks = 0;
         auto restore = [&](const auto& cp) {value = cp.state[0]; ++restores; return true;};
         auto tick = [&](const auto& packet, bool) {value += packet.inputs[0].buttons; ++ticks; return true;};
         auto yield = [] {return false;};
+        assert(playback.Step(restore, tick, yield, 1));
+        assert(ticks == 0 && restores == 1 && playback.Position() == 600);
+        assert(playback.Control(SpectatorStagePlayback::Action::Seek, boss.frame));
         assert(playback.Step(restore, tick, yield, 300));
         assert(value == 110 && ticks == 100 && restores == 1 && playback.Position() == 700);
         assert(playback.Control(SpectatorStagePlayback::Action::Pause));
@@ -446,12 +449,12 @@ int main() {
         assert(playback.Position() == playback.Edge() && playback.Following() && !playback.Paused() && !playback.Seeking());
         assert(!playback.WaitingForLiveInput()); // Ended at the edge is terminal, not a stalled live stream.
     }
-    {
-        // Bootstrap reconstructs the newest retained entry at a bounded
-        // background rate. The adapter keeps this hidden until ready; later
-        // passive Following never re-arms acceleration.
+    for (const auto game : {'6', '7', '8', 'A', 'B', 'F'}) {
+        // Joining restores the available stage start without chasing a Boss.
+        // Only an explicit seek/live command may accelerate any of the six
+        // cooperative titles, and incoming frames cannot re-arm that command.
         SpectatorStagePlayback playback;
-        SpectatorStageEvent cp; cp.game = '6'; cp.playerCount = 2;
+        SpectatorStageEvent cp; cp.game = game; cp.playerCount = 2;
         cp.sessionId = cp.gameplayAbi = cp.schema = cp.serial = 1;
         cp.frame = 0; cp.stage = 1; cp.state = {1};
         assert(playback.Receive(cp));
@@ -466,16 +469,27 @@ int main() {
         auto ready = cp; ready.kind = SpectatorEventKind::Bootstrap;
         ready.state.clear(); ready.frame = 200; ready.serial = 2;
         assert(playback.Receive(ready));
-        assert(playback.Seeking() && playback.FastForwarding() && playback.Target() == 100);
+        assert(playback.Seeking() && !playback.FastForwarding() && playback.Target() == 0);
+        SpectatorStageView view;
+        assert(!playback.Initialized() && !view.State(playback));
+        assert(!view.Control(playback,SpectatorStageView::Run(playback).c_str(),"seek",node.frame));
 
         unsigned ticks = 0;
-        auto restore = [](const auto&) { return true; };
+        unsigned restores=0;
+        auto restore = [&](const auto& event) {
+            assert(event.kind==SpectatorEventKind::Checkpoint && event.serial==cp.serial);
+            ++restores; return true;
+        };
         auto tick = [&](const auto&, bool) { ++ticks; return true; };
         auto yield = [] { return false; };
-        while (playback.Seeking()) {
-            assert(playback.FastForwarding());
-            assert(playback.Step(restore, tick, yield, 32));
-        }
+        assert(playback.Step(restore, tick, yield, 1));
+        assert(ticks==0 && restores==1 && playback.Position()==0 && !playback.Seeking());
+        assert(playback.Initialized() && view.State(playback));
+        assert(playback.Step(restore, tick, yield, 1));
+        assert(ticks==1 && playback.Position()==1 && !playback.FastForwarding());
+        assert(playback.Control(SpectatorStagePlayback::Action::Seek,node.frame));
+        while(playback.Seeking())assert(playback.Step(restore,tick,yield,32));
+        assert(restores==1); // A forward Boss navigation never rebuilds the current stage.
         assert(ticks == 100 && playback.Position() == 100 && !playback.Seeking());
         assert(!playback.Following() && !playback.FastForwarding());
 
@@ -524,22 +538,23 @@ int main() {
         for (std::uint32_t frame = 200; frame < 240; ++frame) {
             input.frame = frame; assert(playback.Receive(input));
         }
+        assert(playback.Control(SpectatorStagePlayback::Action::Live));
         assert(playback.Target() == fixedTarget);
         assert(playback.Step(restore, tick, yield, 512));
         assert(playback.Position() == fixedTarget && playback.Following());
         assert(!playback.Seeking() && !playback.FastForwarding());
 
-        // Once the fixed Live destination is reached, even a persistent edge
-        // backlog advances one normal tick per presentation callback.
-        const auto start = playback.Position();
+        // Following plays one tick per normal callback, even when the source
+        // sends new inputs faster. A fixed Live seek does not turn into a loop.
         const auto targetBeforeFollow = playback.Target();
         for (std::uint32_t frame = 240; frame < 300; ++frame) {
             input.frame = frame; assert(playback.Receive(input));
-            assert(!playback.FastForwarding());
-            assert(playback.Step(restore, tick, yield, playback.FastForwarding() ? 32 : 1));
-            assert(playback.Position() == start + frame - 239);
+            const auto before = playback.Position();
+            const auto budget = playback.FastForwarding() ? 32u : 1u;
+            assert(playback.Step(restore, tick, yield, budget));
+            assert(playback.Position() == std::min(before + budget, playback.Edge()));
             assert(playback.Target() == targetBeforeFollow);
-            assert(playback.Following() && !playback.Seeking());
+            assert(playback.Following() && !playback.Seeking() && !playback.FastForwarding());
         }
     }
     {
@@ -659,22 +674,16 @@ int main() {
         assert(!reader.Value(number) && !reader.Done());
         const std::vector<std::uint8_t> badBool{2}; SpectatorScalars::Reader bad(badBool);
         assert(!bad.Value(flag));
-        // Larger local preimages must still fail the unchanged wire gate.
+        // Stage headers have a fixed budget and never use a compressed world image.
         const std::vector<std::uint8_t> large(SpectatorStageMaxStateBytes + 17, 1);
         SpectatorScalars::Writer ordinary;
         assert(!ordinary.Array(large) && !ordinary.Good());
         assert(ordinary.Bytes().size() == SpectatorStageMaxStateBytes);
-        SpectatorScalars::Writer local(large.size());
-        assert(local.Array(large) && local.Good());
         SpectatorStageEvent oversized; oversized.game='6'; oversized.playerCount=3;
         oversized.sessionId=oversized.gameplayAbi=oversized.serial=oversized.schema=1;
-        oversized.frame=0; oversized.stage=1; oversized.state=local.Bytes();
+        oversized.frame=0; oversized.stage=1; oversized.state=large;
         std::vector<std::uint8_t> untouched{7};
         assert(!EncodeSpectatorStageEvent(oversized,&untouched) && untouched == std::vector<std::uint8_t>{7});
-        assert(!local.Value(std::uint8_t(1)) && !local.Good());
-        SpectatorScalars::Writer zero(0), excessive(SpectatorScalars::MaxLocalBytes+1);
-        assert(!zero.Good() && !zero.Value(1));
-        assert(!excessive.Good() && !excessive.Value(1));
         SpectatorStagePlayback playback; SpectatorStageView view;
         assert(!view.State(playback));
         SpectatorStageEvent cp; cp.game = '8'; cp.playerCount = 2; cp.sessionId = 1;

@@ -2,7 +2,9 @@ import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
 import {useLocale} from '../../i18n';
 import {roomPresentation} from './presentation';
-export function RoomPersonal({state, service, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
+import {RoomPacketLoss} from './RoomPacketLoss';
+import type {RoomNetworkPresentation} from './types';
+export function RoomPersonal({state, service, network, assetUrl, th09NetworkOverlayOpen, hidden}: {state: RoomOwnerSnapshot; service: MultiplayerRoomService; network: RoomNetworkPresentation; assetUrl(path: string): string; th09NetworkOverlayOpen: boolean; hidden: boolean}) {
   const {t} = useLocale(), {room, loadout, label, config} = roomPresentation(state, t)!;
   const input = useRef<HTMLInputElement>(null), latest = useRef(service); latest.current = service;
   const moderated = !!state.nickname, moderatedRef = useRef(moderated); moderatedRef.current = moderated;
@@ -32,5 +34,6 @@ export function RoomPersonal({state, service, assetUrl, th09NetworkOverlayOpen, 
     </section>
     <div className="mp-local-player" id="mpLocalPlayer" hidden={!room.synced || state.seat == null}><button className="mp-stand-button" id="mpStandUp" type="button" onClick={service.standUp}>{t('multiplayer.leaveSeat')}</button><div className="mp-seated-loadout">{arrow('mpLoadoutPrevSeat', true)}<span id="mpLocalRoleLabel" hidden={config.inGameSelection}>{label(state.preferredLoadout)}</span>{arrow('mpLoadoutNextSeat', false)}</div></div>
     <button className="mp-game-check-button" id="mpCheckGame" type="button" hidden={state.seat == null || th09NetworkOverlayOpen} disabled={state.seat == null || !!room.phase && room.phase !== 'lobby' || state.ready || state.checkBusy || state.launchBusy} onClick={() => {void service.checkGame();}}>{t(state.checkBusy ? 'multiplayer.checkingGame' : 'multiplayer.checkGame')}</button>
+    <RoomPacketLoss state={state} network={network}/>
   </div>;
 }

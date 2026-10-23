@@ -385,10 +385,13 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         recovering = null;
         noticeText = options.translate(mine ? 'lobby.releaseChanged' : 'lobby.released');
       }
-      const rooms = message.rooms
+      const candidates = message.rooms
         .slice(0, 200)
         .map(parseRoom)
         .filter((room): room is DirectoryRoom => room !== null);
+      // Older relays may retain empty rows while a previous Runtime socket
+      // remains open. Keep rows and their total consistent across versions.
+      const rooms = candidates.filter(room => room.players > 0 || room.spectators > 0);
       loadedProduct =
         typeof message.product === 'string' ? message.product : first ? '' : requestedProduct;
       if (loadedProduct === snapshot.selectedProduct) {
@@ -401,7 +404,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         notice: noticeText,
         supportsRecovery: message.membershipRecovery === true,
         rooms: Object.freeze(rooms),
-        total: bounded(message.total, 100000),
+        total: Math.max(rooms.length, bounded(message.total, 100000) - (candidates.length - rooms.length)),
         connection: 'live',
       });
       if (first && snapshot.selectedProduct) refresh();

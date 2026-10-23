@@ -6,16 +6,11 @@
 #include <type_traits>
 
 namespace Netplay::SpectatorScalars {
-inline constexpr std::size_t MaxLocalBytes = 8u * 1024u * 1024u;
 // The title explicitly visits named scalar fields in a versioned schema.
 // Native structs, pointers, padding and object ownership never enter the wire.
 class Writer {
 public:
     Writer() = default;
-    // A title may encode a larger named state before bounded compression.
-    // This local allocation budget never changes the protocol's wire limit.
-    explicit Writer(std::size_t maxBytes)
-        : limit_(maxBytes), good_(maxBytes > 0 && maxBytes <= MaxLocalBytes) {}
     template<class T> bool Value(const T& value) {
         static_assert(std::is_arithmetic_v<T> || std::is_enum_v<T>, "Visit named scalar fields only");
         if constexpr (std::is_enum_v<T>) return Value(static_cast<std::underlying_type_t<T>>(value));

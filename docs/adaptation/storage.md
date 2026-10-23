@@ -28,6 +28,30 @@
 | <a id="save-05"></a>SAVE-05 · 离线读取已有数据 | 已安装并运行一次后断网，关闭页面再打开。 | 同一份用户数据可继续读取和保存。 |
 | <a id="save-06"></a>SAVE-06 · 游戏包与用户数据分开 | 安装新版游戏包，再读取原有成绩与 Replay。 | 游戏资源版本切换后用户数据保留。 |
 
+## Replay 音频接管
+
+播放器按回放控制能力组织，作品类型与普通版、MP 的资源和存储身份由各作维护。
+
+| 播放器类别 | 当前作品 | 共享入口 | 本作职责 |
+| --- | --- | --- | --- |
+| 关卡录像 | th06、th07、th08、th10、th11、th15 的普通版与 MP | `common/browser/local-replay.mjs`、`local-replay-native.mjs` | 解析格式、选关初始化、逻辑步进、结束判定与音频输出 |
+| 对战录像 | th09 普通版与 MP | `common/browser/versus-replay-th09.mjs`、`playback-clock.mjs` | 原生双人回放、对局信息、回合边界与本作音频接口 |
+| 游戏内菜单回放 | th075 普通版与 MP、th20 普通版 | 本作菜单与游戏循环 | 原生选片、回放操作与音频生命周期 |
+
+th09 对战播放器保留完整的本作实现，普通版和 MP 打包均直接读取共享目录。开发 shell 使用逐字节一致的本地副本，通过 `node common/tools/sync-versus-replay.mjs --check` 核对。该模块随本作的 `auto-replay.mjs` 一同发布，继续读取对局与回合信息。新增对战作品时按本作格式和原生 ABI 接入，再提取已验证的共同能力。
+
+th06、th07 通过原生 `Render()` 推进录像，停止自动迭代时保留音频设备，声音由 `SoundPlayer` 与本作前后台入口管理。目录 Runtime 通过独立的输出适配接口交接设备和 PCM 填充；两类入口分别核对。
+
+录像工作台在同一个游戏 iframe 中切换文件和关卡。共享 `local-replay` 桥先停止普通循环，在原生录像打开完成后恢复音频设备，再由录像时钟推进固定逻辑步。浏览器音频恢复异步进行，命令立即回复；等待输出就绪期间保留当前逻辑帧。
+
+目录 Runtime 通过 `pauseAudio` 连接本作原生输出，已有前台恢复函数通过 `resumeAudio` 继续管理 SDL 节点连接。暂停、定位、结束与后台共同决定输出状态；定位结束保留原来的暂停选择，并清理跳过区间的瞬时音效。切换文件后重新应用输出状态，关闭工作台时暂停输出。
+
+th08 普通版与 MP 的 `eagler_replay_audio_pump`、th10 普通版与 MP 的 `sdl_audio_pump` 在录像逻辑步后填充 PCM，持续提供 OGG 背景音乐。th11、th15 的原生录像步包含 PCM 填充。th09 使用对战播放器中的恢复、音频填充和静音流程。
+
+验收首次选片、连续换片、重播、暂停定位与前后台切换。分别检查 BGM 和 SFX，确认定位结束后按原来的暂停选择恢复输出，跳过区间的瞬时音效不补播。浏览器恢复测试包含 pending 的 `AudioContext.resume()`，核对命令响应和逻辑帧保持。
+
+共享桥的行为测试位于 [`local-replay-bridge.test.mjs`](../../common/tests/local-replay-bridge.test.mjs)。[`test-replay-audio.py`](../../launcher/tests/browser/test-replay-audio.py) 通过 `--game` 和 `--multiplayer` 选择 th08、th10、th11、th15 的正式 Runtime。明确提供录像、DATA、OGG 与字体后，在 iframe 中分别采集 BGM 和 SFX 音频图，检查持续填充、换片、暂停与定位，并记录输入哈希。
+
 ## 记录
 
 在本作 `ADAPTATION.md` 的“运行验收记录”按对应编号填写操作和结果。通过时链接[验证记录](record-template.md)，并写明本次构建模式。

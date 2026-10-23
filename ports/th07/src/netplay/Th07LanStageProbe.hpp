@@ -8,6 +8,7 @@ namespace Netplay::Th07LanStageProbe
 int RunCalcChain();
 bool Requested();
 bool Active();
+bool SpectatorViewing();
 // Production RTC negotiation starts while the title/loading chain is still
 // presenting. Stage 1 must not be dispatched until this becomes true.
 bool TransportReady();

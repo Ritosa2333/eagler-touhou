@@ -16,8 +16,27 @@ export function listLocalReplayFiles(fs,root,validate,describe=(path)=>({path}))
   return files;
 }
 // Adapt the small native ABI without teaching the host any Replay file format.
-export function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,onState,onError}) {
+export function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,pauseAudio,resumeAudio,onState,onError}) {
   const api=key=>{const c=getCore();return c[key]??c['_'+key];};
+  let audioPaused=true,outputPaused=null,wasSeeking=false,resuming=null;
+  function discardTransientSounds(){const pool=getModule()?.eaglerSfxOutput;if(pool)for(const voice of pool.voices.values())if(!voice.loop)pool.stop(voice);}
+  function audioState({paused,hidden,seeking,ended}){
+    audioPaused=paused||hidden||seeking||ended;
+    if(seeking!==wasSeeking){discardTransientSounds();wasSeeking=seeking;}
+    const context=getModule()?.SDL3?.audioContext;
+    const gated=!!context&&context.state!=='running';
+    const stop=audioPaused||gated;
+    const changed=outputPaused!==stop;
+    if(changed){pauseAudio(stop);outputPaused=stop;}
+    // A policy-blocked resume may remain pending. It never owns the command
+    // queue, and logical playback waits for output instead of queuing SFX.
+    if(!audioPaused&&(changed||gated)&&resuming?.context!==context){
+      const pending={context};resuming=pending;
+      try{Promise.resolve(resumeAudio?resumeAudio():context?.resume()).catch(()=>{}).finally(()=>{if(resuming===pending)resuming=null;});}
+      catch{resuming=null;}
+    }
+    return !gated||audioPaused;
+  }
   const heap=()=>getModule().HEAPU8??new Uint8Array(getCore().memory.buffer);
   const text=p=>{if(!p)throw Error('录像无法解析');const b=heap(),end=b.indexOf(0,p);if(end<0||end-p>65536)throw Error('录像信息无效');return new TextDecoder().decode(b.subarray(p,end));};
   // Do not put a NUL escape in an inline shell string. HTML optimizers may
@@ -35,15 +54,16 @@ export function createNativeLocalReplay({core: getCore,module: getModule,physica
       const bytes=getModule().FS.readFile(p);if(!bytes.length||bytes.length>64*1024*1024)throw Error('录像大小无效');
       return bytesCall(bytes,(ptr,size)=>bytesCall(cbytes(p),name=>{const d=JSON.parse(text(fn(ptr,size,name)));
         if(Array.isArray(d.nameBytes))d.name=new TextDecoder('shift_jis').decode(new Uint8Array(d.nameBytes)).replace(/\0.*$/,'').trim();return d;}));},
-    open(path,stage){if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
+    open(path,stage){outputPaused=null;if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
       if(bytesCall(bytes,p=>api('eagler_replay_open')(p,stage))!==1)throw Error(api('eagler_replay_error')?text(api('eagler_replay_error')()):'录像原生启动失败');},
     step(render){const ok=stepReplay?stepReplay(render):api('eagler_replay_step')?.(+render)===1;
-      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));return ok;},
+      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));
+      (api('eagler_replay_audio_pump')??api('sdl_audio_pump'))?.();return ok;},
     present(){api('eagler_replay_present')?.();},
     deferPresentation(){return typeof api('eagler_replay_present')==='function';},
     state(){const preparing=api('eagler_replay_preparing'),extra=preparing?{preparing:!!preparing()}:{};
       if(replayState)return {...replayState(),...extra};const p=api('eagler_replay_state')(),v=Array.from(new Uint32Array(heap().buffer,p,5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],...extra};},
-    stopLoop,onState,onError,
+    stopLoop,...(pauseAudio?{audioState}:{}),onState,onError,
   });
-  return bridge;
+  return {...bridge,get active(){return bridge.active;},get audioPaused(){return audioPaused;}};
 }

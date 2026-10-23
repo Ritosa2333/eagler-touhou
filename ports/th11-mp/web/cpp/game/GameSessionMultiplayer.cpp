@@ -7,8 +7,9 @@ bool GameSession::multiplayer_rollback_boundary(){
     if(!animations.RollbackFrameActive())return false;
     multiplayer_rollback_boundary_requested=true;return true;
 }
-bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions& options){
+bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions& options,const std::array<ReplayStageState,3>* stream){
     if(!options.valid())return fail("Invalid TH11 multiplayer options");
+    multiplayer_stream_pending=stream!=nullptr;if(stream)multiplayer_stream_entries=*stream;
     multiplayer_active=true;multiplayer_options=options;multiplayer_frame=0;multiplayer_pause_held={};
     reset_state();title.reset();practice={};interactive=false;next_continues=0;
     // A negotiated restart or replay seek can rebuild from a paused session.
@@ -26,7 +27,7 @@ bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions
     if(!begin(data,options.stage,options.selections[0]/3,options.selections[0]%3,options.difficulty,false,false,false))return false;
     multiplayer_frame=0;return true;
 }
-bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& inputs){
+bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& inputs,const std::function<void()>& replay_entry){
     if(!multiplayer_active||!battle||!error.empty())return false;
     bool pause_edge=false;
     for(unsigned i=0;i<multiplayer_options.seat_count;++i){const auto& in=inputs[i];if(in.touch_mode<0||in.touch_mode>3||!std::isfinite(in.touch_x)||!std::isfinite(in.touch_y))return fail("Invalid MP movement input");pause_edge|=in.pause&&!multiplayer_pause_held[i];multiplayer_pause_held[i]=in.pause;}
@@ -81,10 +82,10 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
         return true;
     }
     if(state.phase!=GameSessionPhase::stage)return fail("Invalid MP phase");
-    if(!battle->update([&]{battle->mp_set_input(inputs);return true;})){error="MP battle update failed: "+std::to_string(battle->last_error)+" "+battle->error;return false;}
+    if(!battle->update([&]{if(replay_entry)replay_entry();battle->mp_set_input(inputs);return true;})){error="MP battle update failed: "+std::to_string(battle->last_error)+" "+battle->error;return false;}
     if(battle->game_over_requested)return multiplayer_open_result(false,inputs[0].held);
     const auto exit=battle->completion.state.exit;
-    if(exit==StageExit::NextStage){const u32 next=u32(battle->completion.state.next_stage);if(!source||!battle->next_stage(*source,next))return fail("MP stage transition failed");state.stage=next;state.frame=0;}
+    if(exit==StageExit::NextStage){recording_seed=animations.script_rng.seed;const u32 next=u32(battle->completion.state.next_stage);if(!source||!battle->next_stage(*source,next))return fail("MP stage transition failed");state.stage=next;state.frame=0;}
     else if(exit==StageExit::Ending)return multiplayer_open_ending(inputs[0].held);
     else if(exit==StageExit::Results)return multiplayer_open_result(true,inputs[0].held);
     else if(exit==StageExit::ReplayEnd||exit==StageExit::Title)return multiplayer_open_result(false,inputs[0].held);

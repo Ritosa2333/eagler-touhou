@@ -4,7 +4,7 @@
 #include "../multiplayer/NetplayRuntime.hpp"
 #include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/ReplayArchive.hpp"
-#include "../multiplayer/SpectatorStageCheckpoint.hpp"
+#include "../multiplayer/SpectatorReplayStart.hpp"
 #include "../game/MultiplayerPilot.hpp"
 #endif
 #include "ThpracUi.hpp"
@@ -62,12 +62,12 @@ bool mp_tick(u32 held,bool physical=true){
  if(!network.Pump(true)){last_error=network.Error();return false;}
  if(network.StagePlaybackReady()){
   const auto begin=emscripten_get_now();auto& playback=network.StagePlayback();
-  // Bootstrap reconstruction and explicit, fixed-target seek/live requests
-  // may use a bounded rebuild budget. Passive live following stays at 1x.
+  // Reconstruction and delayed live inputs share a bounded catch-up budget.
+  // Historical Play consumes one native tick per presentation.
   const bool fast_forwarding=playback.FastForwarding();
   const bool ok=playback.Step([&](const Netplay::SpectatorStageEvent& cp){
     app->audio_device.spectator_silent(true);
-    return cp.schema==multiplayer::SpectatorStageState::Schema&&multiplayer::SpectatorStageCheckpoint::Restore(*app,network.Setup(),mp_menu,cp.frame,cp.state,last_error);
+    return cp.schema==multiplayer::SpectatorStageState::Schema&&multiplayer::SpectatorReplayStart::Restore(*app,network.Setup(),mp_menu,cp.frame,cp.state,last_error);
    },[&](const auto& input,bool historical){return mp_apply_confirmed(input,historical||fast_forwarding);},
    [&]{return app->pending_load||emscripten_get_now()-begin>=4;},fast_forwarding?240:1);
   app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());
@@ -92,14 +92,19 @@ bool mp_tick(u32 held,bool physical=true){
  Netplay::SpectatorStagePublisher::Frame spectator;bool record_spectator=!network.ReadOnly()&&network.Setup().local_player==0;
  if(record_spectator){
   spectator.frame=frame;spectator.stage=mp_spectator_stage;spectator.inputs=decision.inputs;spectator.hasInputs=true;
-  if(app->scene()&&unsigned(app->progress.stage)!=mp_spectator_stage&&multiplayer::SpectatorStageCheckpoint::Boundary(*app)){
-   if(multiplayer::SpectatorStageCheckpoint::Capture(*app,network.Setup(),spectator_menu_before,frame,spectator.initializer,mp_spectator_error)){
+
+ }
+ const auto replay_activation=app->replay?app->replay->activation_count():0;
+ if(app->scene()){mp_stage=unsigned(app->progress.stage);app->scene()->battle.mp_input(lanes);}const auto stage=mp_stage;
+ if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
+ if(record_spectator){
+  if(app->scene()&&app->replay&&app->replay->activation_count()!=replay_activation&&
+     unsigned(app->progress.stage)!=mp_spectator_stage){
+   if(multiplayer::SpectatorReplayStart::Capture(*app,network.Setup(),spectator_menu_before,frame,spectator.initializer,mp_spectator_error)){
     spectator.schema=multiplayer::SpectatorStageState::Schema;spectator.stage=mp_spectator_stage=unsigned(app->progress.stage);
    }
   }
  }
- if(app->scene()){mp_stage=unsigned(app->progress.stage);app->scene()->battle.mp_input(lanes);}const auto stage=mp_stage;
- if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
  if(mp_recording&&!mp_replay.Append(frame,stage,decision.inputs.data(),network.Setup().player_count)){last_error="MP recording capacity exhausted";return false;}
  if(record_spectator&&mp_spectator_stage)network.RecordSpectatorFrame(std::move(spectator));
  if(!network.MarkSimulated(frame,decision)){last_error=network.Error();return false;}
@@ -116,7 +121,7 @@ PracticeCadence cadence;
 touhou::sdl::PresentationCadence presentation;bool limit_presentation_60=false;
 GameInput controls;
 SDL_Joystick* controller=nullptr;
-bool loading_held=false;
+bool loading_held=false,loading_preserve_keyboard=false;
 bool running=false,suspended=false,lost_focus=false,music_enabled=true,room_preview=false;u32 render_scale=1;
 u32 loop_epoch=0;
 #if TH15_PRESENTATION_LAB
@@ -139,7 +144,8 @@ i32 draw_frame_rate(void*){
  return app->captions.enqueue({{588,470,0},style,text})?1:5;
 }
 void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystick(id);}
-void clear_inputs(){practice_pointers.reset();th15_browser_keyboard_reset();ThpracUi::reset_input();EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();controls={};if(app){app->practice.input.reset();app->keyboard_state={};app->touch={};
+// Keep the prior sample on stage loads so held Bomb/Pause keys gain no new edge.
+void clear_inputs(bool preserve_keyboard=false){practice_pointers.reset();if(!preserve_keyboard)th15_browser_keyboard_reset();ThpracUi::reset_input();EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});for(auto& key:keyboard_map)if(!preserve_keyboard)key.hosted=false;SDL_ResetKeyboard();gestures.reset();if(!preserve_keyboard)controls={};if(app){app->practice.input.reset();app->keyboard_state={};app->touch={};
 #if TH15_MULTIPLAYER
  if(!mp_started)
 #endif
@@ -348,11 +354,11 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   // Startup retains native 180 loading frames; subsequent loads wait for
   // resource completion. Neither path accumulates gameplay simulation debt.
   if(app->loading_waiting()){
-   if(!loading_held)clear_inputs();loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
+   if(!loading_held){loading_preserve_keyboard=app->pending_load==2;clear_inputs(loading_preserve_keyboard);}loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
    if(!(app->loading_startup?app->advance_loading(delta):app->complete_loading())){running=false;th15_browser_frame(0,emscripten_get_now()-begin,0);return EM_FALSE;}
    app->audio_device.pump();return EM_TRUE;
   }
-  if(loading_held){loading_held=false;clear_inputs();cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
+  if(loading_held){loading_held=false;clear_inputs(loading_preserve_keyboard);loading_preserve_keyboard=false;cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
 #if TH15_PRESENTATION_LAB
   // Resource readiness uses its isolated loading clock, never game/replay ticks.
   // A freeze requested during startup must not strand the loading barrier.

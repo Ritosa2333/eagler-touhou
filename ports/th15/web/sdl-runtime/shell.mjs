@@ -6,7 +6,7 @@ import {scanCodes} from './keyboard.mjs';
 // Generated from eagler-common/browser/local-replay*.mjs.
 // The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
 // This host owns only asynchronous command ordering and presentation pacing.
-function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
+function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},audioState=()=>true,onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
   let selected=null,path='',paused=false,rate=1,target=null,startFrame=0,last=null,credit=0,animation=0,continuation=0,closed=false,lastReport=-Infinity;
   let channel=null,pendingTask=null,taskSerial=0;
   function soon(fn){
@@ -19,10 +19,11 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
   }
   function cancelScheduled(){if(animation)cancel(animation);if(continuation){if(cancelDeferred)cancelDeferred(continuation);else pendingTask=null;}animation=continuation=0;}
   function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected});}
+  function syncAudio(){return audioState({paused:closed||!selected||paused,hidden:hidden(),seeking:target!==null,ended:!!selected&&!!state().ended})!==false;}
   function schedule(){if(animation||continuation||closed)return;if(target!==null&&!hidden())continuation=soon(draw);else animation=raf(draw);}
   function draw(time){animation=continuation=0;if(closed||!selected)return;
     try {
-      if(hidden()){last=null;schedule();return;}
+      if(!syncAudio()||hidden()){last=null;schedule();return;}
       const delta=last===null?0:Math.min(.25,Math.max(0,(time-last)/1000));last=time;
       const unlimited=target!==null||rate===0;
       credit=Math.min(240,credit+delta*60*rate);
@@ -39,8 +40,9 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
       if(count&&!shown)present();
       if(!unlimited)credit=Math.max(0,credit-count);
       if(target!==null&&!current.preparing&&(current.frame>=target||current.ended)){target=null;last=null;credit=0;report();}
+      syncAudio();
       if(time-lastReport>=100){lastReport=time;report();}schedule();
-    }catch(error){paused=true;target=null;report();onError(error);}
+    }catch(error){paused=true;target=null;syncAudio();report();onError(error);}
   }
   const reset=()=>{last=null;credit=0;target=null;};
   async function restart(nextPath,stage){
@@ -48,7 +50,7 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
     // complete. The startup picture's first-frame notification is too early.
     await prepare();if(closed)throw Error('录像播放器已关闭');
     cancelScheduled();stopLoop();
-    try{await open(nextPath,stage);}catch(error){selected=null;reset();onState(null);throw error;}
+    try{await open(nextPath,stage);}catch(error){selected=null;reset();syncAudio();onState(null);throw error;}
     if(closed)throw Error('录像播放器已关闭');
     reset();startFrame=state().bootstrapTarget??0;target=startFrame||state().preparing?startFrame:null;
   }
@@ -73,9 +75,9 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
         }else throw Error('不支持的录像操作');
         last=null;credit=0;cancelScheduled();schedule();
       }
-      report();return {};
+      syncAudio();report();return {};
     },
-    close(){closed=true;cancelScheduled();channel?.port1.close();channel?.port2.close();selected=null;},
+    close(){closed=true;cancelScheduled();channel?.port1.close();channel?.port2.close();selected=null;syncAudio();},
     get active(){return !!selected&&!closed;},
   };
 }
@@ -97,8 +99,27 @@ function listLocalReplayFiles(fs,root,validate,describe=(path)=>({path})) {
   return files;
 }
 // Adapt the small native ABI without teaching the host any Replay file format.
-function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,onState,onError}) {
+function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,pauseAudio,resumeAudio,onState,onError}) {
   const api=key=>{const c=getCore();return c[key]??c['_'+key];};
+  let audioPaused=true,outputPaused=null,wasSeeking=false,resuming=null;
+  function discardTransientSounds(){const pool=getModule()?.eaglerSfxOutput;if(pool)for(const voice of pool.voices.values())if(!voice.loop)pool.stop(voice);}
+  function audioState({paused,hidden,seeking,ended}){
+    audioPaused=paused||hidden||seeking||ended;
+    if(seeking!==wasSeeking){discardTransientSounds();wasSeeking=seeking;}
+    const context=getModule()?.SDL3?.audioContext;
+    const gated=!!context&&context.state!=='running';
+    const stop=audioPaused||gated;
+    const changed=outputPaused!==stop;
+    if(changed){pauseAudio(stop);outputPaused=stop;}
+    // A policy-blocked resume may remain pending. It never owns the command
+    // queue, and logical playback waits for output instead of queuing SFX.
+    if(!audioPaused&&(changed||gated)&&resuming?.context!==context){
+      const pending={context};resuming=pending;
+      try{Promise.resolve(resumeAudio?resumeAudio():context?.resume()).catch(()=>{}).finally(()=>{if(resuming===pending)resuming=null;});}
+      catch{resuming=null;}
+    }
+    return !gated||audioPaused;
+  }
   const heap=()=>getModule().HEAPU8??new Uint8Array(getCore().memory.buffer);
   const text=p=>{if(!p)throw Error('录像无法解析');const b=heap(),end=b.indexOf(0,p);if(end<0||end-p>65536)throw Error('录像信息无效');return new TextDecoder().decode(b.subarray(p,end));};
   // Do not put a NUL escape in an inline shell string. HTML optimizers may
@@ -116,17 +137,18 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
       const bytes=getModule().FS.readFile(p);if(!bytes.length||bytes.length>64*1024*1024)throw Error('录像大小无效');
       return bytesCall(bytes,(ptr,size)=>bytesCall(cbytes(p),name=>{const d=JSON.parse(text(fn(ptr,size,name)));
         if(Array.isArray(d.nameBytes))d.name=new TextDecoder('shift_jis').decode(new Uint8Array(d.nameBytes)).replace(/\0.*$/,'').trim();return d;}));},
-    open(path,stage){if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
+    open(path,stage){outputPaused=null;if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
       if(bytesCall(bytes,p=>api('eagler_replay_open')(p,stage))!==1)throw Error(api('eagler_replay_error')?text(api('eagler_replay_error')()):'录像原生启动失败');},
     step(render){const ok=stepReplay?stepReplay(render):api('eagler_replay_step')?.(+render)===1;
-      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));return ok;},
+      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));
+      (api('eagler_replay_audio_pump')??api('sdl_audio_pump'))?.();return ok;},
     present(){api('eagler_replay_present')?.();},
     deferPresentation(){return typeof api('eagler_replay_present')==='function';},
     state(){const preparing=api('eagler_replay_preparing'),extra=preparing?{preparing:!!preparing()}:{};
       if(replayState)return {...replayState(),...extra};const p=api('eagler_replay_state')(),v=Array.from(new Uint32Array(heap().buffer,p,5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],...extra};},
-    stopLoop,onState,onError,
+    stopLoop,...(pauseAudio?{audioState}:{}),onState,onError,
   });
-  return bridge;
+  return {...bridge,get active(){return bridge.active;},get audioPaused(){return audioPaused;}};
 }
 // END GENERATED LOCAL REPLAY
 const runtimeBuild=/*TH15_BUILD_INFO*/{version:'development-incomplete',completeGame:false};
@@ -174,7 +196,7 @@ async function installRuntimePack(pack){
  // Runtime-owned locale marker comes from the validated manifest, not text guessing.
  const localePath='/thcrap/th15/runtime-language.txt';core.FS.writeFile(localePath,pack.language);runtimePackFiles.push(localePath);
 }
-const localReplay=createNativeLocalReplay({core:()=>core,module:()=>core,physical:value=>'/savesth15/'+path(value),stopLoop:()=>{clearKeyboard();core._th15_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:fatal});
+const localReplay=createNativeLocalReplay({core:()=>core,module:()=>core,physical:value=>'/savesth15/'+path(value),stopLoop:()=>{clearKeyboard();core._th15_loop_stop();},pauseAudio:paused=>core._th15_loop_pause(+paused),onState:playback=>emit('runtime-info',{playback}),onError:fatal});
 async function command(m){switch(m.command){
 case 'configure':if(launched)throw Error('不能配置正在运行的游戏');if(!['ogg','none'].includes(m.music))throw Error('不支持的音乐模式');options=m.options||{};music=m.music==='ogg';for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
@@ -198,14 +220,12 @@ case 'write':{
 case 'remove':if(launched&&!options.replayViewer)throw Error('请先退出游戏');core.FS.unlink('/savesth15/'+path(m.path));await sync();return {};
 default:throw Error('不支持的操作');}}
 window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}}).catch(fatal);});
-document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th15_touch_cancel();core._th15_loop_pause(+document.hidden);if(document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}}});
+document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th15_touch_cancel();core._th15_loop_pause(+(document.hidden||(localReplay.active&&localReplay.audioPaused)));if(document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}}});
 window.addEventListener('blur',()=>{clearKeyboard();core?._th15_touch_cancel();});
 window.addEventListener('eagler-thprac-menu',e=>emit('thprac-menu',{open:!!e.detail?.open}));
 // Keyboard events in the child realm do not bubble to the launcher. SDL's
 // canvas listener alone misses keys when the child BODY owns focus.
-// Modifier chords suppress fresh input only; a keyup must always pass so a
-// held key released during a chord (Alt+Tab and friends) cannot strand input.
-for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!launched||event==='keydown'&&(e.altKey||e.metaKey))return;if(keyboard.mapNative(e,event==='keydown')){e.preventDefault();e.stopImmediatePropagation();return;}if(keyboard.event(e,event==='keydown')){e.preventDefault();e.stopPropagation();}},{capture:true});
+for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!launched||e.altKey||e.metaKey)return;if(keyboard.mapNative(e,event==='keydown')){e.preventDefault();e.stopImmediatePropagation();return;}if(keyboard.event(e,event==='keydown')){e.preventDefault();e.stopPropagation();}},{capture:true});
 for(const event of ['pointerdown','keydown'])window.addEventListener(event,()=>core?.SDL3?.audioContext?.resume().catch(()=>{}),{capture:true});
 for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['pointercancel',2]])document.body.addEventListener(name,e=>{
  if(!launched||!options.touchEnabled||e.pointerType==='mouse')return;if(e.type==='pointercancel'){core._th15_touch_cancel();return;}e.preventDefault();if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th15_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);

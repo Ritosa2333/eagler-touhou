@@ -38,11 +38,6 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   let deadline = 0, disposed = false, chord = false;
   let bound: RuntimeMidiEventContext | null = null;
   let unbind: (() => void) | null = null;
-  // True while a launcher lifecycle cancellation (blur/pagehide/visibility or
-  // a preference swap) flushes held keys. Runtime-requested resets — such as
-  // the between-stage loading barrier — must instead let a still-held physical
-  // key rebuild ownership from its browser-reported auto-repeat.
-  let cancelling = false;
   let identity = options.runtime.getInputContext();
   let inputAllowed = identity.launched && !identity.spectator;
   let mapping: KeyboardMapping | null = null;
@@ -72,9 +67,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     if (mapping && keyboardInputBridge(context)) {
       if (event.type === 'keydown' && event.isComposing) return;
       if (options.launcherOwnsTarget(event.target) && event.type === 'keydown') return;
-      // Mapping recognition and modifier chords gate fresh input only. A
-      // keyup must always reach the Runtime so no held key can be stranded.
-      if (event.type === 'keydown' && (!mapping.recognizes(event) || event.altKey || event.metaKey)) return;
+      if (!mapping.recognizes(event) || event.type === 'keydown' && (event.altKey || event.metaKey)) return;
       if (options.runtime.postInput('keyboard', {code:event.code,key:event.key,keyCode:event.keyCode,location:event.location,
           down:event.type === 'keydown',repeat:event.repeat,inputSource:'physical',launcherOwnsFocus:options.launcherOwnsTarget(event.target)})) event.preventDefault();
       return;
@@ -84,15 +77,12 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     if (keys.length) event.preventDefault();
   };
   function clear() {
-    cancelling = true;
-    try {
-      options.releaseHeldTouchFire(); options.cancelTouchFunction(); keyboard.clear();
-      const context = options.runtime.getInputContext();
-      const bridge = keyboardInputBridge(context);
-      if (bridge && bridge.submit({protocol:context.protocol,game:context.game,epoch:context.epoch,command:'keyboard-clear'})) return;
-      if (!options.runtime.getSnapshot().launched || !options.frame.contentWindow) return;
-      options.runtime.postInput('keyboard-clear', {});
-    } finally { cancelling = false; }
+    options.releaseHeldTouchFire(); options.cancelTouchFunction(); keyboard.clear();
+    const context = options.runtime.getInputContext();
+    const bridge = keyboardInputBridge(context);
+    if (bridge && bridge.submit({protocol:context.protocol,game:context.game,epoch:context.epoch,command:'keyboard-clear'})) return;
+    if (!options.runtime.getSnapshot().launched || !options.frame.contentWindow) return;
+    options.runtime.postInput('keyboard-clear', {});
   }
   function rebind() {
     if (disposed) return;
@@ -146,7 +136,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
         },
         clear() {
           clearing = true;
-          try {options.cancelTouchFunction();options.releaseHeldTouchFire();return owner.clear(cancelling);}
+          try {options.cancelTouchFunction();options.releaseHeldTouchFire();return owner.clear();}
           finally {clearing = false;}
         },
       };

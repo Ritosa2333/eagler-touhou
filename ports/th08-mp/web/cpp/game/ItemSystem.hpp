@@ -52,6 +52,7 @@ class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemR
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     void synchronize(Owner&);
     u32 nearest_owner(const Vec3&)const noexcept;
+    u32 nearest_power_owner(const Vec3&,bool only_needy)const noexcept;
     u32 item_index(const ItemState&)const noexcept;
 #else
     void synchronize();
@@ -67,6 +68,7 @@ class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemR
     u32 owner_for(ItemState&)override;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     u32 auto_collect_owner(ItemState&)override;
+    u32 overflow_owner(ItemState&,u32)override;
 #endif
     void animation_step(AnmVm& vm)override{executor.execute(vm);failed|=executor.invalid;}
     void sound(i32 index,i32 mode)override{actions.sound(index,mode);}

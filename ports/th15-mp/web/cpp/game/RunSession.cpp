@@ -11,6 +11,9 @@ bool RunSession::attach(const StageCamera& view,i32 destination,bool prepare_rep
  gameplay=std::make_unique<SessionGameplay>(scene(),progress,static_cast<SessionGameplayServices&>(*this),replay.live(),replay.replay());if(!gameplay->error.empty())return fail(gameplay->error);
  gameplay->enable_input(false);activation=std::make_unique<SessionActivation>(progress,scene().battle.session,gameplay->runtime.age,static_cast<SceneActivationServices&>(*this));return true;
 }
+bool RunSession::enter_replay_stage(){
+ bool waiting=false;return load_scene(waiting)&&!waiting&&activate_scene();
+}
 bool RunSession::step(const SessionGameplayInput& input){if(!gameplay||!activation)return fail("Run session is not attached");if(!gameplay->step(input))return fail(gameplay->error);return error.empty();}
 bool RunSession::ending_fade(){return platform.ending_fade();}
 bool RunSession::finish_replay(){return platform.finish_replay();}
@@ -50,7 +53,28 @@ bool RunSession::reset_player(){
 bool RunSession::reset_items(){auto& i=*scene().battle.items;return i.reset()||fail(i.error);}
 bool RunSession::reset_enemies(){auto& e=*scene().battle.enemies;return e.clear()||fail(e.error);}
 bool RunSession::reset_lasers(){auto& l=scene().battle.laser_scene->manager;return l.clear()||fail(l.error);}
-bool RunSession::prepare_replay_stage(){auto state=replay_state();if(!replay.activate_stage(state))return fail(replay.error);gameplay->reset_input();gameplay->enable_input(true);return true;}
+bool RunSession::prepare_replay_stage(){
+ auto state=replay_state();if(!replay.activate_stage(state))return fail(replay.error);
+#if TH15_MULTIPLAYER
+ auto& b=scene().battle;
+ if(b.mp_enabled){
+  const bool stream=replay.stream_entry(u32(progress.stage));
+  const auto* native=replay.snapshot(u32(progress.stage));if(!native)return false;
+  Rng seed;if(!native->restore_seed(seed))return false;
+  for(unsigned i=0;i<b.mp_options.seat_count;++i){
+   auto& p=*b.pilots[i];auto header=stream?replay.seat_entry(i):*native;
+   auto local=progress;local.new_run=false;std::string track;
+   ReplayRunState seat{local,p.session,b.score,b.enemy_world,p.player->motion,track};
+   if(stream){
+    if(!header.restore_progress(seat)||!header.restore_player(p.player->motion)||!p.player->configure_options())return false;
+   }else if(!header.create(seat,seed)||!header.refresh(seat))return false;
+   replay.seat_entry(i,header);
+  }
+  b.mp_fragments=b.session.life_pieces;replay.finish_stream();
+ }
+#endif
+ gameplay->reset_input();gameplay->enable_input(true);return true;
+}
 bool RunSession::start_main_script(){return scene().start_main_script()||fail(scene().error);}
 bool RunSession::initialize_hud(){return scene().initialize_hud(scene_destination)||fail(scene().error);}
 bool RunSession::enable_game_callbacks(){return scene().enable_game_callbacks()||fail(scene().error);}

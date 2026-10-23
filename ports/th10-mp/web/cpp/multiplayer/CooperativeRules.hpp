@@ -8,7 +8,7 @@ constexpr std::uint8_t kMaxSeats = 3;
 constexpr std::uint8_t kMinSeats = 2;
 constexpr std::int16_t kMaxLives = 9;
 constexpr std::int16_t kMaxPower = 100;
-constexpr std::uint8_t kRescueTicks = 90;
+constexpr std::uint8_t kRescueTicks = 5;
 constexpr std::uint16_t kWipeRetryTicks = 180;
 constexpr std::int32_t kRescueRadiusHundredths = 2000;
 constexpr std::int16_t kPowerTransferAmount = 20;
@@ -68,6 +68,7 @@ struct SeatFrameInput {
     bool focus;
     bool shoot;
     bool shootPressed;
+    bool focusPressed;
 };
 
 struct FrameInput {

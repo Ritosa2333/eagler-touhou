@@ -9,10 +9,17 @@ import {pathToFileURL} from 'node:url';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'../..'),launcher=resolve(process.env.TH15_LAUNCHER_ROOT);
+const relayRoot=resolve(process.env.TH15_RELAY_ROOT||resolve(launcher,'../services/relay/src'));
 const puppeteer=createRequire(resolve(launcher,'package.json'))('puppeteer-core');
 const {findChromiumExecutable}=await import(pathToFileURL(resolve(launcher,'lib/chromium-executable.mjs')));
 const runtime=resolve(process.env.TH15_TEST_RUNTIME),fixtures=process.argv.includes('--fixtures');
 const lifecycleOnly=process.argv.includes('--lifecycle-only')||process.env.TH15_TEST_LIFECYCLE_ONLY==='1';
+const uninterruptedFrames=Number(process.env.TH15_TEST_UNINTERRUPTED_FRAMES||0);
+const uninterruptedOnly=process.argv.includes('--uninterrupted-only');
+assert.ok(Number.isInteger(uninterruptedFrames)&&uninterruptedFrames>=0);
+if(uninterruptedFrames||uninterruptedOnly)assert.ok(fixtures&&uninterruptedFrames>0,'long-run comparison requires --fixtures and a positive TH15_TEST_UNINTERRUPTED_FRAMES');
+// Chapter bonus tally counters are presentation. Retain the stage-clear gate.
+const gameplay=values=>[...values.slice(0,7),...values.slice(8,12),values[13]&~0x1800,values[13]&0x100?values[14]:0];
 const buildRoot=resolve(root,'web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer');
 const probes=resolve(buildRoot,'spectator-stage');
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
@@ -20,7 +27,7 @@ const productionBuild=JSON.parse(await readFile(resolve(buildRoot,'build.json'),
 const productionManifest=JSON.parse(await readFile(resolve(runtime,'manifest.json'),'utf8'));
 const productionWasm=await readFile(resolve(runtime,'th15.wasm'));
 const productionLoader=await readFile(resolve(runtime,'th15.mjs'));
-const productionLoaderSha=sha256(await readFile(resolve(buildRoot,'th15-application.mjs')));
+const productionLoaderSha=sha256(await readFile(resolve(buildRoot,'th15.mjs')));
 assert.equal(productionBuild.features?.multiplayer,true,'TH15_OUTPUT must be a multiplayer build');
 assert.equal(sha256(productionWasm),productionBuild.sha256,'packaged Runtime WASM must match TH15_OUTPUT/build.json');
 assert.equal(productionManifest.execution?.sha256,productionBuild.sha256,'production manifest must name TH15_OUTPUT WASM');
@@ -39,7 +46,7 @@ const buildIdentity={productionWasm:productionBuild.sha256,productionLoader:prod
 const out=resolve(probes,process.env.TH15_TEST_EVIDENCE_NAME||(fixtures?'relay-fixture':'relay-production'));await mkdir(out,{recursive:true});let passReport=null;
 const archive=await readFile(process.env.TH15_TEST_ARCHIVE);let options=[],relayLog='',browser;
 const sharedFonts=resolve(process.env.TH15_TEST_SHARED_FONTS||resolve(root,'../dist/ui-rewrite-fixed-20261010/shared'));
-const relay=spawn(process.execPath,[resolve(launcher,'server/netplay-relay.mjs')],{cwd:launcher,windowsHide:true,
+const relay=spawn(process.execPath,[resolve(relayRoot,'netplay-relay.mjs')],{cwd:relayRoot,windowsHide:true,
  env:{...process.env,EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
 relay.stderr.on('data',b=>relayLog+=b);
 const relayPort=await new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error('Relay startup timeout '+relayLog)),15000);relay.stdout.on('data',b=>{relayLog+=b;const m=relayLog.match(/listening ws:\/\/127\.0\.0\.1:(\d+)/);if(m){clearTimeout(timer);yes(Number(m[1]));}});relay.once('exit',code=>{clearTimeout(timer);no(Error('Relay exited '+code+' '+relayLog));});});
@@ -107,7 +114,7 @@ try{
    const f=frame(seat),endpointManifest=await f.evaluate(async()=>{const r=await fetch('./manifest.json');return r.ok?await r.json():null;});
    assert.equal(endpointManifest?.execution?.sha256,productionBuild.sha256,'seat '+seat+' served production manifest identity');
    assert.equal(endpointManifest?.execution?.loaderSha256,productionLoaderSha,'seat '+seat+' served production loader identity');
-   if(fixtures)await frame(seat).evaluate(()=>{Module.spectatorLabStates=new Map();Module.spectatorLabTrace=frame=>{const p=Module._th15_spectator_lab_network_state(frame)>>>2;Module.spectatorLabStates.set(frame,Array.from(Module.HEAPU32.subarray(p,p+16)));if(frame===Module.spectatorLabNext&&!Module._th15_spectator_lab_next())throw Error('Native next stage failed');};});
+   if(fixtures)await frame(seat).evaluate(longRun=>{Module.spectatorLabKeepAlive=longRun;Module.spectatorLabStates=new Map();Module.spectatorLabGroups=new Map();Module.spectatorLabRows=new Map();Module.spectatorLabTrace=frame=>{const p=Module._th15_spectator_lab_network_state(frame)>>>2;Module.spectatorLabStates.set(frame,Array.from(Module.HEAPU32.subarray(p,p+16)));const g=Module._th15_spectator_lab_groups()>>>2;Module.spectatorLabGroups.set(frame,Array.from(Module.HEAPU32.subarray(g,g+6)));const r=Module._th15_spectator_lab_rows()>>>2;if(!longRun)Module.spectatorLabRows.set(frame,Array.from(Module.HEAPU32.subarray(r+1,r+1+Module.HEAPU32[r])));if(frame===Module.spectatorLabNext&&!Module._th15_spectator_lab_next())throw Error('Native next stage failed');};},uninterruptedFrames>0);
    await page.evaluate(s=>launchRuntime(s),seat);await wait(()=>endpoint.wasm&&endpoint.loader,'seat '+seat+' runtime binary identity');
    assert.equal(endpoint.wasmStatus,200,'seat '+seat+' WASM response must be HTTP 200 at '+endpoint.wasmRequest);
    assert.equal(endpoint.loaderStatus,200,'seat '+seat+' loader response must be HTTP 200');
@@ -123,7 +130,7 @@ try{
   await add(count);const viewer=frame(count);
   const read=f=>f.evaluate(()=>{const error=document.querySelector('#error').textContent;if(error)throw Error('Native spectator: '+error);const p=Module._th15_mp_spectator_state();return p?{...JSON.parse(new TextDecoder().decode(Module.HEAPU8.subarray(p,Module.HEAPU8.indexOf(0,p)))),...(Module.spectatorLabPlayback?{probe:Module.spectatorLabPlayback}:{})}:null;});
   await wait(async()=>{const s=await read(viewer);return s&&s.position>=150;},'late native restore',60000);
-  const initialViewerState=await read(viewer);
+  const initialViewerState=await read(viewer);console.log("TH15 normal viewer playback",initialViewerState.position);
   let playbackControlCount=0,controlsAtSourceTransition=null;
   const control=async(action,target,activeFrame=frame(count))=>{playbackControlCount++;const state=await read(activeFrame);return pages.get(count).evaluate(({count,state,action,target})=>rpc(count,'spectator-playback',{run:state.run,action,...(target===undefined?{}:{frame:target})}),{count,state,action,target});};
   assert.ok(initialViewerState&&!initialViewerState.paused&&!initialViewerState.seeking,'late viewer must start in playable history state');
@@ -131,8 +138,34 @@ try{
   assert.equal(entryProgress.paused,false,'late viewer history playback remains unpaused');assert.equal(entryProgress.seeking,false,'late viewer history playback is not seeking');
   assert.ok(entryProgress.received>initialViewerState.received,'late viewer keeps receiving confirmed history');
   assert.ok(entryProgress.position>initialViewerState.position,'late viewer advances through its initial history target');
+  let uninterrupted=null;
+  if(uninterruptedFrames){
+   const start=initialViewerState.min,end=start+uninterruptedFrames;let compared=start;const deadline=Date.now()+900000;
+   while(compared<end){
+    const state=await read(viewer);assert.ok(!state.paused&&!state.seeking,'normal playback must remain untouched');
+    const until=Math.min(end,state.position);
+    if(until>=compared+120||until===end){
+     const take=f=>f.evaluate(({from,to})=>Array.from({length:to-from},(_,i)=>Module.spectatorLabStates.get(from+i+1)??null),{from:compared,to:until});
+     const actual=await take(viewer);
+     for(let source=0;source<count;++source){const expected=await take(frame(source));
+      for(let i=0;i<actual.length;++i){const at=compared+i+1;assert.ok(actual[i]&&expected[i],'missing normal-play frame '+at);
+       assert.deepEqual(gameplay(actual[i]),gameplay(expected[i]),'normal-play native divergence source '+source+' frame '+at);}}
+     compared=until;console.log('TH15 uninterrupted native agreement '+compared);
+     await writeFile(resolve(out,'progress.json'),JSON.stringify({compared,start,end,controls:playbackControlCount}));
+    }
+    assert.ok(Date.now()<deadline,'normal playback comparison deadline');await new Promise(r=>setTimeout(r,500));
+   }
+   assert.equal(playbackControlCount,0);assert.deepEqual(errors,[]);
+   uninterrupted={start,end,frames:compared-start,controls:0,sourceCount:count,collisionProtection:'symmetric private fixture, active game simulation'};
+   if(uninterruptedOnly){
+    const row={count,fixtures,uninterrupted,canonicalEquality:true,endpoints,state:await read(viewer)};reports.push(row);console.log(JSON.stringify(row));
+    for(let seat=0;seat<=count;seat++)await frame(seat).evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});
+    await closeContexts();for(const socket of sockets.splice(0))socket.close();
+    passReport={status:'PASS',buildIdentity,reports,httpFailures,cleanupWarnings};await writeFile(resolve(out,'report.json'),JSON.stringify(passReport,null,2)+'\n');continue;
+   }
+  }
    await control('live');const liveSetupRequest=await read(viewer);assert.ok(liveSetupRequest,'Stage1 Live request did not produce playback state');
-   const fixedSetupTarget=liveSetupRequest.target;await wait(async()=>{const s=await read(viewer);return s.following&&!s.paused&&!s.seeking&&s.position>=fixedSetupTarget;},'Stage1 fixed Live target before controls or source transition',30000);
+   const fixedSetupTarget=liveSetupRequest.target;await wait(async()=>{const s=await read(viewer);return s.following&&!s.paused&&!s.seeking&&s.position>=fixedSetupTarget;},'Stage1 fixed Live target before controls or source transition',fixtures?120000:30000);
   const stageOneLiveSetup={initialFollowing:initialViewerState.following,initialTarget:initialViewerState.target,initialPosition:initialViewerState.position,
    initialReceived:initialViewerState.received,historyAdvancedTo:entryProgress.position,followingAfterLive:true};
   if(lifecycleOnly){
@@ -212,20 +245,34 @@ try{
    passReport={status:'PASS',buildIdentity,reports,httpFailures,cleanupWarnings};await writeFile(resolve(out,'report.json'),JSON.stringify(passReport,null,2)+'\n');
    continue;
   }
-  const compare=async(f,target)=>{const sample=await f.evaluate(()=>{const p=Module._th15_mp_spectator_state(),state=JSON.parse(new TextDecoder().decode(Module.HEAPU8.subarray(p,Module.HEAPU8.indexOf(0,p)))),at=state.position,q=Module._th15_spectator_lab_network_state(at)>>>2;return {frame:at,state,actual:Array.from(Module.HEAPU32.subarray(q,q+16))};});
+  const compare=async(f,target)=>{const sample=await f.evaluate(()=>{const p=Module._th15_mp_spectator_state(),state=JSON.parse(new TextDecoder().decode(Module.HEAPU8.subarray(p,Module.HEAPU8.indexOf(0,p)))),at=state.position,q=Module._th15_spectator_lab_network_state(at)>>>2;return {frame:at,state,actual:Array.from(Module.HEAPU32.subarray(q,q+16)),groups:Array.from(Module.HEAPU32.subarray(Module._th15_spectator_lab_groups()>>>2,(Module._th15_spectator_lab_groups()>>>2)+6))};});
    if(target!==undefined)assert.equal(sample.frame,target,'canonical snapshot position');
    assert.equal(sample.actual[3],sample.frame,'canonical native frame must match captured playback position');
    await wait(async()=>{for(let seat=0;seat<count;seat++)if(!await frame(seat).evaluate(frame=>Module.spectatorLabStates.has(frame),sample.frame))return false;return true;},'source hashes at canonical snapshot frame '+sample.frame,30000);
-   for(let seat=0;seat<count;seat++)assert.deepEqual(sample.actual,await frame(seat).evaluate(frame=>Module.spectatorLabStates.get(frame),sample.frame),'canonical equality seat '+seat+' frame '+sample.frame);return sample;};
+   // Native Replay rebuilds the background and presentation VM owners. Keep
+   // their counters in the evidence, while gameplay compares the semantic
+   // digest (including projectiles/items), native frame, RNG and ECL state.
+
+   for(let seat=0;seat<count;seat++){
+    const expected=await frame(seat).evaluate(frame=>Module.spectatorLabStates.get(frame),sample.frame);
+    if(gameplay(sample.actual).some((value,index)=>value!==gameplay(expected)[index])){
+     const rows=await f.evaluate(()=>{const r=Module._th15_spectator_lab_rows()>>>2;return Array.from(Module.HEAPU32.subarray(r+1,r+1+Module.HEAPU32[r]));});
+     const expectedRows=await frame(seat).evaluate(frame=>Module.spectatorLabRows.get(frame),sample.frame);
+     await writeFile(resolve(out,'first-owner-difference.json'),JSON.stringify({frame:sample.frame,actual:sample.actual,expected,rows,expectedRows},null,2));
+    }
+    const groups=await frame(seat).evaluate(frame=>Module.spectatorLabGroups.get(frame),sample.frame);
+    assert.deepEqual(gameplay(sample.actual),gameplay(expected),'canonical equality seat '+seat+' frame '+sample.frame+' | groups [resources,enemies,players,bullets,items,lasers] '+JSON.stringify({expected:groups,actual:sample.groups}));
+   }
+   return sample;};
   let followSamples=0,maxFollowLag=0,target=initialViewerState.min+Math.min(30,initialViewerState.edge-initialViewerState.min),automaticStageTwo=null;
   const runControls=async(stageOneTarget)=>{
    await control('pause');const paused=await read(viewer);await new Promise(r=>setTimeout(r,350));const pausedAfter=await read(viewer);assert.equal(pausedAfter.position,paused.position);assert.ok(pausedAfter.received>paused.received);
    if(stageOneTarget===undefined)target=paused.min+Math.min(30,paused.edge-paused.min);
    await control('seek',target);await wait(async()=>{const s=await read(viewer);return s.position===target&&!s.seeking;},'backward seek');if(fixtures)await compare(viewer,target);
-   await control('play');await wait(async()=> (await read(viewer)).position>target,'play');await control('live');await wait(async()=>{const s=await read(viewer);return s.following&&!s.seeking&&s.position>=s.edge-4;},'follow live',30000);
+   await control('play');await wait(async()=> (await read(viewer)).position>target,'play');await control('live');await wait(async()=>{const s=await read(viewer);return s.following&&!s.seeking&&s.position>=s.target;},'follow live',30000);
    const followStart=await frame(0).evaluate(()=>Module.HEAPU32[(Module._th15_mp_status()>>>2)+3]);
-   await wait(async()=>{const s=await read(viewer);assert.ok(s.following&&!s.seeking&&!s.paused);++followSamples;maxFollowLag=Math.max(maxFollowLag,s.edge-s.position);const source=await frame(0).evaluate(()=>Module.HEAPU32[(Module._th15_mp_status()>>>2)+3]);return source>=followStart+120&&s.position>=s.edge-4;},'sustained live follow',60000);
-   assert.ok(maxFollowLag<=16,'live playback accumulated '+maxFollowLag+' frames of lag');
+   await wait(async()=>{const s=await read(viewer);assert.ok(s.following&&!s.seeking&&!s.paused);++followSamples;maxFollowLag=Math.max(maxFollowLag,s.edge-s.position);const source=await frame(0).evaluate(()=>Module.HEAPU32[(Module._th15_mp_status()>>>2)+3]);return source>=followStart+120&&s.position>=s.target;},'sustained live follow',60000);
+   // Normal playback retains its own cadence after the fixed Live target.
   };
   if(!fixtures)await runControls();
   if(fixtures){
@@ -235,7 +282,7 @@ try{
    await wait(async()=> (await read(viewer))?.nodes.some(n=>n.kind==='stage'&&n.stage===2),'native stage two publication',60000);
    const node=(await read(viewer)).nodes.find(n=>n.kind==='stage'&&n.stage===2);
    await wait(async()=>{const s=await read(viewer),segment=s?.nodes.find(n=>n.kind==='stage'&&n.stage===2);if(!segment)return false;assert.ok(s.following,'observer lost Following across automatic Stage2 checkpoint');assert.equal(s.paused,false,'observer paused before first user control');return segment.id===node.id&&s.position>node.frame&&!s.seeking;},'automatic Stage2 segment follows without user controls',180000);
-   const automatic=await compare(viewer);
+   const automatic=await compare(viewer);console.log("TH15 automatic stage two native agreement",automatic.frame);
    const controlsSinceSourceTransition=playbackControlCount-controlsAtSourceTransition;assert.equal(controlsSinceSourceTransition,0,'viewer controls must remain untouched from source Stage2 trigger through automatic canonical comparison');
    automaticStageTwo={nodeFrame:node.frame,viewerFrame:automatic.frame,following:automatic.state.following,paused:automatic.state.paused,seeking:automatic.state.seeking,sourceCount:count,canonicalMatched:true,controlsSinceSourceTransition,stageOneLiveSetup:true};
    await runControls(target);
@@ -243,7 +290,7 @@ try{
    await control('pause');await control('seek',node.frame+30);await wait(async()=>{const s=await read(viewer);return s.position===node.frame+30&&!s.seeking;},'stage two seek');
    await compare(viewer,node.frame+30);
    await control('seek',node.frame+600);await wait(async()=>{const s=await read(viewer);return s.position===node.frame+600&&!s.seeking;},'stage two 600-frame future seek',360000);
-   await compare(viewer,node.frame+600);
+   await compare(viewer,node.frame+600);console.log("TH15 stage two future native agreement",node.frame+600);
    await control('seek',target);await wait(async()=>{const s=await read(viewer);return s.position===target&&!s.seeking;},'return to previous stage');await compare(viewer,target);await control('live');
    const id=viewerId+'_late',member=viewerMember+'_late',late=await open(new URLSearchParams({room,lobby:id,member,intent:'join'}));lobbies.push(late);await send(late,{type:'spectate'},m=>m.room?.spectatorCount===2);
    const seat=count+1;options.push({...options[count],netplaySpectatorId:id,netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(started.serial),member})});await add(seat);const fresh=frame(seat);
@@ -251,7 +298,7 @@ try{
    const state=await read(fresh);await pages.get(seat).evaluate(({seat,state})=>rpc(seat,'spectator-playback',{run:state.run,action:'pause'}),{seat,state});await pages.get(seat).evaluate(({seat,state,target})=>rpc(seat,'spectator-playback',{run:state.run,action:'seek',frame:target}),{seat,state,target:node.frame+30});await wait(async()=>{const s=await read(fresh);return s.position===node.frame+30&&!s.seeking;},'late stage two exact position');await compare(fresh,node.frame+30);
    await pages.get(seat).evaluate(({seat,state,target})=>rpc(seat,'spectator-playback',{run:state.run,action:'seek',frame:target}),{seat,state:await read(fresh),target:node.frame+600});await wait(async()=>{const s=await read(fresh);return s.position===node.frame+600&&!s.seeking;},'late stage two 600-frame future seek',360000);await compare(fresh,node.frame+600);
   }
-  assert.deepEqual(errors,[]);const row={count,fixtures,fullWaitingRoomObserver:true,lateJoin:true,pause:true,backwardSeek:true,stageTwoFuture600:fixtures,lateStageTwoFuture600:fixtures,automaticStageTwo,stageOneLiveSetup,play:true,live:true,followSamples,maxFollowLag,canonicalEquality:fixtures,endpoints,state:await read(viewer)};
+  assert.deepEqual(errors,[]);const row={count,fixtures,uninterrupted,fullWaitingRoomObserver:true,lateJoin:true,pause:true,backwardSeek:true,stageTwoFuture600:fixtures,lateStageTwoFuture600:fixtures,automaticStageTwo,stageOneLiveSetup,play:true,live:true,followSamples,maxFollowLag,canonicalEquality:fixtures,endpoints,state:await read(viewer)};
   row.independentBrowserContexts=contexts.length;await pages.get(count).screenshot({path:resolve(out,count+'p.png'),fullPage:true});reports.push(row);console.log(JSON.stringify(row));
   for(let seat=0;seat<options.length;seat++)try{await frame(seat).evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});}catch(error){cleanupWarnings.push('native runtime close seat '+seat+': '+String(error));}
   await closeContexts();for(const socket of sockets.splice(0))try{socket.close();}catch(error){cleanupWarnings.push('lobby socket close: '+String(error));}

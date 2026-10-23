@@ -4,6 +4,7 @@
 #include "PlayerRecords.hpp"
 #include "Ending.hpp"
 #include "TouchMotionTrack.hpp"
+#include "ChargeReplayTrack.hpp"
 namespace th09 {
 namespace multiplayer { class WorldState; }
 enum class SessionPhase {inactive,match,game_over,match_complete,ending,finished};
@@ -24,6 +25,10 @@ public:
     ScoreEntry result;SessionPhase phase=SessionPhase::inactive;
     u8 continues=0;bool is_replay=false,recordable=true;u32 frames=0;std::string error;
     FrameTiming timing;touch::MotionTrack motion;
+    std::array<ChargeFrame,2> charge_frames;
+    ChargeReplayTrack charge_replay;
+    bool charge_input_recorded=false;u32 charge_recorded_frame=0,charge_recorded_stage=0;
+    bool record_charge_frame(const std::array<ChargeSample,2>&);
     // `target` means (x,y) is an absolute field position the player walks toward,
     // not a pre-scaled velocity. Networked gestures ship the target because a
     // velocity sampled from the sender's position is stale by the lockstep input

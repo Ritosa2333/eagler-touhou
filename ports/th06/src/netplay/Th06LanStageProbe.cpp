@@ -1,5 +1,6 @@
 #include "Th06LanStageProbe.hpp"
 
+#include <eagler/audio/ReplayMusicScope.hpp>
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplayInput.hpp>
 #include <eagler/netplay/NetplayProtocol.hpp>
@@ -16,7 +17,7 @@
 #include <eagler/netplay/ConfirmedInputWatchdog.hpp>
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
-#include <eagler/netplay/SpectatorStageScalars.hpp>
+#include "ReplayStageStart.hpp"
 #include <eagler/netplay/SpectatorStageView.hpp>
 
 #include "BulletManager.hpp"
@@ -38,7 +39,6 @@
 #include "Stage.hpp"
 #include "Supervisor.hpp"
 #include "Touch.hpp"
-#include "pbg4/Lzss.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #endif
@@ -111,8 +111,6 @@ std::uint32_t g_PredictedFrames = 0;
 std::uint32_t g_RollbackCount = 0;
 std::uint32_t g_ResimulatedFrames = 0;
 std::uint32_t g_MaxRollbackSpan = 0;
-std::array<FrameInput, MAX_PLAYERS> g_SpectatorDebugFrame34FirstInputs{};
-bool g_SpectatorDebugFrame34FirstSeen = false;
 std::uint32_t g_SnapshotTicks = 0;
 std::uint32_t g_ConfirmedOnlyTicks = 0;
 std::size_t g_MaxSnapshotBytes = 0;
@@ -163,8 +161,6 @@ bool g_SpectatorNativeStageReady = false;
 bool g_SpectatorPublisherReady = false;
 bool g_SpectatorPublisherEligible = false;
 bool g_SpectatorLaneStopped = false;
-std::array<std::uint32_t, 64> g_StageStartFrameTags{};
-std::array<std::uint8_t, 64> g_StageAtFrameStart{};
 bool g_TestUsePauseCycle = false;
 bool g_TestUseRetryContinueCycle = false;
 bool g_TestUseDenseRollbackProfile = false;
@@ -220,6 +216,7 @@ bool ProductionLanMode();
 bool RollbackAuditEnabled();
 void DisableSpectatorPublisher(std::uint32_t frame, const char *reason);
 void ClearTransientModes();
+void PublishConfirmedSpectatorFrames();
 void Fail(const char *reason);
 std::uint16_t LocalScript(std::uint8_t player, std::uint32_t frame);
 
@@ -234,1226 +231,60 @@ std::uint64_t CurrentSessionId()
             0x9e3779b97f4a7c15ull);
 }
 
-// Schema 6 wraps schema-5 named scalars with bounded sparse/LZSS encoding.
-// The scalar stream remains explicit and never contains native object images.
-constexpr std::uint32_t SPECTATOR_CHECKPOINT_SCHEMA = 6;
-constexpr std::uint32_t SPECTATOR_CHECKPOINT_MAGIC = 0x36564353; // SCV6
-constexpr std::uint32_t SPECTATOR_CHECKPOINT_RAW_LIMIT = 256u * 1024u;
+constexpr std::uint32_t SPECTATOR_REPLAY_SCHEMA = SpectatorReplayStart::Schema;
 
-void WriteCheckpointWord(std::vector<std::uint8_t> *out, std::uint32_t value)
-{
-    for (unsigned n = 0; n < 4; ++n) out->push_back(static_cast<std::uint8_t>(value >> (n * 8)));
+void ApplyLifecycleFixtureStart();
+
+bool EncodeSpectatorReplayStart(std::vector<std::uint8_t>* bytes) {
+    return SpectatorReplayStart::Encode(bytes);
 }
 
-std::uint32_t ReadCheckpointWord(const std::uint8_t *data)
-{
-    std::uint32_t value = 0;
-    for (unsigned n = 0; n < 4; ++n) value |= std::uint32_t(data[n]) << (n * 8);
-    return value;
-}
+void ReportSpectatorReplayBoundary(std::uint32_t frame,std::uint8_t predictedMask=0);
 
-std::vector<std::uint8_t> PackCheckpointSparse(const std::vector<std::uint8_t> &raw)
-{
-    std::vector<std::uint8_t> packed;
-    packed.reserve(raw.size() + ((raw.size() + 63u) / 64u) * 8u);
-    for (std::size_t at = 0; at < raw.size(); at += 64)
-    {
-        const std::size_t maskOffset = packed.size();
-        const std::size_t count = std::min<std::size_t>(64, raw.size() - at);
-        packed.resize(maskOffset + 8, 0);
-        for (std::size_t n = 0; n < count; ++n)
-        {
-            if (raw[at + n] == 0) continue;
-            packed[maskOffset + n / 8] |= static_cast<std::uint8_t>(1u << (n % 8));
-            packed.push_back(raw[at + n]);
-        }
-    }
-    return packed;
-}
-
-bool UnpackCheckpointSparse(const std::vector<std::uint8_t> &packed, std::uint32_t rawSize,
-                            std::vector<std::uint8_t> *raw)
-{
-    if (!raw || rawSize == 0 || rawSize > SPECTATOR_CHECKPOINT_RAW_LIMIT) return false;
-    std::vector<std::uint8_t> next(rawSize, 0);
-    std::size_t read = 0;
-    for (std::size_t at = 0; at < rawSize; at += 64)
-    {
-        if (packed.size() - read < 8) return false;
-        const std::size_t maskOffset = read;
-        const std::size_t count = std::min<std::size_t>(64, rawSize - at);
-        read += 8;
-        for (std::size_t n = 0; n < 64; ++n)
-        {
-            if ((packed[maskOffset + n / 8] & (1u << (n % 8))) == 0) continue;
-            if (n >= count || read >= packed.size() || packed[read] == 0) return false;
-            next[at + n] = packed[read++];
-        }
-    }
-    if (read != packed.size()) return false;
-    *raw = std::move(next);
-    return true;
-}
-
-bool CompressSpectatorCheckpoint(const std::vector<std::uint8_t> &raw,
-                                 std::vector<std::uint8_t> *capsule)
-{
-    if (!capsule || raw.empty() || raw.size() > SPECTATOR_CHECKPOINT_RAW_LIMIT) return false;
-    const auto sparse = PackCheckpointSparse(raw);
-    if (sparse.empty() || sparse.size() > 0x7fffffffu) return false;
-    i32 compressedSize = 0;
-    u8 *compressed = Lzss::Compress(const_cast<u8 *>(sparse.data()), static_cast<i32>(sparse.size()),
-                                    &compressedSize);
-    if (!compressed || compressedSize <= 0)
-    {
-        std::free(compressed);
-        return false;
-    }
-    const std::size_t capsuleSize = 12u + static_cast<std::size_t>(compressedSize);
-    if (capsuleSize > SpectatorStageMaxStateBytes)
-    {
-        std::free(compressed);
-        return false;
-    }
-    capsule->clear();
-    capsule->reserve(capsuleSize);
-    WriteCheckpointWord(capsule, SPECTATOR_CHECKPOINT_MAGIC);
-    WriteCheckpointWord(capsule, static_cast<std::uint32_t>(raw.size()));
-    WriteCheckpointWord(capsule, static_cast<std::uint32_t>(sparse.size()));
-    capsule->insert(capsule->end(), compressed, compressed + compressedSize);
-    std::free(compressed);
-    return true;
-}
-
-bool DecompressSpectatorCheckpoint(const std::vector<std::uint8_t> &capsule,
-                                   std::vector<std::uint8_t> *raw)
-{
-    if (!raw || capsule.size() < 13 || capsule.size() > SpectatorStageMaxStateBytes ||
-        ReadCheckpointWord(capsule.data()) != SPECTATOR_CHECKPOINT_MAGIC)
-        return false;
-    const std::uint32_t rawSize = ReadCheckpointWord(capsule.data() + 4);
-    const std::uint32_t sparseSize = ReadCheckpointWord(capsule.data() + 8);
-    if (rawSize == 0 || rawSize > SPECTATOR_CHECKPOINT_RAW_LIMIT) return false;
-    const std::uint32_t masks = ((rawSize + 63u) / 64u) * 8u;
-    if (sparseSize < masks || sparseSize > rawSize + masks || sparseSize > 0x7fffffffu) return false;
-    std::vector<std::uint8_t> sparse(sparseSize, 0);
-    auto compressed = capsule;
-    auto *expanded = Lzss::Decompress(compressed.data() + 12,
-                                     static_cast<i32>(compressed.size() - 12),
-                                     sparse.data(), sparseSize);
-    if (!expanded) return false;
-    // The legacy decoder accepts zero-padded truncated bitstreams. Re-encode
-    // and compare so only canonical, complete LZSS capsules are accepted.
-    i32 canonicalSize = 0;
-    u8 *canonical = Lzss::Compress(sparse.data(), static_cast<i32>(sparse.size()), &canonicalSize);
-    if (!canonical || canonicalSize != static_cast<i32>(capsule.size() - 12) ||
-        std::memcmp(canonical, capsule.data() + 12, capsule.size() - 12) != 0)
-    {
-        std::free(canonical);
-        return false;
-    }
-    std::free(canonical);
-    return UnpackCheckpointSparse(sparse, rawSize, raw);
-}
-struct SpectatorVec3Checkpoint { f32 x = 0.0f, y = 0.0f, z = 0.0f; };
-struct SpectatorTimerCheckpoint { i32 previous = 0, current = 0; f32 subFrame = 0.0f; };
-struct SpectatorPlayerBulletCheckpoint
-{
-    std::uint8_t player = 0, slot = 0;
-    f32 positionX = 0.0f, positionY = 0.0f, positionZ = 0.0f;
-    f32 previousPositionX = 0.0f, previousPositionY = 0.0f, previousPositionZ = 0.0f;
-    f32 sizeX = 0.0f, sizeY = 0.0f, sizeZ = 0.0f;
-    f32 velocityX = 0.0f, velocityY = 0.0f, sidewaysMotion = 0.0f;
-    f32 unk134X = 0.0f, unk134Y = 0.0f, unk134Z = 0.0f;
-    i32 unk140Previous = 0, unk140Current = 0;
-    f32 unk140SubFrame = 0.0f;
-    i32 damage = 0, bulletState = 0, bulletType = 0, unk152 = 0, spawnPositionIdx = 0;
-    i32 anmFileIndex = -1;
-    bool hasVm = false;
-    i32 vmInstructionOffset = -1;
-    i16 vmActiveSpriteIndex = -1, vmBaseSpriteIndex = -1;
-    u32 vmFlags = 0, vmColor = 0, vmPrevColor = 0, vmAlphaInitial = 0, vmAlphaFinal = 0;
-    i16 vmAlphaEnd = 0, vmScaleEnd = 0, vmAutoRotate = 0, vmPendingInterrupt = 0, vmPosEnd = 0;
-    i32 vmTimeOfLastSpriteSet = 0;
-    u8 vmFontWidth = 0, vmFontHeight = 0;
-    SpectatorVec3Checkpoint vmRotation{}, vmPrevRotation{}, vmAngleVel{}, vmPos{}, vmPrevPos{};
-    SpectatorVec3Checkpoint vmPosInterpInitial{}, vmPosInterpFinal{}, vmPosOffset{};
-    f32 vmScaleX = 0.0f, vmScaleY = 0.0f, vmPrevScaleX = 0.0f, vmPrevScaleY = 0.0f;
-    f32 vmScaleFinalX = 0.0f, vmScaleFinalY = 0.0f, vmScaleInitialX = 0.0f, vmScaleInitialY = 0.0f;
-    f32 vmUvX = 0.0f, vmUvY = 0.0f, vmPrevUvX = 0.0f, vmPrevUvY = 0.0f;
-    SpectatorTimerCheckpoint vmScriptTime{}, vmScaleTime{}, vmPosTime{}, vmAlphaTime{};
-};
-struct SpectatorPlayerCheckpoint
-{
-    SpectatorVec3Checkpoint unk44c, hitboxTopLeft, hitboxBottomRight, grabItemTopLeft, grabItemBottomRight;
-    SpectatorVec3Checkpoint hitboxSize, grabItemSize;
-    std::array<SpectatorVec3Checkpoint, 2> orbsPosition{};
-    std::array<SpectatorVec3Checkpoint, 32> bombRegionPositions{}, bombRegionSizes{};
-    std::array<i32, 32> bombRegionDamages{}, unk838{};
-    std::array<f32, 64> bombProjectiles{};
-    std::array<SpectatorTimerCheckpoint, 2> laserTimer{};
-    f32 horizontalMovementSpeedMultiplierDuringBomb = 0.0f;
-    f32 verticalMovementSpeedMultiplierDuringBomb = 0.0f;
-    u8 initParam = 0;
-    i32 lifeGiveTimer = 0, lifeGiveTargetToken = 0, powerGiveTaps = 0, powerGiveWindow = 0;
-    i32 orbState = 0, isFocus = 0, unk9e4 = 0;
-    SpectatorTimerCheckpoint focusMovementTimer{};
-    i32 playerDirection = 0;
-    f32 previousHorizontalSpeed = 0.0f, previousVerticalSpeed = 0.0f;
-    i16 previousFrameInput = 0;
-    SpectatorVec3Checkpoint positionOfLastEnemyHit{};
-    SpectatorTimerCheckpoint fireBulletTimer{}, teamBombProtectionTimer{}, bombTimer{};
-    u32 bombIsInUse = 0;
-    i32 bombDuration = 0;
-    std::array<i32, 8> bombProjectileStates{};
-    std::array<f32, 8> bombProjectileRelated{};
-    std::array<SpectatorVec3Checkpoint, 8> bombPositions{}, bombVelocities{};
-};
-struct SpectatorCheckpoint
-{
-    std::uint32_t magic = 0x36504353; // SCP6
-    std::int32_t stage = 0, difficulty = 0, rank = 0, maxRank = 0, minRank = 0, subRank = 0;
-    std::uint16_t initialSeed = 0, stageSeed = 0, rngSeed = 0, currentPower = 0, pointItemsInStage = 0, pointItems = 0;
-    std::uint16_t randomItemSpawnIndex = 0, randomItemTableIndex = 0;
-    std::uint32_t rngGeneration = 0;
-    std::uint64_t expectedHash = 0;
-    std::uint64_t expectedPlayer0 = 0, expectedPlayer1 = 0, expectedPlayer2 = 0;
-    std::array<f32, TH06_MULTI_MAX_PLAYERS * 3> playerPositionCenter{};
-    std::array<i32, TH06_MULTI_MAX_PLAYERS> playerRespawnTimer{}, playerBulletGracePeriod{}, playerState{};
-    std::array<i32, TH06_MULTI_MAX_PLAYERS * 2> playerInvulnerabilityTimer{};
-    std::array<f32, TH06_MULTI_MAX_PLAYERS> playerInvulnerabilitySubFrame{};
-    std::array<SpectatorPlayerCheckpoint, TH06_MULTI_MAX_PLAYERS> players{};
-    std::uint32_t guiScore = 0, score = 0, nextScoreIncrement = 0, highScore = 0, gameFrames = 0;
-    std::int32_t grazeInStage = 0, grazeTotal = 0, deaths = 0, bombsUsed = 0, spellcardsCaptured = 0;
-    std::int32_t demoFrames = 0, menuCursorBackup = 0;
-    std::uint8_t numRetries = 0, powerItemCountForScore = 0, livesRemaining = 0, bombsRemaining = 0;
-    std::uint8_t extraLives = 0, character = 0, shotType = 0;
-    std::uint8_t isTimeStopped = 0, isInReplay = 0, isInGameMenu = 0, isInRetryMenu = 0;
-    std::uint8_t isInMenu = 0, isGameCompleted = 0, isInPracticeMode = 0, demoMode = 0;
-    ZunVec2 arcadeTop{}, arcadeSize{}, prevArcadeTop{}, prevArcadeSize{};
-    ZunVec2 movementTop{}, movementSize{};
-    f32 cameraDistance = 0.0f;
-    ZunVec3 cameraFacing{};
-    std::uint16_t curInput = 0, lastInput = 0, eighthHeld = 0, heldFrames = 0;
-    std::array<std::uint16_t, TH06_MULTI_MAX_PLAYERS> curPlayerInput{}, lastPlayerInput{};
-    MultiplayerGameplay::SessionState session{};
-    std::array<i32, TH06_MULTI_MAX_PLAYERS> lives{}, bombs{}, powers{}, kills{}, damage{}, challengeDeaths{};
-    std::vector<SpectatorPlayerBulletCheckpoint> playerBullets;
-    i32 teamWipeRetryFrames = 0;
-    i32 supervisorWanted = 0, supervisorCurrent = 0, supervisorWanted2 = 0;
-    bool supervisorEnding = false;
-    f32 supervisorFramerate = 0.0f;
-};
-
-void CaptureSpectatorVec3(SpectatorVec3Checkpoint *out, const ZunVec3 &value)
-{
-    out->x = value.x; out->y = value.y; out->z = value.z;
-}
-
-void ApplySpectatorVec3(const SpectatorVec3Checkpoint &value, ZunVec3 *out)
-{
-    *out = ZunVec3(value.x, value.y, value.z);
-}
-
-void CaptureSpectatorTimer(SpectatorTimerCheckpoint *out, const ZunTimer &value)
-{
-    out->previous = value.previous; out->current = value.current; out->subFrame = value.subFrame;
-}
-
-void ApplySpectatorTimer(const SpectatorTimerCheckpoint &value, ZunTimer *out)
-{
-    out->previous = value.previous; out->current = value.current; out->subFrame = value.subFrame;
-}
-
-bool WriteSpectatorVec3(SpectatorScalars::Writer &writer, const SpectatorVec3Checkpoint &value)
-{
-    return writer.Values(value.x, value.y, value.z);
-}
-
-bool ReadSpectatorVec3(SpectatorScalars::Reader &reader, SpectatorVec3Checkpoint *value)
-{
-    return reader.Values(value->x, value->y, value->z);
-}
-
-bool WriteSpectatorTimer(SpectatorScalars::Writer &writer, const SpectatorTimerCheckpoint &value)
-{
-    return writer.Values(value.previous, value.subFrame, value.current);
-}
-
-bool ReadSpectatorTimer(SpectatorScalars::Reader &reader, SpectatorTimerCheckpoint *value)
-{
-    return reader.Values(value->previous, value->subFrame, value->current);
-}
-
-u32 CaptureSpectatorAnmFlags(const AnmVmFlags &flags)
-{
-    return (u32(flags.isVisible) << 0) | (u32(flags.flag1) << 1) | (u32(flags.blendMode) << 2) |
-           (u32(flags.colorOp) << 3) | (u32(flags.flag4) << 4) | (u32(flags.usePosOffset) << 5) |
-           (u32(flags.flip) << 6) | (u32(flags.anchor) << 8) | (u32(flags.posTime) << 10) |
-           (u32(flags.zWriteDisable) << 12) | (u32(flags.isStopped) << 13);
-}
-
-void ApplySpectatorAnmFlags(u32 bits, AnmVmFlags *flags)
-{
-    flags->isVisible = (bits >> 0) & 1; flags->flag1 = (bits >> 1) & 1;
-    flags->blendMode = (bits >> 2) & 1; flags->colorOp = (bits >> 3) & 1;
-    flags->flag4 = (bits >> 4) & 1; flags->usePosOffset = (bits >> 5) & 1;
-    flags->flip = (bits >> 6) & 3; flags->anchor = (bits >> 8) & 3;
-    flags->posTime = (bits >> 10) & 3; flags->zWriteDisable = (bits >> 12) & 1;
-    flags->isStopped = (bits >> 13) & 1;
-}
-
-bool WriteSpectatorBullet(SpectatorScalars::Writer &writer, const SpectatorPlayerBulletCheckpoint &b)
-{
-    if (!writer.Values(b.player, b.slot, b.positionX, b.positionY, b.positionZ,
-                       b.previousPositionX, b.previousPositionY, b.previousPositionZ,
-                       b.sizeX, b.sizeY, b.sizeZ, b.velocityX, b.velocityY,
-                       b.sidewaysMotion, b.unk134X, b.unk134Y, b.unk134Z,
-                       b.unk140Previous, b.unk140SubFrame, b.unk140Current,
-                       b.damage, b.bulletState, b.bulletType, b.unk152,
-                       b.spawnPositionIdx, b.anmFileIndex, b.hasVm)) return false;
-    if (!b.hasVm) return true;
-    if (!writer.Values(b.vmInstructionOffset, b.vmActiveSpriteIndex, b.vmBaseSpriteIndex,
-                       b.vmFlags, b.vmColor, b.vmPrevColor, b.vmAlphaInitial, b.vmAlphaFinal,
-                       b.vmAlphaEnd, b.vmScaleEnd, b.vmAutoRotate, b.vmPendingInterrupt, b.vmPosEnd,
-                       b.vmTimeOfLastSpriteSet, b.vmFontWidth, b.vmFontHeight,
-                       b.vmScaleX, b.vmScaleY, b.vmPrevScaleX, b.vmPrevScaleY,
-                       b.vmScaleFinalX, b.vmScaleFinalY, b.vmScaleInitialX, b.vmScaleInitialY,
-                       b.vmUvX, b.vmUvY, b.vmPrevUvX, b.vmPrevUvY)) return false;
-    return WriteSpectatorVec3(writer, b.vmRotation) && WriteSpectatorVec3(writer, b.vmPrevRotation) &&
-           WriteSpectatorVec3(writer, b.vmAngleVel) && WriteSpectatorVec3(writer, b.vmPos) &&
-           WriteSpectatorVec3(writer, b.vmPrevPos) && WriteSpectatorVec3(writer, b.vmPosInterpInitial) &&
-           WriteSpectatorVec3(writer, b.vmPosInterpFinal) && WriteSpectatorVec3(writer, b.vmPosOffset) &&
-           WriteSpectatorTimer(writer, b.vmScriptTime) && WriteSpectatorTimer(writer, b.vmScaleTime) &&
-           WriteSpectatorTimer(writer, b.vmPosTime) && WriteSpectatorTimer(writer, b.vmAlphaTime);
-}
-
-bool ReadSpectatorBullet(SpectatorScalars::Reader &reader, SpectatorPlayerBulletCheckpoint *b)
-{
-    if (!reader.Values(b->player, b->slot, b->positionX, b->positionY, b->positionZ,
-                       b->previousPositionX, b->previousPositionY, b->previousPositionZ,
-                       b->sizeX, b->sizeY, b->sizeZ, b->velocityX, b->velocityY,
-                       b->sidewaysMotion, b->unk134X, b->unk134Y, b->unk134Z,
-                       b->unk140Previous, b->unk140SubFrame, b->unk140Current,
-                       b->damage, b->bulletState, b->bulletType, b->unk152,
-                       b->spawnPositionIdx, b->anmFileIndex, b->hasVm)) return false;
-    if (!b->hasVm) return true;
-    if (!reader.Values(b->vmInstructionOffset, b->vmActiveSpriteIndex, b->vmBaseSpriteIndex,
-                       b->vmFlags, b->vmColor, b->vmPrevColor, b->vmAlphaInitial, b->vmAlphaFinal,
-                       b->vmAlphaEnd, b->vmScaleEnd, b->vmAutoRotate, b->vmPendingInterrupt, b->vmPosEnd,
-                       b->vmTimeOfLastSpriteSet, b->vmFontWidth, b->vmFontHeight,
-                       b->vmScaleX, b->vmScaleY, b->vmPrevScaleX, b->vmPrevScaleY,
-                       b->vmScaleFinalX, b->vmScaleFinalY, b->vmScaleInitialX, b->vmScaleInitialY,
-                       b->vmUvX, b->vmUvY, b->vmPrevUvX, b->vmPrevUvY)) return false;
-    return ReadSpectatorVec3(reader, &b->vmRotation) && ReadSpectatorVec3(reader, &b->vmPrevRotation) &&
-           ReadSpectatorVec3(reader, &b->vmAngleVel) && ReadSpectatorVec3(reader, &b->vmPos) &&
-           ReadSpectatorVec3(reader, &b->vmPrevPos) && ReadSpectatorVec3(reader, &b->vmPosInterpInitial) &&
-           ReadSpectatorVec3(reader, &b->vmPosInterpFinal) && ReadSpectatorVec3(reader, &b->vmPosOffset) &&
-           ReadSpectatorTimer(reader, &b->vmScriptTime) && ReadSpectatorTimer(reader, &b->vmScaleTime) &&
-           ReadSpectatorTimer(reader, &b->vmPosTime) && ReadSpectatorTimer(reader, &b->vmAlphaTime);
-}
-
-void CaptureSpectatorBullet(const PlayerBullet &bullet, std::uint8_t player, std::uint8_t slot,
-                            SpectatorPlayerBulletCheckpoint *out)
-{
-    out->player = player; out->slot = slot;
-    out->positionX = bullet.position.x; out->positionY = bullet.position.y; out->positionZ = bullet.position.z;
-    out->previousPositionX = bullet.prevPosition.x; out->previousPositionY = bullet.prevPosition.y;
-    out->previousPositionZ = bullet.prevPosition.z;
-    out->sizeX = bullet.size.x; out->sizeY = bullet.size.y; out->sizeZ = bullet.size.z;
-    out->velocityX = bullet.velocity.x; out->velocityY = bullet.velocity.y;
-    out->sidewaysMotion = bullet.sidewaysMotion;
-    out->unk134X = bullet.unk_134.x; out->unk134Y = bullet.unk_134.y; out->unk134Z = bullet.unk_134.z;
-    out->unk140Previous = bullet.unk_140.previous; out->unk140Current = bullet.unk_140.current;
-    out->unk140SubFrame = bullet.unk_140.subFrame;
-    out->damage = bullet.damage; out->bulletState = bullet.bulletState; out->bulletType = bullet.bulletType;
-    out->unk152 = bullet.unk_152; out->spawnPositionIdx = bullet.spawnPositionIdx;
-    const AnmVm &vm = bullet.sprite;
-    out->anmFileIndex = vm.anmFileIndex;
-    // Used inactive slots keep their bullet scalars because a future spawn
-    // does not overwrite every TH06 bullet field. Their VM is reinitialized
-    // by SetAndExecuteScriptIdx on the next spawn, so only active slots need
-    // the larger animation/timing checkpoint.
-    out->hasVm = bullet.bulletState != PLAYER_BULLET_STATE_UNUSED;
-    if (!out->hasVm) return;
-    if (vm.currentInstruction && vm.beginingOfScript)
-    {
-        const auto current = reinterpret_cast<std::uintptr_t>(vm.currentInstruction);
-        const auto begin = reinterpret_cast<std::uintptr_t>(vm.beginingOfScript);
-        if (current >= begin && current - begin <= 1024 * 1024)
-            out->vmInstructionOffset = static_cast<i32>(current - begin);
-    }
-    out->vmActiveSpriteIndex = vm.activeSpriteIndex; out->vmBaseSpriteIndex = vm.baseSpriteIndex;
-    out->vmFlags = CaptureSpectatorAnmFlags(vm.flags);
-    out->vmColor = vm.color; out->vmPrevColor = vm.prevColor;
-    out->vmAlphaInitial = vm.alphaInterpInitial; out->vmAlphaFinal = vm.alphaInterpFinal;
-    out->vmAlphaEnd = vm.alphaInterpEndTime; out->vmScaleEnd = vm.scaleInterpEndTime;
-    out->vmAutoRotate = vm.autoRotate; out->vmPendingInterrupt = vm.pendingInterrupt;
-    out->vmPosEnd = vm.posInterpEndTime; out->vmTimeOfLastSpriteSet = vm.timeOfLastSpriteSet;
-    out->vmFontWidth = vm.fontWidth; out->vmFontHeight = vm.fontHeight;
-    CaptureSpectatorVec3(&out->vmRotation, vm.rotation); CaptureSpectatorVec3(&out->vmPrevRotation, vm.prevRotation);
-    CaptureSpectatorVec3(&out->vmAngleVel, vm.angleVel); CaptureSpectatorVec3(&out->vmPos, vm.pos);
-    CaptureSpectatorVec3(&out->vmPrevPos, vm.prevPos);
-    CaptureSpectatorVec3(&out->vmPosInterpInitial, vm.posInterpInitial);
-    CaptureSpectatorVec3(&out->vmPosInterpFinal, vm.posInterpFinal); CaptureSpectatorVec3(&out->vmPosOffset, vm.posOffset);
-    out->vmScaleX = vm.scaleX; out->vmScaleY = vm.scaleY; out->vmPrevScaleX = vm.prevScaleX; out->vmPrevScaleY = vm.prevScaleY;
-    out->vmScaleFinalX = vm.scaleInterpFinalX; out->vmScaleFinalY = vm.scaleInterpFinalY;
-    out->vmScaleInitialX = vm.scaleInterpInitialX; out->vmScaleInitialY = vm.scaleInterpInitialY;
-    out->vmUvX = vm.uvScrollPos.x; out->vmUvY = vm.uvScrollPos.y;
-    out->vmPrevUvX = vm.prevUvScrollPos.x; out->vmPrevUvY = vm.prevUvScrollPos.y;
-    CaptureSpectatorTimer(&out->vmScriptTime, vm.currentTimeInScript);
-    CaptureSpectatorTimer(&out->vmScaleTime, vm.scaleInterpTime);
-    CaptureSpectatorTimer(&out->vmPosTime, vm.posInterpTime);
-    CaptureSpectatorTimer(&out->vmAlphaTime, vm.alphaInterpTime);
-}
-
-bool ApplySpectatorBullet(const SpectatorPlayerBulletCheckpoint &source, PlayerBullet *out)
-{
-    out->position = ZunVec3(source.positionX, source.positionY, source.positionZ);
-    out->prevPosition = ZunVec3(source.previousPositionX, source.previousPositionY, source.previousPositionZ);
-    out->size = ZunVec3(source.sizeX, source.sizeY, source.sizeZ);
-    out->velocity = ZunVec2(source.velocityX, source.velocityY);
-    out->sidewaysMotion = source.sidewaysMotion;
-    out->unk_134 = ZunVec3(source.unk134X, source.unk134Y, source.unk134Z);
-    out->unk_140.previous = source.unk140Previous; out->unk_140.subFrame = source.unk140SubFrame;
-    out->unk_140.current = source.unk140Current;
-    out->damage = static_cast<i16>(source.damage); out->bulletState = static_cast<i16>(source.bulletState);
-    out->bulletType = static_cast<i16>(source.bulletType); out->unk_152 = static_cast<i16>(source.unk152);
-    out->spawnPositionIdx = static_cast<i16>(source.spawnPositionIdx);
-    if (!source.hasVm) return true;
-    AnmVm &vm = out->sprite;
-    if (source.anmFileIndex < 0 || source.anmFileIndex >= 2048) return false;
-    g_AnmManager->SetAndExecuteScriptIdx(&vm, source.anmFileIndex);
-    if (source.vmActiveSpriteIndex >= 0)
-    {
-        if (source.vmActiveSpriteIndex >= 2048 ||
-            g_AnmManager->SetActiveSprite(&vm, static_cast<u32>(source.vmActiveSpriteIndex)) != ZUN_SUCCESS)
-            return false;
-    }
-    else
-    {
-        vm.activeSpriteIndex = -1;
-        vm.sprite = nullptr;
-    }
-    vm.baseSpriteIndex = source.vmBaseSpriteIndex;
-    vm.currentTimeInScript.previous = source.vmScriptTime.previous;
-    vm.currentTimeInScript.current = source.vmScriptTime.current;
-    vm.currentTimeInScript.subFrame = source.vmScriptTime.subFrame;
-    vm.currentInstruction = source.vmInstructionOffset < 0 || !vm.beginingOfScript
-        ? nullptr
-        : reinterpret_cast<const AnmRawInstr *>(reinterpret_cast<std::uintptr_t>(vm.beginingOfScript) +
-                                               static_cast<std::uintptr_t>(source.vmInstructionOffset));
-    vm.rotation = ZunVec3(source.vmRotation.x, source.vmRotation.y, source.vmRotation.z);
-    vm.prevRotation = ZunVec3(source.vmPrevRotation.x, source.vmPrevRotation.y, source.vmPrevRotation.z);
-    vm.angleVel = ZunVec3(source.vmAngleVel.x, source.vmAngleVel.y, source.vmAngleVel.z);
-    vm.pos = ZunVec3(source.vmPos.x, source.vmPos.y, source.vmPos.z);
-    vm.prevPos = ZunVec3(source.vmPrevPos.x, source.vmPrevPos.y, source.vmPrevPos.z);
-    vm.scaleX = source.vmScaleX; vm.scaleY = source.vmScaleY;
-    vm.prevScaleX = source.vmPrevScaleX; vm.prevScaleY = source.vmPrevScaleY;
-    vm.scaleInterpFinalX = source.vmScaleFinalX; vm.scaleInterpFinalY = source.vmScaleFinalY;
-    vm.scaleInterpInitialX = source.vmScaleInitialX; vm.scaleInterpInitialY = source.vmScaleInitialY;
-    vm.scaleInterpEndTime = source.vmScaleEnd;
-    vm.scaleInterpTime.previous = source.vmScaleTime.previous; vm.scaleInterpTime.current = source.vmScaleTime.current;
-    vm.scaleInterpTime.subFrame = source.vmScaleTime.subFrame;
-    vm.uvScrollPos = ZunVec2(source.vmUvX, source.vmUvY);
-    vm.prevUvScrollPos = ZunVec2(source.vmPrevUvX, source.vmPrevUvY);
-    vm.color = source.vmColor; vm.prevColor = source.vmPrevColor;
-    vm.alphaInterpInitial = source.vmAlphaInitial; vm.alphaInterpFinal = source.vmAlphaFinal;
-    vm.alphaInterpEndTime = source.vmAlphaEnd;
-    vm.alphaInterpTime.previous = source.vmAlphaTime.previous; vm.alphaInterpTime.current = source.vmAlphaTime.current;
-    vm.alphaInterpTime.subFrame = source.vmAlphaTime.subFrame;
-    vm.posInterpEndTime = source.vmPosEnd;
-    vm.posInterpInitial = ZunVec3(source.vmPosInterpInitial.x, source.vmPosInterpInitial.y, source.vmPosInterpInitial.z);
-    vm.posInterpFinal = ZunVec3(source.vmPosInterpFinal.x, source.vmPosInterpFinal.y, source.vmPosInterpFinal.z);
-    vm.posOffset = ZunVec3(source.vmPosOffset.x, source.vmPosOffset.y, source.vmPosOffset.z);
-    vm.posInterpTime.previous = source.vmPosTime.previous; vm.posInterpTime.current = source.vmPosTime.current;
-    vm.posInterpTime.subFrame = source.vmPosTime.subFrame;
-    vm.autoRotate = source.vmAutoRotate; vm.pendingInterrupt = source.vmPendingInterrupt;
-    vm.timeOfLastSpriteSet = source.vmTimeOfLastSpriteSet; vm.fontWidth = source.vmFontWidth; vm.fontHeight = source.vmFontHeight;
-    ApplySpectatorAnmFlags(source.vmFlags, &vm.flags);
-    out->sprite.pos = ZunVec3(source.vmPos.x, source.vmPos.y, source.vmPos.z);
-    return true;
-}
-
-bool WriteSpectatorPlayer(SpectatorScalars::Writer &writer, const SpectatorPlayerCheckpoint &p)
-{
-    if (!WriteSpectatorVec3(writer, p.unk44c) || !WriteSpectatorVec3(writer, p.hitboxTopLeft) ||
-        !WriteSpectatorVec3(writer, p.hitboxBottomRight) || !WriteSpectatorVec3(writer, p.grabItemTopLeft) ||
-        !WriteSpectatorVec3(writer, p.grabItemBottomRight) || !WriteSpectatorVec3(writer, p.hitboxSize) ||
-        !WriteSpectatorVec3(writer, p.grabItemSize)) return false;
-    for (const auto &v : p.orbsPosition) if (!WriteSpectatorVec3(writer, v)) return false;
-    for (const auto &v : p.bombRegionPositions) if (!WriteSpectatorVec3(writer, v)) return false;
-    for (const auto &v : p.bombRegionSizes) if (!WriteSpectatorVec3(writer, v)) return false;
-    if (!writer.Array(p.bombRegionDamages) || !writer.Array(p.unk838) || !writer.Array(p.bombProjectiles)) return false;
-    for (const auto &t : p.laserTimer) if (!WriteSpectatorTimer(writer, t)) return false;
-    if (!writer.Values(p.horizontalMovementSpeedMultiplierDuringBomb, p.verticalMovementSpeedMultiplierDuringBomb,
-                       p.initParam, p.lifeGiveTimer, p.lifeGiveTargetToken, p.powerGiveTaps, p.powerGiveWindow,
-                       p.orbState, p.isFocus, p.unk9e4) || !WriteSpectatorTimer(writer, p.focusMovementTimer) ||
-        !writer.Values(p.playerDirection, p.previousHorizontalSpeed, p.previousVerticalSpeed, p.previousFrameInput) ||
-        !WriteSpectatorVec3(writer, p.positionOfLastEnemyHit) || !WriteSpectatorTimer(writer, p.fireBulletTimer) ||
-        !WriteSpectatorTimer(writer, p.teamBombProtectionTimer) || !writer.Values(p.bombIsInUse, p.bombDuration) ||
-        !WriteSpectatorTimer(writer, p.bombTimer) || !writer.Array(p.bombProjectileStates) ||
-        !writer.Array(p.bombProjectileRelated)) return false;
-    for (const auto &v : p.bombPositions) if (!WriteSpectatorVec3(writer, v)) return false;
-    for (const auto &v : p.bombVelocities) if (!WriteSpectatorVec3(writer, v)) return false;
-    return writer.Good();
-}
-
-bool ReadSpectatorPlayer(SpectatorScalars::Reader &reader, SpectatorPlayerCheckpoint *p)
-{
-    if (!ReadSpectatorVec3(reader, &p->unk44c) || !ReadSpectatorVec3(reader, &p->hitboxTopLeft) ||
-        !ReadSpectatorVec3(reader, &p->hitboxBottomRight) || !ReadSpectatorVec3(reader, &p->grabItemTopLeft) ||
-        !ReadSpectatorVec3(reader, &p->grabItemBottomRight) || !ReadSpectatorVec3(reader, &p->hitboxSize) ||
-        !ReadSpectatorVec3(reader, &p->grabItemSize)) return false;
-    for (auto &v : p->orbsPosition) if (!ReadSpectatorVec3(reader, &v)) return false;
-    for (auto &v : p->bombRegionPositions) if (!ReadSpectatorVec3(reader, &v)) return false;
-    for (auto &v : p->bombRegionSizes) if (!ReadSpectatorVec3(reader, &v)) return false;
-    if (!reader.Array(p->bombRegionDamages) || !reader.Array(p->unk838) || !reader.Array(p->bombProjectiles)) return false;
-    for (auto &t : p->laserTimer) if (!ReadSpectatorTimer(reader, &t)) return false;
-    if (!reader.Values(p->horizontalMovementSpeedMultiplierDuringBomb, p->verticalMovementSpeedMultiplierDuringBomb,
-                       p->initParam, p->lifeGiveTimer, p->lifeGiveTargetToken, p->powerGiveTaps, p->powerGiveWindow,
-                       p->orbState, p->isFocus, p->unk9e4) || !ReadSpectatorTimer(reader, &p->focusMovementTimer) ||
-        !reader.Values(p->playerDirection, p->previousHorizontalSpeed, p->previousVerticalSpeed, p->previousFrameInput) ||
-        !ReadSpectatorVec3(reader, &p->positionOfLastEnemyHit) || !ReadSpectatorTimer(reader, &p->fireBulletTimer) ||
-        !ReadSpectatorTimer(reader, &p->teamBombProtectionTimer) || !reader.Values(p->bombIsInUse, p->bombDuration) ||
-        !ReadSpectatorTimer(reader, &p->bombTimer) || !reader.Array(p->bombProjectileStates) ||
-        !reader.Array(p->bombProjectileRelated)) return false;
-    for (auto &v : p->bombPositions) if (!ReadSpectatorVec3(reader, &v)) return false;
-    for (auto &v : p->bombVelocities) if (!ReadSpectatorVec3(reader, &v)) return false;
-    return true;
-}
-
-void CaptureSpectatorPlayer(const Player &source, SpectatorPlayerCheckpoint *out)
-{
-    CaptureSpectatorVec3(&out->unk44c, source.unk_44c);
-    CaptureSpectatorVec3(&out->hitboxTopLeft, source.hitboxTopLeft);
-    CaptureSpectatorVec3(&out->hitboxBottomRight, source.hitboxBottomRight);
-    CaptureSpectatorVec3(&out->grabItemTopLeft, source.grabItemTopLeft);
-    CaptureSpectatorVec3(&out->grabItemBottomRight, source.grabItemBottomRight);
-    CaptureSpectatorVec3(&out->hitboxSize, source.hitboxSize);
-    CaptureSpectatorVec3(&out->grabItemSize, source.grabItemSize);
-    for (std::size_t i = 0; i < out->orbsPosition.size(); ++i) CaptureSpectatorVec3(&out->orbsPosition[i], source.orbsPosition[i]);
-    for (std::size_t i = 0; i < out->bombRegionPositions.size(); ++i)
-    {
-        CaptureSpectatorVec3(&out->bombRegionPositions[i], source.bombRegionPositions[i]);
-        CaptureSpectatorVec3(&out->bombRegionSizes[i], source.bombRegionSizes[i]);
-        out->bombRegionDamages[i] = source.bombRegionDamages[i]; out->unk838[i] = source.unk_838[i];
-    }
-    for (std::size_t i = 0; i < std::size(source.bombProjectiles); ++i)
-    {
-        out->bombProjectiles[i * 4] = source.bombProjectiles[i].posX;
-        out->bombProjectiles[i * 4 + 1] = source.bombProjectiles[i].posY;
-        out->bombProjectiles[i * 4 + 2] = source.bombProjectiles[i].sizeX;
-        out->bombProjectiles[i * 4 + 3] = source.bombProjectiles[i].sizeY;
-    }
-    for (std::size_t i = 0; i < out->laserTimer.size(); ++i) CaptureSpectatorTimer(&out->laserTimer[i], source.laserTimer[i]);
-    out->horizontalMovementSpeedMultiplierDuringBomb = source.horizontalMovementSpeedMultiplierDuringBomb;
-    out->verticalMovementSpeedMultiplierDuringBomb = source.verticalMovementSpeedMultiplierDuringBomb;
-    out->initParam = source.initParam; out->lifeGiveTimer = source.lifeGiveTimer;
-    out->lifeGiveTargetToken = source.lifeGiveTargetToken; out->powerGiveTaps = source.powerGiveTaps;
-    out->powerGiveWindow = source.powerGiveWindow; out->orbState = source.orbState;
-    out->isFocus = source.isFocus; out->unk9e4 = source.unk_9e4;
-    CaptureSpectatorTimer(&out->focusMovementTimer, source.focusMovementTimer);
-    out->playerDirection = source.playerDirection; out->previousHorizontalSpeed = source.previousHorizontalSpeed;
-    out->previousVerticalSpeed = source.previousVerticalSpeed; out->previousFrameInput = source.previousFrameInput;
-    CaptureSpectatorVec3(&out->positionOfLastEnemyHit, source.positionOfLastEnemyHit);
-    CaptureSpectatorTimer(&out->fireBulletTimer, source.fireBulletTimer);
-    CaptureSpectatorTimer(&out->teamBombProtectionTimer, source.teamBombProtectionTimer);
-    out->bombIsInUse = source.bombInfo.isInUse; out->bombDuration = source.bombInfo.duration;
-    CaptureSpectatorTimer(&out->bombTimer, source.bombInfo.timer);
-    for (std::size_t i = 0; i < out->bombProjectileStates.size(); ++i)
-    {
-        out->bombProjectileStates[i] = source.bombInfo.reimuABombProjectilesState[i];
-        out->bombProjectileRelated[i] = source.bombInfo.reimuABombProjectilesRelated[i];
-        CaptureSpectatorVec3(&out->bombPositions[i], source.bombInfo.bombRegionPositions[i]);
-        CaptureSpectatorVec3(&out->bombVelocities[i], source.bombInfo.bombRegionVelocities[i]);
-    }
-}
-
-void ApplySpectatorPlayer(const SpectatorPlayerCheckpoint &source, Player *out)
-{
-    ApplySpectatorVec3(source.unk44c, &out->unk_44c);
-    ApplySpectatorVec3(source.hitboxTopLeft, &out->hitboxTopLeft);
-    ApplySpectatorVec3(source.hitboxBottomRight, &out->hitboxBottomRight);
-    ApplySpectatorVec3(source.grabItemTopLeft, &out->grabItemTopLeft);
-    ApplySpectatorVec3(source.grabItemBottomRight, &out->grabItemBottomRight);
-    ApplySpectatorVec3(source.hitboxSize, &out->hitboxSize);
-    ApplySpectatorVec3(source.grabItemSize, &out->grabItemSize);
-    for (std::size_t i = 0; i < source.orbsPosition.size(); ++i) ApplySpectatorVec3(source.orbsPosition[i], &out->orbsPosition[i]);
-    for (std::size_t i = 0; i < source.bombRegionPositions.size(); ++i)
-    {
-        ApplySpectatorVec3(source.bombRegionPositions[i], &out->bombRegionPositions[i]);
-        ApplySpectatorVec3(source.bombRegionSizes[i], &out->bombRegionSizes[i]);
-        out->bombRegionDamages[i] = source.bombRegionDamages[i]; out->unk_838[i] = source.unk838[i];
-    }
-    for (std::size_t i = 0; i < std::size(out->bombProjectiles); ++i)
-    {
-        out->bombProjectiles[i].posX = source.bombProjectiles[i * 4];
-        out->bombProjectiles[i].posY = source.bombProjectiles[i * 4 + 1];
-        out->bombProjectiles[i].sizeX = source.bombProjectiles[i * 4 + 2];
-        out->bombProjectiles[i].sizeY = source.bombProjectiles[i * 4 + 3];
-    }
-    for (std::size_t i = 0; i < source.laserTimer.size(); ++i) ApplySpectatorTimer(source.laserTimer[i], &out->laserTimer[i]);
-    out->horizontalMovementSpeedMultiplierDuringBomb = source.horizontalMovementSpeedMultiplierDuringBomb;
-    out->verticalMovementSpeedMultiplierDuringBomb = source.verticalMovementSpeedMultiplierDuringBomb;
-    out->initParam = source.initParam; out->lifeGiveTimer = source.lifeGiveTimer;
-    out->lifeGiveTargetToken = source.lifeGiveTargetToken; out->powerGiveTaps = source.powerGiveTaps;
-    out->powerGiveWindow = source.powerGiveWindow; out->orbState = source.orbState;
-    out->isFocus = source.isFocus; out->unk_9e4 = source.unk9e4;
-    ApplySpectatorTimer(source.focusMovementTimer, &out->focusMovementTimer);
-    out->playerDirection = static_cast<PlayerDirection>(source.playerDirection);
-    out->previousHorizontalSpeed = source.previousHorizontalSpeed; out->previousVerticalSpeed = source.previousVerticalSpeed;
-    out->previousFrameInput = source.previousFrameInput;
-    ApplySpectatorVec3(source.positionOfLastEnemyHit, &out->positionOfLastEnemyHit);
-    ApplySpectatorTimer(source.fireBulletTimer, &out->fireBulletTimer);
-    ApplySpectatorTimer(source.teamBombProtectionTimer, &out->teamBombProtectionTimer);
-    out->bombInfo.isInUse = source.bombIsInUse; out->bombInfo.duration = source.bombDuration;
-    ApplySpectatorTimer(source.bombTimer, &out->bombInfo.timer);
-    for (std::size_t i = 0; i < source.bombProjectileStates.size(); ++i)
-    {
-        out->bombInfo.reimuABombProjectilesState[i] = source.bombProjectileStates[i];
-        out->bombInfo.reimuABombProjectilesRelated[i] = source.bombProjectileRelated[i];
-        ApplySpectatorVec3(source.bombPositions[i], &out->bombInfo.bombRegionPositions[i]);
-        ApplySpectatorVec3(source.bombVelocities[i], &out->bombInfo.bombRegionVelocities[i]);
-    }
-}
-
-struct SpectatorDiagnosticHasher
-{
-    std::uint64_t value = 1469598103934665603ull;
-
-    template <typename T>
-    void Scalar(const T &item)
-    {
-        const auto *bytes = reinterpret_cast<const std::uint8_t *>(&item);
-        for (std::size_t i = 0; i < sizeof(item); ++i)
-        {
-            value ^= bytes[i];
-            value *= 1099511628211ull;
-        }
-    }
-
-    void Vec2(const ZunVec2 &item) { Scalar(item.x); Scalar(item.y); }
-    void Vec3(const ZunVec3 &item) { Scalar(item.x); Scalar(item.y); Scalar(item.z); }
-    void Timer(const ZunTimer &item) { Scalar(item.previous); Scalar(item.subFrame); Scalar(item.current); }
-};
-
-std::array<std::uint64_t, 5> SpectatorStageDiagnosticParts()
-{
-    std::array<SpectatorDiagnosticHasher, 5> h{};
-    h[0].Timer(g_Stage.scriptTime); h[0].Scalar(g_Stage.instructionIndex);
-    h[0].Timer(g_Stage.timer); h[0].Scalar(g_Stage.stage); h[0].Vec3(g_Stage.position);
-    h[0].Scalar(g_Stage.skyFog.nearPlane); h[0].Scalar(g_Stage.skyFog.farPlane);
-    h[0].Scalar(g_Stage.skyFogInterpInitial.nearPlane); h[0].Scalar(g_Stage.skyFogInterpInitial.farPlane);
-    h[0].Scalar(g_Stage.skyFogInterpFinal.nearPlane); h[0].Scalar(g_Stage.skyFogInterpFinal.farPlane);
-    h[0].Scalar(g_Stage.skyFogInterpDuration); h[0].Timer(g_Stage.skyFogInterpTimer);
-    h[0].Scalar(g_Stage.skyFogNeedsSetup); h[0].Scalar(g_Stage.spellcardState);
-    h[0].Scalar(g_Stage.ticksSinceSpellcardStarted); h[0].Scalar(g_Stage.unpauseFlag);
-
-    h[1].Vec3(g_Stage.facingDirInterpInitial); h[1].Vec3(g_Stage.facingDirInterpFinal);
-    h[1].Scalar(g_Stage.facingDirInterpDuration); h[1].Timer(g_Stage.facingDirInterpTimer);
-    h[1].Vec3(g_Stage.positionInterpFinal); h[1].Scalar(g_Stage.positionInterpEndTime);
-    h[1].Vec3(g_Stage.positionInterpInitial); h[1].Scalar(g_Stage.positionInterpStartTime);
-
-    h[2].Scalar(g_Stage.quadCount); h[2].Scalar(g_Stage.objectsCount);
-    for (i32 i = 0; i < g_Stage.objectsCount; ++i)
-    {
-        const std::uint8_t present = g_Stage.objects && g_Stage.objects[i] ? 1 : 0;
-        h[2].Scalar(present);
-        if (present)
-            h[2].Scalar(g_Stage.objects[i]->flags);
-    }
-
-    h[3].Scalar(g_EnemyManager.randomItemSpawnIndex);
-    h[3].Scalar(g_EnemyManager.randomItemTableIndex);
-    const EclTimelineInstr *timeline = g_EnemyManager.timelineInstr;
-    const std::uint8_t timelinePresent = timeline ? 1 : 0;
-    h[3].Scalar(timelinePresent);
-    if (timeline)
-    {
-        h[3].Scalar(timeline->time); h[3].Scalar(timeline->arg0);
-        h[3].Scalar(timeline->opCode); h[3].Scalar(timeline->size);
-    }
-    h[3].Timer(g_EnemyManager.timelineTime);
-
-    const EnemyEclInstr::RollbackState *ecl = EnemyEclInstr::GetRollbackState();
-    if (ecl)
-    {
-        for (f32 value : ecl->starAngleTable) h[4].Scalar(value);
-        h[4].Vec3(ecl->enemyPosVector); h[4].Vec3(ecl->playerPosVector);
-    }
-    std::array<std::uint64_t, 5> result{};
-    for (std::size_t i = 0; i < result.size(); ++i) result[i] = h[i].value;
-    return result;
-}
-
-std::array<std::uint64_t, 4> SpectatorPlayerDiagnosticParts(const Player &p)
-{
-    std::array<SpectatorDiagnosticHasher, 4> h{};
-    h[0].Vec3(p.positionCenter); h[0].Vec3(p.unk_44c);
-    h[0].Vec3(p.hitboxTopLeft); h[0].Vec3(p.hitboxBottomRight);
-    h[0].Vec3(p.grabItemTopLeft); h[0].Vec3(p.grabItemBottomRight);
-    h[0].Vec3(p.hitboxSize); h[0].Vec3(p.grabItemSize);
-    for (const ZunVec3 &value : p.orbsPosition) h[0].Vec3(value);
-    for (const ZunVec3 &value : p.bombRegionPositions) h[0].Vec3(value);
-    for (const ZunVec3 &value : p.bombRegionSizes) h[0].Vec3(value);
-    for (i32 value : p.bombRegionDamages) h[0].Scalar(value);
-    for (i32 value : p.unk_838) h[0].Scalar(value);
-    for (const PlayerRect &rect : p.bombProjectiles)
-    {
-        h[0].Scalar(rect.posX); h[0].Scalar(rect.posY);
-        h[0].Scalar(rect.sizeX); h[0].Scalar(rect.sizeY);
-    }
-    for (const ZunTimer &timer : p.laserTimer) h[0].Timer(timer);
-    h[0].Scalar(p.horizontalMovementSpeedMultiplierDuringBomb);
-    h[0].Scalar(p.verticalMovementSpeedMultiplierDuringBomb);
-
-    h[1].Scalar(p.respawnTimer); h[1].Scalar(p.bulletGracePeriod); h[1].Scalar(p.playerState);
-    h[1].Scalar(p.initParam); h[1].Scalar(p.lifeGiveTimer); h[1].Scalar(p.lifeGiveTargetToken);
-    h[1].Scalar(p.powerGiveTaps); h[1].Scalar(p.powerGiveWindow);
-    h[1].Scalar(p.orbState); h[1].Scalar(p.isFocus); h[1].Scalar(p.unk_9e4);
-    h[1].Timer(p.focusMovementTimer); h[1].Scalar(p.playerDirection);
-    h[1].Scalar(p.previousHorizontalSpeed); h[1].Scalar(p.previousVerticalSpeed);
-    h[1].Scalar(p.previousFrameInput); h[1].Vec3(p.positionOfLastEnemyHit);
-
-    for (i32 i = 0; i < 80; ++i)
-    {
-        const PlayerBullet &b = p.bullets[i];
-        if (b.bulletState == BULLET_STATE_UNUSED) continue;
-        h[2].Scalar(i); h[2].Vec3(b.position); h[2].Vec3(b.size);
-        h[2].Scalar(b.velocity.x); h[2].Scalar(b.velocity.y); h[2].Scalar(b.sidewaysMotion);
-        h[2].Vec3(b.unk_134); h[2].Timer(b.unk_140); h[2].Scalar(b.damage);
-        h[2].Scalar(b.bulletState); h[2].Scalar(b.bulletType); h[2].Scalar(b.unk_152);
-        h[2].Scalar(b.spawnPositionIdx);
-    }
-
-    h[3].Timer(p.fireBulletTimer); h[3].Timer(p.invulnerabilityTimer);
-    h[3].Timer(p.teamBombProtectionTimer); h[3].Scalar(p.bombInfo.isInUse);
-    h[3].Scalar(p.bombInfo.duration); h[3].Timer(p.bombInfo.timer);
-    if (p.bombInfo.isInUse)
-    {
-        for (i32 value : p.bombInfo.reimuABombProjectilesState) h[3].Scalar(value);
-        for (f32 value : p.bombInfo.reimuABombProjectilesRelated) h[3].Scalar(value);
-        for (const ZunVec3 &value : p.bombInfo.bombRegionPositions) h[3].Vec3(value);
-        for (const ZunVec3 &value : p.bombInfo.bombRegionVelocities) h[3].Vec3(value);
-    }
-    std::array<std::uint64_t, 4> result{};
-    for (std::size_t i = 0; i < result.size(); ++i) result[i] = h[i].value;
-    return result;
-}
-
-void LogSpectatorNativeDiagnosticParts(const char *tag)
-{
-    const auto s = SpectatorStageDiagnosticParts();
-    std::printf("spectator-debug native-parts tag=%s stage=%016llx/%016llx/%016llx/%016llx/%016llx clocks=%d,%d/%.3f,%d,%d/%.3f,%u script=%d objects=%d,%d timeline=%d,%d,%d,%d/%.3f/%d rnd=%u ecl=%g,%g,%g rng=%u/%u gameSeed=%u player0=",
-                tag,
-                static_cast<unsigned long long>(s[0]), static_cast<unsigned long long>(s[1]),
-                static_cast<unsigned long long>(s[2]), static_cast<unsigned long long>(s[3]),
-                static_cast<unsigned long long>(s[4]),
-                g_Stage.scriptTime.previous, g_Stage.scriptTime.current, g_Stage.scriptTime.subFrame,
-                g_Stage.timer.previous, g_Stage.timer.current, g_Stage.timer.subFrame,
-                static_cast<unsigned>(g_Stage.stage), g_Stage.instructionIndex,
-                g_Stage.quadCount, g_Stage.objectsCount,
-                g_EnemyManager.timelineInstr ? g_EnemyManager.timelineInstr->time : -1,
-                g_EnemyManager.timelineInstr ? g_EnemyManager.timelineInstr->arg0 : -1,
-                g_EnemyManager.timelineInstr ? g_EnemyManager.timelineInstr->opCode : -1,
-                g_EnemyManager.timelineInstr ? g_EnemyManager.timelineInstr->size : -1,
-                g_EnemyManager.timelineTime.subFrame, g_EnemyManager.timelineTime.current,
-                static_cast<unsigned>(g_EnemyManager.randomItemSpawnIndex),
-                EnemyEclInstr::GetRollbackState()->starAngleTable[0],
-                EnemyEclInstr::GetRollbackState()->enemyPosVector.x,
-                EnemyEclInstr::GetRollbackState()->playerPosVector.x,
-                static_cast<unsigned>(g_Rng.seed),
-                static_cast<unsigned>(g_Rng.generationCount),
-                static_cast<unsigned>(g_GameManager.randomSeed));
-    for (u8 slot = 0; slot < TH06_MULTI_MAX_PLAYERS; ++slot)
-    {
-        const auto p = SpectatorPlayerDiagnosticParts(g_Players[slot]);
-        std::printf("P%u active=%d=%016llx/%016llx/%016llx/%016llx pos=%.2f,%.2f,%.2f prevHit=%.2f,%.2f,%.2f bullets=%d bomb=%d invuln=%d/%d/%.3f team=%d/%d/%.3f ",
-                    static_cast<unsigned>(slot),
-                    g_PlayerActive[slot] ? 1 : 0,
-                    static_cast<unsigned long long>(p[0]), static_cast<unsigned long long>(p[1]),
-                    static_cast<unsigned long long>(p[2]), static_cast<unsigned long long>(p[3]),
-                    g_Players[slot].positionCenter.x, g_Players[slot].positionCenter.y, g_Players[slot].positionCenter.z,
-                    g_Players[slot].positionOfLastEnemyHit.x, g_Players[slot].positionOfLastEnemyHit.y,
-                    g_Players[slot].positionOfLastEnemyHit.z,
-                    static_cast<int>(std::count_if(std::begin(g_Players[slot].bullets), std::end(g_Players[slot].bullets),
-                                                   [](const PlayerBullet &b) { return b.bulletState != BULLET_STATE_UNUSED; })),
-                    g_Players[slot].bombInfo.isInUse,
-                    g_Players[slot].invulnerabilityTimer.previous, g_Players[slot].invulnerabilityTimer.current,
-                    g_Players[slot].invulnerabilityTimer.subFrame,
-                    g_Players[slot].teamBombProtectionTimer.previous, g_Players[slot].teamBombProtectionTimer.current,
-                    g_Players[slot].teamBombProtectionTimer.subFrame);
-    }
-    std::printf("\n");
-}
-
-void PublishCheckpointDiagnostic(std::uint32_t frame, std::uint8_t stage,
-                                 std::uint64_t hash, std::uint32_t confirmed,
-                                 std::uint8_t predictedMask, bool encodedCapture,
-                                 bool verifiedRestore = false)
-{
-#ifdef __EMSCRIPTEN__
-    if (!ProductionLanMode() || (!RollbackAuditEnabled() && !verifiedRestore))
-        return;
-    char hashText[17];
-    std::snprintf(hashText, sizeof(hashText), "%016llx", static_cast<unsigned long long>(hash));
-    EM_ASM({
-        const hash = UTF8ToString($1);
-        globalThis.__eaglerNetplayLanCheckpointFrame = $0 >>> 0;
-        globalThis.__eaglerNetplayLanCheckpointHash = hash;
-        globalThis.__eaglerNetplayLanCheckpointStage = $2 >>> 0;
-        globalThis.__eaglerNetplayLanCheckpointConfirmed = $3 >>> 0;
-        globalThis.__eaglerNetplayLanCheckpointPredictedMask = $4 >>> 0;
-        if ($5) {
-            globalThis.__eaglerNetplayLanCheckpointCaptureFrame = $0 >>> 0;
-            globalThis.__eaglerNetplayLanCheckpointCaptureHash = hash;
-            globalThis.__eaglerNetplayLanCheckpointCaptureConfirmed = $3 >>> 0;
-            globalThis.__eaglerNetplayLanCheckpointCapturePredictedMask = $4 >>> 0;
-        }
-    }, frame, hashText, static_cast<unsigned>(stage), confirmed,
-       static_cast<unsigned>(predictedMask), encodedCapture ? 1 : 0);
-#else
-    (void)frame;
-    (void)stage;
-    (void)hash;
-    (void)confirmed;
-    (void)predictedMask;
-    (void)encodedCapture;
-    (void)verifiedRestore;
-#endif
-}
-
-bool EncodeSpectatorCheckpoint(std::vector<std::uint8_t> *bytes,
-                               std::uint8_t predictedMask)
-{
-    if (!bytes || !MultiplayerGameplay::IsMultiplayer() || !g_GameManager.currentStage)
-        return false;
-    SpectatorCheckpoint cp;
-    cp.stage = g_GameManager.currentStage;
-    cp.difficulty = static_cast<i32>(g_GameManager.difficulty);
-    cp.rank = g_GameManager.rank; cp.maxRank = g_GameManager.maxRank;
-    cp.minRank = g_GameManager.minRank; cp.subRank = g_GameManager.subRank;
-    cp.initialSeed = g_GameplayStartSeed; cp.stageSeed = g_GameManager.randomSeed; cp.rngSeed = g_Rng.seed;
-    cp.randomItemSpawnIndex = g_EnemyManager.randomItemSpawnIndex;
-    cp.randomItemTableIndex = g_EnemyManager.randomItemTableIndex;
-    cp.rngGeneration = g_Rng.generationCount;
-    const auto checkpointHash = Th06CanonicalHash::Capture();
-    cp.expectedHash = checkpointHash.composite;
-    cp.expectedPlayer0 = checkpointHash.player0;
-    cp.expectedPlayer1 = checkpointHash.player1;
-    cp.expectedPlayer2 = checkpointHash.player2;
-    cp.gameFrames = g_GameManager.gameFrames;
-    for (u8 slot = 0; slot < TH06_MULTI_MAX_PLAYERS; ++slot)
-    {
-        const Player &player = g_Players[slot];
-        CaptureSpectatorPlayer(player, &cp.players[slot]);
-        cp.playerPositionCenter[slot * 3] = player.positionCenter.x;
-        cp.playerPositionCenter[slot * 3 + 1] = player.positionCenter.y;
-        cp.playerPositionCenter[slot * 3 + 2] = player.positionCenter.z;
-        cp.playerRespawnTimer[slot] = player.respawnTimer;
-        cp.playerBulletGracePeriod[slot] = player.bulletGracePeriod;
-        cp.playerState[slot] = player.playerState;
-        cp.playerInvulnerabilityTimer[slot * 2] = player.invulnerabilityTimer.previous;
-        cp.playerInvulnerabilityTimer[slot * 2 + 1] = player.invulnerabilityTimer.current;
-        cp.playerInvulnerabilitySubFrame[slot] = player.invulnerabilityTimer.subFrame;
-        for (u8 index = 0; index < std::size(player.bullets); ++index)
-        {
-            const PlayerBullet &bullet = player.bullets[index];
-            SpectatorPlayerBulletCheckpoint saved;
-            CaptureSpectatorBullet(bullet, slot, index, &saved);
-            const bool usedSlot = saved.bulletState != PLAYER_BULLET_STATE_UNUSED ||
-                saved.positionX != 0.0f || saved.positionY != 0.0f || saved.positionZ != 0.0f ||
-                saved.previousPositionX != 0.0f || saved.previousPositionY != 0.0f ||
-                saved.previousPositionZ != 0.0f || saved.sizeX != 0.0f || saved.sizeY != 0.0f ||
-                saved.sizeZ != 0.0f || saved.velocityX != 0.0f || saved.velocityY != 0.0f ||
-                saved.sidewaysMotion != 0.0f || saved.unk134X != 0.0f || saved.unk134Y != 0.0f ||
-                saved.unk134Z != 0.0f || saved.unk140Previous != 0 || saved.unk140Current != 0 ||
-                saved.unk140SubFrame != 0.0f || saved.damage != 0 || saved.bulletType != 0 ||
-                saved.unk152 != 0 || saved.spawnPositionIdx != 0;
-            if (usedSlot) cp.playerBullets.push_back(saved);
-        }
-    }
-    std::printf("spectator-debug checkpoint frame=%u composite=%016llx meta=%016llx game=%016llx stage=%016llx player0=%016llx player1=%016llx player2=%016llx enemies=%016llx bullets=%016llx items=%016llx counts=%u,%u,%u,%u stageSeed=%u rngSeed=%u rngGen=%u gameFrames=%u initialSeed=%u cpP0=(%.2f,%.2f,%.2f)/%d/%d/%d/%d/%.3f cpP1=(%.2f,%.2f,%.2f)/%d/%d/%d/%d/%.3f\n",
-                g_SimFrame, static_cast<unsigned long long>(checkpointHash.composite),
-                static_cast<unsigned long long>(checkpointHash.meta), static_cast<unsigned long long>(checkpointHash.metaGame),
-                static_cast<unsigned long long>(checkpointHash.stage), static_cast<unsigned long long>(checkpointHash.player0),
-                static_cast<unsigned long long>(checkpointHash.player1), static_cast<unsigned long long>(checkpointHash.player2),
-                static_cast<unsigned long long>(checkpointHash.enemies), static_cast<unsigned long long>(checkpointHash.bullets),
-                static_cast<unsigned long long>(checkpointHash.items), checkpointHash.enemyCount, checkpointHash.bulletCount,
-                checkpointHash.laserCount, checkpointHash.itemCount, static_cast<unsigned>(cp.stageSeed),
-                static_cast<unsigned>(cp.rngSeed), static_cast<unsigned>(cp.rngGeneration),
-                static_cast<unsigned>(cp.gameFrames), static_cast<unsigned>(cp.initialSeed),
-                cp.playerPositionCenter[0], cp.playerPositionCenter[1], cp.playerPositionCenter[2],
-                cp.playerRespawnTimer[0], cp.playerBulletGracePeriod[0], cp.playerState[0],
-                cp.playerInvulnerabilityTimer[1], cp.playerInvulnerabilitySubFrame[0],
-                cp.playerPositionCenter[3], cp.playerPositionCenter[4], cp.playerPositionCenter[5],
-                cp.playerRespawnTimer[1], cp.playerBulletGracePeriod[1], cp.playerState[1],
-                cp.playerInvulnerabilityTimer[3], cp.playerInvulnerabilitySubFrame[1]);
-    LogSpectatorNativeDiagnosticParts("checkpoint");
-    cp.guiScore = g_GameManager.guiScore; cp.score = g_GameManager.score;
-    cp.nextScoreIncrement = g_GameManager.nextScoreIncrement; cp.highScore = g_GameManager.highScore;
-    cp.grazeInStage = g_GameManager.grazeInStage; cp.grazeTotal = g_GameManager.grazeInTotal;
-    cp.deaths = g_GameManager.deaths; cp.bombsUsed = g_GameManager.bombsUsed;
-    cp.spellcardsCaptured = g_GameManager.spellcardsCaptured; cp.demoFrames = g_GameManager.demoFrames;
-    cp.menuCursorBackup = static_cast<i32>(g_GameManager.menuCursorBackup);
-    cp.currentPower = g_GameManager.currentPower;
-    cp.pointItemsInStage = g_GameManager.pointItemsCollectedInStage;
-    cp.pointItems = g_GameManager.pointItemsCollected;
-    cp.numRetries = g_GameManager.numRetries; cp.powerItemCountForScore = g_GameManager.powerItemCountForScore;
-    cp.livesRemaining = g_GameManager.livesRemaining; cp.bombsRemaining = g_GameManager.bombsRemaining;
-    cp.extraLives = g_GameManager.extraLives; cp.character = g_GameManager.character;
-    cp.shotType = g_GameManager.shotType; cp.isTimeStopped = g_GameManager.isTimeStopped;
-    cp.isInReplay = g_GameManager.isInReplay; cp.isInGameMenu = g_GameManager.isInGameMenu;
-    cp.isInRetryMenu = g_GameManager.isInRetryMenu; cp.isInMenu = g_GameManager.isInMenu;
-    cp.isGameCompleted = g_GameManager.isGameCompleted; cp.isInPracticeMode = g_GameManager.isInPracticeMode;
-    cp.demoMode = g_GameManager.demoMode;
-    cp.arcadeTop = g_GameManager.arcadeRegionTopLeftPos; cp.arcadeSize = g_GameManager.arcadeRegionSize;
-    cp.prevArcadeTop = g_GameManager.prevArcadeRegionTopLeftPos;
-    cp.prevArcadeSize = g_GameManager.prevArcadeRegionSize;
-    cp.movementTop = g_GameManager.playerMovementAreaTopLeftPos;
-    cp.movementSize = g_GameManager.playerMovementAreaSize;
-    cp.cameraDistance = g_GameManager.cameraDistance; cp.cameraFacing = g_GameManager.stageCameraFacingDir;
-    cp.curInput = g_CurFrameInput; cp.lastInput = g_LastFrameInput;
-    cp.eighthHeld = g_IsEigthFrameOfHeldInput; cp.heldFrames = g_NumOfFramesInputsWereHeld;
-    for (u8 slot = 0; slot < TH06_MULTI_MAX_PLAYERS; ++slot)
-    {
-        cp.curPlayerInput[slot] = g_CurFrameGameInputs[slot];
-        cp.lastPlayerInput[slot] = g_LastFrameGameInputs[slot];
-        cp.lives[slot] = GetPlayerLives(slot); cp.bombs[slot] = GetPlayerBombs(slot);
-        cp.powers[slot] = GetPlayerPower(slot);
-        cp.kills[slot] = g_MultiplayerContributionStats[slot].enemiesDefeated;
-        cp.damage[slot] = g_MultiplayerContributionStats[slot].damageDealt;
-        cp.challengeDeaths[slot] = g_MultiplayerContributionStats[slot].challengeDeaths;
-    }
-    cp.session = MultiplayerGameplay::GetState();
-    cp.teamWipeRetryFrames = g_teamWipeRetryFrames;
-    cp.supervisorWanted = g_Supervisor.wantedState; cp.supervisorCurrent = g_Supervisor.curState;
-    cp.supervisorWanted2 = g_Supervisor.wantedState2; cp.supervisorEnding = g_Supervisor.isInEnding;
-    cp.supervisorFramerate = g_Supervisor.effectiveFramerateMultiplier;
-
-    SpectatorScalars::Writer writer(256u * 1024u);
-    writer.Values(cp.magic, cp.stage, cp.difficulty, cp.rank, cp.maxRank, cp.minRank, cp.subRank,
-                  cp.initialSeed, cp.stageSeed, cp.rngSeed, cp.currentPower, cp.pointItemsInStage, cp.pointItems,
-                  cp.randomItemSpawnIndex, cp.randomItemTableIndex,
-                  cp.rngGeneration, cp.expectedHash, cp.expectedPlayer0, cp.expectedPlayer1, cp.expectedPlayer2,
-                  cp.guiScore, cp.score, cp.nextScoreIncrement,
-                  cp.highScore, cp.gameFrames, cp.grazeInStage, cp.grazeTotal, cp.deaths,
-                  cp.bombsUsed, cp.spellcardsCaptured, cp.demoFrames, cp.menuCursorBackup,
-                  cp.numRetries, cp.powerItemCountForScore, cp.livesRemaining, cp.bombsRemaining,
-                  cp.extraLives, cp.character, cp.shotType, cp.isTimeStopped, cp.isInReplay,
-                  cp.isInGameMenu, cp.isInRetryMenu, cp.isInMenu, cp.isGameCompleted,
-                  cp.isInPracticeMode, cp.demoMode,
-                  cp.arcadeTop.x, cp.arcadeTop.y, cp.arcadeSize.x, cp.arcadeSize.y,
-                  cp.prevArcadeTop.x, cp.prevArcadeTop.y, cp.prevArcadeSize.x, cp.prevArcadeSize.y,
-                  cp.movementTop.x, cp.movementTop.y, cp.movementSize.x, cp.movementSize.y,
-                  cp.cameraDistance, cp.cameraFacing.x, cp.cameraFacing.y, cp.cameraFacing.z,
-                  cp.curInput, cp.lastInput, cp.eighthHeld, cp.heldFrames,
-                  cp.session.playerCount, cp.session.localPlayer, cp.session.showStagePlayerNames,
-                  cp.session.challengeMode, cp.session.showContributionStats,
-                  cp.teamWipeRetryFrames, cp.supervisorWanted, cp.supervisorCurrent,
-                  cp.supervisorWanted2, cp.supervisorEnding, cp.supervisorFramerate);
-    for (const auto &slot : cp.session.players)
-        writer.Values(slot.active, slot.temporarilyAbsent, slot.permanentlyDeparted,
-                      slot.character, slot.shot);
-    writer.Array(cp.curPlayerInput); writer.Array(cp.lastPlayerInput);
-    writer.Array(cp.playerPositionCenter); writer.Array(cp.playerRespawnTimer);
-    writer.Array(cp.playerBulletGracePeriod); writer.Array(cp.playerState);
-    writer.Array(cp.playerInvulnerabilityTimer); writer.Array(cp.playerInvulnerabilitySubFrame);
-    writer.Array(cp.lives); writer.Array(cp.bombs); writer.Array(cp.powers);
-    writer.Array(cp.kills); writer.Array(cp.damage); writer.Array(cp.challengeDeaths);
-    for (const auto &player : cp.players)
-        if (!WriteSpectatorPlayer(writer, player)) return false;
-    if (cp.playerBullets.size() > TH06_MULTI_MAX_PLAYERS * 80u ||
-        !writer.Value(static_cast<std::uint16_t>(cp.playerBullets.size())))
-        return false;
-    for (const auto &bullet : cp.playerBullets)
-        if (!WriteSpectatorBullet(writer, bullet)) return false;
-    if (!writer.Good() || !CompressSpectatorCheckpoint(writer.Bytes(), bytes))
-        return false;
-    PublishCheckpointDiagnostic(g_SimFrame, static_cast<std::uint8_t>(cp.stage),
-                                checkpointHash.composite,
-                                g_Core.ConfirmedThroughAllRemotes(), predictedMask, true);
-    std::printf("spectator-debug checkpoint capture diagnostic frame=%u stage=%u hash=%016llx confirmed=%u predicted=0x%x\n",
-                g_SimFrame, static_cast<unsigned>(cp.stage),
-                static_cast<unsigned long long>(checkpointHash.composite),
-                g_Core.ConfirmedThroughAllRemotes(), static_cast<unsigned>(predictedMask));
-    return true;
-}
-
-bool DecodeSpectatorCheckpoint(const std::vector<std::uint8_t> &bytes, SpectatorCheckpoint *cp)
-{
-    if (!cp) return false;
-    std::vector<std::uint8_t> raw;
-    if (!DecompressSpectatorCheckpoint(bytes, &raw)) return false;
-    SpectatorScalars::Reader reader(raw);
-    reader.Values(cp->magic, cp->stage, cp->difficulty, cp->rank, cp->maxRank, cp->minRank, cp->subRank,
-                  cp->initialSeed, cp->stageSeed, cp->rngSeed, cp->currentPower, cp->pointItemsInStage, cp->pointItems,
-                  cp->randomItemSpawnIndex, cp->randomItemTableIndex,
-                  cp->rngGeneration, cp->expectedHash, cp->expectedPlayer0, cp->expectedPlayer1, cp->expectedPlayer2,
-                  cp->guiScore, cp->score, cp->nextScoreIncrement,
-                  cp->highScore, cp->gameFrames, cp->grazeInStage, cp->grazeTotal, cp->deaths,
-                  cp->bombsUsed, cp->spellcardsCaptured, cp->demoFrames, cp->menuCursorBackup,
-                  cp->numRetries, cp->powerItemCountForScore, cp->livesRemaining, cp->bombsRemaining,
-                  cp->extraLives, cp->character, cp->shotType, cp->isTimeStopped, cp->isInReplay,
-                  cp->isInGameMenu, cp->isInRetryMenu, cp->isInMenu, cp->isGameCompleted,
-                  cp->isInPracticeMode, cp->demoMode,
-                  cp->arcadeTop.x, cp->arcadeTop.y, cp->arcadeSize.x, cp->arcadeSize.y,
-                  cp->prevArcadeTop.x, cp->prevArcadeTop.y, cp->prevArcadeSize.x, cp->prevArcadeSize.y,
-                  cp->movementTop.x, cp->movementTop.y, cp->movementSize.x, cp->movementSize.y,
-                  cp->cameraDistance, cp->cameraFacing.x, cp->cameraFacing.y, cp->cameraFacing.z,
-                  cp->curInput, cp->lastInput, cp->eighthHeld, cp->heldFrames,
-                  cp->session.playerCount, cp->session.localPlayer, cp->session.showStagePlayerNames,
-                  cp->session.challengeMode, cp->session.showContributionStats,
-                  cp->teamWipeRetryFrames, cp->supervisorWanted, cp->supervisorCurrent,
-                  cp->supervisorWanted2, cp->supervisorEnding, cp->supervisorFramerate);
-    for (auto &slot : cp->session.players)
-        reader.Values(slot.active, slot.temporarilyAbsent, slot.permanentlyDeparted,
-                      slot.character, slot.shot);
-    reader.Array(cp->curPlayerInput); reader.Array(cp->lastPlayerInput);
-    reader.Array(cp->playerPositionCenter); reader.Array(cp->playerRespawnTimer);
-    reader.Array(cp->playerBulletGracePeriod); reader.Array(cp->playerState);
-    reader.Array(cp->playerInvulnerabilityTimer); reader.Array(cp->playerInvulnerabilitySubFrame);
-    reader.Array(cp->lives); reader.Array(cp->bombs); reader.Array(cp->powers);
-    reader.Array(cp->kills); reader.Array(cp->damage); reader.Array(cp->challengeDeaths);
-    for (auto &player : cp->players)
-        if (!ReadSpectatorPlayer(reader, &player)) return false;
-    std::uint16_t bulletCount = 0;
-    if (!reader.Value(bulletCount) || bulletCount > TH06_MULTI_MAX_PLAYERS * 80u)
-        return false;
-    cp->playerBullets.resize(bulletCount);
-    for (auto &bullet : cp->playerBullets)
-        if (!ReadSpectatorBullet(reader, &bullet)) return false;
-    std::array<std::array<bool, 80>, TH06_MULTI_MAX_PLAYERS> seenBullets{};
-    bool validBullets = true;
-    for (const auto &bullet : cp->playerBullets)
-    {
-        if (bullet.player >= TH06_MULTI_MAX_PLAYERS || bullet.slot >= 80 ||
-            seenBullets[bullet.player][bullet.slot])
-        {
-            validBullets = false;
-            break;
-        }
-        seenBullets[bullet.player][bullet.slot] = true;
-    }
-    for (const auto &bullet : cp->playerBullets)
-        if (bullet.hasVm && (bullet.anmFileIndex < 0 || bullet.anmFileIndex >= 2048 ||
-                             bullet.vmInstructionOffset < -1 || bullet.vmInstructionOffset > 1024 * 1024 ||
-                             bullet.vmActiveSpriteIndex < -1 || bullet.vmActiveSpriteIndex >= 2048))
-            validBullets = false;
-    return reader.Done() && validBullets && cp->magic == 0x36504353 && cp->stage >= 1 && cp->stage <= 7 &&
-           cp->session.playerCount >= 2 && cp->session.playerCount <= TH06_MULTI_MAX_PLAYERS &&
-           cp->session.players[0].active && cp->character <= 1 && cp->shotType <= 1;
-}
-
-bool ApplySpectatorCheckpointState(const SpectatorCheckpoint &cp)
-{
-    MultiplayerGameplay::Configure(cp.session);
-    g_GameManager.difficulty = static_cast<Difficulty>(cp.difficulty);
-    g_GameManager.character = cp.character; g_GameManager.shotType = cp.shotType;
-    g_GameManager.guiScore = cp.guiScore; g_GameManager.score = cp.score;
-    g_GameManager.nextScoreIncrement = cp.nextScoreIncrement; g_GameManager.highScore = cp.highScore;
-    g_GameManager.grazeInStage = cp.grazeInStage; g_GameManager.grazeInTotal = cp.grazeTotal;
-    g_GameManager.deaths = cp.deaths; g_GameManager.bombsUsed = cp.bombsUsed;
-    g_GameManager.spellcardsCaptured = cp.spellcardsCaptured; g_GameManager.isTimeStopped = cp.isTimeStopped;
-    g_GameManager.currentPower = cp.currentPower; g_GameManager.pointItemsCollectedInStage = cp.pointItemsInStage;
-    g_GameManager.pointItemsCollected = cp.pointItems; g_GameManager.numRetries = cp.numRetries;
-    g_GameManager.powerItemCountForScore = cp.powerItemCountForScore;
-    g_GameManager.livesRemaining = cp.livesRemaining; g_GameManager.bombsRemaining = cp.bombsRemaining;
-    g_GameManager.extraLives = cp.extraLives; g_GameManager.isInReplay = cp.isInReplay;
-    g_GameManager.isInGameMenu = cp.isInGameMenu; g_GameManager.isInRetryMenu = cp.isInRetryMenu;
-    g_GameManager.isInMenu = cp.isInMenu; g_GameManager.isGameCompleted = cp.isGameCompleted;
-    g_GameManager.isInPracticeMode = cp.isInPracticeMode; g_GameManager.demoMode = cp.demoMode;
-    g_GameManager.demoFrames = cp.demoFrames; g_GameManager.gameFrames = cp.gameFrames;
-    g_GameManager.currentStage = cp.stage; g_GameManager.menuCursorBackup = static_cast<u32>(cp.menuCursorBackup);
-    g_GameManager.randomSeed = cp.stageSeed; g_GameManager.arcadeRegionTopLeftPos = cp.arcadeTop;
-    g_GameManager.arcadeRegionSize = cp.arcadeSize; g_GameManager.prevArcadeRegionTopLeftPos = cp.prevArcadeTop;
-    g_GameManager.prevArcadeRegionSize = cp.prevArcadeSize;
-    g_GameManager.playerMovementAreaTopLeftPos = cp.movementTop;
-    g_GameManager.playerMovementAreaSize = cp.movementSize;
-    g_GameManager.cameraDistance = cp.cameraDistance; g_GameManager.stageCameraFacingDir = cp.cameraFacing;
-    g_GameManager.rank = cp.rank; g_GameManager.maxRank = cp.maxRank;
-    g_GameManager.minRank = cp.minRank; g_GameManager.subRank = cp.subRank;
-    for (u8 slot = 0; slot < TH06_MULTI_MAX_PLAYERS; ++slot)
-    {
-        SetPlayerLives(slot, cp.lives[slot]); SetPlayerBombs(slot, cp.bombs[slot]);
-        SetPlayerPower(slot, cp.powers[slot]);
-        g_MultiplayerContributionStats[slot].enemiesDefeated = cp.kills[slot];
-        g_MultiplayerContributionStats[slot].damageDealt = cp.damage[slot];
-        g_MultiplayerContributionStats[slot].challengeDeaths = cp.challengeDeaths[slot];
-        Player &player = g_Players[slot];
-        player.positionCenter.x = cp.playerPositionCenter[slot * 3];
-        player.positionCenter.y = cp.playerPositionCenter[slot * 3 + 1];
-        player.positionCenter.z = cp.playerPositionCenter[slot * 3 + 2];
-        player.respawnTimer = cp.playerRespawnTimer[slot];
-        player.bulletGracePeriod = cp.playerBulletGracePeriod[slot];
-        player.playerState = static_cast<i8>(cp.playerState[slot]);
-        player.invulnerabilityTimer.previous = cp.playerInvulnerabilityTimer[slot * 2];
-        player.invulnerabilityTimer.current = cp.playerInvulnerabilityTimer[slot * 2 + 1];
-        player.invulnerabilityTimer.subFrame = cp.playerInvulnerabilitySubFrame[slot];
-        ApplySpectatorPlayer(cp.players[slot], &player);
-        g_CurFrameGameInputs[slot] = cp.curPlayerInput[slot];
-        g_LastFrameGameInputs[slot] = cp.lastPlayerInput[slot];
-    }
-    g_teamWipeRetryFrames = cp.teamWipeRetryFrames;
-    g_CurFrameInput = cp.curInput; g_LastFrameInput = cp.lastInput;
-    g_IsEigthFrameOfHeldInput = cp.eighthHeld; g_NumOfFramesInputsWereHeld = cp.heldFrames;
-    g_Supervisor.wantedState = cp.supervisorWanted; g_Supervisor.curState = cp.supervisorCurrent;
-    g_Supervisor.wantedState2 = cp.supervisorWanted2; g_Supervisor.isInEnding = cp.supervisorEnding;
-    g_Supervisor.effectiveFramerateMultiplier = cp.supervisorFramerate;
-    g_EnemyManager.randomItemSpawnIndex = cp.randomItemSpawnIndex;
-    g_EnemyManager.randomItemTableIndex = cp.randomItemTableIndex;
-    for (const auto &saved : cp.playerBullets)
-    {
-        PlayerBullet &bullet = g_Players[saved.player].bullets[saved.slot];
-        if (!ApplySpectatorBullet(saved, &bullet)) return false;
-    }
-    // Script assignment may execute randomized ANM instructions. Restore the
-    // frame's RNG only after all native VM reconstruction has completed.
-    g_Rng.seed = cp.rngSeed;
-    g_Rng.generationCount = cp.rngGeneration;
-    return true;
-}
-
-bool RestoreSpectatorCheckpoint(const SpectatorStageEvent &event)
-{
-    std::printf("netplay spectator TH06: restore begin frame=%u bytes=%u nativeReady=%d\n",
-                event.frame, static_cast<unsigned>(event.state.size()),
-                g_SpectatorNativeStageReady ? 1 : 0);
-    SpectatorCheckpoint cp;
-    if (event.game != '6' || event.schema != SPECTATOR_CHECKPOINT_SCHEMA ||
-        !DecodeSpectatorCheckpoint(event.state, &cp) || event.stage != static_cast<std::uint32_t>(cp.stage))
-        return false;
-
-    // Rebuild through the actual GameManager -> Stage -> Player -> ECL chain.
-    // This is the native game's constructor, seeded and configured by the
-    // versioned scalar initializer, rather than an object-memory restore.
+bool RestoreSpectatorReplayStart(const SpectatorStageEvent& event) {
+    if(event.game!='6'||event.schema!=SPECTATOR_REPLAY_SCHEMA||
+       !SpectatorReplayStart::Prepare(event.state,event.stage,event.playerCount))return false;
     SideEffects::SetSpeculative(true);
-    if (g_SpectatorNativeStageReady)
-        GameManager::CutChain();
-    else if (g_MainMenu.chainCalc)
-    {
-        g_Chain.Cut(g_MainMenu.chainCalc);
-        g_MainMenu.chainCalc = nullptr;
-        if (g_MainMenu.chainDraw)
-        {
-            g_Chain.Cut(g_MainMenu.chainDraw);
-            g_MainMenu.chainDraw = nullptr;
-        }
+    GameManager::CutChain();
+    ReplayManager::SaveReplay(nullptr,nullptr);
+    if(!MultiplayerGameplay::Configure(SpectatorReplayStart::prepared.setup)){
+        SpectatorReplayStart::Finish();SideEffects::SetSpeculative(false);return false;
     }
-    std::printf("netplay spectator TH06: restore chain cut\n");
-
-    if (!MultiplayerGameplay::Configure(cp.session))
-    {
-        SideEffects::SetSpeculative(false);
-        return false;
-    }
-    std::printf("netplay spectator TH06: restore session configured stage=%d seed=%u\n",
-                cp.stage, static_cast<unsigned>(cp.stageSeed));
-    // Resources are read by PrepareMultiplayerStageRevival before Player's
-    // native constructor clears its prior slot. Seed all seats first.
-    for (u8 slot = 0; slot < TH06_MULTI_MAX_PLAYERS; ++slot)
-    {
-        SetPlayerLives(slot, cp.lives[slot]);
-        SetPlayerBombs(slot, cp.bombs[slot]);
-        SetPlayerPower(slot, cp.powers[slot]);
-        g_MultiplayerContributionStats[slot].enemiesDefeated = cp.kills[slot];
-        g_MultiplayerContributionStats[slot].damageDealt = cp.damage[slot];
-        g_MultiplayerContributionStats[slot].challengeDeaths = cp.challengeDeaths[slot];
-    }
-    g_teamWipeRetryFrames = cp.teamWipeRetryFrames;
-    g_GameManager.difficulty = static_cast<Difficulty>(cp.difficulty);
-    g_GameManager.character = cp.character;
-    g_GameManager.shotType = cp.shotType;
+    g_GameManager.currentStage=static_cast<i32>(event.stage)-1;
+    g_GameManager.difficulty=static_cast<decltype(g_GameManager.difficulty)>(SpectatorReplayStart::prepared.difficulty);
+    g_GameManager.character=SpectatorReplayStart::prepared.setup.players[0].character;
+    g_GameManager.shotType=SpectatorReplayStart::prepared.setup.players[0].shot;
+    g_GameManager.isInPracticeMode = 0; g_GameManager.isInMenu = 0; g_GameManager.isInGameMenu = 0; g_GameManager.isInRetryMenu = 0;
+    g_GameManager.isInReplay = 1;
+    g_Supervisor.curState=SUPERVISOR_STATE_MAINMENU;
+    g_Supervisor.wantedState=SUPERVISOR_STATE_GAMEMANAGER;
+    const bool constructed=GameManager::RegisterChain()==ZUN_SUCCESS;
+    const bool initialized=SpectatorReplayStart::Finish();
     g_GameManager.isInReplay = 0;
-    g_GameManager.isInPracticeMode = cp.isInPracticeMode;
-    g_GameManager.isInMenu = 0;
-    g_GameManager.isInGameMenu = 0;
-    g_GameManager.isInRetryMenu = 0;
-    g_GameManager.isGameCompleted = 0;
-    g_GameManager.currentStage = cp.stage - 1;
-    g_GameManager.randomSeed = cp.stageSeed;
-    g_Rng.Initialize(cp.initialSeed);
-    // A late viewer may have no previous native GameManager chain. REINIT
-    // deliberately reuses stage-owned GUI allocations and ANM banks, so the
-    // first reconstruction must use the normal fresh-stage initialization
-    // path. ApplySpectatorCheckpointState restores the captured named scalars
-    // after the authentic native constructors have completed.
-    g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
-    g_Supervisor.wantedState = SUPERVISOR_STATE_GAMEMANAGER;
-    g_Supervisor.wantedState2 = SUPERVISOR_STATE_GAMEMANAGER;
-    std::printf("netplay spectator TH06: restore register begin stage=%d\n", cp.stage);
-    const bool constructed = GameManager::RegisterChain() == ZUN_SUCCESS;
-    std::printf("netplay spectator TH06: restore register result=%d\n", constructed ? 1 : 0);
     SideEffects::SetSpeculative(false);
-    if (!constructed)
-        return false;
-    g_SpectatorNativeStageReady = true;
-    if (cp.gameFrames != 0)
-    {
-        std::array<FrameInput, TH06_MULTI_MAX_PLAYERS> neutralInputs{};
-        Input::SetReplayOverride(0);
-        Input::SetPlayerInputOverrides(neutralInputs.data(), cp.session.playerCount);
-        g_Supervisor.curState = cp.supervisorCurrent;
-        g_Supervisor.wantedState = cp.supervisorWanted;
-        g_Supervisor.wantedState2 = cp.supervisorWanted2;
-        SideEffects::SetSpeculative(true);
-        for (std::uint32_t i = 0; i < cp.gameFrames; ++i)
-            if (g_Chain.RunCalcChain() == CHAIN_CALLBACK_RESULT_EXIT_GAME_ERROR)
-                break;
-        SideEffects::SetSpeculative(false);
-        Input::ClearPlayerButtonOverrides();
-        Input::ClearReplayOverride();
-        std::printf("spectator-debug warmed native ticks=%u gmFrames=%u\n",
-                    static_cast<unsigned>(cp.gameFrames), static_cast<unsigned>(g_GameManager.gameFrames));
+    if(!constructed||!initialized)return false;
+    g_Supervisor.wantedState2=event.frame==0?SUPERVISOR_STATE_MAINMENU:SUPERVISOR_STATE_GAMEMANAGER;
+    g_Supervisor.curState=SUPERVISOR_STATE_GAMEMANAGER;
+    g_Supervisor.wantedState=SUPERVISOR_STATE_GAMEMANAGER;
+    SideEffects::SetSpeculative(true);
+    for(u32 f=0;f<SpectatorReplayStart::prepared.leadInFrames;++f){
+        const auto& inputs=SpectatorReplayStart::prepared.leadIn[f];u16 buttons=0;
+        for(unsigned seat=0;seat<event.playerCount;++seat)buttons|=inputs[seat].buttons;
+        Input::SetReplayOverride(buttons);Input::SetPlayerInputOverrides(inputs.data(),event.playerCount);
+        const int result=g_Chain.RunCalcChain();
+        Input::ClearPlayerButtonOverrides();Input::ClearReplayOverride();
+        if(result==0||result==-1){SideEffects::SetSpeculative(false);return false;}
     }
-    std::printf("netplay spectator TH06: restore apply begin\n");
-    if (!ApplySpectatorCheckpointState(cp))
-    {
-        SideEffects::SetSpeculative(false);
-        return false;
+    SideEffects::SetSpeculative(false);
+    if(event.frame==0){
+        g_CurFrameInput=g_LastFrameInput=g_IsEigthFrameOfHeldInput=g_NumOfFramesInputsWereHeld=0;
+        for(unsigned seat=0;seat<3;++seat)g_CurFrameGameInputs[seat]=g_LastFrameGameInputs[seat]=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ApplyLifecycleFixtureStart();
+#endif
     }
-
-    LogSpectatorNativeDiagnosticParts("restore");
-    const auto actual = Th06CanonicalHash::Capture().composite;
-    if (actual != cp.expectedHash)
-    {
-        const auto expectedDebug = Th06CanonicalHash::Capture();
-        std::printf("spectator-debug actual parts composite=%016llx meta=%016llx game=%016llx stage=%016llx player0=%016llx player1=%016llx player2=%016llx enemies=%016llx bullets=%016llx items=%016llx counts=%u,%u,%u,%u\n",
-                    static_cast<unsigned long long>(expectedDebug.composite), static_cast<unsigned long long>(expectedDebug.meta),
-                    static_cast<unsigned long long>(expectedDebug.metaGame), static_cast<unsigned long long>(expectedDebug.stage),
-                    static_cast<unsigned long long>(expectedDebug.player0), static_cast<unsigned long long>(expectedDebug.player1),
-                    static_cast<unsigned long long>(expectedDebug.player2), static_cast<unsigned long long>(expectedDebug.enemies),
-                    static_cast<unsigned long long>(expectedDebug.bullets), static_cast<unsigned long long>(expectedDebug.items),
-                    expectedDebug.enemyCount, expectedDebug.bulletCount, expectedDebug.laserCount, expectedDebug.itemCount);
-        std::printf("netplay spectator TH06: checkpoint hash mismatch frame=%u expected=%016llx actual=%016llx expectedPlayer=%016llx/%016llx/%016llx actualPlayer=%016llx/%016llx/%016llx expectedP0=(%.2f,%.2f,%.2f)/%d/%d/%d/%d/%.3f actualP0=(%.2f,%.2f,%.2f)/%d/%d/%d/%d/%.3f expectedP1=(%.2f,%.2f,%.2f)/%d/%d/%d/%d/%.3f actualP1=(%.2f,%.2f,%.2f)/%d/%d/%d/%d/%.3f\n",
-                    event.frame, static_cast<unsigned long long>(cp.expectedHash),
-                    static_cast<unsigned long long>(actual),
-                    static_cast<unsigned long long>(cp.expectedPlayer0),
-                    static_cast<unsigned long long>(cp.expectedPlayer1),
-                    static_cast<unsigned long long>(cp.expectedPlayer2),
-                    static_cast<unsigned long long>(expectedDebug.player0),
-                    static_cast<unsigned long long>(expectedDebug.player1),
-                    static_cast<unsigned long long>(expectedDebug.player2),
-                    cp.playerPositionCenter[0], cp.playerPositionCenter[1], cp.playerPositionCenter[2],
-                    cp.playerRespawnTimer[0], cp.playerBulletGracePeriod[0], cp.playerState[0],
-                    cp.playerInvulnerabilityTimer[1], cp.playerInvulnerabilitySubFrame[0],
-                    g_Players[0].positionCenter.x, g_Players[0].positionCenter.y, g_Players[0].positionCenter.z,
-                    g_Players[0].respawnTimer, g_Players[0].bulletGracePeriod, g_Players[0].playerState,
-                    g_Players[0].invulnerabilityTimer.current, g_Players[0].invulnerabilityTimer.subFrame,
-                    cp.playerPositionCenter[3], cp.playerPositionCenter[4], cp.playerPositionCenter[5],
-                    cp.playerRespawnTimer[1], cp.playerBulletGracePeriod[1], cp.playerState[1],
-                    cp.playerInvulnerabilityTimer[3], cp.playerInvulnerabilitySubFrame[1],
-                    g_Players[1].positionCenter.x, g_Players[1].positionCenter.y, g_Players[1].positionCenter.z,
-                    g_Players[1].respawnTimer, g_Players[1].bulletGracePeriod, g_Players[1].playerState,
-                    g_Players[1].invulnerabilityTimer.current, g_Players[1].invulnerabilityTimer.subFrame);
-        return false;
-    }
-    g_SimFrame = event.frame;
-    PublishCheckpointDiagnostic(event.frame, static_cast<std::uint8_t>(cp.stage), cp.expectedHash,
-                                g_Core.ConfirmedThroughAllRemotes(), 0, false, true);
-    std::printf("netplay spectator TH06: checkpoint restored frame=%u stage=%d hash=%016llx\n",
-                event.frame, cp.stage, static_cast<unsigned long long>(actual));
+    g_SpectatorNativeStageReady=true;g_SimFrame=event.frame;
+    ReportSpectatorReplayBoundary(event.frame);
     return true;
 }
 
@@ -1521,6 +352,19 @@ bool UseEndingCycle()
 
 void RetireGameplaySession()
 {
+    if (!g_SpectatorMode && g_LocalPlayer == 0 && g_SpectatorPublisherReady &&
+        g_ProductionTransportStarted && g_BrowserPeerTransport.IsOpen())
+    {
+        // End at the contiguous confirmed cursor. Viewers can then consume
+        // their buffered tail instead of waiting forever behind the live delay.
+        PublishConfirmedSpectatorFrames();
+        const bool ended = g_SpectatorPublisherReady && g_SpectatorPublisher.Finish(
+            g_SpectatorPublisher.Published(), [](const std::vector<std::uint8_t>& wire) {
+                return g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size());
+            });
+        if (!ended) g_BrowserPeerTransport.StopSpectators(false);
+        g_SpectatorPublisherReady = false;
+    }
     ClearTransientModes();
     Th06Rollback::Clear();
     if (g_SpectatorMode)
@@ -2513,6 +1357,25 @@ bool ObserveEliminationCycle(std::uint32_t frame)
 }
 #endif
 
+void ReportSpectatorReplayBoundary(std::uint32_t frame,std::uint8_t predictedMask){
+#ifdef __EMSCRIPTEN__
+    char hash[17];std::snprintf(hash,sizeof(hash),"%016llx",static_cast<unsigned long long>(Th06CanonicalHash::Capture().composite));
+    EM_ASM({
+        globalThis.__eaglerNetplayLanCheckpointFrame=$0>>>0;
+        globalThis.__eaglerNetplayLanCheckpointHash=UTF8ToString($1);
+        globalThis.__eaglerNetplayLanCheckpointStage=$2;
+        globalThis.__eaglerNetplayLanCheckpointConfirmed=$3;
+        globalThis.__eaglerNetplayLanCheckpointPredictedMask=$4;
+        globalThis.__eaglerNetplayLanCheckpointCaptureFrame=$0>>>0;
+        globalThis.__eaglerNetplayLanCheckpointCaptureHash=UTF8ToString($1);
+        globalThis.__eaglerNetplayLanCheckpointCaptureConfirmed=$3;
+        globalThis.__eaglerNetplayLanCheckpointCapturePredictedMask=$4;
+    },frame,hash,g_GameManager.currentStage,g_Core.ConfirmedThroughAllRemotes(),predictedMask);
+#else
+    (void)frame;(void)predictedMask;
+#endif
+}
+
 void HashToHex(std::uint64_t value, char out[17])
 {
     std::snprintf(out, 17, "%016llx", static_cast<unsigned long long>(value));
@@ -2558,6 +1421,33 @@ void Fail(const char *reason)
         static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
         static_cast<unsigned long long>(TransportBufferedAmount()),
         TransportLastError().c_str());
+}
+
+void ApplyLifecycleFixtureStart()
+{
+#if defined(__EMSCRIPTEN__) && defined(TH_DEV_TOOLS)
+    if(g_SpectatorMode&&EM_ASM_INT({return Module.eaglerOptions?.netplayReplayFixtureStart?1:0;})){
+        for(std::uint8_t player=0;player<g_PlayerCount;++player){
+            SetPlayerLives(player,8);g_Players[player].playerState=PLAYER_STATE_INVULNERABLE;
+            g_Players[player].invulnerabilityTimer.SetCurrent(0x3fffffff);
+        }
+    }
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (UseStageTransitionTest() || UseEndingCycle() ||
+        UseEliminationCycle() || UseRetryContinueCycle() || UseCoopTransferCycle())
+    {
+        // Lifecycle harnesses isolate the state transition under test from
+        // incidental bullet hits. The elimination cycle explicitly replaces
+        // this state at its deterministic terminal-death frames below.
+        for (std::uint8_t player = 0; player < g_PlayerCount; ++player)
+        {
+            SetPlayerLives(player, 8);
+            g_Players[player].playerState = PLAYER_STATE_INVULNERABLE;
+            g_Players[player].invulnerabilityTimer.SetCurrent(0x3fffffff);
+        }
+    }
+#endif
 }
 
 bool Initialize()
@@ -2725,19 +1615,7 @@ bool Initialize()
     g_ConfirmedOnlyTicks = 0;
 
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if (UseStageTransitionTest() || UseEndingCycle() ||
-        UseEliminationCycle() || UseRetryContinueCycle() || UseCoopTransferCycle())
-    {
-        // Lifecycle harnesses isolate the state transition under test from
-        // incidental bullet hits. The elimination cycle explicitly replaces
-        // this state at its deterministic terminal-death frames below.
-        for (std::uint8_t player = 0; player < g_PlayerCount; ++player)
-        {
-            SetPlayerLives(player, 8);
-            g_Players[player].playerState = PLAYER_STATE_INVULNERABLE;
-            g_Players[player].invulnerabilityTimer.SetCurrent(0x3fffffff);
-        }
-    }
+    ApplyLifecycleFixtureStart();
 #endif
 
     SessionConfig sessionConfig;
@@ -2794,8 +1672,6 @@ bool Initialize()
     g_HavePendingSpectatorBootstrap = false;
     g_PendingSpectatorBootstrap = {};
     g_SpectatorNativeStageReady = false;
-    g_StageStartFrameTags.fill(INVALID_FRAME);
-    g_StageAtFrameStart.fill(0);
     g_SpectatorPublisherEligible = !g_SpectatorMode && g_LocalPlayer == 0 &&
                                    ProductionLanMode();
     g_SpectatorLaneStopped = false;
@@ -3107,36 +1983,6 @@ bool SendTailKeepalive()
 
 int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resimulation)
 {
-    if (frame == 34u)
-    {
-        if (!resimulation)
-        {
-            g_SpectatorDebugFrame34FirstInputs = decision.inputs;
-            g_SpectatorDebugFrame34FirstSeen = true;
-        }
-        std::printf("spectator-debug frame34 %s predicted=%u inputs=",
-                    resimulation ? "resim" : "first",
-                    static_cast<unsigned>(decision.predictedMask));
-        for (std::size_t player = 0; player < MAX_PLAYERS; ++player)
-        {
-            const FrameInput &input = decision.inputs[player];
-            const FrameInput &prior = g_SpectatorDebugFrame34FirstInputs[player];
-            std::printf(" p%u={btn:%u mode:%u xy:%.9g,%.9g ul:%u used:%u bomb:%u",
-                        static_cast<unsigned>(player),
-                        static_cast<unsigned>(input.buttons),
-                        static_cast<unsigned>(input.analogMode), input.x, input.y,
-                        input.unlimited ? 1u : 0u, input.touchUsed ? 1u : 0u,
-                        input.touchBomb ? 1u : 0u);
-            if (resimulation && g_SpectatorDebugFrame34FirstSeen)
-                std::printf(" old:%u/%u/%.9g,%.9g/%u/%u/%u",
-                            static_cast<unsigned>(prior.buttons),
-                            static_cast<unsigned>(prior.analogMode), prior.x, prior.y,
-                            prior.unlimited ? 1u : 0u, prior.touchUsed ? 1u : 0u,
-                            prior.touchBomb ? 1u : 0u);
-            std::printf("}");
-        }
-        std::printf("\n");
-    }
     g_SpectatorBossSlotsThisFrame = 0;
     std::vector<std::uint8_t> spectatorInitializer;
     std::uint32_t spectatorSchema = 0;
@@ -3278,47 +2124,9 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
 #endif
     const std::uint8_t stageBeforeCalc =
         static_cast<std::uint8_t>(g_GameManager.currentStage);
-    const std::size_t stageSlot = frame % g_StageStartFrameTags.size();
-    std::uint8_t previousStage = 0;
-    if (frame != 0)
-    {
-        const std::size_t previousSlot = (frame - 1u) % g_StageStartFrameTags.size();
-        if (g_StageStartFrameTags[previousSlot] == frame - 1u)
-            previousStage = g_StageAtFrameStart[previousSlot];
-    }
-    const bool enteredCheckpointStage = stageBeforeCalc >= 2 &&
-        previousStage < stageBeforeCalc;
-    g_StageStartFrameTags[stageSlot] = frame;
-    g_StageAtFrameStart[stageSlot] = stageBeforeCalc;
-    if (enteredCheckpointStage && !g_SpectatorMode && ProductionLanMode() &&
-        RollbackAuditEnabled())
-    {
-        const auto source = Th06CanonicalHash::Capture();
-        const std::uint32_t confirmed = g_Core.ConfirmedThroughAllRemotes();
-        PublishCheckpointDiagnostic(frame, stageBeforeCalc, source.composite,
-                                    confirmed, decision.predictedMask, false);
-        std::printf("spectator-debug checkpoint source boundary frame=%u stage=%u hash=%016llx confirmed=%u predicted=0x%x resim=%d\n",
-                    frame, static_cast<unsigned>(stageBeforeCalc),
-                    static_cast<unsigned long long>(source.composite), confirmed,
-                    static_cast<unsigned>(decision.predictedMask), resimulation ? 1 : 0);
-    }
-    if (!g_SpectatorMode && stageBeforeCalc == 2 && frame == 6680u)
-    {
-        const auto source = Th06CanonicalHash::Capture();
-        std::printf("spectator-debug source-stage2 local=%u frame=%u predicted=0x%x composite=%016llx meta=%016llx game=%016llx stage=%016llx player0=%016llx player1=%016llx player2=%016llx enemies=%016llx bullets=%016llx items=%016llx counts=%u,%u,%u,%u\n",
-                    static_cast<unsigned>(g_LocalPlayer), frame,
-                    static_cast<unsigned>(decision.predictedMask),
-                    static_cast<unsigned long long>(source.composite),
-                    static_cast<unsigned long long>(source.meta),
-                    static_cast<unsigned long long>(source.metaGame),
-                    static_cast<unsigned long long>(source.stage),
-                    static_cast<unsigned long long>(source.player0),
-                    static_cast<unsigned long long>(source.player1),
-                    static_cast<unsigned long long>(source.player2),
-                    static_cast<unsigned long long>(source.enemies),
-                    static_cast<unsigned long long>(source.bullets),
-                    static_cast<unsigned long long>(source.items), source.enemyCount,
-                    source.bulletCount, source.laserCount, source.itemCount);
+    static std::uint8_t replayAuditStage=0;
+    if(!g_SpectatorMode&&(frame==0||stageBeforeCalc!=replayAuditStage)){
+        ReportSpectatorReplayBoundary(frame,decision.predictedMask);replayAuditStage=stageBeforeCalc;
     }
     const auto checkpointRequirement = g_SpectatorPublisherReady
         ? g_SpectatorPublisher.NeedsCheckpoint(frame, stageBeforeCalc)
@@ -3334,9 +2142,9 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     }
     if (g_SpectatorPublisherReady && publisherCheckpointDue)
     {
-        if (EncodeSpectatorCheckpoint(&spectatorInitializer, decision.predictedMask))
+        if (EncodeSpectatorReplayStart(&spectatorInitializer))
         {
-            spectatorSchema = SPECTATOR_CHECKPOINT_SCHEMA;
+            spectatorSchema = SPECTATOR_REPLAY_SCHEMA;
         }
         else
         {
@@ -3514,7 +2322,7 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
         record.bossSlots = g_SpectatorBossSlotsThisFrame;
         if (!g_SpectatorPublisher.Record(std::move(record)))
         {
-            std::printf("spectator-debug publisher record failed frame=%u cursor=%u confirmed=%u resim=%d stage=%u gameFrames=%u\n",
+            std::printf("netplay spectator TH06: record failed frame=%u cursor=%u confirmed=%u resim=%d stage=%u gameFrames=%u\n",
                         frame, g_SpectatorPublisher.Published(),
                         static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
                         resimulation ? 1 : 0, stageBeforeCalc,
@@ -3567,6 +2375,13 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     const std::uint32_t canonicalInterval = RollbackAuditEnabled() ? 20u : 300u;
     if (ProductionLanMode() && ((frame + 1u) % canonicalInterval) == 0u)
     {
+        EM_ASM({
+            globalThis.__eaglerNetplayLanReplayResources ||= Object.create(null);
+            globalThis.__eaglerNetplayLanReplayResources[String($0)]=Array.of($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13);
+        },frame+1u,g_GameManager.score, g_GameManager.guiScore,g_GameManager.currentStage,g_GameManager.rank,
+           GetPlayerLives(0),GetPlayerBombs(0),GetPlayerPower(0),
+           GetPlayerLives(1),GetPlayerBombs(1),GetPlayerPower(1),
+           GetPlayerLives(2),GetPlayerBombs(2),GetPlayerPower(2));
         // This lives inside SimulateFrame rather than the outer driver so a
         // rollback resimulation overwrites the sample for the same logical
         // frame. Consumers only trust a sample once that frame is confirmed.
@@ -3684,15 +2499,6 @@ bool ReconcileRollback()
 
     const std::uint32_t rollback = g_Core.RollbackFrame();
     const std::uint32_t last = g_Core.LastSimulatedFrame();
-    if (rollback <= 34u && last >= 34u)
-    {
-        std::printf("spectator-debug frame34 rollback requested=%u last=%u confirmed=%u p1=%u p2=%u resims=%u\n",
-                    rollback, last,
-                    static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
-                    static_cast<unsigned>(g_Core.ConfirmedThrough(1)),
-                    static_cast<unsigned>(g_Core.ConfirmedThrough(2)),
-                    g_ResimulatedFrames);
-    }
     if (last == INVALID_FRAME || rollback > last)
     {
         // The corrected frame has not run yet. Its exact input will be used
@@ -3982,17 +2788,18 @@ int RunCalcChain()
         }
         const bool fastForwarding = g_SpectatorPlayback.FastForwarding();
         const std::uint64_t catchUpStartedNs = fastForwarding ? SDL_GetTicksNS() : 0;
+        const eagler::audio::ReplayMusicScope musicTimeline;
         const bool stepped = g_SpectatorPlayback.Step(
             [](const SpectatorStageEvent &checkpoint) {
-                return RestoreSpectatorCheckpoint(checkpoint);
+                return RestoreSpectatorReplayStart(checkpoint);
             },
-            [&](const SpectatorFramePacket &packet, bool seeking) {
+            [&](const SpectatorFramePacket &packet, bool) {
                 if (packet.frame != g_SimFrame)
                     return false;
                 FrameDecision decision;
                 decision.canAdvance = true;
                 decision.inputs = packet.inputs;
-                const int result = SimulateFrame(packet.frame, decision, seeking || fastForwarding);
+                const int result = SimulateFrame(packet.frame, decision, fastForwarding);
                 if (result == 0 || result == -1)
                     return false;
                 ++g_SimFrame;

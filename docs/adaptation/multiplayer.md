@@ -8,6 +8,8 @@
 
 本地多人驱动从同仓库 `services/relay/src/netplay-relay.mjs` 启动 Relay，从 `launcher/` 读取共用前端与协议辅助器。外置服务源码可通过 `EAGLER_RELAY_ROOT` 显式选择。
 
+th15 的旁观驱动使用同一 Relay 入口，可通过 `TH15_RELAY_ROOT` 指定服务源码目录；发布验收核对打包使用的 `th15.mjs` 与同次构建的 WASM。合作旁观首次进入按原生关头正常播放，只有显式定位或“回到直播”执行一次固定目标的快进。
+
 TH11 的启动器场景驱动通过房间里的回滚开关选择实测纯延迟，并在结果中记录 `pure-delay`。有界回滚使用本作 `rollback-browser-acceptance.mjs` 的对应场景验收，两种时序分别保存结果。
 
 TH11 回滚驱动通过 `TH11_TEST_FONT` 与 `TH11_TEST_UNICODE_FONT` 接收共用字体，按正常 `configure.sharedResources` 接口安装，并把字体哈希纳入验收输入身份。
@@ -20,7 +22,7 @@ TH11 回滚驱动通过 `TH11_TEST_FONT` 与 `TH11_TEST_UNICODE_FONT` 接收共�
 
 房间预加载持续呈现本地标题。`configure` 保存开局参数，`launch` 统一接管连接与模拟；两个命令之间可跨越任意呈现帧。旁观退出后恢复同一标题与游戏实例，再次加入沿用这一启动边界。合作作品的原生房间检查在配置后保留 500 毫秒标题运行窗口，覆盖三次旁观返回与重入，以及暂停、精确跳转和回到直播。th11 在退出联机会话时一并释放 GameSession 的多人输入归属，标题继续按本地菜单运行。
 
-th08 的旁观历史从首个完成初始化的游戏检查点开始。房间标题可以先运行多个联机帧；发布器在进入游戏后建立首个检查点，再连续发布已确认输入。预先开放的 Extra 与符卡内容直接进入标题菜单；普通版与多人版沿用相同的内容开放规则。
+合作作品的旁观采用[流式 Replay](../architecture/spectator-replay.md)。关头由原生 Replay 入口数据与多人资源组成，后续连续发布全席位已确认输入。th08 的房间标题可以先运行多个联机帧，进入游戏后从首个原生 Replay 关头建立历史。预先开放的 Extra 与符卡内容直接进入标题菜单；普通版与多人版沿用相同的内容开放规则。
 
 th09 在联机连接结束后完成原生标题交接，同时释放本次连接的停止标记。旁观断线、返回房间与再次加入共用同一游戏实例；先前连接的生命周期编号继续隔离旧回调。
 
@@ -29,6 +31,14 @@ th06、th07 按每次房间开局建立共同的联机会话代数起点，旁�
 th10 返回房间菜单时结束本次录像记录、确认音频队列与待执行重开状态，下次开局从第 0 帧建立新的录像和音频时间线。th11 将联机通道结束交给原生菜单返回流程，保留已加载游戏，下一次切换身份继续使用同一实例。
 
 MP-RULE-01 至 MP-RULE-05 是合作模式规则，只用于产品目录中 `multiplayer.gameplay` 为 `cooperative` 的作品。实际生命、Power、碎片、幽灵救援、资源给予与剧情规则按本作开发指南核对。TH09 标记为 `versus`，应将这五项标为“不适用”，改按 TH09 对战指南核对双方资源、对战状态和结束流程。TH15 当前使用实测输入延迟。
+
+红点采用最近未满 Power 优先的原生吸引：上线收点选择最近的未满 Power 玩家，全员满 Power 时选择最近玩家。直接拾取先归未满 Power 的拾取者，满 Power 拾取者将红点吸引到最近的未满 Power 队友。已吸引的道具保持接收者，接收者满 Power 或退出可操作状态时重新选择；席位资格以当前房间实际启用的玩家为准。统一说明位于[多人规则书](../../launcher/content/MULTIPLAYER.md#红点自动分配)。
+
+原生道具验证分别使用 th07 的 `tests/item-collection-browser.py`、th08 的 `portable/multiplayer/check-cooperation.py --case nearest_power_routing`、th10 的 `portable/check-multiplayer-rules.mjs --suite item-ownership`、th11 的 `portable/multiplayer/native-test.mjs --cooperative` 与 th15 的 `portable/multiplayer/native-test.mjs --items-only`。th15 的原生检查与正式构建使用同一公共头文件目录，按当前房间人数核对小 P 数值。
+
+六个合作作品同步更新玩法身份：th06 为 18、th07 为 16、th08 为 `0x08000018`、th10 为 `0x1000000e`、th11 为 4、th15 为 20。房间握手、旁观与多人 Replay 按对应身份选择同一套道具规则；th15 同时统一分关幽灵演算的初始化。
+
+th08 同时支持 `0x08000017` 版本录制的多人回放，播放时保留该版本的跨面补弹行为。
 
 ## 逐项检查
 

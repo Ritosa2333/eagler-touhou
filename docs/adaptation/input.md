@@ -48,3 +48,7 @@
 ## 源码入口
 
 [能力定义](../../launcher/src/contracts/adapter-capabilities.mts) · [键盘桥](../../common/browser/keyboard-input-bridge.mjs) · [直触桥](../../common/browser/direct-input-bridge.mjs)
+
+## th15 跨面按键保持
+
+修复 th15 普通版与多人版跨面后必须重新按键的问题。跨面加载保留键盘持有与输入历史，持续按住的射击、低速和方向键直接延续到下一面。加载期间的松键即时生效。失焦、页面隐藏、暂停与退出取消持有状态。

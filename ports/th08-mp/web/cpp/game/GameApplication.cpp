@@ -108,12 +108,11 @@ bool GameApplication::enter_game(){
     synchronize();statistics.calculate(false);loading_gate=true;loading_hidden=false;return true;
 }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-bool GameApplication::restore_multiplayer_stage(const GameplayLoad& request,bool initial_ready_boundary,u32* failure){
+bool GameApplication::restore_multiplayer_stage(const GameplayLoad& request,bool initial_ready_boundary,u32* failure,bool native_loading,u32 native_loading_frames){
     if(failure)*failure=0;
     if(!session.multiplayer_session.configured||request.stage<0||request.stage>=9||
        request.difficulty<0||request.difficulty>4||request.character<0||request.character>=12){if(failure)*failure=1;return false;}
-    // A checkpoint restore creates a new native gameplay owner graph. Failures
-    // accumulated by a detached presentation scene must not poison that graph.
+    // The native Replay entry replaces the departing presentation scene.
     failed=false;animations.invalid=false;
     title.detach();results.detach();music.detach();
     if(game_attached){game.unload(false,true);game_attached=false;}
@@ -121,27 +120,26 @@ bool GameApplication::restore_multiplayer_stage(const GameplayLoad& request,bool
     supervisor.state.previous=i32(Scene::Game);supervisor.state.stage=u32(request.stage);
     supervisor.state.difficulty=request.difficulty;supervisor.state.practice=0;
     supervisor.state.keep_resources=false;session.practice.active=false;session.practice.replay=false;
-    // The recorded request describes how the source crossed its stage
-    // boundary. It may rely on retained ANM/ECL owners and player resources,
-    // which this fresh observer has deliberately torn down. Build a complete
-    // native stage owner graph first, then restore the source request as
-    // metadata after the scalar state has been reconstructed.
+    // Each streamed Replay entry constructs a complete native stage.
     GameplayLoad constructor=request;constructor.initial=true;constructor.keep_resources=false;
     constructor.release_resources=true;constructor.supervisor_state=i32(Scene::Game);
     restoring_multiplayer_stage=true;const bool loaded=game.load(constructor,true);restoring_multiplayer_stage=false;
     if(!loaded){if(failure)*failure=2;return false;}
-    game.restore_spectator_load_request(request);
     game_attached=true;session.multiplayer_session.started=true;
     results.clear_inactive_failure_for_restore();
     game.menus.context.supervisor_state=i32(Scene::Game);game.menus.context.lockable_backbuffer=true;
-    loading_gate=false;loading_hidden=true;failed|=invalid();synchronize();
+    // The stage header identifies the native loading input position.
+    loading_gate=native_loading;loading_hidden=!native_loading;
+    game.control.state.load_state=native_loading?1:0;
+    game.control.state.load_frames=i32(native_loading_frames);
+    failed|=invalid();synchronize();
     if(failed){if(failure)*failure=u32(3)|(u32(animations.invalid)<<8)|(u32(title.invalid())<<9)|
         (u32(results.invalid())<<10)|(u32(game.invalid())<<11)|(u32(screen.invalid())<<12);return false;}
     if(initial_ready_boundary){
         // A source's frame-zero checkpoint is captured only after its native
         // loading gate closes and one ready update/draw has initialized the
-        // gameplay owners. Re-enter that same boundary before strict scalar
-        // restoration; this is setup work, not a spectator input frame.
+        // gameplay owners. Re-enter that native boundary before consuming
+        // the first published input.
         if(session.network_frame_open){if(failure)*failure=7;return false;}
         const i32 minimum=game.globals.game_flags&8?80:30;
         // During source loading both counters advance together. The last

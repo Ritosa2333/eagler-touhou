@@ -40,6 +40,13 @@ test('disposal rejects pending wait and retires both original250ms/1000ms interv
 
 test('native peer/path records preserve original array rejection and entry limits',()=>{const f=fixture();f.target.__eaglerNetplayRtcPaths=[[],{peer:1,path:'direct'},{peer:2,path:'turn'},{peer:3,path:'other'}];f.target.__eaglerNetplayLanPeers=[[],{player:0},{player:1},{player:2},{player:3}];const net=f.model.readNativeSnapshot();assert.deepEqual(net.rtcPaths.map(x=>x.peer),[1,2]);assert.deepEqual(net.lanPeers.map(x=>x.player),[0,1,2]);f.model.dispose();});
 
+test('input recovery counters are shown independently of stable RTT and omitted when unsupported',()=>{
+ const f=fixture();f.model.refresh();assert.equal(f.model.getSnapshot().diagnostics.runtimeNetplayRecoveryDiag,undefined);
+ f.target.__eaglerNetplayInputRepairs=31;f.target.__eaglerNetplayMissingInputs=4;f.model.refresh();
+ assert.match(f.model.getSnapshot().diagnostics.runtimeNetplayRecoveryDiag,/diagnostics.inputRecovery.*"repairs":31.*"missing":4/);
+ f.context.spectator=true;f.model.refresh();assert.equal(f.model.getSnapshot().diagnostics.runtimeNetplayRecoveryDiag,undefined);f.model.dispose();
+});
+
 for (const spectator of [false,true]) test(`native stopped game exposes an actionable return for spectator=${spectator}`,async()=>{
  const f=fixture(); f.context.spectator=spectator; f.target.__eaglerNetplayFailed=true;
  f.target.__eaglerNetplayError='native simulation stopped'; f.model.refresh();

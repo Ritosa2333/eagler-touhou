@@ -187,14 +187,12 @@ export function MultiplayerQuickChat({ model }: { model: MultiplayerQuickChatMod
         disabled={!context?.connected}
         onClick={model.togglePicker}
       >
-        {th09 && (
-          <img
-            className="th09-chat-icon"
-            src={new URL('assets/player-chat.svg', document.baseURI).href}
-            alt=""
-          />
-        )}
-        {t(th09 ? 'th09.quickChat' : 'chat.prompt')}
+        <img
+          className="th09-chat-icon"
+          src={new URL('assets/player-chat.svg', document.baseURI).href}
+          alt=""
+        />
+        {t('room.quickChat')}
       </button>
       <div className="mp-quick-chat-picker" hidden={!state.pickerOpen}>
         {QUICK_CHAT_ROWS.map((phrases, index) => (

@@ -24,3 +24,7 @@ npm --prefix launcher run dev:workspace
 ## 源码与验证
 
 游戏逻辑在 `src/`，网络和多人代码在 `src/netplay/`、`src/multiplayer/`，浏览器适配在 `portable/`。核心检查从 `ports/th07/` 运行：`bash scripts/run-core-tests.sh`。`CMakePresets.json` 中的 CI 预设使用外置资源执行编译检查；本地含资源的 Runtime 构建按本页上方步骤运行。
+
+红点使用最近未满 Power 优先的原生吸引。直接拾取、上线收点、满 Power 转樱点及双人局席位范围由 `tests/item-collection-browser.py` 驱动真实游戏验证。为独立的 Web 多人测试构建启用 `-DTH_ITEM_COLLECTION_FIXTURES=ON`，再运行 `python ports/th07/tests/item-collection-browser.py --runtime-directory=<测试构建目录> --font=<msgothic.ttc> --output=<结果.json>`；驱动覆盖梦 A／梦 B 的双人局与三人局。正式 Runtime 使用默认关闭的测试选项。
+
+旁观以普通 Replay 节奏播放，进度积压由时间线操作定位。原生关卡与 Boss 音乐在重建中跟随场景切换。跨作持续播放检查位于 `ports/th07/tests/netplay-spectator-natural-browser.py`，传入作品、`--runtime-directory`、`--music-directory`、`--font`、`--relay` 和 `--output`；`--physical-input` 覆盖射击、方向、低速和 Bomb 输入。

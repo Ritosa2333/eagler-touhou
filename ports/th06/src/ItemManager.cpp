@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "ItemManager.hpp"
 #ifdef TH_ENABLE_THPRAC
 #include "PurpleRuntime.hpp"
@@ -240,7 +241,9 @@ constexpr i8 ITEM_STATE_SCATTER = 2;
 
 bool ItemPlayerActive(const Player *player)
 {
-    return player && IsPlayerGameplayActive(player->initParam) &&
+    if(!player)return false;
+    const i32 slot=static_cast<i32>(player-g_Players);
+    return slot>=0 && slot<TH06_MULTI_MAX_PLAYERS && IsPlayerGameplayActive(u8(slot)) &&
            (player->playerState == PLAYER_STATE_ALIVE ||
             player->playerState == PLAYER_STATE_INVULNERABLE);
 }
@@ -288,6 +291,33 @@ Player *ItemTargetPlayer(Item *item)
     return GetClosestActivePlayer(item ? &item->currentPosition : nullptr);
 }
 
+Player *NearestPowerTarget(Item *item, bool only_needy)
+{
+    const int seat=eagler::cooperative::NearestPowerRecipient(TH06_MULTI_MAX_PLAYERS,
+        [&](unsigned id){return IsPlayerGameplayActive(u8(id)) && ItemPlayerActive(&g_Players[id]) &&
+            (!only_needy || GetPlayerPower(id)<128);},
+        [](unsigned id){return GetPlayerPower(id)<128;},
+        [&](unsigned id){const auto& p=g_Players[id].positionCenter;
+            const double dx=double(p.x)-item->currentPosition.x,dy=double(p.y)-item->currentPosition.y;
+            return dx*dx+dy*dy;});
+    return seat<0?nullptr:&g_Players[seat];
+}
+
+Player *OverflowPowerTarget(Item *item, Player *collector)
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer() || !collector ||
+        ItemPlayerPower(collector) < 128 ||
+        (item->itemType != ITEM_POWER_SMALL && item->itemType != ITEM_POWER_BIG &&
+         item->itemType != ITEM_FULL_POWER)) return collector;
+    if (auto* target=NearestPowerTarget(item,true)) {
+        item->state = FixedItemState(u8(target-g_Players));
+        return target;
+    }
+#endif
+    return collector;
+}
+
 Player *AutoCollectTarget(Item *item)
 {
     if (!MultiplayerGameplay::IsMultiplayer())
@@ -306,6 +336,8 @@ Player *AutoCollectTarget(Item *item)
     }
     if (count == 0)
         return nullptr;
+    if(item && (item->itemType==ITEM_POWER_SMALL || item->itemType==ITEM_POWER_BIG ||
+                item->itemType==ITEM_FULL_POWER))return NearestPowerTarget(item,false);
     if (count == 1)
         return &g_Players[candidates[0]];
     const i32 itemIndex = item ? static_cast<i32>(item - g_ItemManager.items) : 0;
@@ -446,7 +478,7 @@ void ItemManager::OnUpdate()
 
             if (curItem->state == ITEM_STATE_AUTO_COLLECT || HasFixedItemTarget(curItem))
             {
-                targetPlayer = ItemTargetPlayer(curItem);
+                targetPlayer = OverflowPowerTarget(curItem, ItemTargetPlayer(curItem));
                 playerAngle = targetPlayer->AngleToPlayer(&curItem->currentPosition);
                 sincosmul(&curItem->startPosition, playerAngle, 8.0f);
             }
@@ -495,7 +527,15 @@ void ItemManager::OnUpdate()
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         targetPlayer = ItemTargetPlayer(curItem);
 #endif
-        if (targetPlayer->CalcItemBoxCollision(&curItem->currentPosition, &g_ItemSize))
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const bool redirectedPower=targetPlayer->CalcItemBoxCollision(&curItem->currentPosition, &g_ItemSize) &&
+            OverflowPowerTarget(curItem, targetPlayer) != targetPlayer;
+#endif
+        if (
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            !redirectedPower &&
+#endif
+            targetPlayer->CalcItemBoxCollision(&curItem->currentPosition, &g_ItemSize))
         {
             switch (curItem->itemType)
             {

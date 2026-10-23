@@ -179,7 +179,6 @@ struct Stage
     AnmVm vm1;
     AnmVm vm2;
     StdRawHeader *stdData;
-    u32 stdDataSize;
     i32 quadCount;
     i32 objectsCount;
     StdRawObject **objects;

@@ -67,15 +67,15 @@ def point_of_collection_owner(browser):
         call(page,'multiplayerSmoke.ticks(150)')
         value=call(page,'multiplayerSmoke.status()')
         power=[value[10],value[22]]
-        assert power[collector]==16 and power[1-collector]==0,(collector,power,value)
+        assert power[1-collector]==16 and power[collector]==0,(collector,power,value)
         results.append(power);page.close()
     page=boot(browser,[1,1])
     assert call(page,'multiplayerSmoke.fixturePocSetup(2)') is True
     call(page,'multiplayerSmoke.ticks(150)')
     value=call(page,'multiplayerSmoke.status()');power=[value[10],value[22]]
-    assert power==[16,0],(power,value)
+    assert power==[0,16],(power,value)
     results.append(power);page.close()
-    return {'case':'point-of-collection-claimant','passed':True,'power':results}
+    return {'case':'point-of-collection-nearest-unfinished-player','passed':True,'power':results}
 
 
 def no_global_power_conversion(browser):
@@ -83,6 +83,17 @@ def no_global_power_conversion(browser):
     assert call(page,'multiplayerSmoke.fixturePowerTypeGuard()') is True
     page.close()
     return {'case':'no-global-power-to-point-conversion','passed':True}
+
+
+def nearest_power_routing(browser):
+    results=[]
+    for count in (2,3):
+        page=boot(browser,list(range(count)))
+        for kind in (10,11,12,13):
+            assert call(page,f'multiplayerSmoke.fixtureItems({kind})')==1,(count,kind)
+            results.append({'players':count,'scenario':kind})
+        page.close()
+    return {'case':'nearest-unfinished-power-poc-contact-and-all-full','passed':True,'results':results}
 
 
 def press(page, key):
@@ -349,7 +360,7 @@ with sync_playwright() as playwright:
     browser = playwright.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader'])
     try:
         report['browser']=browser.version
-        cases=(stage_resources_and_loadout_bombs,separated_power_drops,grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,spirit_extends_and_banked_rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
+        cases=(stage_resources_and_loadout_bombs,separated_power_drops,grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,nearest_power_routing,rescue,spirit_extends_and_banked_rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
         selected=[case for case in cases if args.case=='all' or case.__name__==args.case]
         assert selected,'unknown native cooperation case'
         for case in selected:
