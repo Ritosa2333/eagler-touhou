@@ -34,6 +34,47 @@ static bool initialize(bool heapOnly=false) {
     return true;
 }
 
+static void trap_outside_memory() {
+    // Read the live memory size after initialization/allocation. A volatile
+    // store at its first inaccessible byte traps in Wasm itself, without
+    // entering Emscripten's abort path or synthesizing a JavaScript exception.
+    const auto end=std::uintptr_t(__builtin_wasm_memory_size(0))*65536;
+    *reinterpret_cast<volatile std::uint8_t*>(end)=0x5a;
+    assert(false&&"out-of-bounds Wasm store returned");
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void eagler_write_journal_trap(int hostScope) {
+    assert(hostScope==0||hostScope==1);
+    assert(initialize());
+    assert(J::BeginFrame(0));
+    J::GameScope game;
+    *reinterpret_cast<volatile std::uint32_t*>(&root.state.value)=91;
+    *reinterpret_cast<volatile std::uint32_t*>(&root.state.object->number)=102;
+    if(hostScope) { J::HostScope host; trap_outside_memory(); }
+    else trap_outside_memory();
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_abandon(int hostScope) {
+    const auto* config=reinterpret_cast<const volatile std::uint32_t*>(
+        std::uintptr_t(eagler_rb_config_address()));
+    // A raw Wasm trap unwinds past the C++ frame without running its scope
+    // destructors. Both a tracked call and a suspended host call leave an open
+    // transaction; the tracking flag alone cannot identify this condition.
+    assert(J::FrameOpen()&&J::FrameCount()==1&&J::Ready()&&!J::Failed());
+    assert(config[0]==std::uint32_t(!hostScope));
+    assert(root.state.value==91&&root.state.object->number==102);
+    assert(J::Stats().used_bytes>0);
+    J::Clear();
+    assert(!J::FrameOpen()&&J::FrameCount()==0&&config[0]==0);
+    assert(J::Failed()&&!J::Ready());
+    assert(std::strcmp(J::Error(),"Write journal abandoned an open frame")==0);
+    assert(!J::BeginFrame(1));
+    J::Clear();
+    assert(J::Failed()&&!J::Ready()&&config[0]==0);
+    assert(std::strcmp(J::Error(),"Write journal abandoned an open frame")==0);
+    return 1;
+}
+
 extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
     if (scenario<0) return initialize()?1:0;
     assert(initialize(scenario==5));
@@ -183,7 +224,9 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(J::BeginFrame(1));
         { J::HostScope hostOperation;assert(!J::BeginFrame(2));assert(J::Failed()&&config[0]==0); }
         assert(J::Failed()&&config[0]==0);
+        const auto* firstError=J::Error();
         J::Clear();assert(!J::Ready()&&config[0]==0);
+        assert(J::Error()==firstError);
     } else return 0;
     std::printf("write-journal scenario %d passed\n",scenario);
     return 1;

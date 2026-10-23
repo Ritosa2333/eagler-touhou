@@ -185,10 +185,11 @@ void DiscardBefore(std::uint32_t frame) {
     }
 }
 void Clear() {
+    if (open) Fail("Write journal abandoned an open frame");
     eagler_rb_config[0]=0;
     open=false; frameHead=frameCount=entryHead=entryUsed=0;
-    // A capacity/ownership failure remains terminal: Clear cannot turn partial
-    // history into evidence that the simulation is safe to continue.
+    // A failure or abandoned transaction remains terminal: Clear cannot turn
+    // partial history into evidence that the simulation is safe to continue.
 }
 bool FrameOpen() { return open; }
 std::size_t FrameCount() { return frameCount; }
