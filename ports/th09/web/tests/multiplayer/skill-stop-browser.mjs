@@ -25,6 +25,8 @@ const localCharge=process.env.LOCAL_CHARGE==='1',expectRegression=process.env.EX
 const expectResumeWait=process.env.EXPECT_RESUME_WAIT==='1';
 const auditPrediction=process.env.AUDIT_PREDICTION!=='0',delayControl=process.env.DELAY_CONTROL==='1';
 const expectContinuous=process.env.EXPECT_CONTINUOUS==='1';
+const inputDropEvery=Number(process.env.INPUT_DROP_EVERY||0),controlStallAt=Number(process.env.CONTROL_STALL_AT||900),controlStallTicks=Number(process.env.CONTROL_STALL_TICKS||0);
+assert.ok([inputDropEvery,controlStallAt,controlStallTicks].every(n=>Number.isInteger(n)&&n>=0));
 assert.ok(Number.isInteger(limit)&&limit>=2400&&limit<=24000);
 assert.ok(Number.isInteger(delay)&&delay>=1&&Number.isInteger(jitter)&&jitter>=0&&delay+jitter<=7);
 assert.ok(Number.isInteger(warmup)&&warmup>=0&&warmup<2400);
@@ -36,9 +38,10 @@ const browser=await puppeteer.launch({headless:true,executablePath:process.env.B
 const errors=[];
 try{
   const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(host.url);
-  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl})=>{
+  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks})=>{
     const windows=[],pending=[],tapes=[[],[]],captured=[[],[]],presented=[[],[]],exact=[],exactDraw=[],charges=[[],[]];
     let clock=0;
+    const wire=[0,1].map(()=>({input:0,dropped:0,control:0,stallAt:null})),controlDue=[0,0];let packetSerial=0;
     for(let side=0;side<3;++side){
       const frame=document.createElement('iframe');frame.src='/';document.body.append(frame);
       await new Promise(r=>frame.onload=r);windows.push(frame.contentWindow);
@@ -51,11 +54,14 @@ try{
     const presentations=w=>values(w,'_th09_game_metrics',10)[9];
     const load=w=>values(w,'_th09_probe_load',8);
     const draw=w=>w.core._th09_probe_stop_draw?values(w,'_th09_probe_stop_draw',9):null;
-    const send=(side,bytes)=>{
+    const send=(side,bytes,lane)=>{
       const input=bytes[0]===69&&bytes[5]===1;
-      const charge=bytes[0]===84&&bytes[1]===57&&bytes[2]===67&&bytes[3]===80;
-      if(charge){const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),f=v.getUint32(12,true),raw=Array.from(bytes.subarray(20));
-        if(charges[side][f]&&charges[side][f].some((b,i)=>b!==raw[i]))throw Error('Rewritten charge '+f);charges[side][f]=raw;}
+      const charge=bytes[0]===84&&bytes[1]===57&&bytes[2]===67&&(bytes[3]===80||bytes[3]===66);
+      if(charge){
+        const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),batch=bytes[3]===66,count=batch?v.getUint32(20,true):1;
+        for(let i=0;i<count;++i){const offset=batch?24+i*44:12,f=v.getUint32(offset,true),start=batch?offset+4:20,raw=Array.from(bytes.subarray(start,start+40));
+          if(charges[side][f]&&charges[side][f].some((b,j)=>b!==raw[j]))throw Error('Rewritten charge '+f);charges[side][f]=raw;}
+      }
       if(input){
         const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
         const start=view.getUint32(32,true),count=bytes[42];
@@ -65,12 +71,21 @@ try{
           captured[side][frame]=bits;
         }
       }
-      pending.push({to:1-side,due:clock+(input||charge||delayControl?delay+clock%(jitter+1):0),bytes:new Uint8Array(bytes)});
+      let due=clock+(input||charge||delayControl?delay+clock%(jitter+1):0);
+      if(lane==='input'){
+        ++wire[side].input;
+        if(inputDropEvery&&wire[side].input%inputDropEvery===0){++wire[side].dropped;return;}
+      }else{
+        ++wire[side].control;
+        if(controlStallTicks&&clock>=controlStallAt&&wire[side].stallAt===null){wire[side].stallAt=clock;controlDue[side]=clock+controlStallTicks;}
+        due=Math.max(due,controlDue[side]);controlDue[side]=due;
+      }
+      pending.push({to:1-side,due,serial:++packetSerial,bytes:new Uint8Array(bytes)});
     };
     for(let side=0;side<3;++side){
-      const w=windows[side],dc=()=>({readyState:'open',bufferedAmount:0,send:b=>{if(side<2)send(side,b);}});
+      const w=windows[side],dc=lane=>({readyState:'open',bufferedAmount:0,send:b=>{if(side<2)send(side,b,lane);}});
       w.__eaglerPeerTransport={route:'rtc',localPlayer:side%2,playerCount:2,received:[],receivedHead:0,
-        peers:new Map([[1-side%2,{inputOpen:true,controlOpen:true,inputDc:dc(),controlDc:dc()}]])};
+        peers:new Map([[1-side%2,{inputOpen:true,controlOpen:true,inputDc:dc('input'),controlDc:dc('control')}]])};
       if(side<2&&!w.core._th09_rollback_recovery_mode(1))throw Error('Recovery mode');
       if(localCharge&&!w.core._th09_local_charge_priority)throw Error('Local charge ABI required');
       if(w.core._th09_local_charge_priority&&!w.core._th09_local_charge_priority(+(localCharge&&side<2)))throw Error('Charge policy');
@@ -117,9 +132,11 @@ try{
     }
     const setKeys=(w,bits)=>{for(const [bit,scan] of [[1,44],[2,45],[4,42],[64,203],[128,205],[256,29]])w.core._th09_key(scan,Number(!!(bits&bit)));};
     for(;clock<limit*3;++clock){
-      for(let i=pending.length-1;i>=0;--i)if(pending[i].due<=clock){
-        const packet=pending.splice(i,1)[0];peers[packet.to].__eaglerPeerTransport.received.push(packet.bytes);
-      }
+      const ready=[];
+      for(let i=pending.length-1;i>=0;--i)if(pending[i].due<=clock)ready.push(pending.splice(i,1)[0]);
+      // The reliable SCTP stream retains send order even after a blocked head.
+      ready.sort((a,b)=>a.due-b.due||a.serial-b.serial);
+      for(const packet of ready)peers[packet.to].__eaglerPeerTransport.received.push(packet.bytes);
       for(let side=0;side<2;++side){
         const w=peers[side];setKeys(w,tapes[side][status(w)[4]]||0);
         const callback=w.queue.shift();if(callback)callback(clock*1000/60);
@@ -193,10 +210,10 @@ try{
     }
     const captureDifferences=captured.map((t,side)=>({length:t.length,
       different:t.flatMap((bits,f)=>bits===tapes[side][f]?[]:[{frame:f,planned:tapes[side][f],captured:bits}]).slice(0,20)}));
-    return {clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,
+    return {clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,wire,
       capturesMatch:captured.every((t,side)=>t.length===limit&&t.every((bits,f)=>bits===tapes[side][f]))};
-  },{limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl});
-  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait,auditPrediction,delayControl,expectContinuous},browser:await browser.version(),
+  },{limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks});
+  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait,auditPrediction,delayControl,expectContinuous,inputDropEvery,controlStallAt,controlStallTicks},browser:await browser.version(),
     scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Presentation cadence, predicted poses and confirmed worlds across global cut-ins, field time-stop and resume. Exact final worlds and framebuffer use captured inputs and immutable charge records as the replay oracle. This is not device performance evidence.',result,errors};
   writeFileSync(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   assert.deepEqual(errors,[]);

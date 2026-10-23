@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstring>
 namespace th09::multiplayer {
-// Title-owned reliable control records. The shared input protocol and other
+// Title-owned immutable input records. The shared input protocol and other
 // games retain their existing wire format and confirmation policy.
 class ChargeHistory {
     struct Record {u32 frame=Netplay::INVALID_FRAME;bool actual=false,applied=false;ChargeSample value,used;};
@@ -19,6 +19,8 @@ class ChargeHistory {
     void advance(u32 player){while(Get(player,frontier[player]))++frontier[player];}
 public:
     static constexpr u32 SampleBytes=40,PacketBytes=20+SampleBytes,AckBytes=20;
+    static constexpr u32 BatchHeaderBytes=24,BatchRecordBytes=4+SampleBytes,MaxBatchSamples=8;
+    static constexpr u32 MaxBatchBytes=BatchHeaderBytes+MaxBatchSamples*BatchRecordBytes;
     void begin(std::uint64_t id,u32 player,bool on){*this=ChargeHistory{};session=id;side=player;enabled=on;}
     bool Enabled()const{return enabled;}
     u32 RollbackFrame()const{return rewind;}
@@ -32,6 +34,7 @@ public:
     bool CanAdvance(u32 frame,u32 history)const{return !enabled||frame<ConfirmedCount()+history;}
     bool CanRetire(u32 next)const{return !enabled||(ConfirmedCount()>=next&&acknowledged>=next);}
     u32 LocalCount()const{return frontier[side];}
+    u32 RemoteCount()const{return frontier[1-side];}
     u32 AcknowledgedCount()const{return acknowledged;}
     const ChargeSample* Get(u32 player,u32 frame)const{
         if(!enabled||player>1)return nullptr;const auto& record=records[player][frame%Capacity];
@@ -39,6 +42,7 @@ public:
     }
     static bool IsSample(const u8* bytes,std::size_t size){return size>=4&&!std::memcmp(bytes,"T9CP",4);}
     static bool IsAck(const u8* bytes,std::size_t size){return size>=4&&!std::memcmp(bytes,"T9CA",4);}
+    static bool IsBatch(const u8* bytes,std::size_t size){return size>=4&&!std::memcmp(bytes,"T9CB",4);}
     static void EncodeSample(const ChargeSample& sample,u8* bytes){
         charge_record::encode(sample,bytes);
     }
@@ -47,6 +51,8 @@ public:
     }
     bool Publish(u32 frame,const ChargeSample& sample,std::array<u8,PacketBytes>& packet){
         if(!enabled||!sample.valid()||Get(side,frame))return false;
+        const auto& previous=records[side][frame%Capacity];
+        if(previous.actual&&previous.frame!=frame&&previous.frame>=acknowledged)return false;
         auto& record=slot(side,frame);record.actual=true;record.value=sample;advance(side);
         std::memcpy(packet.data(),"T9CP",4);identity(packet.data());word(packet.data()+12,frame);word(packet.data()+16,side);
         EncodeSample(sample,packet.data()+20);return true;
@@ -82,6 +88,40 @@ public:
         if(!enabled||size!=AckBytes)return false;if(!identity(bytes))return true;
         const u32 count=word(bytes+12);if(word(bytes+16)!=1-side||count>frontier[side])return false;
         acknowledged=std::max(acknowledged,count);return true;
+    }
+    bool Batch(std::array<u8,MaxBatchBytes>& packet,std::size_t& size)const{
+        if(!enabled)return false;
+        std::memcpy(packet.data(),"T9CB",4);identity(packet.data());word(packet.data()+12,side);
+        word(packet.data()+16,RemoteCount());u32 count=0;
+        const auto append=[&](u32 frame){
+            const auto* sample=Get(side,frame);if(!sample)return false;
+            auto* record=packet.data()+BatchHeaderBytes+count*BatchRecordBytes;
+            word(record,frame);EncodeSample(*sample,record+4);++count;return true;
+        };
+        const auto end=LocalCount();
+        // Always retain the oldest hole. The last slot also carries the fresh
+        // result when ACK lag exceeds one batch, without delaying new input.
+        const auto prefix=acknowledged+std::min(end-acknowledged,MaxBatchSamples-1);
+        for(u32 frame=acknowledged;frame<prefix;++frame)if(!append(frame))return false;
+        if(prefix<end&&!append(end-1))return false;
+        word(packet.data()+20,count);size=BatchHeaderBytes+count*BatchRecordBytes;return true;
+    }
+    bool ReceiveBatch(const u8* bytes,std::size_t size,u32 next,bool& accepted,bool& hasData){
+        accepted=hasData=false;
+        if(!enabled||size<BatchHeaderBytes)return false;
+        const auto count=word(bytes+20);
+        if(count>MaxBatchSamples||size!=BatchHeaderBytes+count*BatchRecordBytes)return false;
+        if(!identity(bytes))return true;
+        const auto player=word(bytes+12),ack=word(bytes+16);
+        if(player!=1-side||ack>LocalCount())return false;
+        std::array<u8,PacketBytes> sample{};std::array<u8,AckBytes> ignored{};
+        std::memcpy(sample.data(),"T9CP",4);identity(sample.data());word(sample.data()+16,player);
+        for(u32 i=0;i<count;++i){
+            const auto* record=bytes+BatchHeaderBytes+i*BatchRecordBytes;
+            word(sample.data()+12,word(record));std::memcpy(sample.data()+20,record+4,SampleBytes);
+            bool received=false;if(!Receive(sample.data(),sample.size(),next,ignored,received)||!received)return false;
+        }
+        acknowledged=std::max(acknowledged,ack);accepted=true;hasData=count!=0;return true;
     }
 };
 }

@@ -5,11 +5,10 @@ import {spawn} from 'node:child_process';
 import net from 'node:net';
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {createRequire} from 'node:module';
+import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 import {presentationServer} from '../../scripts/presentation-server.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
-const {chromium}=createRequire(process.env.BROWSER_TEST_PACKAGE||resolve(root,'package.json'))('playwright');
 const label=process.env.RUN_LABEL;if(!/^[\w-]+$/.test(label||''))throw Error('Unique RUN_LABEL required');
 const buildDir=resolve(process.env.PC_BUILD||resolve(root,'artifacts/in-game-selection-release-20261015'));
 const out=resolve(root,'artifacts/multiplayer-tests',label);if(existsSync(out))throw Error('Retained run already exists');mkdirSync(out,{recursive:true});
@@ -20,12 +19,13 @@ const relayPort=await new Promise(r=>{const s=net.createServer();s.listen(0,'127
 const relay=spawn(process.execPath,[resolve(process.env.TH09_SELECTION_RELAY||resolve(root,'../../eagler-touhou/services/netplay/netplay-relay.mjs'))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},stdio:['ignore','pipe','pipe']});
 let relayLog='';relay.stderr.on('data',b=>relayLog+=b);await new Promise((ok,fail)=>{relay.stdout.on('data',b=>{relayLog+=b;if(relayLog.includes('netplay relay listening'))ok();});relay.on('error',fail);relay.on('exit',code=>fail(Error('relay '+code+' '+relayLog)));});
 const host=await presentationServer(0,{release:true,artifactDirectory:buildDir});
-const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,args:['--enable-gpu','--use-gl=angle','--use-angle=d3d11','--autoplay-policy=no-user-gesture-required']});
+const browser=await launchBrowser({headless:true,args:['--enable-gpu','--use-gl=angle','--use-angle=d3d11','--autoplay-policy=no-user-gesture-required']});
 const pages=[];
 async function actor(index){
   const page=await browser.newPage({viewport:{width:900,height:700}});pages.push(page);
   page.on('pageerror',e=>report.errors.push({index,error:e.stack}));
-  await page.goto(host.url);await page.evaluate(async({index,relayPort,fallback,packetDelay})=>{
+  await page.goto(host.url);await page.waitForFunction(()=>typeof window.openProbe==='function');
+  await page.evaluate(async({index,relayPort,fallback,packetDelay})=>{
     await openProbe(0,1,2,3,true);
     if(packetDelay&&index<2){const send=WebSocket.prototype.send;WebSocket.prototype.send=function(data){if(typeof data==='string')return send.call(this,data);const copy=data.slice?data.slice(0):data;setTimeout(()=>{if(this.readyState===1)send.call(this,copy);},packetDelay);};}
 if(fallback)window.RTCPeerConnection=undefined;

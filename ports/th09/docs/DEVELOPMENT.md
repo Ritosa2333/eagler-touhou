@@ -66,15 +66,25 @@ npm --prefix launcher run dev:workspace
 | `false`（默认） | 使用本地优先蓄力，双方同步已接受的本机进度 | `th09_local_charge_priority(1)` |
 | `true` | 使用原版蓄力逻辑，HUD 即时显示当前进度 | `th09_local_charge_priority(0)` |
 
-Runtime 在 HELLO 前完成配置，并将蓄力规则纳入 gameplay ABI，核对双方的规则身份。纯延迟模式使用原版蓄力逻辑。
+Runtime 在 HELLO 前完成配置，并将蓄力规则和批次协议纳入 gameplay ABI，核对双方的规则与交付协议身份。纯延迟模式使用原版蓄力逻辑。
 
 技能切入、停顿和恢复沿用可回滚世界帧推进，恢复工作安排在画面提交之后。历史窗口和资源重建决定确认等待边界。浏览器技能回归记录画面推进间隔、预测位置差异与蓄力 HUD，并以完整确认输入核对原生 Replay、最终世界和画面；`DELAY_CONTROL=1` 同时覆盖输入与控制包延迟，`AUDIT_PREDICTION=1` 单独报告预测画面与确认画面的差异。
 
 调度参考 HiganRTool 的 [input_point 与 post_present](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/core/src/rollback.rs) 和 [tick 边界判定](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/dll/src/rollback_play.rs)。技能停顿继续运行网络输入与回滚时钟；全局切入和咲夜场地时停由世界自身控制对象更新。预测画面差异单独记录，已确认世界与最终回放保持精确核对。`EXPECT_CONTINUOUS=1` 验证固定延迟场景逐次画面推进，`AUDIT_PREDICTION=0` 可复查旧版逐帧确认屏障的表现。
 
+`skill-stop-browser.mjs` 按输入和可靠控制两条通道分别注入交付条件。`INPUT_DROP_EVERY=N` 丢弃每第 N 个输入消息；`CONTROL_STALL_AT` 与 `CONTROL_STALL_TICKS` 设置可靠控制通道开始等待的逻辑 tick 和等待长度，后续控制消息保持发送顺序。报告保留两条通道的发送、丢弃和等待位置，并以采样输入与不可变蓄力记录核对最终世界、录像和画面。
+
+`transport-health-browser.mjs --rtc` 在两个独立浏览器进程中运行共享传输源码，核对选中的直连候选对、实际发送、消息到达和出队计数。`EAGLER_COMMON_ROOT` 选择共享源码目录，`HEALTH_EXPECTED_COMMON_HEAD` 固定其版本，测试同时校验该目录中的已跟踪文件。`--relay` 覆盖 WebSocket 转发路径，TURN 路径由实际 ICE 候选对区分。
+
 ### 蓄力同步与旁观
 
-`LocalChargePlanner` 复用 `ShotControl::update` 接受本机进度。每帧结果经 `ChargeHistory` 的 `T9CP` 记录同步，`T9CA` 独立确认接收进度。已接受结果在重传与回滚中保持不变；待释放技能属于 Player 的回滚状态。资源重建边界使用已确认输入，新世界随后恢复本地优先。
+`LocalChargePlanner` 复用 `ShotControl::update` 接受本机进度。`ChargeChannel` 通过共享无序输入通道发送 `ChargeHistory` 中已经接受的结果，批次携带累计接收确认、最早未确认记录与最新记录。待释放技能属于 Player 的回滚状态。资源重建边界使用已确认输入，新世界随后恢复本地优先。
+
+本地优先在首次推进该帧时固定本机接受的蓄力结果，世界恢复后复用同一份记录。已经接受的释放遇到世界停顿时进入队列，在允许更新时执行一次。双方模拟、录像与旁观共同消费这些记录，保持进度、音效事件与技能释放一致。
+
+单份结果保存进度、两个计时器、释放值及事件标记，共 40 字节。`T9CB` 用 24 字节头携带会话、席位、累计确认和记录数量，每条记录为 4 字节帧号与 40 字节结果；一批最多 8 条，共 376 字节。已有 `T9CP`、`T9CA` 解码继续服务单条记录验证。接收账本按帧号容纳乱序和重复，连续接收前沿限制 8 帧预测范围，接收 ACK 参与会话退休屏障。账本中的 512 个记录槽保留尚待确认的网络记录，世界恢复使用独立的回滚历史。
+
+蓄力结果在首次生成后立即发送，后续批次持续携带最早未确认记录；停帧时每 32 ms 继续发送。累计确认停止前进 80 ms 后，通过共享修复通道追加有界可靠副本，受该通道的 32 KiB 排队门槛管理。接收确认随批次合并，尾帧与退出屏障使用相同交付机制。普通按键采样与发送保持原有时点，录像和旁观沿用既有 40 字节记录格式。
 
 旁观帧 `T9SP/2` 在原有键盘与触控数据后附加两份 40 字节蓄力记录，共 126 字节。历史批次、跳转和实时播放使用同一帧记录。关闭本地优先时继续发送 46 字节 `T9SP/1`。
 
@@ -92,6 +102,8 @@ Runtime 在 HELLO 前完成配置，并将蓄力规则纳入 gameplay ABI，核�
 
 - `web/tests/multiplayer/local-charge.cpp`：原有射击行为、停顿、自动低速与待释放技能。
 - `web/tests/multiplayer/charge-history.cpp`：不可变记录、接收确认、回滚恢复、环形历史、录像编解码和触控轨道共存。
+- `web/tests/multiplayer/charge-channel.cpp`：20 分钟记录环复用、无序批次、最早缺帧补发、双向丢包、ACK 丢失、快速通道中断、可靠通道阻塞和拥塞恢复。
+- `web/tests/server/spectator-rewind.test.mjs`：当前局回看、下一局释放旧局前缀及蓄力记录逐字节保留。
 - `web/tests/multiplayer/local-charge-browser.mjs`：双方咲夜 C2、延迟与抖动下的实际 HUD、独立确认记录模拟、录像和旁观逐帧对照。`CHAINED_SKILLS=1` 测试双方连续技能，`PAUSE_CYCLE=1` 核对暂停记录与原生录像帧的衔接。
 - `web/tests/multiplayer/local-charge-compatibility.mjs`：`PC_BUILD` 为当前开发构建，`BASELINE_BUILD` 为保留的修改前开发构建，关闭功能后比较 6000 帧状态及原生录像字节。
 - `web/tests/multiplayer/legacy-replay-compatibility.mjs`：`TH09_REPLAY_FILE` 指向九关旧版样例 `th9_udyt22.rpy`，比较完整原生回放与旧触控录像。基线、本地优先开启和关闭三种配置逐帧核对 48 项场景状态及 8 项播放状态。

@@ -2,7 +2,7 @@
 #include <eagler/netplay/SessionChannel.hpp>
 #include <eagler/netplay/AdonisStartup.hpp>
 #include <deque>
-#include "ChargeHistory.hpp"
+#include "ChargeChannel.hpp"
 
 namespace th09::multiplayer {
 // Network state never belongs to a world checkpoint. Restoring gameplay must
@@ -62,8 +62,8 @@ public:
     std::uint32_t Resimulated() const { return resimulated_; }
     static bool ValidInput(const Netplay::FrameInput&);
 private:
-    ChargeHistory charges_;bool chargeRequested_=false;
-    std::uint64_t chargeRepairAt_=0;
+    ChargeHistory charges_;ChargeChannel chargeChannel_;bool chargeRequested_=false;
+    std::uint64_t chargeNow_=0;
     bool HasRollback()const{return RollbackFrame()!=Netplay::INVALID_FRAME;}
     bool Configure(const Netplay::SessionConfig&,std::uint64_t now,std::uint8_t delay,
                    Netplay::AdonisMode mode,unsigned predictionReserve=0);

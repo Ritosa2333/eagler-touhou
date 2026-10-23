@@ -246,7 +246,7 @@ function configFromEnv(){
 function readIdentity(file){const bytes=fs.readFileSync(file);return {path:path.resolve(file),bytes:bytes.length,sha256:sha(bytes)};}
 function gitIdentity(directory){
   const run=(...args)=>execFileSync('git',['-C',directory,...args],{encoding:'utf8',windowsHide:true}).trim();
-  return {root:run('rev-parse','--show-toplevel'),head:run('rev-parse','HEAD'),status:run('status','--porcelain','--untracked-files=no')};
+  return {root:run('rev-parse','--show-toplevel'),head:run('rev-parse','HEAD'),status:run('status','--porcelain','--untracked-files=no','--','.')};
 }
 async function freePort(){
   const server=net.createServer();await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
@@ -495,7 +495,7 @@ function selfTest(){
   if(process.env.EAGLER_COMMON_ROOT){
     const file=path.resolve(process.env.EAGLER_COMMON_ROOT,'src/netplay/BrowserPeerTransport.cpp');
     bodies=extractBodies(fs.readFileSync(file,'utf8'));
-    assert.deepEqual(bodies.eagler_peer_connect.args,['relayUrlPtr','tagPtr','localPlayer','playerCount']);
+    assert.deepEqual(bodies.eagler_peer_connect.args,['relayUrlPtr','tagPtr','localPlayer','playerCount','stageSpectatorHistory']);
     assert.deepEqual(bodies.eagler_peer_poll_copy.args,['out','capacity']);
   }
   console.log(JSON.stringify({passed:true,scope:'Node pure packet/schedule/FIFO/optional source parsing; no browser, relay process, network, WASM or benchmark',

@@ -23,8 +23,9 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
         return Fail("Invalid TH09 rollback session");
     auto negotiated = session;
     const bool localCharge=chargeRequested_&&mode!=Netplay::AdonisMode::Delay;
-    if(localCharge)negotiated.gameplayAbi^=0x43504701u;
+    if(localCharge)negotiated.gameplayAbi^=0x43504702u;
     charges_.begin(session.sessionId,session.localPlayer,localCharge);
+    chargeChannel_.Begin(session.localPlayer,now);chargeNow_=now;
     if (inputDelay) negotiated.gameplayAbi ^= 0x49444c00u ^ inputDelay;
     negotiated.gameplayAbi = Netplay::AdonisGameplayAbi(negotiated.gameplayAbi, mode, inputDelay);
     if(measured_)negotiated.gameplayAbi^=0x4d530100u^(predictionReserve<<20);
@@ -59,7 +60,7 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
 }
 void RollbackSession::Clear() {
     charges_=ChargeHistory{};
-    chargeRepairAt_=0;
+    chargeChannel_=ChargeChannel{};chargeNow_=0;
     channel_.Clear(); gate_.Clear(); core_.Clear();hashes_={};
     next_ = replayEnd_ = captures_ = corrections_ = resimulated_ = 0;
     configured_ = failed_ = invalidInput_ = false; error_ = "";
@@ -125,14 +126,8 @@ bool RollbackSession::Pump(std::uint64_t now, bool expectsInput,std::uint64_t me
     const bool captureFollows = deferOrdinaryInput && expectsInput &&
         mode_ == Netplay::AdonisMode::Rollback && NeedsCapture();
     if (!channel_.Pump(gate_, core_, now, expectsInput && gate_.CanStart(), captureFollows)) return Fail(channel_.ErrorText());
-    if(charges_.Enabled()&&now>=chargeRepairAt_&&charges_.AcknowledgedCount()<charges_.LocalCount()){
-        // A reliable channel may be replaced during route recovery. Repeat a
-        // bounded immutable tail until its independent ACK reaches the end.
-        chargeRepairAt_=now+100;const auto end=charges_.LocalCount();
-        const auto first=std::max(charges_.AcknowledgedCount(),end>History?end-History:0);
-        for(u32 frame=first;frame<end;++frame){std::array<u8,ChargeHistory::PacketBytes> packet{};
-            if(!charges_.Repeat(frame,packet)||!transport_.SendControl(packet.data(),packet.size()))return Fail("TH09 charge repair send failed");}
-    }
+    chargeNow_=now;
+    if(!chargeChannel_.Pump(transport_,charges_,now))return Fail("TH09 charge delivery failed");
     if (invalidInput_) return Fail("Invalid TH09 peer input");
     return !failed_;
 }
@@ -160,15 +155,11 @@ bool RollbackSession::Poll(std::vector<std::uint8_t>* bytes) {
             if(!startup_.Receive(transport_,bytes->data(),bytes->size(),startupNowUs_)){Fail(startup_.Error());return false;}
             continue;
         }
-        if(ChargeHistory::IsSample(bytes->data(),bytes->size())){
-            std::array<u8,ChargeHistory::AckBytes> ack{};bool accepted=false;
-            if(!charges_.Receive(bytes->data(),bytes->size(),next_,ack,accepted)||
-               (accepted&&!transport_.SendControl(ack.data(),ack.size()))){Fail("Invalid TH09 charge record");return false;}
-            continue;
+        bool chargePacket=false;
+        if(!chargeChannel_.Receive(charges_,bytes->data(),bytes->size(),next_,chargePacket)){
+            Fail("Invalid TH09 charge record");return false;
         }
-        if(ChargeHistory::IsAck(bytes->data(),bytes->size())){
-            if(!charges_.ReceiveAck(bytes->data(),bytes->size())){Fail("Invalid TH09 charge acknowledgement");return false;}continue;
-        }
+        if(chargePacket)continue;
         if(bytes->size()==20&&!std::memcmp(bytes->data(),"T9HC",4)){
             std::uint64_t id;std::uint32_t frame,hash;
             std::memcpy(&id,bytes->data()+4,8);std::memcpy(&frame,bytes->data()+12,4);std::memcpy(&hash,bytes->data()+16,4);
@@ -211,7 +202,7 @@ bool RollbackSession::CaptureLocalCharge(u32 frame,const ChargeSample& sample){
     const auto side=gate_.Config().localPlayer;
     if(!charges_.Get(side,frame)){
         std::array<u8,ChargeHistory::PacketBytes> packet{};
-        if(!charges_.Publish(frame,sample,packet)||!transport_.SendControl(packet.data(),packet.size()))
+        if(!charges_.Publish(frame,sample,packet)||!chargeChannel_.Published(transport_,charges_,chargeNow_))
             return Fail("TH09 charge record send failed");
     }
     return true;

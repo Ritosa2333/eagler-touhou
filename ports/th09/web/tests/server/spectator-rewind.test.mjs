@@ -33,16 +33,18 @@ test('real receive path retains played packets, rewinds locally, and continues r
   n.receive(packet(46,500));assert.equal(n.spectatorFrame,501);assert.equal(n.spectatorTape.frame,501);assert.equal(n.spectatorTape.matches[0].length,401);
   assert.equal(n.spectatorTape.bytes,0);assert.equal(n.connected,true);
 });
-test('cross-match rewind restores original character initializer and live skips to the newest retained match',()=>{
+test('starting the next match releases the completed prefix and keeps current-match rewind',()=>{
   const {n,calls,play}=viewer();
   n.receive(packet(102,100,3));for(let frame=100;frame<102;frame++)n.receive(packet(46,frame));n.receive(packet(24,102));play(102);
   n.receive(packet(102,900,14));for(let frame=900;frame<1100;frame++)n.receive(packet(46,frame));play(1000);
-  n.seekSpectator(1);assert.deepEqual(calls.filter(c=>c[0]==='restart').at(-1),['restart',100,78,1,3]);
-  assert.equal(n.spectatorTape.current.frame,100);assert.equal(n.spectatorTape.timeline(101).position,1);
-  n.goLive();assert.deepEqual(calls.filter(c=>c[0]==='restart').at(-1),['restart',900,78,0,14]);
-  assert.equal(n.spectatorTape.current.frame,900);assert.equal(n.spectatorTape.matches.length,2);
+  assert.equal(n.spectatorTape.matches.length,1);assert.equal(n.spectatorTape.locate(1),null);
+  const before=calls.length;n.seekSpectator(1);assert.equal(calls.length,before,'completed match is no longer seekable');
+  n.seekSpectator(3);assert.deepEqual(calls.filter(c=>c[0]==='restart').at(-1),['restart',900,78,1,14]);
+  assert.equal(n.spectatorTape.current.frame,900);assert.equal(n.spectatorTape.timeline(901).position,3);
+  n.goLive();assert.deepEqual(calls.filter(c=>c[0]==='restart').at(-1),['restart',900,78,1,14]);
+  assert.equal(n.spectatorTape.current.frame,900);assert.equal(n.spectatorTape.matches.length,1);
   assert.deepEqual(calls.filter(c=>c[0]==='control').at(-1),['control',2,1100]);
-  assert.equal(n.connected,true);assert.equal(n.spectatorTape.locate(1).match.frame,100,'go-live retains skipped local history');
+  assert.equal(n.connected,true);assert.equal(n.spectatorTape.locate(3).match.frame,900,'go-live retains current-match history');
 });
 
 test('local charge records survive batching, local rewind and ordered live handoff byte for byte',()=>{

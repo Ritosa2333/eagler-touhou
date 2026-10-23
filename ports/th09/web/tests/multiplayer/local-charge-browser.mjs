@@ -49,14 +49,16 @@ try{
     const load=w=>values(w,'_th09_probe_load',8);
     const send=(side,bytes)=>{
       const input=bytes[0]===69&&bytes[5]===1;
-      const charge=bytes[0]===84&&bytes[1]===57&&bytes[2]===67&&bytes[3]===80;
+      const charge=bytes[0]===84&&bytes[1]===57&&bytes[2]===67&&(bytes[3]===80||bytes[3]===66);
       if(charge){
-        const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),frame=view.getUint32(12,true);
-        const raw=Array.from(bytes.subarray(20));
-        if(charges[side][frame]){
-          if(charges[side][frame].raw.some((b,i)=>b!==raw[i]))throw Error('Rewritten charge '+frame);
-          ++repeatedCharge;
-        }else charges[side][frame]={charge:view.getInt32(20,true),active:view.getUint32(56,true),raw};
+        const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),batch=bytes[3]===66,count=batch?view.getUint32(20,true):1;
+        for(let i=0;i<count;++i){
+          const offset=batch?24+i*44:12,frame=view.getUint32(offset,true),start=batch?offset+4:20,raw=Array.from(bytes.subarray(start,start+40));
+          if(charges[side][frame]){
+            if(charges[side][frame].raw.some((b,j)=>b!==raw[j]))throw Error('Rewritten charge '+frame);
+            ++repeatedCharge;
+          }else charges[side][frame]={charge:view.getInt32(start,true),active:view.getUint32(start+36,true),raw};
+        }
       }
       if(input){
         const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);

@@ -31,6 +31,7 @@ function compile(args){
   if(result.status!==0)throw Error(result.stdout+result.stderr);
 }
 const suites={
+  'charge-channel':[],
   'charge-history':['ChargeReplayTrack','Lzss'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
   'local-charge':['LocalCharge','ShotControl','AttackAreas','Timer','GameMath','GameInput','InputFrame','Rng'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
   'image-resample':[resolve(root,'cpp/game/ImageResample.cpp')],
