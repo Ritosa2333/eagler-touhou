@@ -17,9 +17,9 @@ void challenge_cases(const std::vector<u8>& bytes){
         const unsigned repetitions=group==3?10:1;
         for(unsigned death=1;death<=repetitions;++death){
             for(auto* peer:{a.get(),b.get()}){auto& w=*peer->session.battle;for(unsigned seat=0;seat<3;++seat){auto& p=*w.pilots[seat];p.economy.power=p.economy.max_power;check(p.power_changed(),"challenge death Power setup");check(w.mp_hit(seat,{CollisionKind::Hit,true}),"challenge actual owner enters deathbomb window");}}
-            for(unsigned frame=0;frame<100;++frame){both();
-                if(frame==8)for(unsigned seat=0;seat<3;++seat){const auto& p=*a->session.battle->pilots[seat];check(p.player->state.life_state==2&&p.challenge_misses==death&&p.economy.lives==0,"held Bomb cannot deathbomb; each resolved Miss increments once without consuming zero lives");}
-                if(frame==12){auto& w=*a->session.battle;unsigned drops=0;for(unsigned i=0;i<ItemManager::capacity;++i){const auto& item=w.items.at(i);if(!item.state)continue;check(item.type!=6,"challenge death keeps normal P drops, never final-life Full Power");if(item.lifetime.current<=5&&(item.type==1||item.type==4))++drops;}check(drops>=21,"all three normal deaths emit seven native P items each");}
+            for(unsigned frame=0;frame<108;++frame){both();
+                if(frame==16)for(unsigned seat=0;seat<3;++seat){const auto& p=*a->session.battle->pilots[seat];check(p.player->state.life_state==2&&p.challenge_misses==death&&p.economy.lives==0,"held Bomb cannot deathbomb; each resolved Miss increments once without consuming zero lives");}
+                if(frame==20){auto& w=*a->session.battle;unsigned drops=0;for(unsigned i=0;i<ItemManager::capacity;++i){const auto& item=w.items.at(i);if(!item.state)continue;check(item.type!=6,"challenge death keeps normal P drops, never final-life Full Power");if(item.lifetime.current<=5&&(item.type==1||item.type==4))++drops;}check(drops>=21,"all three normal deaths emit seven native P items each");}
             }
             auto& w=*a->session.battle;for(unsigned seat=0;seat<3;++seat){const auto& p=*w.pilots[seat];check(p.player->state.life_state==1&&!p.ghost&&p.challenge_misses==death&&p.economy.lives==0,"challenge respawns after every death including more than nine Misses");}
             check(w.mp_wipe_frames==0&&!w.game_over_requested&&a->session.state.phase==GameSessionPhase::stage,"simultaneous challenge deaths never start ghost wipe");
@@ -31,7 +31,8 @@ void challenge_cases(const std::vector<u8>& bytes){
     input={};giver.economy.lives=3;receiver.economy.lives=1;
     put(*giver.player,0,400);put(*receiver.player,10,400);put(*w.pilots[2]->player,100,400);
     for(auto& p:w.pilots)p->player->state.invincibility.set(100000,&w.animations.rate);
-    for(unsigned i=0;i<106;++i){input[0].held=8;step(*a,input);}
+    for(unsigned i=0;i<5;++i){input[0].held=0;step(*a,input);input[0].held=8;step(*a,input);}
+    for(unsigned i=0;i<16;++i)step(*a,input);
     check(giver.economy.lives==2&&receiver.economy.lives==2,"challenge retains hidden-life native transfer and delivery");
     ItemState fragment{};fragment.type=5;bool convert=false;w.items.multiplayer_current_target=0;
     for(unsigned i=0;i<5;++i)check(w.mp_collect(fragment,convert),"challenge team fragment pickup");
@@ -39,6 +40,7 @@ void challenge_cases(const std::vector<u8>& bytes){
     for(auto& p:w.pilots)check(p->challenge_misses==10,"transfers and Extends cannot change cumulative Miss");
     giver.economy.lives=9;check(giver.rewards.add_life()&&giver.economy.lives==9&&giver.challenge_misses==10,"challenge hidden stock still caps at nine");
     w.items.reset();input={};step(*a,input);giver.economy.power=giver.economy.power_step*2;receiver.economy.power=0;w.pilots[2]->economy.power=w.pilots[2]->economy.max_power;
+    for(auto& p:w.pilots)check(p->power_changed(),"refresh options after fixture Power setup");
     for(unsigned i=0;i<5;++i){input[0].held=1;step(*a,input);input[0].held=0;step(*a,input);}for(unsigned i=0;i<16;++i)step(*a,input);
     check(giver.economy.power==giver.economy.power_step&&receiver.economy.power==receiver.economy.power_step,"challenge retains loadout-specific Power transfer");
     check(w.next_stage(a->resources,2),"challenge native stage transition");for(unsigned i=0;i<170;++i)step(*a,input);
@@ -49,6 +51,6 @@ void challenge_cases(const std::vector<u8>& bytes){
     input[0].pause=true;step(*a,input);check(a->session.state.phase==GameSessionPhase::paused,"challenge restart starts from real paused owner");
     for(unsigned seed:{417u,418u}){options.seed=seed;options.local_seat=0;check(a->session.begin_multiplayer(a->resources,options)&&b->session.begin_multiplayer(b->resources,options),"challenge negotiated new run / replay reconstruction");input={};for(unsigned seat=0;seat<3;++seat)check(a->session.multiplayer_seat(seat).misses==0,"challenge new run clears all cumulative Miss counters");for(unsigned frame=0;frame<120;++frame){input[0].held=2|(frame<60?128u:64u);step(*a,input);step(*b,input);check(a->session.multiplayer_hash()==b->session.multiplayer_hash(),"challenge new-run seed reconstructs identical confirmed history");}}
     options.challenge=false;check(a->session.begin_multiplayer(a->resources,options),"ordinary MP rules still available");auto& ordinary=*a->session.battle;input={};for(unsigned i=0;i<125;++i)step(*a,input);auto& p=*ordinary.pilots[0];p.economy.power=p.economy.max_power;check(p.power_changed(),"ordinary Bomb Power setup");input[0].held=2;step(*a,input);check(p.bomb->state.active&&p.economy.power==p.economy.max_power-p.economy.power_step,"ordinary MP Bomb and native cost unchanged");
-    auto& victim=*ordinary.pilots[1];victim.economy.lives=0;check(ordinary.mp_hit(1,{CollisionKind::Hit,true}),"ordinary last-life collision");input={};for(unsigned i=0;i<41;++i)step(*a,input);check(victim.ghost&&victim.economy.lives==-1&&victim.challenge_misses==0,"ordinary MP final death still becomes ghost");
+    auto& victim=*ordinary.pilots[1];victim.economy.lives=0;check(ordinary.mp_hit(1,{CollisionKind::Hit,true}),"ordinary last-life collision");input={};for(unsigned i=0;i<49;++i)step(*a,input);check(victim.ghost&&victim.economy.lives==-1&&victim.challenge_misses==0,"ordinary MP final death still becomes ghost");
     std::puts("PASS: challenge six loadouts/Bomb/deathbomb/Nitori, >9 zero-stock native deaths/drops/respawns, no wipe, independent cumulative Miss, hidden-life transfers/Extends, Power transfer, stage/restart/seed/HUD and ordinary MP control");
 }

@@ -42,6 +42,9 @@ bool PlayerFrame::restore_replay_position(const ReplayStageState& entry){
     if(entry.weapon){motion.state.option_count=0;return rebuild_options()&&rebuild_options();}
     return true;
 }
+bool PlayerFrame::restore_replay_stage(const ReplayStageState& entry){
+    return restore_replay_position(entry)&&(entry.weapon!=0||rebuild_options());
+}
 bool PlayerFrame::start_stage(){
     // 42fec0 resets lifecycle clocks but preserves position, weapon mode and
     // existing shots. Reinitializing the player here breaks replay entry state.
@@ -141,7 +144,13 @@ bool PlayerFrame::update(){
 #ifdef TH_ENABLE_THPRAC
         if(practice&&practice->enabled&&!input.replay&&(practice->cheats&16))input.movement.held|=2;
 #endif
-        if(state.state_timer.current>7){if(!die()||!world.enemy_death()||!death_frame())return false;}
+        if(state.state_timer.current>=
+#ifdef TH11_MULTIPLAYER
+            16
+#else
+            8
+#endif
+        ){if(!die()||!world.enemy_death()||!death_frame())return false;}
         else if(input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step&&(input.movement.held&2)){
             state.state_timer.set(60,&animations.rate);if(!world.start_bomb())return false;input.special_active=true;if(!practice_power_locked())economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;state.life_state=1;
         }break;

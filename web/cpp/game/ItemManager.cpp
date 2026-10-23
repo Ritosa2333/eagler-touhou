@@ -174,6 +174,10 @@ bool ItemManager::update(){
                 item.state=4;item.attraction_speed=float(double(player.attraction_speed)/3);
             }
         }
+#ifdef TH11_MULTIPLAYER
+        if(world.multiplayer_world()&&(item.state==3||item.state==4)&&multiplayer_current_target>=0&&multiplayer_targets[i]<0)
+            multiplayer_targets[i]=-2-multiplayer_current_target;
+#endif
         if(item.vm.update(animations)<0){last_error=8;return false;}item.lifetime.tick();++active_count;
     }
     return !convert||convert_power_items();

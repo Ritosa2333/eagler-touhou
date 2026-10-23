@@ -14,7 +14,7 @@ export function inspectMultiplayerReplay(value,{validate,buildWords}={}) {
     new TextDecoder().decode(bytes.subarray(0,8))!=='EAGLRPY1')
   throw Error('这不是 TH11 多人录像');
  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),u32=offset=>view.getUint32(offset,true);
- if(u32(8)!==1||u32(12)!==11||u32(24)!==128||u32(40)!==0x4d313154||u32(44)!==1||u32(48)!==1)
+ if(u32(8)!==1||u32(12)!==11||u32(24)!==128||u32(40)!==0x4d313154||u32(44)!==1||u32(48)!==3)
   throw Error('不支持的 TH11 多人录像版本');
  const playerCount=bytes[20],recordedPlayer=bytes[21],chapterCount=u32(28),frameCount=u32(32);
  if(![2,3].includes(playerCount)||recordedPlayer>=playerCount||chapterCount<1||chapterCount>7||!frameCount||frameCount>MULTIPLAYER_REPLAY_MAX_FRAMES||
