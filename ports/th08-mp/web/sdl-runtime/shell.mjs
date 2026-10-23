@@ -8,6 +8,7 @@ import {exportReplayName,importReplayName} from './motion-replay.mjs';
 import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,ensureSharedFontAlias,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 import {initializeSaveStorage,migrateLegacySaves} from './save-storage.mjs';
 import {validateMultiplayerOptions,configureMultiplayer,updateNetworkDiagnostics,networkError} from './multiplayer-host.mjs';
+import {createResumeCountdown} from './resume-countdown.mjs';
 // BEGIN GENERATED SPECTATOR PLAYBACK
 // Generated from eagler-common/browser/spectator-playback.mjs.
 // Native playback owns every cursor and restore. The shell only transports
@@ -302,6 +303,9 @@ function installResourceTrace(){
  }catch{}
 }
 let practice;
+// Reads the canonical resume countdown each presented frame; presentation
+// only, the world itself stays owned by the native simulation.
+const pumpResumeCountdown=createResumeCountdown({remaining:()=>core?.sdl_resume_countdown?.()||0,audio:()=>Module?.SDL3?.audioContext});
 const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!closing,reset:clearKeyboard,},
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
@@ -330,7 +334,7 @@ function acceptsTouch(){
  return touchReady();
 }
 const cancelTouches=bindOutsideTouches(document,canvas,()=>touchReady()?core:null,acceptsTouch);
-const error=reason=>{invalidateTouches(true);const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
+const error=reason=>{invalidateTouches(true);pumpResumeCountdown.dismiss?.();const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.deallocate(p);}};
 let storage;
@@ -393,7 +397,7 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>(!localReplay.active||!localReplay.audioPaused)&&!!core&&!!app&&launched&&!closing&&!touchRetired&&ownsTouchDocument()&&!document.hidden);
 }
-async function stop(){if(closing)return;if(roomOwned&&!options.replayViewer){closing=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{closing=false;}return;}closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
+async function stop(){if(closing)return;pumpResumeCountdown.dismiss?.();if(roomOwned&&!options.replayViewer){closing=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{closing=false;}return;}closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
 let localReplayStart=0;
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,
  physical:value=>root()+'/'+storage.relativeSave(value),stopLoop:()=>{clearKeyboard();core.sdl_loop_stop();},pauseAudio:paused=>core.sdl_loop_pause(+paused),resumeAudio:()=>resumeForegroundAudio(),
@@ -587,6 +591,7 @@ const initialized=(async()=>{
   build:runtimeBuildIdentity,onError:error,pause:()=>core.sdl_loop_pause(1)});
  Module.runtimeFinish=(result,duration)=>{
   if(replayReopening)return;
+  if(multiplayerRuntime&&!closing)pumpResumeCountdown();
   if(traceRequested&&!traceStarted&&app)traceStart();
   if(multiplayerRuntime&&app&&options.replayViewer&&core.multiplayer_replay_status){
    const state=replayWords(),pointer=core.multiplayer_replay_request(app);

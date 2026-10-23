@@ -57,9 +57,12 @@ std::uint32_t contract(const SessionSetup& setup,std::uint32_t revision) noexcep
 }
 }
 std::uint32_t gameplay_contract(const SessionSetup& setup) noexcept {
-    return contract(setup,0x08000018u);
+    return contract(setup,0x08000019u);
 }
 std::uint32_t replay_contract_before_stage_bomb_fix(const SessionSetup& setup) noexcept {
     return contract(setup,0x08000017u);
+}
+std::uint32_t replay_contract_before_resume_countdown(const SessionSetup& setup) noexcept {
+    return contract(setup,0x08000018u);
 }
 }

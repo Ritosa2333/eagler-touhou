@@ -597,6 +597,11 @@ EX("sdl_touch_mode") void sdl_touch_mode(u32 mode){if(touch.set_mode(static_cast
 EX("sdl_touch_controls") void sdl_touch_controls(u32 fire,u32 focus,u32 bomb,u32 escape,float x,float y){touch.controls(fire,focus,bomb,escape,x,y);}
 EX("sdl_touch_display") void sdl_touch_display(u32 hitbox){if(runtime)runtime->app.game.always_hitbox=hitbox!=0;}
 EX("sdl_game_status") const i32* sdl_game_status(){static i32 out[10]{};if(runtime){out[0]=runtime->status(0);out[1]=runtime->status(3);out[2]=runtime->status(2)||runtime->status(4);out[3]=number(runtime->app.session.numbers.lives).truncate_int();out[4]=runtime->app.session.numbers.power;out[5]=touch.current_context();out[6]=touch.active();out[7]=touch.fire;out[8]=touch.focus;out[9]=frames;}return out;}
+// Canonical frames remaining in the synchronized multiplayer resume
+// countdown; 0 means gameplay is live (or no multiplayer session is running).
+// pause_state gates a stale counter left behind by a session that died
+// mid-countdown: teardown clears pause_state but not the counter.
+EX("sdl_resume_countdown") i32 sdl_resume_countdown(){return runtime&&runtime->app.in_game()&&runtime->app.game.menus.context.pause_state?runtime->app.game.menus.context.resume_countdown:0;}
 }
 }
 #endif

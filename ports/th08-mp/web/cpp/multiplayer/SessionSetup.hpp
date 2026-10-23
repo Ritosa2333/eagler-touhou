@@ -31,4 +31,7 @@ bool decode_session_setup(SessionSetup&,const std::uint32_t*,std::size_t) noexce
 std::uint32_t gameplay_contract(const SessionSetup&) noexcept;
 // Replay admission only; live sessions always use gameplay_contract.
 std::uint32_t replay_contract_before_stage_bomb_fix(const SessionSetup&) noexcept;
+// Replays admitted under this contract keep their instant, countdown-free
+// resume so their recorded pause frames stay frame-accurate on playback.
+std::uint32_t replay_contract_before_resume_countdown(const SessionSetup&) noexcept;
 }

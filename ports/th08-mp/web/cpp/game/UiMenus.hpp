@@ -9,6 +9,10 @@ struct MenuContext {
     i32 difficulty=0,stage=0,character=0,spell=0;
     u16 keys=0,previous_keys=0;
     u8 pause_state=0,show_retry=0;
+    // Synchronized post-pause resume countdown, in canonical frames remaining.
+    // Journaled with the rest of the context, so every seat and every
+    // spectator counts down the same world frames and resumes together.
+    u8 resume_countdown=0;
     bool lockable_backbuffer=false,spell_captured=false;
     i32 shot_bombs=2,supervisor_state=2;
     u32 system_time=0;
@@ -41,7 +45,7 @@ public:
     UiMenus(AsciiState& ascii,AnmExecutor& executor,AnmRenderer& renderer,GameGlobals& globals,GameValues& values,
             GameConfiguration& config,PlayRecord& statistics,MenuActions& actions)
        :ascii(ascii),executor(executor),renderer(renderer),globals(globals),values(values),config(config),statistics(statistics),actions(actions){}
-    i32 update_pause();
+    i32 update_pause(bool synchronized_resume);
     i32 update_retry();
     void draw_pause();
     void draw_retry();

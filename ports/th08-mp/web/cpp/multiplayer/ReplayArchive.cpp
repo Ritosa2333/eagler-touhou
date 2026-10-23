@@ -50,8 +50,11 @@ bool decode_description(const Netplay::InputReplayInfo& info,ReplayDescription& 
     if(!decode_session_setup(next.setup,fields,version==6?23:version==5?22:version==4?20:version==3?19:17))return false;
     next.setup.input_delay=input_delay;next.setup.measured_prediction=prediction;
     if(c.gameplayAbi!=gameplay_contract(next.setup)){
-        if(c.gameplayAbi!=replay_contract_before_stage_bomb_fix(next.setup))return false;
-        next.legacy_stage_bombs=true;
+        // The stage-bomb era also predates the countdown; both eras must keep
+        // their countdown-free pause timing or their tapes misplay after a pause.
+        if(c.gameplayAbi==replay_contract_before_stage_bomb_fix(next.setup)){next.legacy_stage_bombs=true;next.legacy_resume_countdown=true;}
+        else if(c.gameplayAbi==replay_contract_before_resume_countdown(next.setup))next.legacy_resume_countdown=true;
+        else return false;
     }
     next.score=word(v.data()+40);next.last_stage=word(v.data()+44);
     if(next.score>999999999||next.last_stage>8)return false;
@@ -75,7 +78,7 @@ bool envelope(const u8* data,std::size_t size,std::size_t& score_size,std::size_
 }
 }
 bool ReplayArchive::Begin(const ReplayDescription& value,const std::vector<u8>& score){
-    if(value.legacy_stage_bombs||value.setup.started||!value.setup.configured||!valid_config(value.configuration)||score.size()>MaxBootScore)return false;
+    if(value.legacy_stage_bombs||value.legacy_resume_countdown||value.setup.started||!value.setup.configured||!valid_config(value.configuration)||score.size()>MaxBootScore)return false;
     Netplay::InputReplayConfig config;
     config.gameId=8;config.playerCount=u8(value.setup.player_count);config.recordedPlayer=u8(value.setup.local_player);
     config.gameplayAbi=gameplay_contract(value.setup);config.description=metadata(value);
