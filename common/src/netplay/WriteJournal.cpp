@@ -225,6 +225,26 @@ EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t b
     // This exported trampoline is excluded by the instrumentation pass. Disable
     // tracing before calling instrumented C++ helpers or writing their stack.
     if (!eagler_rb_config[0] || !bytes) return;
+    // Scalar stores usually revisit blocks already captured in this frame.
+    // Keep that case entirely inside the excluded trampoline: no tracing
+    // toggle, journal helper call or metadata write is needed. Check both ends
+    // for unaligned stores; bulk and region-crossing writes use full clipping.
+    if (bytes<=16) {
+        using namespace Netplay::WriteJournal;
+        const auto lo=std::uintptr_t(address);
+        std::size_t first=0,last=0;
+        bool contained=false;
+        if (lo>=heapLo && lo<heapHi && bytes<=heapHi-lo) {
+            first=(lo-heapLo)/BlockBytes;
+            last=(lo+bytes-1-heapLo)/BlockBytes;
+            contained=true;
+        } else if (lo>=rootLo && lo<rootHi && bytes<=rootHi-lo) {
+            first=heapBlocks+(lo-rootBlockLo)/BlockBytes;
+            last=heapBlocks+(lo+bytes-1-rootBlockLo)/BlockBytes;
+            contained=true;
+        }
+        if (contained && tags[first]==tag && tags[last]==tag) return;
+    }
     eagler_rb_config[0]=0;
     Netplay::WriteJournal::Touch(reinterpret_cast<void*>(std::uintptr_t(address)),bytes);
 }

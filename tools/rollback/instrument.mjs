@@ -264,7 +264,7 @@ function collectWrites(module, body, functionName) {
   return writes;
 }
 
-/** Instrument a linked wasm32 binary. No optimizer runs after inserting hooks. */
+/** Instrument a linked wasm32 binary, preserving its function index ABI. */
 export async function instrumentWasm(input, options = {}) {
   const opts = optionsWithDefaults(options);
   const memory = inspectMemory(input);
@@ -318,17 +318,19 @@ export async function instrumentWasm(input, options = {}) {
       const cfgLoad = word => module.i32.load(cfg + word * 4, 4, c(0));
       // Config ranges are valid non-wrapping wasm32 spans. Subtraction avoids
       // overflowing the end address of a store that crosses either boundary.
-      const overlaps = (address, length, baseWord) => module.i32.and(
-        module.i32.ne(cfgLoad(baseWord + 1), c(0)),
-        module.i32.or(
-          module.i32.lt_u(module.i32.sub(address(), cfgLoad(baseWord)), cfgLoad(baseWord + 1)),
-          module.i32.and(module.i32.lt_u(address(), cfgLoad(baseWord)),
-            module.i32.lt_u(module.i32.sub(cfgLoad(baseWord), address()), length()))));
+      const overlaps = (address, length, baseWord) => module.if(
+        module.i32.lt_u(module.i32.sub(address(), cfgLoad(baseWord)), cfgLoad(baseWord + 1)),
+        c(1),
+        module.if(module.i32.lt_u(address(), cfgLoad(baseWord)),
+          module.i32.and(module.i32.ne(cfgLoad(baseWord + 1), c(0)),
+            module.i32.lt_u(module.i32.sub(cfgLoad(baseWord), address()), length())), c(0)));
       const guard = (address, length, originalPointer, offset = 0) => {
         let call = module.call(touch.name, [address(), length()], b.none);
-        if (config) call = module.if(cfgLoad(0), module.if(
-          module.i32.and(module.i32.ne(length(), c(0)),
-            module.i32.or(overlaps(address, length, 1), overlaps(address, length, 3))), call));
+        // Most simulation writes are inside the heap. Short-circuit both the
+        // unusual crossing case and the external root instead of eagerly
+        // reading both complete range predicates for every scalar store.
+        if (config) call = module.if(cfgLoad(0), module.if(module.i32.ne(length(), c(0)),
+          module.if(module.if(overlaps(address, length, 1), c(1), overlaps(address, length, 3)), call)));
         else call = module.if(module.i32.ne(length(), c(0)), call);
         // Wasm memarg offsets are added without wrapping. A trapping effective
         // address must not journal a different low address after i32 overflow.
@@ -382,6 +384,9 @@ export async function instrumentWasm(input, options = {}) {
     }
     if (startName !== null) module.setStart(module.getFunction(startName));
     b.Function.setBody(module.getFunction(marker.name), module.i32.const(INSTRUMENTATION_MAGIC));
+    // Function-local cleanup removes constant guards and temporary locals
+    // without adding/removing functions or invalidating the external symbol map.
+    module.runPasses(['precompute', 'optimize-instructions', 'simplify-locals', 'local-cse', 'vacuum']);
     module.addCustomSection(INSTRUMENTATION_SECTION, new TextEncoder().encode(JSON.stringify(report)));
     if (!module.validate()) fail('instrumented module failed validation');
     const bytes = initializeMarkerWord(module.emitBinary(), markerAddress);
