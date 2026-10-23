@@ -73,7 +73,8 @@ bool StageGameplay::enable_game_callbacks(){if(!prepared||!background_ready||!ma
 bool StageGameplay::begin(i32 destination){return reset_for_entry()&&start_for_entry(destination);}
 bool StageGameplay::step(const StageGameplayFrame& frame){
  if(!started&&!entry_updates)return fail("Stage gameplay is not active");if(!error.empty())return false;input=frame;input.battle.rate=progress.rate;input.battle.game_flags=progress.scene_flags;input.background.rate=progress.rate;input.dialogue.rate=progress.rate;input.dialogue.stage=progress.stage;
- if(!started)input.battle.player_enabled=input.battle.bomb_enabled=input.battle.bullets_enabled=input.battle.items_enabled=input.battle.enemies_enabled=input.battle.lasers_enabled=input.battle.spell_enabled=false;
+ // Native stage teardown retains the player update callback while stage actors wait for activation.
+ if(!started)input.battle.bomb_enabled=input.battle.bullets_enabled=input.battle.items_enabled=input.battle.enemies_enabled=input.battle.lasers_enabled=input.battle.spell_enabled=false;
  if(!battle.prepare_frame(input.battle))return fail(battle.error);const i32 result=scheduler.update();if(result<0)return fail(battle.error.empty()?"Stage callback failed":battle.error);return error.empty()&&battle.error.empty();
 }
 i32 StageGameplay::update_background(){if(!background.update(input.background)){fail(background.error);return i32(FrameAction::Error);}battle.active_frame().background_delta=environment.background_delta;return i32(FrameAction::Continue);}
