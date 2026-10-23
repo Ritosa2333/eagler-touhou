@@ -13,7 +13,9 @@ function fixture({mutateDraw=false,dropTrace=false,events=true,epoch=1}={}) {
   const readCheckpoint=()=>({schema:'eagler-presentation/checkpoint/1',
     state:{complete:true,groups:Array.from({length:17},(_,index)=>({id:index===13?'synchronous-audio-operations':index===14?'host-frame-cadence':`domain-${index}`,digest:tick*100+index}))},
     runtime:{status:Array.from({length:29},(_,index)=>index===0?2:tick),trace:Array.from({length:68},(_,index)=>index===0?tick:index)},
-    replay:{available:true,status:[1,tick,tick,tick+10,tick,tick+10,2,0,0,0],trace:{schema:2,nextSequence:tick+1,firstSequence:1,count:tick,capacity:256,latest:Array.from({length:36},(_,index)=>index===0?tick:index===1?1:0)}},
+    replay:{available:true,status:[1,tick,tick,tick+10,tick,tick+10,2,0,0,0],trace:{available:true,schema:2,
+      nextSequence:tick+1,firstAvailable:tick+1-Math.min(tick,256),count:Math.min(tick,256),capacity:256,
+      latest:tick?Array.from({length:36},(_,index)=>index===0?tick:index===1?1:0):[]}},
     audio:{auditWords:Array.from({length:25},(_,index)=>index===0?1:tick),sfx:{available:true,enabled:true,sequence,
       counts:{events:rows.events.length,routes:rows.routes.length,uploads:0,errors:0},dropped:{events:0,routes:0,uploads:0,errors:0}}}});
   const readAudioRowsSince=since=>({available:!dropTrace,dropped:{events:0,routes:0,uploads:0,errors:0},
@@ -205,11 +207,39 @@ test('VERIFY-07 retains both actual reads at every logical and draw boundary',as
  for(const role of ['baseline','controlled-extra-draw']){
   const run=await capture(fixture({epoch:90}),role);
   const result=assessReplayReadEvidence(run,{requiredTicks:4,expectedAuthorityGroups:17,
-   nativeWordLengths:{status:29,trace:68,replayTrace:36,audioAudit:25}});
+   nativeWordLengths:{status:29,trace:68,audioAudit:25}});
   assert.equal(result.status,'passed',result.issues.join('; '));
   assert.equal(result.pairCount,role==='baseline'?10:34);
   assert.equal(result.readCount,result.pairCount*2);
  }
+});
+
+test('VERIFY-07 accepts an actually empty ring and rejects truncated or forged latest rows',async()=>{
+ const empty=await capture(fixture({epoch:92}),'baseline');
+ assert.equal(empty.start.replay.trace.count,0);
+ assert.deepEqual(empty.start.replay.trace.latest,[]);
+ assert.equal(assessReplayReadEvidence(empty,{requiredTicks:4,expectedAuthorityGroups:17}).status,'passed');
+
+ const missingWord=structuredClone(empty),afterStep=missingWord.rawReadEvidence.pairs.find(pair=>pair.boundary==='tick/1/after-step');
+ afterStep.samples[0].replay.trace.latest.pop();
+ const missingWordResult=assessReplayReadEvidence(missingWord,{requiredTicks:4,expectedAuthorityGroups:17});
+ assert.equal(missingWordResult.status,'failed');
+ assert.ok(missingWordResult.issues.some(issue=>issue.includes('latest row length')));
+
+ const forgedEmpty=structuredClone(empty),initial=forgedEmpty.rawReadEvidence.pairs.find(pair=>pair.boundary==='initial');
+ for(const sample of initial.samples){
+  sample.replay.trace.firstAvailable=sample.replay.trace.nextSequence;
+  sample.replay.trace.latest=Array.from({length:36},(_,index)=>index===0?sample.replay.trace.nextSequence-1:0);
+ }
+ const forgedResult=assessReplayReadEvidence(forgedEmpty,{requiredTicks:4,expectedAuthorityGroups:17});
+ assert.equal(forgedResult.status,'failed');
+ assert.ok(forgedResult.issues.some(issue=>issue.includes('latest row length')));
+
+ const invalidMetadata=structuredClone(empty),metadataPair=invalidMetadata.rawReadEvidence.pairs.find(pair=>pair.boundary==='initial');
+ metadataPair.samples[0].replay.trace.count=1;
+ const metadataResult=assessReplayReadEvidence(invalidMetadata,{requiredTicks:4,expectedAuthorityGroups:17});
+ assert.equal(metadataResult.status,'failed');
+ assert.ok(metadataResult.issues.some(issue=>issue.includes('ring metadata')));
 });
 
 test('VERIFY-07 rejects missing pairs, changed second reads, and borrowed summaries',async()=>{

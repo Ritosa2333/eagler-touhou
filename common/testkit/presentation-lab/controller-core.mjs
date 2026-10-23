@@ -1,3 +1,4 @@
+import {historyReportSummary} from './report-core.mjs';
 import {
   TICK_STATUS,
   validateObservationAdapter,
@@ -81,7 +82,7 @@ export class PresentationLabControllerCore {
       const receipt = this.driver.drawOnly({alpha: value, world: !!world});
       if (!receipt || receipt.status !== 'drawn')
         throw Error(`Presentation draw failed: ${receipt?.status || 'invalid receipt'}`);
-      return this.records();
+      return {...this.records(),status:receipt.status};
     } finally { this.observer.setNegativeControl(false); }
   }
 
@@ -114,7 +115,7 @@ export class PresentationLabControllerCore {
     report.scene = this.observer.readScene();
     if (images) report.images = pictures;
     this.last = report;
-    this.history.push(this.observer.compact(report, {maxObjects: 96, images: false}));
+    this.history.push(historyReportSummary(this.observer.compact(report, {maxObjects: 96, images: false})));
     if (this.history.length > 16) this.history.shift();
     return report;
   }

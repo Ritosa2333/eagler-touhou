@@ -36,6 +36,8 @@ export interface ObservationRecord {
   fields: ObservationField[];
 }
 export interface ObservationFrame {
+  /** Present on the frame returned by a successful preview transaction. */
+  status?: 'drawn';
   sessionEpoch: string | number;
   simulationTick: number;
   referenceDrawSerial?: number;

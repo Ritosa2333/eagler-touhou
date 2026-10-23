@@ -36,6 +36,20 @@ export function compactReport(report,{maxObjects=8192,images=true}={}) {
     objects:report.objects.slice(0,maxObjects).map(object=>({...object,fields:object.fields.filter(field=>field.status!=='static')}))};
 }
 
+/** Recent windows are an index. The current window retains its full raw proof. */
+export function historyReportSummary(report) {
+  const keys=['schema','tick','label','build','negativeControl','valid','purityStatus','purity','gate',
+    'counts','coverage','stateAuthority','stateChanges','traceBefore','traceAfter','scene','issueGroups',
+    'totalObjects','detailsTruncated'];
+  const objects=(report.objects??[]).slice(0,96).map(object=>({
+    ...Object.fromEntries(['key','owner','ownerId','objectId','generation','partId','kind'].filter(key=>object[key]!==undefined).map(key=>[key,object[key]])),
+    fields:(object.fields??[]).slice(0,64).map(field=>Object.fromEntries(
+      ['id','label','status','motion'].filter(key=>field[key]!==undefined).map(key=>[key,field[key]])))
+  }));
+  return {...Object.fromEntries(keys.filter(key=>report[key]!==undefined).map(key=>[key,report[key]])),
+    objects,retention:'history-summary',rawEvidenceRetained:false};
+}
+
 // Preserve full-window counters when stored object details have been bounded.
 export function mergeIssueGroups(reports,{group=groupFindings}={}) {
   const groups=new Map();

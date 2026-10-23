@@ -331,7 +331,11 @@ export interface RuntimeCommandPayloads {
 export interface RuntimeEventPayloads {
   ready: { saveRoot?: string; roomPreview?: boolean; roomReturn?: boolean };
   transfer: { mode?: string; loaded?: number; total?: number; failed?: number; path?: string; [key: string]: unknown };
-  "first-frame": {launchSerial?: number};
+  "first-frame": {launchSerial?: number; presentation?: {
+    schema: "eagler-runtime/first-frame/1";
+    nativePresentCount: number;
+    sentAtEpochMs: number;
+  }};
   "room-menu": {launchSerial?: number};
   "runtime-info": { renderer?: string; architecture?: string; version?: string; [key: string]: unknown };
   "frame-health": { fps?: number; maxGapMs?: number; frameMs?: number; [key: string]: unknown };

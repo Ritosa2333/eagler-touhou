@@ -428,6 +428,8 @@ def export_review_material(page, path, *, source_report, validations, require_mo
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--production-report', default=None,
+                        help='Retained ordinary Runtime browser report for first-frame and Replay comparison')
     parser.add_argument('--url', default='http://127.0.0.1:8132/')
     parser.add_argument('--quick', action='store_true')
     parser.add_argument('--output', type=Path)
@@ -819,7 +821,8 @@ def main():
                             subprocess.run([os.environ.get('PLAYWRIGHT_NODEJS_PATH', 'node'),
                                 str(ROOT.parents[1] / 'tools/ports/presentation-paired-report.mjs'),
                                 '--input-dir=' + str(OUT), '--fixture=' + args.replay_fixture,
-                                '--ticks=' + str(args.paired_ticks)], check=True)
+                                '--ticks=' + str(args.paired_ticks)] +
+                                (['--production-report=' + args.production_report] if args.production_report else []), check=True)
                             pair = json.loads(pair_path.read_text(encoding='utf-8'))
                     except Exception as error:
                         pair = missing_pair_report(args.replay_fixture,

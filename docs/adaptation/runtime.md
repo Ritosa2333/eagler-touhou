@@ -37,7 +37,7 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 操作：从真实宿主页启动当前包，等待 ready，再发送 configure、launch，并等待首帧。
 - 观察与判定：事件顺序为 ready、配置成功、启动成功、首帧；首帧对应实际绘制提交，画布尺寸有效。关卡逻辑推进由输入与生命周期场景独立验证。
 - 反例：Runtime 在配置完成前报告首帧，或只回 ready 却没有运行画面，应判失败。
-- 入口与覆盖：`runtime-browser.mjs` 的 `configure-launch-first-frame` 在选定的普通版包上验证协议事件与有效画布尺寸，记录为本项部分覆盖。桌面报告将 host navigation、ready、keyboard bridge、configure、launch、first-frame 六项作为启动 stages；每个有首帧的 Runtime epoch 以唯一 `gameplayReadinessByEpoch` 收据记录原生玩法资格，重启期间的同实例观察另存为 `gameplayReadinessTransitions`。这两类读取分开归档，启动汇总按 epoch 检查唯一启动收据；资格读取不计作第七个启动 stage。首帧事件与实际绘制提交的时序对照待接入；逻辑帧推进由后续 `hosted-keyboard-native-effect` 检查。
+- 入口与覆盖：`runtime-browser.mjs` 的 `configure-launch-first-frame` 在选定的普通版包上验证协议事件与有效画布尺寸。配对呈现模式进一步保存冷启动与刷新后的浏览器合成帧，按 [DISPLAY-07](presentation.md#display-07) 重判时序。th08 的首帧附带可选 `presentation` 收据，记录 `eagler-runtime/first-frame/1`、`nativePresentCount` 与发送时的 `sentAtEpochMs`。桌面报告将 host navigation、ready、keyboard bridge、configure、launch、first-frame 六项作为启动 stages；每个有首帧的 Runtime epoch 以唯一 `gameplayReadinessByEpoch` 收据记录原生玩法资格，重启期间的同实例观察另存为 `gameplayReadinessTransitions`。这两类读取分开归档，启动汇总按 epoch 检查唯一启动收据；资格读取不计作第七个启动 stage。逻辑帧推进由后续 `hosted-keyboard-native-effect` 检查。
 
 逐作标题导航放在 normal adapter 的 `flow` 声明中。有限流程只使用 `wait`、`press` 和有最大次数的 `press-until`，条件从具名谓词与安全字段路径组成；路径只读归一化 observation 的自有对象字段，不执行任意表达式或数组索引。每个步骤和谓词都指向本作源码，并受总时长、步骤数和输入次数约束。共享执行器只通过正式运行时的 observe、press 和 waitUntil 接口操作；状态缺失或预算耗尽会停止流程，不继续猜测按键。既有 `confirm` 和 TH20 菜单流程保持兼容，多人版仍走房间验收入口。
 

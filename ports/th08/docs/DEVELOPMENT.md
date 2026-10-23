@@ -43,6 +43,8 @@ SDL video/events 子系统归 WebAssembly Runtime 模块所有，并在游戏会
 
 工作台使用独立诊断构建，支持冻结、逐逻辑帧推进、固定 alpha 绘制、对象定位、帧图导出和人工视觉记录。以下命令适用于 Windows、Linux 和 macOS 的 Node 环境；先在当前终端设置 `EMSDK`、`EAGLER_FONT_ROOT`、`TH08_LAB_FONT` 和 `TH08_LAB_DATA`。它们分别指向 Emscripten SDK、含 `blend.bin`／`cp932.bin` 的字体目录、本机 MS Gothic 字体和 `th08.dat`。
 
+本地完整录像目录按服务公布的 `campaignAvailable` 加载。安装 `campaign/manifest.json` 后，工作台展示登记录像；准备 Demo 的环境直接使用 Demo 或手动导入入口，不请求未安装的完整录像清单。
+
 ```sh
 node ports/th08/portable/build.mjs --th08 --presentation-lab
 node ports/th08/portable/package-eagler.mjs --presentation-lab

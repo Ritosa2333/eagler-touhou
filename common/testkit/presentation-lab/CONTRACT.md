@@ -1,5 +1,9 @@
 # Presentation Lab 接入契约
 
+会话导出保留当前窗口的完整原始证据，最近窗口构成有界索引，标记 `history-summary` 与 `rawEvidenceRetained:false`。索引保存场景、对象与判定摘要；逐窗原始素材通过窗口导出保存。新增原始字段不会自动复制进历史索引。
+
+控制器 `preview` 在返回的观察帧中保留原生成功绘制回执 `status:drawn`，配对采样据此确认额外绘制确实执行。手动诊断模式通过其 Runtime epoch 和逐步原生读取绑定 Replay；正式包的首帧呈现使用独立的冷启动／刷新图像证据。
+
 游戏适配层提供两个边界：
 
 - `RuntimeDriverV1`：控制真实 Runtime 的冻结、固定步更新、绘制和输入。
@@ -17,6 +21,7 @@ TypeScript 接口见 [`contracts.d.ts`](contracts.d.ts)，运行时校验见 [`c
 
 - 基准状态来自原始权威绘制，并记录实际模拟 tick 和 draw serial。
 - 每个样本声明状态覆盖范围。未覆盖、缺失或格式错误的数据分类为 `unknown`。
+- Replay 消费 trace 环清空时 `count` 为 `0` 且 `latest` 为空；环有样本时 `latest` 保存完整的 36-word 最新行，`firstAvailable`、`count` 与 `nextSequence` 必须一致。
 - `StateEvidence.authority` 必须按 `state-authority.mjs` 的共享 schema 映射十个权威域。每个域列出对应摘要组与真实源字段；任何缺域、空映射、未关联摘要组或样本间映射变化都会令纯度为 `unknown`。
 - 对象身份由内存地址与生命周期或 generation 信息共同确定。
 - 适配层说明状态写入者、发布点、绘制消费者、最终提交点、连续性和恢复规则。

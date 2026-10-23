@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {mkdtempSync,writeFileSync,readFileSync,rmSync,symlinkSync,renameSync} from 'node:fs';
+import {mkdtempSync,writeFileSync,readFileSync,rmSync,symlinkSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,basename} from 'node:path';
 import {assessPresentationVisualArtifacts} from './presentation-visual-artifacts.mjs';
@@ -165,18 +165,36 @@ test('a replacement PNG, forged boxes or changed producer index is rejected even
   assert.throws(()=>assessPresentationVisualArtifacts(f.args('DISPLAY-05')),/producer identity/);
 });
 
-test('foreign paths, symlink artifacts, a failed browser channel and a manufactured human approval fail closed',t=>{
+test('foreign artifact paths cannot certify a visual capture',t=>{
   const f=fixture(t),args=f.args('DISPLAY-06');
-  const path=f.refs.pauseMaterial.path,link=join(f.directory,'foreign.json');symlinkSync(path,link);
-  args.refs={...f.refs,pauseMaterial:{...f.refs.pauseMaterial,path:link}};
+  args.refs={...f.refs,pauseMaterial:{...f.refs.pauseMaterial,path:join(f.directory,'foreign.json')}};
   assert.throws(()=>assessPresentationVisualArtifacts(args),/exact evidence path/);
-  rmSync(link);renameSync(path,link);symlinkSync(link,path);
-  assert.throws(()=>assessPresentationVisualArtifacts(f.args('DISPLAY-06')),/regular file/);
-  rmSync(path);renameSync(link,path);
+});
+
+test('linked artifact directories cannot replace the declared regular evidence files',t=>{
+  const f=fixture(t),args=f.args('DISPLAY-06');
+  const aliasRoot=mkdtempSync(join(tmpdir(),'native-visual-alias-'));
+  t.after(()=>rmSync(aliasRoot,{recursive:true,force:true}));
+  const link=join(aliasRoot,'evidence');
+  // Directory junctions exercise realpath identity on Windows without requiring
+  // permission to create file symlinks. POSIX uses the same directory alias.
+  symlinkSync(f.directory,link,process.platform==='win32'?'junction':'dir');
+  args.observation=structuredClone(args.observation);
+  args.observation.artifacts.acceptance.path=join(link,'presentation-acceptance.json');
+  args.refs=Object.fromEntries(Object.entries(f.refs).map(([key,value])=>
+    [key,{...value,path:join(link,basename(value.path))}]));
+  assert.throws(()=>assessPresentationVisualArtifacts(args),/regular file/);
+});
+
+test('visual machine evidence cannot manufacture a human approval',t=>{
+  const f=fixture(t);
   const index=structuredClone(f.values.materials);index.humanReview.accepted=true;
   f.save('materials','visual-materials.json',index);
   assert.throws(()=>assessPresentationVisualArtifacts(f.args('DISPLAY-06')),/manufactures an approval/);
-  index.humanReview.accepted=null;
+});
+
+test('a final browser channel failure invalidates the visual capture',t=>{
+  const f=fixture(t),index=structuredClone(f.values.materials);
   const errors=structuredClone(f.values.browserErrors);errors.channels.requestfailed.push('actual fixture request failure');
   f.save('browserErrors','browser-errors.json',errors);index.browserErrors=f.relative(f.refs.browserErrors);
   f.save('materials','visual-materials.json',index);

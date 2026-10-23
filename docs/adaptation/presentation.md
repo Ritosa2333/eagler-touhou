@@ -116,7 +116,7 @@ th08 工作台将多个已导出的窗口加入一组素材，集中选择一次
 - 权威观察与预期：把 Runtime 的 `first-frame` 与对应页面及画布的首次实际呈现事件按同一次导航身份关联。
 - 通过／失败：首帧事件发生在可验证的实际呈现之后；仅完成初始化或提交绘制命令而没有画面呈现即失败。
 - 反例：推迟合成器提交或保持画布空白，确认事件不能因 Runtime 初始化完成而提前通过。
-- 当前入口与覆盖：`runtime-browser.mjs` 的 `configure-launch-first-frame` 等待 Runtime 事件并核对画布；事件与浏览器实际呈现时点的关联断言待接入。
+- 当前入口与覆盖：`runtime-browser.mjs --presentation-replay=绝对路径 --presentation-ticks=600` 保存正式包冷启动与刷新导航的 Chromium 合成帧 PNG、画布区域、帧交换时间和 Runtime 发送时钟。共用判定器重读 PNG，要求同一导航中非空白画布的实际交换早于 `first-frame` 发送；原生 Present 计数与产物、DATA 身份一并绑定。物理显示器的刷新与观感集中进入 Presentation Lab 人工审查组。
 
 ### DISPLAY-08 | 限制到 60 Hz
 
@@ -206,6 +206,10 @@ AudioWorklet 的 `markerReceivedAtFrame` 记录标记消息被处理的渲染块
 - 判定：额外绘制帧不增加音效事件；回滚重演不重复播放已确认事件。
 - 反例：仅提升显示刷新率便使一次击中发出多次声音，应失败。
 - 当前入口/边界：共用 paired Replay 场景以生产帧回调分别运行 60／120／144 Hz 时间序列，逐逻辑帧核对真实 SFX 事件与输出路由的身份、顺序和数量，并检查额外绘制产生零次音效事件、路由或上传。报告记录本次事件窗口与实际回滚窗口；普通单机刷新率场景生成事件对照证据，MP 回滚由对应联机旅程记录。
+
+原始音频证据使用 `audio-output/4`，将声源观察编号、采样槽代次、开始／停止／结束边界和 source／merge 两路 PCM 回执关联。采样槽在原声源结束且原始回执完成后复用；每个逻辑步等待本步采样完成，再推进下一步。判定器核对同一 voice 的窗口独占性、停止操作的时钟边界及每代回执，直接定位槽位竞争与来源缺口。增益预期按实际 AudioParam 操作计算，首窗承担输出判定，静音续段承担故障定位。
+
+配对样本的 `audio.events` 保存音效编号整数序列，完整原生事件由 `audioOutput.raw.native.events` 保存。增益操作记录使用 `gainMutations.args:[value,time]`，与 `gainCalls` 的参数及调用前后时钟逐项对应。每次 `voice-pool-stop` 都保留回执，`nodePresent:false` 表示本次调用没有活动声源，节点停止与结束由各自的代次记录证明。
 
 ### MIDI-01 | 声明 MIDI 选项
 

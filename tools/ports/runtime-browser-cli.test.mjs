@@ -21,6 +21,26 @@ test('ordinary Runtime entry rejects MP before reading private inputs or opening
   }finally{await rm(temporary,{recursive:true,force:true});}
 });
 
+test('formal presentation ticks require an explicit Replay and remain inside the bounded window',async()=>{
+  const temporary=await mkdtemp(resolve(tmpdir(),'runtime-presentation-replay-cli-'));
+  try{
+    for(const [extra,expected] of [
+      [['--presentation-ticks=12'],/requires --presentation-replay/],
+      [['--presentation-replay=D:\\inputs\\demo0.rpy','--presentation-ticks=0'],/positive decimal integer from 1 to 3600/],
+      [['--presentation-replay=D:\\inputs\\demo0.rpy','--presentation-ticks=3601'],/positive decimal integer from 1 to 3600/],
+      [['--presentation-replay=D:\\inputs\\demo0.rpy','--presentation-ticks=01'],/positive decimal integer from 1 to 3600/],
+    ]){
+      const output=resolve(temporary,String(extra.at(-1))),child=spawnSync(process.execPath,
+        [resolve(import.meta.dirname,'runtime-browser.mjs'),`--manifest=${resolve(temporary,'missing.json')}`,`--output=${output}`,
+          '--game=th08','--variant=normal',...extra],{encoding:'utf8',windowsHide:true,timeout:15000});
+      assert.equal(child.status,1,child.stderr);assert.match(child.stderr,expected);
+      assert.doesNotMatch(child.stderr,/ENOENT|Unknown option/);
+      const report=JSON.parse(await readFile(resolve(output,'report.json')));
+      assert.equal(report.status,'failed');assert.equal(report.passed,false);assert.match(report.failure,expected);
+    }
+  }finally{await rm(temporary,{recursive:true,force:true});}
+});
+
 test('malformed manifest replaces an older passing report in both desktop browser entries',async()=>{
   const temporary=await mkdtemp(resolve(tmpdir(),'browser-stale-report-'));
   try{

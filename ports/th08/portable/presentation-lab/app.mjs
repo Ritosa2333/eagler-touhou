@@ -374,7 +374,7 @@ async function loadCampaign({fixtureId,stage,seconds=0}){
 $('campaignFixture').onchange=campaignStages;
 $('campaignGo').onclick=()=>void action(()=>loadCampaign({fixtureId:$('campaignFixture').value,stage:Number($('campaignStage').value),seconds:Number($('campaignSeconds').value)}));
 window.presentationLab.loadCampaign=loadCampaign;
-fetch('/campaign/manifest.json').then(r=>r.ok?r.json():null).then(corpus=>{
+(identity.campaignAvailable?fetch('/campaign/manifest.json').then(r=>r.ok?r.json():null):Promise.resolve(null)).then(corpus=>{
  campaignFixtures=corpus?.fixtures||[];$('campaignFixture').replaceChildren();
  for(const f of campaignFixtures){const option=document.createElement('option');option.value=f.id;option.textContent=`${f.metadata.difficulty===4?'Extra':'Lunatic'} / ${f.listedPlayer} / ${f.listedTeam}`;$('campaignFixture').append(option);}
  if(!campaignFixtures.length){const option=document.createElement('option');option.textContent='本服务未安装完整录像；仍可手动导入';$('campaignFixture').append(option);}

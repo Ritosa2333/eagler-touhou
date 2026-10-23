@@ -79,7 +79,8 @@ export function assertPresentationGainPcm({source,output,startFrame,sampleRate,b
     return {lower,upper,clamp,value:Math.fround(call.value),last:Math.max(upper,clamp??upper)};
   });
   const allowed=(transition,frame)=>(frame>=transition.lower&&frame<=transition.upper)||frame===transition.clamp;
-  const values=[Math.fround(baseline),...transitions.map(transition=>transition.value)];
+    // AudioParam stores its numeric input as float32 before rendering.
+  const values=[baseline,...transitions.map(transition=>transition.value)];
   const prefixBefore=(count,frame)=>{let at=-1;
     for(let i=0;i<count;i++){const transition=transitions[i];let next=Math.max(at,transition.lower);
       if(next>transition.upper){if(transition.clamp!==null&&transition.clamp>=at)next=transition.clamp;else return false;}
@@ -106,7 +107,21 @@ function logicalAudio(rows){return {events:rows.events.map(row=>row.logicalIndex
   routes:rows.routes.map(row=>({logicalIndex:row.logicalIndex,direct:row.direct,fallback:row.fallback,
     fallbackStarted:row.fallbackStarted,pending:row.pending})),uploads:rows.uploads.length,errors:rows.errors.length};}
 
-function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSequence,expectedEvents}={}){
+function audioCaptureLedgerSummary(raw){
+  const starts=Array.isArray(raw?.starts)?raw.starts:[],stops=Array.isArray(raw?.voiceStops)?raw.voiceStops:[],
+    mutations=Array.isArray(raw?.gainMutations)?raw.gainMutations:[],continuations=Array.isArray(raw?.silentContinuations)?raw.silentContinuations:[];
+  const counts=rows=>Object.fromEntries([...new Set(rows.map(row=>String(row)))].sort().map(key=>[key,rows.filter(row=>String(row)===key).length]));
+  const pcmNonzero=row=>!!row?.blocks?.some(block=>[...(block.leftWords??[]),...(block.rightWords??[])].some(word=>word!==0));
+  return {sourceSlotStarts:starts.length,sourceSlotGenerations:starts.filter(row=>integer(row.sourceSlotGeneration)).length,
+    reusedSourceSlots:starts.filter(row=>integer(row.sourceSlotGeneration)&&row.sourceSlotGeneration>1).length,
+    sourceSlotCapacityGaps:Array.isArray(raw?.gaps)?raw.gaps.filter(row=>row.reason==='source-slot-inflight-reuse').length:0,
+    gainMutations:mutations.length,gainMutationMethods:counts(mutations.map(row=>row.method)),voiceStopRecords:stops.length,
+    voiceStopKinds:counts(stops.map(row=>row.kind)),silentContinuations:continuations.length,
+    silentContinuationReceipts:continuations.map(row=>({eventSerial:row.eventSerial,source:!!row.source,output:!!row.output,
+      sourceNonzero:pcmNonzero(row.source),outputNonzero:pcmNonzero(row.output)}))};
+}
+
+function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickIntervals,startNativeSequence,expectedEvents}={}){
   requireValue(output?.schema===PRESENTATION_AUDIO_SCHEMA,'Actual source and output PCM evidence is missing or uses an unsupported schema');
   const raw=output.raw,contract=TH08_PRESENTATION_AUDIO_CONTRACT;
   requireValue(raw&&/^[a-f0-9]{64}$/.test(output.rawSha256??'')&&sha(raw)===output.rawSha256,'Actual audio raw hash differs');
@@ -134,6 +149,43 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSeque
   same(raw.hookEvents.map(stripRoute),events.map(stripRoute),'Native played-event callback');same(raw.hookRoutes,routes,'Native actual-route callback');
   requireValue(raw.starts.length===events.length&&raw.sourcePcm.length===events.length&&raw.pcm.length===events.length&&routes.length===events.length,
     'Each native played event requires exactly one route, actual source start, source PCM and output PCM');
+  const voiceStops=array(raw.voiceStops,'actual source lifecycle ledger'),startById=new Map(raw.starts.map(start=>[start.id,start]));
+  requireValue(startById.size===raw.starts.length&&voiceStops.every((row,index)=>row.sequence===index+1),
+    'Source lifecycle sequence is duplicated or incomplete');
+  const stopBySource=new Map(),endedBySource=new Map(),poolStopsWithNode=[];
+  for(const row of voiceStops){
+    requireValue(finite(row.beforeTime)&&finite(row.afterTime)&&row.afterTime>=row.beforeTime,'Invalid actual source lifecycle time');
+    if(row.kind==='source-node-stop'||row.kind==='source-node-ended'){
+      const start=startById.get(row.sourceId);
+      requireValue(start&&row.nodePresent===true&&row.eventSerial===start.eventSerial&&row.voiceKey===start.voiceKey&&
+        row.sourceSlot===start.sourceSlot&&row.slotGeneration===start.sourceSlotGeneration,
+      'Source stop/end receipt is detached from its leased node generation');
+      if(row.kind==='source-node-stop'){
+        const rows=stopBySource.get(row.sourceId)??[];rows.push(row);stopBySource.set(row.sourceId,rows);
+        requireValue(integer(row.requestedFrame)&&row.requestedFrame>=0&&
+          (row.requestedTime===null||finite(row.requestedTime))&&
+          row.requestedFrame===Math.ceil(Math.max(row.requestedTime??0,row.beforeTime)*rate)&&
+          integer(row.stopUpperFrame)&&row.stopUpperFrame>=row.requestedFrame&&
+          row.stopUpperFrame===Math.ceil(Math.max(row.requestedTime??0,row.afterTime)*rate),
+        'Source stop request lacks its actual scheduled boundary or has a mismatched sample frame');
+      } else {
+        requireValue(!endedBySource.has(row.sourceId),'Source node has duplicate ended receipts');endedBySource.set(row.sourceId,row);
+        requireValue(finite(row.endedAt)&&integer(row.endedFrame)&&row.endedFrame>=Math.ceil(row.afterTime*rate)&&
+          row.endedAt>=start.afterTime&&row.endedAt<=row.beforeTime&&row.beforeTime<=row.afterTime,
+          'Source ended receipt lacks its actual render boundary');
+      }
+    } else if(row.kind==='voice-pool-stop'){
+      if(row.nodePresent===true){
+        const start=startById.get(row.sourceId);
+        requireValue(start&&row.eventSerial===start.eventSerial&&row.voiceKey===start.voiceKey&&row.sourceSlot===start.sourceSlot&&
+          row.slotGeneration===start.sourceSlotGeneration,'Production voice replacement is detached from its source generation');
+        poolStopsWithNode.push(row);
+      } else requireValue(row.nodePresent===false&&row.sourceId===null&&row.eventSerial===null&&row.sourceSlot===null&&
+        row.slotGeneration===null&&uploads.some(upload=>upload.voiceKey===row.voiceKey),
+      'Idle production voice stop carries source identity or an unknown voice');
+    } else requireValue(false,'Unknown source lifecycle record');
+  }
+  requireValue(poolStopsWithNode.every(row=>stopBySource.has(row.sourceId)),'Production voice replacement is missing its matching source stop receipt');
   requireValue(raw.bindings.length===contract.logicalSounds&&uploads.length===contract.logicalSounds,'Complete actual eager upload mapping is missing');
   requireValue(raw.taps.length===contract.logicalSounds*(1+PRESENTATION_AUDIO_LIMITS.sourceSlotsPerVoice),'Actual source/output tap inventory is incomplete');
   const tapById=new Map();
@@ -155,6 +207,8 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSeque
     same(binding.upload,only(uploads,row=>row.handle===binding.handle,'Native upload'),'Actual uploaded voice');
     requireValue(binding.upload.uploadSuccess===true&&binding.upload.voiceKey===binding.voiceKey&&integer(binding.upload.sourceRate)&&binding.upload.sourceRate>0&&
       integer(binding.upload.sourceFrames)&&binding.upload.sourceFrames>0,'Invalid actual uploaded PCM');
+    same(binding.graph,{sourceBuffer:'AudioBufferSourceNode',sourceRoute:'voice.split',leftGain:'voice.left.gain',rightGain:'voice.right.gain',
+      outputRoute:'voice.merge',outputTapInput:'voice.merge',outputTapConnected:true},'Production source/gain/output tap graph');
     requireValue(binding.baseline?.nodePresent===false&&binding.baseline.playing===false&&binding.baseline.speed===1&&
       finite(binding.baseline.leftGain)&&finite(binding.baseline.rightGain)&&binding.baseline.contextTime>=plan.anchorTime&&binding.baseline.contextTime<=window.startedAtTime,
       'Voice baseline is not the observed idle production boundary');
@@ -173,6 +227,16 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSeque
       same(logicalAudio(interval),logicalIntervals[index],`Logical interval ${index}`);cursor=interval.sequence;});
     requireValue(cursor===window.endNativeSequence,'Actual audio trace extends past retained logical boundaries');
   }
+  if(logicalTickIntervals){
+    for(const tick of logicalTickIntervals){
+      requireValue(Array.isArray(tick),'Missing logical-tick audio intervals');
+      const tickEvents=tick.flatMap(interval=>array(interval?.events,'Logical-tick native events'));
+      const indices=tickEvents;
+      requireValue(indices.every(index=>integer(index)&&index>=0&&index<contract.logicalSounds),
+        'Logical-tick audio contains an invalid normalized SFX index');
+      requireValue(new Set(indices).size===indices.length,'A logical tick played the same SFX more than once; its shared voice merge cannot be separated');
+    }
+  }
   let previousGainSequence=0;
   for(const call of array(raw.gainCalls,'Actual gain calls')){
     requireValue(call.sequence===++previousGainSequence&&bindingByKey.has(call.voiceKey)&&['left','right'].includes(call.side),'Missing or reordered actual gain call');
@@ -180,8 +244,18 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSeque
     const expected=call.volume*(call.side==='left'?(call.pan>0?1-call.pan:1):(call.pan<0?1+call.pan:1));
     requireValue(call.value===expected,'Actual AudioParam request does not match production WebSfx gain controls');
   }
+  const gainMutations=array(raw.gainMutations,'complete AudioParam mutation ledger');
+  requireValue(gainMutations.length===raw.gainCalls.length&&gainMutations.every((mutation,index)=>
+    mutation.method==='setValueAtTime'&&mutation.sequence===raw.gainCalls[index].sequence&&
+    mutation.voiceKey===raw.gainCalls[index].voiceKey&&mutation.side===raw.gainCalls[index].side&&
+    Array.isArray(mutation.args)&&mutation.args.length===2&&mutation.args[0]===raw.gainCalls[index].value&&
+    mutation.args[1]===raw.gainCalls[index].time&&finite(mutation.beforeTime)&&finite(mutation.afterTime)&&
+    mutation.afterTime>=mutation.beforeTime&&mutation.beforeTime===raw.gainCalls[index].beforeTime&&
+    mutation.afterTime===raw.gainCalls[index].afterTime),
+  'A production gain was changed by an unmodeled AudioParam method or direct value assignment');
   const priorStartByKey=new Map();let previousEvent=window.startNativeSequence,totalPcmSamples=0;
   requireValue(array(raw.markReceipts,'Actual mark acknowledgements').length===events.length*2,'Source/output markers did not all reach their actual Worklets');
+  const latestGenerationByTap=new Map(),receiptSequenceSet=new Set();
   for(let index=0;index<events.length;index++){
     const event=events[index],binding=bindingByKey.get(event.voiceKey);
     requireValue(integer(event.serial)&&event.serial>previousEvent&&event.serial<=window.endNativeSequence,'Native played events are missing or reordered');previousEvent=event.serial;
@@ -193,7 +267,45 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSeque
     requireValue(route.direct===true&&route.fallback===false&&route.fallbackStarted===false&&route.pending===false,'SFX did not use the observed direct production voice');
     const start=only(raw.starts,row=>row.eventSerial===event.serial,'Actual source.start');
     requireValue(start.id===index+1&&start.voiceKey===event.voiceKey&&start.logicalIndex===event.logicalIndex&&start.handle===event.handle&&
-      binding.sourceTaps.includes(start.sourceTap)&&start.outputTap===binding.outputTap,'Actual source identity does not match the native event');
+      start.sourceId===start.id&&binding.sourceTaps.includes(start.sourceTap)&&start.outputTap===binding.outputTap&&
+      integer(start.sourceSlot)&&start.sourceSlot>=0&&start.sourceSlot<PRESENTATION_AUDIO_LIMITS.sourceSlotsPerVoice&&
+      integer(start.sourceSlotGeneration)&&start.sourceSlotGeneration>0,'Actual source identity does not match the native event');
+    const sourceTap=tapById.get(start.sourceTap);
+    requireValue(sourceTap?.slot===start.sourceSlot&&sourceTap.voiceKey===start.voiceKey,'Source slot tap identity differs from its bound voice');
+    const priorGeneration=latestGenerationByTap.get(start.sourceTap)??0;
+    requireValue(start.sourceSlotGeneration===priorGeneration+1,'Source tap generation is missing, duplicated or reordered');
+    if(priorGeneration===0){
+      requireValue(start.previousSlotReceiptSequence===0&&start.previousSlotEnded===null,'Initial source slot generation claims stale prior activity');
+    } else {
+      const priorStart=only(raw.starts,row=>row.sourceTap===start.sourceTap&&row.sourceSlotGeneration===priorGeneration,'Prior source-slot generation');
+      const priorSource=only(raw.sourcePcm,row=>row.eventSerial===priorStart.eventSerial,'Prior source-slot PCM receipt');
+      const priorEnded=only(raw.voiceStops,row=>row.kind==='source-node-ended'&&row.sourceId===priorStart.sourceId&&
+        row.slotGeneration===priorGeneration,'Prior source-slot ended boundary');
+      same(start.previousSlotEnded,priorEnded,'Source slot reuse ended boundary');
+      requireValue(priorSource.slotReceiptSequence===start.previousSlotReceiptSequence&&integer(start.previousSlotReceiptSequence)&&
+        start.previousSlotReceiptSequence>0&&finite(priorEnded.endedAt)&&priorEnded.endedAt<=start.beforeTime&&
+        priorEnded.endedFrame<=Math.ceil(start.beforeTime*rate),
+      'Source slot was reused before its previous raw PCM receipt and actual node end');
+    }
+    latestGenerationByTap.set(start.sourceTap,start.sourceSlotGeneration);
+    requireValue(start.voiceSplitConnectionCount===1,'The sampled source did not connect once to its bound production voice splitter');
+    if(start.priorControlStop){
+      const stop=only(raw.voiceStops,row=>row.kind==='voice-pool-stop'&&row.sequence===start.priorControlStop.sequence,'Prior production voice stop');
+      same(stop,start.priorControlStop,'Source reuse stop boundary');
+      requireValue(stop.voiceKey===start.voiceKey&&finite(stop.beforeTime)&&finite(stop.afterTime)&&
+        stop.afterTime>=stop.beforeTime&&stop.afterTime<=start.beforeTime,'Production voice stop is not bounded before the new start');
+      if(stop.nodePresent===false){
+        requireValue(stop.sourceId===null&&stop.eventSerial===null&&stop.sourceSlot===null&&stop.slotGeneration===null,
+          'Idle production voice stop is attached to a source generation');
+      } else {
+        requireValue(stop.nodePresent===true&&stop.eventSerial!==start.eventSerial,
+          'Production voice replacement does not retain a distinct prior source');
+        const replaced=only(raw.starts,row=>row.id===stop.sourceId,'Replaced production source');
+        requireValue(replaced.eventSerial===stop.eventSerial&&replaced.sourceSlot===stop.sourceSlot&&
+          replaced.sourceSlotGeneration===stop.slotGeneration&&stopBySource.has(stop.sourceId),
+        'Production stop does not retain its replaced source generation and node stop request');
+      }
+    }
     requireValue(start.bufferSame===true&&start.sourceRate===binding.upload.sourceRate&&start.sourceFrames===binding.upload.sourceFrames&&
       start.channels===2&&start.playbackRate===1&&start.loop===false&&start.when===0&&start.offset===0&&start.duration===null,
       'Actual source.start did not use the native uploaded SFX buffer and production playback parameters');
@@ -201,19 +313,37 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSeque
       start.afterTime<=route.queueClockBeforeTime,'Actual source.start is not bracketed by its native event and route');
     requireValue(integer(start.gainSequence)&&start.gainSequence>=0&&start.gainSequence<=raw.gainCalls.length,'Actual source gain cursor is invalid');
     const sourceRow=only(raw.sourcePcm,row=>row.eventSerial===event.serial,'Actual source PCM'),outputRow=only(raw.pcm,row=>row.eventSerial===event.serial,'Actual voice output PCM');
-    for(const tapId of [start.sourceTap,start.outputTap]){
-      const armed=only(raw.markReceipts,row=>row.eventSerial===event.serial&&row.tapId===tapId,'Actual PCM marker acknowledgement');
-      requireValue(armed.kind==='armed'&&integer(armed.processSequence)&&armed.processSequence>=0,'Actual marker acknowledgement is malformed');
-    }
-    requireValue(sourceRow.kind==='pcm'&&sourceRow.mode==='onset'&&sourceRow.tapId===start.sourceTap&&sourceRow.voiceKey===event.voiceKey&&
+    const sourceArmed=only(raw.markReceipts,row=>row.eventSerial===event.serial&&row.tapId===start.sourceTap,'Actual source PCM marker acknowledgement');
+    const outputArmed=only(raw.markReceipts,row=>row.eventSerial===event.serial&&row.tapId===start.outputTap,'Actual output PCM marker acknowledgement');
+    requireValue(sourceArmed.kind==='armed'&&sourceArmed.purpose==='event-audio'&&sourceArmed.mode==='onset'&&
+      sourceArmed.sourceId===start.sourceId&&sourceArmed.slotGeneration===start.sourceSlotGeneration&&integer(sourceArmed.processSequence)&&
+      outputArmed.kind==='armed'&&outputArmed.purpose==='event-audio'&&outputArmed.mode==='range'&&outputArmed.sourceId===start.sourceId&&
+      outputArmed.slotGeneration===start.sourceSlotGeneration&&integer(outputArmed.processSequence),
+    'Source/output marker acknowledgements do not share the leased generation');
+    requireValue(sourceRow.kind==='pcm'&&sourceRow.purpose==='event-audio'&&sourceRow.mode==='onset'&&sourceRow.tapId===start.sourceTap&&
+      sourceRow.sourceId===start.sourceId&&sourceRow.slotGeneration===start.sourceSlotGeneration&&sourceRow.slot===start.sourceSlot&&
+      integer(sourceRow.slotReceiptSequence)&&sourceRow.slotReceiptSequence>0&&!receiptSequenceSet.has(sourceRow.slotReceiptSequence)&&sourceRow.voiceKey===event.voiceKey&&
       sourceRow.startFrame===Math.ceil(start.beforeTime*rate)&&integer(sourceRow.onsetFrame)&&sourceRow.onsetFrame>=sourceRow.startFrame&&
       sourceRow.endFrame===sourceRow.onsetFrame+PRESENTATION_AUDIO_LIMITS.prefixFrames,'Actual source onset evidence differs from source.start');
+    receiptSequenceSet.add(sourceRow.slotReceiptSequence);
     const source=readPresentationPcmWindow(sourceRow,plan,'Source PCM');
     const firstNonzero=source.left.findIndex((value,i)=>value!==0||source.right[i]!==0);
     requireValue(firstNonzero>=0&&sourceRow.startFrame+firstNonzero===sourceRow.onsetFrame,'Actual source onset summary skips or invents PCM');
-    requireValue(outputRow.kind==='pcm'&&outputRow.mode==='range'&&outputRow.tapId===start.outputTap&&outputRow.voiceKey===event.voiceKey&&
+    requireValue(outputRow.kind==='pcm'&&outputRow.purpose==='event-audio'&&outputRow.mode==='range'&&outputRow.tapId===start.outputTap&&
+      outputRow.sourceId===start.sourceId&&outputRow.slotGeneration===start.sourceSlotGeneration&&outputRow.voiceKey===event.voiceKey&&
       outputRow.startFrame===sourceRow.onsetFrame&&outputRow.endFrame===sourceRow.endFrame&&outputRow.onsetFrame===null,'Output PCM does not cover the same absolute source sample interval');
     const outputPcm=readPresentationPcmWindow(outputRow,plan,'Output PCM');
+    for(const other of raw.starts){
+      if(other.id===start.id||other.voiceKey!==start.voiceKey)continue;
+      const otherStartFrame=Math.ceil(Math.max(other.when??0,other.beforeTime)*rate);
+      requireValue(finite(other.beforeTime)&&integer(otherStartFrame),'Another production source lacks a bounded actual start frame');
+      if(otherStartFrame>=outputRow.endFrame)continue;
+      const endRows=stopBySource.get(other.id)??[],scheduledEnd=endRows.at(-1)?.stopUpperFrame,
+        naturalEnd=endedBySource.get(other.id)?.endedFrame,
+        endFrame=[scheduledEnd,naturalEnd].filter(integer).sort((left,right)=>left-right)[0]??null;
+      requireValue(endFrame!==null&&(endFrame<=otherStartFrame||endFrame<=outputRow.startFrame),
+        'Another production source may overlap this shared voice-merge PCM window');
+    }
     requireValue(sourceRow.endFrame<=tapById.get(start.sourceTap).final.previousEnd&&outputRow.endFrame<=tapById.get(start.outputTap).final.previousEnd,
       'PCM packet exceeds its actual final worklet checkpoint');
     requireValue(outputPcm.left.some((value,i)=>value!==0||outputPcm.right[i]!==0),'Actual output PCM is silent');
@@ -224,27 +354,32 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,startNativeSeque
       const calls=raw.gainCalls.filter(call=>call.voiceKey===start.voiceKey&&call.side===side&&call.sequence>floor&&call.sequence<=start.gainSequence);
       requireValue(calls.length===contract.gainCallsPerChannel,
         'TH08 played event does not retain the four production AudioHost/WebSfx gain calls per channel');
-      assertPresentationGainPcm({source:source[side].subarray(firstNonzero),output:outputPcm[side],startFrame:sourceRow.onsetFrame,
-        sampleRate:rate,baseline,calls,firstPullFrame:outputPcm.firstBlockFrame});
+      try{assertPresentationGainPcm({source:source[side].subarray(firstNonzero),output:outputPcm[side],startFrame:sourceRow.onsetFrame,
+        sampleRate:rate,baseline,calls,firstPullFrame:outputPcm.firstBlockFrame});}
+      catch(error){throw Error(`Native audio event ${event.serial} (logicalIndex ${event.logicalIndex}), ${side} channel: ${error.message}`);}
     }
     priorStartByKey.set(start.voiceKey,start);totalPcmSamples+=outputPcm.left.length;
   }
+  requireValue(receiptSequenceSet.size===events.length&&Array.from({length:events.length},(_,index)=>index+1).every(sequence=>receiptSequenceSet.has(sequence)),
+    'Source-slot receipt sequence is incomplete');
   return {status:'passed',epoch,rateHz,nativeEvents:events.length,actualStarts:raw.starts.length,actualSourceWindows:raw.sourcePcm.length,
     actualOutputWindows:raw.pcm.length,comparedPcmFrames:totalPcmSamples,rawSha256:output.rawSha256,
-    clockSchema:plan.schema,clockEndTime:plan.endTime,clockHorizonSeconds:plan.segments*plan.segmentSeconds};
+    captureLedger:audioCaptureLedgerSummary(raw),clockSchema:plan.schema,clockEndTime:plan.endTime,clockHorizonSeconds:plan.segments*plan.segmentSeconds};
 }
 
 export function assessPresentationAudioOutput(output,expected){
   try{return assessOutputCore(output,expected);}catch(error){return {status:output?'failed':'incomplete',epoch:expected?.epoch??null,
-    rateHz:expected?.rateHz??null,reason:String(error?.message??error).slice(0,1000),rawSha256:output?.rawSha256??null};}
+    rateHz:expected?.rateHz??null,reason:String(error?.message??error).slice(0,1000),rawSha256:output?.rawSha256??null,
+    captureLedger:audioCaptureLedgerSummary(output?.raw)};}
 }
 
 export function assessPresentationAudioRun(run,{requiredTicks=600}={}){
   if(!run||run.capture?.requestedTicks!==requiredTicks||run.capture?.completedTicks!==requiredTicks||run.samples?.length!==requiredTicks)
     return {status:'incomplete',reason:`The full declared ${requiredTicks}-tick Runtime window is missing`};
-  const intervals=run.samples.flatMap(sample=>[sample.audio,...(sample.drawReceipts??[]).map(receipt=>receipt.audio)]);
+  const logicalTickIntervals=run.samples.map(sample=>[sample.audio,...(sample.drawReceipts??[]).map(receipt=>receipt.audio)]),
+    intervals=logicalTickIntervals.flat();
   return assessPresentationAudioOutput(run.audioOutput,{epoch:run.epoch,rateHz:run.scheduler?.rateHz,
-    startNativeSequence:run.start?.audio?.sfx?.sequence,expectedEvents:run.audioEvents,logicalIntervals:intervals});
+    startNativeSequence:run.start?.audio?.sfx?.sequence,expectedEvents:run.audioEvents,logicalIntervals:intervals,logicalTickIntervals});
 }
 
 export function assessPresentationAudioEvidence(runs,{requiredTicks=600,ratesHz=[60,120,144],scope={game:'th08',variant:'normal'},

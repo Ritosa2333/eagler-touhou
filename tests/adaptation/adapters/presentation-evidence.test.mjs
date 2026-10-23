@@ -31,8 +31,9 @@ function replayFixture(epoch,role){
     state:{complete:true,groups:Array.from({length:capability.expectedAuthorityGroups},(_,index)=>({
       id:index===13?'synchronous-audio-operations':index===14?'host-frame-cadence':`domain-${index}`,digest:tick*100+index}))},
     runtime:{status:Array.from({length:29},(_,index)=>index===0?2:tick),trace:Array.from({length:68},(_,index)=>index===0?tick:index)},
-    replay:{available:true,status:[1,tick,tick,tick+10,tick,tick+10,2,0,0,0],trace:{schema:2,nextSequence:tick+1,
-      firstSequence:1,count:tick,capacity:256,latest:Array.from({length:36},(_,index)=>index===0?tick:index===1?1:0)}},
+    replay:{available:true,status:[1,tick,tick,tick+10,tick,tick+10,2,0,0,0],trace:{available:true,schema:2,
+      nextSequence:tick+1,firstAvailable:tick+1-Math.min(tick,256),count:Math.min(tick,256),capacity:256,
+      latest:tick?Array.from({length:36},(_,index)=>index===0?tick:index===1?1:0):[]}},
     audio:{auditWords:Array.from({length:25},(_,index)=>index===0?1:tick),sfx:{available:true,enabled:true,sequence,
       counts:{events:rows.events.length,routes:rows.routes.length,uploads:0,errors:0},dropped:{events:0,routes:0,uploads:0,errors:0}}}});
   const readAudioRowsSince=since=>({available:true,dropped:{events:0,routes:0,uploads:0,errors:0},
@@ -153,7 +154,7 @@ test('paired machine claims are recomputed from all retained 60/120/144 Hz raw r
   const fixture=await evidenceFixture(t);
   for(const entry of fixture.entries){
     const result=assessCompleteEvidence({driver:fixture.driver,entry,product:scope});
-    if(['AUDIO-06','DISPLAY-07'].includes(entry.id)){
+    if(['AUDIO-06','DISPLAY-07','VERIFY-07'].includes(entry.id)){
       assert.equal(entry.complete,false);assert.equal(entry.machineComplete,false);assert.equal(result.valid,false);
     }else assert.deepEqual(result,{available:true,valid:true,reason:null,kind:'paired-presentation'},`${entry.id}: ${result.reason}`);
   }
@@ -162,6 +163,11 @@ test('paired machine claims are recomputed from all retained 60/120/144 Hz raw r
   Object.assign(forgedAudio.observation.observation.check,{complete:true,status:'passed',machineComplete:true});
   assert.equal(assessCompleteEvidence({driver:forged,entry:forgedAudio,product:scope}).valid,false,
     'Event-route summaries cannot certify actual output PCM');
+  const forgedVerify=structuredClone(fixture.driver),verifyEntry=forgedVerify.targets[0].checks.find(row=>row.id==='VERIFY-07');
+  Object.assign(verifyEntry,{complete:true,status:'passed',machineComplete:true});
+  Object.assign(verifyEntry.observation.observation.check,{complete:true,status:'passed',machineComplete:true});
+  assert.equal(assessCompleteEvidence({driver:forgedVerify,entry:verifyEntry,product:scope}).valid,false,
+    'Diagnostic repeated reads and a normal build identity cannot certify independent normal Replay execution');
   const review=fixture.acceptanceReport.humanReview;
   assert.equal(review.status,'pending');
   for(const id of humanIds)assert.equal(fixture.acceptanceReport.checks.find(row=>row.id===id).complete,false);

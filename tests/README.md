@@ -91,6 +91,8 @@ npm run test:adaptation -- --rerun-failed=artifacts/validation/上次目录
 
 Presentation Lab 的共用控制器、报告判定、人工记录绑定和 th08 分类器回归进入 `ports-unit`，由 CI 统一执行。真实 WASM 工作台操作按本作开发指南准备输入，实体显示器的现场结果由人填写。
 
+配对呈现任务先运行带虚拟手柄的正式包浏览器，再运行诊断工作台。正式包保存冷启动与刷新时的合成帧和独立 Replay 执行；首帧事件抵达后停止对应图像采集。诊断包保存各节奏的逐步读取与额外绘制，中央验收重读全部产物。首帧依赖真实 PNG 与发送时钟，观察一致性依赖两套二进制的共同游戏状态。视觉素材的路径隔离回归在 Windows 使用目录 junction，在其他平台使用目录 symlink，无需创建 Windows 文件符号链接的额外权限。
+
 `presentation`、`verify-quick` 与 `verify-daily` 选用同一作品和模式时合并为一个诊断任务，共用一次本地服务准备，按顺序执行各场景。`presentation` 核对真实 WASM 的绘制纯度、权威状态、负控与恢复；`verify-quick` 比较全部登记 Demo，`verify-daily` 比较登记的长 Replay。输入通过 `diagnosticManifest` 或 `EAGLER_TEST_DIAGNOSTIC_MANIFEST` 提供，字段、场景范围和接入方法见[诊断与原版对照队列](../docs/adaptation/stg.md#诊断与原版对照队列)。每个场景分别保存采集、比较和进程报告，并沿用任务边界续跑。
 
 离线报告的 `scenarios` 列出本次实际选择的基础和更新旅程。未选择更新时，其适配要求保留在排除范围与逐编号记录中；显式选择更新但缺少第二代包时，队列记录 blocked/incomplete。基础场景及其完整编号证明独立判定。

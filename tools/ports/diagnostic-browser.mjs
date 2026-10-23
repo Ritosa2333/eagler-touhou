@@ -13,7 +13,7 @@ import {dependencySnapshot,fileIdentity,identityDigest} from '../testing/depende
 import {buildDiagnosticServerEnvironment,inspectDiagnosticProduct,loadDiagnosticInputs} from './diagnostic-inputs.mjs';
 import {DIAGNOSTIC_LANE_CHECKS,PAIRED_PRESENTATION_CHECKS,pairedPresentationCapability,
   resolveDiagnosticProfile} from '../../tests/adaptation/adapters/diagnostics.mjs';
-import {buildPresentationPairedReport} from './presentation-paired-report.mjs';
+import {buildPresentationPairedReport,readProductionPresentationEvidence} from './presentation-paired-report.mjs';
 import {diagnosticCaseIdentity} from '../../tests/adaptation/identity.mjs';
 import {diagnosticTargetCoverage,finalizeDiagnosticTarget,plannedDiagnosticChecks,recordDiagnosticLane} from './diagnostic-report.mjs';
 import {stopDiagnosticChild,trackDiagnosticChild} from './diagnostic-lifecycle.mjs';
@@ -318,7 +318,7 @@ function recordPairedPresentationChecks(target,acceptance,capabilityStatus,reaso
   target.checks=retained.concat(records);
 }
 
-async function presentationPairArtifacts(evidenceRoot,product,profile,serverBuild,productIdentities){
+async function presentationPairArtifacts(evidenceRoot,product,profile,serverBuild,productIdentities,productionReportPath){
   const capability=profile.presentation.pairedReplay;
   const resultPath=resolve(evidenceRoot,'paired-replay-'+capability.fixture+'-result.json');
   const acceptancePath=resolve(evidenceRoot,'presentation-acceptance.json');
@@ -361,9 +361,10 @@ async function presentationPairArtifacts(evidenceRoot,product,profile,serverBuil
     assert.equal(run.identity?.data?.sha256,productIdentities.data?.sha256,`Saved ${label} capture used another DATA input`);
   }
   assert.equal(new Set(runs.map(run=>run.epoch)).size,3,'Each cadence capture must use a fresh Runtime epoch');
+  const productionEvidence=productionReportPath?readProductionPresentationEvidence(productionReportPath):null;
   const recomputed=buildPresentationPairedReport({runs,requiredTicks:capability.ticks,ratesHz:capability.cadencesHz,
     scope:{game:profile.game,variant:profile.variant},expectedAuthorityGroups:capability.expectedAuthorityGroups,
-    cadenceDifferenceGroups:capability.cadenceDifferenceGroups,fixture:capability.fixture,input:inputIdentity});
+    cadenceDifferenceGroups:capability.cadenceDifferenceGroups,fixture:capability.fixture,input:inputIdentity,productionEvidence});
   assert.ok(JSON.stringify(result.report)===JSON.stringify(recomputed),
     'Saved paired comparison does not reproduce from its retained native and PCM captures');
   for(const run of runs){
@@ -378,7 +379,7 @@ async function presentationPairArtifacts(evidenceRoot,product,profile,serverBuil
     assert.deepEqual(row.evidence?.adaptationIds,[row.id],`Paired check is not bound to its own adaptation ID: ${row.id}`);
   }
   return{status:acceptance.report.status,report:acceptance.report,
-    acceptance:acceptance.identity,pair:result.identity,
+    acceptance:acceptance.identity,pair:result.identity,productionReport:productionEvidence?.report??null,
     display:Object.fromEntries(await Promise.all(Object.entries({observations:'presentation-observations.json',
       scan:'display05-pool-reuse-scan.json',titleMaterial:'material-display05-title-before.json',
       poolMaterial:'material-display05-pool-reuse-boundary.json',capture:'browser-captures.json',
@@ -390,22 +391,29 @@ async function presentationPairArtifacts(evidenceRoot,product,profile,serverBuil
       cadencesHz:[...capability.cadencesHz],cadenceDifferenceGroups:[...capability.cadenceDifferenceGroups]}};
 }
 
-async function runLane({lane,profile,server,product,productIdentities,targetId,output,pairedReplayRequested=false,pairedReplayBlockedReason=null}){
+async function runLane({lane,profile,server,product,productIdentities,targetId,output,manifestPath,pairedReplayRequested=false,pairedReplayBlockedReason=null}){
   const evidenceRoot=resolve(output,'evidence',lane),runnerRoot=resolve(output,'runner',lane);
   await mkdir(dirname(evidenceRoot),{recursive:true});
   await mkdir(dirname(runnerRoot),{recursive:true});
   let tasks=[];
+  let productionReportPath=null;
   if(lane==='presentation'){
     const extraArgs=[];
     if(pairedReplayRequested&&!pairedReplayBlockedReason){
       const capability=profile.presentation.pairedReplay;
+      const productionOutput=resolve(output,'production-runtime');
+      productionReportPath=resolve(productionOutput,'report.json');
+      tasks.push(nodeTask({id:'presentation-production-runtime',script:resolve(repoRoot,'tools/ports/runtime-browser.mjs'),
+        args:[`--manifest=${manifestPath}`,`--game=${profile.game}`,'--variant=normal','--gamepad',`--output=${productionOutput}`,
+          `--presentation-replay=${resolve(product.inputRoot,capability.inputFile)}`,`--presentation-ticks=${capability.ticks}`],timeoutMs:15*60*1000}));
+      extraArgs.push('--production-report',productionReportPath);
       extraArgs.push('--paired-replay','--replay-fixture',capability.fixture,'--paired-ticks',String(capability.ticks));
       extraArgs.push('--paired-cadences',capability.cadencesHz.join(','),
         '--cadence-difference-groups',capability.cadenceDifferenceGroups.join(','),
         '--expected-authority-groups',String(capability.expectedAuthorityGroups));
     }
-    tasks=[browserTask({id:'presentation-browser',script:profile.browserVerifierAbsolute,url:server.url,
-      evidenceRoot,timeoutMs:80*60*1000,extraArgs})];
+    tasks.push(browserTask({id:'presentation-browser',script:profile.browserVerifierAbsolute,url:server.url,
+      evidenceRoot,timeoutMs:80*60*1000,extraArgs}));
   }else if(lane==='quick'){
      tasks=[
       pythonTask({id:'quick-capture',script:profile.quickCaptureAbsolute,
@@ -447,7 +455,7 @@ async function runLane({lane,profile,server,product,productIdentities,targetId,o
             requiredChecks:PAIRED_PRESENTATION_CHECKS};
           laneReport.status='incomplete';laneReport.complete=false;
         }else{
-          const pairArtifacts=await presentationPairArtifacts(evidenceRoot,product,profile,server.build,productIdentities);
+          const pairArtifacts=await presentationPairArtifacts(evidenceRoot,product,profile,server.build,productIdentities,productionReportPath);
           laneReport.pairedReplay=pairArtifacts;
           laneReport.observation.pairedPresentation=pairArtifacts;
           const acceptance=pairArtifacts.report;
@@ -651,7 +659,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/diagnostic-browse
       }
       try{
         const laneReport=await runLane({lane,profile:{...profile,...profilePaths},server,product,
-          productIdentities,targetId:target.id,output,pairedReplayRequested,
+          productIdentities,targetId:target.id,output,manifestPath:absoluteManifestPath,pairedReplayRequested,
           pairedReplayBlockedReason});
         report.evidence.lanes.push(laneReport);
         recordDiagnosticLane(targetRecord,lane,laneReport,{checkIds:DIAGNOSTIC_LANE_CHECKS[lane],
@@ -661,7 +669,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/diagnostic-browse
           recordPairedPresentationChecks(targetRecord,paired?.report??null,
             paired?.status==='blocked'?'blocked':'ready',paired?.reason??laneReport.error,
             paired?{acceptance:paired.acceptance,pair:paired.pair,runs:paired.runs,input:paired.input,
-              capability:paired.capability,display:paired.display}:null);
+              capability:paired.capability,display:paired.display,productionReport:paired.productionReport}:null);
         }
         await save();
       }catch(error){

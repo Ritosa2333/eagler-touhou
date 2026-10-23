@@ -38,6 +38,20 @@ function checkCheckpoint(value) {
   if (!isRecord(value.replay) || value.replay.available !== true || !Array.isArray(value.replay.status) ||
       !isRecord(value.replay.trace) || !Array.isArray(value.replay.trace.latest))
     issues.push('Replay status or consumer trace is missing');
+  else {
+    const trace=value.replay.trace;
+    if(trace.available!==true||trace.schema!==2||trace.capacity!==256||
+       !Number.isSafeInteger(trace.nextSequence)||trace.nextSequence<0||
+       !Number.isSafeInteger(trace.firstAvailable)||trace.firstAvailable<0||
+       !Number.isSafeInteger(trace.count)||trace.count<0||trace.count>trace.capacity||
+       trace.firstAvailable>trace.nextSequence||trace.nextSequence-trace.firstAvailable!==trace.count)
+      issues.push('Replay consumer trace ring metadata is invalid');
+    else if((trace.count===0&&trace.latest.length!==0)||(trace.count>0&&trace.latest.length!==36))
+      issues.push('Replay latest row length does not match the consumer trace ring count');
+    else if(trace.latest.some(word=>!Number.isSafeInteger(word)||word<0||word>0xffffffff)||
+        (trace.count>0&&(trace.latest[0]>>>0)!==((trace.nextSequence-1)>>>0)))
+      issues.push('Replay latest consumer trace row is malformed');
+  }
   if (!isRecord(value.audio) || !Array.isArray(value.audio.auditWords) || value.audio.auditWords.length < 2 ||
       !isRecord(value.audio.sfx) || value.audio.sfx.available !== true || value.audio.sfx.enabled !== true ||
       !Number.isSafeInteger(value.audio.sfx.sequence) || !isRecord(value.audio.sfx.dropped))
@@ -275,7 +289,7 @@ export function assessReplayReadEvidence(run,{requiredTicks=run?.capture?.reques
       if(sample.state.groups.length!==expectedAuthorityGroups||sample.state.groups.some(group=>group.digest<0||group.digest>0xffffffff))
         issues.push(`${pair.boundary}: native authority group count or u32 digest is invalid`);
       if(nativeWordLengths){
-        for(const [name,words] of Object.entries({status:sample.runtime.status,trace:sample.runtime.trace,replayTrace:sample.replay.trace.latest,audioAudit:sample.audio.auditWords})){
+        for(const [name,words] of Object.entries({status:sample.runtime.status,trace:sample.runtime.trace,audioAudit:sample.audio.auditWords})){
           if(words.length!==nativeWordLengths[name]||words.some(word=>!Number.isInteger(word)||word<(name==='status'?-0x80000000:0)||word>0xffffffff))
             issues.push(`${pair.boundary}: native ${name} word array is invalid`);
         }

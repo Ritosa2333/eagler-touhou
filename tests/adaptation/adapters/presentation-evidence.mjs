@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {lstatSync,readFileSync,statSync} from 'node:fs';
 import {basename,dirname,isAbsolute,resolve} from 'node:path';
 import {isDeepStrictEqual} from 'node:util';
-import {buildPresentationPairedReport} from '../../../tools/ports/presentation-paired-report.mjs';
+import {buildPresentationPairedReport,readProductionPresentationEvidence} from '../../../tools/ports/presentation-paired-report.mjs';
 import {assessPresentationVisualArtifacts} from './presentation-visual-artifacts.mjs';
 import {identityDigest} from '../../../tools/testing/dependency-snapshot.mjs';
 import {resolveDiagnosticProfile} from './diagnostics.mjs';
@@ -195,11 +195,17 @@ function recompute({driver,entry,product,profile,capability}){
   const runs=[artifacts.baseline,artifacts.controlledExtraDraw,artifacts.cadence144];
   if(['DISPLAY-04','DISPLAY-05','DISPLAY-06'].includes(entry.id))return assessPresentationVisualArtifacts({id:entry.id,
     refs:observation.artifacts.display,acceptance:artifacts.acceptance,observation,entry,capability,runs});
-  // A compositor result is accepted only after its raw files have been reassessed.
-  const firstFrameAssessment=null;
+  // Reopen the ordinary browser report and every hash-bound raw capture.
+  const productionEvidence=observation.artifacts.productionReport?
+    readProductionPresentationEvidence(observation.artifacts.productionReport):null;
+  if(productionEvidence){
+    requireValue(same(productionEvidence.scope,{game:product.game,variant:product.variant}), 'Production capture belongs to another product');
+    requireValue(same(productionEvidence.build,driver.evidence.runtime)&&same(productionEvidence.data,driver.evidence.manifestData),
+      'Production capture differs from the selected package or DATA');
+  }
   const recomputed=buildPresentationPairedReport({runs,requiredTicks:capability.ticks,ratesHz:capability.cadencesHz,
     scope:{game:product.game,variant:product.variant},expectedAuthorityGroups:capability.expectedAuthorityGroups,
-    cadenceDifferenceGroups:capability.cadenceDifferenceGroups,fixture:capability.fixture,input:artifacts.input,firstFrameAssessment});
+    cadenceDifferenceGroups:capability.cadenceDifferenceGroups,fixture:capability.fixture,input:artifacts.input,productionEvidence});
   const result=artifacts.pair,acceptance=artifacts.acceptance;
   requireValue(result?.schema==='eagler-presentation/replay-pair/1'&&same(result.scope,observation.scope)&&
     result.fixture===capability.fixture&&same(result.input,{bytes:artifacts.input.bytes,sha256:artifacts.input.sha256}),

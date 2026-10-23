@@ -17,21 +17,34 @@ import {deriveReplayStorageLocations,parseReplayStoragePolicy,readRuntimeStorage
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
 import {resolveTitleFlow} from '../../tests/adaptation/adapters/title-flow.mjs';
 import {titleFlowKeyFields} from '../../tests/adaptation/adapters/flow-steps.mjs';
+import {createFirstFrameCapture} from './presentation-first-frame.mjs';
+import {captureProductionReplay,readProductionReplayInput} from './presentation-production-replay.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const requestedOutput=argument('output');
 if(!requestedOutput)throw Error('Required: --output=directory');
 const result=await runWithReport({output:resolve(requestedOutput),schema:'eagler-touhou/runtime-browser/1'},async(report,save)=>{
-assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant'],flags:['gamepad']});
+assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant','presentation-replay','presentation-ticks'],flags:['gamepad']});
 if(!argument('manifest')||!argument('output'))throw Error('Required: --manifest=private-inputs.json --output=directory');
 assert.equal(argument('variant'),'normal',
   'runtime-browser requires --variant=normal. Verify multiplayer through tools/ports/room-browser.mjs with real players and --route=rtc|relay');
+const presentationReplayPath=argument('presentation-replay'),presentationTicksArgument=argument('presentation-ticks');
+if(presentationTicksArgument!==undefined&&!presentationReplayPath)
+  throw Error('--presentation-ticks requires --presentation-replay');
+if(presentationTicksArgument!==undefined&&!/^[1-9][0-9]*$/u.test(presentationTicksArgument))
+  throw Error('--presentation-ticks must be a positive decimal integer from 1 to 3600');
+const presentationTicks=presentationTicksArgument===undefined?600:Number(presentationTicksArgument);
+if(presentationReplayPath&&(!Number.isSafeInteger(presentationTicks)||presentationTicks<1||presentationTicks>3600))
+  throw Error('--presentation-ticks must be a positive decimal integer from 1 to 3600');
 const config=JSON.parse(await readFile(resolve(argument('manifest')),'utf8'));
 const output=resolve(argument('output'));
 const variant=argument('variant');
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
 const selection=selectRuntimeTargets(config,{game:argument('game'),variant});
 const {targets}=selection;
+if(presentationReplayPath&&!(targets.length===1&&targets[0].game==='th08'&&targets[0].variant==='normal'))
+  throw Error('--presentation-replay currently requires exactly the th08 normal Runtime target');
+const presentationReplay=presentationReplayPath?await readProductionReplayInput(presentationReplayPath):null;
 await mkdir(output,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const evidenceEvents=events=>events.map(event=>{
@@ -52,7 +65,7 @@ report.storagePolicySource={path:'launcher/src/launcher/replay-storage-policy.mt
 const observationReader=`export const readRuntimeObservation = (${readRuntimeObservation.toString()});\n`;
 report.observationReaderSha256=hash(observationReader);
 await writeFile(resolve(output,'observation-reader.mjs'),observationReader);
-for(const name of ['runtime-observations','runtime-desktop-readiness','practice-observations','replay-fixtures','runtime-storage-contract','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options','../../common/contracts/product-catalog','../../tests/adaptation/adapters/title-flow']){
+for(const name of ['runtime-observations','runtime-desktop-readiness','practice-observations','replay-fixtures','runtime-storage-contract','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','presentation-first-frame','presentation-production-replay','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options','../../common/contracts/product-catalog','../../tests/adaptation/adapters/title-flow']){
   const contents=await readFile(new URL(`./${name}.mjs`,import.meta.url));
   (report.helperSha256??={})[name]=hash(contents);
   await writeFile(resolve(output,basename(`${name}.mjs`)),contents);
@@ -75,6 +88,12 @@ try{
     const context=await browser.newContext({viewport:{width:1100,height:820}});
     if(gamepad)await prepareVirtualGamepad(context,gamepadBundle,gamepadTargetFor(target.game,target.variant,0));
     const page=await context.newPage();
+    const firstFrameProbe=argument('presentation-replay')?await createFirstFrameCapture({context,page}):null;
+    const retainFirstFrame=async kind=>{
+      const identity=await firstFrameProbe.finish({path:resolve(output,`${target.id}-first-frame-${kind}.json`),
+        scope:{game:target.game,variant:target.variant},identity:{build:record.packageIdentity,data:record.dataIdentity}});
+      (record.presentationFirstFrames??=[]).push(identity);
+    };
     await page.exposeBinding('__acceptanceProtocolFailure',(_source,event)=>record.protocolErrors.push(event));
     await page.addInitScript(game=>{
       if(window!==window.top)return;
@@ -195,9 +214,11 @@ try{
             assert.equal(consumer.sha256,expected.sha256,'Runtime font consumption hash mismatch');
           }
         }
+        if(firstFrameProbe)await firstFrameProbe.begin({kind:'cold',epoch:1,frame});
         await page.evaluate(()=>rpc('launch'));
         await page.waitForFunction(()=>events.some(event=>event.event==='first-frame'),null,{timeout:120000});
         await responseProbe.flush();
+        if(firstFrameProbe)await retainFirstFrame('cold');
         await page.waitForTimeout(2500);
         const snapshot=await inspect();assert.ok(snapshot.canvas?.width>0&&snapshot.canvas?.height>0);return snapshot;
       });
@@ -378,8 +399,10 @@ try{
           await page.evaluate(({sharedResources,options})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],sharedResources,
             thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,thpracEnabled:false,limitPresentationTo60:false,...options,replayViewer:true}}),
             {sharedResources,options:target.options??{}});
+          if(firstFrameProbe&&epoch===3)await firstFrameProbe.begin({kind:'reload',epoch,frame});
           await page.evaluate(()=>rpc('launch'));
           await page.waitForFunction(()=>events.some(event=>event.event==='first-frame'),null,{timeout:120000});
+          if(firstFrameProbe&&epoch===3)await retainFirstFrame('reload');
           const mount=await frame.evaluate(readRuntimeStorageMount,{runtime:runtimeMapping,expectedDatabase:locations.normal.database});
           const runtimeUrl=frame.url();
           assert.ok(new URL(runtimeUrl).pathname.startsWith(`/runtime/${target.id}/`),
@@ -507,6 +530,35 @@ try{
           fixture:fixture.identity,bytes:storedBytes.length,sha256:fixtureDigest,restoredAcrossNewInstance:true,deletionPersisted:true,
           operations:journey.operations,negativeControls:journey.negativeControls,fixtureValidation:validity,coverage:journey.coverage};
       },{complete:false,fatal:false,verified:observation=>observation.normalComplete===true});
+      if(presentationReplay)await check('production-replay-capture',['VERIFY-07'],async()=>{
+        const epoch=6;
+        await navigate(site.hostUrl(target,epoch));
+        await page.waitForFunction(epoch=>events.some(event=>event.event==='ready'&&event.epoch===epoch),epoch,{timeout:120000});
+        frame=page.frames().find(item=>item.url().includes(`/runtime/${target.id}/`));assert.ok(frame,`${target.id}: production Replay Runtime iframe is missing`);
+        const ready=await page.evaluate(epoch=>events.find(event=>event.event==='ready'&&event.epoch===epoch),epoch);
+        assert.equal(ready.protocol,'eagler-touhou/1');assert.equal(ready.game,target.game);assert.equal(ready.epoch,epoch);
+        const sharedResources=Object.keys(config.shared??{}).map(name=>({path:`/${name}`,url:`/shared/${name}`}));
+        await page.evaluate(({sharedResources,options})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],sharedResources,
+          thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,thpracEnabled:false,limitPresentationTo60:false,...options}}),
+          {sharedResources,options:target.options??{}});
+        await frame.evaluate(()=>{Date.now=()=>100000;});
+        await page.evaluate(({path,bytes})=>rpc('write',{path,bytes}),
+          {path:'replay/th8_01.rpy',bytes:Array.from(presentationReplay.contents)});
+        await page.evaluate(()=>rpc('launch'));
+        await page.waitForFunction(epoch=>events.some(event=>event.event==='first-frame'&&event.epoch===epoch),epoch,{timeout:120000});
+        const firstFrame=await page.evaluate(epoch=>events.find(event=>event.event==='first-frame'&&event.epoch===epoch),epoch);
+        const captured=await captureProductionReplay({frame,target,packageIdentity:record.packageIdentity,dataIdentity:record.dataIdentity,
+          replayIdentity:presentationReplay,expectedOrigin:site.base,outerUrl:page.url(),epoch,ticks:presentationTicks,firstFrame});
+        const artifactPath=resolve(output,`${target.id}-presentation-production-replay.json`);
+        const artifactBytes=Buffer.from(JSON.stringify(captured,null,2)+'\n');
+        await writeFile(artifactPath,artifactBytes);
+        const artifact={schema:'eagler-presentation/production-replay-artifact/1',status:captured.status,
+          path:artifactPath,bytes:artifactBytes.length,sha256:hash(artifactBytes),runSchema:captured.schema,
+          targetId:target.id,game:target.game,variant:target.variant,epoch:captured.epoch,
+          build:captured.identity.build,data:captured.identity.data,replay:captured.replayIdentity,input:captured.inputIdentity};
+        record.presentationProduction=artifact;
+        return artifact;
+      },{complete:false,fatal:true,verified:artifact=>artifact.status==='passed'});
       await check('runtime-errors',[],async()=>{
         await responseProbe.flush();
         const packageAfter=await verifyRuntimePackage(target,{repoRoot:root}),dataAfter=await verifyPrivateData(target.data);
@@ -529,6 +581,7 @@ try{
       try{await responseProbe.stop();}catch(error){record.failure??=String(error.stack||error);}
       record.teardown={url:page.url(),resourceAbortsRetired:false};
       let contextClosed=false;
+      try{await firstFrameProbe?.close();}catch(error){record.failure??=String(error.stack||error);}
       try{await context.close();contextClosed=true;}catch(error){record.failure??=String(error.stack||error);}
       try{auditErrors();record.finalErrorAudit={status:'passed',afterContextClosed:contextClosed};}
       catch(error){record.finalErrorAudit={status:'failed',afterContextClosed:contextClosed,error:String(error.stack||error)};record.failure??=record.finalErrorAudit.error;}
