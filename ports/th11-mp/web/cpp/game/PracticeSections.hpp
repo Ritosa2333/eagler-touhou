@@ -1,4 +1,4 @@
-// Generated from thprac_games_def.json (MIT); enum order is authoritative.
+// Generated from purple thprac_games_def.json (MIT); enum order is authoritative.
 #pragma once
 namespace th11 {
 enum PracticeSection { PracticeNone=0,
@@ -278,4 +278,20 @@ inline constexpr PracticeSectionInfo practice_sections[]{ {0,0,0,false},
  {13,2,1,true},
  {13,2,1,true},
 };
+        inline int practice_phase_count(int section)
+        {
+            if (section == TH11_ST6_BOSS9) {
+                return 8;
+            }else if (section == TH11_ST7_END_S10) {
+                return 4;
+            } else if (section == 10000 + 5 * 100 + 4) {
+                return 2;
+            } else if ((section == TH11_ST4_RA2 || section == TH11_ST4_RA_BOSS5)) {
+                return 2;
+            } else if (section == TH11_ST5_MID3) {
+                return 4;
+            }
+            return 1;
+        }
+
 }

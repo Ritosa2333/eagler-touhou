@@ -52,8 +52,13 @@ export function applyTouchOptions(core,options) {
  core.sdl_touch_gestures?.(options.touchFocusMode==='two-finger',!!options.doubleTapBombEnabled);
  core.sdl_touch_mode?.(['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode));
 }
-export function touchControls(core,options,message) {
+export function touchControls(core,options,message,Module) {
  const c=message.controls??message,sensitivity=Number(c.touchSensitivity);
+ if(Module){
+  const controls=Module.eaglerControls??={};
+  controls.thpracMobilePanelsEnabled=c.thpracMobilePanelsEnabled===true;
+  controls.thpracMobilePanelsVisible=c.thpracMobilePanelsVisible===true;
+ }
  // Frequent snapshots must not reconfigure the gesture/mode owner.
  if(Number.isFinite(sensitivity)&&sensitivity>=100&&sensitivity<=300&&sensitivity!==options.touchSensitivity){
   options.touchSensitivity=sensitivity;
