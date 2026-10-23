@@ -11,11 +11,14 @@ static_assert(sizeof(EclInstruction)==12&&sizeof(EclTimelineInstruction)==8&&siz
 // into ordinary object pointers without rewriting the portable input bytes.
 class EclProgram {
     bool practice_instructions=false;
+    u32 practice_extension_start=0;
     std::vector<u8> storage;std::vector<EclInstruction*> subs;std::vector<u32> sub_lengths,instruction_offsets;
     std::array<EclTimelineInstruction*,16> timelines{};std::array<u32,16> timeline_lengths{};
 public:
     bool load(const u8* data,u32 size);
-    void release(){practice_instructions=false;storage.clear();subs.clear();sub_lengths.clear();instruction_offsets.clear();timelines.fill(nullptr);timeline_lengths.fill(0);}
+    void release(){practice_instructions=false;practice_extension_start=0;storage.clear();subs.clear();sub_lengths.clear();instruction_offsets.clear();timelines.fill(nullptr);timeline_lengths.fill(0);}
+    // Reserved during load: appending never invalidates live VM pointers.
+    bool append_practice_ecl(const u8* bytes,u32 length,u32& offset);
     u8* mutable_data()noexcept{return storage.data();}
     void enable_practice_instructions()noexcept{practice_instructions=true;}
     const u8* data()const noexcept{return storage.data();}

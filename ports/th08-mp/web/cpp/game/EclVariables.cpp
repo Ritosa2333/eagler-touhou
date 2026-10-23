@@ -54,6 +54,7 @@ i32 EclVm::read_int(i32 id)const noexcept {
     if(id==10096)return familiar_count();
     if(id==10097&&environment)return environment->youkai;
     if(id==10098&&environment){
+        if(environment->practice_force_last_spell)return 2;
         const auto* values=environment->values;
         const i32 current=values?values->time_orbs:0,quota=values?values->last_spell_requirement:0;
         const auto* live=environment->live_values;

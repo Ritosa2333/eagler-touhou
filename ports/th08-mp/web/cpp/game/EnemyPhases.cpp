@@ -36,7 +36,11 @@ bool EnemyPopulation::check_life(EclVm& enemy){
 }
 bool EnemyPopulation::check_timeout(EclVm& enemy){
     auto& globals=executor.game_state();
-    if((enemy.flags&2)&&u8(enemy.boss_id)==0&&globals.gui)globals.gui->spell_seconds=wrapping_sub(enemy.timeout,enemy.lifetime.current)/60;
+    if((enemy.flags&2)&&u8(enemy.boss_id)==0&&globals.gui){
+        globals.gui->spell_seconds=wrapping_sub(enemy.timeout,enemy.lifetime.current)/60;
+        // Purple 0042F34D intercepts this Boss timer setter, not every enemy tick.
+        if(globals.practice_tools_enabled)globals.practice_lock_frames=wrapping_add(globals.practice_lock_frames,1);
+    }
     if(enemy.lifetime.current<enemy.timeout)return false;
     enemy.remaining_seconds=0;i32 highest=0;u32 selected=0;
     for(u32 index=0;index<4;++index)if(enemy.life_thresholds[index]>=0&&highest<enemy.life_thresholds[index]){highest=enemy.life_thresholds[index];selected=index;}
