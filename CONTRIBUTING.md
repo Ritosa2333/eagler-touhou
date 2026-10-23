@@ -36,7 +36,26 @@ git switch -c your-change
 
 修改游戏时，打开该目录的 `ADAPTATION.md`，按[适配流程](docs/adaptation/README.md)找到对应项目。通用改动同时检查普通版与 MP；模式专属改动在记录中写明适用模式。
 
-普通版修改同时判断多人版的适用性，并将来源和多人版处理写入[同步历史](docs/adaptation/port-sync.md)。独立目录通过 `tools/ports/sync.mjs` 按各自基线进行三方同步，源码和历史一并提交。
+普通版修改默认进入 MP 同步范围。日常代码在 monorepo 开发分支中正常提交，来源提交与 MP 的处理决定保存在[同步历史](docs/adaptation/port-sync.md)。th08、th10、th11、th15 的同步维护者按下方流程保留 Git 祖先。
+
+### 普通版与 MP 怎么提交
+
+| 本次工作 | 提交方式 |
+| --- | --- |
+| 修改普通版 | 提交普通版代码与文档，刷新该作目录历史，让 MP 维护者查看新增提交 |
+| 修改 MP 自身逻辑 | 提交 MP 代码与文档，刷新该作目录历史 |
+| 将普通版同步到 MP | 从该作 MP 历史分支合并普通版历史，处理冲突，用写回工具接回 monorepo，再提交同步记录 |
+| 同时修改普通版与 MP，或手工迁入普通版修改 | 完成代码提交后，由同步维护者完成上述历史合并和写回，并登记各项处理决定 |
+
+例如 th10 的历史查询在仓库根目录运行：
+
+```sh
+python tools/ports/project-history.py --repo . --game th10 --write-refs --track-normal
+git branch -vv --list 'port-history/*'
+git log --oneline port-history/th10mp..port-history/th10
+```
+
+日常开发使用原目录和开发分支。`port-history/*` 是各作的目录历史，合并同步时以 MP 分支为起点。`sync.mjs record` 登记处理进度，目录历史合并建立 Git 祖先，两者随同步一起维护。完整操作见[下一次提交与同步](docs/adaptation/port-sync.md#下一次提交与同步)。
 
 修改共用代码时，用[目录映射](launcher/config/workspace.json)和[构建配方](launcher/config/runtime-builds.json)找出受影响的游戏。接口定义、调用方和对应测试在同一改动中更新。
 
@@ -58,6 +77,8 @@ npm test
 ## 5. 提交 PR
 
 确认 `git diff` 中的内容与本次工作一致，提交到你的分支并创建 PR。正文说明改了什么、影响哪些作品和模式、运行了哪些检查，并链接相关适配表和记录。
+
+包含普通版到 MP 历史同步的 PR，在正文注明“请使用合并提交保留祖先关系”。合入时选择 **Create a merge commit**，保留同步节点的两侧父链；这类 PR 禁止 squash 或 rebase 合入。同步维护者合入后刷新目录历史，确认本轮接收的普通版提交已成为 MP 的祖先。
 
 本项目的自动化代理在发布提交说明、PR 和评论前，将完整文字交由维护者审阅。
 
