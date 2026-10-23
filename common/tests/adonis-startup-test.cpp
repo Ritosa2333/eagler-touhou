@@ -423,7 +423,17 @@ void spectator_timing_identity(){
         assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
         timing.prediction=1;assert(timing.Encode().empty());
         timing.prediction=0;timing.mode=2;
-        assert((game==15)==timing.Encode().empty());
+        bytes=timing.Encode();assert(bytes.size()==40);
+        assert(AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+        assert(decoded.game==game&&decoded.mode==2&&decoded.prediction==0);
+        timing.rttP95Us=90'000;timing.fullDelay=3;timing.delay=1;timing.prediction=2;
+        bytes=timing.Encode();assert(bytes.size()==40);
+        assert(AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+        assert(decoded.game==game&&decoded.mode==2&&decoded.prediction==2&&decoded.delay==1);
+        bytes[7]=3;assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+        timing.prediction=3;assert(timing.Encode().empty());
+        timing.prediction=2;timing.mode=1;assert(timing.Encode().empty());
+        timing.mode=0;assert(timing.Encode().empty()); // Direct rollback sends no measured timing packet.
     }
 }
 int main(){

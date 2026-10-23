@@ -105,6 +105,9 @@ void rollback(unsigned count,unsigned mode){
  ReplayArchive recording;auto s=setup(count,0,0);s.version=SessionSetup::Version;s.mode=mode;s.measured_prediction=mode==2?2:0;CHECK(recording.Begin(s,1723456789));
  exact={initial,later,count==3?later:Netplay::FrameInput{}};CHECK(recording.Append(0,1,exact.data(),count));std::vector<unsigned char> bytes;CHECK(recording.Encode(bytes,"ROLLBACK",123,false));
  ReplayArchive loaded;CHECK(loaded.Load(bytes.data(),bytes.size()));CHECK(loaded.Setup().mode==mode&&loaded.Setup().version==SessionSetup::Version);CHECK(*loaded.FrameAt(0)==exact);
+ if(mode==0){auto invalid=s;invalid.input_delay=1;auto corrupt=bytes;corrupt[Netplay::InputReplay::HeaderBytes+12]=1;
+  const auto abi=GameplayAbi(invalid);for(unsigned i=0;i<4;++i)corrupt[16+i]=static_cast<unsigned char>(abi>>(i*8));checksum(corrupt);
+  CHECK(!ReplayArchive::Validate(corrupt.data(),corrupt.size()));}
  NetplayRuntime viewer;CHECK(viewer.BeginPlayback(loaded.Setup()));CHECK(!viewer.AllowsRollback());CHECK(viewer.FeedPlayback(0,loaded.FrameAt(0)->data(),count));d=viewer.Prepare(0);CHECK(d.canAdvance&&!d.predictedMask);CHECK(viewer.MarkSimulated(0,d));CHECK(viewer.Finish());
 }
 }
@@ -114,6 +117,17 @@ __attribute__((export_name("network_free"))) void network_free(void* pointer){st
 __attribute__((export_name("network_validate"))) int network_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
 }
 int main(int argc,char** argv){
+ for(unsigned mode:{1u,2u}){
+  auto s=setup(3,0,2);s.version=SessionSetup::Version;s.mode=mode;s.measured_prediction=mode==2?2:0;
+  CHECK(s.valid());Netplay::AdonisSpectatorTiming timing;timing.game=15;timing.mode=mode;timing.delay=2;
+  timing.prediction=s.measured_prediction;timing.fullDelay=3;timing.rttP95Us=90'000;timing.samples=120;
+  timing.sessionId=s.session_id;timing.gameplayAbi=GameplayAbi(s);const auto encoded=timing.Encode();
+  CHECK(encoded.size()==40);Netplay::AdonisSpectatorTiming decodedTiming;
+  CHECK(Netplay::AdonisSpectatorTiming::Decode(encoded.data(),encoded.size(),decodedTiming));
+  CHECK(decodedTiming.game==15&&decodedTiming.mode==mode&&decodedTiming.prediction==s.measured_prediction&&decodedTiming.gameplayAbi==GameplayAbi(s));
+  auto malformed=encoded;malformed[7]=3;CHECK(!Netplay::AdonisSpectatorTiming::Decode(malformed.data(),malformed.size(),decodedTiming));
+  malformed=encoded;malformed[5]=1;malformed[7]=1;CHECK(!Netplay::AdonisSpectatorTiming::Decode(malformed.data(),malformed.size(),decodedTiming));
+ }
  for(unsigned count:{2u,3u})for(unsigned mode:{0u,2u})rollback(count,mode);
  for(unsigned count:{2u,3u}){
   std::array<NetplayRuntime,3> players;
