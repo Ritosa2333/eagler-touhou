@@ -17,6 +17,26 @@ const outputs = new Map();
 const origin = 'http://127.0.0.1:43219';
 const configuration = mountPath => ({schema: 'eagler-touhou/react-app-shell/1', origin, mountPath});
 const exists = path => stat(path).then(() => true, error => {if (error.code === 'ENOENT') return false; throw error;});
+
+test('content compiler preserves equivalent LF and CRLF bytes and repairs actual stale content', async () => {
+  const files = ['faq.html', 'content/FIRST_USE_NOTICE.html', 'content/MULTIPLAYER.html'];
+  const run = (...args) => execFileSync(process.execPath, ['scripts/build-content-pages.mjs', '--quiet', ...args],
+    {cwd: coldSource, stdio: 'pipe'});
+  for (const file of files) {
+    const path = resolve(coldSource, 'public', file), canonical = (await readFile(path, 'utf8')).replaceAll('\r\n', '\n');
+    for (const text of [canonical, canonical.replaceAll('\n', '\r\n')]) {
+      await writeFile(path, text);
+      const before = await stat(path);
+      run('--check'); run();
+      assert.equal(await readFile(path, 'utf8'), text, 'equivalent content must keep its actual bytes');
+      assert.equal((await stat(path)).mtimeMs, before.mtimeMs, 'equivalent content must not be rewritten');
+    }
+    await writeFile(path, canonical + '<p>stale compiler output</p>\n');
+    assert.throws(() => run('--check'), /stale/);
+    run();
+    assert.equal(await readFile(path, 'utf8'), canonical, 'real content changes must be regenerated');
+  }
+});
 before(async () => {
   await mkdir(resolve('.cache'), {recursive: true});
   work = await mkdtemp(resolve('.cache/react-pwa-contract-'));

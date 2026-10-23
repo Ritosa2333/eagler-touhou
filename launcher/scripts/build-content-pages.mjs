@@ -157,12 +157,14 @@ const firstUseNoticeHtml = renderFirstUseNoticeFragment(await readFile(firstUseN
 const multiplayerHtml = renderMultiplayerFragment(await readFile(multiplayerSourcePath, "utf8"));
 
 async function emit(path, body, staleMessage) {
+  let current = null;
+  try { current = await readFile(path, "utf8"); } catch (error) { if (error.code !== "ENOENT") throw error; }
+  const matches = current !== null && current.replaceAll("\r\n", "\n") === body.replaceAll("\r\n", "\n");
   if (check) {
-    let current = "";
-    try { current = await readFile(path, "utf8"); } catch {}
-    if (current !== body) throw new Error(staleMessage);
+    if (!matches) throw new Error(staleMessage);
     return;
   }
+  if (matches) return;
   await writeFileAtomic(path, body, "utf8");
 }
 
