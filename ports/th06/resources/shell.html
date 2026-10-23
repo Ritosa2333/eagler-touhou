@@ -372,6 +372,7 @@
         if (options.netplayMode != null && options.netplayMode !== "lan") throw new Error("invalid netplay mode");
         if (options.netplaySeed != null && (!Number.isInteger(options.netplaySeed) || options.netplaySeed < 0 || options.netplaySeed > 65535)) throw new Error("invalid netplay seed");
         if (options.netplayDifficulty != null && (!Number.isInteger(options.netplayDifficulty) || options.netplayDifficulty < 0 || options.netplayDifficulty > 4)) throw new Error("invalid netplay difficulty");
+        if (options.netplayPreferTurn != null && typeof options.netplayPreferTurn !== 'boolean') throw new Error("invalid TURN preference");
         if (options.netplayIceServers != null) {
           if (!Array.isArray(options.netplayIceServers) || options.netplayIceServers.length > 8) throw new Error("invalid netplay ICE servers");
           for (const server of options.netplayIceServers) {
@@ -432,6 +433,7 @@
           netplayPlayer: options.netplayPlayer ?? -1,
           netplayPlayerCount: options.netplayPlayerCount ?? 2,
           netplayChallengeMode: options.netplayChallengeMode === true,
+          netplayPreferTurn: options.netplayPreferTurn === true,
           netplaySpectator: !!options.netplaySpectator,
           netplaySpectatorId: options.netplaySpectatorId || "",
           netplaySpectatorCount: options.netplaySpectatorCount ?? 0,

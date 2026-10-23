@@ -285,6 +285,8 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-tail.test.mjs)
     add_test(NAME eagler-common.browser-peer-recovery
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-recovery.test.mjs)
+    add_test(NAME eagler-common.browser-peer-turn-preference
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-turn-preference.test.mjs)
     add_test(NAME eagler-common.save-sync
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/save-sync.test.mjs)
     add_test(NAME eagler-common.adonis-calibration

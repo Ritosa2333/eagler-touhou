@@ -88,6 +88,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true, checkGame =
   const persistent = new Storage(), session = new Storage(), sockets = [], events = [], preparations = [], timers = new Map(), decisions = owners.createDecisionStore(); let timer = 0;
   persistent.setItem(owners.multiplayerDisplayNameStorageKey, 'Alice');
   const identity = owners.createMultiplayerIdentityStore({persistentStorage: persistent, sessionStorage: session, randomWords: () => [1234567, 7654321]});
+  const runtimeState = {launched:false};
   const settings = {touchMovementMode: 'joystick', touchEnabled: false, mobileDevice: false, iceServers: []}, network = syntheticNetwork();
   const service = owners.createMultiplayerRoom({identity, sessions: owners.createMultiplayerRoomSessionStore({storage: session}), preferences: owners.createMultiplayerPreferenceStore({storage: persistent}), decisions,
     memberId: () => 'synthetic-member', createSocket: () => {const socket = new Socket(); sockets.push(socket); return socket;}, relayUrl: () => 'wss://relay.invalid/socket',
@@ -95,10 +96,10 @@ function fixture({product = 'th06mp', locale = 'en', created = true, checkGame =
     prepareResources: (context, report) => {const task = deferred(); preparations.push({context, report, ...task}); return task.promise;},
     preparationFailed: error => events.push(['prepare-error', error]), beginManualImport: context => events.push(['import', context]),
     launch: async context => events.push(['launch', context]), checkGame: async context => {events.push(['check', context]); if (checkGame) await checkGame(context);}, operationFailed: (...args) => events.push(['operation-error', ...args]),
-    isLaunched: () => false, routes: Object.fromEntries(['restore', 'enter', 'settleInvite', 'leave'].map(kind => [kind, value => events.push([kind, value])])),
+    isLaunched: () => runtimeState.launched, routes: Object.fromEntries(['restore', 'enter', 'settleInvite', 'leave'].map(kind => [kind, value => events.push([kind, value])])),
     network: {reset: reconnecting => events.push(['network-reset', reconnecting]), receive: value => events.push(['network-receive', value]), minimumRtt: () => 43},
     online: () => true, visible: () => true, random: () => 0, setTimeout: (fn, delay) => {timers.set(++timer, {fn, delay}); return timer;}, clearTimeout: id => timers.delete(id)});
-  const f = {service, network, decisions, sockets, settings, events, preparations, product, locale, timers, persistent,
+  const f = {service, network, decisions, sockets, settings, events, preparations, product, locale, timers, persistent, runtimeState,
     get id() {return identity.lobbyClientId(product);}, get socket() {return sockets.at(-1);},
     async enter() {await act(() => service.enterRoom(product, '1234', created)); return f;},
     async receive(patch = {}) {await act(() => f.socket.message({code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, startSerial: 0,
@@ -309,6 +310,33 @@ test('Nickname preserves focused draft, commits native change/blur with normaliz
   await act(() => f.socket.close(1006)); assert.equal(input.disabled, false);
   await act(() => {input.focus(); input.value = 'Offline'; input.blur();}); assert.equal(f.service.getSnapshot().displayName, 'Offline');
   await act(() => f.service.setDisplayName('Restored')); assert.equal(input.value, 'Restored');
+});
+
+for (const locale of ['zh-CN', 'en']) test(`own card TURN preference is local, reaches the next launch, and survives room changes | ${locale}`, async () => {
+  const f = await fixture({locale, created:false}).live();
+  const {m} = await mountRoom(f, {panel:{kind:'personal'}});
+  assert.ok(n('#mpPreferTurn').closest('.room-packet-loss'));
+  assert.equal(n('#mpPreferTurn').getAttribute('aria-checked'), 'false');
+  f.runtimeState.launched = true; // Native title preview can already be running in the lobby.
+  const sent = f.socket.sent.length;
+  await click('#mpPreferTurn');
+  assert.equal(n('#mpPreferTurn').getAttribute('aria-checked'), 'true');
+  assert.equal(f.service.runtimeOptions().netplayPreferTurn, true);
+  assert.equal(f.socket.sent.length, sent, 'Personal preference is not broadcast as a room rule');
+  assert.equal(owners.createMultiplayerPreferenceStore({storage:f.persistent}).preferTurn(), true);
+  await f.receive({phase:'running'});
+  assert.equal(env.document.querySelector('#mpPreferTurn'), null);
+  await act(() => f.service.setPreferTurn(false));
+  assert.equal(f.service.getSnapshot().preferTurn, true, 'Running games keep their connection policy');
+  await f.receive();
+  await click('#mpPreferTurn');
+  assert.equal(f.service.runtimeOptions().netplayPreferTurn, undefined);
+  await click('#mpPreferTurn');
+  await act(() => f.service.resetRoomWithoutNavigation());
+  f.runtimeState.launched = false;
+  await f.enter(); await act(() => f.socket.open()); await f.receive();
+  assert.equal(f.service.getSnapshot().preferTurn, true);
+  await m.unmount();
 });
 
 test('own card panel manually tests packet loss, renders both paths and directions, and stays lobby-only', async () => {
