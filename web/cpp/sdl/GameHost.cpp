@@ -1,4 +1,4 @@
-#include "browser-gamepad-input.hpp"
+#include <eagler/input/BrowserGamepad.hpp>
 #ifdef TH_NATIVE_PLATFORM
 #include "PlatformHost.hpp"
 #include "GraphicsHost.hpp"
@@ -77,7 +77,8 @@ bool fixture_full_hidden_draw=false;
 double fixture_cadence[8]{};
 #endif
 #endif
-void reset_cadence(){cadence.reset();
+PracticeCadence practice_cadence;double practice_period=1./60.;
+void reset_cadence(){practice_cadence.reset();cadence.reset();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     network_schedule.reset();network_identity_valid=false;
 #ifdef TH_MULTIPLAYER_FIXTURES
@@ -137,8 +138,16 @@ int touch_stage(){
     return runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;
 }
 void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)runtime->motion.touch_cancel(touch_stage());}
-void pointer(int type,int id,float x,float y){const auto state=touch_state();sync_touch_context(state);if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),type,id,x,y);touch.pointer(type,id,x,y,SDL_GetTicks(),state,runtime&&runtime->keyboard_state()[16]);}
-void cancel_touch(){if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
+// Ownership is acquired on pointer-down and retained through release, even
+// when the drag leaves an ImGui window. Other fingers remain game-owned.
+bool practice_pointer_active=false;int practice_pointer_id=0;
+void pointer(int type,int id,float x,float y){
+    if(type<0||type>2||!std::isfinite(x)||!std::isfinite(y))return;
+    if(type==0&&!practice_pointer_active&&ThpracUi::captures_pointer(x*640.f,y*480.f)){practice_pointer_active=true;practice_pointer_id=id;}
+    if(practice_pointer_active&&id==practice_pointer_id){ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);if(type==2)practice_pointer_active=false;return;}
+    const auto state=touch_state();sync_touch_context(state);if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),type,id,x,y);touch.pointer(type,id,x,y,SDL_GetTicks(),state,runtime&&runtime->keyboard_state()[16]);
+}
+void cancel_touch(){practice_pointer_active=false;ThpracUi::cancel_pointer();if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
 bool read_interpolation_ready(){
     if(!runtime||runtime->app.loading_game()||runtime->app.title.modal())return false;
     if(runtime->app.title.active())return true;
@@ -195,7 +204,7 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     ThpracUi::update_input(*runtime);
     if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})keys[vk]=0;
 }
-int tick(){poll();return !runtime||!runtime->step(false,frame_begin)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
+int tick(){poll();if(runtime)runtime->app.session.practice.input.gui_tick();return !runtime||!runtime->step(false,frame_begin)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #ifdef TH_MULTIPLAYER_FIXTURES
 u32 audio_service_calls=0;
@@ -220,9 +229,16 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
        runtime->app.session.netplay.Mode()==Netplay::AdonisMode::Rollback&&!runtime->pump_network(true))result=2;
 #endif
     const bool limit60=th08_limit_presentation_to_60()!=0;
-    const bool ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
-    const bool tick_due=cadence.advance(delta)!=0;
-    const bool high=display_cadence.high_refresh&&interpolation_ready();bool presented=false;
+    const double period=ThpracUi::simulation_interval(*runtime);
+    bool custom_speed=std::abs(period-1./60.)>1e-12;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(runtime->app.session.netplay.Configured())custom_speed=false;
+#endif
+    if(period!=practice_period){practice_period=practice_cadence.period=period;reset_cadence();display_cadence.reset();presentation_gate.reset();}
+    const bool ready=interpolation_ready()&&!limit60&&!custom_speed,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
+    const unsigned practice_ticks=custom_speed?practice_cadence.advance(delta):0;
+    const bool tick_due=custom_speed?practice_ticks!=0:cadence.advance(delta)!=0;
+    const bool high=display_cadence.high_refresh&&interpolation_ready()&&!custom_speed;bool presented=false;
     bool due=tick_due;unsigned completed=0;bool completed_after_correction=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // Observer Seek/Live batching belongs to StagePlayback. Buffered observer
@@ -290,12 +306,12 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
             // the visible frame below is a second, side-effect-free presentation
             // pass. Live MP catches up authoritative update+draw pairs, then
             // presents once. Ordinary and Replay retain original cadence.
-            const bool hidden=high
+            const bool hidden=high||(custom_speed&&completed+1<practice_ticks)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 ||catchup
 #endif
                 ;if(hidden)sdl_defer(1);
-            const bool lightweight=high&&hidden&&runtime&&!runtime->visual_capture_pending()
+            const bool lightweight=(high||custom_speed)&&hidden&&runtime&&!runtime->visual_capture_pending()
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 // Exact-input play has no texture history to retain. Reuse
                 // the ordinary hidden semantic pass, then draw the display
@@ -350,7 +366,7 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
             due=completed<network_ticks;
         }else
 #endif
-        due=false;
+        due=custom_speed&&completed<practice_ticks;
     }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // Ordinary forward catch-up retains bounded CPU debt. During correction,
@@ -569,9 +585,8 @@ EX("multiplayer_replay_reopen") BrowserRuntime* multiplayer_replay_reopen(u32 mi
 }
 #endif
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
-EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime)std::memset(runtime->keyboard_state(),0,256);cancel_touch();touch.reset();}
+EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime){std::memset(runtime->keyboard_state(),0,256);runtime->app.session.practice.input.reset();}cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
-    if(ThpracUi::captures_game_input())ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
     pointer(type,id,x,y);
 }
 EX("sdl_touch_cancel") void sdl_touch_cancel(){cancel_touch();}

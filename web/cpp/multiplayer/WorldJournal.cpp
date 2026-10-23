@@ -23,6 +23,10 @@ std::size_t replay_bytes(const ReplayRecording& value){
     for(i32 stage=0;stage<9;++stage){const auto* s=value.stage(stage);size+=s->stream.input.size()+s->stream.timing.size();}
     return size;
 }
+std::size_t monitor_bytes(const eagler::thprac::PracticeKeyMonitor& value){
+    return sizeof(value)+value.g_recorded_aps.size()*sizeof(int)+
+        value.g_recorded_keys.size()*sizeof(uint16_t)+value.keys_per_sec.size()*sizeof(uint32_t);
+}
 }
 void WorldJournal::Raw(void* address,std::size_t size,Group group,const char* name,SnapshotMode mode){
     if(size)blocks.push_back({address,size,group,name,mode});
@@ -30,7 +34,15 @@ void WorldJournal::Raw(void* address,std::size_t size,Group group,const char* na
 bool WorldJournal::Inventory(){
     auto& r=*runtime;auto& a=*app;auto& g=a.game;auto& s=a.session;
 #define ADD(field,group) Add(field,group,#field)
-    ADD(s.practice,Session);ADD(s.random,Session);ADD(s.numbers,Session);
+    // Practice's scalar ranges remain journaled and hashed. The monitor owns
+    // vectors/deque and has a deep snapshot alongside the native recorder.
+    auto& practice=s.practice;
+    const auto* practice_begin=reinterpret_cast<const unsigned char*>(&practice);
+    const auto* monitor_begin=reinterpret_cast<const unsigned char*>(&practice.key_monitor);
+    auto* practice_tail=reinterpret_cast<unsigned char*>(&practice.show_keyboard_monitor);
+    Raw(&practice,std::size_t(monitor_begin-practice_begin),Session,"practice controls");
+    Raw(practice_tail,sizeof(practice)-std::size_t(practice_tail-practice_begin),Session,"practice tools");
+    ADD(s.random,Session);ADD(s.numbers,Session);
     ADD(s.config,Session);ADD(s.display_config,Session);ADD(s.history,Session);
     Raw(s.records,sizeof(s.records),Session,"s.records",SnapshotMode::Record);
     Raw(s.previous_records,sizeof(s.previous_records),Session,"s.previous_records",SnapshotMode::PreviousRecord);ADD(s.clears,Session);
@@ -162,6 +174,18 @@ bool WorldJournal::DiagnosticInputSampler(){
     sampler.controller(0,pad,config);const auto sampled=sampler.focus_conflict;
     return sampled!=before&&EndFrame()&&UndoTo(0)&&sampler.focus_conflict==sampled;
 }
+bool WorldJournal::DiagnosticPracticeMonitor(){
+    if(!app||HasHistory())return false;
+    auto& monitor=app->session.practice.key_monitor;
+    const auto before=monitor;
+    if(!BeginFrame(0))return false;
+    monitor.g_recorded_aps.push_back(17);monitor.g_recorded_keys.push_back(3);
+    monitor.keys_per_sec.push_back(7);monitor.g_aps_cur+=11;
+    if(!EndFrame()||!UndoTo(0))return false;
+    return monitor.g_recorded_aps==before.g_recorded_aps&&
+        monitor.g_recorded_keys==before.g_recorded_keys&&
+        monitor.keys_per_sec==before.keys_per_sec&&monitor.g_aps_cur==before.g_aps_cur;
+}
 #endif
 bool WorldJournal::CanExtend(u32 frame,u32 span)const{
     return !records.empty()&&records.back().end+1==frame&&frame-records.back().frame<span;
@@ -173,7 +197,8 @@ u32 WorldJournal::CheckpointStart(u32 frame)const{
 bool WorldJournal::BeginFrame(u32 frame,bool extend){
     if(!CanAdvance()||main.IsFrameOpen()||(!extend&&records.size()>=History)||
        (extend&&!CanExtend(frame,3)))return Fail("frame admission or retirement fence");
-    if(replay_bytes(app->game.recording)>16*1024*1024)return Fail("native recording exceeds checkpoint budget");
+    if(replay_bytes(app->game.recording)+monitor_bytes(app->session.practice.key_monitor)>16*1024*1024)
+        return Fail("owning state exceeds checkpoint budget");
 #ifdef TH_MULTIPLAYER_FIXTURES
     const auto started=emscripten_get_now();
     double replay_elapsed=0;
@@ -184,7 +209,8 @@ bool WorldJournal::BeginFrame(u32 frame,bool extend){
 #ifdef TH_MULTIPLAYER_FIXTURES
         const auto replay_started=emscripten_get_now();
 #endif
-        records.push_back({frame,frame,std::make_unique<ReplayRecording>(app->game.recording)});
+        records.push_back({frame,frame,std::make_unique<ReplayRecording>(app->game.recording),
+            std::make_unique<eagler::thprac::PracticeKeyMonitor>(app->session.practice.key_monitor)});
 #ifdef TH_MULTIPLAYER_FIXTURES
         replay_elapsed=emscripten_get_now()-replay_started;diagnostic_capture_ms[4]+=replay_elapsed;
 #endif
@@ -228,6 +254,7 @@ bool WorldJournal::UndoTo(u32 frame){
     if(target==records.end())return false;
     if(!main.UndoTo(frame)||!enemies.UndoTo(frame)||!pools.UndoTo(frame)||!resources.UndoTo(frame))return Fail("incomplete owner restore");
     app->game.recording=*target->replay; // deep vector copy; no ownership word dump
+    app->session.practice.key_monitor=*target->practice_monitor;
     while(!records.empty()&&records.back().frame>=frame)records.pop_back();
     RebasePresentation();return true;
 }
@@ -297,13 +324,16 @@ bool WorldJournal::TouchGuiTransitions(){
 }
 std::size_t WorldJournal::BytesForFrame(u32 frame)const{
     std::size_t size=main.BytesForFrame(frame)+enemies.BytesForFrame(frame)+pools.BytesForFrame(frame)+resources.BytesForFrame(frame);
-    for(const auto& record:records)if(record.frame<=frame&&frame<=record.end)size+=replay_bytes(*record.replay);
+    for(const auto& record:records)if(record.frame<=frame&&frame<=record.end)
+        size+=replay_bytes(*record.replay)+monitor_bytes(*record.practice_monitor);
     return size;
 }
 #ifdef TH_MULTIPLAYER_FIXTURES
 std::array<std::size_t,5> WorldJournal::DiagnosticBytesForFrame(u32 frame)const{
     std::size_t replay=0;
-    for(const auto& record:records)if(record.frame<=frame&&frame<=record.end){replay=replay_bytes(*record.replay);break;}
+    for(const auto& record:records)if(record.frame<=frame&&frame<=record.end){
+        replay=replay_bytes(*record.replay)+monitor_bytes(*record.practice_monitor);break;
+    }
     return {main.BytesForFrame(frame),enemies.BytesForFrame(frame),pools.BytesForFrame(frame),resources.BytesForFrame(frame),replay};
 }
 #endif
@@ -314,6 +344,15 @@ std::vector<u32> WorldJournal::BlockHashes()const{
 std::array<u32,WorldJournal::GroupCount> WorldJournal::AuditHash()const{
     std::array<u32,GroupCount> h;h.fill(2166136261u);if(!app)return h;
     for(const auto& block:blocks)h[block.group]=hash_bytes(block.address,block.bytes,h[block.group]);
+    const auto& monitor=app->session.practice.key_monitor;
+    h[Session]=hash_value(monitor.g_recorded_aps.size(),h[Session]);
+    h[Session]=hash_bytes(monitor.g_recorded_aps.data(),monitor.g_recorded_aps.size()*sizeof(int),h[Session]);
+    h[Session]=hash_value(monitor.g_recorded_keys.size(),h[Session]);
+    h[Session]=hash_bytes(monitor.g_recorded_keys.data(),monitor.g_recorded_keys.size()*sizeof(uint16_t),h[Session]);
+    h[Session]=hash_value(monitor.g_keys_down,h[Session]);h[Session]=hash_value(monitor.g_key_mask,h[Session]);
+    h[Session]=hash_value(monitor.g_aps_cur,h[Session]);h[Session]=hash_value(monitor.g_record_key_aps,h[Session]);
+    h[Session]=hash_value(monitor.keys_per_sec.size(),h[Session]);
+    for(auto value:monitor.keys_per_sec)h[Session]=hash_value(value,h[Session]);
     const auto& recorder=app->game.recording;
     h[Recording]=hash_value(recorder.metadata(),h[Recording]);
     h[Recording]=hash_value(recorder.input,h[Recording]);h[Recording]=hash_value(recorder.frame_state,h[Recording]);
