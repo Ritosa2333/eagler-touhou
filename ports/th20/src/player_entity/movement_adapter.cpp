@@ -10,7 +10,7 @@
 #ifdef TH_SDL3
 // Direct-touch is a web-port capability; the native reconstruction keeps the
 // recovered eight-way path and links no touch owner.
-#include "../../../web/cpp/sdl/TouchMotion.hpp"
+#include "../../web/cpp/sdl/TouchMotion.hpp"
 #endif
 namespace th20::source::player_entity {
 namespace {

@@ -1,4 +1,5 @@
 #include "PlayerMotion.hpp"
+#include "eagler/input/TouchMotionTrace.hpp"
 #include <algorithm>
 #include <cmath>
 namespace th11 {
@@ -101,7 +102,10 @@ bool PlayerMotion::update_option(PlayerOption& o){
     return true;
 }
 bool PlayerMotion::update(const PlayerMotionInput& in){
-    auto& s=state;s.direction=direction(in.held);const i32 combination=in.character*3+in.subtype;
+    auto& s=state;const i32 trace_before_x=s.x,trace_before_y=s.y,trace_warp=s.warp;
+    const double trace_before_px=double(s.x)/128,trace_before_py=double(s.y)/128;
+    double trace_target_px=trace_before_px,trace_target_py=trace_before_py;
+    s.direction=direction(in.held);const i32 combination=in.character*3+in.subtype;
     if(!in.enemy_manager||!in.enemies||s.transition_timer<4){s.focused=0;s.option_lerp=30;}else s.focused=(in.held>>3)&1;
     i32 dx=0,dy=0;
     if(s.warp==99||s.warp==100)dx=s.warp==99?-150:150;
@@ -115,6 +119,12 @@ bool PlayerMotion::update(const PlayerMotionInput& in){
     // and original replay paths retain the unmodified integer movement above.
     if(in.touch_mode&&s.warp<99&&std::isfinite(in.touch_x)&&std::isfinite(in.touch_y)){
         double x=double(in.touch_x)*128-s.x,y=double(in.touch_y)*128-s.y;
+#ifdef TH11_MULTIPLAYER
+        if(in.touch_mode==3){const double speed=s.focused?s.focus_speed:s.normal_speed;x=std::clamp(double(in.touch_x),-1.,1.)*speed;y=std::clamp(double(in.touch_y),-1.,1.)*speed;const double length=std::sqrt(x*x+y*y);if(length>speed&&length>0){x*=speed/length;y*=speed/length;}trace_target_px=trace_before_px+x/128;trace_target_py=trace_before_py+y/128;}
+        else{trace_target_px=in.touch_x;trace_target_py=in.touch_y;}
+#else
+        trace_target_px=in.touch_x;trace_target_py=in.touch_y;
+#endif
         if(in.touch_mode!=2){const double speed=s.focused?s.focus_speed:s.normal_speed,length=std::sqrt(x*x+y*y);if(length>speed&&length>0){x*=speed/length;y*=speed/length;}}
         dx=truncate_int(x);dy=truncate_int(y);s.direction=direction((dx<0?0x40:dx>0?0x80:0)|(dy<0?0x10:dy>0?0x20:0));
     }
@@ -156,7 +166,37 @@ bool PlayerMotion::update(const PlayerMotionInput& in){
         if(o.snap){o.snap=0;o.x=o.target_x;o.y=o.target_y;}
         else if(s.option_lerp>=30){const i32 x=signed_bits(u32(wrapping_add(o.target_x,-o.x))*u32(s.option_lerp))/100,y=signed_bits(u32(wrapping_add(o.target_y,-o.y))*u32(s.option_lerp))/100;if(!x&&!y){o.x=o.target_x;o.y=o.target_y;}else{o.x=wrapping_add(o.x,x);o.y=wrapping_add(o.y,y);}}
         const Vec3 p{float(double(o.x)/128),float(double(o.y)/128),0};place(o.animation,p);place(o.auxiliary,p);
-    }return true;
+    }
+    // Keep the observer at the actual movement owner and after all player-position
+    // clamps. SDL installs this tick's real frame, stream kind and sensitivity;
+    // native tests without that owner intentionally produce no synthetic frame.
+    auto& trace=eagler::input::GlobalTouchMotionTraceBank();const auto owner=trace.context();
+    if(owner.frame_known){
+        eagler::input::TouchMotionTraceBank::Sample sample{};
+        sample.frame=owner.frame;sample.execution_kind=owner.execution_kind;sample.seat=0;
+#ifdef TH11_MULTIPLAYER
+        if(const auto tag=animations.multiplayer_tag(body);tag)sample.seat=tag-1;
+#endif
+        sample.mode=in.touch_mode==3?1u:unsigned(std::max(0,in.touch_mode));
+        sample.flags=eagler::input::TouchMotionTraceBank::flag_gameplay_tick;
+        if(s.focused)sample.flags|=eagler::input::TouchMotionTraceBank::flag_focused;
+        if(in.touch_mode<0||in.touch_mode>2||(!std::isfinite(in.touch_x)||!std::isfinite(in.touch_y)))
+            sample.flags|=eagler::input::TouchMotionTraceBank::flag_mode_unknown|eagler::input::TouchMotionTraceBank::flag_target_unknown;
+        if(trace_warp!=0||s.warp!=trace_warp||(combination==2&&!(in.held&9)&&state.fast_timer>10))
+            sample.flags|=eagler::input::TouchMotionTraceBank::flag_mode_unknown;
+        sample.before_x=float(trace_before_px);sample.before_y=float(trace_before_py);
+        sample.target_x=float(trace_target_px);sample.target_y=float(trace_target_py);
+        sample.after_x=float(double(s.x)/128);sample.after_y=float(double(s.y)/128);
+        const bool direct=in.touch_mode!=0;
+        const i32 native_speed=direct?(s.focused?s.focus_speed:s.normal_speed):
+            (s.focused?(s.direction<5?s.focus_speed:s.focus_diagonal):(s.direction<5?s.normal_speed:s.normal_diagonal));
+        sample.speed=float(double(native_speed)/128);
+        sample.scale_x=sample.scale_y=animations.rate;
+        sample.sensitivity=owner.sensitivity;
+        if(!std::isfinite(owner.sensitivity)||owner.sensitivity<1||owner.sensitivity>3){sample.flags|=eagler::input::TouchMotionTraceBank::flag_sensitivity_unknown;sample.sensitivity=1;}
+        trace.append(sample);
+    }
+    return true;
 }
 void PlayerMotion::copy_shot_state(ShotPlayer& p)const noexcept {p.position=state.position;p.option_count=state.option_count;p.warp_state=state.warp;p.focused=state.focused;p.weapon_mode=state.weapon_mode;for(u32 i=0;i<8;++i){const auto& o=options[i];p.options[i]={o.x,o.y,o.angle,o.animation};}}
 }

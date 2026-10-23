@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 
 const GAME = 'th11';
 const SHA256 = /^[a-f0-9]{64}$/i;
-import {COMMON_REVISION} from './common-revision.mjs';
+import {COMMON_REVISION,COMMON_SOURCE} from './common-revision.mjs';
 export const MULTIPLAYER_EXPORTS = Object.freeze([
   'configure', 'connect', 'spectator_connect', 'start', 'pump', 'status',
   'calibration_status', 'rollback_status', 'error', 'stop', 'replay_validate', 'replay_load',
@@ -46,7 +46,8 @@ export function validateBuildManifest(build, plan) {
   if (plan.multiplayer) {
     if (build.features?.multiplayer !== true || build.features?.thprac !== false ||
         build.netplay?.prediction !== true || build.netplay?.rollback !== true || build.netplay?.predictionLimit !== 12 ||
-        build.netplay?.measuredStartup !== true || build.commonRevision !== COMMON_REVISION)
+        build.netplay?.measuredStartup !== true || build.commonRevision !== COMMON_REVISION||
+        build.commonSource?.sha256!==COMMON_SOURCE.sha256||build.commonSource?.dirty!==COMMON_SOURCE.dirty)
       throw Error('TH11 MP requires the recorded shared source, measured startup and bounded 12-frame rollback.');
   } else if (build.features?.multiplayer === true || build.commonRevision || build.netplay) {
     throw Error('Ordinary TH11 cannot package a multiplayer build.');

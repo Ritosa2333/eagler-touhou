@@ -19,6 +19,7 @@ enum RenderResult
 struct GameWindow
 {
     static i32 ChecksumExecutable();
+    static void InstallLogOutput();
     static ZunResult CreateGameWindow();
     static ZunResult InitInterface();
     static ZunResult InitRendering();

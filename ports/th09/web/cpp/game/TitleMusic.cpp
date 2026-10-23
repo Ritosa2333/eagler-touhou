@@ -5,12 +5,9 @@
 namespace th09 {
 namespace {
 #include "TitleData.inc"
-// The pinned original locked_music_name is a "%5s " format fed the first five
-// columns of the untranslated title, which start with "No.x". A localized
-// title has no such prefix, so locked rows format the track number directly
-// with the same placeholder instead of slicing the real title (TH10
-// MusicRoom::locked_text).
-constexpr const char* locked_title="\x4e\x6f\x2e\x25\x64\x20\x20\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48";
+// Keep the original five-column number prefix before the placeholder, also
+// when the displayed music title comes from a translation.
+constexpr const char* locked_title="No.%-2d \x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48\x81\x48";
 }
 void TitleMenus::music_list(){
     auto& s=state;for(i32 n=0;n<s.music_count;++n)animations[159+n].pendingInterrupt=n==s.selection?7:8;

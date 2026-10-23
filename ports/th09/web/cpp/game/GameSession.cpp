@@ -103,17 +103,38 @@ void GameSession::warm_resources(){
 bool GameSession::retry(){if(is_replay)return play(replay,starting_replay_stage,demo);const auto date=result.date;return begin(initial,replay_metadata,date.data());}
 bool GameSession::continue_game(){if(!world||phase!=SessionPhase::game_over||is_replay||current.selection.mode!=GameMode::story||continues>=3)return false;++continues;recordable=false;world->continue_game();current=world->configuration;phase=SessionPhase::match;return true;}
 void GameSession::finish(){capture_result();phase=SessionPhase::finished;}
-bool GameSession::movement(const PlayerMotion& p,float speed,float,float& x,float& y){
+bool GameSession::movement(const PlayerMotion& p,float speed,float rate,float& x,float& y){
+    MotionTraceInput trace{};
+    return movement(p,speed,rate,x,y,trace);
+}
+bool GameSession::movement(const PlayerMotion& p,float speed,float rate,float& x,float& y,MotionTraceInput& trace){
     const i32 track=current.selection.stage*2+i32(p.player);
-    if(is_replay)return motion.playback(track,x,y);
+    if(is_replay){
+        const bool available=motion.playback(track,x,y);
+        if(available){trace.active=true;trace.mode=1;trace.mode_known=false;trace.target_known=false;trace.sensitivity_known=false;}
+        return available;
+    }
     const auto& input=motion_input[p.player];const bool enabled=input.enabled&&world;
-    if(enabled){x=input.x;y=input.y;
+    if(enabled){
+        trace.active=true;
+        trace.mode=input.unlimited?2u:1u;
+        trace.sensitivity=input.trace_sensitivity;
+        trace.sensitivity_known=input.trace_sensitivity_known;
+        if(input.target){trace.target_x=input.x;trace.target_y=input.y;}
+        else if(input.trace_target_known){trace.target_x=input.trace_target_x;trace.target_y=input.trace_target_y;}
+        else trace.target_known=false;
+        x=input.x;y=input.y;
         // A networked gesture ships the absolute field target, so both peers
         // convert it here, at the frame that moves the player. Converting at
         // send time aims from a position `lead` frames ahead of this frame and
         // the player orbits the finger instead of reaching it.
         if(input.target){const float sx=p.base_scale.x*p.effect_scale.x,sy=p.base_scale.y*p.effect_scale.y;x=sx?(x-p.position.x)/sx:0;y=sy?(y-p.position.y)/sy:0;}
+        else if(!input.trace_target_known){
+            trace.target_x=p.position.x;
+            trace.target_y=p.position.y;
+        }
         if(!input.unlimited)touch::limit_vector(x,y,speed);}
+    (void)rate;
     motion.record(track,enabled,x,y);return enabled;
 }
 bool GameSession::record_charge_frame(const std::array<ChargeSample,2>& samples){

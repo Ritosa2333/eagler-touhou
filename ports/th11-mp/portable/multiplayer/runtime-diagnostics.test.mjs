@@ -10,6 +10,7 @@ import {webcrypto} from 'node:crypto';
 // the native ABI, document and clock are fixtures; no runtime source rewriting.
 // The package places these three modules together, so reproduce that layout.
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
+const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../../common'));
 const manifest={game:'th11',product:'th11mp',variant:'multiplayer',profile:'multiplayer',
  features:{multiplayer:true},execution:{sha256:'123456789abcdef0'.repeat(4)}};
 
@@ -28,10 +29,10 @@ test('runtime diagnostics preserve live lifecycle and explicit hash sample ident
   rmSync(directory,{recursive:true,force:true});
  });
  for(const [source,name] of [
-  ['web/sdl-runtime/multiplayer.mjs','multiplayer.mjs'],
-  ['third_party/eagler-common/browser/adonis-calibration.mjs','adonis-calibration.mjs'],
-  ['portable/browser/multiplayer-replay.mjs','multiplayer-replay.mjs'],
- ])copyFileSync(join(root,source),join(directory,name));
+  [join(root,'web/sdl-runtime/multiplayer.mjs'),'multiplayer.mjs'],
+  [join(commonRoot,'browser/adonis-calibration.mjs'),'adonis-calibration.mjs'],
+  [join(root,'portable/browser/multiplayer-replay.mjs'),'multiplayer-replay.mjs'],
+ ])copyFileSync(source,join(directory,name));
  const {createMultiplayerRuntime}=await import(pathToFileURL(join(directory,'multiplayer.mjs')).href);
 
  async function fixture(st,{synchronousExitStop=false,replay=false}={}){

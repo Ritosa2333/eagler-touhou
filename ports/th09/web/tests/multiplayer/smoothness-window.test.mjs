@@ -113,7 +113,8 @@ test('unreached start, empty samples and malformed input never fabricate a green
 });
 
 const rawPath=process.env.TH09_SMOOTHNESS_WINDOW_RAW;
-test('frozen relay125 regression: corrected window agrees with independent evidence and legacy summary stays exact',{skip:!rawPath},t=>{
+assert.ok(rawPath,'TH09_SMOOTHNESS_WINDOW_RAW is required for the frozen relay125 independent evidence comparison');
+test('frozen relay125 regression: corrected window agrees with independent evidence and legacy summary stays exact',t=>{
  const bytes=readFileSync(rawPath),sha=createHash('sha256').update(bytes).digest('hex');
  assert.equal(sha,'d03833c48742160afa7956a70b4aa82f135069005e3b4b38422a6b3c08bca770');
  const raw=JSON.parse(bytes),source=readFileSync(new URL('./smoothness-browser.mjs',import.meta.url),'utf8');

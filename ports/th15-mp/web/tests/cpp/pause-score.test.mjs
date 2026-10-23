@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from 'node:fs';import{resolve}from 'node:path';import{core,oracle,memory,string,root,report}from './helpers.mjs';
+import{originalRecordFixture}from'./score-fixture.mjs';
 test('TH15 result score registration matches original practice/Extra qualification, record bytes and both prepared name menus',async()=>{
- const c=await core(),m=await oracle(),f=c.pause_score_create(),pause=m.allocate(0x400),records=m.allocate(0x40000),graphics=m.allocate(0x100),data=c.allocate(0x33b4c),baseline=readFileSync(resolve(root,'artifacts/cpp/analysis/score/original-saved-state.bin'));let cases=0,checks=0,dates=0;
+ const recordFixture=await originalRecordFixture(),c=await core(),m=await oracle(),f=c.pause_score_create(),pause=m.allocate(0x400),records=m.allocate(0x40000),graphics=m.allocate(0x100),data=c.allocate(0x33b4c),baseline=recordFixture.savedState;let cases=0,checks=0,dates=0;
  const bytes=()=>Buffer.concat([Buffer.from(memory(c,c.pause_name_blocks(f,0),5*0xa4a0)),Buffer.from(memory(c,c.pause_name_blocks(f,1),0x42c))]);const double=(at,v)=>{const b=Buffer.alloc(8);b.writeDoubleLE(v);m.write(at,b);};
  m.u32(0x4e9bc8,records);m.u32(0x4e9a88,graphics);m.replace(0x490eda,'fixture qualifying result timestamp',()=>{const out=m.u32(m.reg('ESP')+4);m.u32(out,0x12345678);m.u32(out+4,0x9abcdef0);dates++;return 0;});
  try{for(let character=0;character<5;character++)for(let difficulty=0;difficulty<5;difficulty++)for(const mode of[0,0x10,0x20,0x30,0x100])for(const stage of[1,6,7])for(const result of[0,1])for(let variant=0;variant<4;variant++){

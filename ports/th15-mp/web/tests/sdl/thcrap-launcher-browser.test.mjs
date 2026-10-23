@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
+import {existsSync} from 'node:fs';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,sep} from 'node:path';
 import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 const site=process.env.TH15_HOST_SITE;
-test('TH15 real assembled Launcher selects and installs each prepared language',{timeout:240000,skip:!site},async()=>{
+assert.ok(site,'TH15_HOST_SITE must name the assembled site containing the prepared thcrap package');
+assert.ok(existsSync(resolve(site,'index.html')),`TH15_HOST_SITE must contain index.html: ${site}`);
+test('TH15 real assembled Launcher selects and installs each prepared language',{timeout:240000},async()=>{
  const root=resolve(site),out=resolve(import.meta.dirname,'../../artifacts/thcrap-launcher');await mkdir(out,{recursive:true});
  const mime={html:'text/html',js:'text/javascript',mjs:'text/javascript',json:'application/json',css:'text/css',wasm:'application/wasm',webp:'image/webp',svg:'image/svg+xml',woff2:'font/woff2'};
  const server=createServer(async(req,res)=>{try{const pathname=decodeURIComponent(new URL(req.url,'http://local').pathname),file=resolve(root,'.'+(pathname==='/'?'/index.html':pathname));if(!file.startsWith(root+sep)){res.writeHead(403).end();return;}res.setHeader('Cross-Origin-Opener-Policy','same-origin');res.setHeader('Cross-Origin-Embedder-Policy','require-corp');res.setHeader('Content-Type',mime[file.split('.').pop()]||'application/octet-stream');res.end(await readFile(file));}catch{res.writeHead(404).end();}});

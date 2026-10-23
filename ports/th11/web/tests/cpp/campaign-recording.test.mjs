@@ -1,5 +1,7 @@
-import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import{resolve}from'node:path';import{core,memory,root,report,sha}from'./helpers.mjs';
-test('TH11 live full-campaign inputs record and replay across every stage', {skip:!process.env.TH11_EXTERNAL_REPLAY},async()=>{
+import test from'node:test';import assert from'node:assert/strict';import{existsSync,readFileSync}from'node:fs';import{resolve}from'node:path';import{core,memory,root,report,sha}from'./helpers.mjs';
+assert.ok(process.env.TH11_EXTERNAL_REPLAY,'TH11_EXTERNAL_REPLAY must name the private recorded campaign replay');
+assert.ok(existsSync(process.env.TH11_EXTERNAL_REPLAY),`TH11_EXTERNAL_REPLAY does not exist: ${process.env.TH11_EXTERNAL_REPLAY}`);
+test('TH11 live full-campaign inputs record and replay across every stage',async()=>{
  const c=await core(),raw=readFileSync(resolve(process.env.TH11_EXTERNAL_REPLAY)),rp=c.allocate(raw.length),r=c.replay_create(),archive=readFileSync(resolve(root,'../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat')),data=c.allocate(archive.length),source=c.resources_create(),s=c.game_session_create(),render=c.comp_create(),input=c.allocate(36),out=c.allocate(4<<20),name=c.allocate(9);
  memory(c,rp,raw.length).set(raw);assert.equal(c.replay_open(r,rp,raw.length),1);const header=Buffer.from(memory(c,c.replay_data(r),112)),stages=[];
  for(let n=1;n<=7;++n){const p=c.replay_stage(r,n);if(p){const b=Buffer.from(memory(c,c.replay_data(r)+new DataView(c.memory.buffer).getUint32(p+4,true),144));stages.push({stage:n,frames:b.readUInt32LE(4),seed:b.readUInt16LE(2)});}}

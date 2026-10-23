@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import{core,oracle,memory,report}from'./helpers.mjs';
 const SIZE=0x163c,OFF=0x103c;
 test('TH11 enemy state commands match original health, interrupts, drops, boss slots and rank decisions',async()=>{
- const c=await core(),m=await oracle(),f=c.enemy_fixture_create(),e=c.enemy_fixture_data(f,0),p=e+OFF,b=c.enemy_fixture_data(f,1),w=c.enemy_fixture_data(f,2),cw=c.enemy_fixture_data(f,4),events=c.enemy_fixture_data(f,5),cc=c.allocate(0x1024),ci=c.allocate(128),n=m.allocate(0x2678),q=n+OFF,nb=m.allocate(0x2678),nc=m.allocate(0x1024),ni=m.allocate(128),manager=m.allocate(128),hud=m.allocate(0x4500);
+ const c=await core(),m=await oracle(),f=c.enemy_fixture_create(),e=c.enemy_fixture_data(f,0),p=e+OFF,b=c.enemy_fixture_data(f,1),w=c.enemy_fixture_data(f,2),events=c.enemy_fixture_data(f,5),projectionOut=c.allocate(4),cc=c.allocate(0x1024),ci=c.allocate(128),n=m.allocate(0x2678),q=n+OFF,nb=m.allocate(0x2678),nc=m.allocate(0x1024),ni=m.allocate(128),manager=m.allocate(128),hud=m.allocate(0x4500);
  let checks=0,eventChecks=0,seed=7917;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed;};let nativeEvents=[];
  m.u32(0x4a8d7c,manager);m.u32(0x4a8d84,hud);m.u32(n,0x494074);m.u32(n+4,nc);
  m.replace(0x456650,'hide animation',()=>{nativeEvents.push([m.u32(m.reg('EAX')),0]);return 0;});m.replace(0x456610,'show animation',()=>{nativeEvents.push([m.u32(m.reg('EAX')),1]);return 0;});
@@ -18,7 +18,11 @@ test('TH11 enemy state commands match original health, interrupts, drops, boss s
   for(let o=0x1594;o<0x1614;o+=16){state.writeInt32LE(123,o);state.writeInt32LE(321,o+4);state.writeUInt32LE(0,o+8);state.writeUInt32LE(0,o+12);}
   const cs=Buffer.from(state),ns=Buffer.from(state);cs.writeUInt32LE(e,0x1614);ns.writeUInt32LE(n,0x1614);for(const o of[0x160,0x1564,0x1578]){cs.writeUInt32LE(w+8,o);ns.writeUInt32LE(0x4a7948,o);}memory(c,p,SIZE).set(cs);m.write(q,ns);
   const world=Buffer.alloc(0x44);world.writeUInt16LE(random()&65535);world.writeFloatLE(.75,8);const rank=rankCases[example%rankCases.length],difficulty=example%7-1;world.writeInt32LE(rank,0x24);world.writeInt32LE(difficulty,0x28);memory(c,w,world.length).set(world);m.write(0x4c2f00,world.subarray(0,8));m.f32(0x4a7948,.75);m.i32(0x4a5744,rank);m.i32(0x4a5720,difficulty);
-  const commands=Buffer.alloc(72);for(let j=0;j<8;++j){commands.writeUInt32LE(example%3?b+OFF:0,j*4);m.u32(manager+0x1c+j*4,example%3?nb:0);}commands.writeUInt32LE(random(),32);m.u32(manager+0x3c,commands.readUInt32LE(32));for(let j=36;j<72;j+=4)commands.writeUInt32LE(random(),j);m.write(hud+0x4400,commands.subarray(36,68));m.u32(hud+0x43fc,commands.readUInt32LE(68));memory(c,cw,72).set(commands);new DataView(c.memory.buffer).setUint32(w+0x44,commands.readUInt32LE(0),true);
+  const commandInput={bosses:Array.from({length:8},()=>example%3?b+OFF:0),managerFlags:random(),healthSegments:Array.from({length:4},()=>({fractionBits:random(),type:random()|0})),remainingPhases:random()|0};
+  for(let j=0;j<8;++j){const candidatePointer=commandInput.bosses[j],nativePointer=candidatePointer?nb:0;assert.equal(c.enemy_command_fixture_set(f,0,j,candidatePointer),0,`op=0x${op.toString(16)} example=${example} field=bosses[${j}] seed`);m.u32(manager+0x1c+j*4,nativePointer);}
+  assert.equal(c.enemy_command_fixture_set(f,1,0,commandInput.managerFlags),0,`op=0x${op.toString(16)} example=${example} field=manager_flags seed`);m.u32(manager+0x3c,commandInput.managerFlags);
+  for(let j=0;j<4;++j){const segment=commandInput.healthSegments[j];assert.equal(c.enemy_command_fixture_set(f,2,j,segment.fractionBits),0,`op=0x${op.toString(16)} example=${example} field=health_segments[${j}].fraction seed`);assert.equal(c.enemy_command_fixture_set(f,3,j,segment.type),0,`op=0x${op.toString(16)} example=${example} field=health_segments[${j}].type seed`);m.u32(hud+0x4400+j*8,segment.fractionBits);m.i32(hud+0x4404+j*8,segment.type);}
+  assert.equal(c.enemy_command_fixture_set(f,4,0,commandInput.remainingPhases),0,`op=0x${op.toString(16)} example=${example} field=remaining_phases seed`);m.i32(hud+0x43fc,commandInput.remainingPhases);new DataView(c.memory.buffer).setUint32(w+0x44,commandInput.bosses[0],true);
   const ins=Buffer.alloc(128);ins.writeUInt16LE(op,4);ins.writeUInt16LE(128,6);ins[10]=255;ins[11]=8;let refs=0;
   for(let j=0;j<8;++j){if(floats.get(op)?.includes(j)){ins.writeFloatLE((random()/4294967296-.5)*100000,16+j*4);if(example%3===2){ins.writeFloatLE(j%2?-9998:-9985,16+j*4);refs|=1<<j;}}
    else {ins.writeUInt32LE(random(),16+j*4);if(example%3===2){ins.writeInt32LE(-10000,16+j*4);refs|=1<<j;}}
@@ -35,7 +39,11 @@ test('TH11 enemy state commands match original health, interrupts, drops, boss s
   if(!actual.equals(native)){let o=0;while(actual[o]===native[o])++o;o&=~3;assert.fail(`state 0x${op.toString(16)}/${example} offset 0x${o.toString(16)} cpp=${actual.readUInt32LE(o).toString(16)} native=${native.readUInt32LE(o).toString(16)}`);}
   assert.deepEqual(Buffer.from(memory(c,cc,4)),Buffer.from(m.bytes(nc,4)),`time ${op}/${example}`);assert.deepEqual(Buffer.from(memory(c,cc+8,4096)),Buffer.from(m.bytes(nc+8,4096)),`locals ${op}/${example}`);
   assert.deepEqual(Buffer.from(memory(c,w,12)),Buffer.from(Buffer.concat([Buffer.from(m.bytes(0x4c2f00,8)),Buffer.from(m.bytes(0x4a7948,4))])),`rng/rate ${op}/${example}`);
-  const output=Buffer.from(memory(c,cw,72));for(let j=0;j<8;++j){const ptr=m.u32(manager+0x1c+j*4);assert.equal(output.readUInt32LE(j*4),ptr===n?p:ptr===nb?b+OFF:0,`boss ${op}/${example}/${j}`);}assert.equal(output.readUInt32LE(32),m.u32(manager+0x3c));assert.deepEqual(output.subarray(36,68),Buffer.from(m.bytes(hud+0x4400,32)));assert.equal(output.readUInt32LE(68),m.u32(hud+0x43fc));
+  const readProjection=(field,index,label)=>{const context=`op=0x${op.toString(16)} example=${example} field=${label}`;assert.equal(c.enemy_command_fixture_get(f,field,index,projectionOut),0,`${context} readable`);return new DataView(c.memory.buffer).getUint32(projectionOut,true);};
+  for(let j=0;j<8;++j){const ptr=m.u32(manager+0x1c+j*4),expected=ptr===n?p:ptr===nb?b+OFF:0;assert.equal(readProjection(0,j,`bosses[${j}]`),expected,`op=0x${op.toString(16)} example=${example} field=bosses[${j}]`);}
+  assert.equal(readProjection(1,0,'manager_flags'),m.u32(manager+0x3c),`op=0x${op.toString(16)} example=${example} field=manager_flags`);
+  for(let j=0;j<4;++j){assert.equal(readProjection(2,j,`health_segments[${j}].fraction_bits`),m.u32(hud+0x4400+j*8),`op=0x${op.toString(16)} example=${example} field=health_segments[${j}].fraction`);assert.equal(readProjection(3,j,`health_segments[${j}].type`),m.u32(hud+0x4404+j*8),`op=0x${op.toString(16)} example=${example} field=health_segments[${j}].type`);}
+  assert.equal(readProjection(4,0,'remaining_phases'),m.u32(hud+0x43fc),`op=0x${op.toString(16)} example=${example} field=remaining_phases`);
   const ev=Buffer.from(memory(c,events,516)),actualEvents=Array.from({length:ev.readUInt32LE(0)},(_,j)=>[ev.readUInt32LE(4+j*8),ev.readUInt32LE(8+j*8)]);assert.deepEqual(actualEvents,nativeEvents,`visibility ${op}/${example}`);eventChecks+=actualEvents.length;++checks;
  }
  // Native replay-section setter keeps elapsed frames when the section is
@@ -52,5 +60,5 @@ test('TH11 enemy state commands match original health, interrupts, drops, boss s
  }
  ops.push(0x158);
  report('enemy-state-commands',{passed:true,checks,eventChecks,opcodes:ops,scope:'full enemy state, local variables, RNG, timers, replay section transitions, health HUD, boss registry and animation visibility callback order; callback rendering is tested separately'});
- }finally{c.release(cc);c.release(ci);c.enemy_fixture_delete(f);m.close();}
+ }finally{c.release(projectionOut);c.release(cc);c.release(ci);c.enemy_fixture_delete(f);m.close();}
 });

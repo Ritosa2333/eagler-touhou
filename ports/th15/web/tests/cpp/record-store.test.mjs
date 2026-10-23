@@ -1,7 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from 'node:fs';import{resolve}from 'node:path';import{core,oracle,memory,string,root,report}from './helpers.mjs';
+import{originalRecordFixture}from'./score-fixture.mjs';
 test('TH15 named persisted records preserve every file byte and original initialization, clear, unlock and practice writes',async()=>{
- const c=await core(),m=await oracle(),f=c.records_create(),manager=m.allocate(0x60000),scene=m.allocate(0x100),graphics=m.allocate(0x100),anm=m.allocate(0x40),wave=m.allocate(0x20),dummy=m.allocate(0x100),hud=m.allocate(0x2d4),bomb=m.allocate(0x30),data=c.allocate(0x33b4c),out=c.allocate(256);let cases=0,checks=0;
- const nativeDefaults=readFileSync(resolve(root,'artifacts/cpp/analysis/score/original-saved-state.bin')),fileDefaults=readFileSync(resolve(root,'artifacts/cpp/analysis/score/original-default-scoreth15.dat'));
+ const recordFixture=await originalRecordFixture(),c=await core(),m=await oracle(),f=c.records_create(),manager=m.allocate(0x60000),scene=m.allocate(0x100),graphics=m.allocate(0x100),anm=m.allocate(0x40),wave=m.allocate(0x20),dummy=m.allocate(0x100),hud=m.allocate(0x2d4),bomb=m.allocate(0x30),data=c.allocate(0x33b4c),out=c.allocate(256);let cases=0,checks=0;
+ const nativeDefaults=recordFixture.savedState,fileDefaults=recordFixture.defaultRecords;
  const state=()=>Buffer.concat([Buffer.from(memory(c,c.records_blocks(f,0),5*0xa4a0)),Buffer.from(memory(c,c.records_blocks(f,1),0x42c))]);
  const install=bytes=>{memory(c,data,bytes.length).set(bytes);assert.equal(c.records_import_blocks(f,data),1);m.write(manager+8,bytes);assert.deepEqual(state(),bytes,'named file round trip');checks++;};
  const put=(p,offset,address,value)=>{new DataView(c.memory.buffer).setUint32(p+offset,value>>>0,true);m.u32(address,value>>>0);};

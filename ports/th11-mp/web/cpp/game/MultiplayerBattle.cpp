@@ -41,7 +41,9 @@ bool MultiplayerPilot::tick(){
         auto& s=player->motion.state;s.x=std::clamp(s.x+ghost_dx,-23552,23552);s.y=std::clamp(s.y+ghost_dy,4096,55296);s.position={float(s.x)/128,float(s.y)/128,0};
         return player->motion.body.update(world.animations)>=0;
     }
-    player->input=input;player->spell={world.spell_flags,world.spell_elapsed,world.spell_bonus};
+    player->input=input;player->input.movement.trace_seat=seat;
+    player->input.movement.trace_sensitivity_known=seat==world.mp_options.local_seat;
+    player->spell={world.spell_flags,world.spell_elapsed,world.spell_bonus};
     const i32 before=world.mp_rank;economy.rank=before;
     EffectOwner effect(world,seat);
     if(!player->update())return false;

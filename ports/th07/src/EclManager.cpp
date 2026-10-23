@@ -1303,7 +1303,7 @@ restart:
             case ECL_SUB_RET:
                 if (enemy->noStackRet)
                 {
-                    Supervisor::DebugPrint("error : no Stack Ret\n");
+                    Supervisor::ErrorPrint("error : no Stack Ret\n");
                 }
                 enemy->stackDepth--;
                 if (enemy->currentContext.isPeriodicSub)
@@ -1320,7 +1320,7 @@ restart:
             case ECL_SET_SUB_ANM:
                 if (GET_INT_VALUE(enemy, 0) >= ARRAY_SIZE_SIGNED(enemy->vms))
                 {
-                    Supervisor::DebugPrint("error : sub anim overflow\n");
+                    Supervisor::ErrorPrint("error : sub anim overflow\n");
                 }
                 if (GET_INT_VALUE(enemy, 1) >= 0)
                 {

@@ -209,7 +209,7 @@ class GlesGraphics : public ZunGraphics
         {
             char log[512];
             glGetShaderInfoLog(shader, 512, nullptr, log);
-            Supervisor::DebugPrint("shader compile error: %s\n", log);
+            Supervisor::ErrorPrint("shader compile error: %s\n", log);
             return 0;
         }
         return shader;

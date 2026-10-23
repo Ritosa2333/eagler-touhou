@@ -1,10 +1,14 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';import {resolve} from 'node:path';import {gzipSync,gunzipSync} from 'node:zlib';
+import test from 'node:test';import assert from 'node:assert/strict';import {existsSync,readFileSync,writeFileSync,mkdirSync} from 'node:fs';import {resolve} from 'node:path';import {gzipSync,gunzipSync} from 'node:zlib';
 import {core,oracle,memory,root,report,sha,target} from './helpers.mjs';import {worldOracle} from './world-oracle.mjs';
 const captureTools=process.env.TH11_VERIFIER_CAPTURE?await import('../../../tools/replay-verifier/observation.mjs'):null;
+assert.ok(process.env.TH11_WORLD_REPLAYS,'TH11_WORLD_REPLAYS must select all or a comma-separated list of demo indexes');
+if(process.env.TH11_WORLD_REPLAYS!=='all')for(const item of process.env.TH11_WORLD_REPLAYS.split(','))
+ assert.ok(/^[0-3]$/.test(item),`Invalid TH11_WORLD_REPLAYS demo index: ${item}`);
+if(process.env.TH11_WORLD_FILE)assert.ok(existsSync(process.env.TH11_WORLD_FILE),`TH11_WORLD_FILE does not exist: ${process.env.TH11_WORLD_FILE}`);
 
 // Opt-in: original x86 world emulation takes much longer than component tests.
 // No game callbacks, damage, enemies or collision are skipped on either side.
-test('TH11 whole-world original demos retain native economy, movement and RNG', {skip:!process.env.TH11_WORLD_REPLAYS},async()=>{
+test('TH11 whole-world original demos retain native economy, movement and RNG',async()=>{
  const campaign=process.env.TH11_WORLD_CAMPAIGN==='1',countInstructions=process.env.TH11_ORACLE_COUNT_INSTRUCTIONS!=='0',drawClocks=process.env.TH11_WORLD_DRAW_CLOCKS!=='0';
  const demos=process.env.TH11_WORLD_REPLAYS==='all'?[0,1,2,3]:process.env.TH11_WORLD_REPLAYS.split(',').map(Number);
  const globals=[0x4a56e4,0x4a56e8,0x4a56f0,0x4a56f4,0x4a5718,0x4a571c,0x4a5720,0x4a5744,0x4a5748,0x4a574c,0x4a5754,0x4a576c];
@@ -97,6 +101,10 @@ test('TH11 whole-world original demos retain native economy, movement and RNG', 
     }
    }
    if(capture){const complete=finalState.phase===4&&(!campaign||finalState.stage===(selected===7?7:6));for(const stream of Object.values(capture))stream.finish({complete,reason:complete?'replay-complete':'capture-incomplete',evidence:{checks,selection:options,finalState,replaySha256:sha(raw)}});assert.ok(complete,'verifier requires terminal lifecycle and full route');}
+   if(campaign)assert.ok(finalState.phase===4&&finalState.stage===(selected===7?7:6),
+    'Campaign comparison must reach the declared terminal lifecycle and final stage');
+   else assert.equal(checks,b.readUInt32LE(offset+4)-1,
+    'Demo comparison must cover every recorded gameplay frame before its terminal marker');
    const name=campaign?(selected===7?'world-replay-external-extra':'world-replay-external-campaign'):external?`world-replay-external-stage${selected}`:`world-replay-demo${demo}`;
    report(name+(nativeResumeOnly?'-tail':campaign&&finalState.phase===1?'-partial':''),{passed:true,countInstructions,stageDrawClocks:drawClocks,completed:!nativeResumeOnly&&finalState.phase!==1,startFrame,nativeResumeOnly,nativeCheckpoint,replaySha256:sha(raw),checks,frames,activeTicks,firstInactiveFrame,finalState,selection:options,scope:'Native scheduler and C++ battle run original inputs. Each tick checks 12 economy fields, complete player movement, script RNG, active projectile count and selected enemy/item fields. Active ticks are distinguished from frozen post-game states. Host resource, GPU and audio boundaries are replaced. Stage draw timing executes original background/foreground clock instructions; campaign mode additionally runs native cross-stage teardown/construction. Full rendered pixels and shutdown are separate checks. Native-only checkpoint warmup checks only the reported tail, not the earlier C++ warmup.'});
    if(render)c.comp_delete(render);

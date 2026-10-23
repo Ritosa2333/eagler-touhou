@@ -132,6 +132,8 @@ static_assert(sizeof(GameConfiguration) == 0x38);
 struct Supervisor
 {
     static void DebugPrint(const char *fmt, ...);
+    static void WarnPrint(const char *fmt, ...);
+    static void ErrorPrint(const char *fmt, ...);
 
     static ZunResult RegisterChain();
 

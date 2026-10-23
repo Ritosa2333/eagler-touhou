@@ -39,6 +39,7 @@ set(SOURCES
     src/Controller.cpp
     src/EclManager.cpp
     src/RuntimeExtension.cpp
+    src/RuntimeObservation.cpp
     src/EffectManager.cpp
     src/Ending.cpp
     src/EnemyEclInstr.cpp
@@ -412,7 +413,9 @@ if(USE_VENDORED_SDL)
     set(SDLTTF_HARFBUZZ OFF)
 
     add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
-    add_subdirectory(vendored/SDL_image EXCLUDE_FROM_ALL)
+    include("${EAGLER_COMMON_ROOT}/cmake/EaglerStageSdlImage.cmake")
+    eagler_stage_sdl_image(TH07_SDLIMAGE_STAGED_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/vendored/SDL_image")
+    add_subdirectory("${TH07_SDLIMAGE_STAGED_SOURCE}" "${CMAKE_CURRENT_BINARY_DIR}/vendored/SDL_image" EXCLUDE_FROM_ALL)
     add_subdirectory(vendored/SDL_ttf EXCLUDE_FROM_ALL)
 endif()
 

@@ -21,6 +21,7 @@
 #include "SoundPlayer.hpp"
 #include "Stage.hpp"
 #include "Touch.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #include "ZunMath.hpp"
 #include "dxutil.hpp"
 #include "utils.hpp"
@@ -2533,6 +2534,12 @@ void Player::Die()
 
 i32 Player::HandlePlayerInputs()
 {
+    const float traceBeforeX = this->pos.x;
+    const float traceBeforeY = this->pos.y;
+    float traceTargetX = traceBeforeX;
+    float traceTargetY = traceBeforeY;
+    u32 traceMode = eagler::input::TouchMotionTraceBank::mode_neutral;
+    bool traceSensitivityUnknown = false;
     f32 angleStep;
     f32 targetOffsetX;
     f32 targetOffsetY;
@@ -2548,6 +2555,7 @@ i32 Player::HandlePlayerInputs()
     f32 joystickY;
     bool touchFocus;
     bool sampledReplayTouch = false;
+    bool sampledNetplayJoystick = false;
     bool touchUnlimited = false;
     const bool replayPlayback = g_GameManager.replay != 0;
 
@@ -2679,6 +2687,10 @@ i32 Player::HandlePlayerInputs()
         const f32 maxSpeed = this->isFocus ? this->shooterData->speedFocus : this->shooterData->speed;
         horizontalSpeed = joystickX * maxSpeed;
         verticalSpeed = joystickY * maxSpeed;
+        traceMode = eagler::input::TouchMotionTraceBank::mode_limited;
+        traceTargetX = traceBeforeX + horizontalSpeed * this->horizontalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+        traceTargetY = traceBeforeY + verticalSpeed * this->verticalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+        traceSensitivityUnknown = true;
         this->playerDirection = MOVEMENT_NONE;
     }
 #ifdef TH_ENABLE_NETPLAY
@@ -2688,12 +2700,16 @@ i32 Player::HandlePlayerInputs()
         const f32 maxSpeed = this->isFocus ? this->shooterData->speedFocus : this->shooterData->speed;
         horizontalSpeed = joystickX * maxSpeed;
         verticalSpeed = joystickY * maxSpeed;
+        traceMode = eagler::input::TouchMotionTraceBank::mode_limited;
+        traceTargetX = traceBeforeX + horizontalSpeed * this->horizontalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+        traceTargetY = traceBeforeY + verticalSpeed * this->verticalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+        traceSensitivityUnknown = true;
         this->playerDirection = MOVEMENT_NONE;
     }
 #endif
     else if (!replayPlayback &&
 #ifdef TH_ENABLE_NETPLAY
-             (Netplay::Input::ReplayJoystick(this->initParam, &joystickX, &joystickY) ||
+             ((sampledNetplayJoystick = Netplay::Input::ReplayJoystick(this->initParam, &joystickX, &joystickY)) ||
 #endif
               (
 #ifdef TH_ENABLE_NETPLAY
@@ -2715,6 +2731,10 @@ i32 Player::HandlePlayerInputs()
         const f32 maxSpeed = this->isFocus ? this->shooterData->speedFocus : this->shooterData->speed;
         horizontalSpeed = joystickX * maxSpeed;
         verticalSpeed = joystickY * maxSpeed;
+        traceMode = eagler::input::TouchMotionTraceBank::mode_limited;
+        traceTargetX = traceBeforeX + horizontalSpeed * this->horizontalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+        traceTargetY = traceBeforeY + verticalSpeed * this->verticalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+        traceSensitivityUnknown = sampledNetplayJoystick;
         this->playerDirection = MOVEMENT_NONE;
     }
     else
@@ -2793,6 +2813,11 @@ i32 Player::HandlePlayerInputs()
 
         f32 targetX = this->pos.x + reqGameDx;
         f32 targetY = this->pos.y + reqGameDy;
+        traceMode = touchUnlimited ? eagler::input::TouchMotionTraceBank::mode_unlimited
+                                   : eagler::input::TouchMotionTraceBank::mode_limited;
+        traceTargetX = targetX;
+        traceTargetY = targetY;
+        traceSensitivityUnknown = sampledReplayTouch || sampledNetplayTouch;
 
         if (targetX < minX)
         {
@@ -3005,6 +3030,33 @@ i32 Player::HandlePlayerInputs()
         this->pos.y =
             g_GameManager.playerMovementAreaTopLeftPos.y + g_GameManager.playerMovementAreaSize.y;
     }
+
+    eagler::input::TouchMotionTraceBank::Sample trace{};
+    trace.frame = static_cast<u32>(g_GameManager.framesThisStage);
+    trace.mode = traceMode;
+    trace.flags = eagler::input::TouchMotionTraceBank::flag_gameplay_tick |
+                  (this->isFocus ? eagler::input::TouchMotionTraceBank::flag_focused : 0u) |
+                  (traceSensitivityUnknown ? eagler::input::TouchMotionTraceBank::flag_sensitivity_unknown : 0u);
+    trace.before_x = traceBeforeX;
+    trace.before_y = traceBeforeY;
+    trace.target_x = traceMode == eagler::input::TouchMotionTraceBank::mode_neutral ? traceBeforeX : traceTargetX;
+    trace.target_y = traceMode == eagler::input::TouchMotionTraceBank::mode_neutral ? traceBeforeY : traceTargetY;
+    trace.after_x = this->pos.x;
+    trace.after_y = this->pos.y;
+    trace.speed = this->isFocus ? this->shooterData->speedFocus : this->shooterData->speed;
+    trace.scale_x = this->horizontalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+    trace.scale_y = this->verticalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
+    trace.sensitivity = traceSensitivityUnknown ? 0.0f : EaglerOptions::TouchSensitivity();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    trace.seat = MultiplayerGameplay::IsMultiplayer() ? this->initParam : 0u;
+#endif
+    trace.execution_kind = replayPlayback ? eagler::input::TouchMotionTraceBank::replay
+#ifdef TH_ENABLE_NETPLAY
+        : Netplay::SideEffects::IsResimulation() ? eagler::input::TouchMotionTraceBank::resimulation
+#endif
+        : speculative ? eagler::input::TouchMotionTraceBank::speculative
+                       : eagler::input::TouchMotionTraceBank::forward;
+    eagler::input::GlobalTouchMotionTraceBank().append(trace);
 
     this->hitboxTopLeft = this->pos - this->hitboxSize;
     this->hitboxBottomRight = this->pos + this->hitboxSize;

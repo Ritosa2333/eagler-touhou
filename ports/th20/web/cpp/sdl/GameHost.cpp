@@ -10,14 +10,20 @@
 #include "../../../src/platform_services/services.hpp"
 #include "../../../src/platform_window/platform_window.hpp"
 #include "../../../src/title_system/title.hpp"
+#include "../../../src/gameplay/gameplay.hpp"
+#include "../../../src/player_entity/owner.hpp"
+#include "../../../src/pause_system/pause.hpp"
+#include "../../../src/stone_menu/stone.hpp"
 #include "../platform/Files.hpp"
 #include "../platform/Time.hpp"
 #include "../platform/Audio.hpp"
 #include "../platform/Graphics.hpp"
 #include "HitboxDisplay.hpp"
+#include <eagler/input/TouchMotionTrace.hpp>
 #include <cstring>
 #include <exception>
 #include <memory>
+#include <algorithm>
 
 namespace th20::source::platform_window {
 // Title language follows the launcher configure language, not the OS locale.
@@ -32,10 +38,6 @@ void shutdown_input_host();
 namespace pe = th20::source::program_entry;
 namespace u = th20::source::program_entry::unrecovered;
 
-namespace {
-// Startup canary: proves which wasm build the page actually loaded.
-struct BuildStamp { BuildStamp() { std::fprintf(stderr, "th20 wasm build: exc-diag-3\n"); } } build_stamp;
-}
 using th20::source::program_entry::FunctionController;
 using th20::source::program_entry::SpriteController;
 
@@ -130,7 +132,6 @@ std::uint32_t game_open_impl(std::uint32_t chinese) {
     w.flags |= 1u;
     owned->open = true;
     session = std::move(owned);
-    std::fprintf(stderr, "sdl_game_open: ok\n");
     return 1;
 }
 } // namespace
@@ -175,11 +176,48 @@ __attribute__((export_name("sdl_game_status"))) const std::int32_t* sdl_game_sta
     out[5] = out[6] = 0;                                  // touch context (InputHost owns gestures)
     out[7] = title ? title->cursor.current : -1;          // title list cursor
     out[8] = title ? title->cursor108.current : -1;       // title page cursor
-    out[9] = std::int32_t(th20::source::input::shared_state().slots[0].current);
+    const auto* buttons = th20::source::input::button_slot(0);
+    out[9] = buttons ? std::int32_t(buttons->current) : -1;
     return out;
 }
 __attribute__((export_name("sdl_resource_stats"))) const std::uint32_t* sdl_resource_stats() {
     static std::uint32_t out[4]{};
     return out; // file layer keeps no decoded cache; counters are honestly zero
+}
+__attribute__((export_name("th20_ui_observation_v1"))) const std::int32_t* th20_ui_observation_v1() {
+    using namespace th20::source;
+    // i32 layout: version, validMask, pauseState, pauseSubstate, pauseCursor,
+    // retryConfirmInputReady, stoneState, stoneVisible, stoneCategory.
+    // validMask bit 0 covers words 2..5; bit 1 covers words 6..8.
+    static std::int32_t out[9];
+    std::fill(out,out+9,-1);
+    out[0]=1;out[1]=0;
+    if(const auto* paused=pause::controller()){
+        out[1]|=1;out[2]=paused->state;out[3]=paused->substate;out[4]=paused->cursor.current;
+        out[5]=paused->state==1&&paused->substate==7&&paused->age.current>=30.f?1:0;
+    }
+    if(const auto* stones=stone_menu::controller){
+        out[1]|=2;out[6]=stones->state;out[7]=stones->visible;out[8]=stones->category.current;
+    }
+    return out;
+}
+__attribute__((export_name("th20_touch_motion_trace_v2"))) const std::uint32_t* th20_touch_motion_trace_v2(
+    std::uint32_t seat, std::uint32_t execution_kind) {
+    return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);
+}
+__attribute__((export_name("th20_native_observation_v1"))) const std::uint32_t* th20_native_observation_v1() {
+    using namespace th20::source;
+    static std::uint32_t out[12];std::fill(out,out+12,~0u);
+    out[0]=1;out[1]=1;out[2]=title::controller()?0:6;out[8]=out[9]=0x7fc00000u;
+    if(const auto* buttons=input::button_slot(0)){out[1]|=2;out[3]=buttons->current;}
+    if(const auto* game=gameplay::controller){
+        const auto* paused=pause::controller();const int state=paused?paused->state:0;
+        out[1]|=0x20;out[6]=state==1;out[2]=(game->game_flags&4u)?7:out[6]?2:state>=2?3:1;
+        if(game->frame_timer.current>=0){out[1]|=0x18;out[4]=out[5]=static_cast<std::uint32_t>(game->frame_timer.current);}
+        if(const auto* player=static_cast<const player_entity::Player*>(game_session::context(0).objects_04[0])){
+            out[1]|=4;std::memcpy(out+8,&player->position_614.x,4);std::memcpy(out+9,&player->position_614.y,4);
+        }
+        out[1]|=0x100;out[11]=0;
+    }return out;
 }
 }

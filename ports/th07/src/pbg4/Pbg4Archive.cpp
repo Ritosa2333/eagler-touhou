@@ -113,7 +113,7 @@ u8 *Pbg4Archive::ReadDecompressEntry(const char *filename, u8 *buf)
     }
     return dstBuf;
 err:
-    Supervisor::DebugPrint("info : %s error\n", this->filename);
+    Supervisor::ErrorPrint("error : %s archive member read failed\n", this->filename);
     if (srcBuf)
     {
         free(srcBuf);
@@ -254,7 +254,7 @@ err:
         decompressedData = NULL;
     }
     SAFE_DELETE(this->fileAbstraction);
-    Supervisor::DebugPrint("ファイル %s のオープン中にエラーが発生しました\n", path);
+    Supervisor::ErrorPrint("ファイル %s のオープン中にエラーが発生しました\n", path);
     return false;
 }
 

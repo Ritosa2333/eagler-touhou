@@ -1,0 +1,1135 @@
+{
+  "schema": "eagler-touhou/native-oracle-suite/1",
+  "owner": "th11",
+  "game": "th11",
+  "variant": "normal",
+  "discovery": {
+    "directory": "tests/cpp",
+    "pattern": "*.test.mjs"
+  },
+  "baseInputs": [],
+  "groups": [
+    {
+      "id": "archive-verification-assets-dat-native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "receipt",
+          "receiptId": "accepted-assets",
+          "inputKind": "directory",
+          "expectedPath": "reference/assets"
+        },
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        {
+          "id": "archive-ciphers",
+          "kind": "receipt",
+          "receiptId": "archive-ciphers",
+          "inputKind": "file",
+          "expectedPath": "reference/archive-ciphers.json"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-dat",
+      "requiredInputs": [
+        {
+          "id": "accepted-assets",
+          "kind": "receipt",
+          "receiptId": "accepted-assets",
+          "inputKind": "directory",
+          "expectedPath": "reference/assets"
+        },
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-dat-native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "receipt",
+          "receiptId": "accepted-assets",
+          "inputKind": "directory",
+          "expectedPath": "reference/assets"
+        },
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "assets-dat-native-world-replays",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "receipt",
+          "receiptId": "accepted-assets",
+          "inputKind": "directory",
+          "expectedPath": "reference/assets"
+        },
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        }
+      ],
+      "environment": {
+        "TH11_WORLD_REPLAYS": "all"
+      }
+    },
+    {
+      "id": "assets-native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "accepted-assets",
+          "kind": "receipt",
+          "receiptId": "accepted-assets",
+          "inputKind": "directory",
+          "expectedPath": "reference/assets"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "campaign-recording-dat",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        {
+          "id": "supplied-campaign-replay",
+          "kind": "receipt",
+          "receiptId": "supplied-campaign-replay",
+          "inputKind": "file",
+          "pathEnv": "TH11_EXTERNAL_REPLAY"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "campaign-soak-dat",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        }
+      ],
+      "environment": {
+        "TH11_CAMPAIGN_SOAK": "all"
+      }
+    },
+    {
+      "id": "core-equivalence-dat-replays",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        {
+          "id": "accepted-replay-library",
+          "kind": "receipt",
+          "receiptId": "accepted-replay-library",
+          "inputKind": "directory",
+          "expectedPath": "reference/replays"
+        },
+        {
+          "id": "baseline-core",
+          "kind": "receipt",
+          "receiptId": "baseline-core",
+          "inputKind": "file",
+          "pathEnv": "TH11_EQUIVALENCE_CORE",
+          "referenceIdentity": {
+            "kind": "accepted-reference-file"
+          },
+          "distinctFromCandidate": "artifacts/cpp/game-core-test.wasm"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "dat",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "dat-external-campaign",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        {
+          "id": "supplied-campaign-replay",
+          "kind": "receipt",
+          "receiptId": "supplied-campaign-replay",
+          "inputKind": "file",
+          "pathEnv": "TH11_EXTERNAL_REPLAY"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "dat-native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "dat-replays-world-prefix-equivalence",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        {
+          "id": "accepted-replay-library",
+          "kind": "receipt",
+          "receiptId": "accepted-replay-library",
+          "inputKind": "directory",
+          "expectedPath": "reference/replays"
+        },
+        {
+          "id": "native-prefix-state",
+          "kind": "receipt",
+          "receiptId": "native-prefix-state",
+          "inputKind": "directory",
+          "pathEnv": "TH11_NATIVE_PREFIX"
+        },
+        {
+          "id": "prefix-baseline-core",
+          "kind": "receipt",
+          "receiptId": "prefix-baseline-core",
+          "inputKind": "file",
+          "pathEnv": "TH11_PREFIX_CORE",
+          "referenceIdentity": {
+            "kind": "receipt-json-field",
+            "receiptId": "native-prefix-state",
+            "file": "state.json",
+            "jsonPath": "identity.coreSha256"
+          },
+          "distinctFromCandidate": "artifacts/cpp/game-core-test.wasm"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "scene-schedule-internal-dat",
+      "requiredInputs": [
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "scene-schedule-original",
+      "requiredInputs": [
+        {
+          "id": "accepted-scene-schedule",
+          "kind": "receipt",
+          "receiptId": "accepted-scene-schedule",
+          "inputKind": "file",
+          "pathEnv": "TH11_SCENE_SCHEDULE_REFERENCE"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "text-raster-native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "candidate-glyph-cache-fonts",
+          "kind": "receipt",
+          "receiptId": "candidate-glyph-cache-fonts",
+          "inputKind": "directory",
+          "pathEnv": "TH11_TEST_FONT_DIRECTORY"
+        },
+        {
+          "id": "gdi-host-library",
+          "kind": "receipt",
+          "receiptId": "gdi-host-library",
+          "inputKind": "file"
+        },
+        {
+          "id": "gdi-source-font",
+          "kind": "receipt",
+          "receiptId": "gdi-source-font",
+          "inputKind": "file"
+        }
+      ],
+      "environment": {}
+    },
+    {
+      "id": "native",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        }
+      ],
+      "environment": {}
+    }
+  ],
+  "tests": [
+    {
+      "file": "anm-geometry.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-interpreter.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-projection.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-renderer-effects.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-renderer.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "anm-resource.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "anm-scripts.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "archive.test.mjs",
+      "role": "candidate",
+      "group": "archive-verification-assets-dat-native"
+    },
+    {
+      "file": "ascii-text.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "battle-integration.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "bomb-controller.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "bullet-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-conversion.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-launch.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-manager.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "bullet-state.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "campaign-recording.test.mjs",
+      "role": "candidate",
+      "group": "campaign-recording-dat"
+    },
+    {
+      "file": "campaign-soak.test.mjs",
+      "role": "candidate",
+      "group": "campaign-soak-dat"
+    },
+    {
+      "file": "cancellation-integration.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "communication.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "config.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "controller-input.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "converted-laser-integration.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "converted-laser.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "core-equivalence.test.mjs",
+      "role": "candidate",
+      "group": "core-equivalence-dat-replays"
+    },
+    {
+      "file": "damage-area.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "damage-protection.test.mjs",
+      "role": "candidate",
+      "group": "dat-native"
+    },
+    {
+      "file": "dialogue.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "ecl-context.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ecl-control.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ecl-interpreter.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "ecl-resource.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "ending-session.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "ending.test.mjs",
+      "role": "candidate",
+      "group": "assets-dat-native"
+    },
+    {
+      "file": "enemy-animations.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-callbacks-bullets.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-callbacks.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-commands.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-emitter-commands.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-frame.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-globals.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-manager.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-movement.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-phase.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-script.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "enemy-state-commands.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "external-campaign.test.mjs",
+      "role": "candidate",
+      "group": "dat-external-campaign"
+    },
+    {
+      "file": "fog-interpolation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "frame-statistics.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "game-input.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "game-resources.test.mjs",
+      "role": "candidate",
+      "group": "assets-dat"
+    },
+    {
+      "file": "game-session.test.mjs",
+      "role": "candidate",
+      "group": "assets-dat"
+    },
+    {
+      "file": "graphics-math.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "graphics-pipeline.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "hud-notices.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "hud-score.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "hud-text.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "hud.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "image-resample.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "interpolation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "item-manager.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "item-rendering.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "item-rewards.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "keyboard-input.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-cut.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-infinite.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-line.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-manager.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-probe-cancel.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "laser-state.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "menu-cursor.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "movement.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-end.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "pause-menu.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "player-collision.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "player-frame.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-initialization.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-laser-collision.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "player-motion.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-options.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "player-rendering.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "recorded-session.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "rectangle-cancellation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "replay-codec.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "replay-entry.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "replay-recorder.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "replay.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "restart-session.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "rng.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "scene-camera.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "scene-compositor.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "scene-schedule-original.test.mjs",
+      "role": "candidate",
+      "group": "scene-schedule-original"
+    },
+    {
+      "file": "scene-schedule.test.mjs",
+      "role": "candidate",
+      "group": "scene-schedule-internal-dat"
+    },
+    {
+      "file": "score-file.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "score-popups.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "score-ranking.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-deformation.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-fade.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "screen-shake.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "session-replays.test.mjs",
+      "role": "candidate",
+      "group": "assets-dat"
+    },
+    {
+      "file": "session-resources.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "shot-damage.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "shot-manager.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "shot-resource.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "sound-effects.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "spell-animations.test.mjs",
+      "role": "candidate",
+      "group": "dat-native"
+    },
+    {
+      "file": "spell-controller.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "spell-overlay.test.mjs",
+      "role": "candidate",
+      "group": "dat-native"
+    },
+    {
+      "file": "spell-timing.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "stage-completion.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "stage-culling.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-draw.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-ecl-integration.test.mjs",
+      "role": "candidate",
+      "group": "assets-dat-native"
+    },
+    {
+      "file": "stage-integration.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "stage-passes.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-resources.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "stage-runtime.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-script.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "stage-transition.test.mjs",
+      "role": "candidate",
+      "group": "dat"
+    },
+    {
+      "file": "text-raster.test.mjs",
+      "role": "candidate",
+      "group": "text-raster-native"
+    },
+    {
+      "file": "texture-pixels.test.mjs",
+      "role": "candidate",
+      "group": "native"
+    },
+    {
+      "file": "title-selection.test.mjs",
+      "role": "candidate",
+      "group": "assets-native"
+    },
+    {
+      "file": "world-prefix-equivalence.test.mjs",
+      "role": "candidate",
+      "group": "dat-replays-world-prefix-equivalence"
+    },
+    {
+      "file": "world-replays.test.mjs",
+      "role": "candidate",
+      "group": "assets-dat-native-world-replays"
+    }
+  ],
+  "maintenance": [
+    {
+      "id": "archive-collect",
+      "kind": "test",
+      "file": "archive-collect.mjs",
+      "outputRoot": "artifacts/validation/oracle-maintenance",
+      "requiredInputs": [
+        {
+          "id": "original-executable",
+          "kind": "target-executable"
+        },
+        {
+          "id": "original-native-runtime",
+          "kind": "receipt",
+          "receiptId": "native-runtime",
+          "inputKind": "directory",
+          "expectedPath": "reference/native"
+        },
+        {
+          "id": "original-data-archive",
+          "kind": "file",
+          "path": "../[th11] 东方地灵殿 (汉化版+日文版)/th11.dat",
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        {
+          "id": "archive-ciphers",
+          "kind": "receipt",
+          "receiptId": "archive-ciphers",
+          "inputKind": "file",
+          "expectedPath": "reference/archive-ciphers.json"
+        }
+      ]
+    }
+  ],
+  "nativeEnvironment": {
+    "profile": "full-native/v1",
+    "clearInherited": [
+      "EAGLER_COMMON_ROOT",
+      "EAGLER_MAINTENANCE_OUTPUT",
+      "EAGLER_ORACLE_ROOT",
+      "NODE_OPTIONS",
+      "NODE_TEST_CONTEXT",
+      "TH11_ANM_FILE",
+      "TH11_ANM_FRAMES",
+      "TH11_ANM_SCRIPT",
+      "TH11_BOMB_SELECTIONS",
+      "TH11_CAMPAIGN_SOAK",
+      "TH11_CORE_TEST_FILE",
+      "TH11_CULL_DEBUG",
+      "TH11_DIALOGUE_SHOT",
+      "TH11_DIALOGUE_STAGE",
+      "TH11_EQUIVALENCE_CORE",
+      "TH11_EXTERNAL_REPLAY",
+      "TH11_NATIVE_PREFIX",
+      "TH11_ORACLE_COUNT_INSTRUCTIONS",
+      "TH11_ORACLE_TRACE",
+      "TH11_PLAYER_FILE",
+      "TH11_PLAYER_RATE",
+      "TH11_SCENE_SCHEDULE_REFERENCE",
+      "TH11_TEST_FONT_DIRECTORY",
+      "TH11_PREFIX_CORE",
+      "TH11_SHOT_FILE",
+      "TH11_SHOT_GROUP",
+      "TH11_STAGE_NUMBERS",
+      "TH11_VERIFIER_CAPTURE",
+      "TH11_VERIFIER_CASE",
+      "TH11_WORLD_CAMPAIGN",
+      "TH11_WORLD_CHECKPOINT",
+      "TH11_WORLD_CHECKPOINT_FRAME",
+      "TH11_WORLD_DIAGNOSE",
+      "TH11_WORLD_DRAW_CLOCKS",
+      "TH11_WORLD_FILE",
+      "TH11_WORLD_LIMIT",
+      "TH11_WORLD_NATIVE_RESUME",
+      "TH11_WORLD_REPLAYS",
+      "TH11_WORLD_RESUME",
+      "TH11_WORLD_STAGE",
+      "TH11_WORLD_TRACE"
+    ],
+    "defaults": {
+      "TH11_ORACLE_COUNT_INSTRUCTIONS": "1",
+      "TH11_ORACLE_TRACE": null,
+      "TH11_WORLD_DRAW_CLOCKS": "1",
+      "TH11_ANM_FILE": null,
+      "TH11_ANM_FRAMES": null,
+      "TH11_ANM_SCRIPT": null,
+      "TH11_BOMB_SELECTIONS": null,
+      "TH11_CAMPAIGN_SOAK": null,
+      "TH11_CORE_TEST_FILE": null,
+      "TH11_CULL_DEBUG": null,
+      "TH11_DIALOGUE_SHOT": null,
+      "TH11_DIALOGUE_STAGE": null,
+      "TH11_EQUIVALENCE_CORE": null,
+      "TH11_EXTERNAL_REPLAY": null,
+      "TH11_NATIVE_PREFIX": null,
+      "TH11_PLAYER_FILE": null,
+      "TH11_PLAYER_RATE": null,
+      "TH11_SCENE_SCHEDULE_REFERENCE": null,
+      "TH11_TEST_FONT_DIRECTORY": null,
+      "TH11_PREFIX_CORE": null,
+      "TH11_SHOT_FILE": null,
+      "TH11_SHOT_GROUP": null,
+      "TH11_STAGE_NUMBERS": null,
+      "TH11_VERIFIER_CAPTURE": null,
+      "TH11_VERIFIER_CASE": null,
+      "TH11_WORLD_CAMPAIGN": null,
+      "TH11_WORLD_CHECKPOINT": null,
+      "TH11_WORLD_CHECKPOINT_FRAME": null,
+      "TH11_WORLD_DIAGNOSE": null,
+      "TH11_WORLD_FILE": null,
+      "TH11_WORLD_LIMIT": null,
+      "TH11_WORLD_NATIVE_RESUME": null,
+      "TH11_WORLD_REPLAYS": null,
+      "TH11_WORLD_RESUME": null,
+      "TH11_WORLD_STAGE": null,
+      "TH11_WORLD_TRACE": null
+    }
+  }
+}

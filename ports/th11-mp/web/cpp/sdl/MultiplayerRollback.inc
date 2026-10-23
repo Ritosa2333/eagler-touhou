@@ -195,6 +195,9 @@ bool rollback_run_frame(bool historical){
     }
     rollback_frames.push_back(std::move(record));auto& current=*rollback_frames.back();
     {auto measured=rollback_timer(5);
+    eagler::input::GlobalTouchMotionTraceBank().set_context(session.multiplayer_frame+1,
+        historical?eagler::input::TouchMotionTraceBank::resimulation:netplay.Playback()?eagler::input::TouchMotionTraceBank::replay:eagler::input::TouchMotionTraceBank::forward,
+        historical||netplay.ReadOnly()?std::numeric_limits<float>::quiet_NaN():touch_motion_sensitivity());
     if(!session.update_multiplayer(input,[&]{if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);}))return rollback_abort(frame,"TH11 rollback native Update failed");}
     current.sounds=std::move(session.battle->events);session.battle->events.clear();
     {auto measured=rollback_timer(6);

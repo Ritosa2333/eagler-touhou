@@ -13,7 +13,8 @@ test('TH15 official prepared MSGs complete for all four characters and seven sta
   const z=unzipSync(readFileSync(resolve(packs,'language',language+'.zip'))),dir=resolve(messages,language);mkdirSync(dir,{recursive:true});
   for(const [name,bytes] of Object.entries(z))if(/^thcrap\/th15\/st\d{2}[a-d]\.msg$/.test(name))writeFileSync(resolve(dir,name.split('/').pop()),bytes);
  }
- const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten')};
+ const cache=resolve(process.env.EM_CACHE||resolve(root,'../../../artifacts/emscripten-test-cache'));
+ const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EM_CACHE:cache};
  const run=(command,args,cwd=root)=>{const result=spawnSync(command,args,{cwd,env,encoding:'utf8',windowsHide:true,timeout:90000});assert.equal(result.status,0,(result.error?.message||'')+result.stdout+result.stderr);return result.stdout;};
  const compile=(source,name)=>{const object=resolve(out,name+'.o');run('python',[compiler,'-c',resolve(root,source),'-std=c++17','-o',object]);return object;};
  const ruby=compile('tests/cpp/thcrap-ruby.cpp','ruby'),rubyJs=resolve(out,'ruby.cjs');run('python',[compiler,ruby,'-sDEFAULT_TO_CXX','-sENVIRONMENT=node','-o',rubyJs]);run(process.execPath,[rubyJs]);

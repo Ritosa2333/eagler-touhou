@@ -7,6 +7,7 @@ namespace Netplay::SideEffects
 {
 void SetSpeculative(bool speculative);
 bool IsSpeculative();
+bool IsResimulation();
 // Read-only Replay music commands follow the reconstructed native timeline.
 bool SuppressMusic();
 

@@ -130,7 +130,7 @@ u8 *FileSystem::OpenFile(const char *filepath, i32 isExternalResource)
     file = SDL_IOFromFile(filepath, "rb");
     if (!file)
     {
-        Supervisor::DebugPrint("error : %s is not found.\n", filepath);
+        Supervisor::DebugPrint("file not found: %s\n", filepath);
         return NULL;
     }
 
@@ -175,7 +175,7 @@ i32 FileSystem::WriteDataToFile(const char *filename, const void *out, u32 bytes
     file = SDL_IOFromFile(FileSystem::GetPrefPath(filename).c_str(), "wb");
     if (!file)
     {
-        Supervisor::DebugPrint("error : %s write error\n", filename);
+        Supervisor::ErrorPrint("error : %s write error\n", filename);
         return -1;
     }
 
@@ -183,7 +183,7 @@ i32 FileSystem::WriteDataToFile(const char *filename, const void *out, u32 bytes
     if (bytesToWrite != bytesWritten)
     {
         SDL_CloseIO(file);
-        Supervisor::DebugPrint("error : %s write error\n", filename);
+        Supervisor::ErrorPrint("error : %s write error\n", filename);
         return -2;
     }
     SDL_CloseIO(file);

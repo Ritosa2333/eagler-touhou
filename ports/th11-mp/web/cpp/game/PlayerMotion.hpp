@@ -27,7 +27,7 @@ struct PlayerMotionState {
     i32 option_lerp=30,standing_timer=0,fast_timer=0,weapon_mode=0,recall_timer=0;
     u32 flags=0; i32 option_count=0;float option_angle=0;
 };
-struct PlayerMotionInput {u32 held=0,pressed=0; i32 character=0,subtype=0;bool enemy_manager=false,enemies=false,bomb=false; int touch_mode=0;float touch_x=0,touch_y=0;};
+struct PlayerMotionInput {u32 held=0,pressed=0; i32 character=0,subtype=0;bool enemy_manager=false,enemies=false,bomb=false; int touch_mode=0;float touch_x=0,touch_y=0;u32 trace_seat=0;bool trace_sensitivity_known=true;};
 struct PlayerMotionWorld {
     virtual ~PlayerMotionWorld()=default;
     virtual bool sound(i32){return false;}

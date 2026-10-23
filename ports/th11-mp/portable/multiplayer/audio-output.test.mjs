@@ -1,23 +1,36 @@
 // Build the production MP objects first: node portable/build.mjs --multiplayer
 // Relinks those exact objects with an audio-only fixture, without a game loop.
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {existsSync,readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve,relative} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
 import {responseFileContents} from '../response-file.mjs';
-const root=resolve(import.meta.dirname,'../..'),out=resolve(root,'artifacts/audio-output-fixture');mkdirSync(out,{recursive:true});
+const root=resolve(import.meta.dirname,'../..'),out=resolve(root,'artifacts/audio-output-fixture');
 const sdk=process.env.EMSDK||resolve(root,'../../toolchains/emsdk');
+const archive=process.env.TH11_TEST_ARCHIVE;
+const missing=[];
+const emcc=resolve(sdk,'upstream/emscripten/emcc.py');
+if(!existsSync(emcc))missing.push(`Emscripten compiler: ${emcc}`);
+if(!archive)missing.push('TH11_TEST_ARCHIVE must name the private TH11 archive');
+else if(!existsSync(archive))missing.push(`TH11_TEST_ARCHIVE file does not exist: ${archive}`);
+const launcher=process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../eagler-touhou'),launcherPackage=resolve(launcher,'package.json');
+if(!existsSync(launcherPackage))missing.push(`Launcher package for Playwright is missing: ${launcherPackage}`);
+if(process.env.EAGLER_TEST_CHROMIUM&&!existsSync(process.env.EAGLER_TEST_CHROMIUM))missing.push(`Configured Chromium is missing: ${process.env.EAGLER_TEST_CHROMIUM}`);
+const playwrightModule=process.env.EAGLER_PLAYWRIGHT_MODULE||'playwright',requireFromLauncher=createRequire(launcherPackage);
+let playwright;
+try{playwright=requireFromLauncher(playwrightModule);}catch(error){missing.push(`Playwright module '${playwrightModule}' is unavailable from ${launcherPackage}: ${error.message}`);}
 const plan=JSON.parse(execFileSync(process.execPath,[resolve(root,'portable/build.mjs'),'--multiplayer','--print-plan'],{encoding:'utf8',env:{...process.env,EMSDK:sdk}}));
-const python=process.env.TH_PYTHON||'python',emcc=resolve(sdk,'upstream/emscripten/emcc.py');
+const python=process.env.TH_PYTHON||'python';
 const run=(args,name)=>{const path=resolve(out,name+'.rsp.utf-8');writeFileSync(path,responseFileContents(args));execFileSync(python,[emcc,'@'+path],{cwd:root,env:{...process.env,EMSDK:sdk,EM_CONFIG:resolve(sdk,'.emscripten')},stdio:'inherit',windowsHide:true});};
-const fixture=resolve(out,'fixture.o');run([...plan.flags,'-c',resolve(import.meta.dirname,'AudioOutputFixture.cpp'),'-o',fixture],'compile');
 const objects=plan.sources.map(source=>resolve(root,'web/artifacts/multiplayer/objects',relative(root,resolve(root,source)).replaceAll('\\','_').replaceAll('/','_').replaceAll(':','_').replaceAll('.','_')+'.o'));
+for(const object of objects)if(!existsSync(object))missing.push(`Built multiplayer object is missing: ${object}`);
+if(missing.length)throw Error('Missing audio-output test inputs:\n'+missing.map(item=>' - '+item).join('\n'));
+mkdirSync(out,{recursive:true});
+const fixture=resolve(out,'fixture.o');run([...plan.flags,'-c',resolve(import.meta.dirname,'AudioOutputFixture.cpp'),'-o',fixture],'compile');
 run([...plan.flags,...plan.linkFlags,'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sEXPORTED_FUNCTIONS=_malloc,_free',...objects,fixture,'-o',resolve(out,'audio.mjs')],'link');
-const archive=process.env.TH11_TEST_ARCHIVE;if(!archive)throw Error('Set TH11_TEST_ARCHIVE to the private TH11 archive.');
-const launcher=process.env.EAGLER_LAUNCHER_ROOT||resolve(root,'../../eagler-touhou');
-const {chromium}=createRequire(resolve(launcher,'package.json'))(process.env.EAGLER_PLAYWRIGHT_MODULE||'playwright');
+const {chromium}=playwright;
 const server=createServer((req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  if(path==='/'){res.setHeader('Content-Type','text/html');res.end('<canvas id="canvas"></canvas>');return;}

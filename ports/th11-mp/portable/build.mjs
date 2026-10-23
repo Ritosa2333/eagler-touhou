@@ -6,7 +6,8 @@ import {resolve, relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {responseFileContents} from './response-file.mjs';
-import {COMMON_REVISION as commonRevision, COMMON_COMMIT, COMMON_SOURCE_PATH, COMMON_SOURCE} from './common-revision.mjs';
+import {COMMON_REVISION as commonRevision, COMMON_COMMIT, COMMON_SOURCE_PATH, COMMON_SOURCE, COMMON_ROOT} from './common-revision.mjs';
+import {sourceIdentity} from '../../../launcher/lib/release-manifest.mjs';
 
 const builtAt = new Date().toISOString();
 const workspace = resolve(fileURLToPath(new URL('../', import.meta.url)));
@@ -15,8 +16,7 @@ const multiplayer = process.argv.includes('--multiplayer');
 const lto=process.argv.includes('--lto');
 const simdExperiment=process.argv.includes('--simd-experiment');
 const printPlan = (process.argv.includes('--print-plan')||printingRuntimeInputs);
-// Local validation of shared work in progress must never produce a release
-// attestation or overwrite the normal/multiplayer build directory.
+// Diagnostic feature builds retain their separate output and package policy.
 const diagnostic = process.argv.includes('--diagnostic');
 const thprac = process.env.TH_ENABLE_THPRAC === '1' || process.argv.includes('--thprac');
 if (multiplayer && thprac) throw Error('TH11 multiplayer and THPrac are separate runtime variants.');
@@ -25,6 +25,13 @@ const variant = multiplayer ? 'multiplayer' : 'normal';
 const out = process.env.TH11_OUTPUT
   ? resolve(root, process.env.TH11_OUTPUT)
   : resolve(root, 'artifacts', profile + (diagnostic ? '-diagnostic' : ''));
+const productionOutputs = ['sdl3','multiplayer'].map(name=>resolve(root,'artifacts',name));
+const sameOutputPath = path => process.platform === 'win32'
+  ? out.toLowerCase() === path.toLowerCase()
+  : out === path;
+const productionCollision = productionOutputs.find(sameOutputPath);
+if (diagnostic && productionCollision)
+  throw Error('Diagnostic build output resolves to a production artifact directory: ' + productionCollision);
 
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, '../../common'));
 const sdk = process.env.EMSDK || [
@@ -78,7 +85,7 @@ const linkFlags = multiplayer ? ['-lwebsocket'] : [];
 // export names stable when it is linked. Do not set private compiler options
 // or use DECLARE_ASM_MODULE_EXPORTS=0 (which changes module scoping).
 if(lto)linkFlags.push('-lexports.js');
-await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:source,headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/input'),resolve(netplayRoot,'include')),flags});
 if (printPlan) {
   console.log(JSON.stringify({game: 'th11', profile, variant, outputDirectory: out,
     packageDirectory: resolve(workspace, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
@@ -89,7 +96,6 @@ if (printPlan) {
 let observedCommonRevision = null;
 if (multiplayer) {
   observedCommonRevision = commonRevision;
-  if (!diagnostic && COMMON_SOURCE.dirty) throw Error('Formal TH11 MP build requires a clean shared source; use --diagnostic for local changes.');
 }
 mkdirSync(out, {recursive: true});
 const env = {...process.env, EM_CONFIG: process.env.EM_CONFIG || resolve(sdk, '.emscripten'),
@@ -108,7 +114,7 @@ const headerFiles = dir => readdirSync(dir, {withFileTypes: true}).flatMap(entry
     headerFiles(resolve(dir, entry.name))) :
     /\.(h|hpp|inc)$/.test(entry.name) ? [resolve(dir, entry.name)] : []);
 const headers = [...headerFiles(resolve(root, 'cpp')),...headerFiles(imgui), ...headerFiles(resolve(workspace, 'portable/sdl')),
-  ...headerFiles(resolve(workspace, 'portable/input')), resolve(netplayRoot, 'include/eagler/input/DialogueGesture.hpp'),
+  ...headerFiles(resolve(workspace, 'portable/input')), ...headerInputs(resolve(netplayRoot,'include/eagler/input')),
   ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [resolve(netplayRoot,'include/eagler/text/RuntimeFontRaster.hpp')])].sort();
 const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));
 readObserved(fileURLToPath(import.meta.url));
@@ -176,6 +182,8 @@ for (const [path, expected] of observed) if (sha(readFileSync(path)) !== expecte
   throw Error('Source changed during compilation; refuse mixed build: ' + path);
 const inventory = Object.fromEntries([...observed].sort(([a], [b]) => a.localeCompare(b))
   .map(([path, hash]) => [relative(workspace, path).replaceAll('\\', '/'), hash]));
+if(multiplayer&&(await sourceIdentity(COMMON_ROOT)).sha256!==COMMON_SOURCE.sha256)
+  throw Error('Shared source changed during compilation; refuse mixed build.');
 const sdkMetadata = resolve(sdk, 'touhou-sdk.json');
 const toolchain = existsSync(sdkMetadata) ? JSON.parse(readFileSync(sdkMetadata)) :
   {emsdkRoot: relative(workspace, sdk).replaceAll('\\', '/'), layout: 'external'};
@@ -187,7 +195,7 @@ const report = {
   version: multiplayer ? '1.0.0-mp2-rollback-sdl3' : '1.0.0-sdl3',
   features: {thprac, languages: true, focusHitbox: false, ...(multiplayer ? {multiplayer: true} : {})},
   runtimeSourceFiles,
-  ...(multiplayer ? {commonRevision: observedCommonRevision, commonCommit: COMMON_COMMIT, commonSourcePath: COMMON_SOURCE_PATH,
+  ...(multiplayer ? {commonRevision: observedCommonRevision, commonCommit: COMMON_COMMIT, commonSourcePath: COMMON_SOURCE_PATH,commonSource:COMMON_SOURCE,
     netplay: {prediction: true, rollback: true, predictionLimit: 12, measuredStartup: true}} : {}),
   architecture: {loop: multiplayer ? 'cpp-fixed-60hz-bounded-rollback' : 'cpp-fixed-60hz-bounded-catchup',
     audio: 'cpp-miniaudio-vorbis-sdl3-stream', renderer: 'cpp-gles-semantic-batched',

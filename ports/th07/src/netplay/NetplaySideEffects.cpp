@@ -8,6 +8,7 @@ namespace Netplay::SideEffects
 namespace
 {
 bool g_Speculative = false;
+bool g_Resimulation = false;
 constexpr std::size_t BGM_PATH_CAPACITY = 256;
 char g_PresentedBgmPath[BGM_PATH_CAPACITY] = {};
 char g_CorrectedBgmPath[BGM_PATH_CAPACITY] = {};
@@ -23,6 +24,16 @@ void SetSpeculative(bool speculative)
 bool IsSpeculative()
 {
     return g_Speculative;
+}
+
+void SetResimulation(bool resimulation)
+{
+    g_Resimulation = resimulation;
+}
+
+bool IsResimulation()
+{
+    return g_Resimulation;
 }
 
 bool SuppressMusic()

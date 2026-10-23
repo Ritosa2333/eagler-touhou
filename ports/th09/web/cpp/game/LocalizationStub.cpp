@@ -20,6 +20,7 @@ std::size_t UnitLength(const unsigned char* text)
 bool Localization::Active(){return false;}
 const char* Localization::FontFile(){return nullptr;}
 const char* Localization::FontName(){return nullptr;}
+const char* Localization::Utf8(const char* text){return text;}
 const char* Localization::SpellName(std::uint32_t,const char* fallback){return fallback;}
 const char* Localization::StageName(std::uint32_t,const char* fallback){return fallback;}
 const char* Localization::MusicTitle(std::uint32_t,const char* fallback){return fallback;}

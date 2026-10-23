@@ -5,13 +5,13 @@
 #include "PlayerShots.hpp"
 #include "PlayerCollision.hpp"
 namespace th15 {
-struct PlayerFrameContext {u32 held=0,pressed=0,game_flags=0;bool focus_allowed=false,enemy_present=false,hud_available=false,hud_bomb_active=false;Vec3 background_delta{};EnemyWorldState* enemies=nullptr;};
+struct PlayerFrameContext {u32 held=0,pressed=0,game_flags=0,trace_seat=0;bool focus_allowed=false,enemy_present=false,hud_available=false,hud_bomb_active=false,trace_sensitivity_known=true;Vec3 background_delta{};EnemyWorldState* enemies=nullptr;};
 struct PlayerFrameHost:PlayerLifeServices {virtual bool stop_sound(i32)=0;virtual bool refresh(PlayerFrameContext&)=0;};
 class PlayerFrame final:private PlayerLifecycleHost {
     PlayerMotion& motion;PlayerAnmHost& visuals;AnmManager& animations;PlayerLife& life;DamageSources& damage;PlayerShots& shots;PlayerShotContext& shot_context;PlayerFrameHost& world;
     PlayerFrameContext context;float* active_rate=nullptr;
     bool allow_bomb()override{return world.allow_bomb();}bool begin_bomb()override{return world.begin_bomb();}
-    bool move()override{return motion.update(context.held,context.focus_allowed,*active_rate,visuals);}
+    bool move()override{return motion.update(context.held,context.focus_allowed,*active_rate,visuals,context.trace_seat,context.trace_sensitivity_known);}
     bool cancel_lasers_near(const Vec3& p,float r,i32 kind,bool flag)override{return world.cancel_lasers_near(p,r,kind,flag);}
     bool cancel_bullets_near(const Vec3& p,float r,i32 kind)override{return world.cancel_bullets_near(p,r,kind);}
     bool cancel_lasers(i32 kind,bool flag)override{return world.cancel_lasers(kind,flag);}

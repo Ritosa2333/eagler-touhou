@@ -1,12 +1,14 @@
 #include "GameWindow.hpp"
 
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 
 #ifdef _WIN32
@@ -30,6 +32,47 @@
 #ifdef TH_ENABLE_THPRAC
 #include "ThpracImGui.hpp"
 #endif
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
+static void SDLCALL Th07LogOutput(void *, int category, SDL_LogPriority priority,
+                                  const char *message)
+{
+    if (priority < SDL_LOG_PRIORITY_WARN)
+    {
+        const size_t length = std::strlen(message);
+        std::fwrite(message, 1, length, stdout);
+        if (length == 0 || message[length - 1] != '\n')
+        {
+            std::fputc('\n', stdout);
+        }
+        std::fflush(stdout);
+        return;
+    }
+
+    if (priority == SDL_LOG_PRIORITY_WARN)
+    {
+#ifdef __EMSCRIPTEN__
+        EM_ASM({ console.warn(UTF8ToString($0)); }, message);
+        return;
+#endif
+    }
+
+    if (SDL_LogOutputFunction defaultOutput = SDL_GetDefaultLogOutputFunction())
+    {
+        defaultOutput(nullptr, category, priority, message);
+    }
+}
+
+void GameWindow::InstallLogOutput()
+{
+    // SDL_SetLogOutputFunction uses the log mutex directly; this getter lazily
+    // initializes SDL's logging state without starting any SDL subsystems.
+    (void)SDL_GetLogPriority(SDL_LOG_CATEGORY_APPLICATION);
+    SDL_SetLogOutputFunction(Th07LogOutput, nullptr);
+}
+
 #ifdef TH_ENABLE_NETPLAY
 #include <eagler/netplay/FrameBudget.hpp>
 #include "netplay/Th07DeterminismProbe.hpp"
@@ -629,14 +672,14 @@ ZunResult GameWindow::CreateGameWindow()
 
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
+        Supervisor::ErrorPrint("SDL_Init video failed: %s\n", SDL_GetError());
         g_GameErrorContext.Fatal("Direct3D オブジェクトは何故か作成出来なかった\n");
         return ZUN_ERROR;
     }
-
     SDL_PropertiesID props = SDL_CreateProperties();
     if (!props)
     {
-        Supervisor::DebugPrint("SDL_CreateProperties failed: %s\n", SDL_GetError());
+        Supervisor::ErrorPrint("SDL_CreateProperties failed: %s\n", SDL_GetError());
         return ZUN_ERROR;
     }
 
@@ -675,7 +718,7 @@ ZunResult GameWindow::CreateGameWindow()
     SDL_DestroyProperties(props);
     if (!g_GameWindow.window)
     {
-        Supervisor::DebugPrint("sdl window create failed: %s\n", SDL_GetError());
+        Supervisor::ErrorPrint("sdl window create failed: %s\n", SDL_GetError());
         return ZUN_ERROR;
     }
 
@@ -732,7 +775,7 @@ void GameWindow::ToggleFullscreen()
     if (!g_GameWindow.window)
     {
 #ifdef TH_DEV_TOOLS
-        SDL_Log("th07 window: toggle aborted (no SDL window)");
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "th07 window: toggle aborted (no SDL window)");
 #endif
         return;
     }
@@ -743,7 +786,7 @@ void GameWindow::ToggleFullscreen()
     if (!hwnd)
     {
 #ifdef TH_DEV_TOOLS
-        SDL_Log("th07 window: toggle aborted (no Win32 HWND)");
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "th07 window: toggle aborted (no Win32 HWND)");
 #endif
         return;
     }
@@ -764,7 +807,8 @@ void GameWindow::ToggleFullscreen()
         if (g_WindowedRect.right == 0 && g_WindowedRect.bottom == 0)
         {
 #ifdef TH_DEV_TOOLS
-            SDL_Log("th07 window: toggle aborted (no valid windowed geometry)");
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                        "th07 window: toggle aborted (no valid windowed geometry)");
 #endif
             return;
         }
@@ -774,8 +818,9 @@ void GameWindow::ToggleFullscreen()
         if (!disp || !SDL_GetDisplayBounds(disp, &dispBounds))
         {
 #ifdef TH_DEV_TOOLS
-            SDL_Log("th07 window: toggle aborted (display lookup failed: id=%u error=%s)",
-                    static_cast<unsigned>(disp), SDL_GetError());
+            SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,
+                        "th07 window: toggle aborted (display lookup failed: id=%u error=%s)",
+                        static_cast<unsigned>(disp), SDL_GetError());
 #endif
             return;
         }

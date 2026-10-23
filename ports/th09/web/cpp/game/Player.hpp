@@ -62,7 +62,7 @@ class Player:private PlayerLifeActions,private MotionEffects,private PlayerItemA
     void reset_ai()override{cpu.reset_damage();}
     void animation_interrupt(u32 label)override{actions.body_interrupt(body,i32(label));}
     void update_options()override{}
-    bool movement(float speed,float rate,float& x,float& y)override{return motion_source&&life.input_controller==0&&motion_source->movement(motion,speed,rate,x,y);}
+    bool movement(float speed,float rate,float& x,float& y,MotionTraceInput& trace)override{return motion_source&&life.input_controller==0&&motion_source->movement(motion,speed,rate,x,y,trace);}
     void start_animation(AnmVm& vm,i32 script)override{actions.item_animation(vm,script);}
     void draw_animation(AnmVm& vm)override{actions.draw_item(vm);}
     TransferParameters* create_transfer(i32 type,const Vec3& p,const Vec3& dest,float delay)override{return actions.delayed_transfer(type,p,dest,delay);}

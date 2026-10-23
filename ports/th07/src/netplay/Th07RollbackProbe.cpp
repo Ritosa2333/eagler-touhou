@@ -75,7 +75,7 @@ void ClearTransientModes()
 int FailAfterSpeculative(const char *reason, std::uint32_t frame)
 {
     ClearTransientModes();
-    Supervisor::DebugPrint("netplay rollback probe: FAIL frame=%u stage=%d reason=%s\n",
+    Supervisor::ErrorPrint("netplay rollback probe: FAIL frame=%u stage=%d reason=%s\n",
                            frame, static_cast<int>(g_GameManager.currentStage), reason);
     // The first pass deliberately suppressed persistent side effects. Continuing
     // from it would therefore be a state the real game can never produce.
@@ -113,14 +113,14 @@ int RunCalcChain()
     config.maxBombEffectsPerFrame = 1024;
     if (!Th07Rollback::Reset(config))
     {
-        Supervisor::DebugPrint("netplay rollback probe: FAIL reason=state reset\n");
+        Supervisor::ErrorPrint("netplay rollback probe: FAIL reason=state reset\n");
         return CHAIN_CALLBACK_RESULT_EXIT_GAME_ERROR;
     }
 
     const std::uint32_t frame = g_ProbeFrame++;
     if (!Th07Rollback::BeginFrame(frame))
     {
-        Supervisor::DebugPrint("netplay rollback probe: FAIL frame=%u reason=capture begin\n",
+        Supervisor::ErrorPrint("netplay rollback probe: FAIL frame=%u reason=capture begin\n",
                                frame);
         return CHAIN_CALLBACK_RESULT_EXIT_GAME_ERROR;
     }
@@ -149,7 +149,7 @@ int RunCalcChain()
 
     if (speculativeResult != committedResult || speculativeHash != committedHash)
     {
-        Supervisor::DebugPrint(
+        Supervisor::ErrorPrint(
             "netplay rollback probe: FAIL frame=%u stage=%d result=%d/%d hash=%016llx/%016llx bytes=%llu blocks=%llu bombs=%llu analog=%u\n",
             frame, stage, speculativeResult, committedResult,
             static_cast<unsigned long long>(speculativeHash),

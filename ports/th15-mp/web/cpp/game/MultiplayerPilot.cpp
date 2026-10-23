@@ -57,7 +57,8 @@ bool MultiplayerPilot::tick(){
         return world.animations.tick_instance(player->visuals.root)>=0||world.fail(world.animations.error);
     }
     keys.update(world.mp_options.challenge?input.held&~2u:input.held);
-    PlayerFrameContext c;c.held=keys.held;c.pressed=keys.pressed;refresh(c);
+    PlayerFrameContext c;c.held=keys.held;c.pressed=keys.pressed;c.trace_seat=seat;
+    c.trace_sensitivity_known=seat==world.mp_options.local_seat;refresh(c);
     // The target is transmitted as an absolute field coordinate. Never derive
     // movement from a sender's pre-delay simulation state.
     player->motion.touch={input.touch_mode,input.touch_x,input.touch_y};

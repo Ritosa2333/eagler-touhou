@@ -167,7 +167,7 @@ ScoreDat *ResultScreen::OpenScore(const char *path)
 
     if (g_LastFileSize < sizeof(ScoreDatRaw))
     {
-        Supervisor::DebugPrint("warning : score.dat size is short\r\n");
+        Supervisor::WarnPrint("warning : score.dat size is short\r\n");
         delete scoreData;
         scoreData = NULL;
         goto RECREATE_SCORE;
@@ -194,19 +194,19 @@ ScoreDat *ResultScreen::OpenScore(const char *path)
 
     if (rawData->csum != checksum)
     {
-        Supervisor::DebugPrint("warning : score.dat chksum error\r\n");
+        Supervisor::WarnPrint("warning : score.dat chksum error\r\n");
         goto RECREATE_SCORE;
     }
 
     if (rawData->dataOffset != sizeof(ScoreDatRaw))
     {
-        Supervisor::DebugPrint("warning : header size is mismatch\r\n");
+        Supervisor::WarnPrint("warning : header size is mismatch\r\n");
         goto RECREATE_SCORE;
     }
 
     if (rawData->magic != 11)
     {
-        Supervisor::DebugPrint("warning : score.dat version mismatch\r\n");
+        Supervisor::WarnPrint("warning : score.dat version mismatch\r\n");
         goto RECREATE_SCORE;
     }
 
@@ -240,7 +240,7 @@ ScoreDat *ResultScreen::OpenScore(const char *path)
         }
         if (chunk->th7kLen == 0)
         {
-            Supervisor::DebugPrint("warning : score.dat chapter size is ZERO\r\n");
+            Supervisor::WarnPrint("warning : score.dat chapter size is ZERO\r\n");
             goto RECREATE_SCORE;
         }
         cursor -= chunk->th7kLen;
@@ -249,7 +249,7 @@ ScoreDat *ResultScreen::OpenScore(const char *path)
 
     if (!isTh7k || parsedTh7k->version != 1)
     {
-        Supervisor::DebugPrint("warning : score.dat version mismatch\r\n");
+        Supervisor::WarnPrint("warning : score.dat version mismatch\r\n");
         goto RECREATE_SCORE;
     }
 

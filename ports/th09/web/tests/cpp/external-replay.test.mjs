@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,readdirSync,writeFileSync} from 'node:fs';
+import {existsSync,readFileSync,readdirSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {oracle,core,memory,report,root,d3dxScalar} from './helpers.mjs';
 import {installAnm,normalizedAnm} from './anm-oracle.mjs';
 
-test('Supplied campaign replay matches the original world frame by frame',{skip:!process.env.TH09_REPLAY_FILE},async()=>{
+const externalReplay=process.env.TH09_REPLAY_FILE;
+assert.ok(externalReplay,'TH09_REPLAY_FILE is required for the supplied campaign replay comparison');
+assert.ok(existsSync(externalReplay),`TH09_REPLAY_FILE does not exist: ${externalReplay}`);
+test('Supplied campaign replay matches the original world frame by frame',async()=>{
  const m=await oracle(),routeOracle=await oracle(),c=await core(),f=c.session_create(),name=c.allocate(128),data=c.allocate(16000000),scratch=c.allocate(88),files=new Map();
  const source=n=>{if(!files.has(n))files.set(n,readFileSync(resolve(root,'reference/assets',n)));return files.get(n);};
  for(const n of readdirSync(resolve(root,'reference/assets')).filter(n=>/\.(anm|sht|ecl|msg|std|bmp|png)$/.test(n))){const b=source(n);memory(c,name,128).fill(0);memory(c,name,128).set(new TextEncoder().encode(n));memory(c,data,b.length).set(b);c.session_file(f,name,data,b.length);}
@@ -99,6 +102,8 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
     }catch(error){dumpDivergence(label,error);throw error;}
    };
    compare('initial');let nativeHealth=m.i32(players[0]+0xa8);
+   const recordingFrames=c.session_value(f,3),startFrames=frames;
+   assert.ok(Number.isSafeInteger(recordingFrames)&&recordingFrames>0,'supplied replay must declare its frame range');
    for(let frame=0;frame<c.session_value(f,3)&&frame<Number(process.env.TH09_REPLAY_LIMIT??120000);++frame){
     m.call(0x4204b0,{ecx:replayManager});assert.equal(c.session_step(f,0,0,0),1,err());
     m.call(0x41aa5f,{ecx:0x4a7d90});
@@ -116,6 +121,8 @@ test('Supplied campaign replay matches the original world frame by frame',{skip:
     }
     snapshot(frame);compare(`replay stage ${stage} frame ${frame}`);if(c.session_value(f,0)!==1){stageComplete=c.session_value(f,2)===c.session_value(f,3);break;}
    }
+   assert.ok(stageComplete||frames-startFrames===recordingFrames,
+    `Replay comparison ended before its declared boundary: ${frames-startFrames}/${recordingFrames}`);
   }
   report(external?'external-replay-stage-'+stage:'session-replays',{checks,frames,stage,playerDefeats,stageComplete,scenarios,animationComparison:!process.env.TH09_GAMEPLAY_ONLY,laserComparison:!!process.env.TH09_COMPARE_LASERS,scope:'Supplied original replay: original constructors and update chain versus C++ RNG, inputs, CPU decisions, player motion, collisions, score, dialogue, background and scene state. Animation bytes compared unless gameplay-only is selected. No forced battle outcome.'});
  }finally{c.session_delete(f);c.release(name);c.release(data);c.release(scratch);m.close();routeOracle.close();}

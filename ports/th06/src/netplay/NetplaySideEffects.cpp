@@ -9,6 +9,7 @@ namespace Netplay::SideEffects
 namespace
 {
 bool g_Speculative = false;
+bool g_Resimulation = false;
 bool g_SimulationFrameActive = false;
 std::uint32_t g_CurrentGeneration = 0;
 std::uint32_t g_CurrentFrame = 0;
@@ -72,6 +73,11 @@ bool IsSpeculative()
     return g_Speculative;
 }
 
+bool IsResimulation()
+{
+    return g_Resimulation;
+}
+
 bool SuppressMusic()
 {
     return g_Speculative && !eagler::audio::ReplayMusicScope::Active();
@@ -132,12 +138,14 @@ void BeginSimulationFrame(std::uint32_t generation, std::uint32_t frame, bool sp
     g_CurrentFrame = frame;
     g_SimulationFrameActive = true;
     g_Speculative = speculative;
+    g_Resimulation = speculative;
     g_BombStartScopeDepth = 0;
 }
 
 void EndSimulationFrame()
 {
     g_Speculative = false;
+    g_Resimulation = false;
     g_SimulationFrameActive = false;
     g_BombStartScopeDepth = 0;
 }
