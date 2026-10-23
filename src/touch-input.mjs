@@ -13,17 +13,19 @@ export class TouchInput {
     if(next.touchEnabled!==this.options.touchEnabled||next.touchMovementMode!==this.options.touchMovementMode)this.cancel();
     this.options=next;
   }
-  cancel(){this.points.clear();this.primary=null;this.menu=null;this.pending=0;this.tap=null;this.focus=false;this.axes=[0,0];}
+  cancel({preserveFocus=false}={}){this.points.clear();this.primary=null;this.menu=null;this.pending=0;this.tap=null;if(!preserveFocus||this.options.touchFocusMode!=='toggle-button')this.focus=false;this.axes=[0,0];}
   sync(state){
     if(this.context===state.key)return;
     const toggledFocus=this.focus&&this.options.touchFocusMode==='toggle-button'&&
-      ['game','dialogue'].includes(this.lastKind)&&['game','dialogue'].includes(state.kind);
+      (['game','dialogue'].includes(this.lastKind)||this.paused)&&
+      (['game','dialogue'].includes(state.kind)||state.paused)&&
+      (!(this.paused||state.paused)||this.instance===state.instance);
     const continuous=this.context&&this.lastKind!=='menu'&&state.kind!=='menu'&&this.lastKind!=='replay'&&state.kind!=='replay'&&this.instance===state.instance;
     if(!continuous)this.cancel();else {this.pending=0;this.menu=null;this.tap=null;}
     // Respawn replaces the player instance, invalidating old drag targets.
     // The host's toggle remains selected until the next explicit snapshot.
     if(toggledFocus)this.focus=true;
-    this.context=state.key;this.lastKind=state.kind;this.instance=state.instance;
+    this.context=state.key;this.lastKind=state.kind;this.instance=state.instance;this.paused=!!state.paused;
   }
   controls(snapshot,state){
     this.sync(state);this.fire=snapshot.fireEnabled;this.focus=snapshot.focusEnabled;
@@ -42,7 +44,7 @@ export class TouchInput {
     if(type==='down'){
       if(this.points.has(id)){this.release(id,true);this.pending=0;}
       const point={id,x,y,startX:x,startY:y,start:now,moved:false,blocked:!state.ready,instance:state.instance};this.points.set(id,point);
-      if(this.points.size>=4){this.cancel();this.pending|=256;return;}
+      if(this.points.size>=4){this.cancel({preserveFocus:true});this.pending|=256;return;}
       if(state.kind==='menu'){
         if(!this.menu)this.menu={ids:new Set(),peak:0,start:now,x,y,lastX:x,lastY:y,consumed:false};
         this.menu.ids.add(id);this.menu.peak=Math.max(this.menu.peak,this.menu.ids.size);return;

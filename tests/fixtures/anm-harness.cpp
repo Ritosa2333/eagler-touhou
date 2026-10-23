@@ -26,6 +26,13 @@ int tick(){return machine.tick(runtime);}
 int rebind(int bank,int script){return machine.rebindWithoutReset(registry,bank,script,runtime);}
 void interrupt(int n){machine.interrupt(n);}
 float snapshot[47];float* state(){
+    const auto d=machine.diagnostics();uint32_t mask=0;
+    if(d.rotationVelocity[0]||d.rotationVelocity[1]||d.rotationVelocity[2])mask|=2;
+    if(d.scaleVelocity[0]||d.scaleVelocity[1])mask|=4;
+    if(d.scrollVelocity[0]||d.scrollVelocity[1])mask|=8;
+    for(const auto& t:d.interpolations)if(t.active)for(const int f:t.fields)
+      mask|=f<=2?1:f<=5?2:f<=7?4:f<=9?8:f<=17?16:f<=19?32:0;
+    if(mask!=machine.continuousFields())std::abort();
     auto& s=machine.state();size_t i=0;
     for(auto v:{s.x,s.y,s.z,s.rx,s.ry,s.rotation,s.sx,s.sy,s.u,s.v})snapshot[i++]=v;
     for(int shift:{24,16,8,0})snapshot[i++]=float((s.primary>>shift)&255);

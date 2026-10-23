@@ -83,6 +83,7 @@ public:
     interpolate({X, Y, Z}, {x, y, z}, duration, mode);
   }
   Diagnostic diagnostics() const;
+  uint32_t continuousFields() const;
   bool bind(Registry& registry, int bank, int script, Runtime& runtime,
             const std::array<float, 3>* initialScriptPosition = nullptr);
   bool rebindWithoutReset(Registry& registry, int bank, int script, Runtime& runtime);
