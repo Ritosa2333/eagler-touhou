@@ -23,15 +23,18 @@ public:
     std::uint64_t Timestamp()const{return timestamp_;}
     std::uint32_t Score()const{return score_;}
     bool Completed()const{return completed_;}
+    bool LegacyStageFlow()const{return legacy_stage_flow_;}
+    bool CompatibleBuild(const std::array<std::uint32_t,4>& build)const{return Loaded()&&(legacy_stage_flow_||setup_.build==build);}
     const std::string& Name()const{return name_;}
 private:
-    static bool Metadata(const Netplay::InputReplayInfo&,SessionSetup&,std::uint64_t&,std::uint32_t&,bool&,std::string&);
+    static bool Metadata(const Netplay::InputReplayInfo&,SessionSetup&,std::uint64_t&,std::uint32_t&,bool&,std::string&,bool&);
     std::vector<std::uint8_t> Description(const char*,std::uint32_t,bool,bool)const;
     Netplay::InputReplay replay_;
     SessionSetup setup_;
     std::uint64_t timestamp_=0;
     std::uint32_t score_=0;
     bool completed_=false;
+    bool legacy_stage_flow_=false;
     std::string name_;
 };
 }

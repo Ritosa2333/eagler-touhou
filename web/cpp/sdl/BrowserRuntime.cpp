@@ -274,6 +274,7 @@ EMSCRIPTEN_KEEPALIVE const char* th15_mp_error(){using namespace th15::sdl;retur
 EMSCRIPTEN_KEEPALIVE const char* th15_mp_spectator_state(){return th15::sdl::network.SpectatorState();}
 EMSCRIPTEN_KEEPALIVE int th15_mp_spectator_control(const char* run,const char* action,unsigned frame){return th15::sdl::network.SpectatorControl(run,action,frame);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!app||!network.Configured())return 0;const auto& s=network.Setup();app->practice.enabled=false;app->multiplayer=true;app->mp_options={s.player_count,s.local_player,s.initial_stage(),s.seed,int(s.difficulty),s.challenge,{int(s.selections[0]),int(s.selections[1]),int(s.selections[2])},int(s.chapter_threshold)};
+ app->mp_options.replay_legacy_stage_flow=network.Playback()&&mp_replay.LegacyStageFlow();
  mp_stage=s.initial_stage();mp_spectator_stage=0;mp_spectator_error.clear();mp_saved_name="PLAYER";app->progress={};app->progress.character=s.selections[0];app->progress.difficulty=s.difficulty;app->selected_stage=s.initial_stage();app->selection_player={};app->selection_player.mode_flags=0;
  // The title may have animated for different durations on each client. Neither
  // its RNG consumption nor its presentation clock may enter the match.
@@ -287,7 +288,8 @@ EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!
  };if(!app->begin_run()){last_error=app->failure;return 0;}mp_started=true;return 1;}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_validate(const unsigned char* bytes,unsigned size){return th15::multiplayer::ReplayArchive::Validate(bytes,size);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_load(const unsigned char* bytes,unsigned size,const unsigned* build){using namespace th15::sdl;th15::multiplayer::ReplayArchive parsed;if(running||!app||!build||!parsed.Load(bytes,size))return 0;
- for(unsigned i=0;i<4;++i)if(parsed.Setup().build[i]!=build[i]){last_error="Multiplayer replay build mismatch";return 0;}
+ const std::array<unsigned,4> current_build{build[0],build[1],build[2],build[3]};
+ if(!parsed.CompatibleBuild(current_build)){last_error="Multiplayer replay build mismatch";return 0;}
  if(!network.BeginPlayback(parsed.Setup()))return 0;mp_replay=std::move(parsed);mp_playback=true;mp_recording=mp_local_results=false;mp_menu={};last_error.clear();return 1;}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_save(){using namespace th15::sdl;if(!mp_recording||!mp_replay.FrameCount())return 1;std::vector<th15::u8> bytes;th15::u32 score=0;
  if(app&&app->scene()){const auto& battle=app->scene()->battle;const auto seat=network.Setup().local_player;score=th15::u32(battle.mp_enabled&&seat<battle.mp_options.seat_count?battle.pilots[seat]->score.score:battle.score.score);}
