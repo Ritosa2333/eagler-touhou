@@ -79,16 +79,18 @@ struct Enemies final:EnemyManagerEnvironment {
 struct Scripts final:EnemyScriptResourceEnvironment {
     World& w;explicit Scripts(World& world):w(world){enemy_animations=w.actors.enemies?w.actors.enemies->animation_files:nullptr;}
     void* allocate(u32 size) override{return std::malloc(size);}void release(void* p) override{
+        w.validation_script_sources.erase(p);
 #ifdef TH_ENABLE_THPRAC
         w.practice_script_sizes.erase(p);
 #endif
         std::free(p);}
     u8* read_file(const char* name) override{
+        u32 size=0;auto* data=ResourceFiles{w.scores.files}.load(name,&size,false);
+        if(data)w.validation_script_sources[data]={size,name};
 #ifdef TH_ENABLE_THPRAC
-        u32 size=0;auto* data=ResourceFiles{w.scores.files}.load(name,&size,false);if(data)w.practice_script_sizes[data]=size;return data;
-#else
-        return static_cast<u8*>(w.read_file(name));
+        if(data)w.practice_script_sizes[data]=size;
 #endif
+        return data;
     }
     AnmFile* load_animation(u32 slot,const char* name) override{return w.engine.manager.load(slot,name,w.engine.resources);}
     void missing_animation() override{w.fail();}
@@ -129,10 +131,50 @@ struct Scene final:EnemySceneEnvironment {
 }
 bool World::create_enemies(){Resources env(*this);return EnemyManager::create(reinterpret_cast<const char*>(state.current_stage->resources[3]),env)!=nullptr;}
 void World::destroy_enemies(EnemyManager* p){Resources env(*this);p->shutdown(env);std::free(p);}
-void World::clear_enemies(bool all){if(all){Resources env(*this);actors.enemies->clear_all(env);}else{Enemies env(*this);actors.enemies->clear_enemies(env);}}
+void World::clear_enemies(bool all){
+    if(!all&&state.adaptation.scene.active){
+        const auto& gate=state.adaptation.scene;const auto* manager=actors.enemies;
+        if(!manager||manager->count!=1||!manager->head||manager->tail!=manager->head||
+           reinterpret_cast<uintptr_t>(manager->head->value)!=gate.initial.owner){state.adaptation.scene.note_unexpected_spawn();return;}
+        // The only retained owner is the proven inert main controller. Its
+        // first ECL instruction remains blocked; no hazard is exempted.
+        // clear_enemies advances this real manager clock even when it finds
+        // no deletable owner. Keep that behavior for each actual clear call.
+        actors.enemies->lifetime.tick();return;
+    }
+    if(all){Resources env(*this);actors.enemies->clear_all(env);}else{Enemies env(*this);actors.enemies->clear_enemies(env);}
+}
 i32 World::update_enemies(){Enemies env(*this);return actors.enemies->update(env);}
-Enemy* World::spawn_enemy(const char* name,const EnemySpawnParameters& p){Enemies env(*this);return actors.enemies->spawn(name,p,env);}
+Enemy* World::spawn_enemy(const char* name,const EnemySpawnParameters& p){
+    auto& gate=state.adaptation.scene;
+    if(gate.active){
+        if(!name||std::strcmp(name,"main")||gate.initial.owner||gate.spawningMain){gate.note_unexpected_spawn();return nullptr;}
+        gate.spawningMain=true;
+    }
+    Enemies env(*this);auto* result=actors.enemies->spawn(name,p,env);gate.spawningMain=false;return result;
+}
 void World::destroy_enemy(Enemy& enemy){Enemies env(*this);env.destroy_enemy(enemy);}
-i32 World::update_enemy(Enemy& enemy){Frame env(*this);Script scripts(*this,&enemy);env.scripts=&scripts;return enemy.state.update(env);}
+i32 World::update_enemy(Enemy& enemy){
+    auto& gate=state.adaptation.scene;
+    if(gate.active){
+        const auto pointer=[](const void* p){return static_cast<u32>(reinterpret_cast<uintptr_t>(p));};
+        u32 timeBits=0;std::memcpy(&timeBits,&enemy.script.root.time,4);
+        const adaptation::ControllerIdentity identity{pointer(&enemy),pointer(enemy.script.program),
+            pointer(enemy.script.root.instruction),pointer(enemy.script.program?enemy.script.program->find("main"):nullptr),
+            timeBits,static_cast<u32>(enemy.script.root.stack.top)};
+        if(gate.intercept(identity,actors.enemies?static_cast<u32>(actors.enemies->count):~0u))return 0;
+    }
+    gate.note_execution();Frame env(*this);Script scripts(*this,&enemy);env.scripts=&scripts;return enemy.state.update(env);
+}
 i32 World::enemy_command(EnemyState& enemy,EclContext& context,EclGlobals& globals){Frame frame(*this);Projectiles projectiles(*this);Spawning spawning(*this);Scene scene(*this);EnemyAnimationEnvironment animations{&engine.manager,actors.enemies->animation_files,&engine,&engine};EnemyCommandEnvironment env{frame,projectiles,animations,spawning,scene};return enemy.execute_command(context,globals,env);}
+bool World::validation_dialogue_request(const EclInstruction* instruction){
+    const auto& gate=state.adaptation.scene;
+    if(!gate.active||!gate.firstBlocked||!instruction||instruction->opcode!=0x152||instruction->length<20||
+       (instruction->references&1)||!actors.enemies||actors.enemies->count!=1||!actors.enemies->head||
+       reinterpret_cast<uintptr_t>(actors.enemies->head->value)!=gate.initial.owner)return false;
+    auto& enemy=*actors.enemies->head->value;EclContext call{};call.instruction=const_cast<EclInstruction*>(instruction);
+    call.owner=&enemy.script;call.difficulty=enemy.script.root.difficulty;Script globals(*this,&enemy);
+    enemy_command(enemy.state,call,globals);
+    return actors.gui&&actors.gui->dialogue&&actors.gui->dialogue->id==static_cast<i32>(instruction->argument(0));
+}
 }

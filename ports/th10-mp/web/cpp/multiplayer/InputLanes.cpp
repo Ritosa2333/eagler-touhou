@@ -1,4 +1,5 @@
 #include "InputLanes.hpp"
+#include <eagler/input/LimitedTouchVector.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -119,10 +120,19 @@ bool ResolveMovement(const Netplay::FrameInput& input, i32 speed,
     }
 
     float dx = input.x, dy = input.y;
+    const auto quantize_limited = [&]() noexcept {
+        std::int32_t quantized_x = 0, quantized_y = 0;
+        if (!eagler::input::nearest_integer_touch_vector_within_speed(
+                dx, dy, static_cast<float>(speed), quantized_x, quantized_y)) return false;
+        x = quantized_x;
+        y = quantized_y;
+        return true;
+    };
     if (input.analogMode == Netplay::AnalogMode::Joystick) {
         dx = std::clamp(dx, -1.0f, 1.0f) * static_cast<float>(speed);
         dy = std::clamp(dy, -1.0f, 1.0f) * static_cast<float>(speed);
         limit_vector(dx, dy, static_cast<float>(speed));
+        if (!quantize_limited()) return false;
     } else if (input.analogMode == Netplay::AnalogMode::DirectTouch) {
         dx = rate != 0.0f ? (input.x - static_cast<float>(fixedX)) / rate : 0.0f;
         dy = rate != 0.0f ? (input.y - static_cast<float>(fixedY)) / rate : 0.0f;
@@ -130,17 +140,26 @@ bool ResolveMovement(const Netplay::FrameInput& input, i32 speed,
         if (!input.unlimited) limit_vector(dx, dy, static_cast<float>(speed));
         dx = std::clamp(dx, -kVelocityLimit, kVelocityLimit);
         dy = std::clamp(dy, -kVelocityLimit, kVelocityLimit);
+        if (!input.unlimited) {
+            if (!quantize_limited()) return false;
+        } else {
+            x = static_cast<i32>(std::round(dx));
+            y = static_cast<i32>(std::round(dy));
+        }
     } else if (input.analogMode == Netplay::AnalogMode::DirectTouchDelta ||
                input.analogMode == Netplay::AnalogMode::DirectTouchBegin) {
         if (!input.unlimited) limit_vector(dx, dy, static_cast<float>(speed));
         dx = std::clamp(dx, -kVelocityLimit, kVelocityLimit);
         dy = std::clamp(dy, -kVelocityLimit, kVelocityLimit);
+        if (!input.unlimited) {
+            if (!quantize_limited()) return false;
+        } else {
+            x = static_cast<i32>(std::round(dx));
+            y = static_cast<i32>(std::round(dy));
+        }
     } else {
         return false;
     }
-
-    x = static_cast<i32>(std::round(dx));
-    y = static_cast<i32>(std::round(dy));
     return true;
 }
 

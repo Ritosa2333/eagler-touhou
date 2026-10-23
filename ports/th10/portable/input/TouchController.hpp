@@ -11,7 +11,7 @@ namespace touhou::input {
 struct TouchState {int context=0,instance=0;bool ready=false,choice=false;float x=0,y=0,fast=0,slow=0,min_x=0,min_y=0,max_x=640,max_y=480;};
 struct TouchSample {bool keys[256]{};int motion=0;float x=0,y=0;};
 class TouchController {
-    struct Gesture {bool active=false;int id=0,count=0;float x=0,y=0,last_x=0,last_y=0;std::uint64_t start=0;};
+    struct Gesture {bool active=false;int id=0,count=0;float x=0,y=0,last_x=0,last_y=0;std::uint64_t start=0;bool navigated=false;};
     Gesture menu,tap;eagler::input::DialogueGesture dialogue;std::set<int> fingers;int primary=0,instance=0,context=-1;
     bool dragging=false,motion_blocked=false,tap_armed=false,tap_moved=false;
     bool capture_begin=false,capture_rebase=false;
@@ -47,7 +47,7 @@ public:
         if(type==0&&fingers.count(id)){fingers.erase(id);if(primary==id)clear_motion();if(menu.id==id)menu={};dialogue.erase(id);}
         if(type==2){fingers.erase(id);
             if(s.context==2&&dialogue.end(id,px,py,now,s.choice))confirm_ticks=3;else dialogue.erase(id);
-            if(menu.active&&(menu.id==id||menu.count>=2)){if(std::abs(menu.last_x-menu.x)<=24&&std::abs(menu.last_y-menu.y)<=24){if(menu.count>=2)escape_ticks=3;else confirm_ticks=3;}menu={};}
+            if(menu.active&&(menu.id==id||menu.count>=2)){if(!menu.navigated&&std::abs(menu.last_x-menu.x)<=24&&std::abs(menu.last_y-menu.y)<=24){if(menu.count>=2)escape_ticks=3;else confirm_ticks=3;}menu={};}
             if(tap.active&&tap.id==id){const float dx=px-tap.x,dy=py-tap.y;tap_armed=double_tap&&s.context==1&&now-tap.start<=220&&!tap_moved&&dx*dx+dy*dy<=576;tap_x=px;tap_y=py;tap_time=now;tap={};}
             if(primary==id)clear_motion();return;
         }
@@ -80,7 +80,7 @@ public:
         if(!enabled)return out;
         if(s.context==2){if(s.choice){const int key=dialogue.navigate();if(key)out.keys[key]=true;}
             else if(dialogue.skip(now))out.keys[17]=true;}
-        if(s.context!=1&&menu.active){const float dx=menu.last_x-menu.x,dy=menu.last_y-menu.y;if(std::abs(dx)>24||std::abs(dy)>24){if(std::abs(dx)>std::abs(dy))out.keys[dx>0?39:37]=true;else out.keys[dy>0?40:38]=true;}}
+        if(s.context!=1&&menu.active&&!menu.navigated){const float dx=menu.last_x-menu.x,dy=menu.last_y-menu.y;if(std::abs(dx)>24||std::abs(dy)>24){menu.navigated=true;if(std::abs(dx)>std::abs(dy))out.keys[dx>0?39:37]=true;else out.keys[dy>0?40:38]=true;}}
         if(s.context==1||s.context==2){out.keys[90]=(s.context==1&&fire)||out.keys[90];out.keys[16]=focus||(two_finger&&fingers.size()>1);out.keys[88]=s.context==1&&bomb;
           if(s.ready){
             if(!arrows&&mode==3&&(stick_x||stick_y)){const float speed=key_slow||out.keys[16]?s.slow:s.fast;out.motion=1;out.x=s.x+stick_x*speed;out.y=s.y+stick_y*speed;}

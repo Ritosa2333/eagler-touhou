@@ -81,6 +81,9 @@ struct SessionFrame final:GameSessionEnvironment {
 };
 }
 bool World::start(i32 mode){if(actors.session)__builtin_trap();
+    state.adaptation.reset_actions();
+    state.adaptation.scene.begin(mode==0&&!(state.game.flags&0x30)&&!state.practice.enabled);
+    if(state.adaptation.scene.active)state.practice.assisted=true;
 #ifdef TH_ENABLE_THPRAC
     // A non-zero replay mode is playback; cheats are unavailable while one runs.
     state.practice.replay=mode!=0;

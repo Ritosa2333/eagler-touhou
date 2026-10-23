@@ -42,6 +42,8 @@ ScreenEffects* effects_create(AnimationEngine*,const u32*,const u32*);void effec
 Application* application_create(FileSystem*,Input*,GameState*,AnimationEngine*,Fonts*,Audio*,ScreenEffects*);void application_destroy(Application*);
 void application_touch_state(Application*,u32*);void sdl_loop_start(Application*);void sdl_loop_stop();void sdl_files_root(u32);
 void sdl_audio_shutdown();void sdl_fonts_shutdown();void sdl_shutdown();
+bool sdl_validation_write_lock();void sdl_validation_write_reset();const u32* sdl_validation_write_receipt();
+u32 sdl_loop_epoch();
 }
 namespace {
 struct Session {
@@ -51,6 +53,7 @@ struct Session {
     ~Session(){sdl_loop_stop();if(app)application_destroy(app);if(effects)effects_destroy(effects);if(audio)audio_destroy(audio);sdl_audio_shutdown();if(fonts)fonts_destroy(fonts);sdl_fonts_shutdown();if(animation)animation_engine_destroy(animation);if(device)graphics_destroy(device);if(state)game_state_destroy(state);if(input)input_destroy(input);if(files)files_destroy(files);sdl_shutdown();}
 };
 std::unique_ptr<Session> session;
+u32 session_generation=0;
 SDL_Gamepad* controllers[2]{};
 constexpr SDL_GamepadButton gamepad_slots[]={SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH,SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,SDL_GAMEPAD_BUTTON_BACK,SDL_GAMEPAD_BUTTON_START,SDL_GAMEPAD_BUTTON_LEFT_STICK,SDL_GAMEPAD_BUTTON_RIGHT_STICK,SDL_GAMEPAD_BUTTON_GUIDE};
 constexpr SDL_GamepadAxis gamepad_axes[]={SDL_GAMEPAD_AXIS_LEFTX,SDL_GAMEPAD_AXIS_LEFTY,SDL_GAMEPAD_AXIS_RIGHTX,SDL_GAMEPAD_AXIS_RIGHTY,SDL_GAMEPAD_AXIS_LEFT_TRIGGER,SDL_GAMEPAD_AXIS_RIGHT_TRIGGER};
@@ -92,6 +95,7 @@ void touch(int type,int id,float x,float y){
 extern "C" {
 __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Application* app){
     if(!session||session->app!=app)return;
+    if(app->world)app->world->touch_sensitivity=gestures.sensitivity;
     SDL_Event event;while(SDL_PollEvent(&event)){
 #ifdef TH_ENABLE_THPRAC
         ThpracUi::process_event(event);
@@ -142,7 +146,8 @@ EXPORT("sdl_game_open") Application* sdl_game_open(u32 chinese,u32 seed){
     gestures.begin_session();
     for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
     close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);int controller_count=0;auto* ids=SDL_GetGamepads(&controller_count);for(int i=0;i<controller_count;i++)add_controller(ids[i]);SDL_free(ids);
-    session=std::make_unique<Session>();auto& s=*session;sdl_files_root(chinese||th10_save_language_chinese());u32 rng[]{seed,0};std::memcpy(&s.random,rng,8);std::memcpy(&s.visual,rng,8);
+    session=std::make_unique<Session>();sdl_validation_write_reset();++session_generation;
+    auto& s=*session;sdl_files_root(chinese||th10_save_language_chinese());u32 rng[]{seed,0};std::memcpy(&s.random,rng,8);std::memcpy(&s.visual,rng,8);
     s.files=files_create();if(!s.files||!files_attach(s.files,chinese?"th10c.dat":"th10.dat"))return nullptr;
     const u32 parameters[]{640,480,22,1,0,0,1,0,1,1,80,0,0,0};s.input=input_create();s.state=game_state_create(s.input,chinese);s.device=graphics_create(reinterpret_cast<const GraphicsPresentation*>(parameters),0x40);if(!s.device)return nullptr;
     s.animation=animation_engine_create(s.files,s.device,&s.random,&s.visual,&s.rate);s.fonts=fonts_create(s.device,&s.random,chinese);s.audio=audio_create(s.files);s.effects=effects_create(s.animation,&s.quitting,nullptr);
@@ -157,7 +162,7 @@ EXPORT("sdl_game_close") void sdl_game_close(){sdl_keys_clear();
 #ifdef TH_ENABLE_THPRAC
     ThpracUi::shutdown();
 #endif
-    close_controllers();session.reset();}
+    close_controllers();session.reset();sdl_validation_write_reset();}
 EXPORT("sdl_key") void sdl_key(const char* code,u32 down){for(auto& k:keyboard_map)if(!std::strcmp(code,k.code)){k.hosted=down!=0;return;}}
 EXPORT("sdl_keys_clear") void sdl_keys_clear(){th10_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;if(session&&session->app){std::memset(&session->app->input.snapshot,0,sizeof(session->app->input.snapshot));session->app->state.practice.input.reset();}cancel();gestures.reset();}
 EXPORT("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
@@ -195,6 +200,89 @@ EXPORT("sdl_touch_mode") void sdl_touch_mode(u32 mode){if(gestures.set_mode(stat
 EXPORT("sdl_touch_controls") void sdl_touch_controls(u32 shoot,u32 slow,u32 bomb,u32 escape,float x,float y){gestures.controls(shoot,slow,bomb,escape,x,y);}
 EXPORT("sdl_resource_stats") const u32* sdl_resource_stats(){static u32 out[4]{};if(session&&session->files){auto& f=*session->files;out[0]=f.cache_bytes;out[1]=f.cache_hits;out[2]=f.cache_misses;out[3]=f.decoded.size();}return out;}
 EXPORT("sdl_game_status") const i32* sdl_game_status(){static i32 result[10]{};if(session&&session->app){auto& a=*session->app;result[0]=a.value.screen;result[1]=a.state.game.stage;result[2]=a.error;result[3]=a.state.game.lives;result[4]=a.state.game.power;result[5]=gestures.current_context();result[6]=gestures.active();result[7]=gestures.fire;result[8]=gestures.focus;result[9]=a.input.player_profiles[0].input.raw;}return result;}
+EXPORT("th10_runtime_identity_v1") const u32* th10_runtime_identity_v1(){static u32 out[8];
+    const auto* app=session?session->app:nullptr;const u32 words[]{0x54493130,1,8,app?1u:0u,0,session_generation,
+        static_cast<u32>(reinterpret_cast<uintptr_t>(app)),sdl_loop_epoch()};std::copy(words,words+8,out);return out;}
+EXPORT("th10_menu_state_v1") i32 th10_menu_state_v1(u32 field){
+    const auto* app=session?session->app:nullptr;if(!app)return -1;
+    const auto* title=app->title?app->title->value:nullptr;const auto& input=app->input.player_profiles[0].input;
+    switch(field){case 0:return app->value.screen;case 1:return title?title->screen:-2;
+    case 2:return title?title->menu.selected:0;case 3:return title?title->phase:0;
+    case 4:return title?title->elapsed.current:0;case 5:return title&&title->phase==2;
+    case 6:return input.raw;case 7:return input.raw_previous;
+    case 8:return app->title&&app->title->startup?app->title->startup->elapsed:-1;default:return -1;}
+}
+EXPORT("th10_touch_action_state_v1") const u32* th10_touch_action_state_v1(Application* app){
+    static const u32 unavailable[20]{1};return session&&session->app==app?app->state.adaptation.actions:unavailable;}
+EXPORT("th10_validation_scene_arm") u32 th10_validation_scene_arm(Application* app){
+    if(!session||session->app!=app||(app->world&&app->world->actors.session)||app->state.practice.enabled||
+       (app->state.game.flags&0x30)||app->state.adaptation.scene.status)return 0;
+    if(!sdl_validation_write_lock())return 0;
+    return app->state.adaptation.scene.arm(true)?1:0;
+}
+EXPORT("th10_validation_scene_arm_state") const u32* th10_validation_scene_arm_state(Application* app){
+    static u32 out[8];std::fill(out,out+8,0);out[0]=1;if(!session||session->app!=app)return out;
+    const auto& gate=app->state.adaptation.scene;const auto* write=sdl_validation_write_receipt();
+    const u32 words[]{1,gate.status,gate.generation,gate.pending,gate.status==2,gate.firstBlocked,gate.updateStarted,write[1]};
+    std::copy(words,words+8,out);return out;
+}
+EXPORT("th10_validation_scene_write_state_v1") const u32* th10_validation_scene_write_state_v1(Application* app){
+    static const u32 unavailable[8]{1};return session&&session->app==app?sdl_validation_write_receipt():unavailable;
+}
+EXPORT("th10_validation_controller_v1") const u32* th10_validation_controller_v1(Application* app){
+    static u32 out[24];std::fill(out,out+24,0);out[0]=1;if(!session||session->app!=app)return out;
+    const auto pointer=[](const void* p){return static_cast<u32>(reinterpret_cast<uintptr_t>(p));};
+    const auto& gate=app->state.adaptation.scene;const auto* manager=app->world?app->world->actors.enemies:nullptr;
+    out[1]=gate.active;out[2]=gate.generation;out[3]=gate.initial.owner;out[4]=gate.initial.program;
+    out[5]=gate.initial.instruction;out[7]=gate.blockedCalls;out[8]=gate.executedCalls;
+    out[9]=gate.unexpectedOwners;out[10]=gate.firstBlocked;out[16]=gate.initial.timeBits;out[18]=gate.initial.stackTop;
+    out[22]=app->state.adaptation.hostFrames;
+    if(!manager)return out;out[11]=manager->count;out[21]=manager->lifetime.current;
+    out[12]=pointer(manager->head?manager->head->value:nullptr);out[13]=pointer(manager->tail?manager->tail->value:nullptr);
+    const bool unique=manager->count==1&&manager->head&&manager->tail==manager->head&&
+        !manager->head->next&&!manager->head->previous&&out[12]==gate.initial.owner;
+    out[23]=unique;if(!unique)return out;const auto& owner=manager->head->value->script;
+    out[6]=pointer(owner.root.instruction);out[14]=owner.threads.next?2:1;
+    std::memcpy(out+15,&owner.root.time,4);out[17]=owner.root.stack.top;
+    out[19]=pointer(owner.program?owner.program->find("main"):nullptr);out[20]=owner.program?owner.program->subroutine_count:0;
+    if(pointer(owner.program)!=gate.initial.program||owner.threads.value!=&owner.root||owner.root.owner!=&owner)out[23]=0;
+    return out;
+}
+EXPORT("th10_validation_scene_state") const u32* th10_validation_scene_state(Application* app){
+    static u32 out[16];std::fill(out,out+16,0);out[0]=1;if(!session||session->app!=app)return out;
+    const auto& gate=app->state.adaptation.scene;const auto* world=app->world;
+    out[1]=gate.active;out[9]=app->state.game.stage;out[11]=app->state.adaptation.hostFrames;
+    out[12]=gate.blockedCalls;out[14]=gate.active&&app->state.practice.assisted;
+    if(!world)return out;const auto& actors=world->actors;
+    out[2]=actors.session&&!world->loading;out[3]=out[2]&&actors.player&&actors.enemies&&actors.bullets&&actors.lasers;
+    out[4]=(actors.gui&&actors.gui->dialogue)||(actors.results&&actors.results->state!=0);
+    out[5]=app->state.replay&&app->state.replay->mode==1;out[6]=actors.enemies?actors.enemies->count:0;
+    if(actors.bullets)for(const auto& bullet:actors.bullets->pool)if(bullet.state)++out[7];
+    out[8]=actors.lasers?actors.lasers->count:0;out[10]=actors.enemies?actors.enemies->lifetime.current:0;
+    out[13]=actors.enemies&&actors.enemies->program?actors.enemies->program->subroutine_count:0;
+    out[15]=actors.player?actors.player->state:~0u;return out;
+}
+// ABI v1: version, validity, phase, consumed input, world/reset frames,
+// paused, multiplayer frame, float-bit x/y, application frame, local seat.
+EXPORT("th10_native_observation_v1") const u32* th10_native_observation_v1(){
+    static u32 out[12];std::fill(out,out+12,~0u);out[0]=1;out[1]=1;out[2]=6;out[8]=out[9]=0x7fc00000u;
+    if(!session||!session->app)return out;
+    const auto& app=*session->app;const auto* world=app.world;
+    out[1]|=2;out[3]=app.input.player_profiles[0].input.current;
+    out[1]|=0x80;out[10]=app.state.adaptation.hostFrames;
+    out[2]=app.stopped?5:app.title?0:7;
+    if(world&&world->actors.session&&!world->loading){
+        const auto* results=world->actors.results;const int state=results?results->state:0;
+        out[1]|=0x20;out[6]=state>=1&&state<=5;out[2]=out[6]?2:state>=6?3:1;
+        const int frame=world->actors.session->elapsed.current;
+        if(frame>=0){out[1]|=0x18;out[4]=out[5]=static_cast<u32>(frame);}
+        if(const auto* player=world->actors.player){
+            out[1]|=4;std::memcpy(out+8,&player->position.x,4);std::memcpy(out+9,&player->position.y,4);
+        }
+        out[1]|=0x100;out[11]=0;
+    }return out;
+}
 }
 
 #include "LocalReplay.inc"
+#include "DialogueAdaptation.inc"

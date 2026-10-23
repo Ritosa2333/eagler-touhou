@@ -8,6 +8,7 @@
 #include "../game/EclProgram.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
 #include <map>
+#include <string>
 namespace th10::browser {
 // The gameplay owner persists across sessions, including transitions that keep
 // the player/replay/projectile pools or hand a completed replay to the menus.
@@ -20,12 +21,14 @@ struct World final:HudActions,CallbackReceiver {
     struct Preview {ReplayDocument document;Preview* next;Preview(FileSystem& files,u32 flags,Preview* next):document(files,flags),next(next){}};
     Preview* previews=nullptr;
     i32 new_game=0,loader_stop=0,loader_running=0,resource_drawing=-1,resource_updating=-1,pending_upload=0;
-    float measured_fps=60;bool loading=false;bool always_hitbox=false;i32 error=0;
+    float measured_fps=60;float touch_sensitivity=1.f;bool loading=false;bool always_hitbox=false;i32 error=0;
     struct PlayerPresentation {Vec3 position{};i32 state=0;bool valid=false;} player_presentation;
     struct BulletPresentation {Vec3 position{};float angle=0;i32 id=0;u16 state=0;bool active=false;} bullet_presentation[2000]{};
     struct ItemPresentation {Vec3 position{};i32 age=0,state=0,kind=0;bool active=false;} item_regular_presentation[150]{},item_faith_presentation[2048]{};
     struct LaserPresentation {Vec3 position{};float angle=0,length=0,width=0;u32 id=0;i32 state=0;u32 kind=0;};
     std::map<const EnemyLaser*,LaserPresentation> laser_presentation;
+    struct ValidationSource {u32 size=0;std::string name;};
+    std::map<const void*,ValidationSource> validation_script_sources;
 #ifdef TH_ENABLE_THPRAC
     std::map<const void*,u32> practice_script_sizes;
 #endif
@@ -65,6 +68,7 @@ struct World final:HudActions,CallbackReceiver {
     bool create_enemies();void destroy_enemies(EnemyManager*);void clear_enemies(bool all);i32 update_enemies();
     Enemy* spawn_enemy(const char*,const EnemySpawnParameters&);void destroy_enemy(Enemy&);i32 update_enemy(Enemy&);
     i32 enemy_command(EnemyState&,EclContext&,EclGlobals&);
+    bool validation_dialogue_request(const EclInstruction* instruction);
     bool create_spell();void destroy_spell(SpellCard*);i32 update_spell();i32 draw_spell(bool foreground);
     void start_spell(i32,i32,const char*,i32);void finish_spell();
     bool create_replay(i32,const char*);void destroy_replay(Replay*);void prepare_replay();void activate_replay();

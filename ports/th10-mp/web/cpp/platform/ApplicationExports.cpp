@@ -1,8 +1,10 @@
 #include "Application.hpp"
 #include <new>
 #include <cstdlib>
+#include <eagler/input/TouchMotionTrace.hpp>
 using namespace th10;
 #define APP_EXPORT(name) extern "C" __attribute__((export_name(name)))
+APP_EXPORT("th10_touch_motion_trace_v2") const std::uint32_t* application_touch_motion_trace_v2(std::uint32_t seat,std::uint32_t execution_kind){return eagler::input::GlobalTouchMotionTraceBank().snapshot(seat,execution_kind);}
 #ifdef TH_NATIVE_PLATFORM
 APP_EXPORT("application_resident_hits") u32 application_resident_hits(browser::Application* app){return app->engine.resources.resident_hits;}
 APP_EXPORT("application_preload_stats") const u32* application_preload_stats(browser::Application* app){static u32 out[3];out[0]=app->engine.resources.prepared.size();out[1]=app->engine.resources.prepared_bytes;out[2]=app->engine.resources.cache_hits;return out;}

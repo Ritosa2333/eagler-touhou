@@ -77,6 +77,7 @@ void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool World::begin_netplay_frame(u32 frame){
     const auto& runtime=state.netplay_runtime;
+    touch_trace_predicted_mask=0;
     spectator_boss_registration_mask=0;
     spectator_activation_checkpoint_frame=Netplay::INVALID_FRAME;
     spectator_activation_checkpoint_stage=0;
@@ -89,6 +90,7 @@ bool World::begin_netplay_frame(u32 frame){
         if(!rollback)rollback.reset(new(std::nothrow) multiplayer::RollbackState);
         if(!rollback)return false;
         const auto decision=runtime.Prepare(frame);
+        touch_trace_predicted_mask=decision.predictedMask;
         const bool capture=Netplay::NeedsRollbackSnapshot(frame,runtime.ConfirmedThroughAllRemotes(),
             decision.predictedMask,rollback_resimulating,true);
         if(!rollback->BeginFrame(*this,frame,capture))return false;
@@ -119,7 +121,7 @@ bool World::end_netplay_frame(){
     if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
     if(audio.manager.command_sink==&spectator_silent_audio)audio.manager.command_sink=nullptr;
     spectator_suppress_audio=false;
-    engine.rollback_state=nullptr;engine.netplay_frame=~u32(0);
+    engine.rollback_state=nullptr;engine.netplay_frame=~u32(0);touch_trace_predicted_mask=0;
     if(state.netplay_runtime.StagePlaybackReady())return true;
     const bool commands=audio_events.EndFrame();
     const bool state=!rollback||rollback->EndFrame();

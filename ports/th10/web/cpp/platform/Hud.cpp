@@ -24,7 +24,12 @@ HudFrame::HudFrame(Hud& h):owner(h){GuiFrameEnvironment::game=GuiDrawEnvironment
 void HudFrame::update_animation(AnmVm& vm){owner.engine.update(vm);}
 void HudFrame::bind_digit(AnmFile& f,AnmVm& vm,i32 digit){f.bind_sprite(vm,digit);}
 u32 HudFrame::create_animation(AnmFile& file,i32 script){return owner.animation(file,script);}
-i32 HudFrame::update_dialogue(Dialogue& dialogue){HudMessages env(owner);return dialogue.tick(env);}
+i32 HudFrame::update_dialogue(Dialogue& dialogue){HudMessages env(owner);
+    const auto& input=owner.input.player_profiles[0].input;
+    const u32 current=input.current,previous=input.previous,pressed=input.pressed;
+    const auto result=dialogue.tick(env);auto& observed=owner.state.adaptation;
+    ++observed.dialogueSequence;observed.dialogueCurrent=current;observed.dialoguePrevious=previous;
+    observed.dialoguePressed=pressed;observed.dialogueValid=true;return result;}
 void HudFrame::release_dialogue(Dialogue* dialogue){std::free(dialogue);}
 void HudFrame::play_sound(i32 id){owner.sound(id);}
 void HudFrame::draw_animation(AnmVm& vm){owner.engine.draw(vm);}
@@ -82,8 +87,8 @@ Gui* Hud::allocate(){return static_cast<Gui*>(std::malloc(sizeof(Gui)));}
 AnmFile* Hud::load_animations(i32 slot,const char* name){return engine.manager.load(slot,name,engine.resources);}
 void Hud::release_animations(AnmFile& file){file.release(engine.resources);}
 void Hud::delete_object(void* object){std::free(object);}
-void Hud::free_bytes(void* bytes){std::free(bytes);}
-u8* Hud::read_file(const char* name){return ResourceFiles{records.files}.load(name,nullptr,false);}
+void Hud::free_bytes(void* bytes){validation_message_sources.erase(bytes);std::free(bytes);}
+u8* Hud::read_file(const char* name){u32 size=0;auto* bytes=ResourceFiles{records.files}.load(name,&size,false);if(bytes)validation_message_sources[bytes]={size,name};return bytes;}
 void Hud::report_error(){error=-1;}
 u32 Hud::create_animation(AnmFile& file,i32 script){return animation(file,script);}
 void Hud::initialize_animation(AnmFile& file,AnmVm& vm,i32 script){file.initialize_script(vm,script,engine,engine.manager.started_scripts);}

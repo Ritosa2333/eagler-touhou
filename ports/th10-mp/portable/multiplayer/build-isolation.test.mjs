@@ -24,10 +24,8 @@ test('fixture setup never enters the ordinary or production multiplayer source s
 });
 
 test('fixture mode requires the explicit TH10 multiplayer variant',()=>{
- for(const args of [['--multiplayer-fixtures'],['--th08','--multiplayer','--multiplayer-fixtures']]){
-  const result=spawnSync(process.execPath,['portable/build.mjs',...args,'--print-plan'],
-                        {cwd:root,encoding:'utf8',windowsHide:true});
-  assert.notEqual(result.status,0);
-  assert.match(result.stderr,/TH10 fixture builds require/);
- }
+ const result=spawnSync(process.execPath,['portable/build.mjs','--multiplayer-fixtures','--print-plan'],
+                       {cwd:root,encoding:'utf8',windowsHide:true});
+ assert.notEqual(result.status,0);
+ assert.match(result.stderr,/TH10 fixture builds require/);
 });

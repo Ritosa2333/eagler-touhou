@@ -113,6 +113,7 @@ EM_BOOL frame(double timestamp,void* epoch){
 }
 }
 extern "C" {
+__attribute__((export_name("sdl_loop_epoch"))) th10::u32 sdl_loop_epoch(){return loop_epoch;}
 __attribute__((export_name("sdl_loop_time"))) double sdl_loop_time(){return elapsed+(running&&!suspended?std::max(0.,emscripten_get_now()-callback_begin)/1000.:0.);}
 // A deterministic, stopped-loop entry point for replay/regression runners.
 // It shares native input, audio progression and the same Application tick.

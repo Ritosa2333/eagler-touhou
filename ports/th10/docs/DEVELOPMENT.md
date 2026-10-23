@@ -15,7 +15,7 @@ $env:EAGLER_DEVELOPMENT_VANILLA_FONT='C:\Windows\Fonts\msgothic.ttc'
 $env:EAGLER_DEVELOPMENT_UNICODE_FONT='C:\local-content\fonts\unifont-15.1.05.otf'
 $env:EAGLER_DEVELOPMENT_GAMES='th10'
 node launcher/scripts/build-runtime.mjs --game=th10 --variant=normal --emsdk='/path/to/emsdk'
-node ports/th10/portable/package-eagler.mjs
+node launcher/scripts/package-runtime.mjs --game=th10 --variant=normal
 npm --prefix launcher run build
 npm --prefix launcher run dev:workspace
 ```
@@ -25,3 +25,7 @@ npm --prefix launcher run dev:workspace
 ## 源码与验证
 
 `web/cpp/` 含游戏、SDL 宿主和 Runtime 导出；`portable/` 含 GLES、数值、输入和浏览器接口；`portable/presentation-lab/` 是独立诊断工作台。源码检查从 `ports/th10/` 运行 `node portable/check-high-refresh-contract.mjs` 和 `node portable/check-presentation-purity.mjs`；纯度报告以 `unknown` 标记尚待归类的结果。
+
+`th10_native_observation_v1()` 以共用 12-word ABI 提供只读阶段、已消费输入、玩家坐标、Results 暂停状态与关卡逻辑计时。有效位区分尚未建立的状态，读取接口只复制数据。普通版重开对照关卡逻辑计时；MP 按本地席位读取已提交输入及坐标，暂停和重开通过真实房间协商流程验收。
+
+`th10_touch_motion_trace_v2(seat, kind)` 在原生 `Player::move` 完成固定点写回与场地夹紧后记录运动轨迹。TH10 的位置单位为百分之一像素，目标保持触控控制器给出的游戏坐标，限速前的原生速度与倍率独立记录；触控灵敏度取自 SDL 控制器配置。限速后的浮点向量量化为速度圆盘内误差最小的整数格点，保证逐轴取整后仍不超过本作原生速度预算；未饱和微移保留原有百分之一像素精度，无限速模式沿用原生取整。

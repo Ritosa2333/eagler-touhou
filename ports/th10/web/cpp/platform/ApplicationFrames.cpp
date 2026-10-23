@@ -23,7 +23,15 @@ AppLoop::AppLoop(Application& a):owner(a){application=&a.value;animations=&a.man
 Extended AppLoop::time(){return owner.time();}void AppLoop::sleep(u32){}void AppLoop::flush(){owner.engine.flush();}
 void AppLoop::configure_flat(Camera& camera){owner.configure_camera(camera,true);}
 void AppLoop::set_viewport(void*,const CameraViewport& viewport){owner.engine.device.viewport(viewport);}
-i32 AppLoop::update(){owner.engine.snapshot_presentation();const i32 result=owner.engine.update_all();if(result&&result!=-1)presentation_audit::simulation_tick();return result;}
+i32 AppLoop::update(){owner.engine.snapshot_presentation();auto& observed=owner.state.adaptation;
+    const auto sequence=observed.consumerSequence;observed.dialogueValid=false;
+    const i32 result=owner.engine.update_all();++observed.hostFrames;
+    if(owner.world&&owner.world->actors.player&&owner.world->actors.results){
+        const auto phase=owner.world->actors.results->state;
+        if(sequence==observed.consumerSequence&&phase>=1&&phase<=5)
+            observed.publish_paused(owner.state.game.stage,owner.world->actors.player->state);
+    }
+    if(result&&result!=-1)presentation_audit::simulation_tick();return result;}
 void AppLoop::update_audio(){owner.audio.update();}
 void AppLoop::stop_loader(){owner.value.stop_loading(owner.screens);}
 i32 AppLoop::begin_scene(void*){return owner.engine.device.begin_scene();}

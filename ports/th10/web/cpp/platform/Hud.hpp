@@ -10,6 +10,8 @@
 #include "../game/GuiFrame.hpp"
 #include "../game/Dialogue.hpp"
 #include "../game/AudioGame.hpp"
+#include <map>
+#include <string>
 namespace th10::browser {
 struct HudActions {
     virtual void clear_for_dialogue()=0;
@@ -59,6 +61,8 @@ struct Hud final:GuiResourceEnvironment,CallbackReceiver {
     GameState& state;GameActors& actors;AnimationEngine& engine;Common& common;Fonts& fonts;
     Input& input;Audio& audio;Scores& records;ScreenEffects& screen_effects;HudActions& actions;
     UpdateChain* update_chain;u8* message_cache=nullptr;char resource_name[260]{};u32 difficulty_visible=0;i32 error=0;
+    struct ValidationSource {u32 size=0;std::string name;};
+    std::map<const void*,ValidationSource> validation_message_sources;
     float previous_boss_health=0;Enemy* previous_boss=nullptr;bool boss_presentation_valid=false;
     Hud(GameState&,GameActors&,AnimationEngine&,Common&,Fonts&,Input&,Audio&,Scores&,ScreenEffects&,HudActions&);
     ~Hud();

@@ -38,10 +38,10 @@ for(const source of ['cpp/game/PracticeConfig.cpp','cpp/game/PracticeRuntime.cpp
  if(!sources.includes(source))sources.push(source);
 const shared=resolve(workspace,'portable/sdl'),numeric=resolve(workspace,'portable/numeric'),input=resolve(workspace,'portable/input'),renderer=resolve(shared,'Renderer.cpp');
 function headers(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headers(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);}
-const dialogueHeaders=[resolve(commonInclude,'eagler/input/DialogueGesture.hpp'),resolve(commonInclude,'eagler/audio/WebSfx.hpp')];
+const dialogueHeaders=[...headerInputs(resolve(commonInclude,'eagler/input')),resolve(commonInclude,'eagler/audio/WebSfx.hpp')];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(imgui),...headers(shared),...headers(numeric),...headers(input),...commonThpracHeaders,...dialogueHeaders].sort())hash.update(path).update(readFileSync(path));
 const flags=[...common,'-std=c++17','-fno-exceptions','-fno-rtti'],prefix=JSON.stringify([flags,hash.digest('hex')]);
-await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input')),flags});
+await printRuntimeInputs({workspace,root,sources:[...sources,renderer,resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c')],headers:[...headerInputs(imgui,resolve(root,'cpp'),resolve(workspace,'portable/sdl'),resolve(workspace,'portable/numeric'),resolve(workspace,'portable/input')),...dialogueHeaders,...commonThpracHeaders],flags});
 const objects=resolve(out,'objects');if(!printingRuntimeInputs)mkdirSync(objects,{recursive:true});
 async function compile(source,c=false){const object=sourceObjectPath(objects,workspace,source),key=createHash('sha256').update(prefix).update(readFileSync(source)).digest('hex');if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;
  await run([...(c?[...common,'-std=c11','-DSOFTFLOAT_FAST_INT64','-DINLINE_LEVEL=5']:flags),'-c',source,'-o',object]);writeFileSync(object+'.key',key);return object;

@@ -6,6 +6,7 @@
 #include "../game/ApplicationState.hpp"
 #include "../game/PracticeConfig.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
+#include "../../../portable/input/AdaptationState.hpp"
 namespace th10::browser {
 // Persistent application data shared by menus, gameplay and result screens.
 struct GameState {
@@ -23,6 +24,7 @@ struct GameState {
     const StageConfiguration* current_stage;
     Replay* replay=nullptr;
     touhou::input::MotionTrack motion;
+    adaptation::State adaptation;
     double active_time=0,total_time=0;
     bool chinese;
     GameState(Input& input,bool chinese);

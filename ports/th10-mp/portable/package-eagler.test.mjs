@@ -42,8 +42,8 @@ function makeFixture({thprac = false} = {}) {
     write('web/sdl-runtime/' + name, readFileSync(new URL('../web/sdl-runtime/' + name, import.meta.url)));
   write('portable/browser/motion-replay.mjs', 'export const replay = true;');
   write('portable/browser/replay-file-policy.mjs', 'export const replayPolicy = true;');
-  write('third_party/eagler-common/browser/save-sync.mjs', readFileSync(new URL('../../../common/browser/save-sync.mjs',import.meta.url)));
-  write('third_party/eagler-common/browser/adonis-calibration.mjs', readFileSync(new URL('../../../common/browser/adonis-calibration.mjs',import.meta.url)));
+  write('common/browser/save-sync.mjs', readFileSync(new URL('../../../common/browser/save-sync.mjs',import.meta.url)));
+  write('common/browser/adonis-calibration.mjs', readFileSync(new URL('../../../common/browser/adonis-calibration.mjs',import.meta.url)));
   write(join('private-fonts', 'blend.bin'), Buffer.from([1, 2, 3]));
   write(join('private-fonts', 'codepages.bin'), Buffer.from([4, 5]));
 
@@ -79,6 +79,16 @@ function makeFixture({thprac = false} = {}) {
   return {root, fonts, dispose: () => rmSync(root, {recursive: true, force: true})};
 }
 
+function packageFixture(root, fonts, args) {
+  const previous = process.env.EAGLER_COMMON_ROOT;
+  process.env.EAGLER_COMMON_ROOT = resolve(root, 'common');
+  try { return packageEagler({root, fonts, args}); }
+  finally {
+    if (previous === undefined) delete process.env.EAGLER_COMMON_ROOT;
+    else process.env.EAGLER_COMMON_ROOT = previous;
+  }
+}
+
 test('package plans keep normal, multiplayer and presentation-lab outputs separate', () => {
   const {root, dispose} = makeFixture();
   try {
@@ -103,9 +113,9 @@ test('package plans keep normal, multiplayer and presentation-lab outputs separa
 test('normal and multiplayer packages emit isolated manifests with verified identities', () => {
   const {root, fonts, dispose} = makeFixture();
   try {
-    const normal = packageEagler({root, fonts, args: []});
-    const multiplayer = packageEagler({root, fonts, args: ['--multiplayer']});
-    const lab = packageEagler({root, fonts, args: ['--presentation-lab']});
+    const normal = packageFixture(root, fonts, []);
+    const multiplayer = packageFixture(root, fonts, ['--multiplayer']);
+    const lab = packageFixture(root, fonts, ['--presentation-lab']);
     assert.equal(normal.out, resolve(root, 'build-eagler'));
     assert.equal(multiplayer.out, resolve(root, 'build-eagler-multiplayer'));
     assert.equal(lab.out, resolve(root, 'artifacts/presentation-lab/runtime'));
@@ -161,7 +171,7 @@ test('THPrac-enabled packages contain every lazily loaded practice module', () =
   const {root, fonts, dispose} = makeFixture({thprac: true});
   try {
     for (const args of [[], ['--multiplayer'], ['--presentation-lab']]) {
-      const {out} = packageEagler({root, fonts, args});
+      const {out} = packageFixture(root, fonts, args);
       const manifest = JSON.parse(readFileSync(resolve(out, 'manifest.json'), 'utf8'));
       const inventory = JSON.parse(readFileSync(resolve(out, 'runtime-files.json'), 'utf8'));
       assert.equal(manifest.features.thprac, true);
@@ -180,7 +190,7 @@ test('THPrac package declarations must agree with the actual native export', () 
       const build = JSON.parse(readFileSync(path, 'utf8'));
       build.features.thprac = !thprac;
       writeFileSync(path, JSON.stringify(build));
-      assert.throws(() => packageEagler({root, fonts, args: []}), /native capability/);
+      assert.throws(() => packageFixture(root, fonts, []), /native capability/);
       assert.equal(existsSync(resolve(root, 'build-eagler')), false);
     } finally { dispose(); }
   }
@@ -195,7 +205,7 @@ test('actual fixture exports cannot hide behind a production manifest', () => {
     const binary=wasmFixture(['mp_fixture_prepare'],'forged-profile');
     writeFileSync(resolve(directory,'th10-sdl.wasm'),binary);
     writeFileSync(path,JSON.stringify({...build,sha256:sha256(binary),exports:[]}));
-    assert.throws(()=>packageEagler({root,fonts,args:['--multiplayer']}),/Fixture mutation export/);
+    assert.throws(()=>packageFixture(root,fonts,['--multiplayer']),/Fixture mutation export/);
     assert.equal(existsSync(resolve(root,'build-eagler-multiplayer')),false);
   } finally {dispose();}
 });
@@ -206,11 +216,11 @@ test('packaging rejects build-variant and artifact-hash mismatches before output
     const buildPath = resolve(root, 'web/artifacts/multiplayer/build.json');
     const build = JSON.parse(readFileSync(buildPath, 'utf8'));
     writeFileSync(buildPath, JSON.stringify({...build, variant: 'normal'}));
-    assert.throws(() => packageEagler({root, fonts, args: ['--multiplayer']}), /profile or variant/);
+    assert.throws(() => packageFixture(root, fonts, ['--multiplayer']), /profile or variant/);
     assert.equal(existsSync(resolve(root, 'build-eagler-multiplayer')), false);
 
     writeFileSync(buildPath, JSON.stringify({...build, sha256: '0'.repeat(64)}));
-    assert.throws(() => packageEagler({root, fonts, args: ['--multiplayer']}), /Build identity mismatch/);
+    assert.throws(() => packageFixture(root, fonts, ['--multiplayer']), /Build identity mismatch/);
     assert.equal(existsSync(resolve(root, 'build-eagler-multiplayer')), false);
   } finally {
     dispose();
