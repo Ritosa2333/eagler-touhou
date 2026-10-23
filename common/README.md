@@ -37,6 +37,7 @@ ctest --test-dir build/common -C Release --output-on-failure
 | `eagler::netplay_base` | Protocol、Core、Session 与 WebSocket 基础实现 |
 | `eagler::session_channel` | 基于 `PeerTransport` 的会话通道 |
 | `eagler::rollback` | 通用回滚存储 |
+| `eagler::write_journal` | 独立模拟堆与 Wasm 首次写入日志；由使用它的作品显式接入 |
 | `eagler::browser_peer_transport` | 浏览器 Peer transport |
 | `eagler::netplay_input`、`eagler::input_replay` | 逻辑输入与 Replay 文件编解码 |
 | `eagler::thprac` | 可选 THPrac 输入、HUD 和练习工具 |

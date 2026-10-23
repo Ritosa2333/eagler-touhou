@@ -45,6 +45,18 @@ target_link_libraries(eagler_common_rollback INTERFACE
     eagler::netplay_headers
 )
 
+# Opt-in whole-simulation allocation and Wasm write journaling. Consumers run
+# tools/rollback/instrument.mjs after their final link; the runtime rejects a
+# missing instrumentation marker before constructing a simulation heap.
+add_library(eagler_common_write_journal INTERFACE)
+add_library(eagler::write_journal ALIAS eagler_common_write_journal)
+target_sources(eagler_common_write_journal INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/WriteJournal.cpp>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/SimulationHeap.cpp>"
+)
+target_compile_definitions(eagler_common_write_journal INTERFACE EAGLER_WRITE_JOURNAL=1)
+target_link_libraries(eagler_common_write_journal INTERFACE eagler::netplay_headers)
+
 # Browser peer networking is deliberately separate from netplay_base. Titles
 # that use another transport can keep Protocol/Core without inheriting WebRTC
 # or relay implementation sources. The consumer provides only the stable
