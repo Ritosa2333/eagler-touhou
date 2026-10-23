@@ -99,6 +99,21 @@ function sameExecutionMemory(actual, baseline) {
   assert.deepEqual(actual.slice(44), baseline.slice(44));
 }
 
+function exportedFunctionIndices(bytes) {
+  const module = b.readBinary(bytes);
+  try {
+    const indices = new Map();
+    for (let index = 0; index < module.getNumFunctions(); index++)
+      indices.set(b.getFunctionInfo(module.getFunctionByIndex(index)).name, index);
+    const exports = {};
+    for (let index = 0; index < module.getNumExports(); index++) {
+      const info = b.getExportInfo(module.getExportByIndex(index));
+      if (info.kind === b.ExternalFunction) exports[info.name] = indices.get(info.value);
+    }
+    return exports;
+  } finally { module.dispose(); }
+}
+
 test('scalar store widths, integer/floating types and Wasm marker execute correctly', async () => {
   const bytes = fixture(SCALAR_FUNCTIONS);
   const a = await running(bytes), baseline = await running(bytes, { instrumented: false });
@@ -159,6 +174,50 @@ test('childless unreachable, nop and memory.size preserve control flow and traps
   assert.throws(() => a.f.probe(1), WebAssembly.RuntimeError);
   assert.throws(() => baseline.f.probe(1), WebAssembly.RuntimeError);
   assert.deepEqual(a.trace, []); assert.deepEqual(a.heap, before);
+});
+
+test('function indices, exports, table targets and start survive local reconstruction', async () => {
+  // Every original function is exported so the complete function-index map is
+  // observable independently of Binaryen's regenerated internal names. Hooks,
+  // non-writing helpers and writing functions deliberately alternate positions.
+  const input = wasm(`(module
+    (type $operation (func (param i32) (result i32)))
+    (import "env" "touch" (func $notify (param i32 i32)))
+    (import "env" "mark" (func $mark (param i32 i32) (result i32)))
+    (export "notify" (func $notify)) (export "mark" (func $mark))
+    (memory (export "memory") 1)
+    (table (export "table") 3 funcref)
+    (elem (i32.const 0) $first $pure $second)
+    (func $first (export "first") (param i32) (result i32)
+      (i32.store (i32.const 260) (local.get 0)) (i32.add (local.get 0) (i32.const 1)))
+    (func $marker (export "eagler_rb_instrumented") (result i32) (i32.load (i32.const 40)))
+    (func $pure (export "pure") (param i32) (result i32) (i32.mul (local.get 0) (i32.const 3)))
+    (func $touch (export "eagler_rb_touch") (param i32 i32) (call $notify (local.get 0) (local.get 1)))
+    (func $second (export "second") (param i32) (result i32)
+      (i32.store (i32.const 516) (local.get 0)) (i32.add (local.get 0) (i32.const 2)))
+    (func $config (export "eagler_rb_config_address") (result i32) (i32.const 64))
+    (func $startup (export "startup") (i32.store (i32.const 96) (i32.const 12345)))
+    (start $startup)
+    (func $dispatch (export "indirect") (param i32 i32) (result i32)
+      (call_indirect (type $operation) (local.get 0) (local.get 1))))`);
+  const expected = exportedFunctionIndices(input);
+  assert.deepEqual(Object.values(expected).sort((a, b) => a - b), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const a = await running(input), baseline = await running(input, { instrumented: false });
+  assert.deepEqual(exportedFunctionIndices(a.bytes), expected, 'external index symbol map stays exact');
+  assert.equal(expected.eagler_rb_instrumented, 3);
+  assert.equal(new DataView(a.heap.buffer).getUint32(96, true), 12345, 'original start function executes');
+  assert.equal(a.f.table.get(0), a.f.first);
+  assert.equal(a.f.table.get(1), a.f.pure);
+  assert.equal(a.f.table.get(2), a.f.second);
+  const before = a.heap.slice();
+  for (const [slot, result] of [[0, 8], [1, 21], [2, 9]]) {
+    assert.equal(a.f.indirect(7, slot), result);
+    assert.equal(baseline.f.indirect(7, slot), result);
+  }
+  assert.deepEqual(a.trace, [['touch', 260, 4], ['touch', 516, 4]]);
+  sameExecutionMemory(a.heap, baseline.heap);
+  a.restore(); sameTracked(a.heap, before);
+  assert.throws(() => a.f.indirect(7, 3), WebAssembly.RuntimeError);
 });
 
 test('tracking flag and both state spans filter writes without changing execution', async () => {

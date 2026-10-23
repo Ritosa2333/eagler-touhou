@@ -1595,7 +1595,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
             predictionLimit < 1 ||
-            predictionLimit > configurablePredictionLimit))
+            predictionLimit > configurablePredictionLimit)) ||
+        (room.th15 && predictionLimit !== timingPolicy.predictionLimit)
       ) {
         sendLobby(socket, { type: 'error', error: 'invalid input timing' });
         return;

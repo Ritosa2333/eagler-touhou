@@ -13,6 +13,8 @@ node --test tools/rollback/instrument.test.mjs
 
 构建器将最终 `runtime.wasm` 交给打包步骤。如果还要运行 `wasm-opt`，在最终优化产物上再执行 `--verify`。CLI 在完整校验后原子写入输出文件，并打印包含各类写入数量的 JSON 构建记录。
 
+插桩保留原有函数索引顺序，Emscripten 输出的函数索引 symbol map 可继续用于崩溃与性能采样。增加局部变量时，工具按原始顺序一次重建完整函数列表，并保留导出、间接调用表和 start 函数的绑定。
+
 ## C++ 导出约定
 
 | Wasm 导出 | 签名 | 作用 |

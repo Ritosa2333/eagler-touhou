@@ -141,6 +141,7 @@ export function buildMultiplayerRuntimeOptions(
   if (loadouts.length !== playerCount) throw new Error('LAN 机体配置数量不足');
 
   const th11 = product === multiplayerConfigForProduct('th11mp');
+  const th15 = product === multiplayerConfigForProduct('th15mp');
   const th075 = roomProduct === 'th075mp';
   const requestedMode = input.adonisMode ?? (th11 || th075 ? 1 : 0);
   const timingPolicy = multiplayerInputTimingPolicy(product);
@@ -148,12 +149,12 @@ export function buildMultiplayerRuntimeOptions(
   const adonisMode = rollback ? 0 : requestedMode;
   const measuredTitle = timingPolicy.measuredStartup;
   if (
-    th11 &&
+    (th11 || th15) &&
     input.predictionLimit !== undefined &&
     input.predictionLimit !== timingPolicy.predictionLimit &&
     !(adonisMode === 1 && input.predictionLimit === 0)
   )
-    throw new Error('TH11 直接回滚固定使用 12 帧预测上限');
+    throw new Error(`${th11 ? 'TH11' : 'TH15'} 直接回滚固定使用 12 帧预测上限`);
   if (
     (input.inputDelayAuto !== undefined && typeof input.inputDelayAuto !== 'boolean') ||
     (input.inputDelayAuto && (!measuredTitle || !requestedMode)) ||
@@ -211,18 +212,18 @@ export function buildMultiplayerRuntimeOptions(
                 : 0,
         }
       : {}),
-    ...(input.adonisMode !== undefined || th11 || th075 ? { netplayAdonisMode: adonisMode } : {}),
-    ...((th11 && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
+    ...(input.adonisMode !== undefined || th11 || th15 || th075 ? { netplayAdonisMode: adonisMode } : {}),
+    ...(((th11 || th15) && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
     ...(measuredTitle && adonisMode
       ? {
           netplayInputDelayAuto: input.inputDelayAuto ?? false,
           netplayPredictionReserve: input.predictionReserve ?? 2,
         }
       : {}),
-    ...(!timingPolicy.rollback || input.predictionLimit !== undefined || th11 || th075
+    ...(!timingPolicy.rollback || input.predictionLimit !== undefined || th11 || th15 || th075
       ? {
           netplayPredictionLimit:
-            !timingPolicy.rollback || ((th11 || th075) && adonisMode === 1)
+            !timingPolicy.rollback || ((th11 || th15 || th075) && adonisMode === 1)
               ? 0
               : typeof input.predictionLimit === 'number' &&
                   Number.isInteger(input.predictionLimit) &&

@@ -81,12 +81,19 @@ test('native Replay stage headers fit inside the bounded relay envelope',()=>{
   assert.equal(parseSpectatorStageEvent(oversized,70,3),null);
 });
 
-test('TH15 measured pure-delay timing remains before a nonzero stage bootstrap',()=>{
+for(const [label,mode,automatic,fullDelay,inputDelay,reserve,rtt] of [
+  ['pure delay',1,false,1,2,0,32000],
+  ['manual hybrid',2,false,1,2,1,32000],
+  ['automatic hybrid',2,true,3,1,2,90000],
+  ['automatic hybrid without prediction budget',2,true,1,1,0,32000],
+]) test(`TH15 measured ${label} timing remains before a nonzero stage bootstrap`,()=>{
   const stream=new SpectatorStageRelay(70,3),timing=Buffer.alloc(40);
-  timing.set([69,70,84,77,1,1,2,0]);timing.writeUInt32LE(1,8);
+  timing.set([69,70,84,77,1,mode,inputDelay,reserve]);timing.writeUInt32LE(fullDelay,8);
   timing.writeBigUInt64LE(0x123456789abcdef0n,12);timing.writeUInt32LE(0x10203040,20);
-  timing.writeUInt32LE(32000,24);timing.writeUInt32LE(120,36);
+  timing.writeUInt32LE(rtt,24);timing.writeUInt32LE(Number(automatic),32);timing.writeUInt32LE(120,36);
+  assert.equal(isSpectatorFrameForRoom('th15mp-7403',timing,3),true);
   assert.equal(stream.accept(timing),'timing');stream.accept(event(70,3));
   stream.accept(input(70,3,600));assert.deepEqual(stream.history.map(p=>[p[2],p[3]]),[[84,77],[83,86],[78,80]]);
-  const hybrid=Buffer.from(timing);hybrid[5]=2;assert.equal(isSpectatorFrameForRoom('th15mp-7403',hybrid,3),false);
+  const direct=Buffer.from(timing);direct[5]=0;assert.equal(isSpectatorFrameForRoom('th15mp-7403',direct,3),false);
+  const badReserve=Buffer.from(timing);badReserve[7]=3;assert.equal(isSpectatorFrameForRoom('th15mp-7403',badReserve,3),false);
 });

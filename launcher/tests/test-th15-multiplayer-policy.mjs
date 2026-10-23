@@ -25,7 +25,7 @@ assert.equal(policy.spectator,true);
 assert.equal(policy.titleRoomEntry,false);
 assert.equal(policy.gameplay,'cooperative');
 assert.equal(Object.hasOwn(policy,'challengeMode'),false,'challenge is a shared cooperative room rule, not a per-title capability');
-assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:false,manualRollbackDelay:false,manualDelayLimit:9,predictionLimit:0});
+assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:true,manualRollbackDelay:false,manualDelayLimit:9,predictionLimit:12});
 for(const id of ['th06mp','th07mp','th08mp','th10mp']) assert.equal(multiplayerConfigForProduct(id).gameplay,'cooperative');
 for(const id of ['th08mp','th09mp','th10mp']) assert.equal(multiplayerInputTimingPolicy(multiplayerConfigForProduct(id)).rollback,true);
 assert.equal(game.replay.prefix,'th15');
@@ -41,7 +41,7 @@ assert.equal(DEVELOPMENT_CONTENT.games.th15.runtime,projectRelativeWorkspacePath
 assert.equal(DEVELOPMENT_CONTENT.games.th15.multiplayerRuntime,projectRelativeWorkspacePath('th15mp','build-eagler-multiplayer','th15.html')+'?hosted=1');
 const base={url:'ws://localhost/?room=th15mp-1234&run=1&player=0&players=2&member=member_test_1234',
   player:0,playerCount:2,seed:1234,difficulty:4,loadouts:[{character:0,shot:0},{character:3,shot:0}],
-  inputDelay:0,inputDelayAuto:true,adonisMode:1,predictionReserve:2,predictionLimit:0,challengeMode:false,
+  inputDelay:0,inputDelayAuto:true,adonisMode:1,predictionReserve:2,predictionLimit:12,challengeMode:false,
   spectator:false,spectatorId:'',spectatorCount:0,iceServers:[]};
 const configured=buildMultiplayerRuntimeOptions(base,policy);
 assert.equal(configured.netplayAdonisMode,1);assert.equal(configured.netplayPredictionLimit,0);
@@ -53,24 +53,42 @@ for(const challengeMode of [false,true]) for(const d of [0,1,9]){
   assert.equal(options.netplayChallengeMode,challengeMode);assert.equal(options.netplayInputDelay,d);
   assert.equal(options.netplayAdonisMode,1);assert.equal(options.netplayPredictionLimit,0);
 }
-for(const patch of [{adonisMode:0},{adonisMode:2},{adonisMode:undefined},{predictionLimit:1},
+for(const challengeMode of [false,true]) for(const adonisMode of [0,2]){
+  const options=buildMultiplayerRuntimeOptions({...base,challengeMode,adonisMode,inputDelayAuto:false,inputDelay:3},policy);
+  assert.equal(options.netplayChallengeMode,challengeMode);
+  assert.equal(options.netplayAdonisMode,0,'shared launcher maps rollback choices to direct rollback');
+  assert.equal(options.netplayPredictionLimit,12);assert.equal(options.netplayInputDelay,0);
+  assert.equal(options.netplayInputDelayAuto,false);
+}
+const defaultRollback=buildMultiplayerRuntimeOptions({...base,adonisMode:undefined,inputDelayAuto:false,predictionLimit:undefined},policy);
+assert.equal(defaultRollback.netplayAdonisMode,0);assert.equal(defaultRollback.netplayPredictionLimit,12);
+assert.equal(defaultRollback.netplayInputDelayAuto,false);
+for(const patch of [{adonisMode:0},{adonisMode:3},{adonisMode:undefined},{predictionLimit:1},{predictionLimit:13},
+  {adonisMode:0,inputDelayAuto:false,predictionLimit:0},
   {predictionReserve:0},{inputDelay:10,inputDelayAuto:false},{challengeMode:'true'},
   {difficulty:5},{loadouts:[{character:0,shot:0},{character:4,shot:0}]}])
   assert.throws(()=>buildMultiplayerRuntimeOptions({...base,...patch},policy),JSON.stringify(patch));
-assert.throws(()=>buildMultiplayerRuntimeOptions({...base,challengeMode:true,adonisMode:2},policy),/纯延迟/);
-assert.throws(()=>buildMultiplayerRuntimeOptions({...base,adonisMode:2,loadouts:[{character:0,shot:0},{character:1,shot:0}]},PRODUCT_GAMES.th10.multiplayer),
-  /纯延迟/,'URL product policy cannot be bypassed with unrelated permissive constraints');
+assert.throws(()=>buildMultiplayerRuntimeOptions({...base,adonisMode:0,inputDelayAuto:false,predictionLimit:8,
+  loadouts:[{character:0,shot:0},{character:1,shot:0}]},PRODUCT_GAMES.th10.multiplayer),
+  /TH15.*12/,'URL product policy cannot be bypassed with unrelated permissive constraints');
 const watcher=buildMultiplayerRuntimeOptions({...base,challengeMode:true,player:null,spectator:true,spectatorId:'watcher_test_123'},policy);
 assert.equal(watcher.netplayPlayer,null);assert.equal(watcher.netplayPredictionLimit,0);assert.equal(watcher.netplayChallengeMode,true);
+const rollbackWatcher=buildMultiplayerRuntimeOptions({...base,adonisMode:0,inputDelayAuto:false,
+  player:null,spectator:true,spectatorId:'watcher_test_123'},policy);
+assert.equal(rollbackWatcher.netplayPlayer,null);assert.equal(rollbackWatcher.netplayPredictionLimit,12);
 
 const timing={phase:'ready',automatic:true,adonisMode:1,inputDelay:3,fullDelay:3,predictionReserve:0,
   rttP95Us:90000,samples:117,lost:5,route:'rtc'};
-const room={playerCount:2,difficulty:4,inputDelay:3,inputDelayAuto:true,predictionReserve:2,predictionLimit:0,
+const room={playerCount:2,difficulty:4,inputDelay:3,inputDelayAuto:true,predictionReserve:2,predictionLimit:12,
   adonisMode:1,challengeMode:false,phase:'running',timing};
 const context={localClientId:'member_test_1234',...policy};
 assert.deepEqual(normalizeMultiplayerLobbySnapshot(room,context).timing,timing);
 for(const challengeMode of [false,true]) assert.equal(normalizeMultiplayerLobbySnapshot({...room,challengeMode},context).challengeMode,challengeMode);
-for(const patch of [{adonisMode:2},{adonisMode:0},{predictionLimit:1},
+const directRoom=normalizeMultiplayerLobbySnapshot({...room,adonisMode:0,inputDelay:0,inputDelayAuto:false,timing:null},context);
+assert.equal(directRoom.adonisMode,0);assert.equal(directRoom.predictionLimit,12);
+const hybridTiming={...timing,adonisMode:2,predictionReserve:2,inputDelay:1};
+assert.deepEqual(normalizeMultiplayerLobbySnapshot({...room,adonisMode:2,inputDelay:1,timing:hybridTiming},context).timing,hybridTiming);
+for(const patch of [{adonisMode:3},{adonisMode:0},{inputDelay:10},{predictionReserve:0},
   {timing:{...timing,adonisMode:2,predictionReserve:2,inputDelay:1}}])
   assert.equal(normalizeMultiplayerLobbySnapshot({...room,challengeMode:true,...patch},context),null);
 function timingPacket(value,marker=0x46) {
@@ -84,7 +102,9 @@ for(const count of [2,3]){
   assert.equal(isSpectatorFrameForRoom('th15mp-1234',packet,count),true);
   for(const other of ['th08mp-1234','th10mp-1234','th09mp-1234'])assert.equal(isSpectatorFrameForRoom(other,packet,count),false);
   for(const marker of [0x38,0x41])assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket(timing,marker),count),false);
-  assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket({...timing,adonisMode:2,predictionReserve:2,inputDelay:1}),count),false);
+  assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket(hybridTiming),count),true);
+  assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket({...hybridTiming,predictionReserve:0}),count),false);
+  assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket({...timing,adonisMode:0}),count),false);
   assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket({...timing,predictionReserve:1}),count),false);
   const frame=new Uint8Array(24+count*12);frame.set([0x45,0x46,0x4e,0x50,4,3,count,0]);
   assert.equal(isSpectatorFrameForRoom('th15mp-1234',frame,count),true);
@@ -101,7 +121,9 @@ const port=await new Promise((resolve,reject)=>{
 });
 const root=fileURLToPath(new URL('..',import.meta.url));
 const relay=spawn(process.execPath,[fileURLToPath(new URL('../../services/relay/src/netplay-relay.mjs',import.meta.url))],{
-  cwd:root,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:''},
+  // Six independent local fixtures cover both player counts and all mode requests.
+  cwd:root,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),
+    EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'6'},
   stdio:['ignore','pipe','pipe'],
 });
 let relayLog='';relay.stdout.on('data',chunk=>{relayLog+=String(chunk);});relay.stderr.on('data',chunk=>{relayLog+=String(chunk);});
@@ -120,7 +142,7 @@ async function connect(code,index,count,challenge){
     intent:index===0?'create':'join',players:String(count),difficulty:'4',...(challenge===undefined?{}:{challengeMode:challenge?'1':'0'})});
   const socket=new WebSocket('ws://127.0.0.1:'+port+'/?'+query);sockets.push(socket);
   const first=await nextJson(socket);
-  assert.equal(first.type,'state',`room ${code} player ${index}: ${JSON.stringify(first)}`);assert.equal(first.room.adonisMode,1);assert.equal(first.room.predictionLimit,0);
+  assert.equal(first.type,'state',`room ${code} player ${index}: ${JSON.stringify(first)}`);assert.equal(first.room.adonisMode,0);assert.equal(first.room.predictionLimit,12);
   assert.equal(first.room.challengeMode,challenge??false);
   return socket;
 }
@@ -131,7 +153,10 @@ try{
     const receive=chunk=>{if(String(chunk).includes('listening')){clearTimeout(timer);relay.stdout.off('data',receive);resolve();}};
     relay.stdout.on('data',receive);relay.once('exit',code=>{clearTimeout(timer);reject(Error('relay exited '+code+'\n'+relayLog));});
   });
-  for(const [count,automatic,code] of [[2,true,'9101'],[3,false,'9102']]){
+  for(const [count,requestedMode,automatic,code] of [
+    [2,1,true,'9101'],[3,1,false,'9102'],[2,0,false,'9103'],[3,0,false,'9104'],
+    [2,2,true,'9105'],[3,2,false,'9106'],
+  ]){
     const peers=[];
     for(let index=0;index<count;index++){
       const peer=await connect(code,index,count,count===3?true:undefined);peers.push(peer);
@@ -143,17 +168,29 @@ try{
     assert.equal(changed.room.seats.slice(0,count).every(seat=>seat?.ready===false),true,'changing challenge invalidates every player readiness');
     assert.equal(normalizeMultiplayerLobbySnapshot(changed.room,context).challengeMode,true);
     for(let index=0;index<count;index++) await send(peers[index],{type:'set-ready',ready:true},reply=>reply.room?.seats[index]?.ready===true);
-    for(const patch of [{adonisMode:0},{adonisMode:2},{adonisMode:undefined},{predictionLimit:1},{predictionReserve:0},{inputDelay:10,inputDelayAuto:false}]){
+    for(const patch of [{adonisMode:0},{adonisMode:3},{adonisMode:undefined},
+      {predictionLimit:0},{predictionLimit:1},{predictionLimit:11},{predictionLimit:13},
+      {predictionReserve:0},{inputDelay:10,inputDelayAuto:false}]){
       await send(peers[0],{type:'start',adonisMode:1,inputDelay:0,inputDelayAuto:true,predictionReserve:2,...patch},reply=>reply.type==='error'&&/timing/.test(reply.error));
     }
-    const started=await send(peers[0],{type:'start',adonisMode:1,inputDelay:automatic?0:3,inputDelayAuto:automatic,predictionReserve:2},reply=>reply.type==='start');
-    assert.equal(started.room.adonisMode,1);assert.equal(started.room.predictionLimit,0);assert.equal(started.room.challengeMode,true);
+    const mode=requestedMode===1?1:0;
+    const started=await send(peers[0],{type:'start',adonisMode:requestedMode,inputDelay:automatic?0:3,inputDelayAuto:automatic,predictionReserve:2},reply=>reply.type==='start');
+    assert.equal(started.room.adonisMode,mode);assert.equal(started.room.predictionLimit,12);assert.equal(started.room.challengeMode,true);
+    assert.equal(started.room.inputDelayAuto,mode===1&&automatic);
+    assert.equal(started.room.inputDelay,mode===1&&!automatic?3:0);
     const running=normalizeMultiplayerLobbySnapshot(started.room,context);
     const runtime=buildMultiplayerRuntimeOptions({...base,playerCount:count,challengeMode:running.challengeMode,
+      adonisMode:running.adonisMode,inputDelay:running.inputDelay,inputDelayAuto:running.inputDelayAuto,
+      predictionLimit:running.predictionLimit,predictionReserve:running.predictionReserve,
       loadouts:started.room.seats.slice(0,count).map(seat=>policy.loadouts[seat.loadout])},policy);
-    assert.equal(runtime.netplayChallengeMode,true);assert.equal(runtime.netplayPredictionLimit,0);
+    assert.equal(runtime.netplayChallengeMode,true);assert.equal(runtime.netplayPredictionLimit,mode===1?0:12);
+    assert.equal(runtime.netplayAdonisMode,mode);
     const result={...timing,automatic,route:'relay'};
     await send(peers[0],{type:'timing-result',serial:started.serial,timing:{...result,adonisMode:2,inputDelay:1,predictionReserve:2}},reply=>reply.type==='error');
+    if(mode===0){
+      await send(peers[0],{type:'timing-result',serial:started.serial,timing:result},reply=>reply.type==='error');
+      continue;
+    }
     const confirmed=await send(peers[0],{type:'timing-result',serial:started.serial,timing:result},reply=>!!reply.room?.timing);
     assert.equal(confirmed.room.timing.predictionReserve,0);assert.equal(confirmed.room.timing.adonisMode,1);
     assert.equal(confirmed.room.inputDelay,3);assert.equal(confirmed.room.playerCount,count);assert.equal(confirmed.room.challengeMode,true);
@@ -162,4 +199,4 @@ try{
   for(const socket of sockets) socket.close();
   relay.kill();
 }
-console.log('TH15 MP catalog, shared cooperative challenge, P0 timing, EBTM/EBNP and local 2P/3P relay policy PASS');
+console.log('TH15 MP catalog, fixed 12-frame rollback, pure delay, EFTM/EFNP and local 2P/3P relay policy PASS');
