@@ -79,6 +79,23 @@ jobs:
     defaults:
       run:
         working-directory: launcher
+  launcher-typecheck:
+    name: Launcher typecheck
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: launcher
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - run: npm ci --ignore-scripts
+    - run: npm run typecheck
+    defaults:
+      run:
+        working-directory: launcher
   ui-behavior:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -841,7 +858,7 @@ jobs:
     needs:
     - source-history
     - scope
-    - check
+    - launcher-typecheck
     - source-contracts
     - source-publication
     runs-on: ubuntu-latest
@@ -853,7 +870,7 @@ jobs:
       env:
         EAGLER_RESULTS: ${{ toJSON(needs) }}
       run: node -e "const jobs=JSON.parse(process.env.EAGLER_RESULTS); const failed=Object.entries(jobs).filter(([,job])=>['failure','cancelled'].includes(job.result));
-        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||jobs['source-history'].result!=='success'||jobs['source-publication'].result!=='success'||failed.length)process.exit(1); console.log('Core
+        if(jobs.scope.result!=='success'||jobs['launcher-typecheck'].result!=='success'||jobs['source-history'].result!=='success'||jobs['source-publication'].result!=='success'||failed.length)process.exit(1); console.log('Core
         checks completed');"
   relay:
     name: services/relay
