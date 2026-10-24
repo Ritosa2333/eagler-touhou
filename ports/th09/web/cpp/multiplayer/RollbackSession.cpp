@@ -42,7 +42,10 @@ bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint6
     // actions require actual input. Every eventual release is reconciled.
     config.predictableButtons = 1 | 4 | 0xf0;
     config.directionButtons = 0xf0;
-    config.maxDirectionPredictionFrames = 3;
+    // Hold the last direction throughout our bounded prediction window, as
+    // Higan does. Inventing a release after three frames repeatedly freezes
+    // the remote ship and makes recovery jump it forward, including cut-ins.
+    config.maxDirectionPredictionFrames = History;
     // TH09 transmits a held absolute field target, not fresh displacement.
     // Both rollback modes retain that target (or the held joystick vector).
     // Actual moves, releases and metadata changes still use full input

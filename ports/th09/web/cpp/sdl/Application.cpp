@@ -912,11 +912,15 @@ void queue_rollback_recovery(){
         if(!ok){running=false;probe->audio.suspend(true);th09_browser_frame(0,emscripten_get_now()-begin);}
     },reinterpret_cast<void*>(uintptr_t(ticket)),0);
 }
-// A packet may unblock a tick whose clock credit was already spent in rAF.
-// Finish only that obligation here; packet rate cannot create fresh ticks.
+// New packets can correct the displayed frontier between rAF callbacks. That
+// recovery owns no clock credit. A previously blocked due tick may also wake.
 TH09_EXPORT("th09_rollback_wake") void th09_rollback_wake(){
     if(!running||suspended||!probe||spectator_mode||!rollback_active||!network.active||
-       rollback.Mode()!=Netplay::AdonisMode::Rollback||!cadence.retry_pending())return;
+       rollback.Mode()!=Netplay::AdonisMode::Rollback)return;
+    if(!cadence.retry_pending()){
+        if(rollback.RollbackFrame()!=Netplay::INVALID_FRAME)queue_rollback_recovery();
+        return;
+    }
     if(rollback.RollbackFrame()==Netplay::INVALID_FRAME&&!rollback.Prepare().canAdvance)return;
     const double begin=emscripten_get_now();const auto ok=rollback_tick(1);
     if(ok==2)cadence.blocked(true);

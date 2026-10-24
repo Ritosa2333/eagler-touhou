@@ -117,6 +117,8 @@ TH08 MP 的活动索引在 Item 更新后、Bullet/Laser 更新前重建，替�
 
 - `FrameSchedule::blocked(true)` 记录一个已经到期的待推进帧；下一次显示机会重试这一帧，不再累积网络等待时间，也不凭空增加新的预测帧。
 - `Application.cpp` 将恢复安排到绘制提交之后；`RecoverySchedule` 为回调分配 ticket 并绑定 loop epoch。暂停、停止或新一轮循环取消旧 ticket，避免过期异步回调操作新会话。
+- th09 收包入口可在两次 rAF 之间安排已有历史的纠正并刷新完整端点。重复唤醒合并为一个恢复任务，物理输入和新逻辑帧继续由到期的时钟驱动。
+- th09 宣言标志在人物、弹幕更新之后清除。恢复画面验证覆盖随后 8 帧的实际移动，并将全局宣言、场地时停和完整 canvas 对照分别统计，见本作 [宣言回归参数](../../ports/th09/docs/DEVELOPMENT.md)。
 - 真实采样沿 `RollbackSession::Capture()` 发生一次；历史 `Prepare/Complete` 和 `Restored()` 只消费缓存输入。`PacedElapsedMs()` 将 Adonis 建议应用到外层经过时间，而非改变固定逻辑 tick。
 - 确认输出环的退休点独立于“待纠正帧”。按最旧未提交输出保留空间，恢复工作跨显示回调时，已经确认的音频/Replay/观战帧仍可顺序排空。
 
