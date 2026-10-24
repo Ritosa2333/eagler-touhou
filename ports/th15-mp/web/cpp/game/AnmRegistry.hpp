@@ -32,6 +32,13 @@ public:
     AnmVm* find_child_script(AnmVm&,i32 script,i32 occurrence)const noexcept;
     bool attach(AnmVm& child,AnmVm& parent);
     std::vector<AnmVm*> children(const AnmVm&)const;
+    // Visit the same children in the same order without allocating a snapshot.
+    // The callback must not mutate this registry, directly or indirectly;
+    // callers that need to change it during traversal must keep using children().
+    template<class Visitor> void visit_children(const AnmVm& vm,Visitor&& visit)const {
+        const auto* entry=node(const_cast<AnmVm&>(vm));
+        if(entry)for(const auto* child:entry->children)visit(static_cast<const AnmVm&>(child->vm));
+    }
     bool discard(AnmVm&);bool destroy_tree(AnmVm&);
     bool preserve_embedded_children(AnmVm&);
     bool retire_children(AnmVm&);
