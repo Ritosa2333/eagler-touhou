@@ -144,7 +144,7 @@
     "th15": {
       "normal": "ports/th15",
       "multiplayer": "ports/th15-mp",
-      "base": "38612dd9cc19e5bff3aea85ecf1e35165af92788",
+      "base": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
       "history": [
         {
           "kind": "manual",
@@ -180,6 +180,20 @@
             "ports/th15-mp/web/tests/sdl/checkpoint-persistence-browser.test.mjs"
           ],
           "note": "PR #126 两侧已实现关卡交接，保留 MP 旧录像时序、房间预览与联机输入所有权。目录合并接收普通版历史，并补入检查点宽树与持久化测试。"
+        },
+        {
+          "kind": "git-merge",
+          "base": "38612dd9cc19e5bff3aea85ecf1e35165af92788",
+          "source": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
+          "targetHead": "e5285cbe868f82c99bb0f3cf3a441aebd7dff6fc",
+          "integration": "committed",
+          "normalHistory": "8d01b6e1886e53c240a56777574f74a617294c5d",
+          "multiplayerHistory": "fc6a8c2f9b75949c450e4c460cdac1893bb79c2a",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/web/tests/sdl/render-loading-lifecycle-browser.test.mjs"
+          ],
+          "note": "双侧换关夹具和文档同时更新。合并后 MP 文件树不变，保留普通版来源与 MP 接收父链。"
         }
       ],
       "origin": {
