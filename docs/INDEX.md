@@ -1,6 +1,6 @@
 # 文档总表
 
-共 230 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 231 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -69,6 +69,7 @@
 | 作品源码文档 | [ports/th11-mp/docs/DEVELOPMENT.md](../ports/th11-mp/docs/DEVELOPMENT.md) | TH11 多人版开发指南 |
 | 作品源码文档 | [ports/th11-mp/docs/ROLLBACK.md](../ports/th11-mp/docs/ROLLBACK.md) | TH11 多人整堆回滚 |
 | 作品源码文档 | [ports/th11-mp/docs/rollback-20261023.md](../ports/th11-mp/docs/rollback-20261023.md) | TH11 整堆回滚验收 ｜ 2026-10-23 |
+| 作品源码文档 | [ports/th11-mp/docs/rollback-20261024.md](../ports/th11-mp/docs/rollback-20261024.md) | TH11 回滚绘制与性能验收 ｜ 2026-10-24 |
 | 作品源码文档 | [ports/th11/docs/DEVELOPMENT.md](../ports/th11/docs/DEVELOPMENT.md) | TH11 开发指南 |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
