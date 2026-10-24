@@ -4,6 +4,8 @@
 
 Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、安装与资源准备，Runtime 负责游戏循环和本作文件。
 
+启动器的自托管包检查覆盖游戏资源准备脚本和运行适配源码。th12 的 `ports/th12/scripts` 与 `ports/th12/src` 随 CI 检出，打包清单能核对完整的原版资源准备链。
+
 ## 准备
 
 按游戏开发指南生成 Runtime，在启动器中导入本地游戏数据。打开浏览器开发者工具，同时查看 Console 和 Network。协议字段见[Runtime 接口参考](../../launcher/docs/GAME_ADAPTER_CONTRACT.md)。
