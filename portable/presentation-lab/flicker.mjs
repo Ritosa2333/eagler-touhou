@@ -1,6 +1,6 @@
 // Threshold analysis for interpolated-frame displacement. Pure data in/out so
 // it can run in the browser, in node tests, or over an exported campaign.
-export const DEFAULT_THRESHOLDS=Object.freeze({maxStep:48,maxError:2.5,minStep:8,rebaseStep:200});
+export const DEFAULT_THRESHOLDS=Object.freeze({maxStep:48,maxError:2.5,minStep:8,rebaseStep:256});
 const round=value=>Math.round(value*1000)/1000;
 const field=(record,id)=>{const value=record?.fields?.find(entry=>entry.id===id)?.value;return Array.isArray(value)?value:[0,0,0];};
 export function recordPosition(record){

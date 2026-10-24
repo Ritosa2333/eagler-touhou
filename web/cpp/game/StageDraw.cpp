@@ -19,8 +19,8 @@ SceneCamera Stage::display_camera(float alpha) const {
 bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFades& fades){
     using touhou::graphics::Compare;
     if(state.draw_flags&8)return true;
-    const bool draw_only=high_refresh::interpolating();
-    SceneCamera stage_camera=draw_only?display_camera(high_refresh::alpha):state.camera;
+    const bool draw_only=high_refresh::render_only;
+    SceneCamera stage_camera=high_refresh::interpolating()?display_camera(high_refresh::alpha):state.camera;
     stage_camera.offset=camera.offset;
     if(!(state.draw_flags&4)||state.fade_timer.current<60){
         camera=stage_camera;renderer.set_camera(camera,false);
@@ -49,8 +49,8 @@ bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFade
 bool Stage::draw_foreground(AnmRenderer& renderer,SceneCamera& camera){
     using touhou::graphics::Compare;
     if(state.draw_flags&8)return true;
-    const bool draw_only=high_refresh::interpolating();
-    SceneCamera stage_camera=draw_only?display_camera(high_refresh::alpha):state.camera;
+    const bool draw_only=high_refresh::render_only;
+    SceneCamera stage_camera=high_refresh::interpolating()?display_camera(high_refresh::alpha):state.camera;
     stage_camera.offset=camera.offset;
     if(!(state.draw_flags&4)||state.fade_timer.current<60){
         camera=stage_camera;renderer.set_camera(camera,false);
