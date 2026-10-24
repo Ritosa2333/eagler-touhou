@@ -27,3 +27,21 @@ test('registered head insertion and secondary draw priority survive the separate
   core._th12_anm_schedule_count=()=>20;assert.throws(()=>readCoreDrawSchedule(core),/顺序记录/);
   core._th12_anm_schedule_count=()=>3;view.setUint32(44,3,true);assert.throws(()=>readCoreDrawSchedule(core),/顺序字段/);
 });
+test('owned capture wrappers reuse storage while published endpoints remain independent',()=>{
+  const source=[{id:1,logical:true,order:8,a:{layer:0}},{a:{layer:26}},{a:{layer:21}}];
+  const schedule=new Map([[1,{drawPriority:31,clip:2}]]),before=structuredClone(source);
+  const first=orderPresentation(source,schedule);
+  assert.deepEqual(source,before,'ordinary callers retain their input');
+  const fresh=structuredClone(source),second=orderPresentation(fresh,schedule,{reusePoses:true});
+  assert.deepEqual(second,first);assert.equal(second[0],fresh[0]);
+  second[0].order=100;assert.equal(first[0].order,8);
+  assert.deepEqual(source,before);
+});
+test('dense layers retain native priority, insertion order and stable ties',()=>{
+  const poses=Array.from({length:1200},(_,index)=>({id:index,drawPriority:[24,31,69,41,24][index%5],order:index%17===0?1200-index:index}));
+  const expected=poses.map((pose,index)=>({...pose,index})).sort((a,b)=>a.drawPriority-b.drawPriority||a.order-b.order||a.index-b.index);
+  assert.deepEqual(orderPresentation(poses).map(p=>p.id),expected.map(p=>p.id));
+  poses[601].drawPriority=101;
+  const fallback=poses.map((pose,index)=>({...pose,index})).sort((a,b)=>a.drawPriority-b.drawPriority||a.order-b.order||a.index-b.index);
+  assert.deepEqual(orderPresentation(poses).map(p=>p.id),fallback.map(p=>p.id));
+});

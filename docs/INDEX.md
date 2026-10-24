@@ -1,6 +1,6 @@
 # 文档总表
 
-共 250 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 254 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -24,6 +24,8 @@
 | 适配指南 | [docs/adaptation/storage.md](adaptation/storage.md) | 存档与 Replay |
 | 适配指南 | [docs/adaptation/th07-border-dialogue-20261019.md](adaptation/th07-border-dialogue-20261019.md) | th07 共享结界与对话 ｜ 2026-10-19 |
 | 适配指南 | [docs/adaptation/th11-spell-time-20261019.md](adaptation/th11-spell-time-20261019.md) | th11 多人符卡结算计时 ｜ 2026-10-19 |
+| 适配指南 | [docs/adaptation/th12-dense-bomb-performance-20261023.md](adaptation/th12-dense-bomb-performance-20261023.md) | TH12 密集弹幕与 Bomb 展示管线 |
+| 适配指南 | [docs/adaptation/th12-mobile-collision-performance-20261023.md](adaptation/th12-mobile-collision-performance-20261023.md) | TH12 手机低速、判定点及无敌收符修复 |
 | 适配指南 | [docs/adaptation/th12-mobile-information-20261020.md](adaptation/th12-mobile-information-20261020.md) | 星莲船手机信息面板与通关排行 |
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
@@ -66,6 +68,7 @@
 | 作品源码文档 | [ports/th08-mp/docs/DEVELOPMENT.md](../ports/th08-mp/docs/DEVELOPMENT.md) | TH08 多人版开发指南 |
 | 作品源码文档 | [ports/th08/docs/DEVELOPMENT.md](../ports/th08/docs/DEVELOPMENT.md) | TH08 开发指南 |
 | 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | TH09 开发指南 |
+| 作品源码文档 | [ports/th09/docs/NETPLAY-STOPS.md](../ports/th09/docs/NETPLAY-STOPS.md) | th09 联机技能停顿 |
 | 作品源码文档 | [ports/th09/web/reference/MIT-TH08-codec.txt](../ports/th09/web/reference/MIT-TH08-codec.txt) | MIT License |
 | 作品源码文档 | [ports/th10-mp/docs/DEVELOPMENT.md](../ports/th10-mp/docs/DEVELOPMENT.md) | TH10 多人版开发指南 |
 | 作品源码文档 | [ports/th10/docs/DEVELOPMENT.md](../ports/th10/docs/DEVELOPMENT.md) | TH10 开发指南 |
@@ -155,6 +158,7 @@
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |
 | 历史记录 | [docs/history/README.md](history/README.md) | 历史与迁移 |
+| 历史记录 | [docs/history/th12-performance-20261024.md](history/th12-performance-20261024.md) | th12 性能测量 ｜ 2026-10-24 |
 | 历史记录 | [ports/th15-mp/web/CHANGELOG.txt](../ports/th15-mp/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
 | 历史记录 | [ports/th15/web/CHANGELOG.txt](../ports/th15/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
 | 许可证与声明 | [common/LICENSE](../common/LICENSE) | LICENSE |
