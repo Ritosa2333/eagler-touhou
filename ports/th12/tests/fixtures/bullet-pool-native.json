@@ -1,0 +1,448 @@
+{
+  "schema": "th12-native-bullet-pool/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "scope": "original40a250 search until40a34d; original40a9f0 cursor suffix after birth; no emitter/RNG/ANM substitute",
+  "rows": [
+    {
+      "cursor": 0,
+      "free": null,
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 0,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 0,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 0,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 0,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 0,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 0,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 1,
+      "free": null,
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 1,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 1,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 1,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 1,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 1,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 1,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 7,
+      "cursorAfterCommit": 8
+    },
+    {
+      "cursor": 5,
+      "free": null,
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 5,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 5
+    },
+    {
+      "cursor": 5,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 5,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 5,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 5,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 5,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 7,
+      "cursorAfterCommit": 8
+    },
+    {
+      "cursor": 99,
+      "free": null,
+      "selected": 99,
+      "cursorAfterCommit": 100
+    },
+    {
+      "cursor": 99,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 99
+    },
+    {
+      "cursor": 99,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 99,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 99,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 99,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 99,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 500,
+      "cursorAfterCommit": 501
+    },
+    {
+      "cursor": 999,
+      "free": null,
+      "selected": 999,
+      "cursorAfterCommit": 1000
+    },
+    {
+      "cursor": 999,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 999
+    },
+    {
+      "cursor": 999,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 999,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 999,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 999,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 999,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 1997,
+      "cursorAfterCommit": 1998
+    },
+    {
+      "cursor": 1995,
+      "free": null,
+      "selected": 1995,
+      "cursorAfterCommit": 1996
+    },
+    {
+      "cursor": 1995,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 1995
+    },
+    {
+      "cursor": 1995,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 1995,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 1995,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 1995,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 1995,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 1997,
+      "cursorAfterCommit": 1998
+    },
+    {
+      "cursor": 1998,
+      "free": null,
+      "selected": 1998,
+      "cursorAfterCommit": 1999
+    },
+    {
+      "cursor": 1998,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 1998
+    },
+    {
+      "cursor": 1998,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 1998,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 1998,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 1998,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 1998,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 1999,
+      "free": null,
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 1999,
+      "free": [],
+      "selected": -1,
+      "cursorAfterCommit": 1999
+    },
+    {
+      "cursor": 1999,
+      "free": [
+        0
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    },
+    {
+      "cursor": 1999,
+      "free": [
+        1
+      ],
+      "selected": 1,
+      "cursorAfterCommit": 2
+    },
+    {
+      "cursor": 1999,
+      "free": [
+        5
+      ],
+      "selected": 5,
+      "cursorAfterCommit": 6
+    },
+    {
+      "cursor": 1999,
+      "free": [
+        1999
+      ],
+      "selected": 1999,
+      "cursorAfterCommit": 0
+    },
+    {
+      "cursor": 1999,
+      "free": [
+        0,
+        7,
+        500,
+        1997
+      ],
+      "selected": 0,
+      "cursorAfterCommit": 1
+    }
+  ]
+}

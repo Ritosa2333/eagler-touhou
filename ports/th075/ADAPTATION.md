@@ -171,4 +171,20 @@
 
 ## 运行验收记录
 
+### 2026-10-20 生产语言包配置入口
+
+LANG-03：生产 shell 的路径白名单接收 Base replay.dat 汉化变体，按确定路径授权。
+验证入口为 `launcher/tests/test-th075-language-configure.mjs` 和
+`launcher/tests/test-th075-language-upgrade-browser.mjs`，覆盖生产 configure
+以及历史包导入、持久化更新与刷新启动。
+
+### 2026-10-20 通关汉化资源与中文剧情
+
+LANG-03／LANG-05／LANG-06：结算姓名登记与回放菜单分别校验 Base／Patched
+版 replay.dat 汉化替换；保留原作资源选择和 CRC 校验。接入已有十一名角色
+中文脚本，只替换与日文控制位置一致的对白，繁简转换使用 OpenCC t2s。
+编译器七项测试通过；真实 DATA 的诊断浏览器验证全部替换解码、文字渲染、
+十一名角色和 10／5／7／10 场景进入。完整通关流程仍需实际游玩验收。
+普通版生产包单独构建；MP 同步资源变体选择语义，未改多人规则、存档或 Replay 格式。
+
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。

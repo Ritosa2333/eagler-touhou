@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { zipSync } from "fflate";
 
-const GAME_ID = /^th(?:06|07|075|08|09|10|11|15)$/;
+import {isGameId} from '../lib/contracts/product-catalog.mjs';
 const LANGUAGE_ID = /^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i;
 const MAX_FILES = 256;
 
@@ -11,7 +11,7 @@ function assertBytes(value, label) {
 }
 
 function assertGame(value) {
-  if (typeof value !== "string" || !GAME_ID.test(value)) throw new TypeError(`invalid game id: ${value}`);
+  if (typeof value !== "string" || !isGameId(value.toLowerCase())) throw new TypeError(`invalid game id: ${value}`);
   return value.toLowerCase();
 }
 
@@ -61,6 +61,7 @@ export function createStaticThcrapPack({ pack, resources }) {
       path: targetPath,
       sourcePath: typeof resource.sourcePath === "string" ? resource.sourcePath : resource.path,
       format: typeof resource.format === "string" ? resource.format : "binary",
+      ...(game === 'th12' ? {sha256:sha256(bytes)} : {}),
       bytes: bytes.length
     });
     if (entryName === "manifest.json") throw new Error("thcrap resource cannot replace pack manifest");

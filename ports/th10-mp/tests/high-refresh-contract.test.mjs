@@ -15,8 +15,8 @@ test('a stale shared-channel pacing API cannot pass the source contract',()=>{
  assert.notEqual(changed,host);assert.throws(()=>check(assert,changed));
 });
 test('an ordinary catch-up loop cannot pass the source contract',()=>{
- const changed=host.replace('const unsigned offered=cadence.advance(simulation_delta);',
-  'const unsigned offered=2*cadence.advance(simulation_delta);');
+ const changed=host.replace('unsigned offered=cadence.advance(simulation_delta);',
+  'unsigned offered=2*cadence.advance(simulation_delta);');
  assert.notEqual(changed,host);assert.throws(()=>check(assert,changed));
 });
 test('unbounded multiplayer catch-up and charging stalled debt are rejected',()=>{

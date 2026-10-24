@@ -632,6 +632,57 @@ export declare const PRODUCT_GAMES: Readonly<{
             focusHitbox: false;
         }>;
     }>;
+    th12: Readonly<{
+        testOnly: true;
+        number: "12";
+        title: "東方星蓮船";
+        subtitle: "Undefined Fantastic Object";
+        cardArtwork: "th12-card.webp";
+        storage: Readonly<{
+            saveRoot: "/savesth12";
+            scoreFile: "scoreth12.dat";
+            configFiles: readonly string[];
+        }>;
+        runtime: "./runtime/th12/th12.html";
+        runtimeFileLayout: "directory";
+        runtimeAssets: readonly string[];
+        requiredShared: readonly string[];
+        dataProvider: "retail-memory";
+        runtimeResourceTransport: "resources";
+        package: Readonly<{
+            dataFileId: "game-data";
+            dataTarget: "/th12.data";
+            musicSourceDirectories: Readonly<{
+                ogg: "music";
+            }>;
+            musicMounts: Readonly<{
+                ogg: "/music";
+            }>;
+        }>;
+        musicCapabilities: Readonly<{
+            midi: false;
+        }>;
+        musicRuntime: Readonly<{
+            localOggConfigureMode: "runtime-selection";
+        }>;
+        touchFire: Readonly<{
+            mode: "toggle";
+            labelKey: "touch.tapToggle";
+        }>;
+        support: Readonly<{
+            highRefreshRate: true;
+            sourceRepository: "https://github.com/Tweet-META/th12";
+            adaptationNotice: "early-test";
+        }>;
+        replay: Readonly<{
+            prefix: "th12";
+        }>;
+        features: Readonly<{
+            thprac: true;
+            languages: true;
+            focusHitbox: false;
+        }>;
+    }>;
     th15: Readonly<{
         number: "15";
         title: "東方紺珠伝";
@@ -1644,6 +1695,9 @@ export declare function createLocalProductManifest(): {
                 title: string;
                 pack: null;
             }[];
-        };
+        } | (typeof PRODUCT_GAMES.th12 & {
+            music: {midi: {files: never[]; supported: boolean}};
+            languageOptions: {id: string; title: string; pack: null}[];
+        });
     };
 };

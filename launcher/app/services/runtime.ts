@@ -661,13 +661,28 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     return id === 'game-data' || id === plan.generation?.descriptor.runtimeRequirement?.dataFile ||
       /\.(?:html|m?js|wasm)$/i.test(source) || /\.(?:html|m?js|wasm)$/i.test(target);
   }
+  function usesResourceMessages(game: GameId): boolean {
+    const product = PRODUCT_GAMES[game];
+    return 'runtimeResourceTransport' in product && product.runtimeResourceTransport === 'resources';
+  }
+  async function installResourceMessage(resource: {buffer: ArrayBuffer; path: string}, sha256: string | undefined, check: () => void) {
+    check();
+    const url = URL.createObjectURL(new Blob([resource.buffer]));
+    try {
+      check();
+      await send('resources', {resources: [{url, path: resource.path, bytes: resource.buffer.byteLength,
+        ...(sha256 ? {sha256: sha256.toLowerCase()} : {})}]}, options.timeouts?.configure ?? 120_000);
+      check();
+    } finally {URL.revokeObjectURL(url);}
+  }
   async function installResources(token: RuntimeSessionToken, plan: RuntimePlan, extensionGuard?: () => void, localProgress = true) {
     const generation = plan.resourceGeneration ?? plan.generation;
     extensionGuard?.();
     if (!plan.resourceFileIds?.length) return;
     if (!generation || !plan.generation) throw new Error('Managed resources require a Package generation');
-    const before = runtimeIdentity(token), fs = before.runtime.FS ?? before.runtime.Module?.FS;
-    if (!fs) throw new Error(options.translate('runtime.offlineFsUnavailable'));
+    const before = runtimeIdentity(token), messages = usesResourceMessages(plan.game);
+    const fs = before.runtime.FS ?? before.runtime.Module?.FS;
+    if (!messages && !fs) throw new Error(options.translate('runtime.offlineFsUnavailable'));
     let failed = false, next = 0;
     const check = () => {
       if (failed) throw new RuntimeSessionSupersededError();
@@ -681,13 +696,17 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         const declaration = generation.descriptor.files[id];
         if (!declaration || executableResource(plan, id, declaration.source, declaration.target)) throw new Error(`Not a managed Runtime resource: ${id}`);
         const resource = await deps.readResource(generation, id); check();
-        if (!resource || resource.path !== declaration.target || (extensionGuard && resource.buffer.byteLength <= 0) ||
+        if (!resource || resource.path !== declaration.target || ((extensionGuard || messages) && resource.buffer.byteLength <= 0) ||
             (declaration.bytes != null && resource.buffer.byteLength !== Number(declaration.bytes))) throw new Error(options.translate('runtime.resourceDamaged', {path: declaration.target}));
-        if (extensionGuard && declaration.sha256 && await sha256Hex(resource.buffer) !== declaration.sha256.toLowerCase()) throw new Error(options.translate('runtime.resourceDamaged', {path: declaration.target}));
+        if ((extensionGuard || messages) && declaration.sha256 && await sha256Hex(resource.buffer) !== declaration.sha256.toLowerCase()) throw new Error(options.translate('runtime.resourceDamaged', {path: declaration.target}));
         check();
-        const slash = resource.path.lastIndexOf('/');
-        if (slash > 0) fs.mkdirTree(resource.path.slice(0, slash));
-        fs.writeFile(resource.path, new Uint8Array(resource.buffer), {canOwn: true});
+        if (messages) await installResourceMessage(resource, declaration.sha256, check);
+        else {
+          const slash = resource.path.lastIndexOf('/');
+          if (slash > 0) fs!.mkdirTree(resource.path.slice(0, slash));
+          fs!.writeFile(resource.path, new Uint8Array(resource.buffer), {canOwn: true});
+        }
+        check();
         if (extensionGuard && localProgress) noteLocalResource(token, generation, id, resource.buffer.byteLength, 'remaining');
       } catch (error) {failed = true; throw error;}
     };
@@ -712,9 +731,10 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   async function installLocalOgg(token: RuntimeSessionToken, plan: RuntimePlan, ids: readonly string[]) {
     const generation = plan.resourceGeneration ?? plan.generation;
     if (!generation) throw new Error('Local OGG requires a Package generation');
-    const before = runtimeIdentity(token), fs = before.runtime.FS ?? before.runtime.Module?.FS;
-    if (!before.runtime.Module) throw new Error('Runtime music selection is unavailable');
-    if (!fs) throw new Error(options.translate('runtime.offlineFsUnavailable'));
+    const before = runtimeIdentity(token), messages = usesResourceMessages(plan.game);
+    const fs = before.runtime.FS ?? before.runtime.Module?.FS;
+    if (!messages && !before.runtime.Module) throw new Error('Runtime music selection is unavailable');
+    if (!messages && !fs) throw new Error(options.translate('runtime.offlineFsUnavailable'));
     let failed = false, next = 0;
     const check = () => {
       if (failed) throw new RuntimeSessionSupersededError();
@@ -741,18 +761,25 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         // Hashing is asynchronous too: cancelled/sibling-failed reads cannot
         // write into a replaced document or revive a failed transfer.
         check();
-        const slash = declaration.target.lastIndexOf('/');
-        if (slash > 0) fs.mkdirTree(declaration.target.slice(0, slash));
-        fs.writeFile(declaration.target, new Uint8Array(resource.buffer), {canOwn: true});
+        if (messages) await installResourceMessage(resource, declaration.sha256, check);
+        else {
+          const slash = declaration.target.lastIndexOf('/');
+          if (slash > 0) fs!.mkdirTree(declaration.target.slice(0, slash));
+          fs!.writeFile(declaration.target, new Uint8Array(resource.buffer), {canOwn: true});
+        }
+        check();
         noteLocalResource(token, generation, id, resource.buffer.byteLength, 'initial');
       } catch (error) {failed = true; throw error;}
     };
     emitLocalResourceProgress(token, generation, 'initial');
     const worker = async () => {while (!failed && next < ids.length) await installOne(ids[next++]);};
     await Promise.all(Array.from({length: Math.min(2, ids.length)}, worker));
-    check(); runtimeIdentity(token).runtime.Module!.touhouMusicMode = 'ogg';
+    check();
+    // Message-based adapters select music in configure and own their resource
+    // store; they do not expose Emscripten's global Module/FS objects.
+    if (!messages) runtimeIdentity(token).runtime.Module!.touhouMusicMode = 'ogg';
   }
-  /** The only progressive OGG filesystem attachment boundary. Same-revision
+  /** The only progressive OGG resource attachment boundary. Same-revision
    * optional bytes never replace active DATA/code generation or the save owner. */
   function extendOggResources(epoch: number, input: InstalledPackageGeneration, fileIds: readonly string[], presentation: {localProgress?: boolean} = {}): Promise<void> {
     const token = sessions.current(), original = preparedPlan;
@@ -936,9 +963,16 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       update({ phase: 'configuring', spectator: plan.configure.options?.netplaySpectator === true });
       const wire = oggIds.length && product.musicRuntime.localOggConfigureMode === 'midi-sentinel'
         ? {...plan.configure, music: 'midi' as const} : plan.configure;
+      const resourcePlan = {...plan, resourceFileIds: plan.resourceFileIds?.filter(id => !oggIds.includes(id))};
+      // Protocol adapters may need Package-owned fonts during configure's
+      // language preparation. Deliver those base resources at native ready.
+      if (usesResourceMessages(plan.game)) {
+        await installResources(token, resourcePlan);
+        assertOperation(); assertCurrent(token);
+      }
       await send('configure', wire, options.timeouts?.configure ?? 120_000);
       assertOperation(); assertCurrent(token);
-      await installResources(token, {...plan, resourceFileIds: plan.resourceFileIds?.filter(id => !oggIds.includes(id))});
+      if (!usesResourceMessages(plan.game)) await installResources(token, resourcePlan);
       assertOperation(); assertCurrent(token);
       let musicWarning: string | null = null;
       if (oggIds.length) {

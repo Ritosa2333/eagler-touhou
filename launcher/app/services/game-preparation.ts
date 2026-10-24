@@ -179,7 +179,7 @@ async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, gua
     configure: {music: musicTransport(music), resources: ids.length ? [] : remoteMusicResources(settings.gameId, music, host, input.baseUrl, t),
       runtimeResources: remoteRuntimeResources(generation, host, metadata.releaseCatalog, acquisition.catalogUrl, t), runtimePack, sharedResources: shared, options},
     ...(generation ? {resourceFileIds: packageResourceIds(generation)} : {}),
-    ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: true}} : {}),
+    ...(ids.length ? {localOgg: {fileIds: completeOgg ? ids : ids.slice(0, 2), fallbackToMidi: PRODUCT_GAMES[settings.gameId].musicCapabilities?.midi === true}} : {}),
     launcherControls: {restartButtonEnabled: settings.options.restartButtonEnabled,
       thpracTouchControlsEnabled: settings.options.thpracTouchControlsEnabled, magnifierEnabled: settings.options.magnifierEnabled,
       touchControlOpacity: settings.options.touchControlOpacity, touchLayout: input.touchLayout ? structuredClone(input.touchLayout) : null}};

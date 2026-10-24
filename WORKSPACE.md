@@ -13,6 +13,7 @@
 | th09 | `ports/th09` | `ports/th09` | 共用生产程序，保留普通版与 MP 产品身份 |
 | th10 | `ports/th10` | `ports/th10-mp` | 分目录、分模式构建 |
 | th11 | `ports/th11` | `ports/th11-mp` | 分目录、分模式构建 |
+| th12 | `ports/th12` | — | 普通版 WebAssembly 适配，`scripts/build-eagler.mjs` 构建 |
 | th15 | `ports/th15` | `ports/th15-mp` | 分目录、分模式构建 |
 | th20 | `ports/th20` | — | 普通版实验适配 |
 

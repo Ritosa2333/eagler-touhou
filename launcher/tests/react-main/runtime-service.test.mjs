@@ -115,6 +115,21 @@ test('runtime: worker downloads share document network accounting and cannot sur
   release();await assert.rejects(preparing,/SUPERSEDED/);
 });
 
+test('TH12: fonts use acknowledged resource messages before configure without global Module/FS',async()=>{
+  const bytes=new Uint8Array([4,5,6]).buffer;
+  const f=fixture({async readResource(){return {buffer:bytes,path:'/unifont.otf'};}}),plan=managedPlan('th12');
+  plan.generation.descriptor.files.font={source:'shared/unifont.otf',target:'/unifont.otf',bytes:3,revision:'font-r1'};
+  plan.generation.files.font={objectId:'font-object',revision:'font-r1'};plan.resourceFileIds=['font'];
+  const pending=f.service.prepare(plan);await flush();f.event('ready');await flush();
+  assert.equal(f.outbound.some(message=>message.command==='configure'),false);
+  const resource=f.outbound.find(message=>message.command==='resources');assert.ok(resource);
+  const url=resource.resources[0].url;assert.equal(await (await fetch(url)).arrayBuffer().then(value=>new Uint8Array(value).join(',')),'4,5,6');
+  assert.equal(f.runtime.FS,undefined);assert.equal(f.runtime.Module,undefined);
+  f.ack('resources');await flush();assert.equal(f.outbound.at(-1).command,'configure');
+  f.ack('configure');await pending;await assert.rejects(fetch(url));
+  assert.equal(f.service.getSnapshot().phase,'prepared');
+});
+
 test('room preload: binding a run reuses the epoch/DATA and retains the prepared resource payload', async () => {
   const f = fixture(), plan = managedPlan();
   plan.runtimeVariant = 'multiplayer'; plan.entry = 'runtime/th10/th10mp.html';

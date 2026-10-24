@@ -175,7 +175,7 @@ export function resolveLanguagePackSource(entry: LanguageCatalogEntry | null, ba
 }
 
 export function thpracLocaleForLanguage(id: string) {
-  return id === "lang_zh-hans" ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
+  return /^lang_zh(?:-|$)/i.test(id) ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
 }
 
 /** Stored choices win; otherwise use an available translation for the launcher locale. */

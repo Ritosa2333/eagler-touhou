@@ -1,9 +1,10 @@
 import { extname } from "node:path";
 import {Th075ThcrapCompiler} from "./th075-thcrap-compiler.mjs";
+import {Th12ThcrapCompiler} from "./th12-thcrap-compiler.mjs";
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "./thcrap-ascii-contract.mjs";
 import { validateStringContract } from "./thcrap-string-contract.mjs";
 
-const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th15: 15 });
+const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th09: 9, th10: 10, th11: 11, th12: 12, th15: 15 });
 export const THCRAP_RUNTIME_COMPILER_GAMES = Object.freeze([...Object.keys(GAME_VERSION), "th075"]);
 const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
 const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8][a-z]{0,2}\\.dat)\\.jdiff$`, "i");
@@ -675,6 +676,7 @@ export function encodeSpellCommentsTable(parsed, { game } = {}) {
 
 export class ThcrapRuntimeCompiler {
   constructor({ runner, archives = {}, fontFile, fontPython, fontLicense } = {}) {
+    this.th12Compiler = archives.th12 ? new Th12ThcrapCompiler({runner, archives:Array.isArray(archives.th12)?archives.th12:[archives.th12], python:fontPython, parseJson:parseThcrapJson}) : null;
     this.th075Compiler = archives.th075 ? new Th075ThcrapCompiler({archives: Array.isArray(archives.th075)?archives.th075:[archives.th075],fontFile,fontLicense,python:fontPython,parseJson:parseThcrapJson}) : null;
     if ((!runner || typeof runner.extractArchiveEntry !== "function" || typeof runner.dumpMessage !== "function" ||
         typeof runner.compileMessage !== "function") && !(this.th075Compiler && Object.keys(archives).every(game=>game==="th075"))) throw new TypeError("thtk runner is required");
@@ -870,6 +872,10 @@ export class ThcrapRuntimeCompiler {
 
   async processPack(resources, context = {}) {
     if (!Array.isArray(resources)) throw new TypeError("thcrap resources must be an array");
+    if(resources.some(resource=>resource.game==='th12')){
+      if(!this.th12Compiler||resources.some(resource=>resource.game!=='th12'))throw Error('TH12 requires its own configured source lane');
+      return this.th12Compiler.processPack(resources,context);
+    }
     if(resources.some(resource=>resource.game==="th075")){if(!this.th075Compiler||resources.some(resource=>resource.game!=="th075"))throw Error("TH075 requires its own configured source lane");return this.th075Compiler.processPack(resources,context);}
     const stringdefsSources = resources.filter(resource => resource?.sourceRole === "stringdefs");
     const normalResources = resources.filter(resource => resource?.sourceRole !== "stringdefs");

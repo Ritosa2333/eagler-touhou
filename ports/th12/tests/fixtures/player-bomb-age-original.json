@@ -1,0 +1,541 @@
+{
+  "schema": "th12-original-player-bomb-age/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Original Player constructor/SHT, Item/Bomb/ANM/resource startup and full436ba0. Synthetic SanaeB header and live-enemy count1; controlled state timers set through4067e0. Death cases enter actual438370. No Bomb17, ANM27 or GPU pass. Host-only resource/heap/audio boundaries remain those of the selected-manager provider.",
+  "timerEvidence": "Normal436d18 calls406bf0 without Timer reset; death436da8 calls4067e0(60). 436d51 confirms Miss before evaluating Bomb when stateAge>=8. 437405..437475 advances the selected state timer in the common tail.",
+  "rows": [
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 0,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 0,
+        "invulnerability": 120,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "invulnerability": 119,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436d1d",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436d22",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 29,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 29,
+        "invulnerability": 120,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 30,
+        "invulnerability": 119,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436d1d",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436d22",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 59,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 59,
+        "invulnerability": 120,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 60,
+        "invulnerability": 119,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436d1d",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436d22",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 60,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 60,
+        "invulnerability": 120,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "invulnerability": 119,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436d1d",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436d22",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 4452,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 4452,
+        "invulnerability": 120,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 4453,
+        "invulnerability": 119,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436d1d",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436d22",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 4452,
+        "held": 0,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 4452,
+        "invulnerability": 120,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 4453,
+        "invulnerability": 119,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "trace": []
+    },
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 4452,
+        "held": 2,
+        "bombs": 0,
+        "bombActive": false
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 4452,
+        "invulnerability": 120,
+        "bombs": 0,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 4453,
+        "invulnerability": 119,
+        "bombs": 0,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "trace": []
+    },
+    {
+      "initial": {
+        "state": 1,
+        "stateAge": 4452,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": true
+      },
+      "before": {
+        "state": 1,
+        "stateAge": 4452,
+        "invulnerability": 120,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 4453,
+        "invulnerability": 119,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": []
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 0,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 0,
+        "invulnerability": 6,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "invulnerability": 5,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x4067e0",
+          "caller": "0x436db5",
+          "argument": 60
+        },
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436dba",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436dbf",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 1,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 1,
+        "invulnerability": 6,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "invulnerability": 5,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x4067e0",
+          "caller": "0x436db5",
+          "argument": 60
+        },
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436dba",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436dbf",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 7,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 7,
+        "invulnerability": 6,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "invulnerability": 5,
+        "bombs": 1,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": [
+        {
+          "entry": "0x4067e0",
+          "caller": "0x436db5",
+          "argument": 60
+        },
+        {
+          "entry": "0x406bf0",
+          "caller": "0x436dba",
+          "argument": null
+        },
+        {
+          "entry": "0x422f20",
+          "caller": "0x436dbf",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 8,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 8,
+        "invulnerability": 6,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 2,
+        "stateAge": 1,
+        "invulnerability": 179,
+        "bombs": 2,
+        "lives": 1,
+        "bombActive": 0
+      },
+      "trace": [
+        {
+          "entry": "0x4381e0",
+          "caller": "0x436d61",
+          "argument": null
+        }
+      ]
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 7,
+        "held": 0,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 7,
+        "invulnerability": 6,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 4,
+        "stateAge": 8,
+        "invulnerability": 5,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "trace": []
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 7,
+        "held": 2,
+        "bombs": 0,
+        "bombActive": false
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 7,
+        "invulnerability": 6,
+        "bombs": 0,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 4,
+        "stateAge": 8,
+        "invulnerability": 5,
+        "bombs": 0,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "trace": []
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 7,
+        "held": 2,
+        "bombs": 2,
+        "bombActive": true
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 7,
+        "invulnerability": 6,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "after": {
+        "state": 4,
+        "stateAge": 8,
+        "invulnerability": 5,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 1
+      },
+      "trace": []
+    },
+    {
+      "initial": {
+        "state": 4,
+        "stateAge": 8,
+        "held": 0,
+        "bombs": 2,
+        "bombActive": false
+      },
+      "before": {
+        "state": 4,
+        "stateAge": 8,
+        "invulnerability": 6,
+        "bombs": 2,
+        "lives": 2,
+        "bombActive": 0
+      },
+      "after": {
+        "state": 2,
+        "stateAge": 1,
+        "invulnerability": 179,
+        "bombs": 2,
+        "lives": 1,
+        "bombActive": 0
+      },
+      "trace": [
+        {
+          "entry": "0x4381e0",
+          "caller": "0x436d61",
+          "argument": null
+        }
+      ]
+    }
+  ]
+}

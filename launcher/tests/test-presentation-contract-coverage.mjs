@@ -35,6 +35,7 @@ const verification = Object.freeze({
   th09: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
   th075: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th11: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
+  th12: {kind:'managed-web', test:'tests/managed-adapter.test.mjs'},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
@@ -46,6 +47,12 @@ const scheduledWorkspaceTests = new Set(WORKSPACE_NODE_TESTS);
 const selectedGames = selectedPortGames(Object.keys(verification));
 for (const [game, lane] of Object.entries(verification).filter(([game]) => selectedGames.includes(game))) {
   const product = PRODUCT_GAMES[game];
+  if (lane.kind === 'managed-web') {
+    const result=spawnSync(process.execPath,['--test','--test-name-pattern=managed presentation:',workspacePath(game,lane.test)],
+      {cwd:workspacePath(game),encoding:'utf8',windowsHide:true});
+    assert.equal(result.status,0,`${game}: presentation verification failed\n${result.stdout}\n${result.stderr}`);
+    continue;
+  }
   if (lane.kind === 'native-clock') {
     const host = await readFile(workspacePath(game, lane.source), 'utf8');
     assert.match(host, /cadence\.advance\(/, `${game}: browser loop must consume its cadence owner`);

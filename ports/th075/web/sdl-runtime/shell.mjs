@@ -135,7 +135,7 @@ async function command(m){if(dispatchInput(m))return {};switch(m.command){
       if(!manifest||manifest.schema!=='eagler-touhou/thcrap-static-pack/1'||manifest.game!==game||manifest.language!==pack.language||!/^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(pack.language)||!Array.isArray(pack.files)||pack.files.length>256||manifest.files.length!==pack.files.length)throw Error('Invalid TH075 language pack');
       const expected=new Map(manifest.files.map(f=>[f.path,f.bytes])),staged=new Map();
       for(const f of pack.files){
-        if(!/^\/thcrap\/th075\/(?:(?:images|text)\/(?:data\/(?:system|character)\/[a-zA-Z0-9_/]+\.(?:dat|sce)|musicroom\.dat)\.bin|fonts\/(?:localized-glyphs\.bin|LICENSE\.txt)|localization\/options\.json)$/.test(f.path)||f.path.includes('..')||staged.has(f.path))throw Error('Unsupported TH075 language path');
+        if(!/^\/thcrap\/th075\/(?:(?:images|text)\/(?:data\/(?:system|character)\/[a-zA-Z0-9_/]+\.(?:dat|sce)|musicroom\.dat)\.bin|images\/base\/data\/system\/replay\.dat\.bin|fonts\/(?:localized-glyphs\.bin|LICENSE\.txt)|localization\/options\.json)$/.test(f.path)||f.path.includes('..')||staged.has(f.path))throw Error('Unsupported TH075 language path');
         const bytes=new Uint8Array(f.bytes);if(!bytes.length||bytes.length>128*1024*1024||expected.get(f.path)!==bytes.length)throw Error('Invalid TH075 language file size');staged.set(f.path,bytes);
       }
       if(!staged.has('/thcrap/th075/fonts/localized-glyphs.bin')||!staged.has('/thcrap/th075/localization/options.json'))throw Error('Incomplete TH075 language pack');

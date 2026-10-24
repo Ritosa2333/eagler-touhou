@@ -94,8 +94,11 @@ async function treeHasFileNewerThan(root, cutoff) {
 export function hostedLanguagesComplete(manifest) {
   for (const game of GAMES) {
     if (!PRODUCT_GAMES[game].features.languages) continue;
+    const preparation = PRODUCT_CONTENT[game].hostPreparation?.languagePack;
+    const required = preparation?.optional ? ["ja"]
+      : ["ja", ...(preparation?.languages ?? DEFAULT_LANGUAGES.slice(1))];
     const options=manifest.games?.[game]?.languageOptions;
-    if (!Array.isArray(options) || DEFAULT_LANGUAGES.some(id=>!options.some(option=>option.id===id&&(id==='ja'||option.pack)))) return false;
+    if (!Array.isArray(options) || required.some(id=>!options.some(option=>option.id===id&&(id==='ja'||option.pack)))) return false;
   }
   return true;
 }
@@ -179,14 +182,18 @@ async function resolveFonts(projectRoot, layout) {
   return Object.freeze({ unicode, japanese });
 }
 
-async function prepareFeatureConfig(projectRoot, layout, resourceMode) {
+async function prepareFeatureConfig(projectRoot, layout, resourceMode, languageSelections) {
   const basePath = script(projectRoot, "host/config/site-features.default.json");
   const features = JSON.parse(await readFile(basePath, "utf8"));
   features.resourceMode = resourceMode;
+  const hostedManifest = !languageSelections && resourceMode === "import"
+    ? JSON.parse(await readFile(resolve(layout.site, "site-manifest.json"), "utf8")) : null;
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     if (!product.features.languages && !product.features.thprac) continue;
+    const available = languageSelections?.[game] ?? hostedManifest?.games?.[game]?.languageOptions
+      ?.filter(option => option.id === "ja" || option.pack).map(option => option.id) ?? ["ja"];
     features.games[game] = {
-      ...(product.features.languages ? { languages: [...DEFAULT_LANGUAGES] } : {}),
+      ...(product.features.languages ? { languages: ["ja", ...new Set(available.filter(id => id !== "ja"))] } : {}),
       ...(product.features.thprac ? { thprac: true } : {}),
     };
   }
@@ -208,19 +215,43 @@ async function prepareFeatureConfig(projectRoot, layout, resourceMode) {
 async function prepareLanguages(projectRoot, layout, python, thtk, font) {
   const languageRoot = resolve(layout.root, ".cache", "generated", "language-packs");
   const games = GAMES.filter(game => PRODUCT_GAMES[game].features.languages);
-  const requestedLanguages = ["lang_zh-hans", "lang_en"];
+  const requestedLanguages = game => PRODUCT_CONTENT[game].hostPreparation?.languagePack?.languages ?? DEFAULT_LANGUAGES.slice(1);
   let task = 0;
-  const total = games.length * requestedLanguages.length;
+  const total = games.reduce((count, game) => count + requestedLanguages(game).length, 0);
   const prepared = {};
-  for (const language of requestedLanguages) {
-    const label = language === "lang_zh-hans" ? "Simplified Chinese" : "English";
-    for (const game of games) {
-      const preparation = PRODUCT_CONTENT[game].hostPreparation?.languagePack;
-      if (preparation?.kind !== "thcrap-runtime-compiler") {
-        throw new Error(`${game}: language capability has no supported Host preparation declaration`);
-      }
+  const selections = {};
+  for (const game of games) {
+    selections[game] = ["ja"];
+    const preparation = PRODUCT_CONTENT[game].hostPreparation?.languagePack;
+    if (!["thcrap-runtime-compiler", "retail-overlay-compiler"].includes(preparation?.kind)) {
+      throw new Error(`${game}: language capability has no supported Host preparation declaration`);
+    }
+    for (const language of requestedLanguages(game)) {
       const output = resolve(languageRoot, game);
-      prepared[game] = output;
+      console.log(`[Languages ${++task}/${total}] ${game.toUpperCase()} ${language}`);
+      if (preparation.kind === "retail-overlay-compiler") {
+        if (!preparation.script) throw new Error(`${game}: language compiler script is not declared`);
+        const result = await run(process.execPath, [
+          script(projectRoot, preparation.script), "--game", game, "--language", language,
+          "--original", layout.games[game], "--output", output,
+          "--python", python, "--thdat", thtk.thdat,
+        ], {cwd: projectRoot, capture: true});
+        if (result.stderr) process.stderr.write(`${result.stderr}\n`);
+        const status = JSON.parse(result.stdout);
+        if (status.game !== game || typeof status.skipped !== "boolean" ||
+            !Array.isArray(status.languages) ||
+            (status.skipped ? !preparation.optional || status.languages.length !== 0
+              : status.languages.length !== 1 || status.languages[0] !== language)) {
+          throw new Error(`${game}: invalid language compiler result`);
+        }
+        if (status.skipped) {
+          console.log(`[Languages] ${game.toUpperCase()} optional ${language} inputs absent; Japanese only`);
+          continue;
+        }
+        prepared[game] = output;
+        selections[game].push(language);
+        continue;
+      }
       const args = [
         script(projectRoot, "scripts/prepare-th06-language-pack.mjs"),
         "--game", game, "--language", language,
@@ -235,15 +266,17 @@ async function prepareLanguages(projectRoot, layout, python, thtk, font) {
       } else {
         throw new Error(`${game}: invalid language Host preparation input mode`);
       }
-      console.log(`[Languages ${++task}/${total}] ${game.toUpperCase()} ${label}`);
       await run(process.execPath, args, { cwd: projectRoot });
+      prepared[game] = output;
+      selections[game].push(language);
     }
+    Object.freeze(selections[game]);
   }
-  console.log("Default languages ready: Japanese / Simplified Chinese / English");
-  return Object.freeze(prepared);
+  console.log("Language packs ready; Japanese remains the default for every game");
+  return Object.freeze({directories: Object.freeze(prepared), selections: Object.freeze(selections)});
 }
 
-async function prepareArtwork(projectRoot, layout, python, thtk) {
+async function prepareArtwork(projectRoot, layout, python, thtk, preparedContent) {
   const output = resolve(layout.root, ".cache", "generated", "host-artwork");
   const args = [
     script(projectRoot, "scripts/prepare-host-artwork.py"),
@@ -253,11 +286,18 @@ async function prepareArtwork(projectRoot, layout, python, thtk) {
   ];
   if (thtk?.thdat) args.push(`--thdat=${thtk.thdat}`);
   if (thtk?.thanm) args.push(`--thanm=${thtk.thanm}`);
+  for (const game of GAMES) {
+    const declaration = PRODUCT_CONTENT[game].hostPreparation?.artwork;
+    if (declaration?.kind === 'prepared-content') {
+      if (!preparedContent[game]) throw new Error(`${game}: prepared artwork content is unavailable`);
+      args.push(`--prepared-artwork-dir=${game}=${resolve(preparedContent[game], declaration.directory)}`);
+    }
+  }
   await run(python, args, { cwd: projectRoot });
   return output;
 }
 
-async function prepareDeclaredContent(projectRoot, layout) {
+async function prepareDeclaredContent(projectRoot, layout, python, thtk) {
   const prepared = {};
   for (const game of GAMES) {
     const declaration = PRODUCT_CONTENT[game].hostPreparation?.preparedContent;
@@ -279,7 +319,7 @@ async function prepareDeclaredContent(projectRoot, layout) {
       preparationScript,
       `--original=${layout.games[game]}`,
       `--output=${output}`,
-    ], { cwd: projectRoot });
+    ], { cwd: projectRoot, env: {...process.env, EAGLER_CONTENT_PYTHON:python, EAGLER_CONTENT_THDAT:thtk?.thdat ?? 'thdat'} });
     prepared[game] = output;
   }
   return Object.freeze(prepared);
@@ -361,12 +401,12 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
   console.log("[Build 2/6] Preparing language packs");
   const languages = await prepareLanguages(projectRoot, layout, hostPython, thtk, fonts.unicode);
   console.log("[Build 3/6] Preparing Launcher artwork");
-  const artwork = await prepareArtwork(projectRoot, layout, hostPython, thtk);
-  const preparedContent = await prepareDeclaredContent(projectRoot, layout);
+  const preparedContent = await prepareDeclaredContent(projectRoot, layout, hostPython, thtk);
+  const artwork = await prepareArtwork(projectRoot, layout, hostPython, thtk, preparedContent);
   const dataAssets = await prepareDeclaredDataAssets(projectRoot, layout, hostPython, fonts, preparedContent);
   console.log("[Build 4/6] Preparing music");
   const ogg = modes.includes("ogg") ? await prepareOgg(projectRoot, layout, hostPython, preparedContent) : null;
-  const features = await prepareFeatureConfig(projectRoot, layout, "hosted");
+  const features = await prepareFeatureConfig(projectRoot, layout, "hosted", languages.selections);
   try {
     console.log("[Build 5/6] Assembling static site");
     const args = [
@@ -383,7 +423,7 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
       `--runtime-release=${layout.runtimeRelease}`,
       ...GAMES.map(game => `--${game}-assets=${layout.games[game]}`),
       ...Object.entries(dataAssets).map(([game, path]) => `--${game}-data-assets=${path}`),
-      ...Object.entries(languages).map(([game, path]) => `--${game}-language-packs=${path}`),
+      ...Object.entries(languages.directories).map(([game, path]) => `--${game}-language-packs=${path}`),
     ];
     if (ogg) {
       for (const game of GAMES) args.push(`--${game}-ogg=${ogg[game]}`);

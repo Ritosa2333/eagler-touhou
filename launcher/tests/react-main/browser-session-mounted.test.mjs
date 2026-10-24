@@ -560,6 +560,21 @@ test('actual BrowserLauncher: Back waits for native sync; repeated Back does not
   await until(() => !playerOpen() && currentUrl() === previous, 'successful native sync returns to its options');
 });
 
+test('actual BrowserLauncher: fullscreen locks Escape before delayed native preparation and releases it on exit', async t => {
+  const prior = Object.getOwnPropertyDescriptor(env.window.navigator, 'keyboard'), calls = [];
+  Object.defineProperty(env.window.navigator, 'keyboard', {configurable:true, value:{
+    async lock(codes) {calls.push({type:'lock',codes:[...codes]});}, unlock() {calls.push({type:'unlock'});}
+  }});
+  t.after(() => {if(prior) Object.defineProperty(env.window.navigator,'keyboard',prior); else delete env.window.navigator.keyboard;});
+  const f = await mountBrowser({autoReady:false}); await start();
+  await until(() => f.navigations.some(url => url !== 'about:blank'), 'native preparation is waiting');
+  assert.equal(api.getTestSession().getRuntime().getSnapshot().launched,false);
+  assert.ok(calls.some(call => call.type==='lock' && call.codes.includes('Escape')), 'browser hold-Escape policy begins before Runtime Ready');
+  assert.equal(commands().includes('launch'),false);
+  await back(); await until(() => !playerOpen(), 'preparation cancellation closes fullscreen Player');
+  assert.equal(f.fullscreen,null);assert.equal(calls.at(-1).type,'unlock');
+});
+
 test('actual BrowserLauncher: Back during native preparation cancels before configure or launch', async () => {
   const f = await mountBrowser({autoReady: false}); await start();
   await until(() => f.navigations.some(url => url !== 'about:blank'), 'actual native preparation started');

@@ -1,3 +1,4 @@
+import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
 import { TH11_MUSIC_FILES } from "./th11-content-layout.mjs";
@@ -221,6 +222,51 @@ export const PRODUCT_CONTENT = Object.freeze({
         developmentEnv: "EAGLER_TH11_ARCHIVES",
         developmentFiles: Object.freeze(["th11.dat"]),
       }),
+    }),
+  }),
+  th12: Object.freeze({
+    original: Object.freeze({files: Object.freeze(["th12.exe", "th12.dat"]), oggSourceFiles: Object.freeze(["thbgm.dat"]),
+      preparedAlternative: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg", "artwork/th12-card.webp"])})}),
+    dataLayout: TH12_DATA_LAYOUT,
+    music: Object.freeze({ogg: Object.freeze({mount: PRODUCT_GAMES.th12.package.musicMounts.ogg, files: TH12_MUSIC_FILES})}),
+    hostPreparation: Object.freeze({
+      artwork: Object.freeze({kind: "prepared-content", directory: "artwork"}),
+      preparedContent: Object.freeze({
+        directory: "assets-eagler",
+        markerFiles: Object.freeze(["th12.data", "music/th12_01.ogg", "artwork/th12-card.webp"]),
+        script: "scripts/prepare-th12-content.mjs",
+        // Keep the preparer's repository-relative layout: the Python menu
+        // builder invokes Node's replay parser, including its metadata imports.
+        // These are source/format declarations only, never retail resources.
+        buildSources: Object.freeze([
+          ["retail-preparer", "scripts/prepare-retail.mjs"],
+          ["dependency", "scripts/retail-versions.json"],
+          ["dependency", "scripts/retail_version.py"],
+          ["managed-content-preparer", "scripts/prepare-managed-content.mjs"],
+          ["dependency", "scripts/prepare-assets.py"],
+          ["dependency", "scripts/prepare-presentation.py"],
+          ["dependency", "scripts/prepare-sounds.py"],
+          ["dependency", "scripts/prepare-music.py"],
+          ["dependency", "scripts/prepare-menu-assets.py"],
+          ["dependency", "scripts/prepare-host-artwork.py"],
+          ["dependency", "src/managed-data.mjs"],
+          ["dependency", "src/replay.mjs"],
+          ["dependency", "src/replay-motion.mjs"],
+          ["dependency", "src/practice/bridge.mjs"],
+          ["dependency", "src/practice/damage-sources.mjs"],
+          ["dependency", "src/practice/sections.mjs"],
+        ].map(([role, source]) => Object.freeze({
+          role, repository: "th12", source, target: `host/content-preparers/th12/${source}`,
+        }))),
+      }),
+      languagePack: Object.freeze({
+        kind: "thcrap-runtime-compiler",
+        inputMode: "archive",
+        archive: "th12.dat",
+        developmentEnv: "EAGLER_TH12_ARCHIVES",
+        developmentFiles: Object.freeze(["th12.dat"]),
+      }),
+      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
     }),
   }),
   th15: Object.freeze({

@@ -53,7 +53,9 @@ export function validatePortLayout(directory, inputFiles) {
     const local = slash(relative(owner,child)), top = local.split('/')[0];
     if (/(?:_web$|^(?:analysis|reports|incremental|source_reconstruction|native_recovered|handoff|deploy|\.github)$)/.test(top))
       issues.push(`${directory}/${top}: directory is outside the current port layout`);
-    if (/\.(?:asm|obj|pdb|dmp)$/i.test(local) && !compiler.has(child))
+    // Disassembly retained beside decompiler indexes is source documentation.
+    const disassembly = /^decompiled\/.+\.asm$/i.test(local);
+    if (/\.(?:asm|obj|pdb|dmp)$/i.test(local) && !disassembly && !compiler.has(child))
       issues.push(`${name}: not a declared compiler input`);
   }
   return [...new Set(issues)];

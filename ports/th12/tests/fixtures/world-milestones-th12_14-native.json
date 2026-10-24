@@ -1,0 +1,203 @@
+{
+  "schema": "th12-native-world-milestones/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "replay": "th12_14.rpy",
+  "replaySha256": "c92747c90ceacc9907440dd03b00afd88ef206bc76abfe1e64b7bc1de24ab516",
+  "creationGuardPrimed": false,
+  "wholeGameOracle": false,
+  "partial": true,
+  "gpuExecuted": false,
+  "scope": "Selected original Enemy/ECL/Player/Bullet/Item/UFO/Bonus/HUD/ANM managers; no STD, hostile-laser manager, full application scheduler or whole-game acceptance.",
+  "hostBoundaries": {
+    "allocator": 86,
+    "host_anm_resource_loader": 3,
+    "host_file_loader": 2,
+    "0x453e20": 837,
+    "host_free": 62,
+    "0x43e250": 8
+  },
+  "records": [
+    {
+      "inputTick": 0,
+      "rngSeed": 4796,
+      "rngCalls": 0,
+      "playerFixed": [
+        0,
+        51200
+      ],
+      "enemies": [],
+      "friendly": []
+    },
+    {
+      "inputTick": 60,
+      "rngSeed": 4796,
+      "rngCalls": 0,
+      "playerFixed": [
+        0,
+        40256
+      ],
+      "enemies": [],
+      "friendly": []
+    },
+    {
+      "inputTick": 61,
+      "rngSeed": 24998,
+      "rngCalls": 4,
+      "playerFixed": [
+        0,
+        39680
+      ],
+      "enemies": [
+        {
+          "id": 3,
+          "routine": "RGirl00",
+          "position": [
+            13.850000381469727,
+            -32.0
+          ],
+          "life": 10
+        }
+      ],
+      "friendly": []
+    },
+    {
+      "inputTick": 68,
+      "rngSeed": 45835,
+      "rngCalls": 66,
+      "playerFixed": [
+        0,
+        35648
+      ],
+      "enemies": [],
+      "friendly": []
+    },
+    {
+      "inputTick": 199,
+      "rngSeed": 18925,
+      "rngCalls": 464,
+      "playerFixed": [
+        13110,
+        16602
+      ],
+      "enemies": [],
+      "friendly": [
+        {
+          "slot": 4,
+          "phase": 1,
+          "age": 0,
+          "position": [
+            73.2439956665039,
+            43.610469818115234
+          ],
+          "damage": 2,
+          "hitLastFrame": 0
+        },
+        {
+          "slot": 7,
+          "phase": 1,
+          "age": 0,
+          "position": [
+            80.8121566772461,
+            48.4810905456543
+          ],
+          "damage": 2,
+          "hitLastFrame": 0
+        },
+        {
+          "slot": 8,
+          "phase": 2,
+          "age": 20,
+          "position": [
+            72.80999755859375,
+            52.599998474121094
+          ],
+          "damage": 15,
+          "hitLastFrame": 1
+        },
+        {
+          "slot": 15,
+          "phase": 1,
+          "age": 0,
+          "position": [
+            80.37815856933594,
+            57.47062301635742
+          ],
+          "damage": 2,
+          "hitLastFrame": 0
+        },
+        {
+          "slot": 16,
+          "phase": 1,
+          "age": 0,
+          "position": [
+            72.3759994506836,
+            61.58952713012695
+          ],
+          "damage": 2,
+          "hitLastFrame": 0
+        },
+        {
+          "slot": 17,
+          "phase": 1,
+          "age": 0,
+          "position": [
+            64.8078384399414,
+            56.71890640258789
+          ],
+          "damage": 2,
+          "hitLastFrame": 0
+        },
+        {
+          "slot": 18,
+          "phase": 1,
+          "age": 0,
+          "position": [
+            65.24183654785156,
+            47.72937774658203
+          ],
+          "damage": 2,
+          "hitLastFrame": 1
+        }
+      ]
+    },
+    {
+      "inputTick": 409,
+      "rngSeed": 43099,
+      "rngCalls": 1718,
+      "playerFixed": [
+        11882,
+        23314
+      ],
+      "enemies": [
+        {
+          "id": 26,
+          "routine": "Girl01",
+          "position": [
+            -112.0,
+            50.70000076293945
+          ],
+          "life": 400
+        },
+        {
+          "id": 27,
+          "routine": "Girl01",
+          "position": [
+            112.0,
+            50.70000076293945
+          ],
+          "life": 363
+        },
+        {
+          "id": 31,
+          "routine": "RGirl00",
+          "position": [
+            -54.15999984741211,
+            31.270000457763672
+          ],
+          "life": 10
+        }
+      ],
+      "friendly": []
+    }
+  ]
+}

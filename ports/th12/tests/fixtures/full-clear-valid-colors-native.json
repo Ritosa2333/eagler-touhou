@@ -1,0 +1,405 @@
+{
+  "schema": "th12-native-full-clear-valid-colors/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "bulletAnmSha256": "e3204da64932a75f5042b49c2666f7989d400ec8b27ff096381f825da69f92a0",
+  "asciiAnmSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+  "gpuExecuted": false,
+  "wholeGameOracle": false,
+  "acceptedReplayGolden": false,
+  "boundary": "Actual40a250 with valid type0/color5, type17/color4, type26/color2 shooters, real454ee0/40d430 ANM remap and original bullet birth update; actual40cf60(1)/4273f0 and subsequent460fe0 Primary27. Zero-speed mode1 single bullets, default shooter flags0x83/fireSound22/transformSound40, original resources and prepared host allocations. Constructor called directly, so emitter wrapper/audio output omitted. No gameplay instruction replacements. Player/Enemy/Item manager updates omitted; no GPU draw.",
+  "cases": [
+    {
+      "type": 0,
+      "color": 5,
+      "origin": [
+        -80,
+        120
+      ],
+      "mode": 1,
+      "speed": 0,
+      "flags": 131,
+      "fireSound": 22,
+      "transformSound": 40,
+      "seed": 4660,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "bulletBirth": {
+        "position": [
+          -80.0,
+          120.0,
+          0.10000000149011612
+        ],
+        "typeColor": [
+          0,
+          5
+        ],
+        "sprite": 5,
+        "spriteWidth": 8.0,
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        }
+      },
+      "afterClear": {
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        },
+        "effects": [
+          {
+            "id": 1,
+            "type": 0,
+            "bank": 0,
+            "script": 96,
+            "sprite": 391,
+            "spriteSelected": true,
+            "enginePosition": [
+              144.0,
+              136.0,
+              0.10000000149011612
+            ],
+            "scriptPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "clock": 1,
+            "clockValue": 1.0,
+            "nativeAnmTickCalls": 1,
+            "layer": 16,
+            "flags": 1073741839,
+            "primaryColor": 4279243007,
+            "callbacks": [
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0"
+            ]
+          }
+        ],
+        "pointBirths": [
+          {
+            "type": 9,
+            "position": [
+              -80.0,
+              120.0,
+              0.10000000149011612
+            ]
+          }
+        ]
+      },
+      "afterPrimary27": {
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        },
+        "effects": [
+          {
+            "id": 1,
+            "type": 0,
+            "bank": 0,
+            "script": 96,
+            "sprite": 391,
+            "spriteSelected": true,
+            "enginePosition": [
+              144.0,
+              136.0,
+              0.10000000149011612
+            ],
+            "scriptPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "clock": 2,
+            "clockValue": 2.0,
+            "nativeAnmTickCalls": 2,
+            "layer": 16,
+            "flags": 1073741839,
+            "primaryColor": 4279243007,
+            "callbacks": [
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": 17,
+      "color": 4,
+      "origin": [
+        0,
+        160
+      ],
+      "mode": 1,
+      "speed": 0,
+      "flags": 131,
+      "fireSound": 22,
+      "transformSound": 40,
+      "seed": 4660,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "bulletBirth": {
+        "position": [
+          0.0,
+          160.0,
+          0.10000000149011612
+        ],
+        "typeColor": [
+          17,
+          4
+        ],
+        "sprite": 308,
+        "spriteWidth": 32.0,
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        }
+      },
+      "afterClear": {
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        },
+        "effects": [
+          {
+            "id": 1,
+            "type": 0,
+            "bank": 0,
+            "script": 96,
+            "sprite": 391,
+            "spriteSelected": true,
+            "enginePosition": [
+              224.0,
+              176.0,
+              0.10000000149011612
+            ],
+            "scriptPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "clock": 1,
+            "clockValue": 1.0,
+            "nativeAnmTickCalls": 1,
+            "layer": 16,
+            "flags": 1073741839,
+            "primaryColor": 4279271552,
+            "callbacks": [
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0"
+            ]
+          }
+        ],
+        "pointBirths": [
+          {
+            "type": 9,
+            "position": [
+              0.0,
+              160.0,
+              0.10000000149011612
+            ]
+          }
+        ]
+      },
+      "afterPrimary27": {
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        },
+        "effects": [
+          {
+            "id": 1,
+            "type": 0,
+            "bank": 0,
+            "script": 96,
+            "sprite": 391,
+            "spriteSelected": true,
+            "enginePosition": [
+              224.0,
+              176.0,
+              0.10000000149011612
+            ],
+            "scriptPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "clock": 2,
+            "clockValue": 2.0,
+            "nativeAnmTickCalls": 2,
+            "layer": 16,
+            "flags": 1073741839,
+            "primaryColor": 4279271552,
+            "callbacks": [
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": 26,
+      "color": 2,
+      "origin": [
+        80,
+        200
+      ],
+      "mode": 1,
+      "speed": 0,
+      "flags": 131,
+      "fireSound": 22,
+      "transformSound": 40,
+      "seed": 4660,
+      "rngBefore": {
+        "seed": 4660,
+        "calls": 0
+      },
+      "bulletBirth": {
+        "position": [
+          80.0,
+          200.0,
+          0.10000000149011612
+        ],
+        "typeColor": [
+          26,
+          2
+        ],
+        "sprite": 354,
+        "spriteWidth": 64.0,
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        }
+      },
+      "afterClear": {
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        },
+        "effects": [
+          {
+            "id": 1,
+            "type": 0,
+            "bank": 0,
+            "script": 96,
+            "sprite": 391,
+            "spriteSelected": true,
+            "enginePosition": [
+              304.0,
+              216.0,
+              0.10000000149011612
+            ],
+            "scriptPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "clock": 1,
+            "clockValue": 1.0,
+            "nativeAnmTickCalls": 1,
+            "layer": 16,
+            "flags": 1073741839,
+            "primaryColor": 4279303952,
+            "callbacks": [
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0"
+            ]
+          }
+        ],
+        "pointBirths": [
+          {
+            "type": 9,
+            "position": [
+              80.0,
+              200.0,
+              0.10000000149011612
+            ]
+          }
+        ]
+      },
+      "afterPrimary27": {
+        "rng": {
+          "seed": 4660,
+          "calls": 0
+        },
+        "effects": [
+          {
+            "id": 1,
+            "type": 0,
+            "bank": 0,
+            "script": 96,
+            "sprite": 391,
+            "spriteSelected": true,
+            "enginePosition": [
+              304.0,
+              216.0,
+              0.10000000149011612
+            ],
+            "scriptPosition": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "clock": 2,
+            "clockValue": 2.0,
+            "nativeAnmTickCalls": 2,
+            "layer": 16,
+            "flags": 1073741839,
+            "primaryColor": 4279303952,
+            "callbacks": [
+              "0x0",
+              "0x0",
+              "0x0",
+              "0x0"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

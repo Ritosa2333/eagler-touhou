@@ -23,6 +23,7 @@
     "relay": "services/relay",
     "turn": "services/turn",
     "telemetry": "services/telemetry",
-    "resources": "services/resource-router"
+    "resources": "services/resource-router",
+    "th12": "ports/th12"
   }
 }

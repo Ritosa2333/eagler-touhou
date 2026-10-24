@@ -1,0 +1,3994 @@
+{
+  "schema": "th12-native-enemy-quantization/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "partial": true,
+  "acceptedReplayGolden": false,
+  "wholeGameOracle": false,
+  "provider": "Original465320/floor493290, ECL300/302/310/311, movement413840 to413ac5, combine413700; no execution stubs",
+  "traceSource": {
+    "artifact": "artifacts\\reverse\\world-native-active-th12_14-1500.json",
+    "sha256": "aab3debef45f3d4028866ddaeff3a3af7f2ca06ab9ceda67206e3e2aba76a65c",
+    "enemy": 48,
+    "restoredFrame": 1204
+  },
+  "preparedInputs": [
+    "SSE2 availability flag1, FPCW037f, MXCSR1f80, gameRate1",
+    "Native310/311 radius0->16 duration60, primed16 actual original movement ticks",
+    "Trace1204 public motion fields restored; center0 and radialDelta0; no whole-state restoration claimed"
+  ],
+  "controlBoundary": "Extra control stops413840 before413ac0, saves CPU context, calls original465320 once on relativeXY on separate stack, restores CPU context, resumes native combine",
+  "quantizationCases": [
+    {
+      "requestedValue": -4.53000020980835,
+      "before": {
+        "xy": [
+          -4.53000020980835,
+          4.53000020980835
+        ],
+        "bits": [
+          3230725571,
+          1083241923
+        ]
+      },
+      "once": {
+        "xy": [
+          -4.539999961853027,
+          4.53000020980835
+        ],
+        "bits": [
+          3230746542,
+          1083241923
+        ]
+      },
+      "twice": {
+        "xy": [
+          -4.539999961853027,
+          4.53000020980835
+        ],
+        "bits": [
+          3230746542,
+          1083241923
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.53000020980835,
+              4.53000020980835
+            ],
+            "bits": [
+              3230725571,
+              1083241923
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              4.53000020980835
+            ],
+            "bits": [
+              3230746542,
+              1083241923
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.539999961853027,
+              4.53000020980835
+            ],
+            "bits": [
+              3230746542,
+              1083241923
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              4.53000020980835
+            ],
+            "bits": [
+              3230746542,
+              1083241923
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -4.539999961853027,
+      "before": {
+        "xy": [
+          -4.539999961853027,
+          4.539999961853027
+        ],
+        "bits": [
+          3230746542,
+          1083262894
+        ]
+      },
+      "once": {
+        "xy": [
+          -4.539999961853027,
+          4.539999961853027
+        ],
+        "bits": [
+          3230746542,
+          1083262894
+        ]
+      },
+      "twice": {
+        "xy": [
+          -4.539999961853027,
+          4.539999961853027
+        ],
+        "bits": [
+          3230746542,
+          1083262894
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.539999961853027,
+              4.539999961853027
+            ],
+            "bits": [
+              3230746542,
+              1083262894
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              4.539999961853027
+            ],
+            "bits": [
+              3230746542,
+              1083262894
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.539999961853027,
+              4.539999961853027
+            ],
+            "bits": [
+              3230746542,
+              1083262894
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              4.539999961853027
+            ],
+            "bits": [
+              3230746542,
+              1083262894
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -4.789999961853027,
+      "before": {
+        "xy": [
+          -4.789999961853027,
+          4.789999961853027
+        ],
+        "bits": [
+          3231270830,
+          1083787182
+        ]
+      },
+      "once": {
+        "xy": [
+          -4.789999961853027,
+          4.789999961853027
+        ],
+        "bits": [
+          3231270830,
+          1083787182
+        ]
+      },
+      "twice": {
+        "xy": [
+          -4.789999961853027,
+          4.789999961853027
+        ],
+        "bits": [
+          3231270830,
+          1083787182
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.789999961853027,
+              4.789999961853027
+            ],
+            "bits": [
+              3231270830,
+              1083787182
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              4.789999961853027
+            ],
+            "bits": [
+              3231270830,
+              1083787182
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.789999961853027,
+              4.789999961853027
+            ],
+            "bits": [
+              3231270830,
+              1083787182
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              4.789999961853027
+            ],
+            "bits": [
+              3231270830,
+              1083787182
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -4.800000190734863,
+      "before": {
+        "xy": [
+          -4.800000190734863,
+          4.800000190734863
+        ],
+        "bits": [
+          3231291802,
+          1083808154
+        ]
+      },
+      "once": {
+        "xy": [
+          -4.809999942779541,
+          4.800000190734863
+        ],
+        "bits": [
+          3231312773,
+          1083808154
+        ]
+      },
+      "twice": {
+        "xy": [
+          -4.809999942779541,
+          4.800000190734863
+        ],
+        "bits": [
+          3231312773,
+          1083808154
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.800000190734863,
+              4.800000190734863
+            ],
+            "bits": [
+              3231291802,
+              1083808154
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.809999942779541,
+              4.800000190734863
+            ],
+            "bits": [
+              3231312773,
+              1083808154
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.809999942779541,
+              4.800000190734863
+            ],
+            "bits": [
+              3231312773,
+              1083808154
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.809999942779541,
+              4.800000190734863
+            ],
+            "bits": [
+              3231312773,
+              1083808154
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -4.809999942779541,
+      "before": {
+        "xy": [
+          -4.809999942779541,
+          4.809999942779541
+        ],
+        "bits": [
+          3231312773,
+          1083829125
+        ]
+      },
+      "once": {
+        "xy": [
+          -4.809999942779541,
+          4.809999942779541
+        ],
+        "bits": [
+          3231312773,
+          1083829125
+        ]
+      },
+      "twice": {
+        "xy": [
+          -4.809999942779541,
+          4.809999942779541
+        ],
+        "bits": [
+          3231312773,
+          1083829125
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.809999942779541,
+              4.809999942779541
+            ],
+            "bits": [
+              3231312773,
+              1083829125
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.809999942779541,
+              4.809999942779541
+            ],
+            "bits": [
+              3231312773,
+              1083829125
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.809999942779541,
+              4.809999942779541
+            ],
+            "bits": [
+              3231312773,
+              1083829125
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.809999942779541,
+              4.809999942779541
+            ],
+            "bits": [
+              3231312773,
+              1083829125
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -0.009999752044677734,
+      "before": {
+        "xy": [
+          -0.009999752044677734,
+          0.009999752044677734
+        ],
+        "bits": [
+          3156465152,
+          1008981504
+        ]
+      },
+      "once": {
+        "xy": [
+          -0.009999999776482582,
+          0.0
+        ],
+        "bits": [
+          3156465418,
+          0
+        ]
+      },
+      "twice": {
+        "xy": [
+          -0.009999999776482582,
+          0.0
+        ],
+        "bits": [
+          3156465418,
+          0
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.009999752044677734,
+              0.009999752044677734
+            ],
+            "bits": [
+              3156465152,
+              1008981504
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.009999999776482582,
+              0.0
+            ],
+            "bits": [
+              3156465418,
+              0
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.009999999776482582,
+              0.0
+            ],
+            "bits": [
+              3156465418,
+              0
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.009999999776482582,
+              0.0
+            ],
+            "bits": [
+              3156465418,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -0.019999980926513672,
+      "before": {
+        "xy": [
+          -0.019999980926513672,
+          0.019999980926513672
+        ],
+        "bits": [
+          3164854016,
+          1017370368
+        ]
+      },
+      "once": {
+        "xy": [
+          -0.019999999552965164,
+          0.009999999776482582
+        ],
+        "bits": [
+          3164854026,
+          1008981770
+        ]
+      },
+      "twice": {
+        "xy": [
+          -0.019999999552965164,
+          0.009999999776482582
+        ],
+        "bits": [
+          3164854026,
+          1008981770
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.019999980926513672,
+              0.019999980926513672
+            ],
+            "bits": [
+              3164854016,
+              1017370368
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.019999999552965164,
+              0.009999999776482582
+            ],
+            "bits": [
+              3164854026,
+              1008981770
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.019999999552965164,
+              0.009999999776482582
+            ],
+            "bits": [
+              3164854026,
+              1008981770
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.019999999552965164,
+              0.009999999776482582
+            ],
+            "bits": [
+              3164854026,
+              1008981770
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -0.015,
+      "before": {
+        "xy": [
+          -0.014999999664723873,
+          0.014999999664723873
+        ],
+        "bits": [
+          3161834127,
+          1014350479
+        ]
+      },
+      "once": {
+        "xy": [
+          -0.019999999552965164,
+          0.009999999776482582
+        ],
+        "bits": [
+          3164854026,
+          1008981770
+        ]
+      },
+      "twice": {
+        "xy": [
+          -0.019999999552965164,
+          0.009999999776482582
+        ],
+        "bits": [
+          3164854026,
+          1008981770
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.014999999664723873,
+              0.014999999664723873
+            ],
+            "bits": [
+              3161834127,
+              1014350479
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.019999999552965164,
+              0.009999999776482582
+            ],
+            "bits": [
+              3164854026,
+              1008981770
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.019999999552965164,
+              0.009999999776482582
+            ],
+            "bits": [
+              3164854026,
+              1008981770
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.019999999552965164,
+              0.009999999776482582
+            ],
+            "bits": [
+              3164854026,
+              1008981770
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": -0.005,
+      "before": {
+        "xy": [
+          -0.004999999888241291,
+          0.004999999888241291
+        ],
+        "bits": [
+          3148076810,
+          1000593162
+        ]
+      },
+      "once": {
+        "xy": [
+          -0.009999999776482582,
+          0.0
+        ],
+        "bits": [
+          3156465418,
+          0
+        ]
+      },
+      "twice": {
+        "xy": [
+          -0.009999999776482582,
+          0.0
+        ],
+        "bits": [
+          3156465418,
+          0
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.004999999888241291,
+              0.004999999888241291
+            ],
+            "bits": [
+              3148076810,
+              1000593162
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.009999999776482582,
+              0.0
+            ],
+            "bits": [
+              3156465418,
+              0
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -0.009999999776482582,
+              0.0
+            ],
+            "bits": [
+              3156465418,
+              0
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.009999999776482582,
+              0.0
+            ],
+            "bits": [
+              3156465418,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": 0.0,
+      "before": {
+        "xy": [
+          0.0,
+          -0.0
+        ],
+        "bits": [
+          0,
+          2147483648
+        ]
+      },
+      "once": {
+        "xy": [
+          0.0,
+          -0.0
+        ],
+        "bits": [
+          0,
+          2147483648
+        ]
+      },
+      "twice": {
+        "xy": [
+          0.0,
+          -0.0
+        ],
+        "bits": [
+          0,
+          2147483648
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              0.0,
+              -0.0
+            ],
+            "bits": [
+              0,
+              2147483648
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              -0.0
+            ],
+            "bits": [
+              0,
+              2147483648
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              0.0,
+              -0.0
+            ],
+            "bits": [
+              0,
+              2147483648
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              -0.0
+            ],
+            "bits": [
+              0,
+              2147483648
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": 0.005,
+      "before": {
+        "xy": [
+          0.004999999888241291,
+          -0.004999999888241291
+        ],
+        "bits": [
+          1000593162,
+          3148076810
+        ]
+      },
+      "once": {
+        "xy": [
+          0.0,
+          -0.009999999776482582
+        ],
+        "bits": [
+          0,
+          3156465418
+        ]
+      },
+      "twice": {
+        "xy": [
+          0.0,
+          -0.009999999776482582
+        ],
+        "bits": [
+          0,
+          3156465418
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              0.004999999888241291,
+              -0.004999999888241291
+            ],
+            "bits": [
+              1000593162,
+              3148076810
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              -0.009999999776482582
+            ],
+            "bits": [
+              0,
+              3156465418
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              0.0,
+              -0.009999999776482582
+            ],
+            "bits": [
+              0,
+              3156465418
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              -0.009999999776482582
+            ],
+            "bits": [
+              0,
+              3156465418
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": 0.015,
+      "before": {
+        "xy": [
+          0.014999999664723873,
+          -0.014999999664723873
+        ],
+        "bits": [
+          1014350479,
+          3161834127
+        ]
+      },
+      "once": {
+        "xy": [
+          0.009999999776482582,
+          -0.019999999552965164
+        ],
+        "bits": [
+          1008981770,
+          3164854026
+        ]
+      },
+      "twice": {
+        "xy": [
+          0.009999999776482582,
+          -0.019999999552965164
+        ],
+        "bits": [
+          1008981770,
+          3164854026
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              0.014999999664723873,
+              -0.014999999664723873
+            ],
+            "bits": [
+              1014350479,
+              3161834127
+            ]
+          },
+          "after": {
+            "xy": [
+              0.009999999776482582,
+              -0.019999999552965164
+            ],
+            "bits": [
+              1008981770,
+              3164854026
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              0.009999999776482582,
+              -0.019999999552965164
+            ],
+            "bits": [
+              1008981770,
+              3164854026
+            ]
+          },
+          "after": {
+            "xy": [
+              0.009999999776482582,
+              -0.019999999552965164
+            ],
+            "bits": [
+              1008981770,
+              3164854026
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": 4.53000020980835,
+      "before": {
+        "xy": [
+          4.53000020980835,
+          -4.53000020980835
+        ],
+        "bits": [
+          1083241923,
+          3230725571
+        ]
+      },
+      "once": {
+        "xy": [
+          4.53000020980835,
+          -4.539999961853027
+        ],
+        "bits": [
+          1083241923,
+          3230746542
+        ]
+      },
+      "twice": {
+        "xy": [
+          4.53000020980835,
+          -4.539999961853027
+        ],
+        "bits": [
+          1083241923,
+          3230746542
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              4.53000020980835,
+              -4.53000020980835
+            ],
+            "bits": [
+              1083241923,
+              3230725571
+            ]
+          },
+          "after": {
+            "xy": [
+              4.53000020980835,
+              -4.539999961853027
+            ],
+            "bits": [
+              1083241923,
+              3230746542
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              4.53000020980835,
+              -4.539999961853027
+            ],
+            "bits": [
+              1083241923,
+              3230746542
+            ]
+          },
+          "after": {
+            "xy": [
+              4.53000020980835,
+              -4.539999961853027
+            ],
+            "bits": [
+              1083241923,
+              3230746542
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "requestedValue": 127.97999572753906,
+      "before": {
+        "xy": [
+          127.97999572753906,
+          -127.97999572753906
+        ],
+        "bits": [
+          1124070850,
+          3271554498
+        ]
+      },
+      "once": {
+        "xy": [
+          127.9800033569336,
+          -127.9800033569336
+        ],
+        "bits": [
+          1124070851,
+          3271554499
+        ]
+      },
+      "twice": {
+        "xy": [
+          127.9800033569336,
+          -127.9800033569336
+        ],
+        "bits": [
+          1124070851,
+          3271554499
+        ]
+      },
+      "calls": [
+        {
+          "label": "first-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              127.97999572753906,
+              -127.97999572753906
+            ],
+            "bits": [
+              1124070850,
+              3271554498
+            ]
+          },
+          "after": {
+            "xy": [
+              127.9800033569336,
+              -127.9800033569336
+            ],
+            "bits": [
+              1124070851,
+              3271554499
+            ]
+          }
+        },
+        {
+          "label": "second-call",
+          "component": "standalone",
+          "extraControlCall": false,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              127.9800033569336,
+              -127.9800033569336
+            ],
+            "bits": [
+              1124070851,
+              3271554499
+            ]
+          },
+          "after": {
+            "xy": [
+              127.9800033569336,
+              -127.9800033569336
+            ],
+            "bits": [
+              1124070851,
+              3271554499
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "motionCases": [
+    {
+      "name": "native-once",
+      "extraRelativeQuantization": false,
+      "clampEnabled": true,
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "setupArgs": {
+        "relative": true,
+        "angle": 0,
+        "initialRadius": 0,
+        "initialRadiusDelta": 0,
+        "initialSpeed": 0.03490658476948738,
+        "targetSpeed": 0.03490658476948738,
+        "targetRadius": 16,
+        "targetDelta": 0,
+        "duration": 60,
+        "mode": 0,
+        "clamp": true
+      },
+      "setupCallArguments": [
+        1,
+        0,
+        0,
+        0,
+        0.03490658476948738,
+        0.03490658476948738,
+        16,
+        0,
+        60,
+        0,
+        1
+      ],
+      "preTicks": 16,
+      "restoreCheckpoint": {
+        "traceFrame": 1204,
+        "state": {
+          "position": [
+            -4.269999980926514,
+            127.91999816894531,
+            0.0
+          ],
+          "absolute": [
+            0.0,
+            127.97999572753906,
+            0.0
+          ],
+          "relative": [
+            -4.269999980926514,
+            -0.05999999865889549,
+            0.0
+          ],
+          "delta": [
+            0.14999985694885254,
+            0.260009765625,
+            0.0
+          ],
+          "angle": 0.0,
+          "speed": 0.0,
+          "relativeAngle": -3.1297788619995117,
+          "relativeSpeed": 0.03490658476948738,
+          "relativeRadius": 4.266666889190674,
+          "relativeRadiusDelta": 0.0,
+          "absoluteGeometryFlags": 0,
+          "relativeGeometryFlags": 1,
+          "flags": 536970304,
+          "relativePolarDuration": 60,
+          "relativeRadiusDuration": 60
+        }
+      },
+      "restorePositionArguments": [
+        -4.269999980926514,
+        127.91999816894531,
+        0.0,
+        127.97999572753906,
+        -4.269999980926514,
+        -0.05999999865889549,
+        0.0,
+        -3.1297788619995117,
+        4.266666889190674
+      ],
+      "initial": {
+        "position": [
+          -4.269999980926514,
+          127.91999816894531,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          127.97999572753906,
+          0.0
+        ],
+        "relative": [
+          -4.269999980926514,
+          -0.05999999865889549,
+          0.0
+        ],
+        "delta": [
+          0.14999985694885254,
+          0.260009765625,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": -3.1297788619995117,
+        "relativeSpeed": 0.03490658476948738,
+        "relativeRadius": 4.266666889190674,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 1,
+        "flags": 536970304,
+        "relativePolarDuration": 60,
+        "relativeRadiusDuration": 60
+      },
+      "frames": [
+        {
+          "traceFrame": 1205,
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          },
+          "reference": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              127.9800033569336
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071
+            ],
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895
+          }
+        },
+        {
+          "traceFrame": 1206,
+          "state": {
+            "position": [
+              -4.809999942779541,
+              127.58000183105469,
+              0.0
+            ],
+            "absolute": [
+              -0.019999980926513672,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.18000030517578125,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          },
+          "reference": {
+            "position": [
+              -4.809999942779541,
+              127.58000183105469
+            ],
+            "absolute": [
+              -0.019999980926513672,
+              127.9800033569336
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863
+          }
+        }
+      ],
+      "quantizations": [
+        {
+          "label": "trace-frame1205",
+          "component": "absolute",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              0.0,
+              127.97999572753906
+            ],
+            "bits": [
+              0,
+              1124070850
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              127.9800033569336
+            ],
+            "bits": [
+              0,
+              1124070851
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "component": "relative",
+          "extraControlCall": false,
+          "caller": "0x464e9d",
+          "before": {
+            "xy": [
+              -4.52838659286499,
+              -0.21172218024730682
+            ],
+            "bits": [
+              3230722187,
+              3193490867
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.53000020980835,
+              -0.2199999988079071
+            ],
+            "bits": [
+              3230725571,
+              3194046382
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.53000020980835,
+              127.76000213623047
+            ],
+            "bits": [
+              3230725571,
+              1124042015
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              127.76000213623047
+            ],
+            "bits": [
+              3230746542,
+              1124042015
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "absolute",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -0.009999752044677734,
+              127.9800033569336
+            ],
+            "bits": [
+              3156465152,
+              1124070851
+            ]
+          },
+          "after": {
+            "xy": [
+              -0.009999999776482582,
+              127.9800033569336
+            ],
+            "bits": [
+              3156465418,
+              1124070851
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "relative",
+          "extraControlCall": false,
+          "caller": "0x464e9d",
+          "before": {
+            "xy": [
+              -4.784018039703369,
+              -0.3913748562335968
+            ],
+            "bits": [
+              3231258285,
+              3200803401
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "bits": [
+              3231270830,
+              3201092813
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.800000190734863,
+              127.58000183105469
+            ],
+            "bits": [
+              3231291802,
+              1124018422
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.809999942779541,
+              127.58000183105469
+            ],
+            "bits": [
+              3231312773,
+              1124018422
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "trace-frame1205",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.269999980926514,
+              127.91999816894531,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.14999985694885254,
+              0.260009765625,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              -0.009999999776482582,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.809999942779541,
+              127.58000183105469,
+              0.0
+            ],
+            "absolute": [
+              -0.019999980926513672,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.18000030517578125,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        }
+      ]
+    },
+    {
+      "name": "extra-relative-quant-control",
+      "extraRelativeQuantization": true,
+      "clampEnabled": true,
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "setupArgs": {
+        "relative": true,
+        "angle": 0,
+        "initialRadius": 0,
+        "initialRadiusDelta": 0,
+        "initialSpeed": 0.03490658476948738,
+        "targetSpeed": 0.03490658476948738,
+        "targetRadius": 16,
+        "targetDelta": 0,
+        "duration": 60,
+        "mode": 0,
+        "clamp": true
+      },
+      "setupCallArguments": [
+        1,
+        0,
+        0,
+        0,
+        0.03490658476948738,
+        0.03490658476948738,
+        16,
+        0,
+        60,
+        0,
+        1
+      ],
+      "preTicks": 16,
+      "restoreCheckpoint": {
+        "traceFrame": 1204,
+        "state": {
+          "position": [
+            -4.269999980926514,
+            127.91999816894531,
+            0.0
+          ],
+          "absolute": [
+            0.0,
+            127.97999572753906,
+            0.0
+          ],
+          "relative": [
+            -4.269999980926514,
+            -0.05999999865889549,
+            0.0
+          ],
+          "delta": [
+            0.14999985694885254,
+            0.260009765625,
+            0.0
+          ],
+          "angle": 0.0,
+          "speed": 0.0,
+          "relativeAngle": -3.1297788619995117,
+          "relativeSpeed": 0.03490658476948738,
+          "relativeRadius": 4.266666889190674,
+          "relativeRadiusDelta": 0.0,
+          "absoluteGeometryFlags": 0,
+          "relativeGeometryFlags": 1,
+          "flags": 536970304,
+          "relativePolarDuration": 60,
+          "relativeRadiusDuration": 60
+        }
+      },
+      "restorePositionArguments": [
+        -4.269999980926514,
+        127.91999816894531,
+        0.0,
+        127.97999572753906,
+        -4.269999980926514,
+        -0.05999999865889549,
+        0.0,
+        -3.1297788619995117,
+        4.266666889190674
+      ],
+      "initial": {
+        "position": [
+          -4.269999980926514,
+          127.91999816894531,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          127.97999572753906,
+          0.0
+        ],
+        "relative": [
+          -4.269999980926514,
+          -0.05999999865889549,
+          0.0
+        ],
+        "delta": [
+          0.14999985694885254,
+          0.260009765625,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": -3.1297788619995117,
+        "relativeSpeed": 0.03490658476948738,
+        "relativeRadius": 4.266666889190674,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 1,
+        "flags": 536970304,
+        "relativePolarDuration": 60,
+        "relativeRadiusDuration": 60
+      },
+      "frames": [
+        {
+          "traceFrame": 1205,
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.539999961853027,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              -0.26999998092651367,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          },
+          "reference": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              127.9800033569336
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071
+            ],
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895
+          }
+        },
+        {
+          "traceFrame": 1206,
+          "state": {
+            "position": [
+              -4.789999961853027,
+              127.58000183105469,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.25,
+              -0.18000030517578125,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          },
+          "reference": {
+            "position": [
+              -4.809999942779541,
+              127.58000183105469
+            ],
+            "absolute": [
+              -0.019999980926513672,
+              127.9800033569336
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863
+          }
+        }
+      ],
+      "quantizations": [
+        {
+          "label": "trace-frame1205",
+          "component": "absolute",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              0.0,
+              127.97999572753906
+            ],
+            "bits": [
+              0,
+              1124070850
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              127.9800033569336
+            ],
+            "bits": [
+              0,
+              1124070851
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "component": "relative",
+          "extraControlCall": false,
+          "caller": "0x464e9d",
+          "before": {
+            "xy": [
+              -4.52838659286499,
+              -0.21172218024730682
+            ],
+            "bits": [
+              3230722187,
+              3193490867
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.53000020980835,
+              -0.2199999988079071
+            ],
+            "bits": [
+              3230725571,
+              3194046382
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "component": "relative",
+          "extraControlCall": true,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.53000020980835,
+              -0.2199999988079071
+            ],
+            "bits": [
+              3230725571,
+              3194046382
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              -0.2199999988079071
+            ],
+            "bits": [
+              3230746542,
+              3194046382
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.539999961853027,
+              127.76000213623047
+            ],
+            "bits": [
+              3230746542,
+              1124042015
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              127.76000213623047
+            ],
+            "bits": [
+              3230746542,
+              1124042015
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "absolute",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              0.0,
+              127.9800033569336
+            ],
+            "bits": [
+              0,
+              1124070851
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              127.9800033569336
+            ],
+            "bits": [
+              0,
+              1124070851
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "relative",
+          "extraControlCall": false,
+          "caller": "0x464e9d",
+          "before": {
+            "xy": [
+              -4.784018039703369,
+              -0.3913748562335968
+            ],
+            "bits": [
+              3231258285,
+              3200803401
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "bits": [
+              3231270830,
+              3201092813
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "relative",
+          "extraControlCall": true,
+          "caller": "0x100f000",
+          "before": {
+            "xy": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "bits": [
+              3231270830,
+              3201092813
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "bits": [
+              3231270830,
+              3201092813
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.789999961853027,
+              127.58000183105469
+            ],
+            "bits": [
+              3231270830,
+              1124018422
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              127.58000183105469
+            ],
+            "bits": [
+              3231270830,
+              1124018422
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "trace-frame1205",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.269999980926514,
+              127.91999816894531,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.539999961853027,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.14999985694885254,
+              0.260009765625,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.539999961853027,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              -0.26999998092651367,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.26999998092651367,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.789999961853027,
+              127.58000183105469,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.25,
+              -0.18000030517578125,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537101376,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        }
+      ]
+    },
+    {
+      "name": "native-unclamped-control",
+      "extraRelativeQuantization": false,
+      "clampEnabled": false,
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "setupArgs": {
+        "relative": true,
+        "angle": 0,
+        "initialRadius": 0,
+        "initialRadiusDelta": 0,
+        "initialSpeed": 0.03490658476948738,
+        "targetSpeed": 0.03490658476948738,
+        "targetRadius": 16,
+        "targetDelta": 0,
+        "duration": 60,
+        "mode": 0,
+        "clamp": false
+      },
+      "setupCallArguments": [
+        1,
+        0,
+        0,
+        0,
+        0.03490658476948738,
+        0.03490658476948738,
+        16,
+        0,
+        60,
+        0,
+        0
+      ],
+      "preTicks": 16,
+      "restoreCheckpoint": {
+        "traceFrame": 1204,
+        "state": {
+          "position": [
+            -4.269999980926514,
+            127.91999816894531,
+            0.0
+          ],
+          "absolute": [
+            0.0,
+            127.97999572753906,
+            0.0
+          ],
+          "relative": [
+            -4.269999980926514,
+            -0.05999999865889549,
+            0.0
+          ],
+          "delta": [
+            0.14999985694885254,
+            0.2599945068359375,
+            0.0
+          ],
+          "angle": 0.0,
+          "speed": 0.0,
+          "relativeAngle": -3.1297788619995117,
+          "relativeSpeed": 0.03490658476948738,
+          "relativeRadius": 4.266666889190674,
+          "relativeRadiusDelta": 0.0,
+          "absoluteGeometryFlags": 0,
+          "relativeGeometryFlags": 1,
+          "flags": 536904768,
+          "relativePolarDuration": 60,
+          "relativeRadiusDuration": 60
+        }
+      },
+      "restorePositionArguments": [
+        -4.269999980926514,
+        127.91999816894531,
+        0.0,
+        127.97999572753906,
+        -4.269999980926514,
+        -0.05999999865889549,
+        0.0,
+        -3.1297788619995117,
+        4.266666889190674
+      ],
+      "initial": {
+        "position": [
+          -4.269999980926514,
+          127.91999816894531,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          127.97999572753906,
+          0.0
+        ],
+        "relative": [
+          -4.269999980926514,
+          -0.05999999865889549,
+          0.0
+        ],
+        "delta": [
+          0.14999985694885254,
+          0.2599945068359375,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": -3.1297788619995117,
+        "relativeSpeed": 0.03490658476948738,
+        "relativeRadius": 4.266666889190674,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 1,
+        "flags": 536904768,
+        "relativePolarDuration": 60,
+        "relativeRadiusDuration": 60
+      },
+      "frames": [
+        {
+          "traceFrame": 1205,
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537035840,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          },
+          "reference": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              127.9800033569336
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071
+            ],
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895
+          }
+        },
+        {
+          "traceFrame": 1206,
+          "state": {
+            "position": [
+              -4.789999961853027,
+              127.58000183105469,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.25,
+              -0.18000030517578125,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537035840,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          },
+          "reference": {
+            "position": [
+              -4.809999942779541,
+              127.58000183105469
+            ],
+            "absolute": [
+              -0.019999980926513672,
+              127.9800033569336
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863
+          }
+        }
+      ],
+      "quantizations": [
+        {
+          "label": "trace-frame1205",
+          "component": "absolute",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              0.0,
+              127.97999572753906
+            ],
+            "bits": [
+              0,
+              1124070850
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              127.9800033569336
+            ],
+            "bits": [
+              0,
+              1124070851
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "component": "relative",
+          "extraControlCall": false,
+          "caller": "0x464e9d",
+          "before": {
+            "xy": [
+              -4.52838659286499,
+              -0.21172218024730682
+            ],
+            "bits": [
+              3230722187,
+              3193490867
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.53000020980835,
+              -0.2199999988079071
+            ],
+            "bits": [
+              3230725571,
+              3194046382
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.53000020980835,
+              127.76000213623047
+            ],
+            "bits": [
+              3230725571,
+              1124042015
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              127.76000213623047
+            ],
+            "bits": [
+              3230746542,
+              1124042015
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "absolute",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              0.0,
+              127.9800033569336
+            ],
+            "bits": [
+              0,
+              1124070851
+            ]
+          },
+          "after": {
+            "xy": [
+              0.0,
+              127.9800033569336
+            ],
+            "bits": [
+              0,
+              1124070851
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "relative",
+          "extraControlCall": false,
+          "caller": "0x464e9d",
+          "before": {
+            "xy": [
+              -4.784018039703369,
+              -0.3913748562335968
+            ],
+            "bits": [
+              3231258285,
+              3200803401
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              -0.4000000059604645
+            ],
+            "bits": [
+              3231270830,
+              3201092813
+            ]
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.789999961853027,
+              127.58000183105469
+            ],
+            "bits": [
+              3231270830,
+              1124018422
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.789999961853027,
+              127.58000183105469
+            ],
+            "bits": [
+              3231270830,
+              1124018422
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "trace-frame1205",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.269999980926514,
+              127.91999816894531,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.14999985694885254,
+              0.2599945068359375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537035840,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1205",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.094872236251831,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.5333333015441895,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537035840,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.76000213623047,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.26000022888183594,
+              -0.15999603271484375,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537035840,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        },
+        {
+          "label": "trace-frame1206",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.789999961853027,
+              127.58000183105469,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              127.9800033569336,
+              0.0
+            ],
+            "relative": [
+              -4.789999961853027,
+              -0.4000000059604645,
+              0.0
+            ],
+            "delta": [
+              -0.25,
+              -0.18000030517578125,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": -3.0599656105041504,
+            "relativeSpeed": 0.03490658476948738,
+            "relativeRadius": 4.800000190734863,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 1,
+            "flags": 537035840,
+            "relativePolarDuration": 60,
+            "relativeRadiusDuration": 60
+          }
+        }
+      ]
+    }
+  ],
+  "combineCases": [
+    {
+      "name": "inside",
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "before": {
+        "position": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "after": {
+        "position": [
+          -4.539999961853027,
+          127.77999877929688,
+          0.0
+        ],
+        "absolute": [
+          -0.009999752044677734,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          -4.53000020980835,
+          -0.220001220703125,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "quantizations": [
+        {
+          "label": "direct-combine-inside",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.53000020980835,
+              127.77999877929688
+            ],
+            "bits": [
+              3230725571,
+              1124044636
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              127.77999877929688
+            ],
+            "bits": [
+              3230746542,
+              1124044636
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "direct-combine-inside",
+          "event": "enter",
+          "state": {
+            "position": [
+              0.0,
+              128.0,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              128.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        },
+        {
+          "label": "direct-combine-inside",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.77999877929688,
+              0.0
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              128.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              -4.53000020980835,
+              -0.220001220703125,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "outside",
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "before": {
+        "position": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "absolute": [
+          500.0,
+          500.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "after": {
+        "position": [
+          140.0,
+          192.0,
+          0.0
+        ],
+        "absolute": [
+          144.52999877929688,
+          192.22000122070312,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          495.4700012207031,
+          371.7799987792969,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "quantizations": [
+        {
+          "label": "direct-combine-outside",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              495.4700012207031,
+              499.7799987792969
+            ],
+            "bits": [
+              1140309033,
+              1140450263
+            ]
+          },
+          "after": {
+            "xy": [
+              495.4700012207031,
+              499.7799987792969
+            ],
+            "bits": [
+              1140309033,
+              1140450263
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "direct-combine-outside",
+          "event": "enter",
+          "state": {
+            "position": [
+              0.0,
+              128.0,
+              0.0
+            ],
+            "absolute": [
+              500.0,
+              500.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        },
+        {
+          "label": "direct-combine-outside",
+          "event": "return",
+          "state": {
+            "position": [
+              140.0,
+              192.0,
+              0.0
+            ],
+            "absolute": [
+              144.52999877929688,
+              192.22000122070312,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              495.4700012207031,
+              371.7799987792969,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        }
+      ]
+    }
+  ],
+  "directSetCases": [
+    {
+      "opcode": 300,
+      "name": "inside",
+      "coordinates": [
+        0.0,
+        128.0
+      ],
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "before": {
+        "position": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "after": {
+        "position": [
+          -4.539999961853027,
+          127.77999877929688,
+          0.0
+        ],
+        "absolute": [
+          -0.009999752044677734,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "quantizations": [
+        {
+          "label": "ECL300-inside",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.53000020980835,
+              127.77999877929688
+            ],
+            "bits": [
+              3230725571,
+              1124044636
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              127.77999877929688
+            ],
+            "bits": [
+              3230746542,
+              1124044636
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "ECL300-inside",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.53000020980835,
+              127.77999877929688,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              128.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        },
+        {
+          "label": "ECL300-inside",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.77999877929688,
+              0.0
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              128.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        }
+      ]
+    },
+    {
+      "opcode": 300,
+      "name": "outside",
+      "coordinates": [
+        500.0,
+        500.0
+      ],
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "before": {
+        "position": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "after": {
+        "position": [
+          140.0,
+          192.0,
+          0.0
+        ],
+        "absolute": [
+          144.52999877929688,
+          192.22000122070312,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "quantizations": [
+        {
+          "label": "ECL300-outside",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              495.4700012207031,
+              499.7799987792969
+            ],
+            "bits": [
+              1140309033,
+              1140450263
+            ]
+          },
+          "after": {
+            "xy": [
+              495.4700012207031,
+              499.7799987792969
+            ],
+            "bits": [
+              1140309033,
+              1140450263
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "ECL300-outside",
+          "event": "enter",
+          "state": {
+            "position": [
+              495.4700012207031,
+              499.7799987792969,
+              0.0
+            ],
+            "absolute": [
+              500.0,
+              500.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        },
+        {
+          "label": "ECL300-outside",
+          "event": "return",
+          "state": {
+            "position": [
+              140.0,
+              192.0,
+              0.0
+            ],
+            "absolute": [
+              144.52999877929688,
+              192.22000122070312,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        }
+      ]
+    },
+    {
+      "opcode": 302,
+      "name": "inside",
+      "coordinates": [
+        -4.53000020980835,
+        -0.2199999988079071
+      ],
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "before": {
+        "position": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "after": {
+        "position": [
+          -4.539999961853027,
+          127.77999877929688,
+          0.0
+        ],
+        "absolute": [
+          -0.009999752044677734,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "quantizations": [
+        {
+          "label": "ECL302-inside",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              -4.53000020980835,
+              127.77999877929688
+            ],
+            "bits": [
+              3230725571,
+              1124044636
+            ]
+          },
+          "after": {
+            "xy": [
+              -4.539999961853027,
+              127.77999877929688
+            ],
+            "bits": [
+              3230746542,
+              1124044636
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "ECL302-inside",
+          "event": "enter",
+          "state": {
+            "position": [
+              -4.53000020980835,
+              127.77999877929688,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              128.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        },
+        {
+          "label": "ECL302-inside",
+          "event": "return",
+          "state": {
+            "position": [
+              -4.539999961853027,
+              127.77999877929688,
+              0.0
+            ],
+            "absolute": [
+              -0.009999752044677734,
+              128.0,
+              0.0
+            ],
+            "relative": [
+              -4.53000020980835,
+              -0.2199999988079071,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        }
+      ]
+    },
+    {
+      "opcode": 302,
+      "name": "outside",
+      "coordinates": [
+        500.0,
+        500.0
+      ],
+      "preparedClamp": [
+        0,
+        128,
+        280,
+        128
+      ],
+      "before": {
+        "position": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "absolute": [
+          0.0,
+          128.0,
+          0.0
+        ],
+        "relative": [
+          -4.53000020980835,
+          -0.2199999988079071,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "after": {
+        "position": [
+          140.0,
+          192.0,
+          0.0
+        ],
+        "absolute": [
+          -360.0,
+          -308.0,
+          0.0
+        ],
+        "relative": [
+          500.0,
+          500.0,
+          0.0
+        ],
+        "delta": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "angle": 0.0,
+        "speed": 0.0,
+        "relativeAngle": 0.0,
+        "relativeSpeed": 0.0,
+        "relativeRadius": 0.0,
+        "relativeRadiusDelta": 0.0,
+        "absoluteGeometryFlags": 0,
+        "relativeGeometryFlags": 0,
+        "flags": 65536,
+        "relativePolarDuration": 0,
+        "relativeRadiusDuration": 0
+      },
+      "quantizations": [
+        {
+          "label": "ECL302-outside",
+          "component": "combined",
+          "extraControlCall": false,
+          "caller": "0x464ddc",
+          "before": {
+            "xy": [
+              500.0,
+              628.0
+            ],
+            "bits": [
+              1140457472,
+              1142751232
+            ]
+          },
+          "after": {
+            "xy": [
+              500.0,
+              628.0
+            ],
+            "bits": [
+              1140457472,
+              1142751232
+            ]
+          }
+        }
+      ],
+      "combinations": [
+        {
+          "label": "ECL302-outside",
+          "event": "enter",
+          "state": {
+            "position": [
+              500.0,
+              628.0,
+              0.0
+            ],
+            "absolute": [
+              0.0,
+              128.0,
+              0.0
+            ],
+            "relative": [
+              500.0,
+              500.0,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        },
+        {
+          "label": "ECL302-outside",
+          "event": "return",
+          "state": {
+            "position": [
+              140.0,
+              192.0,
+              0.0
+            ],
+            "absolute": [
+              -360.0,
+              -308.0,
+              0.0
+            ],
+            "relative": [
+              500.0,
+              500.0,
+              0.0
+            ],
+            "delta": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angle": 0.0,
+            "speed": 0.0,
+            "relativeAngle": 0.0,
+            "relativeSpeed": 0.0,
+            "relativeRadius": 0.0,
+            "relativeRadiusDelta": 0.0,
+            "absoluteGeometryFlags": 0,
+            "relativeGeometryFlags": 0,
+            "flags": 65536,
+            "relativePolarDuration": 0,
+            "relativeRadiusDuration": 0
+          }
+        }
+      ]
+    }
+  ]
+}

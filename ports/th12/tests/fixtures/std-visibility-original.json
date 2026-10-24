@@ -1,0 +1,234 @@
+{
+  "schema": "th12-original-std-tick-gate-samples/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Original403ec0->403020->4049a0; original stage01.std commands; objectCount0 omits ANM object ticks; D3DXnormalize fixture",
+  "wholeGameDeterminism": false,
+  "wholePresentationOracle": false,
+  "gpuExecuted": false,
+  "records": [
+    {
+      "initialFlags": 0,
+      "transitionAge": 0,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 1,
+          "callbackCount": 1,
+          "position": [
+            0.0,
+            0.011333022266626358,
+            -400.0018615722656
+          ],
+          "flags": 0
+        },
+        {
+          "tick": 1,
+          "scriptClock": 2,
+          "callbackCount": 2,
+          "position": [
+            0.0,
+            0.04529556259512901,
+            -400.0075378417969
+          ],
+          "flags": 0
+        }
+      ]
+    },
+    {
+      "initialFlags": 1,
+      "transitionAge": 0,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 1,
+          "callbackCount": 1,
+          "position": [
+            0.0,
+            0.011333022266626358,
+            -400.0018615722656
+          ],
+          "flags": 1
+        },
+        {
+          "tick": 1,
+          "scriptClock": 2,
+          "callbackCount": 2,
+          "position": [
+            0.0,
+            0.04529556259512901,
+            -400.0075378417969
+          ],
+          "flags": 1
+        }
+      ]
+    },
+    {
+      "initialFlags": 4,
+      "transitionAge": 29,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 1,
+          "callbackCount": 1,
+          "position": [
+            0.0,
+            0.011333022266626358,
+            -400.0018615722656
+          ],
+          "flags": 4
+        },
+        {
+          "tick": 1,
+          "scriptClock": 2,
+          "callbackCount": 2,
+          "position": [
+            0.0,
+            0.04529556259512901,
+            -400.0075378417969
+          ],
+          "flags": 4
+        }
+      ]
+    },
+    {
+      "initialFlags": 4,
+      "transitionAge": 30,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 0,
+          "callbackCount": 1,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 4
+        },
+        {
+          "tick": 1,
+          "scriptClock": 0,
+          "callbackCount": 2,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 4
+        }
+      ]
+    },
+    {
+      "initialFlags": 4,
+      "transitionAge": 59,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 0,
+          "callbackCount": 1,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 4
+        },
+        {
+          "tick": 1,
+          "scriptClock": 0,
+          "callbackCount": 2,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 4
+        }
+      ]
+    },
+    {
+      "initialFlags": 4,
+      "transitionAge": 60,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 0,
+          "callbackCount": 0,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 4
+        },
+        {
+          "tick": 1,
+          "scriptClock": 0,
+          "callbackCount": 0,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 4
+        }
+      ]
+    },
+    {
+      "initialFlags": 8,
+      "transitionAge": 0,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 0,
+          "callbackCount": 0,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 8
+        },
+        {
+          "tick": 1,
+          "scriptClock": 0,
+          "callbackCount": 0,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 8
+        }
+      ]
+    },
+    {
+      "initialFlags": 9,
+      "transitionAge": 0,
+      "samples": [
+        {
+          "tick": 0,
+          "scriptClock": 0,
+          "callbackCount": 0,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 9
+        },
+        {
+          "tick": 1,
+          "scriptClock": 0,
+          "callbackCount": 0,
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": 9
+        }
+      ]
+    }
+  ]
+}

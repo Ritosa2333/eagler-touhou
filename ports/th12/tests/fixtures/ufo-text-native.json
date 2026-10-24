@@ -1,0 +1,5787 @@
+{
+  "schema": "th12-native-ufo-text/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Actual44a4f0/44a5d0; no candidate runtime, no game/ANM ticks.",
+  "fixtureCallbacks": [
+    "4020a0/4021a0 capture native format/arguments and FontManager state; text formatting is Python, no glyphs/GPU executed.",
+    "412530 returns the matching mapped live Enemy;461920 returns a mapped handle VM."
+  ],
+  "wholeGameOracle": false,
+  "wholePresentationOracle": false,
+  "gpuExecuted": false,
+  "records": [
+    {
+      "name": "age-0",
+      "input": {
+        "enemyId": 42,
+        "age": 0,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [],
+      "healthScale": 0.0,
+      "healthEnginePosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-19",
+      "input": {
+        "enemyId": 42,
+        "age": 19,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [],
+      "healthScale": 0.0,
+      "healthEnginePosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-20",
+      "input": {
+        "enemyId": 42,
+        "age": 20,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        }
+      ],
+      "healthScale": 0.0,
+      "healthEnginePosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-59",
+      "input": {
+        "enemyId": 42,
+        "age": 59,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        }
+      ],
+      "healthScale": 0.0,
+      "healthEnginePosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-60",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-70",
+      "input": {
+        "enemyId": 42,
+        "age": 70,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            10,
+            83
+          ],
+          "text": "10:83"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-71",
+      "input": {
+        "enemyId": 42,
+        "age": 71,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            10,
+            81
+          ],
+          "text": "10:81"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-719",
+      "input": {
+        "enemyId": 42,
+        "age": 719,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            1
+          ],
+          "text": " 0:01"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-720",
+      "input": {
+        "enemyId": 42,
+        "age": 720,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            0
+          ],
+          "text": " 0:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "age-721",
+      "input": {
+        "enemyId": 42,
+        "age": 721,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            -1
+          ],
+          "text": " 0:-01"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-1",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 61,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            1
+          ],
+          "text": " 0:01"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-2",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 62,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            3
+          ],
+          "text": " 0:03"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-3",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 63,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            5
+          ],
+          "text": " 0:05"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-5",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 65,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            8
+          ],
+          "text": " 0:08"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-7",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 67,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            11
+          ],
+          "text": " 0:11"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-11",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 71,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            18
+          ],
+          "text": " 0:18"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-13",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 73,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            21
+          ],
+          "text": " 0:21"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-17",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 77,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            28
+          ],
+          "text": " 0:28"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-19",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 79,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            31
+          ],
+          "text": " 0:31"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-29",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 89,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            48
+          ],
+          "text": " 0:48"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-59",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 119,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            0,
+            98
+          ],
+          "text": " 0:98"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-60",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 120,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            1,
+            0
+          ],
+          "text": " 1:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-61",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 121,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            1,
+            1
+          ],
+          "text": " 1:01"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-65",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 125,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            1,
+            8
+          ],
+          "text": " 1:08"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-67",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 127,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            1,
+            11
+          ],
+          "text": " 1:11"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-119",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 179,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            1,
+            98
+          ],
+          "text": " 1:98"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-120",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 180,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            2,
+            0
+          ],
+          "text": " 2:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-121",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 181,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            2,
+            1
+          ],
+          "text": " 2:01"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-659",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 719,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            10,
+            98
+          ],
+          "text": "10:98"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-660",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-661",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 721,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            1
+          ],
+          "text": "11:01"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-719",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 779,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            98
+          ],
+          "text": "11:98"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "remaining-720",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 780,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            12,
+            0
+          ],
+          "text": "12:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "display-1",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 1,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4294967040,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "display-4",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 4,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4294967040,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "display-5",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 5,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4286611584,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "display-9",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 9,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4286611584,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "display-10",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 10,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4294967040,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "display-119",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 119,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4286611584,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "display-120",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 120,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4294967040,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "reward-without-UFO",
+      "input": {
+        "enemyId": 0,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": null,
+        "displayFrames": 120,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4294967040,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            176.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        }
+      ],
+      "healthScale": 0.0,
+      "healthEnginePosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "absent-enemy",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": null,
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        }
+      ],
+      "healthScale": 0.0,
+      "healthEnginePosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "mismatched-enemy",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 99,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        }
+      ],
+      "healthScale": 0.0,
+      "healthEnginePosition": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "empty-score",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 120,
+        "multiplier": 6,
+        "score": 0,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            264.0,
+            144.0,
+            0.0
+          ],
+          "colorARGB": 4294967040,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "fractional-fill",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 1,
+        "bucketB": 999,
+        "fill": 0.28999999165534973,
+        "enemy": {
+          "id": 42,
+          "x": 40,
+          "y": 128,
+          "z": 0
+        },
+        "displayFrames": 0,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 264,
+        "rewardY": 144,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            1
+          ],
+          "text": "  1"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            999
+          ],
+          "text": "999"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            28
+          ],
+          "text": " 28%"
+        },
+        {
+          "font": 2,
+          "position": [
+            252.0,
+            164.0,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        264.0,
+        144.0,
+        0.0
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "fractional-position",
+      "input": {
+        "enemyId": 42,
+        "age": 60,
+        "duration": 720,
+        "bucketA": 12,
+        "bucketB": 34,
+        "fill": 0.75,
+        "enemy": {
+          "id": 42,
+          "x": -100.125,
+          "y": 205.375,
+          "z": 0
+        },
+        "displayFrames": 120,
+        "multiplier": 6,
+        "score": 1234560,
+        "rewardX": 123.25,
+        "rewardY": 456.125,
+        "rewardZ": 0
+      },
+      "calls": [
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            260.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            12
+          ],
+          "text": " 12"
+        },
+        {
+          "font": 3,
+          "position": [
+            512.0,
+            280.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d",
+          "arguments": [
+            34
+          ],
+          "text": " 34"
+        },
+        {
+          "font": 2,
+          "position": [
+            512.0,
+            310.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 0,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%3d%%",
+          "arguments": [
+            75
+          ],
+          "text": " 75%"
+        },
+        {
+          "font": 4,
+          "position": [
+            123.25,
+            456.125,
+            0.0
+          ],
+          "colorARGB": 4294967040,
+          "scale": [
+            2.0,
+            2.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "format": "*%1.1f",
+          "arguments": [
+            6.0
+          ],
+          "text": "*6.0"
+        },
+        {
+          "font": 4,
+          "position": [
+            123.25,
+            488.125,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            0,
+            0
+          ],
+          "groupedNumber": 1234560,
+          "text": "1,234,560"
+        },
+        {
+          "font": 2,
+          "position": [
+            111.875,
+            241.375,
+            0.0
+          ],
+          "colorARGB": 3229679552,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "drawFlag": 1,
+          "alignment": [
+            1,
+            1
+          ],
+          "format": "%2d:%.2d",
+          "arguments": [
+            11,
+            0
+          ],
+          "text": "11:00"
+        }
+      ],
+      "healthScale": 0.6494736671447754,
+      "healthEnginePosition": [
+        123.875,
+        221.375,
+        0.0
+      ],
+      "rngUnchanged": true
+    }
+  ]
+}

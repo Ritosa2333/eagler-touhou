@@ -80,8 +80,8 @@ export async function writeSyntheticRuntimeRelease(root, {preloadBuilds = {}} = 
       const payloads = product.runtimeFileLayout === "directory"
         ? Object.fromEntries(product.runtimeAssets.map(name => [name,
           name === `${stem}.html` ? html :
-          name === "shell.mjs" ? Buffer.from(directoryProtocolFixture(game)) :
-          name === "eagler-host.mjs" ? Buffer.from(directoryManagedDataFixture()) :
+          ["shell.mjs", "managed-shell.mjs"].includes(name) ? Buffer.from(directoryProtocolFixture(game)) :
+          ["eagler-host.mjs", "managed-data.mjs"].includes(name) ? Buffer.from(directoryManagedDataFixture()) :
           Buffer.from(name.endsWith(".mjs") || name.endsWith(".js") ? `// ${game}:${variant}:${name}\n` : `${game}:${variant}:${name}`)]))
         : {
             [`${stem}.html`]: html,

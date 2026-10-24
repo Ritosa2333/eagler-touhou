@@ -36,6 +36,8 @@ git switch -c your-change
 
 修改游戏时，打开该目录的 `ADAPTATION.md`，按[适配流程](docs/adaptation/README.md)找到对应项目。通用改动同时检查普通版与 MP；模式专属改动在记录中写明适用模式。
 
+新增作品目录时，在 `docs/migration/` 登记原仓库提交、子树连接点与导出基点，并运行 `python tools/ports/check-history.py --base upstream/main`。该检查同时核对已登记来源提交的祖先关系和新目录的来源登记。[th12 子树](docs/migration/th12-subtree-20261024.md)展示单目录作品的导出与同步命令。
+
 普通版修改默认进入 MP 同步范围。日常代码在 monorepo 开发分支中正常提交，来源提交与 MP 的处理决定保存在[同步历史](docs/adaptation/port-sync.md)。th08、th10、th11、th15 的同步维护者按下方流程保留 Git 祖先。
 
 ### 普通版与 MP 怎么提交
@@ -78,8 +80,10 @@ npm test
 
 确认 `git diff` 中的内容与本次工作一致，提交到你的分支并创建 PR。正文说明改了什么、影响哪些作品和模式、运行了哪些检查，并链接相关适配表和记录。
 
-包含普通版到 MP 历史同步的 PR，在正文注明“请使用合并提交保留祖先关系”。合入时选择 **Create a merge commit**，保留同步节点的两侧父链；这类 PR 禁止 squash 或 rebase 合入。同步维护者合入后刷新目录历史，确认本轮接收的普通版提交已成为 MP 的祖先。
+作品目录与普通版到 MP 历史同步的 PR 使用 **Create a merge commit**，保留来源提交和同步节点的父链。合入后刷新目录历史或子树导出端，确认原仓库提交仍是祖先。主分支的 `Checks` 汇总以来源历史、变更范围、启动器与共享契约类型检查、源码契约、文档与发布清单为合并门槛。完整的 `check`、作品原生、WASM、浏览器与服务回归继续运行并报告结果。
 
-本项目的自动化代理在发布提交说明、PR 和评论前，将完整文字交由维护者审阅。
+分支经过 rebase 或 squash 后，先从本地 reflog 或 PR 提交记录找回改写前通过 `Source history` 的提交。核对当前目录与该提交的内容；内容已完整保留时，在修复分支合并旧提交以接回父链，内容有差异时正常合并并逐项处理。最后运行 `python tools/ports/check-history.py --base <目标分支>`，确认祖先和导出树。不要用纯文件复制代替历史连接。
+
+自动化代理自主确定简短中文提交标题。PR 标题、正文和评论在发布前交由维护者审阅。
 
 旧仓库改动转入 monorepo 时，按[历史与迁移](docs/history/README.md)找到原源码归属，再把差异应用到当前组件目录。

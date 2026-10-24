@@ -27,7 +27,9 @@ CMake 使用 `eagler::thprac`。脚本构建把 `common/include` 加入头文件
 
 ## 3. 各作保留的差异
 
-TH08/10/11/15 使用抽取的紫版工具。TH06/07 保留自己的实现和构建开关。F12 项目、作弊、warp、catch-up 上限与回放标记在作品层维护；练习录像保留辅助元数据，播放时显示其使用条件。
+TH08/10/11/12/15 使用抽取的紫版工具。TH06/07 保留自己的实现和构建开关。F12 项目、作弊、warp、catch-up 上限与回放标记在作品层维护；练习录像保留辅助元数据，播放时显示其使用条件。
+
+TH12 的 [原生 ImGui 接入](../../ports/th12/src/practice/INTEGRATION.md) 复用同一套 ImGui、FreeType 和共享工具。浏览器传递输入、字体及绘制数据，窗口内容由作品的 C++ 适配器生成。定制 ImGui 的 `BeginDisabled(condition)` 与 `EndDisabled(condition)` 使用同一个条件；顶点颜色遵循 `IMGUI_USE_BGRA_PACKED_COLOR`。
 
 ## 4. 验证与更新
 

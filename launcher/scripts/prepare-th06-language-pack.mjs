@@ -10,6 +10,8 @@ import { ThcrapRuntimeCompiler } from "../server/thcrap-compiler.mjs";
 import { ThtkRunner } from "../server/thtk-runner.mjs";
 import { createStaticThcrapPack } from "../server/thcrap-static-pack.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
+import {chineseStoryInputs,chineseStaticResources} from '../server/th075-chinese-static.mjs';
+import {Th075BaseResources} from '../server/th075-thcrap-compiler.mjs';
 
 const args = new Map();
 for (let index = 2; index < process.argv.length; index++) {
@@ -45,6 +47,9 @@ const fontFile = args.get("font-file")
 const fontName = args.get("font-name") || "Unifont";
 const fontPython = args.get("font-python") || "python";
 const refresh = ["1", "true", "yes"].includes(String(args.get("refresh") || "").toLowerCase());
+const storyRoot=args.get('th075-story-resources');
+if(storyRoot&&(game!=='th075'||language!=='lang_zh-hans'))throw Error('--th075-story-resources requires TH075 Simplified Chinese');
+const storySources=storyRoot?await chineseStoryInputs(resolve(storyRoot)):[];
 
 async function localInputFingerprint() {
   const files = [];
@@ -58,8 +63,12 @@ async function localInputFingerprint() {
     resolve(project, "scripts/subset-font.py"),
     resolve(project, "integrations/thcrap.mjs"),
     resolve(project, "server/thcrap-compiler.mjs"),
+    resolve(project, "server/th12-thcrap-compiler.mjs"),
+    resolve(project, "scripts/th12-language-textures.py"),
     resolve(project, "server/th075-thcrap-compiler.mjs"),
     resolve(project, "server/th075-menu-text.mjs"),
+    resolve(project, "server/th075-chinese-static.mjs"),
+    resolve(project, "scripts/th075-simplify-story.py"),
     resolve(project, "scripts/th075-language-assets.py"),
     resolve(project, "server/thcrap-ascii-contract.mjs"),
     resolve(project, "server/thcrap-string-contract.mjs"),
@@ -76,6 +85,7 @@ async function localInputFingerprint() {
     schema: "eagler-touhou/language-pack-cache-input/1",
     game,
     language,
+    storyScripts:storySources.map(({path,sha256})=>({path,sha256})),
     repository: repository || null,
     fontName,
     archives: files,
@@ -144,7 +154,25 @@ const sourceFetch=async(url,options)=>{
 const downloaded = await downloadThcrapPack(pack, {fetchImpl:sourceFetch,
   onProgress: ({ completed, total, path }) => process.stderr.write(`\r${completed}/${total} ${path}                    `)
 });
+let story;
+if(storySources.length){
+  story=await chineseStaticResources(storySources,new Th075BaseResources(archives),async tables=>{
+    const temporary=await mkdtemp(join(tmpdir(),'th075-simplify-'));
+    try{
+      const input=join(temporary,'source.json'),output=join(temporary,'converted.json');
+      await writeFile(input,JSON.stringify(tables));
+      await promisify(execFile)(fontPython,[resolve(project,'scripts/th075-simplify-story.py'),input,output],{windowsHide:true});
+      return JSON.parse(await readFile(output,'utf8'));
+    }finally{await rm(temporary,{recursive:true,force:true});}
+  });
+  downloaded.resources.push(...story.resources);
+}
 const resources = await compiler.processPack(downloaded.resources,{language});
+if(story){
+  const options=resources.find(r=>r.targetPath==='/thcrap/th075/localization/options.json');
+  const metadata=JSON.parse(options.bytes);metadata.storyDialogue=story.provenance;options.bytes=Buffer.from(JSON.stringify(metadata)+'\n');
+  pack.assets.push(...storySources.map(({path,script,sha256})=>({path:'Chinese-Story/'+path+'/'+sha256,crc32:crc32(script)})));
+}
 
 function collectStrings(value, output) {
   if (typeof value === "string") {
@@ -207,7 +235,7 @@ async function applyFontOverride(input) {
   }
 }
 
-const preparedResources = game === "th075" ? resources : await applyFontOverride(resources);
+const preparedResources = ['th075','th12'].includes(game) ? resources : await applyFontOverride(resources);
 const result = createStaticThcrapPack({ pack, resources: preparedResources });
 const preparedRuntimeVersion = result.manifest.runtimeVersion;
 const packDirectory = resolve(output, "language");

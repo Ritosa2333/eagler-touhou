@@ -105,7 +105,9 @@ export function bindPlayerInput({session, document, window, translate: t}: {sess
   }
   const lockCodes = ['Escape','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','ShiftLeft','ShiftRight','Enter','Tab','Backspace','F1','F2','F3','F4','F5','F6','F7','KeyU','F12'];
   const nativeKeyboard = (window.navigator as Navigator & {keyboard?: {lock?(codes: string[]): Promise<void>; unlock?(): void}}).keyboard;
-  const fullscreen = () => {zoom.cancelGesture(); if (session.nativeTouch.isFullscreen() && runtime.getSnapshot().launched) {void nativeKeyboard?.lock?.(lockCodes).catch(() => {}); if (!(ios && touch.hasDirectPointers())) refocus();} else if (!session.nativeTouch.isFullscreen()) nativeKeyboard?.unlock?.();};
+  // Fullscreen precedes Runtime preparation. Lock Escape at that boundary,
+  // including long DATA/font startup, so a short press remains game input.
+  const fullscreen = () => {zoom.cancelGesture(); if (session.nativeTouch.isFullscreen() && session.getSnapshot().playerOpen && !editing()) {void nativeKeyboard?.lock?.(lockCodes).catch(() => {}); if (!(ios && touch.hasDirectPointers())) refocus();} else if (!session.nativeTouch.isFullscreen()) nativeKeyboard?.unlock?.();};
   document.addEventListener('fullscreenchange', fullscreen); document.addEventListener('webkitfullscreenchange', fullscreen);
   function sync() {
     const next = runtime.getMidiEventContext(), snapshot = runtime.getSnapshot();
@@ -123,6 +125,6 @@ export function bindPlayerInput({session, document, window, translate: t}: {sess
   const reset = (event: Event) => {if (!runtime.getSnapshot().launched) return; event.preventDefault(); event.stopPropagation(); zoom.reset(); refocus();};
   const layoutUpdates = bindPlayerLayoutUpdates({window, safeZone: safe, applyLayout});
   toggle.addEventListener('click', reset);
-  sync(); applyLayout();
+  sync(); fullscreen(); applyLayout();
   return {touch, keyboard, zoom, relayoutAfterOrientation: layoutUpdates.relayoutAfterOrientation, dispose() {layoutUpdates.dispose(); document.removeEventListener('fullscreenchange', fullscreen); document.removeEventListener('webkitfullscreenchange', fullscreen); nativeKeyboard?.unlock?.(); unsubscribe(); unsubscribeEvents(); unsubscribeLayout(); gamepad.dispose(); keyboard.dispose(); touch.dispose(); zoom.uninstallInputBridge(); zoom.cancelGesture(); toggle.removeEventListener('click', reset);}};
 }

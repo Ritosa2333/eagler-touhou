@@ -12,6 +12,22 @@
 
 核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行，每个测试入口在同一计划中执行一次。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。
 
+房间丢包测量的状态和双端计数由 `npm run check` 检查；`npm run test:room-packet-loss:browser` 在本机浏览器中验证真实 DataChannel 与房间面板。
+
+th075 生产配置的语言包边界由 `npm run check:workspace` 检查；`npm run test:th075-language-upgrade:browser` 使用历史导入包、现行站点和原生 Runtime 验证升级流程。th12 中文贴图合成由 `npm run check` 检查。
+
+Host 工作区检查覆盖 th12 的原始音轨输入与 `assets-eagler` 成品内容标记，确保两种内容准备方式都能被识别。
+
+产品目录检查识别两种目录型 Runtime 键盘入口：现有作品发布 `directory-keyboard.mjs`，th12 由 `managed-shell.mjs` 接收 Launcher 输入并连接共享映射。
+
+跨站点存档迁移检查以产品目录为准逐项核对数据库，包含 th12 的 `/savesth12`。
+
+正式发布输入示例包含 th12 的原始游戏目录，保持隐藏测试作品与其他作品共用完整站点清单。
+
+内部 Operator 交付清单也登记 th12 的普通版与 OGG 内容，保持交付配置和作品目录相同顺序。
+
+语言包缓存检查使用完整构建输入指纹，覆盖 th12 贴图编译器与 th075 中文剧情资源脚本，验证相同输入直接复用生成包。
+
 `npm run test:replay-audio:browser -- --help` 列出录像音频测试的输入，支持 th08、th10、th11、th15 的普通版与多人版。共享录像桥测试为异步定位保留有超时的状态等待，覆盖暂停归属和定位前后的音效输出。房间组件测试通过实际管理菜单与产品目录声明的难度选项验证成员管理和原生选角边界。
 
 `react-main/directory-views.test.mjs` 在中英文环境中遍历完整作品目录，检查已发布多人作品的房间信息和创建表单。采用原生菜单选择的作品隐藏大厅难度，其余作品展示房间声明的难度。

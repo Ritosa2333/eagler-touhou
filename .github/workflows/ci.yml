@@ -9,6 +9,21 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  source-history:
+    name: Source history
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+    - run: python3 tools/ports/test_check_history.py
+    - run: python3 tools/ports/check-history.py --base "$EAGLER_CI_BASE"
+      env:
+        EAGLER_CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
   scope:
     runs-on: ubuntu-latest
     outputs:
@@ -42,7 +57,11 @@ jobs:
 
           common/contracts
 
-          services'
+          services
+
+          ports/th12/scripts
+
+          ports/th12/src'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
@@ -57,6 +76,25 @@ jobs:
     - run: python -m pip install --requirement requirements-ci.txt
     - run: npm --prefix ../services/relay ci --ignore-scripts
     - run: npm run check
+    defaults:
+      run:
+        working-directory: launcher
+  launcher-typecheck:
+    name: Launcher typecheck
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: 'launcher
+
+          common/contracts'
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: launcher/package-lock.json
+    - run: npm ci --ignore-scripts
+    - run: npm run typecheck
     defaults:
       run:
         working-directory: launcher
@@ -820,29 +858,11 @@ jobs:
     name: Checks
     if: ${{ always() }}
     needs:
+    - source-history
     - scope
-    - check
+    - launcher-typecheck
     - source-contracts
     - source-publication
-    - common_ci_native
-    - ports_th06_eagler_ci_core-tests
-    - ports_th06_eagler_ci_web-build
-    - ports_th07_eagler_ci_core-tests
-    - ports_th07_eagler_ci_web-build
-    - ports_th08_presentation_lab_source-contract
-    - ports_th08_replay_verifier_golden-integrity
-    - ports_th08_mp_presentation_lab_source-contract
-    - ports_th08_mp_replay_verifier_golden-integrity
-    - ports_th10_input_regressions_input
-    - ports_th10_presentation_lab_source-contract
-    - ports_th10_replay_verifier_golden-integrity
-    - ports_th10_mp_performance_regressions_native-regressions
-    - ports_th10_mp_performance_regressions_wasm-owner-regressions
-    - ports_th10_mp_presentation_lab_source-contract
-    - ports_th10_mp_replay_verifier_golden-integrity
-    - relay
-    - telemetry
-    - turn
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-node@v7
@@ -852,7 +872,7 @@ jobs:
       env:
         EAGLER_RESULTS: ${{ toJSON(needs) }}
       run: node -e "const jobs=JSON.parse(process.env.EAGLER_RESULTS); const failed=Object.entries(jobs).filter(([,job])=>['failure','cancelled'].includes(job.result));
-        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||failed.length)process.exit(1); console.log('Applicable
+        if(jobs.scope.result!=='success'||jobs['launcher-typecheck'].result!=='success'||jobs['source-history'].result!=='success'||jobs['source-publication'].result!=='success'||failed.length)process.exit(1); console.log('Core
         checks completed');"
   relay:
     name: services/relay

@@ -11,7 +11,7 @@ function environmentPython(environment) {
 
 async function importsWork(python) {
   if (!existsSync(python)) return false;
-  const result = await run(python, ["-c", "import fontTools, soundfile, PIL"], {
+  const result = await run(python, ["-c", "import fontTools, soundfile, PIL, pefile, imageio_ffmpeg"], {
     capture: true,
     allowFailure: true,
   });
@@ -48,7 +48,7 @@ export async function ensurePythonEnvironment({ projectRoot, hostRoot, python = 
     "-r", resolve(projectRoot, "host", "requirements.txt"),
   ]);
   if (!await importsWork(privatePython)) {
-    throw new Error("The private Python environment cannot import fontTools, soundfile and PIL after installation");
+    throw new Error("The private Python environment cannot import required content-preparation dependencies after installation");
   }
   return privatePython;
 }

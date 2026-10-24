@@ -4,6 +4,7 @@
 /games/
 /node_modules/
 /.local/
+/.codex-tmp/
 
 # Local build caches and private inputs
 /.cache/
@@ -11,3 +12,9 @@
 /prepared/
 /private-assets/
 **/__pycache__/
+
+# Local disassembly and diagnostic outputs
+*.asm
+*.obj
+*.pdb
+*.dmp

@@ -12,6 +12,7 @@ import {
   TOUCH_SENSITIVITY_MIN,
 } from "../lib/contracts/runtime-protocol.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
+import {execFileSync} from 'node:child_process';
 
 const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game,
   product.runtimeFileLayout === "directory"
@@ -26,6 +27,11 @@ const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game
 
 assert.deepEqual(Object.keys(shellSources), Object.keys(PRODUCT_GAMES));
 for (const [game, paths] of Object.entries(shellSources)) {
+  if (game === 'th12') {
+    execFileSync(process.execPath,['--test','--test-name-pattern=managed (protocol|touch):',workspacePath(game,'tests/managed-adapter.test.mjs')],
+      {encoding:'utf8',windowsHide:true});
+    continue;
+  }
   const source = (await Promise.all(paths.map(path => readFile(path, "utf8")))).join("\n");
   assert.match(source, /runtimeEpoch/, `${game}: Runtime shell must bind protocol traffic to a navigation epoch`);
   assert.match(source, /\.epoch\s*!==\s*epoch|message\.epoch\s*!==\s*epoch/,
