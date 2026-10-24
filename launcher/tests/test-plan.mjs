@@ -81,6 +81,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-multiplayer-relay-url.mjs",
   "tests/test-netplay-measured-timing.mjs",
   "tests/test-room-network.mjs",
+  "tests/test-room-packet-loss.mjs",
   "tests/test-multiplayer-runtime-options.mjs",
   "tests/test-th11-multiplayer-policy.mjs",
   "tests/test-th15-multiplayer-policy.mjs",
@@ -133,11 +134,13 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
 
 export const REPOSITORY_PYTHON_TESTS = Object.freeze([
   "tests/test_ogg_converter.py",
+  "tests/test-th12-language-textures.py",
 ]);
 
 export const WORKSPACE_PRECHECKS = Object.freeze([]);
 
 export const WORKSPACE_NODE_TESTS = Object.freeze([
+  "tests/test-th075-language-configure.mjs",
   "tests/test-shared-font-selection-workspace.mjs",
   "tests/test-development-site-manifest-workspace.mjs",
   "tests/test-runtime-protocol-contract.mjs",

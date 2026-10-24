@@ -47,6 +47,12 @@
       "thprac": false,
       "runtimeVariants": ["normal"]
     },
+    "th12": {
+      "languages": ["ja"],
+      "music": ["ogg"],
+      "thprac": false,
+      "runtimeVariants": ["normal"]
+    },
     "th15": {
       "languages": ["ja"],
       "music": ["ogg"],

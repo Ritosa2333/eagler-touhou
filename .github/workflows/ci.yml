@@ -9,6 +9,21 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  source-history:
+    name: Source history
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+    - run: python3 tools/ports/test_check_history.py
+    - run: python3 tools/ports/check-history.py --base "$EAGLER_CI_BASE"
+      env:
+        EAGLER_CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
   scope:
     runs-on: ubuntu-latest
     outputs:
@@ -820,6 +835,7 @@ jobs:
     name: Checks
     if: ${{ always() }}
     needs:
+    - source-history
     - scope
     - check
     - source-contracts
@@ -852,7 +868,7 @@ jobs:
       env:
         EAGLER_RESULTS: ${{ toJSON(needs) }}
       run: node -e "const jobs=JSON.parse(process.env.EAGLER_RESULTS); const failed=Object.entries(jobs).filter(([,job])=>['failure','cancelled'].includes(job.result));
-        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||failed.length)process.exit(1); console.log('Applicable
+        if(jobs.scope.result!=='success'||jobs.check.result!=='success'||jobs['source-history'].result!=='success'||failed.length)process.exit(1); console.log('Applicable
         checks completed');"
   relay:
     name: services/relay
