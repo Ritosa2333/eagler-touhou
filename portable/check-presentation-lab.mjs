@@ -2,7 +2,7 @@
 // Runtime evidence lives in logs/lab/report.json; this gate protects the
 // wiring and the diagnostic/production boundary from silent drift.
 import assert from 'node:assert/strict';
-import {readFileSync,existsSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 const root=resolve(import.meta.dirname,'..');
 const read=path=>readFileSync(resolve(root,path),'utf8');
@@ -25,9 +25,7 @@ assert(audit.includes('fault_phase'),'negative control must alternate across fra
 const build=read('portable/build.mjs');
 assert(build.includes('artifacts/presentation-diagnostics'),'diagnostic builds need an isolated output');
 assert(build.includes("TH_PRESENTATION_AUDIT=1"),'lab build must enable the audit profile');
-const packagingPath=resolve(root,'portable/package-architecture.mjs');
-if(existsSync(packagingPath)){
-  const packaging=readFileSync(packagingPath,'utf8');
-  assert(packaging.includes('Production packaging rejects diagnostic'),'packaging must reject diagnostic builds');
-}
+const packaging=read('portable/package-eagler.mjs');
+assert(packaging.includes('validateProductionBuild('),'production packager must inspect the actual binary');
+assert(read('portable/production-build.mjs').includes('Production packaging rejects diagnostic'),'packaging must reject diagnostic builds');
 console.log('TH11 Presentation Lab source contract PASS');

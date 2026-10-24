@@ -78,8 +78,9 @@ export class Th11RuntimeDriver{
       return {count:words[0],character:words[1],subtype:words[2],difficulty:words[3],stages:words.slice(4,12),frames:words.slice(12,20)};
     }finally{this.core.free(pointer);}
   }
-  loadDemo(index){const result=this.core.presentation_lab_demo(index);if(result)throw Error('TH11 demo start failed: '+result);}
+  loadDemo(index){this.freeze();const result=this.core.presentation_lab_demo(index);if(result)throw Error('TH11 demo start failed: '+result);}
   loadReplay(bytes,stage=0){
+    this.freeze();
     const pointer=this.core.malloc(bytes.length);
     try{
       new Uint8Array(this.core.memory.buffer,pointer,bytes.length).set(bytes);
@@ -91,6 +92,7 @@ export class Th11RuntimeDriver{
   // Diagnostic scene seeding. Starts the real production stage lifecycle
   // (same restart path as the title menu) without consuming stored inputs.
   startStage({stage=1,character=0,subtype=0,difficulty=1}={}){
+    this.freeze();
     if(this.core.presentation_lab_start_stage(stage,character,subtype,difficulty)!==0)return false;
     for(let i=0;i<8;++i){const result=this.core.presentation_lab_tick();if(result!==0)break;if(!this.core.presentation_lab_world_frozen())break;}
     return true;

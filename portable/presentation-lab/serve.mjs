@@ -4,7 +4,7 @@ import {execFileSync} from 'node:child_process';
 import config from './lab.config.mjs';
 import {createPresentationLabServer,sha256} from '../../../../common/testkit/presentation-lab/server-core.mjs';
 
-const lab=import.meta.dirname,root=resolve(lab,'../..');
+const lab=import.meta.dirname,root=resolve(lab,'../..'),workspace=resolve(root,'..');
 const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'../../common'));
 const common=resolve(commonRoot,'testkit/presentation-lab');
 for(const name of ['controller-core.mjs','contracts.mjs','analyzer.mjs','report-core.mjs','server-core.mjs','workbench.html','workbench.mjs','workbench.css'])
@@ -15,14 +15,18 @@ if(build.game!=='th11'||build.profile!=='presentation-lab'||build.diagnostic!==t
 const exportsSet=new Set((build.exports||[]).map(entry=>entry.name));
 for(const name of config.requiredExports)if(!exportsSet.has(name))throw Error('Diagnostic build is missing '+name);
 
-// Assemble the current source shell with the matching isolated Lab WASM.
-const runtime=config.runtimeRoot,source=resolve(root,'web/sdl-runtime');
+// Assemble an isolated runtime directory: packaged shell + lab WASM.
+const runtime=config.runtimeRoot,shell=resolve(root,'web/sdl-runtime');
 mkdirSync(runtime,{recursive:true});
-for(const name of ['shell.mjs','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs','managed.css','startup-branding.mjs'])
-  copyFileSync(resolve(source,name),resolve(runtime,name));
-copyFileSync(resolve(root,'portable/browser/motion-replay.mjs'),resolve(runtime,'motion-replay.mjs'));
-writeFileSync(resolve(runtime,'th11.html'),readFileSync(resolve(source,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">'));
-writeFileSync(resolve(runtime,'manifest.json'),JSON.stringify({game:'th11',protocol:'eagler-touhou/1',profile:'presentation-lab',diagnostic:true,builtAt:build.builtAt,version:build.version},null,2)+'\n');
+{
+  for(const name of ['shell.mjs','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs','managed.css','startup-branding.mjs'])
+    copyFileSync(resolve(shell,name),resolve(runtime,name));
+  copyFileSync(resolve(root,'portable/browser/motion-replay.mjs'),resolve(runtime,'motion-replay.mjs'));
+  const bridge=resolve(commonRoot,'browser/direct-input-bridge.mjs');
+  if(existsSync(bridge))copyFileSync(bridge,resolve(runtime,'direct-input-bridge.mjs'));
+  const html=readFileSync(resolve(shell,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
+  writeFileSync(resolve(runtime,'th11.html'),html);
+}
 // The Lab does not need the original startup signature animation, and its
 // isolated runtime can fail that decorative draw before the game is ready.
 // Keep installStartupBranding (loading resources) but skip the animation.
@@ -30,16 +34,16 @@ writeFileSync(resolve(runtime,'manifest.json'),JSON.stringify({game:'th11',proto
   const shellPath=resolve(runtime,'shell.mjs');
   if(existsSync(shellPath)){
     const shell=readFileSync(shellPath,'utf8');
-    const patched=shell.replace('await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));','')
-      .replace(/\/\*TH11_BUILD_INFO\*\/\{[^;]*\}/,'/*TH11_BUILD_INFO*/'+JSON.stringify({version:build.version,completeGame:true}));
+    const patched=shell.replace('await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));','').replace(/\/\*TH11_BUILD_INFO\*\/\{[^;]*\}/,'/*TH11_BUILD_INFO*/'+JSON.stringify({version:build.version,completeGame:true}));
     if(patched!==shell)writeFileSync(shellPath,patched);
   }
 }
 copyFileSync(resolve(config.buildRoot,'th11-sdl.mjs'),resolve(runtime,'th11-sdl.mjs'));
 copyFileSync(resolve(config.buildRoot,'th11-sdl.wasm'),resolve(runtime,'th11-sdl.wasm'));
+writeFileSync(resolve(runtime,'manifest.json'),JSON.stringify({game:'th11',profile:'presentation-lab',diagnostic:true,builtAt:build.builtAt,execution:{sha256:build.sha256,loaderSha256:build.loaderSha256}})+'\n');
 mkdirSync(resolve(runtime,'fonts'),{recursive:true});
-const fontSource=process.env.EAGLER_FONT_ROOT?resolve(process.env.EAGLER_FONT_ROOT,'cp932.bin'):resolve(root,'web/assets/sdl-native/fonts/cp932.bin');
-if(!existsSync(fontSource))throw Error('Set EAGLER_FONT_ROOT to a directory containing cp932.bin');
+const fontSource=resolve(process.env.EAGLER_FONT_ROOT||resolve(root,'web/assets/sdl-native/fonts'),'cp932.bin');
+if(!existsSync(fontSource))throw Error('Set EAGLER_FONT_ROOT to the cp932.bin directory');
 copyFileSync(fontSource,resolve(runtime,'fonts/cp932.bin'));
 const resources={schema:'eagler-sdl-resources/1',game:'th11',resources:[{path:'/fonts/cp932.bin',url:'./fonts/cp932.bin',bytes:statSync(fontSource).size}]};
 writeFileSync(resolve(runtime,'resources.json'),JSON.stringify(resources,null,2)+'\n');
@@ -62,9 +66,8 @@ files.set('/msgothic.ttc',font);
 const data=process.env.TH11_LAB_DATA||'';
 if(existsSync(data))files.set('/input/th11.dat',data);
 
-const sourceCommit=process.env.TH11_LAB_SOURCE_COMMIT||execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
-const identity={schema:'presentation-lab/build/1',game:'th11',commit:sourceCommit,wasm:build.sha256,loader:build.loaderSha256,
-  commonCommit:process.env.TH11_LAB_SOURCE_COMMIT?sourceCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:commonRoot,encoding:'utf8'}).trim(),instrumented:true,dataAvailable:files.has('/input/th11.dat'),
+const identity={schema:'presentation-lab/build/1',game:'th11',commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),wasm:build.sha256,loader:build.loaderSha256,
+  commonCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:commonRoot,encoding:'utf8'}).trim(),instrumented:true,dataAvailable:files.has('/input/th11.dat'),
   evidence:'diagnostic runtime, not production deployment',sampling:'authoritative Draw endpoints + frozen alpha sweep'};
 const port=Number(process.env.PORT||8136);
 const {server,start}=createPresentationLabServer({port,files,identity:()=>identity,incident:{directory:resolve(config.artifactRoot,'incidents'),validate(report){

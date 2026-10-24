@@ -67,3 +67,11 @@ test('missing samples cannot establish an authored snap',()=>{
   const result=analyzeFlicker({previous,current,samples});
   assert.equal(result.rebases.length,0);assert.equal(result.flagged.length,1);
 });
+
+for(const step of [300,512,1024])for(const pattern of ['stale','snap','constant'])test(`${step}px ${pattern} is never exempted by distance`,()=>{
+  const previous=frame(1,[record('a',[0,0,0])]),current=frame(2,[record('a',[step,0,0])]);
+  const samples=[0,.25,.5,.75,1].map(alpha=>({alpha,records:[record('a',[pattern==='constant'?step:pattern==='snap'?(alpha<.5?0:step):(alpha===1?step:0),0,0])]}));
+  const result=analyzeFlicker({previous,current,samples});
+  assert.equal(result.flagged.length,1);assert.equal(result.rebases.length,0);
+  assert.ok(result.flagged[0].reasons.includes('endpoint-mismatch'));
+});
