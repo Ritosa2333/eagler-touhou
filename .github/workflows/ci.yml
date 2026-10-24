@@ -136,9 +136,10 @@ jobs:
     - name: Verify TH15 performance observations and ordered sender delay
       if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th15-mp') }}
       run: |
-        node --test ports/th15-mp/portable/multiplayer/performance-browser-metrics.test.mjs ports/th15-mp/portable/multiplayer/performance-browser-probe.test.mjs ports/th15-mp/portable/multiplayer/performance-browser-diagnostic.test.mjs ports/th15-mp/portable/multiplayer/performance-sender-delay.test.mjs ports/th15-mp/portable/multiplayer/performance-input-proof.test.mjs ports/th15-mp/portable/multiplayer/score-save.test.mjs
+        node --test ports/th15-mp/portable/multiplayer/performance-browser-metrics.test.mjs ports/th15-mp/portable/multiplayer/performance-browser-probe.test.mjs ports/th15-mp/portable/multiplayer/performance-browser-diagnostic.test.mjs ports/th15-mp/portable/multiplayer/performance-browser-environment.test.mjs ports/th15-mp/portable/multiplayer/performance-sender-delay.test.mjs ports/th15-mp/portable/multiplayer/performance-input-proof.test.mjs ports/th15-mp/portable/multiplayer/score-save.test.mjs
         node ports/th15-mp/portable/multiplayer/pending-save-test.mjs
         node ports/th15-mp/portable/multiplayer/frame-schedule-test.mjs
+        node ports/th15-mp/portable/multiplayer/presentation-pool-test.mjs
   port-adaptation:
     strategy:
       fail-fast: false

@@ -94,9 +94,11 @@ MpStep mp_execute_rollback(const Netplay::FrameDecision& decision,bool capture_u
  const auto frame=network.NextFrame();
  mp_frames.emplace_back();auto& record=mp_frames.back();record.frame=frame;
  record.menu_before=mp_menu;record.stage_before=mp_stage;record.spectator_before=mp_spectator_stage;
- record.anm_before=AnmVm::presentation_counter;record.graphics_before=app->graphics.backend.state;
- record.font_tabs=app->fonts.rollback_layout();
- record.presentation_before=app->graphics.presentation.snapshot();
+ if(capture_undo){
+  record.anm_before=AnmVm::presentation_counter;record.graphics_before=app->graphics.backend.state;
+  record.font_tabs=app->fonts.rollback_layout();
+  record.presentation_before=app->graphics.presentation.snapshot();
+ }
  app->graphics.presentation.retain_authored=true;
  if(capture_undo){
   if(!journal::BeginFrame(frame)){mp_frames.pop_back();mp_journal_error("TH15 snapshot begin failed");return MpStep::Failed;}
@@ -202,9 +204,23 @@ bool mp_rollback_tick(u32 held,bool physical){
    if(network.RollbackFrame()!=Netplay::INVALID_FRAME)continue;
   }
   const auto decision=network.Prepare(frame);if(!decision.canAdvance)return true;
-  const auto result=mp_execute_rollback(decision,true);if(result==MpStep::Failed)return false;
+  // No legal later input can invalidate a fully confirmed forward frame when
+  // all its predecessors have already committed. Execute it once, just like a
+  // confirmed lifecycle boundary, without allocating undo state or recording
+  // every scalar write. Corrections and any retained prefix keep the journal.
+  const auto confirmed=network.Confirmed();
+  const bool exact_forward=!correcting&&!decision.predictedMask&&confirmed!=Netplay::INVALID_FRAME&&frame<=confirmed&&
+   network.RollbackFrame()==Netplay::INVALID_FRAME&&network.InputsReconciledBeforeNext()&&mp_frames.empty()&&!journal::FrameCount();
+  const auto result=mp_execute_rollback(decision,!exact_forward);if(result==MpStep::Failed)return false;
   if(result==MpStep::Boundary)continue;
-  if(!correcting){++mp_advanced;return mp_commit_reconciled();}
+  if(!correcting){
+   ++mp_advanced;if(!mp_commit_reconciled())return false;
+   if(exact_forward){
+    if(app->title){mp_local_results=true;mp_menu={};}
+    if(app->exiting&&!network.Finish()&&*network.Error()){last_error=network.Error();return false;}
+   }
+   return true;
+  }
   ++mp_replayed;++replayed;
   if(!mp_commit_reconciled())return false;
   if(replayed>=4||emscripten_get_now()-begin>=4){

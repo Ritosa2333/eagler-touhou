@@ -18,12 +18,23 @@ u32 color(u32 a,u32 b,float alpha,u32 mask){u32 out=b;for(u32 shift=0;shift<32;s
 // this boundary, while game Draw callbacks and font raster writes stay outside.
 void PresentationFrame::finish(){TH15_HOST_SCOPE;
  current.resize(written);recording=false;ready=enabled&&written>0;
+ pooled_current=false;
  if(retain_authored){
-  // Keep only the exact GPU transaction. Interpolation metadata and live
-  // animation owners are unnecessary when rebuilding a restored predecessor.
-  auto next=std::make_shared<std::vector<Command>>();next->reserve(current.size());
-  for(const auto& c:current){Command out;out.state=c.state;out.clear=c.clear;out.direct=c.direct;out.camera=c.camera;
-   out.topology=c.topology;out.count=c.count;out.stride=c.stride;out.flags=c.flags;out.color=c.color;out.bytes=c.bytes;out.rect=c.rect;next->push_back(std::move(out));}
+  // A retained transaction owns every vertex and state value. When no extra
+  // presentation needs current, transfer its storage instead of copying every
+  // draw a second time. Only an unreferenced pool entry can become writable.
+  auto next=authored_pool.acquire();
+  if(!enabled){current.swap(*next);pooled_current=true;}
+  else {
+   // Interpolation still needs current and previous. Reuse the exact snapshot
+   // buffers, without retaining interpolation samples or animation owners.
+   next->resize(current.size());
+   for(size_t i=0;i<current.size();++i){const auto& c=current[i];auto& out=(*next)[i];
+    out.state=c.state;out.clear=c.clear;out.direct=c.direct;out.camera=c.camera;
+    out.topology=c.topology;out.count=c.count;out.stride=c.stride;out.flags=c.flags;out.color=c.color;
+    out.bytes=c.bytes;out.rect=c.rect;out.samples.clear();
+   }
+  }
   authored=std::move(next);
  }
 }
@@ -38,7 +49,11 @@ void PresentationFrame::restore(Snapshot&& frame,touhou::sdl::Renderer& renderer
  renderer.flush();renderer.state=saved;
 }
 void PresentationFrame::begin(){TH15_HOST_SCOPE;
- if(!enabled&&!retain_authored){reset();return;}if(enabled)previous.swap(current);else previous.clear();written=0;pending.clear();occurrences.clear();endpoints.clear();
+ if(!enabled&&!retain_authored){reset();return;}
+ // A transferred frame was authored with interpolation disabled, so it has no
+ // samples to match. Do not mistake the recycled working buffer for its frame.
+ if(enabled&&!pooled_current)previous.swap(current);else previous.clear();
+ pooled_current=false;written=0;pending.clear();occurrences.clear();endpoints.clear();
  if(enabled)for(u32 i=0;i<previous.size();++i)for(u32 j=0;j<previous[i].samples.size();++j)endpoints.push_back({previous[i].samples[j].key,{i,j}});
  std::sort(endpoints.begin(),endpoints.end(),[](const auto& a,const auto& b){return a.first<b.first;});recording=true;ready=false;
 }

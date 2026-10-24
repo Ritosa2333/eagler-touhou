@@ -15,6 +15,8 @@ struct RollbackTextureProbe {
  bool armed=false,frame_open=false;u32 executions=0,frame=Netplay::INVALID_FRAME,retained=0;
 };
 std::unique_ptr<RollbackTextureProbe> rollback_lab_textures;
+FrameCallback rollback_lab_presentation_callback;
+std::vector<unsigned> rollback_lab_presentation_trace;
 bool rollback_lab_observe_textures(RollbackTextureProbe& probe,RollbackTextureObservation& result){
  TH15_SYSTEM_SCOPE;auto& graphics=app->graphics;result.valid=false;
  for(unsigned index=0;index<2;++index){
@@ -59,6 +61,23 @@ EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_begin(unsigned count,unsigned mode){
 EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_remote(unsigned seat,unsigned frame,unsigned held,int mode,float x,float y){
  using namespace th15::sdl;return seat>0&&seat<network.Setup().player_count&&rollback_lab_valid_remote(seat,frame,held,mode,x,y);
 }
+EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_presentation_begin(){
+ using namespace th15;using namespace th15::sdl;TH15_SYSTEM_SCOPE;
+ if(!app||running||network.NextFrame()!=0||app->scheduler.contains(rollback_lab_presentation_callback))return 0;
+ rollback_lab_presentation_trace.clear();rollback_lab_presentation_callback.enabled=true;
+ rollback_lab_presentation_callback.run=[](void*)->i32{
+  TH15_SYSTEM_SCOPE;const auto frame=network.NextFrame();
+  // Select by the actual simulated frame, including every history step in a
+  // bounded correction call. Changes happen in Update before Draw::begin.
+  const bool enabled=(frame>=180&&frame<239)||(frame>=241&&frame<248)||(frame>=260&&frame<280);
+  app->graphics.presentation.enabled=enabled;
+  rollback_lab_presentation_trace.insert(rollback_lab_presentation_trace.end(),{frame,enabled?1u:0u,network.Correcting()?1u:0u});
+  return i32(FrameAction::Continue);
+ };
+ return app->scheduler.add(rollback_lab_presentation_callback,FramePass::Update,-1000000)>=0;
+}
+EMSCRIPTEN_KEEPALIVE unsigned th15_rollback_lab_presentation_size(){return unsigned(th15::sdl::rollback_lab_presentation_trace.size());}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_rollback_lab_presentation_trace(){return th15::sdl::rollback_lab_presentation_trace.data();}
 EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_step(unsigned held,int mode,float x,float y,unsigned physical){
  using namespace th15::sdl;
  if(!app||!network.Configured()||app->exiting)return 0;
@@ -75,6 +94,10 @@ EMSCRIPTEN_KEEPALIVE unsigned th15_rollback_lab_replay_size(){
 }
 EMSCRIPTEN_KEEPALIVE const unsigned char* th15_rollback_lab_replay_bytes(){return th15::sdl::rollback_lab_recording.data();}
 EMSCRIPTEN_KEEPALIVE const char* th15_rollback_lab_backend_error(){return Netplay::WriteJournal::Error();}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_rollback_lab_journal(){
+ static std::array<unsigned,4> value{};const auto stats=Netplay::WriteJournal::Stats();
+ value={stats.frames,stats.restores,stats.restored_frames,unsigned(Netplay::WriteJournal::FrameCount())};return value.data();
+}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_rollback_lab_details(){
  using namespace th15::sdl;static std::array<unsigned,10> value{};value.fill(0);if(!app)return value.data();
  value={network.Confirmed(),mp_recording?mp_replay.FrameCount():0u,app->pause?unsigned(app->pause->state.screen):0u,

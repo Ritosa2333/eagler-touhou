@@ -10,6 +10,8 @@ const root=resolve(import.meta.dirname,'../..');
 const runtime=resolve(root,'web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer','rollback');
 const out=resolve(process.argv.find(v=>v.startsWith('--output='))?.slice(9)||runtime);await mkdir(out,{recursive:true});
 const lifecycleOnly=process.argv.includes('--lifecycle-only');
+const presentationToggle=process.argv.includes('--presentation-toggle');
+assert.ok(!(lifecycleOnly&&presentationToggle),'Run lifecycle and presentation toggle acceptance separately');
 const cp932=process.env.TH15_TEST_CP932_FONT||(process.env.EAGLER_FONT_ROOT&&resolve(process.env.EAGLER_FONT_ROOT,'cp932.bin'));
 const font=process.env.TH15_TEST_FONT,unicode=process.env.TH15_TEST_UNICODE_FONT;
 for(const [name,value] of Object.entries({TH15_TEST_ARCHIVE:process.env.TH15_TEST_ARCHIVE,cp932,TH15_TEST_FONT:font,TH15_TEST_UNICODE_FONT:unicode}))assert.ok(value,'Missing '+name);
@@ -40,13 +42,15 @@ let browser;const reports=[],errors=[];
 async function initialize(page,count,mode,scale){
  page.on('pageerror',error=>errors.push(String(error)));await page.setViewportSize({width:640*scale,height:480*scale});
  await page.goto(base+'/?scale='+scale);await page.evaluate(()=>moduleReady);
- await page.evaluate(({count,mode,lifecycleOnly})=>{
+ await page.evaluate(({count,mode,lifecycleOnly,presentationToggle})=>{
   const m=Module,text=p=>new TextDecoder().decode(m.HEAPU8.subarray(p,m.HEAPU8.indexOf(0,p)));
   const error=()=>text(m._th15_mp_error())||text(m._th15_spectator_lab_error());
   const check=(ok,label)=>{if(!ok)throw Error(label+': '+error());};
   check(m._th15_rollback_lab_begin(count,mode),'native begin');
+  if(presentationToggle)check(m._th15_rollback_lab_presentation_begin(),'presentation toggle begin');
   const words=(pointer,length)=>Array.from(m.HEAPU32.subarray(pointer>>>2,(pointer>>>2)+length));
   const status=()=>words(m._th15_mp_rollback_status(),20),details=()=>words(m._th15_rollback_lab_details(),10);
+  const journal=()=>words(m._th15_rollback_lab_journal(),4);
   const lifecycle=()=>words(m._th15_rollback_lab_lifecycle(),8);
   let lastCapture=0,lastCommit=0;
   const audit=()=>{const s=status();check(s[3]>=lastCapture,'physical capture rewound');lastCapture=s[3];
@@ -86,8 +90,10 @@ async function initialize(page,count,mode,scale){
    return {executions:value[1],mutationFrame:value[2],journalOpenAtMutation:value[3]===1,retainedAtMutation:value[4],
     gameOwned:value.slice(5,7),uploadedBytes:{edited:value[7],untouched:value[8]},images};
   };
-  window.rollbackLab={count,mode,input,remote,tick,status,details,lifecycle,audit,state,forward,drain,snapshot,replay,textureSnapshot};
- },{count,mode,lifecycleOnly});
+  const presentationTrace=()=>{const trace=words(m._th15_rollback_lab_presentation_trace(),m._th15_rollback_lab_presentation_size()),result=[];
+   check(trace.length%3===0,'presentation trace extent');for(let i=0;i<trace.length;i+=3)result.push({frame:trace[i],enabled:trace[i+1]===1,correcting:trace[i+2]===1});return result;};
+  window.rollbackLab={count,mode,input,remote,tick,status,details,lifecycle,audit,state,forward,drain,snapshot,replay,textureSnapshot,presentationTrace,journal};
+ },{count,mode,lifecycleOnly,presentationToggle});
 }
 function compare(expected,actual,label){
  assert.deepEqual(actual.world,expected.world,label+' world');assert.deepEqual(actual.groups,expected.groups,label+' script/projectile groups');
@@ -177,8 +183,8 @@ async function lifecycleAcceptance(exact,late,report){
 try{
  browser=await launchBrowser({...(process.env.EAGLER_CHROME_PATH?{executablePath:process.env.EAGLER_CHROME_PATH}:{}),
   args:[...(process.platform==='linux'&&process.getuid?.()===0?['--no-sandbox']:[]),'--enable-unsafe-swiftshader','--use-angle=swiftshader','--autoplay-policy=no-user-gesture-required']});
- const cases=lifecycleOnly?[{count:3,mode:2,scale:2}]:[...([2,3].flatMap(count=>[0,2].map(mode=>({count,mode,scale:1})))),{count:3,mode:2,scale:2}];
- for(const config of cases){const {count,mode,scale}=config,label=`${count}p-mode${mode}-scale${scale}${lifecycleOnly?'-lifecycle':''}`,trajectory=[];
+ const cases=lifecycleOnly||presentationToggle?[{count:3,mode:2,scale:2}]:[...([2,3].flatMap(count=>[0,2].map(mode=>({count,mode,scale:1})))),{count:3,mode:2,scale:2}];
+ for(const config of cases){const {count,mode,scale}=config,label=`${count}p-mode${mode}-scale${scale}${lifecycleOnly?'-lifecycle':presentationToggle?'-presentation-toggle':''}`,trajectory=[];
   const exact=await browser.newPage(),late=await browser.newPage();await initialize(exact,count,1,scale);await initialize(late,count,mode,scale);
   const report={...config,label,oracle:'independent v7 pure-delay exact-input WASM',checks:[],trajectory};
   try{
@@ -187,7 +193,12 @@ try{
     await writeFile(resolve(out,label+'.json'),JSON.stringify(report,null,2)+'\n');
     console.log('PASS '+label+' | confirmed stage 2, ending, results, immutable retired frontiers, completion Replay');continue;
    }
+   const journalBefore=await late.evaluate(()=>rollbackLab.journal());
    await pairedExact(exact,late,0,240,trajectory);
+   const journalExactPrefix=await late.evaluate(()=>rollbackLab.journal());
+   assert.equal(journalExactPrefix[0],journalBefore[0],label+' fully confirmed forward prefix allocated undo frames');
+   assert.equal(journalExactPrefix[3],0,label+' fully confirmed prefix retained history');
+   report.checks.push({kind:'confirmed-forward-without-undo',first:0,end:240,before:journalBefore,after:journalExactPrefix});
    // Fresh, unused ANM images exercise a first CPU edit in discarded prediction
    // without altering the authored game. The fixture callback uses the real
    // image writer, journal, texture upload and framebuffer readback.
@@ -204,14 +215,19 @@ try{
    assert.deepEqual(textureBefore[1].images,textureBefore[0].images,label+' initial CPU and GPU texture bytes');
    // Eight speculative frames, then a second mismatch during bounded catchup.
    await exact.evaluate(()=>{for(let f=240;f<248;++f)rollbackLab.forward(f);});
-   const retained=await late.evaluate(async()=>{for(let f=240;f<248;++f)rollbackLab.forward(f,1<<1);const capture=rollbackLab.status()[3],corrections=rollbackLab.status()[8];
+   const retained=await late.evaluate(async()=>{const journalBefore=rollbackLab.journal(),replayedBefore=rollbackLab.status()[9];
+    for(let f=240;f<248;++f)rollbackLab.forward(f,1<<1);const capture=rollbackLab.status()[3],corrections=rollbackLab.status()[8],journalPredicted=rollbackLab.journal();
     const textureEdited=await rollbackLab.textureSnapshot(true);
     rollbackLab.remote(240,1);rollbackLab.tick(240,false);let attempts=0;
     while(rollbackLab.status()[1]&&rollbackLab.status()[2]<242){rollbackLab.tick(rollbackLab.status()[2],false);if(++attempts>8)throw Error('First correction did not reach second predicted input');}
     const partial=rollbackLab.status();
     if(!partial[1]||partial[2]>=248)throw Error('Correction was not split across callbacks');
     for(let f=241;f<248;++f)rollbackLab.remote(f,1);const corrected=rollbackLab.drain(248);
-    if(corrected.status[3]!==capture)throw Error('Correction recaptured local controls');return {corrections,partial,corrected,textureEdited};});
+    if(corrected.status[3]!==capture)throw Error('Correction recaptured local controls');return {corrections,partial,corrected,textureEdited,replayedBefore,journalBefore,journalPredicted,journalCorrected:rollbackLab.journal()};});
+   assert.equal(retained.journalPredicted[0]-retained.journalBefore[0],8,label+' prediction must capture all eight undo frames');
+   assert.equal(retained.journalPredicted[3],8,label+' prediction retained an incomplete undo window');
+   assert.equal(retained.journalCorrected[0]-retained.journalPredicted[0],retained.corrected.status[9]-retained.replayedBefore,label+' historical steps must each capture undo state');
+   assert.equal(retained.journalCorrected[3],0,label+' reconciled correction retained undo frames');
    assert.ok(retained.corrected.status[8]>=retained.corrections+2,'A new late mismatch did not restart correction');
    const edit=retained.textureEdited;
    assert.equal(edit.executions,1);assert.equal(edit.mutationFrame,240);assert.equal(edit.journalOpenAtMutation,true);assert.ok(edit.retainedAtMutation>0);
@@ -229,6 +245,9 @@ try{
    for(const page of [exact,late])assert.equal(await page.evaluate(()=>Module._th15_rollback_lab_texture_end()),1,label+' texture probe cleanup');
    report.checks.push({kind:'nested-correction',...retained});
    await pairedExact(exact,late,248,300,trajectory);
+   const journalResumed=await late.evaluate(()=>rollbackLab.journal());
+   assert.equal(journalResumed[0],retained.journalCorrected[0],label+' confirmed forward resume did not return to the no-undo path');
+   report.checks.push({kind:'confirmed-forward-resumed-without-undo',first:248,end:300,before:retained.journalCorrected,after:journalResumed});
    // Pause arrives as the first replayed frame after a future GPU frontier.
    for(const [page,withhold] of [[exact,0],[late,1<<(count-1)]])await page.evaluate(withhold=>{for(let f=300;f<306;++f)rollbackLab.forward(f,withhold);},withhold);
    await late.evaluate(()=>{for(let f=300;f<306;++f)rollbackLab.remote(f,rollbackLab.count-1);rollbackLab.drain(306);});
@@ -259,6 +278,17 @@ try{
    assert.deepEqual(replayFrames(actualReplay),replayFrames(expectedReplay),'Confirmed all-seat Replay differs from exact run');
    await writeFile(resolve(out,label+'.rpy'),Uint8Array.from(actualReplay));report.confirmedReplayFrames=replayFrames(actualReplay).frames;
    report.futureMatchingFrames=600;report.final=await late.evaluate(()=>rollbackLab.snapshot(true));
+   if(presentationToggle){
+    const traces={exact:await exact.evaluate(()=>rollbackLab.presentationTrace()),late:await late.evaluate(()=>rollbackLab.presentationTrace())};
+    for(const [name,trace] of Object.entries(traces)){
+     assert.ok(trace.length>0,name+' presentation trace is empty');
+     for(const {frame,enabled} of trace)assert.equal(enabled,(frame>=180&&frame<239)||(frame>=241&&frame<248)||(frame>=260&&frame<280),name+' presentation mode at '+frame);
+     for(const frame of [180,239,241,248,260,280])assert.ok(trace.some(sample=>sample.frame===frame),name+' omitted presentation transition '+frame);
+    }
+    assert.ok(traces.late.some(sample=>sample.frame===241&&sample.enabled&&sample.correcting),'Correction did not replay the disabled-to-enabled transition');
+    assert.ok(traces.late.filter(sample=>sample.frame===241).length>traces.exact.filter(sample=>sample.frame===241).length,'Presentation transition did not repeat through correction');
+    report.checks.push({kind:'presentation-storage-transitions',schedule:[[180,239],[241,248],[260,280]],traces});
+   }
    assert.ok(report.final.status[11]>0&&report.final.status[9]>0);assert.deepEqual(errors,[]);
    report.status='PASS';reports.push(report);await writeFile(resolve(out,label+'.json'),JSON.stringify(report,null,2)+'\n');
    console.log('PASS '+label+' | nested correction, late pause, retired GPU predecessor, 600 future frames, 12-frame fence, confirmed Replay');
