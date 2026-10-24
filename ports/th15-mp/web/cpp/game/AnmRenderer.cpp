@@ -10,6 +10,14 @@ extern "C" EMSCRIPTEN_KEEPALIVE const unsigned* th15_probe_render_modes(){return
 namespace th15 {
 using namespace touhou::graphics;
 namespace {u32 multiply_color(u32 a,u32 b){u32 out=0;for(u32 shift=0;shift<32;shift+=8)out|=std::min(255u,(((a>>shift)&255)*((b>>shift)&255))>>7)<<shift;return out;}}
+#if TH15_MULTIPLAYER
+namespace {
+u32 opacity_color(u32 color,u32 opacity){return (color&0xffffffu)|(((color>>24)*opacity/255)<<24);}
+template<class Vertex> void opacity_vertices(std::vector<Vertex>& output,const std::vector<Vertex>& source,u32 count,u32 opacity){
+    output.assign(source.begin(),source.begin()+count);for(auto& vertex:output)vertex.color=opacity_color(vertex.color,opacity);
+}
+}
+#endif
 void AnmRenderer::flush(){if(vertices.empty())return;graphics.set_layout(VertexLayout::ScreenColorUv);graphics.triangles(vertices.size()/3,vertices.data(),sizeof(AnmGeometryVertex));vertices.clear();}
 void AnmRenderer::invalidate(){flush();bound_texture=~0u;}
 void AnmRenderer::set_viewport(const GraphicsViewport& value){invalidate();viewport=value;graphics.set_viewport(value);}
@@ -94,13 +102,17 @@ int AnmRenderer::world_quad(AnmVm& vm){
     const Vertex data[]={{{xs[ax][0],ys[ay][0],0},{0,0}},{{xs[ax][1],ys[ay][0],0},{1,0}},{{xs[ax][0],ys[ay][1],0},{0,1}},{{xs[ax][1],ys[ay][1],0},{1,1}}};
     const bool fog=state.fog;if(v.draw_mode()==15)state.fog=true;submit(vm,Topology::Strip,2,data,sizeof(Vertex));if(v.draw_mode()==15)state.fog=false;else state.fog=fog;return 0;
 }
-int AnmRenderer::mesh(AnmVm& vm){
-    const i32 count=vm.variables.integers[0];if(count<1||u32(count)>vm.geometry.world_vertices.size()/2){error="World animation mesh buffer unavailable";return -2;}Matrix4 world;if(!anm_mesh_transform(vm,world)){error="World animation mesh transform unavailable";return -2;}
+int AnmRenderer::mesh(AnmVm& vm,const AnmGeometry& geometry,u32 opacity){
+    const i32 count=vm.variables.integers[0];if(count<1||u32(count)>geometry.world_vertices.size()/2){error="World animation mesh buffer unavailable";return -2;}Matrix4 world;if(!anm_mesh_transform(vm,world)){error="World animation mesh transform unavailable";return -2;}
+    const auto* data=geometry.world_vertices.data();
+#if TH15_MULTIPLAYER
+    if(opacity!=255){opacity_vertices(opacity_world_vertices,geometry.world_vertices,u32(count)*2,opacity);data=opacity_world_vertices.data();}
+#endif
     flush();if(!material(vm))return -2;auto& state=graphics.pipeline();state.depthWrite=!(vm.visual.flags&0x2000);state.textureTransform=true;
-    graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldColorUv);submit(vm,Topology::Strip,u32(count)*2-2,vm.geometry.world_vertices.data(),sizeof(AnmWorldVertex));return 0;
+    graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldColorUv);submit(vm,Topology::Strip,u32(count)*2-2,data,sizeof(AnmWorldVertex));return 0;
 }
-int AnmRenderer::trail(AnmVm& vm){
-    auto& data=*vm.geometry.trail;const i32 count=data.age.current;if(count<1||count>64){error="Particle trail vertex count outside range";return -2;}const auto& v=vm.visual;const auto& p=vm.variables.position;Vec3 center{float(float(v.child_anchor.x+v.translation.x)+p.x),float(float(v.child_anchor.y+p.y)+v.translation.y),float(float(v.child_anchor.z+p.z)+v.translation.z)};if(!anm_adjust_position(vm,center)){error="Particle trail position unavailable";return -2;}
+int AnmRenderer::trail(AnmVm& vm,const AnmTrail& data){
+    const i32 count=data.age.current;if(count<1||count>64){error="Particle trail vertex count outside range";return -2;}const auto& v=vm.visual;const auto& p=vm.variables.position;Vec3 center{float(float(v.child_anchor.x+v.translation.x)+p.x),float(float(v.child_anchor.y+p.y)+v.translation.y),float(float(v.child_anchor.z+p.z)+v.translation.z)};if(!anm_adjust_position(vm,center)){error="Particle trail position unavailable";return -2;}
     flush();if(!material(vm,false))return -2;graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,data.colors[u32(i)]});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
 }
 int AnmRenderer::draw(AnmVm& vm){
@@ -108,27 +120,42 @@ int AnmRenderer::draw(AnmVm& vm){
     if(std::find(multiplayer_hidden_hud.begin(),multiplayer_hidden_hud.end(),&vm)!=multiplayer_hidden_hud.end())return 0;
     if(std::find(multiplayer_hidden_hitboxes.begin(),multiplayer_hidden_hitboxes.end(),&vm)!=multiplayer_hidden_hitboxes.end())return 0;
     if(const auto found=multiplayer_player_opacity.find(&vm);found!=multiplayer_player_opacity.end()){
-        auto copy=vm;const auto alpha=found->second;
-        const auto fade=[&](u32 color){return (color&0xffffffu)|(((color>>24)*alpha/255)<<24);};
-        copy.visual.color=fade(copy.visual.color);copy.visual.secondary_color=fade(copy.visual.secondary_color);
+        const auto alpha=found->second;const bool overlay_tree=bool(vm.geometry.overlay);
+        // Use one local object for both paths: presentation samples identify
+        // this temporary VM as well as its preserved generation/parent chain.
+        auto copy=overlay_tree?vm:AnmVm(vm,AnmVm::RenderCopyTag{});
+        copy.visual.color=opacity_color(copy.visual.color,alpha);copy.visual.secondary_color=opacity_color(copy.visual.secondary_color,alpha);
         // Match TH11: retain additive blending, normalize other blends so
         // reduced alpha actually fades focus/hitbox and option animations.
         if(copy.visual.blend_mode()!=1)copy.visual.flags&=~0x1e0u;
-        for(auto& vertex:copy.geometry.screen_vertices)vertex.color=fade(vertex.color);
-        for(auto& vertex:copy.geometry.world_vertices)vertex.color=fade(vertex.color);
-        return draw(copy);
+        // Overlay rendering recursively mutates its cloned panel VMs. Preserve
+        // that entire deep-copy path and its original panel identities.
+        if(overlay_tree){
+            for(auto& vertex:copy.geometry.screen_vertices)vertex.color=opacity_color(vertex.color,alpha);
+            for(auto& vertex:copy.geometry.world_vertices)vertex.color=opacity_color(vertex.color,alpha);
+            return draw(copy);
+        }
+        return draw_body(copy,vm.geometry,alpha);
     }
 #endif
+    return draw_body(vm,vm.geometry);
+}
+int AnmRenderer::draw_body(AnmVm& vm,const AnmGeometry& geometry,u32 opacity){
 #if TH15_DEVELOPMENT_HARNESS
  ++render_modes[vm.visual.draw_mode()&31];
 #endif
-    if(vm.geometry.overlay)return overlay(vm);
-    if(vm.geometry.trail)return trail(vm);
-    const auto& v=vm.visual;if(vm.geometry.distortion){flush();if(!material(vm))return -2;graphics.set_depth_mask(false);graphics.set_layout(VertexLayout::ScreenColorUv);submit(vm,Topology::Fan,31,vm.geometry.distortion->vertices.data(),sizeof(AnmGeometryVertex));}
-    if((v.flags&3)!=3||(v.render_flags&0x60))return -1;const u32 mode=v.draw_mode();if(mode==8||mode==15){if(!(v.color>>24)&&!(v.secondary_color>>24))return -1;return world_quad(vm);}if(mode==24||mode==25)return mesh(vm);
+    if(geometry.overlay)return overlay(vm);
+    if(geometry.trail)return trail(vm,*geometry.trail);
+    const auto& v=vm.visual;if(geometry.distortion){flush();if(!material(vm))return -2;graphics.set_depth_mask(false);graphics.set_layout(VertexLayout::ScreenColorUv);submit(vm,Topology::Fan,31,geometry.distortion->vertices.data(),sizeof(AnmGeometryVertex));}
+    if((v.flags&3)!=3||(v.render_flags&0x60))return -1;const u32 mode=v.draw_mode();if(mode==8||mode==15){if(!(v.color>>24)&&!(v.secondary_color>>24))return -1;return world_quad(vm);}if(mode==24||mode==25)return mesh(vm,geometry,opacity);
     if(graphics.pipeline().depthWrite){flush();graphics.set_depth_mask(false);}if(mode>=16&&mode<=22)return shape(vm);if(mode<=3){if(!(v.color>>24)&&!(v.secondary_color>>24))return -1;return quad(vm,mode==0);}
     if(mode==4||mode==6){if(!(v.color>>24)&&!(v.secondary_color>>24))return -1;return projected_quad(vm,mode==6);}
-    if(mode==10||mode==23||mode>25)return 0;if(mode==9||mode==11||mode==12||mode==13||mode==14){if(mode!=11&&!(v.color>>24))return -1;const i32 count=vm.variables.integers[0];if(count<2||u32(count)>vm.geometry.screen_vertices.size()/2){error="Animation strip buffer unavailable";return -2;}flush();if(!material(vm))return -2;graphics.set_layout(VertexLayout::ScreenColorUv);submit(vm,mode==11?Topology::Fan:Topology::Strip,u32(count)*2-2,vm.geometry.screen_vertices.data(),sizeof(AnmGeometryVertex));return 0;}
+    if(mode==10||mode==23||mode>25)return 0;if(mode==9||mode==11||mode==12||mode==13||mode==14){if(mode!=11&&!(v.color>>24))return -1;const i32 count=vm.variables.integers[0];if(count<2||u32(count)>geometry.screen_vertices.size()/2){error="Animation strip buffer unavailable";return -2;}
+        const auto* data=geometry.screen_vertices.data();
+#if TH15_MULTIPLAYER
+        if(opacity!=255){opacity_vertices(opacity_screen_vertices,geometry.screen_vertices,u32(count)*2,opacity);data=opacity_screen_vertices.data();}
+#endif
+        flush();if(!material(vm))return -2;graphics.set_layout(VertexLayout::ScreenColorUv);submit(vm,mode==11?Topology::Fan:Topology::Strip,u32(count)*2-2,data,sizeof(AnmGeometryVertex));return 0;}
     error="Animation drawing mode not yet implemented: "+std::to_string(mode);return -2;
 }
 bool AnmRenderer::draw_layer(const std::vector<AnmVm*>& layer){for(auto* vm:layer)if(draw(*vm)==-2)return false;return true;}

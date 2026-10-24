@@ -42,6 +42,17 @@ public:
     AnmResource* resource=nullptr;const AnmSprite* sprite=nullptr;AnmResource* sprite_resource=nullptr;
     i32 source_script=-1;
     u32 ordering=0;
+    // Draw still needs a mutable VM copy, including its original identity and
+    // parent pointers. Its caller supplies read-only geometry separately;
+    // overlay trees keep using the ordinary deep-copy constructor.
+    struct RenderCopyTag {};
+    AnmVm()=default;
+    AnmVm(const AnmVm& source,RenderCopyTag)
+        :script(source.script),saved_offset(source.saved_offset),saved_timer(source.saved_timer),
+         presentation_generation(source.presentation_generation),presentation_motion(source.presentation_motion),presentation_part(source.presentation_part),
+         variables(source.variables),visual(source.visual),interpolators(source.interpolators),timer(source.timer),age(source.age),instruction_offset(source.instruction_offset),visible(source.visible),error(source.error),
+         pending_interrupt(source.pending_interrupt),slowdown(source.slowdown),environment(source.environment),rotation_parent(source.rotation_parent),creation_parent(source.creation_parent),object_host(source.object_host),
+         sprite_source(source.sprite_source),resource(source.resource),sprite(source.sprite),sprite_resource(source.sprite_resource),source_script(source.source_script),ordering(source.ordering){}
     void copy_checkpoint(const AnmVm& source){*this=source;timer.set(source.timer.current);age.set(source.age.current);rotation_parent=creation_parent=nullptr;}
     bool bind(AnmScript&);int tick(Rng&,float rate=1);
     bool bind(AnmResource&,u32 script);bool select_sprite(i32 index)noexcept;

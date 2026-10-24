@@ -8,7 +8,13 @@ namespace th15 {
 class AnmRenderer {
     ZunGraphics& graphics;std::vector<AnmGeometryVertex> vertices;u32 bound_texture=~0u;
     struct ColorVertex {Vec3 position;float reciprocal_w;u32 color;};std::vector<ColorVertex> shapes;
-    bool material(AnmVm&,bool textured=true);int quad(AnmVm&,bool pixel);int pack_quad(AnmVm&,Vec3 (&)[4],bool pixel,const u32* colors=nullptr);int projected_quad(AnmVm&,bool fog);int world_quad(AnmVm&);int mesh(AnmVm&);int shape(AnmVm&);int trail(AnmVm&);
+#if TH15_MULTIPLAYER
+    // Keep both headers and backing storage in the renderer's journaled heap,
+    // just like vertices/shapes. Reuse them only after synchronous submission.
+    std::vector<AnmGeometryVertex> opacity_screen_vertices;std::vector<AnmWorldVertex> opacity_world_vertices;
+#endif
+    int draw_body(AnmVm&,const AnmGeometry&,u32 opacity=255);
+    bool material(AnmVm&,bool textured=true);int quad(AnmVm&,bool pixel);int pack_quad(AnmVm&,Vec3 (&)[4],bool pixel,const u32* colors=nullptr);int projected_quad(AnmVm&,bool fog);int world_quad(AnmVm&);int mesh(AnmVm&,const AnmGeometry&,u32 opacity);int shape(AnmVm&);int trail(AnmVm&,const AnmTrail&);
     u32 tint_color(u32)const noexcept;int overlay(AnmVm&);
 public:
     u32 presentation_instance=0;
