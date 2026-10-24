@@ -90,6 +90,17 @@ test('inactive or immediate saves still wait for the real filesystem callback',a
   f.disk.resolve();await saved;assert.equal(done,true);
 });
 
+test('a native token completed before frame zero still flushes Replay and awaits IDBFS once',async()=>{
+  let requests=0,polls=0;
+  const f=fixture({request:()=>{++requests;return 7;},poll:token=>{assert.equal(token,7);++polls;return 1;}});
+  const saved=f.controller.save();let done=false;saved.then(()=>done=true);
+  assert.equal(f.controller.save(),saved);await settle();
+  assert.equal(requests,1);assert.equal(polls,1);assert.equal(f.count('replay'),2);
+  assert.equal(f.count('sync'),1);assert.equal(done,false);assert.equal(f.timers.size,0);
+  assert.equal(f.controller.save(),saved,'Host sync joins the actual startup persistence');
+  f.disk.resolve();await saved;assert.equal(done,true);assert.equal(f.count('sync'),1);
+});
+
 // Execute the production functions themselves so this checks dispatch order,
 // input ABI calls and lifecycle placement, rather than a second queue model.
 const shell=readFileSync(new URL('../../web/sdl-runtime/shell.mjs',import.meta.url),'utf8');
@@ -98,6 +109,7 @@ const stopSource=shell.slice(shell.indexOf('async function stop()'),shell.indexO
 const backgroundSaveSource=shell.slice(shell.indexOf('const backgroundSaveError='),shell.indexOf('\nfunction closeAudio('));
 const phaseExitSource=shell.match(/if\(core\._th15_phase\(\)===4\)void stop\(\)\.catch\([^)]+\);/)[0];
 const transportExitSource=shell.match(/onExit:(\(\)=>\{void stop\(\)\.catch\([^)]+\);\})/)[1];
+const periodicSaveSource=shell.match(/setInterval\(\(\)=>\{if\(launched&&!document\.hidden\)void save\(\)\.catch\(backgroundSaveError\);\},30000\);/)[0];
 function hostFixture(){
   const disk=deferred(),calls=[],replies=[],listeners=new Map(),fatals=[];
   const context={queue:Promise.resolve(),initialized:Promise.resolve(true),launched:true,stopping:false,
@@ -118,6 +130,21 @@ function hostFixture(){
   const dispatch=(command,fields={})=>context.dispatchHostCommand({command,request:command,...fields});
   return {disk,calls,replies,listeners,fatals,context,dispatch};
 }
+
+test('natural periodic save and room exit share an immediate native token until actual disk completion',async()=>{
+  const h=hostFixture();let periodic,interval,requests=0,replays=0,syncs=0;
+  const owner=createScoreSave({request:()=>{++requests;return 1;},poll:()=>1,cancel:()=>{},error:()=>'',
+    flushReplay:()=>{++replays;},sync:()=>{++syncs;return h.disk.promise;}});
+  h.context.save=()=>owner.save();h.context.roomOwned=true;
+  h.context.setInterval=(fn,ms)=>{periodic=fn;interval=ms;};runInNewContext(periodicSaveSource,h.context);
+  assert.equal(interval,30000);periodic();await settle();
+  assert.equal(requests,1);assert.equal(replays,2);assert.equal(syncs,1);
+  const stopped=h.context.stop();await settle();assert.equal(requests,1);
+  assert.equal(h.calls.includes('stop-loop'),false);assert.equal(h.calls.includes('return-room'),false);
+  h.disk.resolve();await stopped;
+  assert.ok(h.calls.includes('return-room'));assert.equal(h.context.launched,false);
+  assert.equal(syncs,1);assert.equal(h.fatals.length,0);
+});
 
 test('live touch input and ACK pass pending sync while file and room commands stay ordered',async()=>{
   const h=hostFixture();h.dispatch('sync');h.dispatch('read',{path:'th15.cfg'});h.dispatch('return-room');

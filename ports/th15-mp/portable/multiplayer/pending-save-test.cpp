@@ -1,4 +1,5 @@
 #include "PendingSave.hpp"
+#include "NetplayRuntime.hpp"
 
 #include <array>
 #include <cstdint>
@@ -32,6 +33,53 @@ template<class Save>
 PendingSave::Status complete_safe(PendingSave& pending, Save save) {
     return pending.Complete(true, false, true, 0, 0, save);
 }
+
+// Use the production room gate and input/correction core. No browser or socket
+// is needed to reproduce a run whose native start precedes peer readiness.
+struct Peers {
+    std::array<th15::multiplayer::NetplayRuntime, 3> peers;
+    unsigned count;
+    Peers(unsigned players, unsigned mode) : count(players) {
+        for (unsigned seat = 0; seat < count; ++seat) {
+            th15::multiplayer::SessionSetup setup;
+            setup.version = th15::multiplayer::SessionSetup::Version;
+            setup.session_id = 0x12345678; setup.seed = 417; setup.difficulty = 1;
+            setup.player_count = count; setup.local_player = seat; setup.mode = mode;
+            setup.automatic = false; setup.input_delay = setup.requested_delay = mode == 0 ? 0 : 2;
+            setup.selections = {0, 1, count == 3 ? 3u : 0u}; setup.build = {1, 2, 3, 4};
+            require(peers[seat].Reset(setup), "native setup accepted");
+        }
+    }
+    auto& runtime() { return peers[0]; }
+    void ready() {
+        for (unsigned to = 0; to < count; ++to) for (unsigned from = 0; from < count; ++from)
+            if (to != from) require(peers[to].ApplySession(peers[from].Hello()) == Netplay::SessionPacketResult::Accepted,
+                                    "native Hello accepted");
+        for (unsigned seat = 0; seat < count; ++seat) {
+            require(peers[seat].CanSendReady(), "native Ready admission"); peers[seat].MarkLocalReady();
+        }
+        for (unsigned to = 0; to < count; ++to) for (unsigned from = 0; from < count; ++from)
+            if (to != from) require(peers[to].ApplySession(peers[from].Ready()) == Netplay::SessionPacketResult::Accepted,
+                                    "native Ready accepted");
+        require(runtime().CanStart(), "native room gate released");
+    }
+    void remote(unsigned frame, Netplay::FrameInput input) {
+        for (unsigned seat = 1; seat < count; ++seat) {
+            const auto result = runtime().SubmitRemote(seat, frame, input);
+            require(result == Netplay::RemoteInputResult::Accepted || result == Netplay::RemoteInputResult::PredictionCorrect ||
+                    result == Netplay::RemoteInputResult::RollbackRequired, "native remote input accepted");
+        }
+    }
+    void capture() {
+        auto& r = runtime(); require(r.NeedsCapture(), "physical frontier admits a sample");
+        require(r.Capture(r.CaptureFrame(), Netplay::FrameInput(1)), "native physical capture accepted");
+    }
+    void simulate() {
+        auto& r = runtime(); const auto frame = r.NextFrame(); const auto decision = r.Prepare(frame);
+        require(decision.canAdvance, "native core admits the frame");
+        require(r.MarkSimulated(frame, decision), "native core commits the frame");
+    }
+};
 }
 
 int main() {
@@ -200,6 +248,104 @@ int main() {
             require(pending.Poll(active) == PendingSave::Pending && pending.Waiting(),
                     "late caller does not requeue or complete the active request");
         }
+    });
+
+    for (unsigned players : {2u, 3u}) for (unsigned mode : {0u, 2u}) {
+        run("untouched run saves before the real Hello/Ready gate opens", [=] {
+            Peers fixture(players, mode); auto& r = fixture.runtime(); PendingSave pending; unsigned writes = 0;
+            require(!r.CanStart() && !r.InputsReconciledBeforeNext(), "peer gate really is closed");
+            const auto token = pending.Request();
+            for (unsigned i = 0; i < 3; ++i)
+                require(pending.CompleteForRuntime(true, true, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Completed,
+                        "empty prefix performs the requested save without peer confirmation");
+            require(writes == 1 && pending.Poll(token) == PendingSave::Completed, "same token writes and completes exactly once");
+            require(!r.CanStart() && !r.InputsReconciledBeforeNext(), "saving cannot admit gameplay or weaken input reconciliation");
+            fixture.ready(); fixture.capture(); fixture.remote(0, Netplay::FrameInput()); fixture.simulate();
+            require(r.NextFrame() == 1, "normal room admission can still advance after the save");
+            require(pending.Poll(token) == PendingSave::Completed && writes == 1, "simulation does not repeat a completed save");
+        });
+    }
+
+    run("empty-prefix exception cannot ignore retained game or journal state", [] {
+        Peers fixture(2, 0); auto& r = fixture.runtime();
+        for (const auto retained : {0u, 1u}) for (const auto journal : {0u, 1u}) if (retained || journal) {
+            PendingSave pending; unsigned writes = 0; const auto token = pending.Request();
+            require(pending.CompleteForRuntime(true, true, r, retained, journal, [&] { ++writes; return true; }) == PendingSave::Pending,
+                    "undo records remain fenced even at frame zero");
+            require(writes == 0 && pending.Poll(token) == PendingSave::Pending, "unsafe state performs no write");
+            require(pending.CompleteForRuntime(true, true, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Completed,
+                    "same request can complete after all retained state is gone");
+            require(writes == 1, "released empty prefix writes once");
+        }
+    });
+
+    run("an owner that already began simulation or failed cannot claim an empty prefix", [] {
+        Peers fixture(2, 0); auto& r = fixture.runtime(); PendingSave pending; unsigned writes = 0;
+        const auto token = pending.Request();
+        require(pending.CompleteForRuntime(true, false, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "sticky owner flag forbids the exception even with zero cursors");
+        require(!r.Capture(9, Netplay::FrameInput()) && *r.Error(), "actual runtime failure while waiting for a peer");
+        require(pending.CompleteForRuntime(true, true, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "runtime error cannot be bypassed by the empty-prefix exception");
+        require(writes == 0 && pending.Cancel(token), "failure stays unwritten and cancellable");
+    });
+
+    for (unsigned mode : {0u, 2u}) run("a simulated frame must reconcile and discard undo before saving", [=] {
+        Peers fixture(2, mode); auto& r = fixture.runtime(); PendingSave pending; unsigned writes = 0;
+        fixture.ready(); require(r.SetWorldReady(true), "prediction world admitted"); fixture.capture(); fixture.simulate();
+        require(r.NextFrame() == 1 && !r.InputsReconciledBeforeNext(), "actual predicted frame awaits remote input");
+        const auto token = pending.Request();
+        require(pending.CompleteForRuntime(true, true, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "a simulated native frontier cannot use the exception even if the owner flag is wrong");
+        fixture.remote(0, Netplay::FrameInput());
+        require(r.InputsReconciledBeforeNext(), "matching actual input confirms the simulated prefix");
+        require(pending.CompleteForRuntime(true, false, r, 1, 1, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "confirmation alone cannot bypass retained undo");
+        require(pending.CompleteForRuntime(true, false, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Completed,
+                "original confirmed save fence completes after undo release");
+        require(writes == 1 && pending.Poll(token) == PendingSave::Completed, "confirmed save writes once");
+    });
+
+    run("a mismatch and correction to frame zero never reopen the startup exception", [] {
+        Peers fixture(2, 0); auto& r = fixture.runtime(); PendingSave pending; unsigned writes = 0;
+        fixture.ready(); require(r.SetWorldReady(true), "prediction world admitted"); fixture.capture(); fixture.simulate();
+        fixture.remote(0, Netplay::FrameInput(1));
+        require(r.RollbackFrame() == 0 && !r.InputsReconciledBeforeNext(), "late mismatch requests a real rollback");
+        const auto token = pending.Request();
+        require(pending.CompleteForRuntime(true, true, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "rollback request prevents storage before restoration");
+        require(r.BeginCorrection(0), "native correction rewinds frame zero");
+        require(r.NextFrame() == 0 && r.LastFrame() == Netplay::INVALID_FRAME && r.Correcting(), "rewind looks empty only by its cursors");
+        require(pending.CompleteForRuntime(true, true, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "zero cursors cannot admit storage during correction");
+        require(!r.EndCorrection(), "historical frame still has to run"); fixture.simulate();
+        require(pending.CompleteForRuntime(true, false, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "completed history still needs explicit correction completion");
+        require(r.EndCorrection(), "actual correction completes");
+        require(pending.CompleteForRuntime(true, false, r, 0, 1, [&] { ++writes; return true; }) == PendingSave::Pending,
+                "restored journal still needs release");
+        require(pending.CompleteForRuntime(true, false, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Completed,
+                "corrected confirmed prefix finally saves");
+        require(writes == 1 && pending.Poll(token) == PendingSave::Completed, "correction cannot duplicate token completion");
+    });
+
+    run("pure delay and a not-yet-started MP runtime keep their immediate save path", [] {
+        for (unsigned mode : {0u, 1u}) {
+            Peers fixture(2, mode); auto& r = fixture.runtime(); PendingSave pending; unsigned writes = 0;
+            require(!r.CanStart(), "room is still waiting"); const auto token = pending.Request();
+            require(pending.CompleteForRuntime(mode == 1, false, r, 0, 0, [&] { ++writes; return true; }) == PendingSave::Completed,
+                    "nonrollback owner remains independent of the room gate");
+            require(writes == 1 && pending.Poll(token) == PendingSave::Completed, "normal save writes once");
+        }
+    });
+
+    run("real storage failure on an empty prefix is not converted into success", [] {
+        Peers fixture(2, 2); PendingSave pending; unsigned writes = 0; const auto token = pending.Request();
+        require(pending.CompleteForRuntime(true, true, fixture.runtime(), 0, 0, [&] { ++writes; return false; }) == PendingSave::Failed,
+                "actual settings callback can fail before the first frame");
+        require(pending.CompleteForRuntime(true, true, fixture.runtime(), 0, 0, [&] { ++writes; return true; }) == PendingSave::Failed,
+                "failed token is terminal");
+        require(writes == 1 && pending.Poll(token) == PendingSave::Failed, "failed empty save is attempted once");
     });
 
     std::printf("PASS TH15 native PendingSave: %u cases, %u checks\n", cases, checks);

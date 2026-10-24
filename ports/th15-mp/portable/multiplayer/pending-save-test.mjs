@@ -3,8 +3,8 @@ import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 
-// Execute the actual native request owner. Network/frontier integration is
-// covered by the production browser run, not by a second simulated save owner.
+// Execute the actual request owner against the production room/input core.
+// Browser coverage still owns real game-file and IDBFS persistence.
 const root=resolve(import.meta.dirname,'../..'),workspace=resolve(root,'../..');
 const temporary=mkdtempSync(resolve(tmpdir(),'th15-pending-save-'));
 const executable=resolve(temporary,process.platform==='win32'?'pending-save.exe':'pending-save');
@@ -16,7 +16,11 @@ function run(program,args){
   if(result.status!==0)throw Error(`${program} exited ${result.status}`);
 }
 try{
-  run(process.env.CXX||'g++',['-O2','-std=c++17','-Wall','-Wextra','-Werror',
-    '-I'+resolve(root,'web/cpp/multiplayer'),resolve(import.meta.dirname,'pending-save-test.cpp'),'-o',executable]);
+  const common=['NetplayCore','NetplayProtocol','NetplaySession','WebSocketTransport','BrowserPeerTransport','SessionChannel','InputReplay'];
+  run(process.env.CXX||'g++',['-O2','-std=c++17','-Wall','-Wextra','-Werror','-Wno-misleading-indentation',
+    '-DTH15_MULTIPLAYER=1','-DTH_NATIVE_PLATFORM=1','-I'+resolve(root,'web/cpp/multiplayer'),'-I'+resolve(workspace,'common/include'),
+    resolve(import.meta.dirname,'pending-save-test.cpp'),
+    ...['NetplayRuntime','SessionSetup','InputLanes'].map(name=>resolve(root,'web/cpp/multiplayer',name+'.cpp')),
+    ...common.map(name=>resolve(workspace,'common/src/netplay',name+'.cpp')),'-o',executable]);
   run(executable,[]);
 }finally{rmSync(temporary,{recursive:true,force:true});}

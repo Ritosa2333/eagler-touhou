@@ -49,12 +49,15 @@ bool mp_complete_requested_save();
 #include "MultiplayerRollback.inc"
 bool mp_complete_requested_save(){
  if(!mp_save_request.Waiting())return true;
- const bool rollback=mp_started&&network.AllowsRollback();
+ // Recording begins before the first MP step and is never reset by a rewind.
+ // An untouched run may persist its real settings while the room gate waits.
+ bool before_simulation=!mp_recording&&app&&app->failure.empty()&&last_error.empty();
  unsigned retained=0,frames=0;
 #if TH15_WRITE_JOURNAL
  retained=unsigned(mp_frames.size());frames=journal::FrameCount();
+ before_simulation=before_simulation&&!journal::FrameOpen()&&!journal::Failed();
 #endif
- const auto result=mp_save_request.Complete(rollback,network.Correcting(),network.InputsReconciledBeforeNext(),retained,frames,[]{
+ const auto result=mp_save_request.CompleteForRuntime(mp_started,before_simulation,network,retained,frames,[]{
   if(!app||app->save_settings())return true;
   mp_save_error=app->failure.empty()?"TH15 score save failed":app->failure;last_error=mp_save_error;return false;
  });
