@@ -96,7 +96,9 @@ bool MultiplayerPilot::reset_stage(){
     session.bomb_state=0;spell_startup_bomb=false;keys={};input={};life_hold=power_taps=power_gap=0;life_latched=false;
     if(!rebuild_bomb())return false;
     if(ghost)return revive(false);
-    return player->reset_for_stage()||world.fail(player->error);
+    if(world.mp_options.replay_legacy_stage_flow)return player->reset_for_stage()||world.fail(player->error);
+    // Retained live players reset through RunSession at scene activation.
+    return true;
 }
 bool MultiplayerPilot::allow_bomb(){return !ghost&&!world.mp_options.challenge&&bomb&&bomb->allowed();}
 bool MultiplayerPilot::begin_bomb(){
