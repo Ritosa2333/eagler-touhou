@@ -675,9 +675,10 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         const bool limit60=th11_limit_presentation_to_60()!=0;
         const bool ready=interpolation_ready()&&!limit60&&!custom_speed;
         if(ready)presentation.advance(delta);else{app.reset_presentation_frames();presentation.reset();}
-        auto ticks=cadence.advance(delta);
 #ifdef TH_ENABLE_THPRAC
-        if(custom_speed)ticks=practice_cadence.advance(delta);
+        const auto ticks=custom_speed?practice_cadence.advance(delta):cadence.advance(delta);
+#else
+        const auto ticks=cadence.advance(delta);
 #endif
         bool ok=true;app.graphics.backend.defer=true;
         const bool high=presentation.high_refresh&&ready;
