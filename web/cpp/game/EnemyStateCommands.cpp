@@ -5,6 +5,7 @@
 #include "ScreenDeformation.hpp"
 #include "EnemyCallbacks.hpp"
 #include "Stage.hpp"
+#include "PracticeConfig.hpp"
 namespace th11 {
 namespace {
 template<class T>T& destination(T* p){if(!p)__builtin_trap();return *p;}
@@ -26,7 +27,16 @@ i32 enemy_state_command(EnemyState& e,EclContext& c,EnemyGlobals& g,EnemyCommand
         if(update&&!w.animation_visibility)return -2;e.flags=flags;
         if(update)for(u32 id:e.animations)w.animation_visibility(id,visible,w.animation_user);break;
     }
-    case 0x144:e.flags|=0x2000;e.clamp_center.x=f(0);e.clamp_center.y=f(1);e.clamp_size.x=f(2);e.clamp_size.y=f(3);break;
+    case 0x144:e.flags|=0x2000;e.clamp_center.x=f(0);e.clamp_center.y=f(1);e.clamp_size.x=f(2);e.clamp_size.y=f(3);
+#ifdef TH_ENABLE_THPRAC
+        if(w.practice_boss_move_down){float* y_pos=&e.clamp_center.y;float* y_range=&e.clamp_size.y;const float g_bossMoveDownRange=w.practice_boss_move_down_range;
+            // Purple th11_bossmovedown / 0x41497c, unchanged arithmetic.
+            float y_max=(*y_pos)+(*y_range)*0.5f;
+            float y_min2=y_max-(*y_range)*(1.0f-g_bossMoveDownRange);
+            *y_pos=(y_max+y_min2)*0.5f;*y_range=(y_max-y_min2);
+        }
+#endif
+        break;
     case 0x145:e.flags&=~0x2000u;break;
     case 0x146:for(auto& count:e.drops.counts)count=0;break;
     case 0x147:{const i32 type=drop_type(i(0),e.flags),count=i(1);if(type<0||type>12)return -2;if(type==0)e.drops.primary=count;else e.drops.counts[type-1]=count;break;}
@@ -35,6 +45,9 @@ i32 enemy_state_command(EnemyState& e,EclContext& c,EnemyGlobals& g,EnemyCommand
     case 0x14b:{const i32 health=i(0);e.health=e.max_health=e.interrupt_health=health;e.scaled_health=signed_bits(u32(health)*7);
         if(e.flags&0x80000){for(auto& segment:w.health_segments)segment={0,0};e.flags|=0x4000000;}break;}
     case 0x14c:{const i32 slot=i(0);if(slot>=8)return -2;w.manager_flags&=~1u;
+#ifdef TH_ENABLE_THPRAC
+        if(w.practice&&w.practice->enabled)w.practice->lock_frames=0;
+#endif
         if(slot<0){if(e.flags&0x80000){if(e.boss_slot<0||e.boss_slot>=8)return -2;w.bosses[e.boss_slot]=nullptr;}e.flags&=~0x80000u;}
         else {w.bosses[slot]=&e;e.boss_slot=slot;e.flags|=0x80000;}
         world.boss=w.bosses[0];break;}
@@ -63,7 +76,11 @@ i32 enemy_state_command(EnemyState& e,EclContext& c,EnemyGlobals& g,EnemyCommand
     case 0x157:if(!w.spells||!w.spells->end())return -2;e.health_flags&=~1u;break;
     case 0x16a:if(!w.spells)return -2;w.spells->survival();break;
     case 0x16b:if(!w.spells)return -2;w.spells->hide_circle();break;
-    case 0x158:{const i32 section=i(0);if(w.stage_section!=section)w.section_frame=0;w.stage_section=section;break;}
+    case 0x158:{const i32 section=i(0);if(w.stage_section!=section)w.section_frame=0;w.stage_section=section;
+#ifdef TH_ENABLE_THPRAC
+        if(w.practice&&w.practice->enabled)w.practice->lock_frames=0;
+#endif
+        break;}
     case 0x15a:{const double radius=c.float_argument(0,g);e.exclusion_distance=float(radius*radius);break;}
     case 0x15b:{const i32 type=i(2);const float value=f(1);const i32 health=e.max_health,slot=i(0);if(slot<0||slot>=4)return -2;w.health_segments[slot]={float(double(value)/health),type};break;}
     case 0x15d:case 0x15e:{const u32 index=op==0x15d?(world.rank<512?0:2):rank_index(world.rank);auto* out=c.float_reference(0,g);destination(out)=f(index);break;}

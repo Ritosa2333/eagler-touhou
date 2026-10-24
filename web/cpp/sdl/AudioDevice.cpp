@@ -47,7 +47,7 @@ bool AudioDevice::initialize(GameResources& resources){
 #ifdef TH11_MULTIPLAYER
     if(a.spectator_silent)ma_engine_set_volume(&a.engine,0.f);
 #endif
-    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"1024");const SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
     if(SDL_InitSubSystem(SDL_INIT_AUDIO))a.stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
     if(!a.stream){error=SDL_GetError();return false;}
     for(u32 n=0;n<a.samples.size();++n)if(!resources.read(sound_samples[n],a.samples[n])){error=std::string("Missing sound: ")+sound_samples[n];return false;}
@@ -124,11 +124,12 @@ void AudioDevice::begin_pump_profile_frame(){
     p.fill(0);p[0]=1;p[1]=18;p[2]=1;p[3]=callback;p[14]=p[15]=-1;
 }
 void AudioDevice::pump(){
+    constexpr i32 low_water=2048,high_water=3072,chunk_frames=1024;
     if(!pump_profile_[2]){
         // Keep the default path free of clocks and additional queue reads.
         auto& a=*impl;if(!a.ready||!a.stream||a.suspended)return;i32 queued=std::max(0,SDL_GetAudioStreamQueued(a.stream))/8;
-        if(!a.refill&&queued<4096)a.refill=true;if(!a.refill)return;if(queued>=6144){a.refill=false;return;}
-        for(i32 n=0;n<6&&queued<6144;++n){float pcm[2048]{};if(!mix(pcm,1024)){a.stats[3]=1;return;}if(!SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm))){a.stats[3]=2;return;}++a.stats[1];a.stats[2]+=1024;queued+=1024;}if(queued>=6144)a.refill=false;
+        if(!a.refill&&queued<low_water)a.refill=true;if(!a.refill)return;if(queued>=high_water){a.refill=false;return;}
+        for(i32 n=0;n<3&&queued<high_water;++n){float pcm[chunk_frames*2]{};const i32 frames=std::min(chunk_frames,high_water-queued);if(!mix(pcm,frames)){a.stats[3]=1;return;}if(!SDL_PutAudioStreamData(a.stream,pcm,frames*8)){a.stats[3]=2;return;}++a.stats[1];a.stats[2]+=frames;queued+=frames;}if(queued>=high_water)a.refill=false;
         return;
     }
     auto& a=*impl;auto& p=pump_profile_;const auto now=[](){return double(SDL_GetTicksNS())/1000000.;};
@@ -142,15 +143,15 @@ void AudioDevice::pump(){
     };
     if(!a.ready||!a.stream||a.suspended){finish();return;}
     i32 queued=queue();if(p[14]<0)p[14]=queued;
-    if(!a.refill&&queued<4096)a.refill=true;if(!a.refill){finish();return;}if(queued>=6144){a.refill=false;finish();return;}
-    for(i32 n=0;n<6&&queued<6144;++n){
-        float pcm[2048]{};const double mixAt=now();++p[5];const bool mixed=mix(pcm,1024);p[10]+=now()-mixAt;
-        if(!mixed){++p[16];a.stats[3]=1;finish();return;}p[7]+=1024;
-        const double putAt=now();const bool submitted=SDL_PutAudioStreamData(a.stream,pcm,sizeof(pcm));p[11]+=now()-putAt;
-        if(!submitted){++p[17];a.stats[3]=2;finish();return;}++p[6];p[8]+=1024;
-        ++a.stats[1];a.stats[2]+=1024;queued+=1024;
+    if(!a.refill&&queued<low_water)a.refill=true;if(!a.refill){finish();return;}if(queued>=high_water){a.refill=false;finish();return;}
+    for(i32 n=0;n<3&&queued<high_water;++n){
+        float pcm[chunk_frames*2]{};const i32 frames=std::min(chunk_frames,high_water-queued);const double mixAt=now();++p[5];const bool mixed=mix(pcm,frames);p[10]+=now()-mixAt;
+        if(!mixed){++p[16];a.stats[3]=1;finish();return;}p[7]+=frames;
+        const double putAt=now();const bool submitted=SDL_PutAudioStreamData(a.stream,pcm,frames*8);p[11]+=now()-putAt;
+        if(!submitted){++p[17];a.stats[3]=2;finish();return;}++p[6];p[8]+=frames;
+        ++a.stats[1];a.stats[2]+=frames;queued+=frames;
     }
-    if(queued>=6144)a.refill=false;finish();
+    if(queued>=high_water)a.refill=false;finish();
 }
 void AudioDevice::suspend(bool paused){auto& a=*impl;a.suspended=paused;web_sfx::suspend(paused);if(a.stream){if(paused)SDL_PauseAudioStreamDevice(a.stream);else SDL_ResumeAudioStreamDevice(a.stream);}}
 #ifdef TH11_MULTIPLAYER

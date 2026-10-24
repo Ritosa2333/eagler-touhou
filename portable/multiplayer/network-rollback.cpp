@@ -215,6 +215,9 @@ void readonly_and_hybrid(const char* direct_path,const char* hybrid_path){
   for(unsigned frame=0;frame<4;++frame)VERIFY(archive.Append(frame,1,inputs.data(),3));
   std::vector<unsigned char> bytes;VERIFY(archive.Encode(bytes,"RBTEST",123456,false));
   ReplayArchive parsed;VERIFY(parsed.Load(bytes.data(),bytes.size()));VERIFY(parsed.Setup().mode==mode&&parsed.Setup().version==6);
+  // Previous gameplay recordings use different stage-entry rules.
+  auto previous=bytes;put(previous,Netplay::InputReplay::HeaderBytes+8,1);checksum(previous);
+  VERIFY(!ReplayArchive::Validate(previous.data(),previous.size()));
   if(!mode){
    auto corrupt=bytes;auto invalid=s;invalid.input_delay=1;VERIFY(!invalid.valid());
    put(corrupt,52,1);put(corrupt,16,GameplayAbi(invalid));checksum(corrupt);
