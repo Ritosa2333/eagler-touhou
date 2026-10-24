@@ -43,17 +43,17 @@ touch、config、marker 三个函数本身不插桩。touch 在进入日志辅�
 
 `Clear()` 在已关闭的帧边界释放历史；如果事务仍然开启，则将后端标为终止失败。Wasm 越界陷阱会跳过 C++ 析构，可能留下仍开启但追踪已暂停的事务，因此清理根据帧状态判断。清理保留首个错误原因，后续 `Ready()` 与 `BeginFrame()` 均拒绝重新启用该后端。
 
-堆用量沿用 `mspace_mallinfo().uordblks` 的精确结果。分配器 wrapper 在宿主静态区保留一个按 mspace 地址识别的缓存槽；创建、分配、对齐分配及释放均使它失效，成功恢复分配器元数据后以及失败、清理边界也会失效。多个 mspace 交替查询会替换缓存槽，不会复用其他空间的值。普通系统堆操作不影响该缓存；它与现有分配器一样只用于单线程调用。
+堆用量与 `mspace_mallinfo().uordblks` 保持精确一致。分配器 wrapper 在宿主静态区保留一个按 mspace 地址识别的缓存槽。首次查询建立总量；缓存有效时，分配和对齐分配按返回对象的实际 chunk 大小增加总量，释放按合并前的实际 chunk 大小减少总量，不用请求大小或 usable bytes 估计。该不变量依赖固定的外部内存段；编译期断言禁止开启堆增长、mmap、footers、错误恢复或锁。创建、失败、跨 mspace 修改，以及成功恢复分配器元数据后和清理边界会使缓存失效。allocator 写入期间若日志失败，也不会重新启用已失效的缓存。多个 mspace 交替查询会替换缓存槽，不会复用其他空间的值。普通系统堆操作不影响该缓存；它与现有分配器一样只用于单线程调用。
 
 ## 验证职责
 
 测试实例化真实 Wasm，比较插桩前后的内存结果，并用独立日志恢复已跟踪区域。覆盖标志检查、标量宽度、向量存储、两个状态区、未对齐跨块、两端跨界、嵌套操作数求值、递归、被动数据段初始化、数据段释放及原始陷阱行为。
 
-`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后分别使用默认模式、`--native-filter` 及 native inline dirty guard 插桩。测试先验证原始模块拒绝初始化，再为每种模式的十二个场景创建独立实例，检查容器与分配器元数据恢复、跨越外部 root 两端的写入及邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域、失败状态，同时覆盖已记录块和未记录块的非对齐标量写入、无外部 root 的整堆恢复，以及宿主调用的嵌套追踪暂停与失败保护。场景 9–11 用独立的 uncached mallinfo 查询和扫描计数核对堆用量缓存，覆盖一次和嵌套恢复、系统分配作用域、清理、无效目标及开启帧上的恢复拒绝。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
+`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后分别使用默认模式、`--native-filter` 及 native inline dirty guard 插桩。测试先验证原始模块拒绝初始化，再为每种模式的十五个场景创建独立实例，检查容器与分配器元数据恢复、跨越外部 root 两端的写入及邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域、失败状态，同时覆盖已记录块和未记录块的非对齐标量写入、无外部 root 的整堆恢复，以及宿主调用的嵌套追踪暂停与失败保护。场景 9–11 用独立的 uncached mallinfo 查询和扫描计数核对堆用量缓存，覆盖一次和嵌套恢复、系统分配作用域、清理、无效目标及开启帧上的恢复拒绝。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
 
-每种插桩模式另有两个真实越界写入案例：分别在 `GameScope` 和嵌套 `HostScope` 中触发 Wasm 陷阱，JavaScript 捕获后再调用清理入口，验证未封帧状态始终保持终止失败。总计运行 43 个独立模块实例：1 个未插桩拒绝实例，以及 3 种配置各 12 个正常场景与 2 个陷阱场景；另检查四个未启用后端的真实 Wasm 对象不定义任何符号。
+每种插桩模式另有三个真实日志耗尽案例：先填满日志并建立有效的堆用量缓存，再分别在 malloc、memalign、free 的元数据写入期间触发失败，要求返回后的首次查询重新扫描且与 uncached oracle 完全相等。还有两个真实越界写入案例：分别在 `GameScope` 和嵌套 `HostScope` 中触发 Wasm 陷阱，JavaScript 捕获后再调用清理入口，验证未封帧状态始终保持终止失败。总计运行 52 个独立模块实例：1 个未插桩拒绝实例，以及 3 种配置各 15 个场景与 2 个陷阱场景；另检查四个未启用后端的真实 Wasm 对象不定义任何符号。
 
-补充的 native 分配器检查可运行 `node tools/rollback/heap-cache-test.mjs`，需要支持 C++20 的 `c++` 或 `CXX` 指定的编译器，也可传入 `--cxx=/path/to/c++` 与 `--output=/new/directory`。该入口编译 `common/tests/simulation-heap-cache-test.cpp`，逐项比较精确用量与独立 uncached oracle，检查重复查询无额外扫描、多 mspace 切换、同地址重建、失败及零字节分配、对齐、碎片化、释放和普通系统分配。`EAGLER_WRITE_JOURNAL_TEST_HOOKS=1` 仅用于这些测试的 oracle 和扫描计数；生产构建不包含这些入口。真实 undo 的验证仍由上述 Wasm 场景承担。
+补充的 native 分配器检查可运行 `node tools/rollback/heap-cache-test.mjs`，需要支持 C++20 的 `c++` 或 `CXX` 指定的编译器，也可传入 `--cxx=/path/to/c++` 与 `--output=/new/directory`。该入口编译 `common/tests/simulation-heap-cache-test.cpp`，逐项比较精确用量与独立 uncached oracle，检查成功分配/释放后的查询无额外扫描、多 mspace 切换、同地址重建、失败及零字节分配、对齐、碎片化、释放和普通系统分配，并运行 20,000 步确定性分配轨迹。每次比较后再做 128 次缓存命中检查。`EAGLER_WRITE_JOURNAL_TEST_HOOKS=1` 仅用于这些测试的 oracle 和扫描计数；生产构建不包含这些入口。真实 undo 的验证仍由上述 Wasm 场景承担。
 
 构建限定为单个、非共享 wasm32 线性内存。原子操作、SIMD lane 内存操作、memory64、多内存和未知指令形态会明确中止插桩。宿主 JavaScript 直接写入线性内存需要在对应桥接处接入 touch，或使用系统区域承载这些写入；Wasm 指令插桩覆盖的是模块内部执行的写入。
 

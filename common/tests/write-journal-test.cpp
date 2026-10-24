@@ -103,7 +103,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_abandon(int hostScope) 
 
 extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
     if (scenario<0) return initialize()?1:0;
-    assert(initialize(scenario==5||scenario==8));
+    assert(initialize(scenario==5||scenario==8||scenario>=12));
     if (scenario==0) {
         auto* original=root.state.object.get();
         const auto originalText=root.state.object->text;
@@ -343,7 +343,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         const auto initial=checked_heap_usage(space,true);
         void* anchor=nullptr;
         { J::GameScope game;anchor=J::Allocate(256); }
-        const auto baseline=checked_heap_usage(space,true);assert(baseline>initial);
+        const auto baseline=checked_heap_usage(space,false);assert(baseline>initial);
         { J::GameScope game;
           { J::SystemScope system;
             auto* host=J::Allocate(8192);auto* aligned=J::AllocateAligned(256,4096);
@@ -354,7 +354,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(J::BeginFrame(10));
         void* first=nullptr;
         { J::GameScope game;first=J::Allocate(5000); }
-        const auto firstUsed=checked_heap_usage(space,true);assert(firstUsed>baseline);
+        const auto firstUsed=checked_heap_usage(space,false);assert(firstUsed>baseline);
         std::memset(first,0x57,5000);
         assert(checked_heap_usage(space,false)==firstUsed);
         assert(J::EndFrame()&&J::RestoreTo(10));
@@ -363,18 +363,18 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(J::BeginFrame(20));
         { J::GameScope game;assert(J::Allocate(8192)); }
         assert(J::EndFrame());
-        const auto outerUsed=checked_heap_usage(space,true);assert(outerUsed>baseline);
+        const auto outerUsed=checked_heap_usage(space,false);assert(outerUsed>baseline);
         assert(J::BeginFrame(21));
         { J::GameScope game;
           J::Release(anchor);assert(J::Allocate(16384));
           auto* aligned=J::AllocateAligned(4096,6000);
           assert(reinterpret_cast<std::uintptr_t>(aligned)%4096==0); }
-        const auto nestedUsed=checked_heap_usage(space,true);assert(nestedUsed>outerUsed);
+        const auto nestedUsed=checked_heap_usage(space,false);assert(nestedUsed>outerUsed);
         assert(J::EndFrame()&&J::RestoreTo(21));
         assert(checked_heap_usage(space,true)==outerUsed);
         assert(J::BeginFrame(21));
         { J::GameScope game;assert(J::Allocate(24000)); }
-        assert(checked_heap_usage(space,true)>outerUsed);
+        assert(checked_heap_usage(space,false)>outerUsed);
         assert(J::EndFrame()&&J::RestoreTo(20));
         assert(checked_heap_usage(space,true)==baseline);
         J::Clear();assert(checked_heap_usage(space,true)==baseline);
@@ -383,17 +383,17 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         void* retained=nullptr;
         { J::GameScope game;retained=J::Allocate(7000); }
         assert(J::EndFrame());
-        const auto retainedUsed=checked_heap_usage(space,true);assert(retainedUsed>baseline);
+        const auto retainedUsed=checked_heap_usage(space,false);assert(retainedUsed>baseline);
         // Clear discards history; it does not rewind the live allocation.
         J::Clear();assert(checked_heap_usage(space,true)==retainedUsed);
-        J::Release(retained);assert(checked_heap_usage(space,true)==baseline);
+        J::Release(retained);assert(checked_heap_usage(space,false)==baseline);
         assert(J::BeginFrame(31)&&J::EndFrame());
         J::DiscardBefore(32);assert(checked_heap_usage(space,false)==baseline);
         assert(J::BeginFrame(32));std::memset(anchor,0x65,256);
         assert(checked_heap_usage(space,false)==baseline);
         assert(J::EndFrame()&&J::RestoreTo(32));
         assert(checked_heap_usage(space,true)==baseline);
-        J::Release(anchor);assert(checked_heap_usage(space,true)==initial);
+        J::Release(anchor);assert(checked_heap_usage(space,false)==initial);
         J::Clear();assert(checked_heap_usage(space,true)==initial);
     } else if (scenario==10||scenario==11) {
         auto* space=eagler_sim_test_last_created_space();assert(space);
@@ -401,7 +401,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(J::BeginFrame(100));
         void* allocation=nullptr;
         { J::GameScope game;allocation=J::Allocate(16384); }
-        const auto current=checked_heap_usage(space,true);assert(current>initial);
+        const auto current=checked_heap_usage(space,false);assert(current>initial);
         if(scenario==10) assert(J::EndFrame());
         // Missing target and open-boundary rejection both retain the live
         // allocation. Neither may retain an old cache across the failed call.
@@ -410,7 +410,46 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(!J::RestoreTo(100));
         assert(checked_heap_usage(space,true)==current);
         J::Clear();assert(checked_heap_usage(space,true)==current);
-        J::Release(allocation);assert(checked_heap_usage(space,true)==initial);
+        J::Release(allocation);assert(checked_heap_usage(space,false)==initial);
+    } else if (scenario>=12&&scenario<=14) {
+        // Fill the real bounded log without modifying allocator metadata. The
+        // next frame's first allocator write must fail inside its wrapper,
+        // while the usage cache was valid on entry to malloc/memalign/free.
+        auto* space=eagler_sim_test_last_created_space();assert(space);
+        const auto* config=reinterpret_cast<const volatile std::uint32_t*>(
+            std::uintptr_t(eagler_rb_config_address()));
+        void* allocation=nullptr;
+        if (scenario==14) { J::GameScope game;allocation=J::Allocate(8192); }
+        const auto before=checked_heap_usage(space,true);
+        assert(config[2]==8*1024*1024&&config[3]==0&&config[4]==0);
+        for (std::uint32_t frame=0;frame<4;++frame) {
+            assert(J::BeginFrame(frame));
+            J::Touch(reinterpret_cast<void*>(std::uintptr_t(config[1])),config[2]);
+            assert(!J::Failed()&&J::EndFrame());
+        }
+        const auto full=J::Stats();
+        assert(full.used_bytes==full.capacity_bytes&&full.frames==4);
+        assert(checked_heap_usage(space,false)==before);
+        assert(J::BeginFrame(4)&&J::Ready()&&J::FrameOpen()&&config[0]==1);
+        const auto scans=eagler_sim_test_used_scans();
+        if (scenario==14) J::Release(allocation);
+        else {
+            J::GameScope game;
+            allocation=scenario==12?J::Allocate(8192):J::AllocateAligned(4096,6000);
+            assert(allocation&&J::OwnedByGameHeap(allocation));
+        }
+        // Do not call Stats before the cold-query assertion: that would hide
+        // accidental cache reactivation after Fail inside allocator writes.
+        assert(J::Failed()&&!J::Ready()&&J::FrameOpen()&&config[0]==0);
+        assert(std::strcmp(J::Error(),"Write journal capacity exhausted")==0);
+        assert(eagler_sim_test_used_scans()==scans);
+        const auto after=checked_heap_usage(space,true);
+        assert(scenario==14?after<before:after>before);
+        assert(!J::EndFrame()&&!J::FrameOpen()&&J::Failed());
+        assert(checked_heap_usage(space,false)==after);
+        J::Clear();assert(checked_heap_usage(space,true)==after);
+        assert(J::Failed()&&!J::Ready()&&config[0]==0);
+        assert(std::strcmp(J::Error(),"Write journal capacity exhausted")==0);
     } else return 0;
     std::printf("write-journal scenario %d passed\n",scenario);
     return 1;
