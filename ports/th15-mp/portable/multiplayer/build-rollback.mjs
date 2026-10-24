@@ -6,6 +6,12 @@ import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'../..'),repository=resolve(root,'../..');
+// Generic/inline fixtures keep following their release metadata. Scalar hooks
+// require the same explicit opt-in as the production build.
+const scalarHooks=process.argv.includes('--journal-scalar-hooks');
+const explicitInline=process.argv.includes('--journal-inline-dirty-blocks');
+const explicitGeneric=process.argv.includes('--journal-native-filter');
+assert.ok(Number(scalarHooks)+Number(explicitInline)+Number(explicitGeneric)<=1,'Select only one journal guard');
 const out=resolve(root,'web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer');
 const dir=resolve(out,'rollback');mkdirSync(dir,{recursive:true});
 const sdk=resolve(process.env.TH15_EMSDK||resolve(repository,'toolchains/emsdk'));
@@ -16,6 +22,14 @@ const build=JSON.parse(readFileSync(resolve(out,'build.json'),'utf8'));
 assert.equal(build.kind,'th15-sdl3-application-release');assert.equal(build.features.multiplayer,true);
 assert.equal(build.netplay?.instrumentation,0x52424a31);
 assert.equal(typeof build.netplay.inlineDirtyBlocks,'boolean');assert.equal(build.netplay.dirtyGuardAbi,0x52424431);
+const inlineDirtyBlocks=build.netplay.inlineDirtyBlocks;
+if(build.netplay.scalarHooks!==undefined||build.netplay.scalarHookAbi!==undefined){
+ assert.equal(typeof build.netplay.scalarHooks,'boolean');assert.equal(build.netplay.scalarHookAbi,1);
+}
+assert.equal(build.netplay.scalarHooks??false,scalarHooks,'Scalar fixture opt-in must match production metadata (--journal-scalar-hooks)');
+assert.ok(!(inlineDirtyBlocks&&scalarHooks),'Scalar hooks and inline dirty guards are separate profiles');
+if(explicitInline)assert.equal(inlineDirtyBlocks,true,'Inline fixture opt-in must match production metadata');
+if(explicitGeneric)assert.equal(inlineDirtyBlocks,false,'Generic fixture opt-in must match production metadata');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 for(const [name,digest] of Object.entries({...build.sources,...build.headers}))assert.equal(sha(readFileSync(resolve(root,name))),digest,'Release source changed: '+name);
 const objects=Object.keys(build.sources).filter(p=>p!=='web/cpp/sdl/BrowserRuntime.cpp').map(p=>resolve(out,'objects',p.replaceAll('/','_')+'.o'));
@@ -39,13 +53,22 @@ const result=spawnSync(process.env.TH_PYTHON||process.env.PYTHON||'python',[comp
  {cwd:root,env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'1'},encoding:'utf8',windowsHide:true});
 if(result.error||result.status)throw result.error||Error(result.stdout+result.stderr);
 const instrument=resolve(repository,'tools/rollback/instrument.mjs');
-const guard=['--native-filter',...(build.netplay.inlineDirtyBlocks?['--inline-dirty-blocks']:[])];
+const guard=['--native-filter',...(inlineDirtyBlocks?['--inline-dirty-blocks']:[]),...(scalarHooks?['--scalar-hooks']:[])];
 for(const args of [[instrument,...guard,resolve(dir,'th15.wasm'),resolve(dir,'th15.journal.wasm')],[instrument,'--verify',...guard,resolve(dir,'th15.journal.wasm')]]){
- const checked=spawnSync(process.execPath,args,{stdio:'inherit',windowsHide:true});if(checked.error||checked.status)throw checked.error||Error('Fixture instrumentation failed');
+ const checked=spawnSync(process.execPath,args,{stdio:['ignore','pipe','inherit'],encoding:'utf8',windowsHide:true});if(checked.error||checked.status)throw checked.error||Error('Fixture instrumentation failed');
+ process.stdout.write(checked.stdout);
+ if(args.includes('--verify')){
+  const verified=JSON.parse(checked.stdout);
+  assert.equal(verified.scalarHooks??false,scalarHooks,'Verified scalar profile differs from production metadata');
+  assert.equal(verified.inlineDirtyBlocks??false,inlineDirtyBlocks,'Verified inline profile differs from production metadata');
+  if(scalarHooks)assert.equal(verified.scalarHookAbi,1);
+ }
 }
 renameSync(resolve(dir,'th15.journal.wasm'),resolve(dir,'th15.wasm'));
 const report={schema:'eagler-th15-rollback-fixture/1',builtAt:new Date().toISOString(),productionWasm:build.sha256,
  productionBuiltAt:build.builtAt,productionObjects:objects.length,entrySourceSha256:sha(Buffer.from(source)),
  wasmSha256:sha(readFileSync(resolve(dir,'th15.wasm'))),loaderSha256:sha(readFileSync(resolve(dir,'th15.mjs'))),
- instrumentation:0x52424a31,oracle:'independent exact-input WASM, semantic scalar trace and native framebuffer bytes'};
+ instrumentation:0x52424a31,nativeFilter:true,inlineDirtyBlocks,dirtyGuardAbi:build.netplay.dirtyGuardAbi,scalarHooks,
+ ...(build.netplay.scalarHookAbi!==undefined?{scalarHookAbi:build.netplay.scalarHookAbi}:{}),
+ oracle:'independent exact-input WASM, semantic scalar trace and native framebuffer bytes'};
 writeFileSync(resolve(dir,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({status:'PASS',fixture:dir,...report}));

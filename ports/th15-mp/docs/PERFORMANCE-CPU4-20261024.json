@@ -1,0 +1,1635 @@
+{
+  "schema": "eagler-touhou/th15-cpu4-performance/1",
+  "recordedAt": "2026-10-24T16:53:40.926769+00:00",
+  "status": "CPU4 logic-rate target and100ms tail gate unmet; five accepted historical pairs; current scalar hooks remain opt-in and lack whole-game performance acceptance.",
+  "currentSource": {
+    "revision": "792f029084a405d4ec8ec3c927c64ecf534f6e85",
+    "branch": "experiment/th15-rollback-20261023",
+    "defaultGuard": "generic-native",
+    "scalarHooksDefault": false,
+    "scalarOptInFlag": "--journal-scalar-hooks",
+    "currentScalarProductionOracleCompleted": false,
+    "currentScalarWholeGamePerformanceMeasured": false,
+    "microbenchmarkStatus": "preparation-only; no result claimed"
+  },
+  "measurementSource": {
+    "harnessRevision": "87d10f5a5f1d60f01128bbe4fa54d8ffee2005e6",
+    "baselineRevision": "496b0c30dae2fbb0e94fd1338efc2240e1c7008f",
+    "baselineWasmSha256": "9b0793493aff66b84ee9e70402ae944b58ce0ce6fbcd5e36f9dafcb2ce806eb8",
+    "candidateRevision": "87d10f5a5f1d60f01128bbe4fa54d8ffee2005e6",
+    "candidateWasmSha256": "877e50395e0307a5d2b523d251e4a3e2154de44cf91d25e47eaa2a4bfa7a8e66",
+    "baselineWasmBytes": 6023458,
+    "candidateWasmBytes": 6023838,
+    "historicalCacheWasmSha256": "9d71c1762be85c697b394bd5d2032b199142ff1deaa65e5ac8b115de74175fc4",
+    "rebuiltBaselineDiffersFromHistoricalWasm": true,
+    "differenceReasonEstablished": false,
+    "compiledSourceDelta": {
+      "sources": [
+        {
+          "path": "../../common/src/netplay/SimulationHeap.cpp",
+          "baselineSha256": "54926ded1887b7ebf89cf39427fe6f020224e78b00b2d0f871383086abf3a84c",
+          "candidateSha256": "e2f710b030f384f5b8f73bb17b5fe1c5ff1bd9d12c527e06557267e0be8d83a5"
+        }
+      ],
+      "headers": [
+        {
+          "path": "../../common/include/eagler/netplay/WriteJournal.hpp",
+          "baselineSha256": "a75d9e2dfe4d1f4b0a57e39c9ca443d2abbddfc86340c2d397cea76ba1a20e14",
+          "candidateSha256": "b6725f8ac317a55b84f59d6433cb3ff73e2029460663dcd5839a9bb654d3ecf2"
+        }
+      ]
+    }
+  },
+  "evidence": {
+    "performanceAndDiagnosticClass": "tool-output-transcription; original raw/receipts/profiles and full audits unavailable",
+    "originalPerformanceRawRestored": false,
+    "originalReceiptsReconstructed": false,
+    "performanceRecomputedAfterLoss": false,
+    "checkpoint02": {
+      "libraryFileId": "libfile_71d32a5d02d88191b921310af57891ec",
+      "sha256": "9dd54a5e5cfbf04c0eac10a0de1ede36c685f2e2347d1034b39aa9e855536a4b",
+      "bytes": 12346124,
+      "members": 703,
+      "indexMembers": 702,
+      "stage": "pre-performance",
+      "restoredOriginalOutFiles": 661,
+      "allCrcPassed": true,
+      "allIndexHashesPassed": true,
+      "restoredMatrixWindows": 0,
+      "restoredSaveOnlyRuns": 0,
+      "restoredDiagnosticRuns": 0,
+      "restorationReceipt": "checkpoint02-actual-archive-restoration-20261024.json",
+      "restorationReceiptSha256": "85b34ef543d3ca1b87e27097a593aefffa449c26b6c55d3ed4cb09680f3b209f"
+    },
+    "matrixTranscription": {
+      "artifact": "tool-log-transcription-unarchived-matrix-diagnostics-20261024.json",
+      "bytes": 28113,
+      "sha256": "2ad11fdf9a2612fc8e35497a12d076ae0e4a6a08d34fbe6f5463d67448333384",
+      "evidenceClass": "tool-output-transcription"
+    },
+    "cpuTranscription": {
+      "artifact": "cpu-observations-transcribed-20261024.json",
+      "bytes": 5874,
+      "sha256": "b7647776378276b93fdc3c79bbf65eb2893fa26dddee3da34ff42413a90d8540",
+      "evidenceClass": "preliminary-tool-output-transcription"
+    },
+    "sourceScope": {
+      "artifact": "paired-production-source-scope-01.json",
+      "bytes": 2217,
+      "sha256": "b6b6cce4241d26fcdbc04e1e3801b38f061873bd22cd6832ca447e3c976bd415",
+      "evidenceClass": "archived-and-restored-original"
+    },
+    "archiveRestoration": {
+      "artifact": "checkpoint02-actual-archive-restoration-20261024.json",
+      "bytes": 352053,
+      "sha256": "85b34ef543d3ca1b87e27097a593aefffa449c26b6c55d3ed4cb09680f3b209f",
+      "evidenceClass": "fresh-archive-verification"
+    },
+    "previouslyReportedDigestsOnly": {
+      "meaning": "These digests were printed by real completed tool calls before reset; corresponding files are unavailable and these are NOT hashes of this transcription.",
+      "matrixFinal": "86d175e1380db6098fb85c434003b31a36bcc20f54dd811b4320b8eb8f912932",
+      "matrixAudit01Fail": "a5bc18fdf1c89ed3add8fb9693e0c3f5099c8a5664d1815d68f9a4712fdad25d",
+      "matrixAudit02": "c23d4f5d0ef17b6e7e6d8c95c0463d1d55ef8c2c6cd954091a767868d6cb5529",
+      "matrixSummaryJson": "c1ab95c116c0c9c2f0650f34f064440b78531896cce4c9ab84297070d776852c",
+      "matrixSummaryMd": "5e9e528b5223f5bbc565c98488aae5cdc139f1741cd7c76827f341b91ec4ea54",
+      "raceAnalysis": "8a0b846253de0318cb21cc87203dc111260ba47271e75502316bc85d0384cab7",
+      "thresholdOfflineCases01": "105384aa35ae7363be3be0650f364b628efac98948c404a8a4c184c18cf01ebc",
+      "diagnosticAudit01Fail": "ad5acedb72184c0ed7f946eb4c4ca9eab967afa458a00d65d43ece889ec4784a",
+      "diagnosticAudit02": "27387fd2f8db9897d4fa74ed3e3040022a1615a27b2e95bb296efba89f768c37"
+    },
+    "checkpoint03": {
+      "libraryFileId": "libfile_920e2926ca5c819182ad9cd4fcb3c462",
+      "fileId": "file_0000000010a481fda96977eb5e3e24ca",
+      "fileName": "th15-scalar-validation-checkpoint-03-20261024.zip",
+      "sha256": "2faf03b0162d6c0e4fa739a41fca46b5baf21488b39beac532b21917f27269ac",
+      "bytes": 251026,
+      "libraryCreatedAt": "2026-10-24T16:51:32.601206Z",
+      "contents": [
+        "Actual 33 instrument tests: logs and final",
+        "Actual 69 Wasm instances: logs, final, result",
+        "Explicitly labelled matrix and diagnostic transcriptions"
+      ],
+      "originalMatrixRawIncluded": false,
+      "originalDiagnosticRawIncluded": false,
+      "uploadObservation": "checkpoint03-upload-finalization-observation-01.json",
+      "metadataConfirmedByParent": true
+    }
+  },
+  "hostEnvironment": {
+    "at": "2026-10-24T14:39:14.872098+00:00",
+    "machine": "x86_64",
+    "kernel": "6.18.55",
+    "cpuModel": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "logicalCpusVisible": 9,
+    "cpuQuota": "800000 100000",
+    "memoryLimit": "8589934592",
+    "scope": "Host/container identity, not equivalent to user i7-14650HX. CPU4 is CDP renderer slowdown; SwiftShader GPU work is not CDP CPU-throttled."
+  },
+  "matrix": {
+    "source": "87d10f5a5f1d60f01128bbe4fa54d8ffee2005e6",
+    "baselineSource": "496b0c30dae2fbb0e94fd1338efc2240e1c7008f",
+    "baselineRebuiltWasm": "9b0793493aff66b84ee9e70402ae944b58ce0ce6fbcd5e36f9dafcb2ce806eb8",
+    "candidateWasm": "877e50395e0307a5d2b523d251e4a3e2154de44cf91d25e47eaa2a4bfa7a8e66",
+    "conditions": {
+      "cpuThrottle": 4,
+      "renderer": "SwiftShader",
+      "headless": true,
+      "separateChromePerSeat": true,
+      "durationSeconds": 15,
+      "nominalAddedRttMs": 100,
+      "samplesPerConditionPerBuild": 1,
+      "notUserIntelGpuEnvironment": true
+    },
+    "reportedAuditChecks": 402339,
+    "reportedAuditDiscrepancies": 0,
+    "reportedAuditConsistency": "PASS",
+    "originalExecutionFailures": 1,
+    "originalCompleteCandidateRuns": 6,
+    "originalCompleteBaselineRuns": 5,
+    "reportedValidPairs": 5,
+    "actualRunCount": 12,
+    "actualMeasuredSeatWindows": 30,
+    "completeInputSaveSeatWindows": 28,
+    "acceptedPairedSeatWindows": 26,
+    "allSeatsAtLeast60LogicHzRuns": 0,
+    "numeric100msPassingRuns": 0,
+    "rows": [
+      {
+        "group": "baseline",
+        "mode": 1,
+        "players": 2,
+        "originalReportedExecutionStatus": "observation-failed",
+        "originalReportedObservationPassed": false,
+        "originalReportedSaveValidationPassed": false,
+        "originalReportedThresholdField": {
+          "present": false
+        },
+        "logicHzBySeat": [
+          20.266666666666666,
+          20.133333333333333
+        ],
+        "callbackP95MsBySeat": [
+          31.8,
+          37.3
+        ],
+        "observerP95MsBySeat": [
+          1.2,
+          1.3
+        ],
+        "observerSumMsBySeat": [
+          110.8,
+          114.8
+        ],
+        "presentationHoldMaxMsBySeat": [
+          657.5,
+          343.7
+        ],
+        "frontierHoldMaxMsBySeat": [
+          648.8,
+          382
+        ],
+        "callbackMaxMsBySeat": [
+          94.1,
+          204.8
+        ],
+        "historyTicksBySeat": [
+          0,
+          0
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "candidate",
+        "mode": 1,
+        "players": 2,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          12,
+          12.266666666666667
+        ],
+        "callbackP95MsBySeat": [
+          22.3,
+          107.8
+        ],
+        "observerP95MsBySeat": [
+          1,
+          0.9
+        ],
+        "observerSumMsBySeat": [
+          137.8,
+          39.2
+        ],
+        "presentationHoldMaxMsBySeat": [
+          775.6,
+          657.3
+        ],
+        "frontierHoldMaxMsBySeat": [
+          775.7,
+          658.3
+        ],
+        "callbackMaxMsBySeat": [
+          58,
+          218
+        ],
+        "historyTicksBySeat": [
+          0,
+          0
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "baseline",
+        "mode": 0,
+        "players": 2,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          16.2,
+          16.533333333333335
+        ],
+        "callbackP95MsBySeat": [
+          45.2,
+          41.9
+        ],
+        "observerP95MsBySeat": [
+          4.4,
+          4.2
+        ],
+        "observerSumMsBySeat": [
+          252.1,
+          142
+        ],
+        "presentationHoldMaxMsBySeat": [
+          431.2,
+          617.3
+        ],
+        "frontierHoldMaxMsBySeat": [
+          538.7,
+          624.1
+        ],
+        "callbackMaxMsBySeat": [
+          65,
+          110.2
+        ],
+        "historyTicksBySeat": [
+          98,
+          97
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "candidate",
+        "mode": 0,
+        "players": 2,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          15.533333333333333,
+          15.266666666666667
+        ],
+        "callbackP95MsBySeat": [
+          41.6,
+          43.1
+        ],
+        "observerP95MsBySeat": [
+          4.7,
+          4
+        ],
+        "observerSumMsBySeat": [
+          210.6,
+          172.8
+        ],
+        "presentationHoldMaxMsBySeat": [
+          431.7,
+          325
+        ],
+        "frontierHoldMaxMsBySeat": [
+          454.6,
+          416.7
+        ],
+        "callbackMaxMsBySeat": [
+          174.3,
+          50
+        ],
+        "historyTicksBySeat": [
+          137,
+          125
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "baseline",
+        "mode": 2,
+        "players": 2,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          18.866666666666667,
+          18.866666666666667
+        ],
+        "callbackP95MsBySeat": [
+          49,
+          47.8
+        ],
+        "observerP95MsBySeat": [
+          2.6,
+          3.4
+        ],
+        "observerSumMsBySeat": [
+          132,
+          127.8
+        ],
+        "presentationHoldMaxMsBySeat": [
+          351.2,
+          434
+        ],
+        "frontierHoldMaxMsBySeat": [
+          384.9,
+          436.8
+        ],
+        "callbackMaxMsBySeat": [
+          82.8,
+          81.2
+        ],
+        "historyTicksBySeat": [
+          51,
+          47
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "candidate",
+        "mode": 2,
+        "players": 2,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          19.866666666666667,
+          19.866666666666667
+        ],
+        "callbackP95MsBySeat": [
+          41.4,
+          45.6
+        ],
+        "observerP95MsBySeat": [
+          3.1,
+          3.6
+        ],
+        "observerSumMsBySeat": [
+          119.6,
+          139.9
+        ],
+        "presentationHoldMaxMsBySeat": [
+          407.3,
+          273.1
+        ],
+        "frontierHoldMaxMsBySeat": [
+          430.7,
+          366
+        ],
+        "callbackMaxMsBySeat": [
+          52.3,
+          160.4
+        ],
+        "historyTicksBySeat": [
+          85,
+          69
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "baseline",
+        "mode": 1,
+        "players": 3,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          15,
+          15.066666666666666,
+          15.066666666666666
+        ],
+        "callbackP95MsBySeat": [
+          47.4,
+          44.1,
+          34.8
+        ],
+        "observerP95MsBySeat": [
+          2.5,
+          1.8,
+          1.2
+        ],
+        "observerSumMsBySeat": [
+          145.1,
+          115.8,
+          82
+        ],
+        "presentationHoldMaxMsBySeat": [
+          305.4,
+          275,
+          294.9
+        ],
+        "frontierHoldMaxMsBySeat": [
+          310.5,
+          280.6,
+          295.6
+        ],
+        "callbackMaxMsBySeat": [
+          88.4,
+          75.7,
+          57.9
+        ],
+        "historyTicksBySeat": [
+          0,
+          0,
+          0
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "candidate",
+        "mode": 1,
+        "players": 3,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          15.4,
+          15.6,
+          15.6
+        ],
+        "callbackP95MsBySeat": [
+          38,
+          34.4,
+          36.9
+        ],
+        "observerP95MsBySeat": [
+          1,
+          1.2,
+          1.4
+        ],
+        "observerSumMsBySeat": [
+          59.4,
+          68.6,
+          112.2
+        ],
+        "presentationHoldMaxMsBySeat": [
+          310.5,
+          220.7,
+          296.2
+        ],
+        "frontierHoldMaxMsBySeat": [
+          313.3,
+          220.7,
+          295.7
+        ],
+        "callbackMaxMsBySeat": [
+          71.6,
+          65.3,
+          54.1
+        ],
+        "historyTicksBySeat": [
+          0,
+          0,
+          0
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "baseline",
+        "mode": 0,
+        "players": 3,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          7.4,
+          7.933333333333334,
+          8.066666666666666
+        ],
+        "callbackP95MsBySeat": [
+          52.9,
+          62.4,
+          61.2
+        ],
+        "observerP95MsBySeat": [
+          7.3,
+          6,
+          4.9
+        ],
+        "observerSumMsBySeat": [
+          417,
+          227.5,
+          230.4
+        ],
+        "presentationHoldMaxMsBySeat": [
+          748.9,
+          873.1,
+          828.8
+        ],
+        "frontierHoldMaxMsBySeat": [
+          775.7,
+          874.2,
+          1170
+        ],
+        "callbackMaxMsBySeat": [
+          75.2,
+          83.8,
+          193.3
+        ],
+        "historyTicksBySeat": [
+          123,
+          91,
+          98
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "candidate",
+        "mode": 0,
+        "players": 3,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          5.8,
+          5.933333333333334,
+          5.4
+        ],
+        "callbackP95MsBySeat": [
+          160,
+          69.5,
+          70.6
+        ],
+        "observerP95MsBySeat": [
+          9.9,
+          9.3,
+          5.3
+        ],
+        "observerSumMsBySeat": [
+          246.8,
+          428.1,
+          150.2
+        ],
+        "presentationHoldMaxMsBySeat": [
+          1148.3,
+          1231.2,
+          793.6
+        ],
+        "frontierHoldMaxMsBySeat": [
+          1522.4,
+          1242,
+          861.3
+        ],
+        "callbackMaxMsBySeat": [
+          1207.3,
+          477.7,
+          465.9
+        ],
+        "historyTicksBySeat": [
+          60,
+          75,
+          94
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "baseline",
+        "mode": 2,
+        "players": 3,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          11.466666666666667,
+          11.6,
+          11.466666666666667
+        ],
+        "callbackP95MsBySeat": [
+          70.3,
+          59.8,
+          62.7
+        ],
+        "observerP95MsBySeat": [
+          3,
+          3.1,
+          2.9
+        ],
+        "observerSumMsBySeat": [
+          114.3,
+          125.8,
+          74.6
+        ],
+        "presentationHoldMaxMsBySeat": [
+          416.7,
+          484.1,
+          342.5
+        ],
+        "frontierHoldMaxMsBySeat": [
+          420,
+          481.3,
+          396.7
+        ],
+        "callbackMaxMsBySeat": [
+          252.4,
+          92.1,
+          94.9
+        ],
+        "historyTicksBySeat": [
+          37,
+          68,
+          46
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      },
+      {
+        "group": "candidate",
+        "mode": 2,
+        "players": 3,
+        "originalReportedExecutionStatus": "measured",
+        "originalReportedObservationPassed": true,
+        "originalReportedSaveValidationPassed": true,
+        "originalReportedThresholdField": {
+          "present": true,
+          "value": false
+        },
+        "logicHzBySeat": [
+          11.8,
+          11.6,
+          11.266666666666667
+        ],
+        "callbackP95MsBySeat": [
+          43.8,
+          58.3,
+          55.8
+        ],
+        "observerP95MsBySeat": [
+          2.5,
+          2.4,
+          3.2
+        ],
+        "observerSumMsBySeat": [
+          58.8,
+          75.1,
+          87.3
+        ],
+        "presentationHoldMaxMsBySeat": [
+          438.2,
+          324.2,
+          335.8
+        ],
+        "frontierHoldMaxMsBySeat": [
+          469.4,
+          509.6,
+          523.7
+        ],
+        "callbackMaxMsBySeat": [
+          68.3,
+          93.5,
+          114.6
+        ],
+        "historyTicksBySeat": [
+          39,
+          51,
+          55
+        ],
+        "origin": "Transcribed from actual pre-reset tool output; original per-frame data unavailable."
+      }
+    ],
+    "pairs": [
+      {
+        "mode": 1,
+        "players": 2,
+        "eligible": false,
+        "reason": "baseline fixed neutral Replay proof failed before fire/persistence ledger",
+        "logicPercentBySeat": null
+      },
+      {
+        "mode": 0,
+        "players": 2,
+        "eligible": true,
+        "logicPercentBySeat": [
+          -4.12,
+          -7.66
+        ]
+      },
+      {
+        "mode": 2,
+        "players": 2,
+        "eligible": true,
+        "logicPercentBySeat": [
+          5.3,
+          5.3
+        ]
+      },
+      {
+        "mode": 1,
+        "players": 3,
+        "eligible": true,
+        "logicPercentBySeat": [
+          2.67,
+          3.54,
+          3.54
+        ]
+      },
+      {
+        "mode": 0,
+        "players": 3,
+        "eligible": true,
+        "logicPercentBySeat": [
+          -21.62,
+          -25.21,
+          -33.06
+        ]
+      },
+      {
+        "mode": 2,
+        "players": 3,
+        "eligible": true,
+        "logicPercentBySeat": [
+          2.91,
+          0,
+          -1.74
+        ]
+      }
+    ],
+    "selectedLongestPresentationHolds": [
+      {
+        "group": "baseline",
+        "mode": 1,
+        "players": 2,
+        "seat": 0,
+        "holdMs": 657.5,
+        "callbackMs": 52,
+        "observerMs": 2.8,
+        "outsideObservedCallbacksMs": 602.7
+      },
+      {
+        "group": "candidate",
+        "mode": 1,
+        "players": 2,
+        "seat": 0,
+        "holdMs": 775.6,
+        "callbackMs": 20.2,
+        "observerMs": 6.3,
+        "outsideObservedCallbacksMs": 749.1
+      },
+      {
+        "group": "baseline",
+        "mode": 0,
+        "players": 2,
+        "seat": 1,
+        "holdMs": 617.3,
+        "callbackMs": 73.8,
+        "observerMs": 5.7,
+        "outsideObservedCallbacksMs": 537.8
+      },
+      {
+        "group": "candidate",
+        "mode": 0,
+        "players": 2,
+        "seat": 0,
+        "holdMs": 431.7,
+        "callbackMs": 60.9,
+        "observerMs": 0.6,
+        "outsideObservedCallbacksMs": 370.2
+      },
+      {
+        "group": "baseline",
+        "mode": 2,
+        "players": 2,
+        "seat": 1,
+        "holdMs": 434,
+        "callbackMs": 59.7,
+        "observerMs": 0.1,
+        "outsideObservedCallbacksMs": 374.2
+      },
+      {
+        "group": "candidate",
+        "mode": 2,
+        "players": 2,
+        "seat": 0,
+        "holdMs": 407.3,
+        "callbackMs": 268.8,
+        "observerMs": 3.3,
+        "outsideObservedCallbacksMs": 135.2
+      },
+      {
+        "group": "baseline",
+        "mode": 1,
+        "players": 3,
+        "seat": 0,
+        "holdMs": 305.4,
+        "callbackMs": 22.5,
+        "observerMs": 0.3,
+        "outsideObservedCallbacksMs": 282.6
+      },
+      {
+        "group": "candidate",
+        "mode": 1,
+        "players": 3,
+        "seat": 0,
+        "holdMs": 310.5,
+        "callbackMs": 26.9,
+        "observerMs": 0,
+        "outsideObservedCallbacksMs": 283.6
+      },
+      {
+        "group": "baseline",
+        "mode": 0,
+        "players": 3,
+        "seat": 1,
+        "holdMs": 873.1,
+        "callbackMs": 68.6,
+        "observerMs": 5.5,
+        "outsideObservedCallbacksMs": 799
+      },
+      {
+        "group": "candidate",
+        "mode": 0,
+        "players": 3,
+        "seat": 1,
+        "holdMs": 1231.2,
+        "callbackMs": 466.9,
+        "observerMs": 2.5,
+        "outsideObservedCallbacksMs": 761.8
+      },
+      {
+        "group": "baseline",
+        "mode": 2,
+        "players": 3,
+        "seat": 1,
+        "holdMs": 484.1,
+        "callbackMs": 128,
+        "observerMs": 11.9,
+        "outsideObservedCallbacksMs": 344.2
+      },
+      {
+        "group": "candidate",
+        "mode": 2,
+        "players": 3,
+        "seat": 0,
+        "holdMs": 438.2,
+        "callbackMs": 123,
+        "observerMs": 20,
+        "outsideObservedCallbacksMs": 295.2
+      }
+    ],
+    "inputAndPersistence": {
+      "managedSubmitted": 2061,
+      "managedAcknowledged": 2061,
+      "managedErrors": 0,
+      "stableFirstAttempts": 28,
+      "replayObservationsIncludingRepeatedSnapshots": 196,
+      "replayFrameSeatSamplesIncludingRepeatedSnapshots": 269773,
+      "distinctOnDiskReplayPaths": 84
+    },
+    "reportedCleanup": {
+      "pidNamespace": "pid:[4026532200]",
+      "recordedBrowserPidsAbsent": 117,
+      "activeMatchingProcesses": 0,
+      "performedBeforeReset": true,
+      "notAClaimAboutCurrentProcesses": true
+    },
+    "firstFailedCase": {
+      "group": "baseline",
+      "mode": 1,
+      "players": 2,
+      "originalStatus": "observation-failed",
+      "originalThresholdKeyPresent": false,
+      "originalObservationPassed": false,
+      "originalSavePassed": false,
+      "error": "Confirmed Replay does not cover the required proof interval",
+      "proofInterval": {
+        "first": 537,
+        "endExclusive": 539
+      },
+      "replayFramesBySeat": [
+        537,
+        539
+      ],
+      "commonRecordedInputPrefix": {
+        "frames": 537,
+        "bytes": 12888,
+        "equal": true,
+        "reportedSha256": "bac578a65a30de91240f31131873f347901e39f504efbb33246e07ad86c90509",
+        "bytesRestored": false
+      },
+      "seat0TimesInIframeMs": {
+        "nativeRequestEntered": 60193.2,
+        "nativeRequestReturned": 60389.8,
+        "fsStarted": 60390.3,
+        "fsCompleted": 60467.2,
+        "hostBaselineSyncStarted": 60455.7,
+        "hostBaselineSyncAck": 60467.9
+      },
+      "actualFrozenSourceBehavior": "score-save.mjs39 returns pending.promise; Host sync joined an earlier natural timer save while its FS transaction remained active.",
+      "conclusion": "The successful old transaction persisted a snapshot2frames shorter than the fixed neutral horizon. No disagreement was found in the common input prefix; the missing interval cannot establish input mismatch. Original FAIL and excluded pair were preserved.",
+      "analysisChecksReported": 2234,
+      "analysisDiscrepanciesReported": 0
+    },
+    "thresholdAuditorRevision": {
+      "originalAuditStatus": "FAIL",
+      "originalDiscrepancies": 1,
+      "reason": "Original thresholdsMet key absent after pre-summary exception; v1 auditor wrongly expected false.",
+      "revisedAuditStatus": "PASS",
+      "originalFailedExecutionStillFailed": true,
+      "validPairsStill5": true,
+      "offlineCasesActuallyCompleted": 10,
+      "offlineCasesPassed": 10,
+      "laterStandaloneOfflineCases02": "Did not complete: runtime env and v2 auditor were unavailable after reset. No PASS is claimed."
+    }
+  },
+  "supplementalSaveOnly": {
+    "source": "87d10f5a5f1d60f01128bbe4fa54d8ffee2005e6",
+    "mode": 1,
+    "players": 3,
+    "cpuThrottle": 4,
+    "renderer": "SwiftShader",
+    "saveValidationOnly": true,
+    "originalStatus": "save-validation-passed",
+    "performanceMeasured": false,
+    "performanceEligible": false,
+    "reportedAuditChecks": 37926,
+    "reportedAuditDiscrepancies": 0,
+    "attemptStatesBySeat": [
+      [
+        "stable"
+      ],
+      [
+        "stable"
+      ],
+      [
+        "superseded",
+        "stable"
+      ]
+    ],
+    "selectedAttemptsBySeat": [
+      1,
+      1,
+      2
+    ],
+    "naturalTimerRequestToken": 5,
+    "naturalTimerFsId": 5,
+    "naturalTimerIntervalMs": [
+      60135.6,
+      60186
+    ],
+    "originalRawRestored": false
+  },
+  "diagnosticInputSave": {
+    "instrumentedDiagnosticRuns": 2,
+    "diagnosticSeatWindows": 5,
+    "eligiblePerformancePairs": 0,
+    "reportedAuditChecks": 73903,
+    "reportedAuditDiscrepancies": 0,
+    "replayObservationsIncludingRepeatedSnapshots": 35,
+    "replayFrameSeatSamplesIncludingRepeatedSnapshots": 53267,
+    "stableFirstAttempts": 5,
+    "hostSubmitted": 333,
+    "hostAcknowledged": 333,
+    "hostErrors": 0,
+    "runs": [
+      {
+        "mode": 2,
+        "players": 2,
+        "originalStatus": "diagnostic-observed",
+        "diagnostic": true,
+        "performanceEligible": false,
+        "thresholdsMet": null,
+        "observationPassed": true,
+        "savePassed": true,
+        "logicHzBySeat": [
+          21.8,
+          22.8
+        ],
+        "callbackP95MsBySeat": [
+          43.6,
+          39.8
+        ],
+        "observerP95MsBySeat": [
+          1.6,
+          2.3
+        ],
+        "observerSumMsBySeat": [
+          109.8,
+          118.9
+        ],
+        "finalReplayFramesBySeat": [
+          798,
+          793
+        ],
+        "recordedBrowserPidsAbsent": 8,
+        "driverPidsAbsent": 1,
+        "console404Count": 4
+      },
+      {
+        "mode": 0,
+        "players": 3,
+        "originalStatus": "diagnostic-observed",
+        "diagnostic": true,
+        "performanceEligible": false,
+        "thresholdsMet": null,
+        "observationPassed": true,
+        "savePassed": true,
+        "logicHzBySeat": [
+          8,
+          8.466666666666667,
+          8.4
+        ],
+        "callbackP95MsBySeat": [
+          56.4,
+          66.2,
+          63.1
+        ],
+        "observerP95MsBySeat": [
+          3.6,
+          3.6,
+          4.3
+        ],
+        "observerSumMsBySeat": [
+          162.1,
+          137.3,
+          167.1
+        ],
+        "finalReplayFramesBySeat": [
+          565,
+          565,
+          559
+        ],
+        "recordedBrowserPidsAbsent": 12,
+        "driverPidsAbsent": 1,
+        "console404Count": 6
+      }
+    ],
+    "consoleErrors": {
+      "total": 10,
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "resourceUrlRecorded": false,
+      "allBeforeMeasurementStart": true,
+      "benignResourceClaim": false,
+      "unknownResourceIdentity": true
+    },
+    "auditRevision": {
+      "originalAuditDiscrepancies": 2,
+      "originalAuditStatus": "FAIL",
+      "reason": "Audit-only consoleErrors=[] assertion was stricter than the actual driver observer/input/save gates.",
+      "correctedAuditRetainedAllConsoleErrors": true,
+      "correctedAuditDidNotClaimAllNetworkResourcesLoaded": true,
+      "originalFlagsUnchanged": true
+    }
+  },
+  "preliminaryCpuSamples": {
+    "status": "preliminary actual samples, final comprehensive CPU report not completed",
+    "originalProfileBytesRestored": false,
+    "samplingIntervalUs": 4000,
+    "wasm": "877e50395e0307a5d2b523d251e4a3e2154de44cf91d25e47eaa2a4bfa7a8e66",
+    "rows": [
+      {
+        "case": "2P2",
+        "seat": 0,
+        "profileSha": "8935a4d9ea7f6280ccc3e31eb4b732b26fc37fcfec7b958e7879187bded641c9",
+        "windowMs": [
+          978.192,
+          15804.092
+        ],
+        "samples": 3230,
+        "weightedMs": 14821.718,
+        "idlePercentTotal": 42.86,
+        "touchSelfSamples": 103,
+        "touchSelfWeightMs": 466.1,
+        "touchSelfPercentNonIdle": 5.5,
+        "touchInclusivePercentNonIdle": 9.36,
+        "captureSelfSamples": 80,
+        "captureSelfPercentNonIdle": 4.02,
+        "statusSelfSamples": 28,
+        "statusSelfPercentNonIdle": 1.41,
+        "anmDrawInclusiveSamples": 664,
+        "anmDrawInclusivePercentNonIdle": 35.27,
+        "indexedWasmNodesWithExactBodyOffset": 760
+      },
+      {
+        "case": "2P2",
+        "seat": 1,
+        "profileSha": "6f5618cecfd6b24aab106a1eed0c390c369985d54d2d8ce54518f64edfd9b5ae",
+        "windowMs": [
+          521.406,
+          15435.906
+        ],
+        "samples": 3282,
+        "weightedMs": 14910.252,
+        "idlePercentTotal": 45.89,
+        "touchSelfSamples": 157,
+        "touchSelfWeightMs": 685.4,
+        "touchSelfPercentNonIdle": 8.5,
+        "touchInclusivePercentNonIdle": 13.8,
+        "captureSelfSamples": 99,
+        "captureSelfPercentNonIdle": 5.46,
+        "statusSelfSamples": 19,
+        "statusSelfPercentNonIdle": 1.12,
+        "anmDrawInclusiveSamples": 666,
+        "anmDrawInclusivePercentNonIdle": 36.89,
+        "indexedWasmNodesWithExactBodyOffset": 767
+      },
+      {
+        "case": "3P0",
+        "seat": 0,
+        "profileSha": "86f3a453e84cac9a362b7a9d4f69631446f68dec20f19953c823cfca9638fe25",
+        "windowMs": [
+          1444.2,
+          16359.29
+        ],
+        "samples": 3124,
+        "weightedMs": 14896.827,
+        "idlePercentTotal": 45.78,
+        "touchSelfSamples": 182,
+        "touchSelfWeightMs": 910.7,
+        "touchSelfPercentNonIdle": 11.28,
+        "touchInclusivePercentNonIdle": 17.6,
+        "captureSelfSamples": 112,
+        "captureSelfPercentNonIdle": 6.36,
+        "statusSelfSamples": 34,
+        "statusSelfPercentNonIdle": 2.19,
+        "anmDrawInclusiveSamples": 687,
+        "anmDrawInclusivePercentNonIdle": 39.25,
+        "indexedWasmNodesWithExactBodyOffset": 733
+      },
+      {
+        "case": "3P0",
+        "seat": 1,
+        "profileSha": "e06d810cc344ac69ca9d77e9b4b42e15a2a72fdf55a6040e40b76cefe0c43eab",
+        "windowMs": [
+          864.987,
+          15733.187
+        ],
+        "samples": 2984,
+        "weightedMs": 14857.547,
+        "idlePercentTotal": 39.55,
+        "touchSelfSamples": 164,
+        "touchSelfWeightMs": 758.95,
+        "touchSelfPercentNonIdle": 8.45,
+        "touchInclusivePercentNonIdle": 12.98,
+        "captureSelfSamples": 79,
+        "captureSelfPercentNonIdle": 4.63,
+        "statusSelfSamples": 26,
+        "statusSelfPercentNonIdle": 1.48,
+        "anmDrawInclusiveSamples": 759,
+        "anmDrawInclusivePercentNonIdle": 40.84,
+        "indexedWasmNodesWithExactBodyOffset": 1040,
+        "rawNegativeDelta": {
+          "sampleIndex": 9,
+          "deltaUs": -2,
+          "outsideConservativeWindow": true
+        }
+      },
+      {
+        "case": "3P0",
+        "seat": 2,
+        "profileSha": "43bffa08fa3a60b90b970f63c2b4524b3d3576c3b54a4f279cefa0636dd28119",
+        "windowMs": [
+          351.2,
+          15198.669
+        ],
+        "samples": 2971,
+        "weightedMs": 14843.094,
+        "idlePercentTotal": 39.89,
+        "touchSelfSamples": 188,
+        "touchSelfWeightMs": 914.63,
+        "touchSelfPercentNonIdle": 10.25,
+        "touchInclusivePercentNonIdle": 14.68,
+        "captureSelfSamples": 86,
+        "captureSelfPercentNonIdle": 4.51,
+        "statusSelfSamples": 20,
+        "statusSelfPercentNonIdle": 1.3,
+        "anmDrawInclusiveSamples": 751,
+        "anmDrawInclusivePercentNonIdle": 40.76,
+        "indexedWasmNodesWithExactBodyOffset": 766
+      }
+    ],
+    "limitations": [
+      "Preliminary rows are a transcription of actual successful tool output, not recovered raw cpuprofiles or a completed final report.",
+      "Weighted milliseconds are prior-sample spacing attributed to a sampled stack, not measured CPU time.",
+      "Inclusive metrics overlap. No inference of hook width/outside-hit frequencies is possible from these profiles.",
+      "Full allocator/GC/JIT rankings were not successfully emitted in a final report."
+    ],
+    "mapAuditSha256Reported": "b39f56032fdff58d47f962a92ad896e4abd0f2c71c328815ac80af62ea4a11d3",
+    "mapsSha256Reported": "1dc9eff5e7cb3dcd60c11ba5e730cc209aaf654261812fa2b4251cb9532c5061",
+    "transcriptionCorrections": [
+      {
+        "field": "preliminaryActualToolOutput[0].profileSha",
+        "previousValue": "8935a4d9ea7f6280ccc3e31eb4b732b26fc37fec7b958e7879187bded641c9",
+        "correctedValue": "8935a4d9ea7f6280ccc3e31eb4b732b26fc37fcfec7b958e7879187bded641c9",
+        "reason": "Stored transcription omitted fc; corrected from earlier successful receipt output retained in conversation context. No new raw filesystem read."
+      }
+    ]
+  },
+  "glAndResourceDiagnostics": {
+    "evidenceClass": "actual-completed-tool-output-transcription",
+    "formerlyCompletedAnalysisSha256": "884e063ac8104035edfdfb32ba94f56e211b9d5344be4434456b48f706a3f0a9",
+    "formerlyCompletedSummarySha256": "03b6c414f608df7c461b5c5314eb9beee0d1816a3ba66c93ae92f6f55711c947",
+    "originalBytesRestored": false,
+    "cpuQuota": "800000 100000",
+    "cases": [
+      {
+        "mode": 2,
+        "players": 2,
+        "gpuProcessCpuMeanCores": 6.044,
+        "rendererProcessCpuMeanCores": 1.772,
+        "gpuPercentMatchedBrowserCpu": 76.59,
+        "cdpBracketApproxSeconds": 17.1,
+        "cgroupInner": {
+          "approxSeconds": 14,
+          "cpuMeanCores": 7.9978,
+          "throttledPeriods": 140,
+          "periods": 140
+        },
+        "cgroupOuter": {
+          "approxSeconds": 16,
+          "cpuMeanCores": 7.9954,
+          "throttledPeriods": 157,
+          "periods": 160
+        },
+        "wrappedGlWallPercentInsideCompleteNativeCallbacksBySeat": [
+          9.33,
+          7.96
+        ],
+        "maxWrappedGlCallMsBySeat": [
+          13.3,
+          15.7
+        ]
+      },
+      {
+        "mode": 0,
+        "players": 3,
+        "gpuProcessCpuMeanCores": 5.496,
+        "rendererProcessCpuMeanCores": 2.347,
+        "gpuPercentMatchedBrowserCpu": 69.2,
+        "cdpBracketApproxSeconds": 17.7,
+        "cgroupInner": {
+          "approxSeconds": 14,
+          "cpuMeanCores": 7.9991,
+          "throttledPeriods": 139,
+          "periods": 140
+        },
+        "cgroupOuter": {
+          "approxSeconds": 16,
+          "cpuMeanCores": 7.9955,
+          "throttledPeriods": 157,
+          "periods": 160
+        },
+        "wrappedGlWallPercentInsideCompleteNativeCallbacksBySeat": [
+          7.37,
+          11.64,
+          10.48
+        ],
+        "maxWrappedGlCallMsBySeat": [
+          12.5,
+          13.9,
+          17
+        ]
+      }
+    ],
+    "hostNodeCpuMeanCoresRange": [
+      0.022,
+      0.028
+    ],
+    "allFiveSeats": {
+      "measureTextureCalls": 0,
+      "measureEstimatedTextureUploadBytes": 0,
+      "allPhasesReadPixelsCalls": 0,
+      "warmupTexImage2DCallsPerSeat": 165,
+      "warmupEstimatedTextureUploadBytesPerSeat": 138875392,
+      "measureGlCallsAtLeast25ms": 0
+    },
+    "boundaries": [
+      "CDP process-counter brackets include profiler start/stop and are approximately17.1/17.7seconds, not the exact15-second game window.",
+      "GPU-process CPU describes SwiftShader CPU work, not hardware GPU execution time.",
+      "Cgroup inner/outer brackets bound the observed window; resource pressure correlation does not identify the cause of a particular presentation stall.",
+      "Wrapped GL call wall time is CPU-side synchronous API duration; asynchronous GPU/process activity is outside that duration."
+    ]
+  },
+  "implementation": {
+    "exactChunkDeltaCommit": "55bffb97ee0693ff055a83e4dfaf7449e1e13cdd",
+    "productionCallPath": [
+      "onGameFrame -> multiplayer.frame",
+      "_th15_mp_rollback_status -> journal::Stats",
+      "eagler_sim_used"
+    ],
+    "baselineAccounting": "Exact cached mallinfo usage invalidated by allocator mutations; the first subsequent query rescans chunks.",
+    "candidateAccounting": "Cold query computes exact mallinfo uordblks; warm malloc/memalign add final chunksize(mem2chunk(pointer)); free subtracts the pre-free chunk size. Restores/failure/clear/space change invalidate the host cache.",
+    "invariant": "Single-threaded fixed external segment with morecore/mmap/mremap/footers/locks disabled; actual chunk sizes include allocator rounding, unlike requested byte counts.",
+    "failureBoundary": "Allocation returning after journal invalidation must not reactivate the cache; update checks validity and space both before and after mutation.",
+    "wholeGameOutcome": "Mixed observed changes; no stable all-scenario gain or60Hz claim."
+  },
+  "restoredProductionCorrectness": {
+    "revision": "87d10f5a5f1d60f01128bbe4fa54d8ffee2005e6",
+    "productionWasmSha256": "877e50395e0307a5d2b523d251e4a3e2154de44cf91d25e47eaa2a4bfa7a8e66",
+    "oracleCases": 7,
+    "regularCases": 5,
+    "lifecycleCases": 1,
+    "presentationCases": 1,
+    "checkedConditions": 18930,
+    "failures": [],
+    "futureSemanticFrames": 3600,
+    "replayFrameSeatSamples": 15480,
+    "audit": {
+      "artifact": "incremental-01-independent-oracle-audit-01.json",
+      "bytes": 224230,
+      "sha256": "8fffa6bd8ee50cb36e30f8d8d8f41128f652124d6ebb14c1477820fb91317d50",
+      "evidenceClass": "archived-and-restored-original"
+    },
+    "flow": {
+      "artifact": "incremental-01-production-oracle-flow.final.json",
+      "bytes": 10660,
+      "sha256": "fe2a985a0a1b2f86c929855e58e6f6adfe24db01fc5be8a0d40fe6f1432df3c2",
+      "evidenceClass": "archived-and-restored-original"
+    },
+    "replayedAfterRestoration": false,
+    "doesNotValidateCurrentScalarGameBuild": true,
+    "limits": [
+      "Per-frame exact scalar traces and paired full-resolution equality are asserted by the SHA-verified browser driver; reports retain trajectory digests and selected snapshots, not both entire raw traces.",
+      "The fixture calls mp_tick directly and does not exercise BrowserRuntime rAF scheduling. Native scheduler tests and production browser performance validate that separate path.",
+      "Lifecycle requests exercise native stage/ending/results owners; authored story/staff-script completion and live ACK retirement are outside this fixture.",
+      "Presentation runs sweep real native alpha 0/.5/1 at three selected simulation frames. The 600 future comparisons are semantic state comparisons, not 600 framebuffer readbacks."
+    ]
+  },
+  "currentScalarValidation": {
+    "revision": "792f029084a405d4ec8ec3c927c64ecf534f6e85",
+    "node": "v24.19.0",
+    "instrumentTests": {
+      "tests": 33,
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0,
+      "final": {
+        "artifact": "scalar-hooks-instrument-tests-03.final.json",
+        "bytes": 567,
+        "sha256": "15d096d961b8937cc65900a61758a3be057e5103fb21e6128e81c3e57c5164f5",
+        "evidenceClass": "fresh-actual-test"
+      },
+      "log": {
+        "artifact": "scalar-hooks-instrument-tests-03.outer.log",
+        "bytes": 7524,
+        "sha256": "6fdad98c6130eba063fd61b2ac3784b4b170800a57c3ac3dbe7c90f6cade7f5c",
+        "evidenceClass": "fresh-actual-test"
+      }
+    },
+    "memory": {
+      "wasmInstances": 69,
+      "profiles": 4,
+      "scenariosPerProfile": 15,
+      "realTrapCasesPerProfile": 2,
+      "rawUninstrumentedRejection": 1,
+      "inactiveObjects": 4,
+      "inactiveDefinedSymbols": 0,
+      "profilesDetails": [
+        {
+          "name": "wasm",
+          "scenarios": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "trapScopes": [
+            "game",
+            "host"
+          ],
+          "stores": 1286,
+          "scalarHookStores": null
+        },
+        {
+          "name": "native-hook",
+          "scenarios": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "trapScopes": [
+            "game",
+            "host"
+          ],
+          "stores": 1286,
+          "scalarHookStores": null
+        },
+        {
+          "name": "native-scalar-hooks",
+          "scenarios": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "trapScopes": [
+            "game",
+            "host"
+          ],
+          "stores": 1286,
+          "scalarHookStores": 1286
+        },
+        {
+          "name": "native-inline-dirty",
+          "scenarios": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "trapScopes": [
+            "game",
+            "host"
+          ],
+          "stores": 1286,
+          "scalarHookStores": null
+        }
+      ],
+      "final": {
+        "artifact": "scalar-hooks-memory-02.final.json",
+        "bytes": 584,
+        "sha256": "1a08d044dc564abff6017992f1cc1d49728d8e5ab7abca9bd51def6f41a64d02",
+        "evidenceClass": "fresh-actual-test"
+      },
+      "log": {
+        "artifact": "scalar-hooks-memory-02.outer.log",
+        "bytes": 2426,
+        "sha256": "55ce8ccfcfb18a83334190be5f8e65c7e7e263a2476cf8405e082e8ef13b0901",
+        "evidenceClass": "fresh-actual-test"
+      },
+      "result": {
+        "artifact": "scalar-hooks-memory-02/result.json",
+        "bytes": 5314,
+        "sha256": "c61cfdfdac939383a044f9006933c84a56d6a38081422b3528d92fbb05f3fbd9",
+        "evidenceClass": "fresh-actual-test"
+      }
+    },
+    "reviewedCorrections": [
+      "Packaging requires Boolean(verifiedJournal.scalarHooks)===Boolean(build.netplay.scalarHooks).",
+      "Verifier permits zero scalar stores for a bulk-only profile while checking scalarHookStores===stores and width-count sums."
+    ],
+    "scope": "Independent review read source plus actual finalized logs; it did not rerun tests. Unit/memory success is not production-oracle or performance acceptance."
+  },
+  "reproduction": {
+    "runner": "ports/th15-mp/portable/multiplayer/performance-browser.mjs",
+    "headedFlag": "--headed",
+    "outputFlag": "--output",
+    "environmentVariables": [
+      "EAGLER_CHROME_PATH",
+      "TH15_TEST_ARCHIVE",
+      "TH15_TEST_FONT",
+      "TH15_TEST_UNICODE_FONT"
+    ],
+    "hardwareArguments": [
+      "--runtime=/path/to/frozen/runtime",
+      "--mode=0",
+      "--players=2",
+      "--duration=15",
+      "--cpu-throttle=4",
+      "--renderer=hardware",
+      "--headed",
+      "--output=/path/to/new/result"
+    ],
+    "softwareRendererArgument": "--renderer=swiftshader",
+    "formalDiagnosticArgument": "--diagnostic=none",
+    "diagnosticOnlyArgument": "--diagnostic=gl-cpu",
+    "saveOnlyArguments": [
+      "--save-validation-only",
+      "--save-evidence-supersession-test"
+    ],
+    "conditionOrder": [
+      [
+        1,
+        2
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "perConditionOrder": [
+      "baseline",
+      "candidate"
+    ],
+    "dataUrl": "https://touhou.vip/games/th15/th15.dat",
+    "dataSha256": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+    "strictHardwareIdentity": true,
+    "originalContextReused": true,
+    "runtimeCdpTargetCovered": true,
+    "cpuThrottleIsNotGpuThrottle": true
+  },
+  "limits": [
+    "No raw rows, original receipt bodies, complete audit bodies or CPU profiles were reconstructed.",
+    "The completed pre-reset audit statements are historical tool observations, not a new independent audit of currently available raw evidence.",
+    "One timed observation per case provides no repeated-trial confidence interval.",
+    "Callback/observer/outside partitions are elapsed wall time, not simulation/restore/render/GPU/OS CPU attribution.",
+    "A save overlapping a hold does not prove the save caused the full hold.",
+    "Diagnostic observers and sidecar/profiler overhead exclude all diagnostic results from the formal performance comparison.",
+    "Restored checkpoint02 production/oracle artifacts remain distinct from this unarchived-result transcription."
+  ]
+}

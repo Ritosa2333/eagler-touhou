@@ -1,6 +1,6 @@
 # 文档总表
 
-共 231 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 232 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -70,6 +70,7 @@
 | 作品源码文档 | [ports/th11/docs/DEVELOPMENT.md](../ports/th11/docs/DEVELOPMENT.md) | TH11 开发指南 |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15-mp/docs/PERFORMANCE-20261024.md](../ports/th15-mp/docs/PERFORMANCE-20261024.md) | TH15 MP 生产包性能实测（2026-10-24） |
+| 作品源码文档 | [ports/th15-mp/docs/PERFORMANCE-CPU4-20261024.md](../ports/th15-mp/docs/PERFORMANCE-CPU4-20261024.md) | TH15 MP CPU 4× 性能、保存边界与固定宽度 hook（2026-10-24） |
 | 作品源码文档 | [ports/th15-mp/docs/PERFORMANCE-OPTIMIZATION-20261024.md](../ports/th15-mp/docs/PERFORMANCE-OPTIMIZATION-20261024.md) | TH15 MP 回滚性能优化与复测（2026-10-24） |
 | 作品源码文档 | [ports/th15-mp/docs/ROLLBACK-ACCEPTANCE-20261023.md](../ports/th15-mp/docs/ROLLBACK-ACCEPTANCE-20261023.md) | TH15 多人回滚验收：2026-10-23 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
