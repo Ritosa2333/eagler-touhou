@@ -135,7 +135,7 @@ jobs:
     - run: node --test tools/build/compiler-arguments.test.mjs tools/build/source-dependencies.test.mjs tools/build/source-object.test.mjs tools/build/runtime-inputs.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
     - name: Verify TH11 rollback performance admission and timing evidence
       if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th11-mp') }}
-      run: node --test ports/th11-mp/portable/multiplayer/rollback-browser-metrics.test.mjs
+      run: node --test ports/th11-mp/portable/multiplayer/rollback-browser-metrics.test.mjs ports/th11-mp/portable/multiplayer/rollback-sender-delay.test.mjs
   port-adaptation:
     strategy:
       fail-fast: false

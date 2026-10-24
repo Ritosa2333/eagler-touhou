@@ -10,6 +10,7 @@ import {pathToFileURL} from 'node:url';
 import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 import {expectedDisconnectConsole} from './acceptance-errors.mjs';
 import {assessPerformance,diagnosticModes,progressEvents,windowHolds,timingTails} from './rollback-browser-metrics.mjs';
+import {createSenderDelayQueue} from './rollback-sender-delay.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 
@@ -101,11 +102,11 @@ if(audioProfile){
 
 // Installed before WASM instantiation, in each real document. This changes only
 // transport scheduling / observation, never packet bytes or native input state.
-function installProbe(config){
+function installProbe(config,createSenderDelayQueue){
   const state={timeOrigin:performance.timeOrigin,phase:'idle',start:0,end:0,raf:[],transport:[],motion:[],tail:[],
     overflow:[],errors:[],lastMotion:0,current:null,serial:0,wireSerial:0,queued:0,queuedBytes:0,maxQueued:0,
     maxQueuedBytes:0,realDelay:config.latency,profile:config.profile,attached:false,settleStarted:0};
-  const timers=new Set(),orderedDue=new WeakMap(),originalRaf=requestAnimationFrame.bind(globalThis);
+  const senderDelay=createSenderDelayQueue({state}),originalRaf=requestAnimationFrame.bind(globalThis);
   let random=(0x713311+config.seat*1009)>>>0;
   const push=(list,value,max=20000)=>{if(list.length<max)list.push(value);else if(!state.overflow.includes(list===state.raf?'raf':list===state.transport?'transport':'motion'))state.overflow.push(list===state.raf?'raf':list===state.transport?'transport':'motion');};
   function rnd(){random=(Math.imul(random,1664525)+1013904223)>>>0;return random/4294967296;}
@@ -121,19 +122,12 @@ function installProbe(config){
       if(elapsed>=span*.66&&elapsed<span*.66+350)extra=300;
     }
     const delay=state.realDelay>0?Math.max(0,state.realDelay+(rnd()*2-1)*config.jitter+extra):0;
-    let due=now+delay;
-    if(ordered){due=Math.max(due,orderedDue.get(socket)||0);orderedDue.set(socket,due+.001);}
+    const due=now+delay;
     const id=++state.wireSerial,entry={id,kind,phase:state.phase,scheduled:now,due,requestedDelay:delay,extra,
       size:payload.length,signature:signature(payload),actual:null,lateness:null,readyState:socket.readyState};
     if(state.phase==='idle'&&payload.length<=64)entry.startupBytes=Array.from(payload);
     push(state.transport,entry);
-    if(++state.queued>1024||(state.queuedBytes+=payload.length)>4*1024*1024){state.errors.push('bounded transport injection queue overflow');throw Error('acceptance transport queue overflow');}
-    state.maxQueued=Math.max(state.maxQueued,state.queued);state.maxQueuedBytes=Math.max(state.maxQueuedBytes,state.queuedBytes);
-    const deliver=()=>{state.queued--;state.queuedBytes-=payload.length;entry.actual=performance.now();entry.lateness=entry.actual-due;
-      try{if(socket.readyState!=='open'&&socket.readyState!==1){entry.cancelled='channel closed before due';return;}original.call(socket,payload);}
-      catch(e){entry.error=String(e);state.errors.push(String(e));}};
-    if(!delay&&due<=now){deliver();return;}
-    const timer=setTimeout(()=>{timers.delete(timer);deliver();},Math.max(0,due-now));timers.add(timer);
+    senderDelay.enqueue({socket,payload,entry,send:original,ordered});
   }
   if(globalThis.WebSocket){const original=WebSocket.prototype.send;WebSocket.prototype.send=function(data){return send(original,this,data,'ws',true);};}
   if(config.route==='relay')Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true});
@@ -238,7 +232,7 @@ function installProbe(config){
     stop(){state.phase='settled';return small();},
     lifecycle(){state.phase='disconnect';return small();},
     result(){return state;},
-    close(){for(const timer of timers)clearTimeout(timer);timers.clear();},
+    close(){senderDelay.close();},
   };
 }
 
@@ -342,6 +336,8 @@ try{
   pinned.set(report.identity.errorClassifier.path,report.identity.errorClassifier.sha256);
   report.identity.timingMetrics=fileIdentity(resolve(import.meta.dirname,'rollback-browser-metrics.mjs'));
   pinned.set(report.identity.timingMetrics.path,report.identity.timingMetrics.sha256);
+  report.identity.senderDelay=fileIdentity(resolve(import.meta.dirname,'rollback-sender-delay.mjs'));
+  pinned.set(report.identity.senderDelay.path,report.identity.senderDelay.sha256);
   const sharedFiles=new Map();
   const sharedResources=[];
   report.identity.sharedFonts=[];
@@ -454,7 +450,10 @@ try{
     assert.ok(browserPid,'Chrome process identity available');report.processIds.push(browserPid);
     report.browser.push({seat,version:browser.version(),pid:browserPid,args,gpu:system.gpu,processes:processes.processInfo});
     const context=await browser.newContext({viewport:{width:660,height:510},serviceWorkers:'block'});contexts.push(context);
-    await context.addInitScript(installProbe,{seat,route,latency:delayLocation==='sender'?latency:0,jitter:delayLocation==='sender'?jitter:0,duration,profile,nativeProfile,audioProfile});
+    const probeConfig={seat,route,latency:delayLocation==='sender'?latency:0,jitter:delayLocation==='sender'?jitter:0,duration,profile,nativeProfile,audioProfile};
+    // One script fixes helper/probe ordering; separate init scripts have no
+    // guaranteed execution order in a new document.
+    await context.addInitScript({content:`(${installProbe.toString()})(${JSON.stringify(probeConfig)},(${createSenderDelayQueue.toString()}));`});
     const page=await context.newPage();pages.push(page);
     page.on('pageerror',e=>observeError({seat,kind:'pageerror',error:String(e),checkerMs:performance.now()}));
     page.on('crash',()=>observeError({seat,kind:'page-crash',checkerMs:performance.now()}));
