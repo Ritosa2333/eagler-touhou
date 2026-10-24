@@ -1,6 +1,6 @@
 # 文档总表
 
-共 255 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 256 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -156,6 +156,7 @@
 | 架构说明 | [docs/architecture/spectator.md](architecture/spectator.md) | 旁观协议 |
 | 迁移记录 | [docs/migration/README.md](migration/README.md) | Monorepo 迁移记录 |
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
+| 迁移记录 | [docs/migration/th12-subtree-20261024.md](migration/th12-subtree-20261024.md) | th12 子树继承 ｜ 上游同源历史 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |
 | 历史记录 | [docs/history/README.md](history/README.md) | 历史与迁移 |
 | 历史记录 | [docs/history/th12-audio-20261024.md](history/th12-audio-20261024.md) | th12 菜单音效 ｜ Edge A/B ｜ 2026-10-24 |

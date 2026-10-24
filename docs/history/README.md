@@ -4,6 +4,8 @@ monorepo 的原仓库来源与导入提交记录在 [import-sources.json](../mig
 
 TH12 的 `eagler` 分支导入来源、提交与目录映射见 [2026-10-20 导入记录](../migration/th12-eagler-20261020.json)，开发入口为 [ports/th12](../../ports/th12/README.md)。
 
+th12 的 Git 子树继承与独立历史导出见 [子树继承](../migration/th12-subtree-20261024.md)。
+
 th12 PR #111 的 4× CPU 帧率、JS 提交基准及像素和音频对照见 [2026-10-24 性能测量](th12-performance-20261024.md)。
 
 th12 菜单音效的 Edge A/B 听感与原采样率 PCM 验证见 [2026-10-24 音效对照](th12-audio-20261024.md)。

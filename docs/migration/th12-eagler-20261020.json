@@ -9,5 +9,12 @@
   "monorepoBase": "01baa1a8",
   "integrationPatch": "../../ports/th12/integration/eagler-touhou-th12.patch",
   "mode": "source-snapshot",
+  "currentMode": "git-subtree",
+  "subtreeJoin": {
+    "commit": "5caafc121b891a6d8a316dfcc46cdc96b0f62166",
+    "upstreamCommit": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+    "splitCommit": "256103c07f3ba98742c9542fa8aab3c34e06ba62",
+    "aheadCommits": 20
+  },
   "sharedSource": "common/include/eagler/thprac/PracticeSpeed.hpp"
 }
