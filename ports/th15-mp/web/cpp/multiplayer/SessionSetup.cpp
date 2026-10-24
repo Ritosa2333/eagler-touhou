@@ -24,10 +24,14 @@ std::array<std::uint32_t,SessionSetup::Words> EncodeSessionSetup(const SessionSe
     for(unsigned i=0;i<3;++i){w[8+i*2]=s.selections[i];w[9+i*2]=0;}
     w[14]=1;w[15]=s.automatic;w[16]=s.prediction_reserve;for(unsigned i=0;i<4;++i)w[17+i]=s.build[i];w[21]=s.challenge;w[22]=multiplayer_chapter_threshold(s.player_count,s.chapter_threshold);return w;
 }
-std::uint32_t GameplayAbi(const SessionSetup& s){
+namespace {
+std::uint32_t gameplay_abi(const SessionSetup& s,std::uint32_t version){
     std::uint32_t h=2166136261u;const auto word=[&](std::uint32_t n){for(unsigned i=0;i<4;++i){h^=(n>>(i*8))&255;h*=16777619u;}};
-    word(0x54483135u);word(SessionSetup::GameplayVersion);word(s.player_count);word(s.difficulty);
+    word(0x54483135u);word(version);word(s.player_count);word(s.difficulty);
     for(auto selection:s.selections)word(selection);word(s.challenge);word(multiplayer_chapter_threshold(s.player_count,s.chapter_threshold));word(s.automatic);word(s.requested_delay);
     word(s.input_delay);word(s.prediction_reserve);for(auto build:s.build)word(build);return h?h:1;
 }
+}
+std::uint32_t GameplayAbi(const SessionSetup& s){return gameplay_abi(s,SessionSetup::GameplayVersion);}
+std::uint32_t ReplayAbiBeforeStageFlowFix(const SessionSetup& s){return gameplay_abi(s,20);}
 }

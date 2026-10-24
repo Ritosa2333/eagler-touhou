@@ -9,25 +9,36 @@ void put(std::uint8_t* p,std::uint32_t n){for(unsigned i=0;i<4;++i)p[i]=std::uin
 }
 std::vector<std::uint8_t> ReplayArchive::Description(const char* name,std::uint32_t score,bool completed,bool cheat)const{
     std::vector<std::uint8_t> d(DescriptionBytes);
-    put(d.data(),Magic);put(d.data()+4,Version);put(d.data()+8,SessionSetup::GameplayVersion);put(d.data()+12,setup_.input_delay);
+    put(d.data(),Magic);put(d.data()+4,Version);put(d.data()+8,legacy_stage_flow_?20:SessionSetup::GameplayVersion);put(d.data()+12,setup_.input_delay);
     put(d.data()+16,std::uint32_t(timestamp_));put(d.data()+20,std::uint32_t(timestamp_>>32));put(d.data()+24,score);
     put(d.data()+28,unsigned(completed)|(unsigned(cheat)<<1));if(name)std::memcpy(d.data()+32,name,std::min<std::size_t>(std::strlen(name),8));
     const auto words=EncodeSessionSetup(setup_);for(unsigned i=0;i<words.size();++i)put(d.data()+40+i*4,words[i]);return d;
 }
-bool ReplayArchive::Metadata(const Netplay::InputReplayInfo& info,SessionSetup& setup,std::uint64_t& timestamp,std::uint32_t& score,bool& completed,std::string& name){
+bool ReplayArchive::Metadata(const Netplay::InputReplayInfo& info,SessionSetup& setup,std::uint64_t& timestamp,std::uint32_t& score,bool& completed,std::string& name,bool& legacy){
     const auto& c=info.config;const auto& d=c.description;
     if(c.gameId!=15||d.size()!=DescriptionBytes||get(d.data())!=Magic||get(d.data()+4)!=Version||
-       get(d.data()+8)!=SessionSetup::GameplayVersion||get(d.data()+12)>9||(get(d.data()+28)&~3u))return false;
+       (get(d.data()+8)!=SessionSetup::GameplayVersion&&get(d.data()+8)!=20)||get(d.data()+12)>9||(get(d.data()+28)&~3u))return false;
     std::array<std::uint32_t,SessionSetup::Words> words{};for(unsigned i=0;i<words.size();++i)words[i]=get(d.data()+40+i*4);
     SessionSetup next;if(!DecodeSessionSetup(next,words.data(),words.size()))return false;next.input_delay=get(d.data()+12);
-    if(c.playerCount!=next.player_count||c.recordedPlayer!=next.local_player||c.gameplayAbi!=GameplayAbi(next))return false;
+    const bool old=get(d.data()+8)==20;
+    if(c.playerCount!=next.player_count||c.recordedPlayer!=next.local_player||
+       c.gameplayAbi!=(old?ReplayAbiBeforeStageFlowFix(next):GameplayAbi(next)))return false;
     for(unsigned i=0;i<info.chapterCount;++i)if(info.chapters[i].label<1||info.chapters[i].label>7||
         (i&&info.chapters[i].label<=info.chapters[i-1].label))return false;
     if(info.chapters[0].label!=next.initial_stage())return false;
     setup=next;timestamp=get(d.data()+16)|(std::uint64_t(get(d.data()+20))<<32);score=get(d.data()+24);completed=(get(d.data()+28)&1)!=0;
-    name.assign(reinterpret_cast<const char*>(d.data()+32),8);while(!name.empty()&&(name.back()==0||name.back()==' '))name.pop_back();return true;
+    name.assign(reinterpret_cast<const char*>(d.data()+32),8);while(!name.empty()&&(name.back()==0||name.back()==' '))name.pop_back();legacy=old;return true;
 }
-void ReplayArchive::Clear(){replay_.Clear();setup_={};timestamp_=score_=0;completed_=false;name_.clear();}
+void ReplayArchive::Clear(){replay_.Clear();setup_={};timestamp_=score_=0;completed_=legacy_stage_flow_=false;name_.clear();}
+bool ReplayArchive::CompatibleBuild(const std::array<std::uint32_t,4>& build)const{
+    if(!Loaded()||!(build[0]|build[1]|build[2]|build[3]))return false;
+    if(!legacy_stage_flow_)return setup_.build==build;
+    // Rule 20 -> 21 is a named compatibility path, not a build-check bypass.
+    // Baseline: b8040505, CI run 40085809634, th15 multiplayer release.
+    // Revalidate this path when advancing the current gameplay version.
+    constexpr std::array<std::uint32_t,4> stage_flow_baseline{0x69cf52f0,0x644bdac4,0x784d5168,0xcab6de55};
+    return SessionSetup::GameplayVersion==21&&setup_.build==stage_flow_baseline;
+}
 bool ReplayArchive::Begin(const SessionSetup& setup,std::uint64_t timestamp){
     if(!setup.valid())return false;ReplayArchive next;next.setup_=setup;next.timestamp_=timestamp;
     Netplay::InputReplayConfig config;config.gameId=15;config.gameplayAbi=GameplayAbi(setup);config.playerCount=std::uint8_t(setup.player_count);
@@ -39,7 +50,7 @@ bool ReplayArchive::Append(std::uint32_t frame,std::uint32_t stage,const Netplay
     return replay_.Append(frame,stage,input,count);
 }
 bool ReplayArchive::Load(const std::uint8_t* data,std::size_t bytes){
-    ReplayArchive next;if(!next.replay_.Decode(data,bytes)||!Metadata(next.replay_.Info(),next.setup_,next.timestamp_,next.score_,next.completed_,next.name_))return false;
+    ReplayArchive next;if(!next.replay_.Decode(data,bytes)||!Metadata(next.replay_.Info(),next.setup_,next.timestamp_,next.score_,next.completed_,next.name_,next.legacy_stage_flow_))return false;
     std::array<MultiplayerInput,3> checked;
     for(std::uint32_t f=0;f<next.FrameCount();++f)if(!InputLanes::Decode(next.FrameAt(f)->data(),next.setup_.player_count,checked))return false;
     *this=std::move(next);return true;
