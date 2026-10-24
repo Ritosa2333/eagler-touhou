@@ -73,7 +73,8 @@ void AnmRenderer::multiplayer_geometry(const AnmVm& vm,Topology topology,u32 cou
     if(!owner||owner>=multiplayer_opacity.size()||multiplayer_opacity[owner]==255){graphics.primitives(topology,count,source,sizeof(AnmVertex));return;}
     // Draw-only copies preserve native ring/ripple/distortion vertices and RNG.
     multiplayer_geometry_vertices.assign(source,source+count+2);
-    for(auto& vertex:multiplayer_geometry_vertices)vertex.color=multiplayer_color(vm,vertex.color);
+    const auto opacity=multiplayer_opacity[owner];
+    for(auto& vertex:multiplayer_geometry_vertices)vertex.color=(vertex.color&0xffffff)|(((vertex.color>>24)*opacity/255)<<24);
     graphics.primitives(topology,count,multiplayer_geometry_vertices.data(),sizeof(AnmVertex));
 }
 #endif
@@ -152,16 +153,27 @@ int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
 #endif
     if(!vm.sprite||!vm.resource)return -2;const u32 mode=(vm.flags>>22)&15;
     if(mode<=3){
-        Vec3 positions[4];const u32 saved_flags=vm.flags;
+        Vec3 positions[4];
         const bool pixel=mode==0||(mode==1&&vm.rotation.z==0);
-        const u32 geometry_mode=pixel?0:mode==3?(vm.rotation.z==0?2:1):mode;
-        vm.flags=(vm.flags&~0x3c00000u)|(geometry_mode<<22);const bool ok=anm_quad_positions(vm,positions,preserve_subpixel);vm.flags=saved_flags;if(!ok)return -2;
+        {
+            // Only local geometry is written; the authored VM flags stay intact.
+            TH11_HOST_SCOPE;
+            const u32 geometry_mode=pixel?0:mode==3?(vm.rotation.z==0?2:1):mode;
+            if(!anm_quad_positions(vm,positions,geometry_mode,preserve_subpixel))return -2;
+        }
         return submit_quad(vm,positions,pixel,nullptr,preserve_subpixel);
     }
-    if(mode==4||mode==5){Vec3 positions[4];if(mode==4?!anm_billboard_quad(vm,camera,positions):!anm_projected_quad(vm,camera,positions))return -1;return submit_quad(vm,positions,false);}
+    if(mode==4||mode==5){
+        Vec3 positions[4];
+        if(mode==4){TH11_HOST_SCOPE;if(!anm_billboard_quad(vm,camera,positions))return -1;}
+        else if(!anm_projected_quad(vm,camera,positions))return -1;
+        return submit_quad(vm,positions,false);
+    }
     if(mode==6||mode==7){
         Vec3 positions[4];u32 colors[4];
         if(mode==6){
+            // Billboard/fog calculations write these stack arrays, never the VM.
+            TH11_HOST_SCOPE;
             if(!anm_billboard_quad(vm,camera,positions))return -1;
             const Vec3 center{float(double(float(double(vm.position.x)+vm.script_position.x))+vm.child_position.x),float(double(float(double(vm.position.y)+vm.script_position.y))+vm.child_position.y),float(double(float(double(vm.position.z)+vm.script_position.z))+vm.child_position.z)};
             const float amount=fog_amount(center,camera.position);if(amount>=1)return -1;

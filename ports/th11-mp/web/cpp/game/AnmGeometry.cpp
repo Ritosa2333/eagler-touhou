@@ -2,7 +2,10 @@
 #include <cmath>
 namespace th11 {
 bool anm_quad_positions(const AnmVm& vm,Vec3 (&out)[4],bool preserve_subpixel) noexcept {
-    const u32 mode=(vm.flags>>22)&15,anchor_x=(vm.flags>>18)&3,anchor_y=(vm.flags>>20)&3;
+    return anm_quad_positions(vm,out,(vm.flags>>22)&15,preserve_subpixel);
+}
+bool anm_quad_positions(const AnmVm& vm,Vec3 (&out)[4],u32 mode,bool preserve_subpixel) noexcept {
+    const u32 anchor_x=(vm.flags>>18)&3,anchor_y=(vm.flags>>20)&3;
     if(mode>3||anchor_x==3||anchor_y==3)return false;
     const float w=float(double(vm.sprite_size.x)*vm.scale.x),h=float(double(vm.sprite_size.y)*vm.scale.y);
     const double x=double(vm.position.x)+vm.script_position.x+vm.child_position.x;

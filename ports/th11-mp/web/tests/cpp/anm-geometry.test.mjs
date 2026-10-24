@@ -8,8 +8,14 @@ test('TH11 quad vertices and screen UVs match original CPU drawing routines',asy
   const b=Buffer.alloc(0x434);for(const off of offsets)b.writeFloatLE((random()-.5)*(off===0x2c?6.28:off===0x3c||off===0x40?5:640),off);b.writeUInt32LE((mode<<22)|(ax<<18)|(ay<<20),0x404);
   memory(c,p,b.length).set(b);m.write(q,b);memory(c,out,48).fill(0);m.view(nativeOut,48).fill(0);assert.equal(c.anm_quad(p,out),1);m.reg('EAX',q);m.call(0x452010,{ecx:nativeOut});
   const a=Buffer.from(memory(c,out,48)),expected=Buffer.from(m.bytes(nativeOut,48));for(let i=0;i<12;++i)assert.equal(a.readUInt32LE(i*4),expected.readUInt32LE(i*4),`mode=${mode} anchor=${ax},${ay} sample=${n} coordinate=${i}: ${a.readFloatLE(i*4)} vs ${expected.readFloatLE(i*4)}`);++checks;
+  // Draw may choose geometry that differs from the VM's authored mode. The
+  // explicit mode must preserve all VM bytes and match the same native oracle.
+  const authored=Buffer.from(b);authored.writeUInt32LE((((mode+1)%4)<<22)|(ax<<18)|(ay<<20),0x404);memory(c,p,authored.length).set(authored);
+  assert.equal(c.anm_quad_mode(p,out,mode,0),1);
+  assert.deepEqual(Buffer.from(memory(c,out,48)),expected,`explicit mode=${mode} anchor=${ax},${ay} sample=${n}`);
+  assert.deepEqual(Buffer.from(memory(c,p,authored.length)),authored,'explicit geometry mode leaves VM unchanged');++checks;
   for(let i=0;i<4;++i){c.anm_screen_uv(out+i*12,uv);m.reg('EAX',nativeOut+i*12);m.call(0x44b470,{ecx:nativeUv});assert.deepEqual(Buffer.from(memory(c,uv,8)),Buffer.from(m.bytes(nativeUv,8)));++checks;}
- }report('anm-geometry',{passed:true,checks,scope:'quad modes 0-3, nine anchor combinations, random scale/rotation/position, screen UV'});
+ }report('anm-geometry',{passed:true,checks,scope:'quad modes 0-3, nine anchor combinations, random scale/rotation/position, explicit mode without VM mutation, screen UV'});
  }finally{m.close();c.release(p);c.release(out);c.release(uv);}
 });
 test('TH11 ripple initialization and animated vertices match original',async()=>{

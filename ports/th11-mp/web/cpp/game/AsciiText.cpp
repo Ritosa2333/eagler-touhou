@@ -11,6 +11,9 @@ bool AsciiText::draw(AnmRenderer& renderer,i32 pass,SceneCamera& full,SceneCamer
     for(const auto& request:requests){
         const auto& style=request.style;if(style.pass!=pass)continue;
         renderer.set_camera(style.playfield?play:full,true);
+        // The camera above is game state. Glyph layout writes only this stack
+        // VM; sprite binding reads the atlas and submission uses host queues.
+        TH11_HOST_SCOPE;
         vm.flags=0x140003u|((style.font==0&&style.scale.x!=1)?0x80000000u:0);
         vm.scale=style.scale;vm.script_position=request.position;
         float advance=float(double(style.scale.x)*(style.font==0?spacing:style.font==3?12:7));

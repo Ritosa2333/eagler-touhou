@@ -607,6 +607,7 @@ API(anm_vm_init) void anm_vm_init(AnmVm* p){p->initialize();}
 API(anm_vm_bind) int anm_vm_bind(AnmVm* p,AnmResource* r,i32 s,AnmEnvironment* e){return p->bind_script(*r,s,0,&e->rate);}
 API(anm_vm_update) int anm_vm_update(AnmVm* p,AnmEnvironment* e){return p->update(*e);}
 API(anm_quad) int anm_quad(AnmVm* p,Vec3* out){return anm_quad_positions(*p,*reinterpret_cast<Vec3(*)[4]>(out));}
+API(anm_quad_mode) int anm_quad_mode(AnmVm* p,Vec3* out,u32 mode,u32 preserve_subpixel){return anm_quad_positions(*p,*reinterpret_cast<Vec3(*)[4]>(out),mode,preserve_subpixel!=0);}
 API(anm_screen_uv) void anm_screen_uv_api(Vec3* p,Vec2* out){*out=anm_screen_uv(*p);}
 API(anm_ring) int anm_ring(AnmVm* p,AnmVertex* out,u32 cap){return anm_ring_vertices(*p,out,cap);}
 API(anm_manager_create) AnmManager* anm_manager_create(){return new AnmManager;}
