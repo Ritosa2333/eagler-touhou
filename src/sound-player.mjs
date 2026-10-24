@@ -9,6 +9,39 @@ function nativeGain(base,percent,power){
 export const nativeSoundGain=(base,percent)=>nativeGain(base,percent,3);
 export const nativeMusicGain=percent=>nativeGain(0,percent,2);
 
+// Keep retail PCM at its authored rate. decodeAudioData resamples each WAV
+// during loading, which changes the short 8-bit menu effects in Edge.
+function pcmBuffer(context,bytes){
+  const raw=bytes instanceof ArrayBuffer?new Uint8Array(bytes):
+    new Uint8Array(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+  const view=new DataView(raw.buffer,raw.byteOffset,raw.byteLength);
+  const tag=offset=>String.fromCharCode(...raw.subarray(offset,offset+4));
+  if(raw.length<12||tag(0)!=='RIFF'||tag(8)!=='WAVE'||view.getUint32(4,true)+8>raw.length)
+    throw Error('音效 WAV 文件无效');
+  let format=null,data=null;
+  for(let offset=12;offset+8<=raw.length;){
+    const size=view.getUint32(offset+4,true),start=offset+8,end=start+size;
+    if(end>raw.length)throw Error('音效 WAV 数据块无效');
+    if(tag(offset)==='fmt '){
+      if(size<16)throw Error('音效 WAV 格式块无效');
+      format={code:view.getUint16(start,true),channels:view.getUint16(start+2,true),
+        rate:view.getUint32(start+4,true),align:view.getUint16(start+12,true),bits:view.getUint16(start+14,true)};
+    }else if(tag(offset)==='data')data={start,size};
+    offset=end+(size&1);
+  }
+  if(!format||!data||format.code!==1||![1,2].includes(format.channels)||
+    ![8,16].includes(format.bits)||!format.rate||
+    format.align!==format.channels*format.bits/8||!data.size||data.size%format.align)
+    throw Error('音效 WAV PCM 格式无效');
+  const frames=data.size/format.align,buffer=context.createBuffer(format.channels,frames,format.rate);
+  const output=Array.from({length:format.channels},(_,channel)=>buffer.getChannelData(channel));
+  for(let frame=0;frame<frames;frame++)for(let channel=0;channel<format.channels;channel++){
+    const at=data.start+frame*format.align+channel*format.bits/8;
+    output[channel][frame]=format.bits===8?(view.getUint8(at)-128)/128:view.getInt16(at,true)/32768;
+  }
+  return buffer;
+}
+
 export class SoundPlayer {
   constructor({context,index,readBytes,volume=80,onError=console.warn}){
     this.context=context;this.index=new Map(index.map(record=>[record.id,record]));
@@ -19,8 +52,7 @@ export class SoundPlayer {
     if(this.buffers.has(file))return Promise.resolve(this.buffers.get(file));
     if(this.pending.has(file))return this.pending.get(file);
     const promise=Promise.resolve().then(()=>this.readBytes(file)).then(bytes=>
-      this.context.decodeAudioData(bytes instanceof ArrayBuffer?bytes.slice(0):
-        bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength))
+      pcmBuffer(this.context,bytes)
     ).then(buffer=>{this.buffers.set(file,buffer);return buffer;}).finally(()=>this.pending.delete(file));
     this.pending.set(file,promise);return promise;
   }
