@@ -263,7 +263,7 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  // Inter-stage flow retains the departing STD for the native transition.
  // Keep the completed composite visible while preparing the next scene;
  // the startup-only loading panel would clear it to a black frame here.
- if(flow&&flow->pending()&&(!(scene()->hud.flags&0x100)||scene()->hud.intro_age.current>=120)){graphics.presentation.reset();pending_load=2;return true;}
+ if(flow&&flow->pending()&&(!multiplayer||!mp_options.replay_legacy_stage_flow||!(scene()->hud.flags&0x100)||scene()->hud.intro_age.current>=120)){graphics.presentation.reset();pending_load=2;return true;}
  fades.erase(std::remove_if(fades.begin(),fades.end(),[](const auto& value){return !value->active;}),fades.end());motion.erase(std::remove_if(motion.begin(),motion.end(),[](const auto& value){return !value->active;}),motion.end());animations.collect_resources();
  if(pending_bank>=0||pending_page>=0){if(!draw_loading(false))return false;pending_load=3;return true;}
  if(pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15){if(!draw_loading(false))return false;pending_load=1;return true;}

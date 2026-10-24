@@ -121,7 +121,7 @@ PracticeCadence cadence;
 touhou::sdl::PresentationCadence presentation;bool limit_presentation_60=false;
 GameInput controls;
 SDL_Joystick* controller=nullptr;
-bool loading_held=false;
+bool loading_held=false,loading_preserve_keyboard=false;
 bool running=false,suspended=false,lost_focus=false,music_enabled=true,room_preview=false;u32 render_scale=1;
 u32 loop_epoch=0;
 #if TH15_PRESENTATION_LAB
@@ -144,11 +144,25 @@ i32 draw_frame_rate(void*){
  return app->captions.enqueue({{588,470,0},style,text})?1:5;
 }
 void add_controller(SDL_JoystickID id){if(!controller)controller=SDL_OpenJoystick(id);}
-void clear_inputs(){practice_pointers.reset();th15_browser_keyboard_reset();ThpracUi::reset_input();EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});for(auto& key:keyboard_map)key.hosted=false;SDL_ResetKeyboard();gestures.reset();controls={};if(app){app->practice.input.reset();app->keyboard_state={};app->touch={};
+// Stage loads retain physical holds and their edge history.
+void clear_inputs(bool preserve_keyboard=false){
+ practice_pointers.reset();gestures.reset();
+ if(!preserve_keyboard){
+  th15_browser_keyboard_reset();ThpracUi::reset_input();
+  for(auto& key:keyboard_map)key.hosted=false;
+  controls={};
+ }else ThpracUi::cancel_pointer();
+ EM_ASM({if(Module.eaglerControls)Module.eaglerControls.thpracKeyboardBits=0;});
+ SDL_ResetKeyboard();
+ if(app){
+  if(!preserve_keyboard)app->practice.input.reset();
+  app->keyboard_state={};app->touch={};
 #if TH15_MULTIPLAYER
- if(!mp_started)
+  if(!mp_started)
 #endif
- if(app->scene())app->scene()->battle.player->motion.touch={};}}
+  if(app->scene())app->scene()->battle.player->motion.touch={};
+ }
+}
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->session)return value;
@@ -260,6 +274,7 @@ EMSCRIPTEN_KEEPALIVE const char* th15_mp_error(){using namespace th15::sdl;retur
 EMSCRIPTEN_KEEPALIVE const char* th15_mp_spectator_state(){return th15::sdl::network.SpectatorState();}
 EMSCRIPTEN_KEEPALIVE int th15_mp_spectator_control(const char* run,const char* action,unsigned frame){return th15::sdl::network.SpectatorControl(run,action,frame);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!app||!network.Configured())return 0;const auto& s=network.Setup();app->practice.enabled=false;app->multiplayer=true;app->mp_options={s.player_count,s.local_player,s.initial_stage(),s.seed,int(s.difficulty),s.challenge,{int(s.selections[0]),int(s.selections[1]),int(s.selections[2])},int(s.chapter_threshold)};
+ app->mp_options.replay_legacy_stage_flow=network.Playback()&&mp_replay.LegacyStageFlow();
  mp_stage=s.initial_stage();mp_spectator_stage=0;mp_spectator_error.clear();mp_saved_name="PLAYER";app->progress={};app->progress.character=s.selections[0];app->progress.difficulty=s.difficulty;app->selected_stage=s.initial_stage();app->selection_player={};app->selection_player.mode_flags=0;
  // The title may have animated for different durations on each client. Neither
  // its RNG consumption nor its presentation clock may enter the match.
@@ -273,7 +288,8 @@ EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!
  };if(!app->begin_run()){last_error=app->failure;return 0;}mp_started=true;return 1;}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_validate(const unsigned char* bytes,unsigned size){return th15::multiplayer::ReplayArchive::Validate(bytes,size);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_load(const unsigned char* bytes,unsigned size,const unsigned* build){using namespace th15::sdl;th15::multiplayer::ReplayArchive parsed;if(running||!app||!build||!parsed.Load(bytes,size))return 0;
- for(unsigned i=0;i<4;++i)if(parsed.Setup().build[i]!=build[i]){last_error="Multiplayer replay build mismatch";return 0;}
+ const std::array<unsigned,4> current_build{build[0],build[1],build[2],build[3]};
+ if(!parsed.CompatibleBuild(current_build)){last_error="Multiplayer replay build mismatch";return 0;}
  if(!network.BeginPlayback(parsed.Setup()))return 0;mp_replay=std::move(parsed);mp_playback=true;mp_recording=mp_local_results=false;mp_menu={};last_error.clear();return 1;}
 EMSCRIPTEN_KEEPALIVE int th15_mp_replay_save(){using namespace th15::sdl;if(!mp_recording||!mp_replay.FrameCount())return 1;std::vector<th15::u8> bytes;th15::u32 score=0;
  if(app&&app->scene()){const auto& battle=app->scene()->battle;const auto seat=network.Setup().local_player;score=th15::u32(battle.mp_enabled&&seat<battle.mp_options.seat_count?battle.pilots[seat]->score.score:battle.score.score);}
@@ -342,7 +358,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
  // The shared shell already rendered its two-second startup animation while
  // initialization ran. Do not add another native loading hold after it.
  if(app->loading_frames>=120){app->loading_startup=false;app->loading_debt=0;}
- if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
+ if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;loading_held=loading_preserve_keyboard=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended
@@ -353,11 +369,11 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   // Startup retains native 180 loading frames; subsequent loads wait for
   // resource completion. Neither path accumulates gameplay simulation debt.
   if(app->loading_waiting()){
-   if(!loading_held)clear_inputs();loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
+   if(!loading_held){loading_preserve_keyboard=app->pending_load==2;clear_inputs(loading_preserve_keyboard);}loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
    if(!(app->loading_startup?app->advance_loading(delta):app->complete_loading())){running=false;th15_browser_frame(0,emscripten_get_now()-begin,0);return EM_FALSE;}
    app->audio_device.pump();return EM_TRUE;
   }
-  if(loading_held){loading_held=false;clear_inputs();cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
+  if(loading_held){loading_held=false;clear_inputs(loading_preserve_keyboard);loading_preserve_keyboard=false;cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
 #if TH15_PRESENTATION_LAB
   // Resource readiness uses its isolated loading clock, never game/replay ticks.
   // A freeze requested during startup must not strand the loading barrier.

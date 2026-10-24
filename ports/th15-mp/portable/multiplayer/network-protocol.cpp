@@ -30,6 +30,32 @@ void checksum(std::vector<unsigned char>& bytes){
  unsigned h=2166136261u;for(unsigned i=0;i<bytes.size();++i)if(i<36||i>=40){h^=bytes[i];h*=16777619u;}
  for(unsigned i=0;i<4;++i)bytes[36+i]=static_cast<unsigned char>(h>>(i*8));
 }
+void legacy_replay_admission(){
+ const std::array<unsigned,4> baseline{0x69cf52f0,0x644bdac4,0x784d5168,0xcab6de55};
+ const auto current=setup(2,0,0).build;
+ for(unsigned count:{2u,3u})for(unsigned delay:{0u,2u,9u})for(bool known:{true,false}){
+  auto config=setup(count,count-1,delay);config.build=baseline;if(!known)config.build[3]^=1;
+  Netplay::InputReplay old;Netplay::InputReplayConfig metadata;
+  metadata.gameId=15;metadata.gameplayAbi=ReplayAbiBeforeStageFlowFix(config);
+  metadata.playerCount=count;metadata.recordedPlayer=config.local_player;
+  metadata.description.resize(ReplayArchive::DescriptionBytes);
+  const auto put=[&](unsigned at,unsigned value){for(unsigned i=0;i<4;++i)metadata.description[at+i]=static_cast<unsigned char>(value>>(i*8));};
+  put(0,ReplayArchive::Magic);put(4,ReplayArchive::Version);put(8,20);put(12,delay);
+  const auto words=EncodeSessionSetup(config);for(unsigned i=0;i<words.size();++i)put(40+i*4,words[i]);
+  CHECK(old.Begin(metadata));
+  for(unsigned frame=0;frame<180;++frame){std::array<Netplay::FrameInput,3> inputs;for(unsigned seat=0;seat<count;++seat)inputs[seat]=input(frame,seat);CHECK(old.Append(frame,frame<90?1:2,inputs.data(),count));}
+  std::vector<unsigned char> bytes;CHECK(old.Encode(&bytes));ReplayArchive replay;
+  CHECK(replay.Load(bytes.data(),bytes.size()));CHECK(replay.LegacyStageFlow());
+  CHECK(replay.CompatibleBuild(current)==known);CHECK(!replay.CompatibleBuild({}));
+  CHECK(replay.CompatibleBuild(config.build)==known);
+  CHECK(replay.Info().chapterCount==2&&replay.FrameCount()==180);
+  for(unsigned frame=0;frame<180;++frame)CHECK(*replay.FrameAt(frame)==*old.FrameAt(frame));
+  CHECK(replay.Encode(bytes,"LEGACY",0,false));ReplayArchive restored;
+  CHECK(restored.Load(bytes.data(),bytes.size())&&restored.LegacyStageFlow());
+  CHECK(restored.CompatibleBuild(current)==known);
+  replay.Clear();CHECK(!replay.LegacyStageFlow()&&!replay.CompatibleBuild(current));
+ }
+}
 std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=false){
  std::array<NetplayRuntime,3> players;std::array<ReplayArchive,3> recordings;
  for(unsigned s=0;s<count;++s){auto config=setup(count,s,delay);config.challenge=challenge;CHECK(players[s].Reset(config));CHECK(recordings[s].Begin(config,1723456789));}
@@ -57,6 +83,8 @@ std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=fals
   CHECK(players[s].Finish());CHECK(players[s].Retired());CHECK(recordings[s].Encode(bytes,s==2?"P3TEST":"PLAYER",999999999,true));
   ReplayArchive replay;CHECK(replay.Load(bytes.data(),bytes.size()));CHECK(replay.FrameCount()==180);CHECK(replay.Info().config.recordedPlayer==s);
   CHECK(replay.Setup().input_delay==delay);CHECK(replay.Setup().challenge==challenge);CHECK(replay.Score()==999999999);CHECK(replay.Completed());
+  CHECK(!replay.LegacyStageFlow()&&replay.CompatibleBuild(replay.Setup().build));
+  auto other_build=replay.Setup().build;other_build[0]^=1;CHECK(!replay.CompatibleBuild(other_build));
   NetplayRuntime viewer;CHECK(viewer.BeginPlayback(replay.Setup()));CHECK(viewer.Setup().challenge==challenge);CHECK(!viewer.NeedsCapture());
   for(unsigned f=0;f<180;++f){CHECK(viewer.FeedPlayback(f,replay.FrameAt(f)->data(),count));const auto d=viewer.Prepare(f);CHECK(d.canAdvance&&!d.predictedMask);
    CHECK(d.inputs==*recordings[s].FrameAt(f));CHECK(viewer.MarkSimulated(f,d));}
@@ -81,6 +109,7 @@ __attribute__((export_name("network_free"))) void network_free(void* pointer){st
 __attribute__((export_name("network_validate"))) int network_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
 }
 int main(int argc,char** argv){
+ legacy_replay_admission();
  for(unsigned count:{2u,3u}){
   std::array<NetplayRuntime,3> players;
   for(unsigned seat=0;seat<count;++seat)CHECK(players[seat].Reset(setup(count,seat,0)));

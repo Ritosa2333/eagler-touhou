@@ -48,3 +48,15 @@
 ## 源码入口
 
 [能力定义](../../launcher/src/contracts/adapter-capabilities.mts) · [键盘桥](../../common/browser/keyboard-input-bridge.mjs) · [直触桥](../../common/browser/direct-input-bridge.mjs)
+
+## th15 跨面按键保持
+
+修复 th15 普通版与多人版跨面后必须重新按键的问题。跨面加载保留键盘持有、输入边沿与 THPrac 快捷键历史，持续按住的射击、低速和方向键直接延续到下一面。加载期间的松键即时生效。键盘持有与游戏内输入许可分别由平台和关卡状态管理。失焦、页面隐藏、暂停与退出取消持有状态。
+
+## th15 通关过渡
+
+th15 通关后按原版顺序移交关卡。过渡期保留玩家更新，子机完成收起，已有子弹继续更新。新关卡激活前，角色按原版关卡状态停止低速和发射。持续按住的射击和低速在下一面自动恢复，过渡期松开则按释放后的状态进入下一面。
+
+换关回归入口为 `ports/th15/web/tests/sdl/render-loading-lifecycle-browser.test.mjs`。先构建开发夹具，再设置 `TH15_OUTPUT` 指向夹具目录、`TH15_ORIGINAL_DAT` 指向原版素材、`TH15_FONT_ROOT` 指向 `cp932.bin` 所在目录、`TH15_SHARED_FONT_ROOT` 指向 `msgothic.ttc` 与 `unifont.otf` 所在目录，执行 `node --test <入口>`。断言覆盖即时换关、20 帧持续移动、松键停移及跨换关的 120 帧 Stage Clear 计时。
+
+th15 多人新对局与新录像使用规则版本 21。已登记构建的规则版本 20 旧多人录像按录制时的场景交接、过渡移动与玩家重置顺序播放，兼容身份见[多人规则](multiplayer.md)。
