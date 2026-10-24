@@ -9,12 +9,15 @@ import {createHash,randomUUID} from 'node:crypto';
 import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 import {createSenderDelayQueue} from './performance-sender-delay.mjs';
 import {distribution,summarize,replayInputs} from './performance-browser-metrics.mjs';
+import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic} from './performance-browser-diagnostic.mjs';
 
 const root=resolve(import.meta.dirname,'../..'),repo=resolve(root,'../..');
 function option(name,fallback){const combined=process.argv.find(x=>x.startsWith(name+'='));if(combined)return combined.slice(name.length+1);
   const i=process.argv.indexOf(name);if(i<0)return fallback;assert.ok(process.argv[i+1]&&!process.argv[i+1].startsWith('--'),'Missing '+name);return process.argv[i+1];}
 const mode=Number(option('--mode','0')),players=Number(option('--players','2')),duration=Number(option('--duration','15'));
 assert.ok([0,1,2].includes(mode)&&[2,3].includes(players));assert.ok(duration>=5&&duration<=60);
+const diagnosticMode=option('--diagnostic','none');assert.ok(['none','gl-cpu'].includes(diagnosticMode),'Unsupported diagnostic mode');
+const diagnostic=diagnosticMode!=='none';
 const runtime=resolve(option('--runtime',process.env.TH15_MP_PACKAGE||resolve(root,'build-eagler-multiplayer')));
 const launcher=resolve(option('--launcher-root',process.env.TH15_LAUNCHER_ROOT||resolve(repo,'launcher')));
 const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(repo,'services/relay'),'src/netplay-relay.mjs');
@@ -27,22 +30,31 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
 function gitIdentity(){const run=args=>{const r=spawnSync('git',['-C',repo,...args],{encoding:'utf8',maxBuffer:8*1024*1024});assert.equal(r.status,0,r.stderr);return r.stdout.trim();};
   return {head:run(['rev-parse','HEAD']),tree:run(['rev-parse','HEAD^{tree}']),status:run(['status','--porcelain=v1']),diffSha256:hash(run(['diff','--binary','HEAD']))};}
 const report={schema:'eagler-touhou/th15-production-performance/1',startedAt:new Date().toISOString(),completedAt:null,
-  status:'running',performanceMeasured:false,observationPassed:false,settings:{mode,players,durationSeconds:duration,inputDelayFrames:mode===0?0:2,
+  status:'running',performanceMeasured:false,performanceEligible:!diagnostic,diagnostic,observationPassed:false,settings:{mode,players,durationSeconds:duration,inputDelayFrames:mode===0?0:2,
     predictionFrames:mode===1?0:12,renderScale:1,cpuThrottle:1,route:'relay',oneWaySendDelayMs:50,jitterPlusMinusMs:5,
-    nominalRoundTripAddedMs:100,profiler:false,music:false,warmupMinimumFrames:180,tailThresholdMs:100},
+    nominalRoundTripAddedMs:100,profiler:diagnostic,music:false,warmupMinimumFrames:180,tailThresholdMs:100},
   scope:{productionPackage:true,independentBrowserProcesses:players,realRaf:true,managedHostInput:true,renderer:'SwiftShader',
     actualGpuScanout:false,performanceObserver:true,fullCampaign:false,phone:false,
     saveObserver:'Sparse native request/poll transitions and real FS.syncfs callbacks; reuse the previous rollback observation without extra journal Stats in the measurement window.',
     persistenceValidation:'After the fixed performance window: concurrent Host sync/input, real IDBFS records compared to MEMFS bytes and native file validation.'},
   stages:[],errors:[],consoleErrors:[],cleanup:[],results:[]};
+if(diagnostic){report.thresholdsMet=null;report.diagnostics={mode:diagnosticMode,samplingIntervalUs:4000,profiles:[],
+  performanceEligibility:'Diagnostic GL wrappers and CPU sampling add overhead. This run cannot satisfy the performance gate; thresholdsMet remains null.'};}
 const save=()=>saveJson('receipt.json',report),mark=name=>{report.stages.push({name,at:new Date().toISOString()});save();};
 save();
-let server,relay,relayLog='',firstFailure,browserTemp;const browsers=[],contexts=[],pages=[],frames=[],lobbies=[];
+let server,relay,relayLog='',firstFailure,browserTemp;const browsers=[],contexts=[],pages=[],frames=[],lobbies=[],cpuProfiles=[];
 const originalTempEnv=Object.fromEntries(['TMPDIR','TMP','TEMP'].map(key=>[key,process.env[key]]));
 let shuttingDown=false,options=[];
 const observeError=(seat,kind,error)=>{(shuttingDown?report.cleanup:report.errors).push({seat,kind,error:String(error)});};
 const watchdog=setTimeout(()=>{report.errors.push({kind:'overall-timeout',error:'Production performance observer exceeded its bounded deadline'});save();
   relay?.kill();void Promise.allSettled(browsers.map(b=>b.close()));},(240+duration)*1000);
+async function finishCpuProfiles(){
+  for(const {seat,handle} of cpuProfiles){if(handle.closed)continue;
+    try{const {profile,metadata}=await stopCpuDiagnostic(handle);const name='peer-'+seat+'.cpuprofile';saveJson(name,profile);
+      report.diagnostics.profiles.push({seat,...metadata,file:fileIdentity(resolve(out,name))});}
+    catch(error){observeError(seat,'cpu-profiler',error);report.diagnostics.profiles.push({seat,...handle.metadata,error:String(error)});}
+  }
+}
 
 // Self-contained browser observer. The sender queue is an exact copy of the
 // independently tested TH11 FIFO helper from commit c32c922f64263a07ec602041297c7a17325a8dec.
@@ -244,7 +256,8 @@ function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{const
 async function lobbySend(socket,message,predicate){const promise=nextJson(socket,predicate);socket.send(JSON.stringify(message));return promise;}
 
 try{
-  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs']
+  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs',
+    ...(diagnostic?['performance-browser-diagnostic.mjs']:[])]
     .map(name=>[name,fileIdentity(resolve(import.meta.dirname,name))]));
   report.relaySource=fileIdentity(relayEntry);
   assert.ok(process.env.TH15_TEST_ARCHIVE,'Set TH15_TEST_ARCHIVE');
@@ -302,7 +315,8 @@ try{
     const gpuSession=await browser.newBrowserCDPSession();const systemInfo=await gpuSession.send('SystemInfo.getInfo');await gpuSession.detach();
     report.browserProcesses.push({seat,version:browser.version(),processes:processes.processInfo,systemInfo});
     const context=await browser.newContext({viewport:{width:640,height:480},deviceScaleFactor:1});contexts.push(context);
-    await context.addInitScript({content:'('+installProbe.toString()+')('+JSON.stringify({seat,duration})+',('+createSenderDelayQueue.toString()+'))'});
+    await context.addInitScript({content:'('+installProbe.toString()+')('+JSON.stringify({seat,duration})+',('+createSenderDelayQueue.toString()+'));'+
+      (diagnostic?'('+installGlDiagnostic.toString()+')(__th15Performance.state);':'')});
     const page=await context.newPage();pages.push(page);page.on('pageerror',error=>observeError(seat,'pageerror',error));
     page.on('crash',()=>observeError(seat,'page-crash','Chromium page crashed'));
     page.on('console',message=>{if(message.type()==='error')report.consoleErrors.push({seat,at:new Date().toISOString(),text:message.text(),cleanup:shuttingDown});});
@@ -314,11 +328,16 @@ try{
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>{const p=Module._th15_mp_status()>>>2;return Module.HEAPU32[p+3]>=180||document.querySelector('#error').textContent;},null,{timeout:90000,polling:250})));
   report.warmup=await Promise.all(frames.map(frame=>frame.evaluate(()=>__th15Performance.snapshot())));
   for(const warm of report.warmup){assert.equal(warm.error,'');assert.equal(warm.nativePhase,1);assert.equal(warm.route,'relay');assert.equal(warm.rollback[0],1);}
+  if(diagnostic){mark('diagnostic-profiler-start');
+    for(let seat=0;seat<pages.length;++seat)cpuProfiles.push({seat,handle:await startCpuDiagnostic(pages[seat],{samplingIntervalUs:4000})});}
   mark('measurement-start');
   await Promise.all(pages.map(page=>page.evaluate(duration=>measure(duration),duration)));
-  // Do no polling, screenshots, profiling, serialization or test work in the window.
+  // The default measurement has no profiler or extra GL wrappers. Explicit
+  // diagnostic runs keep their sampler active and are never performance eligible.
+  // Neither path polls, screenshots, serializes or runs tests in the window.
   await pause(duration*1000+600);
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>__th15Performance.state.phase==='complete',null,{timeout:10000,polling:250})));
+  if(diagnostic){await finishCpuProfiles();mark('diagnostic-profiler-stop');}
   mark('measurement-complete');report.performanceMeasured=true;
   await pause(800); // Let the final managed-input release and FIFO packets settle.
   for(let seat=0;seat<players;++seat){
@@ -327,7 +346,8 @@ try{
     const metrics=summarize(raw),sent=raw.transport.filter(e=>Number.isFinite(e.actual)&&e.phase==='measure');
     metrics.actualSendDelay=distribution(sent.map(e=>e.actual-e.scheduled));metrics.sendTimerLateness=distribution(sent.map(e=>e.lateness));
     report.results.push({seat,metrics,input:{submitted:input.submitted,acknowledged:input.acknowledged,errors:input.errors},
-      raw:fileIdentity(resolve(out,'peer-'+seat+'.json')),errors:raw.errors,overflow:raw.overflow});save();
+      raw:fileIdentity(resolve(out,'peer-'+seat+'.json')),errors:raw.errors,overflow:raw.overflow,
+      ...(diagnostic?{glDiagnostic:raw.glDiagnostic}: {})});save();
   }
   // Keep the unmodified 15 s measurement intact. Exercise the real 30 s
   // autosave and then concurrent Host sync/input while all peers still run.
@@ -393,18 +413,20 @@ try{
     if(!metrics.presentationSubmissions)failures.push('No submitted game presentation for seat '+seat);
   }
   if(report.errors.length)failures.push('Browser errors');
+  if(diagnostic&&report.diagnostics.profiles.filter(p=>p.stopped&&p.file&&!p.error).length!==players)failures.push('Incomplete diagnostic CPU profiles');
   report.observationFailures=failures;report.observationPassed=failures.length===0;
   report.thresholds={maximumMs:100,meaning:'The 100 ms comparison used for TH11, applied to complete native callback wall, presentation and forward-frontier window holds. This does not claim 60 fps.',
     peers:report.results.map(({seat,metrics:m})=>({seat,callbackMax:m.callbackWall.max,presentationMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max,
       met:[m.callbackWall.max,m.presentWindowHolds.max,m.frontierWindowHolds.max].every(v=>Number.isFinite(v)&&v<=100)}))};
-  report.thresholdsMet=report.observationPassed&&report.thresholds.peers.every(p=>p.met);
-  report.status=report.observationPassed?'measured':'observation-failed';if(!report.observationPassed||!report.saveValidationPassed)process.exitCode=1;
+  report.thresholdsMet=diagnostic?null:report.observationPassed&&report.thresholds.peers.every(p=>p.met);
+  report.status=report.observationPassed?(diagnostic?'diagnostic-observed':'measured'):'observation-failed';if(!report.observationPassed||!report.saveValidationPassed)process.exitCode=1;
 }catch(error){firstFailure=error;report.status=report.performanceMeasured?'observation-failed':'startup-or-execution-failed';
   report.errors.push({kind:'runner',error:String(error),stack:error.stack});process.exitCode=1;
   // Preserve partial observations without turning startup failure into a measurement.
   for(let seat=0;seat<frames.length;++seat)try{saveJson('peer-'+seat+'-partial.json',await frames[seat].evaluate(()=>({probe:globalThis.__th15Performance?.result(),error:document.querySelector('#error')?.textContent})));}catch{}
 }finally{
   mark('cleanup');shuttingDown=true;
+  if(diagnostic)await finishCpuProfiles();
   await Promise.allSettled(pages.map(page=>page.evaluate(()=>window.stopInput?.())));
   await Promise.allSettled(frames.map(frame=>frame.evaluate(()=>{globalThis.__th15Performance?.close();globalThis.Module?._th15_loop_stop?.();globalThis.Module?._th15_mp_close?.();})));
   await Promise.allSettled(browsers.map(browser=>browser.close()));for(const socket of lobbies)socket.close();relay?.kill();
@@ -413,6 +435,6 @@ try{
   clearTimeout(watchdog);writeFileSync(resolve(out,'relay.log'),relayLog);report.completedAt=new Date().toISOString();save();
 }
 console.log(JSON.stringify({out,status:report.status,performanceMeasured:report.performanceMeasured,observationPassed:report.observationPassed,
-  thresholdsMet:report.thresholdsMet,saveValidationPassed:report.saveValidationPassed,results:report.results.map(({seat,metrics:m})=>({seat,logicHz:m.logicHz,presentationHz:m.presentationHz,
+  diagnostic,performanceEligible:report.performanceEligible,thresholdsMet:report.thresholdsMet,saveValidationPassed:report.saveValidationPassed,results:report.results.map(({seat,metrics:m})=>({seat,logicHz:m.logicHz,presentationHz:m.presentationHz,
     callbackP95:m.callbackWall.p95,callbackMax:m.callbackWall.max,presentationMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max,rollback:m.rollbackDelta}))},null,2));
 if(firstFailure)console.error(firstFailure.stack);

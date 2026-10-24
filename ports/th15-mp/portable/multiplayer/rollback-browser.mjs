@@ -77,7 +77,16 @@ async function initialize(page,count,mode,scale){
    return result;
   };
   const replay=()=>{const size=m._th15_rollback_lab_replay_size();check(size,'confirmed replay encode');return Array.from(m.HEAPU8.subarray(m._th15_rollback_lab_replay_bytes(),m._th15_rollback_lab_replay_bytes()+size));};
-  window.rollbackLab={count,mode,input,remote,tick,status,details,lifecycle,audit,state,forward,drain,snapshot,replay};
+  const textureSnapshot=async(edited=false)=>{
+   const pointer=m._th15_rollback_lab_texture_observe(edited?1:0);check(pointer,'texture observation');
+   const value=words(pointer,13);check(value[0]===1,'texture capture');const images=[];
+   for(let index=0;index<4;++index){const size=value[9+index],p=m._th15_rollback_lab_texture_bytes(edited?1:0,index);check(p&&size,'texture bytes');
+    const bytes=m.HEAPU8.slice(p,p+size);images.push({size,allZero:bytes.every(v=>v===0),sha256:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(v=>v.toString(16).padStart(2,'0')).join('')});
+   }
+   return {executions:value[1],mutationFrame:value[2],journalOpenAtMutation:value[3]===1,retainedAtMutation:value[4],
+    gameOwned:value.slice(5,7),uploadedBytes:{edited:value[7],untouched:value[8]},images};
+  };
+  window.rollbackLab={count,mode,input,remote,tick,status,details,lifecycle,audit,state,forward,drain,snapshot,replay,textureSnapshot};
  },{count,mode,lifecycleOnly});
 }
 function compare(expected,actual,label){
@@ -179,17 +188,45 @@ try{
     console.log('PASS '+label+' | confirmed stage 2, ending, results, immutable retired frontiers, completion Replay');continue;
    }
    await pairedExact(exact,late,0,240,trajectory);
+   // Fresh, unused ANM images exercise a first CPU edit in discarded prediction
+   // without altering the authored game. The fixture callback uses the real
+   // image writer, journal, texture upload and framebuffer readback.
+   const textureBefore=[];
+   for(const [page,armed] of [[exact,0],[late,1]]){
+    assert.equal(await page.evaluate(armed=>Module._th15_rollback_lab_texture_begin(armed),armed),1,label+' texture probe setup');
+    textureBefore.push(await page.evaluate(()=>rollbackLab.textureSnapshot()));
+   }
+   for(const before of textureBefore){
+    assert.deepEqual(before.gameOwned,[1,1],label+' texture pixels must belong to the game heap');
+    assert.deepEqual(before.uploadedBytes,{edited:0,untouched:0},label+' prepared textures must already be cached');
+    assert.equal(before.executions,0);assert.ok(before.images.every(image=>image.size===1024&&!image.allZero));
+   }
+   assert.deepEqual(textureBefore[1].images,textureBefore[0].images,label+' initial CPU and GPU texture bytes');
    // Eight speculative frames, then a second mismatch during bounded catchup.
    await exact.evaluate(()=>{for(let f=240;f<248;++f)rollbackLab.forward(f);});
-   const retained=await late.evaluate(()=>{for(let f=240;f<248;++f)rollbackLab.forward(f,1<<1);const capture=rollbackLab.status()[3],corrections=rollbackLab.status()[8];
+   const retained=await late.evaluate(async()=>{for(let f=240;f<248;++f)rollbackLab.forward(f,1<<1);const capture=rollbackLab.status()[3],corrections=rollbackLab.status()[8];
+    const textureEdited=await rollbackLab.textureSnapshot(true);
     rollbackLab.remote(240,1);rollbackLab.tick(240,false);let attempts=0;
     while(rollbackLab.status()[1]&&rollbackLab.status()[2]<242){rollbackLab.tick(rollbackLab.status()[2],false);if(++attempts>8)throw Error('First correction did not reach second predicted input');}
     const partial=rollbackLab.status();
     if(!partial[1]||partial[2]>=248)throw Error('Correction was not split across callbacks');
     for(let f=241;f<248;++f)rollbackLab.remote(f,1);const corrected=rollbackLab.drain(248);
-    if(corrected.status[3]!==capture)throw Error('Correction recaptured local controls');return {corrections,partial,corrected};});
+    if(corrected.status[3]!==capture)throw Error('Correction recaptured local controls');return {corrections,partial,corrected,textureEdited};});
    assert.ok(retained.corrected.status[8]>=retained.corrections+2,'A new late mismatch did not restart correction');
+   const edit=retained.textureEdited;
+   assert.equal(edit.executions,1);assert.equal(edit.mutationFrame,240);assert.equal(edit.journalOpenAtMutation,true);assert.ok(edit.retainedAtMutation>0);
+   assert.deepEqual(edit.uploadedBytes,{edited:1024,untouched:0},label+' first CPU edit must really upload to the GPU');
+   for(const index of [0,2]){assert.equal(edit.images[index].allZero,true);assert.notEqual(edit.images[index].sha256,textureBefore[1].images[index].sha256);}
+   for(const index of [1,3])assert.deepEqual(edit.images[index],textureBefore[1].images[index],label+' untouched texture during prediction');
+   const textureAfter=[];for(const page of [exact,late])textureAfter.push(await page.evaluate(()=>rollbackLab.textureSnapshot()));
+   for(let index=0;index<2;++index)assert.deepEqual(textureAfter[index].images,textureBefore[index].images,label+' restored CPU and GPU texture bytes');
+   assert.deepEqual(textureAfter[1].images,textureAfter[0].images,label+' restored textures equal exact-input oracle');
+   assert.equal(textureAfter[1].executions,1,label+' texture edit must not repeat during history');
+   assert.deepEqual(textureAfter[0].uploadedBytes,{edited:0,untouched:0});
+   assert.deepEqual(textureAfter[1].uploadedBytes,{edited:1024,untouched:0},label+' restore must refresh the first-edited texture and keep the untouched upload');
+   report.checks.push({kind:'first-speculative-texture-edit',before:textureBefore,edited:edit,restored:textureAfter});
    compare(await exact.evaluate(()=>rollbackLab.snapshot(true)),await late.evaluate(()=>rollbackLab.snapshot(true)),label+' nested correction');
+   for(const page of [exact,late])assert.equal(await page.evaluate(()=>Module._th15_rollback_lab_texture_end()),1,label+' texture probe cleanup');
    report.checks.push({kind:'nested-correction',...retained});
    await pairedExact(exact,late,248,300,trajectory);
    // Pause arrives as the first replayed frame after a future GPU frontier.

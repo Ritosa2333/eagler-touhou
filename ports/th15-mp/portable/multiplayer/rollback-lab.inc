@@ -3,6 +3,32 @@ namespace th15::sdl {
 namespace {
 std::vector<u8> rollback_lab_recording;
 touhou::sdl::Renderer::SurfaceCheckpoint rollback_lab_screen;
+struct RollbackTextureObservation {
+ std::array<std::vector<u8>,4> bytes;
+ std::array<u32,2> uploads{};
+ bool valid=false;
+};
+struct RollbackTextureProbe {
+ AnmResource resource;FrameCallback callback;std::array<u32,2> handles{};
+ std::array<bool,2> owned{};
+ RollbackTextureObservation current,edited;
+ bool armed=false,frame_open=false;u32 executions=0,frame=Netplay::INVALID_FRAME,retained=0;
+};
+std::unique_ptr<RollbackTextureProbe> rollback_lab_textures;
+bool rollback_lab_observe_textures(RollbackTextureProbe& probe,RollbackTextureObservation& result){
+ TH15_SYSTEM_SCOPE;auto& graphics=app->graphics;result.valid=false;
+ for(unsigned index=0;index<2;++index){
+  const auto* image=graphics.pixels(probe.handles[index]);if(!image)return false;
+  result.bytes[index]=image->pixels;
+  const auto before=graphics.backend.stats.uploadBytes;
+  graphics.backend.prepare(probe.handles[index]);
+  result.uploads[index]=graphics.backend.stats.uploadBytes-before;
+ }
+ auto surfaces=graphics.backend.save_surfaces({probe.handles[0],probe.handles[1]});
+ if(surfaces.size()!=2)return false;
+ for(unsigned index=0;index<2;++index)result.bytes[index+2]=std::move(surfaces[index].rgba);
+ result.valid=true;return true;
+}
 bool rollback_lab_valid_remote(unsigned seat,u32 frame,unsigned held,int mode,float x,float y){
  Netplay::FrameInput input;
  if(!multiplayer::InputLanes::Capture(held,(held&0x100u)!=0,mode,x,y,input))return false;
@@ -61,6 +87,64 @@ EMSCRIPTEN_KEEPALIVE const unsigned char* th15_rollback_lab_pixels(){
 }
 EMSCRIPTEN_KEEPALIVE unsigned th15_rollback_lab_pixels_size(){
  using namespace th15::sdl;return rollback_lab_screen.empty()?0:unsigned(rollback_lab_screen[0].rgba.size());
+}
+EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_texture_begin(unsigned armed){
+ using namespace th15;using namespace th15::sdl;TH15_SYSTEM_SCOPE;
+ if(!app||running||rollback_lab_textures||network.Correcting()||network.RollbackFrame()!=Netplay::INVALID_FRAME||!mp_frames.empty()||journal::FrameCount())return 0;
+ auto probe=std::make_unique<RollbackTextureProbe>();
+ // Fresh auxiliary ANM images establish that neither texture has ever passed
+ // through changed(). They use the production loader, journaled pixels and GPU
+ // cache; normal game assets and their draw commands remain untouched.
+ for(unsigned index=0;index<2;++index){
+  AnmTexture image;image.name=index?"rollback-static-control":"rollback-first-edit";
+  image.width=image.pixel_width=16;image.height=image.pixel_height=16;
+  image.format=image.pixel_format=1;image.pixels.resize(16*16*4);
+  for(unsigned at=0;at<image.pixels.size();++at)image.pixels[at]=(at%4==3)?255:u8(1+(at+index*71)%254);
+  probe->resource.textures.push_back(std::move(image));
+ }
+ if(!app->graphics.preload(probe->resource))return 0;
+ for(unsigned index=0;index<2;++index){
+  probe->handles[index]=app->graphics.texture(probe->resource,index);
+  const auto* image=app->graphics.pixels(probe->handles[index]);
+  if(!image||image->pixels.empty())return 0;
+  probe->owned[index]=journal::OwnedByGameHeap(image->pixels.data());
+ }
+ probe->armed=armed!=0;probe->callback.owner=probe.get();probe->callback.enabled=true;
+ probe->callback.run=[](void* owner)->i32{
+  auto& probe=*static_cast<RollbackTextureProbe*>(owner);
+  if(!probe.armed)return i32(FrameAction::Continue);
+  TH15_SYSTEM_SCOPE;probe.armed=false;++probe.executions;
+  probe.frame=network.NextFrame();probe.frame_open=journal::FrameOpen();probe.retained=u32(journal::FrameCount());
+  // A one-shot probe executes inside a real retained game frame. Corrections
+  // replay the normal game draw without repeating this deliberate test edit.
+  if(!probe.frame_open||!app->graphics.clear_image(probe.handles[0])||!rollback_lab_observe_textures(probe,probe.edited)){
+   last_error="TH15 first-edit texture probe failed";return i32(FrameAction::Error);
+  }
+  return i32(FrameAction::Continue);
+ };
+ if(app->scheduler.add(probe->callback,FramePass::Draw,1000000)<0)return 0;
+ rollback_lab_textures=std::move(probe);return 1;
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_rollback_lab_texture_observe(unsigned edited){
+ using namespace th15;using namespace th15::sdl;TH15_SYSTEM_SCOPE;static std::array<unsigned,13> values{};
+ if(!app||!rollback_lab_textures||journal::FrameOpen()||edited>1)return nullptr;
+ auto& probe=*rollback_lab_textures;auto& observation=edited?probe.edited:probe.current;
+ if(!edited&&!rollback_lab_observe_textures(probe,observation))return nullptr;
+ values={observation.valid?1u:0u,probe.executions,probe.frame,probe.frame_open?1u:0u,probe.retained,
+  probe.owned[0]?1u:0u,probe.owned[1]?1u:0u,observation.uploads[0],observation.uploads[1],
+  u32(observation.bytes[0].size()),u32(observation.bytes[1].size()),u32(observation.bytes[2].size()),u32(observation.bytes[3].size())};
+ return values.data();
+}
+EMSCRIPTEN_KEEPALIVE const unsigned char* th15_rollback_lab_texture_bytes(unsigned edited,unsigned index){
+ using namespace th15::sdl;if(!rollback_lab_textures||edited>1||index>=4)return nullptr;
+ const auto& probe=*rollback_lab_textures;const auto& observation=edited?probe.edited:probe.current;
+ return observation.bytes[index].data();
+}
+EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_texture_end(){
+ using namespace th15::sdl;TH15_SYSTEM_SCOPE;
+ if(!app||!rollback_lab_textures||network.Correcting()||network.RollbackFrame()!=Netplay::INVALID_FRAME||!mp_frames.empty()||journal::FrameCount())return 0;
+ app->scheduler.remove(rollback_lab_textures->callback);app->graphics.unload(rollback_lab_textures->resource);
+ rollback_lab_textures.reset();return app->graphics.error.empty();
 }
 EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_retire_title(){
  using namespace th15::sdl;if(!app||network.Correcting()||network.RollbackFrame()!=Netplay::INVALID_FRAME||!mp_frames.empty()||journal::FrameCount())return 0;
