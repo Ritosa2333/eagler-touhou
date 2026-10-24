@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {spawn,spawnSync} from 'node:child_process';
-import {readFileSync,writeFileSync,mkdirSync,existsSync,createReadStream,statSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,mkdtempSync,rmSync,existsSync,createReadStream,statSync} from 'node:fs';
 import {pipeline} from 'node:stream';
 import {resolve,dirname,extname,relative,isAbsolute,sep} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -64,7 +64,7 @@ report.scope.diagnosticOnly=diagnosticModes(report.settings).length>0;
 const mark=(name,extra={})=>{report.stages.push({name,checkerMs:performance.now(),...extra});save();};
 const observeError=entry=>{if(report.stages.at(-1)?.name==='cleanup-start')report.cleanup.push({action:'owned-shutdown-event',...entry});else report.errors.push(entry);};
 save();
-let relay,server;const browsers=[],contexts=[],pages=[],cdps=[],relayHeartbeats=[];
+let relay,server,browserTemp;const browsers=[],contexts=[],pages=[],cdps=[],relayHeartbeats=[];
 let relayLog='',relayLogOverflow=false,firstFailure=null;
 const totalBudgetMs=(300+duration)*1000;
 const watchdog=setTimeout(()=>{
@@ -375,7 +375,9 @@ try{
   }
   if(delayLocation==='relay')pinned.set(timingObserver,report.identity.relayTimingObserver.sha256);
   const {chromium}=await loadPlaywright();
-  const browserTemp=resolve(out,'browser-temp');mkdirSync(browserTemp,{recursive:true});
+  // Chromium creates Unix sockets below TMPDIR; a long artifact directory can
+  // exceed the OS socket-path limit before a browser page even starts.
+  browserTemp=mkdtempSync(process.platform==='win32'?resolve(out,'browser-temp-'):'/tmp/th11-rb-');
   // Scope temporary profiles/downloads to this owned test process and its children.
   // The machine's C: temp volume can be full; never clean another user's files.
   process.env.TEMP=browserTemp;process.env.TMP=browserTemp;process.env.TMPDIR=browserTemp;
@@ -737,6 +739,8 @@ try{
   for(let seat=0;seat<browsers.length;++seat){try{await browsers[seat].close();report.cleanup.push({seat,action:'close-owned-browser',ok:true});}catch(e){report.cleanup.push({seat,action:'close-owned-browser',error:String(e)});}}
   if(server){server.closeAllConnections?.();await Promise.race([new Promise(r=>server.close(r)),pause(3000)]);}
   if(relay){relay.kill();await Promise.race([new Promise(r=>relay.once('exit',r)),pause(3000)]);report.cleanup.push({action:'stop-owned-relay',pid:relay.pid,exitCode:relay.exitCode,signal:relay.signalCode});}
+  if(browserTemp){try{rmSync(browserTemp,{recursive:true,force:true});report.cleanup.push({action:'remove-owned-browser-temp',path:browserTemp,ok:true});}
+    catch(e){report.cleanup.push({action:'remove-owned-browser-temp',path:browserTemp,error:String(e)});}}
   writeFileSync(resolve(out,'relay.log'),relayLog);writeFileSync(resolve(out,'relay-heartbeats.json'),JSON.stringify(relayHeartbeats)+'\n');
   report.relayHeartbeat={count:relayHeartbeats.length,lateness:distribution(relayHeartbeats.map(x=>x.late)),clock:'relay child performance.now; not comparable to peer timeOrigins',logOverflow:relayLogOverflow};
   clearTimeout(watchdog);
