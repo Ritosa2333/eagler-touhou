@@ -25,7 +25,7 @@ if(process.argv.includes('--compile-only')){
  writeFileSync(resolve(out,'visual-test-compile-only.json'),JSON.stringify({
   schema:1,compiled:true,source:resolve(import.meta.dirname,'visual-gameplay.cpp'),
   output:loader,buildManifest:resolve(out,'build.json')
- },null,2)+'\\n');
+ },null,2)+'\n');
  console.log('PASS: TH15 opacity old-full-copy oracle compiled and linked (execution requires TH15_TEST_ARCHIVE)');
 }else{
  if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE to the Japanese 1.00b archive');
