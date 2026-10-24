@@ -11,6 +11,12 @@ struct AuditRebaseScope {
     explicit AuditRebaseScope(bool value):previous(presentation_audit::authored_rebase()){presentation_audit::authored_rebase(value);}
     ~AuditRebaseScope(){presentation_audit::authored_rebase(previous);}
 };
+struct RestoreDrawVm {
+    AnmVm* target=nullptr;
+    AnmVm saved;
+    RestoreDrawVm(AnmVm& vm,bool active){if(active){saved=vm;target=&vm;}}
+    ~RestoreDrawVm(){if(target)*target=saved;}
+};
 void camera_fog(AnmRenderer& renderer,const SceneCamera& camera){auto& p=renderer.pipeline();p.fogColor=camera.fog.color;p.fogNear=camera.fog.near_distance;p.fogFar=camera.fog.far_distance;}
 void restore_tint(AnmRenderer& renderer,i32 frame_effect){renderer.flush();renderer.tint_enabled=frame_effect!=0;renderer.tint=frame_effect?0xff404040:0x80808080;}
 }
@@ -48,7 +54,7 @@ bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFade
         if(state.tint==multiplayer_tint_source)renderer.tint=renderer.multiplayer_tint(state.tint,multiplayer_tint_owner);
 #endif
     }
-    state.drawn_objects=state.culled_objects=state.drawn_primitives=0;
+    if(!high_refresh::render_only)state.drawn_objects=state.culled_objects=state.drawn_primitives=0;
     if(state.draw_flags&1){
         if(state.script_animations[0].sprite){
             renderer.set_camera(camera,true);auto& p=renderer.pipeline();p.fog=false;p.depthWrite=false;
@@ -118,19 +124,23 @@ bool stage_visible(const StageObject& object,Vec3 instance,const SceneCamera& ca
 }
 bool Stage::draw_layer(AnmRenderer& renderer,SceneCamera& camera,u32 layer){
     renderer.set_camera(camera,false);
+    const bool draw_only=high_refresh::render_only;
     // 404190 keeps this cache separate from the actual device depth mask.
     // In the foreground its initial value is still true, even with writes off.
     bool depth_write=true;
     for(auto& instance:resource.instances){auto& object=resource.objects[instance.object];if(object.layer!=layer)continue;
-        if(!stage_visible(object,instance.position,camera,state.draw_distance_squared)){instance.flags&=~1; ++state.culled_objects;continue;}
-        object.flags|=2;
+        if(!stage_visible(object,instance.position,camera,state.draw_distance_squared)){
+            if(!draw_only){instance.flags&=~1;++state.culled_objects;}continue;
+        }
+        if(!draw_only)object.flags|=2;
         for(const auto& primitive:object.primitives){if(primitive.type!=0)continue;auto& vm=object_animations[primitive.animation];
+            const RestoreDrawVm restore(vm,draw_only);
             const u32 mode=(vm.flags>>22)&15;
             if(mode>=4){
                 // The VM script may already be finished while the stage owner
                 // repositions it every draw. Publish the pre-draw endpoint so
                 // Draw can interpolate from the previous presented position.
-                presentation::capture_if_needed(vm);
+                if(!draw_only)presentation::capture_if_needed(vm);
                 vm.position={float(double(primitive.position.x)+instance.position.x),float(double(primitive.position.y)+instance.position.y),float(double(primitive.position.z)+instance.position.z)};
                 if((primitive.size.x!=0||primitive.size.y!=0)&&!vm.sprite){error="stage primitive has no sprite";return false;}
                 if(primitive.size.x!=0){vm.scale.x=float(double(primitive.size.x)/vm.sprite->width);vm.flags|=8;}
@@ -138,9 +148,10 @@ bool Stage::draw_layer(AnmRenderer& renderer,SceneCamera& camera,u32 layer){
             }
             renderer.set_fog(mode==8);
             const bool write=(vm.flags&0x800)==0;if(write!=depth_write){renderer.set_depth_write(write);depth_write=write;}
-            if(renderer.draw(vm)==-2){error="stage primitive draw failed";return false;}++state.drawn_primitives;
+            if(renderer.draw(vm)==-2){error="stage primitive draw failed";return false;}
+            if(!draw_only)++state.drawn_primitives;
         }
-        instance.flags|=1;++state.drawn_objects;
+        if(!draw_only){instance.flags|=1;++state.drawn_objects;}
     }
     if(!depth_write)renderer.set_depth_write(true);return true;
 }

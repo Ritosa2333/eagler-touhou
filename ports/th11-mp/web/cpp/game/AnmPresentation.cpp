@@ -7,14 +7,26 @@ namespace th11::presentation {
 namespace {
 constexpr float tau=6.2831854820251465f;
 struct Entry {std::uint64_t tick=0;Sample sample;};
-std::unordered_map<std::uint64_t,Entry> samples;
+struct Key {
+    const float* clock;
+    std::uint64_t identity;
+    bool operator==(const Key& other)const noexcept{return clock==other.clock&&identity==other.identity;}
+};
+struct KeyHash {
+    std::size_t operator()(const Key& key)const noexcept{
+        return std::hash<std::uint64_t>{}(key.identity)^(std::hash<const float*>{}(key.clock)<<1);
+    }
+};
+std::unordered_map<Key,Entry,KeyHash> samples;
 std::uint64_t current_tick=1;
 std::uint32_t stats[8]{},watch[10]{},watch_id=0;
-std::uint64_t key(const AnmVm& vm) noexcept {
+Key key(const AnmVm& vm) noexcept {
     // Pooled VMs keep a stable address; embedded copies share the authored id.
     // Prefer the id so attached visuals drawn from a stack copy still find the
     // endpoint published for their owner.
-    return vm.id?0x8000000000000000ull|vm.id:std::uint64_t(reinterpret_cast<std::uintptr_t>(&vm));
+    // Combat and MP menu managers allocate their own ids. The bound clock
+    // identifies their owner even when a submitted copy retains that id.
+    return {vm.timer.rate,vm.id?0x8000000000000000ull|vm.id:std::uint64_t(reinterpret_cast<std::uintptr_t>(&vm))};
 }
 u32 continuous_fields(const AnmVm& vm) noexcept {
     u32 fields=0;
@@ -62,37 +74,21 @@ bool all_near(u32 before,u32 current,u32 maximum) noexcept {
 }
 }
 void begin_tick() noexcept {
-#ifdef TH11_MULTIPLAYER
-    // Netplay retains its confirmed-frontier clock and presentation ownership.
-    return;
-#endif
     ++current_tick;
     if(samples.size()>16384)for(auto it=samples.begin();it!=samples.end();)it=it->second.tick+120<current_tick?samples.erase(it):std::next(it);
 }
 void reset() noexcept {samples.clear();current_tick=1;}
 void capture(const AnmVm& vm) noexcept {
-#ifdef TH11_MULTIPLAYER
-    // Netplay retains its confirmed-frontier clock and presentation ownership.
-    return;
-#endif
     auto& entry=samples[key(vm)];
     if(entry.tick==current_tick)return;
     entry.tick=current_tick;entry.sample=sample_of(vm);
 }
 void capture_if_needed(const AnmVm& vm) noexcept {
-#ifdef TH11_MULTIPLAYER
-    // Netplay retains its confirmed-frontier clock and presentation ownership.
-    return;
-#endif
     auto& entry=samples[key(vm)];
     if(entry.tick==current_tick)return;
     entry.tick=current_tick;entry.sample=sample_of(vm);
 }
 void snap(const AnmVm& vm) noexcept {
-#ifdef TH11_MULTIPLAYER
-    // Netplay retains its confirmed-frontier clock and presentation ownership.
-    return;
-#endif
     auto& entry=samples[key(vm)];
     entry.tick=current_tick;entry.sample=sample_of(vm);
 }
@@ -105,6 +101,7 @@ bool present_position(const AnmVm& current,Vec3& out) noexcept {
     const bool visible=(current.flags&3u)==3u;
     if(before.visible!=visible||!visible)return false;
     if(current.timer.current<before.timer)return false;
+    if(high_refresh::alpha>=1.f){out=total(current.position,current.script_position,current.child_position);return true;}
     Vec3 position=current.position;
     if(near(before.position,current.position))position=mix(before.position,current.position);
     Vec3 script=current.script_position;
@@ -130,6 +127,7 @@ bool present(AnmVm& destination,const AnmVm& current) noexcept {
     const bool visible=(current.flags&3u)==3u;
     if(before.visible!=visible||!visible)return false;
     if(current.timer.current<before.timer)return false;
+    if(high_refresh::alpha>=1.f){destination=current;return true;}
     const u32 continuous=before.continuous|continuous_fields(current);
     bool applied=false;
     const bool position_near=near(before.position,current.position),script_near=near(before.script_position,current.script_position),child_near=near(before.child_position,current.child_position);

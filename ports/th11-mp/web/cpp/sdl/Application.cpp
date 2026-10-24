@@ -23,6 +23,7 @@
 #include "../game/WorldRollback.hpp"
 #include "../game/RollbackCapture.hpp"
 #include "../multiplayer/FrameSchedule.hpp"
+#include "../multiplayer/PresentationSchedule.hpp"
 #endif
 #include "../game/FrameStatistics.hpp"
 #include "../game/AnmRenderer.hpp"
@@ -764,6 +765,7 @@ th11::PracticeCadence practice_cadence;
 #endif
 #ifdef TH11_MULTIPLAYER
 multiplayer::FrameSchedule rollback_cadence,exact_cadence;
+multiplayer::PresentationSchedule multiplayer_presentation;
 unsigned recovery_tasks_remaining=0;
 constexpr bool recovery_tasks_enabled=false; // r37/r38 did not improve cadence
 #endif
@@ -775,6 +777,7 @@ void reset_cadences(){
     cadence.reset();
 #ifdef TH11_MULTIPLAYER
     rollback_cadence.reset();exact_cadence.reset();
+    multiplayer_presentation.reset();
 #endif
 }
 std::array<u8,256> previous_scans{};
@@ -1194,7 +1197,11 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th11_presentation_state(){
     static unsigned state[10];
     auto& s=th11::sdl::app.session;
     state[0]=th11::sdl::presentation.high_refresh?1u:0u;
+#ifdef TH11_MULTIPLAYER
+    state[1]=unsigned(th11::sdl::multiplayer_presentation.alpha()*1000.);
+#else
     state[1]=unsigned(th11::sdl::cadence.interpolation_alpha()*1000.);
+#endif
     state[2]=th11::sdl::presentation_draws;
     state[3]=interpolation_ready()?1u:0u;
     state[4]=unsigned(s.state.phase);
@@ -1360,6 +1367,11 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
             if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
         }
         recovery_tasks_remaining=2; // hard cap between real rAF callbacks
+        const bool display_ready=!suspended&&app.multiplayer_world&&!app.multiplayer_finish_pending&&
+            interpolation_ready()&&!th11_limit_presentation_to_60();
+        if(display_ready)presentation.advance(delta);
+        else{presentation.reset();app.reset_presentation_frames();}
+        th11::high_refresh::smooth_submission=display_ready&&presentation.high_refresh;
         th11::runtime_cost::begin();
         if(app.rollback_profile_enabled){app.rollback_profile.fill(0);app.rollback_profile[0]=1;app.rollback_profile[1]=1;}
         const bool capture_follows=!suspended&&app.netplay.AllowsRollback()&&
@@ -1412,6 +1424,17 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
                 if(seeking)exact_cadence.reset();else exact_cadence.cpu_yield();
             }
             if(!app.netplay.FlushDeferredInputs()){if(app.error.empty())app.error=app.netplay.Error();ok=false;}
+            const bool seeking=app.netplay.StagePlaybackReady()&&
+                (app.netplay.StagePlayback().Paused()||app.netplay.StagePlayback().Seeking()||app.netplay.StagePlayback().FastForwarding());
+            const bool display_eligible=ok&&presentation.high_refresh&&interpolation_ready()&&
+                app.multiplayer_world&&!app.multiplayer_finish_pending&&!app.netplay.Correcting()&&
+                app.netplay.RollbackFrame()==Netplay::INVALID_FRAME&&!seeking&&
+                !(app.netplay.Playback()&&app.netplay.NextFrame()<app.multiplayer_seek_target)&&
+                !th11_limit_presentation_to_60();
+            const auto phase=app.netplay.AllowsRollback()&&!app.netplay.ReadOnly()?rollback_cadence.phase():exact_cadence.phase();
+            const bool draw=multiplayer_presentation.observe(delta,display_eligible,app.netplay.Generation(),
+                app.rollback_revisions,app.session.state.stage,app.netplay.NextFrame(),phase);
+            if(draw){++presentation_draws;ok=app.presentation_draw(multiplayer_presentation.alpha(),true,true);}
             if(!ok||app.netplay.Correcting())app.graphics.backend.cancel_present();
             {auto measured=app.rollback_timer(11);app.graphics.backend.commit();}app.graphics.backend.defer=false;
         }else{cadence.reset();rollback_cadence.reset();exact_cadence.reset();}

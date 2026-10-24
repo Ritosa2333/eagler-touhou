@@ -33,10 +33,17 @@ assert(loopStart>0&&loopEnd>loopStart,'loop body not found');
 const loop=app.slice(loopStart,loopEnd);
 const drawStart=loop.indexOf('presentation_draw');
 assert(drawStart>0,'loop does not call presentation_draw');
-const drawOnly=loop.slice(drawStart);
+// MP and ordinary configurations each own a loop branch. Check the shared
+// draw transaction itself, rather than treating the later #else as draw-only.
+const transactionStart=app.indexOf('bool presentation_draw(');
+const transactionEnd=app.indexOf('bool return_to_title()',transactionStart);
+assert(transactionStart>0&&transactionEnd>transactionStart,'display transaction not found');
+const drawOnly=app.slice(transactionStart,transactionEnd);
 assert(!drawOnly.includes('sample_and_tick'),'draw-only frames must not run simulation');
 assert(!drawOnly.includes('session.update'),'draw-only frames must not update the session');
 assert(!drawOnly.includes('playback.tick'),'draw-only frames must not consume Replay');
+assert(app.includes('multiplayer_presentation.observe('),'MP display must observe completed native frames');
+assert(app.includes('app.rollback_revisions'),'MP display must fence corrected history');
 
 const drawSplit=app.indexOf('bool draw_session()');
 const drawEnd=app.indexOf('bool presentation_draw');

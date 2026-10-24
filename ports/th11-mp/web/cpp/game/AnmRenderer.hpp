@@ -27,6 +27,9 @@ public:
     std::array<u8,4> multiplayer_opacity{{255,255,255,255}};
     std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
     std::map<u32,unsigned> multiplayer_hitbox_owners;
+    const AnmVm* presentation_copy=nullptr;
+    unsigned presentation_owner=0;
+    unsigned multiplayer_owner(const AnmVm&)const noexcept;
     u32 multiplayer_color(const AnmVm&,u32)const noexcept;
     u32 multiplayer_tint(u32,unsigned)const noexcept;
     void multiplayer_geometry(const AnmVm&,touhou::graphics::Topology,u32,const AnmVertex*);

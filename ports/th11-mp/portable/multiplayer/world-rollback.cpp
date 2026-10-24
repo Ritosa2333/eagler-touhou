@@ -1,6 +1,8 @@
 #include "../../web/cpp/game/WorldRollback.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "../../web/cpp/game/RollbackCapture.hpp"
+#include "../../web/cpp/game/AnmPresentation.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -183,7 +185,14 @@ void ecl(Image& out,const std::string& key,const EclProgram& program){
 Image observe(GameSession& s){
     Image out;auto& b=*s.battle;
     out.put("session/value",s.state,s.game_input,s.multiplayer_active,s.multiplayer_options,s.multiplayer_frame,s.multiplayer_pause_held,
-        s.recording_timestamp,s.always_hitbox,s.interactive,s.spell_records,s.clear_records,s.practice,s.multiplayer_always_hitbox,s.multiplayer_local_visibility);
+        s.recording_timestamp,s.always_hitbox,s.interactive,s.spell_records,s.clear_records,s.multiplayer_always_hitbox,s.multiplayer_local_visibility);
+    const auto& p=s.practice;
+    out.put("session/practice",p.enabled,p.active,p.replay,p.menu,p.accepted,p.configured,p.run,p.replay_candidate,
+        p.replay_candidate_valid,p.assisted,p.everlasting_bgm,p.all_clear_bonus,p.warp,p.spell_category,
+        p.cheats,p.tracker_misses,p.tracker_bombs,p.map_inf_life_to_no_continue,p.force_boss_move_down,p.lock_marisa_b,
+        p.show_keyboard_monitor,p.show_lock_timer,p.fix_stage6_replay,p.disable_master_display,p.boss_move_down_range,
+        p.locked_formation,p.lock_frames,p.lock_tick_seen,p.input,p.speed,bool(p.record_keys));
+    check(!p.record_keys,"MP practice recording callback has no hidden mutable owner");
     out.put("session/graph",s.battle.get(),s.title.get(),s.pause_menu.get(),s.ending.get(),s.resources.stage.get(),s.resources.previous_stage.get(),s.resources.stage_number);
     WorldRollbackTestAccess::session(out,s);economy(out,"session/economy",s.economy);out.text("session/error",s.error);
     auto& ew=static_cast<const EnemyFrameWorld&>(b);
@@ -276,6 +285,7 @@ struct RecordingGraphics final:ZunGraphics{
 };
 struct Peer{
     GameResources resources;GameSession session;RecordingGraphics graphics;AnmRenderer renderer{graphics};
+    bool high_refresh_samples=false,interpolated_motion=false;
     explicit Peer(const std::vector<u8>& data){check(resources.open_archive(data.data(),u32(data.size())),"open real retail archive");}
     void draw(){
         // Device cache is an independent host owner. Reset only its recorder /
@@ -293,6 +303,16 @@ struct Peer{
             check(false,"real confirmed/rollback session Update");
         }
         draw();++ticks;
+    }
+    void sample_draws(){
+        const auto baseline=observe(session);
+        const auto native_commands=graphics.commands;
+        for(float alpha:{0.f,.25f,.5f,.75f,1.f}){
+            high_refresh::begin(alpha,true,true);draw();high_refresh::end();
+            baseline.compare(observe(session),"MP extra draw leaves every observed world owner unchanged");
+            if(alpha==.5f&&graphics.commands!=native_commands)interpolated_motion=true;
+            if(alpha==1.f)check(graphics.commands==native_commands,"MP alpha 1 reproduces complete authored geometry commands");
+        }
     }
 };
 using Inputs=std::array<MultiplayerInput,3>;
@@ -321,6 +341,7 @@ Segment execute(Peer& p,WorldRollback& adapter,Netplay::RollbackJournal& j,const
         if(stimulus)stimulus(p,n,wrong);
         p.step(inputs[n]);adapter.EndRollbackFrame();
         check(j.EndFrame()&&!j.Failed(),"seal complete Update and authored Draw transaction");
+        if(p.high_refresh_samples)p.sample_draws();
         peak_bytes=std::max(peak_bytes,j.BytesForFrame(start));peak_blocks=std::max(peak_blocks,j.BlocksForFrame(start));
         if(save_images){out.images.push_back(observe(p.session));out.draws.push_back(p.graphics.commands);}
         out.frames.push_back(std::move(frame));
@@ -355,7 +376,14 @@ void correction(Peer& p,const std::vector<Inputs>& actual,const std::vector<Inpu
     check(reference.images.size()==replay.images.size(),"reference/replay frame span equal");
     for(std::size_t n=0;n<reference.images.size();++n){
         reference.images[n].compare(replay.images[n],"actual corrected full owner replay");
-        if(reference.draws[n]!=replay.draws[n]){std::fprintf(stderr,"draw trace mismatch relative frame=%zu\n",n);check(false,"complete Draw command/vertex stream equality");}
+        if(reference.draws[n]!=replay.draws[n]){
+            const auto& a=reference.draws[n];const auto& b=replay.draws[n];std::size_t byte=0;
+            while(byte<a.size()&&byte<b.size()&&a[byte]==b[byte])++byte;
+            std::fprintf(stderr,"draw trace mismatch relative frame=%zu byte=%zu sizes=%zu/%zu\n",n,byte,a.size(),b.size());
+            for(std::size_t i=byte>16?byte-16:0;i<std::min(byte+32,std::min(a.size(),b.size()));++i)
+                std::fprintf(stderr,"%zu %02x %02x\n",i,a[i],b[i]);
+            check(false,"complete Draw command/vertex stream equality");
+        }
         ++checks;
     }
     if(verified)verified(p);
@@ -368,6 +396,19 @@ void movement_cases(const std::vector<u8>& bytes){
         correction(*p,motion_inputs(count,8),motion_inputs(count,8,true));
     }
     std::puts("PASS world: 2P/3P retail Update+Draw, touch target/analog, shooting, 8-frame reference/wrong/corrected oracle");
+}
+void presentation_cases(const std::vector<u8>& bytes){
+    high_refresh::smooth_submission=true;
+    for(unsigned seats:{2u,3u}){
+        auto p=prepared(bytes,seats,{0,3,5});p->high_refresh_samples=true;
+        correction(*p,motion_inputs(seats,8),motion_inputs(seats,8,true));
+        check(p->interpolated_motion,"MP visual samples produce interpolated geometry between fixed ticks");
+        // Restore invalidates the discarded future, then corrected ticks
+        // rebuild pairs. No prior resource/camera history can be blended.
+        ++cases;
+    }
+    high_refresh::smooth_submission=false;
+    std::puts("PASS world: 2P/3P high-refresh repeated Draw, alpha endpoints and complete wrong/corrected world equality");
 }
 void bomb_cases(const std::vector<u8>& bytes){
     for(unsigned group=0;group<2;++group){
@@ -396,7 +437,7 @@ void put(PlayerFrame& p,float x,float y){p.motion.state.x=truncate_int(double(x)
 void rescue_case(const std::vector<u8>& bytes){
     auto p=prepared(bytes,2,{0,3,5});auto& world=*p->session.battle;auto& donor=*world.pilots[0];auto& ghost=*world.pilots[1];
     ghost.economy.lives=-1;check(ghost.game_over(false),"real ghost transition before rollback window");
-    donor.economy.lives=3;donor.life_hold=86;donor.life_latched=false;
+    donor.economy.lives=3;donor.life_hold=(eagler::cooperative::TransferTaps-1)*32+eagler::cooperative::TransferTapWindow;donor.life_latched=false;
     put(*donor.player,0,400);put(*ghost.player,10,400);ghost.ghost_clock=1;ghost.ghost_dx=ghost.ghost_dy=0;
     donor.player->state.invincibility.set(100000,&world.animations.rate);
     std::vector<Inputs> actual(8),wrong(8);
@@ -511,7 +552,7 @@ int main(int argc,char** argv){
     check(argc==2,"pass existing retail archive path");
     std::ifstream file(argv[1],std::ios::binary);check(bool(file),"retail archive available");
     const std::vector<u8> bytes((std::istreambuf_iterator<char>(file)),std::istreambuf_iterator<char>());
-    contiguous_capture_cases();movement_cases(bytes);bomb_cases(bytes);rescue_case(bytes);barrier_cases(bytes);transition_cases(bytes);failure_and_observer_cases(bytes);
+    contiguous_capture_cases();movement_cases(bytes);presentation_cases(bytes);bomb_cases(bytes);rescue_case(bytes);barrier_cases(bytes);transition_cases(bytes);failure_and_observer_cases(bytes);
     std::printf("TH11 retail world rollback: %u cases, %u checks, %u real Update+Draw ticks PASS; peak journal %zu bytes / %zu blocks\n",
         cases,checks,ticks,peak_bytes,peak_blocks);
     std::puts("SCOPE: stable stage real owners and authored CPU Draw command/geometry oracle. No host FontDevice textures, GPU pixels, Application/netplay, browser or performance acceptance.");
