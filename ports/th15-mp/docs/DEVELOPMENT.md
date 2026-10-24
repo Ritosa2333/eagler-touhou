@@ -83,6 +83,8 @@ node ports/th15-mp/portable/multiplayer/browser-test.mjs --rollback --output=/ab
 
 ### 生产包性能观察
 
+六场生产包实测、自动存档修复、内存和长停顿结果见 [2026-10-24 性能记录](PERFORMANCE-20261024.md)，逐席数据和证据身份见[机器摘要](PERFORMANCE-20261024.json)。该记录分别列出运行观察、保存验证和性能门槛。
+
 `portable/multiplayer/performance-browser.mjs` 使用正式 Runtime、真实 Relay 和每席独立的 Chromium 进程，暖机后观察固定 15 秒的真实 rAF、移动与射击。`--mode=0|1|2` 和 `--players=2|3` 选择场景，`--runtime` 指定冻结的正式包，`--output` 指定独立结果目录；DATA、字体与浏览器路径沿用上面的环境变量。每次运行保留原始回调、网络发送时间、确认 Replay 和包身份。
 
 完整游戏回调耗时包含没有 `onGameFrame` 通知的历史追赶，原生通知耗时另列采样覆盖率。呈现指标计数游戏画布默认 framebuffer 的颜色提交，逻辑速度使用新的模拟水位；两者分别报告。状态观察开销单独计时，测量期间关闭采样 profiler、截图与像素读回。100 ms 比较用于识别长间隔，持续帧率和整局表现需结合对应场景数据判断。
