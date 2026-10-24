@@ -69,9 +69,10 @@ test('save observer records status transitions and real FS callbacks without ext
 });
 
 const persistenceSource=source.slice(source.indexOf('async function inspectPersistence('),source.indexOf('\nfunction nextJson('));
-function persistenceFixture({mismatch=false,databaseError=false}={}){
-  const root='/savesth15mp',memory=new Map([[root+'/scoreth15.dat',new Uint8Array([1,2,3])],[root+'/th15.cfg',new Uint8Array([4,5])]]);
-  const disk=new Map([...memory].map(([path,bytes])=>[path,{contents:bytes.slice()}]));
+function persistenceFixture({mismatch=false,databaseError=false,signed=false}={}){
+  const root='/savesth15mp',memory=new Map([[root+'/scoreth15.dat',new Uint8Array(signed?[0,127,128,197,255]:[1,2,3])],[root+'/th15.cfg',new Uint8Array([4,5])]]);
+  const disk=new Map([...memory].map(([path,bytes])=>{if(!signed)return [path,{contents:bytes.slice()}];
+    const backing=new Int8Array(bytes.length+4);backing.set(bytes,2);return [path,{contents:backing.subarray(2,bytes.length+2)}];}));
   if(mismatch)disk.get(root+'/scoreth15.dat').contents[0]=9;
   const heap=new Uint8Array(1024),calls=[];let closed=0;
   const db={close:()=>++closed,transaction:(name,mode)=>{calls.push(['transaction',name,mode]);let outstanding=0;
@@ -101,6 +102,14 @@ test('persistence inspection retains byte mismatch instead of claiming successfu
   const f=persistenceFixture({mismatch:true}),result=await f.context.inspectPersistence();
   assert.equal(result.files[0].equal,false);assert.deepEqual(Array.from(result.files[0].memory),[1,2,3]);
   assert.deepEqual(Array.from(result.files[0].indexedDb),[9,2,3]);assert.equal(f.closed,1);
+});
+
+test('persistence compares high-bit Int8Array bytes and still detects a real stored-byte change',async()=>{
+  const signed=persistenceFixture({signed:true}),valid=await signed.context.inspectPersistence();
+  assert.equal(valid.files[0].equal,true);assert.deepEqual(Array.from(valid.files[0].indexedDb),[0,127,128,197,255]);
+  assert.deepEqual(signed.calls.find(call=>call[0]==='validate')[2],[0,127,128,197,255]);
+  const changed=persistenceFixture({signed:true,mismatch:true}),invalid=await changed.context.inspectPersistence();
+  assert.equal(invalid.files[0].equal,false);assert.deepEqual(Array.from(invalid.files[0].indexedDb),[9,127,128,197,255]);
 });
 
 test('persistence inspection rejects actual IndexedDB read failure',async()=>{

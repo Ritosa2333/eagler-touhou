@@ -207,7 +207,9 @@ async function inspectPersistence(){
     };
   });
   for(const file of files){const entry=stored[file.name];if(!entry?.contents)throw Error('IDBFS file is missing: '+file.name);
-    file.indexedDb=Array.from(entry.contents);file.equal=file.memory.length===file.indexedDb.length&&file.memory.every((byte,i)=>byte===file.indexedDb[i]);
+    // MEMFS may persist an Int8Array. Compare the stored bytes, independent
+    // of whether its JS view represents the high bit with a negative number.
+    file.indexedDb=Array.from(new Uint8Array(entry.contents));file.equal=file.memory.length===file.indexedDb.length&&file.memory.every((byte,i)=>byte===file.indexedDb[i]);
     const bytes=new Uint8Array(file.indexedDb),pointer=Module._malloc(bytes.length);if(!pointer)throw Error('Native validation allocation failed');
     try{Module.HEAPU8.set(bytes,pointer);file.nativeValid=Module._th15_validate_file(file.kind,pointer,bytes.length)===1;}finally{Module._free(pointer);}
   }
