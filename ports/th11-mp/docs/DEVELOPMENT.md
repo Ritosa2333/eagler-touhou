@@ -12,7 +12,7 @@ Launcher 手柄动作通过共用浏览器桥同步进入本地原生采样，�
 
 MP 构建使用[Wasm 写入日志插桩](../../../tools/rollback/README.md)。首次构建执行 `npm --prefix tools/rollback ci --ignore-scripts`。构建器在最终链接后自动插桩并核验标志，源码清单包含插桩器、锁文件与模拟堆分配器；打包时继续核对最终 Wasm 身份。
 
-游戏动态对象及分配器元数据位于独立的 192 MiB 模拟堆，`GameSession` 自身作为精确的外部根范围登记；每个逻辑帧记录 32 字节块的首次写入。`GameScope` 为游戏对象分配内存，`SystemScope` 为字体、图形、网络和长期缓存分配内存。纹理像素与渲染状态继续通过原有事务恢复；暂停、资源更替和关卡退出沿用确认帧边界。音效和 Replay 在确认后发布，纠正过程重新生成对应输出。完整所有权与提交流程见[整堆回滚设计](ROLLBACK.md)，实测环境与结果见 [2026-10-23 验收记录](rollback-20261023.md)。
+游戏动态对象及分配器元数据位于独立的 192 MiB 模拟堆，`GameSession` 自身作为精确的外部根范围登记；每个逻辑帧记录 32 字节块的首次写入。`GameScope` 为游戏对象分配内存，`SystemScope` 为字体、图形、网络和长期缓存分配内存。纹理像素与渲染状态继续通过原有事务恢复；暂停、资源更替和关卡退出沿用确认帧边界。音效和 Replay 在确认后发布，纠正过程重新生成对应输出。完整所有权与提交流程见[整堆回滚设计](ROLLBACK.md)，本轮实测环境与结果见 [2026-10-24 验收记录](rollback-20261024.md)，此前结果见 [2026-10-23 记录](rollback-20261023.md)。
 
 运行 `node --test tools/rollback/instrument.test.mjs` 验证真实 Wasm 写入覆盖；设置 `EMSDK` 后运行 `node tools/rollback/memory-test.mjs` 验证未启用后端的符号隔离，以及启用后端的分配器、容器、重复回滚、范围边界和真实 Wasm 陷阱处理。两者与完整游戏浏览器验收分别执行、分别记录。该后端由 MP 构建显式设置 `EAGLER_WRITE_JOURNAL=1`，普通版继续使用自己的源码与构建入口。
 
@@ -45,3 +45,36 @@ npm --prefix launcher run dev:workspace
 | 多人运行时检查 | Node.js 22.18 以上；上方已设置的 `WASI_SDK_ROOT` | 运行 `node --test ports/th11-mp/portable/multiplayer/*.test.mjs`。 |
 
 原版文件放在 `ports/th11-mp/[th11] 东方地灵殿 (汉化版+日文版)/`。源码或测试输入变更后，先重建 WASI 模块，再运行对照测试。
+
+## 回滚性能验收与诊断
+
+[`rollback-browser-acceptance.mjs`](../portable/multiplayer/rollback-browser-acceptance.mjs) 使用两个独立浏览器进程运行生产包，分别保存原生回调、呈现计数器与模拟前沿的时间记录。正式性能比较关闭下列诊断开关，并保持移动输入覆盖；定位开销时另开诊断运行，使用独立输出目录保留结果。
+
+| 开关 | 诊断用途 |
+| --- | --- |
+| `--native-profile` | 记录恢复、捕获、Update、Draw、封帧等原生阶段耗时与详细 Draw pass 分项。 |
+| `--audio-profile` | 记录音频混音、提交、队列读取及其耗时，增加诊断时钟与读取。 |
+| `--cpu-samples` | 启用 CDP CPU 采样，并保存每端的 `.cpuprofile`。 |
+| `--diagnostic-stationary` | 使用静止输入辅助定位开销；正式验收保持移动与射击。 |
+
+上述任一开关开启时，回执标记 `scope.diagnosticOnly=true`，`performancePassed` 固定为 `false`。`diagnosticPerformanceThresholdsMet` 仍记录这次诊断运行的数值是否满足原阈值，便于定位问题；它不授予正式性能通过资格。`--profile stable|spike` 选择网络延迟形态，与上述采样开关分别设置。
+
+正式对比固定浏览器版本、GPU 模式、CPU 倍率、输入载体、网络路由、延迟注入位置、延迟与抖动、测量时长和阈值，并记录各自 Runtime 的身份。下面示例使用 1× CPU、Relay、发送端 50±5 ms 注入和 15 秒测量，三个 profiler 开关均未开启；字体与 `TH11_TEST_ARCHIVE` 按本文开头准备。
+
+```powershell
+$stamp=Get-Date -Format 'yyyyMMdd-HHmmss'
+node ports/th11-mp/portable/multiplayer/rollback-browser-acceptance.mjs `
+  --runtime ports/th11-mp/build-eagler-multiplayer `
+  --duration 15 --cpu 1 --peer-cpu 1 --route relay `
+  --delay-location sender --profile stable --latency-ms 50 --jitter-ms 5 `
+  --max-gap-ms 100 --replay-oracle --pixel-oracle `
+  --output "ports/th11-mp/artifacts/rollback-smoothness/formal-$stamp"
+```
+
+[`rollback-browser-metrics.mjs`](../portable/multiplayer/rollback-browser-metrics.mjs) 要求两端的原生回调最大耗时、整个窗口内呈现与前沿最大停顿都不超过所设阈值，且数据完整有效；上述命令保持 100 ms 门槛。`performancePassed` 与整体 `passed` 分别读取，整体结果还包含原生状态、精确 Replay、完整游戏区域像素、输入与观测覆盖、音频和源码稳定性检查。
+
+原生回调耗时是包含图形提交及可能等待的 wall time；呈现计数器在回调退出时观察，表示提交节奏。测量后的长尾分解使用同一页面时钟的既有时间戳，区分原生执行、shell、观测代码与回调外空档，并关联发送延迟注入计时器的迟到情况；原始停顿与阈值仍完整保留。像素读回和 Replay 对照在性能窗口结束后执行。
+
+[2026-10-23 验收记录](rollback-20261023.md) 保留原有证据与口径：`jr-10` 的原生、Replay、游戏区域像素检查通过，100 ms 长尾性能门禁失败。带阶段采样的历史数值按该记录引用；后续正式性能比较按本节关闭诊断开关产生新回执，分别保留正确性、性能和诊断结论。
+
+[2026-10-24 新鲜回执](rollback-20261024.md)使用修正后的 FIFO 注入器进行同脚本对照：基线通过本次 100 ms 门槛，绘制版本的原生、Replay 与完整游戏区域像素通过，性能门禁失败。原始回执、逻辑推进率、全部旧注入器失败与脚本身份分别保留；该结果没有建立绘制改动的性能提升或稳定通过门槛的结论。

@@ -1,0 +1,4553 @@
+{
+  "schema": "eagler-touhou/th11-rollback-acceptance-summary/1",
+  "draft": false,
+  "generatedAtUtc": "2026-10-24T02:48:16.846445+00:00",
+  "evidenceOrigin": {
+    "kind": "fresh 2026-10-24 executions with retained raw artifacts",
+    "reconstructionOfLost20261023Evidence": false,
+    "rawEvidenceRoot": "artifacts/rollback-20261024",
+    "rawReceiptHashesComputedFromExistingFiles": true,
+    "rawReceiptPayloadsEmbedded": false,
+    "rawArtifactsTrackedInGit": false
+  },
+  "priorEvidence": {
+    "document": "rollback-20261023.md",
+    "summary": "rollback-20261023.json",
+    "retainedConclusion": "jr-10 native fields/Replay/playfield correctness passed; 100 ms long-tail performance failed",
+    "supersededOrRelabeled": false
+  },
+  "comparison": {
+    "runIds": [
+      "baseline-unprofiled-04",
+      "draw-unprofiled-02"
+    ],
+    "transportGroup": "fifo-corrected",
+    "resultsComplete": true,
+    "legacyTransportRunsExcludedFromSameHarnessComparison": true,
+    "checks": {
+      "sameSettings": true,
+      "sameRuntimeOptions": true,
+      "sameBrowserVersions": true,
+      "sameWebgl": true,
+      "sameFixtureSeed": true,
+      "sameDataArchive": true,
+      "sameFonts": true,
+      "sameScriptHashes": {
+        "runner": true,
+        "timingMetrics": true,
+        "senderDelay": true,
+        "relay": true,
+        "catalog": true,
+        "runtimeOptions": true,
+        "relayUrl": true,
+        "host": true,
+        "errorClassifier": true,
+        "replayOracle": true,
+        "framebufferProof": true
+      },
+      "bothUseFifoHelper": true,
+      "allProfilersAndStationaryDisabled": true,
+      "unchanged100msThreshold": true,
+      "bothMeasurementsComplete": true,
+      "bothSourceStable": true
+    },
+    "comparisonAdmission": "Same corrected script identities and settings; all three profilers and stationary mode disabled; unchanged 100 ms gate.",
+    "canonicalNativeFields": "game[1:5] and game[8:] from the 56-word export; not a full heap dump",
+    "playfield": {
+      "x": 32,
+      "y": 16,
+      "width": 384,
+      "height": 448,
+      "channels": "RGBA",
+      "tolerance": 0
+    }
+  },
+  "builds": {
+    "baseline": {
+      "builtAt": "2026-10-24T02:11:37.231Z",
+      "game": "th11",
+      "profile": "multiplayer",
+      "variant": "multiplayer",
+      "diagnostic": false,
+      "optimization": {
+        "level": "O2",
+        "linkTime": false,
+        "fastMath": false,
+        "fpContract": "off",
+        "simdExperiment": false
+      },
+      "commonRevision": "832e3a9faf3189710431305e93622af53a6a7f5b",
+      "commonCommit": "6108c89da5c448e091490c0f04721ac598e9a354",
+      "sourceDigest": "67c27df90a4140ea62c8e92c2050036253d545152c3f2ec229728205bd6410e9",
+      "netplay": {
+        "prediction": true,
+        "rollback": true,
+        "predictionLimit": 12,
+        "measuredStartup": true,
+        "stateBackend": "write-journal-32",
+        "instrumentation": 1380076081,
+        "simulationHeapBytes": 201326592
+      },
+      "sdlVersion": "3.4.2",
+      "buildRecord": {
+        "path": "artifacts/rollback-20261024/baseline-build/build.json",
+        "bytes": 101403,
+        "sha256": "85f9640b755eff80983d21a86a8c43aadcfbe0029eca02ce16cd10ad9ae2a7ec"
+      },
+      "wasm": {
+        "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.wasm",
+        "bytes": 5013140,
+        "sha256": "f9154a727e67077abfce409ee16b09374f9e4153a9221b3be747d0b68f661449"
+      },
+      "loader": {
+        "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.mjs",
+        "bytes": 265214,
+        "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+      },
+      "shell": {
+        "path": "artifacts/rollback-20261024/baseline-runtime/shell.mjs",
+        "bytes": 39570,
+        "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+      },
+      "manifest": {
+        "path": "artifacts/rollback-20261024/baseline-runtime/manifest.json",
+        "bytes": 1114,
+        "sha256": "44e03a5d49f26858007497abff8e09f04da1d84d41949484b7e5a433624b9eba"
+      },
+      "inventory": {
+        "path": "artifacts/rollback-20261024/baseline-runtime/runtime-files.json",
+        "bytes": 2550,
+        "sha256": "cf4f3ba2e121e03fbb77d2f92e8d59c697ac49566b30ae37dd4205e450d25a2c"
+      }
+    },
+    "draw": {
+      "builtAt": "2026-10-24T02:23:43.912Z",
+      "game": "th11",
+      "profile": "multiplayer",
+      "variant": "multiplayer",
+      "diagnostic": false,
+      "optimization": {
+        "level": "O2",
+        "linkTime": false,
+        "fastMath": false,
+        "fpContract": "off",
+        "simdExperiment": false
+      },
+      "commonRevision": "832e3a9faf3189710431305e93622af53a6a7f5b",
+      "commonCommit": "524adac9917ccda7a68ced0159367abf59a2880b",
+      "sourceDigest": "a819949810e0129c1c63871c25eeaa422c22a306a15528195c18c1eaa6995b8d",
+      "netplay": {
+        "prediction": true,
+        "rollback": true,
+        "predictionLimit": 12,
+        "measuredStartup": true,
+        "stateBackend": "write-journal-32",
+        "instrumentation": 1380076081,
+        "simulationHeapBytes": 201326592
+      },
+      "sdlVersion": "3.4.2",
+      "buildRecord": {
+        "path": "artifacts/rollback-20261024/draw-build/build.json",
+        "bytes": 101403,
+        "sha256": "d01f8648330c236173929535b8c3d13f3d86cc0cb93bc5bd3463b0663899fc85"
+      },
+      "wasm": {
+        "path": "artifacts/rollback-20261024/draw-runtime/th11-sdl.wasm",
+        "bytes": 5013171,
+        "sha256": "034d76ab22c9e6cecb4ff0cdcfdab62d02a9767936ae812147a5cc9cac44fee5"
+      },
+      "loader": {
+        "path": "artifacts/rollback-20261024/draw-runtime/th11-sdl.mjs",
+        "bytes": 265214,
+        "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+      },
+      "shell": {
+        "path": "artifacts/rollback-20261024/draw-runtime/shell.mjs",
+        "bytes": 39570,
+        "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+      },
+      "manifest": {
+        "path": "artifacts/rollback-20261024/draw-runtime/manifest.json",
+        "bytes": 1114,
+        "sha256": "e0885f13b0c2fe0cdc9ead5a5c2bea6529f6d49fa02af47d80131e586bd9f49d"
+      },
+      "inventory": {
+        "path": "artifacts/rollback-20261024/draw-runtime/runtime-files.json",
+        "bytes": 2550,
+        "sha256": "30e3f5e50a6da44c52e90176054206a691f878aaf17abcc7fe417e554d86394d"
+      }
+    }
+  },
+  "runtimeSourceChanges": [
+    {
+      "path": "web/cpp/game/AnmGeometry.cpp",
+      "baselineSha256": "a7847c83d80eb26a2c62707117c441bf612314a51d6c8cb46896201e1d979d67",
+      "drawSha256": "b49b177ced7ac9c318ec3a2524cc27841a6c4e34d1dde2b7122e6f1973914e24"
+    },
+    {
+      "path": "web/cpp/game/AnmGeometry.hpp",
+      "baselineSha256": "7d69c213e1f3f68084f2c08e58527837635ff19e9eaadc0b9769b21a586c3beb",
+      "drawSha256": "851cc90f16b518ce55832c9315cb4af395107f39d87254ead8f1d265c0c414f9"
+    },
+    {
+      "path": "web/cpp/game/AnmRenderer.cpp",
+      "baselineSha256": "554926e16e456ed7705af3fcc620b0c91df7e7fb4f4081f002bc4cc754d1bf13",
+      "drawSha256": "859eee120811e52a9e31ad19341cb93bfa6bd91f836c58ce5054e9f4960c6504"
+    },
+    {
+      "path": "web/cpp/game/AsciiText.cpp",
+      "baselineSha256": "4745009b375ac17ee419fee60e98228e6dc2f1fe07c8f19bd6ae02ae601a3685",
+      "drawSha256": "9d37196851f390cd16f55bd9c94a94bbfad777defbdc9d7be2c89c4095652d61"
+    }
+  ],
+  "runs": [
+    {
+      "id": "baseline-unprofiled-01",
+      "collectionStatus": "complete",
+      "transportGroup": "legacy-delay-shim",
+      "receipt": {
+        "path": "artifacts/rollback-20261024/baseline-unprofiled-01/receipt.json",
+        "bytes": 23754,
+        "sha256": "fd03993285b4560fc256321ef5bb5e2d68e92193ab46c0ea67bc2c873ea7a4f4"
+      },
+      "startedAt": "2026-10-24T02:16:43.747Z",
+      "completedAt": "2026-10-24T02:16:45.469Z",
+      "status": "failed",
+      "passed": false,
+      "performancePassed": null,
+      "performanceAssessed": false,
+      "performanceThresholdsMet": null,
+      "sourceStable": null,
+      "settings": {
+        "duration": 15,
+        "cpu": 1,
+        "routeRequested": "relay",
+        "profile": "stable",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "prediction": 12,
+        "maxGapMs": 100,
+        "disconnect": false,
+        "nativeProfile": false,
+        "audioProfile": false,
+        "cpuSamples": false,
+        "cpuRates": [
+          1,
+          1
+        ],
+        "delayLocation": "sender",
+        "replayOracle": true,
+        "stationary": false,
+        "touchCarrier": "rpc",
+        "headed": false,
+        "gpuRequested": "swiftshader"
+      },
+      "scope": {
+        "desktop": true,
+        "independentChromeProcesses": 2,
+        "managedHostInput": true,
+        "realNativeLoop": true,
+        "actualGpu": true,
+        "pixelMotion": false,
+        "fullWorldOracle": false,
+        "launcherUi": false,
+        "phone": false,
+        "performanceObserver": true,
+        "diagnosticOnly": false
+      },
+      "stageNames": [
+        "preflight",
+        "launch-independent-browsers",
+        "cleanup-start"
+      ],
+      "measurementStarted": false,
+      "measurementCompleted": false,
+      "failureSummary": "Chromium startup: Socket path too long (SingletonSocket)",
+      "failures": null,
+      "errors": [],
+      "performanceAssessment": null,
+      "sourceIdentity": {
+        "game": {
+          "head": "6108c89da5c448e091490c0f04721ac598e9a354",
+          "headExitCode": 0,
+          "status": "",
+          "statusExitCode": 0
+        },
+        "common": {
+          "head": "6108c89da5c448e091490c0f04721ac598e9a354",
+          "headExitCode": 0,
+          "status": "",
+          "statusExitCode": 0
+        },
+        "launcher": {
+          "head": "6108c89da5c448e091490c0f04721ac598e9a354",
+          "headExitCode": 0,
+          "status": "",
+          "statusExitCode": 0
+        }
+      },
+      "fileIdentities": {
+        "archive": {
+          "path": "../runtime-inputs/th11.dat",
+          "bytes": 26610794,
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        "manifest": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/manifest.json",
+          "bytes": 1114,
+          "sha256": "44e03a5d49f26858007497abff8e09f04da1d84d41949484b7e5a433624b9eba"
+        },
+        "inventory": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/runtime-files.json",
+          "bytes": 2550,
+          "sha256": "cf4f3ba2e121e03fbb77d2f92e8d59c697ac49566b30ae37dd4205e450d25a2c"
+        },
+        "wasm": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.wasm",
+          "bytes": 5013140,
+          "sha256": "f9154a727e67077abfce409ee16b09374f9e4153a9221b3be747d0b68f661449"
+        },
+        "loader": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.mjs",
+          "bytes": 265214,
+          "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+        },
+        "shell": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/shell.mjs",
+          "bytes": 39570,
+          "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+        },
+        "relay": {
+          "path": "services/relay/src/netplay-relay.mjs",
+          "bytes": 83351,
+          "sha256": "88f50ecab709af44b2789ae29ba0396af3defe1947336ee2ef2097ebaf29b392"
+        },
+        "catalog": {
+          "path": "launcher/lib/contracts/product-catalog.mjs",
+          "bytes": 641,
+          "sha256": "b81139c1e38624a49bd1140800222333120b3d8b10fd78884d00eece92522fe9"
+        },
+        "runtimeOptions": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs",
+          "bytes": 7899,
+          "sha256": "ad7ec8663a5fa085898e10e1f793979300076a8c72e8e05933a301eb23fc78c6"
+        },
+        "relayUrl": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs",
+          "bytes": 3753,
+          "sha256": "aecb2db7692b020a413002857e8b17249e73e6d33116f8023f2e4ba3964f97eb"
+        },
+        "runner": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-acceptance.mjs",
+          "bytes": 63412,
+          "sha256": "9cfbbdd45f58e5c61cc5ff5c36c815db5564d37c94486c082d4aff1b7a6af329"
+        },
+        "host": {
+          "path": "ports/th11-mp/portable/multiplayer/browser-host.html",
+          "bytes": 8207,
+          "sha256": "60a6ba063aec2e1b13af92bc895ca2daff5092bf2bd82a3b34c82c8172f450f6"
+        },
+        "errorClassifier": {
+          "path": "ports/th11-mp/portable/multiplayer/acceptance-errors.mjs",
+          "bytes": 441,
+          "sha256": "bfd4ffba39d3ac97cb1d6438e5aac7312503aaf7810c4b22a313f088e1885adc"
+        },
+        "timingMetrics": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.mjs",
+          "bytes": 8702,
+          "sha256": "1f021051463f6071dc065a6b600a23f5a5f5b1324b199ab98498bcbfa7dca4e1"
+        },
+        "replayOracle": {
+          "path": "ports/th11-mp/portable/multiplayer/replay-prefix-oracle.mjs",
+          "bytes": 5712,
+          "sha256": "0b5db07ef3deb8e373a93f17bf3c3fd2d7a9e58c1bdec97a84133edaa4a3e97e"
+        },
+        "framebufferProof": {
+          "path": "ports/th11-mp/portable/multiplayer/framebuffer-proof.mjs",
+          "bytes": 4257,
+          "sha256": "aa8ee6332e703234108c97bbde1d752614f21f575f1c154742140f5bfe826afe"
+        }
+      },
+      "sharedFonts": [
+        {
+          "path": "../runtime-inputs/msgothic.ttc",
+          "bytes": 8990160,
+          "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+        },
+        {
+          "path": "../runtime-inputs/unifont.otf",
+          "bytes": 5105508,
+          "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+        }
+      ],
+      "browsers": [],
+      "webgl": null,
+      "fixtureSeed": null,
+      "policy": {
+        "inputTiming": {
+          "rollbackLimit": 12,
+          "sendPredictionLimit": 12,
+          "measuredStartup": true,
+          "manualDelayLimit": 9
+        },
+        "resolved": {
+          "measuredStartup": true,
+          "rollback": true,
+          "manualRollbackDelay": false,
+          "manualDelayLimit": 9,
+          "predictionLimit": 12
+        }
+      },
+      "runtimeOptions": [],
+      "correctness": null,
+      "confirmedBoundary": null,
+      "replay": [],
+      "pixelSampling": {
+        "requested": true,
+        "readbackPhase": "bounded confirmed post-draw pause samples after measurement; exact Replay after seek",
+        "performanceWindowReadbacks": 0
+      },
+      "peers": []
+    },
+    {
+      "id": "baseline-unprofiled-02",
+      "collectionStatus": "complete",
+      "transportGroup": "legacy-delay-shim",
+      "receipt": {
+        "path": "artifacts/rollback-20261024/baseline-unprofiled-02/receipt.json",
+        "bytes": 285072,
+        "sha256": "50ed05bcf27d7416abf05b3db79aadc08434b182e15dcb158d7ed35b4ee4e1e6"
+      },
+      "startedAt": "2026-10-24T02:19:56.807Z",
+      "completedAt": "2026-10-24T02:20:56.075Z",
+      "status": "failed",
+      "passed": false,
+      "performancePassed": false,
+      "performanceAssessed": true,
+      "performanceThresholdsMet": false,
+      "sourceStable": true,
+      "settings": {
+        "duration": 15,
+        "cpu": 1,
+        "routeRequested": "relay",
+        "profile": "stable",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "prediction": 12,
+        "maxGapMs": 100,
+        "disconnect": false,
+        "nativeProfile": false,
+        "audioProfile": false,
+        "cpuSamples": false,
+        "cpuRates": [
+          1,
+          1
+        ],
+        "delayLocation": "sender",
+        "replayOracle": true,
+        "stationary": false,
+        "touchCarrier": "rpc",
+        "headed": false,
+        "gpuRequested": "swiftshader"
+      },
+      "scope": {
+        "desktop": true,
+        "independentChromeProcesses": 2,
+        "managedHostInput": true,
+        "realNativeLoop": true,
+        "actualGpu": true,
+        "pixelMotion": false,
+        "fullWorldOracle": false,
+        "launcherUi": false,
+        "phone": false,
+        "performanceObserver": true,
+        "diagnosticOnly": false
+      },
+      "stageNames": [
+        "preflight",
+        "launch-independent-browsers",
+        "real-relay-admitted",
+        "measurement-start",
+        "confirmation-tail-start",
+        "confirmed-boundary-checked",
+        "pause-resume-usability-checked",
+        "loops-stopped-after-correctness",
+        "exact-replay-oracle-start",
+        "exact-replay-oracle-complete",
+        "cleanup-start"
+      ],
+      "measurementStarted": true,
+      "measurementCompleted": true,
+      "failureSummary": null,
+      "failures": [
+        {
+          "seat": 1,
+          "kind": "performance-threshold",
+          "nativeMax": 22.699999999254942,
+          "presentMax": 163.40000000037253,
+          "frontierMax": 163.40000000037253,
+          "invalidMetrics": []
+        }
+      ],
+      "errors": [],
+      "performanceAssessment": {
+        "diagnosticOnly": false,
+        "diagnostics": [],
+        "peers": [
+          {
+            "seat": 0,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 12.799999999813735,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 82.09999999962747,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 82.09999999962747,
+                "maximumMs": 100,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "seat": 1,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 22.699999999254942,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 163.40000000037253,
+                "maximumMs": 100,
+                "passed": false
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 163.40000000037253,
+                "maximumMs": 100,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "thresholdsMet": false,
+        "performancePassed": false
+      },
+      "sourceIdentity": {
+        "game": {
+          "head": "b75752ae8da4a2999e4c682d78875b91e414bb4c",
+          "headExitCode": 0,
+          "status": "",
+          "statusExitCode": 0
+        },
+        "common": {
+          "head": "b75752ae8da4a2999e4c682d78875b91e414bb4c",
+          "headExitCode": 0,
+          "status": "",
+          "statusExitCode": 0
+        },
+        "launcher": {
+          "head": "b75752ae8da4a2999e4c682d78875b91e414bb4c",
+          "headExitCode": 0,
+          "status": "",
+          "statusExitCode": 0
+        }
+      },
+      "fileIdentities": {
+        "archive": {
+          "path": "../runtime-inputs/th11.dat",
+          "bytes": 26610794,
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        "manifest": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/manifest.json",
+          "bytes": 1114,
+          "sha256": "44e03a5d49f26858007497abff8e09f04da1d84d41949484b7e5a433624b9eba"
+        },
+        "inventory": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/runtime-files.json",
+          "bytes": 2550,
+          "sha256": "cf4f3ba2e121e03fbb77d2f92e8d59c697ac49566b30ae37dd4205e450d25a2c"
+        },
+        "wasm": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.wasm",
+          "bytes": 5013140,
+          "sha256": "f9154a727e67077abfce409ee16b09374f9e4153a9221b3be747d0b68f661449"
+        },
+        "loader": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.mjs",
+          "bytes": 265214,
+          "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+        },
+        "shell": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/shell.mjs",
+          "bytes": 39570,
+          "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+        },
+        "relay": {
+          "path": "services/relay/src/netplay-relay.mjs",
+          "bytes": 83351,
+          "sha256": "88f50ecab709af44b2789ae29ba0396af3defe1947336ee2ef2097ebaf29b392"
+        },
+        "catalog": {
+          "path": "launcher/lib/contracts/product-catalog.mjs",
+          "bytes": 641,
+          "sha256": "b81139c1e38624a49bd1140800222333120b3d8b10fd78884d00eece92522fe9"
+        },
+        "runtimeOptions": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs",
+          "bytes": 7899,
+          "sha256": "ad7ec8663a5fa085898e10e1f793979300076a8c72e8e05933a301eb23fc78c6"
+        },
+        "relayUrl": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs",
+          "bytes": 3753,
+          "sha256": "aecb2db7692b020a413002857e8b17249e73e6d33116f8023f2e4ba3964f97eb"
+        },
+        "runner": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-acceptance.mjs",
+          "bytes": 63867,
+          "sha256": "a0ff99fdacdb7197b623b4a4c35589f7e18ef2f68fb225383ec14e2715871bca"
+        },
+        "host": {
+          "path": "ports/th11-mp/portable/multiplayer/browser-host.html",
+          "bytes": 8207,
+          "sha256": "60a6ba063aec2e1b13af92bc895ca2daff5092bf2bd82a3b34c82c8172f450f6"
+        },
+        "errorClassifier": {
+          "path": "ports/th11-mp/portable/multiplayer/acceptance-errors.mjs",
+          "bytes": 441,
+          "sha256": "bfd4ffba39d3ac97cb1d6438e5aac7312503aaf7810c4b22a313f088e1885adc"
+        },
+        "timingMetrics": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.mjs",
+          "bytes": 8702,
+          "sha256": "1f021051463f6071dc065a6b600a23f5a5f5b1324b199ab98498bcbfa7dca4e1"
+        },
+        "replayOracle": {
+          "path": "ports/th11-mp/portable/multiplayer/replay-prefix-oracle.mjs",
+          "bytes": 5712,
+          "sha256": "0b5db07ef3deb8e373a93f17bf3c3fd2d7a9e58c1bdec97a84133edaa4a3e97e"
+        },
+        "framebufferProof": {
+          "path": "ports/th11-mp/portable/multiplayer/framebuffer-proof.mjs",
+          "bytes": 4257,
+          "sha256": "aa8ee6332e703234108c97bbde1d752614f21f575f1c154742140f5bfe826afe"
+        }
+      },
+      "sharedFonts": [
+        {
+          "path": "../runtime-inputs/msgothic.ttc",
+          "bytes": 8990160,
+          "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+        },
+        {
+          "path": "../runtime-inputs/unifont.otf",
+          "bytes": 5105508,
+          "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+        }
+      ],
+      "browsers": [
+        {
+          "seat": 0,
+          "version": "151.0.7922.34",
+          "pid": 10006
+        },
+        {
+          "seat": 1,
+          "version": "151.0.7922.34",
+          "pid": 10115
+        }
+      ],
+      "webgl": [
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        },
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        }
+      ],
+      "fixtureSeed": {
+        "value": 1234,
+        "source": "fixed deterministic acceptance seed; raw relay snapshot has no seed"
+      },
+      "policy": {
+        "inputTiming": {
+          "rollbackLimit": 12,
+          "sendPredictionLimit": 12,
+          "measuredStartup": true,
+          "manualDelayLimit": 9
+        },
+        "resolved": {
+          "measuredStartup": true,
+          "rollback": true,
+          "manualRollbackDelay": false,
+          "manualDelayLimit": 9,
+          "predictionLimit": 12
+        }
+      },
+      "runtimeOptions": [
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 0,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        },
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 1,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        }
+      ],
+      "correctness": {
+        "exportedNativeFieldsEqual": true,
+        "frame": 866,
+        "fullWorldBrowserOracle": false,
+        "exactWorldComponentEvidence": null,
+        "limitation": "56-word native status covers hash, stage/phase/frame and player values; it is not a complete body dump."
+      },
+      "confirmedBoundary": {
+        "frame": 866,
+        "generation": 0
+      },
+      "replay": [
+        {
+          "seat": 0,
+          "frame": 866,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:866",
+            "presentation": 4
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "ea6e79ee03788ee68bfbef427e80bf417ec7a64b417729c2e660098eb8363277",
+            "replaySha256": "667e506c09f271af241f6fad5b541d9d5c81f5b3cba4ff9e4385f558e45cfa2d"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-02/peer-0-actual-inputs.rpy",
+            "bytes": 21800,
+            "sha256": "db66e9f966d2687cf6dda30167f6010321590d759b25db3cbfd8dc69e5254926"
+          }
+        },
+        {
+          "seat": 1,
+          "frame": 866,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:866",
+            "presentation": 4
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "317ac447f66c58cb2d2fb49eaad4ecd8f31baf6bf6c42b391a0f3485f8488d76",
+            "replaySha256": "16d4c678e1c7b98914e0bb7682cbe1e30ab4e7b1651429b63fb712912da84aaa"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-02/peer-1-actual-inputs.rpy",
+            "bytes": 21824,
+            "sha256": "80d64d9fe11ed5815eaf54421835c9cb7d2a5190a158d3c3b5e3638655b0b186"
+          }
+        }
+      ],
+      "pixelSampling": {
+        "requested": true,
+        "readbackPhase": "bounded confirmed post-draw pause samples after measurement; exact Replay after seek",
+        "performanceWindowReadbacks": 0,
+        "liveBoundary": {
+          "frame": 866,
+          "generation": 0,
+          "samples": [
+            {
+              "seat": 0,
+              "key": "0:866",
+              "presentation": 4,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 4,
+              "retainedSamples": 4,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            },
+            {
+              "seat": 1,
+              "key": "0:866",
+              "presentation": 4,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 5,
+              "retainedSamples": 5,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            }
+          ]
+        }
+      },
+      "peers": [
+        {
+          "seat": 0,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-02/peer-0.json",
+            "sha256": "197ffb44658a3f2774d27c99cbdbc0a821bac06730debd7e4f6a053a8b21027d"
+          },
+          "metrics": {
+            "callbacks": 507,
+            "callbackKinds": {
+              "raf": 507,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 14992,
+            "logicalTicks": 723,
+            "logicHz": 48.22572038420491,
+            "nativeReportedWall": {
+              "count": 507,
+              "p50": 3.1000000005587935,
+              "p95": 8.599999999627471,
+              "p99": 9.799999999813735,
+              "max": 12.799999999813735,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 507,
+              "p50": 3.400000000372529,
+              "p95": 8.700000000186265,
+              "p99": 9.899999999441206,
+              "max": 25.799999999813735,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 507,
+              "p50": 0,
+              "p95": 0.20000000018626451,
+              "p99": 0.40000000037252903,
+              "max": 13,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 507,
+              "p50": 0,
+              "p95": 0.20000000018626451,
+              "p99": 0.6999999992549419,
+              "max": 5.199999999254942,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 486,
+            "frontierCount": 469,
+            "presentWindowHolds": {
+              "count": 487,
+              "p50": 29,
+              "p95": 46.59999999962747,
+              "p99": 59.700000000186265,
+              "max": 82.09999999962747,
+              "over33": 125,
+              "over50": 21,
+              "over100": 0
+            },
+            "frontierWindowHolds": {
+              "count": 470,
+              "p50": 29.299999999813735,
+              "p95": 54.799999999813735,
+              "p99": 63.59999999962747,
+              "max": 82.09999999962747,
+              "over33": 136,
+              "over50": 36,
+              "over100": 0
+            },
+            "rollbackDelta": {
+              "restores": 234,
+              "historyTicks": 1359,
+              "presentations": 486
+            },
+            "actualSendDelay": {
+              "count": 1484,
+              "p50": 83.6000000005588,
+              "p95": 120.30000000074506,
+              "p99": 152.90000000037253,
+              "max": 160.90000000037253,
+              "over33": 1484,
+              "over50": 1475,
+              "over100": 301
+            },
+            "injectionTimerLateness": {
+              "count": 1484,
+              "p50": 32.483109541866725,
+              "p95": 68.89044208731502,
+              "p99": 101.70064537040889,
+              "max": 113.18164485041052,
+              "over33": 695,
+              "over50": 248,
+              "over100": 18
+            },
+            "maxQueued": 18,
+            "maxQueuedBytes": 2529,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 18687.799999999814,
+            "end": 18769.89999999944,
+            "durationMs": 82.09999999962747,
+            "insideObservedCallbacksMs": 5.3999999994412065,
+            "outsideObservedCallbacksMs": 76.70000000018626,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 5.3999999994412065,
+              "nativeReportedMs": 5.2000000001862645,
+              "shellHookMs": 0,
+              "observerMs": 0.19999999925494194,
+              "otherCallbackMs": 0
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 658,
+                "nativeReportedMs": 5.2000000001862645,
+                "forwardTicks": 3,
+                "historyTicksDelta": 0,
+                "overlapMs": 5.3999999994412065,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 10,
+              "dueWithinGap": 2,
+              "deliveredWithinGap": 5,
+              "pendingAtGapEnd": 5,
+              "maxObservedLatenessMs": 103.92336830077693
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 18687.799999999814,
+            "end": 18769.89999999944,
+            "durationMs": 82.09999999962747,
+            "insideObservedCallbacksMs": 5.3999999994412065,
+            "outsideObservedCallbacksMs": 76.70000000018626,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 5.3999999994412065,
+              "nativeReportedMs": 5.2000000001862645,
+              "shellHookMs": 0,
+              "observerMs": 0.19999999925494194,
+              "otherCallbackMs": 0
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 658,
+                "nativeReportedMs": 5.2000000001862645,
+                "forwardTicks": 3,
+                "historyTicksDelta": 0,
+                "overlapMs": 5.3999999994412065,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 10,
+              "dueWithinGap": 2,
+              "deliveredWithinGap": 5,
+              "pendingAtGapEnd": 5,
+              "maxObservedLatenessMs": 103.92336830077693
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        },
+        {
+          "seat": 1,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-02/peer-1.json",
+            "sha256": "913287a960e19c6b19c5b7d929d9c721aad8cb39f5b6de69018a75e3df2c16f9"
+          },
+          "metrics": {
+            "callbacks": 505,
+            "callbackKinds": {
+              "raf": 505,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 14974.399999999441,
+            "logicalTicks": 718,
+            "logicHz": 47.948498771238036,
+            "nativeReportedWall": {
+              "count": 505,
+              "p50": 3.2999999998137355,
+              "p95": 8.5,
+              "p99": 9.599999999627471,
+              "max": 22.699999999254942,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 505,
+              "p50": 3.5,
+              "p95": 8.800000000745058,
+              "p99": 9.899999999441206,
+              "max": 23.100000000558794,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 505,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.40000000037252903,
+              "max": 2,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 505,
+              "p50": 0,
+              "p95": 0.20000000018626451,
+              "p99": 0.599999999627471,
+              "max": 1.2000000001862645,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 486,
+            "frontierCount": 476,
+            "presentWindowHolds": {
+              "count": 487,
+              "p50": 29.299999999813735,
+              "p95": 43.19999999925494,
+              "p99": 55.200000000186265,
+              "max": 163.40000000037253,
+              "over33": 125,
+              "over50": 9,
+              "over100": 1
+            },
+            "frontierWindowHolds": {
+              "count": 477,
+              "p50": 29.40000000037253,
+              "p95": 46.5,
+              "p99": 60,
+              "max": 163.40000000037253,
+              "over33": 134,
+              "over50": 17,
+              "over100": 1
+            },
+            "rollbackDelta": {
+              "restores": 235,
+              "historyTicks": 1329,
+              "presentations": 486
+            },
+            "actualSendDelay": {
+              "count": 751,
+              "p50": 80.29999999981374,
+              "p95": 117.79999999981374,
+              "p99": 142.90000000037253,
+              "max": 189.5,
+              "over33": 751,
+              "over50": 741,
+              "over100": 133
+            },
+            "injectionTimerLateness": {
+              "count": 751,
+              "p50": 30.520450219046324,
+              "p95": 67.17018829861263,
+              "p99": 93.83649510517716,
+              "max": 140.07365289516747,
+              "over33": 334,
+              "over50": 119,
+              "over100": 6
+            },
+            "maxQueued": 9,
+            "maxQueuedBytes": 1854,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 17763,
+            "end": 17926.400000000373,
+            "durationMs": 163.40000000037253,
+            "insideObservedCallbacksMs": 36.80000000074506,
+            "outsideObservedCallbacksMs": 126.59999999962747,
+            "completeCallbacks": {
+              "count": 3,
+              "wallMs": 36.80000000074506,
+              "nativeReportedMs": 36.299999999813735,
+              "shellHookMs": 0.10000000055879354,
+              "observerMs": 0.09999999962747097,
+              "otherCallbackMs": 0.30000000074505806
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 504,
+                "nativeReportedMs": 22.699999999254942,
+                "forwardTicks": 0,
+                "historyTicksDelta": 2,
+                "overlapMs": 23.100000000558794,
+                "clipped": false
+              },
+              {
+                "id": 505,
+                "nativeReportedMs": 8.900000000372529,
+                "forwardTicks": 0,
+                "historyTicksDelta": 5,
+                "overlapMs": 9,
+                "clipped": false
+              },
+              {
+                "id": 506,
+                "nativeReportedMs": 4.7000000001862645,
+                "forwardTicks": 4,
+                "historyTicksDelta": 3,
+                "overlapMs": 4.7000000001862645,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 11,
+              "dueWithinGap": 4,
+              "deliveredWithinGap": 6,
+              "pendingAtGapEnd": 5,
+              "maxObservedLatenessMs": 140.07365289516747
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 17763,
+            "end": 17926.400000000373,
+            "durationMs": 163.40000000037253,
+            "insideObservedCallbacksMs": 36.80000000074506,
+            "outsideObservedCallbacksMs": 126.59999999962747,
+            "completeCallbacks": {
+              "count": 3,
+              "wallMs": 36.80000000074506,
+              "nativeReportedMs": 36.299999999813735,
+              "shellHookMs": 0.10000000055879354,
+              "observerMs": 0.09999999962747097,
+              "otherCallbackMs": 0.30000000074505806
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 504,
+                "nativeReportedMs": 22.699999999254942,
+                "forwardTicks": 0,
+                "historyTicksDelta": 2,
+                "overlapMs": 23.100000000558794,
+                "clipped": false
+              },
+              {
+                "id": 505,
+                "nativeReportedMs": 8.900000000372529,
+                "forwardTicks": 0,
+                "historyTicksDelta": 5,
+                "overlapMs": 9,
+                "clipped": false
+              },
+              {
+                "id": 506,
+                "nativeReportedMs": 4.7000000001862645,
+                "forwardTicks": 4,
+                "historyTicksDelta": 3,
+                "overlapMs": 4.7000000001862645,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 11,
+              "dueWithinGap": 4,
+              "deliveredWithinGap": 6,
+              "pendingAtGapEnd": 5,
+              "maxObservedLatenessMs": 140.07365289516747
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        }
+      ]
+    },
+    {
+      "id": "baseline-unprofiled-03",
+      "collectionStatus": "complete",
+      "transportGroup": "legacy-delay-shim",
+      "receipt": {
+        "path": "artifacts/rollback-20261024/baseline-unprofiled-03/receipt.json",
+        "bytes": 304134,
+        "sha256": "b9bc78fb2c91a5b1b9863c1701592d1e49454d0090e7ea94a17b3d15137a6ef4"
+      },
+      "startedAt": "2026-10-24T02:30:02.131Z",
+      "completedAt": "2026-10-24T02:31:08.215Z",
+      "status": "failed",
+      "passed": false,
+      "performancePassed": false,
+      "performanceAssessed": true,
+      "performanceThresholdsMet": false,
+      "sourceStable": true,
+      "settings": {
+        "duration": 15,
+        "cpu": 1,
+        "routeRequested": "relay",
+        "profile": "stable",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "prediction": 12,
+        "maxGapMs": 100,
+        "disconnect": false,
+        "nativeProfile": false,
+        "audioProfile": false,
+        "cpuSamples": false,
+        "cpuRates": [
+          1,
+          1
+        ],
+        "delayLocation": "sender",
+        "replayOracle": true,
+        "stationary": false,
+        "touchCarrier": "rpc",
+        "headed": false,
+        "gpuRequested": "swiftshader"
+      },
+      "scope": {
+        "desktop": true,
+        "independentChromeProcesses": 2,
+        "managedHostInput": true,
+        "realNativeLoop": true,
+        "actualGpu": true,
+        "pixelMotion": false,
+        "fullWorldOracle": false,
+        "launcherUi": false,
+        "phone": false,
+        "performanceObserver": true,
+        "diagnosticOnly": false
+      },
+      "stageNames": [
+        "preflight",
+        "launch-independent-browsers",
+        "real-relay-admitted",
+        "measurement-start",
+        "confirmation-tail-start",
+        "confirmed-boundary-checked",
+        "pause-resume-usability-checked",
+        "loops-stopped-after-correctness",
+        "exact-replay-oracle-start",
+        "exact-replay-oracle-complete",
+        "cleanup-start"
+      ],
+      "measurementStarted": true,
+      "measurementCompleted": true,
+      "failureSummary": null,
+      "failures": [
+        {
+          "seat": 0,
+          "kind": "performance-threshold",
+          "nativeMax": 17,
+          "presentMax": 260.59999999962747,
+          "frontierMax": 260.59999999962747,
+          "invalidMetrics": []
+        },
+        {
+          "seat": 1,
+          "kind": "performance-threshold",
+          "nativeMax": 51.200000000186265,
+          "presentMax": 146.20000000018626,
+          "frontierMax": 146.20000000018626,
+          "invalidMetrics": []
+        }
+      ],
+      "errors": [],
+      "performanceAssessment": {
+        "diagnosticOnly": false,
+        "diagnostics": [],
+        "peers": [
+          {
+            "seat": 0,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 17,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 260.59999999962747,
+                "maximumMs": 100,
+                "passed": false
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 260.59999999962747,
+                "maximumMs": 100,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "seat": 1,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 51.200000000186265,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 146.20000000018626,
+                "maximumMs": 100,
+                "passed": false
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 146.20000000018626,
+                "maximumMs": 100,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "thresholdsMet": false,
+        "performancePassed": false
+      },
+      "sourceIdentity": {
+        "game": {
+          "head": "524adac9917ccda7a68ced0159367abf59a2880b",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "common": {
+          "head": "524adac9917ccda7a68ced0159367abf59a2880b",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "launcher": {
+          "head": "524adac9917ccda7a68ced0159367abf59a2880b",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        }
+      },
+      "fileIdentities": {
+        "archive": {
+          "path": "../runtime-inputs/th11.dat",
+          "bytes": 26610794,
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        "manifest": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/manifest.json",
+          "bytes": 1114,
+          "sha256": "44e03a5d49f26858007497abff8e09f04da1d84d41949484b7e5a433624b9eba"
+        },
+        "inventory": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/runtime-files.json",
+          "bytes": 2550,
+          "sha256": "cf4f3ba2e121e03fbb77d2f92e8d59c697ac49566b30ae37dd4205e450d25a2c"
+        },
+        "wasm": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.wasm",
+          "bytes": 5013140,
+          "sha256": "f9154a727e67077abfce409ee16b09374f9e4153a9221b3be747d0b68f661449"
+        },
+        "loader": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.mjs",
+          "bytes": 265214,
+          "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+        },
+        "shell": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/shell.mjs",
+          "bytes": 39570,
+          "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+        },
+        "relay": {
+          "path": "services/relay/src/netplay-relay.mjs",
+          "bytes": 83351,
+          "sha256": "88f50ecab709af44b2789ae29ba0396af3defe1947336ee2ef2097ebaf29b392"
+        },
+        "catalog": {
+          "path": "launcher/lib/contracts/product-catalog.mjs",
+          "bytes": 641,
+          "sha256": "b81139c1e38624a49bd1140800222333120b3d8b10fd78884d00eece92522fe9"
+        },
+        "runtimeOptions": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs",
+          "bytes": 7899,
+          "sha256": "ad7ec8663a5fa085898e10e1f793979300076a8c72e8e05933a301eb23fc78c6"
+        },
+        "relayUrl": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs",
+          "bytes": 3753,
+          "sha256": "aecb2db7692b020a413002857e8b17249e73e6d33116f8023f2e4ba3964f97eb"
+        },
+        "runner": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-acceptance.mjs",
+          "bytes": 63867,
+          "sha256": "a0ff99fdacdb7197b623b4a4c35589f7e18ef2f68fb225383ec14e2715871bca"
+        },
+        "host": {
+          "path": "ports/th11-mp/portable/multiplayer/browser-host.html",
+          "bytes": 8207,
+          "sha256": "60a6ba063aec2e1b13af92bc895ca2daff5092bf2bd82a3b34c82c8172f450f6"
+        },
+        "errorClassifier": {
+          "path": "ports/th11-mp/portable/multiplayer/acceptance-errors.mjs",
+          "bytes": 441,
+          "sha256": "bfd4ffba39d3ac97cb1d6438e5aac7312503aaf7810c4b22a313f088e1885adc"
+        },
+        "timingMetrics": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.mjs",
+          "bytes": 8702,
+          "sha256": "1f021051463f6071dc065a6b600a23f5a5f5b1324b199ab98498bcbfa7dca4e1"
+        },
+        "replayOracle": {
+          "path": "ports/th11-mp/portable/multiplayer/replay-prefix-oracle.mjs",
+          "bytes": 5712,
+          "sha256": "0b5db07ef3deb8e373a93f17bf3c3fd2d7a9e58c1bdec97a84133edaa4a3e97e"
+        },
+        "framebufferProof": {
+          "path": "ports/th11-mp/portable/multiplayer/framebuffer-proof.mjs",
+          "bytes": 4257,
+          "sha256": "aa8ee6332e703234108c97bbde1d752614f21f575f1c154742140f5bfe826afe"
+        }
+      },
+      "sharedFonts": [
+        {
+          "path": "../runtime-inputs/msgothic.ttc",
+          "bytes": 8990160,
+          "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+        },
+        {
+          "path": "../runtime-inputs/unifont.otf",
+          "bytes": 5105508,
+          "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+        }
+      ],
+      "browsers": [
+        {
+          "seat": 0,
+          "version": "151.0.7922.34",
+          "pid": 14653
+        },
+        {
+          "seat": 1,
+          "version": "151.0.7922.34",
+          "pid": 14758
+        }
+      ],
+      "webgl": [
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        },
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        }
+      ],
+      "fixtureSeed": {
+        "value": 1234,
+        "source": "fixed deterministic acceptance seed; raw relay snapshot has no seed"
+      },
+      "policy": {
+        "inputTiming": {
+          "rollbackLimit": 12,
+          "sendPredictionLimit": 12,
+          "measuredStartup": true,
+          "manualDelayLimit": 9
+        },
+        "resolved": {
+          "measuredStartup": true,
+          "rollback": true,
+          "manualRollbackDelay": false,
+          "manualDelayLimit": 9,
+          "predictionLimit": 12
+        }
+      },
+      "runtimeOptions": [
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 0,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        },
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 1,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        }
+      ],
+      "correctness": {
+        "exportedNativeFieldsEqual": true,
+        "frame": 840,
+        "fullWorldBrowserOracle": false,
+        "exactWorldComponentEvidence": null,
+        "limitation": "56-word native status covers hash, stage/phase/frame and player values; it is not a complete body dump."
+      },
+      "confirmedBoundary": {
+        "frame": 840,
+        "generation": 0
+      },
+      "replay": [
+        {
+          "seat": 0,
+          "frame": 840,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:840",
+            "presentation": 6
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "ea88d691758b3c3d3b58df189cb53b696e3ab9880c116b4db80eeb3234ccbe54",
+            "replaySha256": "1f4004aceff6459588ab1b5e0cc4a1191e780d6103e17357ada6ce776794b650"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-03/peer-0-actual-inputs.rpy",
+            "bytes": 21200,
+            "sha256": "ba126bf8b77c572b1bf985fce6dd8229e15ecda79118394146ca4b47e1dad91c"
+          }
+        },
+        {
+          "seat": 1,
+          "frame": 840,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:840",
+            "presentation": 8
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "b2db13d1fab7d2109f83ff2e1ade005639d508abc7fc9efb55da4db9c7830657",
+            "replaySha256": "fc3e7833e7fe7119940e8b293982386da6cbc981ea3c8fab6a59b8fc28c4f918"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-03/peer-1-actual-inputs.rpy",
+            "bytes": 21176,
+            "sha256": "643abf877a6040812ace0eb5627961f812a0b4d8ece04b96a3402ac99c3a8ed3"
+          }
+        }
+      ],
+      "pixelSampling": {
+        "requested": true,
+        "readbackPhase": "bounded confirmed post-draw pause samples after measurement; exact Replay after seek",
+        "performanceWindowReadbacks": 0,
+        "liveBoundary": {
+          "frame": 840,
+          "generation": 0,
+          "samples": [
+            {
+              "seat": 0,
+              "key": "0:840",
+              "presentation": 6,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 5,
+              "retainedSamples": 5,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            },
+            {
+              "seat": 1,
+              "key": "0:840",
+              "presentation": 8,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 7,
+              "retainedSamples": 7,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            }
+          ]
+        }
+      },
+      "peers": [
+        {
+          "seat": 0,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-03/peer-0.json",
+            "sha256": "b0d8b8fd1cb3ca775815955d523f55761c66e79377badbea5abcd1f62d6d990f"
+          },
+          "metrics": {
+            "callbacks": 446,
+            "callbackKinds": {
+              "raf": 446,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 14994.299999999814,
+            "logicalTicks": 690,
+            "logicHz": 46.01748664492564,
+            "nativeReportedWall": {
+              "count": 446,
+              "p50": 3.6000000005587935,
+              "p95": 9,
+              "p99": 12.5,
+              "max": 17,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 446,
+              "p50": 3.7999999998137355,
+              "p95": 9.200000000186265,
+              "p99": 12.599999999627471,
+              "max": 19.90000000037253,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 446,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.5,
+              "max": 2.900000000372529,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 446,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.5,
+              "max": 5.7999999998137355,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 424,
+            "frontierCount": 416,
+            "presentWindowHolds": {
+              "count": 425,
+              "p50": 32,
+              "p95": 56.60000000055879,
+              "p99": 81.59999999962747,
+              "max": 260.59999999962747,
+              "over33": 182,
+              "over50": 35,
+              "over100": 2
+            },
+            "frontierWindowHolds": {
+              "count": 417,
+              "p50": 32.299999999813735,
+              "p95": 58.200000000186265,
+              "p99": 81.59999999962747,
+              "max": 260.59999999962747,
+              "over33": 185,
+              "over50": 42,
+              "over100": 2
+            },
+            "rollbackDelta": {
+              "restores": 213,
+              "historyTicks": 1277,
+              "presentations": 424
+            },
+            "actualSendDelay": {
+              "count": 1413,
+              "p50": 88.19999999925494,
+              "p95": 135.40000000037253,
+              "p99": 185.79999999981374,
+              "max": 312.90000000037253,
+              "over33": 1413,
+              "over50": 1403,
+              "over100": 410
+            },
+            "injectionTimerLateness": {
+              "count": 1413,
+              "p50": 35.92170870536938,
+              "p95": 83.6641428239418,
+              "p99": 134.2112263936324,
+              "max": 259.9311719741672,
+              "over33": 783,
+              "over50": 389,
+              "over100": 36
+            },
+            "maxQueued": 23,
+            "maxQueuedBytes": 2620,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 14334.800000000745,
+            "end": 14595.400000000373,
+            "durationMs": 260.59999999962747,
+            "insideObservedCallbacksMs": 6.2000000001862645,
+            "outsideObservedCallbacksMs": 254.3999999994412,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 6.2000000001862645,
+              "nativeReportedMs": 5.900000000372529,
+              "shellHookMs": 0.09999999962747097,
+              "observerMs": 0.20000000018626451,
+              "otherCallbackMs": 0
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 367,
+                "nativeReportedMs": 5.900000000372529,
+                "forwardTicks": 4,
+                "historyTicksDelta": 6,
+                "overlapMs": 6.2000000001862645,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 19,
+              "dueWithinGap": 7,
+              "deliveredWithinGap": 4,
+              "pendingAtGapEnd": 15,
+              "maxObservedLatenessMs": 259.9311719741672
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 14334.800000000745,
+            "end": 14595.400000000373,
+            "durationMs": 260.59999999962747,
+            "insideObservedCallbacksMs": 6.2000000001862645,
+            "outsideObservedCallbacksMs": 254.3999999994412,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 6.2000000001862645,
+              "nativeReportedMs": 5.900000000372529,
+              "shellHookMs": 0.09999999962747097,
+              "observerMs": 0.20000000018626451,
+              "otherCallbackMs": 0
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 367,
+                "nativeReportedMs": 5.900000000372529,
+                "forwardTicks": 4,
+                "historyTicksDelta": 6,
+                "overlapMs": 6.2000000001862645,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 19,
+              "dueWithinGap": 7,
+              "deliveredWithinGap": 4,
+              "pendingAtGapEnd": 15,
+              "maxObservedLatenessMs": 259.9311719741672
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        },
+        {
+          "seat": 1,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-03/peer-1.json",
+            "sha256": "f4cc5975944f0d09f2978449c03947e295b46669537223101927f552d0aeb221"
+          },
+          "metrics": {
+            "callbacks": 488,
+            "callbackKinds": {
+              "raf": 488,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 14978,
+            "logicalTicks": 690,
+            "logicHz": 46.06756576311924,
+            "nativeReportedWall": {
+              "count": 488,
+              "p50": 2.7000000001862645,
+              "p95": 8.600000000558794,
+              "p99": 11.5,
+              "max": 51.200000000186265,
+              "over33": 1,
+              "over50": 1,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 488,
+              "p50": 2.900000000372529,
+              "p95": 9,
+              "p99": 12.700000000186265,
+              "max": 51.40000000037253,
+              "over33": 1,
+              "over50": 1,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 488,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.7999999998137355,
+              "max": 3.2999999998137355,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 488,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.8999999994412065,
+              "max": 2.8999999994412065,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 448,
+            "frontierCount": 440,
+            "presentWindowHolds": {
+              "count": 449,
+              "p50": 30.09999999962747,
+              "p95": 56.59999999962747,
+              "p99": 79.90000000037253,
+              "max": 146.20000000018626,
+              "over33": 157,
+              "over50": 35,
+              "over100": 3
+            },
+            "frontierWindowHolds": {
+              "count": 441,
+              "p50": 30.299999999813735,
+              "p95": 59.5,
+              "p99": 79.90000000037253,
+              "max": 146.20000000018626,
+              "over33": 163,
+              "over50": 42,
+              "over100": 3
+            },
+            "rollbackDelta": {
+              "restores": 206,
+              "historyTicks": 1163,
+              "presentations": 448
+            },
+            "actualSendDelay": {
+              "count": 737,
+              "p50": 80.6000000005588,
+              "p95": 118.5,
+              "p99": 158.29999999981374,
+              "max": 204.40000000037253,
+              "over33": 737,
+              "over50": 725,
+              "over100": 141
+            },
+            "injectionTimerLateness": {
+              "count": 737,
+              "p50": 29.832656415179372,
+              "p95": 67.22064286284149,
+              "p99": 108.20145024592057,
+              "max": 154.22104791132733,
+              "over33": 331,
+              "over50": 139,
+              "over100": 13
+            },
+            "maxQueued": 11,
+            "maxQueuedBytes": 2318,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 13034.100000000559,
+            "end": 13180.300000000745,
+            "durationMs": 146.20000000018626,
+            "insideObservedCallbacksMs": 10.200000001117587,
+            "outsideObservedCallbacksMs": 135.99999999906868,
+            "completeCallbacks": {
+              "count": 7,
+              "wallMs": 10.200000001117587,
+              "nativeReportedMs": 8.600000000558794,
+              "shellHookMs": 0.5,
+              "observerMs": 0.10000000055879354,
+              "otherCallbackMs": 1
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 181,
+                "nativeReportedMs": 0,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.10000000055879354,
+                "clipped": false
+              },
+              {
+                "id": 182,
+                "nativeReportedMs": 0.20000000018626451,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 1.099999999627471,
+                "clipped": false
+              },
+              {
+                "id": 183,
+                "nativeReportedMs": 0.09999999962747097,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.09999999962747097,
+                "clipped": false
+              },
+              {
+                "id": 184,
+                "nativeReportedMs": 0,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.40000000037252903,
+                "clipped": false
+              },
+              {
+                "id": 185,
+                "nativeReportedMs": 0.10000000055879354,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.10000000055879354,
+                "clipped": false
+              },
+              {
+                "id": 187,
+                "nativeReportedMs": 0,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.09999999962747097,
+                "clipped": false
+              },
+              {
+                "id": 188,
+                "nativeReportedMs": 8.200000000186265,
+                "forwardTicks": 1,
+                "historyTicksDelta": 12,
+                "overlapMs": 8.300000000745058,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 7,
+              "dueWithinGap": 5,
+              "deliveredWithinGap": 4,
+              "pendingAtGapEnd": 3,
+              "maxObservedLatenessMs": 52.27878993982449
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 13034.100000000559,
+            "end": 13180.300000000745,
+            "durationMs": 146.20000000018626,
+            "insideObservedCallbacksMs": 10.200000001117587,
+            "outsideObservedCallbacksMs": 135.99999999906868,
+            "completeCallbacks": {
+              "count": 7,
+              "wallMs": 10.200000001117587,
+              "nativeReportedMs": 8.600000000558794,
+              "shellHookMs": 0.5,
+              "observerMs": 0.10000000055879354,
+              "otherCallbackMs": 1
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 181,
+                "nativeReportedMs": 0,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.10000000055879354,
+                "clipped": false
+              },
+              {
+                "id": 182,
+                "nativeReportedMs": 0.20000000018626451,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 1.099999999627471,
+                "clipped": false
+              },
+              {
+                "id": 183,
+                "nativeReportedMs": 0.09999999962747097,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.09999999962747097,
+                "clipped": false
+              },
+              {
+                "id": 184,
+                "nativeReportedMs": 0,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.40000000037252903,
+                "clipped": false
+              },
+              {
+                "id": 185,
+                "nativeReportedMs": 0.10000000055879354,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.10000000055879354,
+                "clipped": false
+              },
+              {
+                "id": 187,
+                "nativeReportedMs": 0,
+                "forwardTicks": 0,
+                "historyTicksDelta": 0,
+                "overlapMs": 0.09999999962747097,
+                "clipped": false
+              },
+              {
+                "id": 188,
+                "nativeReportedMs": 8.200000000186265,
+                "forwardTicks": 1,
+                "historyTicksDelta": 12,
+                "overlapMs": 8.300000000745058,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 7,
+              "dueWithinGap": 5,
+              "deliveredWithinGap": 4,
+              "pendingAtGapEnd": 3,
+              "maxObservedLatenessMs": 52.27878993982449
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        }
+      ]
+    },
+    {
+      "id": "draw-unprofiled-01",
+      "collectionStatus": "complete",
+      "transportGroup": "legacy-delay-shim",
+      "receipt": {
+        "path": "artifacts/rollback-20261024/draw-unprofiled-01/receipt.json",
+        "bytes": 50192,
+        "sha256": "c5e3c7b730313e7d272735d51ce104f277407b5c64cec0ff50569279b2c4c32f"
+      },
+      "startedAt": "2026-10-24T02:28:03.437Z",
+      "completedAt": "2026-10-24T02:28:13.902Z",
+      "status": "failed",
+      "passed": false,
+      "performancePassed": null,
+      "performanceAssessed": false,
+      "performanceThresholdsMet": null,
+      "sourceStable": null,
+      "settings": {
+        "duration": 15,
+        "cpu": 1,
+        "routeRequested": "relay",
+        "profile": "stable",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "prediction": 12,
+        "maxGapMs": 100,
+        "disconnect": false,
+        "nativeProfile": false,
+        "audioProfile": false,
+        "cpuSamples": false,
+        "cpuRates": [
+          1,
+          1
+        ],
+        "delayLocation": "sender",
+        "replayOracle": true,
+        "stationary": false,
+        "touchCarrier": "rpc",
+        "headed": false,
+        "gpuRequested": "swiftshader"
+      },
+      "scope": {
+        "desktop": true,
+        "independentChromeProcesses": 2,
+        "managedHostInput": true,
+        "realNativeLoop": true,
+        "actualGpu": true,
+        "pixelMotion": false,
+        "fullWorldOracle": false,
+        "launcherUi": false,
+        "phone": false,
+        "performanceObserver": true,
+        "diagnosticOnly": false
+      },
+      "stageNames": [
+        "preflight",
+        "launch-independent-browsers",
+        "real-relay-admitted",
+        "cleanup-start"
+      ],
+      "measurementStarted": false,
+      "measurementCompleted": false,
+      "failureSummary": "Invalid peer packet during idle startup, before measurement",
+      "failures": null,
+      "errors": [
+        {
+          "seat": 0,
+          "kind": "console-error",
+          "message": "Invalid peer packet during idle startup, before measurement"
+        }
+      ],
+      "performanceAssessment": null,
+      "sourceIdentity": {
+        "game": {
+          "head": "524adac9917ccda7a68ced0159367abf59a2880b",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "common": {
+          "head": "524adac9917ccda7a68ced0159367abf59a2880b",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "launcher": {
+          "head": "524adac9917ccda7a68ced0159367abf59a2880b",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        }
+      },
+      "fileIdentities": {
+        "archive": {
+          "path": "../runtime-inputs/th11.dat",
+          "bytes": 26610794,
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        "manifest": {
+          "path": "artifacts/rollback-20261024/draw-runtime/manifest.json",
+          "bytes": 1114,
+          "sha256": "e0885f13b0c2fe0cdc9ead5a5c2bea6529f6d49fa02af47d80131e586bd9f49d"
+        },
+        "inventory": {
+          "path": "artifacts/rollback-20261024/draw-runtime/runtime-files.json",
+          "bytes": 2550,
+          "sha256": "30e3f5e50a6da44c52e90176054206a691f878aaf17abcc7fe417e554d86394d"
+        },
+        "wasm": {
+          "path": "artifacts/rollback-20261024/draw-runtime/th11-sdl.wasm",
+          "bytes": 5013171,
+          "sha256": "034d76ab22c9e6cecb4ff0cdcfdab62d02a9767936ae812147a5cc9cac44fee5"
+        },
+        "loader": {
+          "path": "artifacts/rollback-20261024/draw-runtime/th11-sdl.mjs",
+          "bytes": 265214,
+          "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+        },
+        "shell": {
+          "path": "artifacts/rollback-20261024/draw-runtime/shell.mjs",
+          "bytes": 39570,
+          "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+        },
+        "relay": {
+          "path": "services/relay/src/netplay-relay.mjs",
+          "bytes": 83351,
+          "sha256": "88f50ecab709af44b2789ae29ba0396af3defe1947336ee2ef2097ebaf29b392"
+        },
+        "catalog": {
+          "path": "launcher/lib/contracts/product-catalog.mjs",
+          "bytes": 641,
+          "sha256": "b81139c1e38624a49bd1140800222333120b3d8b10fd78884d00eece92522fe9"
+        },
+        "runtimeOptions": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs",
+          "bytes": 7899,
+          "sha256": "ad7ec8663a5fa085898e10e1f793979300076a8c72e8e05933a301eb23fc78c6"
+        },
+        "relayUrl": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs",
+          "bytes": 3753,
+          "sha256": "aecb2db7692b020a413002857e8b17249e73e6d33116f8023f2e4ba3964f97eb"
+        },
+        "runner": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-acceptance.mjs",
+          "bytes": 63867,
+          "sha256": "a0ff99fdacdb7197b623b4a4c35589f7e18ef2f68fb225383ec14e2715871bca"
+        },
+        "host": {
+          "path": "ports/th11-mp/portable/multiplayer/browser-host.html",
+          "bytes": 8207,
+          "sha256": "60a6ba063aec2e1b13af92bc895ca2daff5092bf2bd82a3b34c82c8172f450f6"
+        },
+        "errorClassifier": {
+          "path": "ports/th11-mp/portable/multiplayer/acceptance-errors.mjs",
+          "bytes": 441,
+          "sha256": "bfd4ffba39d3ac97cb1d6438e5aac7312503aaf7810c4b22a313f088e1885adc"
+        },
+        "timingMetrics": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.mjs",
+          "bytes": 8702,
+          "sha256": "1f021051463f6071dc065a6b600a23f5a5f5b1324b199ab98498bcbfa7dca4e1"
+        },
+        "replayOracle": {
+          "path": "ports/th11-mp/portable/multiplayer/replay-prefix-oracle.mjs",
+          "bytes": 5712,
+          "sha256": "0b5db07ef3deb8e373a93f17bf3c3fd2d7a9e58c1bdec97a84133edaa4a3e97e"
+        },
+        "framebufferProof": {
+          "path": "ports/th11-mp/portable/multiplayer/framebuffer-proof.mjs",
+          "bytes": 4257,
+          "sha256": "aa8ee6332e703234108c97bbde1d752614f21f575f1c154742140f5bfe826afe"
+        }
+      },
+      "sharedFonts": [
+        {
+          "path": "../runtime-inputs/msgothic.ttc",
+          "bytes": 8990160,
+          "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+        },
+        {
+          "path": "../runtime-inputs/unifont.otf",
+          "bytes": 5105508,
+          "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+        }
+      ],
+      "browsers": [
+        {
+          "seat": 0,
+          "version": "151.0.7922.34",
+          "pid": 14004
+        },
+        {
+          "seat": 1,
+          "version": "151.0.7922.34",
+          "pid": 14112
+        }
+      ],
+      "webgl": null,
+      "fixtureSeed": {
+        "value": 1234,
+        "source": "fixed deterministic acceptance seed; raw relay snapshot has no seed"
+      },
+      "policy": {
+        "inputTiming": {
+          "rollbackLimit": 12,
+          "sendPredictionLimit": 12,
+          "measuredStartup": true,
+          "manualDelayLimit": 9
+        },
+        "resolved": {
+          "measuredStartup": true,
+          "rollback": true,
+          "manualRollbackDelay": false,
+          "manualDelayLimit": 9,
+          "predictionLimit": 12
+        }
+      },
+      "runtimeOptions": [
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 0,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        },
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 1,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        }
+      ],
+      "correctness": null,
+      "confirmedBoundary": null,
+      "replay": [],
+      "pixelSampling": {
+        "requested": true,
+        "readbackPhase": "bounded confirmed post-draw pause samples after measurement; exact Replay after seek",
+        "performanceWindowReadbacks": 0
+      },
+      "peers": []
+    },
+    {
+      "id": "baseline-unprofiled-04",
+      "collectionStatus": "complete",
+      "transportGroup": "fifo-corrected",
+      "receipt": {
+        "path": "artifacts/rollback-20261024/baseline-unprofiled-04/receipt.json",
+        "bytes": 287334,
+        "sha256": "03c499a0a94ab921193014f473b8fb0a63021266cc413dbcb915b9d3ac25054c"
+      },
+      "startedAt": "2026-10-24T02:40:10.698Z",
+      "completedAt": "2026-10-24T02:41:18.839Z",
+      "status": "passed",
+      "passed": true,
+      "performancePassed": true,
+      "performanceAssessed": true,
+      "performanceThresholdsMet": true,
+      "sourceStable": true,
+      "settings": {
+        "duration": 15,
+        "cpu": 1,
+        "routeRequested": "relay",
+        "profile": "stable",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "prediction": 12,
+        "maxGapMs": 100,
+        "disconnect": false,
+        "nativeProfile": false,
+        "audioProfile": false,
+        "cpuSamples": false,
+        "cpuRates": [
+          1,
+          1
+        ],
+        "delayLocation": "sender",
+        "replayOracle": true,
+        "stationary": false,
+        "touchCarrier": "rpc",
+        "headed": false,
+        "gpuRequested": "swiftshader"
+      },
+      "scope": {
+        "desktop": true,
+        "independentChromeProcesses": 2,
+        "managedHostInput": true,
+        "realNativeLoop": true,
+        "actualGpu": true,
+        "pixelMotion": false,
+        "fullWorldOracle": false,
+        "launcherUi": false,
+        "phone": false,
+        "performanceObserver": true,
+        "diagnosticOnly": false
+      },
+      "stageNames": [
+        "preflight",
+        "launch-independent-browsers",
+        "real-relay-admitted",
+        "measurement-start",
+        "confirmation-tail-start",
+        "confirmed-boundary-checked",
+        "pause-resume-usability-checked",
+        "loops-stopped-after-correctness",
+        "exact-replay-oracle-start",
+        "exact-replay-oracle-complete",
+        "cleanup-start"
+      ],
+      "measurementStarted": true,
+      "measurementCompleted": true,
+      "failureSummary": null,
+      "failures": [],
+      "errors": [],
+      "performanceAssessment": {
+        "diagnosticOnly": false,
+        "diagnostics": [],
+        "peers": [
+          {
+            "seat": 0,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 16.59999999962747,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 96.70000000018626,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 96.70000000018626,
+                "maximumMs": 100,
+                "passed": true
+              }
+            ]
+          },
+          {
+            "seat": 1,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 12.599999999627471,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 76.5,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 76.5,
+                "maximumMs": 100,
+                "passed": true
+              }
+            ]
+          }
+        ],
+        "thresholdsMet": true,
+        "performancePassed": true
+      },
+      "sourceIdentity": {
+        "game": {
+          "head": "faba380aa7020a02e852ace5092619edd43efe1e",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "common": {
+          "head": "faba380aa7020a02e852ace5092619edd43efe1e",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "launcher": {
+          "head": "faba380aa7020a02e852ace5092619edd43efe1e",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        }
+      },
+      "fileIdentities": {
+        "archive": {
+          "path": "../runtime-inputs/th11.dat",
+          "bytes": 26610794,
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        "manifest": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/manifest.json",
+          "bytes": 1114,
+          "sha256": "44e03a5d49f26858007497abff8e09f04da1d84d41949484b7e5a433624b9eba"
+        },
+        "inventory": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/runtime-files.json",
+          "bytes": 2550,
+          "sha256": "cf4f3ba2e121e03fbb77d2f92e8d59c697ac49566b30ae37dd4205e450d25a2c"
+        },
+        "wasm": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.wasm",
+          "bytes": 5013140,
+          "sha256": "f9154a727e67077abfce409ee16b09374f9e4153a9221b3be747d0b68f661449"
+        },
+        "loader": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/th11-sdl.mjs",
+          "bytes": 265214,
+          "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+        },
+        "shell": {
+          "path": "artifacts/rollback-20261024/baseline-runtime/shell.mjs",
+          "bytes": 39570,
+          "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+        },
+        "relay": {
+          "path": "services/relay/src/netplay-relay.mjs",
+          "bytes": 83351,
+          "sha256": "88f50ecab709af44b2789ae29ba0396af3defe1947336ee2ef2097ebaf29b392"
+        },
+        "catalog": {
+          "path": "launcher/lib/contracts/product-catalog.mjs",
+          "bytes": 641,
+          "sha256": "b81139c1e38624a49bd1140800222333120b3d8b10fd78884d00eece92522fe9"
+        },
+        "runtimeOptions": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs",
+          "bytes": 7899,
+          "sha256": "ad7ec8663a5fa085898e10e1f793979300076a8c72e8e05933a301eb23fc78c6"
+        },
+        "relayUrl": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs",
+          "bytes": 3753,
+          "sha256": "aecb2db7692b020a413002857e8b17249e73e6d33116f8023f2e4ba3964f97eb"
+        },
+        "runner": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-acceptance.mjs",
+          "bytes": 63509,
+          "sha256": "cfffd4b4087b3a8f6857d788e8548b87fa314b61b4e42f3fb79e183d6fa17c9a"
+        },
+        "host": {
+          "path": "ports/th11-mp/portable/multiplayer/browser-host.html",
+          "bytes": 8207,
+          "sha256": "60a6ba063aec2e1b13af92bc895ca2daff5092bf2bd82a3b34c82c8172f450f6"
+        },
+        "errorClassifier": {
+          "path": "ports/th11-mp/portable/multiplayer/acceptance-errors.mjs",
+          "bytes": 441,
+          "sha256": "bfd4ffba39d3ac97cb1d6438e5aac7312503aaf7810c4b22a313f088e1885adc"
+        },
+        "timingMetrics": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.mjs",
+          "bytes": 8702,
+          "sha256": "1f021051463f6071dc065a6b600a23f5a5f5b1324b199ab98498bcbfa7dca4e1"
+        },
+        "senderDelay": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-sender-delay.mjs",
+          "bytes": 4585,
+          "sha256": "f3956e115d27c8ff3c509adb22df6a525893dc57095826361bf233486c8c7e11"
+        },
+        "replayOracle": {
+          "path": "ports/th11-mp/portable/multiplayer/replay-prefix-oracle.mjs",
+          "bytes": 5712,
+          "sha256": "0b5db07ef3deb8e373a93f17bf3c3fd2d7a9e58c1bdec97a84133edaa4a3e97e"
+        },
+        "framebufferProof": {
+          "path": "ports/th11-mp/portable/multiplayer/framebuffer-proof.mjs",
+          "bytes": 4257,
+          "sha256": "aa8ee6332e703234108c97bbde1d752614f21f575f1c154742140f5bfe826afe"
+        }
+      },
+      "sharedFonts": [
+        {
+          "path": "../runtime-inputs/msgothic.ttc",
+          "bytes": 8990160,
+          "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+        },
+        {
+          "path": "../runtime-inputs/unifont.otf",
+          "bytes": 5105508,
+          "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+        }
+      ],
+      "browsers": [
+        {
+          "seat": 0,
+          "version": "151.0.7922.34",
+          "pid": 16045
+        },
+        {
+          "seat": 1,
+          "version": "151.0.7922.34",
+          "pid": 16153
+        }
+      ],
+      "webgl": [
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        },
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        }
+      ],
+      "fixtureSeed": {
+        "value": 1234,
+        "source": "fixed deterministic acceptance seed; raw relay snapshot has no seed"
+      },
+      "policy": {
+        "inputTiming": {
+          "rollbackLimit": 12,
+          "sendPredictionLimit": 12,
+          "measuredStartup": true,
+          "manualDelayLimit": 9
+        },
+        "resolved": {
+          "measuredStartup": true,
+          "rollback": true,
+          "manualRollbackDelay": false,
+          "manualDelayLimit": 9,
+          "predictionLimit": 12
+        }
+      },
+      "runtimeOptions": [
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 0,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        },
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 1,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        }
+      ],
+      "correctness": {
+        "exportedNativeFieldsEqual": true,
+        "frame": 881,
+        "fullWorldBrowserOracle": false,
+        "exactWorldComponentEvidence": null,
+        "limitation": "56-word native status covers hash, stage/phase/frame and player values; it is not a complete body dump."
+      },
+      "confirmedBoundary": {
+        "frame": 881,
+        "generation": 0
+      },
+      "replay": [
+        {
+          "seat": 0,
+          "frame": 881,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:881",
+            "presentation": 4
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "ce536acc343a2bdf1b74042dd92349f9fcc0fd4b6960918e13c3e86cbcfa7b6f",
+            "replaySha256": "4f593ed533861b7a2d60a7911e1633382bca0d35c75cf386c84238656c619574"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-04/peer-0-actual-inputs.rpy",
+            "bytes": 22280,
+            "sha256": "f7c0532eb3dab73cd91c6f7ae2150f4eeac250034afc68a9771f5225a120883c"
+          }
+        },
+        {
+          "seat": 1,
+          "frame": 881,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:881",
+            "presentation": 6
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "6fcdbd3f33628c7dda618cd546d10841503edfb454865e28ffe945e34271f44f",
+            "replaySha256": "5fc1b79544af06ebec2811cc24e7cb877fe225c23350f136e43bdb843db756be"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-04/peer-1-actual-inputs.rpy",
+            "bytes": 22328,
+            "sha256": "195eb69350875138b5fd91a8a14246e19b3a9a70b4ed2391122774d1b6a9d418"
+          }
+        }
+      ],
+      "pixelSampling": {
+        "requested": true,
+        "readbackPhase": "bounded confirmed post-draw pause samples after measurement; exact Replay after seek",
+        "performanceWindowReadbacks": 0,
+        "liveBoundary": {
+          "frame": 881,
+          "generation": 0,
+          "samples": [
+            {
+              "seat": 0,
+              "key": "0:881",
+              "presentation": 4,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 5,
+              "retainedSamples": 5,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            },
+            {
+              "seat": 1,
+              "key": "0:881",
+              "presentation": 6,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 5,
+              "retainedSamples": 5,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            }
+          ]
+        }
+      },
+      "peers": [
+        {
+          "seat": 0,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-04/peer-0.json",
+            "sha256": "3018358e767c500fdd891e47d5724b64b144990f51e2c5c9b5b5551d3ee997b1"
+          },
+          "metrics": {
+            "callbacks": 464,
+            "callbackKinds": {
+              "raf": 464,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 15000.5,
+            "logicalTicks": 733,
+            "logicHz": 48.86503783207226,
+            "nativeReportedWall": {
+              "count": 464,
+              "p50": 4.7000000001862645,
+              "p95": 9.299999999813735,
+              "p99": 11,
+              "max": 16.59999999962747,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 464,
+              "p50": 4.900000000372529,
+              "p95": 9.400000000372529,
+              "p99": 11.300000000745058,
+              "max": 16.799999999813735,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 464,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.599999999627471,
+              "max": 2.099999999627471,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 464,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.599999999627471,
+              "max": 2.5,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 451,
+            "frontierCount": 437,
+            "presentWindowHolds": {
+              "count": 451,
+              "p50": 31.600000000558794,
+              "p95": 48.90000000037253,
+              "p99": 59.90000000037253,
+              "max": 96.70000000018626,
+              "over33": 180,
+              "over50": 18,
+              "over100": 0
+            },
+            "frontierWindowHolds": {
+              "count": 437,
+              "p50": 32,
+              "p95": 52.799999999813735,
+              "p99": 67.70000000018626,
+              "max": 96.70000000018626,
+              "over33": 186,
+              "over50": 31,
+              "over100": 0
+            },
+            "rollbackDelta": {
+              "restores": 280,
+              "historyTicks": 1588,
+              "presentations": 451
+            },
+            "actualSendDelay": {
+              "count": 1494,
+              "p50": 75.79999999981374,
+              "p95": 118.20000000018626,
+              "p99": 133.90000000037253,
+              "max": 161.59999999962747,
+              "over33": 1494,
+              "over50": 1481,
+              "over100": 255
+            },
+            "injectionTimerLateness": {
+              "count": 1494,
+              "p50": 23.964569067116827,
+              "p95": 67.1246864409186,
+              "p99": 84.19967694720253,
+              "max": 110.49318431084976,
+              "over33": 505,
+              "over50": 254,
+              "over100": 7
+            },
+            "maxQueued": 21,
+            "maxQueuedBytes": 2139,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 22562.700000000186,
+            "end": 22659.400000000373,
+            "durationMs": 96.70000000018626,
+            "insideObservedCallbacksMs": 19.899999999441206,
+            "outsideObservedCallbacksMs": 76.80000000074506,
+            "completeCallbacks": {
+              "count": 2,
+              "wallMs": 19.899999999441206,
+              "nativeReportedMs": 19.40000000037253,
+              "shellHookMs": 0.09999999962747097,
+              "observerMs": 0.20000000018626451,
+              "otherCallbackMs": 0.19999999925494194
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 726,
+                "nativeReportedMs": 13.900000000372529,
+                "forwardTicks": 0,
+                "historyTicksDelta": 3,
+                "overlapMs": 14.299999999813735,
+                "clipped": false
+              },
+              {
+                "id": 727,
+                "nativeReportedMs": 5.5,
+                "forwardTicks": 3,
+                "historyTicksDelta": 4,
+                "overlapMs": 5.599999999627471,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 18,
+              "dueWithinGap": 7,
+              "deliveredWithinGap": 9,
+              "pendingAtGapEnd": 9,
+              "maxObservedLatenessMs": 80.2541246493347
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 22562.700000000186,
+            "end": 22659.400000000373,
+            "durationMs": 96.70000000018626,
+            "insideObservedCallbacksMs": 19.899999999441206,
+            "outsideObservedCallbacksMs": 76.80000000074506,
+            "completeCallbacks": {
+              "count": 2,
+              "wallMs": 19.899999999441206,
+              "nativeReportedMs": 19.40000000037253,
+              "shellHookMs": 0.09999999962747097,
+              "observerMs": 0.20000000018626451,
+              "otherCallbackMs": 0.19999999925494194
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 726,
+                "nativeReportedMs": 13.900000000372529,
+                "forwardTicks": 0,
+                "historyTicksDelta": 3,
+                "overlapMs": 14.299999999813735,
+                "clipped": false
+              },
+              {
+                "id": 727,
+                "nativeReportedMs": 5.5,
+                "forwardTicks": 3,
+                "historyTicksDelta": 4,
+                "overlapMs": 5.599999999627471,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 18,
+              "dueWithinGap": 7,
+              "deliveredWithinGap": 9,
+              "pendingAtGapEnd": 9,
+              "maxObservedLatenessMs": 80.2541246493347
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        },
+        {
+          "seat": 1,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/baseline-unprofiled-04/peer-1.json",
+            "sha256": "01bfaced938ae1f323d7984de65a675c7199c4879de4bf430f8ff9353e7de054"
+          },
+          "metrics": {
+            "callbacks": 538,
+            "callbackKinds": {
+              "raf": 538,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 14992.399999999441,
+            "logicalTicks": 732,
+            "logicHz": 48.824737867187864,
+            "nativeReportedWall": {
+              "count": 538,
+              "p50": 2.5,
+              "p95": 8.200000000186265,
+              "p99": 9.799999999813735,
+              "max": 12.599999999627471,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 538,
+              "p50": 2.7000000001862645,
+              "p95": 8.599999999627471,
+              "p99": 11.200000000186265,
+              "max": 12.799999999813735,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 538,
+              "p50": 0,
+              "p95": 0.20000000018626451,
+              "p99": 0.40000000037252903,
+              "max": 2.2000000001862645,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 538,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.599999999627471,
+              "max": 4.900000000372529,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 507,
+            "frontierCount": 491,
+            "presentWindowHolds": {
+              "count": 508,
+              "p50": 28.399999999441206,
+              "p95": 41.59999999962747,
+              "p99": 51,
+              "max": 76.5,
+              "over33": 109,
+              "over50": 8,
+              "over100": 0
+            },
+            "frontierWindowHolds": {
+              "count": 492,
+              "p50": 28.700000000186265,
+              "p95": 48.5,
+              "p99": 66.90000000037253,
+              "max": 76.5,
+              "over33": 117,
+              "over50": 22,
+              "over100": 0
+            },
+            "rollbackDelta": {
+              "restores": 216,
+              "historyTicks": 1191,
+              "presentations": 507
+            },
+            "actualSendDelay": {
+              "count": 778,
+              "p50": 72.29999999981374,
+              "p95": 106.29999999981374,
+              "p99": 120,
+              "max": 150.40000000037253,
+              "over33": 778,
+              "over50": 739,
+              "over100": 75
+            },
+            "injectionTimerLateness": {
+              "count": 778,
+              "p50": 22.215125866234303,
+              "p95": 56.02339045330882,
+              "p99": 67.98773178085685,
+              "max": 98.71608808403835,
+              "over33": 221,
+              "over50": 71,
+              "over100": 0
+            },
+            "maxQueued": 9,
+            "maxQueuedBytes": 1698,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 21763.400000000373,
+            "end": 21839.900000000373,
+            "durationMs": 76.5,
+            "insideObservedCallbacksMs": 6.7000000001862645,
+            "outsideObservedCallbacksMs": 69.79999999981374,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 6.7000000001862645,
+              "nativeReportedMs": 6.6000000005587935,
+              "shellHookMs": 0,
+              "observerMs": 0.09999999962747097,
+              "otherCallbackMs": 0
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 619,
+                "nativeReportedMs": 6.6000000005587935,
+                "forwardTicks": 4,
+                "historyTicksDelta": 5,
+                "overlapMs": 6.7000000001862645,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 8,
+              "dueWithinGap": 4,
+              "deliveredWithinGap": 4,
+              "pendingAtGapEnd": 4,
+              "maxObservedLatenessMs": 57.13943502865732
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 21763.400000000373,
+            "end": 21839.900000000373,
+            "durationMs": 76.5,
+            "insideObservedCallbacksMs": 6.7000000001862645,
+            "outsideObservedCallbacksMs": 69.79999999981374,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 6.7000000001862645,
+              "nativeReportedMs": 6.6000000005587935,
+              "shellHookMs": 0,
+              "observerMs": 0.09999999962747097,
+              "otherCallbackMs": 0
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 619,
+                "nativeReportedMs": 6.6000000005587935,
+                "forwardTicks": 4,
+                "historyTicksDelta": 5,
+                "overlapMs": 6.7000000001862645,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 8,
+              "dueWithinGap": 4,
+              "deliveredWithinGap": 4,
+              "pendingAtGapEnd": 4,
+              "maxObservedLatenessMs": 57.13943502865732
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        }
+      ]
+    },
+    {
+      "id": "draw-unprofiled-02",
+      "collectionStatus": "complete",
+      "transportGroup": "fifo-corrected",
+      "receipt": {
+        "path": "artifacts/rollback-20261024/draw-unprofiled-02/receipt.json",
+        "bytes": 309393,
+        "sha256": "b317b7ceaeebe10e8b26bf361db8961cacb9fc67d1027c54e161b30d377a5548"
+      },
+      "startedAt": "2026-10-24T02:41:34.369Z",
+      "completedAt": "2026-10-24T02:42:39.144Z",
+      "status": "failed",
+      "passed": false,
+      "performancePassed": false,
+      "performanceAssessed": true,
+      "performanceThresholdsMet": false,
+      "sourceStable": true,
+      "settings": {
+        "duration": 15,
+        "cpu": 1,
+        "routeRequested": "relay",
+        "profile": "stable",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "prediction": 12,
+        "maxGapMs": 100,
+        "disconnect": false,
+        "nativeProfile": false,
+        "audioProfile": false,
+        "cpuSamples": false,
+        "cpuRates": [
+          1,
+          1
+        ],
+        "delayLocation": "sender",
+        "replayOracle": true,
+        "stationary": false,
+        "touchCarrier": "rpc",
+        "headed": false,
+        "gpuRequested": "swiftshader"
+      },
+      "scope": {
+        "desktop": true,
+        "independentChromeProcesses": 2,
+        "managedHostInput": true,
+        "realNativeLoop": true,
+        "actualGpu": true,
+        "pixelMotion": false,
+        "fullWorldOracle": false,
+        "launcherUi": false,
+        "phone": false,
+        "performanceObserver": true,
+        "diagnosticOnly": false
+      },
+      "stageNames": [
+        "preflight",
+        "launch-independent-browsers",
+        "real-relay-admitted",
+        "measurement-start",
+        "confirmation-tail-start",
+        "confirmed-boundary-checked",
+        "pause-resume-usability-checked",
+        "loops-stopped-after-correctness",
+        "exact-replay-oracle-start",
+        "exact-replay-oracle-complete",
+        "cleanup-start"
+      ],
+      "measurementStarted": true,
+      "measurementCompleted": true,
+      "failureSummary": null,
+      "failures": [
+        {
+          "seat": 0,
+          "kind": "performance-threshold",
+          "nativeMax": 26.399999999441206,
+          "presentMax": 224.09999999962747,
+          "frontierMax": 224.09999999962747,
+          "invalidMetrics": []
+        },
+        {
+          "seat": 1,
+          "kind": "performance-threshold",
+          "nativeMax": 33.10000000055879,
+          "presentMax": 178.59999999962747,
+          "frontierMax": 178.59999999962747,
+          "invalidMetrics": []
+        }
+      ],
+      "errors": [],
+      "performanceAssessment": {
+        "diagnosticOnly": false,
+        "diagnostics": [],
+        "peers": [
+          {
+            "seat": 0,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 26.399999999441206,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 224.09999999962747,
+                "maximumMs": 100,
+                "passed": false
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 224.09999999962747,
+                "maximumMs": 100,
+                "passed": false
+              }
+            ]
+          },
+          {
+            "seat": 1,
+            "checks": [
+              {
+                "metric": "nativeReportedWall.max",
+                "value": 33.10000000055879,
+                "maximumMs": 100,
+                "passed": true
+              },
+              {
+                "metric": "presentWindowHolds.max",
+                "value": 178.59999999962747,
+                "maximumMs": 100,
+                "passed": false
+              },
+              {
+                "metric": "frontierWindowHolds.max",
+                "value": 178.59999999962747,
+                "maximumMs": 100,
+                "passed": false
+              }
+            ]
+          }
+        ],
+        "thresholdsMet": false,
+        "performancePassed": false
+      },
+      "sourceIdentity": {
+        "game": {
+          "head": "faba380aa7020a02e852ace5092619edd43efe1e",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "common": {
+          "head": "faba380aa7020a02e852ace5092619edd43efe1e",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        },
+        "launcher": {
+          "head": "faba380aa7020a02e852ace5092619edd43efe1e",
+          "headExitCode": 0,
+          "status": "M ports/th11-mp/docs/DEVELOPMENT.md\n M ports/th11-mp/docs/ROLLBACK.md",
+          "statusExitCode": 0
+        }
+      },
+      "fileIdentities": {
+        "archive": {
+          "path": "../runtime-inputs/th11.dat",
+          "bytes": 26610794,
+          "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+        },
+        "manifest": {
+          "path": "artifacts/rollback-20261024/draw-runtime/manifest.json",
+          "bytes": 1114,
+          "sha256": "e0885f13b0c2fe0cdc9ead5a5c2bea6529f6d49fa02af47d80131e586bd9f49d"
+        },
+        "inventory": {
+          "path": "artifacts/rollback-20261024/draw-runtime/runtime-files.json",
+          "bytes": 2550,
+          "sha256": "30e3f5e50a6da44c52e90176054206a691f878aaf17abcc7fe417e554d86394d"
+        },
+        "wasm": {
+          "path": "artifacts/rollback-20261024/draw-runtime/th11-sdl.wasm",
+          "bytes": 5013171,
+          "sha256": "034d76ab22c9e6cecb4ff0cdcfdab62d02a9767936ae812147a5cc9cac44fee5"
+        },
+        "loader": {
+          "path": "artifacts/rollback-20261024/draw-runtime/th11-sdl.mjs",
+          "bytes": 265214,
+          "sha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0"
+        },
+        "shell": {
+          "path": "artifacts/rollback-20261024/draw-runtime/shell.mjs",
+          "bytes": 39570,
+          "sha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+        },
+        "relay": {
+          "path": "services/relay/src/netplay-relay.mjs",
+          "bytes": 83351,
+          "sha256": "88f50ecab709af44b2789ae29ba0396af3defe1947336ee2ef2097ebaf29b392"
+        },
+        "catalog": {
+          "path": "launcher/lib/contracts/product-catalog.mjs",
+          "bytes": 641,
+          "sha256": "b81139c1e38624a49bd1140800222333120b3d8b10fd78884d00eece92522fe9"
+        },
+        "runtimeOptions": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs",
+          "bytes": 7899,
+          "sha256": "ad7ec8663a5fa085898e10e1f793979300076a8c72e8e05933a301eb23fc78c6"
+        },
+        "relayUrl": {
+          "path": "launcher/.cache/build/browser/assets/launcher/multiplayer-relay-url.mjs",
+          "bytes": 3753,
+          "sha256": "aecb2db7692b020a413002857e8b17249e73e6d33116f8023f2e4ba3964f97eb"
+        },
+        "runner": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-acceptance.mjs",
+          "bytes": 63509,
+          "sha256": "cfffd4b4087b3a8f6857d788e8548b87fa314b61b4e42f3fb79e183d6fa17c9a"
+        },
+        "host": {
+          "path": "ports/th11-mp/portable/multiplayer/browser-host.html",
+          "bytes": 8207,
+          "sha256": "60a6ba063aec2e1b13af92bc895ca2daff5092bf2bd82a3b34c82c8172f450f6"
+        },
+        "errorClassifier": {
+          "path": "ports/th11-mp/portable/multiplayer/acceptance-errors.mjs",
+          "bytes": 441,
+          "sha256": "bfd4ffba39d3ac97cb1d6438e5aac7312503aaf7810c4b22a313f088e1885adc"
+        },
+        "timingMetrics": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.mjs",
+          "bytes": 8702,
+          "sha256": "1f021051463f6071dc065a6b600a23f5a5f5b1324b199ab98498bcbfa7dca4e1"
+        },
+        "senderDelay": {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-sender-delay.mjs",
+          "bytes": 4585,
+          "sha256": "f3956e115d27c8ff3c509adb22df6a525893dc57095826361bf233486c8c7e11"
+        },
+        "replayOracle": {
+          "path": "ports/th11-mp/portable/multiplayer/replay-prefix-oracle.mjs",
+          "bytes": 5712,
+          "sha256": "0b5db07ef3deb8e373a93f17bf3c3fd2d7a9e58c1bdec97a84133edaa4a3e97e"
+        },
+        "framebufferProof": {
+          "path": "ports/th11-mp/portable/multiplayer/framebuffer-proof.mjs",
+          "bytes": 4257,
+          "sha256": "aa8ee6332e703234108c97bbde1d752614f21f575f1c154742140f5bfe826afe"
+        }
+      },
+      "sharedFonts": [
+        {
+          "path": "../runtime-inputs/msgothic.ttc",
+          "bytes": 8990160,
+          "sha256": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db"
+        },
+        {
+          "path": "../runtime-inputs/unifont.otf",
+          "bytes": 5105508,
+          "sha256": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+        }
+      ],
+      "browsers": [
+        {
+          "seat": 0,
+          "version": "151.0.7922.34",
+          "pid": 16713
+        },
+        {
+          "seat": 1,
+          "version": "151.0.7922.34",
+          "pid": 16819
+        }
+      ],
+      "webgl": [
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        },
+        {
+          "available": true,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "vendor": "Google Inc. (Google)"
+        }
+      ],
+      "fixtureSeed": {
+        "value": 1234,
+        "source": "fixed deterministic acceptance seed; raw relay snapshot has no seed"
+      },
+      "policy": {
+        "inputTiming": {
+          "rollbackLimit": 12,
+          "sendPredictionLimit": 12,
+          "measuredStartup": true,
+          "manualDelayLimit": 9
+        },
+        "resolved": {
+          "measuredStartup": true,
+          "rollback": true,
+          "manualRollbackDelay": false,
+          "manualDelayLimit": 9,
+          "predictionLimit": 12
+        }
+      },
+      "runtimeOptions": [
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 0,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        },
+        {
+          "netplayMode": "lan",
+          "netplayChallengeMode": false,
+          "netplayPlayer": 1,
+          "netplayPlayerCount": 2,
+          "netplaySeed": 1234,
+          "netplayDifficulty": 1,
+          "netplayInputDelay": 0,
+          "netplayAdonisMode": 0,
+          "netplayInputDelayAuto": false,
+          "netplayPredictionLimit": 12,
+          "netplaySpectator": false,
+          "netplaySpectatorCount": 0,
+          "netplayIceServers": [],
+          "netplayLoadouts": [
+            {
+              "character": 0,
+              "shot": 0
+            },
+            {
+              "character": 1,
+              "shot": 0
+            }
+          ],
+          "touchEnabled": true,
+          "touchMovementMode": "touch",
+          "touchSensitivity": 100,
+          "doubleTapBombEnabled": false
+        }
+      ],
+      "correctness": {
+        "exportedNativeFieldsEqual": true,
+        "frame": 822,
+        "fullWorldBrowserOracle": false,
+        "exactWorldComponentEvidence": null,
+        "limitation": "56-word native status covers hash, stage/phase/frame and player values; it is not a complete body dump."
+      },
+      "confirmedBoundary": {
+        "frame": 822,
+        "generation": 0
+      },
+      "replay": [
+        {
+          "seat": 0,
+          "frame": 822,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:822",
+            "presentation": 3
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "fd3386f9edca1ef96834396479d5e74893ae87c495d5ee2a15a24c8a9e0f15db",
+            "replaySha256": "19be2e60383805ab4b234f3fa4181a4a9353907429832e3cef7dbf69a8de131f"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/draw-unprofiled-02/peer-0-actual-inputs.rpy",
+            "bytes": 20936,
+            "sha256": "610bb33290bec8441f20a939981fbcba427a65cf2e3460898653eccfa3f20b77"
+          }
+        },
+        {
+          "seat": 1,
+          "frame": 822,
+          "passed": true,
+          "livePixelSample": {
+            "key": "0:822",
+            "presentation": 6
+          },
+          "pixels": {
+            "equal": true,
+            "mismatches": 0,
+            "first": [],
+            "distinctColorsAtLeast": 257,
+            "viewport": {
+              "x": 32,
+              "y": 16,
+              "width": 384,
+              "height": 448
+            },
+            "tolerance": 0,
+            "liveSha256": "90b50f843168bed77e37bfef1052c5d343eb07dcb1b3d5f72c55ecb7c8243bf9",
+            "replaySha256": "771e96e6c83de29a375de0ff5e4ef28b76e2421e214681887f4659dfc832df90"
+          },
+          "inputReplay": {
+            "path": "artifacts/rollback-20261024/draw-unprofiled-02/peer-1-actual-inputs.rpy",
+            "bytes": 20888,
+            "sha256": "b87aa6e6bd99ae19498d08c6868061a0b221aac1f289dd36d97096852832f65e"
+          }
+        }
+      ],
+      "pixelSampling": {
+        "requested": true,
+        "readbackPhase": "bounded confirmed post-draw pause samples after measurement; exact Replay after seek",
+        "performanceWindowReadbacks": 0,
+        "liveBoundary": {
+          "frame": 822,
+          "generation": 0,
+          "samples": [
+            {
+              "seat": 0,
+              "key": "0:822",
+              "presentation": 3,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 7,
+              "retainedSamples": 7,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            },
+            {
+              "seat": 1,
+              "key": "0:822",
+              "presentation": 6,
+              "width": 640,
+              "height": 480,
+              "format": "RGBA8 bottom-left",
+              "sampleReadbacks": 8,
+              "retainedSamples": 8,
+              "sampleLimit": 16,
+              "readbackLimit": 64
+            }
+          ]
+        }
+      },
+      "peers": [
+        {
+          "seat": 0,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/draw-unprofiled-02/peer-0.json",
+            "sha256": "f51cedc19ddd65185c4e54a3fa9823aebbe92fc335f4392baa1acc7c6d8be7d6"
+          },
+          "metrics": {
+            "callbacks": 411,
+            "callbackKinds": {
+              "raf": 411,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 14997.900000000373,
+            "logicalTicks": 678,
+            "logicHz": 45.206328886042925,
+            "nativeReportedWall": {
+              "count": 411,
+              "p50": 4.8999999994412065,
+              "p95": 10.700000000186265,
+              "p99": 16.09999999962747,
+              "max": 26.399999999441206,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 411,
+              "p50": 5.2000000001862645,
+              "p95": 11,
+              "p99": 16.40000000037253,
+              "max": 29,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 411,
+              "p50": 0,
+              "p95": 0.40000000037252903,
+              "p99": 1.2999999998137355,
+              "max": 4.599999999627471,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 411,
+              "p50": 0.09999999962747097,
+              "p95": 0.30000000074505806,
+              "p99": 0.8999999994412065,
+              "max": 3,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 380,
+            "frontierCount": 379,
+            "presentWindowHolds": {
+              "count": 381,
+              "p50": 33.39999999944121,
+              "p95": 75.40000000037253,
+              "p99": 129.79999999981374,
+              "max": 224.09999999962747,
+              "over33": 190,
+              "over50": 57,
+              "over100": 8
+            },
+            "frontierWindowHolds": {
+              "count": 380,
+              "p50": 33.39999999944121,
+              "p95": 75.40000000037253,
+              "p99": 129.79999999981374,
+              "max": 224.09999999962747,
+              "over33": 190,
+              "over50": 58,
+              "over100": 8
+            },
+            "rollbackDelta": {
+              "restores": 199,
+              "historyTicks": 1174,
+              "presentations": 380
+            },
+            "actualSendDelay": {
+              "count": 1386,
+              "p50": 77.59999999962747,
+              "p95": 163.69999999925494,
+              "p99": 218,
+              "max": 357.30000000074506,
+              "over33": 1386,
+              "over50": 1371,
+              "over100": 330
+            },
+            "injectionTimerLateness": {
+              "count": 1386,
+              "p50": 26.099213351495564,
+              "p95": 110.30452752066776,
+              "p99": 163.98531277198344,
+              "max": 311.7718741958961,
+              "over33": 534,
+              "over50": 315,
+              "over100": 84
+            },
+            "maxQueued": 19,
+            "maxQueuedBytes": 2517,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 22960.200000000186,
+            "end": 23184.299999999814,
+            "durationMs": 224.09999999962747,
+            "insideObservedCallbacksMs": 25.799999999813735,
+            "outsideObservedCallbacksMs": 198.29999999981374,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 25.799999999813735,
+              "nativeReportedMs": 25.600000000558794,
+              "shellHookMs": 0,
+              "observerMs": 0.09999999962747097,
+              "otherCallbackMs": 0.09999999962747097
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 724,
+                "nativeReportedMs": 25.600000000558794,
+                "forwardTicks": 3,
+                "historyTicksDelta": 0,
+                "overlapMs": 25.799999999813735,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 9,
+              "dueWithinGap": 5,
+              "deliveredWithinGap": 0,
+              "pendingAtGapEnd": 9,
+              "maxObservedLatenessMs": 311.7718741958961
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 22960.200000000186,
+            "end": 23184.299999999814,
+            "durationMs": 224.09999999962747,
+            "insideObservedCallbacksMs": 25.799999999813735,
+            "outsideObservedCallbacksMs": 198.29999999981374,
+            "completeCallbacks": {
+              "count": 1,
+              "wallMs": 25.799999999813735,
+              "nativeReportedMs": 25.600000000558794,
+              "shellHookMs": 0,
+              "observerMs": 0.09999999962747097,
+              "otherCallbackMs": 0.09999999962747097
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 724,
+                "nativeReportedMs": 25.600000000558794,
+                "forwardTicks": 3,
+                "historyTicksDelta": 0,
+                "overlapMs": 25.799999999813735,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 9,
+              "dueWithinGap": 5,
+              "deliveredWithinGap": 0,
+              "pendingAtGapEnd": 9,
+              "maxObservedLatenessMs": 311.7718741958961
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        },
+        {
+          "seat": 1,
+          "rawPeerFile": {
+            "path": "artifacts/rollback-20261024/draw-unprofiled-02/peer-1.json",
+            "sha256": "95091150308f80780ead0f4f63e9035928c0b15ad55cfc0a5da2496b26a3e1bb"
+          },
+          "metrics": {
+            "callbacks": 476,
+            "callbackKinds": {
+              "raf": 476,
+              "recoveryTasks": 0
+            },
+            "elapsedMs": 14960.599999999627,
+            "logicalTicks": 677,
+            "logicHz": 45.25219576755055,
+            "nativeReportedWall": {
+              "count": 476,
+              "p50": 2.5,
+              "p95": 8.700000000186265,
+              "p99": 13,
+              "max": 33.10000000055879,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "callbackWall": {
+              "count": 476,
+              "p50": 2.6000000005587935,
+              "p95": 9.099999999627471,
+              "p99": 13.900000000372529,
+              "max": 46.10000000055879,
+              "over33": 1,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 476,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.7000000001862645,
+              "max": 3.5,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "existingShellHookWall": {
+              "count": 476,
+              "p50": 0,
+              "p95": 0.2999999998137355,
+              "p99": 0.5,
+              "max": 12.899999999441206,
+              "over33": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "presentCount": 427,
+            "frontierCount": 418,
+            "presentWindowHolds": {
+              "count": 428,
+              "p50": 30.5,
+              "p95": 68.19999999925494,
+              "p99": 106.29999999981374,
+              "max": 178.59999999962747,
+              "over33": 156,
+              "over50": 38,
+              "over100": 6
+            },
+            "frontierWindowHolds": {
+              "count": 419,
+              "p50": 30.799999999813735,
+              "p95": 68.5,
+              "p99": 106.29999999981374,
+              "max": 178.59999999962747,
+              "over33": 161,
+              "over50": 47,
+              "over100": 6
+            },
+            "rollbackDelta": {
+              "restores": 174,
+              "historyTicks": 988,
+              "presentations": 427
+            },
+            "actualSendDelay": {
+              "count": 737,
+              "p50": 69.5,
+              "p95": 116.5,
+              "p99": 157.70000000018626,
+              "max": 220.20000000018626,
+              "over33": 737,
+              "over50": 723,
+              "over100": 96
+            },
+            "injectionTimerLateness": {
+              "count": 737,
+              "p50": 19.18415579898283,
+              "p95": 65.4854251309298,
+              "p99": 106.04299153666943,
+              "max": 174.96773296734318,
+              "over33": 212,
+              "over50": 89,
+              "over100": 11
+            },
+            "maxQueued": 8,
+            "maxQueuedBytes": 2002,
+            "overflow": [],
+            "probeErrors": []
+          },
+          "worstPresentationGap": {
+            "begin": 20739.10000000056,
+            "end": 20917.700000000186,
+            "durationMs": 178.59999999962747,
+            "insideObservedCallbacksMs": 103.09999999962747,
+            "outsideObservedCallbacksMs": 75.5,
+            "completeCallbacks": {
+              "count": 3,
+              "wallMs": 103.09999999962747,
+              "nativeReportedMs": 89.70000000018626,
+              "shellHookMs": 13,
+              "observerMs": 0.19999999925494194,
+              "otherCallbackMs": 0.20000000018626451
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 575,
+                "nativeReportedMs": 30.799999999813735,
+                "forwardTicks": 0,
+                "historyTicksDelta": 1,
+                "overlapMs": 31.09999999962747,
+                "clipped": false
+              },
+              {
+                "id": 576,
+                "nativeReportedMs": 33.10000000055879,
+                "forwardTicks": 0,
+                "historyTicksDelta": 2,
+                "overlapMs": 46.10000000055879,
+                "clipped": false
+              },
+              {
+                "id": 577,
+                "nativeReportedMs": 25.799999999813735,
+                "forwardTicks": 2,
+                "historyTicksDelta": 4,
+                "overlapMs": 25.899999999441206,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 7,
+              "dueWithinGap": 5,
+              "deliveredWithinGap": 5,
+              "pendingAtGapEnd": 2,
+              "maxObservedLatenessMs": 85.07309998525307
+            }
+          },
+          "worstFrontierGap": {
+            "begin": 20739.10000000056,
+            "end": 20917.700000000186,
+            "durationMs": 178.59999999962747,
+            "insideObservedCallbacksMs": 103.09999999962747,
+            "outsideObservedCallbacksMs": 75.5,
+            "completeCallbacks": {
+              "count": 3,
+              "wallMs": 103.09999999962747,
+              "nativeReportedMs": 89.70000000018626,
+              "shellHookMs": 13,
+              "observerMs": 0.19999999925494194,
+              "otherCallbackMs": 0.20000000018626451
+            },
+            "clippedCallbackOverlapMs": 0,
+            "startBoundary": false,
+            "endBoundary": false,
+            "callbacks": [
+              {
+                "id": 575,
+                "nativeReportedMs": 30.799999999813735,
+                "forwardTicks": 0,
+                "historyTicksDelta": 1,
+                "overlapMs": 31.09999999962747,
+                "clipped": false
+              },
+              {
+                "id": 576,
+                "nativeReportedMs": 33.10000000055879,
+                "forwardTicks": 0,
+                "historyTicksDelta": 2,
+                "overlapMs": 46.10000000055879,
+                "clipped": false
+              },
+              {
+                "id": 577,
+                "nativeReportedMs": 25.799999999813735,
+                "forwardTicks": 2,
+                "historyTicksDelta": 4,
+                "overlapMs": 25.899999999441206,
+                "clipped": false
+              }
+            ],
+            "transport": {
+              "inFlightDuringGap": 7,
+              "dueWithinGap": 5,
+              "deliveredWithinGap": 5,
+              "pendingAtGapEnd": 2,
+              "maxObservedLatenessMs": 85.07309998525307
+            }
+          },
+          "timingInterpretation": {
+            "clock": "One document performance clock; no peer-clock subtraction.",
+            "native": "Wall time through native work, GL submission and audio; not CPU thread time or GPU completion.",
+            "presentation": "Counter changes observed at callback exit; not GPU completion or display scanout.",
+            "outsideCallbacks": "Time outside the observed native callbacks may contain other tasks, normal frame scheduling or process descheduling; no cause is assigned.",
+            "waits": "Request-to-entry, timestamp-to-entry and previous-exit-to-entry overlap; never add them to the gap partition.",
+            "edges": "The first row initializes counters, so the start segment may include an unrecognized first presentation/frontier event. End segments are censored at the configured end.",
+            "clipped": "Native/shell/observer totals cover complete callbacks only; a callback crossing the window edge contributes its overlap separately.",
+            "timers": "Same-page injected send timers overlapping the gap; a late delivery may occur after the gap. Timing overlap does not establish causality.",
+            "phases": "Native profile bins may nest (for example exactTick contains update/draw); they are context, not additive components."
+          }
+        }
+      ]
+    }
+  ],
+  "legacyHandshakeEvidence": {
+    "peer0": {
+      "rawFailure": {
+        "path": "artifacts/rollback-20261024/draw-unprofiled-01/peer-0-failure.json",
+        "bytes": 2797,
+        "sha256": "85576f9eb3284b07b265ef255f59bfd191c747d7d5ebf1eca569560306823cd2"
+      },
+      "startupTransport": [
+        {
+          "id": 1,
+          "kind": "ws",
+          "phase": "idle",
+          "signature": 4234444755,
+          "scheduled": 7113.5,
+          "due": 7161.983935138211,
+          "actual": 7162.299999999814,
+          "at": null,
+          "packetTypeByte28": 1
+        },
+        {
+          "id": 2,
+          "kind": "ws",
+          "phase": "idle",
+          "signature": 4234444755,
+          "scheduled": 7312.700000000186,
+          "due": 7367.196609817911,
+          "actual": 7366.9000000003725,
+          "at": null,
+          "packetTypeByte28": 1
+        },
+        {
+          "id": null,
+          "kind": "receive",
+          "phase": "idle",
+          "signature": 1163064845,
+          "scheduled": null,
+          "due": null,
+          "actual": null,
+          "at": 7386.799999999814,
+          "packetTypeByte28": 2
+        },
+        {
+          "id": null,
+          "kind": "receive",
+          "phase": "idle",
+          "signature": 2508141854,
+          "scheduled": null,
+          "due": null,
+          "actual": null,
+          "at": 7387.700000000186,
+          "packetTypeByte28": 1
+        }
+      ]
+    },
+    "peer1": {
+      "rawFailure": {
+        "path": "artifacts/rollback-20261024/draw-unprofiled-01/peer-1-failure.json",
+        "bytes": 1845,
+        "sha256": "77a8b735851b0cfc7ba2d8ff3417e808469038967afd6f3369a55cafdde69388"
+      },
+      "startupTransport": [
+        {
+          "id": null,
+          "kind": "receive",
+          "phase": "idle",
+          "signature": 4234444755,
+          "scheduled": null,
+          "due": null,
+          "actual": null,
+          "at": 6516,
+          "packetTypeByte28": 1
+        },
+        {
+          "id": 1,
+          "kind": "ws",
+          "phase": "idle",
+          "signature": 2508141854,
+          "scheduled": 6521,
+          "due": 6573.394339127932,
+          "actual": 6573.299999999814,
+          "at": null,
+          "packetTypeByte28": 1
+        },
+        {
+          "id": 2,
+          "kind": "ws",
+          "phase": "idle",
+          "signature": 1163064845,
+          "scheduled": 6521.5,
+          "due": 6573.395339127932,
+          "actual": 6573.0999999996275,
+          "at": null,
+          "packetTypeByte28": 2
+        },
+        {
+          "id": null,
+          "kind": "receive",
+          "phase": "idle",
+          "signature": 4234444755,
+          "scheduled": null,
+          "due": null,
+          "actual": null,
+          "at": 6556.5999999996275,
+          "packetTypeByte28": 1
+        }
+      ]
+    },
+    "sameClockComparisons": {
+      "senderReadyBeforeHelloMs": 0.20000000018626451,
+      "receiverReadyBeforeHelloMs": 0.900000000372529,
+      "crossPeerClockSubtraction": false
+    },
+    "interpretation": "The old sender delay shim sent READY ahead of HELLO; the peer observed that order and rejected startup. This specific packet-order evidence does not assign a cause to measured performance tails.",
+    "independentAnalysisRecord": {
+      "path": "artifacts/rollback-20261024/draw01-startup-order-evidence.json",
+      "bytes": 6407,
+      "sha256": "2781d35713d3d7b037f2a915dff36ca141069c8fa61896ca17046ebe9b237de3"
+    }
+  },
+  "tests": {
+    "geometry": {
+      "record": {
+        "path": "artifacts/rollback-20261024/geometry-regression/geometry-regression-result.json",
+        "bytes": 2102,
+        "sha256": "923f281247bd4e9ee9d8e19ae45f0778dbed39c8b930875b3f1239637286ce19"
+      },
+      "verifiedAtUtc": "2026-10-24T02:12:21.321322+00:00",
+      "kind": "real-wasm-semantic-regression",
+      "nativeOriginalOracle": false,
+      "journalInstrumented": false,
+      "compilerVersion": "emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 6.0.9-git (4e4223852a0835923411059a3929907d7df1232e)",
+      "nodeVersion": "v24.19.0",
+      "flags": [
+        "-std=c++17",
+        "-O2",
+        "-ffp-contract=off",
+        "-fno-strict-aliasing",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-sENVIRONMENT=node",
+        "-sEXIT_RUNTIME=1",
+        "-sASSERTIONS=1"
+      ],
+      "runtimeExitCode": 0,
+      "result": {
+        "kind": "th11-explicit-geometry-mode-semantic-regression",
+        "nativeOriginalOracle": false,
+        "passed": true,
+        "validCases": 18432,
+        "invalidModeCases": 252,
+        "invalidAnchorCases": 56,
+        "totalCases": 18740,
+        "samplesPerModeAnchor": 256,
+        "subpixelVariants": 2,
+        "failures": 0
+      },
+      "artifacts": {
+        "geometry-regression.cpp": {
+          "bytes": 4709,
+          "sha256": "dfb546729b9f2e10421ceaea75a962c4b0f8127150d6496764eb486e68688000"
+        },
+        "files/ports/th11-mp/web/cpp/game/AnmGeometry.cpp": {
+          "bytes": 6914,
+          "sha256": "b49b177ced7ac9c318ec3a2524cc27841a6c4e34d1dde2b7122e6f1973914e24"
+        },
+        "files/ports/th11-mp/web/cpp/game/AnmGeometry.hpp": {
+          "bytes": 939,
+          "sha256": "851cc90f16b518ce55832c9315cb4af395107f39d87254ead8f1d265c0c414f9"
+        },
+        "geometry-regression.wasm": {
+          "bytes": 20976,
+          "sha256": "73e545c5e699f2131d5229c4c8ceff2f1fd4e439e15c0c8c2b8fcf00ad916fd7"
+        },
+        "geometry-regression.cjs": {
+          "bytes": 31744,
+          "sha256": "b550d0febf7e1d4c988ae2f3f8c30e15ccccd89bc7380e1961ed2ee32451dbda"
+        },
+        "draw-host.patch": {
+          "bytes": 7980,
+          "sha256": "2b07f936a4c078c466616607a3a1a7be0c1435290d3bde4406a053d5cae5e3ec"
+        }
+      }
+    },
+    "metrics": {
+      "collectionStatus": "complete",
+      "passed": true,
+      "tests": 7
+    },
+    "fifo": {
+      "collectionStatus": "complete",
+      "passed": true,
+      "tests": 11
+    },
+    "helperRun": {
+      "command": "node --test --test-isolation=none --test-reporter=spec ports/th11-mp/portable/multiplayer/rollback-browser-metrics.test.mjs ports/th11-mp/portable/multiplayer/rollback-sender-delay.test.mjs",
+      "rawLog": {
+        "path": "artifacts/rollback-20261024/sender-fifo-unit-tests.log",
+        "bytes": 1909,
+        "sha256": "1ad6e7a5c202794ee6a4be3a5a939512b72f549987c2b97f475a63910ddb7d64"
+      },
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "metricsTests": 7,
+      "fifoTests": 11,
+      "fifoFactoryTestedAfterToStringInFreshVm": true,
+      "testFiles": [
+        {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.test.mjs",
+          "bytes": 7275,
+          "sha256": "08683aa8575e3f3d4d0441aff37d60062950285e8cd9473264c8b683fcde44c2"
+        },
+        {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-sender-delay.test.mjs",
+          "bytes": 8488,
+          "sha256": "7e0245de58a5e2751e810bff981faa580025823617ac4c5af101bd482307d4aa"
+        }
+      ],
+      "implementationFiles": [
+        {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-browser-metrics.mjs",
+          "bytes": 8702,
+          "sha256": "1f021051463f6071dc065a6b600a23f5a5f5b1324b199ab98498bcbfa7dca4e1"
+        },
+        {
+          "path": "ports/th11-mp/portable/multiplayer/rollback-sender-delay.mjs",
+          "bytes": 4585,
+          "sha256": "f3956e115d27c8ff3c509adb22df6a525893dc57095826361bf233486c8c7e11"
+        }
+      ]
+    }
+  },
+  "outcome": {
+    "candidateRun": "draw-unprofiled-02",
+    "baselineRun": "baseline-unprofiled-04",
+    "candidateNativeReplayPlayfieldCorrectnessPassed": true,
+    "candidatePerformancePassed": false,
+    "baselinePerformancePassed": true,
+    "candidateOverallPassed": false,
+    "baselineOverallPassed": true,
+    "performanceImprovementEstablished": false,
+    "stableThresholdPassEstablished": false,
+    "interpretation": "The candidate passes native/Replay/playfield correctness but fails this 100 ms performance gate. One paired desktop run does not establish a causal performance regression, a speedup, 60 FPS, or general stability."
+  },
+  "independentAudit": {
+    "record": {
+      "path": "artifacts/rollback-20261024/final-independent-audit.json",
+      "bytes": 212968,
+      "sha256": "ccd9b7058b4173daa01d4ff3741d23ee329283defa5735f4e670f6472bb730a0"
+    },
+    "auditedAt": "2026-10-24T02:46:40.823683+00:00",
+    "method": "Independent Python recomputation from preserved receipt, peer, Replay and RGBA files; no game run, browser run, test rerun or source change.",
+    "verifiedIdentityCountByRun": {
+      "baseline-unprofiled-04": 19,
+      "draw-unprofiled-02": 19
+    },
+    "findings": {
+      "fifoActualPacketsChecked": 5758,
+      "drawPresentationGapsOver100Ms": 14,
+      "drawFrontierGapsOver100Ms": 14,
+      "gapsOutsideCallbacksDominant": 13,
+      "gapsContainingPendingCorrection": 5,
+      "gapsContainingNetworkWait": 2,
+      "clearNewProductionDefectIdentified": false,
+      "unboundedCorrectionStarvationObserved": false,
+      "causes": {
+        "seat0WorstOutsideCallbackInterval": null,
+        "seat1WorstNativeAndShellWallTime": null,
+        "differenceBetweenTheTwoRuns": null
+      },
+      "performanceConclusion": "The baseline passes the unchanged 100 ms gate once; the Draw candidate fails it on both seats. Native P95 also rises from 9.3/8.2 to 10.7/8.7 ms in this pair. This does not establish a drawing speedup or prove that the code change caused the slower run.",
+      "scopeLimit": "No GPU completion clock, CPU thread-time trace, fixed identical input workload, or complete world body dump was collected. Outside-callback time is not assigned to browser, GPU, OS or game code."
+    }
+  },
+  "publishedSourceMapping": {
+    "rawRecordCommitIdentitiesPreserved": true,
+    "verification": "git rev-parse <commit>^{tree} for both local and published commit objects",
+    "entries": [
+      {
+        "context": "measurement runner",
+        "localCommit": "faba380aa7020a02e852ace5092619edd43efe1e",
+        "publishedCommit": "c32c922f64263a07ec602041297c7a17325a8dec",
+        "gitTree": "592ea8f0eee61df8b0eb62a71a0a595b48896743",
+        "sameGitTreeVerified": true
+      },
+      {
+        "context": "baseline build",
+        "localCommit": "6108c89da5c448e091490c0f04721ac598e9a354",
+        "publishedCommit": "37310c4b4e78b35bb34d30aa4d879bd77279d961",
+        "gitTree": "e2aee3e3ec3a878d95fb629fe56eab5002b0ce2c",
+        "sameGitTreeVerified": true
+      },
+      {
+        "context": "draw build",
+        "localCommit": "524adac9917ccda7a68ced0159367abf59a2880b",
+        "publishedCommit": "1439dee4f8710fc795be32a084828347070f804c",
+        "gitTree": "e77ba2b134612041626afa9359fcc334f9062a3d",
+        "sameGitTreeVerified": true
+      }
+    ]
+  }
+}

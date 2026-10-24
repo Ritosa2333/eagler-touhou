@@ -2,7 +2,7 @@
 
 TH11 MP 将游戏对象、动态容器和分配器元数据放在同一套恢复边界内，通过最终 Wasm 的写入日志恢复整帧状态。新增游戏字段或调整容器时，位于已登记区域内的写入会自动进入日志，减少逐个子系统维护快照字段的工作。网络输入、确认输出和资源退休继续使用当前多人运行时的边界。
 
-方案参考 [TH11 源仓库 issue #7](https://github.com/Ritosa2333/th11/issues/7) 和 [apeirs/th11 的固定版本实现](https://github.com/apeirs/th11/tree/324fb143e78560ae34f5930a19048e34035eb2f8)。本作接入公共 [`WriteJournal`](../../../common/include/eagler/netplay/WriteJournal.hpp)，沿用现有 12 帧预测上限、输入协议和多人规则。构建步骤见[开发指南](DEVELOPMENT.md)，运行结果见 [2026-10-23 验收记录](rollback-20261023.md)。
+方案参考 [TH11 源仓库 issue #7](https://github.com/Ritosa2333/th11/issues/7) 和 [apeirs/th11 的固定版本实现](https://github.com/apeirs/th11/tree/324fb143e78560ae34f5930a19048e34035eb2f8)。本作接入公共 [`WriteJournal`](../../../common/include/eagler/netplay/WriteJournal.hpp)，沿用现有 12 帧预测上限、输入协议和多人规则。构建步骤见[开发指南](DEVELOPMENT.md)，本轮运行结果见 [2026-10-24 验收记录](rollback-20261024.md)，此前结果保留在 [2026-10-23 记录](rollback-20261023.md)。
 
 ## 状态由谁恢复
 
@@ -27,10 +27,14 @@ TH11 MP 将游戏对象、动态容器和分配器元数据放在同一套恢复
 | --- | --- |
 | [`GraphicsDevice`](../web/cpp/sdl/GraphicsDevice.hpp) | 纹理绑定、顶点布局与矩阵提交、三角形与图元提交、视口、清屏、呈现，以及渲染目标选择和清理。顶点和矩阵输入按只读数据使用。 |
 | [`AnmRenderer`](../web/cpp/game/AnmRenderer.cpp) | 宿主顶点队列、材质缓存、四边形与 ASCII 图元提交、多人透明度副本，以及刷新和失效处理。 |
+| `AnmRenderer::draw` 的局部几何计算 | 模式 0–3 的四边形计算、模式 4 的 billboard 计算，以及模式 6 的 billboard 与雾颜色计算。输入只读，输出写入调用方自己的栈数组。 |
 | `AnmRenderer::set_camera` | 游戏相机计算完成后的局部块，复制渲染器相机并提交矩阵和视口；原作相机计算继续追踪。 |
+| [`AsciiText::draw`](../web/cpp/game/AsciiText.cpp) | 每条文字请求完成 `set_camera` 后的字形循环。位置、颜色、缩放和 sprite 绑定只修改局部栈上的 VM，字库资源只读；提交使用宿主队列。下一条请求和结尾的相机更新位于作用域外。 |
 | [`stage_visible()`](../web/cpp/game/StageDraw.cpp) | 输入只读、临时几何结果位于栈上的可见性判断，返回 `bool`。 |
 
-`AnmRenderer::draw()` 的 VM 修改、Draw 回调、字体布局与纹理像素读写沿各自原有日志路径执行。带结构体返回值的通用几何函数需要单独检查调用方的返回缓冲区归属，不能据其局部计算形式直接暂停追踪。`HostScope` 保持帧事务开启；嵌套退出时恢复进入前的追踪开关，帧已关闭或发生终止性错误时保持关闭。
+[`anm_quad_positions`](../web/cpp/game/AnmGeometry.cpp) 保留从 VM flags 读取模式的原入口，并提供显式模式重载。`AnmRenderer::draw` 按原有旋转与像素对齐规则选出模式后直接传入，省去每个普通精灵先修改、再恢复 `vm.flags` 的两次临时写入。锚点、浮点运算顺序和 `preserve_subpixel` 行为保持一致。多人几何透明度副本也在一次提交中复用已查询的 owner 与 opacity，逐顶点沿用原整数 alpha 计算。
+
+模式 5/7 的 `anm_projected_quad` 会经 `anm_world_matrix` 更新 VM 的 `transform_matrix` 和 flags，这条路径继续追踪。其他真实 VM 修改、Draw 回调、FontDevice 的字体布局与纹理像素读写沿各自原有日志路径执行。带结构体返回值的通用几何函数需要单独检查调用方的返回缓冲区归属，不能据其局部计算形式直接暂停追踪。`HostScope` 保持帧事务开启；嵌套退出时恢复进入前的追踪开关，帧已关闭或发生终止性错误时保持关闭。
 
 ## 每帧记录实际写入
 
@@ -79,6 +83,6 @@ TH11 MP 将游戏对象、动态容器和分配器元数据放在同一套恢复
 
 共享后端由 `EAGLER_WRITE_JOURNAL=1` 显式启用。`WriteJournal.cpp` 与 `SimulationHeap.cpp` 在宏未定义或为 `0` 时不产生定义符号，让其他产品保留自己的分配器和运行路径。测试分别编译这四种真实 Wasm 对象组合，再用启用后端的 19 个独立实例验证恢复、异常与初始化拒绝行为。
 
-验证按各自职责组织：真实 Wasm 指令测试检查写入语义，C++ 测试检查分配器与恢复范围，包测试检查交付身份，双客户端浏览器检查已纠正的原生状态、生产 Replay 和同帧画面。可重复执行的命令与明确的运行环境见[验收记录](rollback-20261023.md)。
+验证按各自职责组织：真实 Wasm 指令测试检查写入语义，C++ 测试检查分配器与恢复范围，包测试检查交付身份，双客户端浏览器检查已纠正的原生状态、生产 Replay 和同帧画面。可重复执行的命令与明确的运行环境见[开发指南](DEVELOPMENT.md)和[本轮验收记录](rollback-20261024.md)。本轮绘制版本的原生状态、Replay 与游戏区域像素通过，100 ms 长尾性能门禁失败；性能结论按该次记录读取。
 
 后续增加游戏状态时，先确定对象所属区域；需要跨越预测历史的宿主资源继续保留租约与确认屏障。由 JavaScript 直接写入线性内存的桥接入口需要显式接入记录，或使用系统内存承载输入，再由 Wasm 更新游戏对象。模块内的写入覆盖由最终产物插桩统一维护。
