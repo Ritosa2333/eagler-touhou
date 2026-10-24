@@ -42,6 +42,7 @@ export interface MultiplayerRuntimeOptionInput {
   disableLocalChargePriority?: boolean;
   chapterThreshold?: number;
   iceServers: unknown;
+  preferTurn?: boolean;
   loadouts: MultiplayerRuntimeLoadout[];
 }
 
@@ -68,6 +69,7 @@ export interface MultiplayerRuntimeOptions {
   netplayDisableLocalChargePriority?: boolean;
   netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
+  netplayPreferTurn?: boolean;
   netplayLoadouts: MultiplayerRuntimeLoadout[];
 }
 
@@ -86,6 +88,8 @@ export function buildMultiplayerRuntimeOptions(
   }
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
+    throw new Error('TURN 偏好必须为布尔值');
   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
   if (input.challengeMode !== undefined && typeof input.challengeMode !== 'boolean')
     throw new Error('挑战模式参数无效');
@@ -241,6 +245,7 @@ export function buildMultiplayerRuntimeOptions(
       netplayReplayNames: [0, 1].map(side => String(input.replayNames?.[side] || `P${side + 1}`).slice(0, 64)),
     } : {}),
     netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
+    ...(input.preferTurn === true ? { netplayPreferTurn: true } : {}),
     netplayLoadouts: loadouts,
   };
 }

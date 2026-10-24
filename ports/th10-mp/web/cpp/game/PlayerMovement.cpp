@@ -43,7 +43,14 @@ i32 Player::move(PlayerMovementEnvironment& env){
     else if(x==0&&input_velocity.x>0)animation_index=4;
     if(animation_index>=0)animation_file->initialize_script(animation,animation_index,*env.animations,env.manager->started_scripts);
     input_velocity={x,y};velocity={Scalar::mul_int_truncate(x,*env.default_rate),Scalar::mul_int_truncate(y,*env.default_rate)};
-    fixed_position={clamp(wrapping_add(fixed_position.x,velocity.x),-18400,18400),clamp(wrapping_add(fixed_position.y,velocity.y),3200,43200)};
+#ifdef TH_ENABLE_THPRAC
+    env.practice_velocity(velocity.x,velocity.y); // purple 0x425442: integer truncation
+#endif
+    i32 vertical=velocity.y;
+#ifdef TH_ENABLE_THPRAC
+    if(env.flip_vertical_step())vertical=negate(vertical); // native SSS 0x425444 add -> sub
+#endif
+    fixed_position={clamp(wrapping_add(fixed_position.x,velocity.x),-18400,18400),clamp(wrapping_add(fixed_position.y,vertical),3200,43200)};
     position.x=pixels(fixed_position.x);position.y=pixels(fixed_position.y);
     if(env.manager->registry.find_and_clear(focus_animation))env.manager->registry.set_position(focus_animation,position,true);
     if(!focused&&(x||y))update_position_history();position_history[0]=fixed_position;

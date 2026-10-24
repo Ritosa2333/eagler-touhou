@@ -1,5 +1,6 @@
 #include "PracticeConfig.hpp"
 #include "PracticeSections.hpp"
+#include "PracticeVersion.hpp"
 #include <cmath>
 #include <algorithm>
 #include <cstdio>
@@ -7,6 +8,19 @@
 #include <cstring>
 namespace th10 {
 void PracticeConfig::reset(){std::memset(this,0,sizeof(*this));}
+i32 PracticeConfig::divine_virtues_delay_max(i32 difficulty){
+    constexpr i32 limits[]{140,120,100,50,160};
+    return limits[std::clamp(difficulty,0,4)];
+}
+void PracticeConfig::update_menu_difficulty(i32 difficulty,i32& previous_difficulty){
+    // Apply only to the editable menu, never to loaded replay parameters.
+    // Extra has no corresponding spell or State(1) override upstream.
+    if(difficulty>=0&&difficulty<4){
+        const auto maximum=divine_virtues_delay_max(difficulty);
+        st6_boss9_spd=difficulty!=previous_difficulty?maximum:std::clamp(st6_boss9_spd,0,maximum);
+    }
+    previous_difficulty=difficulty;
+}
 bool PracticeConfig::valid()const {
     // Warp 0..5 (None/Portion/Mid/End/NonSpell/Spell); th10 has no frame warp.
     if(mode<0||mode>1||stage<0||stage>6||warp<0||warp>5||phase<0||phase>1||frame<0||dlg<0||dlg>1)return false;
@@ -59,7 +73,7 @@ std::string practice_replay_json(const PracticeConfig& p){
     // THPracParam::GetJson(): section/phase/dlg are only written when set.
     if(!p.valid())return {};
     char buffer[1024];
-    int length=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"2.3.0.3\",\"game\":\"th10\",\"mode\":%d,\"stage\":%d",p.mode,p.stage);
+    int length=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"%s\",\"game\":\"th10\",\"mode\":%d,\"stage\":%d",practice_source_version,p.mode,p.stage);
     if(length<=0||static_cast<std::size_t>(length)>=sizeof(buffer))return {};
     auto append=[&](const char* fmt,auto... args){
         const int written=std::snprintf(buffer+length,sizeof(buffer)-static_cast<std::size_t>(length),fmt,args...);

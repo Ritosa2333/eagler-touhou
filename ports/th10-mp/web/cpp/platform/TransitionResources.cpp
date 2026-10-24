@@ -30,6 +30,9 @@ AnmFile* AnimationResources::prepared_file(i32 slot,const char* name){
     PreparedAnimation* source=nullptr;for(auto& entry:prepared)if(entry.name==name&&entry.display==display){source=&entry;break;}if(!source)return nullptr;
     auto* file=allocate_file();*file={};file->file_index=slot;std::strncpy(file->name,name,sizeof(file->name)-1);
     file->loaded=static_cast<u8*>(allocate_bytes(source->raw.size()));std::memcpy(file->loaded,source->raw.data(),source->raw.size());
+#ifdef TH_ENABLE_THPRAC
+    practice_animation_sizes[file->loaded]=u32(source->raw.size());
+#endif
     file->texture_count=source->textures.size();file->sprite_count=source->sprites.size();file->script_count=source->script_offsets.size();
     file->textures=static_cast<AnmTexture*>(allocate_bytes(file->texture_count*sizeof(AnmTexture)));std::memset(file->textures,0,file->texture_count*sizeof(AnmTexture));
     for(i32 i=0;i<file->texture_count;++i){auto& image=source->textures[i];auto& texture=file->textures[i];

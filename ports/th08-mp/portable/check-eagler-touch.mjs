@@ -2,6 +2,7 @@ import {execFileSync} from 'node:child_process';
 import {readFileSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {WASI} from 'node:wasi';
+import {commonInclude} from './common-root.mjs';
 const root=resolve(import.meta.dirname,'..'),game='th08';
 const sdk=process.env.EMSDK??resolve(root,'tools/emsdk');
 const emcc=['install','upstream'].map(layout=>resolve(sdk,layout,'emscripten/emcc.py')).find(existsSync);

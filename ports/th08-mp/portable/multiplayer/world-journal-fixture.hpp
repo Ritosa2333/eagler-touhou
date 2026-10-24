@@ -41,6 +41,7 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0,bool op
         bullet->extras[0]={0,2,0,1,0x80,0};
     }
     if(!journal.Bind(runtime))return fail(2);
+    if(!journal.DiagnosticPracticeMonitor())return fail(5);
     {
         std::vector<u32> order(journal.DiagnosticBlockCount());
         for(u32 i=0;i<order.size();++i)order[i]=i;

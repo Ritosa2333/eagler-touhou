@@ -174,3 +174,15 @@
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
 
 本轮桌面协议、输入、文件持久化与实际 MP 房间结果见[逐作运行记录](../../docs/adaptation/desktop-20261018.md)。按作品、模式和分项读取通过、失败及待复验结果，原始报告身份见同页机器记录。
+
+### 2026-10-23 神德练习延迟（PRACTICE-08、PRACTICE-05）
+
+| 字段 | 记录 |
+| --- | --- |
+| 基线 | upstream/main `9b9417f7b`；分支 `fix/th10-divine-virtues-delay` |
+| 源码／模式 | `ports/th10`，normal，`--thprac`；公共库来自本分支 `common` |
+| 原版依据 | 紫版 thprac `17780056107a014e88d35fceb3ad86c121d94287` 的 `thprac_th10.cpp`，`THGuiPrac::State(1)` |
+| 行为 | Easy／Normal／Hard／Lunatic 上限与默认值为 140／120／100／50；同难度保留设置，切换难度重置，Extra 返回普通难度时同步恢复默认值 |
+| 录像 | 菜单调整与录像解码分离；旧录像中的 160 和缺省值 -1 均按录制参数保留，ECL 仍写入 `0x8d38 + difficulty * 4` |
+| 检查 | `portable/check-th10-practice.mjs` 检查 UI 使用难度范围；`portable/check-th10-purple.mjs` 编译运行 C++，覆盖四难度范围、零值、同难度保留、难度切换与录像参数往返 |
+| 构建验证 | Windows，Emscripten SDL3，`portable/build.mjs --thprac` 通过；Wasm SHA256 `66b0398450d10ba7234c47070315ea44ef28f5841ce23ab2919ef2f6664c5596`；文档检查、前端类型检查与构建通过 |

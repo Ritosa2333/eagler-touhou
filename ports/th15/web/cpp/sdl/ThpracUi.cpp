@@ -1,6 +1,7 @@
 #include "ThpracUi.hpp"
 #include "ApplicationState.hpp"
 #if TH_ENABLE_THPRAC
+#include <eagler/thprac/PracticeSdlKeyboard.hpp>
 #include "../game/PracticeSections.hpp"
 #include "../game/PracticeSectionCatalog.hpp"
 #include "../game/PracticeUiLabels.hpp"
@@ -182,7 +183,7 @@ void update_input(ApplicationState& app,const bool* keys){if(!initialized)return
  publish_menu(app.practice.menu_visible);
 }
 void render(ApplicationState& app){if(!initialized)return;if(draw_generation==generation){app.graphics.backend.render_imgui(ImGui::GetDrawData(),1);return;}draw_generation=generation;auto& io=ImGui::GetIO();io.DeltaTime=1.f/60;io.MousePos={px,py};if(!pointer_edges.empty()){const auto event=pointer_edges.front();pointer_edges.pop_front();pointer_sample_down=event.down;io.MousePos={event.x,event.y};}io.MouseDown[0]=pointer_sample_down;io.KeyCtrl=down[17];io.KeyShift=down[16];io.KeyAlt=down[18];io.ConfigDragClickToInputText=desktop;for(int i=0;i<256;i++)io.KeysDown[i]=down[i];
- if(app.practice.menu)for(int i=48;i<=57;i++)if(edge[i])io.AddInputCharacter(ImWchar(i));
+ eagler::thprac::sdl_keyboard_frame(io);
  io.NavInputs[ImGuiNavInput_DpadUp]=down[38];io.NavInputs[ImGuiNavInput_DpadDown]=down[40];io.NavInputs[ImGuiNavInput_DpadLeft]=down[37];io.NavInputs[ImGuiNavInput_DpadRight]=down[39];io.NavInputs[ImGuiNavInput_Activate]=down[90]||down[13];io.NavInputs[ImGuiNavInput_Cancel]=down[88]||down[27];if(MobileThprac::captures_advanced(app.practice.advanced_visible))std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);ImGui::NewFrame();
  if(app.practice.menu)practice_menu(app);else was_open=false;
  if(MobileThprac::show(MobileThprac::Advanced,app.practice.advanced_visible)){ImGui::SetNextWindowPos({0,0},ImGuiCond_Always);ImGui::SetNextWindowSize({640,480},ImGuiCond_Always);ImGui::SetNextWindowBgAlpha(.8f);if(MobileThprac::begin(MobileThprac::Advanced, "Advanced###th15-purple-advanced", ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoTitleBar, locale)){

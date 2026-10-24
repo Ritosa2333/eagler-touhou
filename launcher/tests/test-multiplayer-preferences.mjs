@@ -24,6 +24,12 @@ const storage = new MemoryStorage([
   [multiplayerLoadoutStorageKey("th07mp"), "5"],
 ]);
 const preferences = createMultiplayerPreferenceStore({ storage });
+assert.equal(preferences.preferTurn(), false);
+preferences.persistPreferTurn(true);
+assert.equal(preferences.preferTurn(), true);
+assert.equal(createMultiplayerPreferenceStore({storage}).preferTurn(), true);
+preferences.persistPreferTurn(false);
+assert.equal(createMultiplayerPreferenceStore({storage}).preferTurn(), false);
 assert.equal(preferences.replayAutoSave('th09mp'), true);
 preferences.persistReplayAutoSave('th09mp', false);
 assert.equal(createMultiplayerPreferenceStore({storage}).replayAutoSave('th09mp'), false);
@@ -50,6 +56,9 @@ assert.equal(storage.getItem(multiplayerLoadoutStorageKey("th07mp")), "4");
 
 const hostile = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } };
 const hostilePreferences = createMultiplayerPreferenceStore({ storage: hostile });
+assert.equal(hostilePreferences.preferTurn(), false);
+hostilePreferences.persistPreferTurn(true);
+assert.equal(hostilePreferences.preferTurn(), true, 'A denied storage write preserves the current session preference');
 assert.equal(hostilePreferences.replayAutoSave('th09mp'), true);
 assert.deepEqual(hostilePreferences.load({ product: "th06mp", multiplayer: true, maxLoadout: 4 }), {
   shareSingleplayerSettings: true,

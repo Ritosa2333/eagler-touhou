@@ -181,7 +181,7 @@ public:
         failed|=!scene.effects.bind_player(seat,state.motion.movement.position,state.shots.regions);
 #endif
     }
-    void reset(){failed=false;for(u32 i=0;i<8;i++){boss_owners[i]=nullptr;boss_views[i]={};}}
+    void reset(){failed=false;practice.input.reset();for(u32 i=0;i<8;i++){boss_owners[i]=nullptr;boss_views[i]={};}}
     PlayerSimulationServices services(){return {*this,motion,*this,*this,patterns,*this,*this};}
     bool prepare();void finish();void sync_values();bool invalid()const{return failed;}
     bool load_shots(bool focused,const char* path)override{const auto bytes=platform.read(path);return shots[focused].load(bytes.data(),bytes.size());}
@@ -215,7 +215,7 @@ public:
         values.update_integrity();
 #endif
     }
-    void dissolve()override{++practice.tracker_dissolve_count;}
+    void dissolve()override{++practice.tracker_dissolve_count;if(practice.enabled&&!practice.replay)practice.input.begin_retry(practice.active?practice.run.mode:0);}
     void randomize_integrity()override{
 #if !defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
         values.randomize_integrity();
@@ -259,7 +259,7 @@ public:
     void set_power(i32 n)override{values.set_power(n);sync_values();}
     void add_power(i32 n)override{failed|=!values.add_power(n);sync_values();}
     void set_bombs(i32 n)override{values.set_bombs(n);sync_values();}
-    void add_lives(i32 n)override{failed|=!values.add_lives(n);sync_values();}
+    void add_lives(i32 n)override{if(n<0&&practice.enabled&&!practice.replay)practice.input.begin_retry(practice.active?practice.run.mode:0);failed|=!values.add_lives(n);sync_values();}
     void subtract_rank(i32 n)override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         rank.subtract(multiplayer::rank_penalty(n,player_count));

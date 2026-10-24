@@ -20,7 +20,11 @@ bool EnemyState::scene_command(EclContext& context,EclGlobals& globals,EnemyScen
         (void)integer(2);const auto parameter=integer(1);env.start_spell(id,name_id,name,parameter);break;
     }
     case 0x157:env.end_spell();break;
-    case 0x158:env.game->select_section(integer(0));break;
+    case 0x158:
+#ifdef TH_ENABLE_THPRAC
+        env.reset_practice_timer();
+#endif
+        env.game->select_section(integer(0));break;
     case 0x159:env.clear_enemies();break;
     case 0x16b:*env.spell_flags|=0x10;env.registry->delete_and_clear(*env.spell_bonus_animation);break;
     case 0x16d:env.delete_lasers();break;

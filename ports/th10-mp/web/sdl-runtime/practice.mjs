@@ -4,7 +4,7 @@ import {normalizePractice,fields,defaults} from './practice-config.mjs';
 
 export function createPractice({core,getApp,canvas}){
  let options={},params={...defaults},keyboardBits=0;
- const thpracBit=code=>code==='Backspace'?1:code==='Tab'?1<<8:code==='F12'?1<<9:/^F[1-7]$/.test(code)?1<<Number(code.slice(1)):0;
+ const thpracBit=code=>code==='Backspace'?1:code==='Tab'||code==='F8'?1<<8:code==='F12'?1<<9:code==='KeyU'||code==='U'?1<<10:/^F[1-7]$/.test(code)?1<<Number(code.slice(1)):0;
  function publishKeys(){const module=window.Module;if(!module)return;(module.eaglerControls??={}).thpracKeyboardBits=keyboardBits;}
  function send(){
   const app=getApp();if(!app)return;const values=fields.map(key=>Number(params[key]));values.push(1);

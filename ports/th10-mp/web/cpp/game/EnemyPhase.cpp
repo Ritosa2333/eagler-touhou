@@ -20,6 +20,9 @@ const char* EnemyState::check_interrupts(EnemyPhaseState& world) noexcept {
         if(interrupt.health<0||interrupt.time<1)continue;
         const auto remaining=wrapping_add(wrapping_add(interrupt.time,static_cast<i32>(0u-static_cast<u32>(lifetime.current))),59)/60;
         *world.countdown=remaining>99?99:remaining;
+#ifdef TH_ENABLE_THPRAC
+        if(world.lock_timer_pending)*world.lock_timer_pending=true;
+#endif
         if(lifetime.current<interrupt.time)return nullptr;
         health=interrupt.health;interrupt.health=-1;reset_timer();flags|=0x10000;
         *world.item_value=wrapping_add(*world.item_value,-3000);

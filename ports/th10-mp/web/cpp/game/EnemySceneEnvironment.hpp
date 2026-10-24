@@ -9,6 +9,9 @@ struct EnemySceneEnvironment {
     AnmRegistry* registry;
     u32* spell_flags;
     u32* spell_bonus_animation;
+#ifdef TH_ENABLE_THPRAC
+    virtual void reset_practice_timer() {}
+#endif
     virtual void screen_effect(i32 first,i32 second,i32 third)=0;
     virtual void start_dialogue(i32 id)=0;
     virtual void cancel_projectiles()=0;

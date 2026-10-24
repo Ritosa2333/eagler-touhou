@@ -1,4 +1,4 @@
-// Generated from thprac (MIT), sha256 230c3aacf25e1fdb350dd3be3f5974923c28a5f82325a7382c97516c6910cc3e.
+// Generated from thprac (MIT), sha256 2f0f262046f8c6bf2ddbded1fed0bd781effdb91a673a4b11f3782cda8d3dc0a.
 // Regenerate with portable/generate-thprac.mjs; included inside PracticePatcher.
     void THStageWarp([[maybe_unused]] ECLHelper& ecl, int stage, int portion)
     {
@@ -59,8 +59,16 @@
                 ECLWarp(3180, 0xabcc, 360, 0xbed4);
                 break;
             case 5:
-                ECLWarp(4903, 0xb2d8, 360, 0xbed4);
-                STDJump(0xf48, 56, 6558);
+                if (thPracParam.dlg){
+                    ECLWarp(4962, 0xb280, 360, 0xbed4);
+                    // ECLCallSub(ecl, 0x1870, 22, 60);//sub17
+                    ECLCallSub(ecl, 0x1758, 22, 60); // sub17
+                    STDJump(0xf48, 38, 4562);
+                    STDStage4Fix();
+                }else{
+                    STDJump(0xf48, 56, 6558);
+                    ECLWarp(4903, 0xb2d8, 360, 0xbed4);
+                }
                 break;
             case 6:
                 ECLWarp(5363, 0xb598, 360, 0xbed4);
@@ -84,8 +92,18 @@
                 ECLWarp(3180, 0xce50, 360, 0xe158);
                 break;
             case 5:
-                ECLWarp(4903, 0xd55c, 360, 0xe158);
-                STDJump(0xf48, 56, 6558);
+                if (thPracParam.dlg) {
+                    ECLWarp(4962, 0xd504, 360, 0xe158);
+                    ECLTimeFix(0x1814, 0, 5);
+                    //ECLCallSub(ecl, 0x18b4, 22, 60);
+                    ECLCallSub(ecl, 0x179C, 25, 60);
+                    STDStage4Fix();
+
+                    ECLSetTime(ecl, 0x2570, 0, 41, 0);
+                } else {
+                    ECLWarp(4903, 0xd55c, 360, 0xe158);
+                    STDJump(0xf48, 56, 6558);
+                }
                 break;
             case 6:
                 ECLWarp(5363, 0xd81c, 360, 0xe158);
@@ -248,10 +266,49 @@
             ECLSetTime(ecl, 0x389c, 0, (diff <= 1) ? 33 : 38, 60);
             break;
         case TH08_ST2_BOSS3:
-            ECLWarp(4870, 0xc020, 0, -1);
-            ECLTimeFix(0x1ed8, 0, 7);
-            ECLTimeFix(0x1f98, 0, 3);
+            if (thPracParam.sp1_pts){
+                // ECLCallSub(ecl, 0x3d68, 51, 0);
+                ecl << std::pair { 0x1ebc+0x14, (float)thPracParam.bsX+192.0f };
+                ecl << std::pair { 0x1ebc+0x18, (float)thPracParam.bsY };
+                static const uint32_t code_cave[]  = {
+                          0x10, 0x00140007, 0x0003FF00, 0x461C8800,0x461CE800,// fset(%F2, %SELF_X);
+                          0x10, 0x00140007, 0x0003FF00, 0x461C8C00,0x461CEC00,// fset(%F3, %SELF_Y);
+
+                          0x10, 0x0018001B, 0x0003FF00, 0x461C8000, 0x461CCC00, 0x42700000, // fset_mul(%F0, %RANDF2, 60.0f);
+                          0x10, 0x0018001B, 0x0003FF00, 0x461C8400, 0x461CCC00, 0x42700000, // fset_mul(%F1, %RANDF2, 60.0f);
+                          0x10, 0x00180019, 0x0007FF00, 0x461C8000, 0x461C8000, 0x461C8800, // fset_add(%F0,%F0,%F2);
+                          0x10, 0x00180019, 0x0007FF00, 0x461C8400, 0x461C8400, 0x461C8C00, // fset_add(%F1,%F1,%F3);
+                          0x10, 0x0014003F, 0x0003FF00, 0x461C8000, 0x461C8400, // movePos(%F0,%F1);
+                          0x10, 0x0010008D, 0x0000FF00, 0x00000000, // dropItemId(0);
+
+                          0x10, 0x0018001B, 0x0003FF00, 0x461C8000, 0x461CCC00, 0x42700000, // fset_mul(%F0, %RANDF2, 60.0f);
+                          0x10, 0x0018001B, 0x0003FF00, 0x461C8400, 0x461CCC00, 0x42700000, // fset_mul(%F1, %RANDF2, 60.0f);
+                          0x10, 0x00180019, 0x0007FF00, 0x461C8000, 0x461C8000, 0x461C8800, // fset_add(%F0,%F0,%F2);
+                          0x10, 0x00180019, 0x0007FF00, 0x461C8400, 0x461C8400, 0x461C8C00, // fset_add(%F1,%F1,%F3);
+                          0x10, 0x0014003F, 0x0003FF00, 0x461C8000, 0x461C8400, // movePos(%F0,%F1);
+                          0x10, 0x0010008D, 0x0000FF00, 0x00000000, // dropItemId(0);
+
+                          0x10, 0x0018001B, 0x0003FF00, 0x461C8000, 0x461CCC00, 0x42700000, // fset_mul(%F0, %RANDF2, 60.0f);
+                          0x10, 0x0018001B, 0x0003FF00, 0x461C8400, 0x461CCC00, 0x42700000, // fset_mul(%F1, %RANDF2, 60.0f);
+                          0x10, 0x00180019, 0x0007FF00, 0x461C8000, 0x461C8000, 0x461C8800, // fset_add(%F0,%F0,%F2);
+                          0x10, 0x00180019, 0x0007FF00, 0x461C8400, 0x461C8400, 0x461C8C00, // fset_add(%F1,%F1,%F3);
+                          0x10, 0x0014003F, 0x0003FF00, 0x461C8000, 0x461C8400, // movePos(%F0,%F1);
+                          0x10, 0x0010008D, 0x0000FF00, 0x00000000, // dropItemId(0);
+
+                          0x10, 0x0014003F, 0x0003FF00, 0x461C8800,0x461C8C00, // movePos(%F2,%F3);
+
+                          0x10, 0x001000A8, 0x0000FF00, 5,//dropPointItems(5);
+                          //0x10, 0x00140086, 0x0000FF00, 0x000008E8,0x0000002C, //	timerThreshold(2280, 44);
+                          0x10, 0x001C004B, 0x0000FF00,0x42000000,0x42400000,0x43B00000,0x43000000,//moveLimit(32.0f, 48.0f, 352.0f, 128.0f);
+                          0x10, 0x00140004, 0x0000FF00, 10,0xABCD,              //	jmp(10, 0xABCD)
+                };
+
+                InstallPointSetup(code_cave, sizeof(code_cave));
+            }
             ECLCallSub(ecl, 0x1ed8, 27, 0);
+            ECLTimeFix(0x1ed8, 0, 7);
+            ECLWarp(4870, 0xc020, 0, -1);
+            ECLTimeFix(0x1f98, 0, 3);
             ecl << ECLX(0xc026, (int8_t)0x50) << ECLX(0x1f9c, (int16_t)0);
 
             ECLTimeFix(0x37e0, 0, 5);
@@ -737,105 +794,72 @@
 
             ECLSetTime(ecl, 0x55e8, 0, 68, 60);
             break;
-        case TH08_ST6A_BOSS9: {
-            constexpr unsigned int st6AFirstBossCreateTime = 4022;
-            constexpr unsigned int st6AFirstBossCreate = 0xc838;
-            constexpr unsigned int st6AFirstBossCreateNextInstOffset = 0xc838 + 0x6;
-            constexpr unsigned int st6AFirstBossFirstSubEnd = 0x367c;
-            constexpr unsigned int st6AFirstBossSecondSubSetLifeThresholdIns = 0x3cd8;
-            constexpr unsigned int st6AFirstBossSecondSubMoveLimits = 0x3dc8;
-            constexpr unsigned int st6AFirstBossSecondSubSecondCardEffect = 0x3d28; //why
-            constexpr unsigned int st6ABossPreSp9SubMoveLimits = 0x9a44;
-            constexpr unsigned int st6ABossPreSp9DropItemsIns = 0x99f8;
-            constexpr unsigned int st6ABossPreSp9DropPointItemsIns = 0x9a08;
-
+        case TH08_ST6A_BOSS9:
             MSGNameFix();
-            ECLWarp(st6AFirstBossCreateTime, st6AFirstBossCreate); // main timeline warp (NOTE: using SecondBossCreateTime here leads to LS warp + dialogue)
-            ecl << pair { st6AFirstBossCreateNextInstOffset, (int8_t)(0x20 + 0x18) }; // skips ahead 24 bytes more than usual, skipping dialogue wait & event
-
-            ECLCallSub(ecl, st6AFirstBossFirstSubEnd, 33);         // forces the next sub to trigger without waiting for ecl time (i think?)
-            ECLCallSub(ecl, st6AFirstBossSecondSubMoveLimits, 72); // call pre-Spell 9 sub
-            ECLTimeFix(st6AFirstBossSecondSubSecondCardEffect, 0, 6); // removes time offsets set in next 6 instructions
-            ECLTimeFix(st6ABossPreSp9SubMoveLimits, 60, 6);           // adds the removed time offset to the next 6 instructions?
-
-            ecl << pair { st6AFirstBossSecondSubSetLifeThresholdIns, (int16_t)0 } // NOPs setting the life threshold
-                << pair { st6ABossPreSp9DropItemsIns, (int16_t)0 }                // NOPs dropping items from (fake) non
-                << pair { st6ABossPreSp9DropPointItemsIns, (int16_t)0 };          // NOPs dropping point items from (fake) non
+            ECLWarp(4022, 0xc838);
+            ecl << pair{0xc83e, (int8_t)0x38};
+            ECLCallSub(ecl, 0x367c, 33);
+            ECLCallSub(ecl, 0x3dc8, 72);
+            ECLTimeFix(0x3d28, 0, 6);
+            ECLTimeFix(0x9a44, 60, 6);
+            ecl << pair{0x3cd8, (int16_t)0}
+                << pair{0x99f8, (int16_t)0} << pair{0x9a08, (int16_t)0};
             break;
-
-        } case TH08_ST6A_LS: {
-            constexpr unsigned int st6ATLPreKaguyaDlgTime = 4023;
-            constexpr unsigned int st6ATLPreKaguyaDlg = 0xc87c;
-            constexpr unsigned int st6ATLKaguyaCreateTime = 4083;
-            constexpr unsigned int st6ATLKaguyaCreate = 0xc89c;
-
-            constexpr unsigned int st6ATLEirinCreate = 0xc8e0;
-            constexpr unsigned int st6ATLPostEirinCreateWaitEnemy = 0xc900;
-            constexpr unsigned int st6ATLPostEirinCreateReadMsg = 0xc90c;
-            constexpr unsigned int st6ATLPostEirinCreateWaitMsg = 0xc918;
-
-            //note: Kaguya prepares stuff in Sub29/30
-            constexpr unsigned int st6AKaguyaFirstSubEffectCall = 0x375c;
-            constexpr unsigned int st6AKaguyaSecondSubEffectCall = 0x3914;
-            constexpr unsigned int st6AKaguyaPreEirinCreationTimedInstr = 0x3844;
-            constexpr unsigned int st6AKaguyaScreenFlashFuncCall = 0x3934;
-            constexpr unsigned int st6AKaguyaPostEirinCreationTimedInstr = 0x3948;
-
-            //note: HE is Sub78
-            constexpr unsigned int st6BossSp10TimerThreshold = 0xac60;
-            constexpr unsigned int st6BossSp10FirstAttackNOP = 0xb244;
-            constexpr unsigned int st6BossSp10FirstAttack = 0xb250;
-            constexpr unsigned int st6BossSp10PostSpin = 0xb2bc;
-            constexpr unsigned int st6BossSp10PostSpinEtCancel = 0xb2f8;
-
-            //note: HE post-spin is async Sub84
-            constexpr unsigned int st6BossSp10FinalPhasePostSetup = 0xbf68;
-            constexpr unsigned int st6BossSp10FinalPhaseEtEx1 = 0xc078;
-            constexpr unsigned int st6BossSp10FinalPhasePostEtEx1 = 0xc0a0;
-            constexpr unsigned int st6BossSp10FinalPhaseSlowdownStart = 0xc228;
-
+        case TH08_ST6A_LS:
             MSGNameFix();
-            scene.globals.stage_interrupt = 5; // manually set correct STD interrupt
-            ecl << pair { st6AKaguyaFirstSubEffectCall + ECL_INS_OPCODE, (int16_t)0 }; // NOPs a pre-existing effect sub call (when Kaguya spawns)
+            ECLWarp(4083, 0xc89c);
+            ecl << pair{0xc8a2, (int8_t)0x44};
 
-            if (thPracParam.dlg) {
-                ECLWarp(st6ATLPreKaguyaDlgTime, st6ATLPreKaguyaDlg); // main timeline warp (to pre-Kaguya dialogue)
-            } else {
-                ECLWarp(st6ATLKaguyaCreateTime, st6ATLKaguyaCreate); // main timeline warp (to Kaguya creation)
-                ECLTimeFix(st6AKaguyaPreEirinCreationTimedInstr, 0, 10); // all these need to happen before Eirin is created, but we skip timeline wait that ensures it
-                ECLTimeFix(st6AKaguyaPostEirinCreationTimedInstr, 1, 2); // done to prevent a crash if the spell is cancelled while Kaguya isn't boss
+            ECLCallSub(ecl, 0x376c, 30);
+            ecl << pair { 0x37A4, (int16_t)0 } << pair { 0x3928, (int16_t)0 };//disable setBoss(-1) to avoid countdown disappear
 
-                ecl << pair { st6ATLKaguyaCreate + ECL_TL_OFFNEXT, (int8_t)(0x20 + 0x8) } // skips ahead 0xc bytes more than usual, skipping dialogue wait
-                    << pair { st6AKaguyaSecondSubEffectCall + 0x4, (int16_t)0 } // NOPs a pre-existing effect sub call (timed w/ music start)
-                    << pair { st6AKaguyaScreenFlashFuncCall + 0x4, (int16_t)0 } // NOPs calling hardcoded function 17 which does a white flash
-                    << pair { st6ATLEirinCreate + ECL_TL_TIME,              st6ATLKaguyaCreateTime + 1 } // lowers timeline instruction's time offset to run immediately
-                    << pair { st6ATLPostEirinCreateWaitEnemy + ECL_TL_TIME, st6ATLKaguyaCreateTime + 1 }  // lowers timeline instruction's time offset to run immediately
-                    << pair { st6ATLPostEirinCreateReadMsg + ECL_TL_TIME,   st6ATLKaguyaCreateTime + 1 }  // lowers timeline instruction's time offset to run immediately
-                    << pair { st6ATLPostEirinCreateWaitMsg + ECL_TL_TIME,   st6ATLKaguyaCreateTime + 1 }; // lowers timeline instruction's time offset to run immediately
+            ecl << pair{0x3760, (int16_t)0} << pair{0x3918, (int16_t)0}
+                << pair{0x3938, (int16_t)0};
+            ecl << pair{0xc8e0, 4084} << pair{0xc900, 4084}
+                << pair{0xc90c, 4084} << pair{0xc918, 4084};
+
+            switch (thPracParam.phase) {
+            case 0:
+                break;
+            case 1:
+                ecl << pair { 0xB2A4, (int16_t)0 }; // et_cancel
+                ecl << pair { 0xAC6C, 5940 - (920-260) }; // time
+                ECLJump(ecl, 0xB244, 0xB264, 920, 260);
+                break;
+            case 2:
+                ecl << pair { 0xB2FC, (int16_t)0 }; // et_cancel
+                ecl << pair { 0xAC6C, 5940 - (2920 - 260) };
+                ECLJump(ecl, 0xB244, 0xB2BC, 2920, 260);
+                break;
+            case 3:
+                ecl << pair { 0xB2FC, (int16_t)0 }; // et_cancel
+                ecl << pair { 0xAC6C, (5940 - (2920 - 260 + (60 + 38) * 12 / 2 + 260 ))  };
+                ECLJump(ecl, 0xB244, 0xB2BC, 2920, 260);
+                ECLJump(ecl, 0xBEC8, 0xC064, 260, 0);
+                break;
+            case 4:
+                ecl << pair { 0xB2FC, (int16_t)0 }; //et_cancel
+                ecl << pair { 0xAC6C, (5940 - (2920 - 260 + (60 + 38) * 12 / 2 + (80 + 26) * 10 / 2 + 260  + 200 ))  };
+                ECLJump(ecl, 0xB244, 0xB2BC, 2920, 260);
+                ECLJump(ecl, 0xBEC8, 0xC228, 460, 0);
+                break;
+            case 5:
+                ecl << pair { 0xB2FC, (int16_t)0 }; // et_cancel
+                ecl << pair { 0xAC6C, (5940 - (2920 - 260 + (60 + 38) * 12 / 2 + (80 + 26) * 10 / 2 + 260 + 200 + (100+20)*17 / 2)) };
+                // use L case(first interval=100, then decrease 5 eachtime till 15)
+                ECLJump(ecl, 0xB244, 0xB2BC, 2920, 260);
+                ECLJump(ecl, 0xBEC8, 0xC228, 460, 0);
+                ecl << pair { 0xC274, (int32_t)15 }; // rage
+                ecl << pair { 0xC288, (int32_t)15 }; // rage
+                ecl << pair { 0xC29C, (int32_t)15 }; // rage
+                ecl << pair { 0xC2B0, (int32_t)15 }; // rage
+                break;
+            default:
+                break;
             }
 
-            if (thPracParam.phase) {
-                // remove skipped time from spell duration: 5940 (original) minus 2920-200 (skipped time in Sub78) = 3220
-                ecl << pair { st6BossSp10TimerThreshold + ECL_INS_ARG1, (int16_t)3220 };
-                ECLTimeFix(st6BossSp10FirstAttackNOP, 200, 1); // make NOP run without waiting in order to trigger jump
-                ECLJump(ecl, st6BossSp10FirstAttack, st6BossSp10PostSpin, 2920, 200); // jump to post-spin logic
-
-                if (thPracParam.phase == 2) {
-                    // remove skipped time & waits from spell duration: 5940 - (2920 - 200) = 3220 (cf. above), minus...
-                    // post spin parts force a repeated wait: wait = sum_{i=0}^{cnt-1} (start - i * sub) = cnt*start - sub*(cnt*(cnt-1))/2
-                    // first post spin part has cnt = 13 (12 + 1 loops), start = 60, sub = 2   => wait1 = 624
-                    // second post spin part has cnt = 11 (10 + 1 loops), start = 80, sub = 6  => wait2 = 550
-                    // we also have instruction time waits between each part which amount to 460 - 36 - 20 (considering the spell time value which is reset on each loop, then incremented by wait)
-                    // spell duration accounting for skips: 5940 - (2920 - 200) - (550 + 624) - (460 - 36 - 20) = 3220 - 1578 = 1642 frames
-                    ecl << pair { st6BossSp10TimerThreshold + ECL_INS_ARG1, (int16_t)1642 }
-                        << pair { st6BossSp10PostSpinEtCancel + ECL_INS_OPCODE, (int16_t)0 }; // NOP etCancel
-                    ECLJump(ecl, st6BossSp10FinalPhasePostSetup, st6BossSp10FinalPhaseEtEx1, 260); // jump to otherwise missed etEx
-                    ECLJump(ecl, st6BossSp10FinalPhasePostEtEx1, st6BossSp10FinalPhaseSlowdownStart, 460, 260); // jump to slowdown phase
-                }
-            }
             break;
-
-        } case TH08_ST6B_MID1:
+        case TH08_ST6B_MID1:
             ECLWarp(3490, 0x104e4);
             if (!thPracParam.dlg) {
                 ecl << pair{0x104ea, (int8_t)0x44};
@@ -1198,7 +1222,6 @@
             ECLCallSub(ecl, 0x67c4, 83, 60);
             ecl << pair{0x8408, (int16_t)0};
             break;
-
         case TH08_ST7_END_LS: { // Imperishable Shooting
             constexpr unsigned int st7TLPreLSTime = 9678;
             constexpr unsigned int st7TLPreLS = 0x1530c;
@@ -1220,47 +1243,66 @@
             MSGNameFix();
             ECLWarp(st7TLPreLSTime, st7TLPreLS, 0, -1);
             ECLJump(ecl, st7BossSp11PreTimeCheck, st7BossSp11PostTimeCheck);
-            if (!thPracParam.phase) break;
-            ecl << pair{ st7BossSp11Wave1Particles + ECL_INS_OPCODE, (int16_t)0 }; // NOP wave1 particles
-            //Note: each particles call (sub152) is 32f counted for seconds timer but not ECL time; we deduct skipped ones from threshold
+            if (!thPracParam.phase)
+                break;
+            ecl << pair { st7BossSp11Wave1Particles + ECL_INS_OPCODE, (int16_t)0 }; // NOP wave1 particles
+            // Note: each particles call (sub152) is 32f counted for seconds timer but not ECL time; we deduct skipped ones from threshold
 
             switch (thPracParam.phase) {
             case 1: // two circles (69s left)
                 ECLJump(ecl, st7BossSp11Wave1PostColor, st7BossSp11Wave2Start, 540, 90); // (skip 540-90 = 450f)
-                ecl << pair{ st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)4258 };  // (base 4740f - 450f - 1 * 32f)
+                ecl << pair { st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)4258 }; // (base 4740f - 450f - 1 * 32f)
                 break;
 
             case 2: // triangular circles (61s left)
                 ECLJump(ecl, st7BossSp11Wave1PostColor, st7BossSp11Wave3Start, 1000, 90); // (skip 1000-90 = 910f)
-                ecl << pair{ st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)3798 }    // (base 4740f - 910f - 1 * 32f)
-                    << pair{ st7BossSp11Wave1ShotColor + ECL_INS_ARG2, 2}; // (red)
+                ecl << pair { st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)3798 } // (base 4740f - 910f - 1 * 32f)
+                    << pair { st7BossSp11Wave1ShotColor + ECL_INS_ARG2, 2 }; // (red)
                 break;
 
             case 3: // line of circles (52s left)
                 ECLJump(ecl, st7BossSp11Wave1PostColor, st7BossSp11Wave4Start, 1460, 90); // (skip 1460-90 = 1370f)
-                ecl << pair{ st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)3306 };   // (base 4740f - 1370f - 2 * 32f)
+                ecl << pair { st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)3306 }; // (base 4740f - 1370f - 2 * 32f)
                 break;
 
             case 4: // thick circles (36s left)
                 ECLJump(ecl, st7BossSp11Wave1PostColor, st7BossSp11Wave5Start, 2280, 90); // (skip 2280-90 = 2190f)
-                ecl << pair{ st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)2326 }    // (base 4740f - 2190f - 7 * 32f)
-                    << pair{ st7BossSp11Wave1ShotColor + ECL_INS_ARG2, 2 }; // (red)
+                ecl << pair { st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)2326 } // (base 4740f - 2190f - 7 * 32f)
+                    << pair { st7BossSp11Wave1ShotColor + ECL_INS_ARG2, 2 }; // (red)
                 break;
 
             case 5: // green rice circle (22s left)
                 ECLJump(ecl, st7BossSp11Wave1PostColor, st7BossSp11Wave6Start, 3040, 90); // (skip 3040-90 = 2950f)
-                ecl << pair{ st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)1502 };   // (base 4740f - 2950f - 9 * 32f)
+                ecl << pair { st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)1502 }; // (base 4740f - 2950f - 9 * 32f)
                 break;
 
             case 6: // finale (14s left)
                 ECLJump(ecl, st7BossSp11Wave1PostColor, st7BossSp11Wave7Start, 3410, 90); // (skip 3410-90 = 3320f)
-                ecl << pair{ st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)1020 };   // (base 4740f - 3320f - 10 * 32f - 5 * 16f) (phase 6 green shooter subs cost 16f)
+                ecl << pair { st7BossSp11TimerThreshold + ECL_INS_ARG1, (int16_t)1020 }; // (base 4740f - 3320f - 10 * 32f - 5 * 16f) (phase 6 green shooter subs cost 16f)
                 break;
             }
 
             break;
         }
 
+        case TH08_LW_1:
+        case TH08_LW_2:
+        case TH08_LW_3:
+        case TH08_LW_4:
+        case TH08_LW_5:
+        case TH08_LW_6:
+        case TH08_LW_7:
+        case TH08_LW_8:
+        case TH08_LW_9:
+        case TH08_LW_10:
+        case TH08_LW_11:
+        case TH08_LW_12:
+        case TH08_LW_13:
+        case TH08_LW_14:
+        case TH08_LW_15:
+        case TH08_LW_16:
+        case TH08_LW_17:
+            break;
         default:
             break;
         }

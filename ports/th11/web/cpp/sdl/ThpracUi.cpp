@@ -1,4 +1,5 @@
 #include "ThpracUi.hpp"
+#include <eagler/thprac/PracticeSdlKeyboard.hpp>
 #include "../game/GameSession.hpp"
 #include "../game/GameEconomy.hpp"
 #include "../game/PracticeSectionCatalog.hpp"
@@ -225,11 +226,8 @@ bool captures_game_input(){return MobileThprac::captures_advanced(advanced_open)
 void render(GameSession& runtime,touhou::sdl::Renderer& renderer){if(!initialized)return;
  if(rendered_generation==input_generation){if(frame_drawn)renderer.render_imgui(ImGui::GetDrawData(),backbuffer(runtime));return;}
  rendered_generation=input_generation;auto& io=ImGui::GetIO();io.DeltaTime=1.f/60.f;io.DisplaySize={640,480};io.MousePos={mouse_x,mouse_y};if(!pointer_edges.empty()){const auto edge=pointer_edges.front();pointer_edges.pop_front();pointer_sample_down=edge.down;io.MousePos={edge.x,edge.y};}io.MouseDown[0]=pointer_sample_down;io.KeyCtrl=key_down[VK_CONTROL];io.KeyShift=key_down[VK_SHIFT];io.KeyAlt=key_down[VK_MENU];io.ConfigDragClickToInputText=desktop_pointer;for(int i=0;i<256;i++)io.KeysDown[i]=key_down[i];
- // Desktop thprac numeric fields should be directly editable: ImGui's drag
- // widgets can now switch to TempInputText on a click-release without a drag.
- // Queue numeric characters for the whole practice-menu frame; ImGui clears
- // unused characters at EndFrame, while an active TempInputText consumes them.
- if(runtime.practice.menu){for(int vk=48;vk<=57;vk++)if(pressed(vk))io.AddInputCharacter(ImWchar('0'+vk-48));for(int vk=96;vk<=105;vk++)if(pressed(vk))io.AddInputCharacter(ImWchar('0'+vk-96));if(pressed(189)||pressed(109))io.AddInputCharacter('-');if(pressed(190)||pressed(110))io.AddInputCharacter('.');}
+ // Numeric editing also applies to advanced tools outside the practice menu.
+ eagler::thprac::sdl_keyboard_frame(io);
  io.NavInputs[ImGuiNavInput_DpadUp]=key_down[VK_UP];io.NavInputs[ImGuiNavInput_DpadDown]=key_down[VK_DOWN];io.NavInputs[ImGuiNavInput_DpadLeft]=key_down[VK_LEFT];io.NavInputs[ImGuiNavInput_DpadRight]=key_down[VK_RIGHT];io.NavInputs[ImGuiNavInput_Activate]=key_down[VK_Z]||key_down[VK_RETURN];io.NavInputs[ImGuiNavInput_Cancel]=key_down[VK_X]||key_down[VK_ESCAPE];ImGui::NewFrame();frame_open=true;
  // Persistent touch fire must not keep the closed Practice menu capturing
  // gameplay inputs (including the launcher's Escape serial pulse).

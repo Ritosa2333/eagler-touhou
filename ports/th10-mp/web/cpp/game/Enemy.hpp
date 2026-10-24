@@ -85,6 +85,8 @@ static_assert(offsetof(EnemyState,absolute_angle)==0x1d4);
 static_assert(offsetof(EnemyState,emitters)==0x2c4);
 static_assert(offsetof(EnemyState,emitter_offsets)==0x1344);
 static_assert(offsetof(EnemyState,visual_size)==0x13a4);
+static_assert(offsetof(EnemyState,clamp_center)+sizeof(float)==0x13b0);
+static_assert(offsetof(EnemyState,clamp_size)+sizeof(float)==0x13b8);
 static_assert(offsetof(EnemyState,health)==0x13c0);
 static_assert(offsetof(EnemyState,flags)==0x1444);
 static_assert(offsetof(EnemyState,interrupts)==0x1458);

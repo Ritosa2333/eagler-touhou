@@ -1,4 +1,4 @@
-// Generated from thprac (MIT), source sha256 230c3aacf25e1fdb350dd3be3f5974923c28a5f82325a7382c97516c6910cc3e.
+// Generated from thprac (MIT), source sha256 2f0f262046f8c6bf2ddbded1fed0bd781effdb91a673a4b11f3782cda8d3dc0a.
 export const sections=[
   {
     "id": 1,
@@ -3637,6 +3637,601 @@ export const sections=[
         "「不朽的弹幕」",
         "\"Imperishable Shooting\"",
         "「インペリシャブルシューティング」"
+      ]
+    ]
+  },
+  {
+    "id": 105,
+    "key": "TH08_LW_1",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「不合时令的蝶雨」",
+        "\"Unseasonal Butterfly Storm\"",
+        "「季節外れのバタフライストーム」"
+      ],
+      [
+        "「不合时令的蝶雨」",
+        "\"Unseasonal Butterfly Storm\"",
+        "「季節外れのバタフライストーム」"
+      ],
+      [
+        "「不合时令的蝶雨」",
+        "\"Unseasonal Butterfly Storm\"",
+        "「季節外れのバタフライストーム」"
+      ],
+      [
+        "「不合时令的蝶雨」",
+        "\"Unseasonal Butterfly Storm\"",
+        "「季節外れのバタフライストーム」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 106,
+    "key": "TH08_LW_2",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「Blind Night-Bird」（失明的夜雀）",
+        "\"Blind Nightbird\"",
+        "「ブラインドナイトバード」"
+      ],
+      [
+        "「Blind Night-Bird」（失明的夜雀）",
+        "\"Blind Nightbird\"",
+        "「ブラインドナイトバード」"
+      ],
+      [
+        "「Blind Night-Bird」（失明的夜雀）",
+        "\"Blind Nightbird\"",
+        "「ブラインドナイトバード」"
+      ],
+      [
+        "「Blind Night-Bird」（失明的夜雀）",
+        "\"Blind Nightbird\"",
+        "「ブラインドナイトバード」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 107,
+    "key": "TH08_LW_3",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「日出国之天子」",
+        "\"Emperor of the Land of the Rising Sun\"",
+        "「日出づる国の天子」"
+      ],
+      [
+        "「日出国之天子」",
+        "\"Emperor of the Land of the Rising Sun\"",
+        "「日出づる国の天子」"
+      ],
+      [
+        "「日出国之天子」",
+        "\"Emperor of the Land of the Rising Sun\"",
+        "「日出づる国の天子」"
+      ],
+      [
+        "「日出国之天子」",
+        "\"Emperor of the Land of the Rising Sun\"",
+        "「日出づる国の天子」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 108,
+    "key": "TH08_LW_4",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「幻胧月睨（Lunatic Red Eyes）」（疯狂红眼）",
+        "\"Lunatic Red Eyes\"",
+        "「幻朧月睨（ルナティックレッドアイズ）」"
+      ],
+      [
+        "「幻胧月睨（Lunatic Red Eyes）」（疯狂红眼）",
+        "\"Lunatic Red Eyes\"",
+        "「幻朧月睨（ルナティックレッドアイズ）」"
+      ],
+      [
+        "「幻胧月睨（Lunatic Red Eyes）」（疯狂红眼）",
+        "\"Lunatic Red Eyes\"",
+        "「幻朧月睨（ルナティックレッドアイズ）」"
+      ],
+      [
+        "「幻胧月睨（Lunatic Red Eyes）」（疯狂红眼）",
+        "\"Lunatic Red Eyes\"",
+        "「幻朧月睨（ルナティックレッドアイズ）」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 109,
+    "key": "TH08_LW_5",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「天网蛛网捕蝶之法」",
+        "\"Heaven Spider's Butterfly-Capturing Web\"",
+        "「「天網蜘網捕蝶の法」"
+      ],
+      [
+        "「天网蛛网捕蝶之法」",
+        "\"Heaven Spider's Butterfly-Capturing Web\"",
+        "「「天網蜘網捕蝶の法」"
+      ],
+      [
+        "「天网蛛网捕蝶之法」",
+        "\"Heaven Spider's Butterfly-Capturing Web\"",
+        "「「天網蜘網捕蝶の法」"
+      ],
+      [
+        "「天网蛛网捕蝶之法」",
+        "\"Heaven Spider's Butterfly-Capturing Web\"",
+        "「「天網蜘網捕蝶の法」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 110,
+    "key": "TH08_LW_6",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「蓬莱的树海」",
+        "\"Hourai's Sea of Trees\"",
+        "「蓬莱の樹海」"
+      ],
+      [
+        "「蓬莱的树海」",
+        "\"Hourai's Sea of Trees\"",
+        "「蓬莱の樹海」"
+      ],
+      [
+        "「蓬莱的树海」",
+        "\"Hourai's Sea of Trees\"",
+        "「蓬莱の樹海」"
+      ],
+      [
+        "「蓬莱的树海」",
+        "\"Hourai's Sea of Trees\"",
+        "「蓬莱の樹海」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 111,
+    "key": "TH08_LW_7",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「不死鸟重生」",
+        "\"Phoenix Rebirth\"",
+        "「フェニックス再誕」"
+      ],
+      [
+        "「不死鸟重生」",
+        "\"Phoenix Rebirth\"",
+        "「フェニックス再誕」"
+      ],
+      [
+        "「不死鸟重生」",
+        "\"Phoenix Rebirth\"",
+        "「フェニックス再誕」"
+      ],
+      [
+        "「不死鸟重生」",
+        "\"Phoenix Rebirth\"",
+        "「フェニックス再誕」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 112,
+    "key": "TH08_LW_8",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「Ancient Duper」（远古的欺骗者）",
+        "\"Ancient Duper\"",
+        "「エンシェントデューパー」"
+      ],
+      [
+        "「Ancient Duper」（远古的欺骗者）",
+        "\"Ancient Duper\"",
+        "「エンシェントデューパー」"
+      ],
+      [
+        "「Ancient Duper」（远古的欺骗者）",
+        "\"Ancient Duper\"",
+        "「エンシェントデューパー」"
+      ],
+      [
+        "「Ancient Duper」（远古的欺骗者）",
+        "\"Ancient Duper\"",
+        "「エンシェントデューパー」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 113,
+    "key": "TH08_LW_9",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「无何有的浄化」",
+        "\"Total Purification\"",
+        "「無何有浄化」"
+      ],
+      [
+        "「无何有的浄化」",
+        "\"Total Purification\"",
+        "「無何有浄化」"
+      ],
+      [
+        "「无何有的浄化」",
+        "\"Total Purification\"",
+        "「無何有浄化」"
+      ],
+      [
+        "「无何有的浄化」",
+        "\"Total Purification\"",
+        "「無何有浄化」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 114,
+    "key": "TH08_LW_10",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「梦想天生」",
+        "\"Innate Dream\"",
+        "「夢想天生」"
+      ],
+      [
+        "「梦想天生」",
+        "\"Innate Dream\"",
+        "「夢想天生」"
+      ],
+      [
+        "「梦想天生」",
+        "\"Innate Dream\"",
+        "「夢想天生」"
+      ],
+      [
+        "「梦想天生」",
+        "\"Innate Dream\"",
+        "「夢想天生」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 115,
+    "key": "TH08_LW_11",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「Blazing Star」（彗星）",
+        "\"Blazing Star\"",
+        "「ブレイジングスター」"
+      ],
+      [
+        "「Blazing Star」（彗星）",
+        "\"Blazing Star\"",
+        "「ブレイジングスター」"
+      ],
+      [
+        "「Blazing Star」（彗星）",
+        "\"Blazing Star\"",
+        "「ブレイジングスター」"
+      ],
+      [
+        "「Blazing Star」（彗星）",
+        "\"Blazing Star\"",
+        "「ブレイジングスター」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 116,
+    "key": "TH08_LW_12",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「Deflation World」（收缩的世界）",
+        "\"Deflation World\"",
+        "「デフレーションワールド」"
+      ],
+      [
+        "「Deflation World」（收缩的世界）",
+        "\"Deflation World\"",
+        "「デフレーションワールド」"
+      ],
+      [
+        "「Deflation World」（收缩的世界）",
+        "\"Deflation World\"",
+        "「デフレーションワールド」"
+      ],
+      [
+        "「Deflation World」（收缩的世界）",
+        "\"Deflation World\"",
+        "「デフレーションワールド」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 117,
+    "key": "TH08_LW_13",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「待宵反射卫星斩」",
+        "\"Matsuyoi-Reflecting Satellite Slash\"",
+        "「待宵反射衛星斬」"
+      ],
+      [
+        "「待宵反射卫星斩」",
+        "\"Matsuyoi-Reflecting Satellite Slash\"",
+        "「待宵反射衛星斬」"
+      ],
+      [
+        "「待宵反射卫星斩」",
+        "\"Matsuyoi-Reflecting Satellite Slash\"",
+        "「待宵反射衛星斬」"
+      ],
+      [
+        "「待宵反射卫星斩」",
+        "\"Matsuyoi-Reflecting Satellite Slash\"",
+        "「待宵反射衛星斬」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 118,
+    "key": "TH08_LW_14",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「猎奇剧团里的怪人」",
+        "\"The Phantom of the Grand Guignol\"",
+        "「グランギニョル座の怪人」"
+      ],
+      [
+        "「猎奇剧团里的怪人」",
+        "\"The Phantom of the Grand Guignol\"",
+        "「グランギニョル座の怪人」"
+      ],
+      [
+        "「猎奇剧团里的怪人」",
+        "\"The Phantom of the Grand Guignol\"",
+        "「グランギニョル座の怪人」"
+      ],
+      [
+        "「猎奇剧团里的怪人」",
+        "\"The Phantom of the Grand Guignol\"",
+        "「グランギニョル座の怪人」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 119,
+    "key": "TH08_LW_15",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「Scarlet Destiny」（绯红色的命运）",
+        "\"Scarlet Destiny\"",
+        "「スカーレットディスティニー」"
+      ],
+      [
+        "「Scarlet Destiny」（绯红色的命运）",
+        "\"Scarlet Destiny\"",
+        "「スカーレットディスティニー」"
+      ],
+      [
+        "「Scarlet Destiny」（绯红色的命运）",
+        "\"Scarlet Destiny\"",
+        "「スカーレットディスティニー」"
+      ],
+      [
+        "「Scarlet Destiny」（绯红色的命运）",
+        "\"Scarlet Destiny\"",
+        "「スカーレットディスティニー」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 120,
+    "key": "TH08_LW_16",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「西行寺无余涅槃」",
+        "\"Saigyouji Parinirvana\"",
+        "「西行寺無余涅槃」"
+      ],
+      [
+        "「西行寺无余涅槃」",
+        "\"Saigyouji Parinirvana\"",
+        "「西行寺無余涅槃」"
+      ],
+      [
+        "「西行寺无余涅槃」",
+        "\"Saigyouji Parinirvana\"",
+        "「西行寺無余涅槃」"
+      ],
+      [
+        "「西行寺无余涅槃」",
+        "\"Saigyouji Parinirvana\"",
+        "「西行寺無余涅槃」"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ]
+  },
+  {
+    "id": 121,
+    "key": "TH08_LW_17",
+    "stage": 9,
+    "group": 2,
+    "spell": true,
+    "bgm": 1,
+    "names": [
+      [
+        "「深弹幕结界 -梦幻泡影-」",
+        "\"Profound Danmaku Barrier -Phantasm, Foam and Shadow-\"",
+        "「深弾幕結界　-夢幻泡影-」"
+      ],
+      [
+        "「深弹幕结界 -梦幻泡影-」",
+        "\"Profound Danmaku Barrier -Phantasm, Foam and Shadow-\"",
+        "「深弾幕結界　-夢幻泡影-」"
+      ],
+      [
+        "「深弹幕结界 -梦幻泡影-」",
+        "\"Profound Danmaku Barrier -Phantasm, Foam and Shadow-\"",
+        "「深弾幕結界　-夢幻泡影-」"
+      ],
+      [
+        "「深弹幕结界 -梦幻泡影-」",
+        "\"Profound Danmaku Barrier -Phantasm, Foam and Shadow-\"",
+        "「深弾幕結界　-夢幻泡影-」"
+      ],
+      [
+        "",
+        "",
+        ""
       ]
     ]
   }

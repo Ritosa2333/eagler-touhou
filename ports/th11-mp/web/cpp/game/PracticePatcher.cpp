@@ -2,6 +2,7 @@
 #include "PracticePatcher.hpp"
 #include "PracticeSections.hpp"
 #include "PracticeSiteChecks.hpp"
+#include "PracticeWave.hpp"
 #include "EclResource.hpp"
 #include <cstring>
 #include <utility>
@@ -21,9 +22,11 @@ public:
 };
 class ECLHelper:public VFile {
     std::vector<std::vector<u8>>& files;
+    unsigned current=0;
 public:
     explicit ECLHelper(std::vector<std::vector<u8>>& f):files(f){SetFile(0);}
-    void SetFile(unsigned ordinal){if(ordinal>=files.size()){valid=false;VFile::SetFile(nullptr,0);return;}VFile::SetFile(files[ordinal].data(),files[ordinal].size());}
+    void SetFile(unsigned ordinal){if(ordinal>=files.size()){valid=false;VFile::SetFile(nullptr,0);return;}current=ordinal;VFile::SetFile(files[ordinal].data(),files[ordinal].size());}
+    size_t AppendWave(bool first_wave){if(!valid)return 0;auto& bytes=files[current];const auto offset=bytes.size();bytes.insert(bytes.end(),std::begin(practice_wave),std::end(practice_wave));if(first_wave)bytes[offset+16]=0;VFile::SetFile(bytes.data(),bytes.size());return offset;}
 };
 class Patcher {
     const PracticeConfig& thPracParam;
@@ -51,7 +54,9 @@ bool patch_practice_buffers(PracticeBuffers& output,const PracticeConfig& config
         const auto& bytes=site.file==-1?output.scene:site.file==-2?output.background:output.ecl[site.file];
         if(site.offset>bytes.size()||site.length>bytes.size()-site.offset){error="TH11 practice source site outside resource";return false;}
         u32 crc=~0u;for(u32 i=0;i<site.length;++i){crc^=bytes[site.offset+i];for(int bit=0;bit<8;++bit)crc=(crc>>1)^(0xedb88320u&u32(-i32(crc&1)));}
+#ifndef TH11_PRACTICE_SITE_GENERATION
         if(~crc!=site.crc){error="TH11 practice source site mismatch: stage "+std::to_string(site.stage+1)+", file "+std::to_string(site.file)+", offset "+std::to_string(site.offset);return false;}
+#endif
     }
     // Verify the original resource before rewriting instruction bytes. The
     // native THPrac hook runs before pointer binding, not before decoding the
@@ -65,7 +70,17 @@ bool patch_practice_buffers(PracticeBuffers& output,const PracticeConfig& config
     if(!Patcher(transaction,config).apply()){error="TH11 practice patch exceeds its owned source buffers";return false;}
     for(size_t i=0;i<verified.size();++i){
         const auto& before=output.ecl[i];const auto& after=transaction.ecl[i];
-        std::vector<bool> instruction_byte(before.size(),false),boundary(before.size(),false);
+        std::vector<bool> instruction_byte(before.size(),false),boundary(after.size(),false);
+        if(after.size()!=before.size()){
+            if(config.stage!=4||config.section!=TH11_ST5_MID3||i!=2||(config.phase!=2&&config.phase!=3)||after.size()!=before.size()+sizeof(practice_wave)){error="Unexpected TH11 practice ECL extension";return false;}
+            for(size_t n=0;n<sizeof(practice_wave);++n)if(after[before.size()+n]!=(n==16&&config.phase==2?0:practice_wave[n])){error="TH11 purple wave payload mismatch";return false;}
+            for(size_t p=before.size();p<after.size();){
+                if(after.size()-p<16){error="Truncated purple wave instruction";return false;}
+                u16 length;std::memcpy(&length,after.data()+p+6,2);
+                if(length<16||length%4||length>after.size()-p){error="Invalid purple wave instruction length";return false;}
+                boundary[p]=true;p+=length;
+            }
+        }
         for(const auto& sub:verified[i].subroutines){
             for(u32 p=sub.offset+16;p<sub.offset+sub.size;){
                 boundary[p]=true;u16 length;std::memcpy(&length,before.data()+p+6,2);
@@ -74,7 +89,7 @@ bool patch_practice_buffers(PracticeBuffers& output,const PracticeConfig& config
             }
         }
         for(size_t p=0;p<before.size();++p)if(before[p]!=after[p]&&!instruction_byte[p]){error="TH11 practice patch changed an ECL directory/header";return false;}
-        for(size_t p=0;p+24<=after.size();++p)if(boundary[p]){
+        for(size_t p=0;p+24<=before.size();++p)if(boundary[p]){
             u16 opcode,length;std::memcpy(&opcode,after.data()+p+4,2);std::memcpy(&length,after.data()+p+6,2);
             if(opcode==12&&length==24&&std::memcmp(before.data()+p,after.data()+p,24)){
                 i32 delta;std::memcpy(&delta,after.data()+p+16,4);const i64 target=i64(p)+delta;

@@ -46,18 +46,21 @@ assert.match(packageScript,/Production build contains diagnostic export/);
 assert.match(labStart,/package-eagler\.mjs --presentation-lab/);
 assert.match(labServer,/artifacts\/presentation-lab\/runtime/);
 
-// Ordinary/Replay skip expired deadlines. Live MP and spectators with a
-// confirmed backlog use the shared TH06/07 bounded catch-up start budget.
+// Ordinary/Replay use their title clock. Live MP owns bounded network catch-up;
+// confirmed spectator batching belongs to StagePlayback.
 assert.match(host,/int tick\(\).*runtime->step\(false,frame_begin\)/s);
-assert.match(host,/const bool tick_due=cadence\.advance\(delta\)!=0/);
+assert.match(host,/const bool tick_due=custom_speed\?practice_ticks!=0:cadence\.advance\(delta\)!=0/);
+assert.match(host,/if\(runtime->app\.session\.netplay\.Configured\(\)\)custom_speed=false/);
 assert.match(host,/while\(due&&!result\)/);
-assert.match(host,/Configured\(\)&&\s*\(!runtime->app.session.netplay.ReadOnly\(\)\|\|\(runtime->app.session.netplay.Spectator\(\)&&\s*runtime->app.session.netplay.CanStart\(\)&&runtime->network_driver\(\)&&runtime->network_driver\(\)->Network\(\).SpectatorBacklog\(\)>4\)\)/);
+assert.match(host,/const bool catchup=runtime&&runtime->app.session.netplay.Configured\(\)&&\s*!runtime->app.session.netplay.ReadOnly\(\)/);
+assert.doesNotMatch(host,/SpectatorBacklog\(/);
 assert.match(host,/Netplay::FrameBudget::CanStartTick/);
 assert.doesNotMatch(host,/for\(unsigned i=0;i<ticks/);
-assert.match(host,/elapsed\+=touhou::sdl::FrameCadence::interval;result=tick\(\)/);
+assert.match(host,/elapsed\+=touhou::sdl::FrameCadence::interval;[\s\S]*?result=tick\(\)/);
 assert.match(host,/th08_limit_presentation_to_60/);
 assert.match(host,/const bool limit60=th08_limit_presentation_to_60\(\)!=0/);
-assert.match(host,/const bool ready=interpolation_ready\(\)&&!limit60/);
+assert.match(host,/const bool ready=interpolation_ready\(\)&&!limit60&&!custom_speed/);
+assert.match(host,/const bool high=display_cadence\.high_refresh&&interpolation_ready\(\)&&!custom_speed/);
 
 // Every real 60 Hz tick still executes TH08's authoritative draw once. High
 // refresh only hides that swap and follows it with a presentation-only draw.

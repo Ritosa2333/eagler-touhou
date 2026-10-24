@@ -133,8 +133,8 @@ export class SharedNetplay {
     this.startupNoticeAt = 0;
     this.startupTransport = globalThis.__eaglerPeerTransport;
     if(this.startupTransport)this.startupTransport.onDisconnect=()=>this.connectionEnded();
-    // Arrival-driven receive/ACK also wakes one already-due rollback tick.
-    // The native scheduler owns that obligation; packets never earn ticks.
+    // Arrival-driven receive/ACK refreshes pending corrections and can wake
+    // one already-due tick. Packets never earn fresh simulation clock credit.
     if (!spectator && this.startupTransport)
       this.startupTransport.onReceive = () => {
         if (!this.prepared || !this.connected || this.disconnected || this.pumping) return;

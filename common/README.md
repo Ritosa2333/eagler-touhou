@@ -52,3 +52,7 @@ ctest --test-dir build/common -C Release --no-tests=error --output-on-failure
 C++ 共享库使用 [MIT License](LICENSE)。`contracts/` 沿用其 [`GPL-3.0-or-later`](contracts/LICENSE) 许可。
 
 各作 thprac 共用的 ImGui 源码与许可证位于 `third_party/imgui/`，构建直接引用这一份源码。
+
+## thprac 数值键盘
+
+`PracticeKeyboard.hpp` 为练习菜单、暂停页和高级工具提供统一的数值与编辑键输入，SDL 接入使用 `PracticeSdlKeyboard.hpp`。作品按既有规则提供反应测试输入：th07 在键盘更新后写入游戏逻辑按键，保留手柄与触屏操作。可选 thprac 的 SDL／ImGui 引用位于功能条件编译块内，普通构建沿用自身依赖。

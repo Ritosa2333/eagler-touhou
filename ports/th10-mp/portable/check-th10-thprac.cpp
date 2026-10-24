@@ -4,6 +4,8 @@
 // candidate lifecycle used by the title replay menu.
 #include "../web/cpp/game/PracticeConfig.hpp"
 #include "../web/cpp/game/PracticeSections.hpp"
+#include "../web/cpp/game/PracticeVersion.hpp"
+#include "../web/cpp/game/PracticeGameplay.hpp"
 #include "../portable/input/MotionTrack.hpp"
 #include <cassert>
 #include <cstring>
@@ -37,6 +39,53 @@ touhou::input::MotionTrack touched(){
 }
 }
 int main(){
+    const int delay_limits[]{140,120,100,50};
+    PracticeConfig menu; i32 previous_difficulty=-1;
+    for(int difficulty=0;difficulty<4;difficulty++){
+        assert(PracticeConfig::divine_virtues_delay_max(difficulty)==delay_limits[difficulty]);
+        menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==delay_limits[difficulty]);
+        menu.st6_boss9_spd=23;menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==23); // Reopening the same difficulty preserves edits.
+        menu.st6_boss9_spd=160;menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==delay_limits[difficulty]);
+        menu.st6_boss9_spd=0;menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==0);
+    }
+    menu.update_menu_difficulty(4,previous_difficulty);
+    menu.update_menu_difficulty(3,previous_difficulty);
+    assert(menu.st6_boss9_spd==50); // Returning from Extra resets like purple.
+    {eagler::thprac::PracticeSpeed speed;assert(speed.interval(false,false,false,false)==1./60.);
+    assert(speed.interval(true,false,true,false)==1./15.);speed.fps_replay_fast=240;
+    assert(speed.interval(true,true,false,false)==1./240.);speed.fps=0;assert(speed.interval(false,false,false,false)==1.);
+    PracticeCadence cadence;cadence.period=1./120.;assert(cadence.advance(1./60.)==2);cadence.reset();assert(cadence.debt==0);}
+    // Native clamp preserves the maximum at 140; endpoints and guards matter.
+    {PracticeState gameplay;float y=100,range=80;
+    gameplay.force_boss_move_down=true;practice_boss_clamp(gameplay,y,range);
+    assert(y==100&&range==80&&!gameplay.assisted);
+    gameplay.enabled=true;practice_boss_clamp(gameplay,y,range);
+    assert(y==120&&range==40&&gameplay.assisted);
+    gameplay.boss_move_down_range=0;y=100;range=80;practice_boss_clamp(gameplay,y,range);assert(y==100&&range==80);
+    gameplay.boss_move_down_range=1;practice_boss_clamp(gameplay,y,range);assert(y==140&&range==0);
+    gameplay.replay=true;y=100;range=80;practice_boss_clamp(gameplay,y,range);assert(y==140&&range==0);
+    gameplay.boss_move_down_range=.5f;y=100;range=80;practice_boss_clamp(gameplay,y,range);assert(y==120&&range==40);
+    gameplay.force_boss_move_down=false;y=100;range=80;practice_boss_clamp(gameplay,y,range);assert(y==100&&range==80);
+    practice_point_collected(gameplay,true);assert(gameplay.tracker_yellow==0);
+    gameplay.show_point_items=true;practice_point_collected(gameplay,true);practice_point_collected(gameplay,false);
+    assert(gameplay.tracker_white==1&&gameplay.tracker_yellow==1);
+    gameplay.lock_timer_pending=true;practice_consume_lock_timer(gameplay);assert(gameplay.lock_timer==1&&!gameplay.lock_timer_pending);
+    practice_consume_lock_timer(gameplay);assert(gameplay.lock_timer==1);
+    gameplay.lock_timer_pending=true;practice_reset_lock_timer(gameplay);practice_consume_lock_timer(gameplay);assert(gameplay.lock_timer==0);
+    gameplay.enabled=false;practice_point_collected(gameplay,true);assert(gameplay.tracker_yellow==1);}
+    // Shared purple input tools: native state filters and 15-tick retry.
+    eagler::thprac::PracticeInput input;u8 keys[256]{};keys[88]=keys[67]=keys[90]=keys[160]=keys[161]=128;
+    input.disable_xkey=input.disable_zkey=input.disable_shiftkey=true;input.apply(keys);
+    assert(!keys[88]&&!keys[67]&&!keys[90]&&!keys[160]&&!keys[161]);
+    input.force_shiftkey=true;input.apply(keys);assert(keys[160]==128&&keys[161]==128);
+    input.enable_fast_retry=true;input.begin_retry(0);assert(input.fast_retry_count_down==0);
+    input.begin_retry(1);assert(input.fast_retry_count_down==15);
+    for(int tick=15;tick>=1;--tick){std::memset(keys,0,sizeof keys);input.apply(keys);assert(keys[27]==128);assert((keys[82]!=0)==(tick==1));input.gui_tick();}
+    input.reset();std::memset(keys,0,sizeof keys);input.force_shiftkey=false;input.apply(keys);assert(!keys[27]&&!keys[82]);
     const PracticeConfig original=sample();
     assert(original.valid());
     double words[PracticeConfig::word_count]{};original.encode(words);
@@ -46,7 +95,7 @@ int main(){
 
     // THPracParam::GetJson() byte layout: compact, optional keys omitted.
     const std::string json=practice_replay_json(original);
-    assert(json.find("{\"version\":\"2.3.0.3\",\"game\":\"th10\",\"mode\":1,\"stage\":4,\"section\":")==0);
+    assert(json.find(std::string("{\"version\":\"")+practice_source_version+"\",\"game\":\"th10\",\"mode\":1,\"stage\":4,\"section\":")==0);
     assert(json.find("\"frame\"")==std::string::npos);
     assert(json.find("\"faith\":250000")!=std::string::npos&&json.find("\"score\":9876543210")!=std::string::npos&&json.size()>26&&json.compare(json.size()-26,26,"\"real_bullet_sprite\":true}")==0);
     PracticeConfig parsed;assert(practice_replay_parse(json.data(),u32(json.size()),parsed));

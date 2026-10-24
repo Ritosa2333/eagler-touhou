@@ -16,6 +16,30 @@ static void no_motion(const TouchSample& s){assert(!s.motion);assert(!s.keys[16]
 
 int main(){
     const auto state=gameplay(); TouchController touch; unsigned checks=0;
+    // Practice tuning shares the title/menu gesture context. Launcher fire
+    // must not auto-confirm it; one tap confirms, two fingers cancel, and a
+    // navigation swipe must not also confirm on release.
+    {
+        TouchController menu;TouchState tuning;menu.begin_session();
+        menu.controls(true,false,0,0,0,0);
+        assert(!menu.sample(tuning,0,false,false).keys[90]);
+        menu.pointer(0,1,.1f,.5f,10,tuning,false);
+        menu.pointer(2,1,.1f,.5f,30,tuning,false);
+        assert(menu.sample(tuning,31,false,false).keys[90]);
+        menu.cancel_transient();
+        menu.pointer(0,1,.1f,.5f,40,tuning,false);
+        menu.pointer(0,2,.2f,.5f,41,tuning,false);
+        menu.pointer(2,1,.1f,.5f,60,tuning,false);
+        menu.pointer(2,2,.2f,.5f,61,tuning,false);
+        const auto cancelled=menu.sample(tuning,62,false,false);
+        assert(cancelled.keys[27]&&!cancelled.keys[90]);
+        menu.cancel_transient();
+        menu.pointer(0,1,.1f,.4f,70,tuning,false);
+        menu.pointer(1,1,.1f,.6f,90,tuning,false);
+        assert(menu.sample(tuning,91,false,false).keys[40]);
+        menu.pointer(2,1,.1f,.6f,100,tuning,false);
+        assert(!menu.sample(tuning,101,false,false).keys[90]);++checks;
+    }
     touch.begin_session(); touch.set_mode(1); touch.controls(true,true,0,0,0,0);
     touch.pointer(0,1,.5f,.5f,100,state,false);
     auto sample=touch.sample(state,101,false,false);

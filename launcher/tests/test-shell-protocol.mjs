@@ -497,7 +497,7 @@ for (const test of cases) {
       options: {
         netplayMode: "lan", netplayUrl: "ws://127.0.0.1:18142/?room=contract&player=1",
         netplayPlayer: 1, netplayPlayerCount: 3, netplaySeed: 19005,
-        netplayDifficulty: 4, netplayLoadouts,
+        netplayDifficulty: 4, netplayLoadouts, netplayPreferTurn: true,
       },
     } });
     if (context.Module.eaglerOptions.netplayMode !== "lan" ||
@@ -505,6 +505,7 @@ for (const test of cases) {
         context.Module.eaglerOptions.netplayPlayer !== 1 || context.Module.eaglerOptions.netplayPlayerCount !== 3 ||
         context.Module.eaglerOptions.netplaySeed !== 19005 ||
         context.Module.eaglerOptions.netplayDifficulty !== 4 ||
+        context.Module.eaglerOptions.netplayPreferTurn !== true ||
         JSON.stringify(context.Module.eaglerOptions.netplayLoadouts) !== JSON.stringify(netplayLoadouts)) {
       throw new Error(`${test.game}: production LAN options were not installed`);
     }

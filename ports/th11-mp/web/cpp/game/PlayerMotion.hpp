@@ -39,6 +39,7 @@ public:
     PlayerMotion(AnmResource&,AnmResource&,AnmManager&,PlayerMotionWorld&,u16 player_file=7,u16 bullet_file=0);
     PlayerMotionState state;std::array<PlayerOption,8> options{};AnmVm body{};
     u32 focus_animation=0;i32 last_error=0;
+    i32 practice_locked_formation=-1;
     bool update(const PlayerMotionInput&);
     bool update_warp(const PlayerMotionInput&);
     bool update_option(PlayerOption&);

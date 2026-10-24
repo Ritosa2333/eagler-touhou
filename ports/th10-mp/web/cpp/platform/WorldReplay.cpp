@@ -226,8 +226,9 @@ void World::save_replay(const char* file,const char* name){
     std::vector<u8> tail;
     // Advanced-practice runs append their 'USER'/'PRAC' block immediately after
     // the vanilla replay, ahead of the motion trailer (upstream THSaveReplay +
-    // ReplaySaveParam). Assisted/cheated runs are deliberately not savable.
-    const bool practice_save=state.practice.active&&!state.practice.replay&&!state.practice.assisted&&state.practice.run.mode==1;
+    // ReplaySaveParam). Assistance does not block saving: vanilla playback
+    // does not reproduce live cheats and may diverge, like TH06-08.
+    const bool practice_save=state.practice.active&&!state.practice.replay&&state.practice.run.mode==1;
     if(practice_save)tail=practice_replay_block(state.practice.run);
     tail.insert(tail.end(),motion_tail.begin(),motion_tail.end());
     // th10_rep_power_fix runs inside save_replay while the payload is plain.

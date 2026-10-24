@@ -83,7 +83,7 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
         if(state.timer.current>=30){
             state.state=1;movement.position={Scalar::div(context.extent.x,2),Scalar::sub(context.extent.y,64),.2f};state.timer.set(0);animation.scale={3,3};
             actions.animation(((context.character<4&&!context.focused)||!(context.character&1))?0:5);
-            if(context.lives>0
+            if(context.lives>0||(context.cheats&2)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 ||context.challenge_mode
 #endif

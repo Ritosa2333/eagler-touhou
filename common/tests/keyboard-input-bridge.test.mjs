@@ -9,6 +9,18 @@ function fixture(){
 }
 const key=(code,down=true)=>({...identity,command:'keyboard',code,key:code==='KeyZ'?'z':'',keyCode:0,location:0,down});
 
+test('numeric and editing SDL queries follow the canonical key lifetime',()=>{
+  for(const [code,scan] of [['Digit0',39],['Digit7',36],['Numpad0',98],['Numpad9',97],
+    ['Minus',45],['Period',55],['NumpadSubtract',86],['NumpadDecimal',99],['Delete',76],['End',77]]){
+    const f=fixture();f.target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,
+      supports:()=>true,map:(e,down)=>[{code:e.code,key:'',keyCode:0,location:0,down}],
+      clear:()=>[{code,key:'',keyCode:0,location:0,down:false}]};
+    const bridge=f.target.__eaglerKeyboardInputBridge;
+    f.keyboard.mapNative({code},true);assert.equal(bridge.scancodeState(scan),1,code);
+    f.keyboard.clear();assert.equal(bridge.scancodeState(scan),0,code);
+  }
+});
+
 test('local two-player words are synchronous, scoped to the advertised context and cleared at context changes',()=>{
   const target={},events=[];let mode='standard',clears=0;
   const keyboard=createBrowserKeyboard({hostContext:{target,...identity,ready:()=>true,profile:()=>mode},send:(code,down)=>events.push([code,down])});

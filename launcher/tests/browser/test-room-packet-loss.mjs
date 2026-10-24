@@ -17,11 +17,11 @@ import {createRoomNetwork} from './src/launcher/room-network.mts';
 import './app/components/room/room-workspace.css';
 const side=Number(new URLSearchParams(location.search).get('side')||0), ids=['peer-a','peer-b'];
 const seats=ids.map((clientId,index)=>({clientId,name:index?'对方':'自己',loadout:0}));
-const state={product:'th09mp',room:{code:'test',synced:true,phase:'lobby',playerCount:2,seats},seat:side,preferredLoadout:0,displayName:seats[side].name,connected:true};
+const state={product:'th09mp',room:{code:'test',synced:true,phase:'lobby',playerCount:2,seats},seat:side,preferredLoadout:0,displayName:seats[side].name,connected:true,preferTurn:false};
 const root=createRoot(document.getElementById('root'));
 window.suspended=false;
 window.network=createRoomNetwork({send:message=>{parent.postMessage({kind:'signal',side,message},location.origin);return true;},changed:()=>render()});
-const service={setDisplayName:x=>x,standUp(){},checkGame(){}};
+const service={setDisplayName:x=>x,standUp(){},checkGame(){},setPreferTurn(value){state.preferTurn=value;render();}};
 function render(){root.render(<RoomPersonal state={state} service={service} network={window.network} assetUrl={x=>x} th09NetworkOverlayOpen={false} hidden={false}/>);}
 window.signal=async message=>{await window.network.receive({...message,from:ids[1-side]});};
 window.start=async()=>{await window.network.receive({type:'room-probe-config',iceServers:[]});window.network.update({localId:ids[side],peers:ids,active:true});render();};
@@ -31,7 +31,7 @@ render();
 `},bundle:true,format:'esm',platform:'browser',jsx:'automatic',outfile:resolve(out,'peer.mjs'),logLevel:'silent'});
 const peerHtml=`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/peer.css"><style>
 :root{--line:#45453c;--paper:#eae8d9;--ink:#191a17;--muted:#a5a59a}body{margin:0;padding:22px;background:var(--ink);color:var(--paper);font:14px system-ui}button,input{font:inherit;background:transparent;color:inherit;border:1px solid var(--line);border-radius:9px;padding:9px}input{max-width:150px}.mp-name-editor{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.mp-local-player{margin:16px 0}.mp-game-check-button{margin-top:12px}button:disabled{opacity:.45}[hidden]{display:none!important}
-</style><div id="root"></div><script type="module" src="/peer.mjs"></script>`;
+</style><div id="mpRoomView" class="room-workspace-view"><div id="root"></div></div><script type="module" src="/peer.mjs"></script>`;
 const html=`<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#111}iframe{width:430px;height:560px;border:0}</style><iframe id="a" src="/peer?side=0"></iframe><iframe id="b" src="/peer?side=1"></iframe><script>
 addEventListener('message',e=>{if(e.origin!==location.origin||e.data?.kind!=='signal')return;document.getElementById(e.data.side?'a':'b').contentWindow.signal(e.data.message);});
 </script>`;
@@ -53,6 +53,9 @@ try{
   await Promise.all(frames().map(f=>f.evaluate(()=>start())));
   await frames()[0].waitForFunction(()=>network.lossReady('peer-b','direct'),{timeout:15000});
   assert.deepEqual(await Promise.all(frames().map(f=>f.evaluate(()=>audit().state))),['idle','idle']);
+  await frames()[0].click('#mpPreferTurn');
+  assert.equal(await frames()[0].$eval('#mpPreferTurn',e=>e.getAttribute('aria-checked')), 'true');
+  assert.equal(await frames()[1].$eval('#mpPreferTurn',e=>e.getAttribute('aria-checked')), 'false');
   await frames()[0].click('#mpPacketLossTest');
   await Promise.all(frames().map(f=>f.waitForFunction(()=>audit().state==='complete',{timeout:15000})));
   const results=await Promise.all(frames().map(f=>f.evaluate(()=>audit())));

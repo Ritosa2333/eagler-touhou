@@ -1,5 +1,9 @@
 #pragma once
 #include "Types.hpp"
+#include <eagler/thprac/PracticeInput.hpp>
+#include <eagler/thprac/PracticeKeyMonitor.hpp>
+#include <eagler/thprac/PracticeSpeed.hpp>
+#include "PracticeCadence.hpp"
 #include <string>
 #include <vector>
 namespace th08 {
@@ -10,7 +14,11 @@ struct PracticeConfig {
     i64 score=0;
     i32 life=2,bomb=8,power=128,gauge=0,graze=0,point=0,point_total=0,point_stage=0;
     i32 time=0,value=60000,night=0,familiar=0,rank=12,rankLock=0;
-    static constexpr u32 word_count=23;
+    i32 sp1_pts=0,bsX=0,bsY=0;
+    // Read-only provenance for recordings from the previous blue adapter.
+    // Not a bridge field and never inherited by new live Practice runs.
+    bool legacy_blue_replay=false;
+    static constexpr u32 word_count=26;
     // Upstream THPracParam::Reset() clears every field. This is distinct from
     // the initialized Practice-menu defaults above.
     void reset();
@@ -33,12 +41,22 @@ struct PracticeState {
     // Advanced Options owns these independently of the in-game F1-F7 flags,
     // exactly like THAdvOptWnd's persistent context in upstream thprac.
     bool all_clear_bonus=false,doswnc=false;
+    eagler::thprac::PracticeInput input;
+    eagler::thprac::PracticeKeyMonitor key_monitor;
+    bool show_keyboard_monitor=false,map_inf_life_to_no_continue=false,force_last_spell=false;
+    bool show_lock_timer=false;
+    bool disable_master=false;
+    bool show_bullet_hitbox=false;
+    bool use_custom_rsqrt=false;int rsqrt_cpu=0;
+    eagler::thprac::PracticeSpeed speed;
     // TH08's Tab tracker keeps this per-run counter separately from the
     // aggregate captured-spell value stored by the original game.
     u32 tracker_last_spell_captures=0,tracker_dissolve_count=0;
 };
 // Upstream thprac THPracParam::GetJson()/ReadJson() payload for th08.
 std::string practice_replay_json(const PracticeConfig&);
+i32 practice_runtime_stage(const PracticeConfig&);
+bool practice_last_word_matches(const PracticeConfig&,i32 stage,i32 spell);
 bool practice_replay_parse(const char* json,u32 size,PracticeConfig&);
 // The 'USER'/'PRAC' block upstream ReplaySaveParam appends to th08+ replays.
 // Empty when the config cannot be serialized (caller saves a vanilla replay).

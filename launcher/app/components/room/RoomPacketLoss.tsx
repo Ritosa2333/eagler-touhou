@@ -1,8 +1,9 @@
 import {useLocale} from '../../i18n';
-import type {RoomOwnerSnapshot} from '../../services/multiplayer-room';
+import type {RoomOwnerSnapshot, MultiplayerRoomService} from '../../services/multiplayer-room';
+import {OptionSwitch} from '../settings/TouchSettingsFields';
 import type {RoomNetworkPresentation} from './types';
 
-export function RoomPacketLoss({state, network}: {state: RoomOwnerSnapshot; network: RoomNetworkPresentation}) {
+export function RoomPacketLoss({state, network, service}: {state: RoomOwnerSnapshot; network: RoomNetworkPresentation; service: MultiplayerRoomService}) {
   const {t} = useLocale(), room = state.room;
   if (!room?.synced || room.phase !== 'lobby' || state.seat == null || state.spectatorRequested) return null;
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && !seat.offline && index !== state.seat ? [{seat, index}] : []);
@@ -13,6 +14,10 @@ export function RoomPacketLoss({state, network}: {state: RoomOwnerSnapshot; netw
     <header><div><h3 id="mpPacketLossTitle">{t('room.packetLoss')}</h3><p>{t('room.packetLossHint')}</p></div>
       <button id="mpPacketLossTest" type="button" disabled={!ready || running || state.launchBusy} onClick={() => network.testLoss()}>{t(running ? 'room.packetLossRunning' : 'room.packetLossTest')}</button>
     </header>
+    <div className="room-turn-preference">
+      <div><label htmlFor="mpPreferTurn">{t('room.preferTurn')}</label><p id="mpPreferTurnHint">{t('room.preferTurnHint')}</p></div>
+      <OptionSwitch id="mpPreferTurn" label={t('room.preferTurn')} describedBy="mpPreferTurnHint" checked={state.preferTurn} disabled={!state.connected || state.launchBusy || state.checkBusy} onChange={() => service.setPreferTurn(!state.preferTurn)}/>
+    </div>
     <div role="status" aria-live="polite">{!peers.length ? <p>{t('room.waitPeer')}</p> : peers.map(({seat, index}) => <div className="room-packet-loss-peer" key={seat.clientId}>
       <strong>{state.nickname ? seat.name || `P${index + 1}` : `P${index + 1}`}</strong>
       {lanes.map(lane => {

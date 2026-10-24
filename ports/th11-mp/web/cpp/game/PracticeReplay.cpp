@@ -1,5 +1,7 @@
 // USER/PRAC serialization follows TH08/TH10 and THPracParam for TH11.
 #include "PracticeConfig.hpp"
+#include "PracticeSections.hpp"
+#include "PracticeVersion.hpp"
 #include <string>
 #include <vector>
 #include <cstdio>
@@ -31,11 +33,13 @@ bool json_bool(const std::string& json,const char* key,bool fallback){
 }
 
 std::string practice_replay_json(const PracticeConfig& p){
- if(!p.valid())return {};char buffer[1024];int n=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"2.3.0.3\",\"game\":\"th11\",\"mode\":%d,\"stage\":%d",p.mode,p.stage);
+ if(!p.valid())return {};char buffer[1024];int n=std::snprintf(buffer,sizeof(buffer),"{\"version\":\"%s\",\"game\":\"th11\",\"mode\":%d,\"stage\":%d",p.legacy_blue?"2.3.0.3":practice_source_version,p.mode,p.stage);
  auto append=[&](const char* fmt,auto... args){const int w=std::snprintf(buffer+n,sizeof(buffer)-n,fmt,args...);if(w<0||w>=int(sizeof(buffer))-n)return false;n+=w;return true;};
  if(p.section&&!append(",\"section\":%d",p.section))return {};
  if(p.phase&&!append(",\"phase\":%d",p.phase))return {};
  if(p.dlg&&!append("%s",",\"dlg\":true"))return {};
+ if((p.section==TH11_ST4_RA2||p.section==TH11_ST4_RA_BOSS5)&&p.phase&&!append(",\"boss_x\":%.9g,\"boss_y\":%.9g",double(p.boss_x),double(p.boss_y)))return {};
+ if(p.section==10504&&!append(",\"wave_passed\":%d",p.wave_passed))return {};
  if(!append(",\"life\":%d,\"life_fragment\":%d,\"power\":%d,\"graze\":%d,\"signal\":%d,\"value\":%d,\"score\":%lld,\"marisa_b_formation\":%d}",p.life,p.life_fragment,p.power,p.graze,p.signal,p.value,static_cast<long long>(p.score),p.marisa_b_formation))return {};
  return std::string(buffer,n);
 }
@@ -43,8 +47,10 @@ bool practice_replay_parse(const char* json,u32 size,PracticeConfig& out){
  out.reset();if(!json||!size||size>4096)return false;const std::string text(json,size);
  if(text.find("\"version\":")==std::string::npos||text.find("\"game\":\"th11\"")==std::string::npos)return false;
  PracticeConfig p;p.reset();bool valid=true;
+ p.legacy_blue=text.find("\"version\":\"2.3.0.3\"")!=std::string::npos;
  auto number=[&](const char* key,i32& field){const double v=json_number(text,key,0);if(!std::isfinite(v)||std::trunc(v)!=v||v<0||v>2147483647.){valid=false;return;}field=i32(v);};
  number("mode",p.mode);number("stage",p.stage);number("section",p.section);number("phase",p.phase);number("life",p.life);number("life_fragment",p.life_fragment);number("power",p.power);number("graze",p.graze);number("signal",p.signal);number("value",p.value);number("marisa_b_formation",p.marisa_b_formation);
+ number("wave_passed",p.wave_passed);p.boss_x=float(json_number(text,"boss_x",0));p.boss_y=float(json_number(text,"boss_y",0));
  const double score=json_number(text,"score",0);if(!std::isfinite(score)||std::trunc(score)!=score||score<0||score>9999999990.)return false;p.score=i64(score);p.dlg=json_bool(text,"dlg",false);
  if(!valid||!p.valid())return false;out=p;return true;
 }

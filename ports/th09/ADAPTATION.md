@@ -141,7 +141,7 @@
 | MP-01 | [独立 MP 产品变体](../../docs/adaptation/multiplayer.md#mp-01) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
-| MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
+| MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | 进行中 | normal：单人模式；multiplayer：[宣言期间画面与恢复 8 帧回归](docs/DEVELOPMENT.md)，2,400 帧，单程 3–4 帧交付延迟，WASM `daf985b001e235e3` |
 | MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-06 | [旁观加入与输入隔离](../../docs/adaptation/multiplayer.md#mp-06) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |
 | MP-07 | [旁观只读取连续已确认历史](../../docs/adaptation/multiplayer.md#mp-07) | 不适用 | 待核对 | normal：单人模式；multiplayer：按本项步骤执行，结果写入验证记录 |

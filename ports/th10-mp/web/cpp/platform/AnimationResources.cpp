@@ -21,10 +21,18 @@ AnimationResources::~AnimationResources(){
 AnmFile* AnimationResources::allocate_file(){return static_cast<AnmFile*>(std::malloc(sizeof(AnmFile)));}
 void* AnimationResources::allocate_bytes(u32 size){return std::malloc(size);}
 void AnimationResources::release_file(AnmFile* file){std::free(file);}
-void AnimationResources::release_bytes(void* bytes){std::free(bytes);}
+void AnimationResources::release_bytes(void* bytes){
+#ifdef TH_ENABLE_THPRAC
+    practice_animation_sizes.erase(bytes);
+#endif
+    std::free(bytes);}
 u8* AnimationResources::read_file(const char* name,bool external,u32* size){
 #ifdef TH_NATIVE_PLATFORM
-    u32 n=0;auto* data=ResourceFiles{files}.load(name,&n,external);if(size)*size=n;if(!external)last_read_size=n;return data;
+    u32 n=0;auto* data=ResourceFiles{files}.load(name,&n,external);if(size)*size=n;if(!external)last_read_size=n;
+#ifdef TH_ENABLE_THPRAC
+    if(!external&&data)practice_animation_sizes[data]=n;
+#endif
+    return data;
 #else
     return ResourceFiles{files}.load(name,size,external);
 #endif

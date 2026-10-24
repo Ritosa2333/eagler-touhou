@@ -88,6 +88,24 @@ Runtime 在 HELLO 前完成配置，并将蓄力规则和批次协议纳入 game
 
 技能切入、停顿和恢复沿用可回滚世界帧推进，恢复工作安排在画面提交之后。历史窗口和资源重建决定确认等待边界。浏览器技能回归记录画面推进间隔、预测位置差异与蓄力 HUD，并以完整确认输入核对原生 Replay、最终世界和画面；`DELAY_CONTROL=1` 同时覆盖输入与控制包延迟，`AUDIT_PREDICTION=1` 单独报告预测画面与确认画面的差异。
 
+恢复重算到原显示帧时，立即提交该帧的完整画面。技能停顿和等待输入期间，已到达的输入可以及时更新人物、弹幕和 HUD 的显示。端点绘制复用最后一次历史 tick 的 Draw，逻辑时钟、物理输入采样和音效保持各自原有节奏；跨回调的中间恢复状态继续保留上一张完整画面。
+
+网络包到达时也可触发同帧纠正，合并到已有的恢复任务中。即使下一次逻辑更新尚未到期，画面也能使用新收到的输入；只有已经到期的等待帧才可由网络唤醒继续推进。
+
+方向预测在 8 帧历史窗口内延续最近收到的方向键，与 Higan 的按键保持方式一致，让持续移动连贯地跨过技能切入与场地时停。收到实际松键或转向后，按对应帧纠正轨迹。炸弹和菜单操作使用真实输入，历史窗口继续限制预测距离。
+
+`AUDIT_RECOVERY_REFRESH=1` 在恢复计时器前后读取画面提交数、人物状态和实际 canvas，核对同帧刷新、采样前沿及最终 Replay。`EXPECT_STALE_RECOVERY=1` 使用保留基线验证旧画面复现场景。
+
+技能回归按每次显示机会的最后一次完整提交统计人物位置，分别报告全局切入、场地时停与恢复沿的误差样本和像素偏差。宣言标志在人物、弹幕更新之后清除，`display.declarationRecovery` 因此继续检查随后 8 个逻辑帧，覆盖真正恢复移动时的方向预测和纠正。`CHARACTERS=0,0` 选择双方灵梦，默认 `2,2` 覆盖双方咲夜。输入组件回归覆盖八方向持续移动、延迟松键、反向和历史窗口耗尽。
+
+`AUDIT_DECLARATION=1` 按宣言开始、中段、末段、标志清除和随后 8 帧分别核对实际 canvas 与完整输入画面，报告 `declarationAudit`。测试为回读保留已提交的绘图缓冲，取样直接读取该次提交。完整输入对照从全新游戏实例启动，使用与玩家相同的初始动画资源。人物位置指标与整幅画面指标分别保留，覆盖弹幕、背景和宣言动画；进入宣言 16 帧后的 `settled` 样本要求整幅画面精确一致。
+
+2026-10-24 的双方灵梦回归采用 2,400 帧、单程 3–4 帧交付延迟、本地优先蓄力和两次 rAF 之间收包。WASM `daf985b001e235e377fecd7f8541138ada52bd4b00f15eba48ca0d0051ef2d76` 的 101 个宣言中、末段整幅画面样本与完整输入一致，183 次宣言期间收包纠正均提交完整恢复画面。恢复后的 160 个显示机会中，方向保持将位置差异样本从保留基线的 62 个降至 12 个。报告入口为 `web/artifacts/multiplayer-tests/declaration-verified-20261024/report.json`，参数见报告 `parameters`，源码身份见 `identity`。
+
+单程 5–7 帧交付延迟的连续宣言对照覆盖 2 组双方连发，37 个宣言中、末段整幅画面样本与完整输入一致，85 次宣言期间收包纠正提交完整恢复画面；最终双方世界与完整输入回放一致。该场景报告为 `web/artifacts/multiplayer-tests/declaration-chain-verified-20261024/report.json`。
+
+`ARRIVAL_RECOVERY=1` 在两次 rAF 之间经正式收包、唤醒入口投递输入，验证停顿画面即时纠正、同帧提交及采样前沿。`EXPECT_MISSING_ARRIVAL=1` 可用保留构建核对等待下一次 rAF 的基线。
+
 调度参考 HiganRTool 的 [input_point 与 post_present](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/core/src/rollback.rs) 和 [tick 边界判定](https://github.com/Mako-th/HiganRTool/blob/33d02817d07f48b57954dd160cdfce292aeabf1e/src/dll/src/rollback_play.rs)。技能停顿继续运行网络输入与回滚时钟；全局切入和咲夜场地时停由世界自身控制对象更新。预测画面差异单独记录，已确认世界与最终回放保持精确核对。`EXPECT_CONTINUOUS=1` 验证固定延迟场景逐次画面推进，`AUDIT_PREDICTION=0` 可复查旧版逐帧确认屏障的表现。
 
 `skill-stop-browser.mjs` 按输入和可靠控制两条通道分别注入交付条件。`INPUT_DROP_EVERY=N` 丢弃每第 N 个输入消息；`CONTROL_STALL_AT` 与 `CONTROL_STALL_TICKS` 设置可靠控制通道开始等待的逻辑 tick 和等待长度，后续控制消息保持发送顺序。报告保留两条通道的发送、丢弃和等待位置，并以采样输入与不可变蓄力记录核对最终世界、录像和画面。

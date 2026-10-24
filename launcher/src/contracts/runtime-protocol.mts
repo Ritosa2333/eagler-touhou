@@ -123,6 +123,7 @@ export interface RuntimeConfigureOptions {
   netplayReplayAutoSave?: boolean;
   netplayReplayNames?: string[];
   netplayIceServers?: unknown[];
+  netplayPreferTurn?: boolean;
   netplayLoadouts?: RuntimeNetplayLoadout[];
 }
 
@@ -174,6 +175,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   netplayReplayAutoSave: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH09 player completed-match local archive; defaults on" }),
   netplayReplayNames: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "TH09 Replay matchup name snapshot" }),
   netplayIceServers: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
+  netplayPreferTurn: Object.freeze({ requirement: "optional", capability: "multiplayer", when: "local relay-only ICE preference for the next multiplayer connection; defaults off" }),
   netplayLoadouts: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer player session" }),
 } satisfies Readonly<Record<keyof RuntimeConfigureOptions, Readonly<{
   requirement: RuntimeConfigureOptionRequirement;

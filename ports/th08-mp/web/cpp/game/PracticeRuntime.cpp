@@ -26,6 +26,17 @@ using ECLHelper=ScriptWriter;
 class PracticePatcher {
     GameplayScene& scene;GameplaySession& session;const PracticeConfig& thPracParam;
     ScriptWriter ecl,stdfile;bool valid=true;
+    void InstallPointSetup(const uint32_t* words,u32 size){
+        // Upstream patches word 129 relative to instruction word 125.
+        // Use a per-run copy: never mutate the authoritative static payload.
+        if(size!=130*4){valid=false;return;}
+        std::vector<u8> payload(size);std::memcpy(payload.data(),words,size);
+        const u32 start=scene.program.size();
+        const i32 back=0x3e30-i32(start+125*4);
+        std::memcpy(payload.data()+129*4,&back,4);
+        u32 offset=0;if(!scene.program.append_practice_ecl(payload.data(),size,offset)){valid=false;return;}
+        ECLJump(ecl,0x3e14,i32(offset),10,0x10);
+    }
     enum {ECL_TL_TIME=0,ECL_TL_OPCODE=4,ECL_TL_OFFNEXT=6,ECL_INS_TIME=0,ECL_INS_OPCODE=4,ECL_INS_ARG1=12,ECL_INS_ARG2=16};
     void ECLWarp(i32 t0,i32 o0,i32 t1=-1,i32 o1=-1,i32 t2=-1,i32 o2=-1,i32 t3=-1,i32 o3=-1){
         const i32 times[]{t0,t1,t2,t3},offsets[]{o0,o1,o2,o3};
@@ -63,14 +74,20 @@ class PracticePatcher {
             valid&=scene.hud.front&&scene.name_atlas.copy(*scene.hud.front,name);
     }
 #include "PracticePatches.inc"
+#include "PracticeLegacyPatches.inc"
 public:
     PracticePatcher(GameplayScene& g,GameplaySession& s):scene(g),session(s),thPracParam(s.practice.run),ecl(g.program.mutable_data(),g.program.size()),stdfile(reinterpret_cast<u8*>(g.background_script.program.header()),g.background_script.program.bytes_size()){}
     bool apply(){
         // Upstream direct-frame starts alter timeline zero only. Exact section
         // warps below overwrite that clock and set each additional timeline.
         scene.enemies.state.timelines[0].timer.set(thPracParam.frame);
-        if(thPracParam.section>=10000)THStageWarp(ecl,(thPracParam.section-10000)/100,thPracParam.section%100);
-        else if(thPracParam.section)THPatch(ecl,thPracParam.section);
+        if(thPracParam.legacy_blue_replay){
+            if(thPracParam.section>=10000)THStageWarpLegacy(ecl,(thPracParam.section-10000)/100,thPracParam.section%100);
+            else if(thPracParam.section)THPatchLegacy(ecl,thPracParam.section);
+        }else{
+            if(thPracParam.section>=10000)THStageWarp(ecl,(thPracParam.section-10000)/100,thPracParam.section%100);
+            else if(thPracParam.section)THPatch(ecl,thPracParam.section);
+        }
         if(thPracParam.section)scene.program.enable_practice_instructions();
         return valid&&ecl.valid&&stdfile.valid;
     }
@@ -87,7 +104,7 @@ bool apply_practice(GameplayScene& g,GameplaySession& s){
     const auto& p=state.run;if(!p.valid())return false;
     // Practice data belongs to its selected stage. If the game advances after
     // completing it, continue normally instead of applying stale script edits.
-    if(u32(p.stage)!=g.globals.stage){state.active=false;return true;}
+    if(u32(practice_runtime_stage(p))!=g.globals.stage){state.active=false;return true;}
     auto& n=s.numbers;n.score=n.display_score=u32(p.score/10);n.lives=float(p.life);n.bombs=float(p.bomb);n.power=float(p.power);
     n.gauge=n.gauge_copy=i16(std::clamp(p.gauge,int(s.thresholds.minimum),int(s.thresholds.maximum)));
     n.graze=n.graze_stage=p.graze;n.points=p.point?p.point:p.point_total;n.points_stage=p.point?p.point:p.point_stage;s.history.points=n.points;
@@ -97,7 +114,7 @@ bool apply_practice(GameplayScene& g,GameplaySession& s){
     if(!PracticePatcher(g,s).apply())return false;
     state.familiar_pending=p.familiar!=0;g.enemies.population.practice_familiar=state.familiar_pending?p.familiar:0;
     const bool boss=p.section>=10000?((p.stage==3||p.stage==4)&&p.section%100>4):(p.section&&!p.dlg&&practice_sections[p.section].bgm);
-    if(boss){
+    if(boss&&p.stage!=9){
         constexpr i32 songs[9][3]{{1,2,0},{3,4,0},{5,6,0},{7,8,0},{7,9,0},{10,11,0},{12,13,15},{12,14,15},{16,17,0}};
         const i32 slot=(p.section==TH08_ST6A_LS||(p.section>=TH08_ST6B_LS1&&p.section<=TH08_ST6B_LS5))?2:1;
         g.control.state.start_music=2;g.play_practice_music(slot,songs[p.stage][slot]);

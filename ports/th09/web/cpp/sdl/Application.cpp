@@ -892,10 +892,15 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
         // Recovery does not consume the wall-clock tick's forward step. Replay
         // through the old frontier, then capture/simulate its new input once.
         const bool final=f>=rollback_catchup;
+        // Repaint the completed old frontier on its existing replay tick.
+        // This also runs from post-Present recovery while the next tick waits
+        // for input. Intermediate restored frames never reach the screen.
+        const bool refresh=(!final&&f+1==rollback_catchup&&!probe->in_title&&(render||recoveryOnly));
+        const bool paint=(render&&final)||refresh;
         TH09_PERF_COUNT(ForwardTicks,final?1:0);TH09_PERF_COUNT(ReplayTicks,final?0:1);TH09_PERF_COUNT(SpeculativeTicks,speculative?1:0);
         const bool wasComplete=probe->complete;
         const auto priorRoundFrames=probe->world?probe->world->rules.progress.round_frames:0;
-        const bool deferPresent=render&&final&&speculative&&!probe->in_title;
+        const bool deferPresent=refresh||(render&&final&&speculative&&!probe->in_title);
         probe->charge_frames={};
         // Resource replacement requires exact keys and a reconciled past.
         // This shared boundary uses native charge rules once; accepted charge
@@ -907,7 +912,7 @@ u32 rollback_tick(u32 render,bool recoveryOnly=false,bool forceRecovery=false){
             else if(side==u32(network.side))step.owner=&probe->local_charge;
         }
         if(probe->session){probe->session->charge_frames=probe->charge_frames;probe->session->charge_input_recorded=false;}
-        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,render&&final,false,!deferPresent);
+        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,paint,false,!deferPresent);
         std::array<ChargeSample,2> samples;
         if(rollback.LocalChargePriority()){
             if(probe->world&&!probe->in_title)for(auto& field:probe->world->battle->fields)field.player->finish_charge_frame();
@@ -964,11 +969,15 @@ void queue_rollback_recovery(){
         if(!ok){running=false;probe->audio.suspend(true);th09_browser_frame(0,emscripten_get_now()-begin);}
     },reinterpret_cast<void*>(uintptr_t(ticket)),0);
 }
-// A packet may unblock a tick whose clock credit was already spent in rAF.
-// Finish only that obligation here; packet rate cannot create fresh ticks.
+// New packets can correct the displayed frontier between rAF callbacks. That
+// recovery owns no clock credit. A previously blocked due tick may also wake.
 TH09_EXPORT("th09_rollback_wake") void th09_rollback_wake(){
     if(!running||suspended||!probe||spectator_mode||!rollback_active||!network.active||
-       rollback.Mode()!=Netplay::AdonisMode::Rollback||!cadence.retry_pending())return;
+       rollback.Mode()!=Netplay::AdonisMode::Rollback)return;
+    if(!cadence.retry_pending()){
+        if(rollback.RollbackFrame()!=Netplay::INVALID_FRAME)queue_rollback_recovery();
+        return;
+    }
     if(rollback.RollbackFrame()==Netplay::INVALID_FRAME&&!rollback.Prepare().canAdvance)return;
     const double begin=emscripten_get_now();const auto ok=rollback_tick(1);
     if(ok==2)cadence.blocked(true);

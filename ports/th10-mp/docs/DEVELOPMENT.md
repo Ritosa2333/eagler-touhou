@@ -32,3 +32,7 @@ npm --prefix launcher run dev:workspace
 多人源码在 `web/cpp/multiplayer/` 和 `portable/multiplayer/`；共享 GLES、输入接口在 `portable/`。目录键盘模块由 `eagler-common` 生成：从仓库根目录运行 `node common/tools/sync-directory-keyboard.mjs ports/th10-mp/web/sdl-runtime/directory-keyboard.mjs`。键盘映射与 Shell 接线回归运行 `python launcher/tests/test-keyboard-mapping-browser.py`，在 Chromium 中覆盖全部 15 个 normal/MP Runtime 变体。从 `ports/th10-mp/` 运行 `node portable/check-high-refresh-contract.mjs --multiplayer` 和 `node portable/check-presentation-purity.mjs --multiplayer`；纯度报告以 `unknown` 标记尚待归类的结果。Launcher 手柄动作在原生取样边界合并进游戏输入；运行 `node launcher/tests/test-gamepad-contract.mjs` 校验全部登记变体与共享 C++ 映射。
 
 `th10_touch_motion_trace_v2(seat, kind)` 从按席位绑定的 `PlayerUpdate` 回调记录原生移动完成后的实际坐标。直接触控目标来自已提交的 fixed-hundredths 输入；正向、预测、回滚重演与回放各自使用独立轨迹流，本机触控灵敏度沿用捕获配置，远端与历史输入按 unknown 标志保留源数据边界。限速向量先按原生速度径向限制，再量化到速度圆盘内误差最小的整数格点；逐轴量化不会越过速度预算，未饱和微移保留百分之一像素精度，无限速触控仍沿用原生取整。
+
+## 普通版修改同步
+
+普通版目录历史通过真实 Git 合并接入 MP，来源与接收范围见[普通版与多人版同步](../../../docs/adaptation/port-sync.md)。通用功能、练习源码和专项检查沿普通版更新，MP 保留席位输入、回滚、旁观与多人录像所有权。构建配方继续选择对应模式。

@@ -36,7 +36,7 @@ public:
     bool begin(i32 id,i32 timeout,const char* name,Vec3 boss,bool bomb);
     bool update(float player_y,Vec3 boss,bool bomb);
     bool end();
-    bool queue_text(AsciiText&,u32 title_color)const;
+    bool queue_text(AsciiText&,u32 title_color,bool outer_pass=false)const;
     void survival();
     void hide_circle();
 private:

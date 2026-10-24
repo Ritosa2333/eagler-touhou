@@ -1,7 +1,10 @@
+import {commonInclude,commonThpracHeaders} from './common-root.mjs';
 import {sourceObjectPath} from '../../../tools/build/source-object.mjs';
 import {printingRuntimeInputs, printRuntimeInputs, headerInputs} from '../../../tools/build/runtime-inputs.mjs';
 const builtAt=new Date().toISOString();
 import {spawn} from 'node:child_process';
+import {compilerArguments} from '../../../tools/build/compiler-arguments.mjs';
+const compilerArgumentsSource=fileURLToPath(new URL('../../../tools/build/compiler-arguments.mjs',import.meta.url));
 import {readFileSync,writeFileSync,readdirSync,mkdirSync,existsSync,statSync} from 'node:fs';
 import {resolve,dirname,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -37,7 +40,9 @@ const thcrap=process.env.TH_ENABLE_THCRAP!=='0';
 const thprac=process.env.TH_ENABLE_THPRAC==='1'||process.argv.includes('--thprac');
 const imgui=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'../../common'),'third_party/imgui');
 const common=['-O2','-g0','-fno-strict-aliasing','-ffp-contract=off','-DTH_SDL3=1','-DTH_NATIVE_PLATFORM=1','-DIMGUI_DISABLE_WIN32_FUNCTIONS','--use-port=sdl3','--use-port=sdl3_ttf','-I'+resolve(workspace,'portable/sdl'),'-I'+imgui,...(thcrap?['-DTH_ENABLE_THCRAP=1']:[]),...(thprac?['-DTH_ENABLE_THPRAC=1']:[])];
+common.push('-I'+commonInclude);
 if(presentationLab)common.push('-DTH_PRESENTATION_AUDIT=1');
+common.push('-I'+resolve(netplayRoot,'include'));
 const excluded=new Set(game==='th10'?['LegacyBridge.cpp','LegacyCallbacks.cpp','Exports.cpp','Freestanding.cpp',thcrap?'LocalizationStub.cpp':'Localization.cpp']:['RuntimeExports.cpp']);
 const sources=readdirSync(resolve(root,'cpp/game')).filter(n=>n.endsWith('.cpp')&&!excluded.has(n)).map(n=>'cpp/game/'+n);
 sources.push(...readdirSync(resolve(root,'cpp/platform')).filter(n=>n.endsWith('.cpp')&&!(multiplayer&&n==='WorldPlayer.cpp')).map(n=>'cpp/platform/'+n));
@@ -69,7 +74,7 @@ function observed(path){const bytes=readFileSync(path),value=digest(bytes);if(ca
 observed(fileURLToPath(import.meta.url));
 observed(resolve(workspace,'portable/response-file.mjs'));
 const dialogueHeaders=[...headerInputs(resolve(netplayRoot,'include/eagler/input')),resolve(netplayRoot,'include/eagler/audio/WebSfx.hpp')];
-const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(imgui),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...dialogueHeaders].sort())hash.update(path).update(observed(path));
+const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(imgui),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...commonThpracHeaders,...headers(resolve(netplayRoot,'include/eagler/thprac')),...dialogueHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
 // Same flags/native translation units; share the object cache, never the
 // linked binary, manifest or source inventory. Build variants sequentially.
@@ -89,7 +94,7 @@ const hostImports=[];
 const library=resolve(out,'browser-services.js');writeFileSync(library,'addToLibrary({\n'+hostImports.map(i=>`${JSON.stringify(i.name)}: function() { return Module['services'][${JSON.stringify(i.module)}][${JSON.stringify(i.name)}].apply(null, arguments); }`).join(',\n')+'\n});\n');
 await run([...flags,...linkFlags,'--emit-symbol-map','--js-library',library,'-sDEFAULT_TO_CXX=1','--no-entry','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=67108864','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0',...outputs,rendererObject,softObject,'-o',output]);
 const wasm=readFileSync(output.replace('.mjs','.wasm')),module=new WebAssembly.Module(wasm),sha=x=>createHash('sha256').update(x).digest('hex');
-const sourceFiles=[...sources.map(p=>resolve(root,p)),...headers(resolve(root,'cpp')),...headers(imgui),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...dialogueHeaders,renderer,soft,resolve(workspace,'portable',game+'-services.json'),...(existsSync(resolve(root,'cpp/game/THPRAC-LICENSE.txt'))?[resolve(root,'cpp/game/THPRAC-LICENSE.txt')]:[]),fileURLToPath(import.meta.url),fileURLToPath(new URL('../../../tools/build/source-object.mjs',import.meta.url))].sort();
+const sourceFiles=[...sources.map(p=>resolve(root,p)),...headers(resolve(root,'cpp')),...headers(imgui),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...commonThpracHeaders,...headers(resolve(netplayRoot,'include/eagler/thprac')),...dialogueHeaders,renderer,soft,resolve(workspace,'portable',game+'-services.json'),...(existsSync(resolve(root,'cpp/game/THPRAC-LICENSE.txt'))?[resolve(root,'cpp/game/THPRAC-LICENSE.txt')]:[]),fileURLToPath(import.meta.url),fileURLToPath(new URL('../../../tools/build/source-object.mjs',import.meta.url))].sort();
 sourceFiles.push(resolve(workspace,'portable/response-file.mjs'));sourceFiles.sort();
 const inventory=Object.fromEntries(sourceFiles.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(observed(p))]));
 for(const [path,expected] of capturedInputs)if(digest(readFileSync(path))!==expected)throw Error('Source changed during compilation; do not publish mixed build: '+path);

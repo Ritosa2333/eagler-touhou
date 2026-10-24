@@ -4,6 +4,7 @@
 namespace th11 {
 struct EnemyFrameWorld {
     bool practice_time_lock=false;
+    bool practice_enemy_invincible=false;
     i32 player_state=1,special_active=0,spell_id=0;
     u32 player_flags=0,spell_flags=0,bomb_animation_flags=0;
     bool special_ending=false,target_locked=false;

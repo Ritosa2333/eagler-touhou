@@ -240,8 +240,7 @@ let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=fals
 let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0;
 let practice;
 let calibration=null,runtimeBuild='',runtimeBuildWords=[];
-const keyboard=createBrowserKeyboard({
- hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!closing,reset:clearKeyboard,},
+const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!closing,reset:clearKeyboard},
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
 });

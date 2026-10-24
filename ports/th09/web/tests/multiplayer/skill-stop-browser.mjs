@@ -21,10 +21,15 @@ mkdirSync(out,{recursive:true});
 const limit=Number(process.env.FRAMES||7200),delay=Number(process.env.PACKET_DELAY||5);
 const jitter=Number(process.env.PACKET_JITTER||0),warmup=Number(process.env.SKILL_WARMUP||0);
 const chained=process.env.CHAINED_SKILLS==='1';
+const characters=(process.env.CHARACTERS||'2,2').split(',').map(Number);
+assert.ok(characters.length===2&&characters.every(n=>Number.isInteger(n)&&n>=0&&n<16));
 const localCharge=process.env.LOCAL_CHARGE==='1',expectRegression=process.env.EXPECT_REGRESSION==='1';
 const expectResumeWait=process.env.EXPECT_RESUME_WAIT==='1';
 const auditPrediction=process.env.AUDIT_PREDICTION!=='0',delayControl=process.env.DELAY_CONTROL==='1';
 const expectContinuous=process.env.EXPECT_CONTINUOUS==='1';
+const auditRefresh=process.env.AUDIT_RECOVERY_REFRESH==='1',expectStaleRecovery=process.env.EXPECT_STALE_RECOVERY==='1';
+const arrivalRecovery=process.env.ARRIVAL_RECOVERY==='1',expectMissingArrival=process.env.EXPECT_MISSING_ARRIVAL==='1';
+const auditDeclaration=process.env.AUDIT_DECLARATION==='1';
 const inputDropEvery=Number(process.env.INPUT_DROP_EVERY||0),controlStallAt=Number(process.env.CONTROL_STALL_AT||900),controlStallTicks=Number(process.env.CONTROL_STALL_TICKS||0);
 assert.ok([inputDropEvery,controlStallAt,controlStallTicks].every(n=>Number.isInteger(n)&&n>=0));
 assert.ok(Number.isInteger(limit)&&limit>=2400&&limit<=24000);
@@ -38,16 +43,24 @@ const browser=await puppeteer.launch({headless:true,executablePath:process.env.B
 const errors=[];
 try{
   const page=await browser.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(host.url);
-  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks})=>{
+  const result=await page.evaluate(async({limit,delay,jitter,warmup,chained,characters,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks,auditRefresh,arrivalRecovery,auditDeclaration})=>{
     const windows=[],pending=[],tapes=[[],[]],captured=[[],[]],presented=[[],[]],exact=[],exactDraw=[],charges=[[],[]];
     let clock=0;
+    const refreshAudit={corrections:0,stale:0,stopCorrections:0,pixelChanges:0,examples:[]};
+    const arrivalAudit={opportunities:0,corrections:0,stopCorrections:0,changed:0,stale:0,pixelSamples:0,pixelChanges:0};
     const wire=[0,1].map(()=>({input:0,dropped:0,control:0,stallAt:null})),controlDue=[0,0];let packetSerial=0;
     for(let side=0;side<3;++side){
       const frame=document.createElement('iframe');frame.src='/';document.body.append(frame);
       await new Promise(r=>frame.onload=r);windows.push(frame.contentWindow);
     }
-    for(const w of windows)await w.openProbe(2,2,2,3,true);
-    const peers=windows.slice(0,2),ref=windows[2];
+    const retainCanvas=w=>{
+      // Recovery Presents happen between callbacks. Retain that submitted
+      // buffer for readback after compositing; never redraw to take a sample.
+      if(auditDeclaration){const canvas=w.document.querySelector('canvas'),get=canvas.getContext.bind(canvas);
+        canvas.getContext=(kind,options)=>get(kind,{...options,preserveDrawingBuffer:true});}
+    };
+    for(const w of windows){retainCanvas(w);await w.openProbe(2,2,2,3,true);}
+    const peers=windows.slice(0,2);let ref=windows[2];
     const values=(w,name,count)=>{const c=w.core,p=c[name]()/4;return Array.from(c.HEAP32.subarray(p,p+count));};
     const status=w=>values(w,'_th09_rollback_info',8),world=w=>values(w,'_th09_probe_world',48);
     const float=n=>new Float32Array(new Int32Array([n]).buffer)[0];
@@ -90,7 +103,7 @@ try{
       if(localCharge&&!w.core._th09_local_charge_priority)throw Error('Local charge ABI required');
       if(w.core._th09_local_charge_priority&&!w.core._th09_local_charge_priority(+(localCharge&&side<2)))throw Error('Charge policy');
       if(!expectRegression&&!w.core._th09_probe_stop_draw)throw Error('Draw observation required');
-      if(!w.core._th09_adonis_configure(0)||!w.core._th09_rollback_begin(12345,side%2,3,2,2,0x1234,0x5678,0x901,0))
+      if(!w.core._th09_adonis_configure(0)||!w.core._th09_rollback_begin(12345,side%2,3,...characters,0x1234,0x5678,0x901,0))
         throw Error('Begin '+w.probeError());
       w.core._th09_probe_frame_limit(limit);
     }
@@ -119,15 +132,31 @@ try{
       }
       if(!ref.core._th09_probe_rollback_step(tapes[0][f],tapes[1][f],0))throw Error('Reference '+ref.probeError());
     }
+    const observers=[],visibleFrames=[0,0],loopResults=[1,1];
+    const declarationPictures=[[],[]],declarationStates=[{bits:0,start:0,resume:-100},{bits:0,start:0,resume:-100}];
     for(let side=0;side<2;++side){
       const w=peers[side];w.queue=[];w.requestAnimationFrame=cb=>{w.queue.push(cb);return w.queue.length;};
       let lastPresent=presentations(w);
-      w.core.onGameFrame=ok=>{
+      const observe=ok=>{
         if(!ok)throw Error('Native loop '+w.probeError()+' '+JSON.stringify({side,clock,status:status(w)}));
         const count=presentations(w);if(count===lastPresent)return;lastPresent=count;
+        visibleFrames[side]=status(w)[0];
         presented[side].push({clock,frame:status(w)[0],confirmed:status(w)[1],world:world(w),load:load(w),draw:draw(w),
           visual:w.core._th09_probe_charge_visual?values(w,'_th09_probe_charge_visual',8):null});
+        if(auditDeclaration){
+          const row=presented[side].at(-1),state=declarationStates[side],bits=row.draw[8]&0x1800;
+          if(bits!==state.bits){state.start=row.frame;if(!bits&&state.bits)state.resume=row.frame;}
+          const age=bits?row.frame-state.start:row.frame-state.resume;
+          // AttackController clears the flag AFTER player/bullet updates.
+          // Age zero at exit is still frozen; observe the next eight ticks too.
+          if(bits?[0,4,8,16,28,30].includes(age):age>=0&&age<=8)
+            declarationPictures[side].push({frame:row.frame,clock,confirmed:row.confirmed,bits,age,
+              image:w.document.querySelector('canvas').toDataURL()});
+          state.bits=bits;
+        }
       };
+      w.core.onGameFrame=ok=>{loopResults[side]=ok;observe(ok);};
+      observers.push(()=>observe(1));
       w.core._th09_loop_start();
     }
     const setKeys=(w,bits)=>{for(const [bit,scan] of [[1,44],[2,45],[4,42],[64,203],[128,205],[256,29]])w.core._th09_key(scan,Number(!!(bits&bit)));};
@@ -137,12 +166,52 @@ try{
       // The reliable SCTP stream retains send order even after a blocked head.
       ready.sort((a,b)=>a.due-b.due||a.serial-b.serial);
       for(const packet of ready)peers[packet.to].__eaglerPeerTransport.received.push(packet.bytes);
+      // Deliver through the production arrival entry points after the prior
+      // post-Present timer drained and before this clock's rAF. Restrict this
+      // audit to completed callbacks: no outstanding due tick may advance.
+      if(arrivalRecovery&&ready.length&&loopResults.every(n=>n===1)&&peers.every(w=>status(w)[0]<limit)){
+        const before=peers.map(w=>({info:status(w),draw:draw(w),presentations:presentations(w),
+          callbacks:values(w,'_th09_rollback_recovery_info',5)[2],
+          image:arrivalAudit.pixelChanges<4&&draw(w)[8]?w.document.querySelector('canvas').toDataURL():null}));
+        for(const w of peers){if(!w.core._th09_rollback_pump())throw Error(w.probeError());
+          w.core._th09_rollback_wake();w.core._th09_rollback_wake();}
+        await new Promise(r=>setTimeout(r,0));
+        for(let side=0;side<2;++side){
+          const w=peers[side],a=before[side],info=status(w),picture=draw(w);++arrivalAudit.opportunities;
+          if(info[4]!==a.info[4]||info[0]>a.info[0])throw Error('Packet arrival earned fresh input or time');
+          if(values(w,'_th09_rollback_recovery_info',5)[2]-a.callbacks>1)throw Error('Duplicate wake scheduled duplicate recovery');
+          if(presentations(w)!==a.presentations&&info[0]!==a.info[0])throw Error('Arrival presented an incomplete recovery');
+          if(a.image){++arrivalAudit.pixelSamples;if(a.image!==w.document.querySelector('canvas').toDataURL())++arrivalAudit.pixelChanges;}
+          if(info[3]>a.info[3]&&info[0]===a.info[0]){
+            ++arrivalAudit.corrections;if(picture[8]|a.draw[8])++arrivalAudit.stopCorrections;
+            if(picture.some((n,i)=>n!==a.draw[i])){++arrivalAudit.changed;if(presentations(w)===a.presentations)++arrivalAudit.stale;}
+          }
+          observers[side]();
+        }
+      }
       for(let side=0;side<2;++side){
         const w=peers[side];setKeys(w,tapes[side][status(w)[4]]||0);
         const callback=w.queue.shift();if(callback)callback(clock*1000/60);
       }
       // Deliver the real native post-Present timer between manual rAF callbacks.
+      // Read the actual canvas around recovery without forcing another Draw.
+      // Logical/capture frontiers must stay put when an endpoint is repainted.
+      const beforeRecovery=auditRefresh?peers.map((w,side)=>({info:status(w),visibleFrame:visibleFrames[side],draw:draw(w),presentations:presentations(w),
+        image:refreshAudit.pixelChanges<4&&draw(w)[8]?w.document.querySelector('canvas').toDataURL():null})):null;
       await new Promise(r=>setTimeout(r,0));
+      if(auditRefresh)for(let side=0;side<2;++side){
+        const w=peers[side],a=beforeRecovery[side],info=status(w),picture=draw(w),count=presentations(w);
+        if(info[4]!==a.info[4])throw Error('Recovery captured fresh physical input');
+        if(count!==a.presentations&&info[0]!==a.visibleFrame)throw Error('Presented an incomplete recovery frontier');
+        observers[side]();
+        if(info[3]<=a.info[3]||info[0]!==a.info[0]||!picture.some((n,i)=>n!==a.draw[i]))continue;
+        ++refreshAudit.corrections;const stale=count===a.presentations,stopped=!!(picture[8]|a.draw[8]);
+        if(stale)++refreshAudit.stale;if(stopped)++refreshAudit.stopCorrections;
+        if(!stale&&a.image&&a.image!==w.document.querySelector('canvas').toDataURL())++refreshAudit.pixelChanges;
+        if(refreshAudit.examples.length<12||stopped)refreshAudit.examples.push({side,clock,frame:info[0],stopped,stale,
+          presentations:count-a.presentations,before:a.draw,after:picture});
+      }
+      if(!auditRefresh)for(const observe of observers)observe();
       if(peers.every(w=>status(w)[0]===limit&&status(w)[1]===limit))break;
     }
     for(const w of peers)w.core._th09_loop_stop();
@@ -152,15 +221,24 @@ try{
     // The physical keyboard adapter can retain a brief stroke during a wait.
     // The exact oracle consumes the actual captured wire input, just as Replay
     // does, so input buffering cannot masquerade as a rollback state error.
-    ref.core._th09_network_end();
+    // Tape generation executes a complete match and changes shared animation
+    // resources. Start the exact picture oracle with fresh resource owners,
+    // just as the two peers did, rather than reusing the generator's caches.
+    const referenceTransport=ref.__eaglerPeerTransport,oldFrame=ref.frameElement;
+    ref.core._th09_network_end();ref.core._th09_probe_close();oldFrame.remove();
+    const referenceFrame=document.createElement('iframe');referenceFrame.src='/';document.body.append(referenceFrame);
+    await new Promise(r=>referenceFrame.onload=r);ref=referenceFrame.contentWindow;windows[2]=ref;
+    retainCanvas(ref);await ref.openProbe(2,2,2,3,true);ref.__eaglerPeerTransport=referenceTransport;
     if(localCharge&&!ref.core._th09_local_charge_priority(1))throw Error('Reference policy');
-    if(!ref.core._th09_rollback_begin(12345,0,3,2,2,0x1234,0x5678,0x901,0))throw Error('Reference restart '+ref.probeError());
+    if(!ref.core._th09_rollback_begin(12345,0,3,...characters,0x1234,0x5678,0x901,0))throw Error('Reference restart '+ref.probeError());
     if(localCharge&&!ref.core._th09_probe_charge_reference_mode(1))throw Error('Reference commands');
+    const pictureFrames=new Set(declarationPictures.flat().map(row=>row.frame)),exactPictures=new Map();
     for(let f=0;f<limit;++f){
       if(localCharge)for(let side=0;side<2;++side){if(!charges[side][f])throw Error('Missing charge record '+f);ref.core.HEAPU8.set(charges[side][f],ref.core._th09_probe_charge_reference_buffer()+40*side);}
-      if(!ref.core._th09_probe_rollback_step(captured[0][f],captured[1][f],0))throw Error('Exact replay '+ref.probeError());
+      if(!ref.core._th09_probe_rollback_step(captured[0][f],captured[1][f],+pictureFrames.has(f+1)))throw Error('Exact replay '+ref.probeError());
       exact.push(world(ref));
       exactDraw.push(draw(ref));
+      if(pictureFrames.has(f+1))exactPictures.set(f+1,ref.document.querySelector('canvas').toDataURL());
     }
     const summary=peers.map(status),hashes=windows.map(w=>w.core._th09_network_hash()>>>0),audits=windows.map(world);
     const images=windows.map(w=>{w.core._th09_game_draw();return w.document.querySelector('canvas').toDataURL();});
@@ -176,12 +254,12 @@ try{
           if(row.frame>row.confirmed&&charge>0)++unconfirmedChargeFrames;
         }
         const stopBits=row.draw?row.draw[8]:row.world[2]&0x1800;
-        const stopped=!!(row.world[2]&0x1800),wasStopped=prior,edge=stopBits!==priorBits;
+        const stopped=!!stopBits,wasStopped=prior,edge=stopBits!==priorBits;
         if(stopped&&!prior)++starts;prior=stopped;priorBits=stopBits;
         const expected=exact[row.frame-1];
         if(row.frame<=row.confirmed&&row.world.some((n,i)=>n!==expected[i]))confirmedErrors.push({frame:row.frame});
         const expectedBits=exactDraw[row.frame-1]?.[8]??(expected[2]&0x1800);
-        const expectedStop=!!(expected[2]&0x1800),resume=!stopped&&wasStopped;
+        const expectedStop=!!expectedBits,resume=!stopped&&wasStopped;
         maxBullets=Math.max(maxBullets,row.load[0]+row.load[1]);
         // A not-yet-received opponent release cannot be known to zero-delay
         // rollback. Retain that separate prediction diagnostic; the acceptance
@@ -199,7 +277,28 @@ try{
           if(pose||appearance)errors.push({frame:row.frame,clock:row.clock,player,resume,pose,appearance});
         }
       }
-      return {cadence,presentations:rows.length,frozen,resumed,edges,starts,maxBullets,maxPose,maxDraw,unseenStopFrames,unseenMaxPose,
+      // A forward picture and a recovery picture can share one clock. Score
+      // the last complete submission once per opportunity, including field
+      // time-stop and its exit. This measures poses, not monitor scanout.
+      const lastSubmitted=[...new Map(rows.map(row=>[row.clock,row])).values()];
+      const stats=()=>({samples:0,different:0,totalPixels:0,maxPixels:0});
+      const display={global:stats(),field:stats(),resume:stats(),declarationRecovery:stats()};let lastStop=0,lastGlobal=0,declarationResume=-100;
+      for(const row of lastSubmitted){
+        const bits=row.draw?.[8]??(row.world[2]&0x1800),expected=exactDraw[row.frame-1];
+        if(!row.draw||!expected)continue;
+        const error=Math.max(...[0,1].map(p=>Math.hypot(float(row.draw[p*4+2])-float(expected[p*4+2]),float(row.draw[p*4+3])-float(expected[p*4+3]))));
+        const group=bits&0x1800?display.global:bits?display.field:lastStop?display.resume:null;
+        if(group){++group.samples;if(error>0)++group.different;group.totalPixels+=error;group.maxPixels=Math.max(group.maxPixels,error);}
+        const global=bits&0x1800;
+        if(lastGlobal&&!global)declarationResume=row.frame;
+        if(!global&&row.frame>declarationResume&&row.frame<=declarationResume+8){
+          const group=display.declarationRecovery;++group.samples;if(error>0)++group.different;
+          group.totalPixels+=error;group.maxPixels=Math.max(group.maxPixels,error);
+        }
+        lastGlobal=global;
+        lastStop=bits;
+      }
+      return {display,cadence,presentations:rows.length,frozen,resumed,edges,starts,maxBullets,maxPose,maxDraw,unseenStopFrames,unseenMaxPose,
         confirmedErrors,unconfirmedChargeFrames,gaugeErrorCount:gaugeErrors.length,gaugeErrors:gaugeErrors.slice(0,12),errorCount:errors.length,errors:errors.slice(0,12)};
     });
     let lastEnd=-1,prior=false,shortGaps=0;
@@ -210,13 +309,50 @@ try{
     }
     const captureDifferences=captured.map((t,side)=>({length:t.length,
       different:t.flatMap((bits,f)=>bits===tapes[side][f]?[]:[{frame:f,planned:tapes[side][f],captured:bits}]).slice(0,20)}));
-    return {clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,wire,
+    const declarationAudit=declarationPictures.map(rows=>{
+      const group=()=>({samples:0,different:0});
+      const groups={start:group(),middle:group(),end:group(),settled:group(),exitFlag:group(),recovery:group()},differences=[];
+      for(const row of rows){
+        const phase=row.bits?(row.age<8?'start':row.age<28?'middle':'end'):row.age?'recovery':'exitFlag';
+        const bucket=groups[phase];++bucket.samples;
+        const different=row.image!==exactPictures.get(row.frame);
+        // Sixteen ticks span two complete prediction windows. At this point
+        // the scene frozen by the declaration must match the accepted inputs.
+        if(row.bits&&row.age>=16){++groups.settled.samples;if(different)++groups.settled.different;}
+        if(different){++bucket.different;
+          const {image,...sample}=row;differences.push({...sample,phase,expectedBits:exactDraw[row.frame-1][8]&0x1800});}
+      }
+      return {groups,differences};
+    });
+    return {declarationAudit,arrivalAudit,refreshAudit,clock,summary,hashes,audits,imagesEqual:new Set(images).size===1,metrics,pairs,shortGaps,captureDifferences,capturesComplete,stopWaits,wire,
       capturesMatch:captured.every((t,side)=>t.length===limit&&t.every((bits,f)=>bits===tapes[side][f]))};
-  },{limit,delay,jitter,warmup,chained,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks});
-  const report={identity,parameters:{limit,delay,jitter,warmup,chained,localCharge,expectRegression,expectResumeWait,auditPrediction,delayControl,expectContinuous,inputDropEvery,controlStallAt,controlStallTicks},browser:await browser.version(),
-    scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Presentation cadence, predicted poses and confirmed worlds across global cut-ins, field time-stop and resume. Exact final worlds and framebuffer use captured inputs and immutable charge records as the replay oracle. This is not device performance evidence.',result,errors};
+  },{limit,delay,jitter,warmup,chained,characters,localCharge,expectRegression,auditPrediction,delayControl,inputDropEvery,controlStallAt,controlStallTicks,auditRefresh,arrivalRecovery,auditDeclaration});
+  const report={identity,parameters:{limit,delay,jitter,warmup,chained,characters,localCharge,expectRegression,expectResumeWait,auditPrediction,delayControl,expectContinuous,inputDropEvery,controlStallAt,controlStallTicks,auditRefresh,expectStaleRecovery,arrivalRecovery,expectMissingArrival,auditDeclaration},browser:await browser.version(),
+    scope:'Authored game, native rAF/post-Present drivers and synthetic delayed packets. Presentation cadence, predicted poses and confirmed worlds across global cut-ins, field time-stop and resume. Recovery refresh auditing reads actual canvas pixels without an extra Draw. Exact final worlds and framebuffer use captured inputs and immutable charge records as the replay oracle. This is not device performance evidence.',result,errors};
   writeFileSync(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
   assert.deepEqual(errors,[]);
+  if(auditDeclaration)for(const audit of result.declarationAudit){
+    assert.ok(audit.groups.middle.samples>0&&audit.groups.end.samples>0&&audit.groups.recovery.samples>0,'Declaration interior and actual movement recovery sampled');
+    assert.ok(audit.groups.settled.samples>0,'Settled declaration scene sampled');
+    if(!expectRegression)assert.equal(audit.groups.settled.different,0,'Settled declaration scene matches captured commands');
+  }
+  if(arrivalRecovery){
+    assert.ok(result.arrivalAudit.opportunities>100);
+    if(expectMissingArrival)assert.equal(result.arrivalAudit.corrections,0,'Baseline waits for another rAF');
+    else{assert.ok(result.arrivalAudit.changed>0&&result.arrivalAudit.stopCorrections>0,'Arrival corrects stopped pictures before rAF');
+      // A correction can change keys or a covered sprite without changing
+      // visible pixels. Submission and exact-scene checks own correctness.
+      assert.ok(result.arrivalAudit.pixelSamples>0,'Stopped canvas sampled around arrival recovery');
+      assert.equal(result.arrivalAudit.stale,0,'Completed arrival corrections are presented');}
+  }
+  if(auditRefresh){
+    assert.ok(result.refreshAudit.corrections>0&&result.refreshAudit.stopCorrections>0,'Completed corrections exercised during skill stops');
+    if(expectStaleRecovery)assert.ok(result.refreshAudit.stale>0,'Baseline leaves corrected state unpresented');
+    else{
+      assert.equal(result.refreshAudit.stale,0,'Every completed changed frontier is repainted');
+      assert.ok(result.refreshAudit.pixelChanges>0,'Actual stopped canvas changes without a new logical tick');
+    }
+  }
   assert.ok(result.stopWaits.every(Boolean),'Native boundary observations required');
   if(expectResumeWait)assert.ok(result.stopWaits.some(row=>row[1]>0),'Baseline repeats confirmation after a completed stop');
   else assert.ok(result.stopWaits.every(row=>row[1]===0),'A completed stop adds no confirmation fence to the following ordinary frame');
@@ -244,7 +380,7 @@ try{
     assert.ok(result.metrics.every(m=>m.maxBullets>=100),'Dense authored bullet workload exercised');
   }
   assert.equal(sha(resolve(build,'th09-presentation.wasm')),identity.wasm,'Build stayed frozen');
-  console.log(JSON.stringify({passed:true,identity,parameters:report.parameters,pairs:result.pairs,shortGaps:result.shortGaps,stopWaits:result.stopWaits,metrics:result.metrics}));
+  console.log(JSON.stringify({passed:true,identity,parameters:report.parameters,pairs:result.pairs,shortGaps:result.shortGaps,stopWaits:result.stopWaits,refreshAudit:result.refreshAudit,metrics:result.metrics}));
 }finally{
   await browser.close();host.netplay.close();await new Promise(r=>host.server.close(r));
 }

@@ -277,6 +277,8 @@ const entries = [
   ["room.localDevice", "本机", "Local"],
   ["room.packetLoss", "丢包测试", "Packet loss"],
   ["room.packetLossHint", "直连与 TURN 分别测量 | 约 6 秒", "Direct and TURN measured separately | about 6 seconds"],
+  ["room.preferTurn", "优先使用 TURN", "Prefer TURN"],
+  ["room.preferTurnHint", "本机设置 | 下次开局通过 TURN 中转", "This device | Use TURN for the next game"],
   ["room.packetLossTest", "测试丢包率", "Test packet loss"],
   ["room.packetLossRunning", "测试中…", "Testing…"],
   ["room.packetLossOutgoing", "你 → 对方", "You → peer"],

@@ -29,3 +29,9 @@ npm --prefix launcher run dev:workspace
 `web/cpp/` 是游戏和 SDL 宿主；`portable/multiplayer/` 是合作玩法和网络接入；`portable/browser/`、`portable/input/`、`portable/sdl/` 提供浏览器端代码。源码检查从 `ports/th08-mp/` 运行：`node portable/check-multiplayer-cooperation.mjs` 和 `node portable/check-high-refresh-contract.mjs`。
 
 玩家移动轨迹由 `PlayerSimulation` 完成 `move_player` 后记录真实终点，经 `th08_touch_motion_trace_v2(seat, kind)` 按玩家席位与执行类型读取。直接目标与 Delta/Begin 的目标在生产 `ResolveAnalogMovement` 限速前形成；多帧回退、回放和远端输入保留各自执行流，未随输入包传输的敏感度以 ABI unknown 标志表达。
+
+## 普通版修改同步
+
+普通版目录历史通过真实 Git 合并接入 MP，来源与接收范围见[普通版与多人版同步](../../../docs/adaptation/port-sync.md)。通用功能、练习源码和专项检查沿普通版更新，MP 保留席位输入、回滚、旁观与多人录像所有权。构建配方继续选择对应模式。
+
+练习按键监视器使用独立内容快照，回滚复制容器内容；练习标量状态继续进入日志与校验。

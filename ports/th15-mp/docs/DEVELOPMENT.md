@@ -65,3 +65,7 @@ SDL 还导出按 seat 与执行流隔离的 `th15_touch_motion_trace_v2(seat, ex
 发布版同时导出独立的 `th15_input_context_v1` 诊断数组，不改变上述 12-word 观测 ABI。其 12 个 `u32` 依次为版本、有效位掩码、ApplicationState 是否初始化、场景是否存在、多人模式、native 本地 seat、pilot 是否存在、该 seat 的 player 是否存在、ghost、该 player 的 `life.state`、原始 `scene_flags`、`messages.active()`。有效位依次为 `APP=0x001`、`SCENE=0x002`、`MODE=0x004`、`SEAT=0x008`、`PILOT=0x010`、`PLAYER=0x020`、`GHOST=0x040`、`LIFE=0x080`、`FLAGS=0x100`、`MESSAGES=0x200`；未观测项为 `0xffffffff`。该函数只读运行上下文。
 
 记录夹具在隔离原版实例中初始化和保存，再用新的记录管理器解码，并核对完整状态，供记录、暂停与结局对照复用。解码前用独立填充值初始化目标，验证未执行解码会被检出。字体定义和字体目录通过本作私有输入收据提供。`EAGLER_ORACLE_INPUT_RECEIPT` 指定收据，登记绝对路径与 SHA-256，执行器在每组运行前后复核输入身份。
+
+## 普通版修改同步
+
+普通版目录历史通过真实 Git 合并接入 MP，来源与接收范围见[普通版与多人版同步](../../../docs/adaptation/port-sync.md)。通用功能、练习源码和专项检查沿普通版更新，MP 保留席位输入、回滚、旁观与多人录像所有权。构建配方继续选择对应模式。

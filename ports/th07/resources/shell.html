@@ -418,6 +418,7 @@
         if (options.netplayTouchWorkload && options.netplayTouchWorkload !== "default" && options.debugHarness !== "netplay-lan-stage1") throw new Error("touch workloads require the test harness");
         if (options.netplaySeed != null && (!Number.isInteger(options.netplaySeed) || options.netplaySeed < 0 || options.netplaySeed > 65535)) throw new Error("invalid netplay seed");
         if (options.netplayDifficulty != null && (!Number.isInteger(options.netplayDifficulty) || options.netplayDifficulty < 0 || options.netplayDifficulty > 5)) throw new Error("invalid netplay difficulty");
+        if (options.netplayPreferTurn != null && typeof options.netplayPreferTurn !== 'boolean') throw new Error("invalid TURN preference");
         if (options.netplayIceServers != null) {
           if (!Array.isArray(options.netplayIceServers) || options.netplayIceServers.length > 8) throw new Error("invalid netplay ICE servers");
           for (const server of options.netplayIceServers) {
@@ -496,6 +497,7 @@
           netplayPlayer: options.netplayPlayer ?? -1,
           netplayPlayerCount: options.netplayPlayerCount ?? 2,
           netplayChallengeMode: options.netplayChallengeMode === true,
+          netplayPreferTurn: options.netplayPreferTurn === true,
           netplaySpectator: !!options.netplaySpectator,
           netplaySpectatorId: options.netplaySpectatorId || "",
           netplaySpectatorCount: options.netplaySpectatorCount ?? 0,
@@ -1014,9 +1016,10 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           // same canonical keyboard without sampling or consuming gameplay pulses.
           scancodeState(scan){
             const owner=mapper();if(!owner)return -1;
-            const special={40:'Enter',41:'Escape',42:'Backspace',43:'Tab',44:'Space',74:'Home',
+            const special={40:'Enter',41:'Escape',42:'Backspace',43:'Tab',44:'Space',45:'Minus',55:'Period',
+              73:'Insert',74:'Home',75:'PageUp',76:'Delete',77:'End',78:'PageDown',86:'NumpadSubtract',98:'Numpad0',99:'NumpadDecimal',
               79:'ArrowRight',80:'ArrowLeft',81:'ArrowDown',82:'ArrowUp',88:'NumpadEnter',
-              224:'ControlLeft',225:'ShiftLeft',228:'ControlRight',229:'ShiftRight'};
+              224:'ControlLeft',225:'ShiftLeft',226:'AltLeft',227:'MetaLeft',228:'ControlRight',229:'ShiftRight',230:'AltRight',231:'MetaRight'};
             const code=scan>=4&&scan<=29?'Key'+String.fromCharCode(65+scan-4):scan>=30&&scan<=38?'Digit'+(scan-29):scan===39?'Digit0':
               scan>=58&&scan<=69?'F'+(scan-57):scan>=89&&scan<=97?'Numpad'+(scan-88):special[scan];
             return code&&owner.supports?.(code)?Number(held.has(code)):-1;
