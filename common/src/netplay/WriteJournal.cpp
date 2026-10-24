@@ -251,9 +251,19 @@ EMSCRIPTEN_KEEPALIVE __attribute__((noinline)) std::uint32_t eagler_rb_instrumen
 EMSCRIPTEN_KEEPALIVE __attribute__((noinline)) void eagler_rb_capture(std::uint32_t address, std::uint32_t bytes) {
     Netplay::WriteJournal::Touch(reinterpret_cast<void*>(std::uintptr_t(address)),bytes);
 }
-EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t bytes) {
-    // This exported trampoline is excluded by the instrumentation pass. Disable
-    // tracing before calling instrumented C++ helpers or writing their stack.
+}
+
+namespace {
+// Width zero retains the generic hook's dynamic size. Fixed widths specialize
+// the same clipping/tag logic inside their excluded exports, without a second
+// call to the generic hook or an instrumentable out-of-line template helper.
+template<std::uint32_t Width>
+__attribute__((always_inline)) inline void TouchStore(std::uint32_t address, std::uint32_t requestedBytes=0) {
+    static_assert(Width==0 || Width==1 || Width==2 || Width==4 || Width==8 || Width==16,
+                  "Unsupported write-journal scalar width");
+    const auto bytes=Width?Width:requestedBytes;
+    // Every caller is excluded by the instrumentation pass. Disable tracing
+    // before calling instrumented C++ helpers or writing their stack.
     if (!eagler_rb_config[0] || !bytes) return;
     using namespace Netplay::WriteJournal;
     const auto lo=std::uintptr_t(address);
@@ -302,6 +312,20 @@ EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t b
     eagler_rb_config[0]=0;
     eagler_rb_capture(address,bytes);
 }
+}
+
+extern "C" {
+EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t bytes) {
+    TouchStore<0>(address,bytes);
+}
+EMSCRIPTEN_KEEPALIVE std::uint32_t eagler_rb_scalar_abi() {
+    return Netplay::WriteJournal::ScalarHookVersion;
+}
+EMSCRIPTEN_KEEPALIVE void eagler_rb_touch1(std::uint32_t address) { TouchStore<1>(address); }
+EMSCRIPTEN_KEEPALIVE void eagler_rb_touch2(std::uint32_t address) { TouchStore<2>(address); }
+EMSCRIPTEN_KEEPALIVE void eagler_rb_touch4(std::uint32_t address) { TouchStore<4>(address); }
+EMSCRIPTEN_KEEPALIVE void eagler_rb_touch8(std::uint32_t address) { TouchStore<8>(address); }
+EMSCRIPTEN_KEEPALIVE void eagler_rb_touch16(std::uint32_t address) { TouchStore<16>(address); }
 }
 
 // Linked explicitly by write-journal products; other games retain their normal

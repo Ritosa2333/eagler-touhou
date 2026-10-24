@@ -9,9 +9,12 @@
 // these regions; irreversible effects are published by the confirmed driver.
 namespace Netplay::WriteJournal {
 constexpr std::uint32_t InstrumentationVersion = 0x52424a31;
-// Optional scalar-store guard ABI: 32-byte blocks, one byte per first-write
+// Optional in-Wasm guard ABI: 32-byte blocks, one byte per first-write
 // generation. Consumers must check this export before reading its metadata.
 constexpr std::uint32_t DirtyGuardVersion = 0x52424431;
+// Optional shared scalar hooks: one u32 address argument, fixed byte widths.
+// This is separate from the in-Wasm dirty-tag metadata ABI above.
+constexpr std::uint32_t ScalarHookVersion = 1;
 bool Initialize(void* root, std::size_t rootBytes,
                 std::size_t heapBytes = std::size_t(192) << 20);
 bool Ready();
@@ -83,6 +86,15 @@ std::uint32_t LastFrameBlocks();
 
 extern "C" {
 void eagler_rb_touch(std::uint32_t address, std::uint32_t bytes);
+// Each fixed-width hook has touch(address, width) semantics. A post-link pass
+// must check ScalarHookVersion and exclude all six scalar ABI exports from
+// instrumentation before selecting them; the generic hook remains the default.
+std::uint32_t eagler_rb_scalar_abi();
+void eagler_rb_touch1(std::uint32_t address);
+void eagler_rb_touch2(std::uint32_t address);
+void eagler_rb_touch4(std::uint32_t address);
+void eagler_rb_touch8(std::uint32_t address);
+void eagler_rb_touch16(std::uint32_t address);
 // Five words: tracking enabled, heap address/bytes, external root address/bytes.
 std::uint32_t eagler_rb_config_address();
 // Three words: tag array address, current generation (1..255 while tracking),

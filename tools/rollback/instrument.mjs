@@ -10,12 +10,16 @@ import { pathToFileURL } from 'node:url';
 export const INSTRUMENTATION_MAGIC = 0x52424a31;
 export const INSTRUMENTATION_SECTION = 'eagler.write-journal.v1';
 export const DIRTY_BLOCK_ABI = 0x52424431;
+export const SCALAR_HOOK_ABI = 1;
+const SCALAR_WIDTHS = [1, 2, 4, 8, 16];
 export const DEFAULT_EXPORTS = Object.freeze({
   touch: 'eagler_rb_touch',
   config: 'eagler_rb_config_address',
   marker: 'eagler_rb_instrumented',
   dirtyConfig: 'eagler_rb_dirty_config_address',
   dirtyAbi: 'eagler_rb_dirty_config_abi',
+  scalarAbi: 'eagler_rb_scalar_abi',
+  ...Object.fromEntries(SCALAR_WIDTHS.map(width => [`scalarTouch${width}`, `eagler_rb_touch${width}`])),
 });
 
 const b = binaryen;
@@ -221,14 +225,38 @@ function initializeMarkerWord(binary, address) {
 }
 
 function optionsWithDefaults(options) {
-  const out = { nativeFilter: false, inlineDirtyBlocks: false, ...DEFAULT_EXPORTS, ...options };
+  const out = { nativeFilter: false, inlineDirtyBlocks: false, scalarHooks: false, ...DEFAULT_EXPORTS, ...options };
   for (const key of ['touch', 'marker']) if (typeof out[key] !== 'string' || !out[key]) fail(`invalid ${key} export name`);
   if (out.config !== null && (typeof out.config !== 'string' || !out.config)) fail('invalid config export name');
   if (typeof out.nativeFilter !== 'boolean' || (out.nativeFilter && out.config === null)) fail('native-filter requires a configuration export');
   if (typeof out.inlineDirtyBlocks !== 'boolean' || (out.inlineDirtyBlocks && !out.nativeFilter)) fail('inline-dirty-blocks requires native-filter');
+  if (typeof out.scalarHooks !== 'boolean' || (out.scalarHooks && !out.nativeFilter)) fail('scalar-hooks requires native-filter');
+  if (out.scalarHooks && out.inlineDirtyBlocks) fail('scalar-hooks and inline-dirty-blocks are separate guard profiles');
+  if (out.scalarHooks) for (const key of ['scalarAbi', ...SCALAR_WIDTHS.map(width => `scalarTouch${width}`)])
+    if (typeof out[key] !== 'string' || !out[key]) fail(`invalid ${key} export name`);
   if (out.inlineDirtyBlocks) for (const key of ['dirtyConfig', 'dirtyAbi'])
     if (typeof out[key] !== 'string' || !out[key]) fail(`invalid ${key} export name`);
   return out;
+}
+
+function scalarHooks(module, opts, excluded) {
+  const abi = exportedFunction(module, opts.scalarAbi, [], b.i32);
+  if (constantResult(abi.info.body) !== SCALAR_HOOK_ABI) fail('incompatible scalar-hook ABI');
+  if (excluded.has(abi.name)) fail('scalar hooks and ABI must be distinct backend functions');
+  excluded.add(abi.name);
+  const hooks = new Map();
+  for (const width of SCALAR_WIDTHS) {
+    const hook = exportedFunction(module, opts[`scalarTouch${width}`], [b.i32], b.none, true);
+    if (excluded.has(hook.name)) fail('scalar hooks and ABI must be distinct backend functions');
+    excluded.add(hook.name);
+    hooks.set(width, hook);
+  }
+  return hooks;
+}
+
+function scalarHookExportNames(opts) {
+  return { abi: opts.scalarAbi,
+    stores: Object.fromEntries(SCALAR_WIDTHS.map(width => [width, opts[`scalarTouch${width}`]])) };
 }
 
 function configureFeatures(module) {
@@ -289,6 +317,10 @@ export async function instrumentWasm(input, options = {}) {
     const markerAddress = markerWordAddress(marker.info.body, memory.initial * 65536);
     if (config && markerAddress < cfg + 20 && markerAddress + 4 > cfg) fail('marker word must not overlap configuration');
     const excluded = new Set([touch.name, marker.name, config?.name]);
+    // Backends keep these exports even when routing stores through the generic
+    // hook. Their own hot bodies must remain excluded in every guard profile.
+    const specialized = opts.scalarHooks || module.getExport(opts.scalarAbi) ? scalarHooks(module, opts, excluded) : new Map();
+    const scalar = opts.scalarHooks ? specialized : new Map();
     let dirtyAddress = null;
     if (opts.inlineDirtyBlocks) {
       const dirtyConfig = exportedFunction(module, opts.dirtyConfig, [], b.i32);
@@ -309,6 +341,9 @@ export async function instrumentWasm(input, options = {}) {
       configAddress: cfg, markerAddress, functions: 0, stores: 0, copies: 0, fills: 0, inits: 0, maxWriteDepth: 0,
       rangeFilter: opts.nativeFilter ? 'native-hook' : 'wasm',
       inlineDirtyBlocks: opts.inlineDirtyBlocks, inlineDirtyStores: 0,
+      ...(opts.scalarHooks ? { scalarHooks: true, scalarHookAbi: SCALAR_HOOK_ABI, scalarHookStores: 0,
+        scalarHookWidths: Object.fromEntries(SCALAR_WIDTHS.map(width => [width, 0])),
+        scalarHookExports: scalarHookExportNames(opts) } : {}),
       ...(opts.inlineDirtyBlocks ? { dirtyBlockAbi: DIRTY_BLOCK_ABI, dirtyConfigAddress: dirtyAddress,
         dirtyBlockBytes: 32, dirtyTagBytes: 1, dirtyExports: { config: opts.dirtyConfig, abi: opts.dirtyAbi } } : {}),
     };
@@ -350,7 +385,13 @@ export async function instrumentWasm(input, options = {}) {
           module.i32.and(module.i32.ne(cfgLoad(baseWord + 1), c(0)),
             module.i32.lt_u(module.i32.sub(cfgLoad(baseWord), address()), length())), c(0)));
       const guard = (address, length, originalPointer, offset = 0, scalarBytes = 0, depth = 0) => {
-        let call = module.call(touch.name, [address(), length()], b.none);
+        const scalarHook = scalar.get(scalarBytes);
+        let call = scalarHook ? module.call(scalarHook.name, [address()], b.none) :
+          module.call(touch.name, [address(), length()], b.none);
+        if (scalarHook) {
+          report.scalarHookStores++;
+          report.scalarHookWidths[scalarBytes]++;
+        }
         if (opts.inlineDirtyBlocks && scalarBytes > 0 && scalarBytes <= 16) {
           // Only a fully contained scalar heap store can bypass the native
           // hook. Root writes, partial overlaps and bulk writes retain its
@@ -459,8 +500,29 @@ export async function verifyInstrumentedWasm(input, options = {}) {
   try {
     const marker = exportedFunction(module, opts.marker, [], b.i32);
     if (constantResult(marker.info.body) !== INSTRUMENTATION_MAGIC) fail('instrumentation marker missing or incorrect');
-    exportedFunction(module, opts.touch, [b.i32, b.i32], b.none, true);
-    if (opts.config !== null) exportedFunction(module, opts.config, [], b.i32);
+    const touch = exportedFunction(module, opts.touch, [b.i32, b.i32], b.none, true);
+    const config = opts.config !== null ? exportedFunction(module, opts.config, [], b.i32) : null;
+    // A bare --verify also checks a scalar profile's native signatures and ABI.
+    // Earlier modules without this report keep their generic verification path.
+    const sections = WebAssembly.Module.customSections(new WebAssembly.Module(input), INSTRUMENTATION_SECTION);
+    const reports = sections.map(section => JSON.parse(new TextDecoder().decode(section)));
+    const usesScalarHooks = opts.scalarHooks || reports.some(report => report.scalarHooks === true);
+    if (usesScalarHooks) {
+      if (!config) fail('scalar-hooks requires a configuration export');
+      if (sections.length !== 1) fail('scalar-hook instrumentation report missing or ambiguous');
+      const report = reports[0];
+      if (report.scalarHooks !== true || report.scalarHookAbi !== SCALAR_HOOK_ABI ||
+          report.rangeFilter !== 'native-hook' || report.inlineDirtyBlocks !== false ||
+          !Number.isInteger(report.scalarHookStores) || report.scalarHookStores < 0 ||
+          report.scalarHookStores !== report.stores ||
+          SCALAR_WIDTHS.some(width => !Number.isInteger(report.scalarHookWidths?.[width]) || report.scalarHookWidths[width] < 0) ||
+          SCALAR_WIDTHS.reduce((total, width) => total + report.scalarHookWidths[width], 0) !== report.scalarHookStores ||
+          report.scalarHookExports?.abi !== opts.scalarAbi ||
+          SCALAR_WIDTHS.some(width => report.scalarHookExports?.stores?.[width] !== opts[`scalarTouch${width}`]))
+        fail('scalar-hook instrumentation report missing or incompatible');
+    }
+    if (usesScalarHooks || module.getExport(opts.scalarAbi))
+      scalarHooks(module, opts, new Set([marker.name, touch.name, config?.name]));
     if (opts.inlineDirtyBlocks) {
       const abi = exportedFunction(module, opts.dirtyAbi, [], b.i32);
       if (constantResult(abi.info.body) !== DIRTY_BLOCK_ABI) fail('incompatible dirty-block ABI');
@@ -473,6 +535,7 @@ export async function verifyInstrumentedWasm(input, options = {}) {
         fail('inline-dirty-block instrumentation report missing or incompatible');
     }
     return { marker: opts.marker, magic: INSTRUMENTATION_MAGIC,
+      ...(usesScalarHooks ? { scalarHookAbi: SCALAR_HOOK_ABI, scalarHooks: true } : {}),
       ...(opts.inlineDirtyBlocks ? { dirtyBlockAbi: DIRTY_BLOCK_ABI, inlineDirtyBlocks: true } : {}) };
   } finally { module.dispose(); }
 }
@@ -486,7 +549,8 @@ async function main(args) {
     else if (arg === '--no-config') options.config = null;
     else if (arg === '--native-filter') options.nativeFilter = true;
     else if (arg === '--inline-dirty-blocks') options.inlineDirtyBlocks = true;
-    else if (/^--(touch|config|marker|dirtyConfig|dirtyAbi)=.+/.test(arg)) { const at = arg.indexOf('='); options[arg.slice(2, at)] = arg.slice(at + 1); }
+    else if (arg === '--scalar-hooks') options.scalarHooks = true;
+    else if (/^--(touch|config|marker|dirtyConfig|dirtyAbi|scalarAbi|scalarTouch(?:1|2|4|8|16))=.+/.test(arg)) { const at = arg.indexOf('='); options[arg.slice(2, at)] = arg.slice(at + 1); }
     else if (arg.startsWith('-')) fail(`unknown option ${arg}`);
     else positional.push(arg);
   }

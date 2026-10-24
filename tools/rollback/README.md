@@ -21,6 +21,10 @@ node --test tools/rollback/instrument.test.mjs
 
 C++ trampoline 对状态区之外的写入直接返回；对同帧已记录的标量写入也直接返回，未对齐写入同时检查首尾两个块。这些快速判断只读取内存；需要保存首次写入内容时，先关闭追踪再调用日志辅助函数。`--native-filter` 要求使用具备完整范围裁剪与递归保护的后端，并保留配置导出。
 
+`--native-filter --scalar-hooks` 是可选的固定宽度实验配置。1、2、4、8、16 字节写入分别调用共享的 `eagler_rb_touch1/2/4/8/16(address)`，批量写入继续调用原来的二参数 hook。后端 `eagler_rb_scalar_abi()` 必须返回 `1`；插桩器校验签名、独立函数身份与构建记录，并在所有配置中排除已声明的五个 hook 及 ABI 导出，避免内部写入再次插桩。未对齐写入仍检查实际覆盖的两个 32 字节块。
+
+TH15 的生产默认仍是 generic native hook。实验构建可向 `ports/th15-mp/web/scripts/build-sdl-application.mjs --release --multiplayer` 添加 `--journal-scalar-hooks`，打包时会核对 Wasm 实际配置与 `build.json`。此开关不代表整游戏性能已达标；启用前需完成真实后端、生产 oracle 及目标硬件上的性能验证。
+
 原生后端另保留 `eagler_rb_capture` 冷路径导出，避免链接优化把完整的捕获循环重新内联到高频 trampoline；插桩器的必需导出约定保持下表三项。封帧通过 `LastFrameBlocks()` 读取已维护的块数，完整 `Stats()` 的分配器遍历用于诊断查询。
 
 ## C++ 导出约定
@@ -49,9 +53,9 @@ touch、config、marker 三个函数本身不插桩。touch 在进入日志辅�
 
 测试实例化真实 Wasm，比较插桩前后的内存结果，并用独立日志恢复已跟踪区域。覆盖标志检查、标量宽度、向量存储、两个状态区、未对齐跨块、两端跨界、嵌套操作数求值、递归、被动数据段初始化、数据段释放及原始陷阱行为。
 
-`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后分别使用默认模式、`--native-filter` 及 native inline dirty guard 插桩。测试先验证原始模块拒绝初始化，再为每种模式的十五个场景创建独立实例，检查容器与分配器元数据恢复、跨越外部 root 两端的写入及邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域、失败状态，同时覆盖已记录块和未记录块的非对齐标量写入、无外部 root 的整堆恢复，以及宿主调用的嵌套追踪暂停与失败保护。场景 9–11 用独立的 uncached mallinfo 查询和扫描计数核对堆用量缓存，覆盖一次和嵌套恢复、系统分配作用域、清理、无效目标及开启帧上的恢复拒绝。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
+`node tools/rollback/memory-test.mjs` 使用 `EMSDK` 指定的 SDK（默认 `toolchains/emsdk`）以 `-O2` 编译真实 C++ 后端和 `common/tests/write-journal-test.cpp`，然后分别使用默认模式、`--native-filter`、native scalar hooks 及 native inline dirty guard 插桩。测试先验证原始模块拒绝初始化，再为每种模式的十五个场景创建独立实例，检查容器与分配器元数据恢复、跨越外部 root 两端的写入及邻接字节保留、1,100 次回放与标签轮转、嵌套分配作用域、失败状态，同时覆盖已记录块和未记录块的非对齐标量写入、无外部 root 的整堆恢复，以及宿主调用的嵌套追踪暂停与失败保护。场景 9–11 用独立的 uncached mallinfo 查询和扫描计数核对堆用量缓存，覆盖一次和嵌套恢复、系统分配作用域、清理、无效目标及开启帧上的恢复拒绝。构建产物与结果保存在 `artifacts/rollback/`；可用 `--emxx=/path/to/em++` 和 `--output=/path/to/artifacts` 指定编译器与产物目录。
 
-每种插桩模式另有三个真实日志耗尽案例：先填满日志并建立有效的堆用量缓存，再分别在 malloc、memalign、free 的元数据写入期间触发失败，要求返回后的首次查询重新扫描且与 uncached oracle 完全相等。还有两个真实越界写入案例：分别在 `GameScope` 和嵌套 `HostScope` 中触发 Wasm 陷阱，JavaScript 捕获后再调用清理入口，验证未封帧状态始终保持终止失败。总计运行 52 个独立模块实例：1 个未插桩拒绝实例，以及 3 种配置各 15 个场景与 2 个陷阱场景；另检查四个未启用后端的真实 Wasm 对象不定义任何符号。
+每种插桩模式另有三个真实日志耗尽案例：先填满日志并建立有效的堆用量缓存，再分别在 malloc、memalign、free 的元数据写入期间触发失败，要求返回后的首次查询重新扫描且与 uncached oracle 完全相等。还有两个真实越界写入案例：分别在 `GameScope` 和嵌套 `HostScope` 中触发 Wasm 陷阱，JavaScript 捕获后再调用清理入口，验证未封帧状态始终保持终止失败。总计运行 69 个独立模块实例：1 个未插桩拒绝实例，以及 4 种配置各 15 个场景与 2 个陷阱场景；另检查四个未启用后端的真实 Wasm 对象不定义任何符号。
 
 补充的 native 分配器检查可运行 `node tools/rollback/heap-cache-test.mjs`，需要支持 C++20 的 `c++` 或 `CXX` 指定的编译器，也可传入 `--cxx=/path/to/c++` 与 `--output=/new/directory`。该入口编译 `common/tests/simulation-heap-cache-test.cpp`，逐项比较精确用量与独立 uncached oracle，检查成功分配/释放后的查询无额外扫描、多 mspace 切换、同地址重建、失败及零字节分配、对齐、碎片化、释放和普通系统分配，并运行 20,000 步确定性分配轨迹。每次比较后再做 128 次缓存命中检查。`EAGLER_WRITE_JOURNAL_TEST_HOOKS=1` 仅用于这些测试的 oracle 和扫描计数；生产构建不包含这些入口。真实 undo 的验证仍由上述 Wasm 场景承担。
 

@@ -22,7 +22,11 @@ if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
 if(multiplayer){
  if(build.netplay?.stateBackend!=='write-journal-32'||build.netplay.instrumentation!==0x52424a31||build.netplay.predictionLimit!==12||build.netplay.rollback!==true)throw Error('Rebuild TH15 with the write-journal state owner');
  if(typeof build.netplay.inlineDirtyBlocks!=='boolean'||build.netplay.dirtyGuardAbi!==0x52424431)throw Error('Rebuild TH15 with an identified first-write block guard');
- execFileSync(process.execPath,[resolve(root,'../../tools/rollback/instrument.mjs'),'--verify','--native-filter',...(build.netplay.inlineDirtyBlocks?['--inline-dirty-blocks']:[]),resolve(buildRoot,'th15.wasm')],{stdio:'inherit'});
+ if(build.netplay.scalarHooks!==undefined&&typeof build.netplay.scalarHooks!=='boolean')throw Error('Invalid scalar-hook build identity');
+ if(build.netplay.scalarHooks&&(build.netplay.scalarHookAbi!==1||build.netplay.inlineDirtyBlocks))throw Error('Rebuild TH15 with compatible scalar hooks');
+ const verifiedJournal=JSON.parse(execFileSync(process.execPath,[resolve(root,'../../tools/rollback/instrument.mjs'),'--verify','--native-filter',...(build.netplay.inlineDirtyBlocks?['--inline-dirty-blocks']:[]),...(build.netplay.scalarHooks?['--scalar-hooks']:[]),resolve(buildRoot,'th15.wasm')],{encoding:'utf8',stdio:['ignore','pipe','inherit']}));
+ if(Boolean(verifiedJournal.scalarHooks)!==Boolean(build.netplay.scalarHooks))throw Error('Scalar-hook build identity does not match the Wasm profile');
+ console.log(JSON.stringify(verifiedJournal));
 }
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th15_probe|th15_spectator_lab_|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);

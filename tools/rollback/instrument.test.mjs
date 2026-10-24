@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import b from 'binaryen';
-import { instrumentWasm, verifyInstrumentedWasm, INSTRUMENTATION_MAGIC, INSTRUMENTATION_SECTION, DIRTY_BLOCK_ABI } from './instrument.mjs';
+import { instrumentWasm, verifyInstrumentedWasm, INSTRUMENTATION_MAGIC, INSTRUMENTATION_SECTION, DIRTY_BLOCK_ABI, SCALAR_HOOK_ABI } from './instrument.mjs';
 
 const SCALAR_FUNCTIONS = `
   (func (export "s8") (param i32 i32) (i32.store8 (local.get 0) (local.get 1)))
@@ -35,7 +35,8 @@ function wasm(text) {
 }
 
 function fixture(functions, { importedMemory = false, exports = {}, data = true, dirty = false,
-  dirtyAbi = DIRTY_BLOCK_ABI, dirtyAddress = 84 } = {}) {
+  dirtyAbi = DIRTY_BLOCK_ABI, dirtyAddress = 84, scalar = false, scalarAbi = SCALAR_HOOK_ABI,
+  scalarDefinitions = null } = {}) {
   const names = { touch: 'eagler_rb_touch', marker: 'eagler_rb_instrumented', config: 'eagler_rb_config_address', ...exports };
   return wasm(`(module
     (import "env" "touch" (func $touch (param i32 i32)))
@@ -47,6 +48,12 @@ function fixture(functions, { importedMemory = false, exports = {}, data = true,
     (func (export "read_marker_from_wasm") (result i32) (call $marker))
     ${dirty ? `(func (export "eagler_rb_dirty_config_address") (result i32) (i32.const ${dirtyAddress}))
       (func (export "eagler_rb_dirty_config_abi") (result i32) (i32.const ${dirtyAbi}))` : ''}
+    ${scalar ? `(global $scalar_width (mut i32) (i32.const 0))
+      (func (export "last_scalar_width") (result i32) (global.get $scalar_width))
+      (func (export "eagler_rb_scalar_abi") (result i32) (i32.const ${scalarAbi}))
+      ${scalarDefinitions ?? [1, 2, 4, 8, 16].map(width => `(func (export "eagler_rb_touch${width}") (param i32)
+        (global.set $scalar_width (i32.const ${width}))
+        (call $touch (local.get 0) (i32.const ${width})))`).join('\n')}` : ''}
     ${data ? '(data $data "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!?")' : ''}
     ${functions}
   )`);
@@ -272,6 +279,123 @@ test('native-filter delegates clipping while preserving tracking, bulk writes an
   assert.equal(a.report.rangeFilter, 'native-hook');
   assert.deepEqual(exportedFunctionIndices(a.bytes), exportedFunctionIndices(bytes));
   await assert.rejects(instrumentWasm(bytes, { nativeFilter: true, config: null }), /requires a configuration/);
+});
+
+test('fixed-width hooks preserve scalar widths, clipping, bulk writes and trapping offsets', async () => {
+  const input = fixture(SCALAR_FUNCTIONS + BULK_FUNCTIONS + `
+    (func (export "vector") (param i32)
+      (v128.store align=1 (local.get 0) (v128.const i32x4 1 2 3 4)))`, { scalar: true });
+  const options = { nativeFilter: true, scalarHooks: true };
+  const a = await running(input, { options }), baseline = await running(input, { instrumented: false });
+  const before = a.heap.slice();
+  for (const [name, args, width] of [
+    ['s8', [255, 0x7f], 1], ['s16', [287, 0x1234], 2], ['s32', [254, 0x12345678], 4],
+    ['s64', [316, 0x123456789abcdefn], 8], ['s64n', [520, 0x123456789abcdefn], 4],
+    ['f32', [260, 1.25], 4], ['f64', [566, 3.5], 8], ['vector', [280], 16], ['s32', [900, 42], 4],
+  ]) {
+    a.f[name](...args); baseline.f[name](...args);
+    assert.equal(a.f.last_scalar_width(), width);
+    assert.deepEqual(a.trace.at(-1), ['touch', args[0], width]);
+  }
+  for (const [name, args] of [['fill', [510, 0x47, 8]], ['init', [300, 1, 4]], ['copy', [570, 260, 8]]]) {
+    a.f[name](...args); baseline.f[name](...args);
+    assert.equal(a.f.last_scalar_width(), 4, 'bulk writes retain the generic two-argument hook');
+  }
+  sameExecutionMemory(a.heap, baseline.heap);
+  a.restore(); sameTracked(a.heap, before);
+  a.clear(); a.tracking(false); a.f.s32(260, 42); assert.deepEqual(a.trace, []);
+  a.tracking(true); a.f.fill(256, 0, 0); assert.deepEqual(a.trace, []);
+  assert.throws(() => a.f.offset(0xfffffffc, 1n), WebAssembly.RuntimeError);
+  assert.deepEqual(a.trace, [], 'overflowing effective addresses do not reach a specialized hook');
+  assert.equal(a.report.scalarHookStores, a.report.stores);
+  assert.deepEqual(Object.keys(a.report.scalarHookWidths), ['1', '2', '4', '8', '16']);
+  assert(Object.values(a.report.scalarHookWidths).every(count => count > 0));
+  assert.deepEqual(exportedFunctionIndices(a.bytes), exportedFunctionIndices(input));
+  assert.equal((await verifyInstrumentedWasm(a.bytes)).scalarHooks, true, 'bare verification discovers the profile');
+});
+
+test('fixed-width hooks preserve nested operand order and exclude every specialized hook body', async () => {
+  const hooks = [1, 2, 4, 8, 16].map(width => `(func (export "eagler_rb_touch${width}") (param i32)
+    (i32.store (i32.const 112) (i32.const ${width}))
+    (call $touch (local.get 0) (i32.const ${width})))`).join('\n');
+  const input = fixture(SCALAR_FUNCTIONS + `
+    (func $recurse (export "recurse") (param i32) (result i32)
+      (if (result i32) (local.get 0)
+        (then (i32.store (i32.add (i32.const 256) (i32.mul (local.get 0) (i32.const 4)))
+          (call $recurse (i32.sub (local.get 0) (i32.const 1))))
+          (i32.add (local.get 0) (i32.const 100)))
+        (else (i32.const 99))))
+    (func (export "nested")
+      (i32.store (call $mark (i32.const 1) (i32.const 284))
+        (block (result i32)
+          (i64.store (call $mark (i32.const 2) (i32.const 286)) (i64.const 1234))
+          (call $mark (i32.const 3) (i32.const 5678)))))
+    (func (export "vector") (param i32)
+      (v128.store align=1 (local.get 0) (v128.const i32x4 1 2 3 4)))`,
+    { scalar: true, scalarDefinitions: hooks });
+  const options = { nativeFilter: true, scalarHooks: true };
+  const a = await running(input, { options }), baseline = await running(input, { instrumented: false });
+  const before = a.heap.slice();
+  for (const [name, args, width] of [['s8', [260, 1], 1], ['s16', [260, 2], 2], ['s32', [260, 4], 4],
+    ['s64', [260, 8n], 8], ['vector', [280], 16]]) {
+    a.clear(); a.f[name](...args);
+    assert.deepEqual(a.trace, [['touch', args[0], width]], 'hook-internal stores cannot recursively instrument themselves');
+    assert.equal(new DataView(a.heap.buffer).getUint32(112, true), width);
+    a.restore();
+  }
+  a.clear(); assert.equal(a.f.recurse(4), baseline.f.recurse(4));
+  assert.deepEqual(a.trace, [260, 264, 268, 272].map(address => ['touch', address, 4]));
+  a.trace.length = 0; a.f.nested(); baseline.f.nested();
+  assert.deepEqual(a.trace, [['mark', 1], ['mark', 2], ['touch', 286, 8], ['mark', 3], ['touch', 284, 4]]);
+  assert.deepEqual(a.heap.slice(128, 1024), baseline.heap.slice(128, 1024));
+  a.restore(); sameTracked(a.heap, before);
+});
+
+test('fixed-width hooks reject missing, incompatible, aliased and incorrectly typed native exports', async () => {
+  const options = { nativeFilter: true, scalarHooks: true };
+  await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS), options), /missing export eagler_rb_scalar_abi/);
+  await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS, { scalar: true, scalarAbi: 2 }), options), /incompatible scalar-hook ABI/);
+  const input = fixture(SCALAR_FUNCTIONS, { scalar: true });
+  await assert.rejects(instrumentWasm(input, { scalarHooks: true }), /requires native-filter/);
+  await assert.rejects(instrumentWasm(input, { ...options, config: null }), /requires a configuration/);
+  await assert.rejects(instrumentWasm(input, { ...options, inlineDirtyBlocks: true }), /separate guard profiles/);
+  await assert.rejects(instrumentWasm(input, { ...options, scalarTouch8: 'eagler_rb_touch4' }), /distinct backend functions/);
+  const badTypes = [1, 2, 4, 8, 16].map(width => `(func (export "eagler_rb_touch${width}")
+    (param ${width === 4 ? 'i64' : 'i32'}) (drop (local.get 0)))`).join('\n');
+  await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS, { scalar: true, scalarDefinitions: badTypes }), options), /signature/);
+  const generic = await instrumentWasm(input, { nativeFilter: true });
+  await assert.rejects(verifyInstrumentedWasm(generic.bytes, options), /report missing or incompatible/);
+  const built = await instrumentWasm(input, options);
+  await assert.rejects(verifyInstrumentedWasm(built.bytes, { config: null }), /requires a configuration export/);
+});
+
+test('every advertised scalar hook stays excluded in existing guard profiles', async () => {
+  const hooks = [1, 2, 4, 8, 16].map(width => `(func (export "eagler_rb_touch${width}") (param i32)
+    (i32.store (i32.const 112) (i32.const ${width}))
+    (call $touch (local.get 0) (i32.const ${width})))`).join('\n');
+  const input = fixture(SCALAR_FUNCTIONS, { scalar: true, dirty: true, scalarDefinitions: hooks });
+  for (const options of [{}, { nativeFilter: true }, { nativeFilter: true, inlineDirtyBlocks: true }]) {
+    const a = await running(input, { options });
+    assert.equal(a.report.stores, 8, 'backend stores are not part of the game instrumentation count');
+    for (const width of [1, 2, 4, 8, 16]) {
+      a.clear(); a.f[`eagler_rb_touch${width}`](260);
+      assert.deepEqual(a.trace, [['touch', 260, width]]);
+      assert.equal(new DataView(a.heap.buffer).getUint32(112, true), width);
+    }
+  }
+});
+
+test('a scalar profile with only bulk writes retains generic hooks and verifies zero scalar stores', async () => {
+  const options = { nativeFilter: true, scalarHooks: true };
+  const a = await running(fixture(BULK_FUNCTIONS, { scalar: true }), { options });
+  const before = a.heap.slice();
+  a.f.fill(254, 23, 8); a.f.copy(510, 260, 8); a.f.init(570, 1, 8);
+  assert.deepEqual(a.trace, [['touch', 254, 8], ['touch', 510, 8], ['touch', 570, 8]]);
+  assert.equal(a.f.last_scalar_width(), 0);
+  assert.equal(a.report.scalarHookStores, 0);
+  assert.equal(a.report.stores, 0);
+  assert.equal((await verifyInstrumentedWasm(a.bytes, options)).scalarHooks, true);
+  a.restore(); sameTracked(a.heap, before);
 });
 
 test('SIMD v128 whole stores are journaled with all 16 bytes', async () => {
