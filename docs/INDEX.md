@@ -1,6 +1,6 @@
 # 文档总表
 
-共 261 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 267 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -74,7 +74,13 @@
 | 作品源码文档 | [ports/th10-mp/docs/DEVELOPMENT.md](../ports/th10-mp/docs/DEVELOPMENT.md) | TH10 多人版开发指南 |
 | 作品源码文档 | [ports/th10/docs/DEVELOPMENT.md](../ports/th10/docs/DEVELOPMENT.md) | TH10 开发指南 |
 | 作品源码文档 | [ports/th11-mp/docs/DEVELOPMENT.md](../ports/th11-mp/docs/DEVELOPMENT.md) | TH11 多人版开发指南 |
+| 作品源码文档 | [ports/th11-mp/docs/records/2026-10-24-display-high-refresh.md](../ports/th11-mp/docs/records/2026-10-24-display-high-refresh.md) | th11 高刷新呈现 ｜ 2026-10-24 |
+| 作品源码文档 | [ports/th11-mp/portable/presentation-lab/CAMPAIGN.md](../ports/th11-mp/portable/presentation-lab/CAMPAIGN.md) | th11 帧间位移巡检 |
+| 作品源码文档 | [ports/th11-mp/portable/presentation-lab/README.md](../ports/th11-mp/portable/presentation-lab/README.md) | th11 Presentation Lab |
 | 作品源码文档 | [ports/th11/docs/DEVELOPMENT.md](../ports/th11/docs/DEVELOPMENT.md) | TH11 开发指南 |
+| 作品源码文档 | [ports/th11/docs/records/2026-10-24-display-high-refresh.md](../ports/th11/docs/records/2026-10-24-display-high-refresh.md) | th11 高刷新呈现 ｜ 2026-10-24 |
+| 作品源码文档 | [ports/th11/portable/presentation-lab/CAMPAIGN.md](../ports/th11/portable/presentation-lab/CAMPAIGN.md) | th11 帧间位移巡检 |
+| 作品源码文档 | [ports/th11/portable/presentation-lab/README.md](../ports/th11/portable/presentation-lab/README.md) | th11 Presentation Lab |
 | 作品源码文档 | [ports/th12/decompiled/README.md](../ports/th12/decompiled/README.md) | TH12 1.00b 反编译索引 |
 | 作品源码文档 | [ports/th12/docs/BUILD.md](../ports/th12/docs/BUILD.md) | 本地构建与原版输入 |
 | 作品源码文档 | [ports/th12/docs/CONTENT_PREPARATION.md](../ports/th12/docs/CONTENT_PREPARATION.md) | 准备自己的 TH12 游戏资源 |

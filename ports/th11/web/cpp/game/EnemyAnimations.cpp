@@ -1,4 +1,5 @@
 #include "EnemyAnimations.hpp"
+#include "AnmPresentation.hpp"
 namespace th11 {
 namespace {
 template<class F>void family(AnmVm* vm,F operation){
@@ -10,7 +11,13 @@ AnmVm* EnemyAnimations::find(u32& id){auto* vm=manager.find(id);if(!vm)id=0;retu
 void EnemyAnimations::visible(u32 id,bool value){family(manager.find(id),[&](AnmVm& vm){vm.flags=value?vm.flags|2:vm.flags&~2u;});}
 void EnemyAnimations::interrupt(u32 id,i16 value){family(manager.find(id),[&](AnmVm& vm){vm.pending_interrupt=value;});}
 void EnemyAnimations::erase(u32 id){family(manager.find(id),[](AnmVm& vm){vm.flags|=0x4000000;});}
-void EnemyAnimations::position(u32 id,Vec3 p,bool playfield){if(playfield){p.x=float((double(p.x)+32)+192);p.y=float(double(p.y)+16);}family(manager.find(id),[&](AnmVm& vm){vm.position=p;});}
+void EnemyAnimations::position(u32 id,Vec3 p,bool playfield){
+    if(playfield){p.x=float((double(p.x)+32)+192);p.y=float(double(p.y)+16);}
+    family(manager.find(id),[&](AnmVm& vm){
+        // Publish the pre-move endpoint before the owner overwrites position.
+        presentation::capture(vm);vm.position=p;
+    });
+}
 i32 EnemyAnimations::sprite(u32 id){const auto* vm=manager.find(id);return vm?vm->sprite_index:0;}
 u32 EnemyAnimations::effect(i32 file,i32 script,u32 layer){
     if(u32(file)>=resources.size()||!resources[file].file)return 0;

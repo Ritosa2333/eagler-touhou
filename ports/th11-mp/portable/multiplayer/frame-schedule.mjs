@@ -27,7 +27,7 @@ if(process.argv.includes('--run-wasm')){
   const receipt={
     schema:'th11-frame-schedule-component/1',startedAt:new Date().toISOString(),completedAt:null,
     passed:false,root,output:out,requestedLane:lane,
-    scope:{realFrameCadence:true,realPendingFrameSchedule:true,ordinaryReference:true,wasiBits:32,optimization:'O2',
+    scope:{realFrameCadence:true,independentSimulationCadence:true,realPendingFrameSchedule:true,ordinaryReference:true,wasiBits:32,optimization:'O2',
       fullWorld:false,application:false,browser:false,performance:false,retailAssets:false},
     runtime:{node:process.execPath,nodeVersion:process.version,platform:process.platform,arch:process.arch},
     sourceFiles:{},sourceDigest:null,sourceStable:false,toolchain:{sdk,compiler},identity:{},commands:[],lanes:[],
@@ -70,6 +70,7 @@ if(process.argv.includes('--run-wasm')){
     const common=resolve(root,'../../common');
     const sources=[resolve(import.meta.dirname,'frame-schedule.cpp')];
     const headers=[resolve(root,'web/cpp/multiplayer/FrameSchedule.hpp'),
+      resolve(root,'web/cpp/multiplayer/SimulationCadence.hpp'),
       resolve(root,'portable/sdl/FrameCadence.hpp'),
       resolve(common,'include/eagler/netplay/PendingFrameSchedule.hpp'),
       resolve(common,'include/eagler/netplay/FrameBudget.hpp')];

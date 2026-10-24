@@ -9,6 +9,8 @@ struct FrameStatistics {
     void sample(double seconds,bool active,u32 ticks=1);
     void reset_run(){actual=nominal=0;}
     float slowdown()const;
-    AsciiRequest label()const;
+    // One readout, two clocks: the fixed-tick rate and the display rate.
+    AsciiRequest label(float value)const;
+    AsciiRequest label()const{return label(fps);}
 };
 }

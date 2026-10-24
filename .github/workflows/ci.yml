@@ -240,6 +240,19 @@ jobs:
       if: matrix.game == 'th15' && matrix.variant == 'multiplayer'
       shell: bash
       run: TH15_EMSDK="$EMSDK" node ports/th15-mp/portable/multiplayer/network-test.mjs
+    - name: Verify th11 presentation and production profiles
+      if: matrix.game == 'th11'
+      shell: bash
+      run: |
+        node ${{ matrix.directory }}/portable/check-presentation-lab.mjs
+        node ${{ matrix.directory }}/portable/check-high-refresh-contract.mjs
+        node ${{ matrix.directory }}/portable/check-presentation-purity.mjs
+        node --test ${{ matrix.directory }}/portable/production-build.test.mjs ${{ matrix.directory }}/portable/presentation-lab/flicker.test.mjs
+        if [ "${{ matrix.variant }}" = "multiplayer" ]; then
+          node --test ${{ matrix.directory }}/portable/multiplayer/package-isolation.test.mjs
+        fi
+        node ${{ matrix.directory }}/portable/check-build-modes.mjs
+        node ${{ matrix.directory }}/portable/check-presentation.mjs
     - uses: actions/upload-artifact@v4
       if: always()
       with:
