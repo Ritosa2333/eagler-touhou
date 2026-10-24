@@ -69,7 +69,7 @@ EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_presentation_begin(){
   TH15_SYSTEM_SCOPE;const auto frame=network.NextFrame();
   // Select by the actual simulated frame, including every history step in a
   // bounded correction call. Changes happen in Update before Draw::begin.
-  const bool enabled=(frame>=180&&frame<239)||(frame>=241&&frame<248)||(frame>=260&&frame<280);
+  const bool enabled=(frame>=180&&frame<239)||(frame>=241&&frame<250)||(frame>=260&&frame<280);
   app->graphics.presentation.enabled=enabled;
   rollback_lab_presentation_trace.insert(rollback_lab_presentation_trace.end(),{frame,enabled?1u:0u,network.Correcting()?1u:0u});
   return i32(FrameAction::Continue);
@@ -78,6 +78,19 @@ EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_presentation_begin(){
 }
 EMSCRIPTEN_KEEPALIVE unsigned th15_rollback_lab_presentation_size(){return unsigned(th15::sdl::rollback_lab_presentation_trace.size());}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_rollback_lab_presentation_trace(){return th15::sdl::rollback_lab_presentation_trace.data();}
+EMSCRIPTEN_KEEPALIVE const float* th15_rollback_lab_presentation_draw(float alpha){
+ using namespace th15::sdl;TH15_SYSTEM_SCOPE;static std::array<float,9> value{};
+ if(!app||running||!app->scene()||network.Correcting()||journal::FrameOpen())return nullptr;
+ auto& frame=app->graphics.presentation;const auto observed=frame.observed;
+ const auto owner=uintptr_t(&app->scene()->battle.player->visuals.root);
+ const auto before=frame.reference(owner);
+ const bool drawn=frame.present(app->graphics.backend,alpha,app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive);
+ const auto after=frame.reference(owner);frame.observed=observed;if(!drawn)return nullptr;
+ // These endpoints come from immutable native Draw vertices. The runner can
+ // therefore reject a draw that silently substitutes alpha=1 in both peers.
+ value={frame.last_alpha,float(frame.sampled),before[0],before[1],frame.last_x,before[4],after[0],after[1],after[4]};
+ return value.data();
+}
 EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_step(unsigned held,int mode,float x,float y,unsigned physical){
  using namespace th15::sdl;
  if(!app||!network.Configured()||app->exiting)return 0;

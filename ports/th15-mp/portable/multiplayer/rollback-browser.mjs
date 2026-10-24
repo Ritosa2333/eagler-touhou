@@ -92,7 +92,22 @@ async function initialize(page,count,mode,scale){
   };
   const presentationTrace=()=>{const trace=words(m._th15_rollback_lab_presentation_trace(),m._th15_rollback_lab_presentation_size()),result=[];
    check(trace.length%3===0,'presentation trace extent');for(let i=0;i<trace.length;i+=3)result.push({frame:trace[i],enabled:trace[i+1]===1,correcting:trace[i+2]===1});return result;};
-  window.rollbackLab={count,mode,input,remote,tick,status,details,lifecycle,audit,state,forward,drain,snapshot,replay,textureSnapshot,presentationTrace,journal};
+  const presentationProbe=async()=>{
+   const before={...await snapshot(false),journal:journal()},beforeReplay=replay(),draws=[];
+   const replayDigest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes)))).map(v=>v.toString(16).padStart(2,'0')).join('');
+   const replaySha=await replayDigest(beforeReplay);
+   for(const alpha of [0,.5,1]){
+    const pointer=m._th15_rollback_lab_presentation_draw(alpha);check(pointer,'actual presentation alpha '+alpha);
+    const values=Array.from(new Float32Array(m.HEAPU8.buffer,pointer,9));
+    const [actualAlpha,sampled,previousX,currentX,presentedX,matched,afterPreviousX,afterCurrentX,afterMatched]=values;
+    const after={...await snapshot(true),journal:journal()};
+    const afterReplay=replay();check(JSON.stringify(afterReplay)===JSON.stringify(beforeReplay),'presentation advanced confirmed Replay at alpha '+alpha);
+    draws.push({alpha,actualAlpha,sampled,previousX,currentX,presentedX,matched,afterPreviousX,afterCurrentX,afterMatched,
+     replayBytes:afterReplay.length,replaySha:await replayDigest(afterReplay),after});
+   }
+   return {before,replayBytes:beforeReplay.length,replaySha,draws};
+  };
+  window.rollbackLab={count,mode,input,remote,tick,status,details,lifecycle,audit,state,forward,drain,snapshot,replay,textureSnapshot,presentationTrace,presentationProbe,journal};
  },{count,mode,lifecycleOnly,presentationToggle});
 }
 function compare(expected,actual,label){
@@ -105,6 +120,33 @@ async function pairedExact(exact,late,first,end,trajectory){
   const expected=await run(exact),actual=await run(late);for(let i=0;i<expected.length;++i)compare(expected[i],actual[i],'future frame '+(frame+i));
   trajectory.push({first:frame,end:until,hash:sha(Buffer.from(JSON.stringify(actual)))});
  }
+}
+async function presentationAcceptance(exact,late,frame,requireMotion=false){
+ const observations={exact:await exact.evaluate(()=>rollbackLab.presentationProbe()),late:await late.evaluate(()=>rollbackLab.presentationProbe())};
+ for(const [name,observation] of Object.entries(observations)){
+  const label=name+' presentation frame '+frame;assert.equal(observation.before.status[2],frame+1,label+' simulation frontier');
+  for(const draw of observation.draws){
+   for(const field of ['world','groups','status','details','lifecycle','phase','journal'])assert.deepEqual(draw.after[field],observation.before[field],label+' alpha '+draw.alpha+' changed '+field);
+   assert.equal(draw.replayBytes,observation.replayBytes,label+' presentation changed Replay extent');assert.equal(draw.replaySha,observation.replaySha,label+' presentation changed Replay bytes');
+   assert.equal(draw.actualAlpha,draw.alpha,label+' substituted presentation alpha');
+   assert.equal(draw.matched,1,label+' player has no previous Draw endpoint');
+   assert.deepEqual([draw.afterPreviousX,draw.afterCurrentX,draw.afterMatched],[draw.previousX,draw.currentX,draw.matched],label+' presentation modified native Draw endpoints');
+   if(draw.alpha<1)assert.ok(draw.sampled>0,label+' alpha '+draw.alpha+' did not interpolate any actual sample');
+  }
+  if(requireMotion){
+   const [first,middle,last]=observation.draws,delta=first.currentX-first.previousX;
+   assert.ok(Math.abs(delta)>.001,label+' player endpoint did not move');
+   for(const draw of observation.draws){
+    assert.equal(draw.previousX,first.previousX,label+' previous endpoint changed');assert.equal(draw.currentX,first.currentX,label+' current endpoint changed');
+    const expected=first.previousX+delta*draw.alpha;
+    assert.ok(Math.abs(draw.presentedX-expected)<.001,label+' wrong independent interpolated X '+JSON.stringify({alpha:draw.alpha,previous:first.previousX,current:first.currentX,expected,actual:draw.presentedX}));
+   }
+   assert.ok(middle.presentedX>Math.min(first.presentedX,last.presentedX)&&middle.presentedX<Math.max(first.presentedX,last.presentedX),label+' midpoint is not between actual endpoints');
+   assert.notEqual(first.after.pixelSha,last.after.pixelSha,label+' alpha 0 and 1 produced identical full-resolution pixels');
+  }
+ }
+ for(let index=0;index<3;++index)compare(observations.exact.draws[index].after,observations.late.draws[index].after,'presentation frame '+frame+' alpha '+observations.exact.draws[index].alpha);
+ return {kind:'presentation-alpha-output',frame,alphas:[0,.5,1],independentMovingEndpoint:requireMotion,observations};
 }
 function replayFrames(bytes){const data=Uint8Array.from(bytes),view=new DataView(data.buffer),description=view.getUint32(24,true),chapters=view.getUint32(28,true),frames=view.getUint32(32,true);
  return {frames,score:view.getUint32(64,true),complete:view.getUint32(68,true),chapters:Array.from(data.subarray(40+description,40+description+chapters*8)),samples:Array.from(data.subarray(40+description+chapters*8))};}
@@ -194,7 +236,10 @@ try{
     console.log('PASS '+label+' | confirmed stage 2, ending, results, immutable retired frontiers, completion Replay');continue;
    }
    const journalBefore=await late.evaluate(()=>rollbackLab.journal());
-   await pairedExact(exact,late,0,240,trajectory);
+   if(presentationToggle){
+    await pairedExact(exact,late,0,182,trajectory);report.checks.push(await presentationAcceptance(exact,late,181,true));
+    await pairedExact(exact,late,182,240,trajectory);
+   }else await pairedExact(exact,late,0,240,trajectory);
    const journalExactPrefix=await late.evaluate(()=>rollbackLab.journal());
    assert.equal(journalExactPrefix[0],journalBefore[0],label+' fully confirmed forward prefix allocated undo frames');
    assert.equal(journalExactPrefix[3],0,label+' fully confirmed prefix retained history');
@@ -244,7 +289,13 @@ try{
    compare(await exact.evaluate(()=>rollbackLab.snapshot(true)),await late.evaluate(()=>rollbackLab.snapshot(true)),label+' nested correction');
    for(const page of [exact,late])assert.equal(await page.evaluate(()=>Module._th15_rollback_lab_texture_end()),1,label+' texture probe cleanup');
    report.checks.push({kind:'nested-correction',...retained});
-   await pairedExact(exact,late,248,300,trajectory);
+   if(presentationToggle){
+    // Two exact Draws rebuild interpolation endpoints after bounded correction
+    // may have reset them. Then close and reopen before another real sweep.
+    await pairedExact(exact,late,248,250,trajectory);report.checks.push(await presentationAcceptance(exact,late,249));
+    await pairedExact(exact,late,250,262,trajectory);report.checks.push(await presentationAcceptance(exact,late,261));
+    await pairedExact(exact,late,262,300,trajectory);
+   }else await pairedExact(exact,late,248,300,trajectory);
    const journalResumed=await late.evaluate(()=>rollbackLab.journal());
    assert.equal(journalResumed[0],retained.journalCorrected[0],label+' confirmed forward resume did not return to the no-undo path');
    report.checks.push({kind:'confirmed-forward-resumed-without-undo',first:248,end:300,before:retained.journalCorrected,after:journalResumed});
@@ -282,12 +333,12 @@ try{
     const traces={exact:await exact.evaluate(()=>rollbackLab.presentationTrace()),late:await late.evaluate(()=>rollbackLab.presentationTrace())};
     for(const [name,trace] of Object.entries(traces)){
      assert.ok(trace.length>0,name+' presentation trace is empty');
-     for(const {frame,enabled} of trace)assert.equal(enabled,(frame>=180&&frame<239)||(frame>=241&&frame<248)||(frame>=260&&frame<280),name+' presentation mode at '+frame);
-     for(const frame of [180,239,241,248,260,280])assert.ok(trace.some(sample=>sample.frame===frame),name+' omitted presentation transition '+frame);
+     for(const {frame,enabled} of trace)assert.equal(enabled,(frame>=180&&frame<239)||(frame>=241&&frame<250)||(frame>=260&&frame<280),name+' presentation mode at '+frame);
+     for(const frame of [180,239,241,250,260,280])assert.ok(trace.some(sample=>sample.frame===frame),name+' omitted presentation transition '+frame);
     }
     assert.ok(traces.late.some(sample=>sample.frame===241&&sample.enabled&&sample.correcting),'Correction did not replay the disabled-to-enabled transition');
     assert.ok(traces.late.filter(sample=>sample.frame===241).length>traces.exact.filter(sample=>sample.frame===241).length,'Presentation transition did not repeat through correction');
-    report.checks.push({kind:'presentation-storage-transitions',schedule:[[180,239],[241,248],[260,280]],traces});
+    report.checks.push({kind:'presentation-storage-transitions',schedule:[[180,239],[241,250],[260,280]],traces});
    }
    assert.ok(report.final.status[11]>0&&report.final.status[9]>0);assert.deepEqual(errors,[]);
    report.status='PASS';reports.push(report);await writeFile(resolve(out,label+'.json'),JSON.stringify(report,null,2)+'\n');
