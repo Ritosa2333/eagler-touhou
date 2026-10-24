@@ -9,6 +9,7 @@ import {resolve,dirname,extname,relative,isAbsolute,sep} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 import {expectedDisconnectConsole} from './acceptance-errors.mjs';
+import {assessPerformance,diagnosticModes,progressEvents,windowHolds,timingTails} from './rollback-browser-metrics.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {performance} from 'node:perf_hooks';
 
@@ -59,6 +60,7 @@ const report={schema:'th11-rollback-browser/1',startedAt:new Date().toISOString(
   stages:[],errors:[],cleanup:[],browser:[],processIds:[],network:[],http:[],results:[]};
 const save=()=>writeFileSync(resolve(out,'receipt.json'),JSON.stringify(report,null,2)+'\n');
 report.settings.headed=headed;
+report.scope.diagnosticOnly=diagnosticModes(report.settings).length>0;
 const mark=(name,extra={})=>{report.stages.push({name,checkerMs:performance.now(),...extra});save();};
 const observeError=entry=>{if(report.stages.at(-1)?.name==='cleanup-start')report.cleanup.push({action:'owned-shutdown-event',...entry});else report.errors.push(entry);};
 save();
@@ -268,11 +270,7 @@ function analysis(data){
   const rows=data.raf.filter(r=>r.phase==='measure'&&r.entry>=data.start&&r.entry<=data.end);
   const motion=data.motion.filter(r=>r.at>=data.start&&r.at<=data.end);
   const gaps=values=>values.slice(1).map((v,i)=>v-values[i]);
-  let lastPresent=null,highFrame=null;const presents=[],frontiers=[];
-  for(const r of rows){const rb=r.rollback;
-    if(rb?.length===24){if(lastPresent!==null&&rb[21]>lastPresent)presents.push(r.exit);lastPresent=rb[21];}
-    if(r.net?.length===24){if(highFrame!==null&&r.net[3]>highFrame)frontiers.push(r.exit);highFrame=Math.max(highFrame??0,r.net[3]);}
-  }
+  const progress=progressEvents(rows),presents=progress.presents.map(event=>event.at),frontiers=progress.frontiers.map(event=>event.at);
   const elapsed=rows.length>1?rows.at(-1).exit-rows[0].entry:0;
   const logical=rows.length>1?Math.max(0,rows.at(-1).net[3]-rows[0].net[3]):0;
   const first=rows[0]?.rollback||[],last=rows.at(-1)?.rollback||[];
@@ -286,7 +284,6 @@ function analysis(data){
   const audioSummary={samples:audio.length,first:audio[0]||[],last:audio.at(-1)||[],errors:audio.filter(a=>a[3]!==0),
     mixedFramesDelta:audio.length?(audio.at(-1)[2]-audio[0][2])>>>0:0,queueFrames:distribution(audio.map(a=>a[4])),musicIncluded:false};
   const measuredWire=data.transport.filter(e=>e.phase==='measure'&&e.actual!==null&&e.actual!==undefined);
-  const edgeIntervals=times=>gaps([data.start,...times.filter(t=>t>=data.start&&t<=data.end),data.end]);
   return {callbacks:rows.length,callbackKinds:{raf:rows.filter(r=>r.kind!=='recovery-task').length,recoveryTasks:rows.filter(r=>r.kind==='recovery-task').length},elapsedMs:elapsed,logicalTicks:logical,logicHz:elapsed?logical*1000/elapsed:0,
     rafRequestToEntry:distribution(rows.map(r=>r.entry-r.requested)),rafTimestampToEntry:distribution(rows.map(r=>r.entry-r.stamp)),
     callbackEntryIntervals:distribution(gaps(rows.map(r=>r.entry))),callbackWall:distribution(rows.map(r=>r.exit-r.entry)),
@@ -294,12 +291,14 @@ function analysis(data){
     existingShellHookWall:distribution(rows.map(r=>r.shellHookMs??0)),
     presentCount:presents.length,frontierCount:frontiers.length,
     presentIntervals:distribution(gaps(presents)),newFrontierIntervals:distribution(gaps(frontiers)),
-    presentWindowHolds:distribution(edgeIntervals(presents)),frontierWindowHolds:distribution(edgeIntervals(frontiers)),
-    windowEdgeMeaning:'Start/end intervals are censored lower bounds; presentation counter changes are observed at callback exit, not GPU scanout.',
+    presentWindowHolds:distribution(windowHolds(progress.presents,data.start,data.end).map(span=>span.durationMs)),
+    frontierWindowHolds:distribution(windowHolds(progress.frontiers,data.start,data.end).map(span=>span.durationMs)),
+    windowEdgeMeaning:'The first row initializes counters: the start segment may include an unrecognized first event. End segments are censored; counter changes are observed at callback exit, not GPU scanout.',
     moves,rollbackDelta:deltas,callbackFlags,audio:audioSummary,
     ...(audioProfile?{audioProfile:summarizeAudioProfile(rows)}:{}),
     injectionTimerLateness:distribution(measuredWire.map(e=>e.lateness)),actualSendDelay:distribution(measuredWire.map(e=>e.actual-e.scheduled)),
     sourceClock:{timeOrigin:data.timeOrigin,note:'All page deltas use this document performance clock; never subtract peer clocks.'},
+    timingTails:timingTails(rows,{start:data.start,end:data.end,transport:data.transport,thresholdMs:maxGap},progress),
     rollbackFirst:first,rollbackLast:last,overflow:data.overflow,probeErrors:data.errors,
     profile:Object.fromEntries(PROFILE_NAMES.slice(2).map((name,i)=>[name,distribution(rows.filter(r=>r.profile?.[1]===1).map(r=>r.profile[i+2]))])),
     worstNative:rows.toSorted((a,b)=>b.nativeMs-a.nativeMs).slice(0,5).map(r=>({id:r.id,entry:r.entry,nativeMs:r.nativeMs,
@@ -341,6 +340,8 @@ try{
     report.identity.relay,report.identity.catalog,report.identity.runtimeOptions,report.identity.relayUrl,report.identity.runner,report.identity.host].map(f=>[f.path,f.sha256]));
   report.identity.errorClassifier=fileIdentity(resolve(import.meta.dirname,'acceptance-errors.mjs'));
   pinned.set(report.identity.errorClassifier.path,report.identity.errorClassifier.sha256);
+  report.identity.timingMetrics=fileIdentity(resolve(import.meta.dirname,'rollback-browser-metrics.mjs'));
+  pinned.set(report.identity.timingMetrics.path,report.identity.timingMetrics.sha256);
   const sharedFiles=new Map();
   const sharedResources=[];
   report.identity.sharedFonts=[];
@@ -689,10 +690,11 @@ try{
   }
   for(const [path,digest] of pinned)assert.equal(hash(readFileSync(path)),digest,'Fixture changed during browser gate: '+path);
   report.sourceStable=true;
-  const failures=[];
-  if(cpuSamples)failures.push({kind:'diagnostic-cpu-profile-run-not-acceptance'});
-  if(stationary)failures.push({kind:'diagnostic-stationary-run-not-movement-acceptance'});
-  if(audioProfile)failures.push({kind:'diagnostic-audio-profile-run-not-acceptance'});
+  const {failures,...performanceAssessment}=assessPerformance(report.results,report.settings);
+  report.performance=performanceAssessment;
+  report.performanceThresholdsMet=performanceAssessment.thresholdsMet;
+  report.performancePassed=performanceAssessment.performancePassed;
+  if(performanceAssessment.diagnosticOnly)report.diagnosticPerformanceThresholdsMet=performanceAssessment.thresholdsMet;
   for(const result of report.results){const m=result.metrics,seat=result.seat;
     if(audioProfile&&(!m.audioProfile?.coverageComplete||m.audioProfile.mixFailures||m.audioProfile.putFailures))
       failures.push({seat,kind:'audio-profile-error-or-coverage',audioProfile:m.audioProfile});
@@ -701,8 +703,6 @@ try{
     if(touchCarrier==='launcher'&&result.touch.dispatchAccepted!==result.touch.submitted)failures.push({seat,kind:'launcher-input-dispatch-rejected'});
     if(m.callbacks<Math.min(100,duration*10)||m.presentCount<30||m.frontierCount<30||m.moves.some(x=>x.distinct<8))failures.push({seat,kind:'movement-or-callback-coverage'});
     if(m.rollbackDelta.restores<1||m.rollbackDelta.historyTicks<1)failures.push({seat,kind:'rollback-not-actually-exercised'});
-    if(m.nativeReportedWall.max>maxGap||m.presentWindowHolds.max>maxGap||m.frontierWindowHolds.max>maxGap)
-      failures.push({seat,kind:'performance-threshold',nativeMax:m.nativeReportedWall.max,presentMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max});
     if(touchCarrier==='rpc'&&result.touch.acknowledgements!==result.touch.submitted)
       failures.push({seat,kind:'managed-input-unacknowledged',touch:result.touch});
     if(touchCarrier==='launcher'&&result.touch.dispatchAccepted!==result.touch.submitted)
@@ -712,11 +712,10 @@ try{
   const unexpectedErrors=report.errors.filter(entry=>!expectedDisconnectConsole(entry,report.disconnect));
   if(report.disconnect)report.disconnect.expectedConsoleNotifications=report.errors.filter(entry=>expectedDisconnectConsole(entry,report.disconnect));
   if(unexpectedErrors.length)failures.push({kind:'page-or-server-errors',errors:unexpectedErrors});
-  report.failures=failures;report.performancePassed=!audioProfile&&!failures.some(f=>f.kind==='performance-threshold');
+  report.failures=failures;
   if(audioProfile){
     report.audioProfileCollectionComplete=report.results.length===2&&report.results.every(r=>
       r.metrics.audioProfile?.coverageComplete&&!r.metrics.audioProfile.mixFailures&&!r.metrics.audioProfile.putFailures);
-    report.diagnosticPerformanceThresholdsMet=!failures.some(f=>f.kind==='performance-threshold');
   }
   report.passed=failures.length===0;report.status=report.passed?'passed':'failed';
   if(!report.passed)process.exitCode=1;
