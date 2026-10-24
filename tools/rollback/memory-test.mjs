@@ -58,7 +58,8 @@ async function main() {
   console.log('Disabled journal isolation passed (4 real Wasm objects, zero defined symbols)');
   const modulePath = join(output, 'fixture.mjs');
   const exports = ['_eagler_write_journal_test', '_eagler_write_journal_trap', '_eagler_write_journal_abandon',
-    '_eagler_rb_touch', '_eagler_rb_config_address', '_eagler_rb_instrumented'];
+    '_eagler_rb_touch', '_eagler_rb_config_address', '_eagler_rb_dirty_config_address',
+    '_eagler_rb_dirty_config_abi', '_eagler_rb_instrumented'];
   const args = [
     '-std=c++20', '-O2', '-UNDEBUG', '-DEAGLER_WRITE_JOURNAL=1', '-I', join(root, 'common/include'),
     join(root, 'common/tests/write-journal-test.cpp'),
@@ -91,11 +92,14 @@ async function main() {
   assert.equal(uninstrumented._eagler_write_journal_test(-1), 0, 'raw Wasm must reject journal initialization');
   console.log('Uninstrumented module correctly rejects journal initialization');
 
-const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6], trapScopes = ['game', 'host'];
-for (const nativeFilter of [false, true]) {
-  const name = nativeFilter ? 'native-hook' : 'wasm';
-  const { bytes, report } = await instrumentWasm(raw, { nativeFilter });
-  await verifyInstrumentedWasm(bytes);
+const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6, 7], trapScopes = ['game', 'host'];
+for (const [name, options] of [
+  ['wasm', { nativeFilter: false }],
+  ['native-hook', { nativeFilter: true }],
+  ['native-inline-dirty', { nativeFilter: true, inlineDirtyBlocks: true }],
+]) {
+  const { bytes, report } = await instrumentWasm(raw, options);
+  await verifyInstrumentedWasm(bytes, options);
   await writeFile(join(output, `fixture.${name}.wasm`), bytes);
   for (const scenario of scenarios) {
     const instance = await createModule({ wasmBinary: bytes });
@@ -113,7 +117,7 @@ for (const nativeFilter of [false, true]) {
   profiles.push({ name, scenarios, trapScopes, report });
 }
 await writeFile(join(output, 'result.json'), `${JSON.stringify({ success: true, inactiveIsolation, uninstrumentedRejected: true, profiles }, null, 2)}\n`);
-console.log(`C++ Wasm journal fixture passed (4 inactive objects + raw rejection + ${scenarios.length} scenarios + ${trapScopes.length} real trap cases in both profiles). Artifacts: ${output}`);
+console.log(`C++ Wasm journal fixture passed (4 inactive objects + raw rejection + ${scenarios.length} scenarios + ${trapScopes.length} real trap cases in ${profiles.length} profiles). Artifacts: ${output}`);
 }
 
 try { await main(); }

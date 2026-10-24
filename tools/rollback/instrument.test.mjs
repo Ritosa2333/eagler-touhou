@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import b from 'binaryen';
-import { instrumentWasm, verifyInstrumentedWasm, INSTRUMENTATION_MAGIC, INSTRUMENTATION_SECTION } from './instrument.mjs';
+import { instrumentWasm, verifyInstrumentedWasm, INSTRUMENTATION_MAGIC, INSTRUMENTATION_SECTION, DIRTY_BLOCK_ABI } from './instrument.mjs';
 
 const SCALAR_FUNCTIONS = `
   (func (export "s8") (param i32 i32) (i32.store8 (local.get 0) (local.get 1)))
@@ -34,7 +34,8 @@ function wasm(text) {
   } finally { module.dispose(); }
 }
 
-function fixture(functions, { importedMemory = false, exports = {}, data = true } = {}) {
+function fixture(functions, { importedMemory = false, exports = {}, data = true, dirty = false,
+  dirtyAbi = DIRTY_BLOCK_ABI, dirtyAddress = 84 } = {}) {
   const names = { touch: 'eagler_rb_touch', marker: 'eagler_rb_instrumented', config: 'eagler_rb_config_address', ...exports };
   return wasm(`(module
     (import "env" "touch" (func $touch (param i32 i32)))
@@ -44,6 +45,8 @@ function fixture(functions, { importedMemory = false, exports = {}, data = true 
     (func $config (export "${names.config}") (result i32) (i32.const 64))
     (func $marker (export "${names.marker}") (result i32) (i32.load (i32.const 40)))
     (func (export "read_marker_from_wasm") (result i32) (call $marker))
+    ${dirty ? `(func (export "eagler_rb_dirty_config_address") (result i32) (i32.const ${dirtyAddress}))
+      (func (export "eagler_rb_dirty_config_abi") (result i32) (i32.const ${dirtyAbi}))` : ''}
     ${data ? '(data $data "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!?")' : ''}
     ${functions}
   )`);
@@ -69,6 +72,10 @@ async function running(bytes, { instrumented = true, options = {}, ranges = [[25
           const lo = Math.max(block, base), hi = Math.min(block + 32, base + length);
           if (lo >= hi || originals.has(lo)) continue;
           originals.set(lo, heap.slice(lo, hi));
+          if (options.inlineDirtyBlocks && base === ranges[0][0]) {
+            const metadata = new Uint32Array(memory.buffer, 84, 3);
+            heap[metadata[0] + (block - base) / 32] = metadata[1];
+          }
         }
       }
     },
@@ -78,6 +85,7 @@ async function running(bytes, { instrumented = true, options = {}, ranges = [[25
   const heap = new Uint8Array(memory.buffer);
   for (let n = 128; n < 1024; n++) heap[n] = (n * 7 + 13) & 255;
   new Uint32Array(memory.buffer, 64, 5).set([1, ...ranges.flat()]);
+  if (options.inlineDirtyBlocks) new Uint32Array(memory.buffer, 84, 3).set([4096, 1, DIRTY_BLOCK_ABI]);
   return {
     instance, f: instance.exports, heap, trace, originals, ...built,
     restore() { for (const [at, old] of originals) heap.set(old, at); },
@@ -133,6 +141,116 @@ test('scalar store widths, integer/floating types and Wasm marker execute correc
   const sections = WebAssembly.Module.customSections(module, INSTRUMENTATION_SECTION);
   assert.equal(sections.length, 1);
   assert.equal(JSON.parse(new TextDecoder().decode(sections[0])).stores, 8);
+});
+
+test('inline dirty-block guard skips only already-saved scalar heap blocks', async () => {
+  const bytes = fixture(SCALAR_FUNCTIONS + BULK_FUNCTIONS + `
+    (func (export "vector") (param i32)
+      (v128.store align=1 (local.get 0) (v128.const i32x4 1 2 3 4)))`, { dirty: true });
+  const a = await running(bytes, { options: { nativeFilter: true, inlineDirtyBlocks: true } });
+  const before = a.heap.slice();
+  a.f.s32(256, 1); a.f.s64(260, 2n); a.f.f32(268, 3); a.f.f64(272, 4);
+  assert.deepEqual(a.trace, [['touch', 256, 4]], 'one native hook for repeated writes to the saved block');
+  a.f.s16(287, 5);
+  assert.deepEqual(a.trace.at(-1), ['touch', 287, 2], 'a dirty first block never hides a clean second block');
+  const count = a.trace.length;
+  a.f.vector(280); a.f.s64(304, 6n);
+  assert.equal(a.trace.length, count, 'both endpoints of the unaligned SIMD store are saved');
+  a.f.s8(512, 7); a.f.s32(516, 8); a.f.s32(900, 9);
+  assert.deepEqual(a.trace.slice(-3), [['touch', 512, 1], ['touch', 516, 4], ['touch', 900, 4]], 'root and host writes keep native rejection/clipping');
+  a.f.fill(260, 10, 8); a.f.copy(264, 260, 4); a.f.init(268, 0, 4);
+  assert.deepEqual(a.trace.slice(-3), [['touch', 260, 8], ['touch', 264, 4], ['touch', 268, 4]], 'bulk writes never bypass the hook');
+  a.restore(); sameTracked(a.heap, before);
+  assert.equal(a.report.inlineDirtyStores, 9);
+  assert.equal(a.report.dirtyBlockAbi, DIRTY_BLOCK_ABI);
+  assert.deepEqual(exportedFunctionIndices(a.bytes), exportedFunctionIndices(bytes));
+  await verifyInstrumentedWasm(a.bytes, { nativeFilter: true, inlineDirtyBlocks: true });
+});
+
+test('inline dirty-block guard preserves partial overlaps, inactive scopes and offset traps', async () => {
+  const a = await running(fixture(SCALAR_FUNCTIONS, { dirty: true }),
+    { options: { nativeFilter: true, inlineDirtyBlocks: true } });
+  const before = a.heap.slice();
+  for (const address of [254, 318, 510, 574]) a.f.s32(address, 0x12345678);
+  assert.deepEqual(a.trace.map(row => row[1]), [254, 318, 510, 574]);
+  a.restore(); sameTracked(a.heap, before);
+  a.clear(); a.tracking(false);
+  // The metadata address itself is valid, but its tag pointer deliberately is
+  // not: an inactive HostScope must short-circuit before accessing any tags.
+  new Uint32Array(a.heap.buffer, 84, 1)[0] = 0xffffffff;
+  a.f.s32(260, 12); assert.deepEqual(a.trace, []);
+  a.tracking(true);
+  assert.throws(() => a.f.offset(0xfffffffc, 1n), WebAssembly.RuntimeError);
+  assert.deepEqual(a.trace, [], 'overflowing memarg offsets do not wrap into the heap');
+});
+
+test('inline dirty-block guard follows new generations after restore and byte-tag wrap', async () => {
+  const a = await running(fixture(SCALAR_FUNCTIONS, { dirty: true }),
+    { options: { nativeFilter: true, inlineDirtyBlocks: true } });
+  const before = a.heap.slice();
+  const metadata = new Uint32Array(a.heap.buffer, 84, 3);
+  for (let frame = 0; frame < 260; frame++) {
+    const generation = frame % 255 + 1;
+    if (generation === 1) a.heap.fill(0, metadata[0], metadata[0] + 2);
+    metadata[1] = generation; a.clear();
+    a.f.s32(260, frame + 1); a.f.s32(264, frame + 2);
+    assert.deepEqual(a.trace, [['touch', 260, 4]], `exactly one first-write hook in generation ${generation}`);
+    a.restore(); sameTracked(a.heap, before);
+  }
+});
+
+test('inline guard rejects host writes in a heap-only backend but retains both boundary overlaps', async () => {
+  const ranges = [[256, 64], [0, 0]];
+  const a = await running(fixture(SCALAR_FUNCTIONS + BULK_FUNCTIONS, { dirty: true }),
+    { options: { nativeFilter: true, inlineDirtyBlocks: true }, ranges });
+  const before = a.heap.slice();
+  for (const address of [128, 252, 320, 512, 900]) a.f.s32(address, 1234);
+  assert.deepEqual(a.trace, [], 'non-overlapping scalar host writes are rejected without the hook');
+  a.f.s32(254, 1234); a.f.s64(318, 1234n);
+  assert.deepEqual(a.trace, [['touch', 254, 4], ['touch', 318, 8]], 'both partial heap edges reach clipping');
+  a.f.fill(900, 0, 4);
+  assert.deepEqual(a.trace.at(-1), ['touch', 900, 4], 'bulk rejection remains native');
+  a.restore(); sameTracked(a.heap, before, ranges);
+});
+
+test('inline dirty-block guard requires an explicit compatible and disjoint backend ABI', async () => {
+  const options = { nativeFilter: true, inlineDirtyBlocks: true };
+  await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS), options), /missing export eagler_rb_dirty_config_address/);
+  await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS, { dirty: true, dirtyAbi: 1 }), options), /incompatible dirty-block ABI/);
+  for (const dirtyAddress of [0, 85, 65532])
+    await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS, { dirty: true, dirtyAddress }), options), /aligned, static three-word/);
+  for (const dirtyAddress of [60, 64, 80])
+    await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS, { dirty: true, dirtyAddress }), options), /overlap tracked-range/);
+  await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS, { dirty: true, dirtyAddress: 32 }), options), /overlap marker/);
+  await assert.rejects(instrumentWasm(fixture(SCALAR_FUNCTIONS, { dirty: true }), { inlineDirtyBlocks: true }), /requires native-filter/);
+  const baseline = await instrumentWasm(fixture(SCALAR_FUNCTIONS, { dirty: true }), { nativeFilter: true });
+  await assert.rejects(verifyInstrumentedWasm(baseline.bytes, options), /report missing or incompatible/);
+});
+
+test('inline dirty guards retain nested operand order and recursive call-local state', async () => {
+  const bytes = fixture(`
+    (func $recurse (export "recurse") (param i32) (result i32)
+      (if (result i32) (local.get 0)
+        (then
+          (i32.store (i32.add (i32.const 256) (i32.mul (local.get 0) (i32.const 4)))
+            (call $recurse (i32.sub (local.get 0) (i32.const 1))))
+          (i32.add (local.get 0) (i32.const 100)))
+        (else (i32.const 99))))
+    (func (export "nested")
+      (i32.store (call $mark (i32.const 1) (i32.const 284))
+        (block (result i32)
+          (i64.store (call $mark (i32.const 2) (i32.const 286)) (i64.const 1234))
+          (call $mark (i32.const 3) (i32.const 5678))))
+      (i32.store (i32.const 512) (i32.load (i32.const 284))))`, { dirty: true });
+  const options = { nativeFilter: true, inlineDirtyBlocks: true };
+  const a = await running(bytes, { options }), baseline = await running(bytes, { instrumented: false, options });
+  const before = a.heap.slice();
+  assert.equal(a.f.recurse(4), baseline.f.recurse(4));
+  a.f.nested(); baseline.f.nested();
+  assert.deepEqual(a.heap.slice(128, 1024), baseline.heap.slice(128, 1024));
+  assert.deepEqual(a.trace, [['touch', 260, 4], ['mark', 1], ['mark', 2],
+    ['touch', 286, 8], ['mark', 3], ['touch', 512, 4]]);
+  a.restore(); sameTracked(a.heap, before);
 });
 
 test('native-filter delegates clipping while preserving tracking, bulk writes and traps', async () => {

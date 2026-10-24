@@ -21,7 +21,8 @@ const wasm=readFileSync(resolve(buildRoot,'th15.wasm'));
 if(hash(wasm)!==build.sha256)throw Error('Wasm build identity mismatch');
 if(multiplayer){
  if(build.netplay?.stateBackend!=='write-journal-32'||build.netplay.instrumentation!==0x52424a31||build.netplay.predictionLimit!==12||build.netplay.rollback!==true)throw Error('Rebuild TH15 with the write-journal state owner');
- execFileSync(process.execPath,[resolve(root,'../../tools/rollback/instrument.mjs'),'--verify',resolve(buildRoot,'th15.wasm')],{stdio:'inherit'});
+ if(typeof build.netplay.inlineDirtyBlocks!=='boolean'||build.netplay.dirtyGuardAbi!==0x52424431)throw Error('Rebuild TH15 with an identified first-write block guard');
+ execFileSync(process.execPath,[resolve(root,'../../tools/rollback/instrument.mjs'),'--verify','--native-filter',...(build.netplay.inlineDirtyBlocks?['--inline-dirty-blocks']:[]),resolve(buildRoot,'th15.wasm')],{stdio:'inherit'});
 }
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th15_probe|th15_spectator_lab_|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);

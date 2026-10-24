@@ -9,6 +9,9 @@
 // these regions; irreversible effects are published by the confirmed driver.
 namespace Netplay::WriteJournal {
 constexpr std::uint32_t InstrumentationVersion = 0x52424a31;
+// Optional scalar-store guard ABI: 32-byte blocks, one byte per first-write
+// generation. Consumers must check this export before reading its metadata.
+constexpr std::uint32_t DirtyGuardVersion = 0x52424431;
 bool Initialize(void* root, std::size_t rootBytes,
                 std::size_t heapBytes = std::size_t(192) << 20);
 bool Ready();
@@ -81,5 +84,9 @@ extern "C" {
 void eagler_rb_touch(std::uint32_t address, std::uint32_t bytes);
 // Five words: tracking enabled, heap address/bytes, external root address/bytes.
 std::uint32_t eagler_rb_config_address();
+// Three words: tag array address, current generation (1..255 while tracking),
+// and DirtyGuardVersion. Heap tags come first; root writes use the full hook.
+std::uint32_t eagler_rb_dirty_config_address();
+std::uint32_t eagler_rb_dirty_config_abi();
 std::uint32_t eagler_rb_instrumented();
 }

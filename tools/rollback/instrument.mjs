@@ -9,10 +9,13 @@ import { pathToFileURL } from 'node:url';
 
 export const INSTRUMENTATION_MAGIC = 0x52424a31;
 export const INSTRUMENTATION_SECTION = 'eagler.write-journal.v1';
+export const DIRTY_BLOCK_ABI = 0x52424431;
 export const DEFAULT_EXPORTS = Object.freeze({
   touch: 'eagler_rb_touch',
   config: 'eagler_rb_config_address',
   marker: 'eagler_rb_instrumented',
+  dirtyConfig: 'eagler_rb_dirty_config_address',
+  dirtyAbi: 'eagler_rb_dirty_config_abi',
 });
 
 const b = binaryen;
@@ -218,10 +221,13 @@ function initializeMarkerWord(binary, address) {
 }
 
 function optionsWithDefaults(options) {
-  const out = { nativeFilter: false, ...DEFAULT_EXPORTS, ...options };
+  const out = { nativeFilter: false, inlineDirtyBlocks: false, ...DEFAULT_EXPORTS, ...options };
   for (const key of ['touch', 'marker']) if (typeof out[key] !== 'string' || !out[key]) fail(`invalid ${key} export name`);
   if (out.config !== null && (typeof out.config !== 'string' || !out.config)) fail('invalid config export name');
   if (typeof out.nativeFilter !== 'boolean' || (out.nativeFilter && out.config === null)) fail('native-filter requires a configuration export');
+  if (typeof out.inlineDirtyBlocks !== 'boolean' || (out.inlineDirtyBlocks && !out.nativeFilter)) fail('inline-dirty-blocks requires native-filter');
+  if (out.inlineDirtyBlocks) for (const key of ['dirtyConfig', 'dirtyAbi'])
+    if (typeof out[key] !== 'string' || !out[key]) fail(`invalid ${key} export name`);
   return out;
 }
 
@@ -283,11 +289,28 @@ export async function instrumentWasm(input, options = {}) {
     const markerAddress = markerWordAddress(marker.info.body, memory.initial * 65536);
     if (config && markerAddress < cfg + 20 && markerAddress + 4 > cfg) fail('marker word must not overlap configuration');
     const excluded = new Set([touch.name, marker.name, config?.name]);
+    let dirtyAddress = null;
+    if (opts.inlineDirtyBlocks) {
+      const dirtyConfig = exportedFunction(module, opts.dirtyConfig, [], b.i32);
+      const dirtyAbi = exportedFunction(module, opts.dirtyAbi, [], b.i32);
+      if (constantResult(dirtyAbi.info.body) !== DIRTY_BLOCK_ABI) fail('incompatible dirty-block ABI');
+      dirtyAddress = constantResult(dirtyConfig.info.body);
+      if (dirtyAddress === null || !dirtyAddress || dirtyAddress % 4 || dirtyAddress + 12 > memory.initial * 65536)
+        fail('dirty configuration must return an aligned, static three-word address within initial memory');
+      if (dirtyAddress < cfg + 20 && dirtyAddress + 12 > cfg) fail('dirty configuration must not overlap tracked-range configuration');
+      if (dirtyAddress < markerAddress + 4 && dirtyAddress + 12 > markerAddress) fail('dirty configuration must not overlap marker');
+      if (excluded.has(dirtyConfig.name) || excluded.has(dirtyAbi.name) || dirtyConfig.name === dirtyAbi.name)
+        fail('dirty configuration and ABI exports must be distinct backend functions');
+      excluded.add(dirtyConfig.name); excluded.add(dirtyAbi.name);
+    }
     const report = {
       schema: INSTRUMENTATION_SECTION, magic: INSTRUMENTATION_MAGIC,
       exports: { touch: opts.touch, config: opts.config, marker: opts.marker },
       configAddress: cfg, markerAddress, functions: 0, stores: 0, copies: 0, fills: 0, inits: 0, maxWriteDepth: 0,
       rangeFilter: opts.nativeFilter ? 'native-hook' : 'wasm',
+      inlineDirtyBlocks: opts.inlineDirtyBlocks, inlineDirtyStores: 0,
+      ...(opts.inlineDirtyBlocks ? { dirtyBlockAbi: DIRTY_BLOCK_ABI, dirtyConfigAddress: dirtyAddress,
+        dirtyBlockBytes: 32, dirtyTagBytes: 1, dirtyExports: { config: opts.dirtyConfig, abi: opts.dirtyAbi } } : {}),
     };
     const functions = [];
     const originalStart = module.getStart();
@@ -326,8 +349,37 @@ export async function instrumentWasm(input, options = {}) {
         module.if(module.i32.lt_u(address(), cfgLoad(baseWord)),
           module.i32.and(module.i32.ne(cfgLoad(baseWord + 1), c(0)),
             module.i32.lt_u(module.i32.sub(cfgLoad(baseWord), address()), length())), c(0)));
-      const guard = (address, length, originalPointer, offset = 0) => {
+      const guard = (address, length, originalPointer, offset = 0, scalarBytes = 0, depth = 0) => {
         let call = module.call(touch.name, [address(), length()], b.none);
+        if (opts.inlineDirtyBlocks && scalarBytes > 0 && scalarBytes <= 16) {
+          // Only a fully contained scalar heap store can bypass the native
+          // hook. Root writes, partial overlaps and bulk writes retain its
+          // clipping and capacity checks. The two endpoint tags cover at most
+          // two 32-byte blocks, including every unaligned scalar/SIMD store.
+          const relative = slot(depth, 'dirty-relative', b.i32);
+          const first = slot(depth, 'dirty-first', b.i32);
+          const last = slot(depth, 'dirty-last', b.i32);
+          const tagBase = () => module.i32.load(dirtyAddress, 4, c(0));
+          const generation = () => module.i32.load(dirtyAddress + 4, 4, c(0));
+          const dirty = block => module.i32.eq(module.i32.load8_u(0, 1,
+            module.i32.add(tagBase(), get(block))), generation());
+          const alreadySaved = module.block(null, [
+            module.local.set(first, module.i32.shr_u(get(relative), c(5))),
+            module.local.set(last, module.i32.shr_u(module.i32.add(get(relative), c(scalarBytes - 1)), c(5))),
+            module.if(dirty(first), module.if(module.i32.eq(get(first), get(last)), c(1), dirty(last)), c(0)),
+          ], b.i32);
+          const contained = module.if(module.i32.ge_u(cfgLoad(2), c(scalarBytes)),
+            module.i32.le_u(module.local.tee(relative, module.i32.sub(address(), cfgLoad(1)), b.i32),
+              module.i32.sub(cfgLoad(2), c(scalarBytes))), c(0));
+          // TH15 keeps all reversible state in its heap and has no external
+          // root. Reject host/stack stores here instead of paying both this
+          // guard and the native filter. Partial overlaps still call the hook.
+          // Backends with a root retain native clipping outside the heap.
+          const outside = module.if(module.if(cfgLoad(4), c(1), overlaps(address, length, 1)),
+            module.call(touch.name, [address(), length()], b.none));
+          call = module.if(contained, module.if(module.i32.eqz(alreadySaved), call), outside);
+          report.inlineDirtyStores++;
+        }
         // Most simulation writes are inside the heap. Short-circuit both the
         // unusual crossing case and the external root instead of eagerly
         // reading both complete range predicates for every scalar store.
@@ -354,7 +406,7 @@ export async function instrumentWasm(input, options = {}) {
           b.Store.setPtr(expr, module.local.tee(pointer, b.Store.getPtr(expr), b.i32));
           b.Store.setValue(expr, module.block(null, [
             module.local.set(value, b.Store.getValue(expr)),
-            guard(address, () => c(bytes), () => get(pointer), offset),
+            guard(address, () => c(bytes), () => get(pointer), offset, bytes, depth),
             get(value, valueType),
           ], valueType));
           report.stores++;
@@ -409,7 +461,19 @@ export async function verifyInstrumentedWasm(input, options = {}) {
     if (constantResult(marker.info.body) !== INSTRUMENTATION_MAGIC) fail('instrumentation marker missing or incorrect');
     exportedFunction(module, opts.touch, [b.i32, b.i32], b.none, true);
     if (opts.config !== null) exportedFunction(module, opts.config, [], b.i32);
-    return { marker: opts.marker, magic: INSTRUMENTATION_MAGIC };
+    if (opts.inlineDirtyBlocks) {
+      const abi = exportedFunction(module, opts.dirtyAbi, [], b.i32);
+      if (constantResult(abi.info.body) !== DIRTY_BLOCK_ABI) fail('incompatible dirty-block ABI');
+      exportedFunction(module, opts.dirtyConfig, [], b.i32);
+      const sections = WebAssembly.Module.customSections(new WebAssembly.Module(input), INSTRUMENTATION_SECTION);
+      if (sections.length !== 1) fail('inline-dirty-block instrumentation report missing or ambiguous');
+      const report = JSON.parse(new TextDecoder().decode(sections[0]));
+      if (report.inlineDirtyBlocks !== true || report.dirtyBlockAbi !== DIRTY_BLOCK_ABI ||
+          !Number.isInteger(report.inlineDirtyStores) || report.inlineDirtyStores <= 0)
+        fail('inline-dirty-block instrumentation report missing or incompatible');
+    }
+    return { marker: opts.marker, magic: INSTRUMENTATION_MAGIC,
+      ...(opts.inlineDirtyBlocks ? { dirtyBlockAbi: DIRTY_BLOCK_ABI, inlineDirtyBlocks: true } : {}) };
   } finally { module.dispose(); }
 }
 
@@ -421,7 +485,8 @@ async function main(args) {
     if (arg === '--verify') verify = true;
     else if (arg === '--no-config') options.config = null;
     else if (arg === '--native-filter') options.nativeFilter = true;
-    else if (/^--(touch|config|marker)=.+/.test(arg)) { const at = arg.indexOf('='); options[arg.slice(2, at)] = arg.slice(at + 1); }
+    else if (arg === '--inline-dirty-blocks') options.inlineDirtyBlocks = true;
+    else if (/^--(touch|config|marker|dirtyConfig|dirtyAbi)=.+/.test(arg)) { const at = arg.indexOf('='); options[arg.slice(2, at)] = arg.slice(at + 1); }
     else if (arg.startsWith('-')) fail(`unknown option ${arg}`);
     else positional.push(arg);
   }

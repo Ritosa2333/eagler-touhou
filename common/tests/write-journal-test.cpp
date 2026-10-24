@@ -26,6 +26,12 @@ struct alignas(32) Root {
 
 static bool initialize(bool heapOnly=false) {
     if (!J::Initialize(heapOnly?nullptr:&root.state,heapOnly?0:sizeof(root.state),8*1024*1024)) return false;
+    const auto* config=reinterpret_cast<const volatile std::uint32_t*>(
+        std::uintptr_t(eagler_rb_config_address()));
+    const auto* dirty=reinterpret_cast<const volatile std::uint32_t*>(
+        std::uintptr_t(eagler_rb_dirty_config_address()));
+    assert(dirty==config+5&&dirty[0]&&dirty[2]==J::DirtyGuardVersion);
+    assert(eagler_rb_dirty_config_abi()==J::DirtyGuardVersion);
     { J::GameScope game;
       root.state.~State(); new(&root.state) State();
       root.state.values={1,2,3}; root.state.object=std::make_unique<Object>(); }
@@ -227,6 +233,61 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         const auto* firstError=J::Error();
         J::Clear();assert(!J::Ready()&&config[0]==0);
         assert(J::Error()==firstError);
+    } else if (scenario==7) {
+        // Probe every scalar width and alignment, with neither, either, or
+        // both blocks already dirty. An inline first-write shortcut must not
+        // skip a first mutation merely because the other block has a tag.
+        const auto* config=reinterpret_cast<const volatile std::uint32_t*>(
+            std::uintptr_t(eagler_rb_config_address()));
+        const auto* dirty=reinterpret_cast<const volatile std::uint32_t*>(
+            std::uintptr_t(eagler_rb_dirty_config_address()));
+        const auto* tags=reinterpret_cast<const volatile std::uint8_t*>(std::uintptr_t(dirty[0]));
+        std::uint8_t* buffer=nullptr;
+        { J::GameScope game; buffer=static_cast<std::uint8_t*>(J::AllocateAligned(32,96)); }
+        const auto index=(reinterpret_cast<std::uintptr_t>(buffer)-config[1])/32;
+        std::array<std::uint8_t,96> before{};
+        for (std::size_t i=0;i<before.size();++i) before[i]=std::uint8_t(i*19+7);
+        std::memcpy(buffer,before.data(),before.size());
+        const std::array<std::uint8_t,16> replacement{
+            0xf1,0x31,0x82,0xa7,0x90,0x62,0xb3,0xc4,0x25,0xd6,0x47,0xe8,0x59,0x6a,0x7b,0x8c};
+        std::uint32_t frame=0,previous=dirty[1],wraps=0;
+        for (unsigned width: {1u,2u,4u,8u,16u}) for (unsigned offset=0;offset<32;++offset)
+          for (unsigned already=0;already<4;++already,++frame) {
+            assert(J::BeginFrame(frame));
+            const auto generation=dirty[1];
+            assert(config[0]==1&&generation>=1&&generation<=255&&generation!=previous);
+            if (previous==255) { assert(generation==1);++wraps; }
+            previous=generation;
+            if (already&1) buffer[0]^=0x61;
+            if (already&2) buffer[32]^=0x92;
+            switch (width) {
+                case 1: std::memcpy(buffer+offset,replacement.data(),1);break;
+                case 2: std::memcpy(buffer+offset,replacement.data(),2);break;
+                case 4: std::memcpy(buffer+offset,replacement.data(),4);break;
+                case 8: std::memcpy(buffer+offset,replacement.data(),8);break;
+                case 16: std::memcpy(buffer+offset,replacement.data(),16);break;
+            }
+            assert(tags[index]==generation);
+            if ((already&2)||offset+width>32) assert(tags[index+1]==generation);
+            assert(J::EndFrame()&&config[0]==0&&J::RestoreTo(frame));
+            assert(std::memcmp(buffer,before.data(),before.size())==0);
+            // Restoration keeps the generation monotonic; reopening a reused
+            // frame number may never mistake its prior tags for a fresh save.
+            assert(dirty[1]==generation);
+            assert(J::BeginFrame(frame));
+            assert(dirty[1]>=1&&dirty[1]<=255&&dirty[1]!=previous);
+            if (previous==255) { assert(dirty[1]==1);++wraps; }
+            previous=dirty[1];
+            buffer[0]=0xa7;buffer[63]=0x85;
+            assert(J::EndFrame()&&J::RestoreTo(frame));
+            assert(std::memcmp(buffer,before.data(),before.size())==0);
+          }
+        assert(frame==640&&wraps>=5);
+        J::Clear();assert(config[0]==0&&J::FrameCount()==0);
+        assert(J::BeginFrame(0));buffer[33]=0x65;
+        assert(J::EndFrame()&&J::RestoreTo(0));
+        assert(std::memcmp(buffer,before.data(),before.size())==0);
+        J::Release(buffer);
     } else return 0;
     std::printf("write-journal scenario %d passed\n",scenario);
     return 1;

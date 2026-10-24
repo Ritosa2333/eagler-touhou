@@ -15,6 +15,7 @@ const common=resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT||resolve(repository,
 const build=JSON.parse(readFileSync(resolve(out,'build.json'),'utf8'));
 assert.equal(build.kind,'th15-sdl3-application-release');assert.equal(build.features.multiplayer,true);
 assert.equal(build.netplay?.instrumentation,0x52424a31);
+assert.equal(typeof build.netplay.inlineDirtyBlocks,'boolean');assert.equal(build.netplay.dirtyGuardAbi,0x52424431);
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 for(const [name,digest] of Object.entries({...build.sources,...build.headers}))assert.equal(sha(readFileSync(resolve(root,name))),digest,'Release source changed: '+name);
 const objects=Object.keys(build.sources).filter(p=>p!=='web/cpp/sdl/BrowserRuntime.cpp').map(p=>resolve(out,'objects',p.replaceAll('/','_')+'.o'));
@@ -38,7 +39,8 @@ const result=spawnSync(process.env.TH_PYTHON||process.env.PYTHON||'python',[comp
  {cwd:root,env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'1'},encoding:'utf8',windowsHide:true});
 if(result.error||result.status)throw result.error||Error(result.stdout+result.stderr);
 const instrument=resolve(repository,'tools/rollback/instrument.mjs');
-for(const args of [[instrument,'--native-filter',resolve(dir,'th15.wasm'),resolve(dir,'th15.journal.wasm')],[instrument,'--verify',resolve(dir,'th15.journal.wasm')]]){
+const guard=['--native-filter',...(build.netplay.inlineDirtyBlocks?['--inline-dirty-blocks']:[])];
+for(const args of [[instrument,...guard,resolve(dir,'th15.wasm'),resolve(dir,'th15.journal.wasm')],[instrument,'--verify',...guard,resolve(dir,'th15.journal.wasm')]]){
  const checked=spawnSync(process.execPath,args,{stdio:'inherit',windowsHide:true});if(checked.error||checked.status)throw checked.error||Error('Fixture instrumentation failed');
 }
 renameSync(resolve(dir,'th15.journal.wasm'),resolve(dir,'th15.wasm'));

@@ -101,6 +101,8 @@ bool Initialize(void* root, std::size_t rootBytes, std::size_t heapBytes) {
     eagler_rb_config[0]=0;
     eagler_rb_config[1]=std::uint32_t(heapLo); eagler_rb_config[2]=std::uint32_t(heapBytes);
     eagler_rb_config[3]=std::uint32_t(rootLo); eagler_rb_config[4]=std::uint32_t(rootBytes);
+    eagler_rb_config[5]=std::uint32_t(reinterpret_cast<std::uintptr_t>(tags));
+    eagler_rb_config[6]=0; eagler_rb_config[7]=DirtyGuardVersion;
     statistics.capacity_bytes=sizeof(Entry)*MaxEntries;
     statistics.heap_capacity_kib=std::uint32_t(heapBytes/1024);
     ready=true;
@@ -147,6 +149,9 @@ bool BeginFrame(std::uint32_t frame) {
     if (frameCount && frame<=At(frameCount-1).number) return Fail("Write journal frame order rejected");
     if (frameCount==MaxFrames) return Fail("Write journal history exhausted");
     if (++tag==0) { std::memset(tags,0,heapBlocks+rootBlocks); tag=1; }
+    // Publish only after a wrapped generation has been cleared, and before
+    // tracing becomes observable by any instrumented simulation write.
+    eagler_rb_config[6]=tag;
     auto& next=At(frameCount++);
     next.number=frame; next.first=(entryHead+entryUsed)%MaxEntries; next.count=0;
     open=true; eagler_rb_config[0]=1;
@@ -222,6 +227,12 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE std::uint32_t eagler_rb_config_address() {
     return std::uint32_t(reinterpret_cast<std::uintptr_t>(&eagler_rb_config[0]));
 }
+EMSCRIPTEN_KEEPALIVE std::uint32_t eagler_rb_dirty_config_address() {
+    return std::uint32_t(reinterpret_cast<std::uintptr_t>(&eagler_rb_config[5]));
+}
+EMSCRIPTEN_KEEPALIVE std::uint32_t eagler_rb_dirty_config_abi() {
+    return Netplay::WriteJournal::DirtyGuardVersion;
+}
 EMSCRIPTEN_KEEPALIVE __attribute__((noinline)) std::uint32_t eagler_rb_instrumented() {
     // The post-link pass patches this static word as well as the export body,
     // so calls inlined by wasm-opt read the same instrumentation version.
@@ -240,30 +251,38 @@ EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t b
     if (!eagler_rb_config[0] || !bytes) return;
     using namespace Netplay::WriteJournal;
     const auto lo=std::uintptr_t(address);
-    const auto hi=bytes>std::numeric_limits<std::uintptr_t>::max()-lo?
-        std::numeric_limits<std::uintptr_t>::max():lo+bytes;
-    // The compact production instrumentation delegates range filtering here.
-    // Pure reads only until tracing is disabled: even a write that starts
-    // outside a region can overlap its beginning and must reach Capture.
-    if (!(lo<heapHi && hi>heapLo) && !(rootBlocks && lo<rootHi && hi>rootLo)) return;
     // Scalar stores usually revisit blocks already captured in this frame.
     // Keep that case entirely inside the excluded trampoline: no tracing
-    // toggle, journal helper call or metadata write is needed. Check both ends
-    // for unaligned stores; bulk and region-crossing writes use full clipping.
+    // toggle, journal helper call or metadata write is needed. Test complete
+    // containment before the general overlap calculation. Initialize reserves
+    // at least 1 MiB, so subtracting a scalar width cannot underflow heap size.
     if (bytes<=16) {
         std::size_t first=0,last=0;
         bool contained=false;
-        if (lo>=heapLo && lo<heapHi && bytes<=heapHi-lo) {
-            first=(lo-heapLo)/BlockBytes;
-            last=(lo+bytes-1-heapLo)/BlockBytes;
+        const auto heapOffset=lo-heapLo;
+        if (heapOffset<=heapHi-heapLo-bytes) {
+            first=heapOffset/BlockBytes;
+            last=(heapOffset+bytes-1)/BlockBytes;
             contained=true;
         } else if (lo>=rootLo && lo<rootHi && bytes<=rootHi-lo) {
             first=heapBlocks+(lo-rootBlockLo)/BlockBytes;
             last=heapBlocks+(lo+bytes-1-rootBlockLo)/BlockBytes;
             contained=true;
         }
-        if (contained && tags[first]==tag && tags[last]==tag) return;
+        if (contained) {
+            // Most scalar stores do not cross a block. Do not load the same
+            // first-write tag twice, but still test both for unaligned stores.
+            if (tags[first]==tag && (first==last || tags[last]==tag)) return;
+            eagler_rb_config[0]=0;
+            eagler_rb_capture(address,bytes);
+            return;
+        }
     }
+    const auto hi=bytes>std::numeric_limits<std::uintptr_t>::max()-lo?
+        std::numeric_limits<std::uintptr_t>::max():lo+bytes;
+    // Bulk and region-crossing writes retain full clipping. A scalar starting
+    // outside a region can still overlap its beginning and must be captured.
+    if (!(lo<heapHi && hi>heapLo) && !(rootBlocks && lo<rootHi && hi>rootLo)) return;
     eagler_rb_config[0]=0;
     eagler_rb_capture(address,bytes);
 }
