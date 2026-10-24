@@ -7,7 +7,12 @@
 #include "RollbackHooks.hpp"
 namespace th15::sdl {
 class GraphicsDevice final:public ZunGraphics {
-    struct Texture {TextureImage image;u32 revision=0,renderScale=1;bool render_target=false;};
+    struct Texture {
+        TextureImage image;u32 revision=0,renderScale=1;bool render_target=false;
+        // Device-owned and sticky until unload: an edit in a discarded frame
+        // still makes this texture a possible journal-restoration destination.
+        bool cpu_mutated=false;
+    };
     std::map<u32,Texture> textures;
     std::map<const AnmResource*,std::vector<u32>> resources;
     touhou::sdl::Renderer::SurfaceCheckpoint rollback_base;
@@ -32,7 +37,7 @@ public:
     void unload(const AnmResource&);
     u32 texture(const AnmResource&,u32)override;
     TextureImage* pixels(u32 handle){auto it=textures.find(handle);return it==textures.end()?nullptr:&it->second.image;}
-    void changed(u32 handle,std::array<u32,4> region={}){TH15_SYSTEM_SCOPE;auto it=textures.find(handle);if(it!=textures.end()){backend.flush();backend.changed(handle,it->second.revision,region);++it->second.revision;}}
+    void changed(u32 handle,std::array<u32,4> region={}){TH15_SYSTEM_SCOPE;auto it=textures.find(handle);if(it!=textures.end()){it->second.cpu_mutated=true;backend.flush();backend.changed(handle,it->second.revision,region);++it->second.revision;}}
     void bind_texture(u32 handle)override{backend.state.texture=handle;}
     touhou::graphics::PipelineState& pipeline()override{return backend.pipeline();}
     void set_layout(touhou::graphics::VertexLayout layout)override{backend.state.layout=touhou::graphics::attributes(layout);}

@@ -109,11 +109,12 @@ bool GraphicsDevice::resample_surface(u32 source,const i32* region,u32 target,co
 }
 void GraphicsDevice::rollback_restore(bool restore_base){
     TH15_SYSTEM_SCOPE;backend.cancel_present();presentation.reset();
-    // CPU text atlases are journaled with gameplay. Their GPU uploads are a
-    // device cache, so every restored atlas receives a fresh full-image upload.
+    // Edited CPU images are journaled with gameplay. Refresh their device cache
+    // after undo, including an image first edited in the discarded prediction.
+    // Never-edited ANM textures retain the same bytes and GPU upload across undo.
     for(auto& entry:textures){auto& texture=entry.second;
 #if TH15_MULTIPLAYER && TH15_WRITE_JOURNAL
-        if(!texture.render_target&&!texture.image.pixels.empty()&&Netplay::WriteJournal::OwnedByGameHeap(texture.image.pixels.data())){
+        if(texture.cpu_mutated&&!texture.render_target&&!texture.image.pixels.empty()&&Netplay::WriteJournal::OwnedByGameHeap(texture.image.pixels.data())){
             backend.changed(entry.first,texture.revision,{});++texture.revision;
         }
 #endif
