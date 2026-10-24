@@ -13,9 +13,9 @@ void FrameStatistics::sample(double seconds,bool active,u32 ticks){
     frames+=ticks;
 }
 float FrameStatistics::slowdown()const{return nominal?float(100.-double(float(actual/nominal))*100.):0;}
-AsciiRequest FrameStatistics::label()const{
-    char text[64];std::snprintf(text,sizeof(text),"%2.1ffps",double(fps)+.05);
-    AsciiStyle style;style.font=1;style.color=fps<30?0xff5050ffu:fps<40?0xffa0a0ffu:0xffffffffu;
+AsciiRequest FrameStatistics::label(float value)const{
+    char text[64];std::snprintf(text,sizeof(text),"%2.1ffps",double(value)+.05);
+    AsciiStyle style;style.font=1;style.color=value<30?0xff5050ffu:value<40?0xffa0a0ffu:0xffffffffu;
     return {text,{588,470,0},style};
 }
 }

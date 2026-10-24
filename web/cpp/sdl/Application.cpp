@@ -20,12 +20,16 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include "../../../portable/sdl/FrameCadence.hpp"
+#include "../../../portable/sdl/PresentationCadence.hpp"
+#include "../game/HighRefresh.hpp"
+#include "../game/PresentationAudit.hpp"
 #include "../../../portable/input/TouchController.hpp"
 #include <eagler/thprac/PracticePointer.hpp>
 #include <algorithm>
 EM_JS(int, th11_browser_keyboard, (), { return typeof Module["resetBrowserKeyboard"] === "function"; });
 EM_JS(void, th11_reset_browser_keyboard, (), { Module["resetBrowserKeyboard"]?.(); });
 EM_JS(void, th11_browser_frame, (int ok,double milliseconds,unsigned ticks), { Module["onGameFrame"]?.(ok,milliseconds,ticks); });
+EM_JS(int, th11_limit_presentation_to_60, (), { return Module["eaglerOptions"]?.limitPresentationTo60 ? 1 : 0; });
 #include <vector>
 #include <string>
 #include <cstdlib>
@@ -46,6 +50,9 @@ struct Application:StageResourceEffects {
     GameResources resources;
     GameSession session;
     FrameStatistics frame_statistics;
+    // Display-rate readout. Counted once per visible frame (the presentation
+    // pass when high refresh is active), never per simulation tick.
+    double presentation_origin=0;u32 presentation_frames=0;float presentation_fps=0;
     AsciiText frame_text{session.resources.core.ascii};
     AnmRenderer renderer;
     std::vector<u8> archive;
@@ -255,6 +262,8 @@ struct Application:StageResourceEffects {
         const auto before=session.state.phase;
         const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
         if(!session.update(input)){error=session.error;return false;}
+        presentation_audit::simulation_tick();
+        presentation_audit::sample_state(session);
         const auto after=session.state.phase;
         if(before!=GameSessionPhase::title&&after==GameSessionPhase::title)filter_practice_music(PracticeBgmEvent::Stop);
         if(before!=GameSessionPhase::stage&&after==GameSessionPhase::stage&&session.state.frame==0)frame_statistics.reset_run();
@@ -290,13 +299,43 @@ struct Application:StageResourceEffects {
         if(!audio_events()||!text_events())return false;
         if(!audio.update()){error=audio.error;return false;}audio.pump();
         frame_statistics.sample(double(SDL_GetTicks())*.001,after==GameSessionPhase::stage&&session.battle&&session.battle->stage_active&&!session.state.replay);
-        frame_text.clear();const auto label=frame_statistics.label();frame_text.add(label.text.c_str(),label.position,label.style);
-        if(!session.draw(renderer,&frame_text)){error=session.error;return false;}
+        return draw_session();
+    }
+    void presentation_frame(double seconds){
+        if(!presentation_origin)presentation_origin=seconds;
+        ++presentation_frames;
+        const double elapsed=seconds-presentation_origin;
+        if(elapsed<.5)return;
+        presentation_fps=float(double(presentation_frames)/elapsed);
+        presentation_origin=seconds;presentation_frames=0;
+    }
+    void reset_presentation_frames(){presentation_origin=0;presentation_frames=0;presentation_fps=0;}
+    bool draw_session(){
+        if(presentation_audit::enabled()){
+            if(high_refresh::render_only)presentation_audit::begin_sample(high_refresh::alpha);
+            else presentation_audit::begin_reference();
+        }
+        // TH10 behavior: the on-screen counter follows the presented frames, so
+        // a 120/144 Hz display reads 120/144 while logic stays at 60.
+        const float shown=high_refresh::render_only&&presentation_fps>0?presentation_fps:frame_statistics.fps;
+        frame_text.clear();const auto label=frame_statistics.label(shown);frame_text.add(label.text.c_str(),label.position,label.style);
+        if(high_refresh::render_only)presentation_frame(double(SDL_GetTicks())*.001);
+        if(!session.draw(renderer,&frame_text)){error=session.error;presentation_audit::end_frame();return false;}
 #ifdef TH_ENABLE_THPRAC
         renderer.flush();browser::ThpracUi::render(session,graphics.backend);
 #endif
+        presentation_audit::end_frame();
         graphics.present();
         return true;
+    }
+    // Display-only Draw transaction. Simulation, input, RNG, audio and
+    // Replay/recording cursors are untouched; the only state written here is
+    // the temporary presentation window owned by GameSession/Stage.
+    bool presentation_draw(float alpha,bool interpolate,bool world_interpolate){
+        high_refresh::begin(alpha,interpolate,true,world_interpolate);
+        const bool ok=draw_session();
+        high_refresh::end();
+        return ok;
     }
     bool return_to_title(){
         if(!save_scores())return false;
@@ -325,6 +364,9 @@ PracticeCadence cadence;
 #else
 touhou::sdl::FrameCadence cadence;
 #endif
+touhou::sdl::PresentationCadence presentation;
+touhou::sdl::PresentationGate presentation_gate;
+unsigned presentation_draws=0;
 bool running=false,suspended=false;u32 loop_epoch=0;double previous_frame=-1;
 std::array<u8,256> previous_scans{};
 SDL_Joystick* controller=nullptr;
@@ -496,21 +538,137 @@ EMSCRIPTEN_KEEPALIVE int th11_practice_configure(const double* words,unsigned co
 #endif
 EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
-EMSCRIPTEN_KEEPALIVE void th11_loop_pause(unsigned on){using namespace th11::sdl;suspended=on!=0;app.audio.suspend(suspended);previous_frame=-1;cadence.reset();clear_inputs();app.reset_frame_window();}
-EMSCRIPTEN_KEEPALIVE void th11_loop_stop(){using namespace th11::sdl;running=false;++loop_epoch;previous_frame=-1;cadence.reset();clear_inputs();app.audio.suspend(true);app.reset_frame_window();}
+EMSCRIPTEN_KEEPALIVE void th11_loop_pause(unsigned on){using namespace th11::sdl;suspended=on!=0;app.audio.suspend(suspended);previous_frame=-1;cadence.reset();presentation.reset();presentation_gate.reset();app.reset_presentation_frames();clear_inputs();app.reset_frame_window();}
+EMSCRIPTEN_KEEPALIVE void th11_loop_stop(){using namespace th11::sdl;th11::high_refresh::smooth_submission=false;running=false;++loop_epoch;previous_frame=-1;cadence.reset();presentation.reset();presentation_gate.reset();app.reset_presentation_frames();clear_inputs();app.audio.suspend(true);app.reset_frame_window();}
 EMSCRIPTEN_KEEPALIVE void th11_audio_close(){th11::sdl::app.audio.close();}
+bool interpolation_ready(){
+    auto& application=th11::sdl::app;
+    if(!application.initialized||!application.error.empty())return false;
+    const auto& session=application.session;
+    if(session.state.phase!=th11::GameSessionPhase::stage)return false;
+    if(!session.battle||!session.battle->stage_active||session.battle->transitioning)return false;
+    if(session.battle->dialogue&&session.battle->dialogue->active)return false;
+    return true;
+}
+#ifdef TH11_PRESENTATION_DIAGNOSTICS
+// Diagnostic surface for high-refresh verification. Read-only; never affects
+// simulation. Excluded from production packages by build.mjs.
+EMSCRIPTEN_KEEPALIVE const unsigned* th11_presentation_state(){
+    static unsigned state[10];
+    auto& s=th11::sdl::app.session;
+    state[0]=th11::sdl::presentation.high_refresh?1u:0u;
+    state[1]=unsigned(th11::sdl::cadence.interpolation_alpha()*1000.);
+    state[2]=th11::sdl::presentation_draws;
+    state[3]=interpolation_ready()?1u:0u;
+    state[4]=unsigned(s.state.phase);
+    state[5]=s.battle?1u:0u;
+    state[6]=s.battle&&s.battle->stage_active?1u:0u;
+    state[7]=(s.battle&&s.battle->transitioning?1u:0u)|((s.battle&&s.battle->dialogue&&s.battle->dialogue->active)?2u:0u);
+    state[8]=unsigned(th11::sdl::app.presentation_fps*100.f);
+    state[9]=th11::sdl::app.session.state.frame;
+    return state;
+}
+#endif
+#ifdef TH_PRESENTATION_AUDIT
+EMSCRIPTEN_KEEPALIVE void th11_loop_start();
+// A launch may finish after the lab has already frozen the session; block the
+// shell's loop start until resume() so freeze is not silently undone.
+bool presentation_lab_frozen=false;
+// Isolated diagnostic driver. Freeze stops the display callback without an
+// in-game pause; tick and draw are separate transactions.
+EMSCRIPTEN_KEEPALIVE int presentation_lab_freeze(){
+    using namespace th11::sdl;
+    presentation_lab_frozen=true;
+    if(!running)return 0;
+    running=false;++loop_epoch;previous_frame=-1;cadence.reset();presentation.reset();presentation_gate.reset();
+    app.audio.suspend(true);clear_inputs();app.graphics.backend.defer=false;
+    return 0;
+}
+EMSCRIPTEN_KEEPALIVE int presentation_lab_resume(){
+    using namespace th11::sdl;
+    presentation_lab_frozen=false;
+    if(running)return 0;
+    th11_loop_start();
+    return running?0:1;
+}
+EMSCRIPTEN_KEEPALIVE int presentation_lab_tick(){
+    using namespace th11::sdl;
+    if(running)return -1;
+    // The lab studies the high-refresh presentation, so authoritative
+    // references use the same continuous-submission rule as live 120 Hz.
+    th11::high_refresh::smooth_submission=true;
+    return sample_and_tick()?0:1;
+}
+EMSCRIPTEN_KEEPALIVE int presentation_lab_draw(float alpha,int world){
+    using namespace th11::sdl;
+    if(running)return -1;
+    ++presentation_draws;
+    return app.presentation_draw(alpha,true,world!=0)?0:1;
+}
+// Opens a real stage through the production restart path so a diagnostic
+// session has gameplay owners to observe. Diagnostic builds only.
+EMSCRIPTEN_KEEPALIVE int presentation_lab_start_stage(unsigned stage,int character,int subtype,int difficulty){
+    using namespace th11::sdl;
+    if(running)return -1;
+    return app.restart(stage,character,subtype,difficulty)?0:1;
+}
+EMSCRIPTEN_KEEPALIVE void presentation_lab_fault(unsigned on){th11::presentation_audit::fault(on!=0);}
+EMSCRIPTEN_KEEPALIVE int presentation_lab_gate(){using namespace th11::sdl;return presentation_gate.primed?1:0;}
+EMSCRIPTEN_KEEPALIVE int presentation_lab_world_frozen(){return interpolation_ready()?0:1;}
+// Start an archive demo (0..3) or an explicit replay payload without the title
+// menu, so a campaign can cover real stage/boss motion.
+// Read-only replay metadata: [count, character, subtype, difficulty,
+// stage1..7 numbers, stage1..7 frames].
+EMSCRIPTEN_KEEPALIVE const unsigned* presentation_lab_replay_info(const unsigned char* data,unsigned size){
+    static unsigned info[20]{};
+    th11::Replay replay;
+    if(!data||!replay.open(data,size)){info[0]=0;return info;}
+    info[0]=replay.stage_count();info[1]=replay.character();info[2]=replay.subtype();info[3]=replay.difficulty();
+    for(th11::u32 i=0;i<8;++i){const auto* stage=replay.stage(i);info[4+i]=stage?stage->number:0u;info[12+i]=stage?stage->frames:0u;}
+    return info;
+}
+EMSCRIPTEN_KEEPALIVE int presentation_lab_demo(unsigned index){
+    using namespace th11::sdl;
+    if(running)return -1;
+    if(!app.session.load_demo(index))return 1;
+    return app.tick(0)?0:2;
+}
+EMSCRIPTEN_KEEPALIVE int presentation_lab_replay(const unsigned char* data,unsigned size,unsigned stage){
+    using namespace th11::sdl;
+    if(running||!data||size<16)return -1;
+    if(!app.session.begin_replay(app.resources,data,size,stage,false))return 1;
+    return app.tick(0)?0:2;
+}
+#endif
 EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
-    using namespace th11::sdl;if(running||!app.initialized)return;app.release_loading();
-    running=true;suspended=false;previous_frame=-1;cadence.reset();clear_inputs();app.audio.suspend(false);app.reset_frame_window();
+    using namespace th11::sdl;
+#ifdef TH_PRESENTATION_AUDIT
+    if(presentation_lab_frozen)return;
+#endif
+    if(running||!app.initialized)return;app.release_loading();
+    running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();presentation_gate.reset();app.reset_presentation_frames();clear_inputs();app.audio.suspend(false);app.reset_frame_window();
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
         const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-        if(suspended){cadence.reset();return EM_TRUE;}
+        if(suspended){cadence.reset();presentation.reset();presentation_gate.reset();return EM_TRUE;}
+        bool custom_speed=false;
 #ifdef TH_ENABLE_THPRAC
-        const auto period=th11::browser::ThpracUi::simulation_interval(app.session);if(period!=cadence.period){cadence.period=period;cadence.reset();}
+        const auto period=th11::browser::ThpracUi::simulation_interval(app.session);
+        custom_speed=std::abs(period-1./60.)>1e-12;
+        if(period!=cadence.period){cadence.period=period;cadence.reset();presentation.reset();presentation_gate.reset();}
 #endif
+        // Display cadence is independent of the fixed 60 Hz simulation. The
+        // kill switch restores retail one-tick-per-picture presentation.
+        const bool limit60=th11_limit_presentation_to_60()!=0;
+        const bool ready=interpolation_ready()&&!limit60&&!custom_speed;
+        if(ready)presentation.advance(delta);else{app.reset_presentation_frames();presentation.reset();}
         const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
+        const bool high=presentation.high_refresh&&ready;
+        th11::high_refresh::smooth_submission=high;
+        const bool interpolate=presentation_gate.advance(high,ticks!=0);
         for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
+        // Extra draw-only frames never consume input, RNG, audio or Replay.
+        if(ok&&high){++presentation_draws;ok=app.presentation_draw(cadence.interpolation_alpha(),interpolate,true);}
         app.graphics.backend.commit();app.graphics.backend.defer=false;
         app.audio.pump();
         if(ticks)th11_browser_frame(ok?1:0,emscripten_get_now()-begin,ticks);
