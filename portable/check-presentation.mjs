@@ -48,3 +48,10 @@ execFileSync('python',[emcc,
   '-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-o',resolve(out,'multiplayer-presentation-check.cjs'),
 ],{env,cwd:root,stdio:'inherit',windowsHide:true});
 execFileSync(process.execPath,[resolve(out,'multiplayer-presentation-check.cjs')],{env,cwd:root,stdio:'inherit',windowsHide:true});
+execFileSync('python',[emcc,
+  resolve(root,'portable/multiplayer/frame-schedule.cpp'),
+  '-std=c++17','-O2','-UNDEBUG','-DTH11_MULTIPLAYER=1','-ffp-contract=off','-fno-strict-aliasing',
+  '-I'+resolve(root,'../../common/include'),'-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node',
+  '-o',resolve(out,'frame-schedule-check.cjs'),
+],{env,cwd:root,stdio:'inherit',windowsHide:true});
+execFileSync(process.execPath,[resolve(out,'frame-schedule-check.cjs')],{env,cwd:root,stdio:'inherit',windowsHide:true});
