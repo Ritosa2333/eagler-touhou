@@ -1,5 +1,6 @@
 #define TH15_MP_VISUAL_CHECK
 #include "native-gameplay.cpp"
+#include "opacity-draw-check.hpp"
 struct VisualGraphics final:ZunGraphics {
  touhou::graphics::PipelineState state;
  touhou::graphics::PipelineState& pipeline()override{return state;}
@@ -27,6 +28,12 @@ int main(int argc,char** argv){
   require(b.score.graze_total==1,"Graze accounting changed with glow aggregation");
  }
  World w(files,3,1,{0,1,3});auto& b=*w.battle;
+ {
+  const auto game_rng=w.environment.game_rng,visual_rng=w.visual;
+  opacity_draw_check::check(b.pilots[2]->player->visuals.root);
+  require(std::memcmp(&game_rng,&w.environment.game_rng,sizeof(Rng))==0&&std::memcmp(&visual_rng,&w.visual,sizeof(Rng))==0,
+   "Opacity reference Draw changed native game/visual RNG");
+ }
  {
   VisualGraphics graphics;AnmRenderer renderer(graphics);auto& remote=*b.pilots[2]->player;auto& local=*b.pilots[1]->player;
   remote.motion.position=local.motion.position;require(remote.visuals.focus_begin(true,1),"Remote focus creation failed");
