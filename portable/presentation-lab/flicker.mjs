@@ -37,12 +37,8 @@ export function analyzeFlicker({previous,current,samples,thresholds={}}){
     const entry={tick:current.tick||0,key:record.key,owner:record.ownerLabel,objectId:record.objectId,generation:record.generation,layer:record.layer,
       referenceStep:round(step),maxSampleStep:round(maxSampleStep),maxError:round(maxError),worstAlpha,reasons,
       fileIndex:record.lifecycle?.fileIndex,scriptIndex:record.lifecycle?.scriptIndex,spriteIndex:record.lifecycle?.spriteIndex};
-    // A large world step with no sample movement is an authored rebase that
-    // correctly snapped; keep it separately instead of reporting flicker.
-    // A snap shows only the two endpoints (min/mid max error); a blend moves
-    // through intermediate values. Both are authored rebases when the step is
-    // at the world-rebase scale.
-    if(step>=limits.rebaseStep&&(maxSampleStep<.5||maxSampleStep>=step*.9)){entry.kind='authored-rebase';rebases.push(entry);continue;}
+    // Distance and endpoint shape do not establish an authored rebase.
+    // Keep large snaps and stale endpoints visible in the incident list.
     entry.kind=step>=limits.rebaseStep?'blended-discontinuity':maxSampleStep<.5?'no-interpolation':'interpolated-step';
     flagged.push(entry);
   }

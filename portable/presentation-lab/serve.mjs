@@ -15,15 +15,13 @@ const exportsSet=new Set((build.exports||[]).map(entry=>entry.name));
 for(const name of config.requiredExports)if(!exportsSet.has(name))throw Error('Diagnostic build is missing '+name);
 
 // Assemble an isolated runtime directory: packaged shell + lab WASM.
-const runtime=config.runtimeRoot,shell=resolve(root,'build-eagler');
+const runtime=config.runtimeRoot,shell=resolve(root,'web/sdl-runtime');
 mkdirSync(runtime,{recursive:true});
-if(!existsSync(resolve(runtime,'manifest.json'))){
-  const source=existsSync(resolve(shell,'shell.mjs'))?shell:resolve(root,'web/sdl-runtime');
-  for(const name of ['shell.mjs','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs','managed.css','startup-branding.mjs','motion-replay.mjs','manifest.json'])
-    if(existsSync(resolve(source,name)))copyFileSync(resolve(source,name),resolve(runtime,name));
-  const html=existsSync(resolve(shell,'th11.html'))
-    ?readFileSync(resolve(shell,'th11.html'),'utf8')
-    :readFileSync(resolve(source,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
+{
+  for(const name of ['shell.mjs','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs','managed.css','startup-branding.mjs'])
+    copyFileSync(resolve(shell,name),resolve(runtime,name));
+  copyFileSync(resolve(root,'portable/browser/motion-replay.mjs'),resolve(runtime,'motion-replay.mjs'));
+  const html=readFileSync(resolve(shell,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
   writeFileSync(resolve(runtime,'th11.html'),html);
 }
 // The Lab does not need the original startup signature animation, and its
@@ -39,10 +37,12 @@ if(!existsSync(resolve(runtime,'manifest.json'))){
 }
 copyFileSync(resolve(config.buildRoot,'th11-sdl.mjs'),resolve(runtime,'th11-sdl.mjs'));
 copyFileSync(resolve(config.buildRoot,'th11-sdl.wasm'),resolve(runtime,'th11-sdl.wasm'));
+writeFileSync(resolve(runtime,'manifest.json'),JSON.stringify({game:'th11',profile:'presentation-lab',diagnostic:true,builtAt:build.builtAt,execution:{sha256:build.sha256,loaderSha256:build.loaderSha256}})+'\n');
 mkdirSync(resolve(runtime,'fonts'),{recursive:true});
-const fontSource=resolve(root,'web/assets/sdl-native/fonts/cp932.bin');
-if(existsSync(fontSource))copyFileSync(fontSource,resolve(runtime,'fonts/cp932.bin'));
-const resources={schema:'eagler-sdl-resources/1',game:'th11',resources:[{path:'/fonts/cp932.bin',url:'./fonts/cp932.bin',bytes:existsSync(fontSource)?statSync(fontSource).size:131072}]};
+const fontSource=resolve(process.env.EAGLER_FONT_ROOT||resolve(root,'web/assets/sdl-native/fonts'),'cp932.bin');
+if(!existsSync(fontSource))throw Error('Set EAGLER_FONT_ROOT to the cp932.bin directory');
+copyFileSync(fontSource,resolve(runtime,'fonts/cp932.bin'));
+const resources={schema:'eagler-sdl-resources/1',game:'th11',resources:[{path:'/fonts/cp932.bin',url:'./fonts/cp932.bin',bytes:statSync(fontSource).size}]};
 writeFileSync(resolve(runtime,'resources.json'),JSON.stringify(resources,null,2)+'\n');
 if(sha256(readFileSync(resolve(runtime,'th11-sdl.wasm')))!==build.sha256)throw Error('Lab WASM is stale');
 

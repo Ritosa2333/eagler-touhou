@@ -1,91 +1,43 @@
-# 插值位移巡检（campaign）
+# th11 帧间位移巡检
 
-## 目标
-
-跑一场 TH11 Replay，自动记录“插值帧里位移过大 / 不沿端点路径”的对象，
-用于发现 presentation 状态没有在作者重置处失效导致的闪烁。只做诊断，
-不影响生产 Runtime。
+巡检以真实 Draw 端点和冻结后的 alpha 采样检查连续位移，记录对象身份、脚本、图层与首个异常窗口。普通版和 MP 使用各自的构建与驱动，报告同时保存 WASM 身份。
 
 ## 判据
 
-1. 冻结 rAF，但保留游戏逻辑与真实 Draw。
-2. 每 N 个固定 tick 取一对 reference frame（上一 tick / 当前 tick）。
-3. 对同一 tick 依次发出 alpha = 0, .25, .5, .75, 1 的 draw-only 采样。
-4. 对每个对象比较：
-   - **referenceStep**：上一/当前端点的位移；
-   - **maxSampleStep**：相邻 alpha 采样之间的最大位移；
-   - **maxError**：采样位置与“端点线性插值”的最大偏差。
-5. 超过阈值写入报告，保留 owner / objectId / layer / file / script / sprite / tick / alpha。
+- 每隔 `stride` 个固定 tick 读取相邻两个权威端点。
+- 在同一逻辑状态采样 alpha 0、0.25、0.5、0.75、1。
+- `referenceStep` 表示两端点的合成位移，`maxSampleStep` 表示相邻采样的最大位移，`maxError` 表示采样与线性路径的距离。
+- `large-interpolated-step` 和 `endpoint-mismatch` 保留在候选列表。300、512、1024 像素跳变与其他幅度使用同一套异常判据。
+- 位移幅度和端点形状用于分类，不构成作者重基的证明。出生、脚本切换与生命周期由对象身份和实际状态单独核对。
+- `complete` 表示请求的采样窗口全部执行且页面、驱动与采样没有错误。中断或异常保存报告并以非零状态退出。
 
-| 参数 | 默认 | 含义 |
+| 参数 | 默认 | 用途 |
 | --- | --- | --- |
-| `--min-step` | 8 | 端点位移小于该值不检查（静止/慢速） |
-| `--max-step` | 48 | 相邻 alpha 位移超过该值 → `large-interpolated-step` |
-| `--max-error` | 2.5 | 采样偏离端点线性路径 → `endpoint-mismatch` |
-| `--rebase-step` | 256 | 端点跳变达到该值且采样只落在端点时，归入 `authored-rebase` |
-| `--stride` | 30 | 每多少个 tick 采样一次 |
-| `--alphas` | 0,0.25,0.5,0.75,1 | 采样 alpha 序列 |
+| `--ticks` | 3600 | 固定 tick 数量 |
+| `--stride` | 30 | 采样间隔，范围 1–600 |
+| `--min-step` | 8 | 连续位移检查的最小幅度 |
+| `--max-step` | 48 | 相邻采样位移告警线 |
+| `--max-error` | 2.5 | 线性路径误差告警线 |
+| `--rebase-step` | 256 | 大幅跳变的分类线 |
+| `--alphas` | 0,0.25,0.5,0.75,1 | 包含两端点的有序采样序列 |
 
-分类：
+## 运行
 
-- `large-interpolated-step`：插值确实在做，但把一次“应当重置”的跳变平滑拉过去了。
-- `endpoint-mismatch`：采样没有落在端点之间（通常是 state 未重置 / 对象根本没插值）。
-- `authored-rebase`：512/1024 等世界重基导致的 snap（采样只落在端点）。
-  这是启发式豁免，不是“生命周期证明”；阈值以下（如 200）的旧端点仍会告警。
-  后续应以作者重基标记替代该启发式。
-
-## 复现命令
-
-需要先构建诊断 Runtime 并启动 Lab（`start-lab.ps1 -Build`），
-`campaign.mjs` 依赖本机 `playwright`（可从仓库 launcher 的 node_modules 解析）。
+设置 `EMSDK`、`EAGLER_FONT_ROOT`、`TH11_LAB_FONT`、`TH11_LAB_DATA`，分别指向 SDK、cp932.bin 目录、Gothic 字体和自备 th11.dat。
 
 ```powershell
-# 内置 archive demo（0..3）
-node ports/th11/portable/presentation-lab/campaign.mjs --demo 0 --ticks 3600 --stride 30
-
-# 自己的 Replay（建议能到 Boss）
-node ports/th11/portable/presentation-lab/campaign.mjs --replay "D:/path/th11_11.rpy" --ticks 12000
+node ports/th11/portable/build.mjs --presentation-lab
+node ports/th11/portable/presentation-lab/serve.mjs
+node ports/th11/portable/presentation-lab/campaign.mjs --demo 0 --ticks 300 --stride 30
+node ports/th11/portable/presentation-lab/campaign.mjs --replay D:/replays/th11_12.rpy --ticks 12000
 ```
 
-输出默认写入 `ports/th11/artifacts/presentation-lab/campaign/<name>.json`。
+浏览器入口共用 `tools/browser/launch.mjs`，自动使用工作区 Playwright 与已有 Chromium。`TH11_OUTPUT` 选择构建目录，`TH11_LAB_OUTPUT` 选择隔离运行目录，`PORT` 与 `--url` 配合选择本地端口。
 
-## 最终结果（原 `th11@eagler` 分支，2026-10-24）
+原版素材与报告保存在本地。默认报告为 `ports/th11/artifacts/presentation-lab/campaign/<name>.json`，可用 `--out` 指定路径。浏览器启动、宿主资源、命令回执、Demo／Replay 装载和采样构成一条实际运行链。
 
-`th11_12.rpy`（Extra，12,000 tick / 3,950 对象）：
+## 验证
 
-| 分类 | 数量 | 说明 |
-| --- | --- | --- |
-| `no-interpolation` | 2099 → **14** | 自机弹端点修复前 / 后 |
-| `authored-rebase` | 1370 | 512 重基 snap（采样只落在端点） |
-| `blended-discontinuity` | 0 | 没有跨重基平滑插值 |
+[2026-10-24 验收记录](../../docs/records/2026-10-24-display-high-refresh.md)登记当前源码上的构建、17 项准入与位移回归、三种 SDL 宿主编译配置及浏览器 Demo 巡检。
 
-剩余 14 条证据：`ANM layer 10`，`file 7 / script 20,23 / sprite 35`，
-`referenceStep≈10 px/tick`，`maxSampleStep=0`，`maxError≈referenceStep`。
-这是自机弹的另一条写入路径，尚未修完；不要把它当作通过。
-
-## 输出字段
-
-```json
-{
-  "tick": 900,
-  "owner": "ANM layer 10",
-  "objectId": 268522040,
-  "layer": 10,
-  "fileIndex": 7,
-  "scriptIndex": 20,
-  "spriteIndex": 35,
-  "referenceStep": 10.587,
-  "maxSampleStep": 0,
-  "maxError": 10.587,
-  "worstAlpha": 0,
-  "reasons": ["endpoint-mismatch"],
-  "kind": "no-interpolation"
-}
-```
-
-## 边界
-
-- 只覆盖 ANM 提交记录；非 ANM 屏幕矩形、HUD 文本、音频、存档不在范围内。
-- 采样是 CPU 顶点记录，不是 GPU 像素回读。
-- 本改动为 **normal** 版本；`ports/th11-mp` 的同步按 CONTRIBUTING 由同步维护者处理。
-- 报告是候选清单，最终视觉验收仍需真机高刷观察。
+ANM 字段、对象身份与 CPU 提交几何负责定位帧间位移问题。GPU 像素、声音、存档与网络状态分别使用对应专项验收。
