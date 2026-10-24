@@ -977,8 +977,7 @@ const deployment = {
 };
 await writeFile(resolve(staging, "deployment.json"), `${JSON.stringify(deployment, null, 2)}\n`);
 const sources = {};
-const sourceOwners = runtimeRelease ? ["launcher"] : ["launcher", ...gameIds];
-if (!runtimeRelease && languageGames.some(game => serverFeatures[game]?.thprac)) sourceOwners.push("thprac");
+const sourceOwners = runtimeRelease ? ["launcher"] : ["launcher", "common", ...gameIds];
 let packagedLauncherSource = null;
 if (runtimeRelease) {
   try {

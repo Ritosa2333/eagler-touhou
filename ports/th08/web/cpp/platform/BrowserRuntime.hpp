@@ -103,6 +103,7 @@ public:
     bool visual_draw_suppressed()const{return visual_suppressed;}
     bool visual_capture_pending()const{return pending_capture.target!=0;}
     u8* keyboard_state(){return keys;}
+    void clear_live_gameplay_input();
     void controller_state(i32 x,i32 y,const u8* b,u32 n,bool available){pad={};pad.x=x;pad.y=y;pad.available=available;if(b)std::memcpy(pad.buttons,b,std::min<u32>(128,n));InputController::bindings(pad,app.title.context.controller_state);}
     std::vector<u8> read(const char*)override;std::vector<u8> read_prefix(const char*,u32)override;
     bool write(const char*,const u8*,u32)override;std::vector<std::string> user_replays()override;

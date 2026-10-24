@@ -88,7 +88,14 @@ export async function runReplaySuite({adapter, cases, expectedIds, requiredCateg
       original = session(await adapter.openOriginal(spec, {signal}), 'original', id);
       candidate = session(await adapter.openCandidate(spec, {signal}), 'candidate', id);
       const comparison = await compareTraces(original.records, candidate.records, {requiredCategories});
-      results.push({id, replaySha256: item.replaySha256, status: comparison.status, comparison,
+      const terminalValidation=typeof adapter.validateCandidateEnd==='function'
+        ?await adapter.validateCandidateEnd(spec,{signal}):null;
+      if(terminalValidation!=null&&(!terminalValidation||typeof terminalValidation!=='object'||![
+        RESULT_STATUS.DIVERGED,RESULT_STATUS.INCOMPATIBLE,RESULT_STATUS.INCOMPLETE,
+      ].includes(terminalValidation.status)))throw new TypeError('Candidate end validation must return a non-passing result or null');
+      results.push({id, replaySha256: item.replaySha256,
+        status:comparison.status===RESULT_STATUS.PASS&&terminalValidation?terminalValidation.status:comparison.status,
+        comparison,...(terminalValidation?{terminalValidation}:{}),
         inspection, originalProvenance: original.provenance ?? null, candidateProvenance: candidate.provenance ?? null});
     } catch (error) {
       results.push({id, replaySha256: item.replaySha256, status: RESULT_STATUS.ERROR,

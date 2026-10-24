@@ -63,7 +63,7 @@ test('browser byte receipt rejects injected HTML and preserves its exact raw res
   const injected=Buffer.concat([original,Buffer.from('<script src="https://injected.invalid/"></script>')]);
   const identity=bytes=>({bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')});
   const expectedResponses=new Map([['/host',identity(original)],['/runtime.js',identity(Buffer.from('run()'))]]);
-  const probe=watchFixtureResponses(page,{base,expectedResponses,output,label:'native'});
+  const probe=watchFixtureResponses(page,{base,expectedResponses,expectedResponse:()=>null,output,label:'native'});
   const response=(path,bytes)=>({url:()=>base+path,status:()=>200,body:async()=>bytes,
     allHeaders:async()=>({'content-length':String(bytes.length)}),fromServiceWorker:()=>false});
   try{

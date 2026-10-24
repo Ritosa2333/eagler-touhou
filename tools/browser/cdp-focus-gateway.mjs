@@ -4,6 +4,7 @@ import {access, readFile, stat} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {basename, dirname, resolve} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
+import {performance} from 'node:perf_hooks';
 
 const packageRequire = createRequire(new URL('../../launcher/package.json', import.meta.url));
 const {WebSocket, WebSocketServer} = packageRequire('ws');
@@ -163,12 +164,16 @@ async function readDevToolsEndpoint(profileDir,child,timeoutMs) {
   throw new Error(`Timed out waiting for Chrome DevToolsActivePort under ${profileDir}${lastError?`: ${lastError.message}`:''}.`);
 }
 
-export async function createCdpFocusGateway(upstreamUrl,{closeTimeoutMs=2500,handshakeTimeoutMs=5000,maxQueueBytes=8*1024*1024,maxBufferedBytes=32*1024*1024}={}) {
+export async function createCdpFocusGateway(upstreamUrl,{closeTimeoutMs=2500,handshakeTimeoutMs=5000,maxQueueBytes=8*1024*1024,maxPayloadBytes=384*1024*1024,maxBufferedBytes=512*1024*1024,maxCommandRecords=4096}={}) {
   const upstreamEndpoint=isOwnedLoopbackUrl(upstreamUrl,'ws:');
-  for(const [name,value] of Object.entries({closeTimeoutMs,handshakeTimeoutMs,maxQueueBytes,maxBufferedBytes}))
+  for(const [name,value] of Object.entries({closeTimeoutMs,handshakeTimeoutMs,maxQueueBytes,maxPayloadBytes,maxBufferedBytes,maxCommandRecords}))
     if(!Number.isSafeInteger(value)||value<1)throw new TypeError(`${name} must be a positive safe integer.`);
+  // Reserve the largest WebSocket frame header, including a client masking key.
+  const frameOverheadBytes=14;
+  if(maxPayloadBytes>maxBufferedBytes-frameOverheadBytes)
+    throw new TypeError('maxBufferedBytes must cover maxPayloadBytes and its 14-byte WebSocket frame header.');
   const route=`/cdp-${randomBytes(24).toString('hex')}`;
-  const server=new WebSocketServer({host:'127.0.0.1',port:0,path:route,maxPayload:maxBufferedBytes});
+  const server=new WebSocketServer({host:'127.0.0.1',port:0,path:route,maxPayload:maxPayloadBytes});
   try {await waitForEmitter(server,'listening',5000,'CDP gateway listener');}
   catch(error){try{server.close();}catch{}throw error;}
   const address=server.address();
@@ -177,13 +182,17 @@ export async function createCdpFocusGateway(upstreamUrl,{closeTimeoutMs=2500,han
     throw new Error('CDP gateway did not bind a TCP loopback port.');
   }
   const audit={endpoint:`ws://127.0.0.1:${address.port}${route}`,upstreamEndpoint:upstreamEndpoint.href,
-    policy:{handshakeTimeoutMs,maxQueueBytes,maxBufferedBytes},rewrites:[],targets:[],errors:[],clientConnections:0};
+    policy:{handshakeTimeoutMs,maxQueueBytes,maxPayloadBytes,maxBufferedBytes,maxCommandRecords},rewrites:[],targets:[],errors:[],clientConnections:0,
+    commandClock:{source:'node:perf_hooks.performance.now',timeOriginMs:performance.timeOrigin},commands:[],commandRecordsDropped:0};
   const sessions=new Map(),connections=new Set();
   let rewriteEnabled=true,closed=false;
   const recordError=(where,error)=>{audit.errors.push({at:new Date().toISOString(),where,error:String(error?.message||error)});};
   const forward=(socket,data,binary)=>{
     if(socket.readyState!==WebSocket.OPEN)throw new Error('CDP gateway attempted to write to a closed socket.');
-    if(socket.bufferedAmount>maxBufferedBytes)throw new Error(`CDP gateway socket exceeded the ${maxBufferedBytes} byte buffered-data limit.`);
+    const messageBytes=Buffer.byteLength(data);
+    if(messageBytes>maxPayloadBytes)throw new Error(`CDP gateway message exceeded the ${maxPayloadBytes} byte payload limit.`);
+    if(messageBytes>maxBufferedBytes-socket.bufferedAmount-frameOverheadBytes)
+      throw new Error(`CDP gateway send would exceed the ${maxBufferedBytes} byte buffered-data limit (queued ${socket.bufferedAmount}, message ${messageBytes}, frame allowance ${frameOverheadBytes}).`);
     socket.send(data,{binary});
   };
   const closeSocket=(socket,code=1011,reason='CDP gateway protocol failure.')=>{
@@ -197,8 +206,22 @@ export async function createCdpFocusGateway(upstreamUrl,{closeTimeoutMs=2500,han
       client.terminate();
       return;
     }
-    const upstream=new WebSocket(upstreamUrl,{maxPayload:maxBufferedBytes,handshakeTimeout:handshakeTimeoutMs});
-    const connection={client,upstream,queued:[],queuedBytes:0,pendingFocus:new Map()};connections.add(connection);
+    const upstream=new WebSocket(upstreamUrl,{maxPayload:maxPayloadBytes,handshakeTimeout:handshakeTimeoutMs});
+    const connection={client,upstream,queued:[],queuedBytes:0,pendingFocus:new Map(),pendingCommands:new Map()};connections.add(connection);
+    const forwardCommand=bytes=>{
+      forward(upstream,bytes,false);
+      const message=JSON.parse(bytes.toString('utf8')),method=message.method;
+      if(!['Page.bringToFront','Target.activateTarget','Browser.setWindowBounds','Runtime.evaluate','Runtime.callFunctionOn'].includes(method)&&!method?.startsWith('Input.'))return;
+      if(audit.commands.length>=maxCommandRecords){audit.commandRecordsDropped++;return;}
+      const record={id:message.id,sessionId:message.sessionId??null,method,
+        targetId:message.params?.targetId??sessions.get(message.sessionId)?.targetId??null,
+        sentAtMonotonicMs:performance.now(),status:'pending'};
+      if(method==='Runtime.evaluate'||method==='Runtime.callFunctionOn')record.userGesture=typeof message.params?.userGesture==='boolean'?message.params.userGesture:null;
+      if(method==='Browser.setWindowBounds'){
+        record.windowId=message.params?.windowId??null;record.windowState=message.params?.bounds?.windowState??null;
+      }
+      audit.commands.push(record);connection.pendingCommands.set(commandKey(message),record);
+    };
     let upstreamReady=false,fatalSeen=false;
     const maybeForget=()=>{if(client.readyState===WebSocket.CLOSED&&upstream.readyState===WebSocket.CLOSED)connections.delete(connection);};
     const fatal=(where,error)=>{
@@ -226,13 +249,13 @@ export async function createCdpFocusGateway(upstreamUrl,{closeTimeoutMs=2500,han
         connection.queuedBytes+=bytes.length;
         if(connection.queuedBytes>maxQueueBytes){fatal('upstream-queue-limit',new Error(`Controller queued more than ${maxQueueBytes} bytes before Chrome CDP connected.`));return;}
         connection.queued.push(bytes);
-      }else try{forward(upstream,bytes,false);}catch(error){fatal('client-forward',error);}
+      }else try{forwardCommand(bytes);}catch(error){fatal('client-forward',error);}
     });
     upstream.on('unexpected-response',(_request,response)=>fatal('upstream-handshake',new Error(`Chrome CDP returned HTTP ${response.statusCode} during WebSocket handshake.`)));
     upstream.on('open',()=>{
       upstreamReady=true;
       const queued=connection.queued.splice(0);connection.queuedBytes=0;
-      for(const bytes of queued)try{forward(upstream,bytes,false);}catch(error){fatal('queued-forward',error);break;}
+      for(const bytes of queued)try{forwardCommand(bytes);}catch(error){fatal('queued-forward',error);break;}
     });
     upstream.on('message',(data,binary)=>{
       if(binary){fatal('browser-binary-message',new Error('Binary CDP messages are unsupported.'));return;}
@@ -244,6 +267,12 @@ export async function createCdpFocusGateway(upstreamUrl,{closeTimeoutMs=2500,han
         if(sessionId&&info){const target={targetId:info.targetId,type:info.type,url:info.url};sessions.set(sessionId,target);audit.targets.push({at:new Date().toISOString(),sessionId,...target});}
       }else if(message.method==='Target.detachedFromTarget')sessions.delete(message.params?.sessionId);
       if(Number.isSafeInteger(message.id)){
+        const commandRecord=connection.pendingCommands.get(commandKey(message));
+        if(commandRecord){
+          connection.pendingCommands.delete(commandKey(message));
+          commandRecord.responseAtMonotonicMs=performance.now();commandRecord.status=message.error?'error':'acknowledged';
+          if(message.error)commandRecord.error={code:message.error.code??null,message:message.error.message??'Unknown CDP error'};
+        }
         const key=commandKey(message),record=connection.pendingFocus.get(key);
         if(record){
           connection.pendingFocus.delete(key);
@@ -263,7 +292,8 @@ export async function createCdpFocusGateway(upstreamUrl,{closeTimeoutMs=2500,han
       try{forward(client,data,false);}catch(error){fatal('browser-forward',error);}
     });
     for(const [socket,peer,name] of [[client,upstream,'client'],[upstream,client,'browser']]){
-      socket.on('error',error=>fatal(`${name}-socket`,error));
+      socket.on('error',error=>fatal(`${name}-socket`,error.code==='WS_ERR_UNSUPPORTED_MESSAGE_LENGTH'?
+        new Error(`CDP gateway ${name} message exceeded the ${maxPayloadBytes} byte payload limit.`):error));
       socket.on('close',()=>{connection.queued.length=0;connection.queuedBytes=0;closeSocket(peer,1000,'Peer connection closed.');maybeForget();});
     }
   });

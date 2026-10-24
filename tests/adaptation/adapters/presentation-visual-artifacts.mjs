@@ -85,8 +85,8 @@ export function assessPresentationVisualArtifacts({id,refs,acceptance,observatio
     requireValue(row.status==='passed'&&row.complete===false&&row.machineComplete===true,`${id} ${label} does not retain a separate machine-only conclusion`);
   requireValue(same(accepted,observation.check)&&accepted.evidence?.game==='th08'&&accepted.evidence.variant==='normal'&&
     same(accepted.evidence.adaptationIds,[id])&&display.evidence?.game==='th08'&&display.evidence.variant==='normal'&&
-    same(display.evidence.adaptationIds,[id])&&Array.isArray(accepted.evidence.sources)&&
-    accepted.evidence.sources.filter(source=>same(source,display.evidence)).length===1,
+    same(display.evidence.adaptationIds,[id])&&
+    same(accepted.evidence.sources,[{schema:display.schema??null,...display.evidence}]),
   `${id} acceptance differs from its product-specific display source`);
   const raw=observations.value,collection=capture.value,inventory=index.value;
   requireValue(raw.schema==='eagler-presentation/display-observations/1'&&same(raw.scope,observation.scope)&&

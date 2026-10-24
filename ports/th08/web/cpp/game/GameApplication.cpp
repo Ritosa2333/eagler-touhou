@@ -1,6 +1,7 @@
 #include "GameApplication.hpp"
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
+#include "RngAudit.hpp"
 #include <algorithm>
 #include <cstdio>
 namespace th08 {
@@ -152,6 +153,9 @@ JobResult GameApplication::update_supervisor(){
     return invalid()?JobResult::Error:JobResult::Continue;
 }
 bool GameApplication::update(){
+#if defined(TH_PRESENTATION_AUDIT)
+    rng_audit::begin(&session.random);
+#endif
     if(!running||invalid())return false;
     presentation::CalculationScope presentation_tick;
     // ECL callbacks 18/28/29 write the game's persistent global time scale.

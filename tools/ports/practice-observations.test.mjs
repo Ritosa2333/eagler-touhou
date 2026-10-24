@@ -50,6 +50,27 @@ test('unknown or malformed practice declarations cannot become an unsupported-pr
   assert.equal(practiceBuildFeature({features:{thprac:false}},supported),false);
 });
 
+test('a supported product may publish a disabled package without claiming unobserved Host and UI behavior',()=>{
+  const input={game:'th08',productSupported:true,feature:false};
+  const declaration=practiceAdaptationChecks(input).find(check=>check.id==='PRACTICE-01');
+  assert.equal(declaration.status,'observed');assert.equal(declaration.complete,false);
+  assert.deepEqual(declaration.observation.observation,{feature:false,productSupported:true});
+  // Native enable/locale observations are not the missing Host/publication/UI capability matrix.
+  const withLocales=practiceAdaptationChecks({...input,locales:practiceLocaleRows()}).find(check=>check.id==='PRACTICE-01');
+  assert.equal(withLocales.status,'observed');assert.equal(withLocales.complete,false);
+  const audited=practiceAdaptationChecks({...input,finalErrorAudit:{status:'failed'}}).find(check=>check.id==='PRACTICE-01');
+  assert.equal(audited.status,'failed');assert.equal(audited.complete,false);
+});
+
+test('unknown support and unsupported enabled declarations cannot become a valid package observation',()=>{
+  for(const input of [{productSupported:undefined,feature:false},{productSupported:true,feature:undefined}]){
+    const row=practiceAdaptationChecks({game:'th08',...input}).find(check=>check.id==='PRACTICE-01');
+    assert.equal(row.status,'incomplete');assert.equal(row.complete,false);
+  }
+  const invalid=practiceAdaptationChecks({game:'th20',productSupported:false,feature:true}).find(check=>check.id==='PRACTICE-01');
+  assert.equal(invalid.status,'failed');assert.equal(invalid.complete,false);
+});
+
 function practiceLocaleRows(){
   return[
     {epoch:1,enabled:true,locale:'ja-JP',status:'passed',before:{open:false},
@@ -122,7 +143,7 @@ test('th08 practice rows require actual parameter consumption, both input paths 
     {id:'pointer',label:'Native pointer',available:true,exercised:true,source:'ThpracUi::mouse'},
   ]};
   const checks=practiceAdaptationChecks({game:'th08',productSupported:true,feature:true,locales});
-  assert.equal(checks.find(check=>check.id==='PRACTICE-04').status,'observed');
+  assert.equal(checks.find(check=>check.id==='PRACTICE-04').status,'incomplete','cached observed without retained initial/live evidence cannot pass');
   assert.equal(checks.find(check=>check.id==='PRACTICE-06').status,'observed');
   assert.equal(checks.find(check=>check.id==='PRACTICE-08').status,'observed');
 
@@ -133,4 +154,23 @@ test('th08 practice rows require actual parameter consumption, both input paths 
   assert.equal(rejected.find(check=>check.id==='PRACTICE-04').status,'failed');
   assert.equal(rejected.find(check=>check.id==='PRACTICE-06').status,'incomplete');
   assert.equal(rejected.find(check=>check.id==='PRACTICE-08').status,'incomplete');
+});
+
+test('th08 lifecycle numbered result recomputes retained evidence rather than trusting its status',()=>{
+  const locales=practiceLocaleRows();
+  locales[0].practiceLifecycle={status:'observed',complete:true};
+  const row=practiceAdaptationChecks({game:'th08',productSupported:true,feature:true,locales}).find(check=>check.id==='PRACTICE-03');
+  assert.equal(row.status,'incomplete');assert.equal(row.complete,false);
+  assert.equal(row.observation.observation.lifecycle.status,'incomplete');
+  assert.ok(row.observation.observation.lifecycle.missing.includes('retried'));
+  assert.equal(row.observation.observation.lifecycleEvidence,null);
+});
+
+test('missing real Launcher settings evidence remains incomplete and cannot hide an existing failure',()=>{
+  const launcherPractice={status:'observed',passed:true,scenes:[],cleanupErrors:[]};
+  const missing=practiceAdaptationChecks({game:'th08',productSupported:true,feature:true,locales:practiceLocaleRows(),launcherPractice});
+  for(const id of ['PRACTICE-01','PRACTICE-02'])assert.equal(missing.find(row=>row.id===id).status,'incomplete');
+  const locales=practiceLocaleRows();locales[0].status='failed';
+  const failed=practiceAdaptationChecks({game:'th08',productSupported:true,feature:true,locales,launcherPractice});
+  assert.equal(failed.find(row=>row.id==='PRACTICE-02').status,'failed');
 });

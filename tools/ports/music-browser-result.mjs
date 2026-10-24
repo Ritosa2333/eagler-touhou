@@ -1,8 +1,16 @@
-import {TH08_MIDI_PCM_ROLE,TH08_MIDI_VOICE_PCM_ROLE,TH08_OGG_PCM_ROLE,runtimePcmTargetIdentity} from './music-browser-helpers.mjs';
+import {TH08_MIDI_PCM_ROLE,TH08_MIDI_VOICE_PCM_ROLE,TH08_OGG_PCM_ROLE,runtimePcmTargetIdentity,runtimePcmSourceHorizonFrames} from './music-browser-helpers.mjs';
 
 /** IDs whose operations and observations are implemented by this music driver. */
 export function musicAdaptationIds(game){
   return game==='th08'?['AUDIO-01','AUDIO-03','AUDIO-04','AUDIO-05','MIDI-01','MIDI-02','MIDI-03','MIDI-04']:['AUDIO-01'];
+}
+
+/** Additional scenes retain already observed failures and missing evidence. */
+export function mergeMusicBehaviorResult(previous,next){
+  const passed=previous?.passed===true&&next?.passed===true;
+  const statuses=[previous?.status,next?.status];
+  const status=statuses.includes('failed')?'failed':!passed?'incomplete':statuses.includes('partial')?'partial':'passed';
+  return{...previous,passed,status};
 }
 
 /** Bind one Runtime MIDI event to its actual TinySynth send by source order and exact bytes. */
@@ -42,13 +50,18 @@ function midiCountsMatch(native,events){
 
 /** Preserve every error channel; optional mode/stage filters bind errors to one checked scene. */
 export function musicScenarioErrors(record,{fixtureFailures=[],mode:selectedMode=null,stages=null}={}){
-  const errors=[];
+  const errors=[],expectedCounts=new Map();
   const append=(channel,values,{mode=null,stage=null}={})=>{
     for(const value of values??[]){
       const itemMode=value&&typeof value==='object'&&value.mode!==undefined?value.mode:mode;
       const itemStage=value&&typeof value==='object'&&value.stage!==undefined?value.stage:stage;
       if(selectedMode&&itemMode!==selectedMode)continue;
       if(stages&&(!itemStage||!stages.includes(itemStage)))continue;
+      const fault=record.modes?.find(item=>item.mode===itemMode)?.missingOgg;
+      if(isExpectedMissingMusicError({channel,value,stage:itemStage,fault})){
+        const key=`${itemMode}:${channel}`,seen=expectedCounts.get(key)??0;expectedCounts.set(key,seen+1);
+        if(seen===0)continue;
+      }
       errors.push({channel,...(itemMode?{mode:itemMode}:{}),...(itemStage?{stage:itemStage}:{}),value});
     }
   };
@@ -57,6 +70,10 @@ export function musicScenarioErrors(record,{fixtureFailures=[],mode:selectedMode
   for(const mode of record.modes??[]){
     if(mode.responseAuditError)append('response-audit',[mode.responseAuditError],{mode:mode.mode,stage:'response-audit'});
     append('response-identity',mode.fixtureResponses?.errors,{mode:mode.mode,stage:'response-audit'});
+    if(Array.isArray(mode.protocolCapture)){
+      for(const item of mode.protocolCapture)append('runtime-protocol',[item.event],{mode:mode.mode,stage:item.stage});
+      continue;
+    }
     const eventStages=new Map((mode.eventStages??[]).map(item=>[item.index,item.stage]));
     for(let index=0;index<(mode.events??[]).length;index++){
       const event=mode.events[index];
@@ -65,6 +82,19 @@ export function musicScenarioErrors(record,{fixtureFailures=[],mode:selectedMode
     }
   }
   return errors;
+}
+
+/** Only the exact request-bound missing-resource negative is an expected failure. */
+export function isExpectedMissingMusicError({channel,value,stage,fault}={}){
+  if(stage!=='configure'||fault?.requestStatus!==404||fault.requestCount!==1||typeof fault.requestUrl!=='string'||
+    fault.configureResponse?.ok!==false||typeof fault.configureResponse.request!=='string'||
+    !fault.configureResponse.error?.includes(fault.path))return false;
+  if(channel==='http-or-request')return value?.url===fault.requestUrl&&value.status===404&&!value.failure;
+  if(channel==='console')return value?.url===fault.requestUrl&&/404/.test(value.text??'');
+  if(channel==='runtime-protocol')return value?.request===fault.configureResponse.request&&
+    value.epoch===fault.configureResponse.epoch&&value.game==='th08'&&value.protocol==='eagler-touhou/1'&&
+    value.ok===false&&value.error===fault.configureResponse.error;
+  return false;
 }
 
 /** A mode-scoped check can pass while any captured error still fails the overall journey. */
@@ -103,11 +133,12 @@ export function th08OggTrackFile(nativeName){
 }
 
 /** A real OGG title scene must bind the native source name, verified input and output PCM. */
-export function th08OggTitleOutcome({native,expectedFile='th08_01.ogg',input=null,pcm,errors=[]}={}){
+export function th08OggTitleOutcome({native,expectedFile='th08_01.ogg',input=null,pcm,pcmCollection,errors=[]}={}){
   const observedFile=native?.name?.replace(/\.wav$/i,'.ogg')??null;
   const identity=observedFile===expectedFile&&input?.name===expectedFile&&typeof input.sha256==='string';
   const ready=native?.exists===true&&native.soundReady===true&&native.pending===false&&native.playing===true;
-  const pcmPassed=isVerifiedRuntimePcmWindow(pcm,TH08_OGG_PCM_ROLE)&&pcm.outputObserved===true;
+  const pcmPassed=isVerifiedRuntimePcmWindow(pcm,TH08_OGG_PCM_ROLE)&&pcm.outputObserved===true&&
+    observedTrackPcmCollection(pcmCollection,pcm,expectedFile);
   const passed=identity&&ready&&pcmPassed&&errors.length===0;
   return {id:'th08-ogg-title-source-pcm',status:passed?'passed':'failed',passed,complete:false,expectedFile,
     observedName:native?.name??null,observedFile,input:input?{name:input.name,sha256:input.sha256}:null,
@@ -122,7 +153,8 @@ export function th08OggAcceptanceOutcome({title,stage,expectedStageSong=1,errors
   const stagePassed=stage?.native?.exists===true&&stage.native.soundReady===true&&stage.native.pending===false&&
     stage.native.playing===true&&stage.native.lastMusicSong===expectedStageSong&&typeof title?.observedFile==='string'&&stageFile!==title.observedFile&&
     stage?.input?.name===stageFile&&typeof stage.input.sha256==='string'&&
-    isVerifiedRuntimePcmWindow(stage?.pcm,TH08_OGG_PCM_ROLE)&&stage.pcm.outputObserved===true;
+    isVerifiedRuntimePcmWindow(stage?.pcm,TH08_OGG_PCM_ROLE)&&stage.pcm.outputObserved===true&&
+    observedTrackPcmCollection(stage.pcmCollection,stage.pcm,stageFile);
   const passed=titlePassed&&stagePassed&&errors.length===0;
   return {id:'AUDIO-01',status:passed?'partial':'failed',complete:false,passed,
     title:{passed:titlePassed,track:title?.observedFile??null,pcm:title?.pcmObserved===true},
@@ -130,6 +162,105 @@ export function th08OggAcceptanceOutcome({title,stage,expectedStageSong=1,errors
       track:stageFile,input:stage?.input?.name??null,pcm:stage?.pcm?.outputObserved===true},
     pcmScope:'Runtime output PCM from the identified Module.SDL3.audioContext mixer context',
     scope:'Verified title and first-stage OGG sources with Runtime PCM; complete track table, all scene changes and looping remain separate'};
+}
+
+/** Decoder policy is observed at every real lifecycle boundary, alongside existing source/PCM checks. */
+export function th08OggDecodeVariantOutcome({mode,record,errors=[]}={}){
+  const expected=mode==='ogg'?0:mode==='ogg-full'?1:null;
+  const title=th08OggTitleOutcome({...record?.title,errors});
+  const source=th08OggAcceptanceOutcome({title,stage:record?.start?.audio,errors});
+  const pause=record?.start?.oggPause,background=record?.start?.background,restart=record?.start?.restart;
+  const boundaries={title:[record?.title?.decoder],stage:[record?.start?.audio?.decoder],
+    pause:pause?.decoderSamples,background:background?.decoderSamples,restart:restart?.decoderSamples};
+  const counts={title:1,stage:1,pause:4,background:5,restart:3};
+  const decoderMatched=expected!==null&&Object.entries(counts).every(([name,count])=>
+    Array.isArray(boundaries[name])&&boundaries[name].length===count&&boundaries[name].every(decoder=>
+      decoder?.enabled===true&&decoder.decodeMode===expected));
+  const recomputed={pause:th08OggPauseOutcome(pause?.observationInput),
+    background:background?.observationInput?.mode==='ogg'?th08BackgroundContinuityOutcome(background.observationInput):null,
+    restart:th08OggRestartOutcome(restart?.observationInput)};
+  const passed=source.passed&&decoderMatched&&Object.values(recomputed).every(outcome=>outcome?.passed===true)&&errors.length===0;
+  return{mode,expectedDecodeMode:expected,passed,status:passed?'partial':'failed',complete:false,
+    source,decoderMatched,decoderBoundaries:boundaries,recomputed,pause:pause??null,background:background??null,restart:restart??null,
+    scope:'Verified title/stage OGG sources and PCM, native decoder policy, pause, background recovery and same-frame close/reopen'};
+}
+
+export function th08OggDecodeVariantsOutcome({stream,full,errors=[]}={}){
+  const variants=[th08OggDecodeVariantOutcome({mode:'ogg',record:stream,errors:errors.filter(error=>error.mode==='ogg')}),
+    th08OggDecodeVariantOutcome({mode:'ogg-full',record:full,errors:errors.filter(error=>error.mode==='ogg-full')})];
+  const passed=variants.every(variant=>variant.passed);
+  return{passed,status:passed?'partial':'failed',complete:false,variants,
+    scope:'Stream and full decoding share source, PCM and lifecycle semantics; other scenes and listening remain separately scoped'};
+}
+
+/** Account for queued mixer PCM, the SDL output block and the analyser's lookback. */
+export function th08MusicStopDrainFrames(basis){
+  const {native,target,outputBufferFrames,analysisWindowFrames,baseLatency}=basis??{};
+  if(native?.playing!==false||native.outputPaused!==false||native.pending!==false||
+    !Number.isInteger(native.queuedFrames)||native.queuedFrames<0||native.queuedFrames>3072||
+    target?.role!==TH08_OGG_PCM_ROLE||target.available!==true||target.state!=='running'||
+    !Number.isFinite(target.sampleRate)||target.sampleRate<=0||!Number.isFinite(target.currentTime)||
+    !Number.isInteger(outputBufferFrames)||outputBufferFrames<256||outputBufferFrames>16384||
+    !Number.isInteger(analysisWindowFrames)||analysisWindowFrames<2048||analysisWindowFrames>32768||
+    !Number.isFinite(baseLatency)||baseLatency<0||baseLatency>1)return null;
+  // AudioHost's mixer/SDL input is fixed at 44100 Hz; the output context may differ.
+  return runtimePcmSourceHorizonFrames({queuedFrames:native.queuedFrames,queuedSampleRate:44100,
+    target,outputBufferFrames,analysisWindowFrames,baseLatency});
+}
+
+export function th08MusicRoomOutcome({catalog=[],journey,errors=[]}={}){
+  const tracks=journey?.tracks??[];
+  const table=catalog.length===21&&tracks.length===catalog.length&&tracks.every((scene,index)=>
+    scene.index===index&&scene.observation?.status?.supervisorActive===8&&
+    scene.native?.totalFrames===catalog[index].totalFrames&&scene.native?.introFrames===catalog[index].introFrames&&scene.native?.sampleRate===catalog[index].sampleRate&&
+    scene.input?.sha256===catalog[index].input?.sha256&&scene.input?.bytes===catalog[index].input?.bytes&&
+    th08OggTitleOutcome({...scene,expectedFile:catalog[index].file}).passed);
+  const expected=catalog.find(track=>track.index===journey?.loop?.index),samples=journey?.loop?.samples??[];
+  const sampleValid=sample=>sample?.name===expected?.file.replace(/\.ogg$/,'.wav')&&sample.playing===true&&
+    sample.totalFrames===expected?.totalFrames&&sample.introFrames===expected?.introFrames&&sample.sampleRate===expected?.sampleRate&&
+    Number.isFinite(sample.cursorFrames)&&sample.cursorFrames>=0&&sample.cursorFrames<expected.totalFrames;
+  const wrap=samples.findIndex((sample,index)=>index>0&&sampleValid(sample)&&sampleValid(samples[index-1])&&
+    sample.at>samples[index-1].at&&sample.cursorFrames<samples[index-1].cursorFrames&&
+    samples[index-1].cursorFrames>expected.totalFrames-expected.sampleRate&&sample.cursorFrames>=expected.introFrames&&
+    sample.cursorFrames<expected.introFrames+expected.sampleRate);
+  const loopBasis=journey?.loop?.before?.pcmCollection?.sourceBoundary?.basis;
+  const loopHorizon=runtimePcmSourceHorizonFrames(loopBasis);
+  const remainingSeconds=expected&&samples.length?(expected.totalFrames-samples[0].cursorFrames)/expected.sampleRate:null;
+  const timingBudgetSeconds=loopHorizon===null?null:loopHorizon/loopBasis.target.sampleRate;
+  const loop=!!expected&&samples.length>2&&samples.every((sample,index)=>sampleValid(sample)&&Number.isFinite(sample.audioTime)&&
+    (!index||sample.at>samples[index-1].at&&sample.audioTime>samples[index-1].audioTime))&&wrap>0&&
+    samples[0].cursorFrames<expected.introFrames&&timingBudgetSeconds!==null&&
+    (samples.at(-1).at-samples[0].at)/1000>=remainingSeconds-timingBudgetSeconds&&
+    samples.at(-1).audioTime-samples[0].audioTime>=remainingSeconds-timingBudgetSeconds&&
+    th08OggTitleOutcome({...journey.loop.before,expectedFile:expected.file}).passed&&
+    th08OggTitleOutcome({...journey.loop.after,expectedFile:expected.file}).passed;
+  const fadeSamples=journey?.fade?.samples??[],gains=fadeSamples.map(sample=>sample.native?.gain);
+  const fadeIdentity=!!expected&&gains.length>=8&&fadeSamples.every(sample=>sample.native?.name===expected.file.replace(/\.ogg$/,'.wav')&&
+    sample.native?.gain?.name===sample.native.name&&sample.native.gain.sourceAvailable===true&&Number.isFinite(sample.native.gain.value)&&
+    sample.native.gain.playing===sample.native.playing);
+  const quiet=journey?.fade?.quiet,drainFrames=th08MusicStopDrainFrames(quiet?.drainBasis),settle=quiet?.pcmCollection?.settle;
+  const drainIdentity=runtimePcmTargetIdentity(quiet?.drainBasis?.target),quietWindows=quiet?.pcm?.windows;
+  const drained=drainFrames!==null&&drainIdentity.ok&&JSON.stringify(drainIdentity.identity)===JSON.stringify(quiet?.pcm?.identity)&&
+    Array.isArray(quietWindows)&&quietWindows.length>0&&quietWindows[0]?.target?.currentTime===settle?.completedAtTime&&
+    quiet.drainBasis.analysisWindowFrames===Math.max(0,...quietWindows.flatMap(window=>(window.taps??[]).map(tap=>tap.samples)))&&
+    settle?.status==='complete'&&settle.requiredFrames===drainFrames&&
+    settle.startedAtTime>=quiet.drainBasis.target.currentTime&&settle.elapsedFrames>=drainFrames&&
+    (settle.completedAtTime-settle.startedAtTime)*quiet.drainBasis.target.sampleRate>=drainFrames&&
+    quiet.pcm?.firstCurrentTime>=settle.completedAtTime&&quiet.pcm.identity?.contextIndex===quiet.drainBasis.target.contextIndex&&
+    quiet.pcm.sampleRate===quiet.drainBasis.target.sampleRate;
+  const fade=fadeIdentity&&drained&&gains[0].playing===true&&gains[0].value>0&&new Set(gains.map(gain=>gain.volume)).size>=8&&
+    gains.every((gain,index)=>Number.isInteger(gain.volume)&&gain.value>=0&&
+      Math.abs(gain.value-Math.pow(10,gain.volume/2000))<=Math.max(1e-7,Math.pow(10,gain.volume/2000)*1e-5)&&
+      (!index||gain.value<=gains[index-1].value+1e-6&&gain.volume<=gains[index-1].volume))&&
+    gains.at(-1).volume<=-4900&&gains.at(-1).playing===false&&fadeSamples.at(-1).at-fadeSamples[0].at>=7500&&
+    isVerifiedRuntimePcmWindow(journey.fade.quiet?.pcm,TH08_OGG_PCM_ROLE,{minimumWindows:8})&&journey.fade.quiet.pcm.outputObserved===false&&
+    th08OggTitleOutcome({...journey.fade.reset,expectedFile:expected.file}).passed&&journey.fade.reset.native.cursorFrames<expected.sampleRate*5;
+  const passed=table&&loop&&fade&&journey?.entered?.status?.supervisorActive===8&&
+    journey?.exited?.status?.supervisorActive===1&&errors.length===0;
+  return{id:'th08-music-room',passed,status:passed?'partial':'failed',complete:false,table,loop,fade,
+    expectedTracks:catalog.length,observedTracks:tracks.length,drained,drainFrames,errors,
+    loopTiming:{remainingSeconds,timingBudgetSeconds,firstCursorFrames:samples[0]?.cursorFrames??null},
+    scope:'Music Room resource table and PCM, natural loop, keyboard fade and Reset; displayed title text and other scene transitions remain separate'};
 }
 
 function cursorSame(a,b){return Number.isFinite(a)&&Number.isFinite(b)&&a===b;}
@@ -156,6 +287,39 @@ export function th08MidiPauseOutcome({before,paused,resumed,pauseEntered,resumeE
     scope:'Native MIDI timing continues through the gameplay pause path, as selected by TH08 MusicCommands'};
 }
 
+/** Recompute source establishment from raw native/clock samples and measured buffers. */
+export function isVerifiedOggSourceBoundary(boundary,pcm,expectedFile){
+  const {basis,settle,samples}=boundary??{},frames=runtimePcmSourceHorizonFrames(basis);
+  const identity=runtimePcmTargetIdentity(basis?.target);
+  if(frames===null||basis.queuedSampleRate!==44100||basis.queuedFrames>3072||boundary.file!==expectedFile||
+    !identity.ok||identity.identity.role!==TH08_OGG_PCM_ROLE||JSON.stringify(identity.identity)!==JSON.stringify(pcm?.identity)||
+    !Array.isArray(samples)||samples.length<2||!Number.isSafeInteger(boundary.firstObservedAtAttempt)||boundary.firstObservedAtAttempt<1||
+    !Array.isArray(pcm?.windows)||!pcm.windows.length||
+    settle?.status!=='complete'||settle.requiredFrames!==frames||settle.startedAtTime!==basis.target.currentTime||
+    basis.analysisWindowFrames!==Math.max(0,...pcm.windows.flatMap(window=>(window.taps??[]).map(tap=>tap.samples))))return false;
+  if(JSON.stringify(samples[0]?.target)!==JSON.stringify(basis.target))return false;
+  for(let index=0;index<samples.length;index++){
+    const {native,target,trackFile,buffering,attempt}=samples[index]??{},current=runtimePcmTargetIdentity(target);
+    if(attempt!==boundary.firstObservedAtAttempt+index||!Number.isFinite(native?.cursorFrames)||native.cursorFrames<0||
+      trackFile!==expectedFile||th08OggTrackFile(native?.name)!==expectedFile||native?.exists!==true||
+      native.soundReady!==true||native.pending!==false||native.playing!==true||native.outputPaused!==false||
+      !current.ok||JSON.stringify(current.identity)!==JSON.stringify(identity.identity)||target.state!=='running'||
+      !Number.isFinite(target.currentTime)||target.stateChangeDrops!==0||!Array.isArray(target.stateChanges)||
+      target.stateChangeCount!==target.stateChanges.length||target.stateChanges.some((change,i)=>change.sequence!==i+1)||
+      target.stateChanges.some(change=>change.sequence>basis.target.stateChangeCount&&change.state!=='running')||
+      (index===0?target.currentTime!==basis.target.currentTime:target.currentTime<=samples[index-1].target.currentTime)||
+      buffering?.queuedFrames!==native.queuedFrames||!Number.isInteger(native.queuedFrames)||native.queuedFrames<0||native.queuedFrames>3072||
+      ['queuedSampleRate','outputBufferFrames','analysisWindowFrames','baseLatency'].some(key=>buffering?.[key]!==basis[key]))return false;
+  }
+  if(samples[0].buffering.queuedFrames!==basis.queuedFrames)return false;
+  if(samples.every(sample=>sample.native.cursorFrames===samples[0].native.cursorFrames))return false;
+  const established=samples.findIndex(sample=>(sample.target.currentTime-basis.target.currentTime)*basis.target.sampleRate>=frames);
+  if(established<0||settle.completedAtTime!==samples[established].target.currentTime||
+    settle.elapsedFrames!==(settle.completedAtTime-settle.startedAtTime)*basis.target.sampleRate)return false;
+  const outputSamples=samples.slice(established);
+  return outputSamples.length===pcm.windows.length&&outputSamples.every((sample,index)=>sample.target.currentTime===pcm.windows[index].target.currentTime);
+}
+
 /** A Runtime close must clear the active OGG output before its same-frame relaunch. */
 function observedTrackPcmCollection(collection,pcm,expectedFile){
   const target=runtimePcmTargetIdentity(collection?.target);
@@ -169,7 +333,8 @@ function observedTrackPcmCollection(collection,pcm,expectedFile){
     collection.nonZeroSamples===pcm?.nonZeroSamples&&collection.captureCount===pcm?.captureCount&&
     collection.windowCount===pcm?.windowCount&&target.ok&&pcmIdentity.ok&&
     JSON.stringify(target.identity)===JSON.stringify(pcmIdentity.identity)&&
-    target.identity.role===TH08_OGG_PCM_ROLE;
+    target.identity.role===TH08_OGG_PCM_ROLE&&isVerifiedOggSourceBoundary(collection.sourceBoundary,pcm,expectedFile)&&
+    collection.attempts===collection.sourceBoundary.firstObservedAtAttempt+collection.sourceBoundary.samples.length-1;
 }
 
 export function th08OggRestartOutcome({before,quietWindow,reopened,expectedBeforeFile='th08_00.ogg',expectedFile='th08_01.ogg',sameRuntimeFrame,exitObserved}={}){
@@ -361,7 +526,7 @@ export function th08MidiTitleOutcome({native,expectedPath='bgm/th08_01.mid',even
     scope:'Title SMF identity, native sequencer messages, Launcher MIDI bridge and TinySynth PCM'};
 }
 
-function isVerifiedRuntimePcmWindow(pcm,role,{minimumWindows=1}={}){
+export function isVerifiedRuntimePcmWindow(pcm,role,{minimumWindows=1}={}){
   const identity=pcm?.identity,windows=pcm?.windows;
   const expectedSourceRole=role===TH08_MIDI_PCM_ROLE?'tinysynth-compressor-output':role===TH08_MIDI_VOICE_PCM_ROLE?'tinysynth-voice-output':null;
   if(pcm?.status!=='complete'||pcm.role!==role||identity?.role!==role||!Number.isInteger(identity.contextIndex)||identity.contextIndex<0||
@@ -369,7 +534,7 @@ function isVerifiedRuntimePcmWindow(pcm,role,{minimumWindows=1}={}){
      expectedSourceRole&&identity.sourceIdentity?.role!==expectedSourceRole||
      !Number.isInteger(pcm.windowCount)||pcm.windowCount<minimumWindows||!Array.isArray(windows)||windows.length!==pcm.windowCount||
      (pcm.windowCount>1&&(!Number.isFinite(pcm.elapsedFrames)||pcm.elapsedFrames<=0))||!Array.isArray(pcm.issues)||pcm.issues.length>0)return false;
-  let previous=null;let captureCount=0,nonZeroSamples=0;
+  let previous=null;let captureCount=0,nonZeroSamples=0;const tapTimes=new Map();
   for(const window of windows){
     const target=window?.target,taps=window?.taps;
     if(target?.role!==role||target.available!==true||target.contextIndex!==identity.contextIndex||target.state!=='running'||
@@ -387,12 +552,18 @@ function isVerifiedRuntimePcmWindow(pcm,role,{minimumWindows=1}={}){
       const tap=matches[0];
       if(tap.contextState!=='running'||tap.sampleRate!==identity.sampleRate||!Number.isFinite(tap.currentTime)||
          expectedSourceRole&&JSON.stringify(tap.sourceIdentity)!==JSON.stringify(identity.sourceIdentity)||
-         !Number.isSafeInteger(tap.nonZero)||tap.nonZero<0||!Number.isFinite(tap.peakAbs)||!Number.isFinite(tap.rms))return false;
+         !Number.isSafeInteger(tap.samples)||tap.samples<=0||!Number.isSafeInteger(tap.nonZero)||tap.nonZero<0||tap.nonZero>tap.samples||
+         !Number.isFinite(tap.peakAbs)||tap.peakAbs<0||!Number.isFinite(tap.rms)||tap.rms<0||
+         tapTimes.has(tapId)&&tap.currentTime<=tapTimes.get(tapId))return false;
+      tapTimes.set(tapId,tap.currentTime);
       captureCount++;nonZeroSamples+=tap.nonZero;
     }
     previous=target;
   }
-  return captureCount===pcm.captureCount&&nonZeroSamples===pcm.nonZeroSamples&&pcm.outputObserved===(nonZeroSamples>0);
+  const elapsedFrames=windows.length>1?(windows.at(-1).target.currentTime-windows[0].target.currentTime)*identity.sampleRate:null;
+  return pcm.firstCurrentTime===windows[0].target.currentTime&&pcm.lastCurrentTime===windows.at(-1).target.currentTime&&
+    (elapsedFrames===null||Math.abs(pcm.elapsedFrames-elapsedFrames)<1e-6)&&
+    captureCount===pcm.captureCount&&nonZeroSamples===pcm.nonZeroSamples&&pcm.outputObserved===(nonZeroSamples>0);
 }
 
 function stoppedRuntimeAudioEvidence(window,role,{allowClosed=false}={}){
@@ -470,12 +641,12 @@ export function th08MusicModeSeparationOutcome({ogg,midi,midiWithoutOgg,restored
   return {id:'MIDI-04',status:separate?'partial':'failed',complete:false,passed:separate,
     oggSelected:!!ogg?.passed,midiSelected:!!midi?.passed,
     midiWithoutOgg:midiOnly,oggRestored,restoredInSameRuntime:false,
-    scope:'MIDI runs with no OGG bytes and a fresh OGG configuration uses the verified OGG source; same-runtime settings switch is separate'};
+    scope:'MIDI runs with no OGG bytes; a separate fresh Runtime configuration uses the verified OGG source. Mode selection is applied before launch.'};
 }
 
 /** Corrupt-resource observation binds the fault to the live OGG source, not a UI label. */
 export function th08OggFaultOutcome({fault,native,pcm,diagnostics=[],expectedFile='th08_01.ogg',expectedPath=`/bgm-ogg/${expectedFile}`,requestStatus,configureError,
-  injectedBytesSha256,originalBytesSha256,errors=[]}={}){
+  injectedBytesSha256,originalBytesSha256,startup,configureResponse,errors=[]}={}){
   const missing=fault==='missing';
   const source=missing?true:typeof native?.name==='string'&&native.name.replace(/\.wav$/i,'.ogg')===expectedFile;
   const rejected=missing?requestStatus===404&&typeof configureError==='string'&&configureError.includes(expectedPath):
@@ -483,15 +654,50 @@ export function th08OggFaultOutcome({fault,native,pcm,diagnostics=[],expectedFil
   const visible=diagnostics.some(value=>typeof value==='string'&&value.includes(expectedPath))||
     missing&&typeof configureError==='string'&&configureError.includes(expectedPath);
   const outputVerified=isVerifiedRuntimePcmWindow(pcm,TH08_OGG_PCM_ROLE,{minimumWindows:8});
-  const silent=outputVerified&&pcm.outputObserved===false;
+  const startupRejected=missing&&startup?.app===0&&startup.firstFrameCount===0&&startup.ready?.event==='ready'&&
+    startup.ready.protocol==='eagler-touhou/1'&&startup.ready.game==='th08'&&Number.isSafeInteger(startup.ready.epoch)&&
+    configureResponse?.ok===false&&typeof configureResponse.request==='string'&&configureResponse.epoch===startup.ready.epoch&&
+    configureResponse.game==='th08'&&configureResponse.protocol==='eagler-touhou/1'&&configureResponse.error?.includes(expectedPath);
+  const silent=!missing&&outputVerified&&pcm.outputObserved===false;
+  const noFaultOutput=missing?startupRejected:silent;
   const faultIdentity=missing||typeof injectedBytesSha256==='string'&&typeof originalBytesSha256==='string'&&
     injectedBytesSha256!==originalBytesSha256;
-  const passed=source&&rejected&&visible&&silent&&faultIdentity&&errors.length===0;
-  const evidenced=source&&rejected&&silent&&faultIdentity;
+  const passed=source&&rejected&&visible&&noFaultOutput&&faultIdentity&&errors.length===0;
+  const evidenced=source&&rejected&&noFaultOutput&&faultIdentity;
   return {id:`th08-ogg-${fault}-resource-diagnostic`,status:passed?'partial':evidenced?'failed':'incomplete',passed,complete:false,fault,expectedFile,
-    expectedPath,sourceRejected:rejected,silent,outputVerified,diagnosticVisible:visible,diagnostics,requestStatus:requestStatus??null,
+    expectedPath,sourceRejected:rejected,silent,outputVerified,startupRejected,diagnosticVisible:visible,diagnostics,requestStatus:requestStatus??null,
     configureError:configureError??null,injectedBytesSha256:injectedBytesSha256??null,originalBytesSha256:originalBytesSha256??null,
     scope:'Controlled OGG source fault is rejected and a user-facing resource diagnostic identifies the affected file'};
+}
+
+/** Mode recovery uses a new configured Runtime; the running Runtime has no mode-switch command. */
+export function th08MusicFaultRecoveryOutcome({fault,recovery,errors=[]}={}){
+  const scene=recovery?.scene;
+  const output=th08MidiTitleOutcome({native:scene?.native,events:scene?.events,sendCorrelation:scene?.sendCorrelation,
+    pcm:scene?.pcm,contextState:scene?.contextState,errors});
+  const selected=recovery?.selectedMode==='midi'&&recovery.observedMode==='midi'&&recovery.capability?.midi===true&&
+    recovery.configureResponse?.ok===true&&recovery.configureResponse.game==='th08'&&
+    recovery.configureResponse.protocol==='eagler-touhou/1'&&recovery.configureResponse.epoch===recovery.after?.epoch&&recovery.runtimeResources?.length===0;
+  const old=recovery?.before,next=recovery?.after;
+  const fresh=Number.isSafeInteger(old?.epoch)&&Number.isSafeInteger(next?.epoch)&&next.epoch>old.epoch&&
+    old.href!==next.href&&recovery.oldFrameDetached===true;
+  const first=recovery?.firstFrame;
+  const launched=first?.protocol==='eagler-touhou/1'&&first.game==='th08'&&first.event==='first-frame'&&first.epoch===next?.epoch;
+  const retired=fault?.fault==='missing'||recovery?.exit?.protocol==='eagler-touhou/1'&&recovery.exit.game==='th08'&&
+    recovery.exit.epoch===old?.epoch&&recovery.exit.event==='exit'&&recovery.exit.code===0&&recovery.exit.status==='success';
+  const diagnosed=fault?.passed===true&&fault.diagnosticVisible===true;
+  const audioReady=recovery?.audioReady?.state==='running'&&Number.isFinite(recovery.audioReady.currentTime);
+  const passed=diagnosed&&selected&&fresh&&launched&&retired&&audioReady&&output.passed===true&&errors.length===0;
+  return{id:'th08-music-fault-mode-recovery',passed,status:passed?'partial':errors.length||scene&&output.status==='failed'?'failed':'incomplete',complete:false,
+    diagnosed,selected,fresh,launched,retired,audioReady,output,
+    scope:'Runtime resource diagnostic followed by public configure MIDI selection in a fresh epoch and verified MIDI output; Launcher settings UI is separate'};
+}
+
+export function th08MusicFaultJourneyOutcome({corrupt,missing,corruptRecovery,missingRecovery}={}){
+  const parts=[corrupt,missing,corruptRecovery,missingRecovery],passed=parts.every(part=>part?.passed===true);
+  return{id:'AUDIO-05',passed,status:passed?'partial':parts.some(part=>part?.status==='failed')?'failed':'incomplete',complete:false,
+    corrupt,missing,corruptRecovery,missingRecovery,
+    scope:'Missing and corrupt OGG diagnostics with fresh-epoch MIDI recovery through the production Runtime protocol; Launcher preference UI remains separate'};
 }
 
 /** Keep a controlled OGG mode's behavior verdict separate from its partial AUDIO-05 coverage assessment. */

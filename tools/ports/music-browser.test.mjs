@@ -2,33 +2,174 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {runInNewContext} from 'node:vm';
 import {mkdtemp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {resolve,join,relative} from 'node:path';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
+import {parseTh08MusicCatalog,parseTh08MessageMusicCues} from '../../tests/adaptation/adapters/titles/th08-music.mjs';
+import {th08MusicRoomOutcome,mergeMusicBehaviorResult,isVerifiedRuntimePcmWindow,th08OggDecodeVariantsOutcome,th08MusicStopDrainFrames} from './music-browser-result.mjs';
+import {runtimePcm as fixtureRuntimePcm} from './fixtures/music-pcm-window.mjs';
 import {assessDriverReport} from '../../tests/adaptation/results.mjs';
 import {attachMusicStageErrors,attachTh08OggFaultModeAssessment,correlateTh08MidiSends,musicScenarioErrors,musicScenarioPassed,musicTitleSceneOutcome,th08BackgroundContinuityOutcome,th08MidiCapabilityOutcome,th08MidiPauseOutcome,
   th08MidiRestartOutcome,th08MidiTitleOutcome,th08MusicModeSeparationOutcome,th08OggAcceptanceOutcome,th08OggFaultOutcome,
-  th08OggPauseOutcome,th08OggRestartOutcome,th08OggTitleOutcome,th08OggTrackFile} from './music-browser-result.mjs';
-import {describeNativeMusic,describeNoneMusicControl,mapTrackToInput,nativeAudioStatsShape,runtimeMusicResources,
+  th08OggPauseOutcome,th08OggRestartOutcome,th08OggTitleOutcome,th08OggTrackFile,th08MusicFaultRecoveryOutcome,th08MusicFaultJourneyOutcome,isExpectedMissingMusicError} from './music-browser-result.mjs';
+import {describeNativeMusic,describeNoneMusicControl,installMusicProtocolCapture,mapTrackToInput,nativeAudioStatsShape,runtimeMusicResources,
   decodeTh08MidiObservation,decodeTh08MusicObservation,readNativeAudioState,selectedMusicMappingGames,summarizeMusicPcm,
-  validateMusicManifest,verifyMusicInputs,TH08_OGG_PCM_ROLE,TH08_MIDI_PCM_ROLE,TH08_MIDI_VOICE_PCM_ROLE,verifyRuntimeAudioClosedReceipt} from './music-browser-helpers.mjs';
+  validateMusicManifest,verifyMusicInputs,TH08_OGG_PCM_ROLE,TH08_MIDI_PCM_ROLE,TH08_MIDI_VOICE_PCM_ROLE,verifyRuntimeAudioClosedReceipt,pressConsumedRuntimeKey} from './music-browser-helpers.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
+const runtimePcm=(role,options={})=>fixtureRuntimePcm(role,{startTime:1,...options});
+
+test('menu input waits for slow native consumption and release instead of a short wall-clock pulse',async()=>{
+  let requested=0,current=0,previous=0,polls=0,edges=0;
+  const writes=[];
+  const input={code:'KeyZ',mask:1,maxPolls:12,readInput:async()=>({available:true,inputCurrent:current,inputPrevious:previous}),
+    setKey:async(code,down)=>{writes.push(down);requested=down?1:0;},
+    wait:async()=>{if(++polls%4===0){previous=current;current=requested;if(current&&!previous)edges++;}}};
+  const result=await pressConsumedRuntimeKey(input);
+  assert.deepEqual(writes,[true,false]);assert.equal(edges,1);
+  assert.equal(current,0);assert.equal(previous,0);
+  assert.ok(result.observations.find(row=>row.phase==='pressed').polls>2);
+  assert.ok(result.observations.find(row=>row.phase==='released').polls>4);
+  const stalledWrites=[];
+  await assert.rejects(pressConsumedRuntimeKey({...input,maxPolls:3,
+    readInput:async()=>({available:true,inputCurrent:0,inputPrevious:0}),wait:async()=>{},
+    setKey:async(code,down)=>stalledWrites.push(down)}),/did not reach pressed/);
+  assert.deepEqual(stalledWrites,[true,false],'a stalled consumer still releases the key');
+});
+
+test('OGG stream and full each require observed decoder policy, source PCM and every lifecycle',()=>{
+  const record=decodeMode=>{
+    const decoder={enabled:true,decodeMode};
+    const scene=file=>{
+      const pcm=runtimePcm(TH08_OGG_PCM_ROLE);
+      return{native:{name:file.replace('.ogg','.wav'),exists:true,soundReady:true,pending:false,playing:true,outputPaused:false,cursorFrames:100,lastMusicSong:1},
+        decoder:{...decoder},trackFile:file,input:{name:file,sha256:'a'.repeat(64)},pcm,pcmCollection:observedTrackPcmCollection(pcm,file)};
+    };
+    const title=scene('th08_01.ogg'),audio=scene('th08_00.ogg'),before=audio.native;
+    const paused={...before,playing:false,cursorFrames:120},resumed={...before,cursorFrames:150};
+    const lifecycle=(count,observationInput)=>({passed:true,observationInput:structuredClone(observationInput),decoderSamples:Array.from({length:count},()=>({...decoder}))});
+    return{title,start:{audio,
+      oggPause:lifecycle(4,{before,paused,settled:{...paused},resumed,pauseEntered:true,resumeExited:true}),
+      background:lifecycle(5,{mode:'ogg',before,paused:{...before,outputPaused:true,visibilityState:'hidden'},
+        settled:{...before,outputPaused:true,visibilityState:'hidden'},resumed:{...resumed,visibilityState:'visible'},resumedOutput:audio}),
+      restart:lifecycle(3,{before:audio,quietWindow:quietWindow(TH08_OGG_PCM_ROLE),reopened:title,
+        expectedBeforeFile:'th08_00.ogg',expectedFile:'th08_01.ogg',sameRuntimeFrame:true,exitObserved:true})}};
+  };
+  const stream=record(0),full=record(1);
+  assert.equal(th08OggDecodeVariantsOutcome({stream,full}).passed,true);
+  assert.equal(th08OggDecodeVariantsOutcome({stream}).passed,false,'full must really execute');
+  assert.equal(th08OggDecodeVariantsOutcome({full}).passed,false,'stream must really execute');
+  for(const mutate of [r=>r.title.decoder.decodeMode=0,r=>r.start.audio.decoder.decodeMode=0,
+    r=>r.start.oggPause.decoderSamples[2].decodeMode=0,r=>r.start.background.decoderSamples[3].decodeMode=0,
+    r=>r.start.restart.decoderSamples[2].decodeMode=0,r=>r.start.restart.decoderSamples.pop(),
+    r=>delete r.start.oggPause.observationInput,r=>delete r.start.background.observationInput,r=>delete r.start.restart.observationInput,
+    r=>r.start.oggPause.observationInput.resumed.cursorFrames=100,
+    r=>r.start.background.observationInput.resumedOutput.pcm=runtimePcm(TH08_OGG_PCM_ROLE,{nonZeroPerWindow:0}),
+    r=>delete r.start.background.observationInput.resumedOutput.pcm,
+    r=>r.start.restart.observationInput.quietWindow=quietWindow(TH08_OGG_PCM_ROLE,{nonZeroPerWindow:1}),
+    r=>r.start.restart.observationInput.reopened.pcm=runtimePcm(TH08_OGG_PCM_ROLE,{nonZeroPerWindow:0}),
+    r=>r.start.audio.native.name='th08_02.wav',r=>r.title.pcm=runtimePcm(TH08_OGG_PCM_ROLE,{nonZeroPerWindow:0})]){
+    const changed=structuredClone(full);mutate(changed);assert.equal(th08OggDecodeVariantsOutcome({stream,full:changed}).passed,false);
+  }
+  const staleSummary=structuredClone(full);
+  for(const key of ['oggPause','background','restart'])staleSummary.start[key].passed=false;
+  assert.equal(th08OggDecodeVariantsOutcome({stream,full:staleSummary}).passed,true,'raw evidence, rather than cached summaries, decides the variant');
+  assert.equal(th08OggDecodeVariantsOutcome({stream,full,errors:[{mode:'ogg-full',channel:'console'}]}).passed,false);
+});
+
+test('passing Launcher scenes retain earlier Runtime failures and incomplete evidence',()=>{
+  for(const previous of [{status:'failed',passed:false},{status:'incomplete',passed:false}]){
+    assert.deepEqual(mergeMusicBehaviorResult(previous,{status:'partial',passed:true}),previous);
+    assert.equal(mergeMusicBehaviorResult({status:'failed',passed:false},{status:'incomplete',passed:false}).status,'failed');
+  }
+  assert.equal(mergeMusicBehaviorResult({status:'passed',passed:true},{status:'failed',passed:false}).status,'failed');
+  assert.equal(mergeMusicBehaviorResult({status:'partial',passed:true},{status:'passed',passed:true}).status,'partial');
+});
+
+test('PCM evidence needs real sample counts and advancing capture clocks, not summary counters',()=>{
+  for(const role of [TH08_OGG_PCM_ROLE,TH08_MIDI_PCM_ROLE]){
+    const baseline=runtimePcm(role,{windowCount:8});assert.equal(isVerifiedRuntimePcmWindow(baseline,role,{minimumWindows:8}),true);
+    for(const mutate of [p=>p.windows[2].taps[0].samples=0,p=>p.windows[2].taps[0].samples=1,
+      p=>p.windows[2].taps[0].currentTime=p.windows[1].taps[0].currentTime,p=>p.elapsedFrames+=480,
+      p=>delete p.windows[2].taps[0].samples,p=>p.firstCurrentTime+=1,p=>p.lastCurrentTime+=1]){
+      const changed=structuredClone(baseline);mutate(changed);assert.equal(isVerifiedRuntimePcmWindow(changed,role,{minimumWindows:8}),false);
+    }
+  }
+});
+
+test('independent th08 music tables join every track and reject missing or malformed formats',()=>{
+  const comments=Buffer.from(Array.from({length:21},(_,index)=>`@bgm/th08_${String(index).padStart(2,'0')}.mid\r\nTitle ${index}\r\nDescription`).join('\r\n'));
+  const format=Buffer.alloc(21*52+1);
+  for(let index=0;index<21;index++){
+    const p=index*52;format.write(`th08_${String(index).padStart(2,'0')}.wav`,p,'ascii');
+    format.writeUInt32LE(4,p+24);format.writeUInt32LE(400,p+28);
+    format.writeUInt16LE(1,p+32);format.writeUInt16LE(2,p+34);format.writeUInt32LE(44100,p+36);
+    format.writeUInt16LE(4,p+44);format.writeUInt16LE(16,p+46);
+  }
+  assert.equal(parseTh08MusicCatalog(comments,format)[20].totalFrames,100);
+  assert.throws(()=>parseTh08MusicCatalog(comments,format.subarray(0,20*52)));
+  const bad=Buffer.from(format);bad.writeUInt32LE(401,28);assert.throws(()=>parseTh08MusicCatalog(comments,bad));
+  assert.throws(()=>parseTh08MusicCatalog(Buffer.from('@bgm/th08_00.mid\nTitle'),format));
+});
+
+test('Boss music expectation comes from independent message instructions and StageHeader slots',()=>{
+  const message=Buffer.alloc(16),stage=Buffer.alloc(0x490);
+  message.writeUInt32LE(1,0);message.writeUInt32LE(8,4);message.writeUInt16LE(136,8);message[10]=7;message[11]=4;message.writeInt32LE(1,12);
+  stage.write('bgm/th08_00.mid',0x290);stage.write('bgm/th08_03.mid',0x310);
+  const parsed=parseTh08MessageMusicCues(message,stage,0);
+  assert.deepEqual(parsed.cues,[{entry:0,offset:8,time:136,slot:1,path:'bgm/th08_03.mid',file:'th08_03.ogg'}]);
+  assert.equal(parsed.stage.paths[0],'bgm/th08_00.mid');assert.equal(parsed.message.entryCount,1);
+  for(const mutate of [b=>b.writeUInt32LE(9999,0),b=>b.writeUInt32LE(16,4),b=>b[11]=255,b=>b.writeInt32LE(3,12)]){
+    const changed=Buffer.from(message);mutate(changed);assert.throws(()=>parseTh08MessageMusicCues(changed,stage,0));
+  }
+  assert.throws(()=>parseTh08MessageMusicCues(message,stage.subarray(0,0x48f),0));
+});
+
+test('Music Room requires all native sources, a natural timed wrap, gain fade, quiet PCM and keyboard reset',()=>{
+  const catalog=Array.from({length:21},(_,index)=>({index,file:`th08_${String(index).padStart(2,'0')}.ogg`,
+    input:{name:`th08_${String(index).padStart(2,'0')}.ogg`,sha256:'a'.repeat(64),bytes:100},introFrames:100,totalFrames:1000,sampleRate:100}));
+  const scene=track=>{const pcm=runtimePcm(TH08_OGG_PCM_ROLE);return{index:track.index,native:{name:track.file.replace('.ogg','.wav'),exists:true,soundReady:true,pending:false,playing:true,cursorFrames:10,
+    totalFrames:track.totalFrames,introFrames:track.introFrames,sampleRate:track.sampleRate},
+    observation:{status:{supervisorActive:8}},input:{...track.input},pcm,pcmCollection:observedTrackPcmCollection(pcm,track.file)};};
+  const native=cursor=>({name:'th08_00.wav',playing:true,totalFrames:1000,introFrames:100,sampleRate:100,cursorFrames:cursor});
+  const quiet={pcm:runtimePcm(TH08_OGG_PCM_ROLE,{windowCount:8,nonZeroPerWindow:0})};
+  for(const window of quiet.pcm.windows){window.target.currentTime+=1;for(const tap of window.taps)tap.currentTime+=1;}
+  quiet.pcm.firstCurrentTime+=1;quiet.pcm.lastCurrentTime+=1;
+  quiet.drainBasis={native:{playing:false,outputPaused:false,pending:false,queuedFrames:3072},
+    target:{...quiet.pcm.windows[0].target,tapIds:[0],currentTime:0.7},outputBufferFrames:2048,analysisWindowFrames:2048,baseLatency:0.01};
+  quiet.pcmCollection={settle:{status:'complete',requiredFrames:th08MusicStopDrainFrames(quiet.drainBasis),
+    startedAtTime:0.7,completedAtTime:2,elapsedFrames:62400}};
+  const journey={entered:{status:{supervisorActive:8}},exited:{status:{supervisorActive:1}},tracks:catalog.map(scene),
+    loop:{index:0,before:scene(catalog[0]),after:scene(catalog[0]),samples:[{...native(10),at:0,audioTime:1},{...native(980),at:9700,audioTime:10.7},{...native(110),at:10100,audioTime:11.1}]},
+    fade:{samples:Array.from({length:9},(_,index)=>({at:index*1000,native:{name:'th08_00.wav',playing:index<8,gain:{name:'th08_00.wav',sourceAvailable:true,
+      value:Math.pow(10,-index*625/2000),volume:-index*625,playing:index<8}}})),quiet,reset:scene(catalog[0])}};
+  assert.equal(th08MusicRoomOutcome({catalog,journey}).passed,true);
+  const delayedCatalog=catalog.map(track=>({...track,introFrames:300})),delayed=structuredClone(journey);
+  for(const track of delayed.tracks)track.native.introFrames=300;
+  for(const scene of [delayed.loop.before,delayed.loop.after,delayed.fade.reset])scene.native.introFrames=300;
+  delayed.loop.samples=[{...native(200),introFrames:300,at:0,audioTime:1},
+    {...native(980),introFrames:300,at:7800,audioTime:8.8},{...native(310),introFrames:300,at:8100,audioTime:9.1}];
+  assert.equal(th08MusicRoomOutcome({catalog:delayedCatalog,journey:delayed}).loop,true,
+    'output establishment can consume part of intro; natural-loop duration starts at the observed cursor');
+  delayed.loop.samples.at(-1).at=3000;delayed.loop.samples.at(-1).audioTime=4;
+  assert.equal(th08MusicRoomOutcome({catalog:delayedCatalog,journey:delayed}).loop,false,'an early cursor jump remains rejected');
+  for(const mutate of [j=>j.tracks.pop(),j=>delete j.tracks[4].native,j=>j.loop.samples[2].at=8000,
+    j=>j.loop.samples[2].cursorFrames=990,j=>delete j.loop.samples[1].audioTime,j=>j.loop.samples[2].audioTime=1,
+    j=>j.fade.samples[3].native.gain.value=1,j=>j.fade.samples.forEach(s=>s.native.gain.value=1),j=>delete j.fade.samples[0].native.gain,
+    j=>j.fade.quiet.pcm=runtimePcm(TH08_OGG_PCM_ROLE),j=>j.fade.reset.native.cursorFrames=600,
+    j=>delete j.fade.quiet.drainBasis,j=>j.fade.quiet.drainBasis.native.playing=true,
+    j=>j.fade.quiet.drainBasis.outputBufferFrames=null,j=>j.fade.quiet.pcmCollection.settle.requiredFrames=4096,
+    j=>j.fade.quiet.pcmCollection.settle.completedAtTime=0.8,j=>j.fade.quiet.drainBasis.target.contextIndex=1,
+    j=>j.fade.quiet.drainBasis.target.tapIds=[1],j=>j.fade.quiet.drainBasis.target.role='other',
+    j=>j.fade.quiet.drainBasis.target.sourceIdentity={nodeId:1,nodeType:'AudioNode',role:'other'},
+    j=>{j.fade.quiet.drainBasis.analysisWindowFrames=4096;j.fade.quiet.pcmCollection.settle.requiredFrames=th08MusicStopDrainFrames(j.fade.quiet.drainBasis);},
+    j=>{j.fade.quiet.pcm.firstCurrentTime=1.02;j.fade.quiet.pcmCollection.settle.completedAtTime=1.02;}]){
+    const changed=structuredClone(journey);mutate(changed);assert.equal(th08MusicRoomOutcome({catalog,journey:changed}).passed,false);
+  }
+});
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
-function runtimePcm(role,{windowCount=1,nonZeroPerWindow=3}={}){
-  const sourceIdentity=role===TH08_MIDI_PCM_ROLE?{nodeId:10,nodeType:'DynamicsCompressorNode',role:'tinysynth-compressor-output'}:
-    role===TH08_MIDI_VOICE_PCM_ROLE?{nodeId:11,nodeType:'AudioNode',role:'tinysynth-voice-output'}:null;
-  const identity={role,contextIndex:0,tapIds:[0],sampleRate:48000,...(sourceIdentity?{sourceIdentity}:{})};
-  const windows=Array.from({length:windowCount},(_,index)=>({index,target:{role,available:true,contextIndex:0,state:'running',sampleRate:48000,
-    ...(sourceIdentity?{sourceIdentity}:{}),currentTime:index/100,stateChangeCount:0,stateChangeDrops:0,stateChanges:[]},taps:[{tapId:0,contextState:'running',sampleRate:48000,
-      ...(sourceIdentity?{sourceIdentity}:{}),currentTime:index/100,samples:2048,nonZero:nonZeroPerWindow,peakAbs:nonZeroPerWindow?0.25:0,rms:nonZeroPerWindow?0.1:0}]}));
-  const nonZeroSamples=windowCount*nonZeroPerWindow;
-  return {status:'complete',role,identity,windowCount,captureCount:windowCount,sampleRate:48000,contextIndices:[0],tapIds:[0],
-    contextStates:windows.map(()=> 'running'),firstCurrentTime:windows[0]?.target.currentTime??null,
-    lastCurrentTime:windows.at(-1)?.target.currentTime??null,elapsedFrames:windowCount>1?(windowCount-1)*480:null,
-    nonZeroSamples,peakAbs:nonZeroPerWindow?0.25:0,maxRms:nonZeroPerWindow?0.1:0,outputObserved:nonZeroSamples>0,windows,issues:[],reason:null};
-}
 function quietWindow(role,{windowCount=8,nonZeroPerWindow=0}={}){
   const pcmWindow=runtimePcm(role,{windowCount,nonZeroPerWindow});
   return {status:'complete',proof:'runtime-output-pcm-window',role,quiet:pcmWindow.outputObserved===false,pcmWindow};
@@ -36,7 +177,14 @@ function quietWindow(role,{windowCount=8,nonZeroPerWindow=0}={}){
 function observedTrackPcmCollection(pcm,file){
   const identity=pcm.identity,target={role:identity.role,available:true,contextIndex:identity.contextIndex,tapIds:identity.tapIds,
     sampleRate:identity.sampleRate,state:'running',currentTime:pcm.lastCurrentTime,stateChanges:[],stateChangeCount:0,stateChangeDrops:0};
-  return {status:'observed',reason:null,expectedFile:file,observedFile:file,nativeReady:true,attempts:pcm.windowCount,
+  const buffering={queuedFrames:3072,queuedSampleRate:44100,outputBufferFrames:2048,analysisWindowFrames:2048,baseLatency:0.01};
+  const firstTime=pcm.firstCurrentTime-.25,basis={...buffering,target:{...target,currentTime:firstTime}};
+  const sample=(time,attempt)=>({attempt,trackFile:file,native:{name:file.replace('.ogg','.wav'),exists:true,soundReady:true,pending:false,
+    playing:true,outputPaused:false,queuedFrames:3072,cursorFrames:Math.floor(time*44100)},target:{...target,currentTime:time},buffering:{...buffering}});
+  const sourceBoundary={file,basis,firstObservedAtAttempt:1,settle:{status:'complete',requiredFrames:7920,startedAtTime:firstTime,
+    completedAtTime:pcm.firstCurrentTime,elapsedFrames:(pcm.firstCurrentTime-firstTime)*48000},
+    samples:[sample(firstTime,1),...pcm.windows.map((window,index)=>sample(window.target.currentTime,index+2))]};
+  return {status:'observed',reason:null,expectedFile:file,observedFile:file,nativeReady:true,attempts:pcm.windowCount+1,sourceBoundary,
     maxSamples:32,pollIntervalMs:80,pcmObservedAtAttempt:pcm.windowCount,windowCount:pcm.windowCount,captureCount:pcm.captureCount,
     firstCurrentTime:pcm.firstCurrentTime,lastCurrentTime:pcm.lastCurrentTime,elapsedFrames:pcm.elapsedFrames,
     sampleRate:pcm.sampleRate,outputObserved:true,nonZeroSamples:pcm.nonZeroSamples,target};
@@ -46,6 +194,34 @@ test('native title maps are loaded only for games selected in this sparse checko
   assert.deepEqual(selectedMusicMappingGames(['th08']),[]);
   assert.deepEqual(selectedMusicMappingGames(['th11']),['th11']);
   assert.deepEqual(selectedMusicMappingGames(['th15','th08']),['th15']);
+});
+
+test('OGG source acceptance reopens buffering and raw boundary samples instead of trusting a passed receipt',()=>{
+  const pcm=runtimePcm(TH08_OGG_PCM_ROLE,{windowCount:4});
+  const scene={native:{name:'th08_01.wav',exists:true,soundReady:true,pending:false,playing:true},
+    input:{name:'th08_01.ogg',sha256:'a'.repeat(64)},pcm,pcmCollection:observedTrackPcmCollection(pcm,'th08_01.ogg')};
+  assert.equal(th08OggTitleOutcome(scene).passed,true);
+  for(const mutate of [
+    s=>delete s.pcmCollection.sourceBoundary,
+    s=>s.pcmCollection.sourceBoundary.settle.requiredFrames=4096,
+    s=>s.pcmCollection.sourceBoundary.settle.completedAtTime-=.01,
+    s=>s.pcmCollection.sourceBoundary.basis.queuedFrames=0,
+    s=>s.pcmCollection.sourceBoundary.basis.target.stateChangeCount=999,
+    s=>s.pcmCollection.sourceBoundary.basis.analysisWindowFrames=4096,
+    s=>s.pcmCollection.sourceBoundary.samples[0].native.queuedFrames=0,
+    s=>s.pcmCollection.sourceBoundary.samples[0].native.name='th08_00.wav',
+    s=>s.pcmCollection.sourceBoundary.samples[1].native.playing=false,
+    s=>s.pcmCollection.sourceBoundary.samples[1].target.currentTime=.8,
+    s=>s.pcmCollection.sourceBoundary.samples[1].target.tapIds=[1],
+    s=>s.pcmCollection.sourceBoundary.samples[1].target.state='suspended',
+    s=>s.pcmCollection.sourceBoundary.samples[1].buffering.outputBufferFrames=4096,
+    s=>s.pcmCollection.sourceBoundary.samples[1].attempt+=1,
+    s=>s.pcmCollection.sourceBoundary.samples.splice(1,1),
+    s=>s.pcmCollection.sourceBoundary.samples.forEach(sample=>sample.native.cursorFrames=0),
+  ]){
+    const changed=structuredClone(scene);mutate(changed);
+    assert.equal(th08OggTitleOutcome(changed).passed,false,'a cached observed result cannot cover missing or mismatched source evidence');
+  }
 });
 
 test('music input manifests bind a complete OGG inventory to catalog paths and hashes',async t=>{
@@ -144,6 +320,14 @@ test('TH08 native reader copies exported observations and source paths from the 
   t.after(()=>{if(previous===undefined)delete globalThis.window;else globalThis.window=previous;});
   const state=readNativeAudioState('th08');
   assert.equal(state.musicObservation.cursorFrames,900);assert.equal(state.musicObservation.name,'th08_01.wav');
+  const gainBits=new DataView(new ArrayBuffer(4));gainBits.setFloat32(0,0.25,true);
+  window.core.sdl_music_gain_observation_v1=field=>[1,1,gainBits.getUint32(0,true),(-1204)>>>0,1,1][field];
+  const gained=readNativeAudioState('th08').musicObservation.gain;
+  assert.equal(gained.value,.25);assert.equal(gained.volume,-1204);assert.equal(gained.name,'th08_01.wav');
+  assert.equal(gained.sourceAvailable,true);assert.equal(gained.playing,true);
+  window.core.sdl_music_gain_observation_v1=field=>field===0?2:0;
+  assert.throws(()=>readNativeAudioState('th08'),/gain ABI/);
+  delete window.core.sdl_music_gain_observation_v1;
   assert.equal(state.midiObservation.elapsedTicks,300);assert.equal(state.midiObservation.path,'bgm/th08_01.mid');
   assert.equal(state.midiObservation.lastMusicSong,1);assert.equal(nativeAudioStatsShape('th08').midiObservationWordCount,22);
   const context={state:'running'},events=[{bytes:[0x90,60,100],time:1},{bytes:[0x80,60,0],time:2}],sends=events.map(event=>event.bytes);
@@ -204,7 +388,8 @@ test('required title OGG scene may pass while AUDIO-01 full coverage remains par
 test('TH08 music lifecycle gates require source identity, actual output and cursor continuity',()=>{
   const pcm=runtimePcm(TH08_OGG_PCM_ROLE,{windowCount:4,nonZeroPerWindow:25});
   const source={exists:true,soundReady:true,pending:false,playing:true,name:'th08_01.wav',cursorFrames:1000};
-  assert.equal(th08OggTitleOutcome({native:source,input:{name:'th08_01.ogg',sha256:'a'.repeat(64)},pcm}).passed,true);
+  assert.equal(th08OggTitleOutcome({native:source,input:{name:'th08_01.ogg',sha256:'a'.repeat(64)},pcm,
+    pcmCollection:observedTrackPcmCollection(pcm,'th08_01.ogg')}).passed,true);
   assert.equal(th08OggTitleOutcome({native:{...source,name:'th08_02.wav'},input:{name:'th08_01.ogg',sha256:'a'.repeat(64)},pcm}).passed,false);
   const paused={...source,playing:false,cursorFrames:1200},settled={...paused},resumed={...source,cursorFrames:1500};
   assert.equal(th08OggPauseOutcome({before:source,paused,settled,resumed,pauseEntered:true,resumeExited:true}).passed,true);
@@ -224,9 +409,10 @@ test('TH08 music lifecycle gates require source identity, actual output and curs
     settled:{...source,outputPaused:true,cursorFrames:1000,visibilityState:'hidden'},
     resumed:{...source,name:'th08_02.wav',outputPaused:false,cursorFrames:1500,visibilityState:'visible'}}).passed,false);
   assert.equal(th08OggTrackFile('bgm\\th08_03.wav'),'th08_03.ogg');
-  const title=th08OggTitleOutcome({native:source,input:{name:'th08_01.ogg',sha256:'a'.repeat(64)},pcm});
+  const title=th08OggTitleOutcome({native:source,input:{name:'th08_01.ogg',sha256:'a'.repeat(64)},pcm,
+    pcmCollection:observedTrackPcmCollection(pcm,'th08_01.ogg')});
   const stage=th08OggAcceptanceOutcome({title,expectedStageSong:1,stage:{native:{...source,name:'th08_00.wav',lastMusicSong:1},
-    input:{name:'th08_00.ogg',sha256:'b'.repeat(64)},pcm}});
+    input:{name:'th08_00.ogg',sha256:'b'.repeat(64)},pcm,pcmCollection:observedTrackPcmCollection(pcm,'th08_00.ogg')}});
   assert.equal(stage.passed,true);assert.equal(stage.complete,false);
   assert.equal(th08OggAcceptanceOutcome({title,expectedStageSong:3,stage:{native:{...source,name:'th08_00.wav',lastMusicSong:1},
     input:{name:'th08_00.ogg',sha256:'b'.repeat(64)},pcm}}).passed,false);
@@ -485,7 +671,7 @@ test('TH08 OGG fault is rejected only when the real source is pending, silent an
   const native={exists:true,name:'th08_01.wav',pending:true,soundReady:false,playing:false};
   const silent=runtimePcm(TH08_OGG_PCM_ROLE,{windowCount:8,nonZeroPerWindow:0});
   assert.equal(th08OggFaultOutcome({fault:'missing',native,pcm:silent,requestStatus:404,
-    configureError:'Resource download failed: /bgm-ogg/th08_01.ogg'}).passed,true);
+    configureError:'Resource download failed: /bgm-ogg/th08_01.ogg'}).passed,false,'missing download must prove rejected configure before any native launch');
   assert.equal(th08OggFaultOutcome({fault:'corrupt',native,pcm:silent,diagnostics:['音乐资源错误：/bgm-ogg/th08_01.ogg（OGG 解码失败）'],
     injectedBytesSha256:'b'.repeat(64),originalBytesSha256:'a'.repeat(64)}).passed,true);
   assert.equal(th08OggFaultOutcome({fault:'corrupt',native,pcm:silent,diagnostics:[],
@@ -501,6 +687,82 @@ test('TH08 OGG fault is rejected only when the real source is pending, silent an
       diagnostics:['音乐资源错误：/bgm-ogg/th08_01.ogg（OGG 解码失败）'],
       injectedBytesSha256:'b'.repeat(64),originalBytesSha256:'a'.repeat(64)}).passed,false,
     'silence requires eight actual windows from the identified Runtime output');
+});
+
+test('missing music proves the request-bound configure rejection and unlaunched Runtime, without inventing PCM silence',()=>{
+  const ready={protocol:'eagler-touhou/1',game:'th08',epoch:2,event:'ready'},
+    rejection={protocol:'eagler-touhou/1',game:'th08',epoch:2,request:'missing-request',ok:false,error:'Error: Resource download failed: /bgm-ogg/th08_01.ogg'};
+  const input={fault:'missing',requestStatus:404,configureError:rejection.error,configureResponse:rejection,
+    diagnostics:[rejection.error],startup:{app:0,firstFrameCount:0,ready}};
+  const accepted=th08OggFaultOutcome(input);assert.equal(accepted.passed,true);assert.equal(accepted.startupRejected,true);
+  assert.equal(accepted.outputVerified,false);assert.equal(accepted.silent,false);
+  for(const mutate of [v=>v.startup.app=9,v=>v.startup.firstFrameCount=1,v=>delete v.configureResponse,
+    v=>v.configureResponse.epoch=3,v=>v.configureResponse.ok=true,v=>v.requestStatus=200,v=>v.configureError='another file']){
+    const changed=structuredClone(input);mutate(changed);assert.equal(th08OggFaultOutcome(changed).passed,false);
+  }
+  const fault={...input,path:'/bgm-ogg/th08_01.ogg',requestUrl:'https://127.0.0.1/music/th08/th08_01.ogg',requestCount:1};
+  const http={url:fault.requestUrl,status:404},consoleError={url:fault.requestUrl,text:'Failed to load resource: 404'};
+  for(const [channel,value] of [['http-or-request',http],['console',consoleError],['runtime-protocol',rejection]])
+    assert.equal(isExpectedMissingMusicError({channel,value,stage:'configure',fault}),true);
+  for(const value of [{...http,url:'https://127.0.0.1/data/th08'}, {...http,status:500}, {...http,failure:'net::ERR_ABORTED'}])
+    assert.equal(isExpectedMissingMusicError({channel:'http-or-request',value,stage:'configure',fault}),false);
+  assert.equal(isExpectedMissingMusicError({channel:'runtime-protocol',value:{...rejection,request:'other'},stage:'configure',fault}),false);
+  assert.equal(isExpectedMissingMusicError({channel:'http-or-request',value:http,stage:'fault-recovery-launch',fault}),false);
+  const mode={mode:'missing-ogg',missingOgg:fault,events:[rejection],eventStages:[{index:0,stage:'configure'}]};
+  const record={modes:[mode],httpErrors:[{...http,mode:mode.mode,stage:'configure'}],consoleErrors:[{...consoleError,mode:mode.mode,stage:'configure'}]};
+  assert.deepEqual(musicScenarioErrors(record),[]);assert.equal(record.httpErrors.length,1,'expected negative raw errors remain retained');
+  mode.events.push({...rejection,request:'unexpected'});mode.eventStages.push({index:1,stage:'configure'});
+  assert.equal(musicScenarioErrors(record).length,1,'the next unexpected rejection still fails');
+  mode.events[1]={...rejection};assert.equal(musicScenarioErrors(record).length,1,'a repeated expected response is not another allowance');
+  mode.events.length=1;record.httpErrors.push({...record.httpErrors[0]});
+  assert.equal(musicScenarioErrors(record).length,1,'a repeated same-URL HTTP failure cannot borrow the original negative');
+  record.httpErrors.length=1;record.consoleErrors.push({...record.consoleErrors[0]});
+  assert.equal(musicScenarioErrors(record).length,1,'the console allowance is also single-use');
+});
+
+test('music protocol failures survive an old document snapshot and reject foreign events or failed binding drains',async()=>{
+  const callbacks={},captured=[],runtime={},window={__eaglerMusicProtocolStage:'fault-recovery-navigation',
+    __captureMusicProtocolFailure:async value=>captured.push(value)};window.top=window;
+  const frame={contentWindow:runtime,src:'https://local.test/runtime/th08.html?runtimeEpoch=2'};
+  runInNewContext(`(${installMusicProtocolCapture.toString()})({game:'th08'})`,{window,URL,
+    document:{querySelector:()=>frame},location:{origin:'https://local.test',href:'https://local.test/host?epoch=2'},
+    addEventListener:(name,callback)=>callbacks[name]=callback});
+  const data={protocol:'eagler-touhou/1',game:'th08',epoch:2,event:'abort',error:'late prior-document abort'},
+    event={origin:'https://local.test',source:runtime,data};
+  for(const foreign of [{...event,origin:'https://foreign.test'},{...event,source:{}},
+    {...event,data:{...data,epoch:3}},{...event,data:{...data,game:'th07'}}])callbacks.message(foreign);
+  assert.equal(captured.length,0);
+  const mode={mode:'corrupt-ogg',events:[],eventStages:[],protocolCapture:captured};
+  callbacks.message(event);assert.equal(await window.__flushMusicProtocolCaptures(),0);
+  assert.equal(mode.events.length,0,'the old event snapshot never sees the late abort');
+  const errors=musicScenarioErrors({modes:[mode]});assert.equal(errors.length,1);
+  assert.equal(errors[0].value.error,'late prior-document abort');assert.equal(errors[0].stage,'fault-recovery-navigation');
+  window.__captureMusicProtocolFailure=()=>Promise.reject(Error('binding lost during navigation'));
+  callbacks.message(event);await assert.rejects(window.__flushMusicProtocolCaptures(),/binding lost during navigation/);
+});
+
+test('fault recovery requires a new configured epoch and real MIDI messages and PCM, while UI coverage stays partial',()=>{
+  const native={active:true,invalid:false,fileIndex:8,trackCount:2,sysexCount:0,messageCount:2,noteOnCount:3,path:'bgm/th08_01.mid'},
+    correlation=correlateTh08MidiSends([{bytes:[0x90,60,100],time:10},{bytes:[0x80,60,0],time:100}],[[0x90,60,100],[0x80,60,0]]);
+  const fault={fault:'corrupt',passed:true,diagnosticVisible:true},
+    recovery={selectedMode:'midi',observedMode:'midi',capability:{midi:true},audioReady:{state:'running',currentTime:1},runtimeResources:[],before:{href:'/old?runtimeEpoch=2',epoch:2},after:{href:'/new?runtimeEpoch=3',epoch:3},oldFrameDetached:true,
+      configureResponse:{protocol:'eagler-touhou/1',game:'th08',epoch:3,ok:true},
+      firstFrame:{protocol:'eagler-touhou/1',game:'th08',epoch:3,event:'first-frame'},
+      exit:{protocol:'eagler-touhou/1',game:'th08',epoch:2,event:'exit',code:0,status:'success'},
+      scene:{native,sendCorrelation:correlation,events:correlation.events,contextState:'running',pcm:runtimePcm(TH08_MIDI_PCM_ROLE)}};
+  const accepted=th08MusicFaultRecoveryOutcome({fault,recovery});assert.equal(accepted.passed,true);assert.equal(accepted.complete,false);
+  for(const mutate of [v=>v.after.epoch=2,v=>v.observedMode='ogg',v=>v.configureResponse.epoch=2,v=>v.oldFrameDetached=false,
+    v=>v.capability.midi=false,v=>v.firstFrame.epoch=2,v=>v.exit.code=1,v=>v.runtimeResources.push({path:'old.ogg'}),
+    v=>v.scene.pcm.outputObserved=false,v=>v.scene.events=[],v=>v.scene.native.path='wrong.mid',v=>v.audioReady.state='suspended',v=>delete v.audioReady,
+    v=>v.scene.pcm.windows[0].target.state='suspended']){
+    const changed=structuredClone(recovery);mutate(changed);assert.equal(th08MusicFaultRecoveryOutcome({fault,recovery:changed}).passed,false);
+  }
+  assert.equal(th08MusicFaultRecoveryOutcome({fault,recovery,errors:[{channel:'http'}]}).passed,false);
+  const missingRecovery=structuredClone(recovery);delete missingRecovery.exit;
+  assert.equal(th08MusicFaultRecoveryOutcome({fault:{...fault,fault:'missing'},recovery:missingRecovery}).passed,true);
+  const journey=th08MusicFaultJourneyOutcome({corrupt:fault,missing:{...fault,fault:'missing'},corruptRecovery:accepted,missingRecovery:accepted});
+  assert.equal(journey.passed,true);assert.equal(journey.status,'partial');assert.equal(journey.complete,false);
+  assert.equal(th08MusicFaultJourneyOutcome({corrupt:fault,corruptRecovery:accepted}).passed,false);
 });
 
 test('corrupt OGG mode reports its behavior verdict while AUDIO-05 keeps partial coverage',async()=>{
@@ -625,5 +887,27 @@ test('music-browser rejects unknown, duplicate and empty CLI values with a fresh
     const report=JSON.parse(await readFile(join(output,'report.json'),'utf8'));
     assert.equal(report.status,'failed');assert.equal(report.passed,false);
     assert.match(report.failure,new RegExp(expected,'i'));
+  }
+});
+
+test('Launcher music ZIP errors fail before reading Runtime inputs or starting a scene',async t=>{
+  const temp=await mkdtemp(join(tmpdir(),'eagler-music-zip-preflight-'));t.after(()=>rm(temp,{recursive:true,force:true}));
+  const invalid=join(temp,'invalid.zip');await writeFile(invalid,'not a ZIP');
+  const cases=[
+    {name:'missing-map',packages:{},expected:/Launcher music ZIP input is missing/},
+    {name:'missing-zip',packages:{th08:join(temp,'missing.zip')},expected:/missing\.zip/},
+    {name:'invalid-zip',packages:{th08:invalid},expected:/invalid ZIP file/i},
+  ];
+  for(const {name,packages,expected} of cases){
+    const output=join(temp,name),map=join(temp,name+'.json');await writeFile(map,JSON.stringify(packages));
+    const run=spawnSync(process.execPath,[resolve(import.meta.dirname,'music-browser.mjs'),
+      '--output='+output,'--manifest=unread-runtime.json','--music-manifest=unread-music.json','--game=th08',
+      '--variant=normal','--launcher-ui','--packages='+map,'--artwork-dir='+temp],
+      {cwd:root,encoding:'utf8',timeout:30000});
+    assert.equal(run.status,1,run.stdout+'\n'+run.stderr);
+    const report=JSON.parse(await readFile(join(output,'report.json'),'utf8'));
+    assert.equal(report.status,'failed');assert.match(report.failure,expected);assert.deepEqual(report.targets,[]);
+    assert.ok(!report.failure.includes('unread-runtime.json'),'ZIP errors must be found before Runtime verification');
+    assert.ok(!report.server,'input rejection must precede scene/server setup');
   }
 });

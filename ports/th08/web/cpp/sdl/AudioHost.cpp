@@ -250,6 +250,19 @@ __attribute__((export_name("sdl_music_observation"))) const u32* sdl_music_obser
     out[8]=u32(cursor);out[9]=u32(cursor>>32);out[10]=b.total_frames;out[11]=b.intro_frames;out[12]=b.format.rate;
     out[13]=audio.stream?u32(std::max(0,SDL_GetAudioStreamQueued(audio.stream))/8):0;out[14]=audio.mixed;out[15]=audio.error;return out;
 }
+// Scalar, versioned read-only fields keep the existing music record ABI stable.
+__attribute__((export_name("sdl_music_gain_observation_v1"))) u32 sdl_music_gain_observation_v1(u32 field){
+    if(field==0)return 1;
+    const auto found=audio.buffers.find(1000);
+    if(found==audio.buffers.end())return 0;
+    const auto& b=*found->second;
+    if(field==1)return b.sound_ready;
+    if(field==2){const float gain=b.sound_ready?ma_sound_get_volume(&b.sound):0.f;u32 bits=0;std::memcpy(&bits,&gain,sizeof(bits));return bits;}
+    if(field==3)return u32(b.volume);
+    if(field==4)return b.requested;
+    if(field==5)return b.sound_ready?ma_sound_is_playing(&b.sound):0;
+    return 0;
+}
 __attribute__((export_name("sdl_music_name"))) const char* sdl_music_name(){
     static char name[17]{};name[0]=0;const auto found=audio.buffers.find(1000);if(found!=audio.buffers.end())std::strncpy(name,found->second->name.c_str(),sizeof(name)-1);return name;
 }

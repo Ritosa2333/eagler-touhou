@@ -244,18 +244,16 @@ export async function registerEaglerHostTests({owner,testUrl,fontAliases}={}){
     assert.equal(normalizeOptions({touchSensitivity:350}).touchSensitivity,300);
   });
 
-  if(target.variant==='normal'){
-    test(target.owner+' mobile practice panels preserve held keyboard keys',()=>{
-      const core={sdl_touch_controls(){},sdl_touch_options(){}};
-      const options={touchEnabled:true,touchSensitivity:100};
-      const Module={eaglerControls:{thpracKeyboardBits:512}};
-      touchControls(core,options,{controls:{thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true}},Module);
-      assert.deepEqual(Module.eaglerControls,
-        {thpracKeyboardBits:512,thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true});
-      touchControls(core,options,{},Module);
-      assert.equal(Module.eaglerControls.thpracMobilePanelsEnabled,false);
-      assert.equal(Module.eaglerControls.thpracMobilePanelsVisible,false);
-      assert.equal(Module.eaglerControls.thpracKeyboardBits,512);
-    });
-  }
+  test(target.owner+' mobile practice panels preserve held keyboard keys',()=>{
+    const core={sdl_touch_controls(){},sdl_touch_options(){}};
+    const options={touchEnabled:true,touchSensitivity:100};
+    const Module={eaglerControls:{thpracKeyboardBits:512}};
+    touchControls(core,options,{controls:{thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true}},Module);
+    assert.deepEqual(Module.eaglerControls,
+      {thpracKeyboardBits:512,thpracMobilePanelsEnabled:true,thpracMobilePanelsVisible:true});
+    touchControls(core,options,{},Module);
+    assert.equal(Module.eaglerControls.thpracMobilePanelsEnabled,false);
+    assert.equal(Module.eaglerControls.thpracMobilePanelsVisible,false);
+    assert.equal(Module.eaglerControls.thpracKeyboardBits,512);
+  });
 }

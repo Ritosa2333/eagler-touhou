@@ -24,6 +24,22 @@ async function identityTree(path,file=fileIdentity,exclude=()=>false){
   return rows.sort((a,b)=>a.path.localeCompare(b.path,'en'));
 }
 
+export function usesLauncherSourceIdentity(testCase){
+  const args=testCase.task?.args??[];
+  return testCase.requiresLauncherBuild===true||args.some(arg=>['--launcher-ui','--launcher-ui-only'].includes(arg))||
+    ['offline-runtime-browser.mjs','language-browser.mjs'].some(name=>args[0]?.endsWith(name));
+}
+
+/** Actual published UI inputs, including assets and build-time sources outside static imports. */
+export async function launcherSourceIdentity(root){
+  const launcher=resolve(root,'launcher'),directories=await Promise.all(
+    ['app','src','public','lib','scripts','config'].map(async directory=>[directory,identityDigest(await identityTree(resolve(launcher,directory)))]));
+  const rootFiles=await Promise.all((await readdir(launcher,{withFileTypes:true}))
+    .filter(entry=>entry.isFile()&&/\.(?:[cm]?[jt]s|jsonc?|css|html)$/.test(entry.name))
+    .map(async entry=>[entry.name,await fileIdentity(resolve(launcher,entry.name))]));
+  return{directories:Object.fromEntries(directories),rootFiles:Object.fromEntries(rootFiles)};
+}
+
 /** Resume binds the selected diagnostic inputs and current build sources, without starting a server. */
 export async function diagnosticCaseIdentity({root,manifestPath,game,variant,lanes,profile=resolveDiagnosticProfile(game,variant),pairedReplay=null}){
   assert.ok(profile,`Missing diagnostic profile ${game}/${variant}`);
@@ -188,7 +204,7 @@ export function createCaseIdentityReader({root,environment,inputOnly=false,inspe
     const manifestPath=environment.EAGLER_TEST_RUNTIME_MANIFEST;
     assert.ok(manifestPath,'Required input: EAGLER_TEST_RUNTIME_MANIFEST');
     const manifest=await json(manifestPath),isOffline=testCase.task.args[0]?.endsWith('offline-runtime-browser.mjs');
-    const isLanguage=testCase.task.args[0]?.endsWith('language-browser.mjs'),isLauncherJourney=isOffline||isLanguage;
+    const isLauncherJourney=usesLauncherSourceIdentity(testCase);
     const targets=isOffline?selectOfflineRuntimeTargets(manifest,{game:testCase.game}).targets:
       (manifest.targets??[]).filter(target=>target.game===testCase.game&&target.variant===testCase.variant);
     assert.ok(targets.some(target=>target.variant===testCase.variant),`Missing Runtime target ${testCase.game}/${testCase.variant}`);
@@ -203,14 +219,7 @@ export function createCaseIdentityReader({root,environment,inputOnly=false,inspe
       ...(isLauncherJourney?['launcher/scripts/build-launcher.mjs']:[]),
     ]));
     const inputs={products,shared};
-    if(isLauncherJourney&&!inputOnly)inputs.launcherSources=await once('launcher-sources',async()=>{
-      const launcher=resolve(root,'launcher'),directories=await Promise.all(
-        ['app','src','public','lib','scripts','config'].map(async directory=>[directory,identityDigest(await tree(resolve(launcher,directory)))]));
-      const rootFiles=await Promise.all((await readdir(launcher,{withFileTypes:true}))
-        .filter(entry=>entry.isFile()&&/\.(?:[cm]?[jt]s|jsonc?|css|html)$/.test(entry.name))
-        .map(async entry=>[entry.name,await file(resolve(launcher,entry.name))]));
-      return{directories:Object.fromEntries(directories),rootFiles:Object.fromEntries(rootFiles)};
-    });
+    if(isLauncherJourney&&!inputOnly)inputs.launcherSources=await once('launcher-sources',()=>launcherSourceIdentity(root));
     if(/(?:runtime-browser|replay-browser|offline-runtime-browser)\.mjs$/.test(testCase.task.args[0]))
       inputs.replays=await Promise.all(targets.filter(target=>!isOffline||target.variant==='normal').map(target=>
         once(`replay:${target.id}`,async()=>(await loadRuntimeReplayFixture(target)).identity)));
@@ -250,7 +259,8 @@ export function createCaseIdentityReader({root,environment,inputOnly=false,inspe
     }
     if(inputOnly)return{inputPreflight:{status:'passed',targetIds:products.map(item=>item.target.id),inputs:Object.keys(inputs).sort()}};
     const browserMode=adaptationBrowserMode(testCase),browserImplementation=adaptationBrowserImplementation(testCase);
-    const identity={version:3,game:testCase.game,variant:testCase.variant,group:testCase.group,checks:testCase.checks,browserMode,browserImplementation,
+    const identity={version:3,game:testCase.game,variant:testCase.variant,group:testCase.group,checks:testCase.checks,
+      supportingChecks:testCase.supportingChecks??[],browserMode,browserImplementation,
       command:testCase.task.command,args:testCase.task.args.map(arg=>arg.startsWith('--output=')?'--output=<CASE>':arg),
       dependencies,inputs,tools:await toolIdentity(browserMode==='headed',browserImplementation)};
     return{fingerprint:identityDigest(identity),identity};

@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {createHash} from 'node:crypto';
 import {assessCompleteEvidence} from './complete-evidence.mjs';
-import {assessDriverReport} from './results.mjs';
+import {assessDriverReport,adaptationCoverage} from './results.mjs';
 import {assessMinimalRuntimeJourney} from '../../tools/ports/minimal-runtime-browser.mjs';
 import {resolvePracticeAdapter} from './adapters/registry.mjs';
 import {TH08_PRACTICE_FRESH_CONFIG} from './adapters/titles/th08-practice.mjs';
+import {TH08_STORAGE_CONTRACT} from './adapters/titles/th08-storage.mjs';
 
 const HASH='a'.repeat(64),DATA={bytes:10,sha256:HASH};
 const product={game:'th08',variant:'normal'};
@@ -13,6 +14,11 @@ const envelope=(id,observation,game=product.game,adaptationIds=[id])=>({
   game,variant:'normal',adaptationIds,observation,
 });
 const clone=value=>structuredClone(value);
+function automaticPersistence(){
+  const afterFinalizer={startSequence:0,at:10},call={startSequence:1,startedAt:11,populate:false,completed:true,completedAt:12,succeeded:true};
+  return{finalizer:{available:true,finalized:true,afterFinalizer},observer:{available:true,...call,afterFinalizer},restored:{available:true,restored:true,calls:[call]}};
+}
+
 function boundary(id,generationId,game=product.game){
   const before={generationId,revision:'rev-1',files:{'game-data':{objectId:'data-object',revision:HASH.slice(0,16),storageMode:'arraybuffer'}},
     objects:{'data-object':{...DATA}}};
@@ -92,6 +98,91 @@ function rawReplay(){
   return bytes;
 }
 
+// Synthetic score bytes: literal LZSS plus the documented score-envelope encryption.
+function storageScore(count){
+  const decoded=Buffer.alloc(28+12+0x228);decoded.writeUInt16LE(1,4);decoded.writeUInt32LE(28,8);
+  decoded.writeUInt32LE(decoded.length,16);decoded.writeUInt32LE(decoded.length-28,20);
+  for(const [at,name,length,version] of [[28,'TH8K',12,1],[40,'PLST',0x228,2]]){
+    decoded.write(name,at);decoded.writeUInt16LE(length,at+4);decoded.writeUInt16LE(length,at+6);decoded[at+8]=version;
+  }
+  for(const row of [1,6]){decoded.writeUInt32LE(count,40+44+row*68);decoded.writeUInt32LE(count,40+48+row*68);}
+  const bits=[];for(const byte of decoded.subarray(28)){bits.push(1);for(let shift=7;shift>=0;shift--)bits.push((byte>>>shift)&1);}
+  bits.push(...Array(14).fill(0));const compressed=Buffer.alloc(Math.ceil(bits.length/8));
+  bits.forEach((bit,index)=>compressed[index>>>3]|=bit<<(7-index%8));
+  const plain=Buffer.concat([decoded.subarray(0,28),compressed]);plain.writeUInt32LE(compressed.length,24);
+  let checksum=0;for(const byte of plain.subarray(4))checksum=(checksum+byte)&65535;plain.writeUInt16LE(checksum,2);
+  let key=plain[1];for(let index=2;index<plain.length;index++){const value=plain[index];key=((key<<3)|(key>>>5))&255;plain[index]^=key;key=(key+value)&255;}
+  const encrypted=Buffer.from(plain),untouched=(plain.length%256<64?plain.length%256:0)+(plain.length&1);
+  let remaining=plain.length-untouched,cursor=0,limit=0xc00;key=0x59;
+  while(remaining>0&&limit>0){const block=Math.min(256,remaining);let linear=0;
+    for(let parity=1;parity<=2;parity++)for(let pos=block-parity;pos>=0;pos-=2){encrypted[cursor+linear++]=plain[cursor+pos]^key;key=(key+0x79)&255;}
+    cursor+=block;remaining-=block;limit-=block;
+  }return encrypted;
+}
+
+function storageEvidenceFixture(id='SAVE-06'){
+  const c=TH08_STORAGE_CONTRACT,hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+  const snapshot=(stage,volume,count)=>({stage,files:c.files.map(declaration=>{
+    const bytes=declaration.kind==='score'?storageScore(count):Buffer.alloc(60);
+    if(declaration.kind==='configuration'){bytes.writeUInt32LE(0x80001,20);bytes[40]=volume;}
+    return{path:declaration.path,kind:declaration.kind,bytes:bytes.length,sha256:hash(bytes),contentBase64:bytes.toString('base64'),
+      inspection:declaration.inspect(bytes),evidencePath:`${stage}/${declaration.path}`};
+  })});
+  const replayBytes=Buffer.from('synthetic retained Replay'),identity={bytes:replayBytes.length,sha256:hash(replayBytes),contentBase64:replayBytes.toString('base64')};
+  const online=runtimeObservation('gen-online',true),offline=runtimeObservation('gen-update',false),updated=runtimeObservation('gen-update',true);
+  const journey={schema:'eagler-touhou/native-storage-journey/1',source:c.source,
+    before:snapshot('before',80,0),authored:snapshot('authored',80,1),reopened:snapshot('reopened',75,1),
+    updated:snapshot('updated',75,1),offline:{...snapshot('offline',75,1),pageOnline:false},offlineSaved:snapshot('offlineSaved',75,1),
+    configuration:{path:'th08.cfg',field:'soundVolume',before:80,after:75},selection:{difficulty:1,character:0},
+    selectionObservations:{difficulty:{scene:1,page:4,phase:1,cursor:1},character:{scene:1,page:5,phase:1,cursor:0}},
+    entered:{schema:'eagler-touhou/runtime-observation/1',game:'th08',variant:'normal',phase:{name:'stage'},capabilities:{phase:true,input:true,position:true},input:{value:0},position:{x:192,y:384},pause:{active:false}},
+    enteredSelection:{difficulty:1,character:0,practice:0,replay:0,cheats:0,assisted:0,gameFlags:4,rawWords:[0,1,0,0,0,0,0]},
+    lifecycle:{beforeEpoch:1,afterEpoch:2,exitAbsentBeforeStop:true,stopError:null,
+      exit:{protocol:'eagler-touhou/1',game:'th08',event:'exit',epoch:1,code:0,status:'success'},first:{...online.first,epoch:2}},
+    replay:{path:'replay/saved.rpy',...identity,sourceFixture:{path:'source.rpy',...identity}},
+    replayRestored:Object.fromEntries(['reopened','updated','offline','offlineSaved'].map(stage=>[stage,{...identity}])),
+    generations:{before:'gen-online',after:'gen-update'}};
+  // Reopened Runtime uses its own real first-frame and DATA-read epoch.
+  online.ready.epoch=online.first.epoch=online.dataRead.epoch=online.dataReads[0].epoch=2;
+  online.query.runtimeEpoch='2';online.frameUrl=online.frameUrl.replace('runtimeEpoch=1','runtimeEpoch=2');
+  const fixture=offlineCheck(id,{'/nativeUserData':envelope(id,journey)}),driver=fixture.driver;
+  driver.uiImport=uiImport('PACKAGE-02');driver.onlineRuntime=envelope('PACKAGE-02',online);
+  driver.offlineRuntime=envelope('PACKAGE-05',offline);driver.onlineRuntimeAfterUpdate=updated;
+  driver.userFiles={sync:{...clone(journey.replay),runtimePath:journey.replay.path,evidencePath:'retained-replay.rpy'}};
+  driver.packageUpdate={updatePath:'second.zip',updateRevision:'rev-2',updateArchiveBytes:200,updateArchiveSha256:'b'.repeat(64),
+    retry:{generation:{generationId:'gen-update',revision:'rev-2',data:{...DATA}},oldGeneration:'gen-online',atomicCurrentGeneration:'gen-update',sourceZip:'second.zip',archiveBytes:200,archiveSha256:'b'.repeat(64)},replay:{...identity}};
+  return fixture;
+}
+
+test('SAVE completeness binds native gameplay, successful stop, Replay bytes and committed package Runtime observations',()=>{
+  for(const id of ['SAVE-03','SAVE-04','SAVE-05','SAVE-06'])assert.equal(assessCompleteEvidence({...storageEvidenceFixture(id),product}).valid,true);
+  const positive=storageEvidenceFixture();
+  assert.equal(assessCompleteEvidence({...positive,product}).valid,true);
+  for(const mutate of [
+    d=>delete d.nativeUserData.observation.entered,
+    d=>delete d.nativeUserData.observation.selectionObservations,
+    d=>d.nativeUserData.observation.enteredSelection.rawWords[1]=0,
+    d=>d.nativeUserData.observation.enteredSelection.practice=1,
+    d=>d.nativeUserData.observation.lifecycle.exit.code=1,
+    d=>d.nativeUserData.observation.lifecycle.exit.status='failed',
+    d=>d.nativeUserData.observation.lifecycle.exit.game='th07',
+    d=>d.onlineRuntime.observation.query.runtimeEpoch='1',
+    d=>d.nativeUserData.observation.generations={before:'a',after:'b'},
+    d=>delete d.onlineRuntimeAfterUpdate,
+    d=>d.onlineRuntimeAfterUpdate.query.gameGeneration='gen-online',
+    d=>d.packageUpdate.retry.atomicCurrentGeneration='gen-online',
+    d=>d.packageUpdate.retry.archiveSha256='c'.repeat(64),
+    d=>d.offlineRuntime.observation.pageOnline=true,
+    d=>delete d.nativeUserData.observation.replayRestored.offline.contentBase64,
+    d=>{const j=d.nativeUserData.observation;j.replay.sha256='a'.repeat(64);j.replay.sourceFixture.sha256=j.replay.sha256;for(const value of Object.values(j.replayRestored))value.sha256=j.replay.sha256;},
+    d=>d.userFiles.sync.sha256='a'.repeat(64),
+    d=>d.uiImport.game='th07',
+  ]){
+    const fixture=clone(positive);mutate(fixture.driver);
+    assert.equal(assessCompleteEvidence({...fixture,product}).valid,false);
+  }
+});
+
 function buildEvidenceFixture({game='th08',variant='normal'}={}){
   const now='2026-10-21T00:00:00.000Z',later='2026-10-21T00:00:01.000Z';
   const digest=letter=>letter.repeat(64);
@@ -167,7 +258,7 @@ function practiceAssessorInput(){
     clockTime:4,rank:10,rankMinimum:10,rankMaximum:10,familiarCount:17,familiarPending:true,
     stage,difficulty:1,character:2};
   return{
-    recording:{epoch:1,frameBefore:7,frameAfter:11,saveSucceeded:true,idbfsSyncSucceeded:true,
+    recording:{epoch:1,frameBefore:7,frameAfter:11,saveSucceeded:true,idbfsSyncSucceeded:true,persistence:automaticPersistence(),
       path:replay.savePath,rawBytes:bytes,sha256:digest,inputCapacityFrames:4},
     persisted:{rawBytes:[...bytes],freshEpochSha256:digest},
     import:{beforeLaunch:true,writeSucceeded:true,listed:true,path:replay.importPath('p05a'),rawBytes:[...bytes],
@@ -309,6 +400,12 @@ test('offline claims are shared across registered products and recompute boundar
 test('PRACTICE-05 reruns its declared title assessor on retained source evidence',()=>{
   const {driver,entry}=practicePositive();
   assert.equal(assessCompleteEvidence({driver,entry,product}).valid,true);
+  Object.assign(driver,{runId:'practice-run',startedAt:'2026-10-23T00:00:00Z',finishedAt:'2026-10-23T00:00:01Z',status:'passed',passed:true});
+  driver.targets[0].status='passed';
+  const planned={id:'practice',...product,checksMapped:['PRACTICE-05'],scenarioIds:[]};
+  const assessed=assessDriverReport(planned,{status:'passed',code:0},driver);
+  assert.equal(assessed.status,'passed');
+  assert.equal(adaptationCoverage([{...planned,...assessed}]).complete,true);
   const truncated=practicePositive();
   truncated.entry.observation.observation.result.observationInput.evidence.recording.rawBytes[0]=0;
   const invalid=assessCompleteEvidence({driver:truncated.driver,entry:truncated.entry,product});

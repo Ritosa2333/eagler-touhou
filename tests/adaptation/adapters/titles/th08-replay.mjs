@@ -6,6 +6,8 @@ import {pathToFileURL} from 'node:url';
 import {assetPath,loadGoldenManifest,readJsonLinesArray,readJsonLinesMaybeGzip} from '../../../../ports/th08/tools/replay-verifier/golden.mjs';
 import {loadLegacyOriginal,recordsFromLongJsonLines,recordsFromRows} from '../../../../ports/th08/tools/replay-verifier/legacy-oracle-adapter.mjs';
 import {inspectTh08ReplayFixture} from './th08-replay-format.mjs';
+import {TH08_PRESENTATION_LAB_ABI} from '../../../../ports/th08/portable/presentation-lab/native-abi.mjs';
+import {createReplayLedgerInspector} from '../../../../ports/th08/portable/presentation-lab/replay-capture.mjs';
 
 const REPO_ROOT=resolve(import.meta.dirname,'../../../..');
 
@@ -20,6 +22,8 @@ function pathInside(root,candidate,label){
 
 function validDiagnosticBuild(build){
   return Boolean(build&&build.schema==='th08/presentation-lab-build/1'&&build.instrumented===true&&
+    build.game==='th08'&&build.adapterVersion==='th08-presentation-lab/5'&&build.nativeAbi===TH08_PRESENTATION_LAB_ABI&&
+    Number.isSafeInteger(build.runtimeEpoch)&&build.runtimeEpoch>0&&
     typeof build.commit==='string'&&build.commit.length>0&&['wasm','loader','sourceDigest','toolDigest'].every(key=>sha256Pattern.test(build[key]??''))&&
     build.toolSources&&typeof build.toolSources==='object'&&!Array.isArray(build.toolSources)&&Object.keys(build.toolSources).length>0);
 }
@@ -32,16 +36,40 @@ async function* countedRows(rows,expected,label){
   if(count!==expected)throw new Error(`${label} contains ${count} rows; its metadata declares ${expected}`);
 }
 
-export function assessTh08ReplayCapture(capture,{lane,id,expectedSha256,expectedBytes}={}){
-  const expectedSchema=lane==='quick'?'th08/current-replay-capture/v2':'th08/current-replay-tick-capture/v2';
+export function assessTh08ReplayCapture(capture,{lane,id,expectedSha256,expectedBytes,expectedResourceSha256,allowPrefix=false}={}){
+  const expectedSchema=lane==='quick'?'th08/current-replay-capture/v3':'th08/current-replay-tick-capture/v3';
   if(capture?.schema!==expectedSchema)return{status:'incomplete',reason:`${id}: capture does not use ${expectedSchema}.`};
-  if(capture.complete!==true||capture.stopReason!=='returned-to-title'||capture.terminalScene!==1)
+  if((capture.complete!==true||capture.stopReason!=='returned-to-title'||capture.terminalScene!==1)&&!allowPrefix)
     return{status:'incomplete',reason:`${id}: capture did not observe a natural return to the title.`};
-  if(!Array.isArray(capture.errors)||capture.errors.length)return{status:'incomplete',reason:`${id}: capture reports runtime errors.`};
+  if(!Array.isArray(capture.errors)||capture.errors.length&&!allowPrefix)return{status:'incomplete',reason:`${id}: capture reports runtime errors.`};
   if(!validDiagnosticBuild(capture.build))return{status:'incomplete',reason:`${id}: diagnostic build identity is incomplete.`};
   if(!capture.replay||capture.replay.sha256!==expectedSha256||capture.replay.bytes!==expectedBytes)
     return{status:'incompatible',reason:`${id}: captured Replay identity does not match the registered original bytes.`};
+  if(expectedResourceSha256&&capture.build.inputs?.data?.sha256!==expectedResourceSha256)
+    return{status:'incompatible',reason:`${id}: actual Runtime DATA identity does not match the accepted reference.`};
+  if(capture.build.inputs?.replay&&(capture.build.inputs.replay.sha256!==expectedSha256||capture.build.inputs.replay.bytes!==expectedBytes))
+    return{status:'incompatible',reason:`${id}: Runtime-imported Replay differs from the selected file.`};
   return null;
+}
+
+export async function inspectTh08CaptureJournal(capture,{root,metadataPath,rows}={}){
+  const inspector=createReplayLedgerInspector(),iterator=rows[Symbol.asyncIterator]?.()??rows[Symbol.iterator]();
+  const ledger=Array.isArray(capture.cursorLedger)?capture.cursorLedger:
+    readJsonLinesMaybeGzip(resolveTh08CaptureRowsPath(root,metadataPath,capture.cursorLedger?.path,'TH08 cursor ledger'));
+  let count=0,last=null;
+  for await(const sample of ledger){
+    const row=sample.captured?(await iterator.next()).value:undefined;
+    inspector.push(sample,row);count++;last=sample;
+  }
+  const result=inspector.finish(capture.journal);
+  if(!(await iterator.next()).done||capture.applicationTicks!==count||
+    !Array.isArray(capture.cursorLedger)&&capture.cursorLedger.rows!==count){
+    result.status='incomplete';result.problems.push({reason:'Cursor ledger, trace rows and application tick counts differ'});
+  }
+  if(capture.complete===true&&(last?.scene!==1||capture.terminalScene!==1||capture.stopReason!=='returned-to-title')){
+    result.status='incomplete';result.problems.push({reason:'Claimed natural return is not the final observed title scene'});
+  }
+  return result;
 }
 
 export function resolveTh08CaptureRowsPath(captureRoot,metadataPath,rowsPath,label='TH08'){
@@ -78,11 +106,12 @@ export async function createTh08ReplaySuite({lane,captureRoot,inputRoot,replayFi
     let capture;
     try{capture=await readJson(metadataPath);}
     catch(error){cases.push({id,status:error?.code==='ENOENT'?'missing-capture':'incompatible',reason:`${id}: candidate capture metadata is unavailable or invalid.`});continue;}
-    const captureProblem=assessTh08ReplayCapture(capture,{lane,id,expectedSha256:asset.replaySha256,expectedBytes:replayBytes.byteLength});
+    const captureProblem=assessTh08ReplayCapture(capture,{lane,id,expectedSha256:asset.replaySha256,expectedBytes:replayBytes.byteLength,
+      expectedResourceSha256:golden.manifest.identity.resourceSha256,allowPrefix:true});
     if(captureProblem){cases.push({id,...captureProblem});continue;}
     if(lane==='quick'){
-      if(!Array.isArray(capture.rows)||capture.rows.length!==asset.rawTicks){
-        cases.push({id,status:'incomplete',reason:`${id}: capture does not contain the declared raw tick rows.`});continue;
+      if(!Array.isArray(capture.rows)||!capture.rows.length){
+        cases.push({id,status:'incomplete',reason:`${id}: capture contains no comparable raw tick rows.`});continue;
       }
     }else{
       if(!Number.isSafeInteger(capture.rows?.ticks)||capture.rows.ticks<=0){
@@ -94,8 +123,12 @@ export async function createTh08ReplaySuite({lane,captureRoot,inputRoot,replayFi
         cases.push({id,status:'incomplete',reason:`${id}: captured Replay rows are unavailable.`});continue;
       }
     }
+    let journal;
+    try{journal=await inspectTh08CaptureJournal(capture,{root,metadataPath,
+      rows:lane==='quick'?capture.rows:countedRows(readJsonLinesMaybeGzip(capture.rows.path),capture.rows.ticks,`${id} journal trace`)});}
+    catch(error){cases.push({id,status:'incomplete',reason:`${id}: cursor journal is unavailable or invalid (${error.message}).`});continue;}
     cases.push({id,status:'ready',replayBytes,replaySha256:asset.replaySha256,goldenAsset:asset,
-      inputFixture,capture,metadataPath,oracleRoot:oracleRoot?resolve(oracleRoot):null});
+      inputFixture,capture,journal,metadataPath,oracleRoot:oracleRoot?resolve(oracleRoot):null});
   }
   const common=await import(pathToFileURL(join(resolve(commonRoot??join(REPO_ROOT,'common')),'testkit','replay-verifier','adapter.mjs')));
   const originalProfile=lane==='quick'?'jp-1.00d/historical-oracle-v1':'jp-1.00d/ordinary-replay-v1';
@@ -112,8 +145,16 @@ export async function createTh08ReplaySuite({lane,captureRoot,inputRoot,replayFi
       const actual={stages:capture.stages,finalScore:capture.finalScore};
       const matches=actual.stages.length===expected.stages.length&&actual.stages.every((stage,index)=>stage===expected.stages[index])&&actual.finalScore===expected.finalScore;
       if(capture.terminalMatch!==matches)return{status:'INCOMPATIBLE',reason:'terminal metadata match flag is inconsistent with its observed values',expected,actual,terminalMatch:capture.terminalMatch};
-      if(!matches)return{status:'DIVERGED',reason:'natural-terminal-state',expected,actual};
       return null;
+    },
+    validateCandidateEnd:async({fixture})=>{
+      if(!Array.isArray(fixture.capture.errors)||fixture.capture.errors.length)return{status:'INCOMPLETE',reason:'capture-runtime-errors',errors:fixture.capture.errors??null};
+      if(fixture.journal?.status!=='passed')return{status:'INCOMPLETE',reason:'capture-cursor-journal',journal:fixture.journal};
+      if(lane!=='daily')return null;
+      const {capture,goldenAsset:asset}=fixture;
+      const expected={stages:asset.stages,finalScore:asset.finalScore};
+      const actual={stages:capture.stages,finalScore:capture.finalScore};
+      return capture.terminalMatch?null:{status:'DIVERGED',reason:'natural-terminal-state',expected,actual};
     },
     async openOriginal({fixture}){
       const asset=fixture.goldenAsset;
@@ -137,14 +178,16 @@ export async function createTh08ReplaySuite({lane,captureRoot,inputRoot,replayFi
       const capture=fixture.capture;
       if(!capture)throw new Error(`${fixture.id}: candidate capture was not prevalidated`);
       const provider=`th08-eagler/presentation-lab/${capture.build.wasm}`;
-      if(lane==='quick')return{records:recordsFromRows(fixture,capture.rows,provider,{...common,identity,
+      const complete=capture.complete===true&&capture.stopReason==='returned-to-title'&&capture.terminalScene===1&&
+        capture.errors.length===0&&fixture.journal.status==='passed';
+      if(lane==='quick')return{records:recordsFromRows(fixture,capture.rows,provider,{...common,identity,complete,
         provenance:{diagnosticBuild:capture.build,stopReason:capture.stopReason,terminalScene:capture.terminalScene}}),
       provenance:{provider,diagnosticBuild:capture.build,stopReason:capture.stopReason,terminalScene:capture.terminalScene},close:async()=>{}};
       const asset=fixture.goldenAsset;
       if(!Array.isArray(capture.stages)||capture.stages.some(stage=>!Number.isInteger(stage))||!Number.isSafeInteger(capture.finalScore))
         throw new Error(`${fixture.id}: natural terminal stage/score evidence is malformed`);
       const rows=countedRows(readJsonLinesMaybeGzip(fixture.capture.rows.path),capture.rows.ticks,`${fixture.id} candidate`);
-      return{records:recordsFromLongJsonLines({fixture,rows,provider,identity,complete:true,
+      return{records:recordsFromLongJsonLines({fixture,rows,provider,identity,complete,
         provenance:{diagnosticBuild:capture.build,stopReason:capture.stopReason,terminalScene:capture.terminalScene}},common),
       provenance:{provider,diagnosticBuild:capture.build,stopReason:capture.stopReason,terminalScene:capture.terminalScene},close:async()=>{}};
     },

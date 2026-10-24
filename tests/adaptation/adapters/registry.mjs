@@ -6,7 +6,7 @@ import th10 from './titles/th10.mjs';
 
 const SCHEMA='eagler-touhou/adaptation-adapter/1';
 const identifier=/^[A-Za-z_$][\w$]*$/;
-const capabilities=new Set(['runtime','observation','flow','clock','movement','actions','doubleTapBomb','deathbomb','runBoundaries','dialogueTouchScene','originalMenu','controlledScene','audioLatency','deriveSfxContract','language','classifyLanguageDiagnostic','replay','parseReplayFrames','parseReplayMetadata','parseReplayExtension','practice']);
+const capabilities=new Set(['runtime','observation','flow','clock','movement','actions','doubleTapBomb','deathbomb','runBoundaries','dialogueTouchScene','originalMenu','controlledScene','audioLatency','deriveSfxContract','language','classifyLanguageDiagnostic','replay','parseReplayFrames','parseReplayMetadata','parseReplayExtension','practice','storage']);
 const name=(value,label)=>assert.ok(typeof value==='string'&&identifier.test(value),`${label} must be a JavaScript/native identifier`);
 function freeze(value){
   if(value&&typeof value==='object'){
@@ -26,7 +26,7 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
   assert.ok(Array.isArray(declarations),'Adapter declarations must be an array');
   const entries=new Map();
   for(const original of declarations){
-    const {deriveSfxContract,classifyLanguageDiagnostic,parseReplayFrames,parseReplayMetadata,parseReplayExtension,practice,...declaration}=original;
+    const {deriveSfxContract,classifyLanguageDiagnostic,parseReplayFrames,parseReplayMetadata,parseReplayExtension,practice,storage,...declaration}=original;
     const adapter=structuredClone(declaration);
     for(const [key,value] of Object.entries({deriveSfxContract,classifyLanguageDiagnostic,parseReplayFrames,parseReplayMetadata,parseReplayExtension})){
       if(value===undefined)continue;
@@ -36,6 +36,16 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
     if(practice!==undefined){
       assert.equal(typeof practice,'object','Practice capability must be a title-owned declaration');
       adapter.practice=cloneWithFunctions(practice);
+    }
+    if(storage!==undefined){
+      assert.equal(storage.schema,'eagler-touhou/native-storage/1');
+      assert.ok(storage.source?.trim()&&Array.isArray(storage.files)&&storage.files.length>0,'Native storage needs source-backed file declarations');
+      assert.equal(new Set(storage.files.map(file=>file.path)).size,storage.files.length,'Native storage paths must be unique');
+      for(const file of storage.files){
+        assert.ok(typeof file.path==='string'&&file.path&&!file.path.includes('..')&&!/^[\\/]|:/.test(file.path),'Invalid native storage path');
+        assert.ok(['configuration','score'].includes(file.kind)&&typeof file.inspect==='function','Native storage requires an independent file reader');
+      }
+      adapter.storage=cloneWithFunctions(storage);
     }
     assert.equal(adapter.schema,SCHEMA,'Unsupported adaptation adapter schema');
     const product=products[adapter.game];

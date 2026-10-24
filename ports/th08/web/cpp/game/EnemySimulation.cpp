@@ -1,4 +1,5 @@
 #include "EnemySimulation.hpp"
+#include "RngAudit.hpp"
 #include "EnemyVisibility.hpp"
 #include "EnemyRetirement.hpp"
 #include "GuiState.hpp"
@@ -54,11 +55,23 @@ JobResult EnemySimulation::update(){
     for(auto& layer:state.layers)layer=nullptr;
     if(input.validation.allow_timeline())for(u32 i=0;i<program.timeline_count();++i){
         auto& timeline=state.timelines[i];if(!timeline.instruction){const Timer clock=timeline.timer;if(!timeline_executor.start(timeline,program,i,globals.difficulty)){failed=true;return JobResult::Error;}timeline.timer=clock;}
-        globals.dialogue_active=dialogue_active();timeline_executor.step(timeline);if(timeline.invalid||failed){failed=true;return JobResult::Error;}
+        globals.dialogue_active=dialogue_active();{TH08_RNG_SLOT(-1);TH08_RNG_EVENT(rng_timeline,Timeline,i,0);timeline_executor.step(timeline);}if(timeline.invalid||failed){failed=true;return JobResult::Error;}
     }
     state.active_count=0;
     for(u32 index=0;index<480;++index){
         auto* enemy=population.at(index);if(!enemy)continue;
+        TH08_RNG_SLOT(index);
+#if defined(TH_PRESENTATION_AUDIT)
+        const auto rng_enemy_snapshot=[&](rng_audit::EnemyPhase phase){
+            if(!rng_audit::enabled)return;
+            i32 parent_slot=enemy->parent?-2:-1;
+            // Compare only against owned entries | never dereference an unknown parent.
+            if(enemy->parent)for(u32 p=0;p<480;++p)if(population.at(p)==enemy->parent){parent_slot=i32(p);break;}
+            rng_audit::snapshot_enemy({u32(phase),i32(index),enemy->life,enemy->flags,enemy->flags2,enemy->item_reward,
+                enemy->death_effects[0],enemy->death_effects[1],enemy->death_effects[2],parent_slot,enemy->context().subroutine,
+                enemy->resolved_position.x,enemy->resolved_position.y,enemy->resolved_position.z,enemy->last_damage});
+        };
+#endif
         if(!(enemy->flags&1)){if(player.target_reference==enemy)player.target_reference=nullptr;continue;}
         bool hit=false,die=false;
         if(enemy->flags&0x400){enemy->refresh_position();enemy->resolved_position.z=0;die=true;}
@@ -70,6 +83,7 @@ JobResult EnemySimulation::update(){
                 if(enemy->flags&0x100)update_enemy_form(*enemy,globals.youkai,actions);
                 bool removed=false;u32 transitions=0;
                 for(;;){
+                    TH08_RNG_EVENT(rng_ecl,Ecl,0,0);
                     if(!executor.step(*enemy)){enemy->flags&=~1u;sync_familiars();failed|=!retire_enemy(*enemy,globals,population.replay_flags);removed=true;break;}
                     enemy->integrate_position(timing);if(enemy->familiar_effect)actions.move_overlay(*enemy->familiar_effect,enemy->resolved_position);
                     if(!update_enemy_trail(*enemy)){failed=true;return JobResult::Error;}
@@ -81,21 +95,26 @@ JobResult EnemySimulation::update(){
                     if(++transitions>=10000){enemy->invalid=failed=true;return JobResult::Error;}
                 }
                 if(failed)return JobResult::Error;if(removed)continue;
-                if(!executor.update_animations(*enemy)){failed=true;return JobResult::Error;}
+                {TH08_RNG_EVENT(rng_animation,Animation,0,0);if(!executor.update_animations(*enemy)){failed=true;return JobResult::Error;}}
                 bomb_hit=input.familiar.bomb;
                 if(!(enemy->flags&0x830)&&(!(enemy->flags&0x80000000)||!input.familiar.bomb)){
+                    TH08_RNG_EVENT(rng_contact,ContactDamage,0,0);
+                    TH08_RNG_ENEMY(BeforeContact);
                     if(!contact_enemy_and_trail(*enemy,input.familiar.character,actions)){failed=true;return JobResult::Error;}
+                    TH08_RNG_ENEMY(AfterContact);
                     // ECL may begin/end a spell during this enemy's update.
                     // Damage reduction must observe the current spell flags.
                     const EnemyDamageContext damage{globals.player,input.familiar.character,input.familiar.bomb,u8(globals.spell_flags&1),u8((globals.spell_flags&128)!=0)};
+                    TH08_RNG_ENEMY(BeforeDamage);
                     hit=damage_enemy(*enemy,damage,player,values,bomb_hit,actions);
+                    TH08_RNG_ENEMY(AfterDamage);
                 }
                 if((enemy->flags2&8)&&enemy->life>0)enemy->flags2&=~8u;
                 die=enemy->life<=0&&!(enemy->flags2&0x48);
             }
         }
-        if(die){sync_familiars();if(!death.run(*enemy,index,input.focused,bomb_hit)){failed=true;return JobResult::Error;}}
-        if(failed||!finish_enemy(*enemy,hit)){failed=true;return JobResult::Error;}
+        if(die){TH08_RNG_ENEMY(BeforeDeath);TH08_RNG_EVENT(rng_death,Death,0,0);sync_familiars();if(!death.run(*enemy,index,input.focused,bomb_hit)){failed=true;return JobResult::Error;}}
+        {TH08_RNG_EVENT(rng_finish,Finish,0,0);if(failed||!finish_enemy(*enemy,hit)){failed=true;return JobResult::Error;}}
     }
     if(state.timer.current%200==0&&values.tampered())return JobResult::Exit;
     state.timer.tick(timing);return JobResult::Continue;

@@ -10,6 +10,18 @@ export const TH08_PRESENTATION_AUDIO_CONTRACT=Object.freeze({id:'th08/presentati
   nativeEventBoundary:'SoundEffects::process after deduplication and controls, before output.play',
   gainBoundary:'SoundEffects pan and volume each call AudioHost::controls, which calls WebSfx volume and pan'});
 
+/** Test the requested absolute interval, including partially retained render blocks. */
+export function presentationAudioWindowHasSignal(row){
+  return (row?.blocks??[]).some(block=>['leftWords','rightWords'].some(side=>{
+    const words=block[side];if(!Array.isArray(words))return false;
+    const samples=new Float32Array(Uint32Array.from(words).buffer),offset=block.validOffset??0;
+    return samples.some((sample,index)=>{
+      const frame=block.frame+index-offset;
+      return index>=offset&&index<offset+block.frames&&frame>=row.startFrame&&frame<row.endFrame&&sample!==0;
+    });
+  }));
+}
+
 const finite=Number.isFinite;
 const integer=Number.isSafeInteger;
 const copy=value=>JSON.parse(JSON.stringify(value));
@@ -238,10 +250,7 @@ export async function installPresentationAudioProbe(runtime,{epoch,rateHz}={}){
     binding.output.node.port.postMessage({kind:'mark',mode:'range',purpose:'silent-tail',eventSerial:row.eventSerial,startFrame,endFrame,
       sourceId:start.sourceId,slotGeneration:start.sourceSlotGeneration});
   };
-  const captureHasPcm=row=>[...(row.blocks??[])].some(block=>['leftWords','rightWords'].some(side=>{
-    const words=block[side];if(!Array.isArray(words))return false;
-    return Array.from(new Float32Array(Uint32Array.from(words).buffer)).some(sample=>sample!==0);
-  }));
+  const captureHasPcm=presentationAudioWindowHasSignal;
   const settleContinuation=(continuation,row,kind)=>{
     const waiter=continuationWaiters.get(row.eventSerial);
     if(!waiter||row.startFrame!==continuation.startFrame||row.endFrame!==continuation.endFrame||row.sourceId!==continuation.sourceId||

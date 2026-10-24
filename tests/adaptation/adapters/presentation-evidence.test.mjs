@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {basename,join,resolve} from 'node:path';
-import test from 'node:test';
+import test,{before} from 'node:test';
 import {captureReplayPairRun,compareReplayCadenceRuns,compareReplayPairRuns} from '../../../common/testkit/presentation-lab/replay-pair.mjs';
 import {identityDigest} from '../../../tools/testing/dependency-snapshot.mjs';
 import {assessCompleteEvidence} from '../complete-evidence.mjs';
@@ -81,25 +81,25 @@ async function identity(path){
 }
 
 async function writeJson(path,value){
-  await writeFile(path,JSON.stringify(value,null,2)+'\n');return identity(path);
+  const bytes=Buffer.from(JSON.stringify(value)+'\n');
+  await writeFile(path,bytes);return{path:resolve(path),bytes:bytes.length,sha256:hash(bytes)};
 }
 
-async function evidenceFixture(t){
-  const root=await mkdtemp(join(tmpdir(),'paired-presentation-evidence-'));t.after(()=>rm(root,{recursive:true,force:true}));
-  const output=join(root,'evidence');await writeFile(join(root,'placeholder'),'');
-  const inputPath=join(root,capability.inputFile),inputBytes=Buffer.from('synthetic selected demo replay bytes');
-  await writeFile(inputPath,inputBytes);
-  const input={...capability,...await identity(inputPath)};
-  const data={path:join(root,'th08.dat'),bytes:23,sha256:hash('synthetic selected DATA')};
-  const build={game:scope.game,wasm:hash('diagnostic wasm'),sourceDigest:hash('diagnostic source'),toolDigest:hash('diagnostic tools'),
+const inputBytes=Buffer.from('synthetic selected demo replay bytes');
+const replayIdentity={bytes:inputBytes.length,sha256:hash(inputBytes)};
+const dataIdentity={bytes:23,sha256:hash('synthetic selected DATA')};
+const build={game:scope.game,wasm:hash('diagnostic wasm'),sourceDigest:hash('diagnostic source'),toolDigest:hash('diagnostic tools'),
     profile:'presentation-lab',diagnostic:true,instrumented:true,
     productionBuild:{available:true,diagnostic:false,sourceMatchesCurrent:true,binaryMatchesDescriptor:true,wasmSha256:hash('production wasm')}};
-  const identityValue={build,data:{bytes:data.bytes,sha256:data.sha256}};
+let runHeaders,runBytes,preparedPair;
+// Prepare the full cadences once under a separate deadline. Each case retains
+// isolated files and reruns the assessor; no validation verdict is cached.
+before(async()=>{
   const runs=[];
   for(let index=0;index<capability.cadencesHz.length;index++){
     const rate=capability.cadencesHz[index],source=replayFixture(index+1,index===0?'baseline':'controlled-extra-draw');
     const run=await captureReplayPairRun({controller:source.controller,role:source.role,ticks:capability.ticks,
-      epoch:source.epoch,identity:identityValue,replayIdentity:{bytes:input.bytes,sha256:input.sha256},scope,
+      epoch:source.epoch,identity:{build,data:dataIdentity},replayIdentity,scope,
       readCheckpoint:source.readCheckpoint,readAudioRowsSince:source.readAudioRowsSince,
       expectedAuthorityGroups:capability.expectedAuthorityGroups,
       drawAlphas:index===0?[]:[0,0.5,1],yieldEvery:capability.ticks,onBatch:async()=>{}});
@@ -108,6 +108,18 @@ async function evidenceFixture(t){
       nativePresentCount:4,origin:'http://127.0.0.1:8123'};
     attachCadence(run,rate);runs.push(run);
   }
+  preparedPair=buildPresentationPairedReport({runs,requiredTicks:capability.ticks,scope,
+    ratesHz:capability.cadencesHz,expectedAuthorityGroups:capability.expectedAuthorityGroups,
+    cadenceDifferenceGroups:capability.cadenceDifferenceGroups,fixture:capability.fixture,input:replayIdentity});
+  runBytes=runs.map(run=>Buffer.from(JSON.stringify(run)+'\n'));
+  runHeaders=runs.map(({epoch,identity})=>({epoch,identity}));
+},{timeout:30000});
+
+async function evidenceFixture(t){
+  const root=await mkdtemp(join(tmpdir(),'paired-presentation-evidence-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  const output=join(root,'evidence');await writeFile(join(root,'placeholder'),'');
+  const inputPath=join(root,capability.inputFile);await writeFile(inputPath,inputBytes);
+  const input={...capability,...await identity(inputPath)},data={path:join(root,'th08.dat'),...dataIdentity};
   const rawPaths={
     baseline:join(output,`paired-replay-${capability.fixture}-baseline.json`),
     controlledExtraDraw:join(output,`paired-replay-${capability.fixture}-controlled-extra-draw.json`),
@@ -115,15 +127,17 @@ async function evidenceFixture(t){
   };
   await (await import('node:fs/promises')).mkdir(output,{recursive:true});
   const runIdentities={};
-  for(const [index,key] of ['baseline','controlledExtraDraw','cadence144'].entries())
-    runIdentities[key]=await writeJson(rawPaths[key],runs[index]);
-  const pairReport=buildPresentationPairedReport({runs,requiredTicks:capability.ticks,scope,
-    ratesHz:capability.cadencesHz,expectedAuthorityGroups:capability.expectedAuthorityGroups,
-    cadenceDifferenceGroups:capability.cadenceDifferenceGroups,fixture:capability.fixture,input});
+  for(const [index,key] of ['baseline','controlledExtraDraw','cadence144'].entries()){
+    const path=rawPaths[key],bytes=runBytes[index];await writeFile(path,bytes);
+    runIdentities[key]={path:resolve(path),bytes:bytes.length,sha256:hash(bytes)};
+  }
+  const pairReport=structuredClone(preparedPair);
   const pairPath=join(output,`paired-replay-${capability.fixture}-result.json`),pair=await writeJson(pairPath,pairReport);
   const humanRows=humanIds.filter(id=>!pairReport.checks.some(row=>row.id===id)).map(id=>checkRow(id,'incomplete',false,{reason:'Human review pending'}));
   const pairedRows=pairReport.checks.filter(row=>machineIds.includes(row.id));
-  const acceptanceRows=pairedRows.map(row=>({...row,evidence:{...scope,adaptationIds:[row.id],sources:[row.evidence]}}));
+  const acceptanceRows=pairedRows.map(row=>({...row,evidence:{...scope,adaptationIds:[row.id],
+    sources:[{schema:row.schema??null,...row.evidence}],
+    ...(['DISPLAY-07','VERIFY-07'].includes(row.id)?{authoritativeSource:'pairedReplayRuns'}:{})}}));
   const acceptanceReport={schema:'eagler-presentation/acceptance/1',scope,status:'incomplete',complete:false,
     checks:[...acceptanceRows,...pairReport.checks.filter(row=>!machineIds.includes(row.id)),...humanRows],
     humanReview:{status:'pending',groups:['continuous-motion','boundary','pause']}};
@@ -147,27 +161,15 @@ async function evidenceFixture(t){
     identity:{status:'stable',stable:true,pre:snapshotRef(pre),post:snapshotRef(post)},
     evidence:{...scope,targetId:target.id,manifestData:data,labBuild:build,
       diagnosticInputs:{pairedReplay:input}},server:{status:'ready',url:'http://127.0.0.1:8123/'},targets:[target]};
-  return{driver,entries,runs,rawPaths,runIdentities,acceptanceReport,acceptancePath};
+  return{driver,entries,runs:runHeaders,rawPaths,runIdentities,acceptanceReport,acceptancePath};
 }
 
-test('paired machine claims are recomputed from all retained 60/120/144 Hz raw runs',async t=>{
+for(const id of machineIds)test(`paired ${id} is independently assessed from all retained cadence runs`,async t=>{
   const fixture=await evidenceFixture(t);
-  for(const entry of fixture.entries){
-    const result=assessCompleteEvidence({driver:fixture.driver,entry,product:scope});
+  const entry=fixture.entries.find(row=>row.id===id),result=assessCompleteEvidence({driver:fixture.driver,entry,product:scope});
     if(['AUDIO-06','DISPLAY-07','VERIFY-07'].includes(entry.id)){
       assert.equal(entry.complete,false);assert.equal(entry.machineComplete,false);assert.equal(result.valid,false);
     }else assert.deepEqual(result,{available:true,valid:true,reason:null,kind:'paired-presentation'},`${entry.id}: ${result.reason}`);
-  }
-  const forged=structuredClone(fixture.driver),forgedAudio=forged.targets[0].checks.find(row=>row.id==='AUDIO-06');
-  forgedAudio.complete=true;forgedAudio.status='passed';forgedAudio.machineComplete=true;
-  Object.assign(forgedAudio.observation.observation.check,{complete:true,status:'passed',machineComplete:true});
-  assert.equal(assessCompleteEvidence({driver:forged,entry:forgedAudio,product:scope}).valid,false,
-    'Event-route summaries cannot certify actual output PCM');
-  const forgedVerify=structuredClone(fixture.driver),verifyEntry=forgedVerify.targets[0].checks.find(row=>row.id==='VERIFY-07');
-  Object.assign(verifyEntry,{complete:true,status:'passed',machineComplete:true});
-  Object.assign(verifyEntry.observation.observation.check,{complete:true,status:'passed',machineComplete:true});
-  assert.equal(assessCompleteEvidence({driver:forgedVerify,entry:verifyEntry,product:scope}).valid,false,
-    'Diagnostic repeated reads and a normal build identity cannot certify independent normal Replay execution');
   const review=fixture.acceptanceReport.humanReview;
   assert.equal(review.status,'pending');
   for(const id of humanIds)assert.equal(fixture.acceptanceReport.checks.find(row=>row.id===id).complete,false);
@@ -183,18 +185,20 @@ test('a complete flag with missing artifacts or a stale raw artifact hash is rej
   assert.equal(assessCompleteEvidence({driver:fixture.driver,entry,product:scope}).valid,false);
 });
 
-test('raw-run divergence and borrowed Runtime epochs cannot inherit a passed report',async t=>{
+test('raw-run divergence cannot inherit a passed report',async t=>{
   const fixture=await evidenceFixture(t),entry=fixture.entries[0];
   const raw=JSON.parse(await readFile(fixture.rawPaths.baseline,'utf8'));
   raw.samples[0].logicalTick=9;
-  const bytes=Buffer.from(JSON.stringify(raw,null,2)+'\n');await writeFile(fixture.rawPaths.baseline,bytes);
+  const bytes=Buffer.from(JSON.stringify(raw)+'\n');await writeFile(fixture.rawPaths.baseline,bytes);
   fixture.runIdentities.baseline={path:resolve(fixture.rawPaths.baseline),bytes:bytes.length,sha256:hash(bytes)};
   assert.equal(assessCompleteEvidence({driver:fixture.driver,entry,product:scope}).valid,false);
+});
 
+test('borrowed Runtime epochs cannot inherit a passed report',async t=>{
   const second=await evidenceFixture(t),staleEntry=second.entries[0];
   const borrowed=JSON.parse(await readFile(second.rawPaths.cadence144,'utf8'));
   borrowed.epoch=second.runs[0].epoch;
-  const borrowedBytes=Buffer.from(JSON.stringify(borrowed,null,2)+'\n');await writeFile(second.rawPaths.cadence144,borrowedBytes);
+  const borrowedBytes=Buffer.from(JSON.stringify(borrowed)+'\n');await writeFile(second.rawPaths.cadence144,borrowedBytes);
   second.runIdentities.cadence144={path:resolve(second.rawPaths.cadence144),bytes:borrowedBytes.length,sha256:hash(borrowedBytes)};
   assert.equal(assessCompleteEvidence({driver:second.driver,entry:staleEntry,product:scope}).valid,false);
 });
@@ -210,6 +214,33 @@ test('a changed Replay input file cannot inherit its previously recorded source 
   await writeFile(entry.observation.observation.artifacts.input.path,'different replay input');
   const result=assessCompleteEvidence({driver:fixture.driver,entry,product:scope});
   assert.equal(result.valid,false);assert.match(result.reason,/Selected Replay input bytes differ/);
+});
+
+for(const id of ['AUDIO-06','VERIFY-07'])test(`cached ${id} success cannot replace actual output or ordinary Runtime proof`,async t=>{
+  const fixture=await evidenceFixture(t),forged=structuredClone(fixture.driver),entry=forged.targets[0].checks.find(row=>row.id===id);
+  Object.assign(entry,{complete:true,status:'passed',machineComplete:true});
+  Object.assign(entry.observation.observation.check,{complete:true,status:'passed',machineComplete:true});
+  assert.equal(assessCompleteEvidence({driver:forged,entry,product:scope}).valid,false);
+});
+
+test('paired evidence reports the missing Replay source path before reading its raw files',async t=>{
+  const fixture=await evidenceFixture(t),entry=fixture.entries[0];
+  entry.observation.observation.artifacts.input={...entry.observation.observation.artifacts.input};
+  delete entry.observation.observation.artifacts.input.path;
+  delete entry.observation.observation.artifacts.runs.cadence144;
+  const result=assessCompleteEvidence({driver:fixture.driver,entry,product:scope});
+  assert.equal(result.valid,false);
+  assert.match(result.reason,/Paired Replay input identity does not match/);
+});
+
+for(const mutation of ['schema','duplicate'])test(`hash-bound acceptance rejects a ${mutation} evidence source mutation`,async t=>{
+  const fixture=await evidenceFixture(t),entry=fixture.entries[0],accepted=entry.observation.observation.check;
+    accepted.evidence.sources[0].schema=mutation==='schema'?'unregistered-source':null;
+    if(mutation==='duplicate')accepted.evidence.sources.push(structuredClone(accepted.evidence.sources[0]));
+    const updated=await writeJson(fixture.acceptancePath,fixture.acceptanceReport);
+    Object.assign(entry.observation.observation.artifacts.acceptance,updated);
+    const result=assessCompleteEvidence({driver:fixture.driver,entry,product:scope});
+    assert.equal(result.valid,false);assert.match(result.reason,/accepted source differs/);
 });
 
 test('legacy lifecycle summaries with fake PNG data cannot certify native boundary evidence',async t=>{

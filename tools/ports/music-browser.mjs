@@ -8,17 +8,25 @@ import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
 import {readVerifiedRuntimeFile,selectRuntimeTargets,verifyPrivateData,verifyRuntimePackage} from './acceptance-contracts.mjs';
 import {sourceSnapshot} from '../testing/source-snapshot.mjs';
+import {dependencySnapshot} from '../testing/dependency-snapshot.mjs';
+import {parseTh08MusicCatalog,parseTh08MessageMusicCues} from '../../tests/adaptation/adapters/titles/th08-music.mjs';
+import {controlValidationScene,validationSceneRequest,assertControlledSceneArmed,assertControlledScene} from '../../tests/adaptation/adapters/scene.mjs';
+import {dialogueTouchSceneRequest,readDialogueTouchWords,normalizeDialogueTouchManifest,normalizeDialogueTouchObservation,requestDialogueTouchMessage} from '../../tests/adaptation/adapters/dialogue.mjs';
+import {collectMusicCueTransition,assessMusicCueTransition} from './music-cue-transition.mjs';
+import {readSfxLatencySceneState,sfxLatencySceneRequest} from '../../tests/adaptation/adapters/audio.mjs';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
+import {verifyLauncherFixtureMusic} from './launcher-runtime-fixture.mjs';
+import {inspectOfflineUpdateDescriptor} from './offline-runtime-update.mjs';
 import {readRuntimeObservation,runtimeObservationRequest} from './runtime-observations.mjs';
-import {correlateTh08MidiSends,th08MidiTransportCount,musicScenarioErrors,musicScenarioPassed,attachMusicStageErrors,attachTh08OggFaultModeAssessment,musicTitleSceneOutcome,th08BackgroundContinuityOutcome,th08MidiCapabilityOutcome,th08MidiPauseOutcome,
+import {mergeMusicBehaviorResult,correlateTh08MidiSends,th08MidiTransportCount,musicScenarioErrors,musicScenarioPassed,attachMusicStageErrors,attachTh08OggFaultModeAssessment,musicTitleSceneOutcome,th08BackgroundContinuityOutcome,th08MidiCapabilityOutcome,th08MidiPauseOutcome,
   th08MidiRestartOutcome,th08MidiTitleOutcome,th08MusicModeSeparationOutcome,th08OggAcceptanceOutcome,th08OggFaultOutcome,
-  th08OggPauseOutcome,th08OggRestartOutcome,th08OggTitleOutcome,th08OggTrackFile} from './music-browser-result.mjs';
-import {MUSIC_BROWSER_GAMES,MUSIC_PCM_PROBE_SOURCE,describeNativeMusic,describeNoneMusicControl,mapTrackToInput,
+  th08OggPauseOutcome,th08OggRestartOutcome,th08OggTitleOutcome,th08OggTrackFile,th08MusicFaultRecoveryOutcome,th08MusicFaultJourneyOutcome,th08MusicRoomOutcome,th08OggDecodeVariantsOutcome,th08MusicStopDrainFrames} from './music-browser-result.mjs';
+import {MUSIC_BROWSER_GAMES,MUSIC_PCM_PROBE_SOURCE,installMusicProtocolCapture,describeNativeMusic,describeNoneMusicControl,mapTrackToInput,
   nativeAudioStatsShape,readNativeAudioState,runtimeMusicResources,selectedMusicMappingGames,summarizeMusicPcm,
   summarizeRuntimePcmWindow,summarizeRelatedRuntimePcmWindow,collectRuntimePcmWindow,collectRuntimeOutputPcm,collectExpectedTrackRuntimePcm,RUNTIME_PCM_SAMPLE_INTERVAL_MS,
   TH08_OGG_PCM_ROLE,TH08_MIDI_PCM_ROLE,
-  TH08_MIDI_VOICE_PCM_ROLE,verifyMusicInputs} from './music-browser-helpers.mjs';
+  TH08_MIDI_VOICE_PCM_ROLE,verifyMusicInputs,pressConsumedRuntimeKey} from './music-browser-helpers.mjs';
 
 const arg=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const outputArgument=arg('output'),requestedOutput=outputArgument?resolve(outputArgument):null;
@@ -36,6 +44,52 @@ const th08TitleOgg='th08_01.ogg',th08TitleMidi='bgm/th08_01.mid';
 // GameplayControl.cpp uses stage_music[game.stage]; the first stage is index 0 -> song id 1.
 const th08FirstStageSong=1;
 const th08FirstStageOgg='th08_00.ogg';
+
+function observeMusicProtocolHistory(){
+  if(!Array.isArray(window.events))throw Error('Music Runtime protocol event history is unavailable');
+  window.__eaglerMusicProtocolStages=window.events.map((event,index)=>({index,event:event?.event??null,stage:window.__eaglerMusicProtocolStage??'host-navigation'}));
+  const originalPush=window.events.push;
+  window.events.push=function(...items){
+    for(let offset=0;offset<items.length;offset++)window.__eaglerMusicProtocolStages.push({
+      index:this.length+offset,event:items[offset]?.event??null,stage:window.__eaglerMusicProtocolStage??'unscoped'});
+    return originalPush.apply(this,items);
+  };
+}
+
+async function recoverTh08MusicFault({page,frame,modeRecord,target,fixture,sharedResources,configure,midiBridgeSource,markStage,drainProtocol}){
+  const recovery=modeRecord.recovery={selectedMode:'midi',capability:PRODUCT_GAMES.th08.musicCapabilities,runtimeResources:[],before:modeRecord.runtimeFrameIdentity,
+    selectionEntry:'eagler-touhou/1 configure.music before launch',after:null};
+  await markStage('fault-recovery-retire');
+  if(modeRecord.mode==='corrupt-ogg'){
+    await frame.evaluate(()=>window.__th08Runtime.stop());
+    await page.waitForFunction(()=>events.some(event=>event.event==='exit'),null,{timeout:30000});
+    recovery.exit=await page.evaluate(()=>events.find(event=>event.event==='exit'));
+  }
+  modeRecord.beforeRecoveryEvents=await page.evaluate(()=>window.events);
+  modeRecord.beforeRecoveryEventStages=await page.evaluate(()=>window.__eaglerMusicProtocolStages);
+  await markStage('fault-recovery-navigation');
+  await drainProtocol();
+  await page.goto(fixture.hostUrl(target,recovery.before.epoch+1));
+  recovery.oldFrameDetached=frame.isDetached();
+  await page.waitForFunction(()=>events.some(event=>event.event==='ready'),null,{timeout:120000});
+  await page.evaluate(observeMusicProtocolHistory);
+  const nextFrame=page.frames().find(candidate=>candidate.url().includes(`/runtime/${target.id}/`));assert.ok(nextFrame,'Recovery Runtime frame is unavailable');
+  recovery.after=await bindMusicRuntimeFrame(page,nextFrame);
+  await markStage('fault-recovery-configure');
+  recovery.configureResponse=await page.evaluate(configure,{sharedResources,runtimeResources:[],musicMode:'midi',options:target.options??{}});
+  recovery.observedMode=await nextFrame.evaluate(()=>window.__th08Runtime.Module.touhouMusicMode);
+  await markStage('fault-recovery-midi-bridge');
+  recovery.midiBridge=await installTh08MidiBridge(page,fixture,midiBridgeSource);
+  await markStage('fault-recovery-launch');await page.evaluate(()=>rpc('launch'));
+  await page.waitForFunction(()=>events.some(event=>event.event==='first-frame'),null,{timeout:120000});
+  recovery.firstFrame=await page.evaluate(()=>events.find(event=>event.event==='first-frame'));
+  await page.evaluate(()=>{window.__eaglerMidiRuntimeLaunched=true;document.querySelector('iframe')?.focus();});
+  await page.waitForFunction(()=>window.__eaglerTinySynth?.getAudioContext?.().state==='running',null,{timeout:30000});
+  recovery.audioReady=await page.evaluate(()=>{const context=window.__eaglerTinySynth.getAudioContext();return{state:context.state,currentTime:context.currentTime};});
+  await markStage('fault-recovery-output');recovery.scene=await collectTh08MidiScene(nextFrame,page,th08TitleMidi);
+  await page.screenshot({path:resolve(output,`th08-${modeRecord.mode}-midi-recovery.png`)});
+  return nextFrame;
+}
 
 function midiBridgeFactorySource(){
   const moduleUrl=pathToFileURL(resolve(root,'launcher/app/services/midi-bridge.ts')).href;
@@ -65,7 +119,7 @@ async function readTh08Sample(frame,{audioRole=null}={}){
   const raw=await frame.evaluate(readNativeAudioState,{game:'th08',includeRuntimePcm:audioRole===TH08_OGG_PCM_ROLE,
     includeMidiHost:audioRole===TH08_MIDI_PCM_ROLE});
   const runtime=await frame.evaluate(readRuntimeObservation,runtimeObservationRequest({game:'th08',variant:'normal'}));
-  return {native:raw.musicObservation,midi:raw.midiObservation,runtime,runtimePcm:raw.runtimePcm??null,midiHost:raw.midiHost??null};
+  return {native:raw.musicObservation,midi:raw.midiObservation,decoder:raw.decoder,runtime,runtimePcm:raw.runtimePcm??null,midiHost:raw.midiHost??null};
 }
 
 function hasMidiNote(bytes,kind){
@@ -98,20 +152,33 @@ async function collectTh08MidiScene(frame,page,expectedPath=th08TitleMidi,{nativ
     contextIndex:host?.contextIndex??-1,pcmTarget:host?.pcmTarget??null,pcm};
 }
 
-async function collectTh08OggScene(frame,page,resources,{expectedFile=null,rejectedSource=false}={}){
+async function collectTh08OggScene(frame,page,resources,{expectedFile=null,rejectedSource=false,stoppedSource=false}={}){
   let raw=null,native=null;
   const readSample=async()=>{
     raw=await frame.evaluate(readNativeAudioState,{game:'th08',includeRuntimePcm:true});
     native={...raw.musicObservation,lastMusicSong:raw.midiObservation?.lastMusicSong??-1};
-    return {native,trackFile:th08OggTrackFile(native.name),target:raw.runtimePcm?.target??null,captures:raw.runtimePcm?.captures??[]};
+    const target=raw.runtimePcm?.target??null,captures=raw.runtimePcm?.captures??[];
+    return {native,trackFile:th08OggTrackFile(native.name),target,captures,
+      buffering:{queuedFrames:native.queuedFrames,queuedSampleRate:44100,outputBufferFrames:raw.runtimePcm?.outputBufferFrames,
+        baseLatency:raw.runtimePcm?.baseLatency,analysisWindowFrames:Math.max(0,...captures.filter(capture=>
+          capture.contextIndex===target?.contextIndex&&target.tapIds?.includes(capture.tapId)).map(capture=>capture.samples))}};
   };
-  if(rejectedSource){
+  if(rejectedSource||stoppedSource){
+    let drainBasis=null,settleFrames=4096;
+    if(stoppedSource){
+      const sample=await readSample(),target=sample.target;
+      const captures=sample.captures.filter(capture=>capture.contextIndex===target?.contextIndex&&target.tapIds?.includes(capture.tapId));
+      drainBasis={native:sample.native,target,outputBufferFrames:raw.runtimePcm?.outputBufferFrames,
+        baseLatency:raw.runtimePcm?.baseLatency,analysisWindowFrames:Math.max(0,...captures.map(capture=>capture.samples))};
+      settleFrames=th08MusicStopDrainFrames(drainBasis);
+      assert.notEqual(settleFrames,null,'Stopped music needs the actual SDL queue and browser output buffering');
+    }
     const {lastSample,collection}=await collectRuntimeOutputPcm({role:TH08_OGG_PCM_ROLE,readSample,
-      wait:milliseconds=>page.waitForTimeout(milliseconds)});
+      settleFrames,wait:milliseconds=>page.waitForTimeout(milliseconds)});
     const {pcmWindow,...pcmCollection}=collection;
     const file=lastSample?.trackFile??null;
     return {native:lastSample?.native??native,decoder:raw?.decoder??null,trackFile:file,input:mapTrackToInput(file,resources),
-      pcmTarget:lastSample?.target??null,pcm:pcmWindow??null,pcmCollection};
+      pcmTarget:lastSample?.target??null,pcm:pcmWindow??null,pcmCollection,...(drainBasis?{drainBasis}:{})};
   }
   const collected=await collectExpectedTrackRuntimePcm({role:TH08_OGG_PCM_ROLE,expectedFile,maxSamples:32,
     pollIntervalMs:RUNTIME_PCM_SAMPLE_INTERVAL_MS,wait:milliseconds=>page.waitForTimeout(milliseconds),
@@ -129,6 +196,111 @@ async function collectTh08OggScene(frame,page,resources,{expectedFile=null,rejec
       target:pcmCollection.target??null}};
 }
 
+async function collectTh08BossMusicCue(page,frame,resources,recipe){
+  const target={game:'th08',variant:'normal'},request=dialogueTouchSceneRequest(target),contract=request.contract;
+  const arm=await frame.evaluate(controlValidationScene,validationSceneRequest({...target,action:'arm'}));assertControlledSceneArmed(arm);
+  let runtime=await frame.evaluate(readRuntimeObservation,runtimeObservationRequest(target));
+  for(let press=0;press<28&&!gameplayReached('th08',runtime);press++){
+    await pressStart(page);runtime=await frame.evaluate(readRuntimeObservation,runtimeObservationRequest(target));
+  }
+  assert.ok(gameplayReached('th08',runtime),'Boss cue fixture did not reach gameplay');
+  const initial=assertControlledScene(await frame.evaluate(controlValidationScene,validationSceneRequest(target)));
+  const beforeAudio=await collectTh08OggScene(frame,page,resources,{expectedFile:recipe.beforeFile});
+  const observe=async()=>{
+    const raw=await frame.evaluate(readDialogueTouchWords,{...request,operation:'observation'});
+    const native=normalizeDialogueTouchObservation(raw,contract);assert.equal(native.available,true,native.reason);
+    const audio=await readTh08Sample(frame);
+    return{runtime:native.runtime,frame:native.hostFrames,file:th08OggTrackFile(audio.native.name),request:native.request,native,music:audio.native,
+      inputs:{fire:native.touch.fireEnabled,skip:Boolean(native.dialogue.currentInput&contract.skipMask)}};
+  };
+  const controls=fireEnabled=>page.evaluate(fireEnabled=>rpc('touch-controls',{fireEnabled,focusEnabled:false,bombSerial:0,
+    escapeSerial:0,joystickX:0,joystickY:0,touchSensitivity:100}),fireEnabled);
+  const transition=await collectMusicCueTransition({
+    readSource:async()=>{
+      const raw=normalizeDialogueTouchManifest(await frame.evaluate(readDialogueTouchWords,{...request,operation:'manifest'}),contract);
+      assert.equal(raw.available,true,raw.reason);
+      const message=raw.source.message;
+      return{runtime:raw.runtime,stage:raw.source.stage,identity:{asset:message.asset,bytes:message.byteLength,
+        hash:{algorithm:'fnv1a64',value:message.fnv64},entryCount:message.entryCount},entries:raw.candidates.map(row=>row.entry),raw};
+    },
+    observe,
+    request:async entry=>{
+      const held=await controls(true);assert.equal(held.ok,true);
+      const response=await frame.evaluate(requestDialogueTouchMessage,{contract,entry});
+      if(response.accepted)await page.evaluate(()=>rpc('keyboard',{code:'ControlLeft',down:true,inputSource:'physical'}));
+      return response;
+    },
+    wait:()=>page.waitForTimeout(20),
+    release:async()=>{
+      await page.evaluate(()=>rpc('keyboard',{code:'ControlLeft',down:false,inputSource:'physical'}));await controls(false);
+    },
+  },recipe);
+  const audio=await collectTh08OggScene(frame,page,resources,{expectedFile:recipe.afterFile});
+  const final=assertControlledScene(await frame.evaluate(controlValidationScene,validationSceneRequest(target)));
+  return{transition,beforeAudio,audio,controlled:{arm,initial,final}};
+}
+
+async function collectTh08MusicRoom(page,frame,resources,catalog){
+  const result={tracks:[],loop:null,fade:null,inputs:[]};
+  const inputRequest=sfxLatencySceneRequest({game:'th08',variant:'normal'});
+  const masks={ArrowDown:32,ArrowUp:16,KeyZ:1,KeyR:16384,ControlLeft:256,Escape:8};
+  const press=async code=>result.inputs.push(await pressConsumedRuntimeKey({code,mask:masks[code],
+    readInput:()=>frame.evaluate(readSfxLatencySceneState,inputRequest),
+    setKey:(code,down)=>page.evaluate(({code,down})=>rpc('keyboard',{code,down,inputSource:'physical'}),{code,down}),
+    wait:ms=>page.waitForTimeout(ms)}));
+  // Native title cursor anchors each key press; no direct menu or audio calls.
+  for(let step=0;step<12;step++){
+    const sample=await readTh08Sample(frame);
+    if(sample.runtime?.status?.cursor===6)break;
+    await press('ArrowDown');
+  }
+  assert.equal((await readTh08Sample(frame)).runtime?.status?.cursor,6,'Music Room title cursor');
+  await press('KeyZ');
+  result.entered=(await waitTh08Observation(frame,sample=>sample.runtime?.status?.supervisorActive===8,{label:'Music Room entry'})).runtime;
+  await page.waitForTimeout(500);
+  for(const track of catalog){
+    await press('KeyZ');
+    const scene=await collectTh08OggScene(frame,page,resources,{expectedFile:track.file});
+    scene.observation=(await readTh08Sample(frame)).runtime;scene.index=track.index;
+    result.tracks.push(scene);await press('ArrowDown');
+  }
+  const shortest=catalog.reduce((a,b)=>a.totalFrames/a.sampleRate<=b.totalFrames/b.sampleRate?a:b);
+  // One complete table walk wraps back to cursor zero.
+  for(let index=0;index<shortest.index;index++)await press('ArrowDown');
+  // Selecting the different loop track starts it once; Reset is exercised after fade.
+  await press('KeyZ');
+  const loop=result.loop={index:shortest.index,samples:[],before:null,after:null};
+  loop.before=await collectTh08OggScene(frame,page,resources,{expectedFile:shortest.file});
+  const deadline=Date.now()+Math.ceil(shortest.totalFrames/shortest.sampleRate*1000)+5000;
+  while(Date.now()<deadline){
+    const {native,runtimePcm}=await readTh08Sample(frame,{audioRole:TH08_OGG_PCM_ROLE});
+    loop.samples.push({...native,at:Date.now(),audioTime:runtimePcm?.target?.currentTime??null});
+    if(loop.samples.length>1&&native.cursorFrames<loop.samples.at(-2).cursorFrames)break;
+    await page.waitForTimeout(100);
+  }
+  loop.after=await collectTh08OggScene(frame,page,resources,{expectedFile:shortest.file});
+  const fade=result.fade={samples:[],quiet:null,reset:null};
+  fade.samples.push({native:(await readTh08Sample(frame)).native,at:Date.now()});
+  await press('ControlLeft');
+  for(let index=0;index<100;index++){
+    const native=(await readTh08Sample(frame)).native;fade.samples.push({native,at:Date.now()});
+    if(native?.playing===false)break;
+    await page.waitForTimeout(100);
+  }
+  // Drain output independently after the production fade has stopped its source.
+  fade.quiet=await collectTh08OggScene(frame,page,resources,{stoppedSource:true});
+  await press('KeyR');
+  fade.reset=await collectTh08OggScene(frame,page,resources,{expectedFile:shortest.file});
+  await press('Escape');
+  result.exited=(await waitTh08Observation(frame,sample=>sample.runtime?.status?.supervisorActive===1,{label:'Music Room exit'})).runtime;
+  for(let step=0;step<12;step++){
+    if((await readTh08Sample(frame)).runtime?.status?.cursor===0)break;
+    await press('ArrowUp');
+  }
+  assert.equal((await readTh08Sample(frame)).runtime?.status?.cursor,0,'Return to Start title cursor');
+  return result;
+}
+
 async function pauseTh08Gameplay(page,frame,mode){
   const before=await readTh08Sample(frame);
   if(before.runtime?.worldProgress?.comparable!==true)throw Error('TH08 pause scene requires native comparable gameplay');
@@ -140,8 +312,12 @@ async function pauseTh08Gameplay(page,frame,mode){
   await pressKey(page,'Escape',120);
   const resumed=await waitTh08Observation(frame,state=>state.runtime?.worldProgress?.state?.paused===false,
     {label:'TH08 gameplay resume'});
-  if(mode==='ogg')return th08OggPauseOutcome({before:before.native,paused:paused.native,settled:settled.native,resumed:resumed.native,
-    pauseEntered:true,resumeExited:true});
+  if(mode==='ogg'){
+    const observationInput={before:before.native,paused:paused.native,settled:settled.native,resumed:resumed.native,
+      pauseEntered:true,resumeExited:true};
+    return {...th08OggPauseOutcome(observationInput),observationInput,
+      decoderSamples:[before.decoder,paused.decoder,settled.decoder,resumed.decoder]};
+  }
   const bridgeContext=await page.evaluate(()=>window.__eaglerTinySynth?.getAudioContext?.().state??null);
   return th08MidiPauseOutcome({before:before.midi,paused:paused.midi,resumed:resumed.midi,
     pauseEntered:true,resumeExited:true,bridgeContext});
@@ -164,12 +340,13 @@ async function backgroundTh08Gameplay(page,frame,mode){
   const resumedOutput=mode==='ogg'?await collectTh08OggScene(frame,page,[],{expectedFile:th08OggTrackFile(before.native?.name)}):
     await collectTh08MidiScene(frame,page,before.midi?.path);
   const hiddenTag=value=>({...value,visibilityState:'hidden'}),visibleTag=value=>({...value,visibilityState:'visible'});
-  const outcome=th08BackgroundContinuityOutcome(mode==='ogg'?{mode,before:before.native,paused:hiddenTag(hiddenState.native),
+  const observationInput=mode==='ogg'?{mode,before:before.native,paused:hiddenTag(hiddenState.native),
     settled:hiddenTag(settled.native),resumed:visibleTag(resumed.native),resumedOutput}:{mode,before:before.midi,paused:hiddenTag(hiddenState.midi),
     settled:hiddenTag(settled.midi),resumed:visibleTag(resumed.midi),bridgeBefore,bridgePaused,
     resumedOutput,
-    bridgeResumed:await page.evaluate(()=>window.__eaglerTinySynth?.getAudioContext?.().state??null)});
-  return {...outcome,lifecycleSignal:'document.hidden override plus dispatched visibilitychange in host and Runtime documents'};
+    bridgeResumed:await page.evaluate(()=>window.__eaglerTinySynth?.getAudioContext?.().state??null)};
+  const outcome=th08BackgroundContinuityOutcome(observationInput);
+  return {...outcome,observationInput,...(mode==='ogg'?{decoderSamples:[before.decoder,hiddenState.decoder,settled.decoder,resumed.decoder,resumedOutput.decoder]}:{}),lifecycleSignal:'document.hidden override plus dispatched visibilitychange in host and Runtime documents'};
 }
 
 /** Bind the actual Playwright Runtime frame to its same-origin host iframe element. */
@@ -252,6 +429,7 @@ async function restartTh08Runtime(page,frame,mode,resources){
   const sameRuntimeAfterExit=await runtimeFrameStillBound(page);
   const quietWindow=await quietRuntimePcmWindow(frame,{role:audioRole,
     expectedTarget:mode==='ogg'?beforeState.pcmTarget:beforeState.midiHost?.pcmTarget,settleFrames:4096,retainCaptureRows:mode==='midi'});
+  const stoppedDecoder=mode==='ogg'?(await frame.evaluate(readNativeAudioState,{game:'th08'})).decoder:null;
   let midiClose=null,voicePcmWindow=null;
   if(mode==='midi'){
     midiClose=await readTh08MidiBridgeState(page);
@@ -290,9 +468,10 @@ async function restartTh08Runtime(page,frame,mode,resources){
   const reopened=await collectTh08OggScene(frame,page,resources,{expectedFile:th08TitleOgg});
   const before={native:beforeState.native,trackFile:beforeState.trackFile,input:beforeState.input,pcm:beforeState.pcm,
     pcmCollection:beforeState.pcmCollection};
-  const outcome=th08OggRestartOutcome({before,quietWindow,reopened,expectedBeforeFile:th08FirstStageOgg,expectedFile:th08TitleOgg,
-    sameRuntimeFrame:sameRuntimeAfterExit&&sameRuntimeAfterLaunch,exitObserved:true});
-  return {...outcome,beforeState:beforeState.native,beforePcmCollection:beforeState.pcmCollection,
+  const observationInput={before,quietWindow,reopened,expectedBeforeFile:th08FirstStageOgg,expectedFile:th08TitleOgg,
+    sameRuntimeFrame:sameRuntimeAfterExit&&sameRuntimeAfterLaunch,exitObserved:true};
+  const outcome=th08OggRestartOutcome(observationInput);
+  return {...outcome,observationInput,decoderSamples:[beforeState.decoder,stoppedDecoder,reopened.decoder],beforeState:beforeState.native,beforePcmCollection:beforeState.pcmCollection,
     reopenedState:reopened.native,reopenedPcm:reopened.pcm,reopenedPcmCollection:reopened.pcmCollection,
     frame:{url:frameUrl,sameRuntimeAfterExit,sameRuntimeAfterLaunch}};
 }
@@ -422,7 +601,7 @@ async function pressStart(page) {
 }
 
 const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'},async(report,save)=>{
-  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','music-manifest','variant'],flags:['plan-only']});
+  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','music-manifest','variant','packages','artwork-dir'],flags:['plan-only','launcher-ui','launcher-ui-only']});
   assert.ok(requestedOutput,'Required: --output=report-directory');
   if(outputInspectionError)throw outputInspectionError;
   assert.ok(!outputExists||outputIsDirectory,'--output must name a directory');
@@ -432,6 +611,21 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
   assert.ok(musicArgument,'Required: --music-manifest=private-local-music-inputs.json');
   assert.ok(gameArgument,'Required: --game=explicit-comma-separated-game-ids');
   const games=gameArgument.split(',');
+  const launcherOnly=process.argv.includes('--launcher-ui-only'),launcherUi=launcherOnly||process.argv.includes('--launcher-ui');
+  let launcherPackageMap=null,launcherPackageBytes=null,launcherPackagePath=null,launcherArtwork=null;
+  const launcherArchives={};
+  if(launcherUi){
+    assert.deepEqual(games,['th08'],'Register title-owned Launcher music observations before selecting another product');
+    assert.ok(arg('packages')&&arg('artwork-dir'),'Launcher music UI requires --packages and --artwork-dir');
+    launcherPackagePath=resolve(arg('packages'));launcherPackageBytes=await readFile(launcherPackagePath);
+    launcherPackageMap=JSON.parse(launcherPackageBytes.toString('utf8'));launcherArtwork=resolve(arg('artwork-dir'));
+    for(const game of games){
+      assert.equal(typeof launcherPackageMap?.[game],'string',`${game}: Launcher music ZIP input is missing`);
+      const archive=await inspectOfflineUpdateDescriptor(launcherPackageMap[game]);
+      assert.equal(archive.descriptor.game,game,`${game}: Launcher music ZIP belongs to another product`);
+      launcherArchives[game]=archive;
+    }
+  }
   assert.ok(games.length&&games.every(Boolean),'--game must contain comma-separated game IDs');
   assert.equal(new Set(games).size,games.length,'--game must not contain duplicate game IDs');
   for(const game of games)assert.ok(MUSIC_BROWSER_GAMES.includes(game),`Unsupported music acceptance game ${game}`);
@@ -440,6 +634,16 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
   const selection=selectRuntimeTargets(config,{game:games.join(','),variant:'normal'});
   const musicManifestBytes=await readFile(musicManifestPath),musicManifest=JSON.parse(musicManifestBytes.toString('utf8'));
   const musicInputs=await verifyMusicInputs(musicManifest,{repoRoot:root,games});
+  const launcherMusicPreflight={};
+  if(launcherUi){
+    for(const game of games){
+      const archive=launcherArchives[game];
+      const music=await verifyLauncherFixtureMusic({game,input:musicInputs[game],descriptor:archive.descriptor});
+      launcherMusicPreflight[game]={path:archive.path,archiveSha256:archive.archiveSha256,music};
+    }
+    report.launcherMusicPreflight=launcherMusicPreflight;
+    await save();
+  }
   const packageBuilds=selection.targets.map(async target=>({target,identity:{
     runtime:await verifyRuntimePackage(target,{repoRoot:root}),data:await verifyPrivateData(target.data)}}));
   const verifiedPackages=await Promise.all(packageBuilds);
@@ -456,6 +660,10 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
     browserLaunch:{path:'tools/browser/launch.mjs',file:resolve(root,'tools/browser/launch.mjs')},
     resultModel:{path:'tools/ports/music-browser-result.mjs',file:resolve(root,'tools/ports/music-browser-result.mjs')},
   };
+  if(launcherUi){
+    const dependencies=await dependencySnapshot(root,['tools/ports/launcher-music-journey.mjs']);
+    for(const [index,source] of dependencies.entries())guardedSources[`launcherMusicDependency${index}`]={path:source.path,file:resolve(root,source.path)};
+  }
   if(mappingGames.includes('th11')){
     const path=resolve(root,'ports/th11/web/cpp/game/MusicCatalog.hpp'),bytes=await readFile(path);
     th11Tracks=trackMapFromTh11(bytes.toString('utf8'));
@@ -471,11 +679,37 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
     musicMapEvidence.th15={source:'ports/th15/web/assets/music/manifest.json',sha256:hash(bytes),layoutSha256:catalog.layoutSha256,trackCount:th15Tracks.length};
   }
   const th08Selected=games.includes('th08');
+  let th08Catalog=[],th08BossRecipe=null;
+  if(th08Selected){
+    const item=verifiedPackages.find(item=>item.target.game==='th08');
+    await mkdir(output,{recursive:true});
+    const entries={};
+    for(const [key,entry] of Object.entries({comments:'musiccmt.txt',format:'thbgm.fmt',bossMessage:'msg1a.dat',stage:'stage1.std'})){
+      const destination=resolve(output,`th08-${key}.bin`);
+      execFileSync('python',[resolve(root,'launcher/scripts/touhou_formats.py'),'extract-pbgz-entry','--archive',item.target.data,'--entry',entry,'--output',destination],{cwd:root,maxBuffer:1024*1024});
+      const bytes=await readFile(destination);entries[key]={entry,path:destination,bytes:bytes.length,sha256:hash(bytes),content:bytes};
+    }
+    assert.deepEqual(await verifyPrivateData(item.target.data),item.identity.data,'DATA changed during independent music extraction');
+    th08Catalog=parseTh08MusicCatalog(entries.comments.content,entries.format.content).map(track=>{
+      const input=mapTrackToInput(track.file,musicInputs.th08.files);assert.ok(input,`Missing catalog OGG ${track.file}`);return{...track,input};
+    });
+    const parsed=parseTh08MessageMusicCues(entries.bossMessage.content,entries.stage.content,0);
+    const cue=parsed.cues.find(cue=>cue.slot===1);assert.ok(cue,'Stage 1 message has no Boss music cue');
+    const beforeFile=parsed.stage.paths[0].slice(4).replace(/\.mid$/,'.ogg');assert.equal(beforeFile,th08FirstStageOgg);
+    assert.ok(th08Catalog.some(track=>track.file===cue.file),'Boss cue is absent from the independent Music Room catalog');
+    th08BossRecipe={stage:0,entry:cue.entry,beforeFile,afterFile:cue.file,maxPolls:600,releaseInputs:['fire','skip'],maxCleanupPolls:30,
+      acceptedStatus:dialogueTouchSceneRequest({game:'th08',variant:'normal'}).contract.request.acceptedStatus,
+      cueSource:{asset:entries.bossMessage.entry,bytes:parsed.message.bytes,hash:{algorithm:'fnv1a64',value:parsed.message.fnv64},entryCount:parsed.message.entryCount}};
+    musicMapEvidence.th08={data:item.identity.data,entries:Object.fromEntries(Object.entries(entries).map(([key,{content,...entry}])=>[key,entry])),tracks:th08Catalog,bossCue:{parsed,recipe:th08BossRecipe}};
+  }
   const midiBridgeSource=th08Selected?midiBridgeFactorySource():null;
   const midiBridgeBytes=midiBridgeSource?Buffer.from(midiBridgeSource,'utf8'):null;
   const midiVendorPath=resolve(root,'launcher/public/vendor/webaudio-tinysynth.min.js');
   const midiVendorBytes=th08Selected?await readFile(midiVendorPath):null;
   if(th08Selected)Object.assign(guardedSources,{
+    th08MusicParser:{path:'tests/adaptation/adapters/titles/th08-music.mjs',file:resolve(root,'tests/adaptation/adapters/titles/th08-music.mjs')},
+    th08MusicExtractor:{path:'launcher/scripts/touhou_formats.py',file:resolve(root,'launcher/scripts/touhou_formats.py')},
+    th08MusicRoom:{path:'ports/th08/web/cpp/game/MusicRoom.cpp',file:resolve(root,'ports/th08/web/cpp/game/MusicRoom.cpp')},
     th08AudioHost:{path:'ports/th08/web/cpp/sdl/AudioHost.cpp',file:resolve(root,'ports/th08/web/cpp/sdl/AudioHost.cpp')},
     th08MusicControl:{path:'ports/th08/web/cpp/game/MusicControl.cpp',file:resolve(root,'ports/th08/web/cpp/game/MusicControl.cpp')},
     th08MusicCommands:{path:'ports/th08/web/cpp/game/MusicCommands.cpp',file:resolve(root,'ports/th08/web/cpp/game/MusicCommands.cpp')},
@@ -519,12 +753,15 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
     sourceSnapshotStart,manifest:{path:manifestPath,sha256:hash(await readFile(manifestPath))},
     musicManifest:{path:musicManifestPath,sha256:hash(musicManifestBytes),games:Object.keys(musicInputs)},
     musicInputs,musicMapEvidence,artifacts,
+    launcherInputs:launcherUi?{packages:{path:launcherPackagePath,sha256:hash(launcherPackageBytes)},artwork:launcherArtwork,only:launcherOnly}:null,
     selection:{games:selection.games,variant:selection.variant,expectedTargets:selection.expected},
-    scope:th08Selected?'Chromium | formal TH08 Runtime configure and launch | verified OGG title/stage scenes, native cursor pause and simulated document-hidden recovery | authentic Launcher MIDI bridge factory with production TinySynth vendor | controlled corrupt-OGG resource diagnostic. Launcher preference UI, full track table/looping and physical device behavior remain separate.':
+    scope:th08Selected?'Chromium | formal TH08 Runtime configure and launch | DATA-bound Music Room track table, native source and PCM, natural loop, keyboard fade and Reset | OGG title/stage, pause and document-hidden recovery | production Launcher MIDI bridge and TinySynth | corrupt/missing OGG diagnostics and public configure MIDI recovery. Displayed Music Room text, other scene transitions, Launcher preference UI and physical device behavior remain separate.':
       'Chromium | formal Runtime configure and launch | product-catalog OGG mounts | actual Runtime WebAudio output tap | title output scenes. AUDIO-01 full track switching, gameplay scene changes, looping and lifecycle coverage remains itemized separately. TH11 and TH15 expose mapped native track identity; TH08, TH10 and TH20 report decoder and PCM evidence without asserting a track ID. No MIDI or physical listening claim.',
     protocols:{runtime:'eagler-touhou/1',audio:'Parallel AnalyserNode tap through a muted branch; original destination connection remains direct',
       nativeStats:Object.fromEntries(games.map(game=>[game,nativeAudioStatsShape(game)]))},
     targets:[]});
+  if(launcherOnly)report.scope='Real Launcher | visible music choices and selected-mode launch consent | persisted preference after reload | actual Runtime mode, decoder and PCM | isolated installed OGG object loss and production MIDI fallback';
+  else if(launcherUi)report.scope+=' This invocation also runs the actual Launcher preference and resource-fallback UI journey.';
   await save();
   const verifyArtifacts=async()=>{
     const current={
@@ -552,6 +789,35 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
       files.set(`/music/${game}/${entry.name}`,bytes);
     }
     return files;
+  };
+  const runLauncherUi=async(record,target,identity,shared)=>{
+    const {runLauncherMusicJourney}=await import('./launcher-music-journey.mjs');
+    const {launchBrowser}=await import('../browser/launch.mjs');
+    const journey=await runLauncherMusicJourney({root,output:resolve(output,'launcher-ui-'+target.game),target,
+      identity:identity.runtime,dataIdentity:identity.data,shared,artwork:launcherArtwork,packageMap:launcherPackageMap,
+      musicInputs:musicInputs[target.game],pcmProbeSource:MUSIC_PCM_PROBE_SOURCE,readAudioState:readNativeAudioState,
+      launchBrowser:({tlsIdentity})=>launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
+        `--ignore-certificate-errors-spki-list=${tlsIdentity.spkiSha256}`]})});
+    record.launcherMusic=journey;
+    const passed=journey.status==='observed'&&journey.scenes.length===5&&journey.scenes.every(scene=>scene.passed===true)&&
+      journey.resourceFault?.passed===true&&journey.cleanupErrors.length===0;
+    const status=passed?'partial':journey.status==='failed'?'failed':'incomplete';
+    const launcherEvidence={path:resolve(output,'launcher-ui-'+target.game,'launcher-music-journey.json'),status:journey.status,passed};
+    if(launcherOnly){
+      record.dataIdentity=identity.data;record.packageIdentity=identity.runtime;
+      record.checks=['AUDIO-05','MIDI-01','MIDI-04'].map(id=>({id,status,passed,complete:false,launcherMusic:launcherEvidence,
+        scope:'Real Launcher menu preferences, fresh Runtime none/MIDI/OGG decode selection and installed OGG failure fallback'}));
+      record.scenario={id:'th08-launcher-music-ui',status:passed?'passed':status,passed};
+      record.status=record.scenario.status;record.passed=passed;
+    }else{
+      for(const check of record.checks.filter(check=>['AUDIO-05','MIDI-01','MIDI-04'].includes(check.id))){
+        Object.assign(check,mergeMusicBehaviorResult(check,{passed,status}),{launcherMusic:launcherEvidence});
+      }
+      record.scenario=mergeMusicBehaviorResult(record.scenario??{id:'th08-normal-audio-midi-scenes',status:record.status,passed:record.passed},
+        {passed,status:passed?'passed':status});
+      record.scenario.launcherUiPassed=passed;record.status=record.scenario.status;record.passed=record.scenario.passed;
+    }
+    await save();
   };
   if(process.argv.slice(2).includes('--plan-only')){
     for(const {target,identity} of verifiedPackages){
@@ -597,6 +863,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
       const game=target.game,record={game,variant:'normal',id:target.id,status:'running',passed:false,modes:[],checks:[],errors:[],consoleErrors:[],httpErrors:[]};
       report.targets.push(record);await save();
       const shared={...Object.fromEntries(Object.entries(config.shared??{}).map(([name,path])=>[name,resolve(path)]))};
+      if(launcherOnly){await runLauncherUi(record,target,identity,shared);continue;}
       const files=await snapshotMusicFiles(game);
       if(game==='th08')files.set('/launcher/vendor/webaudio-tinysynth.min.js',midiVendorBytes);
       const fixture=await createRuntimeFixtureSite({repoRoot:root,targets:[target],shared,files,protocol:'https'});
@@ -609,49 +876,57 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
         `--ignore-certificate-errors-spki-list=${fixture.tlsIdentity.spkiSha256}`]});
       record.fixture={base:fixture.base,protocol:fixture.protocol,tlsIdentity:fixture.tlsIdentity};
       try{
-        const modes=game==='th08'?['none','ogg','midi','corrupt-ogg']:['none','ogg'];
+        const modes=game==='th08'?['none','ogg','ogg-full','midi','corrupt-ogg','missing-ogg']:['none','ogg'];
         for(const mode of modes){
           const modeRecord={mode,status:'running',runtimeResources:[],title:null,start:null};record.modes.push(modeRecord);
           const context=await browser.newContext({viewport:{width:1100,height:820}});
           await context.addInitScript({content:game==='th08'?'window.__eaglerMusicPcmProbeTop=true;\n'+MUSIC_PCM_PROBE_SOURCE:MUSIC_PCM_PROBE_SOURCE});
           const page=await context.newPage();let frame=null,fixtureWatcher=null,activeStage='host-navigation';
+          modeRecord.protocolCapture=[];
+          await page.exposeBinding('__captureMusicProtocolFailure',(source,item)=>{
+            if(source.page!==page||source.frame!==page.mainFrame()){
+              record.errors.push({mode,stage:activeStage,error:'Music protocol capture came from another page or a child frame'});return;
+            }
+            modeRecord.protocolCapture.push({...item,receivedAt:new Date().toISOString()});
+          });
+          await page.addInitScript(installMusicProtocolCapture,{game});
+          const drainProtocol=()=>page.evaluate(async()=>{
+            if(typeof window.__flushMusicProtocolCaptures!=='function')throw Error('Music protocol capture is not installed');
+            if(await window.__flushMusicProtocolCaptures()!==0)throw Error('Music protocol captures did not drain');
+          });
           const markStage=async stageName=>{
             activeStage=stageName;
             if(page.url()!=='about:blank')await page.evaluate(name=>{window.__eaglerMusicProtocolStage=name;},stageName);
           };
           page.on('pageerror',error=>record.errors.push({mode,stage:activeStage,error:String(error)}));
           page.on('crash',()=>record.errors.push({mode,stage:activeStage,error:'Runtime browser page crashed'}));
-          page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push({mode,stage:activeStage,text:message.text()});});
-          page.on('response',response=>{if(response.status()>=400)record.httpErrors.push({mode,stage:activeStage,url:response.url(),status:response.status()});});
+          page.on('console',message=>{if(message.type()==='error')record.consoleErrors.push({mode,stage:activeStage,text:message.text(),url:message.location().url});});
+          page.on('response',response=>{if(response.status()>=400){record.httpErrors.push({mode,stage:activeStage,url:response.url(),status:response.status()});
+            if(mode==='missing-ogg'&&response.url()===modeRecord.missingOgg?.requestUrl){modeRecord.missingOgg.requestStatus=response.status();modeRecord.missingOgg.requestCount++;}}});
           page.on('requestfailed',request=>record.httpErrors.push({mode,stage:activeStage,url:request.url(),failure:request.failure()?.errorText??'request failed'}));
           try{
-            fixtureWatcher=await fixture.watchPage(page,{output,label:`${game}-${mode}`});
+            fixtureWatcher=await fixture.watchPage(page,{output,label:`${game}-${mode}`,expectedResponse:mode==='missing-ogg'?(url,response)=>{
+              if(url.href!==modeRecord.missingOgg?.requestUrl||response.status()!==404)return null;
+              const missingBody=Buffer.from('Unknown Runtime fixture resource');
+              return{kind:'controlled-missing-music',expected:{status:404,bytes:missingBody.length,sha256:hash(missingBody)},
+                validate:({response,bytes})=>{assert.equal(response.status(),404);assert.deepEqual(bytes,missingBody);return{kind:'controlled-missing-music',status:404};}};
+            }:undefined});
             await page.goto(fixture.hostUrl(target,mode==='none'?1:2));
             await markStage('host-ready');
             await page.waitForFunction(()=>events.some(event=>event.event==='ready'),null,{timeout:120000});
-            await page.evaluate(()=>{
-              if(!Array.isArray(window.events))throw Error('Music Runtime protocol event history is unavailable');
-              window.__eaglerMusicProtocolStage='runtime-frame-binding';
-              window.__eaglerMusicProtocolStages=window.events.map((event,index)=>({index,event:event?.event??null,stage:'host-navigation'}));
-              const originalPush=window.events.push;
-              window.events.push=function(...items){
-                for(let offset=0;offset<items.length;offset++)window.__eaglerMusicProtocolStages.push({
-                  index:this.length+offset,event:items[offset]?.event??null,stage:window.__eaglerMusicProtocolStage??'unscoped'});
-                return originalPush.apply(this,items);
-              };
-            });
+            await page.evaluate(observeMusicProtocolHistory);
             await markStage('runtime-frame-binding');
             frame=page.frames().find(candidate=>candidate.url().includes(`/runtime/${target.id}/`));assert.ok(frame,`${game}: Runtime frame missing`);
             if(game==='th08')modeRecord.runtimeFrameIdentity=await bindMusicRuntimeFrame(page,frame);
             const sharedResources=Object.keys(config.shared??{}).map(name=>({path:`/${name}`,url:`${fixture.base}/shared/${name}`}));
             const resources=musicInputs[game].files;
             const musicMode=mode==='none'?'none':mode==='midi'?'midi':'ogg';
-            const runtimeResources=['ogg','corrupt-ogg'].includes(mode)?runtimeMusicResources(game,musicInputs,{base:fixture.base}):[];
+            const runtimeResources=['ogg','ogg-full','corrupt-ogg','missing-ogg'].includes(mode)?runtimeMusicResources(game,musicInputs,{base:fixture.base}):[];
             modeRecord.runtimeResources=runtimeResources.map(resource=>({path:resource.path,bytes:resource.bytes}));
             const configure=({sharedResources,runtimeResources,musicMode,options})=>rpc('configure',{language:'ja',music:musicMode,
               resources:[],runtimeResources,sharedResources,thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,
                 thpracEnabled:false,limitPresentationTo60:false,...options}});
-            let corruptOriginal=null,corruptInjected=null;
+            let corruptOriginal=null,corruptInjected=null,missingOriginal=null;
             if(mode==='corrupt-ogg'){
               const faultPath='/music/th08/th08_01.ogg';corruptOriginal=files.get(faultPath);
               assert.ok(corruptOriginal instanceof Uint8Array,'TH08 title OGG fixture bytes are unavailable for fault injection');
@@ -663,9 +938,29 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
                 injection:'zero-fill; flip byte 0 only if bytes equal the source'};
               files.set(faultPath,corruptInjected);
             }
+            if(mode==='missing-ogg'){
+              const faultPath='/music/th08/th08_01.ogg';missingOriginal=files.get(faultPath);assert.ok(missingOriginal instanceof Uint8Array);
+              modeRecord.missingOgg={path:'/bgm-ogg/th08_01.ogg',requestUrl:`${fixture.base}${faultPath}`,requestStatus:null,requestCount:0,
+                originalBytes:missingOriginal.length,originalSha256:hash(missingOriginal),injection:'remove exactly the title OGG fixture route'};
+              files.delete(faultPath);
+            }
             await markStage('configure');
-            try{await page.evaluate(configure,{sharedResources,runtimeResources,musicMode,options:target.options??{}});}
-            finally{if(corruptOriginal)files.set('/music/th08/th08_01.ogg',corruptOriginal);}
+            let configureError=null;
+            const configuredOptions={...target.options,...(game==='th08'&&['ogg','ogg-full'].includes(mode)?{touchEnabled:true,oggDecodeMode:mode==='ogg-full'?'full':'stream'}:{})};
+            modeRecord.configuredOptions=configuredOptions;
+            try{await page.evaluate(configure,{sharedResources,runtimeResources,musicMode,options:configuredOptions});}
+            catch(error){if(mode!=='missing-ogg')throw error;configureError=String(error.message??error);}
+            finally{if(corruptOriginal)files.set('/music/th08/th08_01.ogg',corruptOriginal);if(missingOriginal)files.set('/music/th08/th08_01.ogg',missingOriginal);}
+            if(mode==='missing-ogg'){
+              assert.ok(configureError,'Missing OGG configure unexpectedly succeeded');
+              const rejected=await page.evaluate(()=>events.filter(event=>event.ok===false));assert.equal(rejected.length,1);
+              const startup=await frame.evaluate(()=>({app:window.__th08Runtime.app}));
+              Object.assign(startup,await page.evaluate(()=>({ready:events.find(event=>event.event==='ready'),firstFrameCount:events.filter(event=>event.event==='first-frame').length})));
+              Object.assign(modeRecord.missingOgg,{configureError,configureResponse:rejected[0],startup});
+              await fixtureWatcher.flush();assert.equal(modeRecord.missingOgg.requestCount,1);
+              frame=await recoverTh08MusicFault({page,frame,modeRecord,target,fixture,sharedResources,configure,midiBridgeSource,markStage,drainProtocol});
+              continue;
+            }
             if(mode==='midi'){await markStage('midi-bridge-setup');modeRecord.midiBridge=await installTh08MidiBridge(page,fixture,midiBridgeSource);}
             await markStage('runtime-launch');
             await page.evaluate(()=>rpc('launch'));
@@ -697,7 +992,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
             await markStage('title-response-audit');
             await fixtureWatcher.flush();
             const oggResponses=fixtureWatcher.responses.filter(response=>new URL(response.url).pathname.startsWith(`/music/${game}/`));
-            if(['ogg','corrupt-ogg'].includes(mode)){
+            if(['ogg','ogg-full','corrupt-ogg'].includes(mode)){
               assert.ok(oggResponses.length,`${game}: Runtime did not request any verified OGG resource`);
               if(titleTrack[game])assert.ok(oggResponses.some(response=>new URL(response.url).pathname===`/music/${game}/${titleTrack[game]}`),
                 `${game}: Runtime did not request the native title track OGG`);
@@ -714,6 +1009,14 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
             if(mode==='ogg'&&!titleTrack[game]&&game!=='th08'){
               assert.ok(modeRecord.title.pcm.outputObserved,`${game}: OGG mode produced no observed Runtime PCM output`);
             }
+            if(mode==='corrupt-ogg'){
+              frame=await recoverTh08MusicFault({page,frame,modeRecord,target,fixture,sharedResources,configure,midiBridgeSource,markStage,drainProtocol});
+              continue;
+            }
+            if(game==='th08'&&mode==='ogg'){
+              await markStage('music-room');
+              modeRecord.musicRoom=await collectTh08MusicRoom(page,frame,resources,th08Catalog);
+            }
             const canObserveStart=['th08','th10','th11','th15'].includes(game);
             if(canObserveStart){
               await markStage('gameplay-navigation');
@@ -728,13 +1031,15 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
                 modeRecord.start.audio=await collectScene({stage:true});
                 modeRecord.start.audio.observation=observation;
                 await page.screenshot({path:resolve(output,`${game}-${mode}-gameplay.png`)});
-                if(game==='th08'&&mode==='ogg'){
+                if(game==='th08'&&['ogg','ogg-full'].includes(mode)){
                   await markStage('pause');
                   modeRecord.start.oggPause=await pauseTh08Gameplay(page,frame,'ogg');
                   await markStage('background');
                   modeRecord.start.background=await backgroundTh08Gameplay(page,frame,'ogg');
                   await markStage('restart');
                   modeRecord.start.restart=await restartTh08Runtime(page,frame,'ogg',resources);
+                  await markStage('boss-cue');
+                  modeRecord.start.bossCue=await collectTh08BossMusicCue(page,frame,resources,th08BossRecipe);
                 }else if(game==='th08'&&mode==='midi'){
                   await markStage('pause');
                   modeRecord.start.midiPause=await pauseTh08Gameplay(page,frame,'midi');
@@ -745,13 +1050,14 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
                 }
               }
             }else modeRecord.start={status:'not-run',reason:'TH20 native phase and UI observations are recorded; this driver does not yet implement title-specific navigation'};
-            modeRecord.identityCoverage=titleTrack[game]?'native-track-id-and-ogg-input':'decoder-and-pcm-only';
-            modeRecord.status=['ogg','midi'].includes(mode)&&modeRecord.title.pcm?.outputObserved?'observed':'recorded';
+            modeRecord.identityCoverage=game==='th08'||titleTrack[game]?'native-track-id-and-ogg-input':'decoder-and-pcm-only';
+            modeRecord.status=['ogg','ogg-full','midi'].includes(mode)&&modeRecord.title.pcm?.outputObserved?'observed':'recorded';
             if(mode==='none'){
               modeRecord.control=describeNoneMusicControl(modeRecord.title.pcm);
               modeRecord.passed=modeRecord.control.status==='silent-after-settling';
             }else modeRecord.passed=modeRecord.title.pcm?.outputObserved===true;
           }catch(error){modeRecord.status='failed';modeRecord.passed=false;modeRecord.failedStage=activeStage;
+            if(error.evidence)modeRecord.failureEvidence=error.evidence;
             modeRecord.error=String(error.stack||error);record.errors.push({mode,stage:activeStage,error:modeRecord.error});}
           finally{
             if(fixtureWatcher){
@@ -762,16 +1068,19 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
               modeRecord.fixtureResponses??={capture:fixtureWatcher.capture,count:fixtureWatcher.responses.length,responses:fixtureWatcher.responses,errors:fixtureWatcher.errors};
             }
             await markStage('protocol-tail').catch(()=>{});
-            modeRecord.events=await page.evaluate(()=>{
+            const tailEvents=await page.evaluate(()=>{
               if(!Array.isArray(window.events))throw Error('Runtime protocol event history is unavailable');
               return window.events;
             }).catch(error=>{
               modeRecord.protocolTailError=String(error.stack||error);
               record.errors.push({mode,stage:'protocol-tail',error:modeRecord.protocolTailError});return[];
             });
-            modeRecord.eventStages=await page.evaluate(()=>window.__eaglerMusicProtocolStages??[]).catch(error=>{
+            const tailStages=await page.evaluate(()=>window.__eaglerMusicProtocolStages??[]).catch(error=>{
               record.errors.push({mode,stage:'protocol-tail',error:String(error.stack||error)});return[];
             });
+            modeRecord.events=[...(modeRecord.beforeRecoveryEvents??[]),...tailEvents];
+            modeRecord.eventStages=[...(modeRecord.beforeRecoveryEventStages??[]),...tailStages.map(item=>({...item,index:item.index+(modeRecord.beforeRecoveryEvents?.length??0)}))];
+            try{await drainProtocol();}catch(error){record.errors.push({mode,stage:'protocol-tail',error:String(error.stack||error)});}
             await context.close();await save();
           }
         }
@@ -786,19 +1095,22 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
           const gameplayStages=[...titleStages,'gameplay-navigation','gameplay-observation'];
           const errorsFor=(mode,stages)=>musicScenarioErrors(record,{mode,stages});
           const attachStageErrors=attachMusicStageErrors;
-          const midi=record.modes.find(mode=>mode.mode==='midi'),corrupt=record.modes.find(mode=>mode.mode==='corrupt-ogg');
-          const oggTitle=th08OggTitleOutcome({native:ogg?.title?.native,input:ogg?.title?.input,pcm:ogg?.title?.pcm,
+          const midi=record.modes.find(mode=>mode.mode==='midi'),corrupt=record.modes.find(mode=>mode.mode==='corrupt-ogg'),missing=record.modes.find(mode=>mode.mode==='missing-ogg');
+          const oggTitle=th08OggTitleOutcome({...ogg?.title,
             errors:errorsFor('ogg',titleStages)});
           const oggAcceptance=th08OggAcceptanceOutcome({title:oggTitle,expectedStageSong:th08FirstStageSong,
             stage:ogg?.start?.audio,errors:errorsFor('ogg',gameplayStages)});
+          const musicRoom=th08MusicRoomOutcome({catalog:th08Catalog,journey:ogg?.musicRoom,errors:errorsFor('ogg',['music-room'])});
+          oggAcceptance.musicRoom=musicRoom;oggAcceptance.passed&&=musicRoom.passed;
+          if(!oggAcceptance.passed)oggAcceptance.status='failed';
           const oggPause=attachStageErrors(ogg?.start?.oggPause??{passed:false,status:'incomplete',complete:false,id:'AUDIO-03'},
             errorsFor('ogg',['pause']));
           const oggRestart=attachStageErrors(ogg?.start?.restart??{passed:false,status:'incomplete',complete:false,id:'AUDIO-03-restart'},
             errorsFor('ogg',['restart']));
-          const audioLifecyclePassed=oggPause.passed===true&&oggRestart.passed===true;
-          const audioLifecycleStatus=audioLifecyclePassed?'partial':[oggPause,oggRestart].some(check=>check.status==='failed')?'failed':'incomplete';
+          const audioLifecyclePassed=oggPause.passed===true&&oggRestart.passed===true&&musicRoom.passed===true;
+          const audioLifecycleStatus=audioLifecyclePassed?'partial':[oggPause,oggRestart,musicRoom].some(check=>check.status==='failed')?'failed':'incomplete';
           const audioLifecycle={...oggPause,id:'AUDIO-03',passed:audioLifecyclePassed,
-            status:audioLifecycleStatus,complete:false,restart:oggRestart};
+            status:audioLifecycleStatus,complete:false,restart:oggRestart,musicRoom};
           const oggBackground=attachStageErrors(ogg?.start?.background??{passed:false,status:'incomplete',complete:false,id:'AUDIO-04'},
             errorsFor('ogg',['background']));
           const midiTitle=th08MidiTitleOutcome({native:midi?.title?.native,events:midi?.title?.events??[],
@@ -829,15 +1141,41 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
           if(corrupt){
             Object.assign(corrupt,attachTh08OggFaultModeAssessment(corrupt,oggFault));
           }
-          const audioFault={...oggFault,id:'AUDIO-05',diagnosticCheckId:oggFault.id};
+          const missingFault=th08OggFaultOutcome({fault:'missing',expectedFile:th08TitleOgg,...missing?.missingOgg,
+            diagnostics:[missing?.missingOgg?.configureResponse?.error].filter(Boolean),errors:errorsFor('missing-ogg',titleStages)});
+          const recoveryStages=['fault-recovery-retire','fault-recovery-navigation','fault-recovery-configure','fault-recovery-midi-bridge','fault-recovery-launch','fault-recovery-output'];
+          const corruptRecovery=th08MusicFaultRecoveryOutcome({fault:oggFault,recovery:corrupt?.recovery,errors:errorsFor('corrupt-ogg',recoveryStages)});
+          const missingRecovery=th08MusicFaultRecoveryOutcome({fault:missingFault,recovery:missing?.recovery,errors:errorsFor('missing-ogg',recoveryStages)});
+          if(corrupt){corrupt.recoveryAssessment=corruptRecovery;corrupt.passed=corrupt.passed&&corruptRecovery.passed;corrupt.status=corrupt.passed?'passed':corruptRecovery.status;}
+          if(missing){Object.assign(missing,attachTh08OggFaultModeAssessment(missing,missingFault));missing.recoveryAssessment=missingRecovery;
+            missing.passed=missing.passed&&missingRecovery.passed;missing.status=missing.passed?'passed':missingRecovery.status;}
+          const audioFault=th08MusicFaultJourneyOutcome({corrupt:oggFault,missing:missingFault,corruptRecovery,missingRecovery});
           const midiOutput={...midiTitle,id:'MIDI-02'};
           const audioBackground={...oggBackground,id:'AUDIO-04'};
+          const bossCues=['ogg','ogg-full'].map(mode=>{
+            const scene=record.modes.find(row=>row.mode===mode)?.start?.bossCue;
+            const transition=assessMusicCueTransition(scene?.transition,th08BossRecipe);
+            const audio=th08OggTitleOutcome({...scene?.audio,expectedFile:th08BossRecipe.afterFile,errors:errorsFor(mode,['boss-cue'])});
+            const decoder=scene?.audio?.decoder,decoderMatched=decoder?.enabled===true&&decoder.decodeMode===(mode==='ogg'?0:1);
+            return{mode,transition,audio,decoderMatched,passed:transition.passed&&audio.passed&&decoderMatched};
+          });
+          audioLifecycle.bossCues=bossCues;audioLifecycle.passed&&=bossCues.every(cue=>cue.passed);
+          if(!audioLifecycle.passed)audioLifecycle.status='failed';
+          const decoding=th08OggDecodeVariantsOutcome({stream:ogg,full:record.modes.find(mode=>mode.mode==='ogg-full'),
+            errors:record.scenarioErrors});
+          for(const variant of decoding.variants){
+            const mode=record.modes.find(mode=>mode.mode===variant.mode);
+            if(mode){mode.decodeLifecycle=variant;mode.passed&&=variant.passed;if(!mode.passed)mode.status=variant.status;}
+          }
+          for(const check of [oggAcceptance,audioLifecycle,audioBackground]){
+            check.decoding=decoding;check.passed&&=decoding.passed;if(!check.passed)check.status='failed';
+          }
           record.checks=[oggAcceptance,audioLifecycle,audioBackground,audioFault,midiCapability,midiOutput,midiLifecycle,midiSeparation];
           record.audio01=oggAcceptance;record.audio03=audioLifecycle;record.audio04=audioBackground;record.audio05=audioFault;
           record.midi01=midiCapability;record.midi02=midiOutput;record.midi03=midiLifecycle;record.midi04=midiSeparation;
           const allPassed=musicScenarioPassed(record.checks,record.scenarioErrors);
           record.scenario={id:'th08-normal-audio-midi-scenes',status:allPassed?'passed':'failed',passed:allPassed,
-            scope:'Verified OGG title and first-stage output, OGG pause and same-frame exit/reopen silence, corrupt-resource path notice, title MIDI through Launcher bridge and TinySynth, MIDI pause and voice-reset/reopen lifecycle, and separate OGG/MIDI configurations'};
+            scope:'DATA-bound Music Room sources and PCM, natural loop, keyboard fade and Reset; stream/full OGG title/stage, pause, background and reopen; missing/corrupt resource diagnostics and MIDI recovery; production Launcher MIDI output, pause and voice-reset/reopen; separate OGG/MIDI configurations'};
           record.status=record.scenario.status;record.passed=record.scenario.passed;
         }else{
         const sceneOutcome=musicTitleSceneOutcome({oggPcmObserved:pcmOutput,
@@ -857,21 +1195,28 @@ const result=await runWithReport({output,schema:'eagler-touhou/music-browser/1'}
       finally{await browser.close();}
       }catch(error){record.status='failed';record.passed=false;record.failure=String(error.stack||error);}
       finally{record.httpFailures=fixture.httpFailures;await fixture.close();await save();}
-      console.log(`${game}: ${record.status.toUpperCase()} ${record.failure?.split('\n')[0]??record.audio01?.trackIdentity}`);
+      if(launcherUi)await runLauncherUi(record,target,identity,shared);
+      const failedChecks=(record.checks??[]).filter(check=>check.passed===false).map(check=>check.id);
+      const room=record.audio01?.musicRoom;
+      console.log([`${game}: ${record.status.toUpperCase()}`,record.failure?.split('\n')[0],
+        failedChecks.length?`checks: ${failedChecks.join(', ')}`:record.audio01?.trackIdentity,
+        room?.passed===false?`Music Room: ${['table','loop','fade','drained'].filter(name=>room[name]===false).join(', ')}`:null]
+        .filter(Boolean).join(' | '));
     }
   const musicInputsPostflight=await verifyMusicInputs(musicManifest,{repoRoot:root,games});
   assert.deepEqual(musicInputsPostflight,musicInputs,'OGG resource identities changed during acceptance');
   assert.equal(hash(await readFile(manifestPath)),hash(manifestBytes),'Runtime input manifest changed during music acceptance');
   assert.equal(hash(await readFile(musicManifestPath)),hash(musicManifestBytes),'Music input manifest changed during music acceptance');
+  if(launcherUi)assert.equal(hash(await readFile(launcherPackagePath)),hash(launcherPackageBytes),'Launcher package map changed during music acceptance');
   await verifyArtifacts();
   report.musicInputPostflight=musicInputsPostflight;report.sourceSnapshotPostflight=sourceSnapshot(root);
   const failed=report.targets.some(target=>target.scenario?.passed!==true||target.status==='failed');
-  report.scenario={id:games.includes('th08')?'th08-audio-midi-scenes':'music-title-ogg-scenes',status:failed?'failed':'passed',passed:!failed,
+  report.scenario={id:launcherOnly?'th08-launcher-music-ui':games.includes('th08')?'th08-audio-midi-scenes':'music-title-ogg-scenes',status:failed?'failed':'passed',passed:!failed,
     targetCount:report.targets.length};
   report.coverage={status:'partial',complete:false,
     checks:report.targets.flatMap(target=>target.checks?.length?target.checks.map(check=>({game:target.game,...check})):[{game:target.game,...target.audio01}])};
   report.status=report.scenario.status;report.passed=report.scenario.passed;
-  report.result=failed?'At least one selected music scene or controlled resource-diagnostic assertion failed.':'Selected music scenes and controlled corrupt-resource diagnostic passed; complete AUDIO/MIDI lifecycle coverage remains partial.';
+  report.result=failed?'At least one selected music scene or controlled resource-diagnostic assertion failed.':'Selected music scenes and controlled resource-fault recovery passed; complete AUDIO/MIDI lifecycle coverage remains partial.';
   await save();
 });
 

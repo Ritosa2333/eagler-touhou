@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {compareTraces} from './compare.mjs';
 import {digestCanonicalJson, recordsFromSegments} from './adapter.mjs';
 import {corpusReadiness, validateCorpus} from './corpus.mjs';
+import {formatResult} from './report.mjs';
 
 const digest = value => value.toString(16).padStart(32, '0');
 function trace({game = 'th08', ticks = 3, mutate, complete = true, omitCategory,
@@ -39,6 +40,31 @@ test('reports the earliest category divergence without shifting frames', async (
   assert.equal(result.status, 'DIVERGED');
   assert.equal(result.firstDifference.logicalTick, 1);
   assert.equal(result.firstDifference.category, 'rng');
+});
+
+test('a filtered trace reports its native sample and clocks separately from its comparison row',async()=>{
+  const expected=trace(),actual=trace({mutate:{tick:1,apply:row=>{row.categories.rng=digest(999);}}});
+  for(const records of [expected,actual])for(const row of records.filter(row=>row.type==='tick')){
+    row.replaySampleIndex=6052+row.logicalTick;row.clocks={replayFrame:row.replaySampleIndex,gameFrames:5692+row.logicalTick};
+  }
+  const result=await compareTraces(expected,actual);
+  assert.equal(result.firstDifference.logicalTick,1);
+  assert.equal(result.firstDifference.replaySampleIndex,6053);
+  assert.deepEqual(result.firstDifference.clocks,{replayFrame:6053,gameFrames:5693});
+  const human=formatResult(result);assert.match(human,/first difference: stage-1#0:1/);
+  assert.match(human,/Replay sample: 6053/);assert.match(human,/"gameFrames":5693/);
+});
+
+test('an explicitly incomplete prefix retains earlier divergence and never passes as a complete run',async()=>{
+  const prefix=trace({ticks:1,complete:false});
+  const result=await compareTraces(trace({ticks:3}),prefix);
+  assert.equal(result.status,'INCOMPLETE');assert.equal(result.comparedTicks,1);
+  assert.equal(result.reason,'candidate-capture-incomplete');
+  const changed=trace({ticks:1,complete:false,mutate:{tick:0,apply:row=>{row.scalars.score=99;}}});
+  const divergent=await compareTraces(trace({ticks:3}),changed);
+  assert.equal(divergent.status,'DIVERGED');assert.equal(divergent.firstDifference.logicalTick,0);
+  assert.equal((await compareTraces(trace({ticks:3}),trace({ticks:1}))).status,'DIVERGED',
+    'A declared complete early ending remains a divergence');
 });
 
 test('reports dropped records as incomplete rather than aligning later ticks', async () => {

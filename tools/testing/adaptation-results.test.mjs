@@ -234,6 +234,71 @@ test('a completed scenario cannot certify an adaptation ID without complete proo
   assert.equal(coverage.rows[0].evidence[0].execution,'retained');
 });
 
+test('remaining work groups one failing scene across numbered requirements and distinguishes unreviewed coverage',()=>{
+  const item={...selected,id:'shared',group:'input',status:'failed',execution:'retained',
+    report:{path:'/retained/report.json'},checksMapped:['INPUT-01','INPUT-02','INPUT-05'],checks:[
+      {id:'INPUT-01',status:'failed',error:'no movement'},
+      {id:'INPUT-02',status:'failed',error:'mapping not consumed'},
+      {id:'INPUT-05',status:'passed',complete:false,scope:'Keyboard and touch hold; gamepad combination not declared'},
+    ]};
+  const coverage=adaptationCoverage([item]);
+  assert.equal(coverage.remaining.requirements,3);
+  const failures=coverage.remaining.items.filter(work=>work.kind==='check-failed');
+  assert.equal(failures.length,1);
+  assert.deepEqual(failures[0].checks,['INPUT-01','INPUT-02']);
+  assert.equal(failures[0].execution,'retained');assert.equal(failures[0].report.path,'/retained/report.json');
+  assert.equal(coverage.remaining.byKind['coverage-review-required'].requirements,1);
+  assert.equal(coverage.rows.find(row=>row.id==='INPUT-05').status,'partial');
+  const text=adaptationReviewMarkdown({runId:'fixed-list',status:'failed',cases:[item],coverage});
+  assert.match(text,/待收口编号 3 项/);assert.match(text,/需核对覆盖范围/);assert.match(text,/检查失败/);
+  assert.match(text,/retained\/report.json/);assert.doesNotMatch(text,/产品缺陷|游戏缺陷/);
+});
+
+test('missing tasks, missing observations, blocked inputs and rejected evidence remain different work',()=>{
+  const make=(id,check)=>({...selected,id,group:id,status:'passed',checksMapped:[check],checks:[]});
+  const missing=make('missing','INPUT-01'),blocked={...make('blocked','INPUT-02'),status:'blocked',issues:['Private DATA is absent']};
+  const rejected={...make('rejected','INPUT-05'),checks:[{id:'INPUT-05',status:'passed',complete:false,claimedComplete:true,
+    proofIssue:'Raw pointer identity differs'}]};
+  const coverage=adaptationCoverage([missing,blocked,rejected],{targets:[{game:'th06',variant:'normal',requirements:
+    ['INPUT-01','INPUT-02','INPUT-05','DISPLAY-03'].map(id=>({id}))}]});
+  assert.deepEqual(new Set(coverage.remaining.items.map(item=>item.kind)),
+    new Set(['missing-observation','prerequisite-missing','evidence-rejected','missing-task']));
+  assert.equal(coverage.remaining.requirements,4);assert.equal(coverage.remaining.workItems,4);
+  assert.ok(coverage.remaining.items.find(item=>item.kind==='evidence-rejected').details.includes('Raw pointer identity differs'));
+});
+
+test('human work needs registered scene bundles and independently accepted machine evidence',()=>{
+  const item={...selected,id:'display',group:'presentation',status:'passed',checksMapped:['DISPLAY-04'],checks:[
+    {id:'DISPLAY-04',status:'passed',complete:false,machineComplete:true,completeEvidence:{valid:true},proof:observedProof()},
+  ]};
+  const options={humanReviewBundles:[{id:'display-scenes',checks:['DISPLAY-04']}]};
+  assert.equal(adaptationCoverage([item],options).remaining.items[0].kind,'human-review-required');
+  assert.equal(adaptationCoverage([item]).remaining.items[0].kind,'coverage-review-required');
+  item.checks[0].completeEvidence.valid=false;
+  assert.equal(adaptationCoverage([item],options).remaining.items[0].kind,'coverage-review-required');
+  assert.equal(adaptationCoverage([item],options).complete,false);
+});
+
+test('pending human review keeps independently proven automatic requirements complete',()=>{
+  const item={...selected,id:'mixed-review',group:'presentation',status:'incomplete',issues:[],
+    checksMapped:['DISPLAY-01','DISPLAY-04','DISPLAY-07'],checks:[
+      {id:'DISPLAY-01',status:'passed',complete:true,completeEvidence:{valid:true},proof:observedProof()},
+      {id:'DISPLAY-04',status:'passed',complete:false,machineComplete:true,completeEvidence:{valid:true},proof:observedProof()},
+      {id:'DISPLAY-07',status:'passed',complete:true,proof:observedProof()},
+    ]};
+  const options={humanReviewBundles:[{id:'display',checks:['DISPLAY-04']}]};
+  const coverage=adaptationCoverage([item],options);
+  assert.equal(coverage.rows.find(row=>row.id==='DISPLAY-01').complete,true);
+  assert.equal(coverage.rows.find(row=>row.id==='DISPLAY-07').complete,false,'Incomplete routes require an independent assessor');
+  assert.deepEqual(coverage.remaining.items.filter(work=>work.checks.includes('DISPLAY-04')).map(work=>work.kind),['human-review-required']);
+  assert.equal(coverage.complete,false);assert.equal(summarizeAdaptationCases([item]).passed,false);
+  for(const status of ['failed','blocked','timeout','cancelled']){
+    item.status=status;assert.equal(adaptationCoverage([item],options).rows[0].complete,false,status);
+  }
+  item.status='incomplete';item.issues=['Source identity changed'];
+  assert.equal(adaptationCoverage([item],options).rows[0].complete,false);
+});
+
 test('product-declared N/A combinations do not invalidate complete supported evidence',()=>{
   const cases=[{...selected,id:'2p',status:'passed',checks:[{id:'INPUT-01',status:'passed',complete:true,proof:observedProof()}]},
     {...selected,id:'3p',status:'not-applicable',checks:[]}];
@@ -257,6 +322,36 @@ test('coverage preserves requirements with no driver and product applicability',
   assert.deepEqual(result.rows.map(row=>row.status),['complete','unmapped','not-applicable']);
   assert.equal(result.complete,false);
   assert.equal(adaptationCoverage([],{targets}).rows.length,3,'missing tasks cannot remove selected requirements');
+});
+
+test('supporting identity evidence stays visible without replacing or blocking its required acceptance route',()=>{
+  const owner={game:'th08',variant:'normal',id:'build',status:'passed',checksMapped:['BUILD-04'],
+    checks:[{id:'BUILD-04',status:'passed',complete:true,proof:observedProof()}]};
+  const desktop={game:'th08',variant:'normal',id:'input',status:'passed',checksMapped:['INPUT-01'],supportingChecks:['BUILD-04'],
+    checks:[{id:'BUILD-04',status:'passed',complete:false}]};
+  const options={checks:['BUILD-04']};
+  const result=adaptationCoverage([owner,desktop],options);
+  assert.equal(result.complete,true);
+  assert.deepEqual(result.rows[0].supportingCaseIds,['input']);
+  assert.deepEqual(result.rows[0].evidence.map(row=>row.role),['required','supporting']);
+  assert.equal(adaptationCoverage([desktop],options).complete,false,'Preflight alone cannot satisfy the requirement');
+  desktop.status='failed';desktop.checks[0].status='failed';
+  const failed=adaptationCoverage([owner,desktop],options);
+  assert.equal(failed.complete,false);assert.equal(failed.rows[0].complete,false);
+  assert.equal(failed.rows[0].status,'failed','An actual supporting identity failure is still a failure');
+  assert.equal(summarizeAdaptationCases([owner,desktop]).status,'failed');
+});
+
+test('observed complete proof requires an independently validated assessor and original references',()=>{
+  const item={...selected,id:'practice',status:'passed',checksMapped:['PRACTICE-05'],checks:[
+    {id:'PRACTICE-05',status:'observed',complete:true,completeEvidence:{valid:true},proof:observedProof()},
+  ]};
+  assert.equal(adaptationCoverage([item]).complete,true);
+  for(const mutate of [check=>check.complete=false,check=>delete check.completeEvidence,
+    check=>check.completeEvidence.valid=false,check=>check.proof.references=[],check=>check.status='incomplete']){
+    const invalid=structuredClone(item);mutate(invalid.checks[0]);
+    assert.equal(adaptationCoverage([invalid]).complete,false);
+  }
 });
 
 test('human review includes unmapped requirements, retained evidence and no fabricated verdict',()=>{

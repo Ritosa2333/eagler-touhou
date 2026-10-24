@@ -33,3 +33,15 @@ test('RNG consumed while frozen is exposed at the next gameplay tick', async () 
   assert.equal(result.status, 'DIVERGED');
   assert.equal(result.firstDifference.difference.path, 'scalars.rngCalls');
 });
+
+test('title content availability is profile metadata while every simulation flag stays authoritative',async()=>{
+  const expected=[row(1,10),row(2,11)],actual=[row(1,10,{flags:0x3800c}),row(2,11,{flags:0x3800c})];
+  const result=await compareTraces(trace(expected,'retail'),trace(actual,'browser'));
+  assert.equal(result.status,'PASS');
+  for(const bit of [0x1,0x4,0x8,0x4000]){
+    const changed=actual.map(item=>({...item,flags:item.flags^bit}));
+    const failed=await compareTraces(trace(expected,'retail'),trace(changed,'browser'));
+    assert.equal(failed.status,'DIVERGED');assert.equal(failed.firstDifference.difference.path,'scalars.flags');
+  }
+  assert.throws(()=>[...trace([row(1,10),row(2,11,{flags:0x3800c})],'bad-profile')],/availability changed/);
+});

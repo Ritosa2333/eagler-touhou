@@ -103,6 +103,32 @@ export function assertPresentationGainPcm({source,output,startFrame,sampleRate,b
   return {samples:source.length,indistinguishableFinalStates:states.size};
 }
 
+function continuationPcmProof(raw,start,sourceRow,outputRow,plan){
+  const tail=only(raw.silentContinuations??[],row=>row.eventSerial===start.eventSerial,'Actual output PCM is silent in its prefix; bounded continuation');
+  const from=outputRow.endFrame,to=from+PRESENTATION_AUDIO_LIMITS.silentTailFrames;
+  requireValue(tail.startFrame===from&&tail.endFrame===to&&tail.sourceTap===start.sourceTap&&tail.outputTap===start.outputTap&&
+    tail.sourceId===start.sourceId&&tail.slotGeneration===start.sourceSlotGeneration&&tail.sourceArmed===true&&tail.outputArmed===true,
+  `Event ${start.eventSerial}: continuation does not retain its bounded source generation`);
+  for(const [kind,tapId] of [['source',start.sourceTap],['output',start.outputTap]]){
+    const row=tail[kind];
+    requireValue(row?.kind==='pcm'&&row.purpose==='silent-tail'&&row.mode==='range'&&row.onsetFrame===null&&
+      row.eventSerial===start.eventSerial&&row.voiceKey===start.voiceKey&&row.tapId===tapId&&row.sourceId===start.sourceId&&
+      row.slotGeneration===start.sourceSlotGeneration&&row.startFrame===from&&row.endFrame===to,
+    `Event ${start.eventSerial}: ${kind} continuation belongs to another interval or source`);
+  }
+  const source=readPresentationPcmWindow(tail.source,plan,'Continuation source PCM'),output=readPresentationPcmWindow(tail.output,plan,'Continuation output PCM');
+  requireValue(source.left.some((v,i)=>v!==0||source.right[i]!==0),'Continuation source PCM is silent');
+  const onset=output.left.findIndex((v,i)=>v!==0||output.right[i]!==0);
+  requireValue(onset>=0,`Event ${start.eventSerial}: Actual output PCM is silent across the bounded continuation`);
+  requireValue(source.left[onset]!==0||source.right[onset]!==0,`Event ${start.eventSerial}: output onset has no owned source PCM`);
+  const ownEnds=(raw.voiceStops??[]).filter(row=>row.sourceId===start.sourceId).flatMap(row=>
+    row.kind==='source-node-stop'?[row.stopUpperFrame]:row.kind==='source-node-ended'?[row.endedFrame]:[]).filter(integer);
+  requireValue(!ownEnds.length||from+onset<Math.min(...ownEnds),`Event ${start.eventSerial}: continuation output starts after its source ended`);
+  return{eventSerial:start.eventSerial,sourceId:start.sourceId,slotGeneration:start.sourceSlotGeneration,
+    startFrame:sourceRow.onsetFrame,endFrame:to,onsetFrame:from+onset,outputDelayFrames:from+onset-sourceRow.onsetFrame,
+    source,output};
+}
+
 function createGainTimelineDiagnostic(){
   return {windows:[],matchedChannels:0,differingChannels:0,context:[]};
 }
@@ -288,7 +314,7 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickInter
     mutation.afterTime>=mutation.beforeTime&&mutation.beforeTime===raw.gainCalls[index].beforeTime&&
     mutation.afterTime===raw.gainCalls[index].afterTime),
   'A production gain was changed by an unmodeled AudioParam method or direct value assignment');
-  const priorStartByKey=new Map();let previousEvent=window.startNativeSequence,observedPcmFrames=0;
+  const priorStartByKey=new Map(),continuationProofs=[];let previousEvent=window.startNativeSequence,observedPcmFrames=0;
   requireValue(array(raw.markReceipts,'Actual mark acknowledgements').length===events.length*2,'Source/output markers did not all reach their actual Worklets');
   const latestGenerationByTap=new Map(),receiptSequenceSet=new Set();
   for(let index=0;index<events.length;index++){
@@ -368,20 +394,26 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickInter
       outputRow.sourceId===start.sourceId&&outputRow.slotGeneration===start.sourceSlotGeneration&&outputRow.voiceKey===event.voiceKey&&
       outputRow.startFrame===sourceRow.onsetFrame&&outputRow.endFrame===sourceRow.endFrame&&outputRow.onsetFrame===null,'Output PCM does not cover the same absolute source sample interval');
     const outputPcm=readPresentationPcmWindow(outputRow,plan,'Output PCM');
+    const audible=outputPcm.left.some((value,index)=>value!==0||outputPcm.right[index]!==0);
+    requireValue(!audible||!(raw.silentContinuations??[]).some(row=>row.eventSerial===start.eventSerial),
+      `Event ${start.eventSerial}: an audible prefix has an unrequested continuation`);
+    let continuation=null,continuationError=null;
+    if(!audible)try{continuation=continuationPcmProof(raw,start,sourceRow,outputRow,plan);}catch(error){continuationError=error;}
+    const proofEnd=continuation?.endFrame??outputRow.endFrame;
     gainTimeline.windows.push({eventSerial:event.serial,logicalIndex:event.logicalIndex,startFrame:outputRow.startFrame,
       endFrame:outputRow.endFrame,frames:outputPcm.left.length});
     for(const other of raw.starts){
       if(other.id===start.id||other.voiceKey!==start.voiceKey)continue;
       const otherStartFrame=Math.ceil(Math.max(other.when??0,other.beforeTime)*rate);
       requireValue(finite(other.beforeTime)&&integer(otherStartFrame),'Another production source lacks a bounded actual start frame');
-      if(otherStartFrame>=outputRow.endFrame)continue;
+      if(otherStartFrame>=proofEnd)continue;
       const endRows=stopBySource.get(other.id)??[],scheduledEnd=endRows.at(-1)?.stopUpperFrame,
         naturalEnd=endedBySource.get(other.id)?.endedFrame,
         endFrame=[scheduledEnd,naturalEnd].filter(integer).sort((left,right)=>left-right)[0]??null;
       requireValue(endFrame!==null&&(endFrame<=otherStartFrame||endFrame<=outputRow.startFrame),
         'Another production source may overlap this shared voice-merge PCM window');
     }
-    requireValue(sourceRow.endFrame<=tapById.get(start.sourceTap).final.previousEnd&&outputRow.endFrame<=tapById.get(start.outputTap).final.previousEnd,
+    requireValue(proofEnd<=tapById.get(start.sourceTap).final.previousEnd&&proofEnd<=tapById.get(start.outputTap).final.previousEnd,
       'PCM packet exceeds its actual final worklet checkpoint');
     const prior=priorStartByKey.get(start.voiceKey),floor=prior?.gainSequence??0;
     for(const side of ['left','right']){
@@ -393,13 +425,15 @@ function assessOutputCore(output,{epoch,rateHz,logicalIntervals,logicalTickInter
       observeGainTimeline({diagnostic:gainTimeline,source:source[side].subarray(firstNonzero),output:outputPcm[side],startFrame:sourceRow.onsetFrame,
         sampleRate:rate,baseline,calls,firstPullFrame:outputPcm.firstBlockFrame,event,side,outputRow});
     }
-    requireValue(outputPcm.left.some((value,i)=>value!==0||outputPcm.right[i]!==0),'Actual output PCM is silent');
+    if(continuationError)throw continuationError;
+    if(continuation){const {source,output,...receipt}=continuation;continuationProofs.push(receipt);observedPcmFrames+=output.left.length;}
     priorStartByKey.set(start.voiceKey,start);observedPcmFrames+=outputPcm.left.length;
   }
   requireValue(receiptSequenceSet.size===events.length&&Array.from({length:events.length},(_,index)=>index+1).every(sequence=>receiptSequenceSet.has(sequence)),
     'Source-slot receipt sequence is incomplete');
   return {status:'passed',epoch,rateHz,nativeEvents:events.length,actualStarts:raw.starts.length,actualSourceWindows:raw.sourcePcm.length,
     actualOutputWindows:raw.pcm.length,observedPcmFrames,gainTimelineDiagnostic:finishGainTimelineDiagnostic(gainTimeline),rawSha256:output.rawSha256,
+    ...(continuationProofs.length?{continuationProofs}:{}),
     captureLedger:audioCaptureLedgerSummary(raw),clockSchema:plan.schema,clockEndTime:plan.endTime,clockHorizonSeconds:plan.segments*plan.segmentSeconds};
 }
 

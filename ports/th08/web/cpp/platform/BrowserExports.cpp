@@ -130,6 +130,7 @@ EX("practice_snapshot_v1") const double* browser_practice_snapshot_v1(BrowserRun
     out[10]=i32(a.title.menus.state.currentScreen);out[11]=a.title.menus.state.currentScreenState;
     out[12]=a.title.menus.state.cursor;out[13]=g.globals.stage;out[14]=a.title.context.difficulty;
     out[15]=a.title.context.character;out[16]=a.title.context.shotType;out[17]=g.globals.game_flags;
+    out[18]=a.title.menus.state.stateTimer;
     if(configured)p.configured.encode(out+20);
     if(run)p.run.encode(out+46);
     if(candidate)p.replay_candidate.encode(out+72);
@@ -152,6 +153,13 @@ EX("practice_snapshot_v1") const double* browser_practice_snapshot_v1(BrowserRun
 EX("practice_initial_snapshot_v1") const double* browser_practice_initial_snapshot_v1(BrowserRuntime* r){
     static const double unavailable[80]={1.0};
     return r?r->app.game.practice_initial_snapshot_data():unavailable;
+}
+// Same 80-word load-boundary layout, for ordinary and Practice gameplay.
+// Validity bits: 1=initialized, 2=Replay, 4=custom Practice; run config is
+// present only for custom Practice. Reads never advance or reset the game.
+EX("gameplay_initial_snapshot_v1") const double* browser_gameplay_initial_snapshot_v1(BrowserRuntime* r){
+    static const double unavailable[80]={1.0};
+    return r?r->app.game.gameplay_initial_snapshot_data():unavailable;
 }
 EX("practice_tracker_status") const i32* browser_practice_tracker_status(BrowserRuntime* r){static i32 out[7]{};std::fill(out,out+7,0);if(!r)return out;
     const auto& app=r->app;if(!app.in_game())return out;const auto& n=app.session.numbers;

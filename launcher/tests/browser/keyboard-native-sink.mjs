@@ -131,10 +131,10 @@ function makeCore() {
       }
       if (['deallocate', 'free', '_free', 'release', 'graphics_free'].includes(property)) return () => {};
       if (property === 'sdl_key') return (pointer, down) => record(cString(pointer), down);
-      if (property === '_th09_key' || property === '_th15_key' || property === 'th11_key') {
+      if (property === '_th075_key' || property === '_th09_key' || property === '_th15_key' || property === 'th11_key') {
         return (scan, down) => record(codeForScan(scan), down);
       }
-      if (['sdl_keys_clear', '_th09_keys_clear', 'th11_keys_clear', '_th15_keys_clear'].includes(property)) {
+      if (['sdl_keys_clear', '_th075_keys_clear', '_th09_keys_clear', 'th11_keys_clear', '_th15_keys_clear'].includes(property)) {
         return () => { held.clear(); eventLog.push({clear: true}); };
       }
       if (property in target) return target[property];

@@ -27,7 +27,7 @@ export function groupFindings(reports,{severityOf=defaultSeverity}={}) {
     group.firstTick=Math.min(group.firstTick,report.tick);group.lastTick=Math.max(group.lastTick,report.tick);group.observations++;group.instances.add(object.key);group.windows.add(report.tick);
     if((field.motion||0)>group.maxMotion){group.maxMotion=field.motion;group.exampleKey=object.key;}
   }
-  return [...groups.values()].map(group=>({...group,instanceCount:group.instances.size,windowCount:group.windows.size,exampleKeys:[...group.instances].slice(0,8),instances:undefined,windows:undefined}))
+  return [...groups.values()].map(({instances,windows,...group})=>({...group,instanceCount:instances.size,windowCount:windows.size,exampleKeys:[...instances].slice(0,8)}))
     .sort((a,b)=>b.severity-a.severity||b.windowCount-a.windowCount||b.instanceCount-a.instanceCount||a.key.localeCompare(b.key));
 }
 

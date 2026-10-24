@@ -1,6 +1,7 @@
 #include "GameplayScene.hpp"
 #include "PracticeRuntime.hpp"
 #include "PracticeSections.hpp"
+#include <algorithm>
 namespace th08 {
 GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,AnmRenderer& r,GameplayPlatform& p,Chain* shared_chain,AsciiManager* shared_ascii)
  :session(s),textures(t),library(l),renderer(r),platform(p),chain(shared_chain?*shared_chain:owned_chain),animations(s.random),owned_ascii(animations,r,p),ascii(shared_ascii?*shared_ascii:owned_ascii),
@@ -23,19 +24,19 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     projectile_pool.reset();hud.implementation=&display;globals.gui=&hud;globals.live_values=this;enemies.bind_native(native_scene);player_services.bind(player_world);
 }
 GameplayScene::~GameplayScene(){unload();}
-void GameplayScene::capture_practice_initial_snapshot(){
-    auto* out=practice_initial_snapshot_words;
+void GameplayScene::capture_gameplay_initial_snapshot(){
+    auto* out=gameplay_initial_snapshot_words;
     for(u32 i=0;i<practice_initial_snapshot_word_count;i++)out[i]=0;
     out[0]=1.0;
     const auto& p=session.practice;
-    if(!p.active||p.run.mode!=1)return;
+    const bool custom_practice=p.active&&p.run.mode==1;
     const auto& n=session.numbers;
-    out[1]=1u|(playing_replay?2u:0u);
+    out[1]=1u|(playing_replay?2u:0u)|(custom_practice?4u:0u);
     out[2]=globals.stage;out[3]=globals.game_flags;out[4]=globals.difficulty;out[5]=globals.shot;
     out[6]=playback.stage_mask();out[7]=playback.stream.frame;out[8]=playback.stream.input_cursor;
     out[9]=playback.stream.timing_cursor;out[10]=playback.stream.input.size();out[11]=playback.stream.timing.size();
     out[12]=playback.stream.input_end;out[13]=playback.stream.timing_end;
-    p.run.encode(out+16);
+    if(custom_practice)p.run.encode(out+16);
     out[42]=n.score;out[43]=n.display_score;out[44]=n.lives;out[45]=n.bombs;out[46]=n.power;
     out[47]=n.gauge;out[48]=n.gauge_copy;out[49]=n.graze;out[50]=n.graze_stage;
     out[51]=n.points;out[52]=n.points_stage;out[53]=n.time_orbs;out[54]=n.total_time_orbs;
@@ -44,6 +45,10 @@ void GameplayScene::capture_practice_initial_snapshot(){
     out[60]=enemies.population.practice_familiar;out[61]=enemies.state.frames;out[62]=control.state.frames;
     out[63]=u8(player_state.life.state);out[64]=p.familiar_pending;out[65]=p.cheats;
     out[66]=p.everlasting_bgm;out[67]=globals.stage;out[68]=globals.difficulty;out[69]=globals.shot;
+    if(custom_practice){
+        std::copy(out,out+practice_initial_snapshot_word_count,practice_initial_snapshot_words);
+        practice_initial_snapshot_words[1]=u32(out[1])&3u;
+    }
 }
 bool GameplayScene::ControlActions::replay_stage(i32 stage){return scene.replay_stage_mask&(1u<<stage);}
 void GameplayScene::ControlActions::update_enemy_name(){auto& g=scene.globals;
@@ -163,6 +168,7 @@ void GameplayScene::publish_touch_action_state(){
 JobResult GameplayScene::update_player(){
     player_state.input.always_hitbox=always_hitbox;
     if(!player_services.prepare()||!player.update())return JobResult::Error;
+    if(recording_game&&player.consumed_input().valid)recording.consume_pending_input();
     player_services.finish();synchronize();if(invalid())return JobResult::Error;
     publish_touch_action_state();return JobResult::Continue;
 }
@@ -180,6 +186,10 @@ JobResult GameplayScene::update_replay(){
     }
     publish_input(playback.input);control.input.replay_fps=playback.input.timing_level;
     synchronize();return JobResult::Continue;
+}
+void GameplayScene::clear_live_input(){
+    if(!loaded||!recording_game||playing_replay)return;
+    recording.cancel_pending_input();publish_input(recording.input);
 }
 void GameplayScene::publish_input(const ReplayInputState& input){player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;dialogue_context.input=input.current;dialogue_context.previous_input=input.previous;}
 JobResult GameplayScene::update_recording(){recording.input.flags=globals.game_flags;recording.input.slow_mode=session.config.slow_mode;recording.update();publish_input(recording.input);return JobResult::Continue;}
@@ -214,8 +224,8 @@ void GameplayScene::bind_jobs(){
 }
 bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     if(loaded||wanted.stage<0||wanted.stage>=9||wanted.character<0||wanted.character>=12||wanted.difficulty<0||wanted.difficulty>4||((wanted.flags&0x4000)&&(wanted.spell<0||wanted.spell>=222)))return false;
-    touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=0;
-    practice_initial_snapshot_words[0]=1.0;
+    touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=gameplay_initial_snapshot_words[i]=0;
+    practice_initial_snapshot_words[0]=gameplay_initial_snapshot_words[0]=1.0;
     const bool retain_counters=!wanted.initial&&!(wanted.flags&0x4001)&&wanted.difficulty<4;
     const i32 previous_frames=enemies.state.frames,previous_human=enemies.state.unfocused_frames,previous_active=enemies.state.active_frames;
     failed=false;animations.invalid=false;player_services.reset();request=wanted;previous_input=0;player.timing={1,false};animations.timing=player.timing;
@@ -268,7 +278,7 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     globals.frame_count_value=&enemies.state.frames;session.stall_frames=enemies.state.frames;
     if(initialize_values){
         if(!apply_practice(*this,session)){unload();return false;}
-        capture_practice_initial_snapshot();
+        capture_gameplay_initial_snapshot();
         // GuiFlow creates the stage-entry clock before thprac restores the
         // configured night value. Refresh that already-created VM so the
         // entrance graphic and the later result screen use the same clock.
@@ -278,8 +288,8 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
 }
 void GameplayScene::unload(bool keep,bool release_all){
     if(loaded&&recording_game)recording.stop();
-    touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=0;
-    practice_initial_snapshot_words[0]=1.0;
+    touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=gameplay_initial_snapshot_words[i]=0;
+    practice_initial_snapshot_words[0]=gameplay_initial_snapshot_words[0]=1.0;
     loaded=false;background_flow.context.keep_resources=keep;bullet_flow.context.release_resources=release_all;enemy_flow.context.keep_resources=keep;enemy_flow.context.release_resources=release_all;
     effect_flow.context.keep_resources=keep;gui_flow.context.keep_resources=keep;gui_flow.context.release_resources=release_all;spell_flow.context.keep_resources=keep;spell_flow.context.release_resources=release_all;
     background_flow.detach();bullet_flow.detach();enemy_flow.detach();effect_flow.detach();gui_flow.detach();spell_flow.detach();screen.clear();

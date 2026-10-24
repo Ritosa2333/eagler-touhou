@@ -21,6 +21,8 @@ export type TraceRecord = RunStart | SegmentStart | TickRecord | SegmentEnd | Ru
 export interface ReplayVerifierAdapter {
   describe(): {adapterApiVersion: 1; game: string; adapterVersion: string; features: {original?: boolean; [key: string]: boolean};};
   inspectReplay(input: Uint8Array, options?: {signal?: AbortSignal}): unknown | Promise<unknown>;
+  validateCandidate?(spec: unknown, options?: {signal?: AbortSignal}): unknown | Promise<unknown>;
+  validateCandidateEnd?(spec: unknown, options?: {signal?: AbortSignal}): unknown | Promise<unknown>;
   openCandidate(spec: unknown, options?: {signal?: AbortSignal}): Promise<TraceSession>;
   openOriginal?(spec: unknown, options?: {signal?: AbortSignal}): Promise<TraceSession>;
 }

@@ -12,6 +12,8 @@
 
 ## 逐项检查
 
+th08 的 Quick／Daily 捕获按各自 v3 观察格式登记。菜单观察保留原生场景编号和 Runtime 身份；Replay 的稀疏检出回归同时导入格式解析器和共用 LZSS 解码器，无需检出 `ports/th08`。
+
 | 编号 | 操作 | 通过时应看到 |
 | --- | --- | --- |
 | <a id="verify-01"></a>VERIFY-01 \| 全部内置 Demo 对照 | 运行本作全部内置 Demo 的 quick 检查。 | 每个 Demo 覆盖到其声明结束点。 |
@@ -82,6 +84,20 @@ th11 normal／MP 的历史核心对照从私有 receipt 读取基准文件位置
 - 当前入口：正式包浏览器在独立 Runtime 导航中通过 Shell 导入同一 Demo，沿用本作标题到 Replay 的入口与 120 个逻辑步暖机，再逐逻辑步保留两次原生读取。`presentation-production-replay.mjs` 将正式包与诊断基线的公共状态、68-word trace 和 Replay 消费环对照，报告首个分歧边界。诊断专用状态槽位按源码所有者排除；构建凭据、输入 SHA 和保存的实际读数共同约束结果。共享判定和中央验收均重开原始文件。
 
 ### VERIFY-08 | 本作状态与结束点
+
+th08 的 Quick／Daily 共用同一逐步采集器。v3 捕获为每个应用步保存 ReplayStream 的 loaded、frame、输入游标／块长度、timing 游标／块长度和 stride；权威行绑定自己的应用步与游标，筛选原因独立计数。读取器重新核对账本与行文件，缺行、重复、倒序或不符合原生推进规则的游标变化均保留未完成证据。原生 `ReplayPlayback::after_update` 在对话中按三帧、快进模式按五帧重入 Chain；同一应用步内的消费增量必须与 trace 帧增量一致。实际导入的 Replay 与 DATA 身份来自本次 Runtime 会话。
+
+捕获身份同时核对作品、采集适配器版本、当前原生 ABI 与正整数 Runtime 代次；不同作品、旧接口或缺失代次的记录在比较前拒收。
+
+RNG 首差异可在诊断构建中按 Chain 优先级定位消费来源。`audit_rng_enable(1)` 开启只读计数，`audit_rng_counts()` 返回本应用步的129个32位计数：0–63为计算优先级，64–127为 Draw 优先级，128为 Chain 外调用。统计限定为当前 GameApplication 的共享 RNG，默认关闭，普通构建不导出该接口。先保留不可变参考的最早差异，再读取该窗口的 owner 增量，继续追查具体 ECL、实体或动画路径。
+
+敌人任务的细分记录由 `audit_rng_details()` 与 `audit_rng_detail_status(field)` 读取。status 字段0–5依次为版本1、容量2048、记录数、下次写入位置、覆盖条数和每条5个32位字。记录按环形顺序保存 category、敌人slot、arg0、arg1与调用增量；category 1–8依次为 Timeline、ECL、动画、接触与伤害、死亡、收尾、特效和道具。特效参数为kind／count，道具参数为kind／mode。增量包含嵌套调用，外层阶段与内部特效不能重复求和；覆盖条数非零时保留丢样状态。
+
+`PlayerScene::effect` 的叶子调用使用 category `0x100 + owner`，范围为 `0x100–0x180`，arg0／arg1 分别保留 kind／count，slot 沿用当前敌人槽。读取器减去 `0x100` 得到所属 Chain owner；调用增量已包含在外层阶段中。零 RNG 调用不进入 detail 环，缺少叶子记录不能单独证明该分支没有执行。
+
+`audit_rng_enemy_snapshots_v1()` 按接触前后、伤害前后及死亡前记录生命、状态位、掉落、死亡特效、父对象、ECL 子程序与位置。配套 `audit_rng_enemy_status_v1(field)` 使用相同的六字段环形元数据，每条15个32位字，位置三个字按 Float32 读取。父对象通过与已知池条目比对得到 slot；无父对象为 -1，未知非空引用为 -2。该观察用于定位候选内部的分支，原版对照沿已接受的独立来源比较。
+
+比较先报告最早逻辑帧差异，再保存阶段／分数终态校验。显式未完成的相同前缀记录为 incomplete；声称自然完成却比参考提前结束，继续判为差异。原始 flags 保留在捕获文件，活动 Replay profile 将标题菜单内容可用性与路线来源分别列为元数据，游戏输入、RNG、practice、active、Replay 和 spell-practice 状态照常严格比较。
 
 - 在本作指南登记字段来源、类型、单位、阶段、席位和结束条件，用独立固定状态逐项校验映射。构造正常完成、尚未完成和提前中止，要求结果分别正确。
 - 反例：把应用帧当世界帧、把席位 0 当本地席位，或把菜单状态当回放完成，必须由固定夹具和运行边界检出。

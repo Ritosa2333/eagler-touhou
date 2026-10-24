@@ -6,6 +6,7 @@
 #include "AudioAudit.hpp"
 #include "Renderer.hpp"
 #include "../game/PresentationAudit.hpp"
+#include "../game/RngAudit.hpp"
 #include "../game/DialogueTouchScene.hpp"
 #include "ThpracUi.hpp"
 #include "../../../portable/input/TouchController.hpp"
@@ -338,6 +339,17 @@ EM_BOOL frame(double now,void* epoch){
 u32 sdl_game_time(){return u32(elapsed*1000);}
 extern "C" {
 #define EX(name) __attribute__((export_name(name)))
+#if defined(TH_PRESENTATION_AUDIT)
+EX("audit_rng_enable") void audit_rng_enable(u32 value){using namespace th08::rng_audit;enabled=value!=0;counts.fill(0);event_write=event_count=event_overflow=total_calls=0;enemy_write=enemy_count=enemy_overflow=0;}
+// Candidate diagnostic ABI | status 0 schema,1 capacity,2 count,3 write,4 overwritten,5 words.
+EX("audit_rng_enemy_snapshots_v1") const th08::rng_audit::EnemySnapshot* audit_rng_enemy_snapshots_v1(){return th08::rng_audit::enemy_snapshots.data();}
+EX("audit_rng_enemy_status_v1") u32 audit_rng_enemy_status_v1(u32 field){using namespace th08::rng_audit;
+    switch(field){case 0:return 1;case 1:return enemy_capacity;case 2:return enemy_count;case 3:return enemy_write;case 4:return enemy_overflow;case 5:return sizeof(EnemySnapshot)/sizeof(u32);default:return 0;}}
+EX("audit_rng_counts") const u32* audit_rng_counts(){return th08::rng_audit::counts.data();}
+EX("audit_rng_details") const th08::rng_audit::Event* audit_rng_details(){return th08::rng_audit::events.data();}
+EX("audit_rng_detail_status") u32 audit_rng_detail_status(u32 field){using namespace th08::rng_audit;
+    switch(field){case 0:return 1;case 1:return event_capacity;case 2:return event_count;case 3:return event_write;case 4:return event_overflow;case 5:return sizeof(Event)/sizeof(u32);default:return 0;}}
+#endif
 void sdl_keys_clear();
 EX("language_trace_enable_v1") void language_trace_enable_v1(u32 enabled){eagler::diagnostics::language_trace().enable(enabled!=0);}
 EX("language_trace_json_size_v1") u32 language_trace_json_size_v1(){const auto size=eagler::diagnostics::language_trace().json_size();return size>0xffffffffu?0:u32(size);}
@@ -642,7 +654,7 @@ EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
 }
 EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();sdl_keys_clear();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
-EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime){std::memset(runtime->keyboard_state(),0,256);runtime->app.session.practice.input.reset();}cancel_touch();touch.reset();}
+EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime){std::memset(runtime->keyboard_state(),0,256);runtime->app.session.practice.input.reset();runtime->clear_live_gameplay_input();}cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
     pointer(type,id,x,y);
 }

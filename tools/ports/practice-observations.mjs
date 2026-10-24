@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {resolvePracticeAdapter} from '../../tests/adaptation/adapters/registry.mjs';
 import {practiceGameplayReady,runPracticeGameplayStage} from '../../tests/adaptation/adapters/practice.mjs';
+import {assessLauncherPracticeJourney} from './launcher-practice-journey.mjs';
 
 export {practiceGameplayReady,runPracticeGameplayStage};
 
@@ -52,15 +53,20 @@ function menuTransitionObserved(item){
 }
 
 /** Numbered observations from the practice browser's actual package and menu operations. */
-export function practiceAdaptationChecks({game,variant='normal',productSupported,feature,locales=[],finalErrorAudit,practiceReplayRoundTrip}={}){
+export function practiceAdaptationChecks({game,variant='normal',productSupported,feature,locales=[],finalErrorAudit,practiceReplayRoundTrip,launcherPractice}={}){
   const practiceAdapter=resolvePracticeAdapter(game,variant);
   const auditFailed=finalErrorAudit?.status==='failed';
   const statusWithAudit=status=>auditFailed?'failed':status;
   const unsupported=productSupported===false&&feature===false;
-  const featureStatus=typeof feature!=='boolean'?'incomplete':unsupported?'not-applicable':
-    productSupported===true&&!feature?'failed':'observed';
-  const rows=[boundPracticeCheck({id:'PRACTICE-01',game,variant,status:statusWithAudit(featureStatus),
-    scope:'formal Runtime package practice feature declaration',observation:{feature,productSupported}})];
+  const launcher=launcherPractice?{...assessLauncherPracticeJourney(launcherPractice),report:launcherPractice}:null;
+  const launcherFailed=launcher?.status==='failed';
+  const withLauncher=status=>status==='failed'||launcherFailed?'failed':launcher&&!launcher.passed?'incomplete':status;
+  // Package OFF is a valid configuration. This row observes its declaration;
+  // it does not establish that the Host and visible UI consumed that choice.
+  const featureStatus=typeof feature!=='boolean'||typeof productSupported!=='boolean'?'incomplete':
+    unsupported?'not-applicable':!productSupported&&feature?'failed':'observed';
+  const rows=[boundPracticeCheck({id:'PRACTICE-01',game,variant,status:statusWithAudit(withLauncher(featureStatus)),
+    scope:'formal Runtime package practice feature declaration',observation:{feature,productSupported,...(launcher?{launcher}:{} )}})];
   if(unsupported){
     for(const id of practiceAdaptationIds(game,variant).filter(id=>id!=='PRACTICE-01'))rows.push(boundPracticeCheck({id,game,variant,
       status:'not-applicable',scope:'product declares no practice feature',observation:{feature,productSupported}}));
@@ -72,27 +78,40 @@ export function practiceAdaptationChecks({game,variant='normal',productSupported
   const anyFailed=locales.some(item=>item?.status==='failed');
   const optionsValid=exactMatrix&&expectedRows.every(({expected,item})=>configuredOptionsMatch(item,expected));
   rows.push(boundPracticeCheck({id:'PRACTICE-02',game,variant,
-    status:statusWithAudit(anyFailed?'failed':optionsValid?'observed':'incomplete'),
+    status:statusWithAudit(withLauncher(anyFailed?'failed':optionsValid?'observed':'incomplete')),
     scope:'native options consumed for enabled locales and disabled control',
-    observation:{locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,locale:expected.locale,
+    observation:{...(launcher?{launcher}:{}),locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,locale:expected.locale,
       observedEnabled:item?.opened?.options?.thpracEnabled??null,observedLocale:item?.opened?.options?.thpracLocale??null,
       status:item?.status??'missing'}))}}));
 
   const enabledRows=expectedRows.filter(({expected})=>expected.enabled);
+  const parameterEpoch=locales.find(item=>item?.epoch===1)??null;
+  const lifecycleRecord=parameterEpoch?.practiceLifecycle;
+  let lifecycle=null;
+  if(practiceAdapter?.lifecycle){
+    try{lifecycle=practiceAdapter.lifecycle.assess(lifecycleRecord?.evidence??{});}
+    catch(error){lifecycle={status:'failed',complete:false,error:String(error.message)};}
+  }
+  const lifecycleValid=!practiceAdapter?.lifecycle||(lifecycle?.status==='observed'&&lifecycle.complete===true);
   const menuValid=exactMatrix&&enabledRows.every(({item})=>menuTransitionObserved(item))&&
     expectedRows.filter(({expected})=>!expected.enabled).every(({item})=>item?.status==='passed'&&
       item.before?.open===false&&item.opened?.open===false&&item.closed?.open===false);
   rows.push(boundPracticeCheck({id:'PRACTICE-03',game,variant,
-    status:statusWithAudit(anyFailed?'failed':menuValid?'observed':'incomplete'),
-    scope:'actual gameplay practice menu open and close state',
-    observation:{locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,
+    status:statusWithAudit(anyFailed||lifecycle?.status==='failed'?'failed':menuValid&&lifecycleValid?'observed':'incomplete'),
+    scope:practiceAdapter?.lifecycle?'native practice menu and same Runtime retry, Replay exit, ordinary start and fresh Practice':'actual gameplay practice menu open and close state',
+    observation:{...(practiceAdapter?.lifecycle?{lifecycle,lifecycleEvidence:lifecycleRecord?.evidence??null}:{}),locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,
       beforeOpen:item?.before?.open??null,opened:item?.opened?.open??null,closed:item?.closed?.open??null,
       openEvent:(item?.opened?.events??[]).some(event=>event?.open===true),
       closeEvent:(item?.closed?.events??[]).slice(item?.opened?.events?.length??0).some(event=>event?.open===false),
       status:item?.status??'missing'}))}}));
 
-  const parameterEpoch=locales.find(item=>item?.epoch===1)??null;
-  const consumption=parameterEpoch?.parameterConsumption;
+  const reportedConsumption=parameterEpoch?.parameterConsumption;
+  let consumption=reportedConsumption;
+  if(typeof practiceAdapter?.assessConsumption==='function'){
+    try{consumption=practiceAdapter.assessConsumption(parameterEpoch?.practiceSnapshot,practiceAdapter.parameterCase,practiceAdapter.selectionCase,reportedConsumption??{});}
+    catch(error){consumption={status:'failed',complete:false,error:String(error.message)};}
+    if(reportedConsumption?.status==='failed'&&consumption.status!=='failed')consumption={...consumption,status:'failed',reportedFailure:reportedConsumption};
+  }
   rows.push(boundPracticeCheck({id:'PRACTICE-04',game,variant,
     status:statusWithAudit(consumption?.status==='failed'?'failed':consumption?.status==='observed'?'observed':'incomplete'),
     scope:'native configured block, accepted run block and applied GameplaySession values',

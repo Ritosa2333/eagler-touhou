@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {MUSIC_PCM_PROBE_SOURCE,MUSIC_PCM_HISTORY_PROCESSOR_SOURCE,readNativeAudioState,collectRuntimePcmWindow,collectRuntimeOutputPcm,collectExpectedTrackRuntimePcm,
   summarizeRelatedRuntimePcmWindow,TH08_OGG_PCM_ROLE,TH08_MIDI_PCM_ROLE,TH08_MIDI_VOICE_PCM_ROLE}
   from './music-browser-helpers.mjs';
-import {th08OggRestartOutcome} from './music-browser-result.mjs';
+import {th08OggRestartOutcome,th08MusicStopDrainFrames} from './music-browser-result.mjs';
 
 function createAudioRealm({parent=null,top=null,topLevel=false}={}){
   class AudioNode{
@@ -202,6 +202,28 @@ test('disconnect output selectors only change the recorded production route and 
   assert.equal(selectedRealm.window.__eaglerMusicPcmProbe.outputRouteSnapshot(selectedOutput).connected,false);
 });
 
+test('stopped music drains the observed queue and output buffers before a fixed silent window',async()=>{
+  const collect=async({derived=true,persistent=false}={})=>{
+    const realm=createAudioRealm({top:{}}),reader=installNativeReader(realm),mixer=new realm.AudioContext();
+    const source=installOutput(realm,mixer);installTh08Module(realm,mixer);
+    realm.window.Module.SDL3.audio_playback={scriptProcessorNode:{bufferSize:2048}};mixer.baseLatency=0.01;
+    const native={playing:false,outputPaused:false,pending:false,queuedFrames:3072};
+    const first=reader({game:'th08',includeRuntimePcm:true}).runtimePcm;
+    const basis={native,target:first.target,outputBufferFrames:first.outputBufferFrames,baseLatency:first.baseLatency,
+      analysisWindowFrames:2048};
+    const frames=th08MusicStopDrainFrames(basis);
+    assert.ok(frames>4096,'44.1 kHz queued input plus 48 kHz output and analyser outlast the old settle');
+    return collectRuntimeOutputPcm({role:TH08_OGG_PCM_ROLE,settleFrames:derived?frames:4096,
+      readSample:async()=>{source.pcmLevel=persistent||mixer.currentTime<0.14?0.001:0;
+        return{native,...reader({game:'th08',includeRuntimePcm:true}).runtimePcm};},
+      wait:async milliseconds=>mixer.advance(milliseconds)});
+  };
+  assert.equal((await collect({derived:false})).collection.quiet,false,'the previous fixed settle retains queued tail');
+  const drained=(await collect()).collection;
+  assert.equal(drained.quiet,true);assert.equal(drained.pcmWindow.windowCount,8);
+  assert.equal((await collect({persistent:true})).collection.quiet,false,'ongoing output still fails after the fixed drain');
+});
+
 test('rejected OGG observes eight real output windows without waiting for a playing source',async()=>{
   for(const level of [0,.25]){
     const realm=createAudioRealm({top:{}}),reader=installNativeReader(realm);
@@ -375,41 +397,52 @@ test('actual Runtime reader states reach the restart outcome as incomplete, whil
   assert.equal(expectedTarget.role,TH08_OGG_PCM_ROLE);
 });
 
-test('active OGG PCM collection waits for the expected native track and stops at its first real output sample',async()=>{
+test('active OGG PCM collection excludes old buffered output before attributing the expected track',async()=>{
   const target={role:TH08_OGG_PCM_ROLE,available:true,contextIndex:0,tapIds:[0],sampleRate:48000,state:'running',
     stateChangeCount:0,stateChangeDrops:0,stateChanges:[]};
   const makeSample=(trackFile,nonZero,currentTime)=>({
-    native:{exists:true,soundReady:true,pending:false,playing:true,outputPaused:false,name:trackFile.replace('.ogg','.wav')},trackFile,
+    native:{exists:true,soundReady:true,pending:false,playing:true,outputPaused:false,queuedFrames:3072,cursorFrames:Math.floor(currentTime*44100),name:trackFile.replace('.ogg','.wav')},trackFile,
+    buffering:{queuedFrames:3072,queuedSampleRate:44100,outputBufferFrames:2048,analysisWindowFrames:2048,baseLatency:.01},
     target:{...target,currentTime},captures:[{tapId:0,contextIndex:0,role:TH08_OGG_PCM_ROLE,contextState:'running',sampleRate:48000,
       currentTime,samples:2048,nonZero,peakAbs:nonZero?0.5:0,rms:nonZero?0.2:0}],
   });
-  const samples=[makeSample('th08_01.ogg',2048,.1),makeSample('th08_00.ogg',0,.2),makeSample('th08_00.ogg',2048,.3)];
+  const samples=[makeSample('th08_01.ogg',2048,.1),makeSample('th08_00.ogg',2048,.2),
+    makeSample('th08_00.ogg',2048,.3),makeSample('th08_00.ogg',0,.4),makeSample('th08_00.ogg',2048,.5)];
   let reads=0;const waits=[];
   const result=await collectExpectedTrackRuntimePcm({role:TH08_OGG_PCM_ROLE,expectedFile:'th08_00.ogg',maxSamples:8,
     readSample:async()=>samples[reads++],wait:async milliseconds=>waits.push(milliseconds)});
   assert.equal(result.status,'observed');
-  assert.equal(result.attempts,3);
-  assert.equal(result.pcmObservedAtAttempt,3);
+  assert.equal(result.attempts,5);
+  assert.equal(result.pcmObservedAtAttempt,5);
   assert.equal(result.pcmSourceFile,'th08_00.ogg');
   assert.equal(result.observedFile,'th08_00.ogg');
-  assert.deepEqual(waits,[80,80]);
-  assert.deepEqual(result.pcmWindow.windows.map(window=>window.taps[0].currentTime),[.2,.3],
-    'nonzero PCM from a different native source is excluded from the expected track evidence');
+  assert.deepEqual(waits,[80,80,80,80]);
+  assert.deepEqual(result.pcmWindow.windows.map(window=>window.taps[0].currentTime),[.4,.5],
+    'old nonzero PCM is excluded even when the native name has already changed');
   assert.equal(result.pcmWindow.nonZeroSamples,2048);
 
   let boundedReads=0;
-  const bounded=await collectExpectedTrackRuntimePcm({role:TH08_OGG_PCM_ROLE,expectedFile:'th08_00.ogg',maxSamples:2,
-    readSample:async()=>makeSample('th08_00.ogg',0,++boundedReads/10),wait:async()=>{}});
+  const bounded=await collectExpectedTrackRuntimePcm({role:TH08_OGG_PCM_ROLE,expectedFile:'th08_00.ogg',maxSamples:5,
+    readSample:async()=>makeSample('th08_00.ogg',++boundedReads<3?2048:0,boundedReads/10),wait:async()=>{}});
   assert.equal(bounded.status,'bounded-no-output');
-  assert.equal(bounded.attempts,2);
+  assert.equal(bounded.attempts,5);
   assert.equal(bounded.pcmWindow.status,'complete');
   assert.equal(bounded.pcmWindow.outputObserved,false);
-  assert.match(bounded.reason,/2 bounded samples/);
+  assert.match(bounded.reason,/5 bounded samples/);
 
   let changedReads=0;
   const changed=await collectExpectedTrackRuntimePcm({role:TH08_OGG_PCM_ROLE,expectedFile:'th08_00.ogg',maxSamples:4,
     readSample:async()=>makeSample(changedReads++===0?'th08_00.ogg':'th08_01.ogg',0,changedReads/10),wait:async()=>{}});
   assert.equal(changed.status,'incomplete','a source change before audible PCM ends the attribution window');
   assert.match(changed.reason,/stopped or changed/);
+  let missingReads=0;
+  const missing=await collectExpectedTrackRuntimePcm({role:TH08_OGG_PCM_ROLE,expectedFile:'th08_00.ogg',maxSamples:5,
+    readSample:async()=>{const sample=makeSample('th08_00.ogg',2048,++missingReads/10);if(missingReads===2)sample.target.available=false;return sample;},wait:async()=>{}});
+  assert.equal(missing.status,'incomplete');assert.match(missing.reason,/tap became unavailable/);
+  assert.equal(missing.sourceBoundary.samples.length,1,'the failed read retains the established source evidence');
+  let frozenReads=0;
+  const frozen=await collectExpectedTrackRuntimePcm({role:TH08_OGG_PCM_ROLE,expectedFile:'th08_00.ogg',maxSamples:5,
+    readSample:async()=>{const sample=makeSample('th08_00.ogg',2048,++frozenReads/10);sample.native.cursorFrames=0;return sample;},wait:async()=>{}});
+  assert.equal(frozen.status,'incomplete');assert.match(frozen.reason,/cursor did not advance/);
 });
 

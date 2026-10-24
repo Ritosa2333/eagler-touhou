@@ -1,4 +1,5 @@
 #include "EnemySystem.hpp"
+#include "RngAudit.hpp"
 #include "Presentation.hpp"
 namespace th08 {
 EnemySystem::EnemySystem(EclProgram& program,EclExecutor& executor,const FrameTiming& timing,Rng& random,GameGlobals& numbers,GameValues& values,GameRank& rank,GameGauge& gauge,PlayerSimulation& player,EffectSystem& effects,ItemSystem& items,BulletManagerState& bullets,AsciiManager& ascii,AsciiContext& ascii_context,AnmRenderer& renderer,EnemySystemActions& actions)
@@ -25,12 +26,12 @@ void EnemySystem::publish_player(){
     p.context.gauge=numbers.gauge;p.context.power=Scalar::truncate(numbers.power);p.context.bombs=Scalar::truncate(numbers.bombs);p.context.lives=Scalar::truncate(numbers.lives);p.context.time_orbs=numbers.time_orbs;p.context.last_spell_requirement=numbers.last_spell_requirement;
     population.replay_flags|=p.context.replay_flags;p.context.replay_flags=population.replay_flags;
 }
-void EnemySystem::effect(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();effects.spawn(kind,p,count,color);failed|=effects.invalid;}
+void EnemySystem::effect(i32 kind,const Vec3& p,i32 count,u32 color){TH08_RNG_EVENT(rng_effect,Effect,kind,count);publish_player();effects.spawn(kind,p,count,color);failed|=effects.invalid;}
 void EnemySystem::parameter_effect(i32 kind,const Vec3& p,const Vec3& parameters,i32 count,u32 color){publish_player();effects.spawn(kind,p,count,color,&parameters);failed|=effects.invalid;}
 EffectState* EnemySystem::attached_effect(i32 kind,const Vec3& p,i32 count,u32 color,bool overlay){publish_player();auto* effect=overlay?effects.overlay(kind,p,count,color):effects.spawn(kind,p,count,color);failed|=effects.invalid;return effect;}
 bool EnemySystem::clear_projectiles(i32 mode){publish_player();PlayerCollision::BarrierBatch barriers(&player.collision());failed|=!th08::cancel_projectiles(projectiles,mode,player.status().cancel_item,this);return !failed;}
 void EnemySystem::clear_projectiles_near(const Vec3& p,float radius){th08::cancel_projectiles_near(projectiles,p,radius,*this);}
-void EnemySystem::item(const Vec3& p,i32 kind,i32 mode){publish_player();items.spawn(p,kind,mode);failed|=items.invalid();}
+void EnemySystem::item(const Vec3& p,i32 kind,i32 mode){TH08_RNG_EVENT(rng_item,Item,kind,mode);publish_player();items.spawn(p,kind,mode);failed|=items.invalid();}
 AnmVm* EnemySystem::overlay(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();auto* result=effects.overlay(kind,p,count,color);failed|=effects.invalid;return result;}
 i32 EnemySystem::graze(const Vec3& p,const Vec3& size){publish_player();const i32 result=player.collision().graze(p,size);read_collision();return result;}
 i32 EnemySystem::hit(const Vec3& p,const Vec3& size){publish_player();const i32 result=player.collision().bullet(p,size,false);read_collision();return result;}

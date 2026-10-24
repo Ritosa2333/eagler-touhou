@@ -2,6 +2,10 @@
 
 Replay Verifier 按每个完整模拟 tick 比较标准化的权威状态。common 负责轨迹校验、顺序对齐、比较和报告；游戏适配层负责 Replay 生命周期、字段选择和运行环境。
 
+适配器的 `validateCandidate` 在比较前校验输入格式与身份，`validateCandidateEnd` 在逐 tick 比较后核对自然终态。两份结论同时进入结果；最早 tick 差异优先，终态不符继续保留。显式未完成的相同前缀返回 `INCOMPLETE`，已声明完成但提前结束的轨迹返回差异。
+
+首差异同时列出分段比较行号 `logicalTick`、本作原始采样号 `replaySampleIndex` 与 `clocks`。暂停、对话等经过过滤的原始帧继续保留自己的编号；诊断窗口按原始采样号和本作时钟定位。
+
 ## 比较两份轨迹
 
 轨迹为 JSON Lines。运行比较命令：
@@ -32,3 +36,9 @@ node --test common/testkit/replay-verifier/replay-verifier.test.mjs common/testk
 ```
 
 下一步：[Windows Present 采集器](windows-present-observer/README.md) 或[公共开发入口](../../../docs/README.md)。
+
+## th08 RNG 只读观察
+
+诊断构建以 `TH_PRESENTATION_AUDIT` 启用观测入口，RNG 计数默认关闭。每个应用步的有界 detail 环保留 `(category, enemySlot, arg0, arg1, calls)`，`calls` 为观测范围内共享 RNG 的前后计数差；环溢出由独立计数报告。
+
+`PlayerScene::effect` 叶子保留 `PlayerEffectOwnerBase=0x100` 至 `0x180` 范围：`category=PlayerEffectOwnerBase+chainOwner`，解码以 `category-PlayerEffectOwnerBase` 得到 owner；`arg0=kind`、`arg1=count`。`enemySlot=-1` 表示没有当前敌人槽。该范围与既有 `Effect=7` 分开解码，叶子增量包含在外层阶段中，不与父级相加。候选叶子记录用于定位本作调用路径，原版分支须有独立证据。

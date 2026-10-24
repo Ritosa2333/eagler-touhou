@@ -87,7 +87,7 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     void preload_music(i32 slot,const char* path)override{platform.preload_music(slot,path);}
     u32 now()override{return platform.milliseconds();}
     void update_game_time()override{accumulate_play_time(session.statistics.game_time,menus.context.system_time,now());}
-    void synchronize();void publish_dialogue();JobResult boundary(i32 phase);void capture_practice_initial_snapshot();
+    void synchronize();void publish_dialogue();JobResult boundary(i32 phase);void capture_gameplay_initial_snapshot();
     void publish_touch_action_state();
     // th08_everlasting_bgm (upstream ElBgmTest): returns true to swallow a
     // music command. command: 0=play 1=stop/fade 2=pause 3=resume.
@@ -100,6 +100,7 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     i32 uncollected_time_items()const override{return items.time_orb_count();}
     AsciiManager owned_ascii;
 public:
+    void clear_live_input();
     AsciiManager& ascii;AsciiContext ascii_context;
     EclGlobals globals;EclProgram program;
     GuiState hud;GuiImplState display;DialogueContext dialogue_context;GuiContext gui_context;
@@ -118,8 +119,10 @@ public:
     // Frozen immediately after PracticeRuntime::apply_practice and before the
     // first bound gameplay job. The live PracticeSnapshot remains separate.
     double practice_initial_snapshot_words[practice_initial_snapshot_word_count]{};
+    double gameplay_initial_snapshot_words[practice_initial_snapshot_word_count]{};
     static constexpr u32 practice_initial_snapshot_words_count()noexcept{return practice_initial_snapshot_word_count;}
     const double* practice_initial_snapshot_data()const noexcept{return practice_initial_snapshot_words;}
+    const double* gameplay_initial_snapshot_data()const noexcept{return gameplay_initial_snapshot_words;}
     const TouchActionStateV1& touch_actions()const noexcept{return touch_action_state;}
     bool time_stopped=false,paused=false,retrying=false,always_hitbox=false;
     GameplayScene(GameplaySession&,TextureStore&,AnmLibrary&,AnmRenderer&,GameplayPlatform&,Chain* shared_chain=nullptr,AsciiManager* shared_ascii=nullptr);

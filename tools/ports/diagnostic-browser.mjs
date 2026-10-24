@@ -15,7 +15,7 @@ import {DIAGNOSTIC_LANE_CHECKS,PAIRED_PRESENTATION_CHECKS,pairedPresentationCapa
   resolveDiagnosticProfile} from '../../tests/adaptation/adapters/diagnostics.mjs';
 import {buildPresentationPairedReport,readProductionPresentationEvidence} from './presentation-paired-report.mjs';
 import {diagnosticCaseIdentity} from '../../tests/adaptation/identity.mjs';
-import {diagnosticTargetCoverage,finalizeDiagnosticTarget,plannedDiagnosticChecks,recordDiagnosticLane} from './diagnostic-report.mjs';
+import {assertDiagnosticCaptureBuild,finalizeDiagnosticReport,finalizeDiagnosticTarget,plannedDiagnosticChecks,recordDiagnosticLane} from './diagnostic-report.mjs';
 import {stopDiagnosticChild,trackDiagnosticChild} from './diagnostic-lifecycle.mjs';
 import {runTasks} from '../testing/runner.mjs';
 
@@ -329,7 +329,7 @@ async function presentationPairArtifacts(evidenceRoot,product,profile,serverBuil
     readJsonArtifact(resultPath),readJsonArtifact(acceptancePath),readJsonArtifact(baselinePath),
     readJsonArtifact(controlledPath),readJsonArtifact(cadence144Path)]);
   const inputPath=resolve(product.inputRoot,capability.inputFile);
-  const inputIdentity=await fileIdentity(inputPath,'Paired presentation Replay input');
+  const inputIdentity={path:inputPath,...await fileIdentity(inputPath,'Paired presentation Replay input')};
   assert.deepEqual({bytes:inputIdentity.bytes,sha256:inputIdentity.sha256},
     {bytes:productIdentities.pairedReplay?.bytes,sha256:productIdentities.pairedReplay?.sha256},
     'Paired Replay input changed after the diagnostic identity snapshot');
@@ -485,20 +485,17 @@ async function runLane({lane,profile,server,product,productIdentities,targetId,o
         assert.ok(suiteFixture,`${fixture.id}: quick capture suite omitted its fixture row`);
         assert.equal(rawCapture.schema,profile.quickCaptureSchema,`${fixture.id}: unexpected capture schema`);
         assert.equal(rawCapture.fixture,fixture.index,`${fixture.id}: raw capture belongs to another fixture`);
-        assert.equal(rawCapture.complete,true,`${fixture.id}: Replay capture did not reach its real terminal`);
-        assert.equal(rawCapture.stopReason,'returned-to-title',`${fixture.id}: capture did not observe a natural title return`);
-        assert.equal(rawCapture.terminalScene,1,`${fixture.id}: capture ended outside the title scene`);
         assert.deepEqual(rawCapture.errors,[],`${fixture.id}: capture reports browser errors`);
-        assert.deepEqual(rawCapture.build,server.build,`${fixture.id}: capture used another Lab build`);
+        assertDiagnosticCaptureBuild(rawCapture.build,server.build);
         assert.equal(rawCapture.replay?.sha256,input.sha256,`${fixture.id}: captured Replay differs from the selected input`);
         assert.equal(rawCapture.replay?.bytes,input.bytes,`${fixture.id}: captured Replay size differs from the selected input`);
         assert.ok(Array.isArray(rawCapture.rows)&&rawCapture.rows.length>0,`${fixture.id}: native gameplay rows are missing`);
         assert.equal(suiteFixture.ticks,rawCapture.rows.length,`${fixture.id}: suite tick count differs from its native capture`);
-        assert.equal(suiteFixture.complete,true,`${fixture.id}: suite metadata marks this capture incomplete`);
+        assert.equal(suiteFixture.complete,rawCapture.complete,`${fixture.id}: suite and raw capture completion differ`);
         assert.deepEqual(suiteFixture.errors,[],`${fixture.id}: suite metadata reports browser errors`);
         assert.ok(comparison,`${fixture.id}: immutable Replay gate omitted its comparison result`);
         fixtureRows.push({id:fixture.id,index:fixture.index,input:{path:input.path,bytes:input.bytes,sha256:input.sha256},
-          capture:{path:rawCapturePath,...rawCaptureIdentity,replay:rawCapture.replay,build:rawCapture.build,
+          capture:{path:rawCapturePath,...rawCaptureIdentity,replay:rawCapture.replay,build:rawCapture.build,complete:rawCapture.complete,
             stopReason:rawCapture.stopReason,terminalScene:rawCapture.terminalScene,
             rows:{count:rawCapture.rows.length,first:rawCapture.rows[0],last:rawCapture.rows.at(-1)}},
           comparison});
@@ -534,8 +531,8 @@ async function runLane({lane,profile,server,product,productIdentities,targetId,o
         const capturePath=resolve(evidenceRoot,fixture.captureFile);
         const {report:capture,identity:captureIdentity}=await readJsonArtifact(capturePath);
         assert.equal(capture.schema,profile.dailyCaptureSchema,`${fixture.id}: unexpected capture schema`);
-        assert.equal(capture.complete,true,`${fixture.id}: Replay capture did not reach its actual title-return boundary`);
         assert.deepEqual(capture.errors,[],`${fixture.id}: Replay capture has browser errors`);
+        assertDiagnosticCaptureBuild(capture.build,server.build);
         const identity=productIdentities.dailyReplays[fixture.replayKey];
         assert.equal(capture.replay?.sha256,identity.sha256,`${fixture.id}: capture uses another Replay file`);
         assert.equal(capture.replay?.bytes,identity.bytes,`${fixture.id}: captured Replay size changed`);
@@ -714,8 +711,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/diagnostic-browse
       if(targetRecord.status!=='failed')targetRecord.status='incomplete';
       targetRecord.passed=false;
     }
-    report.coverage=diagnosticTargetCoverage(targetRecord);
-    report.passed=targetRecord.passed;
+    finalizeDiagnosticReport(report,targetRecord);
     await save();
   }
 });

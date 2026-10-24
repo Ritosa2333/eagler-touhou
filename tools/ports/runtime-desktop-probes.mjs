@@ -12,7 +12,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
 import {readRuntimeObservation,runtimeObservationRequest} from './runtime-observations.mjs';
-import {buildProductionPlayerHostRenderer,productionPlayerStylesheetLinks,readLauncherPublicAsset} from './launcher-player-host-scaffold.mjs';
+import {buildProductionPlayerHostRenderer,productionPlayerStylesheetLinks,productionPlayerHostViewportScript,readLauncherPublicAsset} from './launcher-player-host-scaffold.mjs';
 import {MUSIC_PCM_PROBE_SOURCE} from './music-browser-helpers.mjs';
 import {collectDesktopSfxWindow,DESKTOP_AUDIO_PROBE_ADAPTER_SOURCE,mapDesktopSfxStartJournal,validateDesktopSfxInputWindow} from './runtime-desktop-audio.mjs';
 import {createStageRecorder,DesktopStartupPreconditionError,readDesktopHostEvents,recordDesktopGameplayReadiness,recordDesktopStartupEvidenceIssue,requiredAudioTitleReadinessEvidence,requiredDesktopReadinessEvidence,requiredDesktopStartupStages,summarizeDesktopStartupEvidence} from './runtime-desktop-stage.mjs';
@@ -53,8 +53,9 @@ import {gamepadProbeBundle,prepareVirtualGamepad,bindProtocolHostGamepad} from '
 import {deriveSfxLatencyContract,readSfxLatencySceneState,resolveSfxLatencyContract,resolveSfxLatencyScenes,sfxLatencySceneRequest} from '../../tests/adaptation/adapters/audio.mjs';
 import {assertQueueTailMutationIsRejected,classifySfxLatencyEvidence,sfxLatencyProbeInitSource} from './sfx-latency-contract.mjs';
 import {inspectDesktopTerminalErrors} from './runtime-desktop-lifecycle.mjs';
-import {inspectDesktopInputCleanup} from './runtime-desktop-lifecycle.mjs';
+import {inspectDesktopInputCleanup,restoreNativeForeground,inspectForegroundPcmWindow,inspectResumedKeyboardMovement,shouldAssessResumedMovement} from './runtime-desktop-lifecycle.mjs';
 import {createHeadlessLifecycleDiagnostics} from './headless-lifecycle-diagnostics.mjs';
+import {activateOwnedBrowserWindow,setOwnedBrowserWindowState} from '../browser/owned-window.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const outputArgument=argument('output');
@@ -149,7 +150,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     './replay-recording-runner.mjs','../../tests/adaptation/adapters/replay-trace.mjs',
     '../../tests/adaptation/adapters/replay-files.mjs','./gamepad-probe.mjs',
     '../../launcher/src/launcher/gamepad-mapping.mts','../../launcher/app/services/player-gamepad.ts',
-    '../../launcher/tests/fixtures/virtual-gamepads.mjs'];
+    '../../launcher/tests/fixtures/virtual-gamepads.mjs','../browser/activate-owned-window.ps1'];
   const touchDependencies=await dependencySnapshot(root,[fileURLToPath(import.meta.url),
     ...touchEntrypoints.map(name=>fileURLToPath(new URL(name,import.meta.url)))]);
   for(const item of touchDependencies){
@@ -327,7 +328,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     const target=frame().contentWindow,bridge=target.__eaglerKeyboardInputBridge;if(!bridge)throw Error('Runtime keyboard input bridge is unavailable');window.__desktopKeyboardOwner?.clear();
     const ok=bridge.submit({protocol:'eagler-touhou/1',game:selected.game,epoch,command:'keyboard-clear'});
     if(!ok)throw Error('Runtime rejected keyboard clear after layout change');return window.__desktopKeyboardPreferences.getLayoutSnapshot();};
-  </script></head><body>${playerHostMarkup.get(target.game)??(()=>{throw Error(`No production Player scaffold for ${target.game}`);})()}<script>mountEpoch(1);</script></body></html>`;
+  </script></head><body>${playerHostMarkup.get(target.game)??(()=>{throw Error(`No production Player scaffold for ${target.game}`);})()}<script>${productionPlayerHostViewportScript()}mountEpoch(1);</script></body></html>`;
   let fixture;
   const expectedResponses=new Map();
   const reply=(request,response,bytes,contentType,status=200)=>{
@@ -452,7 +453,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             const beforeIdentity=inspectNativeForegroundIdentity({expected:expectedNativePageIdentity,observed:before,requireNormal:false});
             evidence.identityBeforeRestore=beforeIdentity;
             if(!beforeIdentity.ready)throw Error(`The original native page/window identity was not present before screenshot capture: ${beforeIdentity.missing.join('; ')}`);
-            await cdp.send('Browser.setWindowBounds',{windowId:before.window.windowId,bounds:{windowState:'normal'}});
+            evidence.nativeRestore=await restoreForeground({runtime:true});
+            assert.equal(evidence.nativeRestore.ready,true,evidence.nativeRestore.reason);
           }else{
             evidence.pageForegroundClaim='headless document visibility and focus';
             evidence.hostFocusBeforeRestore=await nativeFocusState(page);
@@ -575,17 +577,47 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           nextMovementInputBoundary:boundary.nextMovementInputBoundary};
       };
       const ensureFrame=()=>{const candidate=page.frames().find(item=>item.url().includes(`/runtime/${target.id}/`));if(!candidate)throw Error(`${target.id}: Runtime iframe is missing`);frame=candidate;return frame;};
+      const restoreForeground=async({runtime=false}={})=>{
+        let nativeActivation=null;
+        const focusCanvas=async()=>{ensureFrame();await frame.locator('canvas').focus();};
+        const passiveIdentity=await readPageTargetWindow(cdp,page);
+        const passiveOwnership=inspectNativeForegroundIdentity({expected:expectedNativePageIdentity??passiveIdentity,observed:passiveIdentity});
+        const passiveSamples=[];
+        if(passiveOwnership.ready&&inspectNativePageFocus(await nativeFocusState(page)).ready){
+          if(runtime)await focusCanvas();
+          for(let sample=0;sample<2;sample++){
+            if(sample)await page.waitForTimeout(100);
+            const identity=await readPageTargetWindow(cdp,page);
+            const identityCheck=inspectNativeForegroundIdentity({expected:expectedNativePageIdentity??passiveIdentity,observed:identity});
+            const host=inspectNativePageFocus(await nativeFocusState(page));
+            const runtimeFocus=runtime?inspectNativePageFocus(await nativeFocusState(frame)):null;
+            passiveSamples.push({identity,identityCheck,host,runtime:runtimeFocus});
+            if(!identityCheck.ready||!host.ready||(runtime&&!runtimeFocus.ready))break;
+            if(sample===1)return{ready:true,method:'existing-native-foreground',samples:passiveSamples,...passiveSamples.at(-1),nativeActivation};
+          }
+        }
+        const restored=await restoreNativeForeground({expected:expectedNativePageIdentity,
+        readIdentity:()=>readPageTargetWindow(cdp,page),
+        restoreWindow:windowId=>cdp.send('Browser.setWindowBounds',{windowId,bounds:{windowState:'normal'}}),
+        activatePage:async targetId=>{
+          if(nativeActivation===null)nativeActivation=await activateOwnedBrowserWindow({processId:lifecycleController.metadata.processId,title:await page.title()});
+          await cdp.send('Target.activateTarget',{targetId});await page.bringToFront();
+        },
+        ...(runtime?{focusRuntime:focusCanvas,readRuntime:()=>nativeFocusState(frame)}:{}),
+        readHost:()=>nativeFocusState(page),wait:ms=>page.waitForTimeout(ms)});
+        return{...restored,passiveSamples,nativeActivation};
+      };
       const acquireForeground=(epoch,stageName,{runtime=false}={})=>stage(stageName,{epoch,
         focusKind:headlessProbe?'headless-page-visibility':'native-window-foreground'},async()=>{
         const focusSample=async target=>{try{return await nativeFocusState(target);}catch(error){return{readError:String(error.message||error)};}};
         const hostBefore=await focusSample(page),runtimeBefore=runtime?await focusSample(frame):null;
-        let identityBefore=null,identityAfter=null,identityCheck=null;
+        let identityBefore=null,identityAfter=null,identityCheck=null,nativeRestore=null;
         if(!headlessProbe){
           identityBefore=await readPageTargetWindow(cdp,page);
           const expected=expectedNativePageIdentity??identityBefore;
           const preRestoreIdentity=inspectNativeForegroundIdentity({expected,observed:identityBefore,requireNormal:false});
           assert.ok(preRestoreIdentity.ready,`Cannot restore foreground because the original page/window identity is unavailable: ${preRestoreIdentity.missing.join('; ')}`);
-          await cdp.send('Browser.setWindowBounds',{windowId:identityBefore.window.windowId,bounds:{windowState:'normal'}});
+          nativeRestore=await restoreForeground({runtime});
         }
         await page.bringToFront();
         if(runtime){ensureFrame();await frame.locator('canvas').focus();}
@@ -597,7 +629,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         const proof={epoch,stage:stageName,kind:headlessProbe?'headless-page-visibility':'native-window-foreground',
           before:{host:hostBefore,runtime:runtimeBefore},after:{host,runtime:runtimeState},
           nativeWindow:headlessProbe?{status:'not-claimed',reason:'software input execution observes page state without asserting a desktop window'}:
-            {before:identityBefore,after:identityAfter,identityCheck}};
+            {before:identityBefore,after:identityAfter,identityCheck,restore:nativeRestore}};
         (record.startupForeground??=[]).push(proof);await save();
         if(!headlessProbe)assert.equal(identityCheck.ready,true,`Foreground restore must retain the same actual page and native window in normal state: ${identityCheck.missing.join('; ')}`);
         if(!headlessProbe&&epoch===1&&stageName==='host-focus-before-ready'&&!host.ready)
@@ -1921,13 +1953,14 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             ['w','ArrowUp','y',-1],['s','ArrowDown','y',1],['a','ArrowLeft','x',-1],['d','ArrowRight','x',1]]);
           return{epoch:activeEpoch,reusedRuntime:true,...matrix};
         });
-        for(const [epoch,mode] of [[4,'touch-unlimited'],[5,'joystick'],[6,'joystick-free']]){
+        for(const mode of ['touch-unlimited','joystick','joystick-free']){
           const modeChecks=[`runtime-epoch-touch-mode-${mode}`,
             ...(mode==='touch-unlimited'?['shared-touch-unlimited']:mode==='joystick-free'?['shared-touch-joystick-free']:[])];
           if(requiredCheckIds&&!modeChecks.some(id=>requiredCheckIds.has(id))){
             for(const id of modeChecks)await check(id,async()=>{throw Error('An omitted mode must not launch a Runtime');});
             continue;
           }
+          const epoch=activeEpoch+1;
           let transition;
           if(mode==='touch-unlimited')await check('shared-touch-unlimited',async()=>{
             if(record.touchTraceUnavailable)return{checkStatus:'incomplete',reason:record.touchTraceUnavailable};
@@ -2040,13 +2073,15 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           if(nativePage.status!=='matched')return{checkStatus:'incomplete',before,nativeFocusBefore,nativePage,reason:'The game page could not be matched to one native Chrome target and window.'};
           windowInfo=nativePage.window;
           let held,minimized,focused,events,hostEvents,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,nativeFocusAfter,
-            boundsAtHiddenSample,hiddenInput,eventsWhileMinimized,hostEventsWhileMinimized,minimizedKeyboardClear;
+            boundsAtHiddenSample,hiddenInput,eventsWhileMinimized,hostEventsWhileMinimized,minimizedKeyboardClear,resumedMovement;
           const lifecycleStart=await page.evaluate(()=>lifecycleEvents.length),hostLifecycleStart=await page.evaluate(()=>hostKeyboardLifecycle.length);
           try{
           const directionKey=before.position.x>320?'ArrowLeft':'ArrowRight',sign=directionKey==='ArrowRight'?1:-1;
           await keyDown(directionKey);held=await waitObservation(`direction held before window minimize (${directionKey})`,state=>state.input.value!==before.input.value&&(state.position.x-before.position.x)*sign>0,3000);
           const hiddenStartAtMs=await page.evaluate(()=>performance.now());
-          await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'minimized'}});await page.waitForTimeout(650);
+          await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'minimized'}});
+          record.nativeMinimize=await setOwnedBrowserWindowState({processId:lifecycleController.metadata.processId,title:await page.title(),state:'minimized'});
+          await page.waitForTimeout(650);
           boundsAfterMinimize=await cdp.send('Browser.getWindowBounds',{windowId:windowInfo.windowId});
           await page.waitForFunction(index=>hostKeyboardLifecycle.slice(index).some(item=>(item.reason==='host-blur'||item.reason==='host-hidden')&&item.accepted===true),
             hostLifecycleStart,{timeout:1400}).catch(()=>{});
@@ -2065,7 +2100,11 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             lifecycle:inspectNativeBackgroundEvents({state:nativeState,events:eventsWhileMinimized.filter(item=>item.epoch===activeEpoch)})};
           await cdp.send('Browser.setWindowBounds',{windowId:windowInfo.windowId,bounds:{windowState:'normal'}});await page.bringToFront();
           nativeFocusAfter=await waitForNativeFocus(page);boundsAfterRestore=await cdp.send('Browser.getWindowBounds',{windowId:windowInfo.windowId});
-          focused=await observe();events=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);hostEvents=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);released=focused.input.value===before.input.value;
+          const resumedClock=hiddenInput?.capabilities?.restartFrame;
+          focused=typeof resumedClock==='string'&&Number.isSafeInteger(hiddenInput?.frames?.[resumedClock])?
+            await waitObservation('First observed movement tick after window restore',state=>shouldAssessResumedMovement(hiddenInput,state),3000):await observe();
+          resumedMovement=inspectResumedKeyboardMovement({hidden:hiddenInput,restored:focused,neutralInputValue:before.input.value});
+          events=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);hostEvents=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);released=focused.input.value===before.input.value;
           await keyUp(directionKey);afterKeyup=await observe();
           }catch(error){const finalState=await observe().catch(()=>null),finalEligibility=incompleteGameplayPrecondition(finalState,target.game);
             if(finalEligibility)return{...finalEligibility,before,nativeFocusBefore,nativePage,held,minimized,focused,events,hostEvents,actionError:String(error.stack||error)};
@@ -2074,7 +2113,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           const activeEvents=events.filter(item=>item.epoch===activeEpoch),lifecycle=inspectNativeBackgroundEvents({state:minimized.nativeState,events:activeEvents});
           const backgroundVisibilityReached=lifecycle.visibilityHidden||lifecycle.visibilityChange,
             focusEventReached=lifecycle.blur||hostEvents.some(item=>item.reason==='host-blur'),
-            minimizeEvidence={before,nativeFocusBefore,nativePage,held,minimized,focused,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,minimizedKeyboardClear,
+            minimizeEvidence={before,nativeFocusBefore,nativePage,held,minimized,focused,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,minimizedKeyboardClear,resumedMovement,
               nativeFocusAfter,lifecycleEvents:events,hostKeyboardLifecycle:hostEvents,backgroundVisibilityReached,focusEventReached,
               directionKey:before.position.x>320?'ArrowLeft':'ArrowRight'};
           if(minimized.windowState!=='minimized')return{checkStatus:'incomplete',...minimizeEvidence,reason:'Chrome did not report the owned window in minimized state.'};
@@ -2085,6 +2124,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             reason:minimizedKeyboardClear.missing.join('; ')};
           if(minimizedKeyboardClear.status==='failed')return{checkStatus:'failed',...minimizeEvidence,
             reason:minimizedKeyboardClear.missing.join('; ')};
+          if(resumedMovement.status!=='passed')return{checkStatus:resumedMovement.status,...minimizeEvidence,reason:resumedMovement.reason};
           assert.ok(released,'Foreground lifecycle must clear held native input');assert.equal(afterKeyup.input.value,before.input.value);
           return minimizeEvidence;
         });
@@ -2159,7 +2199,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             await keyUp(directionKey).catch(()=>{});
             if(backgroundPage){try{await backgroundPage.close();backgroundPageClose={status:'closed'};}
               catch(error){backgroundPageClose={status:'failed',error:String(error.stack||error)};}}
-            await page.bringToFront().catch(()=>{});await resetInputState(activeEpoch);
+            record.postTabForegroundRestore=await restoreForeground({runtime:true});
+            await resetInputState(activeEpoch);
           }
           Object.assign(backgroundTabEvidence,{afterReturn,afterKeyup});
           assert.equal(afterReturn.input.value,before.input.value,'Host blur/hidden lifecycle must clear native held input before explicit keyup');
@@ -2202,6 +2243,29 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             audioBeforeFire,audioPreKey,audioContextGate,audioLifecyclePath:backgroundTabEvidence.backgroundAudioLifecycle?.path??'unclassified',
             reason:'The Runtime AudioContext was not already running before the KeyZ gesture; this window cannot establish background audio continuity/recovery.'};
           const keyboardForwardStart=await page.evaluate(()=>keyboardForwardEvents.length),keyboardMapStart=await page.evaluate(()=>keyboardMapEvents.length);
+          const inputOwnerFocus=await focusRestartKeyboardHost({bringToFront:()=>page.bringToFront(),
+            focusHostBody:()=>page.evaluate(()=>{document.body.tabIndex=-1;document.body.focus({preventScroll:true});}),
+            readFocus:()=>page.evaluate(()=>({documentHasFocus:document.hasFocus(),visibilityState:document.visibilityState,hidden:document.hidden,
+              activeElementTag:document.activeElement?.tagName,activeElementIsBody:document.activeElement===document.body,
+              activeElementIsRuntimeFrame:document.activeElement===document.querySelector('iframe')}))});
+          if(inputOwnerFocus.status!=='ready')return{checkStatus:'incomplete',inputOwnerFocus,reason:'The Host keyboard owner did not acquire native focus before the audio stimulus'};
+          const foregroundLifecycleStart=await page.evaluate(()=>({host:hostKeyboardLifecycle.length}));
+          await frame.evaluate(()=>{
+            window.__foregroundPcmLifecycle?.stop?.();
+            const source={url:location.href,timeOrigin:performance.timeOrigin};
+            const events=[],listeners=[];
+            for(const type of ['blur','focus','visibilitychange','pagehide','pageshow']){
+              const target=type==='visibilitychange'?document:window;
+              const listener=()=>events.push({type,time:performance.now(),visibility:document.visibilityState,hidden:document.hidden,source});
+              target.addEventListener(type,listener,true);listeners.push(()=>target.removeEventListener(type,listener,true));
+            }
+            window.__foregroundPcmLifecycle={source,events,stop:()=>listeners.forEach(remove=>remove())};
+          });
+          const readForegroundPcmBoundary=async phase=>({phase,
+            host:await page.evaluate(()=>({source:{url:location.href,timeOrigin:performance.timeOrigin},time:performance.now(),visibilityState:document.visibilityState,hidden:document.hidden,
+              hasFocus:document.hasFocus(),inputOwnerFocused:document.activeElement===document.body})),
+            runtime:await frame.evaluate(()=>({source:{url:location.href,timeOrigin:performance.timeOrigin},time:performance.now(),visibilityState:document.visibilityState,hidden:document.hidden,hasFocus:document.hasFocus()}))});
+          const foregroundPcmSamples=[await readForegroundPcmBoundary('before-capture')];
           const audioEventsBefore=audioPreKey.eventCount;
           let keyDownEvent=null,held=null,heldError=null,heldObservedAtMs=null,foregroundAudio=null;
           const capturePromise=sampleAudio('foreground',1000).catch(error=>({captureError:String(error.stack||error)}));
@@ -2217,9 +2281,16 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
                 heldObservedAtMs=Date.now();}
               catch(error){heldError=String(error.message||error);}
             }
-            foregroundAudio=await capturePromise;afterCapture=await observe();
+            foregroundAudio=await capturePromise;foregroundPcmSamples.push(await readForegroundPcmBoundary('after-capture'));afterCapture=await observe();
           }finally{await keyUp('KeyZ');}
           afterKeyup=await waitObservation('Native input returns to neutral after foreground KeyZ release',state=>state.input.value===neutral.input.value,2000).catch(async()=>observe());
+          foregroundPcmSamples.push(await readForegroundPcmBoundary('after-keyup'));
+          const foregroundPcmLifecycle={
+            hostEvents:await page.evaluate(({start,epoch})=>hostKeyboardLifecycle.slice(start.host).filter(event=>event.epoch===epoch)
+              .map(event=>({...event,source:{url:location.href,timeOrigin:performance.timeOrigin}})),{start:foregroundLifecycleStart,epoch:activeEpoch}),
+            runtimeEvents:await frame.evaluate(()=>{const log=window.__foregroundPcmLifecycle;if(!log)throw Error('Foreground Runtime lifecycle observer is missing');
+              log.stop();return log.events;})};
+          const foregroundPcmWindow=inspectForegroundPcmWindow({samples:foregroundPcmSamples,...foregroundPcmLifecycle});
           const forwardEvents=await page.evaluate(index=>keyboardForwardEvents.slice(index),keyboardForwardStart);
           const mappingEvents=await page.evaluate(index=>keyboardMapEvents.slice(index),keyboardMapStart);
           const fireStimulus=inspectNativeFireStimulus({forwardEvents,epoch:activeEpoch,neutralInputValue:neutral.input.value,
@@ -2239,10 +2310,11 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             capturedContextStates:foregroundAudio.contextStates??[]});
           const afterAudio=await nativePeek(),audioLifecyclePath=backgroundTabEvidence.backgroundAudioLifecycle?.path??'context-state-transition-unclassified';
           const captureOverlappedNativeFire=nativeInputWindow.heldObservedBeforeCaptureFinished;
-          const evidence={backgroundTabEvidence,foreground:{...foreground,hostFocus,runtimeFocus,pageTarget},neutralStart,neutral,foregroundIdle,
-            audioBeforeFire,audioPreKey,audioContextGate,audioGestureWindow,nativeInputWindow,fireStimulus,keyboardForwardEvents:forwardEvents,keyboardMapEvents:mappingEvents,
+          const evidence={backgroundTabEvidence,foreground:{...foreground,hostFocus,runtimeFocus,pageTarget},inputOwnerFocus,neutralStart,neutral,foregroundIdle,
+            audioBeforeFire,audioPreKey,audioContextGate,audioGestureWindow,foregroundPcmWindow,nativeInputWindow,fireStimulus,keyboardForwardEvents:forwardEvents,keyboardMapEvents:mappingEvents,
             audioEvents:stimulusEvents,stimulusStateChanges,audioLifecyclePath,foregroundAudio,afterAudio,
             captureStartedBeforeKeyDown:true,keyDownStartedAfterAudioContextGate:true,captureOverlappedNativeFire};
+          if(!foregroundPcmWindow.ready)return{checkStatus:'incomplete',...evidence,reason:'The foreground PCM environment window was interrupted: '+foregroundPcmWindow.missing.join('; ')};
           if(foregroundAudio?.captureError)return{checkStatus:'incomplete',...evidence,reason:'The Runtime audio capture did not complete'};
           if(!audioGestureWindow.ready)return{checkStatus:'incomplete',...evidence,
             reason:audioGestureWindow.missing.join('; ')};

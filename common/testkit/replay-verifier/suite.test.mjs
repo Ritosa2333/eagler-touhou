@@ -86,3 +86,15 @@ test('a golden reader and candidate provider are both mandatory',async()=>{
   await assert.rejects(runReplaySuite({adapter:noOriginal,cases:[item],expectedIds:['demo0']}),/immutable original trace/);
   await assert.rejects(runReplaySuite({adapter:adapter(),cases:[item,fixture('demo1')],expectedIds:['demo0']}),/outside the selected lane/);
 });
+
+test('terminal summaries cannot hide an earlier tick divergence',async()=>{
+  for(const changed of [true,false]){
+    const title=adapter(changed?{candidateTrace:fixture=>trace(fixture.replaySha256,'changed')}:{});
+    title.validateCandidateEnd=()=>({status:'DIVERGED',reason:'terminal-state',expected:{score:10},actual:{score:9}});
+    const result=await runReplaySuite({adapter:title,cases:[fixture('demo0')],expectedIds:['demo0']});
+    assert.equal(result.status,'DIVERGED');
+    assert.equal(result.results[0].terminalValidation.reason,'terminal-state');
+    assert.equal(result.results[0].comparison.status,changed?'DIVERGED':'PASS');
+    if(changed)assert.equal(result.results[0].comparison.comparedTicks,0);
+  }
+});

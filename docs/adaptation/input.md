@@ -10,7 +10,9 @@
 
 触控坐标按游戏画面换算；灵敏度改变滑动距离，角色的原作速度由逻辑层控制。
 
-各作 `portable/input/touch-bomb-check.mjs` 共用 WASI 编译与执行入口。通过 `WASI_SDK_BIN` 指定 SDK 的 `bin` 目录，或通过 `WASI_SDK_ROOT` 指定 SDK 根目录；入口按当前平台选择编译器，并显式传入本仓 common 头文件目录。结果保存编译命令、工具链版本、源码与 WASM 哈希，以及原生 `verify()` 返回值。每次运行独立更新报告，缺少工具链和编译失败均留下失败记录。该检查验证生产触控模块，浏览器接线和完整手势另按下表操作。
+各作 `portable/input/touch-bomb-check.mjs` 共用 WASI 编译与执行入口。通过 `EAGLER_WASI_SDK` 或 `WASI_SDK_PATH` 指定 SDK 根目录，也兼容 `WASI_SDK_BIN` 与 `WASI_SDK_ROOT`；入口按当前平台选择编译器，并显式传入本仓 common 头文件目录。结果保存编译命令、工具链版本、源码与 WASM 哈希，以及原生 `verify()` 返回值。每次运行独立更新报告，缺少工具链和编译失败均留下失败记录。该检查验证生产触控模块，浏览器接线和完整手势另按下表操作。
+
+th10 normal 的 Runtime 声明与移动规则共用一份契约，分别描述角色坐标精度和 float32 归一化 Pointer 输入。共享场景先按 640×480 输入空间计算目标，再按角色原生量化与速度规则比较实际位移；原始触控反馈不参与生成预期值。
 
 `touch-native-invariants` 组件任务按产品目录生成 source-owner 集合，直接编译作品的 `TouchController.hpp` 和 `MotionTrack.hpp`。固定输入执行方向式与自由摇杆、焦点倍率、逻辑动作键、二指双击 Bomb、菜单／对话手势、Gameplay 已持有射击后触控确认的新样本转换、移动受阻时的 Bomb 脉冲、抬起释放与 `MotionTrack` 标记 API 的 limited、零位移 unlimited、非零位移 unlimited 样本；作品状态含 `choice` 字段时，同一生产 Controller 还验证选项滑动只发一次方向键。th08-mp `ResolveAnalogMovement` 和 th10-mp `InputLanes::ResolveMovement` 另接真实生产消费者，th06/th07 使用既有源码锚点作为参考。报告把组件行为、作品 Runtime 消费和按标题定义的手势能力分别列出，逐作品的 gameplay 接线由 Runtime 场景验收。
 
@@ -147,6 +149,11 @@ th10 的 [SDL 触控入口](../../ports/th10/web/cpp/sdl/GameHost.cpp#L164) 接�
 - 观察与独立预期：读取输入所有者清理事件、设备连接状态、原生输入位及角色状态；恢复后由本次有效设备采样或按键事件继续操作。
 - 判定：失焦、隐藏和断开均清除当时持有，恢复事件本身不重放清理前的旧输入。
 - 反例：持有右移时隐藏页面，恢复后仍继续移动，应失败。
+
+th08 普通局清理输入时，由 ReplayRecording 同步取消尚未消费的实时输入与录像尾样本。玩家实际消费后才退役该样本，清理保留已消费历史、释放边沿、游标、时间和种子；Replay／Demo 播放沿用文件输入。`ports-touch-wasi` 队列中的 `th08-pending-input-clear` 执行真实录制与回放代码，核对清理、重复清理、新输入和不追加记录的边界。真实窗口最小化场景继续检验 SDL 接线与角色消费。
+
+恢复检查等待同一关卡的移动时钟实际前进，比较隐藏期间与恢复后的角色坐标及输入位。输入都为零但角色仍发生残余位移，也使场景失败；时钟或坐标缺席保留未完成结果。
+
 - 当前入口/边界：`runtime-desktop-probes.mjs` 经 Playwright `launchServer` 和 loopback CDP 网关运行全尺寸 headed Chrome，按真实窗口最小化或同窗标签切换采集原生 blur/hidden、输入位和释放结果。最小化期间要求 Host keyboard-clear 被接受且原生输入已中立；没有有效原生输入样本时记为 incomplete，有效非零样本仍判 failed；恢复后的读数不替代隐藏期间证据。标签检查关闭临时页后再次核对宿主页与 Runtime iframe 的 `visibilityState`、`hidden`、`hasFocus()`，并确认仍为原来的 Chrome page target 与 window ID。报告保存实际可执行文件与版本、启动参数、CDP target/window ID、窗口边界，以及按命令 id/session/page target 关联并取得 Chrome 成功响应的焦点改写记录。`--background-only` 专用于窗口、标签和声音三项生命周期检查，报告将其他桌面检查单列为 omitted；手柄断开由 gamepad mapping 与 native gamepad probe 覆盖。
 
 ### INPUT-07 | 原作菜单与对话输入

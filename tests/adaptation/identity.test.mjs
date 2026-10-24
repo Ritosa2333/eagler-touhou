@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,mkdtemp,rm,writeFile} from 'node:fs/promises';
 import {relative,resolve} from 'node:path';
+import {tmpdir} from 'node:os';
 import {fileIdentity,identityDigest} from '../../tools/testing/dependency-snapshot.mjs';
-import {adaptationBrowserImplementation,adaptationBrowserMode,createCaseIdentityReader,diagnosticCaseIdentity,
+import {adaptationBrowserImplementation,adaptationBrowserMode,createCaseIdentityReader,diagnosticCaseIdentity,usesLauncherSourceIdentity,launcherSourceIdentity,
   fingerprintPythonPlaywrightDependencies} from './identity.mjs';
 
 test('the browser identity follows actual desktop driver flags rather than a group label',()=>{
@@ -16,6 +17,29 @@ test('the browser identity follows actual desktop driver flags rather than a gro
   assert.throws(()=>adaptationBrowserMode(task('--background-only','--touch-only')),/one|combine|exclusive|mode/i);
   assert.equal(adaptationBrowserImplementation(task('--input-only')),'node-playwright');
   assert.equal(adaptationBrowserImplementation({task:{args:['tools/ports/diagnostic-browser.mjs']}}),'python-playwright');
+});
+
+test('Launcher source ownership follows actual UI flags and preparation requirements',()=>{
+  for(const flag of ['--launcher-ui','--launcher-ui-only'])for(const script of ['music-browser.mjs','practice-browser.mjs'])
+    assert.equal(usesLauncherSourceIdentity({task:{args:['tools/ports/'+script,flag]}}),true);
+  assert.equal(usesLauncherSourceIdentity({requiresLauncherBuild:true,task:{args:['other.mjs']}}),true);
+  for(const script of ['offline-runtime-browser.mjs','language-browser.mjs'])assert.equal(usesLauncherSourceIdentity({task:{args:['tools/ports/'+script]}}),true);
+  assert.equal(usesLauncherSourceIdentity({group:'practice',task:{args:['tools/ports/practice-browser.mjs']}}),false);
+});
+
+test('real SettingsBody, asset and build entry changes invalidate the Launcher input identity',async t=>{
+  const root=await mkdtemp(resolve(tmpdir(),'launcher-ui-identity-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  for(const directory of ['app/components/settings','src','public','lib','scripts','config'])await mkdir(resolve(root,'launcher',directory),{recursive:true});
+  const put=(path,text)=>writeFile(resolve(root,'launcher',path),text);
+  await put('app/components/settings/SettingsBody.tsx','export const SettingsBody = () => "Practice";');
+  await put('public/control.css','.option-switch { color: black; }');
+  await put('scripts/build-launcher.mjs','export const entry = 1;');await put('package.json','{"name":"fixture"}');
+  const read=async()=>identityDigest({inputs:{launcherSources:await launcherSourceIdentity(root)}});
+  let previous=await read();assert.equal(await read(),previous);
+  for(const [path,text] of [['app/components/settings/SettingsBody.tsx','export const SettingsBody = () => "Changed Practice";'],
+    ['public/control.css','.option-switch { color: blue; }'],['scripts/build-launcher.mjs','export const entry = 2;']]){
+    await put(path,text);const next=await read();assert.notEqual(next,previous,path+' must invalidate old UI evidence');previous=next;
+  }
 });
 
 test('diagnostic reuse follows selected bytes and rejects changed native sources before starting a server',async t=>{

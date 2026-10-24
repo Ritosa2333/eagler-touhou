@@ -1,6 +1,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {restoreNativeForeground} from './runtime-desktop-lifecycle.mjs';
 import {inspectDesktopInputCleanup,inspectDesktopTerminalErrors} from './runtime-desktop-lifecycle.mjs';
+import {inspectResumedKeyboardMovement,shouldAssessResumedMovement} from './runtime-desktop-lifecycle.mjs';
+
+test('window restore rejects residual movement even when both published input snapshots are neutral',()=>{
+  const hidden={capabilities:{restartFrame:'enemy'},frames:{enemy:10},status:{stage:0},input:{value:0},position:{x:212,y:384}};
+  const restored={...hidden,frames:{enemy:11}};
+  const inspect=(state=restored)=>inspectResumedKeyboardMovement({hidden,restored:state,neutralInputValue:0});
+  assert.equal(inspect().status,'passed');
+  assert.equal(inspect({...restored,position:{x:216,y:384}}).status,'failed');
+  assert.equal(inspect({...restored,input:{value:128}}).status,'failed');
+  assert.equal(inspect({...restored,frames:{enemy:10}}).status,'incomplete');
+  assert.equal(inspect({...restored,status:{stage:1}}).status,'incomplete');
+  assert.equal(inspect({...restored,position:null}).status,'incomplete');
+  assert.equal(shouldAssessResumedMovement(hidden,hidden),false);
+  assert.equal(shouldAssessResumedMovement(hidden,restored),true);
+  const nextStage={...restored,status:{stage:1},frames:{enemy:0}};
+  assert.equal(shouldAssessResumedMovement(hidden,nextStage),true,'a reset stage clock must reach assessment before timeout');
+  assert.equal(inspect(nextStage).status,'incomplete');
+  assert.equal(shouldAssessResumedMovement(hidden,{...restored,frames:{}}),true);
+});
 import {backgroundOnlyOmittedChecks,backgroundOnlyRequiredChecks,classifyAudioLifecyclePath,compareNativeBrowserTargets,desktopAdaptationIdsForMode,desktopCheckAdaptationIds,desktopCheckScope,desktopExecutionBrowserMode,inputOnlyOmittedChecks,inputOnlyRequiredChecks,inspectAudioContextsBeforeGesture,inspectAudioGestureWindow,inspectMinimizedKeyboardClear,inspectNativeBackgroundEvents,inspectNativeFireStimulus,inspectNativeForegroundIdentity,inspectNativePageFocus,inspectPostCleanupForeground,inspectViewportScreenshotClip,selectDesktopExecutionMode,selectNativePageTarget,summarizeDesktopCheckScope} from './runtime-desktop-lifecycle.mjs';
 
 test('input cleanup requires every live Runtime acknowledgement and preserves cleanup errors',()=>{
@@ -41,6 +61,25 @@ test('software input probes use headless Chromium and desktop background stays h
   assert.equal(desktopExecutionBrowserMode('background-only'),'headed');
   assert.equal(desktopExecutionBrowserMode('full-desktop'),'headed');
   assert.throws(()=>desktopExecutionBrowserMode('unknown'),/Unknown desktop execution mode/);
+});
+
+test('foreground restoration waits for the owned native window and both real document focus states',async()=>{
+  let time=0,read=0,restores=0;
+  const page=state=>({status:'matched',target:{type:'page',targetId:'owned'},window:{windowId:12,currentBounds:{windowState:state}}});
+  const focused={visibilityState:'visible',hidden:false,hasFocus:true};
+  const io={expected:page('normal'),readIdentity:async()=>page(++read<4?'minimized':'normal'),
+    restoreWindow:async id=>{assert.equal(id,12);restores++;},activatePage:async id=>assert.equal(id,'owned'),
+    readHost:async()=>focused,readRuntime:async()=>focused,wait:async ms=>{time+=ms;},now:()=>time,timeoutMs:1000};
+  const result=await restoreNativeForeground(io);
+  assert.equal(result.ready,true);assert.ok(restores>0);assert.ok(result.samples.length>=3);
+  assert.equal(result.samples.at(-1).identityCheck.windowState,'normal');
+  assert.equal(result.samples.at(-2).identityCheck.windowState,'normal','A transient focus sample is not enough');
+  read=0;time=0;
+  const hidden=await restoreNativeForeground({...io,readRuntime:async()=>({...focused,hasFocus:false})});
+  assert.equal(hidden.ready,false);assert.match(hidden.reason,/deadline/);
+  restores=0;
+  const changed=await restoreNativeForeground({...io,readIdentity:async()=>({...page('normal'),target:{type:'page',targetId:'unrelated'}})});
+  assert.equal(changed.ready,false);assert.equal(restores,0,'Never restore a different page/window');
 });
 
 test('terminal error audit rejects errors arriving after the last functional check',()=>{
@@ -218,7 +257,8 @@ test('audio latency mode requires actual PCM timing and its live negative contro
   assert.deepEqual(scope.requiredIds,['package-and-private-data-identity','native-sfx-before-mixed-queue-tail',
     'negative-control-sfx-delayed-to-mixed-queue-tail','package-and-private-data-identity-postflight']);
   assert.ok(scope.omittedIds.includes('shared-touch-limited'));
-  assert.deepEqual(desktopAdaptationIdsForMode('audio-latency-only'),['BUILD-04','PACKAGE-02','AUDIO-02']);
+  assert.deepEqual(desktopAdaptationIdsForMode('audio-latency-only'),['AUDIO-02']);
+  assert.deepEqual(desktopAdaptationIdsForMode('audio-latency-only',{prerequisites:true}),['BUILD-04','PACKAGE-02']);
   const checks=scope.requiredIds.map(id=>({id,status:'passed'}));
   assert.equal(summarizeDesktopCheckScope(checks,scope).status,'passed');
   assert.equal(summarizeDesktopCheckScope(checks.filter(item=>!item.id.startsWith('negative-control-')),scope).status,'incomplete');
@@ -283,7 +323,7 @@ test('finite Replay mode owns recording and isolation while excluding movement a
   const scope=desktopCheckScope('replay-recording-only');
   assert.deepEqual(scope.requiredIds,['package-and-private-data-identity','shared-replay-recording-and-isolation','package-and-private-data-identity-postflight']);
   assert.deepEqual(desktopAdaptationIdsForMode('replay-recording-only',{game:'th08'}),
-    ['BUILD-04','PACKAGE-02','REPLAY-02','REPLAY-03','REPLAY-04','REPLAY-06']);
+    ['REPLAY-02','REPLAY-03','REPLAY-04','REPLAY-06']);
   assert.ok(scope.omittedIds.includes('shared-touch-limited'));
 });
 
@@ -297,4 +337,68 @@ test('input-only omitted background checks remain unexpected and cannot count to
   const missing=summarizeDesktopCheckScope(input.slice(1),{requiredIds:inputOnlyRequiredChecks,omittedIds:inputOnlyOmittedChecks});
   assert.equal(missing.status,'incomplete');
   assert.equal(missing.missingRequired[0],'package-and-private-data-identity');
+});
+
+// Exercise the production closure with native I/O substituted | no browser launch.
+test('normal focused window focuses only its canvas and requires two stable observations',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const source=await readFile(new URL('./runtime-desktop-probes.mjs',import.meta.url),'utf8');
+  const start=source.indexOf('const restoreForeground=async');
+  const end=source.indexOf('const acquireForeground=',start);
+  const declaration=source.slice(start,end);
+  const identity={status:'matched',target:{type:'page',targetId:'owned'},window:{windowId:12,currentBounds:{windowState:'normal'}}};
+  const visible={visibilityState:'visible',hidden:false,hasFocus:true};
+  let focused=0,waits=0,native=0,activated=0,fallback=0,reads=0;
+  const frame={locator:()=>({focus:async()=>{focused++;}})};
+  const page={waitForTimeout:async()=>{waits++;},title:async()=> 'fixture',bringToFront:async()=>{activated++;}};
+  let unstable=false;
+  const bindings={expectedNativePageIdentity:identity,readPageTargetWindow:async()=>identity,
+    inspectNativeForegroundIdentity,inspectNativePageFocus,cdp:{send:async()=>{activated++;}},page,frame,
+    ensureFrame:()=>{},nativeFocusState:async target=>{reads++;return unstable&&reads===3?{...visible,hidden:true}:visible;},
+    activateOwnedBrowserWindow:async()=>{native++;return{status:'requested'};},lifecycleController:{metadata:{processId:123}},
+    restoreNativeForeground:async options=>{fallback++;await options.activatePage('owned');return{ready:false,reason:'focus unavailable'};}};
+  const restore=new Function(...Object.keys(bindings),declaration+'return restoreForeground;')(...Object.values(bindings));
+  const result=await restore({runtime:true});
+  assert.equal(result.ready,true);assert.equal(result.samples.length,2);assert.equal(result.method,'existing-native-foreground');
+  assert.equal(focused,1);assert.equal(waits,1);assert.equal(native,0);assert.equal(activated,0);assert.equal(fallback,0);
+  reads=0;unstable=true;
+  const failed=await restore({runtime:true});
+  assert.equal(failed.ready,false);assert.equal(fallback,1);assert.equal(native,1);
+  assert.equal(failed.passiveSamples.length,1,'A hidden Runtime does not satisfy the passive foreground path');
+});
+
+test('foreground PCM window rejects intervening Runtime hidden and Host blur even after recovery',async()=>{
+  const {inspectForegroundPcmWindow:inspectRaw}=await import('./runtime-desktop-lifecycle.mjs');
+  const hostSource={url:'https://fixture/host',timeOrigin:1000},runtimeSource={url:'https://fixture/runtime?epoch=1',timeOrigin:2000};
+  const inspectForegroundPcmWindow=options=>inspectRaw({...options,
+    hostEvents:(options.hostEvents??[]).map(event=>({source:hostSource,...event})),
+    runtimeEvents:(options.runtimeEvents??[]).map(event=>({source:runtimeSource,...event}))});
+  const sample=time=>({host:{source:hostSource,time,visibilityState:'visible',hidden:false,hasFocus:true,inputOwnerFocused:true},
+    runtime:{source:runtimeSource,time:time+10000,visibilityState:'visible',hidden:false,hasFocus:false}});
+  const samples=[sample(100),sample(200),sample(300)].map((value,index)=>({...value,phase:['before-capture','after-capture','after-keyup'][index]}));
+  const baseline={samples,hostEvents:[],runtimeEvents:[{type:'blur',hidden:false,visibility:'visible',time:10150}]};
+  assert.equal(inspectForegroundPcmWindow(baseline).ready,true,'Iframe blur while Host owns input is expected');
+  const hidden=inspectForegroundPcmWindow({...baseline,runtimeEvents:[{type:'visibilitychange',hidden:true,time:10150},{type:'visibilitychange',hidden:false,time:10180}]});
+  assert.equal(hidden.ready,false);assert.equal(hidden.runtimeInterruptions.length,1);
+  const blur=inspectForegroundPcmWindow({...baseline,hostEvents:[{reason:'host-blur',time:150},{type:'focus',time:180}]});
+  assert.equal(blur.ready,false);assert.equal(blur.hostInterruptions.length,1);
+  assert.equal(inspectForegroundPcmWindow({...baseline,hostEvents:[{reason:'host-hidden',time:150}]}).ready,false);
+  assert.equal(inspectForegroundPcmWindow({...baseline,runtimeEvents:[{type:'pagehide',time:10150}]}).ready,false);
+  assert.equal(inspectForegroundPcmWindow({...baseline,hostEvents:[{reason:'host-blur',time:99}],runtimeEvents:[{hidden:true,time:10301}]}).ready,true,'Each document uses its own bounded clock interval');
+  assert.equal(inspectForegroundPcmWindow({...baseline,samples:[samples[0],{...samples[1],host:{...samples[1].host,inputOwnerFocused:false}},samples[2]]}).ready,false);
+  assert.equal(inspectForegroundPcmWindow({samples:[samples[0]]}).ready,false);
+  assert.equal(inspectForegroundPcmWindow({...baseline,runtimeEvents:[{type:'focus',time:10150,source:hostSource}]}).ready,false,'Events from a different document cannot inherit Runtime timing');
+  assert.equal(inspectForegroundPcmWindow({...baseline,samples:samples.map((value,index)=>index===1?{...value,runtime:{...value.runtime,source:{...runtimeSource,timeOrigin:3000}}}:value)}).ready,false,'Navigation changes the document clock identity');
+  assert.equal(inspectRaw({...baseline,runtimeEvents:[{type:'focus',time:10150}]}).ready,false,'Missing event provenance is incomplete');
+
+  for(const invalid of [samples.slice(0,2),[...samples,samples[2]],
+    samples.map(({phase,...value})=>value),[samples[1],samples[0],samples[2]],
+    [samples[0],{...samples[1],phase:'before-capture'},samples[2]]])
+    assert.equal(inspectForegroundPcmWindow({...baseline,samples:invalid}).complete,false,'Boundary phases must appear exactly once in producer order');
+  for(const document of ['host','runtime'])for(const time of [-1,100,50,NaN,Infinity]){
+    const invalid=samples.map(value=>({...value,[document]:{...value[document]}}));
+    invalid[1][document].time=document==='runtime'&&Number.isFinite(time)&&time>=0?time+10000:time;
+    assert.equal(inspectForegroundPcmWindow({...baseline,samples:invalid}).ready,false,`${document} boundary time must strictly increase`);
+  }
+
 });

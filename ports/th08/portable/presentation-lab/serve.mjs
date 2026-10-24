@@ -43,6 +43,7 @@ function readProductionBuildIdentity(){
 const productionBuild=readProductionBuildIdentity();
 const files=new Map([['/','index.html'],['/index.html','index.html'],['/app.mjs','app.mjs'],['/controller.mjs','controller.mjs'],['/adapter.mjs','adapter.mjs'],['/native-abi.mjs','native-abi.mjs'],['/visual-contract.mjs','visual-contract.mjs'],['/analyzer.mjs','analyzer.mjs'],['/owners.mjs','owners.mjs'],['/timing.mjs','timing.mjs'],['/style.css','style.css'],['/fullscreen.css','fullscreen.css']].map(([url,file])=>[url,resolve(lab,file)]));
 files.set('/presentation-audio-browser.mjs',audioBrowser);
+files.set('/replay-capture.mjs',resolve(lab,'replay-capture.mjs'));
 for(const name of commonModules)files.set('/common/testkit/presentation-lab/'+name,resolve(common,name));
 for(const file of Object.keys(inventory))files.set('/runtime/'+file,resolve(runtime,file));
 const font=process.env.TH08_LAB_FONT||process.env.EAGLER_DEVELOPMENT_VANILLA_FONT;
@@ -67,7 +68,7 @@ const identity={schema:'th08/presentation-lab-build/1',commit:execFileSync('git'
   sourceDigest:sha(JSON.stringify(build.sourceFiles)),snapshot:snapshot||null,instrumented:true,dataAvailable:files.has('/input/th08.dat'),campaignAvailable:files.has('/campaign/manifest.json'),fixtureManifest:existsSync(resolve(input,'manifest.json'))?JSON.parse(readFileSync(resolve(input,'manifest.json'),'utf8')):{},
   productionBuild,evidence:'diagnostic runtime, not production deployment',sampling:'authoritative Draw endpoints + frozen alpha sweep'};
 function currentIdentity(){
- const local=['index.html','style.css','fullscreen.css','app.mjs','controller.mjs','adapter.mjs','native-abi.mjs','visual-contract.mjs','analyzer.mjs','owners.mjs','timing.mjs'];
+ const local=['index.html','style.css','fullscreen.css','app.mjs','controller.mjs','adapter.mjs','native-abi.mjs','visual-contract.mjs','analyzer.mjs','owners.mjs','timing.mjs','replay-capture.mjs'];
  const toolSources=Object.fromEntries(local.map(name=>[name,sha(readFileSync(resolve(lab,name)))]));
  toolSources['tools/ports/presentation-audio-browser.mjs']=sha(readFileSync(audioBrowser));
 for(const name of commonModules)toolSources['eagler-common/'+name]=sha(readFileSync(resolve(common,name)));

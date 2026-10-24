@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {PresentationLabControllerCore} from './controller-core.mjs';
-import {historyReportSummary} from './report-core.mjs';
+import {groupFindings,historyReportSummary} from './report-core.mjs';
 import {captureReplayPairRun} from './replay-pair.mjs';
 
 test('history exports an index while the current window keeps its original raw proof',()=>{
@@ -14,6 +14,16 @@ test('history exports an index while the current window keeps its original raw p
   assert.deepEqual(summary.objects,[{key:'player/1',fields:[{id:'x',status:'interpolated'}]}]);
   for(const key of ['nativeFrames','nativeLifecycle','readVerification','images','futureRawField'])assert.equal(key in summary,false);
   assert.deepEqual(report.nativeFrames.samples,[1,2]);assert.deepEqual(report.readVerification.receipts,[4]);
+});
+
+test('finding groups retain identical counts and data across browser transport and JSON',()=>{
+  const object={key:'particle/1',owner:'particles',ownerId:5,anm:2,script:3,kind:'world',
+    fields:[{id:'position',label:'position',status:'missing-interpolation',motion:8}]};
+  const groups=groupFindings([{tick:10,objects:[object]},{tick:11,objects:[object,{...object,key:'particle/2'}]}]);
+  assert.equal(groups.length,1);assert.equal(groups[0].instanceCount,2);
+  assert.equal(groups[0].windowCount,2);assert.equal(groups[0].observations,3);
+  assert.deepEqual(groups[0].exampleKeys,['particle/1','particle/2']);
+  assert.deepEqual(structuredClone(groups),JSON.parse(JSON.stringify(groups)));
 });
 
 function fixture() {

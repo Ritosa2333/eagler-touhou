@@ -3,6 +3,7 @@ import {TH08_PRACTICE_ADAPTER} from './th08-practice.mjs';
 import {classifyTh08LanguageDiagnostic} from './th08-language.mjs';
 import {TH08_DIALOGUE_SCENE_CONTRACT} from './th08-dialogue.mjs';
 import {TH08_MENU_CONTRACT} from './th08-menu.mjs';
+import {TH08_STORAGE_CONTRACT} from './th08-storage.mjs';
 
 /** Title-owned meanings. Operations, assertions and evidence belong to shared drivers. */
 const declarations=[{
@@ -10,6 +11,7 @@ const declarations=[{
   runtime:{global:'__th08Runtime',core:'core',module:'Module',app:'app'},
   replay:TH08_REPLAY_SEMANTICS,
   practice:TH08_PRACTICE_ADAPTER,
+  storage:TH08_STORAGE_CONTRACT,
   parseReplayFrames:inspectTh08ReplayInputFrames,
   parseReplayMetadata:inspectTh08ReplayMetadata,
   parseReplayExtension:parseTh08MotionTrailer,

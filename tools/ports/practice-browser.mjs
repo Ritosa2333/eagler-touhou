@@ -12,8 +12,7 @@ import {createStageRecorder} from './runtime-desktop-stage.mjs';
 import {auditBrowserFinalErrors} from '../browser/final-error-audit.mjs';
 import {resolveTitleFlow} from '../../tests/adaptation/adapters/title-flow.mjs';
 import {resolveAdaptationAdapter} from '../../tests/adaptation/adapters/registry.mjs';
-import {createPracticeReplayObservationInput,practiceSnapshotRequest,readPracticeMenuRaw,readPracticeSnapshotRaw,
-  syncPracticeIdbfsRaw} from '../../tests/adaptation/adapters/practice.mjs';
+import {createPracticeReplayObservationInput,practiceSnapshotRequest,readPracticeMenuRaw,readPracticeSnapshotRaw} from '../../tests/adaptation/adapters/practice.mjs';
 import {readRuntimeObservation,runtimeObservationRequest} from './runtime-observations.mjs';
 import {dependencySnapshot} from '../testing/dependency-snapshot.mjs';
 
@@ -84,7 +83,8 @@ async function runPracticeReplayRoundTrip({browser,context,sourcePage,sourceResp
       const frameBefore=capability.recordingFrame(snapshot);
       if(!Number.isSafeInteger(frameBefore))throw new Error('Title Replay adapter did not expose a native recording frame');
       await sourceWaitPracticeUntil('practice Replay recording tick',next=>{
-        const frame=capability.recordingFrame(next);return Number.isSafeInteger(frame)&&frame>frameBefore;
+        if(practice.lifecycle&&(!next.state.inGame||!next.state.active||next.state.replay))throw Error('Practice lifecycle recording left the declared live Practice phase');
+        const frame=capability.recordingFrame(next);return Number.isSafeInteger(frame)&&frame>frameBefore&&frame>=(practice.lifecycle?.minimumRecordingFrames??0);
       },15000);
       const after=await sourceReadPractice(),frameAfter=capability.recordingFrame(after);
       if(!Number.isSafeInteger(frameAfter)||frameAfter<=frameBefore)throw new Error('Native gameplay did not advance after the Replay recording boundary');
@@ -101,13 +101,12 @@ async function runPracticeReplayRoundTrip({browser,context,sourcePage,sourceResp
     });
     if(finalized?.available!==true||finalized.finalized!==true)throw new Error(`Production Replay finalizer failed: ${finalized?.reason??'no successful save receipt'}`);
     const runtimeFrame=sourcePage.frames().find(frame=>frame.url().includes(`/runtime/${target.id}/`));
-    const syncCall=await runtimeFrame.evaluate(syncPracticeIdbfsRaw,{runtime:titleAdapter.runtime});
     const synchronized=await stage('practice-replay-idbfs-sync-complete',{epoch:sourceEpoch},()=>
-      runtimeFrame.evaluate(capability.sync.wait,{timeoutMs:30000,afterCalls:armed.calls}));
+      runtimeFrame.evaluate(capability.sync.wait,{timeoutMs:30000,afterFinalizer:finalized.afterFinalizer}));
     const restored=await runtimeFrame.evaluate(capability.sync.restore);
     observerArmed=false;
-    if(syncCall?.available!==true||syncCall.succeeded!==true||synchronized?.available!==true||synchronized.succeeded!==true||restored?.restored!==true)
-      throw new Error(`Replay persistence boundary did not complete: ${JSON.stringify({syncCall,synchronized,restored})}`);
+    if(synchronized?.available!==true||synchronized.succeeded!==true||restored?.restored!==true)
+      throw new Error(`Replay persistence boundary did not complete: ${JSON.stringify({finalized,synchronized,restored})}`);
     const saved=await stage('practice-replay-shell-readback',{path:capability.savePath},()=>sourcePage.evaluate(path=>rpc('read',{path}),capability.savePath));
     const raw=replayBytes(saved,'Saved practice Replay'),digest=sha256(raw),parsed=capability.parse(raw);
     const recordingStage=capability.recordingStage(sourcePractice,parsed);
@@ -117,7 +116,26 @@ async function runPracticeReplayRoundTrip({browser,context,sourcePage,sourceResp
     const recording={epoch:sourceEpoch,frameBefore:before.frameBefore,frameAfter:before.frameAfter,saveSucceeded:true,
       idbfsSyncSucceeded:true,path:capability.savePath,sha256:digest,bytes:raw.byteLength,format:capability.format,
       parsed:parsed.config??parsed,inputCapacityFrames,stage:recordingStage};
-    caseRecord.p05Recording=recording;await save();
+    recording.rawBytes=Array.from(raw);recording.persistence={finalizer:finalized,observer:synchronized,restored};caseRecord.p05Recording=recording;await save();
+
+    if(practice.lifecycle){
+      caseRecord.practiceLifecycle={epoch:sourceEpoch,appIdentity:await runtimeFrame.evaluate(runtime=>globalThis[runtime.global][runtime.app],titleAdapter.runtime),recording:{path:capability.savePath,sha256:digest,inputCapacityFrames}};
+      const flow=resolveTitleFlow({game:target.game,variant:target.variant});
+      const press=async key=>{await sourcePage.keyboard.press(key,{delay:90});await sourcePage.waitForTimeout(140);};
+      const observe=()=>runtimeFrame.evaluate(readRuntimeObservation,runtimeObservationRequest(target));
+      const waitRuntime=async(label,predicate,timeoutMs=15000)=>{const started=Date.now();let current;do{current=await observe();if(predicate(current))return current;await sourcePage.waitForTimeout(75);}while(Date.now()-started<timeoutMs);throw Error(`${label}: ${JSON.stringify(current)}`);};
+      const lifecycleResult=await practice.lifecycle.run({read:sourceReadPractice,waitUntil:sourceWaitPracticeUntil,readRuntime:observe,readInitial:()=>runtimeFrame.evaluate(readPracticeSnapshotRaw,practiceSnapshotRequest({runtime:titleAdapter.runtime,contract:practice,kind:'gameplayInitial'})),
+        readIdentity:()=>runtimeFrame.evaluate(({runtime,epoch})=>({epoch,app:globalThis[runtime.global][runtime.app],documentTimeOrigin:performance.timeOrigin,url:location.href}),{runtime:titleAdapter.runtime,epoch:sourceEpoch}),waitRuntime,press,
+        restartFromPause:()=>flow.restartFromPause({press,waitUntil:waitRuntime,epoch:sourceEpoch}),
+        enterOrdinary:()=>flow.enterGameplay({observe,waitUntil:waitRuntime,press,lane:'practice',epoch:sourceEpoch}),
+        enterReplay:()=>capability.enterMenu({page:sourcePage,frame:runtimeFrame,target,runtime:titleAdapter.runtime,practice,
+          readRuntimeObservation,runtimeObservationRequest,stage,importPath:capability.savePath,caseRecord:caseRecord.practiceLifecycle,save,sourcePractice,epoch:sourceEpoch,systemSlot:true,captureInitial:true}),
+        replayConfig:parsed.config,record:caseRecord.practiceLifecycle,stage,save});
+      assert.ok(lifecycleResult?.status==='observed'&&lifecycleResult.complete===true,'Practice lifecycle must have complete observed evidence before P05 continues');
+      const appAfter=await runtimeFrame.evaluate(runtime=>globalThis[runtime.global][runtime.app],titleAdapter.runtime);
+      assert.equal(appAfter,caseRecord.practiceLifecycle.appIdentity,'Lifecycle replaced the native GameApplication');
+      caseRecord.practiceLifecycle.sameApplication=true;await save();
+    }
 
     await sourceResponseProbe?.flush();
     if(sourceResponseProbe){for(const error of sourceResponseProbe.errors??[])record.responseErrors.push({epoch:sourceEpoch,error});
@@ -189,18 +207,24 @@ async function runPracticeReplayRoundTrip({browser,context,sourcePage,sourceResp
 
 
 const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/1'},async(report,save)=>{
-  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant']});
+  assertCliArguments(process.argv.slice(2),{values:['output','manifest','game','variant','packages','artwork-dir'],flags:['launcher-ui','launcher-ui-only']});
   assert.equal(option('variant')??'normal','normal','Practice menu driver requires an ordinary Runtime');
   assert.ok(option('manifest')&&option('game'),'Required: --manifest=private-inputs.json --game=explicit-selection');
   const config=JSON.parse(await readFile(resolve(option('manifest')),'utf8'));
+  const launcherOnly=process.argv.includes('--launcher-ui-only'),launcherUi=launcherOnly||process.argv.includes('--launcher-ui');
+  if(launcherUi)assert.ok(option('packages')&&option('artwork-dir'),'Launcher Practice UI requires --packages and --artwork-dir');
+  const launcherPackages=launcherUi?JSON.parse(await readFile(resolve(option('packages')),'utf8')):null;
   const selection=selectRuntimeTargets(config,{game:option('game'),variant:'normal'});
   const missingPracticeAdapters=selection.targets.filter(target=>PRODUCT_GAMES[target.game].features.thprac===true&&
     !resolveAdaptationAdapter(target.game,target.variant)?.practice);
   if(missingPracticeAdapters.length)throw new Error(`Selected practice products need a native practice adapter before browser launch: ${missingPracticeAdapters.map(target=>target.id).join(', ')}`);
   Object.assign(report,{selection:{games:selection.games,variant:'normal',expectedTargets:selection.expected},
-    scope:'Ordinary Runtime | title-declared native practice selection and parameter consumption | native practice controls | locale screenshots for review | declared Replay roundtrip capabilities',
-    coverage:{ids:Array.from(new Set(selection.games.flatMap(game=>practiceAdaptationIds(game,'normal')))),complete:false,
-      scope:'Four isolated locale Runtime epochs per selected target. A registered title capability supplies its native menu path, ABI and parameter case. Replay roundtrip operations run when the selected capability declares them.'},targets:[]});
+    launcherUiOnly:launcherOnly,
+    scope:launcherOnly?'Real Launcher | Japanese Practice setting, Host capability and native gameplay menu':
+      'Ordinary Runtime | title-declared native practice selection and parameter consumption | native practice controls | locale screenshots for review | declared Replay roundtrip capabilities',
+    coverage:{ids:launcherOnly?['PRACTICE-01','PRACTICE-02']:Array.from(new Set(selection.games.flatMap(game=>practiceAdaptationIds(game,'normal')))),complete:false,
+      scope:launcherOnly?'Three real Launcher settings scenes. Native locale, parameter and Replay scenarios are not executed by this invocation.':
+        'Four isolated locale Runtime epochs per selected target. A registered title capability supplies its native menu path, ABI and parameter case. Replay roundtrip operations run when the selected capability declares them.'},targets:[]});
   report.harnessSources=await dependencySnapshot(repoRoot,['tools/ports/practice-browser.mjs']);
   for(const source of report.harnessSources){
     const destination=resolve(output,'harness-source',...source.path.split('/'));
@@ -235,7 +259,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
           }
           record.status='not-applicable';record.reason='This product does not support practice';continue;
         }
-        for(const [epoch,enabled,locale] of [[1,true,'ja-JP'],[2,true,'en-US'],[3,true,'zh-CN'],[4,false,'en-US']]){
+        if(!launcherOnly)for(const [epoch,enabled,locale] of [[1,true,'ja-JP'],[2,true,'en-US'],[3,true,'zh-CN'],[4,false,'en-US']]){
           const caseRecord={epoch,enabled,locale,status:'running'};
           record.locales.push(caseRecord);await save();
           try{
@@ -287,8 +311,10 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
           if(actualPracticeCase){
             const entered=await runPracticeGameplayStage({record:caseRecord,stage,epoch,ready,perform:()=>practiceCapability.enterMenu({
               read:readPractice,waitUntil:waitPracticeUntil,press,waitForGameplay:()=>waitUntil('native practice gameplay ready',ready),
+              readInitial:()=>frame.evaluate(readPracticeSnapshotRaw,practiceSnapshotRequest({runtime:titleAdapter.runtime,contract:practiceCapability,kind:'gameplayInitial'})),
+              readIdentity:()=>frame.evaluate(({runtime,epoch})=>({epoch,app:globalThis[runtime.global][runtime.app],documentTimeOrigin:performance.timeOrigin,url:location.href}),{runtime:titleAdapter.runtime,epoch}),
               parameterCase:practiceCapability.parameterCase,selectionCase:practiceCapability.selectionCase}),
-              assess:snapshot=>practiceCapability.assessConsumption(snapshot,practiceCapability.parameterCase,practiceCapability.selectionCase)});
+              assess:(snapshot,observed)=>practiceCapability.assessConsumption(snapshot,practiceCapability.parameterCase,practiceCapability.selectionCase,observed)});
             caseRecord.practiceSnapshot=entered.practice;
             caseRecord.parameterConsumption=entered.parameterConsumption;
             caseRecord.featureInventory=entered.featureInventory;
@@ -376,8 +402,18 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
           }
         }
         assert.deepEqual(record.errors,[],'Browser errors');assert.deepEqual(record.consoleErrors,[],'Runtime errors');assert.deepEqual(record.httpErrors,[],'HTTP errors');
-        assert.equal(record.locales.length,4,'Every enabled locale and the disabled control must run');
-        assert.ok(record.locales.every(item=>item.status==='passed'),'A practice locale or disabled control failed; see its saved native state');
+        if(!launcherOnly){
+          assert.equal(record.locales.length,4,'Every enabled locale and the disabled control must run');
+          assert.ok(record.locales.every(item=>item.status==='passed'),'A practice locale or disabled control failed; see its saved native state');
+        }
+        if(launcherUi){
+          const {runLauncherPracticeJourney}=await import('./launcher-practice-journey.mjs');
+          record.launcherPractice=await runLauncherPracticeJourney({root:repoRoot,output:resolve(output,'launcher-ui-'+target.game),target,
+            identity:record.identity.runtime,dataIdentity:record.identity.data,shared:config.shared,artwork:resolve(option('artwork-dir')),packageMap:launcherPackages,
+            launchBrowser:({tlsIdentity})=>launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',`--ignore-certificate-errors-spki-list=${tlsIdentity.spkiSha256}`]})});
+          assert.equal(record.launcherPractice.status,'observed','Real Launcher Practice settings failed; inspect the retained journey');
+          assert.equal(record.launcherPractice.scenes.length,3);assert.ok(record.launcherPractice.scenes.every(scene=>scene.passed===true));
+        }
         record.status='passed';
       }catch(error){record.status='failed';record.error=String(error.stack||error);
         const active=record.locales.find(item=>item.status==='running');if(active)Object.assign(active,{status:'failed',error:record.error});}
@@ -403,7 +439,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/practice-browser/
         record.checks.push(...practiceAdaptationChecks({game:target.game,variant:target.variant,
           productSupported:PRODUCT_GAMES[target.game].features.thprac,feature:record.feature,locales:record.locales,
           finalErrorAudit:record.finalErrorAudit,
-          practiceReplayRoundTrip:record.locales.find(item=>item.epoch===1)?.p05}));
+          practiceReplayRoundTrip:record.locales.find(item=>item.epoch===1)?.p05,launcherPractice:record.launcherPractice}));
         await save();console.log(`${target.id}: ${record.status.toUpperCase()} ${record.error?.split('\n')[0]??''}`);
       }
     }

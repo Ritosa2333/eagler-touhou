@@ -111,10 +111,15 @@ export function createSiteSeed(game,data,dataLayout,profile='web-validation-offl
   return seed;
 }
 
-export function featureConfig({resourceMode='import',languages={}}={}){
+export function featureConfig({resourceMode='import',languages={},practiceFeatures={}}={}){
+  assert.ok(practiceFeatures&&typeof practiceFeatures==='object'&&!Array.isArray(practiceFeatures),'Practice feature requests must be a game-to-boolean object');
+  for(const [game,enabled] of Object.entries(practiceFeatures)){
+    assert.ok(Object.hasOwn(PRODUCT_GAMES,game),`Unknown Practice feature product ${game}`);
+    assert.equal(typeof enabled,'boolean',`${game}: Practice feature request must be boolean`);
+    assert.ok(PRODUCT_GAMES[game].features.thprac,`${game}: product does not declare thprac capability`);
+  }
   return{schema:'eagler-touhou/server-features/1',resourceMode,
     games:Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game,product])=>[game,{
-      ...(product.features.languages?{languages:languages[game]??['ja']}:{}),...(product.features.thprac?{thprac:false}:{})
+      ...(product.features.languages?{languages:languages[game]??['ja']}:{}),...(product.features.thprac?{thprac:Object.hasOwn(practiceFeatures,game)?practiceFeatures[game]:false}:{})
     }]))};
 }
-

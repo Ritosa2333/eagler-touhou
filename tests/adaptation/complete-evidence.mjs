@@ -2,7 +2,8 @@ import {createHash} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {resolveDiagnosticProfile} from './adapters/diagnostics.mjs';
-import {resolvePracticeAdapter} from './adapters/registry.mjs';
+import {resolvePracticeAdapter,resolveAdaptationAdapter} from './adapters/registry.mjs';
+import {assessNativeUserDataJourney} from '../../tools/ports/runtime-user-data-journey.mjs';
 import {assessPackageInstallationAuthority,classifyPackageAuthorityPrompt} from '../../tools/ports/offline-installation-authority.mjs';
 import {inspectSourceReviewNow} from '../../tools/ports/adaptation-source-review.mjs';
 import {assessMinimalRuntimeJourney} from '../../tools/ports/minimal-runtime-browser.mjs';
@@ -23,6 +24,7 @@ const REQUIRED_REFS=Object.freeze({
   ],
   'PACKAGE-05':['/appShell','/offlineRuntime','/postflight'],
   'PACKAGE-06':['/packageAuthority','/uiImport','/onlineRuntime','/offlineRuntime'],
+  ...Object.fromEntries(['SAVE-03','SAVE-04','SAVE-05','SAVE-06'].map(id=>[id,['/nativeUserData']])),
 });
 const CONTRACTS=Object.freeze({
   'BUILD-01':{kind:'source-owner',schema:'eagler-touhou/build-acceptance/1',owner:'root',variants:['normal','multiplayer']},
@@ -39,6 +41,7 @@ const CONTRACTS=Object.freeze({
   'PACKAGE-05':{kind:'offline-first-frame',schema:'eagler-touhou/offline-runtime-browser/1',owner:'root'},
   'PACKAGE-06':{kind:'package-installation-authority',schema:'eagler-touhou/offline-runtime-browser/1',owner:'root',variants:['normal']},
   'PRACTICE-05':{kind:'practice-replay-roundtrip',schema:'eagler-touhou/practice-browser/1',owner:'target'},
+  ...Object.fromEntries(['SAVE-03','SAVE-04','SAVE-05','SAVE-06'].map(id=>[id,{kind:'native-user-data-persistence',schema:'eagler-touhou/offline-runtime-browser/1',owner:'root',variants:['normal']}])),
 });
 
 function fail(message){throw new Error(message);}
@@ -327,6 +330,48 @@ function assessPackage02(refs,product,id){
   sameData(post.privateData,expectedData,'Postflight private DATA differs from the selected package');
   requireValue(post.offlinePackage.package.archiveSha256===pkg.archiveSha256,
     'Postflight archive differs from the preflight package');
+}
+
+function assessStorageContext(driver,journey,product,id){
+  const hasUpdate=id==='SAVE-06'||id==='SAVE-05'&&journey.generations!==undefined;
+  const imported=checkImport(driver.uiImport,product,'PACKAGE-02'),generationId=imported.generation.generationId;
+  const expectedData={bytes:imported.generation.bytes,sha256:imported.generation.sha256};
+  const online=evidenceEnvelope(driver.onlineRuntime,product,'PACKAGE-02','Storage online Runtime');
+  checkRuntimeEvents(online,product,'Storage reopened Runtime',{online:true,expectedData,generationId});
+  requireValue(journey.entered?.game===product.game,'Storage gameplay belongs to another title');
+  requireValue(journey.lifecycle?.exit?.protocol==='eagler-touhou/1'&&journey.lifecycle.exit.game===product.game,
+    'Storage exit belongs to another Runtime protocol or title');
+  requireValue(online.first.epoch===journey.lifecycle?.afterEpoch&&
+    Number(online.query.runtimeEpoch)===online.first.epoch&&
+    Number(new URL(online.frameUrl).searchParams.get('runtimeEpoch'))===online.first.epoch&&
+    isDeepStrictEqual(online.first,journey.lifecycle.first),'Storage lifecycle does not identify the reopened Runtime');
+  const saved=driver.userFiles?.sync,replay=journey.replay;
+  requireValue(record(saved)&&nonempty(saved.evidencePath)&&nonempty(saved.sourceFixture?.path)&&
+    saved.runtimePath===replay?.path&&saved.path===replay.path&&saved.sourceFixture.path===replay.sourceFixture?.path,
+  'Storage Replay is not bound to its retained production file and source fixture');
+  sameData(saved,replay,'Storage Replay differs from the production read');
+  sameData(saved.sourceFixture,replay.sourceFixture,'Storage Replay differs from the source fixture');
+  if(id==='SAVE-05'||id==='SAVE-06'){
+    const offline=evidenceEnvelope(driver.offlineRuntime,product,'PACKAGE-05','Storage offline Runtime');
+    const offlineGeneration=hasUpdate?journey.generations?.after:generationId;
+    checkRuntimeEvents(offline,product,'Storage offline Runtime',{online:false,expectedData,generationId:offlineGeneration});
+  }
+  if(hasUpdate){
+    requireValue(journey.generations?.before===generationId,'Storage base generation differs from the imported package');
+    const update=driver.packageUpdate,retry=update?.retry,next=retry?.generation;
+    requireValue(record(next)&&nonempty(next.generationId)&&next.generationId!==generationId&&
+      journey.generations.after===next.generationId&&retry.oldGeneration===generationId&&
+      retry.atomicCurrentGeneration===next.generationId&&nonempty(update.updateRevision)&&
+      update.updateRevision!==imported.generation.revision&&next.revision===update.updateRevision&&
+      nonempty(update.updatePath)&&retry.sourceZip===update.updatePath&&positiveInt(retry.archiveBytes)&&
+      retry.archiveBytes===update.updateArchiveBytes&&validDigest(retry.archiveSha256)&&
+      retry.archiveSha256===update.updateArchiveSha256,
+    'Storage update is not bound to the committed second package');
+    sameData(next.data,expectedData,'Storage update DATA differs from the selected package');
+    checkRuntimeEvents(driver.onlineRuntimeAfterUpdate,product,'Storage updated Runtime',{
+      online:true,expectedData,generationId:next.generationId});
+    sameData(update.replay,replay,'Updated Runtime restored another Replay');
+  }
 }
 
 function assessPackage05(refs,product,id){
@@ -645,7 +690,12 @@ export function assessCompleteEvidence({driver,entry,product}={}){
       const envelopes=Object.fromEntries(Object.entries(refs).map(([pointer,observation])=>[
         pointer,{__envelope:resolvePointer(driver,pointer),__observation:observation},
       ]));
-      if(id==='RUNTIME-05')assessRuntime05(envelopes,product,id);
+      if(id.startsWith('SAVE-')){
+        const storage=resolveAdaptationAdapter(product.game,product.variant)?.storage;
+        requireValue(storage,'Native storage acceptance is not declared for this product');
+        assessStorageContext(driver,refs['/nativeUserData'],product,id);
+        assessNativeUserDataJourney(storage,refs['/nativeUserData'],id);
+      }else if(id==='RUNTIME-05')assessRuntime05(envelopes,product,id);
       else if(id==='PACKAGE-01')assessPackage01(envelopes,product,id);
       else if(id==='PACKAGE-02')assessPackage02(envelopes,product,id);
       else if(id==='PACKAGE-05')assessPackage05(envelopes,product,id);

@@ -10,6 +10,49 @@ export const TH08_MIDI_PCM_ROLE='launcher-tinysynth';
 export const TH08_MIDI_VOICE_PCM_ROLE='launcher-tinysynth-voice';
 export const RUNTIME_PCM_SAMPLE_INTERVAL_MS=80;
 export const MUSIC_PCM_HISTORY_GAP_RANGE_LIMIT=64;
+
+/** Emit one edge and wait for the native consumer on both press and release. */
+export async function pressConsumedRuntimeKey({code,mask,readInput,setKey,wait,maxPolls=320,pollIntervalMs=25}){
+  const observations=[];
+  const until=async(phase,predicate)=>{
+    for(let poll=0;poll<maxPolls;poll++){
+      const input=await readInput();
+      if(input?.available!==true||!Number.isInteger(input.inputCurrent)||!Number.isInteger(input.inputPrevious))
+        throw Error(`${code}: native input observation unavailable during ${phase}`);
+      if(predicate(input)){observations.push({phase,polls:poll+1,current:input.inputCurrent,previous:input.inputPrevious});return input;}
+      await wait(pollIntervalMs);
+    }
+    throw Error(`${code}: native input did not reach ${phase} within ${maxPolls} polls`);
+  };
+  const released=input=>((input.inputCurrent|input.inputPrevious)&mask)===0;
+  await until('before',released);
+  try{await setKey(code,true);await until('pressed',input=>(input.inputCurrent&mask)!==0);}
+  finally{await setKey(code,false);await until('released',released);}
+  return{code,mask,observations};
+}
+
+/** Mirror failures at receipt so navigation cannot discard the previous document's error tail. */
+export function installMusicProtocolCapture({game}){
+  if(window!==window.top)return;
+  const pending=new Set(),errors=[];
+  window.__flushMusicProtocolCaptures=async()=>{
+    while(pending.size)await Promise.all([...pending]);
+    if(errors.length)throw Error(`Music protocol capture failed: ${errors.join(', ')}`);
+    return pending.size;
+  };
+  addEventListener('message',event=>{
+    const frame=document.querySelector('iframe'),value=event.data;
+    if(event.origin!==location.origin||event.source!==frame?.contentWindow||value?.protocol!=='eagler-touhou/1'||value.game!==game)return;
+    const epoch=Number(new URL(frame.src,location.href).searchParams.get('runtimeEpoch'));
+    if(!Number.isSafeInteger(epoch)||epoch<1||value.epoch!==epoch||!['error','abort'].includes(value.event)&&value.ok!==false)return;
+    try{
+      const capture=Promise.resolve(window.__captureMusicProtocolFailure({event:value,
+        stage:window.__eaglerMusicProtocolStage??'host-navigation',documentUrl:location.href}));
+      pending.add(capture);
+      void capture.then(()=>pending.delete(capture),error=>{errors.push(String(error));pending.delete(capture);});
+    }catch(error){errors.push(String(error));}
+  });
+}
 export function selectedMusicMappingGames(games=[]) {
   return games.filter(game=>game==='th11'||game==='th15');
 }
@@ -276,6 +319,14 @@ export function readNativeAudioState(request) {
     const musicState=words('sdl_music_observation',16),musicName=string('sdl_music_name',17);
     const midiState=words('sdl_midi_observation',22),midiPath=string('sdl_midi_path',256);
     if(musicState)musicObservation={...decodeMusic(musicState),name:musicName};
+    const gainExport=exported('sdl_music_gain_observation_v1');
+    if(musicObservation&&gainExport){
+      const raw=Array.from({length:6},(_,field)=>gainExport(field)>>>0);
+      if(raw[0]!==1||[1,4,5].some(index=>raw[index]>1))throw Error('TH08 music gain ABI is invalid');
+      const bits=new DataView(new ArrayBuffer(4));bits.setUint32(0,raw[2],true);
+      musicObservation.gain={abiVersion:1,sourceAvailable:raw[1]===1,value:bits.getFloat32(0,true),
+        volume:raw[3]|0,requested:raw[4]===1,playing:raw[5]===1,name:musicName,rawWords:raw};
+    }
     if(midiState)midiObservation={...decodeMidi(midiState),path:midiPath};
   }
   let runtimePcm,midiHost;
@@ -284,7 +335,9 @@ export function readNativeAudioState(request) {
     runtimePcm={target:probe?.describeTarget?.(context,'th08-sdl3-mixer')??{role:'th08-sdl3-mixer',available:false,
       reason:probe?'target-context-observer-is-unavailable':'runtime-audio-probe-is-unavailable',contextIndex:null,tapIds:[],state:context?.state??null,
       sampleRate:context?.sampleRate??null,currentTime:context?.currentTime??null,stateChanges:[],stateChangeCount:0,stateChangeDrops:0},
-      captures:probe?.capture?.()??[]};
+      captures:probe?.capture?.()??[],
+      outputBufferFrames:module?.SDL3?.audio_playback?.scriptProcessorNode?.bufferSize??null,
+      baseLatency:context?.baseLatency??null};
   }
   if(includeMidiHost){
     // Copy sequencer counters and bridge events in one browser task. Separate
@@ -552,7 +605,18 @@ export function verifyRuntimeAudioClosedReceipt(before,after,{role}={}){
     issues,reason:issues[0]??null};
 }
 
-/** Capture PCM only from the expected, active OGG source until a real output sample appears. */
+/** Output-clock horizon for mixer backlog, browser buffering and analyser lookback. */
+export function runtimePcmSourceHorizonFrames(basis){
+  const {queuedFrames,queuedSampleRate,outputBufferFrames,analysisWindowFrames,baseLatency,target}=basis??{};
+  if(!Number.isSafeInteger(queuedFrames)||queuedFrames<0||!Number.isFinite(queuedSampleRate)||queuedSampleRate<=0||
+    !Number.isSafeInteger(outputBufferFrames)||outputBufferFrames<256||outputBufferFrames>16384||
+    !Number.isSafeInteger(analysisWindowFrames)||analysisWindowFrames<2048||analysisWindowFrames>32768||
+    !Number.isFinite(baseLatency)||baseLatency<0||baseLatency>1||target?.available!==true||target.state!=='running'||
+    !Number.isFinite(target.currentTime)||target.currentTime<0||!Number.isFinite(target.sampleRate)||target.sampleRate<=0)return null;
+  return Math.ceil(queuedFrames*target.sampleRate/queuedSampleRate+baseLatency*target.sampleRate)+outputBufferFrames+analysisWindowFrames;
+}
+
+/** Establish one active source beyond old buffered PCM, then observe its output. */
 export async function collectExpectedTrackRuntimePcm({readSample,wait,role,expectedFile=null,maxSamples=32,
   pollIntervalMs=RUNTIME_PCM_SAMPLE_INTERVAL_MS}={}){
   const incomplete=(reason,details={})=>({status:'incomplete',reason,role,expectedFile,attempts:details.attempts??0,maxSamples,
@@ -560,38 +624,68 @@ export async function collectExpectedTrackRuntimePcm({readSample,wait,role,expec
   if(typeof readSample!=='function'||typeof wait!=='function'||typeof role!=='string'||!role||
      !Number.isSafeInteger(maxSamples)||maxSamples<1||!Number.isFinite(pollIntervalMs)||pollIntervalMs<0)
     return incomplete('active-track PCM collection parameters are invalid');
-  const samples=[];let last=null,pcmObservedAtAttempt=null,pcmSourceFile=null;
+  const samples=[];let last=null,pcmObservedAtAttempt=null,pcmSourceFile=null,sourceBoundary=null;
   let expectedTarget=null;
   for(let index=0;index<maxSamples;index++){
     const attempt=index+1;
     try{last=await readSample();}catch(error){return incomplete(`active-track PCM source read failed: ${String(error?.stack||error)}`,
-      {attempts:attempt,lastSample:last,pcmWindow:samples.length?summarizeRuntimePcmWindow(samples,{role,expectedTarget,minimumWindows:1}):null});}
+      {attempts:attempt,lastSample:last,sourceBoundary,pcmWindow:samples.length?summarizeRuntimePcmWindow(samples,{role,expectedTarget,minimumWindows:1}):null});}
     const native=last?.native,trackFile=last?.trackFile??null;
     const nativeReady=native?.exists===true&&native.soundReady===true&&native.pending===false&&native.playing===true&&native.outputPaused===false;
     const expectedSource=nativeReady&&typeof trackFile==='string'&&(!expectedFile||trackFile===expectedFile);
-    if(expectedFile&&samples.length>0&&!expectedSource){
+    if(sourceBoundary&&(!expectedSource||trackFile!==sourceBoundary.file)){
       const pcmWindow=summarizeRuntimePcmWindow(samples,{role,expectedTarget,minimumWindows:1});
       return incomplete(`expected track ${expectedFile} stopped or changed before non-zero PCM was observed`,
-        {attempts:attempt,lastSample:last,observedFile:trackFile,pcmWindow});
+        {attempts:attempt,lastSample:last,observedFile:trackFile,pcmWindow,sourceBoundary});
     }
+    if(sourceBoundary&&last?.target?.available!==true)return incomplete('active-track PCM output tap became unavailable',
+      {attempts:attempt,lastSample:last,sourceBoundary});
     if(expectedSource&&last?.target?.available===true){
-      if(!expectedTarget)expectedTarget=last.target;
+      if(!sourceBoundary){
+        const basis={...last.buffering,target:last.target},requiredFrames=runtimePcmSourceHorizonFrames(basis);
+        if(requiredFrames===null)return incomplete('active-track PCM lacks measured source buffering',{attempts:attempt,lastSample:last});
+        expectedTarget=last.target;
+        sourceBoundary={file:trackFile,basis,firstObservedAtAttempt:attempt,samples:[],settle:{status:'running',requiredFrames,
+          startedAtTime:last.target.currentTime,completedAtTime:null,elapsedFrames:null}};
+      }
+      const identity=runtimePcmTargetIdentity(last.target),firstIdentity=runtimePcmTargetIdentity(expectedTarget);
+      const boundarySample={attempt,trackFile,native:{...native},target:last.target,buffering:last.buffering};
+      sourceBoundary.samples.push(boundarySample);
+      if(!Number.isFinite(native.cursorFrames)||native.cursorFrames<0||!identity.ok||!firstIdentity.ok||JSON.stringify(identity.identity)!==JSON.stringify(firstIdentity.identity)||
+        last.target.state!=='running'||last.target.stateChangeDrops>0||!targetStateLogIsComplete(last.target)||
+        (last.target.stateChanges??[]).some(change=>change.sequence>expectedTarget.stateChangeCount&&change.state!=='running')||
+        sourceBoundary.samples.length>1&&last.target.currentTime<=sourceBoundary.samples.at(-2).target.currentTime)
+        return incomplete('active-track PCM source clock, context or tap changed',{attempts:attempt,lastSample:last,sourceBoundary});
+      const settle=sourceBoundary.settle;
+      if(settle.status!=='complete'){
+        settle.elapsedFrames=(last.target.currentTime-settle.startedAtTime)*last.target.sampleRate;
+        if(settle.elapsedFrames>=settle.requiredFrames){settle.status='complete';settle.completedAtTime=last.target.currentTime;}
+      }
+      if(settle.status!=='complete'){
+        if(index+1<maxSamples)try{await wait(pollIntervalMs);}catch(error){
+          return incomplete(`active-track PCM wait failed: ${String(error?.stack||error)}`,{attempts:attempt,lastSample:last,sourceBoundary});
+        }
+        continue;
+      }
       samples.push({target:last.target,captures:last.captures});
       const current=last.captures?.find(capture=>capture?.contextIndex===last.target.contextIndex&&
         last.target.tapIds?.includes(capture.tapId)&&capture.nonZero>0);
       if(current&&pcmObservedAtAttempt===null){pcmObservedAtAttempt=attempt;pcmSourceFile=trackFile;}
       const pcmWindow=summarizeRuntimePcmWindow(samples,{role,expectedTarget,minimumWindows:1});
-      if(pcmObservedAtAttempt!==null)return {status:'observed',role,expectedFile,observedFile:trackFile,nativeReady,
+      const cursorAdvanced=sourceBoundary.samples.some(sample=>sample.native.cursorFrames!==sourceBoundary.samples[0].native.cursorFrames);
+      if(pcmObservedAtAttempt!==null&&pcmWindow.status==='complete'&&cursorAdvanced)return {status:'observed',role,expectedFile:expectedFile??sourceBoundary.file,observedFile:trackFile,nativeReady,sourceBoundary,
         attempts:attempt,maxSamples,pollIntervalMs,pcmObservedAtAttempt,pcmSourceFile,windowCount:pcmWindow.windowCount,
         captureCount:pcmWindow.captureCount,firstCurrentTime:pcmWindow.firstCurrentTime,lastCurrentTime:pcmWindow.lastCurrentTime,
         elapsedFrames:pcmWindow.elapsedFrames,sampleRate:pcmWindow.sampleRate,outputObserved:pcmWindow.outputObserved,
         nonZeroSamples:pcmWindow.nonZeroSamples,target:expectedTarget,pcmWindow,lastSample:last};
     }
     if(index+1<maxSamples){try{await wait(pollIntervalMs);}catch(error){return incomplete(`active-track PCM wait failed: ${String(error?.stack||error)}`,
-      {attempts:attempt,lastSample:last,pcmWindow:samples.length?summarizeRuntimePcmWindow(samples,{role,expectedTarget,minimumWindows:1}):null});}}
+      {attempts:attempt,lastSample:last,sourceBoundary,pcmWindow:samples.length?summarizeRuntimePcmWindow(samples,{role,expectedTarget,minimumWindows:1}):null});}}
   }
   const pcmWindow=samples.length?summarizeRuntimePcmWindow(samples,{role,expectedTarget,minimumWindows:1}):null;
-  if(pcmWindow?.status==='complete')return {status:'bounded-no-output',role,expectedFile,observedFile:last?.trackFile??null,
+  if(pcmWindow?.status==='complete'&&pcmWindow.outputObserved===true)return incomplete('native track cursor did not advance beyond source establishment',
+    {attempts:maxSamples,lastSample:last,target:expectedTarget,pcmWindow,sourceBoundary});
+  if(pcmWindow?.status==='complete')return {status:'bounded-no-output',role,expectedFile:expectedFile??sourceBoundary?.file,observedFile:last?.trackFile??null,sourceBoundary,
     nativeReady:last?.native?.exists===true&&last.native.soundReady===true&&last.native.pending===false&&
       last.native.playing===true&&last.native.outputPaused===false,attempts:maxSamples,maxSamples,pollIntervalMs,
     pcmObservedAtAttempt:null,pcmSourceFile:null,windowCount:pcmWindow.windowCount,captureCount:pcmWindow.captureCount,
@@ -599,7 +693,7 @@ export async function collectExpectedTrackRuntimePcm({readSample,wait,role,expec
     sampleRate:pcmWindow.sampleRate,outputObserved:false,nonZeroSamples:pcmWindow.nonZeroSamples,target:expectedTarget,pcmWindow,
     reason:`No non-zero PCM was captured from the expected playing track in ${maxSamples} bounded samples`,lastSample:last};
   return incomplete(pcmWindow?.reason??'Expected playing track did not provide an identified Runtime PCM tap',
-    {attempts:maxSamples,lastSample:last,target:expectedTarget,pcmWindow});
+    {attempts:maxSamples,lastSample:last,target:expectedTarget,pcmWindow,sourceBoundary});
 }
 
 /** Observe output even when a rejected source never becomes playable. */

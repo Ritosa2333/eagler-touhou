@@ -22,7 +22,7 @@ export function watchFixtureResponses(page,{base,expectedResponses,expectedRespo
     const url=new URL(response.url());if(!['http:','https:'].includes(url.protocol)||url.origin!==origin)return;
     if(url.pathname==='/favicon.ico'&&response.status()===204)return;
     const operation=(async()=>{
-      const expected=expectedResponse?await expectedResponse(url,response):expectedResponses.get(url.pathname+url.search);
+      const expected=(expectedResponse?await expectedResponse(url,response):null)??expectedResponses.get(url.pathname+url.search);
       assert.ok(expected,`Browser response was not supplied by the verified fixture: ${url.href}`);
       const semantic=typeof expected.validate==='function';
       const record={url:url.href,status:response.status(),expected:semantic?(expected.expected??{kind:expected.kind??'semantic'}):expected,

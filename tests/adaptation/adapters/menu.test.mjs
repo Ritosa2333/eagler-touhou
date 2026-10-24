@@ -14,7 +14,7 @@ function install(){
 test('data-only original menu reader consumes the selected Runtime identity and native input owner',t=>{
   install();t.after(()=>delete globalThis.menuFixture);
   const serialized=(0,eval)(`(${readOriginalMenuState.toString()})`),value=serialized({contract});
-  assert.deepEqual(value,{available:true,runtime:{generation:2,pointer:512,epoch:9},scene:'title',
+  assert.deepEqual(value,{available:true,runtime:{generation:2,pointer:512,epoch:9},nativeScene:7,scene:'title',
     title:{screen:4,cursor:2,phase:1,stateTimer2:20,confirmationReady:true,input:{current:32,previous:0}}});
 });
 test('missing export stays unavailable and does not borrow another Runtime',t=>{

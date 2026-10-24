@@ -14,6 +14,8 @@
 
 每个作品的适配器声明练习快照的 ABI 宽度、导出签名、归一化字段、独立参数案例和菜单选择预期。共享 `practice-browser.mjs` 负责运行时操作与逐字段比较；PRAC 格式解析和原生菜单导航由作品适配器提供。菜单步骤通过 `waitUntil` 使用同步状态谓词；玩法就绪通过 `waitForGameplay` 异步返回 Runtime 观察。每个快照导出明确声明是否接收 Runtime app 参数。
 
+新作品提供资源初始化完成、首个玩法任务执行前的只读快照，并将其与实时 owner、document、epoch 和 app 绑定。开局资源按固定快照比较，实时状态用于证明实际场景和时钟推进。作品适配器负责本作字段与单位，共享驱动负责读取、执行、保存原始观察和重算结果。
+
 ## 逐项检查
 
 语言场景使用 `--suite=language`。本地适配输入中的 `languageManifest` 指向以下清单；路径使用本机绝对路径，发布目录可选静态语言 catalog 或完整 Site Manifest：
@@ -67,7 +69,8 @@
 - 权威观察与预期：产品目录给出支持上限，构建选项决定当前包是否启用。Runtime Release 匹配本次构建，Host 和 UI 按发布能力与 Host 配置启用，逐层保持能力上限；具体接口、资源和菜单行为按 PRACTICE-02 至 PRACTICE-08 验证。
 - 通过／失败：包身份正确，发布能力不超产品上限，Host 和 UI 不宣称当前包未启用的功能。产品支持而当前包关闭是合法配置。
 - 反例：让不支持练习的产品发布启用包，或让关闭练习的包宣称已启用，必须检出；产品支持、包关闭且 UI 同步关闭的对照应通过。
-- 当前入口与覆盖：`launcher/tests/test-adapter-capabilities.mjs`、`ports:check` 与包身份验收分别核对注册、源码和产物声明。`practice-browser.mjs` 从正式包输出 `PRACTICE-01` 观察行，记录实际 feature 声明；Host、发布选择器与 UI 的能力矩阵由对应验收记录。
+- 当前入口与覆盖：`launcher/tests/test-adapter-capabilities.mjs`、`ports:check` 与包身份验收分别核对注册、源码和产物声明。`practice-browser.mjs` 从正式包输出 `PRACTICE-01` 观察行，记录实际 feature 声明；产品支持且包关闭同样属于有效声明观察。完整结论另绑定 Host、发布选择器与 UI 的实际能力矩阵。
+- 实际 Launcher 场景：`--launcher-ui --packages=<本地 ZIP 清单> --artwork-dir=<本地图像目录>` 使用正式打包器发布显式 Host 能力，执行启用包的用户开启、用户关闭与 Host 关闭三个场景。场景通过可见开关、重新加载偏好、生产 configure、原生 owner 和实际进局后的菜单开关核对每层。私有 DATA 与导入包前后身份随报告保存。
 
 ### PRACTICE-02 | 开局前启用与语言
 
@@ -76,6 +79,8 @@
 - 通过／失败：首个游戏场景采用所选练习能力和 locale；配置缺失、晚到或被默认值覆盖即失败。
 - 反例：让启动器显示已开启但在 Runtime 配置载荷中清除字段，确认首帧前断言失败。
 - 当前入口与覆盖：`practice-browser.mjs --manifest=<本地清单> --game=th06,th07,th08,th09,th10,th11,th15,th20 --output=<结果目录>` 对支持练习的作品要求提供练习启用包，分别配置日语、英语、中文与关闭对照，进入实际关卡，通过 Backspace 打开和关闭原生菜单；`PRACTICE-02` 观察运行时消费的 enable／locale，结果按 `observed` 记录且 `complete=false`。页面、请求、协议、响应和清理结果共同构成最终场景判定。产品不支持练习时记为不适用；缺少启用包时记为输入不满足。关卡参数和 Replay 设置分别验收。
+- 统一队列在选择 th08 的 PRACTICE-01／PRACTICE-02 时同时执行真实 Launcher 设置场景，要求本地 ZIP 清单与图像输入。原生日英中 locale 矩阵与 Launcher 日语开关场景分别保留操作和观察；按 PRACTICE-04 选择参数复验时复用原生场景，不重复准备 Launcher。
+- Launcher 设置的定向复验使用 `--launcher-ui-only`，本次报告明确记录该范围，原生日英中场景、参数与 Replay 证据分别保留自己的运行记录。
 
 ### PRACTICE-03 | 游戏内练习状态
 
@@ -83,7 +88,7 @@
 - 权威观察与预期：读取本作原生练习／关卡／Replay 状态及其创建和清理边界，不用启动器选择状态替代游戏状态。
 - 通过／失败：练习状态只在相应局内有效，重开与回放按本作流程恢复，普通开局不继承旧参数。
 - 反例：练习局退出后直接普通开局，确认旧关卡或资源设置没有残留。
-- 当前入口与覆盖：`practice-browser.mjs` 的 `PRACTICE-03` 将实际关卡中的原生菜单初始关闭、开启事件、关闭状态与关闭事件写入编号观察行，结果为 `observed` 且 `complete=false`。th06 `thprac-replay-restart-contract-test.mjs`、th11 `mobile-thprac.test.mjs` 与 th15 `title-practice-resume.test.mjs` 等分别覆盖场景转换；普通版与 MP 结果分别记录。
+- 当前入口与覆盖：`practice-browser.mjs` 在同一 document、epoch 与原生 GameApplication 上执行非默认练习、Pause 重开、退出标题、已保存 Replay 主动退出、普通开局与再次练习。资源与阶段初始化由 `gameplay_initial_snapshot_v1` 的不可变开局快照核验，实时观察核验场景 owner、原生帧推进与实际 Pause/退出；每个边界保留原始快照和实例身份。PRACTICE-05 同时保留保存、IDBFS 持久化、新 epoch 导入与原生 Replay 播放证明链。Replay 列表按原生 `stateTimer >= 10` 确认输入就绪；持久化由原生写入触发 Shell 的自动串行同步；独立 IDBFS 观察器按开始序号与时间核验 finalizer 返回后发起并成功完成的同步，原始录像字节、原生保存边界与同步回执一并留存。th06 `thprac-replay-restart-contract-test.mjs`、th11 `mobile-thprac.test.mjs` 与 th15 `title-practice-resume.test.mjs` 分别覆盖对应作品的场景转换。
 
 ### PRACTICE-04 | 关卡与资源参数
 
@@ -91,7 +96,19 @@
 - 权威观察与预期：用本作状态字段、固定输入和已声明参数映射确认参数对逻辑的作用；界面显示值只作操作记录。
 - 通过／失败：每个选定参数作用于其声明的游戏字段或阶段；值仅留在菜单、被截断或映射到错误关卡即失败。
 - 反例：保持界面参数不变而从消费端清除一个参数，确认该参数对应的状态断言失败。
-- 当前入口与覆盖：共享 `practice-browser.mjs` 按适配器声明的参数案例和菜单选择运行一次原生练习开局，并读取配置、接受和 GameplaySession 消费值。th08 的独立输入值覆盖分数、残机、Bomb、火力、Gauge、擦弹、蓝点、刻符、夜点、时刻、Rank 与使魔；逐字段映射以 `PracticeRuntime::apply_practice` 为依据。菜单默认难度与所选角色来自独立的作品声明，再与消费快照比较。阶段记录将菜单选择与同一 epoch 的原生 gameplay-ready snapshot 绑定，后续 F7／指针操作以这份状态为起点。此记录为 `observed` 且 `complete=false`，完整 UI 参数范围由各作适配器声明。
+- 当前入口与覆盖：共享 `practice-browser.mjs` 按适配器声明的参数案例和菜单选择运行一次原生练习开局，并保留实时配置、接受 owner、原生帧推进与原始开局快照。th08 的首次参数消费和生命周期资源判据均读取 `gameplay_initial_snapshot_v1` 的不可变初始化值，并将其与同 document、epoch、GameApplication 的实时阶段身份绑定；游戏运行中的分数、Gauge 与使魔变化独立记录。th08 的独立输入值覆盖分数、残机、Bomb、火力、Gauge、擦弹、蓝点、刻符、夜点、时刻、Rank 与使魔；逐字段映射以 `PracticeRuntime::apply_practice` 为依据。菜单默认难度与所选角色来自独立的作品声明，再与消费快照比较。阶段记录将菜单选择与同一 epoch 的原生 gameplay-ready snapshot 绑定，后续 F7／指针操作以这份状态为起点。此记录为 `observed` 且 `complete=false`，完整 UI 参数范围由各作适配器声明。
+
+th08 资源案例的独立预期如下，全部在不可变开局快照中比较：
+
+| 设置 | 原生开局预期 |
+| --- | --- |
+| 分数 1234560 | score 与 displayScore 均为 123456，按本作分数单位转换 |
+| 残机 4、Bomb 3、火力 96 | 对应资源分别为 4、3、96 |
+| Gauge 10000、擦弹 23 | Gauge 两份状态均为 10000，累计与本关擦弹均为 23 |
+| 累计蓝点 234、本关蓝点 345 | points 为 234，pointsStage 为 345 |
+| 刻符 321、夜点 43210、时刻 4 | 当前与累计刻符均为 321，pointValue 为 43210，clockTime 为 4 |
+| 锁定 Rank 10、使魔 17 | Rank 当前值和上下限均为 10，使魔数量 17 且待应用标志开启 |
+| 本关 0、难度 1、角色 2 | 实际加载身份与原生菜单选择一致 |
 
 ### PRACTICE-05 | 练习 Replay 元数据
 
@@ -101,6 +118,7 @@
 - 反例：从 metadata 中移除一个已声明必要字段，确认导入拒绝或按格式约定报出缺项。
 - 当前入口与覆盖：共享 `practice-browser.mjs` 负责实际 GameplaySession 推进、生产保存、IDBFS 同步、文件读回、同一浏览器上下文中的新 Runtime epoch、启动前 Shell 导入及最终判定。th08 normal 适配器提供生产 `save_replay` finalizer、IDBFS 观察器、USER/PRAC 与输入容量解析器及原生 Title Replay 菜单导航。新 epoch 读取持久槽位并核对字节身份，再经 Shell `write` 导入唯一用户 Replay；原生菜单打开候选并启动后，报告比较 fresh 默认值、PRAC、native candidate/run/applied 字段及 Replay 输入游标推进。该链覆盖普通局 GameplaySession 中录制到的参数和 Replay 菜单恢复，不包含 Result UI 的保存入口。
 - 参数起点来自 `GameplayScene::load` 中 `apply_practice` 后、`bind_jobs` 前冻结的原生快照；播放中的实时分数和游标按实际推进及容量分别核对。Last Word 的 stage 9 通过 section 映射到实际玩法关卡后再比较。
+- 原生保存沿用 Shell 的自动串行同步。观察器记录同步开始序号、开始与完成时间，只有在本次 finalizer 返回后开始并成功完成的写入计入保存证明；回执与原始 Replay 字节一起进入独立重算，新 epoch 再读回同一文件核对 SHA-256。
 
 ### PRACTICE-06 | 触控功能键与指针
 

@@ -115,7 +115,7 @@ function makeCase({root,output,id,game,variant,group,scenarioIds,checks,script,a
   const blockedChecks=[...new Set(blockedScenarios.flatMap(scenario=>scenario.checks))];
   return{
     id,game,variant,group,scenarioIds:[...scenarioIds],...(scenarioIds.length===1?{scenarioId:scenarioIds[0]}:{}),
-    checks:[...checks],status,task,requiresLauncherBuild:['offline','offline-update','installation-authority','language'].includes(group),
+    checks:[...checks],status,task,requiresLauncherBuild:['offline','offline-update','installation-authority','language'].includes(group)||game==='th08'&&(group==='music'||group==='practice'&&checks.some(id=>['PRACTICE-01','PRACTICE-02'].includes(id))),
     requiredInputs:[...requiredInputs],inputs:inputNames,blockedInputs,
     blockedScenarios:blockedScenarios.map(scenario=>({...scenario,checks:[...scenario.checks]})),blockedChecks,
     reportPath,...(reason?{reason}:{}),...extra.caseFields,
@@ -136,7 +136,10 @@ function addNormalCases({cases,game,product,groups,selectedChecks,root,output,en
       'touch-motion':'native-touch-motion-contract','touch-actions':'native-touch-action-consumers','replay-recording':'finite-replay-recording-and-live-isolation','audio-latency':'native-sfx-queue-latency','desktop-background':'desktop-background-and-resume',practice:'native-practice-menu-and-locale',music:'title-ogg-pcm'}[group];
     const mapped=checksForGroup(group,game,requirements,product).filter(check=>selectedChecks===null||selectedChecks.has(check));
     if(selectedChecks!==null&&!mapped.length)continue;
-    let common={root,output,game,variant:'normal',group,scenarioIds:[scenarioId],checks:mapped,extra:{environment}};
+    const desktopMode={'desktop-input':'input-only','touch-motion':'touch-only','touch-actions':'actions-only',
+      'replay-recording':'replay-recording-only','audio-latency':'audio-latency-only','desktop-background':'background-only'}[group];
+    let common={root,output,game,variant:'normal',group,scenarioIds:[scenarioId],checks:mapped,
+      extra:{environment,...(desktopMode?{caseFields:{supportingChecks:desktopAdaptationIdsForMode(desktopMode,{game,prerequisites:true})}}:{})}};
     if(group==='music'){
       const owner=workspaceRepositories?.[game];
       const ownerAvailable=typeof owner==='string'&&owner.trim()&&existsSync(resolve(root,owner));
@@ -220,6 +223,10 @@ function addNormalCases({cases,game,product,groups,selectedChecks,root,output,en
         args.push(`--check=${mapped.join(',')}`);
     if(group==='music')args.push(argFor(environment,INPUT.music,'music-manifest'));
     const requiredInputs=group==='music'?[INPUT.runtime,INPUT.music]:[INPUT.runtime];
+    if(game==='th08'&&(group==='music'||group==='practice'&&mapped.some(id=>['PRACTICE-01','PRACTICE-02'].includes(id)))){
+      args.push('--launcher-ui',argFor(environment,INPUT.packages,'packages'),argFor(environment,INPUT.artwork,'artwork-dir'));
+      requiredInputs.push(INPUT.packages,INPUT.artwork);
+    }
     const resources=['browser','runtime'];
     cases.push(makeCase({...common,id:`${group}-normal-${game}`,script,args,requiredInputs,timeoutMs:1800000,resources}));
   }

@@ -3,6 +3,7 @@ import test from 'node:test';
 import {PRODUCT_GAMES} from '../../../common/contracts/product-catalog.mjs';
 import {touchMovementContract} from './movement.mjs';
 import {mapFloat32TouchDragTarget} from '../../../tools/ports/touch-motion-contract.mjs';
+import {TH10_MOVEMENT_CONTRACT} from './titles/th10.mjs';
 
 test('every STG product declares native arithmetic independently of its observed result',()=>{
   for(const [game,product] of Object.entries(PRODUCT_GAMES)){
@@ -12,6 +13,7 @@ test('every STG product declares native arithmetic independently of its observed
     assert.ok(Number.isInteger(contract.precision.unitsPerPixel));
   }
   assert.equal(touchMovementContract('th10','normal').precision.unitsPerPixel,100);
+  assert.deepEqual(touchMovementContract('th10','normal'),TH10_MOVEMENT_CONTRACT);
   assert.equal(touchMovementContract('th15','normal').precision.unitsPerPixel,128);
   assert.equal(touchMovementContract('th06','normal').inputBoundary,'unknown',
     'a source-anchored arithmetic rule does not imply a verified input-consumption boundary');

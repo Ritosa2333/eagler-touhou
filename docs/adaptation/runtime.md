@@ -53,6 +53,12 @@ Runtime 是编译后的游戏程序和浏览器接口。启动器负责界面、
 - 反例：退出后旧实例仍持续消费按键，或恢复时重复响应同一次输入，应判失败。
 - 入口与覆盖：`runtime-desktop-probes.mjs` 用 public `launchServer` 启动完整 headed Chrome，并以 loopback CDP 网关按命令 id、session 和真实 page target 审计 Playwright 焦点改写及 Chrome 成功响应。检查前要求页面原生 visible/hasFocus，记录 Chrome target/window ID 与 bounds，再用真实窗口最小化和同窗标签激活观察浏览器生成的 blur/hidden 事件；最小化期间必须同时观察到 Host 接受 keyboard-clear、原生输入回到中立，才验证 held input 清理。标签窗口中的临时页关闭后，重新核对原游戏 page target、window ID、宿主页与 Runtime iframe 的 visible/hasFocus；音频检查重新取当前状态，要求输出 tap 对应的 AudioContext 在 KeyZ 前已经 running，再要求 Host 接受 KeyZ、原生输入发生变化，并记录 PCM 与输入释放。截图会先恢复真实 Chrome 窗口并核对 page target、window ID 和两个文档的原生焦点，再检查 iframe bounding box 完整落在 viewport 内，以 page screenshot clip 采集当前画面。后台连续运行与挂起后恢复单独记录，KeyZ 手势不能替代后台恢复证据。`--background-only` 运行窗口、标签和声音三项后台检查，并保留包与私有 DATA 前后身份核验；未运行的桌面矩阵以 omitted 单列。`runtime-browser.mjs` 检查暂停、重开与尺寸变化；触点和完整监听器清理分别记录。
 
+桌面窗口恢复集中等待同一 page target、window ID、实际窗口状态和 Host／Runtime 文档焦点共同稳定。窗口已正常可见聚焦时，先聚焦 Runtime canvas 并连续核对两次；需要恢复时，操作作用于已核对的所属窗口，最小化窗口先恢复，再激活真实标签。每次恢复保存观察序列，原生助手另存调用前后窗口与前台进程身份、时间和 API 返回值，身份变化或超时均保留失败／未完成结果。
+
+CDP 网关以有界命令日志关联窗口调整、标签激活、输入与带手势的脚本调用，保存请求、会话、目标及发送／响应单调时钟。日志保留命令身份和错误，脚本正文与输入内容不进入记录；容量溢出单列计数，供后台切换的时间线审查。
+
+网关的握手队列、单条消息与发送积压分别限额：默认8 MiB、384 MiB与512 MiB。消息预算覆盖浏览器响应采集所支持的256 MiB资源及其 Base64 编码；发送前同时计入已排队字节、本条消息和帧头。超出预算时保存端点与限额错误，并关闭所属连接。
+
 ### RUNTIME-05 | Runtime 与资源管理分工
 - 操作：先由 Launcher 安装/准备声明的资源，再启动 Runtime 并读取其声明的 DATA 或共享资源路径。
 - 观察与判定：Launcher 的安装状态与资源字节可核对，Runtime 从提供的挂载读取；游戏运行期间不自行安装或替换 Package Store 内容。

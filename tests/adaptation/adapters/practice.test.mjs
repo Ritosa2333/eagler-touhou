@@ -1,12 +1,18 @@
+import {practiceAdaptationChecks} from '../../../tools/ports/practice-observations.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {assessPracticeParameters,createPracticeReplayObservationInput,practiceSnapshotRequest,readPracticeMenuRaw,
   readPracticeSnapshotRaw,runPracticeGameplayStage,syncPracticeIdbfsRaw} from './practice.mjs';
 import {resolveAdaptationAdapter} from './registry.mjs';
-import {assessTh08PracticeConsumption,decodePracticeInitialSnapshot,decodePracticeSnapshot,
+import {assessTh08PracticeConsumption,assessTh08PracticeLifecycle,requireTh08PracticeLifecycleComplete,decodeGameplayInitialSnapshot,decodePracticeInitialSnapshot,decodePracticeSnapshot,
   assessTh08PracticeReplayRoundTrip,parseTh08PracticeReplayMetadata,TH08_PRACTICE_FRESH_CONFIG,
-  th08PracticeFeatureInventory,th08PracticeRuntimeStage,TH08_PRACTICE_SELECTION_CASE} from './titles/th08-practice.mjs';
+  th08ReplayListConfirmReady,th08PracticeFeatureInventory,th08PracticeRuntimeStage,TH08_PRACTICE_SELECTION_CASE} from './titles/th08-practice.mjs';
+
+function automaticPersistence(){
+  const afterFinalizer={startSequence:0,at:10},call={startSequence:1,startedAt:11,populate:false,completed:true,completedAt:12,succeeded:true};
+  return{finalizer:{available:true,finalized:true,afterFinalizer},observer:{available:true,...call,afterFinalizer},restored:{available:true,restored:true,calls:[call]}};
+}
 
 function validWords(){
   const words=Array(128).fill(0);words[0]=1;words[1]=11;
@@ -16,7 +22,7 @@ function validWords(){
   for(let index=0;index<config.length;index++){words[20+index]=config[index];words[46+index]=config[index];}
   const applied=[123456,123456,4,3,96,10000,10000,23,23,234,345,321,321,43210,4,10,10,10,17,0,0,0,1,0,0,0,1,2];
   for(let index=0;index<applied.length;index++)words[100+index]=applied[index];
-  return words;
+  words[119]=1;return words;
 }
 
 function validInitialWords(){
@@ -27,6 +33,13 @@ function validInitialWords(){
   const applied=[123456,123456,4,3,96,10000,10000,23,23,234,345,321,321,43210,4,10,10,10,17,0,0,0,1,0,0,0,1,2];
   words.splice(42,28,...applied);return words;
 }
+
+function consumptionContext(){
+  const words=validInitialWords();words[1]=5;words[3]=1;
+  const identity={epoch:1,app:0,documentTimeOrigin:123,url:'https://fixture/runtime'};
+  return{initialRaw:{available:true,words},identityBefore:identity,identityAfter:{...identity}};
+}
+const assessConsumption=(snapshot,context=consumptionContext())=>assessTh08PracticeConsumption(snapshot,undefined,undefined,context);
 
 function practiceReplayEvidence(){
   const payload={version:'2.6.1.0',game:'th08',mode:1,stage:0,life:4,bomb:3,power:96,gauge:10000,
@@ -40,7 +53,7 @@ function practiceReplayEvidence(){
   initialSnapshot.run={...parsed.config};initialSnapshot.applied={...initialSnapshot.applied,stage,difficulty:1,character:2};
   const liveApplied={...initialSnapshot.applied,score:initialSnapshot.applied.score+10,displayScore:initialSnapshot.applied.displayScore+10};
   const copied=()=>Buffer.from(raw);
-  return{recording:{epoch:1,frameBefore:7,frameAfter:11,saveSucceeded:true,idbfsSyncSucceeded:true,path:'replay/th8_01.rpy',
+  return{recording:{epoch:1,frameBefore:7,frameAfter:11,saveSucceeded:true,idbfsSyncSucceeded:true,persistence:automaticPersistence(),path:'replay/th8_01.rpy',
       rawBytes:raw,sha256,inputCapacityFrames:4},
     persisted:{rawBytes:copied(),freshEpochSha256:sha256},
     import:{beforeLaunch:true,writeSucceeded:true,listed:true,path:'replay/th8_ud1234.rpy',rawBytes:copied(),sha256,readSha256:sha256},
@@ -62,7 +75,7 @@ test('th08 PracticeSnapshot decodes independent configured, accepted and consume
   assert.equal(snapshot.applied.familiarCount,17);
   assert.equal(snapshot.applied.familiarPending,true);
   assert.equal(snapshot.units.clockTime,'native half-hour index');
-  assert.equal(assessTh08PracticeConsumption(snapshot).status,'observed');
+  assert.equal(assessConsumption(snapshot).status,'observed');
   const inventory=th08PracticeFeatureInventory(snapshot,{pointerTested:true,exercisedKeys:['F7']});
   assert.equal(inventory.status,'observed');
   assert.ok(inventory.items.some(item=>item.id==='native-pointer'&&item.exercised));
@@ -83,9 +96,9 @@ test('th08 PracticeSnapshot rejects wrong version, unknown validity, malformed f
   assert.throws(()=>decodePracticeSnapshot({available:true,words:invalidBool}),/config boolean at 26 is invalid/);
   const unavailable=validWords();unavailable[1]=3;
   const noApplied=decodePracticeSnapshot({available:true,words:unavailable});
-  assert.equal(assessTh08PracticeConsumption(noApplied).status,'incomplete');
-  const changed=validWords();changed[100]=123455;
-  const assessment=assessTh08PracticeConsumption(decodePracticeSnapshot({available:true,words:changed}));
+  assert.equal(assessConsumption(noApplied).status,'incomplete');
+  const changed=validWords(),context=consumptionContext();context.initialRaw.words[42]=123455;
+  const assessment=assessConsumption(decodePracticeSnapshot({available:true,words:changed}),context);
   assert.equal(assessment.status,'failed');
   assert.ok(assessment.mismatches.some(item=>item.field==='applied.score'));
   assert.throws(()=>decodePracticeSnapshot({available:false,reason:'export unavailable'}),/export unavailable/);
@@ -204,11 +217,11 @@ test('shared practice parameter comparison distinguishes absent evidence from in
 
 test('th08 difficulty and character expectations come from the declared menu route',()=>{
   const snapshot=decodePracticeSnapshot({available:true,words:validWords()});
-  assert.equal(assessTh08PracticeConsumption(snapshot).status,'observed');
+  assert.equal(assessConsumption(snapshot).status,'observed');
   const wrongDifficulty={...snapshot,applied:{...snapshot.applied,difficulty:0}};
-  assert.equal(assessTh08PracticeConsumption(wrongDifficulty).status,'failed');
+  assert.equal(assessConsumption(wrongDifficulty).status,'failed');
   const wrongCharacter={...snapshot,applied:{...snapshot.applied,character:1}};
-  assert.equal(assessTh08PracticeConsumption(wrongCharacter).status,'failed');
+  assert.equal(assessConsumption(wrongCharacter).status,'failed');
   assert.deepEqual(TH08_PRACTICE_SELECTION_CASE,{difficulty:1,character:2,
     source:'GameConfiguration.hpp default difficulty=1 | TitleMenus.cpp PracticeStart copies config.difficulty | CharacterSelect stores the selected cursor'});
 });
@@ -343,4 +356,87 @@ test('serialized PracticeInitialSnapshot reader uses its declared ABI and valida
     core.practice_initial_snapshot_v1=()=>memory.buffer.byteLength-16;
     assert.equal(serializedReader(request).available,false);
   }finally{if(prior===undefined)delete globalThis.window;else globalThis.window=prior;}
+});
+
+function validLifecycleEvidence(){
+  const before=decodePracticeSnapshot({available:true,words:validWords()});before.applied.enemyFrame=400;
+  const retried=structuredClone(before);retried.applied.enemyFrame=6;
+  const practiceTitle=structuredClone(before);practiceTitle.state.inGame=false;practiceTitle.state.menu=false;practiceTitle.state.accepted=false;
+  // Title leaves these owners alone. Replay menu State(1) resets run and validity only.
+  const replayMenu=structuredClone(practiceTitle);replayMenu.run={...replayMenu.run,mode:0};replayMenu.state.replayCandidateValid=false;
+  const replay=structuredClone(retried);replay.state.replay=true;replay.state.gameFlags|=8;
+  const replayTitle=structuredClone(practiceTitle);replayTitle.state.replay=true;
+  const ordinary=structuredClone(retried);ordinary.state.active=false;ordinary.state.replay=false;ordinary.state.gameFlags=4;
+  ordinary.applied=null;
+  const initials=Object.fromEntries(['before','retried','replay','ordinary','fresh'].map(name=>{
+    const words=validInitialWords();words[1]=name==='ordinary'?1:name==='replay'?7:5;words[3]=name==='replay'?8:name==='ordinary'?4:1;
+    if(name==='ordinary'){words.fill(0,16,42);words.fill(0,42,70);words[57]=10;words[58]=8;words[59]=16;words[68]=1;words[69]=2;}
+    return[name,{available:true,words}];
+  }));
+  const identities=Object.fromEntries(['before','retried','practiceTitle','replayMenu','replay','replayTitle','ordinary','fresh'].map(name=>[name,{epoch:4,app:0,documentTimeOrigin:123,url:'https://fixture/runtime'}]));
+  return{before,retried,practiceTitle,replayMenu,replay,replayTitle,ordinary,fresh:structuredClone(retried),initials,identities,
+    ordinaryProgress:{counters:{enemySceneFrame:5}},retryBeforeFrame:400,replayConfig:structuredClone(replay.run),replayStream:{loaded:true,frame:10,inputCursor:20},activeReplayExit:true};
+}
+
+test('same Runtime Practice lifecycle preserves configured/sticky owners while rebuilding actual game resources',()=>{
+  assert.equal(assessTh08PracticeLifecycle(validLifecycleEvidence()).status,'observed');
+  for(const mutate of [
+    e=>e.retried.applied.enemyFrame=401,e=>e.initials.retried.words[46]=0,
+    e=>e.practiceTitle.state.accepted=true,e=>e.replayMenu.run.mode=1,e=>e.replayMenu.state.replayCandidateValid=true,
+    e=>e.replay.run.score=0,e=>e.initials.replay.words[45]=8,e=>e.replayStream.inputCursor=0,
+    e=>e.activeReplayExit=false,e=>e.ordinary.state.active=true,e=>e.initials.ordinary.words[46]=96,
+    e=>e.initials.ordinary.words[2]=1,e=>e.initials.fresh.words[47]=0,e=>e.fresh.configured.score=0,
+  ]){const evidence=validLifecycleEvidence();mutate(evidence);const result=assessTh08PracticeLifecycle(evidence);assert.equal(result.status,'failed',JSON.stringify(result));}
+  const missing=validLifecycleEvidence();delete missing.ordinary;assert.equal(assessTh08PracticeLifecycle(missing).status,'incomplete');
+});
+
+test('immutable initialization accepts legitimate live resource drift and requires every actual boundary',()=>{
+  const evidence=validLifecycleEvidence();
+  for(const name of ['before','retried','replay','fresh'])Object.assign(evidence[name].applied,{score:999999,gauge:1,familiarCount:0,power:128,bombs:0});
+  assert.equal(assessTh08PracticeLifecycle(evidence).status,'observed');
+  for(const name of Object.keys(evidence.initials)){const absent=validLifecycleEvidence();delete absent.initials[name];assert.equal(assessTh08PracticeLifecycle(absent).status,'incomplete');}
+  const changed=validLifecycleEvidence();changed.identities.fresh.app=8;assert.equal(assessTh08PracticeLifecycle(changed).status,'failed');
+});
+test('generic gameplay initial decoder distinguishes ordinary and custom/replay schemas',()=>{
+  const e=validLifecycleEvidence();
+  assert.equal(decodeGameplayInitialSnapshot(e.initials.ordinary).run,null);
+  assert.equal(decodeGameplayInitialSnapshot(e.initials.ordinary).state.customPractice,false);
+  assert.equal(decodeGameplayInitialSnapshot(e.initials.replay).schema,'eagler-touhou/th08-gameplay-initial-snapshot/1');
+  for(const mask of [2,4,8]){const raw=structuredClone(e.initials.replay);raw.words[1]=mask;assert.throws(()=>decodeGameplayInitialSnapshot(raw));}
+  const polluted=structuredClone(e.initials.ordinary);polluted.words[16]=1;assert.throws(()=>decodeGameplayInitialSnapshot(polluted),/ordinary run payload/);
+});
+
+test('generic gameplay snapshot request selects the independent export',()=>{const title=resolveAdaptationAdapter('th08','normal');assert.deepEqual(practiceSnapshotRequest({runtime:title.runtime,contract:title.practice,kind:'gameplayInitial'}).snapshot,{export:'gameplay_initial_snapshot_v1',wordCount:80,wordType:'f64',app:true});});
+
+
+test('lifecycle completion gate rejects missing immutable raw before the outer journey continues',()=>{
+  const missing=validLifecycleEvidence();delete missing.initials.retried;
+  const assessment=assessTh08PracticeLifecycle(missing);assert.equal(assessment.status,'incomplete');
+  assert.throws(()=>requireTh08PracticeLifecycleComplete(assessment),/not complete/);
+  for(const result of [undefined,{status:'incomplete',complete:false},{status:'observed',complete:false},{status:'failed',complete:false}])assert.throws(()=>requireTh08PracticeLifecycleComplete(result));
+  assert.equal(requireTh08PracticeLifecycleComplete(assessTh08PracticeLifecycle(validLifecycleEvidence())).complete,true);
+  for(const mutate of [e=>e.initials.ordinary.words[3]=1,e=>e.initials.before.words[3]=4,e=>e.fresh.state.gameFlags=4]){const e=validLifecycleEvidence();mutate(e);assert.equal(assessTh08PracticeLifecycle(e).status,'failed');}
+});
+
+test('first Practice resource assessment uses immutable values and preserves live evidence',()=>{
+  const live=decodePracticeSnapshot({available:true,words:validWords()});Object.assign(live.applied,{score:999999,gauge:4,familiarCount:0});
+  const result=assessConsumption(live);assert.equal(result.status,'observed');assert.equal(result.liveApplied.score,999999);assert.equal(result.applied.score,123456);assert.ok(result.initialRaw.words);
+  for(const mutate of [c=>delete c.initialRaw,c=>delete c.identityBefore]){const context=consumptionContext();mutate(context);assert.equal(assessConsumption(live,context).status,'incomplete');}
+  for(const mutate of [c=>c.initialRaw.words[47]=0,c=>c.identityAfter.app=8,c=>c.initialRaw.words[3]=8]){const context=consumptionContext();mutate(context);assert.equal(assessConsumption(live,context).status,'failed');}
+  const wrongRun=structuredClone(live);wrongRun.run.score=0;assert.equal(assessConsumption(wrongRun).status,'failed');
+});
+
+test('Replay list confirmation waits for the actual native input guard',()=>{
+  for(const timer of [undefined,0,8,9])assert.equal(th08ReplayListConfirmReady({state:{titleScreen:7,titlePhase:1,titleTimer:timer}}),false);
+  for(const timer of [10,11])assert.equal(th08ReplayListConfirmReady({state:{titleScreen:7,titlePhase:1,titleTimer:timer}}),true);
+  assert.equal(th08ReplayListConfirmReady({state:{titleScreen:7,titlePhase:0,titleTimer:20}}),false);
+});
+
+test('P04 numbered observations recompute retained immutable initialization and live owner evidence',()=>{
+  const live=decodePracticeSnapshot({available:true,words:validWords()}),consumption=assessConsumption(live);
+  const row=(snapshot,result)=>practiceAdaptationChecks({game:'th08',productSupported:true,feature:true,locales:[{epoch:1,practiceSnapshot:snapshot,parameterConsumption:result}]}).find(item=>item.id==='PRACTICE-04');
+  assert.equal(row(live,consumption).status,'observed');
+  const missing=structuredClone(consumption);delete missing.initialRaw;assert.equal(row(live,missing).status,'incomplete');
+  const wrong=structuredClone(consumption);wrong.initialRaw.words[47]=0;assert.equal(row(live,wrong).status,'failed');
+  const owner=structuredClone(live);owner.state.active=false;assert.equal(row(owner,consumption).status,'failed');
 });

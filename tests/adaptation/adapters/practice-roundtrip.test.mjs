@@ -4,13 +4,30 @@ import {createHash} from 'node:crypto';
 import {
   armTh08PracticeIdbfsObserverRaw,assessTh08PracticeReplayRoundTrip,finalizeTh08PracticeReplayRaw,
   parseTh08PracticeReplayMetadata,restoreTh08PracticeIdbfsObserverRaw,TH08_PRACTICE_FRESH_CONFIG,
-  waitTh08PracticeIdbfsObserverRaw,th08PracticeRuntimeStage,
+  waitTh08PracticeIdbfsObserverRaw,th08PracticeRuntimeStage,th08PracticeReplayPlaybackReady,
 } from './titles/th08-practice.mjs';
 import {practiceAdaptationIds,practiceAdaptationChecks} from '../../../tools/ports/practice-observations.mjs';
 import {TH08_PRACTICE_SELECTION_CASE} from './titles/th08-practice.mjs';
 
 const payload=Object.freeze({version:'2.6.1.0',game:'th08',mode:1,stage:0,life:4,bomb:3,power:96,gauge:10000,
   score:1234560,graze:23,point_total:234,point_stage:345,time:321,value:43210,night:4,familiar:17,rank:10,rankLock:true});
+
+test('Practice Replay readiness waits beyond the immutable world frame even after input is consumed',()=>{
+  const live={state:{inGame:true,active:true,replay:true},applied:{enemyFrame:0}},stream={loaded:true,frame:1,inputCursor:2};
+  const initial={applied:{enemyFrame:0}};
+  assert.equal(th08PracticeReplayPlaybackReady(live,stream,initial),false);
+  live.applied.enemyFrame=1;assert.equal(th08PracticeReplayPlaybackReady(live,stream,initial),true);
+  initial.applied.enemyFrame=100;live.applied.enemyFrame=100;
+  assert.equal(th08PracticeReplayPlaybackReady(live,stream,initial),false,'warped Practice uses its actual initialization frame');
+  live.applied.enemyFrame=101;assert.equal(th08PracticeReplayPlaybackReady(live,stream,initial),true);
+  assert.equal(th08PracticeReplayPlaybackReady(live,{...stream,ended:true},initial),false);
+  assert.equal(th08PracticeReplayPlaybackReady(live,{...stream,inputCursor:0},initial),false);
+});
+function automaticPersistence(){
+  const afterFinalizer={startSequence:0,at:10},call={startSequence:1,startedAt:11,populate:false,completed:true,completedAt:12,succeeded:true};
+  return{finalizer:{available:true,finalized:true,afterFinalizer},observer:{available:true,...call,afterFinalizer},restored:{available:true,restored:true,calls:[call]}};
+}
+
 function rawReplay(value=payload){
   const json=Buffer.from(JSON.stringify(value)),length=(12+json.length+3)&~3,bytes=Buffer.alloc(0x68+length);
   bytes.writeUInt32LE(0x50523854,0);bytes.writeUInt16LE(6,4);bytes.writeUInt32LE(0x68,12);
@@ -26,7 +43,7 @@ function goodEvidence(bytes=rawReplay()){
     points:234,pointsStage:345,timeOrbs:321,totalTimeOrbs:321,pointValue:43210,clockTime:4,rank:10,rankMinimum:10,
     rankMaximum:10,familiarCount:17,familiarPending:true,stage:runtimeStage,difficulty:1,character:2};
   return{
-    recording:{epoch:1,frameBefore:7,frameAfter:11,saveSucceeded:true,idbfsSyncSucceeded:true,path:'replay/th8_01.rpy',
+    recording:{epoch:1,frameBefore:7,frameAfter:11,saveSucceeded:true,idbfsSyncSucceeded:true,persistence:automaticPersistence(),path:'replay/th8_01.rpy',
       rawBytes:bytes,sha256,inputCapacityFrames:4},
     persisted:{rawBytes:Buffer.from(bytes),freshEpochSha256:sha256},
     import:{beforeLaunch:true,writeSucceeded:true,listed:true,path:'replay/th8_udp05a.rpy',rawBytes:Buffer.from(bytes),sha256,readSha256:sha256},
@@ -138,7 +155,7 @@ test('native save finalizer bridge uses a bounded C string and releases wasm mem
   globalThis.window={__th08Runtime:{core,Module:core,app:3}};
   try{
     assert.deepEqual(finalizeTh08PracticeReplayRaw({game:'th08',slot:1,name:'P05TEST'}),
-      {available:true,finalized:true,slot:1,name:'P05TEST'});
+      {available:true,finalized:true,slot:1,name:'P05TEST',afterFinalizer:null});
     assert.deepEqual(calls,[['allocate',8],['save',3,1,'P05TEST\0'],['free',16]]);
     assert.equal(finalizeTh08PracticeReplayRaw({game:'th06'}).available,false);
     globalThis.window={Module:core,core,__th08Runtime:{app:3}};
@@ -147,29 +164,36 @@ test('native save finalizer bridge uses a bounded C string and releases wasm mem
   }finally{if(prior===undefined)delete globalThis.window;else globalThis.window=prior;}
 });
 
-test('IDBFS observer preserves the underlying sync and reports only completed populate=false calls',async()=>{
-  const prior=globalThis.window,calls=[];
-  const fs={syncfs(populate,callback){calls.push(populate);setTimeout(()=>callback(null),0);}};
-  globalThis.window={Module:{FS:{syncfs(){throw Error('foreign Runtime sync');}}},__th08Runtime:{Module:{FS:fs}}};
+test('IDBFS observer preserves production sync and only credits starts after the finalizer boundary',async()=>{
+  const prior=globalThis.window,pending=[],calls=[];
+  const fs={syncfs(populate,callback){calls.push(populate);pending.push(callback);}};
+  const buffer=new ArrayBuffer(128),core={memory:{buffer},allocate:()=>16,deallocate(){},save_replay:()=>1};
+  globalThis.window={__th08Runtime:{core,Module:{FS:fs},app:3}};
   try{
-    assert.deepEqual(armTh08PracticeIdbfsObserverRaw(),{available:true,armed:true,calls:0});
-    const pending=waitTh08PracticeIdbfsObserverRaw({timeoutMs:1000,afterCalls:0});
-    await new Promise(resolve=>fs.syncfs(false,()=>resolve()));
-    assert.deepEqual(await pending,{available:true,populate:false,succeeded:true,calls:1});
-    assert.deepEqual(restoreTh08PracticeIdbfsObserverRaw(),{available:true,restored:true,calls:[{populate:false,succeeded:true}]});
-    assert.deepEqual(calls,[false]);
+    armTh08PracticeIdbfsObserverRaw();fs.syncfs(false,()=>{});
+    const finalized=finalizeTh08PracticeReplayRaw({game:'th08'});
+    assert.equal(finalized.afterFinalizer.startSequence,1);
+    const wait=waitTh08PracticeIdbfsObserverRaw({timeoutMs:100,afterFinalizer:finalized.afterFinalizer});let settled=false;wait.then(()=>{settled=true;});
+    pending[0](null);await Promise.resolve();assert.equal(settled,false,'old in-flight completion cannot satisfy the new native save');
+    fs.syncfs(true,()=>{});pending[1](null);await Promise.resolve();assert.equal(settled,false,'populate cannot prove save persistence');
+    fs.syncfs(false,()=>{});pending[2](Error('failed'));await Promise.resolve();assert.equal(settled,false,'failed post-boundary sync cannot satisfy persistence');
+    fs.syncfs(false,()=>{});pending[3](null);const receipt=await wait;
+    assert.equal(receipt.succeeded,true);assert.equal(receipt.startSequence,4);assert.ok(receipt.startedAt>=finalized.afterFinalizer.at);assert.ok(receipt.completedAt>=receipt.startedAt);
+    const restored=restoreTh08PracticeIdbfsObserverRaw();assert.equal(restored.restored,true);assert.equal(restored.calls.length,4);assert.deepEqual(calls,[false,true,false,false]);
+  }finally{if(prior===undefined)delete globalThis.window;else globalThis.window=prior;}
+});
+test('IDBFS observer refuses missing boundaries and absence of a completed automatic sync',async()=>{
+  const prior=globalThis.window;const fs={syncfs(){}};globalThis.window={__th08Runtime:{Module:{FS:fs}}};
+  try{armTh08PracticeIdbfsObserverRaw();assert.equal((await waitTh08PracticeIdbfsObserverRaw({timeoutMs:5})).available,false);
+    const afterFinalizer={startSequence:0,at:performance.now()};fs.syncfs(false,()=>{});
+    const result=await waitTh08PracticeIdbfsObserverRaw({timeoutMs:5,afterFinalizer});assert.equal(result.succeeded,false);assert.match(result.reason,/timed out/);
+    restoreTh08PracticeIdbfsObserverRaw();
   }finally{if(prior===undefined)delete globalThis.window;else globalThis.window=prior;}
 });
 
-test('IDBFS observer cannot credit a completed save sync from before the finalizer boundary',async()=>{
-  const prior=globalThis.window;
-  const fs={syncfs(populate,callback){setTimeout(()=>callback(null),0);}};
-  globalThis.window={Module:{FS:fs},__th08Runtime:{Module:{FS:fs}}};
-  try{
-    const observer=armTh08PracticeIdbfsObserverRaw();
-    await new Promise(resolve=>fs.syncfs(false,()=>resolve()));
-    const pending=waitTh08PracticeIdbfsObserverRaw({timeoutMs:20,afterCalls:observer.calls+1});
-    assert.equal((await pending).succeeded,false);
-    restoreTh08PracticeIdbfsObserverRaw();
-  }finally{if(prior===undefined)delete globalThis.window;else globalThis.window=prior;}
+test('retained P05 persistence is independently recomputed from its actual start and completion receipts',()=>{
+  const missing=goodEvidence();delete missing.recording.persistence;assert.equal(assessTh08PracticeReplayRoundTrip(missing).status,'incomplete');
+  for(const mutate of [p=>p.finalizer.finalized=false,p=>p.observer.startSequence=0,p=>p.observer.startedAt=9,p=>p.observer.completed=false,p=>p.observer.succeeded=false,p=>p.observer.populate=true,p=>p.restored.restored=false,p=>p.restored.calls=[],p=>p.observer.afterFinalizer={startSequence:2,at:10}]){
+    const e=goodEvidence();mutate(e.recording.persistence);assert.equal(assessTh08PracticeReplayRoundTrip(e).status,'failed');
+  }
 });

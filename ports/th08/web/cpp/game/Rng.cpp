@@ -1,6 +1,10 @@
 #include "Rng.hpp"
+#include "RngAudit.hpp"
 namespace th08 {
 u16 Rng::next16() noexcept {
+#if defined(TH_PRESENTATION_AUDIT)
+    rng_audit::next(this);
+#endif
     const u16 mixed=u16((seed^0x9630u)-0x6553u);
     seed=u16((mixed<<2)|(mixed>>14));
     ++calls;

@@ -3,6 +3,7 @@
 #include "BulletSystem.hpp"
 #include "BackgroundScript.hpp"
 #include "PracticeConfig.hpp"
+#include "RngAudit.hpp"
 namespace th08 {
 struct PlayerScenePlatform {
     virtual ~PlayerScenePlatform()=default;
@@ -69,7 +70,7 @@ public:
     void update_integrity()override{values.update_integrity();}
     void dissolve()override{++practice.tracker_dissolve_count;if(practice.enabled&&!practice.replay)practice.input.begin_retry(practice.active?practice.run.mode:0);}
     void randomize_integrity()override{values.randomize_integrity();}
-    void effect(i32 kind,const Vec3& p,i32 count,u32 color)override{world->effects.spawn(kind,p,count,color);failed|=world->effects.invalid;}
+    void effect(i32 kind,const Vec3& p,i32 count,u32 color)override{TH08_RNG_EVENT(rng_player_effect,PlayerEffectOwnerBase,kind,count);world->effects.spawn(kind,p,count,color);failed|=world->effects.invalid;}
     void effect(i32 kind,const Vec3& p)override{effect(kind,p,1,0xffffffff);}
     EffectState* fixed_effect(i32 kind,const Vec3& p,i32 slot,u32 color)override{auto* result=world->effects.fixed(kind,p,slot,color);failed|=world->effects.invalid;return result;}
     void sound(i32 index,float x)override{platform.sound(index,0,x,true);}

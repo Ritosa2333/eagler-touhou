@@ -1,4 +1,5 @@
 #include "Chain.hpp"
+#include "RngAudit.hpp"
 #include <vector>
 namespace th08 {
 ChainElement::~ChainElement(){if(deleted)deleted(argument);previous=nullptr;next=nullptr;callback=nullptr;added=nullptr;deleted=nullptr;}
@@ -31,6 +32,9 @@ i32 Chain::run(bool draw){
     auto* root=draw?&drawing:&calculation;auto* current=root;i32 count=0;
     while(current){
         if(current->callback){
+#if defined(TH_PRESENTATION_AUDIT)
+            rng_audit::JobScope rng_job(current->priority,draw);
+#endif
             const JobResult result=current->callback(current->argument);
             switch(result){
             case JobResult::Remove:{auto* removed=current;current=current->next;cut(removed);++count;continue;}

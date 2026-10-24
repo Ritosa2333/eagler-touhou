@@ -33,6 +33,34 @@ export function inspectNativeForegroundIdentity({expected,observed,requireNormal
     targetId:observed?.target?.targetId??null,windowId:Number.isSafeInteger(observed?.window?.windowId)?observed.window.windowId:null};
 }
 
+/** Restore only the owned window and wait for native bounds/focus to settle together. */
+export async function restoreNativeForeground({expected,readIdentity,restoreWindow,activatePage,focusRuntime,
+  readHost,readRuntime,wait,now=Date.now,timeoutMs=5000}={}){
+  const started=now(),samples=[];
+  let identity=await readIdentity(),owner=expected??identity,stable=0;
+  do{
+    const ownership=inspectNativeForegroundIdentity({expected:owner,observed:identity,requireNormal:false});
+    if(!ownership.ready)return{ready:false,reason:'Owned page/window identity changed',samples,identity,ownership};
+    const state=identity.window.currentBounds?.windowState??identity.window.bounds?.windowState;
+    if(state!=='normal')await restoreWindow(identity.window.windowId);
+    await activatePage(identity.target.targetId);
+    if(focusRuntime)await focusRuntime();
+    const host=await readHost(),runtime=readRuntime?await readRuntime():null;
+    identity=await readIdentity();
+    const identityCheck=inspectNativeForegroundIdentity({expected:owner,observed:identity});
+    const hostFocus=inspectNativePageFocus(host),runtimeFocus=runtime?inspectNativePageFocus(runtime):null;
+    const ready=identityCheck.ready&&hostFocus.ready&&(!readRuntime||runtimeFocus?.ready===true);
+    samples.push({elapsedMs:now()-started,identity,identityCheck,host:hostFocus,runtime:runtimeFocus});
+    stable=ready?stable+1:0;
+    if(stable>=2)return{ready:true,samples,identity,identityCheck,host:hostFocus,runtime:runtimeFocus};
+    if(!inspectNativeForegroundIdentity({expected:owner,observed:identity,requireNormal:false}).ready)
+      return{ready:false,reason:'Owned page/window identity changed',samples,identity,identityCheck};
+    await wait(100);
+  }while(now()-started<timeoutMs);
+  return{ready:false,reason:'Native window bounds and document focus did not settle before the deadline',
+    samples,identity,...samples.at(-1)};
+}
+
 export function desktopExecutionBrowserMode(mode){
   if(['input-only','touch-only','actions-only','replay-recording-only','audio-latency-only'].includes(mode))return'headless';
   if(['background-only','full-desktop'].includes(mode))return'headed';
@@ -128,6 +156,34 @@ export function inspectMinimizedKeyboardClear({windowState,nativeState,events=[]
           !nativeNeutral?['native input was not neutral while the window was still minimized']:[]};
 }
 
+/** Stop waiting on a completed tick or a changed/missing world observation. */
+export function shouldAssessResumedMovement(hidden,restored) {
+  const clock=hidden?.capabilities?.restartFrame;
+  return typeof clock!=='string'||!Number.isSafeInteger(hidden?.frames?.[clock])||
+    hidden?.status?.stage!==restored?.status?.stage||restored?.capabilities?.restartFrame!==clock||
+    !Number.isSafeInteger(restored?.frames?.[clock])||restored.frames[clock]>hidden.frames[clock];
+}
+
+/** Published neutrality and the next completed movement tick must agree. */
+export function inspectResumedKeyboardMovement({hidden,restored,neutralInputValue,tolerance=.0001}={}) {
+  const clock=hidden?.capabilities?.restartFrame;
+  const tickObserved=typeof clock==='string'&&restored?.capabilities?.restartFrame===clock&&
+    Number.isSafeInteger(hidden?.frames?.[clock])&&Number.isSafeInteger(restored?.frames?.[clock])&&
+    restored.frames[clock]>hidden.frames[clock];
+  const coordinatesObserved=['x','y'].every(axis=>Number.isFinite(hidden?.position?.[axis])&&Number.isFinite(restored?.position?.[axis]));
+  const sameStage=Number.isSafeInteger(hidden?.status?.stage)&&hidden.status.stage===restored?.status?.stage;
+  const available=tickObserved&&coordinatesObserved&&sameStage&&neutralInputValue===0&&Number.isFinite(tolerance)&&tolerance>=0;
+  const released=hidden?.input?.value===neutralInputValue&&restored?.input?.value===neutralInputValue;
+  const delta=coordinatesObserved?{x:restored.position.x-hidden.position.x,y:restored.position.y-hidden.position.y}:null;
+  const stationary=!!delta&&Math.abs(delta.x)<=tolerance&&Math.abs(delta.y)<=tolerance;
+  return{status:!available?'incomplete':released&&stationary?'passed':'failed',ready:available&&released&&stationary,
+    tickObserved,coordinatesObserved,sameStage,clock:clock??null,
+    hiddenFrame:hidden?.frames?.[clock]??null,restoredFrame:restored?.frames?.[clock]??null,
+    released,stationary,delta,tolerance,
+    reason:!available?'The resumed movement tick, same-stage positions or neutral input baseline were not observed.':
+      !released?'Held native input survived clearing or reappeared after resume.':!stationary?'The first observed resumed movement consumed residual displacement.':null};
+}
+
 export function inspectAudioContextsBeforeGesture(contexts=[]) {
   const observed=Array.isArray(contexts)?contexts:[];
   const ready=observed.length>0&&observed.every(item=>item?.state==='running');
@@ -148,6 +204,33 @@ export function inspectAudioGestureWindow({contextsBeforeGesture=[],stateEvents=
   if(!captureStayedRunning)missing.push('The PCM capture did not observe a running state for every sampled output context.');
   return{ready,preGesture,captureStayedRunning,stateStable,capturedContextStates:observedCaptureStates,
     stateEvents:[...(stateEvents??[])],missing};
+}
+
+/** Per-document clocks remain separate | iframe blur is expected when Host body owns input. */
+export function inspectForegroundPcmWindow({samples=[],hostEvents=[],runtimeEvents=[]}={}) {
+  const missing=[];
+  const phases=['before-capture','after-capture','after-keyup'];
+  const complete=samples.length===phases.length&&samples.every((sample,index)=>sample?.phase===phases[index]&&
+    ['host','runtime'].every(document=>Number.isFinite(sample?.[document]?.time)&&sample[document].time>=0&&
+      (index===0||sample[document].time>samples[index-1]?.[document]?.time)));
+  if(!complete)missing.push('Foreground PCM window boundary observations are incomplete.');
+  const validSource=source=>typeof source?.url==='string'&&source.url.length>0&&Number.isFinite(source?.timeOrigin)&&source.timeOrigin>=0;
+  const sameSource=(a,b)=>validSource(a)&&validSource(b)&&a.url===b.url&&a.timeOrigin===b.timeOrigin;
+  const sourceStable=complete&&['host','runtime'].every(document=>samples.every(sample=>sameSource(sample[document]?.source,samples[0][document]?.source)));
+  const eventSourcesValid=sourceStable&&hostEvents.every(event=>sameSource(event.source,samples[0].host.source))&&
+    runtimeEvents.every(event=>sameSource(event.source,samples[0].runtime.source));
+  if(!sourceStable||!eventSourcesValid)missing.push('Foreground PCM observations did not retain the same document and performance clock identities.');
+  const hostVisibleFocused=complete&&samples.every(({host})=>host.visibilityState==='visible'&&host.hidden===false&&host.hasFocus===true&&host.inputOwnerFocused===true);
+  const runtimeVisible=complete&&samples.every(({runtime})=>runtime.visibilityState==='visible'&&runtime.hidden===false);
+  const inWindow=(event,document)=>Number.isFinite(event?.time)&&event.time>=samples[0]?.[document]?.time&&event.time<=samples.at(-1)?.[document]?.time;
+  const hostInterruptions=hostEvents.filter(event=>inWindow(event,'host')&&(['host-blur','host-hidden'].includes(event.reason)||event.type==='blur'||event.hidden===true));
+  const runtimeInterruptions=runtimeEvents.filter(event=>inWindow(event,'runtime')&&(event.hidden===true||event.visibility==='hidden'||event.type==='pagehide'));
+  if(!hostVisibleFocused)missing.push('Host keyboard input owner was not visible and focused at every PCM window boundary.');
+  if(!runtimeVisible)missing.push('Runtime document was not visible at every PCM window boundary.');
+  if(hostInterruptions.length)missing.push('Host lost foreground input ownership during the PCM window.');
+  if(runtimeInterruptions.length)missing.push('Runtime document became hidden or left during the PCM window.');
+  return{ready:missing.length===0,evidenceRole:'foreground-environment-window',complete,sourceStable,eventSourcesValid,hostVisibleFocused,runtimeVisible,
+    hostInterruptions,runtimeInterruptions,samples,hostEvents,runtimeEvents,missing};
 }
 
 export function classifyAudioLifecyclePath({beforeContexts=[],afterContexts=[],stateEvents=[]}={}) {
@@ -180,7 +263,7 @@ export function selectNativePageTarget({targetInfos=[],url,title}={}) {
 }
 
 const DESKTOP_CHECK_DECLARATIONS=Object.freeze([
-  Object.freeze({id:'package-and-private-data-identity',adaptationIds:['BUILD-04','PACKAGE-02'],modes:['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']}),
+  Object.freeze({id:'package-and-private-data-identity',role:'prerequisite',adaptationIds:['BUILD-04','PACKAGE-02'],modes:['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']}),
   Object.freeze({id:'launcher-touch-native-consumers',adaptationIds:['TOUCH-06','TOUCH-15','INPUT-05'],modes:['actions-only']}),
   Object.freeze({id:'shared-touch-restart',adaptationIds:['TOUCH-18'],modes:['actions-only']}),
   Object.freeze({id:'shared-replay-recording-and-isolation',adaptationIds:['REPLAY-02','REPLAY-03','REPLAY-04','REPLAY-06'],modes:['replay-recording-only']}),
@@ -216,7 +299,7 @@ const DESKTOP_CHECK_DECLARATIONS=Object.freeze([
   Object.freeze({id:'runtime-epoch-touch-mode-touch-unlimited',adaptationIds:['RUNTIME-01'],modes:[]}),
   Object.freeze({id:'runtime-epoch-touch-mode-joystick',adaptationIds:['RUNTIME-01','TOUCH-03'],modes:['input-only','touch-only']}),
   Object.freeze({id:'runtime-epoch-touch-mode-joystick-free',adaptationIds:['RUNTIME-01','TOUCH-04'],modes:[]}),
-  Object.freeze({id:'package-and-private-data-identity-postflight',adaptationIds:['BUILD-04','PACKAGE-02'],modes:['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']}),
+  Object.freeze({id:'package-and-private-data-identity-postflight',role:'prerequisite',adaptationIds:['BUILD-04','PACKAGE-02'],modes:['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']}),
 ]);
 const DESKTOP_CHECK_BY_ID=new Map(DESKTOP_CHECK_DECLARATIONS.map(check=>[check.id,check]));
 const DESKTOP_SELECTIVE_MODES=Object.freeze(['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']);
@@ -244,10 +327,11 @@ export function desktopCheckAdaptationIds(id,{game}={}){
   return [...(declaration.adaptationIdsByGame?.[game]??declaration.adaptationIds)];
 }
 
-export function desktopAdaptationIdsForMode(mode,options={}){
+export function desktopAdaptationIdsForMode(mode,{prerequisites=false,...options}={}){
   if(!DESKTOP_SELECTIVE_MODES.includes(mode))throw new RangeError(`Unknown desktop check scope ${String(mode)}`);
   const ids=[];
-  for(const checkId of checksForMode(mode))for(const adaptationId of desktopCheckAdaptationIds(checkId,options))
+  for(const checkId of checksForMode(mode).filter(id=>(DESKTOP_CHECK_BY_ID.get(id).role==='prerequisite')===prerequisites))
+    for(const adaptationId of desktopCheckAdaptationIds(checkId,options))
     if(!ids.includes(adaptationId))ids.push(adaptationId);
   return ids;
 }

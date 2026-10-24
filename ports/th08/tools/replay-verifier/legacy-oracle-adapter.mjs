@@ -17,16 +17,27 @@ function filterOriginal(rows, bounds) {
 
 function normalizedNumbers(row) { return observableNumbers.map(index => row.numbers[index]); }
 
+export const TH08_REPLAY_FLAG_PROFILE=Object.freeze({
+  id:'th08/active-replay-flags/2',routeProvenance:0x800,titleContentAvailability:0x38000,
+  source:'web/cpp/game/TitleMenus.hpp | TitleFlow.cpp | GameplayStart.cpp | ReplayStream.cpp',
+});
+
 function comparableFlags(row) {
   // 0x800 records the Stage 4B route selected by the Stage 3B dialogue.  The
   // retail player carries it into later stages, while imported Replay stages
   // are selected directly from the Replay stage table.  Once the observed
   // stage is part of the trace, this bit is route provenance rather than
-  // simulation state.  Keep every other game flag authoritative.
-  return row.flags & ~0x800;
+  // simulation state. Bits 15..17 describe title-menu content availability.
+  // The formal product unlocks those menus independently of clear history;
+  // active Replay simulation consumes the lower practice/replay/route bits.
+  // Raw flags stay in capture artifacts, and availability must be constant.
+  return row.flags & ~(TH08_REPLAY_FLAG_PROFILE.routeProvenance|TH08_REPLAY_FLAG_PROFILE.titleContentAvailability);
 }
 
 function ticksFromRows(rows, digestCanonicalJson) {
+  const availability=rows[0]?.flags&TH08_REPLAY_FLAG_PROFILE.titleContentAvailability;
+  if(rows.some(row=>(row.flags&TH08_REPLAY_FLAG_PROFILE.titleContentAvailability)!==availability))
+    throw Error('Title content availability changed inside an active Replay capture');
   return rows.map(row => { const flags = comparableFlags(row); return ({
     replaySampleIndex: row.frame, clockDisposition: 'advanced', appliedInput: row.keys,
     clocks: {replayFrame: row.frame, gameFrames: row.gameFrames},
@@ -63,18 +74,18 @@ function traceIdentity(fixture, identity = {}) {
       game: 'th08', profile: identity.profile ?? 'jp-1.00d/historical-oracle-v1', replaySha256: fixture.replaySha256,
       executableSha256: identity.executableSha256 ?? '330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924',
       resourceSha256: identity.resourceSha256 ?? '9d7edf43b8ddd347cbb641836f6b5050745dd936f688daebbf9382ca557043bb',
-      stateSchema: 'th08/legacy-replay-oracle-row/v1', traceCodec: 'in-memory/v1',
+      stateSchema: 'th08/legacy-replay-oracle-row/v2', traceCodec: 'in-memory/v1',
       digestAlgorithm: 'sha256-truncated-128/legacy-json-v1',
   };
 }
 
-export function recordsFromRows(fixture, rows, provider, {digestCanonicalJson, recordsFromSegments, identity, provenance = {}}) {
+export function recordsFromRows(fixture, rows, provider, {digestCanonicalJson, recordsFromSegments, identity, provenance = {},complete=true}) {
   const stage = rows[0]?.stage, ticks = ticksFromRows(rows, digestCanonicalJson);
   return recordsFromSegments({
     comparisonIdentity: traceIdentity(fixture, identity),
     coverage: {requiredCategories: ['rng', 'player', 'world'], optionalCategories: []},
-    provenance: {provider, ...provenance}, runReason: 'demo-complete',
-    segments: [{segmentId: `stage-${stage}#0`, route: `stage-${stage}`, ticks, reason: 'demo-returned'}],
+    provenance: {provider,flagProfile:TH08_REPLAY_FLAG_PROFILE, ...provenance}, runReason: complete?'demo-complete':'capture-incomplete',
+    segments: [{segmentId: `stage-${stage}#0`, route: `stage-${stage}`, ticks, reason: complete?'demo-returned':'capture-incomplete',complete}],
   });
 }
 
@@ -89,11 +100,11 @@ export function recordsFromLongRows({fixture, rows, provider, identity, complete
     comparisonIdentity: {
       game: 'th08', profile: identity.profile ?? 'jp-1.00d/ordinary-replay-v1', replaySha256: fixture.replaySha256,
       executableSha256: identity.executableSha256, resourceSha256: identity.resourceSha256,
-      stateSchema: 'th08/ordinary-replay-state/v1', traceCodec: 'jsonl/v1',
+      stateSchema: 'th08/ordinary-replay-state/v2', traceCodec: 'jsonl/v1',
       digestAlgorithm: 'sha256-truncated-128/legacy-json-v1',
     },
     coverage: {requiredCategories: ['rng', 'player', 'world'], optionalCategories: []},
-    provenance: {provider}, runReason: complete ? 'replay-complete' : 'capture-incomplete',
+    provenance: {provider,flagProfile:TH08_REPLAY_FLAG_PROFILE}, runReason: complete ? 'replay-complete' : 'capture-incomplete',
     segments: groups.map((group, index) => ({
       segmentId: `stage-${group.stage}#${index}`, route: `stage-${group.stage}`,
       ticks: ticksFromRows(group.rows, digestCanonicalJson),
@@ -109,14 +120,17 @@ export async function* recordsFromLongJsonLines({fixture, rows, provider, identi
     comparisonIdentity: {
       game: 'th08', profile: identity.profile ?? 'jp-1.00d/ordinary-replay-v1', replaySha256: fixture.replaySha256,
       executableSha256: identity.executableSha256, resourceSha256: identity.resourceSha256,
-      stateSchema: 'th08/ordinary-replay-state/v1', traceCodec: 'jsonl/v1',
+      stateSchema: 'th08/ordinary-replay-state/v2', traceCodec: 'jsonl/v1',
       digestAlgorithm: 'sha256-truncated-128/legacy-json-v1',
     },
-    coverage: {requiredCategories: ['rng', 'player', 'world'], optionalCategories: []}, provenance: {provider, ...provenance},
+    coverage: {requiredCategories: ['rng', 'player', 'world'], optionalCategories: []}, provenance: {provider,flagProfile:TH08_REPLAY_FLAG_PROFILE, ...provenance},
   };
   let sequence = 0, logicalTick = 0, tickCount = 0, segmentCount = 0, stage = null, segmentId = null;
-  let previousRawStage = null, previousGameFrames = null;
+  let previousRawStage = null, previousGameFrames = null,availability=null;
   for await (const row of rows) {
+    const currentAvailability=row.flags&TH08_REPLAY_FLAG_PROFILE.titleContentAvailability;
+    if(availability!==null&&availability!==currentAvailability)throw Error('Title content availability changed inside an active Replay capture');
+    availability=currentAvailability;
     const advanced = row.stage !== previousRawStage || row.gameFrames !== previousGameFrames;
     previousRawStage = row.stage; previousGameFrames = row.gameFrames;
     if (!advanced) continue;

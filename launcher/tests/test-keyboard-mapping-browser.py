@@ -8,9 +8,11 @@ This test proves the Shell-to-JS Emscripten export sink, not native game behavio
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
+import struct
 import subprocess
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -55,8 +57,23 @@ HOST_HTML = """<!doctype html><meta charset=utf-8><button id=host tabindex=0>Hos
 <script>
 window.runtimeEvents=[];
 addEventListener('message',event=>{if(event.source===document.querySelector('#runtime').contentWindow)runtimeEvents.push(event.data);});
-window.__eaglerPrepareManagedRuntimeDataV1=async({game})=>{const bytes=game==='th09'?1000000:64;return {buffer:new Uint8Array(bytes).buffer,bytes};};
+window.__eaglerPrepareManagedRuntimeDataV1=async({game})=>{const response=await fetch('/__test__/managed-data?game='+encodeURIComponent(game)),buffer=await response.arrayBuffer();return {buffer,bytes:buffer.byteLength};};
 </script>"""
+
+
+def managed_data_fixture(game: str) -> bytes:
+    if game != "th075":
+        return bytes(1000000 if game == "th09" else 64)
+    # Exercise the real DATA parser with synthetic font/catalog bytes. The
+    # generated native module boundary does not interpret either asset.
+    files = []
+    payload = b""
+    for path, value in [("/fonts/original-glyphs.bin", b"glyphs"), ("/music/catalog.bin", bytes(16))]:
+        files.append({"path": path, "offset": len(payload), "bytes": len(value),
+                      "sha256": hashlib.sha256(value).hexdigest()})
+        payload += value
+    index = json.dumps({"schema": "eagler-touhou/th075-content/1", "files": files}).encode()
+    return b"E75DATA1" + struct.pack("<I", len(index)) + index + payload
 
 
 def runtime_variants(workspace: Path) -> list[dict]:
@@ -136,6 +153,8 @@ class RuntimeHandler(BaseHTTPRequestHandler):
             return self.respond(b"<!doctype html><meta charset=utf-8>", "text/html; charset=utf-8")
         if path == "__test__/classic-module.js":
             return self.respond(CLASSIC_MODULE.encode(), "text/javascript; charset=utf-8")
+        if path == "__test__/managed-data":
+            return self.respond(managed_data_fixture(parse_qs(parsed.query).get("game", [""])[0]), "application/octet-stream")
         if path == "__test__/font.bin":
             return self.respond(GAME_BYTES, "application/octet-stream")
 
@@ -169,6 +188,8 @@ class RuntimeHandler(BaseHTTPRequestHandler):
         if not source.is_file() and len(parts) >= 3 and parts[-2] == "sdl-runtime":
             generated_candidates = [self.workspace / variant["repo"] / "portable" / "browser" / parts[-1],
                                     self.workspace / "common" / "browser" / parts[-1]] if variant else []
+            if variant and variant["game"] == "th075" and parts[-1] == "content-bundle.mjs":
+                generated_candidates.append(self.workspace / variant["repo"] / "portable" / "content-bundle.mjs")
             source = next((candidate for candidate in generated_candidates if candidate.is_file()), source)
         if not source.is_file():
             self.missing.append(path)
@@ -184,7 +205,9 @@ class RuntimeHandler(BaseHTTPRequestHandler):
                 text = text.replace("{{{ SCRIPT }}}", '<script src="/__test__/classic-module.js"></script>', 1)
             if variant["game"] == "th09":
                 text = text.replace('content="normal"', f'content="{variant["variant"]}"', 1)
-            if variant["game"] == "th15":
+            if not variant.get("classic"):
+                # Directory packagers publish the managed HTML with shell.mjs
+                # as its entry. Serve that same entry, including th075.
                 text = text.replace('src="managed.mjs"', 'src="shell.mjs"', 1)
             return self.respond(text.encode(), "text/html; charset=utf-8")
         is_packaged_entry = bool(variant and not variant.get("classic") and
@@ -230,8 +253,10 @@ def launch_payload(variant: dict, origin: str) -> dict:
     options = {"replayViewer": variant["variant"] == "multiplayer" and variant["game"] != "th09"}
     shared = [{"path": path, "url": "/__test__/font.bin", "bytes": len(GAME_BYTES)}
               for path in ("/msgothic.ttc", "/unifont.otf")]
+    if variant["game"] == "th075":
+        shared = []  # Original glyphs are carried in this product's DATA.
     return {"protocol": PROTOCOL, "game": variant["game"], "epoch": EPOCH,
-            "command": "configure", "language": "lang_ja", "music": "none", "options": options,
+            "command": "configure", "language": "ja", "music": "none", "options": options,
             "sharedResources": shared, "runtimeResources": [], "resources": []}
 
 
@@ -404,23 +429,27 @@ def main() -> int:
         selected = [by_id["th10-multiplayer"]]
     launcher = bundle_launcher(launcher_root)
     results = []
+    failures = []
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         try:
             for variant in selected:
                 try:
                     results.append(run_variant(browser, launcher, workspace, launcher_root, variant, args.negative_control))
-                except AssertionError as error:
-                    if args.negative_control and "WASD W must reach the native ArrowUp sink" in str(error):
+                except Exception as error:
+                    if args.negative_control and isinstance(error, AssertionError) and "WASD W must reach the native ArrowUp sink" in str(error):
                         print(json.dumps({"keyboardMappingBrowser": results, "negativeControl": "EXPECTED_FAILURE", "evidence": str(error)}))
                         return 0
-                    raise
+                    if args.negative_control:
+                        raise
+                    failures.append({"variant": variant["id"], "error": str(error)})
         finally:
             browser.close()
     if args.negative_control:
         raise AssertionError("negative control unexpectedly passed; Shell disconnect did not break the browser assertion")
-    print(json.dumps({"keyboardMappingBrowser": results, "variantsPassed": len(results), "variantsRequired": len(variants)}))
-    return 0
+    print(json.dumps({"keyboardMappingBrowser": results, "failures": failures,
+                      "variantsPassed": len(results), "variantsSelected": len(selected), "variantsRequired": len(variants)}))
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":

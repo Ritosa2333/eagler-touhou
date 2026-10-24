@@ -121,6 +121,7 @@ std::vector<std::string> BrowserRuntime::user_replays(){return resources_.user_r
 void BrowserRuntime::calendar(char date[6],char stamp[20]){file_device().calendar(date,stamp);}
 u32 BrowserRuntime::milliseconds(){return file_device().milliseconds();}
 u64 BrowserRuntime::performance_counter(){return u64(milliseconds())*1000;}
+void BrowserRuntime::clear_live_gameplay_input(){if(app.in_game())app.game.clear_live_input();}
 u16 BrowserRuntime::poll_input(){
     const auto touch=u16(file_device().supplemental_input());u16 result=input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);
     auto& p=app.session.practice;

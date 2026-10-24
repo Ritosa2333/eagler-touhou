@@ -49,8 +49,8 @@ export function assessPracticeParameters({snapshot,expectedConfig,expectedApplie
 
 /** Project a title descriptor onto the data-only ABI sent across Playwright's frame boundary. */
 export function practiceSnapshotRequest({runtime,contract,kind='snapshot'}={}){
-  if(!['snapshot','initial'].includes(kind))throw new TypeError('Practice snapshot kind must be snapshot or initial');
-  const spec=kind==='initial'?contract?.initialSnapshot:contract?.snapshot;
+  if(!['snapshot','initial','gameplayInitial'].includes(kind))throw new TypeError('Practice snapshot kind must be snapshot or initial');
+  const spec=kind==='gameplayInitial'?contract?.gameplayInitialSnapshot:kind==='initial'?contract?.initialSnapshot:contract?.snapshot;
   if(!runtime||['global','core','module','app'].some(key=>typeof runtime[key]!=='string'||!runtime[key].trim())||
     !spec||!Number.isSafeInteger(spec.wordCount)||spec.wordCount<=0||
     !['f64','u32','i32'].includes(spec.wordType)||typeof spec.export!=='string'||typeof spec.app!=='boolean')
@@ -145,7 +145,7 @@ export async function runPracticeGameplayStage({record,stage,epoch,perform,ready
     const observed=await perform();
     const snapshot=observed?.snapshot;
     if(!snapshot||!ready(snapshot))throw new Error('Practice selection did not return a native gameplay-ready snapshot');
-    const parameterConsumption=assess(observed.practice);
+    const parameterConsumption=assess(observed.practice,observed);
     record.parameterConsumption=parameterConsumption;
     if(parameterConsumption?.status!=='observed')
       throw new Error(`Native practice parameters did not match the independent title declaration: ${JSON.stringify(parameterConsumption)}`);

@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {PRESENTATION_AUDIO_SCHEMA,presentationAudioFrameClockPlan,decodePresentationAudioClockBlock,
   presentationAudioPcmProcessorSource,installPresentationAudioProbe,leasePresentationAudioSourceSlot,
-  releasePresentationAudioSourceSlot} from './presentation-audio-browser.mjs';
+  releasePresentationAudioSourceSlot,presentationAudioWindowHasSignal} from './presentation-audio-browser.mjs';
 import {assessPresentationAudioOutput,assertPresentationAudioEqual,assertPresentationGainPcm} from './presentation-audio-evidence.mjs';
 
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -67,6 +67,58 @@ function fixture(){
   const expected={epoch:1,rateHz:60,startNativeSequence:46,expectedEvents:1,logicalIntervals:[{events:[0],routes:[{logicalIndex:0,direct:true,fallback:false,fallbackStarted:false,pending:false}],uploads:0,errors:0}]};
   return {raw,expected};
 }
+function silentPrefixWithContinuationFixture(){
+  const {raw,expected}=fixture(),start=raw.starts[0],prefix=raw.pcm[0],from=prefix.endFrame,to=from+512;
+  for(const block of prefix.blocks)for(const side of ['leftWords','rightWords'])block[side].fill(0);
+  const base=Math.floor(from/128)*128;
+  const blocks=Array.from({length:Math.ceil((to-base)/128)},(_,index)=>pcmBlock(raw.clock,base+index*128,base,{sequence:index+2}));
+  const source={kind:'pcm',eventSerial:start.eventSerial,purpose:'silent-tail',mode:'range',tapId:start.sourceTap,voiceKey:start.voiceKey,
+    sourceId:start.sourceId,slotGeneration:start.sourceSlotGeneration,startFrame:from,endFrame:to,onsetFrame:null,blocks};
+  const output=clone(source);output.tapId=start.outputTap;
+  for(const block of output.blocks)for(const side of ['leftWords','rightWords']){
+    const samples=new Float32Array(Uint32Array.from(block[side]).buffer);
+    for(let index=0;index<samples.length;index++)samples[index]*=.5;block[side]=Array.from(new Uint32Array(samples.buffer));
+  }
+  raw.silentContinuations=[{eventSerial:start.eventSerial,startFrame:from,endFrame:to,sourceTap:start.sourceTap,outputTap:start.outputTap,
+    sourceId:start.sourceId,slotGeneration:start.sourceSlotGeneration,sourceArmed:true,outputArmed:true,source,output}];
+  return{raw,expected};
+}
+
+test('a bounded continuation proves actual owned output after a silent initial prefix',()=>{
+  const {raw,expected}=silentPrefixWithContinuationFixture();
+  const result=assessPresentationAudioOutput(seal(raw),expected);
+  assert.equal(result.status,'passed',result.reason);assert.equal(result.continuationProofs.length,1);
+  assert.equal(result.continuationProofs[0].outputDelayFrames,128);assert.equal(result.observedPcmFrames,640);
+  assert.equal(result.gainTimelineDiagnostic.status,'differs','The initial gain diagnostic stays separate from actual output occurrence');
+});
+
+test('continuations cannot borrow another generation, marker, interval or fabricated nonzero output',()=>{
+  for(const mutate of [
+    raw=>raw.silentContinuations[0].sourceId++,
+    raw=>raw.silentContinuations[0].output.slotGeneration++,
+    raw=>raw.silentContinuations[0].sourceArmed=false,
+    raw=>raw.silentContinuations[0].output.startFrame++,
+    raw=>raw.silentContinuations[0].output.blocks.pop(),
+    raw=>raw.silentContinuations.push(clone(raw.silentContinuations[0])),
+    raw=>raw.voiceStops.push({kind:'source-node-ended',sourceId:1,voiceKey:'100',nodePresent:true,eventSerial:47,sourceSlot:0,
+      slotGeneration:1,sequence:1,endedAt:raw.pcm[0].endFrame/raw.clock.sampleRate,beforeTime:raw.pcm[0].endFrame/raw.clock.sampleRate,
+      afterTime:raw.pcm[0].endFrame/raw.clock.sampleRate,endedFrame:raw.pcm[0].endFrame}),
+    raw=>{for(const block of raw.silentContinuations[0].output.blocks)for(const side of ['leftWords','rightWords'])block[side].fill(0);},
+    raw=>{for(const block of raw.silentContinuations[0].source.blocks)for(const side of ['leftWords','rightWords'])block[side].fill(0);},
+  ]){
+    const {raw,expected}=silentPrefixWithContinuationFixture();mutate(raw);
+    assert.equal(assessPresentationAudioOutput(seal(raw),expected).status,'failed');
+  }
+});
+
+test('signal outside the requested window cannot suppress its continuation capture',()=>{
+  const plan=presentationAudioFrameClockPlan({sampleRate:48000,anchorTime:2}),block=pcmBlock(plan,plan.anchorFrame,plan.anchorFrame);
+  const row={startFrame:plan.anchorFrame+16,endFrame:plan.anchorFrame+32,blocks:[block]};
+  for(const side of ['leftWords','rightWords'])for(let index=16;index<32;index++)block[side][index]=0;
+  assert.equal(presentationAudioWindowHasSignal(row),false);
+  block.leftWords[20]=0x3f800000;assert.equal(presentationAudioWindowHasSignal(row),true);
+});
+
 function reusedSlotFixture(){
   const {raw,expected}=fixture(),plan=raw.clock,nominalFrame=raw.sourcePcm[0].startFrame+256,time=nominalFrame/plan.sampleRate,
     frame=Math.ceil(time*plan.sampleRate),

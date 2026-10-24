@@ -31,12 +31,12 @@ test('diagnostic profile binds quick and daily captures to explicit input identi
   assert.deepEqual(profile.quickInputs.map(item=>item.id),['demo0','demo1','demo2','demo3']);
   assert.ok(profile.quickInputs.every(item=>item.file===`${item.id}.rpy`));
   assert.ok(profile.quickInputs.every(item=>item.captureFile===`${item.id}.json`));
-  assert.equal(profile.quickCaptureSchema,'th08/current-replay-capture/v2');
+  assert.equal(profile.quickCaptureSchema,'th08/current-replay-capture/v3');
   assert.deepEqual(new Set(profile.dailyFixtures.map(item=>item.replayKey)),
     new Set(profile.dailyGateReplayOptions.map(item=>item.replayKey)));
   assert.deepEqual(profile.dailyFixtures.map(item=>item.id),['lunatic','extra']);
   assert.ok(profile.dailyFixtures.every(item=>item.captureFile===`${item.id}.json`));
-  assert.equal(profile.dailyCaptureSchema,'th08/current-replay-tick-capture/v2');
+  assert.equal(profile.dailyCaptureSchema,'th08/current-replay-tick-capture/v3');
 });
 
 test('diagnostic lane check map stays limited to operations with structured evidence',()=>{

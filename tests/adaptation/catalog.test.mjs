@@ -16,6 +16,17 @@ import {profiles,suites} from '../suites.mjs';
 const root=resolve(import.meta.dirname,'../..');
 const env=(values={})=>({EAGLER_TEST_RUNTIME_MANIFEST:'runtime-input.json',...values});
 
+test('practice Host and UI requirements schedule real package inputs while parameter-only reruns stay focused',()=>{
+  for(const check of ['PRACTICE-01','PRACTICE-02']){
+    const blocked=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:[check]}).cases[0];
+    assert.deepEqual(blocked.blockedInputs.map(item=>item.name),['EAGLER_TEST_PACKAGES','EAGLER_TEST_ARTWORK']);
+    const ready=buildAdaptationPlan({root,environment:env({EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'}),games:['th08'],variant:'normal',checks:[check]}).cases[0];
+    assert.equal(ready.requiresLauncherBuild,true);assert.ok(ready.task.args.includes('--launcher-ui'));
+  }
+  const parameters=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:['PRACTICE-04']}).cases[0];
+  assert.equal(parameters.status,'ready');assert.equal(parameters.requiresLauncherBuild,false);assert.ok(!parameters.task.args.includes('--launcher-ui'));
+});
+
 test('runtime protocol and installed-resource ownership select their actual separate journeys',()=>{
   const plan=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal'});
   const runtime=plan.cases.find(item=>item.group==='runtime');
@@ -299,7 +310,7 @@ test('a newly catalogued product stays visible and blocked until its driver inte
 
 test('music duties are catalog-derived and every normal and multiplayer product is runnable, blocked or N/A',()=>{
   const workspace=JSON.parse(readFileSync(resolve(root,'launcher/config/workspace.json'),'utf8')).repositories;
-  const plan=buildAdaptationPlan({root,environment:env({EAGLER_TEST_MUSIC_MANIFEST:'music.json'}),groups:['music'],variant:'both'});
+  const plan=buildAdaptationPlan({root,environment:env({EAGLER_TEST_MUSIC_MANIFEST:'music.json',EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'}),groups:['music'],variant:'both'});
   assert.equal(new Set(plan.cases.filter(item=>item.variant==='normal').map(item=>item.game)).size,Object.keys(PRODUCT_GAMES).length);
   assert.equal(plan.cases.filter(item=>item.variant==='multiplayer').length,Object.keys(PRODUCT_GAMES).length);
   assert.equal(new Set(plan.cases.map(item=>item.id)).size,plan.cases.length);
@@ -324,6 +335,12 @@ test('music duties are catalog-derived and every normal and multiplayer product 
       assert.ok(runnable.blockedInputs.length===0);
       assert.ok(runnable.requiredInputs.includes('EAGLER_TEST_RUNTIME_MANIFEST'));
       assert.ok(runnable.requiredInputs.includes('EAGLER_TEST_MUSIC_MANIFEST'));
+      if(game==='th08'){
+        assert.ok(runnable.task.args.includes('--launcher-ui'));
+        assert.ok(runnable.requiresLauncherBuild);
+        assert.ok(runnable.requiredInputs.includes('EAGLER_TEST_PACKAGES'));
+        assert.ok(runnable.requiredInputs.includes('EAGLER_TEST_ARTWORK'));
+      }
     }else assert.equal(runnable,undefined,`${game}: missing interface must not receive a fabricated task`);
     if(expectedBlocked.length){
       assert.ok(blocked,`${game}: missing music duties must remain visible`);
@@ -339,6 +356,13 @@ test('music duties are catalog-derived and every normal and multiplayer product 
     assert.deepEqual(multiplayer.checks,duties);
   }
   assert.deepEqual(plan.unmappedChecks,[]);
+});
+
+test('th08 music cannot silently omit its real Launcher UI when package inputs are absent',()=>{
+  const plan=buildAdaptationPlan({root,environment:env({EAGLER_TEST_MUSIC_MANIFEST:'music.json'}),groups:['music'],games:['th08'],variant:'normal'});
+  const scene=plan.cases.find(item=>item.id==='music-normal-th08');
+  assert.equal(scene.status,'blocked');assert.equal(scene.task,null);
+  assert.deepEqual(scene.blockedInputs.map(input=>input.name),['EAGLER_TEST_PACKAGES','EAGLER_TEST_ARTWORK']);
 });
 
 test('selected music duties outside the current scene remain explicitly blocked',()=>{

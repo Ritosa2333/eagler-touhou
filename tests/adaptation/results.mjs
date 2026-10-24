@@ -262,7 +262,67 @@ export function summarizeAdaptationCases(cases){
     executed:cases.filter(item=>item.execution==='executed').length,retained:cases.filter(item=>item.execution==='retained').length};
 }
 
-export function adaptationCoverage(cases,{checks=[],unmappedChecks=[],targets}={}){
+/** Explain unfinished evidence from the selected routes without inventing product defects. */
+export function adaptationRemainingWork(rows,cases,{humanReviewBundles=[]}={}){
+  const byId=new Map(cases.map(item=>[item.id,item])),work=new Map();
+  const humanIds=new Set(humanReviewBundles.flatMap(bundle=>bundle.checks??[]));
+  const add=(row,item,kind,detail)=>{
+    const caseId=item?.id??null,key=JSON.stringify([row.game,row.variant,caseId,kind]);
+    let entry=work.get(key);
+    if(!entry){entry={game:row.game,variant:row.variant,caseId,group:item?.group??null,kind,checks:[],details:[],
+      ...(item?.report?{report:item.report}:{}),execution:item?.execution??'not-run'};work.set(key,entry);}
+    if(!entry.checks.includes(row.id))entry.checks.push(row.id);
+    if(detail&&!entry.details.includes(detail))entry.details.push(detail);
+  };
+  for(const row of rows){
+    if(row.complete||row.status==='not-applicable')continue;
+    if(!row.caseIds.length)add(row,null,'missing-task','No required route is registered for this requirement');
+    for(const caseId of [...row.caseIds,...(row.supportingCaseIds??[])]){
+      const item=byId.get(caseId),supporting=!row.caseIds.includes(caseId);
+      if(!item){if(!supporting)add(row,{id:caseId},'missing-case','Required route has no result record');continue;}
+      const checks=(item.checks??[]).filter(check=>check.id===row.id);
+      const failures=checks.filter(check=>check.status==='failed');
+      if(failures.length){for(const check of failures)add(row,item,'check-failed',check.error??check.scope??row.id);continue;}
+      if(supporting)continue;
+      if(item.status==='not-applicable')continue;
+      const waitingHuman=humanIds.has(row.id)&&checks.some(check=>check.machineComplete===true&&
+        check.completeEvidence?.valid===true&&check.proof?.source==='driver-report'&&check.proof.references?.length>0);
+      if(item.status!=='passed'&&!(item.status==='incomplete'&&waitingHuman)){
+        const kind=item.status==='blocked'?'prerequisite-missing':item.status==='failed'?'route-failed':'execution-incomplete';
+        const details=[...(item.issues??[]),...(item.incompleteReasons??[]),...(item.blockedInputs??[]).map(input=>input.reason),item.reason].filter(Boolean);
+        add(row,item,kind,details.join(' | ')||`Route status: ${item.status??'missing'}`);
+      }
+      if(!checks.length){if(item.status==='passed')add(row,item,'missing-observation','Route did not report this numbered requirement');continue;}
+      for(const check of checks){
+        const proven=(check.status==='passed'||check.status==='observed'&&check.completeEvidence?.valid===true)&&
+          (item.status==='passed'||item.status==='incomplete'&&!(item.issues?.length)&&check.completeEvidence?.valid===true)&&
+          check.complete===true&&check.proof?.source==='driver-report'&&check.proof.references?.length>0;
+        if(proven)continue;
+        if(check.claimedComplete===true||check.complete===true||check.claimedMachineComplete===true&&check.machineComplete!==true){
+          add(row,item,'evidence-rejected',check.proofIssue??check.completeEvidence?.reason??'Complete claim lacks an accepted observation or independent proof');
+        }else if(check.machineComplete===true&&check.completeEvidence?.valid===true&&
+          check.proof?.source==='driver-report'&&check.proof.references?.length>0&&humanIds.has(row.id)){
+          add(row,item,'human-review-required',check.scope??'Automatic evidence is complete; the registered human scene bundle supplies the visual conclusion');
+        }else if(['incomplete','blocked','not-run','unknown','running'].includes(check.status)){
+          add(row,item,'observation-incomplete',check.error??check.scope??`Observation status: ${check.status}`);
+        }else{
+          add(row,item,'coverage-review-required',check.scope??'Observed scenario does not declare full requirement coverage');
+        }
+      }
+    }
+  }
+  const items=[...work.values()],requirements=new Set(rows.filter(row=>!row.complete&&row.status!=='not-applicable')
+    .map(row=>`${row.game}/${row.variant}/${row.id}`));
+  const byKind={};
+  for(const kind of new Set(items.map(item=>item.kind))){
+    const selected=items.filter(item=>item.kind===kind);
+    byKind[kind]={requirements:new Set(selected.flatMap(item=>item.checks.map(id=>`${item.game}/${item.variant}/${id}`))).size,
+      workItems:selected.length};
+  }
+  return{requirements:requirements.size,workItems:items.length,byKind,items};
+}
+
+export function adaptationCoverage(cases,{checks=[],unmappedChecks=[],targets,humanReviewBundles=[]}={}){
   const rows=[];
   const products=targets??[...new Set(cases.map(item=>`${item.game}/${item.variant}`))].map(target=>{
     const [game,variant]=target.split('/');return{game,variant};
@@ -272,17 +332,22 @@ export function adaptationCoverage(cases,{checks=[],unmappedChecks=[],targets}={
     const expected=requirements??(checks.length?checks:[...new Set(selected.flatMap(item=>item.checksMapped??[]))]).map(id=>({id}));
     for(const {id,reason} of expected){
       const related=selected.filter(item=>item.checksMapped?.includes(id));
-      const evidence=related.flatMap(item=>(item.checks??[]).filter(check=>check.id===id).map(check=>({...check,caseId:item.id,execution:item.execution})));
+      const supporting=selected.filter(item=>!related.includes(item)&&item.supportingChecks?.includes(id));
+      const evidence=[...related,...supporting].flatMap(item=>(item.checks??[]).filter(check=>check.id===id)
+        .map(check=>({...check,caseId:item.id,execution:item.execution,role:related.includes(item)?'required':'supporting'})));
       const failed=evidence.some(item=>item.status==='failed');
       const applicable=related.filter(item=>item.status!=='not-applicable');
-      const complete=!reason&&applicable.length>0&&applicable.every(item=>item.status==='passed'&&
-        (item.checks??[]).some(check=>check.id===id&&check.status==='passed'&&check.complete===true&&
+      const complete=!reason&&!failed&&applicable.length>0&&applicable.every(item=>
+        (item.checks??[]).some(check=>check.id===id&&
+          (item.status==='passed'||item.status==='incomplete'&&!(item.issues?.length)&&check.completeEvidence?.valid===true)&&
+          (check.status==='passed'||check.status==='observed'&&check.completeEvidence?.valid===true)&&check.complete===true&&
           check.proof?.source==='driver-report'&&check.proof.references?.length>0));
       rows.push({game,variant,id,status:reason?'not-applicable':failed?'failed':complete?'complete':related.length?'partial':'unmapped',
-        complete,evidence,caseIds:related.map(item=>item.id),...(reason?{reason}: {})});
+        complete,evidence,caseIds:related.map(item=>item.id),supportingCaseIds:supporting.map(item=>item.id),...(reason?{reason}: {})});
     }
   }
-  return{complete:rows.length>0&&unmappedChecks.length===0&&rows.every(row=>row.complete||row.status==='not-applicable'),rows,unmappedChecks};
+  return{complete:rows.length>0&&unmappedChecks.length===0&&rows.every(row=>row.complete||row.status==='not-applicable'),rows,unmappedChecks,
+    remaining:adaptationRemainingWork(rows,cases,{humanReviewBundles})};
 }
 
 function reviewOperations(guides){
@@ -312,6 +377,10 @@ export function adaptationReviewMarkdown(report,{checklist,root,guides}={}){
     'not-applicable':'不适用',passed:'场景通过',planned:'预览',blocked:'缺前置条件',
     incomplete:'未完成',timeout:'超时',cancelled:'已取消','not-run':'未运行'};
   const status=value=>statuses[value]??cell(value??'未知');
+  const workKinds={'missing-task':'未登记任务','missing-case':'缺场景结果','check-failed':'检查失败',
+    'route-failed':'所属场景失败','prerequisite-missing':'缺前置条件','execution-incomplete':'场景未完成',
+    'missing-observation':'缺编号观察','evidence-rejected':'完整证据未获接受','human-review-required':'等待集中人审',
+    'observation-incomplete':'观察未完成','coverage-review-required':'需核对覆盖范围'};
   const link=(label,path)=>`[${cell(label)}](<${String(path).replaceAll('\\','/')}>)`;
   const definitions=new Map((checklist?.checks??[]).map(check=>[check.id,check]));
   const sections=new Map((checklist?.sections??[]).map(section=>[section.id,section]));
@@ -334,6 +403,19 @@ export function adaptationReviewMarkdown(report,{checklist,root,guides}={}){
   for(const product of products){
     lines.push(`## ${cell(product)}`,'');
     const productRows=rows.filter(row=>`${row.game}/${row.variant}`===product);
+    const workItems=(report.coverage?.remaining?.items??[]).filter(item=>`${item.game}/${item.variant}`===product);
+    if(workItems.length){
+      const pendingIds=new Set(workItems.flatMap(item=>item.checks));
+      lines.push('### 待办清单','',`待收口编号 ${pendingIds.size} 项 | 待办 ${workItems.length} 组`,'',
+        '编号按要求计数，待办按场景和原因归组。同一场景可关联多个编号；覆盖范围待核对与检查失败分别列出。','',
+        '| 场景 | 原因 | 关联编号 | 依据 |','| --- | --- | --- | --- |');
+      for(const item of workItems){
+        const label=item.group??item.caseId??'未登记任务';
+        const source=item.report?.path?link(label,item.report.path):cell(label);
+        lines.push(`| ${source} | ${cell(workKinds[item.kind]??item.kind)} | ${item.checks.map(cell).join('、')} | ${item.details.map(cell).join('<br>')} |`);
+      }
+      lines.push('');
+    }
     const humanBundles=(checklist?.humanReviewBundles??[]).map(bundle=>({...bundle,
       selectedChecks:bundle.checks.filter(id=>productRows.some(row=>row.id===id&&row.status!=='not-applicable'))}))
       .filter(bundle=>bundle.selectedChecks.length);

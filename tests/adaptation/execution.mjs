@@ -73,7 +73,8 @@ export async function runAdaptationVerification(options,dependencies={}){
             item.blockedInputs=[...(item.blockedInputs??[]),{name:'selected-local-inputs',reason:issue}];
           }
         }
-        report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks,targets:report.coverageTargets});
+        report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks,targets:report.coverageTargets,
+          humanReviewBundles:checklist.humanReviewBundles});
         report.status='planned';report.passed=false;await saveReview();await save();return;
       }
       assert.ok(report.cases.length||report.unmappedChecks.length,'No adaptation scenarios selected');
@@ -128,7 +129,8 @@ export async function runAdaptationVerification(options,dependencies={}){
       }
       Object.assign(report,summarizeAdaptationCases(report.cases));
       if(report.preparation&&report.preparation.status!=='passed'){report.status='failed';report.passed=false;}
-      report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks,targets:report.coverageTargets});
+      report.coverage=adaptationCoverage(report.cases,{checks:selection.checks,unmappedChecks:report.unmappedChecks,targets:report.coverageTargets,
+        humanReviewBundles:checklist.humanReviewBundles});
       if((report.unmappedChecks.length||(selection.checks.length||report.verificationScope==='product')&&!report.coverage.complete)&&report.status==='passed'){
         report.status='incomplete';report.passed=false;
       }

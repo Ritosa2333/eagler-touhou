@@ -36,7 +36,8 @@ function firstDifference(expected, actual, path = '') {
 function result(status, fields = {}) { return {schema: RESULT_SCHEMA, status, ...fields}; }
 function location(record) {
   return record && record.type === RECORD_TYPE.TICK
-    ? {sequence: record.sequence, segmentId: record.segmentId, logicalTick: record.logicalTick}
+    ? {sequence: record.sequence, segmentId: record.segmentId, logicalTick: record.logicalTick,
+      replaySampleIndex: record.replaySampleIndex, clocks: {...record.clocks}}
     : {sequence: record?.sequence, recordType: record?.type};
 }
 
@@ -161,6 +162,10 @@ export async function compareTraces(expectedRecords, actualRecords, {requiredCat
     if (expectedProgress) return {...expectedProgress, comparedTicks: expectedCount};
     const actualProgress = validateProgress(actual, actualState, 'actual');
     if (actualProgress) return {...actualProgress, comparedTicks: expectedCount};
+    if (expected.type===RECORD_TYPE.TICK&&
+        [RECORD_TYPE.SEGMENT_END,RECORD_TYPE.RUN_END].includes(actual.type)&&actual.complete===false)
+      return result(RESULT_STATUS.INCOMPLETE,{reason:'candidate-capture-incomplete',comparedTicks:expectedCount,
+        firstDifference:location(expected),actual:{type:actual.type,reason:actual.reason,complete:false}});
     if (expected.type !== actual.type)
       return result(RESULT_STATUS.DIVERGED, {reason: 'record-type', firstDifference: {...location(expected), expected: expected.type, actual: actual.type}, comparedTicks: expectedCount});
     if (expected.type === RECORD_TYPE.TICK) {

@@ -64,6 +64,26 @@ export function productionPlayerStylesheetLinks(){
     '<link rel="stylesheet" href="/launcher-app/workspace-viewport.css">';
 }
 
+/** Bound the fixture's root surface to its declared CSS-pixel viewport.
+ * PlayerSurface and its iframe retain their production layout rules inside it.
+ */
+export function installProductionPlayerHostViewport({document:hostDocument=document,window:hostWindow=window}={}){
+  const player=hostDocument.getElementById('player');
+  if(!player)throw Error('Production Player viewport root is missing');
+  const fit=()=>{
+    const {innerWidth:width,innerHeight:height}=hostWindow;
+    if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)
+      throw Error('Fixture viewport dimensions must be positive CSS pixels');
+    Object.assign(player.style,{left:'0px',top:'0px',right:'auto',bottom:'auto',width:`${width}px`,height:`${height}px`});
+  };
+  fit();hostWindow.addEventListener('resize',fit);
+  return()=>hostWindow.removeEventListener('resize',fit);
+}
+
+export function productionPlayerHostViewportScript(){
+  return `(${installProductionPlayerHostViewport.toString()})();`;
+}
+
 /** Resolve referenced Launcher public files through the production path policy. */
 export async function readLauncherPublicAsset(pathname){
   const prefix='/launcher-public/';

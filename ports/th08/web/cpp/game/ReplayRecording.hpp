@@ -16,12 +16,16 @@ struct ReplayBuildIdentity {i32 size=840704,checksum=i32(2724749753u);};
 // memory are retained; offsets are created when assembling the replay file.
 class ReplayRecording {
     ReplayMetadata metadata_{};ReplayRecordedStage stages_[9];i32 current_stage=-1;bool initialized=false;
+    // A priority-17 sample is consumed by priority 9 on the following tick.
+    struct PendingInput {i32 stage=-1;u32 offset=0;bool valid=false;} pending_input;
 public:
     ReplayInputState input;ReplayFrameState frame_state;
     void reset();
     bool begin(i32 stage,const GameplaySession&,const EclGlobals&,u8 power_item_counter,ReplayBuildIdentity identity={});
-    void update(){if(current_stage>=0)stages_[current_stage].stream.record(input);}
-    void stop(){if(current_stage>=0)stages_[current_stage].stream.stop_recording();}
+    void update();
+    void consume_pending_input()noexcept{pending_input.valid=false;}
+    void cancel_pending_input()noexcept;
+    void stop(){consume_pending_input();if(current_stage>=0)stages_[current_stage].stream.stop_recording();}
     bool ready()const{return initialized;}
     i32 current()const{return current_stage;}
     const ReplayMetadata& metadata()const{return metadata_;}

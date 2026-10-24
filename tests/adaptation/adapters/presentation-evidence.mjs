@@ -16,7 +16,7 @@ const same=(left,right)=>isDeepStrictEqual(left,right);
 function requireValue(condition,message){assert.ok(condition,message);}
 
 function readIdentityBytes(identity,label){
-  requireValue(record(identity)&&isAbsolute(identity.path)&&Number.isSafeInteger(identity.bytes)&&identity.bytes>0&&
+  requireValue(record(identity)&&typeof identity.path==='string'&&isAbsolute(identity.path)&&Number.isSafeInteger(identity.bytes)&&identity.bytes>0&&
     SHA.test(identity.sha256??''),`${label} needs an absolute path, byte count and SHA-256`);
   const before=lstatSync(identity.path);
   requireValue(before.isFile()&&!before.isSymbolicLink(),`${label} must be a regular non-symlink file`);
@@ -75,7 +75,8 @@ function validateProductBinding({driver,entry,product,profile,capability}){
       `${label} identity fingerprint does not match its snapshot`);
     const pairedInput=snapshot.caseIdentity?.files?.pairedReplay;
     const selectedInput=driver.evidence?.diagnosticInputs?.pairedReplay;
-    requireValue(record(pairedInput)&&record(selectedInput)&&pairedInput.bytes===selectedInput.bytes&&
+    requireValue(record(pairedInput)&&record(selectedInput)&&typeof pairedInput.path==='string'&&
+      typeof selectedInput.path==='string'&&pairedInput.bytes===selectedInput.bytes&&
       pairedInput.sha256===selectedInput.sha256&&resolve(pairedInput.path)===resolve(selectedInput.path),
     `${label} identity does not bind the selected Replay input bytes`);
   }
@@ -85,6 +86,10 @@ function validateProductBinding({driver,entry,product,profile,capability}){
 
 function requireArtifactSet(artifacts,capability){
   requireValue(record(artifacts)&&record(artifacts.runs),'Paired report omits its raw evidence artifacts');
+  requireValue(record(artifacts.input)&&typeof artifacts.input.path==='string'&&isAbsolute(artifacts.input.path)&&basename(artifacts.input.path)===capability.inputFile&&
+    Number.isSafeInteger(artifacts.input.bytes)&&artifacts.input.bytes>0&&SHA.test(artifacts.input.sha256??''),
+  'Paired Replay input identity does not match the registered fixture');
+  readIdentityBytes(artifacts.input,'Selected Replay input');
   const names={
     acceptance:'presentation-acceptance.json',
     pair:`paired-replay-${capability.fixture}-result.json`,
@@ -102,10 +107,6 @@ function requireArtifactSet(artifacts,capability){
     loaded[key]=result.value;evidenceDirectories.add(dirname(result.identity.path));
   }
   requireValue(evidenceDirectories.size===1,'Paired raw artifacts do not share one evidence directory');
-  requireValue(record(artifacts.input)&&isAbsolute(artifacts.input.path)&&basename(artifacts.input.path)===capability.inputFile&&
-    Number.isSafeInteger(artifacts.input.bytes)&&artifacts.input.bytes>0&&SHA.test(artifacts.input.sha256??''),
-  'Paired Replay input identity does not match the registered fixture');
-  readIdentityBytes(artifacts.input,'Selected Replay input');
   return{...loaded,input:{path:resolve(artifacts.input.path),bytes:artifacts.input.bytes,sha256:artifacts.input.sha256}};
 }
 
@@ -119,7 +120,7 @@ function validateRunInputs({runs,capability,scope,input,driver}){
   requireValue(Array.isArray(runs)&&runs.length===3,'Three retained cadence run artifacts are required');
   const expectedRoles=['baseline','controlled-extra-draw','controlled-extra-draw'];
   const diagnosticInputs=driver.evidence?.diagnosticInputs?.pairedReplay;
-  requireValue(record(diagnosticInputs)&&resolve(diagnosticInputs.path)===input.path&&
+  requireValue(record(diagnosticInputs)&&typeof diagnosticInputs.path==='string'&&resolve(diagnosticInputs.path)===input.path&&
     diagnosticInputs.bytes===input.bytes&&diagnosticInputs.sha256===input.sha256,
   'Selected Replay bytes do not match the diagnostic input identity');
   const build=driver.evidence?.labBuild;
@@ -188,7 +189,7 @@ function recompute({driver,entry,product,profile,capability}){
   requireValue(same(entry, target.checks.find(item=>item.id===entry.id)),`${entry.id} differs from its target check`);
   const artifacts=requireArtifactSet(observation.artifacts,capability);
   const input=driver.evidence?.diagnosticInputs?.pairedReplay;
-  requireValue(record(input)&&resolve(input.path)===artifacts.input.path&&input.bytes===artifacts.input.bytes&&
+  requireValue(record(input)&&typeof input.path==='string'&&resolve(input.path)===artifacts.input.path&&input.bytes===artifacts.input.bytes&&
     input.sha256===artifacts.input.sha256,`${entry.id} Replay input identity differs from the selected diagnostic manifest`);
   validateRunInputs({runs:[artifacts.baseline,artifacts.controlledExtraDraw,artifacts.cadence144],capability,
     scope:{game:product.game,variant:product.variant},input:artifacts.input,driver});
@@ -219,8 +220,18 @@ function recompute({driver,entry,product,profile,capability}){
     checkStatus(acceptedCheck,entry.id)===expected.status&&acceptedCheck.complete===expected.complete&&
     acceptedCheck.machineComplete===expected.machineComplete&&same(acceptedCheck,observation.check),
   `${entry.id} accepted claim differs from independently recomputed raw evidence`);
-  requireValue(Array.isArray(acceptedCheck.evidence?.sources)&&acceptedCheck.evidence.sources.length===1&&
-    same(acceptedCheck.evidence.sources[0],expected.evidence),`${entry.id} accepted source differs from the recomputed claim`);
+  const sources=[{schema:expected.schema??null,...expected.evidence}];
+  if(observation.artifacts.display?.observations){
+    const display=readIdentityFile(observation.artifacts.display.observations,'Display observations').value;
+    requireValue(display.schema==='eagler-presentation/display-observations/1'&&same(display.scope,observation.scope)&&
+      Array.isArray(display.checks),'Display context belongs to another product or schema');
+    const contextual=display.checks.filter(row=>row.id===entry.id);
+    requireValue(contextual.length<=1,`${entry.id} display context contains duplicate claims`);
+    if(contextual.length)sources.push({schema:contextual[0].schema??null,...contextual[0].evidence});
+  }
+  const expectedEvidence={game:product.game,variant:product.variant,adaptationIds:[entry.id],sources,
+    ...(['DISPLAY-07','VERIFY-07'].includes(entry.id)?{authoritativeSource:'pairedReplayRuns'}:{})};
+  requireValue(same(acceptedCheck.evidence,expectedEvidence),`${entry.id} accepted source differs from the recomputed claim`);
   requireValue(observation.humanReview?.status==='pending','Machine evidence must not manufacture a human display review');
   return expected;
 }

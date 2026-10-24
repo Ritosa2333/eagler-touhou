@@ -115,7 +115,7 @@ function fixture(t){
     browserCaptures:relative(refs.capture),browserErrors:relative(errors),materials,
     humanReview:{status:'pending',accepted:null},claims:{humanVisualApproval:false,physicalRefreshVerified:false}});
   const acceptance={schema:'eagler-presentation/acceptance/1',scope,humanReview:{status:'pending'},checks:checks.map(row=>({
-    ...row,evidence:{...scope,adaptationIds:[row.id],sources:[row.evidence]}}))};
+    ...row,evidence:{...scope,adaptationIds:[row.id],sources:[{schema:row.schema??null,...row.evidence}]}}))};
   const acceptanceRef=save('acceptance','presentation-acceptance.json',acceptance);
   const args=id=>({id,refs,acceptance,observation:{scope,check:acceptance.checks.find(row=>row.id===id),
     humanReview:{status:'pending'},artifacts:{acceptance:acceptanceRef}},entry:{id,status:'passed',complete:false,machineComplete:true},

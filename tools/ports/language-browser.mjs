@@ -1,3 +1,4 @@
+import {chooseSetting} from './launcher-ui-controls.mjs';
 import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -22,17 +23,6 @@ import {resolveAdaptationAdapter} from '../../tests/adaptation/adapters/registry
 const root=resolve(import.meta.dirname,'../..'),arg=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const required=name=>{const value=arg(name);if(!value)throw Error(`Required: --${name}=VALUE`);return value;};
 const output=resolve(required('output')),pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-
-async function chooseSetting(page,id,value){
-  const select=page.locator(`#${id}`);
-  if(await select.inputValue()===value)return;
-  const advanced=page.locator('#advancedOptions');
-  if(await advanced.count()&&await advanced.getAttribute('open')===null)await advanced.locator('summary').click();
-  const control=page.locator('.mizuki-select').filter({has:select});
-  await control.locator('.mizuki-select-trigger').click();
-  await page.locator(`.mizuki-select-menu:visible [data-value="${value}"]`).click();
-  assert.equal(await select.inputValue(),value,`Launcher did not select ${id}=${value}`);
-}
 
 const report=await runWithReport({output,schema:'eagler-touhou/language-browser/1'},async(report,save)=>{
   assertCliArguments(process.argv.slice(2),{values:['output','manifest','language-manifest','artwork-dir','game','variant']});

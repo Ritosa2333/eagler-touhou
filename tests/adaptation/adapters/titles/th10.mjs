@@ -1,5 +1,11 @@
 import {TH10_MENU_CONTRACT} from './th10-menu.mjs';
 import {TH10_DIALOGUE_SCENE_CONTRACT} from './th10-dialogue.mjs';
+export const TH10_MOVEMENT_CONTRACT=Object.freeze({inputBoundary:'synchronous-consumption',
+  inputBoundarySource:'ports/th10/web/cpp/platform/WorldPlayer.cpp | Frame before Player::update',
+  precision:Object.freeze({unitsPerPixel:100,rounding:'toward-zero',scalePlacement:'after-limit',limitedQuantization:'nearest-within-speed'}),
+  inputCommand:Object.freeze({coordinate:'float32-normalized-pointer',pixelsPerUnit:Object.freeze({x:640,y:480}),
+    source:'ports/th10/web/cpp/sdl/GameHost.cpp | sdl_touch(float x,y); portable/input/TouchController.hpp | pointer'}),
+  source:'ports/th10/web/cpp/platform/WorldPlayer.cpp | Movement::movement | game/PlayerMovement.cpp'});
 /** TH10 normal Runtime owners; unavailable diagnostic capabilities stay absent. */
 export default [{
   schema:'eagler-touhou/adaptation-adapter/1',game:'th10',variant:'normal',
@@ -13,10 +19,7 @@ export default [{
   clock:{tickApp:true,startApp:true,stopExport:'sdl_loop_stop',tickExport:'sdl_loop_tick',
     startExport:'sdl_loop_start',pauseExport:'sdl_loop_pause',
     source:'ports/th10/web/cpp/sdl/ApplicationHost.cpp | sdl_loop_tick'},
-  movement:{inputBoundary:'synchronous-consumption',
-    inputBoundarySource:'ports/th10/web/cpp/platform/WorldPlayer.cpp | Frame before Player::update',
-    precision:{unitsPerPixel:100,rounding:'toward-zero',scalePlacement:'after-limit',limitedQuantization:'nearest-within-speed'},
-    source:'ports/th10/web/cpp/platform/WorldPlayer.cpp | Movement::movement | game/PlayerMovement.cpp'},
+  movement:TH10_MOVEMENT_CONTRACT,
   actions:{schema:'eagler-touhou/stg-actions/1',stateExport:'th10_touch_action_state_v1',wordCount:20,stateApp:true,
     sampleBoundary:'after-player-consumer',inputMasks:{fire:1,focus:4,bomb:2,escape:8},
     escapePulseTicks:3,escapePulseSource:'ports/th10/portable/input/TouchController.hpp | escape_ticks',

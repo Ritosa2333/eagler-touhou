@@ -16,14 +16,19 @@ test('tooling discovery includes every executable tool regression exactly once a
   const files = trackedFiles();
   const expected = [...files.filter(file=>file.startsWith('tools/') && isNodeTest(file)),
     ...files.filter(file=>file.startsWith('tests/adaptation/')&&isNodeTest(file))];
-  const catalog = suites(), [task] = catalog.tooling.tasks();
-  assert.ok(task.args.includes('--test-timeout=30000'),'tooling must bound individual test execution');
-  assert.equal(task.timeoutMs,180000,'the outer tooling task retains its independent deadline');
+  const catalog = suites(), tasks = catalog.tooling.tasks();
+  for(const task of tasks){
+    assert.ok(task.args.includes('--test-timeout=30000'),'tooling must bound individual test execution');
+    assert.equal(task.timeoutMs,180000,'each tooling task retains its independent deadline');
+  }
+  const executed=tasks.flatMap(task=>task.args.filter(arg=>isNodeTest(arg)));
   assert.ok(expected.length > 0);
-  assert.deepEqual(task.args.filter(arg=>isNodeTest(arg)), expected);
+  assert.deepEqual([...executed].sort(), [...expected].sort());
+  assert.equal(new Set(executed).size, executed.length);
+  assert.deepEqual(tasks.find(task=>task.id==='presentation-evidence').args.filter(isNodeTest),
+    ['tests/adaptation/adapters/presentation-evidence.test.mjs']);
   for (const file of ['tools/workspace.test.mjs','tools/ports/package-plan.test.mjs','tools/ports/acceptance-errors.test.mjs'])
-    assert.ok(task.args.includes(file), `required regression is not executed: ${file}`);
-  assert.equal(new Set(task.args).size, task.args.length);
+    assert.ok(executed.includes(file), `required regression is not executed: ${file}`);
   assert.deepEqual(testFiles(['tools/nested/check.test.mjs','tools/fixtures/do-not-run.test.mjs'], 'tools', /\.test\.mjs$/), ['tools/nested/check.test.mjs']);
   assert.throws(()=>testFiles(['tools/fixtures/do-not-run.test.mjs'], 'tools', /\.test\.mjs$/), /No test files/);
 });
@@ -43,7 +48,7 @@ test('catalog-derived touch-bomb WASI tasks execute each production owner once a
   const production=owners.filter(owner=>owner.status==='production-fixture');
   const references=owners.filter(owner=>owner.status==='reference-only');
   assert.ok(references.length>0);
-  assert.deepEqual(tasks.map(task=>task.id),production.map(owner=>`touch-bomb-${owner.sourceOwner}`));
+  assert.deepEqual(tasks.map(task=>task.id),[...production.map(owner=>`touch-bomb-${owner.sourceOwner}`),'th08-pending-input-clear','th08-visual-endpoints']);
   for(let index=0;index<production.length;index++){
     const owner=production[index],task=tasks[index];
     assert.deepEqual(task.args,[resolve(owner.sourceRoot,'portable/input/touch-bomb-check.mjs')]);
@@ -56,6 +61,11 @@ test('catalog-derived touch-bomb WASI tasks execute each production owner once a
   }
   assert.ok(references.every(owner=>!tasks.some(task=>task.id===`touch-bomb-${owner.sourceOwner}`)),
     'reference-only owners stay references and do not receive invented executables');
+  const pending=tasks.find(task=>task.id==='th08-pending-input-clear');
+  assert.deepEqual(pending.args,['tools/ports/th08-pending-input-clear-check.mjs']);
+  assert.equal(pending.cwd,repository);
+  assert.deepEqual(tasks.at(-1).args,['ports/th08/portable/presentation-lab/test-visual.mjs']);
+  assert.equal(tasks.at(-1).cwd,repository);
 });
 
 test('a new production touch owner cannot enter the catalog without its old C++ fixture and wrapper',async t=>{
@@ -141,13 +151,16 @@ test('acceptance requires explicit private inputs and selects the complete produ
   const empty = suites({environment:{}});
   assert.throws(()=>empty['runtime-browser'].tasks(), /EAGLER_TEST_RUNTIME_MANIFEST/);
   assert.throws(()=>empty['runtime-rooms'].tasks(), /EAGLER_TEST_RUNTIME_MANIFEST/);
-  for(const id of ['runtime-desktop','runtime-practice','runtime-replay','runtime-offline','runtime-spectator'])
+  for(const id of ['runtime-desktop','runtime-replay','runtime-offline','runtime-spectator'])
     assert.throws(()=>empty[id].tasks(), /EAGLER_TEST_RUNTIME_MANIFEST/, id);
   const [music]=empty['runtime-music'].tasks();
   assert.deepEqual(music.args.slice(0,4),['tests/run.mjs','--profile=adaptation','--suite=music','--variant=normal'],
     'music input preflight and blocked products are reported by the canonical adaptation queue');
-  assert.deepEqual(music.environment,{EAGLER_TEST_RUNTIME_MANIFEST:'',EAGLER_TEST_MUSIC_MANIFEST:''},
+  assert.deepEqual(music.environment,{EAGLER_TEST_RUNTIME_MANIFEST:'',EAGLER_TEST_MUSIC_MANIFEST:'',EAGLER_TEST_PACKAGES:'',EAGLER_TEST_ARTWORK:''},
     'an empty selection cannot borrow private inputs from the parent process');
+  const [practice]=empty['runtime-practice'].tasks();
+  assert.deepEqual(practice.args.slice(0,4),['tests/run.mjs','--profile=adaptation','--suite=practice','--variant=normal']);
+  assert.deepEqual(practice.environment,{EAGLER_TEST_RUNTIME_MANIFEST:'',EAGLER_TEST_PACKAGES:'',EAGLER_TEST_ARTWORK:''});
   assert.throws(()=>suites({environment:{EAGLER_TEST_RUNTIME_MANIFEST:'private-inputs.json'}})['runtime-rooms'].tasks(), /EAGLER_TEST_LAUNCHER_URL/);
   const catalog = suites({environment:{EAGLER_TEST_RUNTIME_MANIFEST:resolve(repository, 'private-inputs.json'), EAGLER_TEST_LAUNCHER_URL:'http://127.0.0.1:8130/'}});
   const [ordinary] = catalog['runtime-browser'].tasks();
@@ -184,7 +197,7 @@ test('behavior acceptance schedules each title and keeps distinct user journeys 
   const environment={EAGLER_TEST_RUNTIME_MANIFEST:'private-inputs.json',EAGLER_TEST_LAUNCHER_URL:'http://127.0.0.1:8130/',
     EAGLER_TEST_PACKAGES:'private-packages.json',EAGLER_TEST_ARTWORK:'private-artwork',EAGLER_TEST_MUSIC_MANIFEST:'private-music-inputs.json'};
   const catalog=suites({environment}),games=Object.keys(PRODUCT_GAMES);
-  for(const id of ['runtime-desktop','runtime-practice','runtime-replay']){
+  for(const id of ['runtime-desktop','runtime-replay']){
     assert.ok(profiles.acceptance.includes(id), `${id} is absent from acceptance`);
     const [task]=catalog[id].tasks();
     assert.deepEqual(task.args.find(arg=>arg.startsWith('--game=')).slice(7).split(','),games);
@@ -198,9 +211,14 @@ test('behavior acceptance schedules each title and keeps distinct user journeys 
   assert.ok(!music.args.some(arg=>arg.startsWith('--game=')),'the canonical catalog owns product enumeration');
   assert.ok(music.args.includes('--variant=normal'));
   assert.deepEqual(music.environment,{EAGLER_TEST_RUNTIME_MANIFEST:'private-inputs.json',
-    EAGLER_TEST_MUSIC_MANIFEST:'private-music-inputs.json'});
+    EAGLER_TEST_MUSIC_MANIFEST:'private-music-inputs.json',EAGLER_TEST_PACKAGES:'private-packages.json',EAGLER_TEST_ARTWORK:'private-artwork'});
   assert.ok(music.resources.includes('browser')&&music.resources.includes('runtime'));
   assert.match(catalog['runtime-music'].scope,/shared adaptation plan/);
+  const [practice]=catalog['runtime-practice'].tasks();
+  assert.ok(profiles.acceptance.includes('runtime-practice'));
+  assert.deepEqual(practice.args.slice(0,4),['tests/run.mjs','--profile=adaptation','--suite=practice','--variant=normal']);
+  assert.ok(!practice.args.some(arg=>arg.startsWith('--game=')));
+  assert.deepEqual(practice.environment,{EAGLER_TEST_RUNTIME_MANIFEST:'private-inputs.json',EAGLER_TEST_PACKAGES:'private-packages.json',EAGLER_TEST_ARTWORK:'private-artwork'});
   const offline=catalog['runtime-offline'].tasks();
   assert.deepEqual(offline.map(task=>task.args.find(arg=>arg.startsWith('--game=')).slice(7)),games);
   assert.equal(new Set(offline.map(task=>task.args.find(arg=>arg.startsWith('--output=')))).size,games.length);

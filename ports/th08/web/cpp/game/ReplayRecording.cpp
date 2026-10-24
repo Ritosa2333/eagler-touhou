@@ -1,6 +1,6 @@
 #include "ReplayRecording.hpp"
 namespace th08 {
-void ReplayRecording::reset(){metadata_=ReplayMetadata{};for(auto& stage:stages_)stage=ReplayRecordedStage{};current_stage=-1;initialized=false;input=ReplayInputState{};frame_state=ReplayFrameState{};}
+void ReplayRecording::reset(){metadata_=ReplayMetadata{};for(auto& stage:stages_)stage=ReplayRecordedStage{};current_stage=-1;initialized=false;pending_input={};input=ReplayInputState{};frame_state=ReplayFrameState{};}
 bool ReplayRecording::begin(i32 index,const GameplaySession& session,const EclGlobals& game,u8 power_item_counter,ReplayBuildIdentity identity){
     if(u32(index)>=9||u32(game.shot)>=12||game.difficulty>=5||(game.game_flags&8))return false;
     const auto& n=session.numbers;
@@ -14,7 +14,24 @@ bool ReplayRecording::begin(i32 index,const GameplaySession& session,const EclGl
     auto& stage=stages_[index];stage=ReplayRecordedStage{};stage.present=true;auto& out=stage.snapshot;
     out.graze=n.graze;out.bombs=u8(Scalar::truncate(n.bombs));out.lives=u8(Scalar::truncate(n.lives));out.power=u8(Scalar::truncate(n.power));out.rank=u8(session.rank.value);
     out.points=n.points;out.seed=session.replay_seed;out.power_item_counter=power_item_counter;out.captured_spells=u8(n.captured_spells);out.extends=i32(n.point_extends);out.next_extend=n.next_point_extend;out.humanity=n.gauge;out.clock=u8(n.clock_time);out.point_value=n.point_value;
-    stage.stream.begin_record(session.random.seed);current_stage=index;input.current=input.previous=0;return true;
+    stage.stream.begin_record(session.random.seed);current_stage=index;pending_input={};input.current=input.previous=0;return true;
+}
+void ReplayRecording::update(){
+    if(current_stage<0)return;
+    auto& stream=stages_[current_stage].stream;const auto before_frame=stream.frame;const auto before_cursor=stream.input_cursor;
+    stream.record(input);
+    if(stream.frame!=before_frame&&stream.input_cursor==before_cursor+2)
+        pending_input={current_stage,stream.input_cursor,true};
+}
+void ReplayRecording::cancel_pending_input()noexcept{
+    if(pending_input.valid&&pending_input.stage==current_stage&&current_stage>=0){
+        auto& stream=stages_[current_stage].stream;const auto offset=pending_input.offset;
+        if(stream.input_cursor==offset&&offset<=stream.input.size()&&stream.input.size()-offset>=2&&stream.input_end==offset+2){
+            stream.input[offset]=stream.input[offset+1]=0;
+        }
+    }
+    pending_input={};input.current=input.physical=0;
+    // previous still describes the last consumed input | preserve release edges.
 }
 std::vector<u8> ReplayRecording::assemble(const ReplayMetadata& metadata)const{
     if(!initialized)return {};

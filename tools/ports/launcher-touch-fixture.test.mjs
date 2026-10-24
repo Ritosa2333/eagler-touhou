@@ -10,7 +10,7 @@ const root=resolve(import.meta.dirname,'../..');
 const require=createRequire(resolve(root,'launcher/package.json'));
 const {build}=require('esbuild');
 const {JSDOM}=require('jsdom');
-import {buildProductionPlayerHostRenderer,productionPlayerStylesheetLinks,readLauncherPublicAsset} from './launcher-player-host-scaffold.mjs';
+import {buildProductionPlayerHostRenderer,productionPlayerStylesheetLinks,installProductionPlayerHostViewport,productionPlayerHostViewportScript,readLauncherPublicAsset} from './launcher-player-host-scaffold.mjs';
 let tempDir,bundlePath,fixture;
 let productionMarkup;
 
@@ -147,4 +147,24 @@ test('production host CSS routes every real url() asset through the public-file 
   assert.match(productionPlayerStylesheetLinks(),/\/launcher-public\/styles\.css/);
   assert.match(productionPlayerStylesheetLinks(),/\/launcher-app\/workspace-viewport\.css/);
   assert.equal(await readLauncherPublicAsset('/launcher-public/%2e%2e/private.json'),null);
+});
+
+test('fixture bounds the production Player root without overriding iframe layout or relaxing clips',()=>{
+  const dom=new JSDOM(`<!doctype html><body>${productionMarkup}</body>`,{runScripts:'outside-only'});
+  const {window}=dom,player=window.document.getElementById('player'),frame=window.document.getElementById('gameFrame');
+  const viewport=window.document.getElementById('gameViewport');
+  Object.defineProperty(window,'innerWidth',{value:1100,writable:true});
+  Object.defineProperty(window,'innerHeight',{value:820,writable:true});
+  const frameStyle=frame.getAttribute('style'),viewportStyle=viewport.getAttribute('style');
+  const dispose=installProductionPlayerHostViewport({document:window.document,window});
+  try{
+    assert.equal(player.style.width,'1100px');assert.equal(player.style.height,'820px');
+    assert.equal(player.style.right,'auto');assert.equal(player.style.bottom,'auto');
+    window.innerWidth=640;window.innerHeight=960;window.dispatchEvent(new window.Event('resize'));
+    assert.equal(player.style.width,'640px');assert.equal(player.style.height,'960px');
+    assert.equal(frame.getAttribute('style'),frameStyle);assert.equal(viewport.getAttribute('style'),viewportStyle);
+    dispose();window.innerWidth=900;window.dispatchEvent(new window.Event('resize'));
+    assert.equal(player.style.width,'640px','Disposal removes fixture resize ownership');
+    window.eval(productionPlayerHostViewportScript());assert.equal(player.style.width,'900px');
+  }finally{dispose();dom.window.close();}
 });

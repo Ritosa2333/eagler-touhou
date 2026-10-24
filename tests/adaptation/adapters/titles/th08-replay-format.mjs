@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {decodeTh08Lzss} from './th08-data-codec.mjs';
 
 const REPLAY_HEADER_BYTES=0x68;
 const REPLAY_METADATA_BYTES=0x134;
@@ -36,31 +37,7 @@ export function decodeTh08ReplayFile(input){
   if(compressedSize>fileSize-REPLAY_HEADER_BYTES||payloadSize<0xcc||payloadSize>MAX_REPLAY_PAYLOAD_BYTES)
     throw new Error('th08 Replay compressed or payload size is invalid');
   const compressed=plain.subarray(REPLAY_HEADER_BYTES,REPLAY_HEADER_BYTES+compressedSize);
-  const payload=Buffer.alloc(payloadSize),dictionary=Buffer.alloc(8192);
-  let source=0,mask=0x80,current=0,head=1,written=0,operations=0;
-  const bit=()=>{
-    if(mask===0x80)current=source<compressed.length?compressed[source++]:0;
-    const result=(current&mask)!==0;
-    mask>>=1;if(mask===0)mask=0x80;
-    return result?1:0;
-  };
-  const bits=count=>{let value=0;while(count--)value=(value<<1)|bit();return value;};
-  const put=value=>{
-    if(written>=payload.length)throw new Error('th08 Replay LZSS data exceeds its declared payload size');
-    payload[written++]=value;dictionary[head]=value;head=(head+1)&8191;
-  };
-  let terminated=false;
-  while(operations++<payloadSize+compressedSize+1024){
-    if(bit())put(bits(8));
-    else{
-      const offset=bits(13);
-      if(offset===0){terminated=true;break;}
-      const length=bits(4)+3;
-      if(length>payload.length-written)throw new Error('th08 Replay LZSS back-reference exceeds its declared payload size');
-      for(let index=0;index<length;index++)put(dictionary[(offset+index)&8191]);
-    }
-  }
-  if(!terminated||written!==payloadSize)throw new Error('th08 Replay LZSS payload did not end at its declared size');
+  const payload=decodeTh08Lzss(compressed,payloadSize);
   const decoded=Buffer.concat([plain.subarray(0,REPLAY_HEADER_BYTES),payload]);
   return{raw,decoded,fileSize,compressedSize,payloadSize,debugRecords:decoded[6]!==0};
 }

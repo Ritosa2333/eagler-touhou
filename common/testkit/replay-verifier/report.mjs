@@ -8,6 +8,8 @@ export function formatResult(result) {
   if (result.firstDifference) {
     const at = [result.firstDifference.segmentId, result.firstDifference.logicalTick].filter(value => value !== undefined).join(':');
     if (at) lines.push(`first difference: ${at}`);
+    if (Number.isSafeInteger(result.firstDifference.replaySampleIndex)) lines.push(`Replay sample: ${result.firstDifference.replaySampleIndex}`);
+    if (result.firstDifference.clocks) lines.push(`clocks: ${JSON.stringify(result.firstDifference.clocks)}`);
     if (result.firstDifference.category) lines.push(`category: ${result.firstDifference.category}`);
     const detail = result.firstDifference.difference;
     if (detail?.path) lines.push(`field: ${detail.path}`, `expected: ${JSON.stringify(detail.expected)}`, `actual: ${JSON.stringify(detail.actual)}`);

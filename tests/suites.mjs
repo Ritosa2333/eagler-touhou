@@ -117,6 +117,8 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
   platform=process.platform}={}) {
   const files = trackedFiles(root), launcher = resolve(root, 'launcher');
   const adaptationTestFiles=testFiles(files,'tests/adaptation',isNodeTest);
+  const presentationEvidenceTests=adaptationTestFiles.filter(file=>file==='tests/adaptation/adapters/presentation-evidence.test.mjs');
+  if(presentationEvidenceTests.length!==1)throw new Error('Missing shared presentation evidence regression');
   const explicitPortTests=[...portModuleUnitTests,...portPythonUnitTests,'ports/th10-mp/tests/high-refresh-contract.test.mjs'];
   if(new Set(explicitPortTests).size!==explicitPortTests.length)throw new Error('Duplicate explicit per-title test path');
   const missingPortTests=explicitPortTests.filter(file=>!files.includes(file));
@@ -157,8 +159,13 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
   return {
     tooling: {
       scope:'Build tools, test execution, source ownership and repository policy', tier:'quick',coverageKind:'module-unit',
-      tasks:()=>[node('tooling', ['--test', '--test-timeout=30000', '--test-concurrency=2', ...testFiles(files, 'tools', isNodeTest),...adaptationTestFiles], root,
-        {timeoutMs:180000, resources:['source-tree'],...compilerHelperCleanup})],
+      tasks:()=>[
+        node('tooling', ['--test', '--test-timeout=30000', '--test-concurrency=2', ...testFiles(files, 'tools', isNodeTest),
+          ...adaptationTestFiles.filter(file=>!presentationEvidenceTests.includes(file))], root,
+          {timeoutMs:180000, resources:['source-tree'],...compilerHelperCleanup}),
+        node('presentation-evidence', ['--test', '--test-timeout=30000', '--test-concurrency=1', ...presentationEvidenceTests], root,
+          {timeoutMs:180000, resources:['source-tree']}),
+      ],
     },
     'launcher-core': {
       scope:'Launcher modules, types, syntax, publication and generated content', tier:'quick',coverageKind:'production-component',
@@ -227,8 +234,10 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
       ],
     },
     'ports-touch-wasi': {
-      scope:'Catalog-derived production TouchController WASI fixtures; th06/th07 retain reference-only source anchors',tier:'integration',coverageKind:'production-component',concurrency:2,
-      tasks:()=>touchBombModuleTasks(root,output),
+      scope:'Production WASI fixtures | catalog-derived touch controllers, recorded-input lifecycle and th08 visual endpoints; th06/th07 retain reference-only touch anchors',tier:'integration',coverageKind:'production-component',concurrency:2,
+      tasks:()=>[...touchBombModuleTasks(root,output),
+        node('th08-pending-input-clear',['tools/ports/th08-pending-input-clear-check.mjs'],root),
+        node('th08-visual-endpoints',['ports/th08/portable/presentation-lab/test-visual.mjs'],root)],
     },
     'ports-oracle': {
       scope:'Frozen original/native comparison suites against current compiled fixture cores and private reference inputs',tier:'acceptance',coverageKind:'original-comparison',concurrency:1,
@@ -296,12 +305,14 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
       {timeoutMs:1800000, resources:['browser','runtime']})],
     },
     'runtime-practice': {
-      scope:'Current ordinary practice-enabled WASM | native overlay, configured locale and disabled control', tier:'acceptance',coverageKind:'browser-runtime',
-      tasks:()=>[node('runtime-practice', ['tools/ports/practice-browser.mjs',
-        `--manifest=${requireInput('EAGLER_TEST_RUNTIME_MANIFEST')}`, '--variant=normal',
-        `--game=${Object.keys(PRODUCT_GAMES).join(',')}`,
-        `--output=${resolve(output, 'runtime-practice')}`], root,
-      {timeoutMs:1800000, resources:['browser','runtime']})],
+      scope:'Catalog-derived ordinary Practice acceptance | shared adaptation plan, native lifecycle and real Launcher settings', tier:'acceptance',coverageKind:'browser-runtime',
+      tasks:()=>[node('runtime-practice', ['tests/run.mjs','--profile=adaptation','--suite=practice','--variant=normal',
+        `--output=${resolve(output, 'runtime-practice-adaptation')}`], root,
+      {timeoutMs:1800000, resources:['browser','runtime'],environment:{
+        EAGLER_TEST_RUNTIME_MANIFEST:environment.EAGLER_TEST_RUNTIME_MANIFEST??'',
+        EAGLER_TEST_PACKAGES:environment.EAGLER_TEST_PACKAGES??'',
+        EAGLER_TEST_ARTWORK:environment.EAGLER_TEST_ARTWORK??'',
+      }})],
     },
     'runtime-replay': {
       scope:'Current ordinary WASM | official Shell Replay import, 120 rate-1 native frames and native termination signal | full input consumption and original-format compatibility reported separately; MP requires explicit selection', tier:'acceptance',coverageKind:'browser-runtime',
@@ -318,6 +329,8 @@ export function suites({root=repository, output=resolve(root, 'artifacts/validat
       {timeoutMs:1800000, resources:['browser','runtime'],environment:{
         EAGLER_TEST_RUNTIME_MANIFEST:environment.EAGLER_TEST_RUNTIME_MANIFEST??'',
         EAGLER_TEST_MUSIC_MANIFEST:environment.EAGLER_TEST_MUSIC_MANIFEST??'',
+        EAGLER_TEST_PACKAGES:environment.EAGLER_TEST_PACKAGES??'',
+        EAGLER_TEST_ARTWORK:environment.EAGLER_TEST_ARTWORK??'',
       }})],
     },
     'runtime-offline': {
