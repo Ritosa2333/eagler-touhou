@@ -2,9 +2,15 @@
 #include "AnmRenderer.hpp"
 #include "HighRefresh.hpp"
 #include "AnmPresentation.hpp"
+#include "PresentationAudit.hpp"
 #include "ScreenFade.hpp"
 namespace th11 {
 namespace {
+struct AuditRebaseScope {
+    bool previous;
+    explicit AuditRebaseScope(bool value):previous(presentation_audit::authored_rebase()){presentation_audit::authored_rebase(value);}
+    ~AuditRebaseScope(){presentation_audit::authored_rebase(previous);}
+};
 void camera_fog(AnmRenderer& renderer,const SceneCamera& camera){auto& p=renderer.pipeline();p.fogColor=camera.fog.color;p.fogNear=camera.fog.near_distance;p.fogFar=camera.fog.far_distance;}
 void restore_tint(AnmRenderer& renderer,i32 frame_effect){renderer.flush();renderer.tint_enabled=frame_effect!=0;renderer.tint=frame_effect?0xff404040:0x80808080;}
 }
@@ -17,6 +23,7 @@ SceneCamera Stage::display_camera(float alpha) const {
     return blend_camera(previous_camera,state.camera,alpha);
 }
 bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFades& fades){
+    const AuditRebaseScope audit_rebase(camera_discontinuity);
     using touhou::graphics::Compare;
     if(state.draw_flags&8)return true;
     const bool draw_only=high_refresh::render_only;
@@ -47,6 +54,7 @@ bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFade
     restore_tint(renderer,state.frame_effect);auto& p=renderer.pipeline();p.depthWrite=false;p.depthCompare=Compare::Always;return true;
 }
 bool Stage::draw_foreground(AnmRenderer& renderer,SceneCamera& camera){
+    const AuditRebaseScope audit_rebase(camera_discontinuity);
     using touhou::graphics::Compare;
     if(state.draw_flags&8)return true;
     const bool draw_only=high_refresh::render_only;

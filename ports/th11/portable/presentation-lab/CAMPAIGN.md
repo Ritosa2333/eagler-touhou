@@ -22,7 +22,7 @@
 | `--min-step` | 8 | 端点位移小于该值不检查（静止/慢速） |
 | `--max-step` | 48 | 相邻 alpha 位移超过该值 → `large-interpolated-step` |
 | `--max-error` | 2.5 | 采样偏离端点线性路径 → `endpoint-mismatch` |
-| `--rebase-step` | 256 | 端点跳变达到该值且采样只落在端点时，归入 `authored-rebase` |
+| `rebaseStep` | 256 | 大位移告警的分类门限；重基接收依据为作者事件与完整采样 |
 | `--stride` | 30 | 每多少个 tick 采样一次 |
 | `--alphas` | 0,0.25,0.5,0.75,1 | 采样 alpha 序列 |
 
@@ -30,9 +30,8 @@
 
 - `large-interpolated-step`：插值确实在做，但把一次“应当重置”的跳变平滑拉过去了。
 - `endpoint-mismatch`：采样没有落在端点之间（通常是 state 未重置 / 对象根本没插值）。
-- `authored-rebase`：512/1024 等世界重基导致的 snap（采样只落在端点）。
-  这是启发式豁免，不是“生命周期证明”；阈值以下（如 200）的旧端点仍会告警。
-  后续应以作者重基标记替代该启发式。
+- `authored-rebase`：舞台 STD opcode 2 发布 `std-camera-set` 事件，并且所有请求的 alpha 采样都落在当前端点（误差不超过 0.01）。事件由原生舞台绘制作用域发布，随 ANM 记录传入巡检器。
+- 256、512、1024 单位的旧端点停留、延迟跳变和跨重基混合均保留告警。缺失采样或没有作者事件的窗口进入候选报告，供逐项核对。
 
 ## 复现命令
 
@@ -56,7 +55,7 @@ node ports/th11/portable/presentation-lab/campaign.mjs --replay "D:/path/th11_11
 | 分类 | 数量 | 说明 |
 | --- | --- | --- |
 | `no-interpolation` | 2099 → **14** | 自机弹端点修复前 / 后 |
-| `authored-rebase` | 1370 | 512 重基 snap（采样只落在端点） |
+| 大位移候选 | 1370 | 原分支按位移分类的 512 重基记录；当前巡检按作者事件与完整采样重新判定 |
 | `blended-discontinuity` | 0 | 没有跨重基平滑插值 |
 
 剩余 14 条证据：`ANM layer 10`，`file 7 / script 20,23 / sprite 35`，

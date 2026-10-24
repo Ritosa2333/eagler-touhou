@@ -59,7 +59,7 @@ assets. This is Lab-only; the production Runtime keeps the original animation.
 - Non-ANM screen rectangles (`solid_rectangle`), HUD text lifetime, title/ending
   embedded VMs, audio queues, storage writes, the timing ring.
 - Therefore a clean sweep is reported as purity `unknown`, never a pass.
-- Replay import and the campaign runner are available (`campaign.mjs`); they require a local `playwright` install and are diagnostic-only.
+- Replay import is available in the workbench. The campaign runner (`campaign.mjs`) requires a local `playwright` install; both use the diagnostic profile.
 - The on-screen `fps` counter follows **presented frames**: in gameplay on a >60 Hz display it shows the display rate, while title/dialogue/pause show the logic rate (~60). `limitPresentationTo60` forces the logic-rate readout.
 - This change targets the **normal** port; `ports/th11-mp` synchronization is handled by the port-sync maintainers.
 - `submitted-position`/`submitted-shape` are derived submission values and are
@@ -70,12 +70,21 @@ assets. This is Lab-only; the production Runtime keeps the original animation.
 
 ## Commands
 
+Run from the monorepo root. The Lab assembles its shell and resource manifest
+from the current source, including the browser replay helper and CP932 map.
+Launch waits for the Runtime command acknowledgement. Stage seeding freezes
+the native loop first; the Replay picker opens its payload through the same
+diagnostic driver after launch.
+
 ```powershell
+$env:EMSDK='C:\tools\emsdk'
+$env:EAGLER_FONT_ROOT='C:\local-content\th11-fonts' # contains cp932.bin
+$env:TH11_LAB_DATA='C:\Games\TH11\th11.dat'
 # build the isolated diagnostic WASM + open the workbench
-./portable/presentation-lab/start-lab.ps1 -Build
+./ports/th11/portable/presentation-lab/start-lab.ps1 -Build
 
 # serve an existing build
-./portable/presentation-lab/start-lab.ps1
+./ports/th11/portable/presentation-lab/start-lab.ps1
 
 # replay interpolation campaign (requires playwright; diagnostic only)
 node ports/th11/portable/presentation-lab/campaign.mjs --demo 0 --ticks 3600 --stride 30
@@ -86,15 +95,23 @@ gameplay window.
 
 Environment:
 - `TH11_LAB_FONT` — local MS Gothic TTC (default `C:/Windows/Fonts/msgothic.ttc`).
-- `TH11_LAB_DATA` — clean `th11.dat` (default `<workspace>/game-data-th11/th11.dat`).
+- `TH11_LAB_DATA` — path to the local retail archive (`th11.dat` or its unchanged `th11.data` copy); otherwise use the workbench file picker.
+- `EAGLER_FONT_ROOT` — directory containing `cp932.bin`, shared with the production packager.
+- `TH11_LAB_SOURCE_COMMIT` — source identity when serving an exported source snapshot; a normal checkout uses its current Git commit.
 - `TH11_PRESENTATION_LAB=1` or `--presentation-lab` — build switch.
 
 ## Source gates
 
 ```text
-node portable/check-high-refresh-contract.mjs
-node portable/check-presentation-purity.mjs
-node portable/check-presentation.mjs
-node portable/check-presentation-lab.mjs
-node --test third_party/eagler-common/testkit/presentation-lab/controller-core.test.mjs third_party/eagler-common/testkit/presentation-lab/release-contract.test.mjs
+node ports/th11/portable/check-high-refresh-contract.mjs
+node ports/th11/portable/check-presentation-purity.mjs
+node ports/th11/portable/check-presentation.mjs
+node ports/th11/portable/check-presentation-lab.mjs
+node --test ports/th11/portable/presentation-lab/flicker.test.mjs
+node --test common/testkit/presentation-lab/controller-core.test.mjs common/testkit/presentation-lab/release-contract.test.mjs
 ```
+
+Default and Lab builds both support configurations with or without `--thprac`.
+Campaign rebase classification requires a native `std-camera-set` event and a
+complete alpha sweep snapped to the current endpoint. The 456-byte observation
+record carries the event in bit 8 of its continuous-field word.

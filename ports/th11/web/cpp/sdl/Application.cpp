@@ -675,7 +675,11 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         const bool limit60=th11_limit_presentation_to_60()!=0;
         const bool ready=interpolation_ready()&&!limit60&&!custom_speed;
         if(ready)presentation.advance(delta);else{app.reset_presentation_frames();presentation.reset();}
-        const auto ticks=custom_speed?practice_cadence.advance(delta):cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
+        auto ticks=cadence.advance(delta);
+#ifdef TH_ENABLE_THPRAC
+        if(custom_speed)ticks=practice_cadence.advance(delta);
+#endif
+        bool ok=true;app.graphics.backend.defer=true;
         const bool high=presentation.high_refresh&&ready;
         th11::high_refresh::smooth_submission=high;
         const bool interpolate=presentation_gate.advance(high,ticks!=0);
