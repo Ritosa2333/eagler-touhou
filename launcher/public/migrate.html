@@ -608,6 +608,10 @@
   }
 
   async function putTargetCacheRecord(message, sourceOrigin) {
+    // Deployment-owned caches (App Shell, Runtime) verify integrity when their
+    // own writers store them; the migration channel may only fill the declared
+    // player-data caches.
+    if (!CACHE_NAMES.has(message.cache)) throw new Error(`缓存不在迁移范围：${message.cache}`);
     const cache = await caches.open(message.cache);
     const url = rewriteCacheUrl(message.url, sourceOrigin);
     const req = new Request(url, { method: "GET", headers: message.requestHeaders });

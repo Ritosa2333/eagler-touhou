@@ -91,6 +91,8 @@ assert.match(html, /store\.keyPath == null\) store\.put\(message\.value, message
   "IndexedDB records must preserve explicit keys for keyless stores");
 assert.match(html, /function rewriteCacheUrl\(url, sourceOrigin\)[\s\S]*parsed\.origin !== sourceOrigin[\s\S]*location\.origin/,
   "Cache Storage request URLs owned by the old HTTP Origin must be rewritten to HTTPS");
+assert.match(html, /function putTargetCacheRecord[\s\S]*?CACHE_NAMES\.has\(message\.cache\)[\s\S]*?caches\.open\(message\.cache\)/,
+  "receiver Cache Storage writes must stay inside the declared cache owners");
 assert.match(html, /await cache\.put\(req, response\);/);
 assert.match(html, /response\.arrayBuffer\(\)/,
   "cache entries must transfer response bytes rather than server URLs");
