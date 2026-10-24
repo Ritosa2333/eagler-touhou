@@ -175,6 +175,8 @@
 
 普通版在开场与 Stage Clear 期间持续推进自机逻辑，换关保留键盘长按与按键边沿。使用 Emscripten 6.0.9 完整构建通过，源码回执为 `artifacts/validation/source-builds/th15-normal.json`。关卡交接规则见[输入规范](../../docs/adaptation/input.md)。
 
+原版素材 Chromium 回归通过：完成关卡后立即发布换关任务，下一帧完成加载；前 20 帧长按持续移动，松键后位置稳定，Stage Clear 使用同一条 120 帧计时。入口为 `web/tests/sdl/render-loading-lifecycle-browser.test.mjs`，素材与构建目录参数见输入规范。
+
 ### 2026-10-20：无欠动画树与存档导出
 
 SAVE-01／SAVE-04：检查点存储回归见[Issue #113 运行记录](../../docs/adaptation/th15-pointdevice-issue113-20261020.md)：宽动画树序列化往返、六面 IDBFS 冷启动恢复，以及 score 和 autosave 的完整导出导入。原版格式保持一致。
