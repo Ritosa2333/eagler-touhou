@@ -73,14 +73,19 @@ void Renderer::bind_framebuffer(GLenum target,GLuint id){TH15_SYSTEM_SCOPE;
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
  if((read&&readFramebuffer!=id)||(draw&&drawFramebuffer!=id)){glBindFramebuffer(target,id);++stats.framebufferBinds;if(read)readFramebuffer=id;if(draw)drawFramebuffer=id;}
 }
-void Renderer::draw_batch(u32 count,const void* data,u32 stride){TH15_SYSTEM_SCOPE;
+// Draw/upload call trees own only host-side caches and GPU objects. Resolve
+// reads GraphicsDevice metadata and pixel bytes; it never calls game code.
+// Pause write tracking while copying/converting those host buffers. Keep
+// read() tracked: its final conversion writes back into game-owned textures.
+// ImGui also retains SystemScope because UserCallback can call arbitrary code.
+void Renderer::draw_batch(u32 count,const void* data,u32 stride){TH15_HOST_SCOPE;
  // The game already coalesced these triangles. Consume while its arena is
  // valid, without retaining a pointer to a buffer the next sprite can reuse.
  flush();++stats.calls;state.stride=stride;stats.directBytes+=count*3*stride;
  issue(state,Topology::Triangles,count,data,count*3*stride,nullptr,IndexType::UInt16,nullptr,0);
 }
-void Renderer::transform(MatrixKind kind,const void* p){TH15_SYSTEM_SCOPE;auto& m=state.matrix[u32(kind)];if(std::memcmp(m.data(),p,64))std::memcpy(m.data(),p,64);}
-void Renderer::viewport(const Viewport& v){TH15_SYSTEM_SCOPE;state.viewport=v;}
+void Renderer::transform(MatrixKind kind,const void* p){TH15_HOST_SCOPE;auto& m=state.matrix[u32(kind)];if(std::memcmp(m.data(),p,64))std::memcpy(m.data(),p,64);}
+void Renderer::viewport(const Viewport& v){TH15_HOST_SCOPE;state.viewport=v;}
 void Renderer::select(const State& s){TH15_SYSTEM_SCOPE;
  const auto& p=s.pipeline;auto arg=[](Argument a){return u32(a.source)|(a.complement?16u:0u)|(a.alphaOnly?32u:0u);};
  std::array<u32,10> key{u32(!!s.texture),u32(p.alphaTest),u32(p.fog),u32(p.color.operation),u32(p.alpha.operation),arg(p.color.first),arg(p.color.second),arg(p.alpha.first),arg(p.alpha.second),u32(p.alphaCompare)|(u32(version==10&&p.depthTest&&(p.depthWrite||p.depthCompare!=Compare::Always))<<8)};auto it=programs.find(key);
@@ -114,7 +119,7 @@ u32 Renderer::upload(Stream& s,GLenum target,const void* bytes,u32 count,u32 min
  glBufferSubData(target,offset,count,bytes);stats.bufferSubUpdates++;s.used=offset+count;return offset;
 #endif
 }
-void Renderer::changed(u32 id,u32 previous,const std::array<u32,4>& region){TH15_SYSTEM_SCOPE;
+void Renderer::changed(u32 id,u32 previous,const std::array<u32,4>& region){TH15_HOST_SCOPE;
  auto it=surfaces.find(id);if(it==surfaces.end())return;auto& g=it->second;
  if(region[0]>=region[2]||region[1]>=region[3]){g.dirty={};g.dirtyBase=~0u;return;}
  if(g.version==previous){g.dirty=region;g.dirtyBase=previous;}
@@ -150,8 +155,8 @@ Renderer::GPU& Renderer::surface(u32 h){TH15_SYSTEM_SCOPE;
  }g.dirty={};g.dirtyBase=~0u;return g;
 }
 Renderer::GPU& Renderer::target(u32 id,u32 depthId){TH15_SYSTEM_SCOPE;auto& g=surface(id);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width*s.renderScale,s.height*s.renderScale);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;}return g;}
-void Renderer::prepare(u32 h){TH15_SYSTEM_SCOPE;surface(h);}
-void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){TH15_SYSTEM_SCOPE;
+void Renderer::prepare(u32 h){TH15_HOST_SCOPE;surface(h);}
+void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){TH15_HOST_SCOPE;
  stats.calls++;state.stride=stride;
  if(index||primitive<Topology::Triangles||primitive>Topology::Fan){flush();issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
  const bool instance=version==10&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
@@ -174,8 +179,8 @@ void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,con
  const auto* src=static_cast<const u8*>(data);const size_t start=batchBytes.size(),size=count*3*stride;stats.copiedBytes+=size;batchBytes.resize(start+size);auto* dest=batchBytes.data()+start;
  if(primitive==Topology::Triangles)std::memcpy(dest,src,size);else if(count){std::memcpy(dest,src,3*stride);dest+=3*stride;for(u32 i=1;i<count;i++){u32 a=primitive==Topology::Fan?0:i&1?i+1:i,b=primitive==Topology::Fan?i+1:i&1?i:i+1,c=i+2;for(u32 v:{a,b,c}){std::memcpy(dest,src+v*stride,stride);dest+=stride;}}}batchCount+=count;if(batchBytes.size()>=1048576)flush();
 }
-void Renderer::flush(){TH15_SYSTEM_SCOPE;if(!batching)return;batching=false;if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>instanceStride?worlds.data():nullptr,worlds.size()>instanceStride?worlds.size():0);else issue(batchState,batchTopology,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
-void Renderer::discard(){TH15_SYSTEM_SCOPE;batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;}
+void Renderer::flush(){TH15_HOST_SCOPE;if(!batching)return;batching=false;if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>instanceStride?worlds.data():nullptr,worlds.size()>instanceStride?worlds.size():0);else issue(batchState,batchTopology,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
+void Renderer::discard(){TH15_HOST_SCOPE;batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;}
 void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize){TH15_SYSTEM_SCOPE;
  stats.batches++;const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
@@ -233,9 +238,9 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
  else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
  else glDrawArrays(mode,0,n);g.rendered=true;
 }
-void Renderer::clear(u32 flags,u32 c,float depth,u32 stencil,const i32* rects,u32 count){TH15_SYSTEM_SCOPE;flush();auto& g=target(state.target,state.depth);const auto& v=state.viewport;i32 box[]{i32(v.x),i32(v.y),i32(v.x+v.width),i32(v.y+v.height)};if(!rects){rects=box;count=1;}glEnable(GL_SCISSOR_TEST);glColorMask(true,true,true,true);glDepthMask(true);drawState.pipeline.colorMask=15;drawState.pipeline.depthWrite=true;auto rgba=color(c);glClearColor(rgba[0],rgba[1],rgba[2],rgba[3]);glClearDepthf(depth);glClearStencil(stencil);glStencilMask(255);GLbitfield bits=(flags&1?GL_COLOR_BUFFER_BIT:0)|(flags&2?GL_DEPTH_BUFFER_BIT:0)|(flags&4?GL_STENCIL_BUFFER_BIT:0);for(u32 i=0;i<count;i++){const i32* p=rects+i*4;const auto scale=resolve(owner,state.target).renderScale;glScissor(p[0]*scale,p[1]*scale,(p[2]-p[0])*scale,(p[3]-p[1])*scale);glClear(bits);}glDisable(GL_SCISSOR_TEST);g.rendered=true;}
-void Renderer::copy(u32 src,const i32* rect,u32 dst,const i32* point){TH15_SYSTEM_SCOPE;flush();auto& a=surface(src);auto& b=surface(dst);bind_framebuffer(GL_READ_FRAMEBUFFER,a.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,b.framebuffer);glDisable(GL_SCISSOR_TEST);const auto as=resolve(owner,src).renderScale,bs=resolve(owner,dst).renderScale;glBlitFramebuffer(rect[0]*as,rect[1]*as,rect[2]*as,rect[3]*as,point[0]*bs,point[1]*bs,(point[0]+rect[2]-rect[0])*bs,(point[1]+rect[3]-rect[1])*bs,GL_COLOR_BUFFER_BIT,GL_NEAREST);b.rendered=true;b.version=resolve(owner,dst).version+1;}
-bool Renderer::resample(u32 src,const i32* from,u32 dst,const i32* to,const float* weights,u32 width,u32 height){TH15_SYSTEM_SCOPE;
+void Renderer::clear(u32 flags,u32 c,float depth,u32 stencil,const i32* rects,u32 count){TH15_HOST_SCOPE;flush();auto& g=target(state.target,state.depth);const auto& v=state.viewport;i32 box[]{i32(v.x),i32(v.y),i32(v.x+v.width),i32(v.y+v.height)};if(!rects){rects=box;count=1;}glEnable(GL_SCISSOR_TEST);glColorMask(true,true,true,true);glDepthMask(true);drawState.pipeline.colorMask=15;drawState.pipeline.depthWrite=true;auto rgba=color(c);glClearColor(rgba[0],rgba[1],rgba[2],rgba[3]);glClearDepthf(depth);glClearStencil(stencil);glStencilMask(255);GLbitfield bits=(flags&1?GL_COLOR_BUFFER_BIT:0)|(flags&2?GL_DEPTH_BUFFER_BIT:0)|(flags&4?GL_STENCIL_BUFFER_BIT:0);for(u32 i=0;i<count;i++){const i32* p=rects+i*4;const auto scale=resolve(owner,state.target).renderScale;glScissor(p[0]*scale,p[1]*scale,(p[2]-p[0])*scale,(p[3]-p[1])*scale);glClear(bits);}glDisable(GL_SCISSOR_TEST);g.rendered=true;}
+void Renderer::copy(u32 src,const i32* rect,u32 dst,const i32* point){TH15_HOST_SCOPE;flush();auto& a=surface(src);auto& b=surface(dst);bind_framebuffer(GL_READ_FRAMEBUFFER,a.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,b.framebuffer);glDisable(GL_SCISSOR_TEST);const auto as=resolve(owner,src).renderScale,bs=resolve(owner,dst).renderScale;glBlitFramebuffer(rect[0]*as,rect[1]*as,rect[2]*as,rect[3]*as,point[0]*bs,point[1]*bs,(point[0]+rect[2]-rect[0])*bs,(point[1]+rect[3]-rect[1])*bs,GL_COLOR_BUFFER_BIT,GL_NEAREST);b.rendered=true;b.version=resolve(owner,dst).version+1;}
+bool Renderer::resample(u32 src,const i32* from,u32 dst,const i32* to,const float* weights,u32 width,u32 height){TH15_HOST_SCOPE;
  if(src==dst)return false;
  auto masks=[](PixelFormat f)->std::array<GLint,4>{switch(f){case PixelFormat::Argb8332:return {7,7,3,255};case PixelFormat::Bgra8:return {255,255,255,255};case PixelFormat::Bgrx8:return {255,255,255,0};case PixelFormat::Rgb565:return {31,63,31,0};case PixelFormat::Xrgb1555:return {31,31,31,0};case PixelFormat::Argb1555:return {31,31,31,1};case PixelFormat::Argb4444:return {15,15,15,15};default:return {};}};
  const auto a=resolve(owner,src),b=resolve(owner,dst);const auto im=masks(a.format),om=masks(b.format);if(!im[0]||!om[0])return false;
@@ -257,7 +262,7 @@ bool Renderer::resample(u32 src,const i32* from,u32 dst,const i32* to,const floa
  // valid VAOs, while the regular draw cache must restore all pipeline state.
  drawState=DrawStateCache{};output.rendered=true;output.version=b.version+1;++stats.resamples;return true;
 }
-Renderer::SurfaceCheckpoint Renderer::save_surfaces(const std::vector<u32>& handles){TH15_SYSTEM_SCOPE;
+Renderer::SurfaceCheckpoint Renderer::save_surfaces(const std::vector<u32>& handles){TH15_HOST_SCOPE;
  flush();SurfaceCheckpoint out;out.reserve(handles.size());
  for(auto id:handles){const auto s=resolve(owner,id);if(!s.handle)continue;auto& g=surface(id);
   SurfacePixels copy;copy.handle=id;copy.width=s.width*s.renderScale;copy.height=s.height*s.renderScale;copy.rgba.resize(size_t(copy.width)*copy.height*4);
@@ -265,7 +270,7 @@ Renderer::SurfaceCheckpoint Renderer::save_surfaces(const std::vector<u32>& hand
   stats.readBytes+=u32(copy.rgba.size());out.push_back(std::move(copy));
  }return out;
 }
-void Renderer::restore_surfaces(const SurfaceCheckpoint& checkpoint){TH15_SYSTEM_SCOPE;
+void Renderer::restore_surfaces(const SurfaceCheckpoint& checkpoint){TH15_HOST_SCOPE;
  flush();for(const auto& copy:checkpoint){const auto s=resolve(owner,copy.handle);
   if(!s.handle||s.width*s.renderScale!=copy.width||s.height*s.renderScale!=copy.height)continue;
   auto& g=surface(copy.handle);bind_texture(g.texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);
@@ -282,8 +287,8 @@ void Renderer::read(u32 id){TH15_SYSTEM_SCOPE;flush();auto it=surfaces.find(id);
 }
 void Renderer::release(u32 id){TH15_SYSTEM_SCOPE;flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
 #include "ImguiRenderer.inc"
-void Renderer::present(u32 id){TH15_SYSTEM_SCOPE;flush();pending=id;stats.frames++;if(!defer)commit();}
-bool Renderer::commit(){TH15_SYSTEM_SCOPE;if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,flip_present_y?0:height,width,flip_present_y?height:0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+void Renderer::present(u32 id){TH15_HOST_SCOPE;flush();pending=id;stats.frames++;if(!defer)commit();}
+bool Renderer::commit(){TH15_HOST_SCOPE;if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,flip_present_y?0:height,width,flip_present_y?height:0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
 #if TH_ENABLE_THPRAC
 u32 Renderer::create_imgui_texture(u32 width,u32 height,const u8* rgba){TH15_SYSTEM_SCOPE;flush();GLuint texture=0;glGenTextures(1,&texture);glActiveTexture(GL_TEXTURE0);bind_texture(texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,rgba);return texture;}
 void Renderer::release_imgui_texture(u32 value){TH15_SYSTEM_SCOPE;flush();GLuint texture=value;if(texture)glDeleteTextures(1,&texture);boundTexture=~0u;}

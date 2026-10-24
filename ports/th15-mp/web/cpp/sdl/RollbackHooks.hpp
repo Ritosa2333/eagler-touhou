@@ -6,9 +6,11 @@
 #include <eagler/netplay/WriteJournal.hpp>
 #define TH15_GAME_SCOPE Netplay::WriteJournal::GameScope th15_game_scope
 #define TH15_SYSTEM_SCOPE Netplay::WriteJournal::SystemScope th15_system_scope
+#define TH15_HOST_SCOPE Netplay::WriteJournal::HostScope th15_host_scope
 #else
 #define TH15_GAME_SCOPE
 #define TH15_SYSTEM_SCOPE
+#define TH15_HOST_SCOPE
 #endif
 namespace th15::sdl::rollback {
 // This output log belongs to the host, outside the reversible simulation heap.
