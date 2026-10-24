@@ -61,6 +61,23 @@ touch、config、marker 三个函数本身不插桩。touch 在进入日志辅�
 
 构建限定为单个、非共享 wasm32 线性内存。原子操作、SIMD lane 内存操作、memory64、多内存和未知指令形态会明确中止插桩。宿主 JavaScript 直接写入线性内存需要在对应桥接处接入 touch，或使用系统区域承载这些写入；Wasm 指令插桩覆盖的是模块内部执行的写入。
 
+## 固定宽度 hook 微基准
+
+`scalar-hook-micro.mjs` 比较相同地址、数据和 volatile stores 下的 generic、scalar 与不调用 hook 的 plain 循环。默认只打印计划；显式选择 `--phase=build` 编译，随后用同一参数的 `--phase=measure` 计时。需要 Emscripten 6.0.9、Node 24.19.0、已安装的本目录依赖、干净且固定提交的源码，以及全新的输出目录。例如：
+
+```sh
+node --no-liftoff --no-wasm-lazy-compilation tools/rollback/scalar-hook-micro.mjs \
+  --phase=build --expected-head=FULL_COMMIT_SHA --output=/path/to/new/micro
+node --no-liftoff --no-wasm-lazy-compilation tools/rollback/scalar-hook-micro.mjs \
+  --phase=measure --expected-head=FULL_COMMIT_SHA --output=/path/to/new/micro
+```
+
+计时前停止其它构建和浏览器任务。默认 32 组路径、3 轮预热和 12 轮测量；三种 variant 的六种顺序各测两次，保留全部 1,440 条原始 trial，不剔除慢样本。每次只计一次 Wasm 导出调用的墙钟时间，循环内部没有 JavaScript 桥接；准备、完整内存比对和恢复校验在计时之外。plain 预先记录其全部堆写入目标，使它也能通过同样的真实恢复检查。16 字节逻辑写入在本夹具中为两个 volatile i64 store，共用一次 16 字节 hook。
+
+测试模块先执行生产 native-generic 插桩，再仅恢复 18 个明确命名的计时循环原始函数体，以免显式 hook 与自动插桩重复调用。逐函数审计要求白名单之外的每个最终函数体与插桩产物完全一致；循环中的实际直接调用、store 形态、hook callee 和函数索引也必须通过检查。它不是生产模块。每个 trial 校验完整 8 MiB 堆、host 写入区、独立字节期望、guard、checksum、首次捕获次数、唯一块数和恢复后的所有堆字节。
+
+结果仅说明这套循环和引擎中的成本，不代表游戏内各写入路径的频率、CPU 4× 游戏帧率或硬件 GPU 表现。启用生产 scalar profile 仍需真实游戏 oracle 和独立性能验证。
+
 ## 来源
 
 整堆与写入日志方案参考 [apeirs/th11 的公开实现](https://github.com/apeirs/th11/blob/324fb143e78560ae34f5930a19048e34035eb2f8/portable/rollback/instrument-rollback.mjs)，关联 [th11 issue #7](https://github.com/Ritosa2333/th11/issues/7)。本工具保留该方案的导出 hook 结构，并加入操作数顺序保持、范围相交、`memory.init` 覆盖及构建标志验证。
