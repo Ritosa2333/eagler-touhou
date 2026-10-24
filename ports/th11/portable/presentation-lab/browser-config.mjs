@@ -5,11 +5,20 @@ export default {
   game,title:'帧间显微镜',dataLabel:'选择自己的 th11.dat',dataUrl:'/input/th11.dat',
   runtimeUrl(epoch){runtimeEpoch=epoch;return `/runtime/th11.html?hosted=1&managedData=1&gameGeneration=presentation-lab&runtimeEpoch=${epoch}`;},
   runtime(target){
+    const epoch=runtimeEpoch;let sequence=0;
     const post=message=>new Promise((resolve,reject)=>{
+      const request=`lab-${epoch}-${++sequence}`;
+      const finish=(error,value)=>{clearTimeout(timer);window.removeEventListener('message',receive);error?reject(error):resolve(value);};
+      const receive=event=>{
+        const value=event.data;
+        if(event.source!==target||event.origin!==location.origin||value?.protocol!==protocol||value.game!==game||value.epoch!==epoch||value.request!==request)return;
+        finish(value.ok?null:Error(value.error||'Runtime command failed'),value);
+      };
+      const timer=setTimeout(()=>finish(Error('Runtime command timed out: '+message.command)),120000);
+      window.addEventListener('message',receive);
       try{
-        target.postMessage({protocol,game,epoch:runtimeEpoch,...message},location.origin);
-        setTimeout(resolve,message.command==='launch'?600:150);
-      }catch(error){reject(error);}
+        target.postMessage({protocol,game,epoch,...message,request},location.origin);
+      }catch(error){finish(error);}
     });
     const shim={get core(){return target.core;},get Module(){return target.Module;},command:post,launch:()=>post({command:'launch'}),
       stop:()=>{try{target.core?.th11_loop_stop?.();}catch{}}};
