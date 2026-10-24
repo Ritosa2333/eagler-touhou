@@ -466,7 +466,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
     if(network.Generation()!=generation||!mp_started||!network.AllowsRollback()||mp_local_results){rollback_cadence.reset();break;}
     if(!ok)break;
     if(mp_advanced){if(!rollback_cadence.complete()){last_error="TH15 forward clock consumed twice";ok=false;break;}}
-    else if(mp_frame_wait==multiplayer::FrameWait::Network){rollback_cadence.network_wait();break;}
+    else if(mp_frame_wait==th15::multiplayer::FrameWait::Network){rollback_cadence.network_wait();break;}
     // CPU-only work keeps its forward offer. Remaining calls can finish the
     // correction and sample its next frontier within the same original budget.
    }
