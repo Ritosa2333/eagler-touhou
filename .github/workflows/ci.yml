@@ -216,6 +216,10 @@ jobs:
     - name: Compile selected source and verify provenance
       shell: bash
       run: node launcher/scripts/build-runtime.mjs --game=${{ matrix.game }} --variant=${{ matrix.variant }} --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+    - name: Compile TH15 opacity draw reference oracle
+      if: matrix.game == 'th15' && matrix.variant == 'multiplayer'
+      shell: bash
+      run: TH15_OUTPUT=build/web/multiplayer node ports/th15-mp/portable/multiplayer/visual-test.mjs --compile-only
     - uses: actions/upload-artifact@v4
       if: always()
       with:

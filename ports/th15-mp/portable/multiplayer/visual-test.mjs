@@ -21,6 +21,14 @@ for(const object of objects)if(!existsSync(object))throw Error('Missing producti
 const loader=resolve(out,'visual-gameplay.cjs'),rsp=resolve(out,'visual-test.rsp');
 writeFileSync(rsp,[...flags,'--use-port=sdl3','-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-sNODERAWFS=1','-sEXIT_RUNTIME=1','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=8388608','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824',...objects,fixture,'-o',loader].map(a=>JSON.stringify(a)).join('\n'));
 run('python',[compiler,'@'+rsp]);
-if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE to the Japanese 1.00b archive');
-const result=run(process.execPath,[loader,resolve(process.env.TH15_TEST_ARCHIVE)]);
-writeFileSync(resolve(out,'visual-test-result.json'),result.stdout);
+if(process.argv.includes('--compile-only')){
+ writeFileSync(resolve(out,'visual-test-compile-only.json'),JSON.stringify({
+  schema:1,compiled:true,source:resolve(import.meta.dirname,'visual-gameplay.cpp'),
+  output:loader,buildManifest:resolve(out,'build.json')
+ },null,2)+'\\n');
+ console.log('PASS: TH15 opacity old-full-copy oracle compiled and linked (execution requires TH15_TEST_ARCHIVE)');
+}else{
+ if(!process.env.TH15_TEST_ARCHIVE)throw Error('Set TH15_TEST_ARCHIVE to the Japanese 1.00b archive');
+ const result=run(process.execPath,[loader,resolve(process.env.TH15_TEST_ARCHIVE)]);
+ writeFileSync(resolve(out,'visual-test-result.json'),result.stdout);
+}
