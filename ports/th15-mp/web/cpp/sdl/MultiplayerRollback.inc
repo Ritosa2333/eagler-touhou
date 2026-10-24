@@ -1,6 +1,7 @@
 // Included in BrowserRuntime's private namespace. Transport, physical capture,
 // published replays and device output deliberately live outside the game heap.
 unsigned mp_advanced=0;u32 mp_committed_score=0;bool mp_committed_complete=false;
+multiplayer::FrameWait mp_frame_wait=multiplayer::FrameWait::Network;
 #if TH15_WRITE_JOURNAL
 namespace journal=Netplay::WriteJournal;
 struct MpRollbackFrame {
@@ -15,6 +16,7 @@ struct MpRollbackFrame {
 std::deque<MpRollbackFrame> mp_frames;
 u32 mp_boundary=Netplay::INVALID_FRAME,mp_corrections=0,mp_replayed=0,mp_barriers=0;
 void mp_reset_rollback(){
+ rollback_cadence.reset();mp_frame_wait=multiplayer::FrameWait::Network;
  mp_save_request.Clear();mp_save_error.clear();
  rollback::End();mp_frames.clear();journal::Clear();mp_boundary=Netplay::INVALID_FRAME;
  if(app)app->graphics.clear_rollback_history();
@@ -158,7 +160,7 @@ bool mp_rollback_tick(u32 held,bool physical){
   if(!mp_commit_reconciled())return false;
   if(network.Correcting()&&network.NextFrame()==network.CorrectionEnd()){
    if(!network.EndCorrection()){last_error="TH15 correction completion rejected";return false;}
-   if(!mp_commit_reconciled())return false;return true;
+   if(!mp_commit_reconciled())return false;mp_frame_wait=multiplayer::FrameWait::Cpu;return true;
   }
   const bool correcting=network.Correcting();const auto frame=network.NextFrame();
   if(!correcting&&mp_save_request.Waiting()){
@@ -171,6 +173,7 @@ bool mp_rollback_tick(u32 held,bool physical){
    if(!mp_commit_reconciled()||!mp_complete_requested_save())return false;
    // Completion releases the fence immediately. The next driver call can
    // capture and advance even if JS has not consumed the completed token yet.
+   if(!mp_save_request.Waiting())mp_frame_wait=multiplayer::FrameWait::Cpu;
    return true;
   }
   if(mp_boundary==frame){
@@ -183,14 +186,14 @@ bool mp_rollback_tick(u32 held,bool physical){
    if(!mp_frames.empty()||journal::FrameCount()){last_error="TH15 lifecycle reached unreconciled state";return false;}
    mp_boundary=Netplay::INVALID_FRAME;
    if(mp_execute_rollback(exact,false)!=MpStep::Executed||!mp_commit_reconciled())return false;
-   if(!correcting)++mp_advanced;
+   if(!correcting)++mp_advanced;else mp_frame_wait=multiplayer::FrameWait::Cpu;
    if(app->title){mp_local_results=true;mp_menu={};}
    if(app->exiting&&!network.Finish()&&*network.Error()){last_error=network.Error();return false;}
    return true;
   }
   if(!correcting){
    if(network.NeedsCapture()){
-    if(!physical)return true;Netplay::FrameInput sampled;
+    if(!physical){mp_frame_wait=multiplayer::FrameWait::Cpu;return true;}Netplay::FrameInput sampled;
     if(!multiplayer::InputLanes::Capture(held,(held&0x100)!=0,app->touch.mode,app->touch.x,app->touch.y,sampled)||!network.Capture(network.CaptureFrame(),sampled)){
      last_error=network.Error();return false;
     }
@@ -206,7 +209,7 @@ bool mp_rollback_tick(u32 held,bool physical){
   if(!mp_commit_reconciled())return false;
   if(replayed>=4||emscripten_get_now()-begin>=4){
    if(network.NextFrame()==network.CorrectionEnd())continue;
-   app->graphics.backend.cancel_present();app->graphics.presentation.reset();return true;
+   app->graphics.backend.cancel_present();app->graphics.presentation.reset();mp_frame_wait=multiplayer::FrameWait::Cpu;return true;
   }
  }
 }
@@ -218,7 +221,7 @@ const u32* mp_rollback_status(){
   mp_boundary,mp_committed_score,mp_committed_complete?1u:0u};return values.data();
 }
 #else
-void mp_reset_rollback(){mp_save_request.Clear();mp_save_error.clear();mp_advanced=mp_committed_score=0;mp_committed_complete=false;}
+void mp_reset_rollback(){rollback_cadence.reset();mp_frame_wait=multiplayer::FrameWait::Network;mp_save_request.Clear();mp_save_error.clear();mp_advanced=mp_committed_score=0;mp_committed_complete=false;}
 bool mp_rollback_tick(u32,bool){last_error="This TH15 build has no instrumented rollback state owner";return false;}
 const u32* mp_rollback_status(){static const std::array<u32,20> values{};return values.data();}
 #endif

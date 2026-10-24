@@ -6,6 +6,7 @@
 #include "../multiplayer/ReplayArchive.hpp"
 #include "../multiplayer/SpectatorReplayStart.hpp"
 #include "../multiplayer/PendingSave.hpp"
+#include "../multiplayer/FrameSchedule.hpp"
 #include "../game/MultiplayerPilot.hpp"
 #endif
 #include "ThpracUi.hpp"
@@ -39,6 +40,7 @@ std::unique_ptr<ApplicationState> app;
 std::string last_error;
 #if TH15_MULTIPLAYER
 multiplayer::NetplayRuntime network;multiplayer::ReplayArchive mp_replay;
+multiplayer::FrameSchedule rollback_cadence;
 GameInput mp_menu;bool mp_started=false,mp_recording=false,mp_playback=false,mp_local_results=false;
 std::string mp_replay_path;std::string mp_saved_name="PLAYER";unsigned mp_stage=1;
 unsigned mp_spectator_stage=0;std::string mp_spectator_error;
@@ -71,7 +73,7 @@ bool mp_apply_confirmed(const Netplay::SpectatorFramePacket& packet,bool histori
  return true;
 }
 bool mp_tick(u32 held,bool physical=true){
- mp_advanced=0;
+ mp_advanced=0;mp_frame_wait=multiplayer::FrameWait::Network;
  if(mp_local_results){
   if(!network.Pump(false)){last_error=network.Error();return false;}
   if(!network.Retired()){if(!network.Finish()&&*network.Error()){last_error=network.Error();return false;}return true;}
@@ -140,6 +142,12 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 touhou::input::TouchController gestures;
 eagler::thprac::PracticePointer practice_pointers;
 PracticeCadence cadence;
+void reset_cadences(){
+ cadence.reset();
+#if TH15_MULTIPLAYER
+ rollback_cadence.reset();
+#endif
+}
 touhou::sdl::PresentationCadence presentation;bool limit_presentation_60=false;
 GameInput controls;
 SDL_Joystick* controller=nullptr;
@@ -398,37 +406,37 @@ EMSCRIPTEN_KEEPALIVE void th15_keys_clear(){th15::sdl::clear_inputs();}
 EMSCRIPTEN_KEEPALIVE void th15_music_enabled(unsigned enabled){using namespace th15::sdl;music_enabled=enabled!=0;if(app){app->audio_device.music_enabled=music_enabled;app->audio_device.refresh_volume();}}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_audio_statistics(){using namespace th15::sdl;return app?app->audio_device.statistics():nullptr;}
 EMSCRIPTEN_KEEPALIVE void th15_audio_close(){using namespace th15::sdl;if(app)app->audio_device.close();}
-EMSCRIPTEN_KEEPALIVE void th15_loop_stop(){using namespace th15::sdl;running=false;++loop_epoch;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(true);}
-EMSCRIPTEN_KEEPALIVE void th15_loop_pause(unsigned enabled){using namespace th15::sdl;suspended=enabled!=0;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(suspended);}
+EMSCRIPTEN_KEEPALIVE void th15_loop_stop(){using namespace th15::sdl;running=false;++loop_epoch;previous_frame=-1;reset_cadences();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(true);}
+EMSCRIPTEN_KEEPALIVE void th15_loop_pause(unsigned enabled){using namespace th15::sdl;suspended=enabled!=0;previous_frame=-1;reset_cadences();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(suspended);}
 EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
  using namespace th15::sdl;if(running||!app||!app->initialized)return;
  // The shared shell already rendered its two-second startup animation while
  // initialization ran. Do not add another native loading hold after it.
  if(app->loading_frames>=120){app->loading_startup=false;app->loading_debt=0;}
- if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
+ if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;previous_frame=-1;reset_cadences();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended
 #if TH15_MULTIPLAYER
  &&!mp_started
 #endif
- ){cadence.reset();presentation.reset();app->graphics.presentation.reset();return EM_TRUE;}
+ ){reset_cadences();presentation.reset();app->graphics.presentation.reset();return EM_TRUE;}
   // Startup retains native 180 loading frames; subsequent loads wait for
   // resource completion. Neither path accumulates gameplay simulation debt.
   if(app->loading_waiting()){
-   if(!loading_held)clear_inputs();loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
+   if(!loading_held)clear_inputs();loading_held=true;reset_cadences();presentation.reset();app->graphics.presentation.reset();
    if(!(app->loading_startup?app->advance_loading(delta):app->complete_loading())){running=false;th15_browser_frame(0,emscripten_get_now()-begin,0);return EM_FALSE;}
    app->audio_device.pump();return EM_TRUE;
   }
-  if(loading_held){loading_held=false;clear_inputs();cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
+  if(loading_held){loading_held=false;clear_inputs();reset_cadences();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
 #if TH15_PRESENTATION_LAB
   // Resource readiness uses its isolated loading clock, never game/replay ticks.
   // A freeze requested during startup must not strand the loading barrier.
-  if(lab_frozen){cadence.reset();return EM_TRUE;}
+  if(lab_frozen){reset_cadences();return EM_TRUE;}
 #endif
   if(presentation_start<0)presentation_start=time;
   bool fast=false,slow=false,debug=false;for(const auto& key:keyboard_map)if(key.hosted){fast|=key.vk==17||key.vk==162||key.vk==163;slow|=key.vk==16||key.vk==160||key.vk==161;debug|=key.vk==32;}
-  const double period=app->practice.enabled?app->practice.speed.interval(app->practice.replay,fast,slow,debug):1./60.;if(period!=cadence.period){cadence.period=period;cadence.reset();app->graphics.presentation.reset();}
+  const double period=app->practice.enabled?app->practice.speed.interval(app->practice.replay,fast,slow,debug):1./60.;if(period!=cadence.period){cadence.period=period;reset_cadences();app->graphics.presentation.reset();}
   const bool interpolate=std::abs(period-1./60.)<1e-12;
   if(!limit_presentation_60&&interpolate)presentation.advance(delta);else presentation.reset();app->graphics.presentation.enabled=presentation.high_refresh&&!limit_presentation_60&&interpolate;
 #if TH15_PRESENTATION_LAB
@@ -436,11 +444,16 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   // presentation remains governed by the real cadence and the 60Hz limiter.
   app->graphics.presentation.enabled=true;
 #endif
-  const auto ticks=cadence.advance(
 #if TH15_MULTIPLAYER
- mp_started?network.PacedElapsed(delta):
+  const bool rollback_schedule=mp_started&&network.AllowsRollback()&&!mp_local_results;
+  const auto generation=network.Generation();
+  const double elapsed_credit=mp_started?network.PacedElapsed(delta):delta;
+  if(rollback_schedule)cadence.reset();else rollback_cadence.reset();
+  const auto ticks=rollback_schedule?rollback_cadence.advance(elapsed_credit):cadence.advance(elapsed_credit);
+#else
+  const auto ticks=cadence.advance(delta);
 #endif
- delta);bool ok=true;app->graphics.backend.defer=true;
+  bool ok=true;app->graphics.backend.defer=true;
   unsigned completed=0;
   for(unsigned i=0;i<ticks&&ok;i++){
 #if TH15_MULTIPLAYER
@@ -449,19 +462,43 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
    ok=sample_and_tick();
 #if TH15_MULTIPLAYER
    completed+=!mp_started||(mp_local_results&&network.Retired())?1:mp_advanced;
+   if(rollback_schedule){
+    if(network.Generation()!=generation||!mp_started||!network.AllowsRollback()||mp_local_results){rollback_cadence.reset();break;}
+    if(!ok)break;
+    if(mp_advanced){if(!rollback_cadence.complete()){last_error="TH15 forward clock consumed twice";ok=false;break;}}
+    else if(mp_frame_wait==multiplayer::FrameWait::Network){rollback_cadence.network_wait();break;}
+    // CPU-only work keeps its forward offer. Remaining calls can finish the
+    // correction and sample its next frontier within the same original budget.
+   }
 #else
    ++completed;
 #endif
    if(app->exiting||app->pending_load)break;
    // Keep every executed update/draw, but do not turn one expensive tick into
    // four consecutive full renders. Retain the short debt for the next RAF.
-   if(i+1<ticks&&emscripten_get_now()-begin>=1000./60.){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*cadence.period);break;}
+   if(i+1<ticks&&emscripten_get_now()-begin>=1000./60.){
+#if TH15_MULTIPLAYER
+    if(!rollback_schedule)
+#endif
+    cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*cadence.period);break;
+   }
   }
+#if TH15_MULTIPLAYER
+  // Settle every uncompleted CPU offer exactly once. An actual network wait
+  // already retained its single retry; that settlement is a no-op here.
+  if(rollback_schedule){if(ok)rollback_cadence.cpu_yield();else rollback_cadence.reset();}
+#endif
   if(ok
 #if TH15_MULTIPLAYER
   &&!network.Correcting()
 #endif
-  &&presentation.high_refresh&&!limit_presentation_60&&interpolate&&!app->pending_load&&!app->exiting){const bool frozen=app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;const float alpha=float(std::clamp(cadence.debt/cadence.period,0.,1.));if(app->graphics.presentation.present(app->graphics.backend,alpha,frozen))ThpracUi::render(*app);}
+  &&presentation.high_refresh&&!limit_presentation_60&&interpolate&&!app->pending_load&&!app->exiting){const bool frozen=app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;
+   const double phase=
+#if TH15_MULTIPLAYER
+    rollback_schedule?rollback_cadence.phase():
+#endif
+    cadence.debt;
+   const float alpha=float(std::clamp(phase/cadence.period,0.,1.));if(app->graphics.presentation.present(app->graphics.backend,alpha,frozen))ThpracUi::render(*app);}
 #if TH15_MULTIPLAYER
   if(network.Correcting())app->graphics.backend.cancel_present();
 #endif
@@ -496,8 +533,8 @@ EMSCRIPTEN_KEEPALIVE int th15_probe_dialogue_extent(const char* text,int font){u
 EMSCRIPTEN_KEEPALIVE int th15_probe_dialogue_request(int script){using namespace th15::sdl;return app&&app->scene()&&app->scene()->messages.request(script);}
 EMSCRIPTEN_KEEPALIVE int th15_probe_dialogue_advance(){using namespace th15::sdl;if(!app||!app->scene())return -1;auto& messages=app->scene()->messages;if(!messages.dialogue)return 0;messages.dialogue->state.clock.set(100000);if(messages.dialogue->state.wait.current>0)messages.dialogue->state.wait.set(1);if(!messages.update({1,0,0,0,0,app->progress.stage}))return -1;return messages.active()?1:0;}
 #if TH15_PRESENTATION_LAB
-EMSCRIPTEN_KEEPALIVE int th15_lab_freeze(){using namespace th15::sdl;if(!app)return 0;lab_frozen=true;cadence.reset();return 1;}
-EMSCRIPTEN_KEEPALIVE int th15_lab_resume(){using namespace th15::sdl;if(!app||!lab_frozen)return 0;lab_frozen=false;previous_frame=-1;cadence.reset();window_start=0;window_ticks=0;return 1;}
+EMSCRIPTEN_KEEPALIVE int th15_lab_freeze(){using namespace th15::sdl;if(!app)return 0;lab_frozen=true;reset_cadences();return 1;}
+EMSCRIPTEN_KEEPALIVE int th15_lab_resume(){using namespace th15::sdl;if(!app||!lab_frozen)return 0;lab_frozen=false;previous_frame=-1;reset_cadences();window_start=0;window_ticks=0;return 1;}
 // Receipts: 1 complete tick, 2 loading, 3 finished, 0 error. Never bare Calculation.
 EMSCRIPTEN_KEEPALIVE int th15_lab_tick(){using namespace th15::sdl;if(!app||!lab_frozen)return 0;if(app->exiting)return 3;if(app->loading_waiting()){if(!app->loading_startup&&app->pending_load&&!app->complete_loading())return 0;return 2;}app->graphics.presentation.enabled=true;const auto before=app->frames;if(!sample_and_tick())return 0;app->audio_device.pump();return app->frames==before+1?1:0;}
 EMSCRIPTEN_KEEPALIVE int th15_lab_draw(float alpha){using namespace th15::sdl;if(!app||!lab_frozen||!std::isfinite(alpha)||alpha<0||alpha>1)return 0;return app->graphics.presentation.present(app->graphics.backend,alpha,app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive);}
