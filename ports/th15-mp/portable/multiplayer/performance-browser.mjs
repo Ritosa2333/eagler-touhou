@@ -27,7 +27,7 @@ const runtime=resolve(option('--runtime',process.env.TH15_MP_PACKAGE||resolve(ro
 const launcher=resolve(option('--launcher-root',process.env.TH15_LAUNCHER_ROOT||resolve(repo,'launcher')));
 const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(repo,'services/relay'),'src/netplay-relay.mjs');
 const out=resolve(option('--output',resolve(root,'web/artifacts/sdl-multiplayer/performance-'+mode+'-'+players+'p-'+new Date().toISOString().replaceAll(':','-'))));
-assert.ok(!existsSync(resolve(out,'receipt.json')),'Never overwrite an earlier receipt');mkdirSync(out,{recursive:true});
+assert.ok(!existsSync(resolve(out,'receipt.json'))&&!existsSync(resolve(out,'receipt.final.json')),'Never overwrite an earlier receipt');mkdirSync(out,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const fileIdentity=path=>{const b=readFileSync(path);return {path,bytes:b.length,sha256:hash(b)};};
 const saveJson=(name,value)=>writeFileSync(resolve(out,name),JSON.stringify(value,null,2)+'\n');
@@ -574,6 +574,10 @@ try{
   if(server){server.closeAllConnections();await new Promise(yes=>server.close(yes));}if(browserTemp)rmSync(browserTemp,{recursive:true,force:true});
   for(const [key,value] of Object.entries(originalTempEnv))if(value===undefined)delete process.env[key];else process.env[key]=value;
   clearTimeout(watchdog);writeFileSync(resolve(out,'relay.log'),relayLog);report.completedAt=new Date().toISOString();save();
+  // Keep a separate, write-once receipt after all cleanup has finished. The
+  // progress receipt is rewritten throughout the run; a matrix must hash this
+  // completed copy instead of depending on a mutable progress-file snapshot.
+  writeFileSync(resolve(out,'receipt.final.json'),JSON.stringify(report,null,2)+'\n',{flag:'wx'});
 }
 console.log(JSON.stringify({out,status:report.status,performanceMeasured:report.performanceMeasured,observationPassed:report.observationPassed,
   diagnostic,performanceEligible:report.performanceEligible,thresholdsMet:report.thresholdsMet,saveValidationPassed:report.saveValidationPassed,results:report.results.map(({seat,metrics:m})=>({seat,logicHz:m.logicHz,presentationHz:m.presentationHz,
