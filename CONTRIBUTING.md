@@ -82,6 +82,8 @@ npm test
 
 作品目录与普通版到 MP 历史同步的 PR 使用 **Create a merge commit**，保留来源提交和同步节点的父链。合入后刷新目录历史或子树导出端，确认原仓库提交仍是祖先。主分支要求 `Checks` 通过，其中包含 `Source history`。
 
+分支经过 rebase 或 squash 后，先从本地 reflog 或 PR 提交记录找回改写前通过 `Source history` 的提交。核对当前目录与该提交的内容；内容已完整保留时，在修复分支合并旧提交以接回父链，内容有差异时正常合并并逐项处理。最后运行 `python tools/ports/check-history.py --base <目标分支>`，确认祖先和导出树。不要用纯文件复制代替历史连接。
+
 本项目的自动化代理在发布提交说明、PR 和评论前，将完整文字交由维护者审阅。
 
 旧仓库改动转入 monorepo 时，按[历史与迁移](docs/history/README.md)找到原源码归属，再把差异应用到当前组件目录。

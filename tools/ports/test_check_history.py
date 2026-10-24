@@ -97,6 +97,28 @@ class SourceHistoryTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "not an ancestor"):
             history.verify(history.Repository(self.repo), head=squashed, base=self.base)
 
+    def test_rebase_without_merges_loses_subtree_join(self):
+        self.git(self.repo, "switch", "-q", "-c", "new-base", self.base)
+        (self.repo / "base-change.txt").write_text("new base\n", encoding="utf-8")
+        self.git(self.repo, "add", "base-change.txt")
+        self.git(self.repo, "commit", "-qm", "new base")
+        self.git(self.repo, "switch", "-q", "main")
+        self.git(self.repo, "rebase", "--onto", "new-base", self.base)
+        with self.assertRaisesRegex(RuntimeError, "not an ancestor"):
+            history.verify(history.Repository(self.repo), base=self.base)
+
+    def test_merge_valid_history_repairs_squash_without_changing_tree(self):
+        valid = self.git(self.repo, "rev-parse", "HEAD")
+        tree = self.git(self.repo, "rev-parse", "HEAD^{tree}")
+        squashed = subprocess.run(
+            ["git", "-C", str(self.repo), "commit-tree", tree, "-p", self.base],
+            input="squashed content\n", capture_output=True, text=True, encoding="utf-8", check=True,
+        ).stdout.strip()
+        self.git(self.repo, "switch", "-q", "--detach", squashed)
+        self.git(self.repo, "merge", "-s", "ours", "-m", "restore source ancestry", valid)
+        self.assertEqual(self.git(self.repo, "rev-parse", "HEAD^{tree}"), tree)
+        history.verify(history.Repository(self.repo), base=self.base)
+
     def test_new_port_requires_retained_source_record(self):
         (self.repo / "ports/th13").mkdir()
         (self.repo / "ports/th13/README.md").write_text("new game\n", encoding="utf-8")
