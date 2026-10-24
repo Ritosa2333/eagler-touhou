@@ -109,3 +109,49 @@ export async function stopCpuDiagnostic(handle){
     try{await handle.session.send('Profiler.disable');}finally{await handle.session.detach();}
   }
 }
+
+// Read browser-owned cumulative process CPU counters only at the two ends of
+// a diagnostic run. No timer or polling is installed in a game realm.
+export async function captureProcessCpuDiagnostic(browser,phase){
+  const session=await browser.newBrowserCDPSession();
+  const clock=()=>({utc:new Date().toISOString(),unixMs:Date.now(),monotonicMs:performance.now()});
+  try{
+    const requestedAt=clock(),result=await session.send('SystemInfo.getProcessInfo'),completedAt=clock();
+    if(!Array.isArray(result.processInfo))throw Error('Process CPU snapshot has no process list');
+    const processes=result.processInfo.map(({type,id,cpuTime})=>{
+      if(typeof type!=='string'||!Number.isFinite(id)||!Number.isFinite(cpuTime)||cpuTime<0)throw Error('Invalid browser process CPU counter');
+      return {type,id,cpuTime};
+    });
+    return {phase,requestedAt,completedAt,cpuTimeUnit:'seconds',processes};
+  }finally{await session.detach();}
+}
+
+export function compareProcessCpuDiagnostics(before,after){
+  const elapsedMs={minimum:after.requestedAt.monotonicMs-before.completedAt.monotonicMs,
+    maximum:after.completedAt.monotonicMs-before.requestedAt.monotonicMs,
+    midpoint:(after.requestedAt.monotonicMs+after.completedAt.monotonicMs-before.requestedAt.monotonicMs-before.completedAt.monotonicMs)/2};
+  if(!(elapsedMs.minimum>0&&elapsedMs.maximum>=elapsedMs.minimum))throw Error('Process CPU snapshots have invalid clock bounds');
+  const group=type=>type.toLowerCase()==='gpu'?'gpu':type==='renderer'?'renderer':type==='browser'?'browser':'other';
+  const key=process=>process.type+':'+process.id,left=new Map(before.processes.map(process=>[key(process),process]));
+  const right=new Map(after.processes.map(process=>[key(process),process])),processes=[],groups={};
+  const rates=seconds=>({minimum:seconds*1000/elapsedMs.maximum,maximum:seconds*1000/elapsedMs.minimum,
+    midpoint:seconds*1000/elapsedMs.midpoint});
+  for(const identity of new Set([...left.keys(),...right.keys()])){
+    const a=left.get(identity),b=right.get(identity),process=b||a;
+    const delta=a&&b?b.cpuTime-a.cpuTime:null,status=!a?'appeared':!b?'disappeared':delta<0?'counter-regressed':'matched';
+    const category=group(process.type),row={type:process.type,id:process.id,group:category,status,
+      beforeCpuSeconds:a?.cpuTime??null,afterCpuSeconds:b?.cpuTime??null,deltaCpuSeconds:status==='matched'?delta:null,
+      averageCpuCores:status==='matched'?rates(delta):null};
+    processes.push(row);
+    const totals=groups[category]??={matchedProcesses:0,unmatchedProcesses:0,deltaCpuSeconds:0,averageCpuCores:null};
+    if(status==='matched'){++totals.matchedProcesses;totals.deltaCpuSeconds+=delta;}
+    else ++totals.unmatchedProcesses;
+  }
+  for(const totals of Object.values(groups)){
+    totals.averageCpuCores=totals.matchedProcesses?rates(totals.deltaCpuSeconds):null;
+    if(!totals.matchedProcesses)totals.deltaCpuSeconds=null;
+  }
+  return {elapsedMs,processes,groups,allProcessesMatched:processes.every(process=>process.status==='matched'),
+    validMatchedCounters:processes.every(process=>process.status!=='counter-regressed'),
+    meaning:'Differences of cumulative SystemInfo process CPU seconds over the recorded before/after query bracket. The bracket includes profiler setup/stop and the fixed observation window. Average CPU cores can exceed one for a multithreaded process. GPU is the browser-reported process type, not a direct GPU execution-time measurement; SwiftShader may execute there. Appeared/disappeared or regressed counters are retained without inventing their missing CPU time.'};
+}

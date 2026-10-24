@@ -9,7 +9,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 import {createSenderDelayQueue} from './performance-sender-delay.mjs';
 import {distribution,summarize,replayInputs} from './performance-browser-metrics.mjs';
-import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic} from './performance-browser-diagnostic.mjs';
+import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
 
 const root=resolve(import.meta.dirname,'../..'),repo=resolve(root,'../..');
 function option(name,fallback){const combined=process.argv.find(x=>x.startsWith(name+'='));if(combined)return combined.slice(name.length+1);
@@ -39,6 +39,7 @@ const report={schema:'eagler-touhou/th15-production-performance/1',startedAt:new
     persistenceValidation:'After the fixed performance window: concurrent Host sync/input, real IDBFS records compared to MEMFS bytes and native file validation.'},
   stages:[],errors:[],consoleErrors:[],cleanup:[],results:[]};
 if(diagnostic){report.thresholdsMet=null;report.diagnostics={mode:diagnosticMode,samplingIntervalUs:4000,profiles:[],
+  processCpu:{before:[],after:[],deltas:[],errors:[]},
   performanceEligibility:'Diagnostic GL wrappers and CPU sampling add overhead. This run cannot satisfy the performance gate; thresholdsMet remains null.'};}
 const save=()=>saveJson('receipt.json',report),mark=name=>{report.stages.push({name,at:new Date().toISOString()});save();};
 save();
@@ -53,6 +54,15 @@ async function finishCpuProfiles(){
     try{const {profile,metadata}=await stopCpuDiagnostic(handle);const name='peer-'+seat+'.cpuprofile';saveJson(name,profile);
       report.diagnostics.profiles.push({seat,...metadata,file:fileIdentity(resolve(out,name))});}
     catch(error){observeError(seat,'cpu-profiler',error);report.diagnostics.profiles.push({seat,...handle.metadata,error:String(error)});}
+  }
+}
+async function finishProcessCpuSnapshots(){
+  for(const before of report.diagnostics.processCpu.before){const {seat}=before;
+    if(report.diagnostics.processCpu.after.some(item=>item.seat===seat)||report.diagnostics.processCpu.errors.some(item=>item.seat===seat))continue;
+    try{const after={seat,...await captureProcessCpuDiagnostic(browsers[seat],'after-profiler-stop')};
+      report.diagnostics.processCpu.after.push(after);
+      report.diagnostics.processCpu.deltas.push({seat,...compareProcessCpuDiagnostics(before,after)});}
+    catch(error){observeError(seat,'process-cpu-snapshot',error);report.diagnostics.processCpu.errors.push({seat,error:String(error)});}
   }
 }
 
@@ -328,7 +338,10 @@ try{
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>{const p=Module._th15_mp_status()>>>2;return Module.HEAPU32[p+3]>=180||document.querySelector('#error').textContent;},null,{timeout:90000,polling:250})));
   report.warmup=await Promise.all(frames.map(frame=>frame.evaluate(()=>__th15Performance.snapshot())));
   for(const warm of report.warmup){assert.equal(warm.error,'');assert.equal(warm.nativePhase,1);assert.equal(warm.route,'relay');assert.equal(warm.rollback[0],1);}
-  if(diagnostic){mark('diagnostic-profiler-start');
+  if(diagnostic){mark('diagnostic-process-cpu-before');
+    for(let seat=0;seat<browsers.length;++seat)report.diagnostics.processCpu.before.push({seat,
+      ...await captureProcessCpuDiagnostic(browsers[seat],'before-profiler-start')});
+    mark('diagnostic-profiler-start');
     for(let seat=0;seat<pages.length;++seat)cpuProfiles.push({seat,handle:await startCpuDiagnostic(pages[seat],{samplingIntervalUs:4000})});}
   mark('measurement-start');
   await Promise.all(pages.map(page=>page.evaluate(duration=>measure(duration),duration)));
@@ -337,7 +350,7 @@ try{
   // Neither path polls, screenshots, serializes or runs tests in the window.
   await pause(duration*1000+600);
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>__th15Performance.state.phase==='complete',null,{timeout:10000,polling:250})));
-  if(diagnostic){await finishCpuProfiles();mark('diagnostic-profiler-stop');}
+  if(diagnostic){await finishCpuProfiles();await finishProcessCpuSnapshots();mark('diagnostic-profiler-stop');}
   mark('measurement-complete');report.performanceMeasured=true;
   await pause(800); // Let the final managed-input release and FIFO packets settle.
   for(let seat=0;seat<players;++seat){
@@ -414,6 +427,8 @@ try{
   }
   if(report.errors.length)failures.push('Browser errors');
   if(diagnostic&&report.diagnostics.profiles.filter(p=>p.stopped&&p.file&&!p.error).length!==players)failures.push('Incomplete diagnostic CPU profiles');
+  if(diagnostic&&report.diagnostics.processCpu.deltas.length!==players)failures.push('Incomplete diagnostic process CPU snapshots');
+  if(diagnostic&&report.diagnostics.processCpu.deltas.some(item=>!item.validMatchedCounters))failures.push('Regressed diagnostic process CPU counters');
   report.observationFailures=failures;report.observationPassed=failures.length===0;
   report.thresholds={maximumMs:100,meaning:'The 100 ms comparison used for TH11, applied to complete native callback wall, presentation and forward-frontier window holds. This does not claim 60 fps.',
     peers:report.results.map(({seat,metrics:m})=>({seat,callbackMax:m.callbackWall.max,presentationMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max,
@@ -426,7 +441,7 @@ try{
   for(let seat=0;seat<frames.length;++seat)try{saveJson('peer-'+seat+'-partial.json',await frames[seat].evaluate(()=>({probe:globalThis.__th15Performance?.result(),error:document.querySelector('#error')?.textContent})));}catch{}
 }finally{
   mark('cleanup');shuttingDown=true;
-  if(diagnostic)await finishCpuProfiles();
+  if(diagnostic){await finishCpuProfiles();await finishProcessCpuSnapshots();}
   await Promise.allSettled(pages.map(page=>page.evaluate(()=>window.stopInput?.())));
   await Promise.allSettled(frames.map(frame=>frame.evaluate(()=>{globalThis.__th15Performance?.close();globalThis.Module?._th15_loop_stop?.();globalThis.Module?._th15_mp_close?.();})));
   await Promise.allSettled(browsers.map(browser=>browser.close()));for(const socket of lobbies)socket.close();relay?.kill();

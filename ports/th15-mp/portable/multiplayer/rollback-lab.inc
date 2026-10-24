@@ -103,10 +103,11 @@ EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_texture_begin(unsigned armed){
   probe->resource.textures.push_back(std::move(image));
  }
  if(!app->graphics.preload(probe->resource))return 0;
+ const auto abandon=[&](){app->graphics.unload(probe->resource);return 0;};
  for(unsigned index=0;index<2;++index){
   probe->handles[index]=app->graphics.texture(probe->resource,index);
   const auto* image=app->graphics.pixels(probe->handles[index]);
-  if(!image||image->pixels.empty())return 0;
+  if(!image||image->pixels.empty())return abandon();
   probe->owned[index]=journal::OwnedByGameHeap(image->pixels.data());
  }
  probe->armed=armed!=0;probe->callback.owner=probe.get();probe->callback.enabled=true;
@@ -122,7 +123,7 @@ EMSCRIPTEN_KEEPALIVE int th15_rollback_lab_texture_begin(unsigned armed){
   }
   return i32(FrameAction::Continue);
  };
- if(app->scheduler.add(probe->callback,FramePass::Draw,1000000)<0)return 0;
+ if(app->scheduler.add(probe->callback,FramePass::Draw,1000000)<0)return abandon();
  rollback_lab_textures=std::move(probe);return 1;
 }
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_rollback_lab_texture_observe(unsigned edited){

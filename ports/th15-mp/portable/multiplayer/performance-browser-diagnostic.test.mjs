@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
-import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic} from './performance-browser-diagnostic.mjs';
+import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
 
 function fixture(options={}){
   const clock={at:0},calls=[],state={phase:'measure',start:0,end:100,current:null};
@@ -99,4 +99,54 @@ test('CPU profiler stop failure still closes the session and does not manufactur
   await assert.rejects(stopCpuDiagnostic(handle),/Profiler.stop failed/);
   assert.equal(handle.closed,true);assert.equal(handle.metadata.stopped,false);
   assert.deepEqual(f.events.slice(-2).map(e=>e.method),['Profiler.disable','detach']);
+});
+
+test('process CPU snapshot brackets one actual SystemInfo read and detaches its browser session',async()=>{
+  const events=[],processInfo=[{id:10,type:'GPU',cpuTime:2.5},{id:11,type:'renderer',cpuTime:1.25}];
+  const browser={newBrowserCDPSession:async()=>({send:async method=>{events.push(method);return {processInfo};},
+    detach:async()=>events.push('detach')})};
+  const snapshot=await captureProcessCpuDiagnostic(browser,'before-profiler-start');
+  assert.deepEqual(events,['SystemInfo.getProcessInfo','detach']);assert.deepEqual(snapshot.processes,processInfo);
+  assert.equal(snapshot.phase,'before-profiler-start');assert.equal(snapshot.cpuTimeUnit,'seconds');
+  assert.ok(snapshot.requestedAt.monotonicMs<=snapshot.completedAt.monotonicMs);
+  assert.ok(Number.isFinite(Date.parse(snapshot.requestedAt.utc)));assert.ok(Number.isFinite(snapshot.completedAt.unixMs));
+});
+
+test('failed process CPU read still detaches and does not fabricate counter data',async()=>{
+  const events=[],browser={newBrowserCDPSession:async()=>({send:async()=>{throw Error('SystemInfo unavailable');},
+    detach:async()=>events.push('detach')})};
+  await assert.rejects(captureProcessCpuDiagnostic(browser,'before'),/SystemInfo unavailable/);
+  assert.deepEqual(events,['detach']);
+});
+
+function processSnapshots(){
+  return {before:{requestedAt:{monotonicMs:100},completedAt:{monotonicMs:110},processes:[
+    {type:'GPU',id:10,cpuTime:2.5},{type:'renderer',id:11,cpuTime:1.25},{type:'browser',id:12,cpuTime:.5}]},
+  after:{requestedAt:{monotonicMs:1110},completedAt:{monotonicMs:1120},processes:[
+    {type:'GPU',id:10,cpuTime:4.5},{type:'renderer',id:11,cpuTime:1.75},{type:'browser',id:12,cpuTime:.6}]}};
+}
+
+test('process CPU differences separate GPU/renderer and retain wall-bracket bounds and multicore rates',()=>{
+  const {before,after}=processSnapshots(),result=compareProcessCpuDiagnostics(before,after);
+  assert.deepEqual(result.elapsedMs,{minimum:1000,maximum:1020,midpoint:1010});
+  assert.equal(result.groups.gpu.deltaCpuSeconds,2);assert.equal(result.groups.renderer.deltaCpuSeconds,.5);
+  assert.equal(result.groups.gpu.averageCpuCores.maximum,2);assert.equal(result.groups.gpu.averageCpuCores.minimum,2/1.02);
+  assert.equal(result.allProcessesMatched,true);assert.equal(result.validMatchedCounters,true);
+});
+
+test('new/disappeared processes do not inherit another PID counter or invent zero CPU use',()=>{
+  const {before,after}=processSnapshots();after.processes[0]={type:'GPU',id:99,cpuTime:.2};
+  const result=compareProcessCpuDiagnostics(before,after);
+  assert.equal(result.allProcessesMatched,false);assert.equal(result.groups.gpu.matchedProcesses,0);
+  assert.equal(result.groups.gpu.unmatchedProcesses,2);assert.equal(result.groups.gpu.deltaCpuSeconds,null);
+  assert.equal(result.groups.gpu.averageCpuCores,null);
+  assert.equal(result.processes.find(p=>p.id===10).status,'disappeared');assert.equal(result.processes.find(p=>p.id===99).status,'appeared');
+});
+
+test('regressed CPU counters and invalid clock brackets remain explicit failures',()=>{
+  const {before,after}=processSnapshots();after.processes[0].cpuTime=1;
+  const result=compareProcessCpuDiagnostics(before,after);
+  assert.equal(result.validMatchedCounters,false);assert.equal(result.processes.find(p=>p.id===10).status,'counter-regressed');
+  assert.equal(result.groups.gpu.deltaCpuSeconds,null);
+  after.requestedAt.monotonicMs=50;assert.throws(()=>compareProcessCpuDiagnostics(before,after),/invalid clock bounds/);
 });
