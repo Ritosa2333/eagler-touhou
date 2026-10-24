@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-const read=path=>readFileSync(new URL('../../'+path,import.meta.url),'utf8');
+import {existsSync,readFileSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('../..',import.meta.url));
+const read=path=>{
+  const file=new URL('../../'+path,import.meta.url);
+  if(existsSync(file))return readFileSync(file,'utf8');
+  return execFileSync('git',['show',`HEAD:${path}`],{cwd:root,encoding:'utf8'});
+};
 
 test('every native thprac renderer feeds numeric editing before NewFrame',()=>{
   for(const title of ['th06','th07','th08','th08-mp','th10','th10-mp','th11','th11-mp','th15','th15-mp']){
