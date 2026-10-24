@@ -133,6 +133,9 @@ jobs:
       env:
         EAGLER_CI_AFFECTED: ${{ needs.scope.outputs.affected }}
     - run: node --test tools/build/compiler-arguments.test.mjs tools/build/source-dependencies.test.mjs tools/build/source-object.test.mjs tools/build/runtime-inputs.test.mjs tools/ci/runtime-source-owner.test.mjs tools/ci/reviewed-publication-assets.test.mjs
+    - name: Verify TH15 performance observations and ordered sender delay
+      if: ${{ contains(fromJSON(needs.scope.outputs.affected), 'ports/th15-mp') }}
+      run: node --test ports/th15-mp/portable/multiplayer/performance-browser-metrics.test.mjs ports/th15-mp/portable/multiplayer/performance-browser-probe.test.mjs ports/th15-mp/portable/multiplayer/performance-sender-delay.test.mjs
   port-adaptation:
     strategy:
       fail-fast: false
