@@ -252,7 +252,9 @@ i32 GameBattle::mp_boss_damage(EnemyState& enemy,i32 amount){
 void GameBattle::mp_prepare_presentation(AnmRenderer& r){
     // Tag the current native VMs on every draw, including registered focus/
     // option/shot trees. The renderer scales draw copies, never simulation VMs.
-    r.multiplayer_player_opacity.clear();
+    // Reuse live map nodes across Draw preparations. Tagging clears this
+    // marker; sweep unvisited pointers before any Draw can observe the map.
+    for(auto& entry:r.multiplayer_player_opacity)entry.second|=0x100u;
     r.multiplayer_hidden_hitboxes.clear();
     for(auto it=r.multiplayer_hitbox_owners.begin();it!=r.multiplayer_hitbox_owners.end();)
         if(!animations.registry.find(it->first))it=r.multiplayer_hitbox_owners.erase(it);else ++it;
@@ -277,6 +279,8 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
         for(const auto& pair:visuals.option_handles)for(auto handle:pair)tag(tag,animations.registry.find(handle));
         for(const auto& shot:pilot.player->shots.shots)if(shot.state)tag(tag,animations.registry.find(shot.animation));
     }
+    for(auto it=r.multiplayer_player_opacity.begin();it!=r.multiplayer_player_opacity.end();)
+        if(it->second&0x100u)it=r.multiplayer_player_opacity.erase(it);else ++it;
     for(const auto& entry:r.multiplayer_hitbox_owners)if(entry.second!=mp_options.local_seat)
         if(auto* vm=animations.registry.find(entry.first))r.multiplayer_hidden_hitboxes.push_back(vm);
 }

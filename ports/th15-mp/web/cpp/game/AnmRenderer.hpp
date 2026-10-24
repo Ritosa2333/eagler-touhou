@@ -14,7 +14,9 @@ public:
     u32 presentation_instance=0;
 #if TH15_MULTIPLAYER
     std::vector<const AnmVm*> multiplayer_hidden_hud;
-    std::unordered_map<const AnmVm*,u8> multiplayer_player_opacity;
+    // Bit 8 is a temporary stale marker while mp_prepare_presentation runs.
+    // Completed preparation exposes only the original 0..255 opacity values.
+    std::unordered_map<const AnmVm*,u16> multiplayer_player_opacity;
     std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
     std::unordered_map<u32,unsigned> multiplayer_hitbox_owners;
 #endif

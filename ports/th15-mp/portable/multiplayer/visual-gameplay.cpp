@@ -43,10 +43,13 @@ int main(int argc,char** argv){
    require(remote.visuals.root.visual.color==alpha&&game==w.environment.game_rng.calls&&visual==w.visual.calls,"Fade changed native VM or RNG");
    const auto focus_handle=remote.visuals.focus_handle;
    remote.visuals.focus_handle=0;b.mp_prepare_presentation(renderer);
+   require(renderer.multiplayer_player_opacity.count(focus)==0,"Detached focus kept a stale opacity override");
    const auto fade_vertices=renderer.pending().size();
    require(renderer.draw(*focus)==0&&renderer.pending().size()==fade_vertices,"Fading teammate hitbox became visible");
    remote.visuals.focus_handle=focus_handle;
    b.mp_options.local_seat=2;b.mp_prepare_presentation(renderer);
+   require(renderer.multiplayer_player_opacity.count(&remote.visuals.root)==0,"New local player kept the previous teammate fade");
+   require(renderer.multiplayer_player_opacity.at(&local.visuals.root)==72,"Previous local player did not acquire the teammate fade");
    require(std::find(renderer.multiplayer_hidden_hitboxes.begin(),renderer.multiplayer_hidden_hitboxes.end(),focus)==renderer.multiplayer_hidden_hitboxes.end(),"Selected viewpoint hitbox hidden");
    require(std::find(renderer.multiplayer_hidden_hitboxes.begin(),renderer.multiplayer_hidden_hitboxes.end(),own_focus)!=renderer.multiplayer_hidden_hitboxes.end(),"Previous viewpoint hitbox visible");
    b.mp_options.local_seat=1;
