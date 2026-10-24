@@ -2003,7 +2003,7 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "d27d4154ff26162059cea0356059c55dd00effa3186416e1ae219fece2cea5bd",
+      "sourceDigest": "77dd4ced9fdccdf309036535801e5146b5684afdbfdf015be67543e65ad08777",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 266,

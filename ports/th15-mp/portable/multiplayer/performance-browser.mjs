@@ -436,7 +436,7 @@ try{
   // autosave and then concurrent Host sync/input while all peers still run.
   mark('post-window-save-validation');
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>performance.now()>=31000,null,{timeout:20000,polling:250})));
-  report.inputProof={status:'running',method:'all-seat confirmed neutral baseline, then a new confirmed fire transition during Host sync',
+  report.inputProof={status:'running',method:'all-seat confirmed neutral baseline, then a new fire command concurrent with Host sync and a later confirmed transition',
     persistenceSource:'During this neutral/fire proof, Replay is written only by normal Host saves. Evidence copies live in /tmp; probes never invoke native export or intercept FS. The runner retains its separate final confirmed-prefix export after stopping producers.'};save();
   const neutralEvidence=report.inputProof.neutralize=await hostProofPhase('neutralize','neutralize',10000);
   const plan=report.inputProof.plan=neutralPlan(neutralEvidence.map(value=>value.snapshot));save();

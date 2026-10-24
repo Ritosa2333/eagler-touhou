@@ -1,0 +1,5394 @@
+{
+  "schema": "eagler-touhou/th15-rollback-performance-optimization/1",
+  "recordedAt": "2026-10-24T09:05:34.084773+00:00",
+  "status": "Measured: concrete path optimizations and correctness verified; 100 ms performance gates unmet.",
+  "branch": "experiment/th15-rollback-20261023",
+  "source": {
+    "measuredRevision": "f001e5c1f1941265ad77f514af58f6f23d31c773",
+    "measuredTree": "82d727f465e7507289dbcaa9d9d986286b08caa4",
+    "sourceStableAcrossMatrix": true,
+    "publishedImplementationCommits": [
+      {
+        "commit": "7472422dee6940eed320fd2a59613d35de2b03bb",
+        "tree": "e8ed8294ce1ceba65c4d1b9da1027ce2ac386488",
+        "message": "perf(th15): retain untouched texture uploads across rollback"
+      },
+      {
+        "commit": "7d19ce3007a648bc18ee9f3204eee32c6df66143",
+        "tree": "018e08d06176cc4e401b8d515db8c1fc3ce80a7e",
+        "message": "perf(th15): pause journal tracking in host render paths"
+      },
+      {
+        "commit": "68246d84478c255b83bb62d1be63b307c9c34f62",
+        "tree": "439f2fd057b407c123e63cf4a9dc6033cc9fcecf",
+        "message": "test(th15): trace render stalls and verify first-edit texture undo"
+      },
+      {
+        "commit": "a45f97013ffb9d4b99bc85b13dc52dfb1c9d878f",
+        "tree": "09bbd989ee265e4c5274f0e8485c90e990e172a4",
+        "message": "perf(th15): preserve forward clock credit across correction"
+      },
+      {
+        "commit": "908c3890cf8cafb85ab951766c5fee50bf92eb67",
+        "tree": "fc8383dc925c9b7e4a9be55ca0b83af53487b4ba",
+        "message": "test(th15): measure diagnostic process CPU and gate frame scheduling"
+      },
+      {
+        "commit": "f001e5c1f1941265ad77f514af58f6f23d31c773",
+        "tree": "82d727f465e7507289dbcaa9d9d986286b08caa4",
+        "message": "fix(th15): qualify frame wait in browser callback scope"
+      }
+    ]
+  },
+  "production": {
+    "wasmSha256": "e65631c22e71f8bbd1245bd31ba13aa14cf45c6409276318835037c40cbc984e",
+    "wasmBytes": 6023500,
+    "runtimeFiles": {
+      "th15.html": "56b84e98f47077ab6be064327855671755ba24cb76ababfa94e6da108c74254b",
+      "manifest.json": "5a834f7239208a97aa3d73e8e0681f63b7990116598048af3ef0c8f85b3978b3",
+      "startup-branding.mjs": "e81c5fafebec1eb2aca77c9b103b156caddec493d745a1c2e72322b3081b502c",
+      "shell.mjs": "0394987c7765dbadf0741a327e01bf1f13d5078ea6eb8143fed895b404d6bd81",
+      "score-save.mjs": "cde8f583952d2ec641e7044903afb7bcd44159591c69da99d77e9fb0e0ed93eb",
+      "managed.css": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da",
+      "keyboard.mjs": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274",
+      "directory-keyboard.mjs": "7500ffdc024df84965e4c63bc00359fa245c9275ae67731989f564252fa11c4b",
+      "th15.mjs": "2bf3032950a2678f8f588c00239b136c9ef7dba8c6593473e1bd855c9f7de772",
+      "th15.wasm": "e65631c22e71f8bbd1245bd31ba13aa14cf45c6409276318835037c40cbc984e",
+      "resources.json": "2943b9bf5ed453125b17a42ec4afb7ee8dba26c8527280f3209bd1850ed10467",
+      "fonts/cp932.bin": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919",
+      "multiplayer.mjs": "038ba43f00af70ab8568233842e8e6b218120fd85d901ffd3960925eabf31c48",
+      "adonis-calibration.mjs": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+    },
+    "build": {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-production-identities.json",
+      "bytes": 10374,
+      "sha256": "843ffa26e067ee52b631b2d122fcc507e411a49d6931f0b4c98cb9c52d5b011b"
+    },
+    "fixture": {
+      "path": "artifacts/th15-perf-optimization-20261024/rollback-fixture-identities.json",
+      "bytes": 1814,
+      "sha256": "940f90893300b9f09acd0719d322e47af01a21ab20139a8e2e2573fe8a827624"
+    }
+  },
+  "commonSettings": {
+    "durationSeconds": 15,
+    "renderScale": 1,
+    "cpuThrottle": 1,
+    "route": "relay",
+    "oneWaySendDelayMs": 50,
+    "jitterPlusMinusMs": 5,
+    "nominalRoundTripAddedMs": 100,
+    "profiler": false,
+    "music": false,
+    "warmupMinimumFrames": 180,
+    "tailThresholdMs": 100
+  },
+  "method": {
+    "windowSeconds": 15,
+    "warmupNativeFrames": 180,
+    "repeatsPerCase": 1,
+    "order": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        2,
+        3
+      ]
+    ],
+    "profiling": false,
+    "diagnosticGlWrapping": false,
+    "logicMeaning": "Observed maximum new NextFrame frontier; historical re-execution is not new progress.",
+    "presentationMeaning": "Default DRAW framebuffer color blit submissions, not GPU completion or monitor scanout.",
+    "callbackMeaning": "Complete actual Emscripten rAF callbacks, including unnotified correction work; end-crossing calls kept complete.",
+    "comparisonMeaning": "Descriptive single real-time windows at different reached game positions; not isolated causal effects or confidence intervals.",
+    "senderDelayMeaning": "FIFO adds nominal one-way 50±5 ms; actual timer lateness is separately recorded, not a measured 100 ms RTT.",
+    "observerMeaning": "Post-callback status read wall time; shell/light hooks remain in callback wall.",
+    "memoryMeaning": "Observed native heap/journal usage within Wasm capacity; not process RSS or full-campaign peak."
+  },
+  "outcomes": {
+    "productionObservation": {
+      "passed": 6,
+      "total": 6
+    },
+    "performance100ms": {
+      "passed": 0,
+      "total": 6
+    },
+    "originalRunnerSaveValidation": {
+      "passed": 5,
+      "total": 6
+    },
+    "independentFileBytesAndRecordedNativeValidation": {
+      "passedRuns": 6,
+      "totalRuns": 6,
+      "passedSeats": 15,
+      "totalSeats": 15
+    },
+    "originalPostWindowInputProof": {
+      "passedRuns": 5,
+      "totalRuns": 6,
+      "passedSeats": 14,
+      "totalSeats": 15
+    },
+    "correctnessOracle": {
+      "passed": 6,
+      "total": 6,
+      "auditChecks": 13997
+    },
+    "independentPerformanceAudit": {
+      "checks": 41017,
+      "discrepancies": 0,
+      "totals": {
+        "runs": 6,
+        "peers": 15,
+        "measuredNativeCallbacks": 2201,
+        "senderPackets": 22655,
+        "independentRecomputationsCompleted": 6,
+        "observationPasses": 6,
+        "thresholdPasses": 0,
+        "runnerReportedSaveValidationPasses": 5,
+        "underlyingBytePersistenceGateWithRecordedNativeValidationPasses": 5,
+        "fileBytesEqualRunPasses": 6,
+        "fileBytesAndRecordedNativeValidationRunPasses": 6,
+        "fileBytesAndRecordedNativeValidationPeerPasses": 15,
+        "postWindowInputProofRunPasses": 5,
+        "postWindowInputProofPeerPasses": 14,
+        "peersWithWindowErrorSamples": 0,
+        "filesVerified": 171
+      },
+      "audit": {
+        "path": "artifacts/th15-perf-optimization-20261024/final-independent-audit-v2.json",
+        "bytes": 528802,
+        "sha256": "2f377888bd9a1da5db0eebb014dfe4f5cad3fceaed609518428be8142f4c012a"
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "final-mode1-2p-01",
+      "mode": 1,
+      "players": 2,
+      "settings": {
+        "mode": 1,
+        "players": 2,
+        "durationSeconds": 15,
+        "inputDelayFrames": 2,
+        "predictionFrames": 0,
+        "renderScale": 1,
+        "cpuThrottle": 1,
+        "route": "relay",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "nominalRoundTripAddedMs": 100,
+        "profiler": false,
+        "music": false,
+        "warmupMinimumFrames": 180,
+        "tailThresholdMs": 100
+      },
+      "receipt": {
+        "path": "artifacts/th15-perf-optimization-20261024/final-mode1-2p-01/receipt.json",
+        "bytes": 77011,
+        "sha256": "1c7e3c458a56882918a9b4925adf7503c9ee804ad9fbc16a7e516031415e96e7"
+      },
+      "startedAt": "2026-10-24T08:33:26.179364+00:00",
+      "completedAt": "2026-10-24T08:34:31.569772+00:00",
+      "observationPassed": true,
+      "performanceThresholdsMet": false,
+      "originalSaveValidationPassed": true,
+      "originalSaveValidationFailures": [],
+      "fileBytesAndRecordedNativeValidationPassed": true,
+      "postWindowInputProofPassed": true,
+      "peers": [
+        {
+          "seat": 0,
+          "windowUtc": {
+            "start": "2026-10-24T08:34:10.404+00:00",
+            "end": "2026-10-24T08:34:25.404+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 422,
+            "completeNativeCallbacks": 422,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 422,
+              "p50": 1.699999999254942,
+              "p95": 9.400000002235174,
+              "p99": 12.700000002980232,
+              "max": 26.600000001490116,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 422,
+              "p50": 0.20000000298023224,
+              "p95": 0.9000000022351742,
+              "p99": 3.2999999970197678,
+              "max": 7.699999999254942,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 231,
+              "p50": 0.4000000022351742,
+              "p95": 2,
+              "p99": 5.100000001490116,
+              "max": 7.100000001490116,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 231,
+              "p50": 3.5,
+              "p95": 9.100000001490116,
+              "p99": 13.199999999254942,
+              "max": 26,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "logicHz": 28.6,
+            "captureHz": 28.6,
+            "forwardFrontierFrames": 429,
+            "capturedFrames": 429,
+            "presentationHz": 15.4,
+            "presentationSubmissions": 231,
+            "presentWindowHolds": {
+              "count": 232,
+              "p50": 57.399999998509884,
+              "p95": 150.40000000223517,
+              "p99": 214.5,
+              "max": 244.5,
+              "over33_4": 152,
+              "over50": 124,
+              "over100": 49
+            },
+            "frontierWindowHolds": {
+              "count": 232,
+              "p50": 57.30000000074506,
+              "p95": 150.5,
+              "p99": 214.5,
+              "max": 245.39999999850988,
+              "over33_4": 152,
+              "over50": 125,
+              "over100": 50
+            },
+            "rollbackDelta": {
+              "corrections": 0,
+              "historyTicks": 0,
+              "restores": 0,
+              "restoredFrameRecords": 0,
+              "barriers": 0
+            },
+            "correctingCallbacks": 0,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239121,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 0,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 150.0,
+            "sumFullCallbackWallMs": 1159.8999999761581,
+            "insideFixedWindowMs": 150.0,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30149,
+                "indexedDbBytes": 30149,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "indexedDbSha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 0,
+              "requestedBegin": 716,
+              "requestedEnd": 731,
+              "confirmedBegin": 716,
+              "confirmedEnd": 731,
+              "lane": {
+                "seat": 0,
+                "frames": 15,
+                "fire": 15,
+                "left": 0,
+                "right": 15,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 2,
+              "frames": 775,
+              "prefix": 180,
+              "begin": 716,
+              "end": 731,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 15,
+                  "fire": 15,
+                  "left": 0,
+                  "right": 15,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 15,
+                  "fire": 15,
+                  "left": 0,
+                  "right": 15,
+                  "distinctButtons": [
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 1,
+          "windowUtc": {
+            "start": "2026-10-24T08:34:10.402+00:00",
+            "end": "2026-10-24T08:34:25.402+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 361,
+            "completeNativeCallbacks": 361,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 361,
+              "p50": 2.199999999254942,
+              "p95": 13.0,
+              "p99": 17.399999998509884,
+              "max": 35.70000000298023,
+              "over33_4": 1,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 361,
+              "p50": 0.20000000298023224,
+              "p95": 0.7000000029802322,
+              "p99": 2.199999999254942,
+              "max": 10.5,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 199,
+              "p50": 0.5,
+              "p95": 3.099999997764826,
+              "p99": 5.399999998509884,
+              "max": 14.200000002980232,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 199,
+              "p50": 4.699999999254942,
+              "p95": 13,
+              "p99": 17.899999998509884,
+              "max": 30.900000002235174,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "logicHz": 28.466666666666665,
+            "captureHz": 28.533333333333335,
+            "forwardFrontierFrames": 427,
+            "capturedFrames": 428,
+            "presentationHz": 13.266666666666667,
+            "presentationSubmissions": 199,
+            "presentWindowHolds": {
+              "count": 200,
+              "p50": 69.09999999776483,
+              "p95": 182.39999999850988,
+              "p99": 238.79999999701977,
+              "max": 241.10000000149012,
+              "over33_4": 150,
+              "over50": 128,
+              "over100": 52
+            },
+            "frontierWindowHolds": {
+              "count": 200,
+              "p50": 68.89999999850988,
+              "p95": 183.70000000298023,
+              "p99": 238.80000000074506,
+              "max": 241.5,
+              "over33_4": 149,
+              "over50": 129,
+              "over100": 53
+            },
+            "rollbackDelta": {
+              "corrections": 0,
+              "historyTicks": 0,
+              "restores": 0,
+              "restoredFrameRecords": 0,
+              "barriers": 0
+            },
+            "correctingCallbacks": 0,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239121,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 0,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 127.79999997466803,
+            "sumFullCallbackWallMs": 1311.6999999955297,
+            "insideFixedWindowMs": 127.79999997466803,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30149,
+                "indexedDbBytes": 30149,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "indexedDbSha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 1,
+              "requestedBegin": 716,
+              "requestedEnd": 731,
+              "confirmedBegin": 716,
+              "confirmedEnd": 731,
+              "lane": {
+                "seat": 1,
+                "frames": 15,
+                "fire": 15,
+                "left": 0,
+                "right": 15,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 2,
+              "frames": 772,
+              "prefix": 180,
+              "begin": 716,
+              "end": 731,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 15,
+                  "fire": 15,
+                  "left": 0,
+                  "right": 15,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 15,
+                  "fire": 15,
+                  "left": 0,
+                  "right": 15,
+                  "distinctButtons": [
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "final-mode1-3p-01",
+      "mode": 1,
+      "players": 3,
+      "settings": {
+        "mode": 1,
+        "players": 3,
+        "durationSeconds": 15,
+        "inputDelayFrames": 2,
+        "predictionFrames": 0,
+        "renderScale": 1,
+        "cpuThrottle": 1,
+        "route": "relay",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "nominalRoundTripAddedMs": 100,
+        "profiler": false,
+        "music": false,
+        "warmupMinimumFrames": 180,
+        "tailThresholdMs": 100
+      },
+      "receipt": {
+        "path": "artifacts/th15-perf-optimization-20261024/final-mode1-3p-01/receipt.json",
+        "bytes": 110338,
+        "sha256": "ecf477475835c478b443f78c46e7e60c6b5614627e4d157b0af40d9ee56a076a"
+      },
+      "startedAt": "2026-10-24T08:34:31.599437+00:00",
+      "completedAt": "2026-10-24T08:35:45.404146+00:00",
+      "observationPassed": true,
+      "performanceThresholdsMet": false,
+      "originalSaveValidationPassed": true,
+      "originalSaveValidationFailures": [],
+      "fileBytesAndRecordedNativeValidationPassed": true,
+      "postWindowInputProofPassed": true,
+      "peers": [
+        {
+          "seat": 0,
+          "windowUtc": {
+            "start": "2026-10-24T08:35:09.060+00:00",
+            "end": "2026-10-24T08:35:24.060+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 171,
+            "completeNativeCallbacks": 171,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 171,
+              "p50": 0.30000000074505806,
+              "p95": 21.5,
+              "p99": 163.39999999850988,
+              "max": 583.1999999992549,
+              "over33_4": 6,
+              "over50": 3,
+              "over100": 3
+            },
+            "observerWall": {
+              "count": 171,
+              "p50": 0.3999999985098839,
+              "p95": 2.600000001490116,
+              "p99": 5.5,
+              "max": 8.5,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 69,
+              "p50": 0.7000000029802322,
+              "p95": 6.700000002980232,
+              "p99": 16.799999997019768,
+              "max": 39,
+              "over33_4": 1,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 69,
+              "p50": 8.300000000745058,
+              "p95": 29,
+              "p99": 149.10000000149012,
+              "max": 253.10000000149012,
+              "over33_4": 3,
+              "over50": 2,
+              "over100": 2
+            },
+            "logicHz": 9.666666666666666,
+            "captureHz": 9.666666666666666,
+            "forwardFrontierFrames": 145,
+            "capturedFrames": 145,
+            "presentationHz": 4.6,
+            "presentationSubmissions": 69,
+            "presentWindowHolds": {
+              "count": 70,
+              "p50": 126.09999999776483,
+              "p95": 499.6000000014901,
+              "p99": 1555.199999999255,
+              "max": 2883.699999999255,
+              "over33_4": 56,
+              "over50": 55,
+              "over100": 44
+            },
+            "frontierWindowHolds": {
+              "count": 70,
+              "p50": 128.19999999925494,
+              "p95": 494.29999999701977,
+              "p99": 1567.5999999977648,
+              "max": 2885.5,
+              "over33_4": 55,
+              "over50": 54,
+              "over100": 44
+            },
+            "rollbackDelta": {
+              "corrections": 0,
+              "historyTicks": 0,
+              "restores": 0,
+              "restoredFrameRecords": 0,
+              "barriers": 0
+            },
+            "correctingCallbacks": 0,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239228,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 0,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 121.59999997541308,
+            "sumFullCallbackWallMs": 1844.5999999977648,
+            "insideFixedWindowMs": 121.59999997541308,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 0,
+              "requestedBegin": 415,
+              "requestedEnd": 423,
+              "confirmedBegin": 415,
+              "confirmedEnd": 423,
+              "lane": {
+                "seat": 0,
+                "frames": 8,
+                "fire": 8,
+                "left": 0,
+                "right": 8,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 507,
+              "prefix": 180,
+              "begin": 415,
+              "end": 423,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 8,
+                  "fire": 8,
+                  "left": 0,
+                  "right": 8,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 8,
+                  "fire": 6,
+                  "left": 0,
+                  "right": 6,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 8,
+                  "fire": 5,
+                  "left": 0,
+                  "right": 5,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 1,
+          "windowUtc": {
+            "start": "2026-10-24T08:35:09.056+00:00",
+            "end": "2026-10-24T08:35:24.056+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 153,
+            "completeNativeCallbacks": 153,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 153,
+              "p50": 0.5999999977648258,
+              "p95": 20.899999998509884,
+              "p99": 31.600000001490116,
+              "max": 519.8000000007451,
+              "over33_4": 2,
+              "over50": 2,
+              "over100": 2
+            },
+            "observerWall": {
+              "count": 153,
+              "p50": 0.3999999985098839,
+              "p95": 4.199999999254942,
+              "p99": 15.199999999254942,
+              "max": 88.59999999776483,
+              "over33_4": 2,
+              "over50": 2,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 69,
+              "p50": 0.6000000014901161,
+              "p95": 5.100000001490116,
+              "p99": 7.899999998509884,
+              "max": 180.79999999701977,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 1
+            },
+            "nativeReportedWall": {
+              "count": 69,
+              "p50": 7.599999997764826,
+              "p95": 20.399999998509884,
+              "p99": 28.100000001490116,
+              "max": 514.4000000022352,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 1
+            },
+            "logicHz": 9.666666666666666,
+            "captureHz": 9.666666666666666,
+            "forwardFrontierFrames": 145,
+            "capturedFrames": 145,
+            "presentationHz": 4.6,
+            "presentationSubmissions": 69,
+            "presentWindowHolds": {
+              "count": 70,
+              "p50": 131.59999999776483,
+              "p95": 755.6000000014901,
+              "p99": 856.6999999992549,
+              "max": 3058.699999999255,
+              "over33_4": 58,
+              "over50": 56,
+              "over100": 45
+            },
+            "frontierWindowHolds": {
+              "count": 70,
+              "p50": 131.0,
+              "p95": 755.7000000029802,
+              "p99": 937.3999999985099,
+              "max": 2881.39999999851,
+              "over33_4": 58,
+              "over50": 56,
+              "over100": 44
+            },
+            "rollbackDelta": {
+              "corrections": 0,
+              "historyTicks": 0,
+              "restores": 0,
+              "restoredFrameRecords": 0,
+              "barriers": 0
+            },
+            "correctingCallbacks": 0,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239230,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 0,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 263.50000001490116,
+            "sumFullCallbackWallMs": 1419.099999986589,
+            "insideFixedWindowMs": 263.50000001490116,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 1,
+              "requestedBegin": 415,
+              "requestedEnd": 426,
+              "confirmedBegin": 415,
+              "confirmedEnd": 426,
+              "lane": {
+                "seat": 1,
+                "frames": 11,
+                "fire": 9,
+                "left": 0,
+                "right": 9,
+                "distinctButtons": [
+                  0,
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 507,
+              "prefix": 180,
+              "begin": 415,
+              "end": 426,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 11,
+                  "fire": 8,
+                  "left": 0,
+                  "right": 8,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 11,
+                  "fire": 9,
+                  "left": 0,
+                  "right": 9,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 11,
+                  "fire": 6,
+                  "left": 0,
+                  "right": 6,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 2,
+          "windowUtc": {
+            "start": "2026-10-24T08:35:09.051+00:00",
+            "end": "2026-10-24T08:35:24.051+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 157,
+            "completeNativeCallbacks": 157,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 157,
+              "p50": 0.3999999985098839,
+              "p95": 21.699999999254942,
+              "p99": 282.4000000022352,
+              "max": 517.3999999985099,
+              "over33_4": 6,
+              "over50": 6,
+              "over100": 6
+            },
+            "observerWall": {
+              "count": 157,
+              "p50": 0.3999999985098839,
+              "p95": 7.699999999254942,
+              "p99": 33.20000000298023,
+              "max": 241.29999999701977,
+              "over33_4": 2,
+              "over50": 1,
+              "over100": 1
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 63,
+              "p50": 0.8000000007450581,
+              "p95": 11.300000000745058,
+              "p99": 196.69999999925494,
+              "max": 511.0999999977648,
+              "over33_4": 4,
+              "over50": 4,
+              "over100": 3
+            },
+            "nativeReportedWall": {
+              "count": 63,
+              "p50": 8.900000002235174,
+              "p95": 39.599999997764826,
+              "p99": 170.20000000298023,
+              "max": 301.9000000022352,
+              "over33_4": 5,
+              "over50": 4,
+              "over100": 3
+            },
+            "logicHz": 9.666666666666666,
+            "captureHz": 9.666666666666666,
+            "forwardFrontierFrames": 145,
+            "capturedFrames": 145,
+            "presentationHz": 4.2,
+            "presentationSubmissions": 63,
+            "presentWindowHolds": {
+              "count": 64,
+              "p50": 150.29999999701977,
+              "p95": 417.5,
+              "p99": 1415.699999999255,
+              "max": 2859.199999999255,
+              "over33_4": 58,
+              "over50": 57,
+              "over100": 49
+            },
+            "frontierWindowHolds": {
+              "count": 64,
+              "p50": 149.5,
+              "p95": 565.1000000014901,
+              "p99": 928.8999999985099,
+              "max": 2857.300000000745,
+              "over33_4": 56,
+              "over50": 55,
+              "over100": 47
+            },
+            "rollbackDelta": {
+              "corrections": 0,
+              "historyTicks": 0,
+              "restores": 0,
+              "restoredFrameRecords": 0,
+              "barriers": 0
+            },
+            "correctingCallbacks": 0,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239231,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 0,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 492.3000000230968,
+            "sumFullCallbackWallMs": 2346.400000035763,
+            "insideFixedWindowMs": 492.3000000230968,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 2,
+              "requestedBegin": 418,
+              "requestedEnd": 424,
+              "confirmedBegin": 418,
+              "confirmedEnd": 424,
+              "lane": {
+                "seat": 2,
+                "frames": 6,
+                "fire": 6,
+                "left": 0,
+                "right": 6,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 504,
+              "prefix": 180,
+              "begin": 418,
+              "end": 424,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 6,
+                  "fire": 5,
+                  "left": 0,
+                  "right": 5,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 6,
+                  "fire": 6,
+                  "left": 0,
+                  "right": 6,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 6,
+                  "fire": 6,
+                  "left": 0,
+                  "right": 6,
+                  "distinctButtons": [
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "final-mode0-2p-01",
+      "mode": 0,
+      "players": 2,
+      "settings": {
+        "mode": 0,
+        "players": 2,
+        "durationSeconds": 15,
+        "inputDelayFrames": 0,
+        "predictionFrames": 12,
+        "renderScale": 1,
+        "cpuThrottle": 1,
+        "route": "relay",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "nominalRoundTripAddedMs": 100,
+        "profiler": false,
+        "music": false,
+        "warmupMinimumFrames": 180,
+        "tailThresholdMs": 100
+      },
+      "receipt": {
+        "path": "artifacts/th15-perf-optimization-20261024/final-mode0-2p-01/receipt.json",
+        "bytes": 77606,
+        "sha256": "3b346f8b895720f5a3efbd3a10389fbeaf8b41b716d845e376e5b1759bb7a756"
+      },
+      "startedAt": "2026-10-24T08:35:45.426653+00:00",
+      "completedAt": "2026-10-24T08:36:27.469870+00:00",
+      "observationPassed": true,
+      "performanceThresholdsMet": false,
+      "originalSaveValidationPassed": false,
+      "originalSaveValidationFailures": [
+        {
+          "seat": 0,
+          "error": "Post-window right movement and shooting were not present in native-confirmed Replay input"
+        }
+      ],
+      "fileBytesAndRecordedNativeValidationPassed": true,
+      "postWindowInputProofPassed": false,
+      "peers": [
+        {
+          "seat": 0,
+          "windowUtc": {
+            "start": "2026-10-24T08:36:01.799+00:00",
+            "end": "2026-10-24T08:36:16.799+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 140,
+            "completeNativeCallbacks": 140,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 140,
+              "p50": 18.300000000745058,
+              "p95": 23.900000002235174,
+              "p99": 25.800000000745058,
+              "max": 45.5,
+              "over33_4": 1,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 140,
+              "p50": 0.19999999925494194,
+              "p95": 1,
+              "p99": 3.099999997764826,
+              "max": 8.799999997019768,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 113,
+              "p50": 0.5999999977648258,
+              "p95": 3.399999998509884,
+              "p99": 6.599999997764826,
+              "max": 7.300000000745058,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 113,
+              "p50": 17.400000002235174,
+              "p95": 22.800000000745058,
+              "p99": 24.5,
+              "max": 39.29999999701977,
+              "over33_4": 1,
+              "over50": 0,
+              "over100": 0
+            },
+            "logicHz": 21.533333333333335,
+            "captureHz": 21.533333333333335,
+            "forwardFrontierFrames": 323,
+            "capturedFrames": 323,
+            "presentationHz": 7.533333333333333,
+            "presentationSubmissions": 113,
+            "presentWindowHolds": {
+              "count": 114,
+              "p50": 92.60000000149012,
+              "p95": 427.0,
+              "p99": 462.6000000014901,
+              "max": 570.7999999970198,
+              "over33_4": 88,
+              "over50": 83,
+              "over100": 51
+            },
+            "frontierWindowHolds": {
+              "count": 105,
+              "p50": 99.10000000149012,
+              "p95": 440.29999999701977,
+              "p99": 462.5999999977648,
+              "max": 572.1999999992549,
+              "over33_4": 81,
+              "over50": 77,
+              "over100": 51
+            },
+            "rollbackDelta": {
+              "corrections": 34,
+              "historyTicks": 186,
+              "restores": 34,
+              "restoredFrameRecords": 186,
+              "barriers": 0
+            },
+            "correctingCallbacks": 26,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              0
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239366,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 1874,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 59.399999994784594,
+            "sumFullCallbackWallMs": 2505.3999999947846,
+            "insideFixedWindowMs": 59.399999994784594,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": false,
+            "runnerReportedFailures": [
+              "Post-window right movement and shooting were not present in native-confirmed Replay input"
+            ],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30149,
+                "indexedDbBytes": 30149,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "indexedDbSha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": false,
+              "seat": 0,
+              "requestedBegin": 758,
+              "requestedEnd": 774,
+              "confirmedBegin": 758,
+              "confirmedEnd": 774,
+              "lane": {
+                "seat": 0,
+                "frames": 16,
+                "fire": 16,
+                "left": 0,
+                "right": 0,
+                "distinctButtons": [
+                  1
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 2,
+              "frames": 798,
+              "prefix": 180,
+              "begin": 758,
+              "end": 774,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 16,
+                  "fire": 16,
+                  "left": 0,
+                  "right": 0,
+                  "distinctButtons": [
+                    1
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 16,
+                  "fire": 2,
+                  "left": 0,
+                  "right": 2,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 1,
+          "windowUtc": {
+            "start": "2026-10-24T08:36:01.801+00:00",
+            "end": "2026-10-24T08:36:16.801+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000,
+            "measuredNativeCallbacks": 129,
+            "completeNativeCallbacks": 128,
+            "crossingEndCallbacks": 1,
+            "callbackWall": {
+              "count": 129,
+              "p50": 17.800000000745058,
+              "p95": 24.399999998509884,
+              "p99": 28.800000000745058,
+              "max": 41.100000001490116,
+              "over33_4": 2,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 129,
+              "p50": 0.20000000298023224,
+              "p95": 1,
+              "p99": 2.900000002235174,
+              "max": 15.400000002235174,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 1,
+              "p50": 17.600000001490116,
+              "p95": 17.600000001490116,
+              "p99": 17.600000001490116,
+              "max": 17.600000001490116,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 107,
+              "p50": 0.6000000014901161,
+              "p95": 3.300000000745058,
+              "p99": 4.5,
+              "max": 10.300000000745058,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 107,
+              "p50": 16.899999998509884,
+              "p95": 22.399999998509884,
+              "p99": 25.5,
+              "max": 32.30000000074506,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "logicHz": 21.133333333333333,
+            "captureHz": 21.066666666666666,
+            "forwardFrontierFrames": 317,
+            "capturedFrames": 316,
+            "presentationHz": 7.066666666666666,
+            "presentationSubmissions": 106,
+            "presentWindowHolds": {
+              "count": 107,
+              "p50": 110.80000000074506,
+              "p95": 379.30000000074506,
+              "p99": 444.0,
+              "max": 681.1000000014901,
+              "over33_4": 87,
+              "over50": 85,
+              "over100": 66
+            },
+            "frontierWindowHolds": {
+              "count": 98,
+              "p50": 112.69999999925494,
+              "p95": 386.4000000022352,
+              "p99": 502.80000000074506,
+              "max": 682.0999999977648,
+              "over33_4": 84,
+              "over50": 82,
+              "over100": 64
+            },
+            "rollbackDelta": {
+              "corrections": 28,
+              "historyTicks": 166,
+              "restores": 28,
+              "restoredFrameRecords": 166,
+              "barriers": 0
+            },
+            "correctingCallbacks": 20,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              0
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239366,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 2421,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 67.8000000230968,
+            "sumFullCallbackWallMs": 2111.1999999918044,
+            "insideFixedWindowMs": 67.50000002235174,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30149,
+                "indexedDbBytes": 30149,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "indexedDbSha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 1,
+              "requestedBegin": 748,
+              "requestedEnd": 760,
+              "confirmedBegin": 748,
+              "confirmedEnd": 760,
+              "lane": {
+                "seat": 1,
+                "frames": 12,
+                "fire": 8,
+                "left": 0,
+                "right": 8,
+                "distinctButtons": [
+                  0,
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 2,
+              "frames": 798,
+              "prefix": 180,
+              "begin": 748,
+              "end": 760,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 12,
+                  "fire": 2,
+                  "left": 0,
+                  "right": 0,
+                  "distinctButtons": [
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 12,
+                  "fire": 8,
+                  "left": 0,
+                  "right": 8,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "final-mode0-3p-01",
+      "mode": 0,
+      "players": 3,
+      "settings": {
+        "mode": 0,
+        "players": 3,
+        "durationSeconds": 15,
+        "inputDelayFrames": 0,
+        "predictionFrames": 12,
+        "renderScale": 1,
+        "cpuThrottle": 1,
+        "route": "relay",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "nominalRoundTripAddedMs": 100,
+        "profiler": false,
+        "music": false,
+        "warmupMinimumFrames": 180,
+        "tailThresholdMs": 100
+      },
+      "receipt": {
+        "path": "artifacts/th15-perf-optimization-20261024/final-mode0-3p-01/receipt.json",
+        "bytes": 109969,
+        "sha256": "4f3eaf1246b71ae02e616c275bc974fda1010594e63ea23e0df1687652e6a9a2"
+      },
+      "startedAt": "2026-10-24T08:36:27.518784+00:00",
+      "completedAt": "2026-10-24T08:37:31.373812+00:00",
+      "observationPassed": true,
+      "performanceThresholdsMet": false,
+      "originalSaveValidationPassed": true,
+      "originalSaveValidationFailures": [],
+      "fileBytesAndRecordedNativeValidationPassed": true,
+      "postWindowInputProofPassed": true,
+      "peers": [
+        {
+          "seat": 0,
+          "windowUtc": {
+            "start": "2026-10-24T08:36:56.550+00:00",
+            "end": "2026-10-24T08:37:11.550+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 55,
+            "completeNativeCallbacks": 55,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 55,
+              "p50": 23.100000001490116,
+              "p95": 128.5,
+              "p99": 180.09999999776483,
+              "max": 662.8000000007451,
+              "over33_4": 16,
+              "over50": 8,
+              "over100": 5
+            },
+            "observerWall": {
+              "count": 55,
+              "p50": 0.8000000007450581,
+              "p95": 10.100000001490116,
+              "p99": 17.900000002235174,
+              "max": 23.699999999254942,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 37,
+              "p50": 1.5999999977648258,
+              "p95": 20.200000002980232,
+              "p99": 22.899999998509884,
+              "max": 160.39999999850988,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 1
+            },
+            "nativeReportedWall": {
+              "count": 37,
+              "p50": 21.800000000745058,
+              "p95": 55.30000000074506,
+              "p99": 98.30000000074506,
+              "max": 117.40000000223517,
+              "over33_4": 6,
+              "over50": 3,
+              "over100": 1
+            },
+            "logicHz": 4.8,
+            "captureHz": 4.8,
+            "forwardFrontierFrames": 72,
+            "capturedFrames": 72,
+            "presentationHz": 2.466666666666667,
+            "presentationSubmissions": 37,
+            "presentWindowHolds": {
+              "count": 38,
+              "p50": 141.29999999701977,
+              "p95": 1217.1000000014901,
+              "p99": 1591.8999999985099,
+              "max": 2175.199999999255,
+              "over33_4": 31,
+              "over50": 29,
+              "over100": 23
+            },
+            "frontierWindowHolds": {
+              "count": 34,
+              "p50": 138.69999999925494,
+              "p95": 1929.699999999255,
+              "p99": 2196.10000000149,
+              "max": 2295.39999999851,
+              "over33_4": 28,
+              "over50": 27,
+              "over100": 22
+            },
+            "rollbackDelta": {
+              "corrections": 9,
+              "historyTicks": 49,
+              "restores": 9,
+              "restoredFrameRecords": 49,
+              "barriers": 0
+            },
+            "correctingCallbacks": 15,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              0
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239239,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 2608,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 169.8999999947846,
+            "sumFullCallbackWallMs": 2554.6000000052154,
+            "insideFixedWindowMs": 169.8999999947846,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 0,
+              "requestedBegin": 303,
+              "requestedEnd": 310,
+              "confirmedBegin": 303,
+              "confirmedEnd": 310,
+              "lane": {
+                "seat": 0,
+                "frames": 7,
+                "fire": 7,
+                "left": 0,
+                "right": 7,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 398,
+              "prefix": 180,
+              "begin": 303,
+              "end": 310,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 7,
+                  "fire": 7,
+                  "left": 0,
+                  "right": 7,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 7,
+                  "fire": 3,
+                  "left": 0,
+                  "right": 3,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 7,
+                  "fire": 4,
+                  "left": 0,
+                  "right": 4,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 1,
+          "windowUtc": {
+            "start": "2026-10-24T08:36:56.581+00:00",
+            "end": "2026-10-24T08:37:11.581+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 58,
+            "completeNativeCallbacks": 58,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 58,
+              "p50": 26.5,
+              "p95": 220.5,
+              "p99": 257.5999999977648,
+              "max": 292.3999999985099,
+              "over33_4": 21,
+              "over50": 13,
+              "over100": 8
+            },
+            "observerWall": {
+              "count": 58,
+              "p50": 0.6999999992549419,
+              "p95": 10.699999999254942,
+              "p99": 27.299999997019768,
+              "max": 32.5,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 39,
+              "p50": 1.8999999985098839,
+              "p95": 36.399999998509884,
+              "p99": 109.70000000298023,
+              "max": 267.80000000074506,
+              "over33_4": 3,
+              "over50": 2,
+              "over100": 2
+            },
+            "nativeReportedWall": {
+              "count": 39,
+              "p50": 22.399999998509884,
+              "p95": 72,
+              "p99": 89.5,
+              "max": 162.39999999850988,
+              "over33_4": 11,
+              "over50": 4,
+              "over100": 1
+            },
+            "logicHz": 4.933333333333334,
+            "captureHz": 4.933333333333334,
+            "forwardFrontierFrames": 74,
+            "capturedFrames": 74,
+            "presentationHz": 2.6,
+            "presentationSubmissions": 39,
+            "presentWindowHolds": {
+              "count": 40,
+              "p50": 162.80000000074506,
+              "p95": 1225.5,
+              "p99": 1367.800000000745,
+              "max": 2115.0,
+              "over33_4": 32,
+              "over50": 30,
+              "over100": 28
+            },
+            "frontierWindowHolds": {
+              "count": 33,
+              "p50": 185.59999999776483,
+              "p95": 1238.0999999977648,
+              "p99": 1530.800000000745,
+              "max": 3403.5,
+              "over33_4": 24,
+              "over50": 24,
+              "over100": 23
+            },
+            "rollbackDelta": {
+              "corrections": 14,
+              "historyTicks": 61,
+              "restores": 14,
+              "restoredFrameRecords": 61,
+              "barriers": 0
+            },
+            "correctingCallbacks": 16,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              0
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239240,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 2345,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 192.59999999776483,
+            "sumFullCallbackWallMs": 2991.8000000044703,
+            "insideFixedWindowMs": 192.59999999776483,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 1,
+              "requestedBegin": 302,
+              "requestedEnd": 306,
+              "confirmedBegin": 302,
+              "confirmedEnd": 306,
+              "lane": {
+                "seat": 1,
+                "frames": 4,
+                "fire": 4,
+                "left": 0,
+                "right": 4,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 398,
+              "prefix": 180,
+              "begin": 302,
+              "end": 306,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 4,
+                  "fire": 3,
+                  "left": 0,
+                  "right": 3,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 4,
+                  "fire": 4,
+                  "left": 0,
+                  "right": 4,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 4,
+                  "fire": 0,
+                  "left": 0,
+                  "right": 0,
+                  "distinctButtons": [
+                    0
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 2,
+          "windowUtc": {
+            "start": "2026-10-24T08:36:56.581+00:00",
+            "end": "2026-10-24T08:37:11.581+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 59,
+            "completeNativeCallbacks": 59,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 59,
+              "p50": 22.399999998509884,
+              "p95": 34.69999999925494,
+              "p99": 59.19999999925494,
+              "max": 91.39999999850988,
+              "over33_4": 5,
+              "over50": 2,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 59,
+              "p50": 0.5,
+              "p95": 8.699999999254942,
+              "p99": 19.100000001490116,
+              "max": 101.30000000074506,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 1
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 34,
+              "p50": 1.5,
+              "p95": 5.099999997764826,
+              "p99": 6.300000000745058,
+              "max": 16.699999999254942,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 34,
+              "p50": 21.5,
+              "p95": 41.5,
+              "p99": 56.5,
+              "max": 89,
+              "over33_4": 3,
+              "over50": 2,
+              "over100": 0
+            },
+            "logicHz": 4.466666666666667,
+            "captureHz": 4.4,
+            "forwardFrontierFrames": 67,
+            "capturedFrames": 66,
+            "presentationHz": 2.2666666666666666,
+            "presentationSubmissions": 34,
+            "presentWindowHolds": {
+              "count": 35,
+              "p50": 122.5,
+              "p95": 1784.5,
+              "p99": 2015.1000000014901,
+              "max": 2329.800000000745,
+              "over33_4": 25,
+              "over50": 24,
+              "over100": 22
+            },
+            "frontierWindowHolds": {
+              "count": 35,
+              "p50": 121.30000000074506,
+              "p95": 1778.1000000014901,
+              "p99": 2014.199999999255,
+              "max": 2330.2000000029802,
+              "over33_4": 26,
+              "over50": 24,
+              "over100": 22
+            },
+            "rollbackDelta": {
+              "corrections": 13,
+              "historyTicks": 71,
+              "restores": 13,
+              "restoredFrameRecords": 71,
+              "barriers": 0
+            },
+            "correctingCallbacks": 22,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              0
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239240,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 2478,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 205.99999998509884,
+            "sumFullCallbackWallMs": 1353.2000000067055,
+            "insideFixedWindowMs": 205.99999998509884,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 2,
+              "requestedBegin": 306,
+              "requestedEnd": 316,
+              "confirmedBegin": 306,
+              "confirmedEnd": 316,
+              "lane": {
+                "seat": 2,
+                "frames": 10,
+                "fire": 10,
+                "left": 0,
+                "right": 10,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 385,
+              "prefix": 180,
+              "begin": 306,
+              "end": 316,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 10,
+                  "fire": 4,
+                  "left": 0,
+                  "right": 4,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 10,
+                  "fire": 0,
+                  "left": 0,
+                  "right": 0,
+                  "distinctButtons": [
+                    0
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 10,
+                  "fire": 10,
+                  "left": 0,
+                  "right": 10,
+                  "distinctButtons": [
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "final-mode2-2p-01",
+      "mode": 2,
+      "players": 2,
+      "settings": {
+        "mode": 2,
+        "players": 2,
+        "durationSeconds": 15,
+        "inputDelayFrames": 2,
+        "predictionFrames": 12,
+        "renderScale": 1,
+        "cpuThrottle": 1,
+        "route": "relay",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "nominalRoundTripAddedMs": 100,
+        "profiler": false,
+        "music": false,
+        "warmupMinimumFrames": 180,
+        "tailThresholdMs": 100
+      },
+      "receipt": {
+        "path": "artifacts/th15-perf-optimization-20261024/final-mode2-2p-01/receipt.json",
+        "bytes": 77143,
+        "sha256": "6de5c652837324cafbcec46ce38309c3cd8de94a2ee2482ff9261913d8ca7aaa"
+      },
+      "startedAt": "2026-10-24T08:37:31.422001+00:00",
+      "completedAt": "2026-10-24T08:38:33.240518+00:00",
+      "observationPassed": true,
+      "performanceThresholdsMet": false,
+      "originalSaveValidationPassed": true,
+      "originalSaveValidationFailures": [],
+      "fileBytesAndRecordedNativeValidationPassed": true,
+      "postWindowInputProofPassed": true,
+      "peers": [
+        {
+          "seat": 0,
+          "windowUtc": {
+            "start": "2026-10-24T08:38:09.677+00:00",
+            "end": "2026-10-24T08:38:24.677+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 97,
+            "completeNativeCallbacks": 97,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 97,
+              "p50": 19,
+              "p95": 28.099999997764826,
+              "p99": 33.69999999925494,
+              "max": 69.40000000223517,
+              "over33_4": 2,
+              "over50": 1,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 97,
+              "p50": 0.30000000074505806,
+              "p95": 1.3999999985098839,
+              "p99": 3.899999998509884,
+              "max": 4.400000002235174,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 82,
+              "p50": 0.6999999992549419,
+              "p95": 2.800000000745058,
+              "p99": 3.600000001490116,
+              "max": 11,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 82,
+              "p50": 17.699999999254942,
+              "p95": 23.5,
+              "p99": 28.700000002980232,
+              "max": 32.899999998509884,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "logicHz": 16.066666666666666,
+            "captureHz": 16.066666666666666,
+            "forwardFrontierFrames": 241,
+            "capturedFrames": 241,
+            "presentationHz": 5.466666666666667,
+            "presentationSubmissions": 82,
+            "presentWindowHolds": {
+              "count": 83,
+              "p50": 130.0,
+              "p95": 495.0,
+              "p99": 747.9000000022352,
+              "max": 857.1999999992549,
+              "over33_4": 72,
+              "over50": 68,
+              "over100": 55
+            },
+            "frontierWindowHolds": {
+              "count": 77,
+              "p50": 121.5,
+              "p95": 539.0,
+              "p99": 858,
+              "max": 1245.9000000022352,
+              "over33_4": 68,
+              "over50": 64,
+              "over100": 50
+            },
+            "rollbackDelta": {
+              "corrections": 20,
+              "historyTicks": 93,
+              "restores": 20,
+              "restoredFrameRecords": 93,
+              "barriers": 0
+            },
+            "correctingCallbacks": 15,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239107,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 1802,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 50.29999998956919,
+            "sumFullCallbackWallMs": 1866.6000000163913,
+            "insideFixedWindowMs": 50.29999998956919,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30149,
+                "indexedDbBytes": 30149,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "indexedDbSha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 0,
+              "requestedBegin": 486,
+              "requestedEnd": 496,
+              "confirmedBegin": 486,
+              "confirmedEnd": 496,
+              "lane": {
+                "seat": 0,
+                "frames": 10,
+                "fire": 10,
+                "left": 0,
+                "right": 10,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 2,
+              "frames": 558,
+              "prefix": 180,
+              "begin": 486,
+              "end": 496,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 10,
+                  "fire": 10,
+                  "left": 0,
+                  "right": 10,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 10,
+                  "fire": 4,
+                  "left": 0,
+                  "right": 4,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 1,
+          "windowUtc": {
+            "start": "2026-10-24T08:38:09.674+00:00",
+            "end": "2026-10-24T08:38:24.674+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 91,
+            "completeNativeCallbacks": 91,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 91,
+              "p50": 18.100000001490116,
+              "p95": 26.199999999254942,
+              "p99": 76.10000000149012,
+              "max": 112.40000000223517,
+              "over33_4": 4,
+              "over50": 3,
+              "over100": 1
+            },
+            "observerWall": {
+              "count": 91,
+              "p50": 0.19999999925494194,
+              "p95": 0.9000000022351742,
+              "p99": 4,
+              "max": 79.59999999776483,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 77,
+              "p50": 0.6000000014901161,
+              "p95": 2,
+              "p99": 3.5,
+              "max": 4.199999999254942,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 77,
+              "p50": 17.400000002235174,
+              "p95": 23.100000001490116,
+              "p99": 24.199999999254942,
+              "max": 72.60000000149012,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 0
+            },
+            "logicHz": 15.533333333333333,
+            "captureHz": 15.533333333333333,
+            "forwardFrontierFrames": 233,
+            "capturedFrames": 233,
+            "presentationHz": 5.133333333333334,
+            "presentationSubmissions": 77,
+            "presentWindowHolds": {
+              "count": 78,
+              "p50": 133.5,
+              "p95": 546.9000000022352,
+              "p99": 935.6000000014901,
+              "max": 953.4000000022352,
+              "over33_4": 66,
+              "over50": 65,
+              "over100": 49
+            },
+            "frontierWindowHolds": {
+              "count": 73,
+              "p50": 158.89999999850988,
+              "p95": 547.0,
+              "p99": 953.6000000014901,
+              "max": 961.0,
+              "over33_4": 64,
+              "over50": 63,
+              "over100": 49
+            },
+            "rollbackDelta": {
+              "corrections": 15,
+              "historyTicks": 95,
+              "restores": 15,
+              "restoredFrameRecords": 95,
+              "barriers": 0
+            },
+            "correctingCallbacks": 14,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239106,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 1993,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 111.40000000223517,
+            "sumFullCallbackWallMs": 1836.899999987334,
+            "insideFixedWindowMs": 111.40000000223517,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30149,
+                "indexedDbBytes": 30149,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "indexedDbSha256": "26764f694fda54b8b47ad9a1a84752ba31988ffe9a78779c41a6bdd3ec1bf75f",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 1,
+              "requestedBegin": 476,
+              "requestedEnd": 490,
+              "confirmedBegin": 476,
+              "confirmedEnd": 490,
+              "lane": {
+                "seat": 1,
+                "frames": 14,
+                "fire": 10,
+                "left": 0,
+                "right": 10,
+                "distinctButtons": [
+                  0,
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 2,
+              "frames": 544,
+              "prefix": 180,
+              "begin": 476,
+              "end": 490,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 14,
+                  "fire": 4,
+                  "left": 0,
+                  "right": 4,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 14,
+                  "fire": 10,
+                  "left": 0,
+                  "right": 10,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "final-mode2-3p-01",
+      "mode": 2,
+      "players": 3,
+      "settings": {
+        "mode": 2,
+        "players": 3,
+        "durationSeconds": 15,
+        "inputDelayFrames": 2,
+        "predictionFrames": 12,
+        "renderScale": 1,
+        "cpuThrottle": 1,
+        "route": "relay",
+        "oneWaySendDelayMs": 50,
+        "jitterPlusMinusMs": 5,
+        "nominalRoundTripAddedMs": 100,
+        "profiler": false,
+        "music": false,
+        "warmupMinimumFrames": 180,
+        "tailThresholdMs": 100
+      },
+      "receipt": {
+        "path": "artifacts/th15-perf-optimization-20261024/final-mode2-3p-01/receipt.json",
+        "bytes": 110123,
+        "sha256": "248c6ba44d9a5088419b47735261b6bac8a602e031d1e7b4c14370e90d4a6d84"
+      },
+      "startedAt": "2026-10-24T08:38:33.271428+00:00",
+      "completedAt": "2026-10-24T08:39:24.052702+00:00",
+      "observationPassed": true,
+      "performanceThresholdsMet": false,
+      "originalSaveValidationPassed": true,
+      "originalSaveValidationFailures": [],
+      "fileBytesAndRecordedNativeValidationPassed": true,
+      "postWindowInputProofPassed": true,
+      "peers": [
+        {
+          "seat": 0,
+          "windowUtc": {
+            "start": "2026-10-24T08:38:59.499+00:00",
+            "end": "2026-10-24T08:39:14.499+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000,
+            "measuredNativeCallbacks": 102,
+            "completeNativeCallbacks": 102,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 102,
+              "p50": 21.5,
+              "p95": 31.600000001490116,
+              "p99": 44.20000000298023,
+              "max": 152.30000000074506,
+              "over33_4": 5,
+              "over50": 1,
+              "over100": 1
+            },
+            "observerWall": {
+              "count": 102,
+              "p50": 0.30000000074505806,
+              "p95": 1.5999999977648258,
+              "p99": 2,
+              "max": 4.100000001490116,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 85,
+              "p50": 0.6999999992549419,
+              "p95": 4.699999999254942,
+              "p99": 9.300000000745058,
+              "max": 10.5,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 85,
+              "p50": 20.699999999254942,
+              "p95": 32,
+              "p99": 35.399999998509884,
+              "max": 144.10000000149012,
+              "over33_4": 4,
+              "over50": 1,
+              "over100": 1
+            },
+            "logicHz": 13.533333333333333,
+            "captureHz": 13.533333333333333,
+            "forwardFrontierFrames": 203,
+            "capturedFrames": 203,
+            "presentationHz": 5.666666666666667,
+            "presentationSubmissions": 85,
+            "presentWindowHolds": {
+              "count": 86,
+              "p50": 157.40000000223517,
+              "p95": 387.19999999925494,
+              "p99": 456.0,
+              "max": 752,
+              "over33_4": 72,
+              "over50": 70,
+              "over100": 64
+            },
+            "frontierWindowHolds": {
+              "count": 80,
+              "p50": 163.60000000149012,
+              "p95": 456.0,
+              "p99": 570.3000000007451,
+              "max": 752.3999999985099,
+              "over33_4": 68,
+              "over50": 65,
+              "over100": 62
+            },
+            "rollbackDelta": {
+              "corrections": 25,
+              "historyTicks": 89,
+              "restores": 25,
+              "restoredFrameRecords": 89,
+              "barriers": 0
+            },
+            "correctingCallbacks": 17,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239289,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 1996,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 46.70000001043081,
+            "sumFullCallbackWallMs": 2465.2000000029802,
+            "insideFixedWindowMs": 46.70000001043081,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 0,
+              "requestedBegin": 475,
+              "requestedEnd": 486,
+              "confirmedBegin": 475,
+              "confirmedEnd": 486,
+              "lane": {
+                "seat": 0,
+                "frames": 11,
+                "fire": 10,
+                "left": 0,
+                "right": 10,
+                "distinctButtons": [
+                  0,
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 550,
+              "prefix": 180,
+              "begin": 475,
+              "end": 486,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 11,
+                  "fire": 10,
+                  "left": 0,
+                  "right": 10,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 11,
+                  "fire": 5,
+                  "left": 0,
+                  "right": 5,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 11,
+                  "fire": 8,
+                  "left": 0,
+                  "right": 8,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 1,
+          "windowUtc": {
+            "start": "2026-10-24T08:38:59.503+00:00",
+            "end": "2026-10-24T08:39:14.503+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 102,
+            "completeNativeCallbacks": 102,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 102,
+              "p50": 20.899999998509884,
+              "p95": 31.300000000745058,
+              "p99": 48.899999998509884,
+              "max": 131,
+              "over33_4": 5,
+              "over50": 2,
+              "over100": 1
+            },
+            "observerWall": {
+              "count": 102,
+              "p50": 0.30000000074505806,
+              "p95": 1.699999999254942,
+              "p99": 3.899999998509884,
+              "max": 176.29999999701977,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 1
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 87,
+              "p50": 0.6999999992549419,
+              "p95": 3.699999999254942,
+              "p99": 10.899999998509884,
+              "max": 107.80000000074506,
+              "over33_4": 1,
+              "over50": 1,
+              "over100": 1
+            },
+            "nativeReportedWall": {
+              "count": 87,
+              "p50": 20,
+              "p95": 27.5,
+              "p99": 37.400000002235174,
+              "max": 41.79999999701977,
+              "over33_4": 2,
+              "over50": 0,
+              "over100": 0
+            },
+            "logicHz": 13.933333333333334,
+            "captureHz": 13.933333333333334,
+            "forwardFrontierFrames": 209,
+            "capturedFrames": 209,
+            "presentationHz": 5.8,
+            "presentationSubmissions": 87,
+            "presentWindowHolds": {
+              "count": 88,
+              "p50": 145.40000000223517,
+              "p95": 369.80000000074506,
+              "p99": 554.0,
+              "max": 725.1000000014901,
+              "over33_4": 76,
+              "over50": 74,
+              "over100": 70
+            },
+            "frontierWindowHolds": {
+              "count": 77,
+              "p50": 161.59999999776483,
+              "p95": 485.0999999977648,
+              "p99": 554.2000000029802,
+              "max": 725.1999999992549,
+              "over33_4": 68,
+              "over50": 66,
+              "over100": 62
+            },
+            "rollbackDelta": {
+              "corrections": 29,
+              "historyTicks": 87,
+              "restores": 29,
+              "restoredFrameRecords": 87,
+              "barriers": 0
+            },
+            "correctingCallbacks": 14,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239310,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 2198,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 236.40000000968575,
+            "sumFullCallbackWallMs": 2393.9999999925494,
+            "insideFixedWindowMs": 236.40000000968575,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 1,
+              "requestedBegin": 481,
+              "requestedEnd": 494,
+              "confirmedBegin": 481,
+              "confirmedEnd": 494,
+              "lane": {
+                "seat": 1,
+                "frames": 13,
+                "fire": 13,
+                "left": 0,
+                "right": 13,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 550,
+              "prefix": 180,
+              "begin": 481,
+              "end": 494,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 13,
+                  "fire": 5,
+                  "left": 0,
+                  "right": 5,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 13,
+                  "fire": 13,
+                  "left": 0,
+                  "right": 13,
+                  "distinctButtons": [
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 13,
+                  "fire": 8,
+                  "left": 0,
+                  "right": 8,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        },
+        {
+          "seat": 2,
+          "windowUtc": {
+            "start": "2026-10-24T08:38:59.514+00:00",
+            "end": "2026-10-24T08:39:14.514+00:00"
+          },
+          "metrics": {
+            "windowMs": 15000.0,
+            "measuredNativeCallbacks": 104,
+            "completeNativeCallbacks": 104,
+            "crossingEndCallbacks": 0,
+            "callbackWall": {
+              "count": 104,
+              "p50": 20.399999998509884,
+              "p95": 28.199999999254942,
+              "p99": 32.899999998509884,
+              "max": 37.19999999925494,
+              "over33_4": 1,
+              "over50": 0,
+              "over100": 0
+            },
+            "observerWall": {
+              "count": 104,
+              "p50": 0.30000000074505806,
+              "p95": 1.5,
+              "p99": 3.399999998509884,
+              "max": 16.699999999254942,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "crossingCallbackWall": {
+              "count": 0,
+              "p50": null,
+              "p95": null,
+              "p99": null,
+              "max": null,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "shellHookWall": {
+              "count": 80,
+              "p50": 0.5999999977648258,
+              "p95": 3.800000000745058,
+              "p99": 6.099999997764826,
+              "max": 8.600000001490116,
+              "over33_4": 0,
+              "over50": 0,
+              "over100": 0
+            },
+            "nativeReportedWall": {
+              "count": 80,
+              "p50": 19.600000001490116,
+              "p95": 27.5,
+              "p99": 32.399999998509884,
+              "max": 36.600000001490116,
+              "over33_4": 1,
+              "over50": 0,
+              "over100": 0
+            },
+            "logicHz": 13.0,
+            "captureHz": 13.0,
+            "forwardFrontierFrames": 195,
+            "capturedFrames": 195,
+            "presentationHz": 5.333333333333333,
+            "presentationSubmissions": 80,
+            "presentWindowHolds": {
+              "count": 81,
+              "p50": 144.80000000074506,
+              "p95": 591.5,
+              "p99": 672.8000000007451,
+              "max": 688.6999999992549,
+              "over33_4": 64,
+              "over50": 63,
+              "over100": 55
+            },
+            "frontierWindowHolds": {
+              "count": 75,
+              "p50": 152.30000000074506,
+              "p95": 591.6000000014901,
+              "p99": 685.5,
+              "max": 785.8000000007451,
+              "over33_4": 61,
+              "over50": 59,
+              "over100": 53
+            },
+            "rollbackDelta": {
+              "corrections": 28,
+              "historyTicks": 114,
+              "restores": 28,
+              "restoredFrameRecords": 114,
+              "barriers": 0
+            },
+            "correctingCallbacks": 22,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832,
+            "runtimePhases": [
+              1
+            ],
+            "observedInputDelayFrames": [
+              2
+            ]
+          },
+          "memory": {
+            "simulationHeapUsedKiBMax": 239289,
+            "simulationHeapCapacityKiB": 393216,
+            "undoKiBMax": 2059,
+            "undoCapacityKiB": 36864,
+            "wasmCapacityBytesStart": 698744832,
+            "wasmCapacityBytesMax": 698744832
+          },
+          "observerAccounting": {
+            "sumMs": 66.49999999627471,
+            "sumFullCallbackWallMs": 2070.5000000037253,
+            "insideFixedWindowMs": 66.49999999627471,
+            "meaning": "Additional post-callback observer wall only. Shell and in-callback hooks remain inside callback wall; these are not zero-overhead runs."
+          },
+          "save": {
+            "runnerReportedPassed": true,
+            "runnerReportedFailures": [],
+            "files": [
+              {
+                "name": "scoreth15.dat",
+                "memoryBytes": 30151,
+                "indexedDbBytes": 30151,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "indexedDbSha256": "734da2c95160c92e2ff44af15a7920e9cc9b5741eb99847977561af26261e4dd",
+                "nativeValidationRecorded": true
+              },
+              {
+                "name": "th15.cfg",
+                "memoryBytes": 108,
+                "indexedDbBytes": 108,
+                "runnerReportedEqual": true,
+                "underlyingBytesEqual": true,
+                "numericDifferences": 0,
+                "negativeIdbElements": 0,
+                "signedRepresentationExplainsEveryDifference": true,
+                "memorySha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "indexedDbSha256": "f8811e02d6c1ad4103fed406734c481d6f3a77ddb637fa07bf00ea259edb1a20",
+                "nativeValidationRecorded": true
+              }
+            ],
+            "fileBytesEqualPassed": true,
+            "fileNativeValidationRecordedPassed": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProof": {
+              "passed": true,
+              "seat": 2,
+              "requestedBegin": 478,
+              "requestedEnd": 489,
+              "confirmedBegin": 478,
+              "confirmedEnd": 489,
+              "lane": {
+                "seat": 2,
+                "frames": 11,
+                "fire": 11,
+                "left": 0,
+                "right": 11,
+                "distinctButtons": [
+                  129
+                ]
+              },
+              "allRequestedFramesConfirmed": true
+            },
+            "hostAckBeforeSyncIndependentlyRecomputed": true,
+            "confirmedInput": {
+              "players": 3,
+              "frames": 548,
+              "prefix": 180,
+              "begin": 478,
+              "end": 489,
+              "seats": [
+                {
+                  "seat": 0,
+                  "frames": 11,
+                  "fire": 8,
+                  "left": 0,
+                  "right": 8,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 1,
+                  "frames": 11,
+                  "fire": 8,
+                  "left": 0,
+                  "right": 8,
+                  "distinctButtons": [
+                    0,
+                    129
+                  ]
+                },
+                {
+                  "seat": 2,
+                  "frames": 11,
+                  "fire": 11,
+                  "left": 0,
+                  "right": 11,
+                  "distinctButtons": [
+                    129
+                  ]
+                }
+              ]
+            },
+            "requestedInputRangeFullyConfirmed": true
+          }
+        }
+      ]
+    }
+  ],
+  "previousComparison": {
+    "audit": {
+      "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-performance-20261024/fixed-independent-audit.json",
+      "bytes": 363654,
+      "sha256": "705d77b7c9df10c62b0417e974922d05bf7b04dfa001ad375703e10f0b28fb00",
+      "verificationSource": "filesystem"
+    },
+    "baselineTotals": {
+      "runs": 6,
+      "peers": 15,
+      "measuredNativeCallbacks": 2969,
+      "senderPackets": 25689,
+      "observationPasses": 6,
+      "thresholdPasses": 0,
+      "runnerReportedSaveValidationPasses": 5,
+      "underlyingBytePersistenceGateWithRecordedNativeValidationPasses": 6,
+      "peersWithWindowErrorSamples": 0,
+      "filesVerified": 90
+    },
+    "cases": [
+      {
+        "mode": 0,
+        "players": 2,
+        "before": {
+          "name": "fixed-mode0-2p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-performance-20261024/fixed-mode0-2p-01/receipt.json",
+            "bytes": 77097,
+            "sha256": "9eb8230a7a1b67845ce0caf57c75a5ea8c7892ff8ecf3cd33187373d8032cf20",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 17.266666666666666,
+              "max": 17.266666666666666
+            },
+            "presentationHz": {
+              "min": 6.4,
+              "max": 6.8
+            },
+            "callbackP95Ms": {
+              "min": 31.5,
+              "max": 42.09999999962747
+            },
+            "callbackMaxMs": 1255.2999999988824,
+            "presentationMaxMs": 824.0999999996275,
+            "frontierMaxMs": 811.6000000014901,
+            "observerP95Ms": {
+              "min": 1.400000000372529,
+              "max": 1.599999999627471
+            },
+            "observerMaxMs": 395.30000000074506,
+            "shellHookP95Ms": {
+              "min": 1.3999999985098839,
+              "max": 8.199999999254942
+            },
+            "nativeReportedP95Ms": {
+              "min": 24.700000001117587,
+              "max": 25.300000000745058
+            },
+            "restores": {
+              "min": 23,
+              "max": 23
+            },
+            "historyTicks": {
+              "min": 145,
+              "max": 148
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239105,
+              "max": 239138
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 2266,
+              "max": 2330
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 211.80000000074506,
+              "max": 2314.2999999988824
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 7.599999999627471,
+              "max": 25.699999999254942
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 239.0,
+              "max": 2323.5999999996275
+            },
+            "periodicPendingObservedSeats": [
+              0,
+              1
+            ],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 253.59999999962747,
+              "max": 1205.800000000745
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 7.700000001117587,
+              "max": 38.90000000037253
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 292.59999999962747,
+              "max": 1245.4000000003725
+            },
+            "observerInsideWindowMs": null,
+            "observerInsideWindowPercent": null
+          }
+        },
+        "after": {
+          "name": "final-mode0-2p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-perf-optimization-20261024/final-mode0-2p-01/receipt.json",
+            "bytes": 77606,
+            "sha256": "3b346f8b895720f5a3efbd3a10389fbeaf8b41b716d845e376e5b1759bb7a756",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": false,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": false,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": false
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 21.133333333333333,
+              "max": 21.533333333333335
+            },
+            "presentationHz": {
+              "min": 7.066666666666666,
+              "max": 7.533333333333333
+            },
+            "callbackP95Ms": {
+              "min": 23.900000002235174,
+              "max": 24.399999998509884
+            },
+            "callbackMaxMs": 45.5,
+            "presentationMaxMs": 681.1000000014901,
+            "frontierMaxMs": 682.0999999977648,
+            "observerP95Ms": {
+              "min": 1,
+              "max": 1
+            },
+            "observerMaxMs": 15.400000002235174,
+            "shellHookP95Ms": {
+              "min": 3.300000000745058,
+              "max": 3.399999998509884
+            },
+            "nativeReportedP95Ms": {
+              "min": 22.399999998509884,
+              "max": 22.800000000745058
+            },
+            "restores": {
+              "min": 28,
+              "max": 34
+            },
+            "historyTicks": {
+              "min": 166,
+              "max": 186
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239366,
+              "max": 239366
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 1874,
+              "max": 2421
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 36.19999999925494,
+              "max": 244.90000000223517
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 12.699999999254942,
+              "max": 21.199999999254942
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 51.899999998509884,
+              "max": 266.9000000022352
+            },
+            "periodicPendingObservedSeats": [
+              0
+            ],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 38.400000002235174,
+              "max": 620.1999999992549
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 24.300000000745058,
+              "max": 29.900000002235174
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 62.80000000074506,
+              "max": 650.5
+            },
+            "observerInsideWindowMs": {
+              "min": 59.399999994784594,
+              "max": 67.50000002235174
+            },
+            "observerInsideWindowPercent": {
+              "min": 0.3959999999652306,
+              "max": 0.4500000001490116
+            }
+          }
+        }
+      },
+      {
+        "mode": 0,
+        "players": 3,
+        "before": {
+          "name": "fixed-mode0-3p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-performance-20261024/fixed-mode0-3p-01/receipt.json",
+            "bytes": 109712,
+            "sha256": "0273c1c334ce8fdc9f29ede71991ccce48b3219fc915729655bcdf3a64576199",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 10.8,
+              "max": 11.266666666666667
+            },
+            "presentationHz": {
+              "min": 5.2,
+              "max": 5.333333333333333
+            },
+            "callbackP95Ms": {
+              "min": 40.20000000111759,
+              "max": 55.80000000074506
+            },
+            "callbackMaxMs": 97.5,
+            "presentationMaxMs": 1115.0999999996275,
+            "frontierMaxMs": 1115.6000000014901,
+            "observerP95Ms": {
+              "min": 1.199999999254942,
+              "max": 2.5
+            },
+            "observerMaxMs": 31.5,
+            "shellHookP95Ms": {
+              "min": 2,
+              "max": 4.5
+            },
+            "nativeReportedP95Ms": {
+              "min": 27.90000000037253,
+              "max": 39.100000001490116
+            },
+            "restores": {
+              "min": 24,
+              "max": 29
+            },
+            "historyTicks": {
+              "min": 109,
+              "max": 152
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239260,
+              "max": 239299
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 2479,
+              "max": 2874
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 202.0,
+              "max": 725.3000000007451
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 10.300000000745058,
+              "max": 32.09999999962747
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 213.09999999962747,
+              "max": 758.9000000003725
+            },
+            "periodicPendingObservedSeats": [
+              0,
+              1,
+              2
+            ],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 157.30000000074506,
+              "max": 879.2000000011176
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 17.09999999962747,
+              "max": 92.29999999888241
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 176.09999999962747,
+              "max": 993.9000000003725
+            },
+            "observerInsideWindowMs": null,
+            "observerInsideWindowPercent": null
+          }
+        },
+        "after": {
+          "name": "final-mode0-3p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-perf-optimization-20261024/final-mode0-3p-01/receipt.json",
+            "bytes": 109969,
+            "sha256": "4f3eaf1246b71ae02e616c275bc974fda1010594e63ea23e0df1687652e6a9a2",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 4.466666666666667,
+              "max": 4.933333333333334
+            },
+            "presentationHz": {
+              "min": 2.2666666666666666,
+              "max": 2.6
+            },
+            "callbackP95Ms": {
+              "min": 34.69999999925494,
+              "max": 220.5
+            },
+            "callbackMaxMs": 662.8000000007451,
+            "presentationMaxMs": 2329.800000000745,
+            "frontierMaxMs": 3403.5,
+            "observerP95Ms": {
+              "min": 8.699999999254942,
+              "max": 10.699999999254942
+            },
+            "observerMaxMs": 101.30000000074506,
+            "shellHookP95Ms": {
+              "min": 5.099999997764826,
+              "max": 36.399999998509884
+            },
+            "nativeReportedP95Ms": {
+              "min": 41.5,
+              "max": 72
+            },
+            "restores": {
+              "min": 9,
+              "max": 14
+            },
+            "historyTicks": {
+              "min": 49,
+              "max": 71
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239239,
+              "max": 239240
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 2345,
+              "max": 2608
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 687.6999999992549,
+              "max": 1362.300000000745
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 24.899999998509884,
+              "max": 88.10000000149012
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 787.5,
+              "max": 1399.6000000014901
+            },
+            "periodicPendingObservedSeats": [
+              0,
+              1,
+              2
+            ],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 144.60000000149012,
+              "max": 1421.4000000022352
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 12.800000000745058,
+              "max": 55.100000001490116
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 200.0,
+              "max": 1436.1000000014901
+            },
+            "observerInsideWindowMs": {
+              "min": 169.8999999947846,
+              "max": 205.99999998509884
+            },
+            "observerInsideWindowPercent": {
+              "min": 1.1326666666318972,
+              "max": 1.3733333332339923
+            }
+          }
+        }
+      },
+      {
+        "mode": 1,
+        "players": 2,
+        "before": {
+          "name": "fixed-mode1-2p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-performance-20261024/fixed-mode1-2p-01/receipt.json",
+            "bytes": 77233,
+            "sha256": "1d424efac574f5b983392cc593e0541aa08b836f3d44f6921e9e0c92ff5aff0a",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": false,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 26.0,
+              "max": 26.2
+            },
+            "presentationHz": {
+              "min": 12.266666666666667,
+              "max": 14.0
+            },
+            "callbackP95Ms": {
+              "min": 8.599999999627471,
+              "max": 10.5
+            },
+            "callbackMaxMs": 35.29999999888241,
+            "presentationMaxMs": 392.0,
+            "frontierMaxMs": 392.5,
+            "observerP95Ms": {
+              "min": 0.599999999627471,
+              "max": 0.6000000014901161
+            },
+            "observerMaxMs": 10.099999999627471,
+            "shellHookP95Ms": {
+              "min": 1.1000000014901161,
+              "max": 1.5
+            },
+            "nativeReportedP95Ms": {
+              "min": 9.400000000372529,
+              "max": 12.399999998509884
+            },
+            "restores": {
+              "min": 0,
+              "max": 0
+            },
+            "historyTicks": {
+              "min": 0,
+              "max": 0
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239114,
+              "max": 239120
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 0,
+              "max": 0
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 44.59999999962747,
+              "max": 45.0
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 16.799999998882413,
+              "max": 17.90000000037253
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 62.29999999888241,
+              "max": 63.90000000037253
+            },
+            "periodicPendingObservedSeats": [],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 59.40000000037253,
+              "max": 74.40000000037253
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 20.0,
+              "max": 24.799999998882413
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 79.59999999962747,
+              "max": 99.5
+            },
+            "observerInsideWindowMs": null,
+            "observerInsideWindowPercent": null
+          }
+        },
+        "after": {
+          "name": "final-mode1-2p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-perf-optimization-20261024/final-mode1-2p-01/receipt.json",
+            "bytes": 77011,
+            "sha256": "1c7e3c458a56882918a9b4925adf7503c9ee804ad9fbc16a7e516031415e96e7",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 28.466666666666665,
+              "max": 28.6
+            },
+            "presentationHz": {
+              "min": 13.266666666666667,
+              "max": 15.4
+            },
+            "callbackP95Ms": {
+              "min": 9.400000002235174,
+              "max": 13.0
+            },
+            "callbackMaxMs": 35.70000000298023,
+            "presentationMaxMs": 244.5,
+            "frontierMaxMs": 245.39999999850988,
+            "observerP95Ms": {
+              "min": 0.7000000029802322,
+              "max": 0.9000000022351742
+            },
+            "observerMaxMs": 10.5,
+            "shellHookP95Ms": {
+              "min": 2,
+              "max": 3.099999997764826
+            },
+            "nativeReportedP95Ms": {
+              "min": 9.100000001490116,
+              "max": 13
+            },
+            "restores": {
+              "min": 0,
+              "max": 0
+            },
+            "historyTicks": {
+              "min": 0,
+              "max": 0
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239121,
+              "max": 239121
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 0,
+              "max": 0
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 42.0,
+              "max": 1506.300000000745
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 48,
+              "max": 289.1000000014901
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 331.8999999985099,
+              "max": 1563.0999999977648
+            },
+            "periodicPendingObservedSeats": [],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 42.399999998509884,
+              "max": 42.900000002235174
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 12.0,
+              "max": 18.199999999254942
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 55.20000000298023,
+              "max": 60.899999998509884
+            },
+            "observerInsideWindowMs": {
+              "min": 127.79999997466803,
+              "max": 150.0
+            },
+            "observerInsideWindowPercent": {
+              "min": 0.8519999998311202,
+              "max": 1.0
+            }
+          }
+        }
+      },
+      {
+        "mode": 1,
+        "players": 3,
+        "before": {
+          "name": "fixed-mode1-3p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-performance-20261024/fixed-mode1-3p-01/receipt.json",
+            "bytes": 109482,
+            "sha256": "62473509614ad4a647b64cadc829e2d6f6c0e7b5a2a9334872ac881803e6d6c7",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 20.933333333333334,
+              "max": 21.0
+            },
+            "presentationHz": {
+              "min": 9.0,
+              "max": 10.866666666666667
+            },
+            "callbackP95Ms": {
+              "min": 11.0,
+              "max": 17.59999999962747
+            },
+            "callbackMaxMs": 96.59999999962747,
+            "presentationMaxMs": 269.5,
+            "frontierMaxMs": 269.19999999925494,
+            "observerP95Ms": {
+              "min": 0.8000000007450581,
+              "max": 1.6000000014901161
+            },
+            "observerMaxMs": 19.59999999962747,
+            "shellHookP95Ms": {
+              "min": 1.800000000745058,
+              "max": 2.299999998882413
+            },
+            "nativeReportedP95Ms": {
+              "min": 13.5,
+              "max": 19.200000001117587
+            },
+            "restores": {
+              "min": 0,
+              "max": 0
+            },
+            "historyTicks": {
+              "min": 0,
+              "max": 0
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239289,
+              "max": 239299
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 0,
+              "max": 0
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 52.79999999888241,
+              "max": 74.09999999962747
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 18.0,
+              "max": 37.90000000037253
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 71.19999999925494,
+              "max": 112.90000000037253
+            },
+            "periodicPendingObservedSeats": [],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 29.5,
+              "max": 63.600000001490116
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 5.400000000372529,
+              "max": 14.5
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 44.19999999925494,
+              "max": 69.20000000111759
+            },
+            "observerInsideWindowMs": null,
+            "observerInsideWindowPercent": null
+          }
+        },
+        "after": {
+          "name": "final-mode1-3p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-perf-optimization-20261024/final-mode1-3p-01/receipt.json",
+            "bytes": 110338,
+            "sha256": "ecf477475835c478b443f78c46e7e60c6b5614627e4d157b0af40d9ee56a076a",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 9.666666666666666,
+              "max": 9.666666666666666
+            },
+            "presentationHz": {
+              "min": 4.2,
+              "max": 4.6
+            },
+            "callbackP95Ms": {
+              "min": 20.899999998509884,
+              "max": 21.699999999254942
+            },
+            "callbackMaxMs": 583.1999999992549,
+            "presentationMaxMs": 3058.699999999255,
+            "frontierMaxMs": 2885.5,
+            "observerP95Ms": {
+              "min": 2.600000001490116,
+              "max": 7.699999999254942
+            },
+            "observerMaxMs": 241.29999999701977,
+            "shellHookP95Ms": {
+              "min": 5.100000001490116,
+              "max": 11.300000000745058
+            },
+            "nativeReportedP95Ms": {
+              "min": 20.399999998509884,
+              "max": 39.599999997764826
+            },
+            "restores": {
+              "min": 0,
+              "max": 0
+            },
+            "historyTicks": {
+              "min": 0,
+              "max": 0
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239228,
+              "max": 239231
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 0,
+              "max": 0
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 29.400000002235174,
+              "max": 583.4000000022352
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 13.899999998509884,
+              "max": 1265.5
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 45.69999999925494,
+              "max": 1851.0
+            },
+            "periodicPendingObservedSeats": [],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 0.5,
+              "max": 61.19999999925494
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 4.600000001490116,
+              "max": 36.19999999925494
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 8.0,
+              "max": 97.60000000149012
+            },
+            "observerInsideWindowMs": {
+              "min": 121.59999997541308,
+              "max": 492.3000000230968
+            },
+            "observerInsideWindowPercent": {
+              "min": 0.8106666665027539,
+              "max": 3.2820000001539786
+            }
+          }
+        }
+      },
+      {
+        "mode": 2,
+        "players": 2,
+        "before": {
+          "name": "fixed-mode2-2p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-performance-20261024/fixed-mode2-2p-01/receipt.json",
+            "bytes": 76973,
+            "sha256": "732b33a7adf667b4b283cef88d8974149df8a859409589cccda2fc017fd3dd02",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 16.333333333333332,
+              "max": 16.4
+            },
+            "presentationHz": {
+              "min": 6.2,
+              "max": 6.266666666666667
+            },
+            "callbackP95Ms": {
+              "min": 37.59999999962747,
+              "max": 41.90000000037253
+            },
+            "callbackMaxMs": 2923.9000000003725,
+            "presentationMaxMs": 2940.699999999255,
+            "frontierMaxMs": 3455.9000000003725,
+            "observerP95Ms": {
+              "min": 1.400000000372529,
+              "max": 1.900000000372529
+            },
+            "observerMaxMs": 16.699999999254942,
+            "shellHookP95Ms": {
+              "min": 1.900000000372529,
+              "max": 4.900000000372529
+            },
+            "nativeReportedP95Ms": {
+              "min": 25.800000000745058,
+              "max": 29.90000000037253
+            },
+            "restores": {
+              "min": 22,
+              "max": 26
+            },
+            "historyTicks": {
+              "min": 97,
+              "max": 110
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239121,
+              "max": 239122
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 1770,
+              "max": 2117
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 70.70000000111759,
+              "max": 472.2999999988824
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 31.90000000037253,
+              "max": 33.59999999962747
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 103.90000000037253,
+              "max": 507.5
+            },
+            "periodicPendingObservedSeats": [
+              1
+            ],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 60.5,
+              "max": 340.5
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 28.800000000745058,
+              "max": 37.20000000111759
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 89.69999999925494,
+              "max": 378.2000000011176
+            },
+            "observerInsideWindowMs": null,
+            "observerInsideWindowPercent": null
+          }
+        },
+        "after": {
+          "name": "final-mode2-2p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-perf-optimization-20261024/final-mode2-2p-01/receipt.json",
+            "bytes": 77143,
+            "sha256": "6de5c652837324cafbcec46ce38309c3cd8de94a2ee2482ff9261913d8ca7aaa",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 15.533333333333333,
+              "max": 16.066666666666666
+            },
+            "presentationHz": {
+              "min": 5.133333333333334,
+              "max": 5.466666666666667
+            },
+            "callbackP95Ms": {
+              "min": 26.199999999254942,
+              "max": 28.099999997764826
+            },
+            "callbackMaxMs": 112.40000000223517,
+            "presentationMaxMs": 953.4000000022352,
+            "frontierMaxMs": 1245.9000000022352,
+            "observerP95Ms": {
+              "min": 0.9000000022351742,
+              "max": 1.3999999985098839
+            },
+            "observerMaxMs": 79.59999999776483,
+            "shellHookP95Ms": {
+              "min": 2,
+              "max": 2.800000000745058
+            },
+            "nativeReportedP95Ms": {
+              "min": 23.100000001490116,
+              "max": 23.5
+            },
+            "restores": {
+              "min": 15,
+              "max": 20
+            },
+            "historyTicks": {
+              "min": 93,
+              "max": 95
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239106,
+              "max": 239107
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 1802,
+              "max": 1993
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 49.399999998509884,
+              "max": 54.5
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 7.899999998509884,
+              "max": 26.5
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 62.899999998509884,
+              "max": 76.89999999850988
+            },
+            "periodicPendingObservedSeats": [],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 71.5,
+              "max": 266.69999999925494
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 10.5,
+              "max": 23.200000002980232
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 95.10000000149012,
+              "max": 277.80000000074506
+            },
+            "observerInsideWindowMs": {
+              "min": 50.29999998956919,
+              "max": 111.40000000223517
+            },
+            "observerInsideWindowPercent": {
+              "min": 0.3353333332637946,
+              "max": 0.7426666666815678
+            }
+          }
+        }
+      },
+      {
+        "mode": 2,
+        "players": 3,
+        "before": {
+          "name": "fixed-mode2-3p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-performance-20261024/fixed-mode2-3p-01/receipt.json",
+            "bytes": 109626,
+            "sha256": "210a0f8fd0d06a657d9945b6f1e389dc82cbb9efa6717c60fbf1397cc883c2b9",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 12.6,
+              "max": 13.133333333333333
+            },
+            "presentationHz": {
+              "min": 5.6,
+              "max": 5.933333333333334
+            },
+            "callbackP95Ms": {
+              "min": 41.80000000074506,
+              "max": 51.59999999962747
+            },
+            "callbackMaxMs": 368.19999999925494,
+            "presentationMaxMs": 1076.0,
+            "frontierMaxMs": 1076.5,
+            "observerP95Ms": {
+              "min": 1.199999999254942,
+              "max": 2.800000000745058
+            },
+            "observerMaxMs": 27.59999999962747,
+            "shellHookP95Ms": {
+              "min": 1.900000000372529,
+              "max": 4.099999999627471
+            },
+            "nativeReportedP95Ms": {
+              "min": 31.59999999962747,
+              "max": 34.30000000074506
+            },
+            "restores": {
+              "min": 20,
+              "max": 23
+            },
+            "historyTicks": {
+              "min": 75,
+              "max": 94
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239286,
+              "max": 239286
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 1897,
+              "max": 2471
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 199.40000000037253,
+              "max": 359.5
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 33.79999999888241,
+              "max": 85.09999999962747
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 234.5,
+              "max": 422.6000000014901
+            },
+            "periodicPendingObservedSeats": [
+              1,
+              2
+            ],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 34.79999999888241,
+              "max": 460.3999999985099
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 5.900000000372529,
+              "max": 46.0
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 41.19999999925494,
+              "max": 506.69999999925494
+            },
+            "observerInsideWindowMs": null,
+            "observerInsideWindowPercent": null
+          }
+        },
+        "after": {
+          "name": "final-mode2-3p-01",
+          "receipt": {
+            "path": "/workspace/scratch/d6791a440650/eagler-touhou-th15/artifacts/th15-perf-optimization-20261024/final-mode2-3p-01/receipt.json",
+            "bytes": 110123,
+            "sha256": "248c6ba44d9a5088419b47735261b6bac8a602e031d1e7b4c14370e90d4a6d84",
+            "verificationSource": "filesystem"
+          },
+          "gates": {
+            "observationPassed": true,
+            "thresholdsMet": false,
+            "runnerReportedSaveValidationPassed": true,
+            "underlyingBytePersistenceGateWithRecordedNativeValidation": true,
+            "fileBytesAndRecordedNativeValidationPassed": true,
+            "postWindowInputProofPassed": true
+          },
+          "metrics": {
+            "logicHz": {
+              "min": 13.0,
+              "max": 13.933333333333334
+            },
+            "presentationHz": {
+              "min": 5.333333333333333,
+              "max": 5.8
+            },
+            "callbackP95Ms": {
+              "min": 28.199999999254942,
+              "max": 31.600000001490116
+            },
+            "callbackMaxMs": 152.30000000074506,
+            "presentationMaxMs": 752,
+            "frontierMaxMs": 785.8000000007451,
+            "observerP95Ms": {
+              "min": 1.5,
+              "max": 1.699999999254942
+            },
+            "observerMaxMs": 176.29999999701977,
+            "shellHookP95Ms": {
+              "min": 3.699999999254942,
+              "max": 4.699999999254942
+            },
+            "nativeReportedP95Ms": {
+              "min": 27.5,
+              "max": 32
+            },
+            "restores": {
+              "min": 25,
+              "max": 29
+            },
+            "historyTicks": {
+              "min": 87,
+              "max": 114
+            },
+            "simulationHeapUsedKiBMax": {
+              "min": 239289,
+              "max": 239310
+            },
+            "simulationHeapCapacityKiB": [
+              393216
+            ],
+            "undoKiBMax": {
+              "min": 1996,
+              "max": 2198
+            },
+            "undoCapacityKiB": [
+              36864
+            ],
+            "wasmCapacityBytesMax": [
+              698744832
+            ],
+            "periodicRequestToCompletionObservedMs": {
+              "min": 77.69999999925494,
+              "max": 198.0
+            },
+            "periodicFilesystemCallbackMs": {
+              "min": 9.699999999254942,
+              "max": 39.100000001490116
+            },
+            "periodicRequestToPersistenceMs": {
+              "min": 88.89999999850988,
+              "max": 234.0
+            },
+            "periodicPendingObservedSeats": [
+              1,
+              2
+            ],
+            "explicitRequestToCompletionObservedMs": {
+              "min": 107.0,
+              "max": 534.5999999977648
+            },
+            "explicitFilesystemCallbackMs": {
+              "min": 12.0,
+              "max": 37.5
+            },
+            "explicitRequestToPersistenceMs": {
+              "min": 135.80000000074506,
+              "max": 572.5
+            },
+            "observerInsideWindowMs": {
+              "min": 46.70000001043081,
+              "max": 236.40000000968575
+            },
+            "observerInsideWindowPercent": {
+              "min": 0.31133333340287206,
+              "max": 1.5760000000645717
+            }
+          }
+        }
+      }
+    ],
+    "interpretation": [
+      "Each old and new case is one separate 15-second wall-clock observation, with different gameplay positions and frame counts.",
+      "Per-seat and range ratios are descriptive, not confidence intervals or an isolated per-frame rollback-cost measurement.",
+      "Original old/new observation, save and 100 ms results remain separate; no failed measurement is replaced.",
+      "The old first-run save flag remains false. Its separately named underlying-byte persistence result is retained from the pinned audit.",
+      "The comparison does not establish results on hardware GPUs, separate physical devices, phones, adaptive input delays or full campaigns.",
+      "Wasm linear-memory capacity contains the simulation heap and journal; these values must not be added to estimate process RSS.",
+      "Additional observer wall is reported separately. Shell and light in-callback hooks remain inside callback wall."
+    ]
+  },
+  "diagnosis": {
+    "performanceEligible": false,
+    "thresholdsMet": null,
+    "table": [
+      {
+        "seat": 0,
+        "old": {
+          "callbacks": 163,
+          "newFrontierHz": 22.066666666666666,
+          "presentationHz": 8.666666666666666,
+          "callbackP95Ms": 44.100000001490116,
+          "callbackMaxMs": 244.69999999925494,
+          "textureUploadBytes": 146055168,
+          "wrappedGlCalls": 55879,
+          "restores": 21,
+          "historyTicks": 97
+        },
+        "optimized": {
+          "callbacks": 131,
+          "newFrontierHz": 22.466666666666665,
+          "presentationHz": 7.6,
+          "callbackP95Ms": 23,
+          "callbackMaxMs": 66.70000000298023,
+          "textureUploadBytes": 0,
+          "wrappedGlCalls": 70039,
+          "restores": 35,
+          "historyTicks": 142
+        },
+        "scheduled": {
+          "callbacks": 134,
+          "newFrontierHz": 24.066666666666666,
+          "presentationHz": 8.133333333333333,
+          "callbackP95Ms": 26.200000002980232,
+          "callbackMaxMs": 50.399999998509884,
+          "textureUploadBytes": 0,
+          "wrappedGlCalls": 62646,
+          "restores": 23,
+          "historyTicks": 81
+        }
+      },
+      {
+        "seat": 1,
+        "old": {
+          "callbacks": 154,
+          "newFrontierHz": 22.0,
+          "presentationHz": 8.133333333333333,
+          "callbackP95Ms": 30.400000002235174,
+          "callbackMaxMs": 111.39999999850988,
+          "textureUploadBytes": 137248768,
+          "wrappedGlCalls": 56058,
+          "restores": 20,
+          "historyTicks": 106
+        },
+        "optimized": {
+          "callbacks": 139,
+          "newFrontierHz": 22.0,
+          "presentationHz": 8,
+          "callbackP95Ms": 26.199999999254942,
+          "callbackMaxMs": 56.30000000074506,
+          "textureUploadBytes": 0,
+          "wrappedGlCalls": 64582,
+          "restores": 30,
+          "historyTicks": 121
+        },
+        "scheduled": {
+          "callbacks": 141,
+          "newFrontierHz": 23.866666666666667,
+          "presentationHz": 8.666666666666666,
+          "callbackP95Ms": 28.199999999254942,
+          "callbackMaxMs": 54.900000002235174,
+          "textureUploadBytes": 0,
+          "wrappedGlCalls": 66045,
+          "restores": 32,
+          "historyTicks": 95
+        }
+      }
+    ],
+    "processCpuSummary": {
+      "sumOfNearConcurrentGpuAverageCpuCores": 7.232467383762028,
+      "sumOfNearConcurrentAllBrowserAverageCpuCores": 7.860420156314787,
+      "gpuCpuSeconds": 117.02000000000001,
+      "allBrowserCpuSeconds": 127.18,
+      "outerUnionElapsedMs": 16197.250270999997,
+      "recordedGpuCpuSecondsPerOuterUnionSecond": 7.224683081517599,
+      "recordedAllBrowserCpuSecondsPerOuterUnionSecond": 7.851950045354709,
+      "recordedCgroupQuotaCores": 8.0,
+      "gpuAverageSumAsPercentOfQuota": 90.40584229702534,
+      "allBrowserAverageSumAsPercentOfQuota": 98.25525195393485
+    },
+    "processCpuMeaning": "Browser process CPU counters over about 16.17-second brackets including profiler start/stop; near-concurrent rates, not exact 15-second window rates or hardware GPU execution time.",
+    "textureMeaning": "Zero uploads applies to these warmed measured battle windows, not all fonts, resource transitions or the full campaign.",
+    "evidence": {
+      "path": "artifacts/th15-perf-optimization-20261024/three-stage-diagnostic-comparison.json",
+      "bytes": 39914,
+      "sha256": "da65a70f2c62b47c2f6e2362649a1b19aee91cc2f75cceec44b53905aef1042a"
+    }
+  },
+  "correctness": {
+    "audit": {
+      "path": "artifacts/th15-perf-optimization-20261024/validation-audit.json",
+      "bytes": 214473,
+      "sha256": "578eabda0a0f671d671cac0c1a93a1aa13968f9c6c609248c28e29f46a412bca"
+    },
+    "coverage": [
+      "Existing real native mp_tick, journaled game memory, native Update/Draw, full-resolution readback and independent pure-delay instance assertions.",
+      "First speculative clear_image changes actual game-owned pixels; backend.prepare and save_surfaces perform real upload and glReadPixels.",
+      "Replay samples independently reconstructed for every frame and seat, with structural and FNV validation."
+    ],
+    "evidenceLimits": [
+      "Per-frame exact scalar traces and paired full-resolution equality are asserted by the SHA-verified browser driver; reports retain trajectory digests and selected snapshots, not both entire raw traces.",
+      "The fixture calls mp_tick directly and does not exercise BrowserRuntime rAF scheduling. Native scheduler tests and production browser performance validate that separate path.",
+      "Lifecycle requests exercise native stage/ending/results owners; authored story/staff-script completion and live ACK retirement are outside this fixture."
+    ],
+    "regularCases": 5,
+    "lifecycleCases": 1,
+    "futureMatchingFramesPerRegularCase": 600,
+    "regularReplayFrames": 873,
+    "completedLifecycleReplayFrames": 504,
+    "independentlyReconstructedReplaySamples": 12861
+  },
+  "tests": {
+    "nativeFrameSchedule": {
+      "groups": 13,
+      "checks": 20605,
+      "passed": true
+    },
+    "javascript": {
+      "namedTests": 79,
+      "passed": true,
+      "files": 6,
+      "evidence": {
+        "path": "artifacts/th15-perf-optimization-20261024/input-proof-tests-02.log",
+        "bytes": 7620,
+        "sha256": "562dda8918285f683dc50ecb8973a6f44a2d392612491b6bcef078ce8d4bc53d"
+      }
+    },
+    "officialProductionBuild": true,
+    "package": true,
+    "moduleCheck": true
+  },
+  "evidenceArchive": "th15-perf-optimization-evidence-20261024.zip",
+  "evidence": [
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/plan.json",
+      "bytes": 3096,
+      "sha256": "7755db67aafdb4b3e3a8bb852849154c98b18ae40ff6e785946d5f549afef6e4"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/schedule-followup-plan.json",
+      "bytes": 1766,
+      "sha256": "90518a0456de26a5a0e7668e22c54c9d4e0e7bae4187da2df747ce0badc91ed3"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/final-matrix.json",
+      "bytes": 25017,
+      "sha256": "59ce210de8480c0035401b17ae555f3be03b2e29efb0d2edcfd9d6252164e3d8"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-production-identities.json",
+      "bytes": 10374,
+      "sha256": "843ffa26e067ee52b631b2d122fcc507e411a49d6931f0b4c98cb9c52d5b011b"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/rollback-fixture-identities.json",
+      "bytes": 1814,
+      "sha256": "940f90893300b9f09acd0719d322e47af01a21ab20139a8e2e2573fe8a827624"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/final-independent-audit.json",
+      "bytes": 503371,
+      "sha256": "3f9aca95aa8b1df0ea7ea58c7f6fd98ee1a33365953dba21be2d701b003c4969"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/final-independent-audit-v2.json",
+      "bytes": 528802,
+      "sha256": "2f377888bd9a1da5db0eebb014dfe4f5cad3fceaed609518428be8142f4c012a"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/final-independent-audit.py",
+      "bytes": 63139,
+      "sha256": "d4672ae753ff863a5410ed356aeaecefc2f86cc01a0d0d02733ed26a875bfd4c"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/validation-audit.json",
+      "bytes": 214473,
+      "sha256": "578eabda0a0f671d671cac0c1a93a1aa13968f9c6c609248c28e29f46a412bca"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/validation-audit.py",
+      "bytes": 20128,
+      "sha256": "06d887b6fb9518e0cfcee7791d0987240a0c1ba941eb78c30e537227dd744020"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/old-diagnostic-audit.json",
+      "bytes": 96134,
+      "sha256": "90548a3dc446c7b26cb5d270ee1d3a4593c91f4af4a7b31f9bb5fc626eeeacb4"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/optimized-diagnostic-audit.json",
+      "bytes": 85654,
+      "sha256": "ed63b553e2343913c546502a72925d47f5d942ba50bef135db0208e9b88a3186"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-gl-cpu-audit.json",
+      "bytes": 83596,
+      "sha256": "e9bb3871cc802f263f9fa7984d21adb24e0ca7ac6be4b3cd2877c822d874981c"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-diagnostic-audit.json",
+      "bytes": 16576,
+      "sha256": "2f9ce9a1b9a3340774cb4a9cd63c34d73c6c075aa04c01cc48000354c378f922"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/three-stage-diagnostic-comparison.json",
+      "bytes": 39914,
+      "sha256": "da65a70f2c62b47c2f6e2362649a1b19aee91cc2f75cceec44b53905aef1042a"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/audit-scheduled-diagnostic.py",
+      "bytes": 18093,
+      "sha256": "4d425a55414525c35061bcc7f714fcf89f3398ee233b75312dee9e39cc984626"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/final-stall-investigation.json",
+      "bytes": 413111,
+      "sha256": "1cae497b1556d031204285148eab62f75317156872f37d936f8293a167006696"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/final-stall-investigation.py",
+      "bytes": 23946,
+      "sha256": "6981f853c1edda6da2a060e142824cc8cb1d7ee9acae03f82fbe30da6a010854"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/final-process-investigation-unsandboxed.json",
+      "bytes": 46975,
+      "sha256": "339f53934696aab3523f0f58fb32c26ecf91dec3c34b0b008a2d68146f102a0b"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/input-validation-investigation.json",
+      "bytes": 56461,
+      "sha256": "c8a58888e3ff5a7d6e5c6b8cdd423ad65009a43479ad6f9c4b110c8b5c9865f4"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/environment-followup.json",
+      "bytes": 486,
+      "sha256": "2f8ca98edb78857e9be1db4e2a577000f7694eeb37583078ef4d0d3ad9e38ed4"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/publication-checkpoints.json",
+      "bytes": 1525,
+      "sha256": "e7262f3cc6f27ed23bb27d4704da99c387bd32ca22b74d3d6a897c3258a93f46"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/frame-schedule-native-01.log",
+      "bytes": 1312,
+      "sha256": "bbe3eda73255364f107bbce0ea4c6e6f3098738b8adb4a5264dfe2c09abd39e7"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/performance-browser-diagnostic-tests-02.log",
+      "bytes": 1488,
+      "sha256": "deaf6cef92cf7c6f9a8e74a6186775e1fad80a14f67ef1bc430d11bb76054dc3"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/performance-browser-probe-tests-01.log",
+      "bytes": 1068,
+      "sha256": "ccdb8a1714fb6d8ad5415b358df7ab7c4e15bbef7b8075257c07effa906d9def"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/performance-browser-metrics-tests-01.log",
+      "bytes": 635,
+      "sha256": "12c5514bd875b507de27f7cb76c892c4b1b883c17d65536cc873ea978b3bd407"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/performance-sender-delay-tests-01.log",
+      "bytes": 1184,
+      "sha256": "acd6caaf3e1568f4b1a22025f5181c6161a03e70bde911435d052b89a1ea48f5"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/score-save-tests-01.log",
+      "bytes": 1843,
+      "sha256": "e9fbac1c1fc3063f1fbcaf1f8b8e01a1af760dca130b8e5930bb884130f9a129"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-build-01.log",
+      "bytes": 20445,
+      "sha256": "fdd7810d8538c08f31330150131f7c43c6cd9ebc32bf8e1f628a2cf030f81222"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-build-02.log",
+      "bytes": 3049,
+      "sha256": "41d68430e667dcca914df3d4a7b8b4560d340e59639eb3e0e8e943cc278ed1de"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-finalization-01.log",
+      "bytes": 506,
+      "sha256": "43c82d42deae378f76bd14bbd2b9cd6d2b2eabef01b5baba606ceeed5aa2e2f6"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-package-01.log",
+      "bytes": 278,
+      "sha256": "27221a2c934b349fff84ce88f563c8b2305187f9aaa27344fc28215dc44a33fa"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/scheduled-module-test-01.log",
+      "bytes": 86,
+      "sha256": "3f0b88e6c2c3179e65ea1ab3b7603d1b510e390f19a9fa0c4ad20ac79029de8d"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/optimized-finalization-01.log",
+      "bytes": 756,
+      "sha256": "c990aafc0c6bf6b3e8a408e7d77f047a89c193e908aeee4520570d25234241bd"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/optimized-finalization-02.log",
+      "bytes": 506,
+      "sha256": "e3dcb1098ece0fd71803cd8f3244a8c4593534385b8d7aa29c52b39d6bd87638"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/rollback-fixture-build-01.log",
+      "bytes": 1118,
+      "sha256": "315d7dd492fd921451362acc30fbb24bb1214ea7a907f2fea72833995b35ec0c"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/rollback-oracle-01/report.json",
+      "bytes": 96274,
+      "sha256": "c873c8645881f4815dae4c8db6d56221cd76776004769826f1c0ca7b81c5bce3"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/lifecycle-oracle-01/report.json",
+      "bytes": 21868,
+      "sha256": "b84218d261a25a339df69cd3383ae3efd4a2233e4034a1c7d3a9b5a036c234a2"
+    },
+    {
+      "path": "artifacts/th15-perf-optimization-20261024/input-transition-publication.json",
+      "bytes": 4354,
+      "sha256": "935ed9f03d67e62dc539a9c27fe2d844c823a51a9b1337f85f5fdf6ad9bdb73f"
+    }
+  ],
+  "limitations": [
+    "These are six optimized production observations, each measured once. Every original observation/save/performance flag is retained.",
+    "Previous results come from the SHA-256-pinned independent audit and hash-verified original observations, including its first save-observer signedness failure.",
+    "Diagnostic GL wrappers and CPU profiles are ineligible for performance acceptance and are rejected from the final matrix.",
+    "Old/new ratios are descriptive results from single fixed real-time windows, not replicated confidence intervals or identical-frame benchmarks.",
+    "Window submissions are default-framebuffer color blits, not GPU completion or monitor scanout.",
+    "Callback wall includes the production shell and lightweight hooks. Observer wall covers only post-callback status reads.",
+    "Different real-time modes reach different gameplay positions; cross-mode ratios are not isolated rollback overhead.",
+    "Console messages have timestamps but no URLs. Their cause remains unknown.",
+    "Parent runtime error events have no timestamps or call stacks; the first status sample supplies a bound, not exact onset.",
+    "No screenshots or framebuffer comparisons are made by this performance audit.",
+    "Native score/config file validation is the original Runtime result. This offline audit independently compares underlying bytes and hashes, without executing native validation again.",
+    "File byte/native-validation results and post-window Replay input proof are reported independently. The legacy underlying-byte save gate still includes every other original save requirement; it is not a file-integrity-only result.",
+    "A native-poll result of Completed is the time completion was observed; actual completion may precede that poll by up to the polling interval or scheduling delay.",
+    "Sparse save events reuse the previous rollback snapshot, with rollbackObservedAt. Those arrays are not asserted to describe the exact request or completion instant.",
+    "Overlap of a save interval with a long hold is temporal evidence, not proof that the save caused that hold.",
+    "The three-player pure-delay and zero-delay windows had long stalls. The outside-callback time has no CPU trace and is not attributed to one resource.",
+    "The original input proof failure is preserved: all 16 frames [758,774) exist, fire is set, right is absent. Life/ready was not recorded, so the exact gameplay cause is unresolved.",
+    "Current process inspections are post-run observations and cannot establish that no competing process existed inside historical windows.",
+    "All native Draws and GPU history submissions remain executed; render-target coverage and historical texture contracts would be needed for broader GPU coalescing."
+  ],
+  "inputProofFollowup": {
+    "recordedAt": "2026-10-24T09:01:29.273543+00:00",
+    "publishedRevision": "a8984ae8b1e11a970f5784870366b2daadebe4d7",
+    "sourceTree": "0b58f61f4a9173eb4fd945b817502908382c3f4d",
+    "productionWasmSha256": "e65631c22e71f8bbd1245bd31ba13aa14cf45c6409276318835037c40cbc984e",
+    "performanceMeasured": false,
+    "performanceEligible": false,
+    "thresholdsMet": null,
+    "originalMatrixReplaced": false,
+    "originalMatrixSaveValidation": "5/6, retained",
+    "observationPassed": true,
+    "saveValidationPassed": true,
+    "sourceStable": true,
+    "driverStable": true,
+    "runtimeStable": true,
+    "inputProof": {
+      "neutral": {
+        "first": 751,
+        "end": 753,
+        "players": 2,
+        "framesPerSeat": 2,
+        "allSeatsNeutral": true,
+        "confirmedFrames": [
+          763,
+          761
+        ]
+      },
+      "fire": {
+        "passed": true,
+        "neutral": {
+          "first": 751,
+          "end": 753
+        },
+        "end": 791,
+        "seats": [
+          {
+            "seat": 0,
+            "first": 780,
+            "end": 791,
+            "transitionFrame": 780,
+            "previousButtons": 0,
+            "transitionButtons": 129,
+            "followingButtons": 129,
+            "fireFrames": 11,
+            "rightFramesObserved": 11,
+            "directionMeaning": "Direction is observed; movement readiness can suppress joystick directions."
+          },
+          {
+            "seat": 1,
+            "first": 789,
+            "end": 791,
+            "transitionFrame": 789,
+            "previousButtons": 0,
+            "transitionButtons": 1,
+            "followingButtons": 1,
+            "fireFrames": 2,
+            "rightFramesObserved": 0,
+            "directionMeaning": "Direction is observed; movement readiness can suppress joystick directions."
+          }
+        ],
+        "confirmedFrames": [
+          802,
+          800
+        ]
+      },
+      "final": {
+        "passed": true,
+        "neutral": {
+          "first": 751,
+          "end": 753
+        },
+        "end": 791,
+        "seats": [
+          {
+            "seat": 0,
+            "first": 780,
+            "end": 791,
+            "transitionFrame": 780,
+            "previousButtons": 0,
+            "transitionButtons": 129,
+            "followingButtons": 129,
+            "fireFrames": 11,
+            "rightFramesObserved": 11,
+            "directionMeaning": "Direction is observed; movement readiness can suppress joystick directions."
+          },
+          {
+            "seat": 1,
+            "first": 789,
+            "end": 791,
+            "transitionFrame": 789,
+            "previousButtons": 0,
+            "transitionButtons": 1,
+            "followingButtons": 1,
+            "fireFrames": 2,
+            "rightFramesObserved": 0,
+            "directionMeaning": "Direction is observed; movement readiness can suppress joystick directions."
+          }
+        ],
+        "confirmedFrames": [
+          865,
+          865
+        ]
+      }
+    },
+    "receipt": {
+      "path": "artifacts/th15-perf-optimization-20261024/input-transition-validation-mode0-2p-01/receipt.json",
+      "bytes": 128015,
+      "sha256": "74c018ab5f7bfc86ad550e853a064192ffe731929068c2783a12cf777d58d27a"
+    },
+    "plan": {
+      "path": "artifacts/th15-perf-optimization-20261024/input-transition-followup-plan.json",
+      "bytes": 2130,
+      "sha256": "3b1857699687ac7f92c81012645a985972ddc6715be8ded3f529edb38267eaa2"
+    },
+    "publication": {
+      "path": "artifacts/th15-perf-optimization-20261024/input-proof-publication-checkpoint.json",
+      "bytes": 416,
+      "sha256": "399120f0c4dba33e45ade5f7de615d27791ec60f5aca941b39d5c21ed4c5fbd7"
+    },
+    "unitTests": {
+      "namedTests": 79,
+      "passed": 79,
+      "failures": 0,
+      "files": 6,
+      "log": {
+        "path": "artifacts/th15-perf-optimization-20261024/input-proof-tests-02.log",
+        "bytes": 7620,
+        "sha256": "562dda8918285f683dc50ecb8973a6f44a2d392612491b6bcef078ce8d4bc53d"
+      }
+    },
+    "measurementHotPathIdentity": {
+      "installProbe": "579e778c516df455ab791f7f6701dd2e4987cb1adb51883a1381e01d23c4623e",
+      "hostMeasure": "a7ef3796c2964b52c7b7e575ab9d8cde3a632780ed89071ffa5ff9145a27c8b8",
+      "metricsModule": "f0b2d955bf9e163dd1b2772138a4c77938cf7ceaea6ba90ae9721ea24c394a70"
+    },
+    "independentAudit": {
+      "path": "artifacts/th15-perf-optimization-20261024/input-transition-validation-audit.json",
+      "bytes": 63669,
+      "sha256": "93d78f44b31a094832acdd3b9151ba5583cfd846303402e89ea0063805ae19f9",
+      "status": "PASS",
+      "checks": 10698
+    }
+  }
+}
