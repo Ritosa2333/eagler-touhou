@@ -16,7 +16,8 @@ export function decodeRecords(buffer,pointer,count,stride){
     for(let i=0;i<vertices.length;i+=5){shape.push(vertices[i]-center[0],vertices[i+1]-center[1]);submittedUv.push(vertices[i+3],vertices[i+4]);}
     const continuous=meta[9],part=meta[3],layer=meta[11];
     records.push({key:[meta[0],meta[1],meta[2],part].join(':'),ownerId:meta[0],ownerLabel:ownerLabel(meta[0]),objectId:meta[1],generation:meta[2],identityConfidence:meta[2]?'proven':'uncertain',partId:part,drawId:meta[4],layer,
-      lifecycle:{continuous:true,scriptIndex:meta[5]|0,spriteIndex:meta[6]|0,fileIndex:meta[10],visible:meta[7]&3},
+      lifecycle:{continuous:true,scriptIndex:meta[5]|0,spriteIndex:meta[6]|0,fileIndex:meta[10],visible:meta[7]&3,
+        ...(continuous&256?{discontinuity:{kind:'authored-rebase',source:'std-camera-set'}}:{})},
       coordinateSpace:'submitted-screen',bounds,geometryQuality:meta[8]>16?'sampled':'complete',
       fields:[
         {id:'position',label:'位置',value:values.slice(0,3),tolerance:.01,interpolationPolicy:'continuous'},
@@ -61,7 +62,7 @@ export class Th11RuntimeDriver{
     if(!this.core?.memory?.buffer)throw Error('Wrong TH11 runtime');
     for(const name of TH11_PRESENTATION_LAB_EXPORTS)if(typeof this.core[name]!=='function')throw Error('Wrong TH11 diagnostic runtime: missing '+name);
   }
-  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th11',adapterVersion:'th11-presentation-lab/1',nativeAbi:TH11_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:false}};}
+  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th11',adapterVersion:'th11-presentation-lab/1',nativeAbi:TH11_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
   phase(){return this.core.th11_phase();}
   sessionFrame(){return this.core.th11_frame();}
   freeze(){if(this.token)return this.token;const result=this.core.presentation_lab_freeze();if(result)throw Error('TH11 diagnostic freeze failed: '+result);this.token=Object.freeze({sessionEpoch:this.identity.runtimeEpoch??this.identity.wasm??'th11',generation:++this.generation});return this.token;}

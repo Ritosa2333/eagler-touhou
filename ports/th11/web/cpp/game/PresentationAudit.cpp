@@ -9,7 +9,7 @@
 namespace th11::presentation_audit {
 namespace {
 struct Frame {std::vector<Record> records;u32 tick=0,draw_serial=0,dropped=0;float alpha=1;};
-bool enabled_flag=false,reference_frame=false,fault_flag=false,fault_phase=false;
+bool enabled_flag=false,reference_frame=false,fault_flag=false,fault_phase=false,rebase_flag=false;
 u32 session=0,tick=0,draw_serial=0,draw_id=0,current_scope=0;
 Frame current,references[2];
 std::vector<std::pair<u64,u32>> occurrences;
@@ -36,7 +36,7 @@ void vector3(float* output,const Vec3& value){output[0]=value.x;output[1]=value.
 }
 void enable(bool value){
     enabled_flag=value;current.records.clear();references[0].records.clear();references[1].records.clear();
-    tick=draw_serial=draw_id=0;reference_frame=false;fault_flag=false;current_scope=0;
+    tick=draw_serial=draw_id=0;reference_frame=false;fault_flag=false;rebase_flag=false;current_scope=0;
     if(value){++session;current.records.reserve(MaxRecords);references[0].records.reserve(MaxRecords);references[1].records.reserve(MaxRecords);}
     occurrences.clear();
 }
@@ -54,6 +54,8 @@ void end_frame()noexcept{
 }
 void scope(u32 owner)noexcept{current_scope=owner;}
 u32 scope()noexcept{return current_scope;}
+void authored_rebase(bool value)noexcept{rebase_flag=value;}
+bool authored_rebase()noexcept{return rebase_flag;}
 void fault(bool value)noexcept{fault_flag=value;}
 void capture(const AnmVm& vm,const AnmVertex* vertices,u32 count,u32 part)noexcept{
     if(!enabled_flag||!vertices||!count)return;
@@ -72,7 +74,7 @@ void capture(const AnmVm& vm,const AnmVertex* vertices,u32 count,u32 part)noexce
     record.script_index=static_cast<u32>(static_cast<u16>(vm.script_index));
     record.sprite_index=static_cast<u32>(static_cast<u16>(vm.sprite_index));
     record.flags=vm.flags;record.vertex_count=std::min(count,MaxVertices);
-    record.continuous=continuous_fields(vm);
+    record.continuous=continuous_fields(vm)|(rebase_flag?AuthoredRebase:0u);
     record.file_index=vm.resource?vm.file_index:0xffffu;
     record.layer=vm.layer;
     vector3(record.position,vm.position);vector3(record.script_position,vm.script_position);vector3(record.child_position,vm.child_position);

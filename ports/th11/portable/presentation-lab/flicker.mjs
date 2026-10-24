@@ -19,12 +19,13 @@ export function analyzeFlicker({previous,current,samples,thresholds={}}){
     const from=recordPosition(before),to=recordPosition(record),step=distance(from,to);
     if(step<limits.minStep){++skipped;continue;}
     ++checked;
-    let maxSampleStep=0,maxError=0,worstAlpha=null,last=null,present=0;
+    let maxSampleStep=0,maxError=0,maxSnapError=0,worstAlpha=null,last=null,present=0;
     for(const sample of samples){
       const entry=sample.records.find(candidate=>candidate.key===record.key);
       if(!entry)continue;
       const got=recordPosition(entry),expected=midpoint(from,to,sample.alpha),error=distance(got,expected);
       ++present;
+      maxSnapError=Math.max(maxSnapError,distance(got,to));
       if(error>maxError){maxError=error;worstAlpha=sample.alpha;}
       if(last)maxSampleStep=Math.max(maxSampleStep,distance(last,got));
       last=got;
@@ -34,11 +35,17 @@ export function analyzeFlicker({previous,current,samples,thresholds={}}){
     if(maxSampleStep>limits.maxStep)reasons.push('large-interpolated-step');
     if(maxError>limits.maxError)reasons.push('endpoint-mismatch');
     if(!reasons.length)continue;
-    const entry={tick:current.tick||0,key:record.key,owner:record.ownerLabel,objectId:record.objectId,generation:record.generation,layer:record.layer,
+    const entry={tick:current.simulationTick??current.tick??0,key:record.key,owner:record.ownerLabel,objectId:record.objectId,generation:record.generation,layer:record.layer,
       referenceStep:round(step),maxSampleStep:round(maxSampleStep),maxError:round(maxError),worstAlpha,reasons,
       fileIndex:record.lifecycle?.fileIndex,scriptIndex:record.lifecycle?.scriptIndex,spriteIndex:record.lifecycle?.spriteIndex};
-    // Distance and endpoint shape do not establish an authored rebase.
-    // Keep large snaps and stale endpoints visible in the incident list.
+    // Only the native stage owner's explicit STD camera-set event proves an
+    // authored rebase. Every requested sample must snap to the current state;
+    // stale endpoints and a delayed jump remain findings even with the event.
+    const discontinuity=record.lifecycle?.discontinuity;
+    if(discontinuity?.kind==='authored-rebase'&&discontinuity.source==='std-camera-set'
+       &&present===samples.length&&maxSnapError<=.01){
+      entry.kind='authored-rebase';entry.discontinuity=discontinuity;rebases.push(entry);continue;
+    }
     entry.kind=step>=limits.rebaseStep?'blended-discontinuity':maxSampleStep<.5?'no-interpolation':'interpolated-step';
     flagged.push(entry);
   }
