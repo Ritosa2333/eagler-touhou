@@ -359,10 +359,9 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
 eagler::thprac::PracticePointer practice_pointers;
-#ifdef TH_ENABLE_THPRAC
-PracticeCadence cadence;
-#else
 touhou::sdl::FrameCadence cadence;
+#ifdef TH_ENABLE_THPRAC
+th11::PracticeCadence practice_cadence;
 #endif
 touhou::sdl::PresentationCadence presentation;
 touhou::sdl::PresentationGate presentation_gate;
@@ -612,6 +611,12 @@ EMSCRIPTEN_KEEPALIVE int presentation_lab_start_stage(unsigned stage,int charact
     if(running)return -1;
     return app.restart(stage,character,subtype,difficulty)?0:1;
 }
+// Recompute the authoritative digests for every read so a draw-only pass is
+// compared against the current state, not a cached post-update snapshot.
+extern "C" __attribute__((export_name("audit_state"))) const th11::u32* audit_state_live(){
+    th11::presentation_audit::sample_state(th11::sdl::app.session);
+    return th11::presentation_audit::state();
+}
 EMSCRIPTEN_KEEPALIVE void presentation_lab_fault(unsigned on){th11::presentation_audit::fault(on!=0);}
 EMSCRIPTEN_KEEPALIVE int presentation_lab_gate(){using namespace th11::sdl;return presentation_gate.primed?1:0;}
 EMSCRIPTEN_KEEPALIVE int presentation_lab_world_frozen(){return interpolation_ready()?0:1;}
@@ -646,23 +651,31 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
     if(presentation_lab_frozen)return;
 #endif
     if(running||!app.initialized)return;app.release_loading();
-    running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();presentation_gate.reset();app.reset_presentation_frames();clear_inputs();app.audio.suspend(false);app.reset_frame_window();
+    running=true;suspended=false;previous_frame=-1;cadence.reset();
+#ifdef TH_ENABLE_THPRAC
+    practice_cadence.reset();
+#endif
+    presentation.reset();presentation_gate.reset();app.reset_presentation_frames();clear_inputs();app.audio.suspend(false);app.reset_frame_window();
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
         const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-        if(suspended){cadence.reset();presentation.reset();presentation_gate.reset();return EM_TRUE;}
+        if(suspended){cadence.reset();
+#ifdef TH_ENABLE_THPRAC
+            practice_cadence.reset();
+#endif
+            presentation.reset();presentation_gate.reset();return EM_TRUE;}
         bool custom_speed=false;
 #ifdef TH_ENABLE_THPRAC
         const auto period=th11::browser::ThpracUi::simulation_interval(app.session);
         custom_speed=std::abs(period-1./60.)>1e-12;
-        if(period!=cadence.period){cadence.period=period;cadence.reset();presentation.reset();presentation_gate.reset();}
+        if(period!=practice_cadence.period){practice_cadence.period=period;practice_cadence.reset();cadence.reset();presentation.reset();presentation_gate.reset();}
 #endif
         // Display cadence is independent of the fixed 60 Hz simulation. The
         // kill switch restores retail one-tick-per-picture presentation.
         const bool limit60=th11_limit_presentation_to_60()!=0;
         const bool ready=interpolation_ready()&&!limit60&&!custom_speed;
         if(ready)presentation.advance(delta);else{app.reset_presentation_frames();presentation.reset();}
-        const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
+        const auto ticks=custom_speed?practice_cadence.advance(delta):cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
         const bool high=presentation.high_refresh&&ready;
         th11::high_refresh::smooth_submission=high;
         const bool interpolate=presentation_gate.advance(high,ticks!=0);

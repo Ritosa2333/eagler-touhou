@@ -50,16 +50,18 @@ worktree `28ded7ec`, pinned `eagler-common` `5c4e96f2`.
 
 ## Operational note
 
-The shared runtime shell can log a non-fatal `Startup animation draw failed`
-message during headless launch; the runtime still reaches phase 1 and the lab
-proceeds. It is a shell startup-branding path, not a Lab tick/draw failure.
+The Lab assembly strips the decorative startup-signature draw from its runtime
+shell, so the diagnostic runtime can launch without the production branding
+assets. This is Lab-only; the production Runtime keeps the original animation.
 
 ## Explicitly unknown / not covered
 
 - Non-ANM screen rectangles (`solid_rectangle`), HUD text lifetime, title/ending
   embedded VMs, audio queues, storage writes, the timing ring.
 - Therefore a clean sweep is reported as purity `unknown`, never a pass.
-- No Replay import or campaign runner yet.
+- Replay import and the campaign runner are available (`campaign.mjs`); they require a local `playwright` install and are diagnostic-only.
+- The on-screen `fps` counter follows **presented frames**: in gameplay on a >60 Hz display it shows the display rate, while title/dialogue/pause show the logic rate (~60). `limitPresentationTo60` forces the logic-rate readout.
+- This change targets the **normal** port; `ports/th11-mp` synchronization is handled by the port-sync maintainers.
 - `submitted-position`/`submitted-shape` are derived submission values and are
   marked `unknown`: retail half-pixel alignment and per-pass pixel handling make
   them unsuitable as continuous authored fields. Authored `position`,
@@ -75,8 +77,8 @@ proceeds. It is a shell startup-branding path, not a Lab tick/draw failure.
 # serve an existing build
 ./portable/presentation-lab/start-lab.ps1
 
-# one-shot headless verification, writes logs/lab/report.json
-node ../local/test-th11-lab.mjs
+# replay interpolation campaign (requires playwright; diagnostic only)
+node ports/th11/portable/presentation-lab/campaign.mjs --demo 0 --ticks 3600 --stride 30
 ```
 
 Default URL: `http://127.0.0.1:8136/`; add `?stage=1` for a deterministic

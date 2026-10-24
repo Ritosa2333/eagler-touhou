@@ -63,7 +63,7 @@ assert(session.includes('RestoreCamera'),'camera window must restore authoritati
 assert(session.includes('renderer.continuous=(pass.kind==SceneDrawKind::Animation&&pass.layer<=19)'),'world pass classification missing');
 
 const stage=read('web/cpp/game/StageDraw.cpp');
-assert(stage.includes('const bool draw_only=high_refresh::interpolating()'),'stage draw purity gate missing');
+assert(stage.includes('const bool draw_only=high_refresh::render_only'),'stage draw purity gate missing');
 assert(stage.includes('state.effects_enabled&&!draw_only'),'effects_enabled must not advance on draw-only frames');
 assert(stage.includes('state.fade_timer.current>0&&!draw_only'),'stage fade timer must not advance on draw-only frames');
 assert(stage.includes('display_camera(high_refresh::alpha)'),'stage camera must expose interpolated endpoints');

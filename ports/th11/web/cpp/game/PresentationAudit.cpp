@@ -196,7 +196,6 @@ __attribute__((export_name("audit_reference_tick"))) th11::u32 audit_reference_t
 __attribute__((export_name("audit_reference_draw_serial"))) th11::u32 audit_reference_draw_serial(th11::u32 index){return references[index&1].draw_serial;}
 __attribute__((export_name("audit_reference_dropped"))) th11::u32 audit_reference_dropped(th11::u32 index){return references[index&1].dropped;}
 __attribute__((export_name("audit_stride"))) th11::u32 audit_stride(){return sizeof(Record);}
-__attribute__((export_name("audit_state"))) const th11::u32* audit_state(){return state();}
 __attribute__((export_name("audit_scope"))) void audit_scope(th11::u32 owner){scope(owner);}
 }
 #endif
