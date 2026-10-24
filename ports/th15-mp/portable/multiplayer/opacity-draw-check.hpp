@@ -156,8 +156,23 @@ inline u32 vertex_color(const Event& e,unsigned index=0){
  const auto step=touhou::graphics::stride(e.layout);require((index+1)*step<=e.vertices.size(),"Opacity oracle vertex out of range");
  u32 value;std::memcpy(&value,e.vertices.data()+index*step+offset,sizeof value);return value;
 }
+inline void light_copy_contract(const AnmVm& source){
+ AnmVm copy(source,AnmVm::RenderCopyTag{});
+ require(copy.geometry.screen_vertices.empty()&&copy.geometry.world_vertices.empty()&&
+  !copy.geometry.distortion&&!copy.geometry.trail&&!copy.geometry.gather&&!copy.geometry.overlay&&
+  copy.geometry.allocation_bytes==0,
+  "RenderCopyTag copied or retained the source geometry payload");
+ require(copy.presentation_generation==source.presentation_generation&&
+  copy.presentation_motion==source.presentation_motion&&copy.presentation_part==source.presentation_part&&
+  copy.source_script==source.source_script&&copy.variables.position==source.variables.position&&
+  copy.variables.rotation==source.variables.rotation&&copy.visual.flags==source.visual.flags&&
+  copy.visual.render_flags==source.visual.render_flags&&copy.interpolators.position.duration==source.interpolators.position.duration&&
+  copy.rotation_parent==source.rotation_parent&&copy.creation_parent==source.creation_parent,
+  "RenderCopyTag failed to retain required mutable/presentation state");
+}
 inline Run compare(const std::string& label,AnmVm& source,u32 opacity,Totals& total,Settings config={}){
  const auto prefix="Opacity "+label+" alpha="+std::to_string(opacity)+": ";
+ if(!source.geometry.overlay)light_copy_contract(source);
  SourceGraph graph(source);const auto before=graph.image();const auto expected=run(source,opacity,config,true);
  const auto after_reference=graph.image();if(after_reference!=before)++total.parent_changes;
  graph.reset_rotations();require(graph.image()==before,prefix+"legacy recipe changed more than original-parent rotation");

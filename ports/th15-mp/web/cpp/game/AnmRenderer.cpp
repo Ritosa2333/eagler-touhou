@@ -120,21 +120,23 @@ int AnmRenderer::draw(AnmVm& vm){
     if(std::find(multiplayer_hidden_hud.begin(),multiplayer_hidden_hud.end(),&vm)!=multiplayer_hidden_hud.end())return 0;
     if(std::find(multiplayer_hidden_hitboxes.begin(),multiplayer_hidden_hitboxes.end(),&vm)!=multiplayer_hidden_hitboxes.end())return 0;
     if(const auto found=multiplayer_player_opacity.find(&vm);found!=multiplayer_player_opacity.end()){
-        const auto alpha=found->second;const bool overlay_tree=bool(vm.geometry.overlay);
-        // Use one local object for both paths: presentation samples identify
-        // this temporary VM as well as its preserved generation/parent chain.
-        auto copy=overlay_tree?vm:AnmVm(vm,AnmVm::RenderCopyTag{});
-        copy.visual.color=opacity_color(copy.visual.color,alpha);copy.visual.secondary_color=opacity_color(copy.visual.secondary_color,alpha);
-        // Match TH11: retain additive blending, normalize other blends so
-        // reduced alpha actually fades focus/hitbox and option animations.
-        if(copy.visual.blend_mode()!=1)copy.visual.flags&=~0x1e0u;
-        // Overlay rendering recursively mutates its cloned panel VMs. Preserve
-        // that entire deep-copy path and its original panel identities.
-        if(overlay_tree){
+        const auto alpha=found->second;
+        // Overlay drawing recursively mutates panel VMs, so it retains the
+        // legacy deep-copy path and its owned geometry.
+        if(vm.geometry.overlay){
+            auto copy=vm;
+            copy.visual.color=opacity_color(copy.visual.color,alpha);copy.visual.secondary_color=opacity_color(copy.visual.secondary_color,alpha);
+            if(copy.visual.blend_mode()!=1)copy.visual.flags&=~0x1e0u;
             for(auto& vertex:copy.geometry.screen_vertices)vertex.color=opacity_color(vertex.color,alpha);
             for(auto& vertex:copy.geometry.world_vertices)vertex.color=opacity_color(vertex.color,alpha);
             return draw(copy);
         }
+        // Ordinary animation draws copy mutable VM state only. Geometry stays
+        // borrowed from the original and is passed separately to draw_body;
+        // the RenderCopyTag constructor must not copy geometry payloads.
+        auto copy=AnmVm(vm,AnmVm::RenderCopyTag{});
+        copy.visual.color=opacity_color(copy.visual.color,alpha);copy.visual.secondary_color=opacity_color(copy.visual.secondary_color,alpha);
+        if(copy.visual.blend_mode()!=1)copy.visual.flags&=~0x1e0u;
         return draw_body(copy,vm.geometry,alpha);
     }
 #endif
