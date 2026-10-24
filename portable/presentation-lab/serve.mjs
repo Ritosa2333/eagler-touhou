@@ -5,7 +5,8 @@ import config from './lab.config.mjs';
 import {createPresentationLabServer,sha256} from '../../../../common/testkit/presentation-lab/server-core.mjs';
 
 const lab=import.meta.dirname,root=resolve(lab,'../..'),workspace=resolve(root,'..');
-const common=resolve(root,'../../common/testkit/presentation-lab');
+const commonRoot=resolve(process.env.EAGLER_COMMON_ROOT||resolve(root,'../../common'));
+const common=resolve(commonRoot,'testkit/presentation-lab');
 for(const name of ['controller-core.mjs','contracts.mjs','analyzer.mjs','report-core.mjs','server-core.mjs','workbench.html','workbench.mjs','workbench.css'])
   if(!existsSync(resolve(common,name)))throw Error('Initialize the pinned eagler-common submodule: missing '+name);
 
@@ -31,7 +32,7 @@ mkdirSync(runtime,{recursive:true});
   const shellPath=resolve(runtime,'shell.mjs');
   if(existsSync(shellPath)){
     const shell=readFileSync(shellPath,'utf8');
-    const patched=shell.replace('await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));','');
+    const patched=shell.replace('await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));','').replace(/\/\*TH11_BUILD_INFO\*\/\{[^;]*\}/,'/*TH11_BUILD_INFO*/'+JSON.stringify({version:build.version,completeGame:true}));
     if(patched!==shell)writeFileSync(shellPath,patched);
   }
 }
@@ -64,7 +65,7 @@ const data=process.env.TH11_LAB_DATA||'';
 if(existsSync(data))files.set('/input/th11.dat',data);
 
 const identity={schema:'presentation-lab/build/1',game:'th11',commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),wasm:build.sha256,loader:build.loaderSha256,
-  commonCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:resolve(root,'../../common'),encoding:'utf8'}).trim(),instrumented:true,dataAvailable:files.has('/input/th11.dat'),
+  commonCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:commonRoot,encoding:'utf8'}).trim(),instrumented:true,dataAvailable:files.has('/input/th11.dat'),
   evidence:'diagnostic runtime, not production deployment',sampling:'authoritative Draw endpoints + frozen alpha sweep'};
 const port=Number(process.env.PORT||8136);
 const {server,start}=createPresentationLabServer({port,files,identity:()=>identity,incident:{directory:resolve(config.artifactRoot,'incidents'),validate(report){

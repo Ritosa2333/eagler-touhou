@@ -28,10 +28,13 @@ export default {
     await runtime.command({command:'configure',language:'ja',music:'none',options:{touchEnabled:false},
       sharedResources:[{path:'/msgothic.ttc',url:'/msgothic.ttc'}],resources:[]});
   },
+  async installReplay(runtime,bytes){runtime.labReplay=Uint8Array.from(bytes);},
   createController:(runtime,identity)=>{
     const controller=new LabController(runtime,identity);
     const params=new URLSearchParams(location.search);
-    if(params.has('stage')){
+    if(runtime.labReplay){controller.freeze();controller.driver.loadReplay(runtime.labReplay);}
+    else if(params.has('stage')){
+      controller.freeze();
       const stage=Number(params.get('stage')||1),character=Number(params.get('character')||0),difficulty=Number(params.get('difficulty')||1);
       if(!controller.driver.startStage({stage:Number.isInteger(stage)?stage:1,character:Number.isInteger(character)?character:0,difficulty:Number.isInteger(difficulty)?difficulty:1}))
         throw Error('TH11 diagnostic stage seed failed');
