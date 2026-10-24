@@ -12,6 +12,7 @@ import {distribution,summarize,replayInputs} from './performance-browser-metrics
 import {installLongTaskDiagnostic,installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
 import {environmentOptions,browserLaunchSettings,inspectRuntimeWebGL,rendererIdentity,startCpuThrottle,coverRuntimeCpuThrottle,verifyCpuThrottleCoverage,closeCpuThrottle} from './performance-browser-environment.mjs';
 import {neutralPlan,committedHorizon,assertProofState,assertBeforeDeadline,awaitBeforeDeadline,proveNeutral,fireHorizon,proveFire} from './performance-input-proof.mjs';
+import {collectStablePersistence} from './performance-persistence-proof.mjs';
 
 const root=resolve(import.meta.dirname,'../..'),repo=resolve(root,'../..');
 function option(name,fallback){const combined=process.argv.find(x=>x.startsWith(name+'='));if(combined)return combined.slice(name.length+1);
@@ -22,7 +23,9 @@ const environment=environmentOptions({cpuThrottle:option('--cpu-throttle','1'),r
 const diagnosticMode=option('--diagnostic','none');assert.ok(['none','gl-cpu','longtasks','all'].includes(diagnosticMode),'Unsupported diagnostic mode');
 const diagnostic=diagnosticMode!=='none',cpuDiagnostic=['gl-cpu','all'].includes(diagnosticMode),longTaskDiagnostic=['longtasks','all'].includes(diagnosticMode);
 const saveValidationOnly=process.argv.includes('--save-validation-only');
+const saveEvidenceSupersessionTest=process.argv.includes('--save-evidence-supersession-test');
 assert.ok(!(diagnostic&&saveValidationOnly),'Save validation is separate from profiler diagnostics');
+assert.ok(!saveEvidenceSupersessionTest||saveValidationOnly,'--save-evidence-supersession-test requires --save-validation-only');
 const runtime=resolve(option('--runtime',process.env.TH15_MP_PACKAGE||resolve(root,'build-eagler-multiplayer')));
 const launcher=resolve(option('--launcher-root',process.env.TH15_LAUNCHER_ROOT||resolve(repo,'launcher')));
 const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(repo,'services/relay'),'src/netplay-relay.mjs');
@@ -31,6 +34,7 @@ assert.ok(!existsSync(resolve(out,'receipt.json'))&&!existsSync(resolve(out,'rec
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const fileIdentity=path=>{const b=readFileSync(path);return {path,bytes:b.length,sha256:hash(b)};};
 const saveJson=(name,value)=>writeFileSync(resolve(out,name),JSON.stringify(value,null,2)+'\n');
+const saveJsonExclusive=(name,value)=>{const path=resolve(out,name);writeFileSync(path,JSON.stringify(value,null,2)+'\n',{flag:'wx'});return fileIdentity(path);};
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 function gitIdentity(){const run=args=>{const r=spawnSync('git',['-C',repo,...args],{encoding:'utf8',maxBuffer:8*1024*1024});assert.equal(r.status,0,r.stderr);return r.stdout.trim();};
   return {head:run(['rev-parse','HEAD']),tree:run(['rev-parse','HEAD^{tree}']),status:run(['status','--porcelain=v1']),diffSha256:hash(run(['diff','--binary','HEAD']))};}
@@ -41,9 +45,12 @@ const report={schema:'eagler-touhou/th15-production-performance/1',startedAt:new
   scope:{productionPackage:true,independentBrowserProcesses:players,realRaf:true,managedHostInput:true,renderer:'pending-verification',
     actualGpuScanout:false,performanceObserver:true,fullCampaign:false,phone:false,
     saveObserver:'Sparse native request/poll transitions and real FS.syncfs callbacks; reuse the previous rollback observation without extra journal Stats in the measurement window.',
-    persistenceValidation:'After the fixed workload: confirmed all-seat neutral baseline, concurrent Host sync/new fire, confirmed neutral-to-fire transition, then completed evidence sync and real IDBFS/MEMFS/native validation.',
+    persistenceValidation:'After the fixed workload: confirmed all-seat neutral baseline and concurrent Host sync/new fire, then bounded stable Host/native/FS/Replay/MEMFS/IDB evidence with every superseded attempt retained.',
     ...(saveValidationOnly?{performanceEligibility:'Supplemental save/input acceptance only; workload timings cannot satisfy or replace a performance result.'}: {})},
   stages:[],errors:[],consoleErrors:[],cleanup:[],results:[]};
+report.saveEvidenceValidation={maxAttempts:3,totalDeadlineMs:35000,naturalSupersessionTest:saveEvidenceSupersessionTest,
+  forcedSeat:saveEvidenceSupersessionTest?players-1:null,
+  deadlineMeaning:'One fixed total deadline for the original 15s Host sync + 10s Replay read + 10s persistence-read budget, shared by all seats and attempts.'};
 if(diagnostic){report.thresholdsMet=null;report.diagnostics={mode:diagnosticMode,gl:cpuDiagnostic,cpuProfiler:cpuDiagnostic,longTasks:longTaskDiagnostic,samplingIntervalUs:cpuDiagnostic?4000:null,profiles:[],
   processCpu:{before:[],after:[],deltas:[],errors:[]},
   performanceEligibility:'Opt-in diagnostic observers, GL wrappers or CPU sampling add overhead. This run cannot satisfy the performance gate; thresholdsMet remains null.'};}
@@ -268,8 +275,10 @@ async function inspectPersistence(includeReplay=false){
     // MEMFS may persist an Int8Array. Compare the stored bytes, independent
     // of whether its JS view represents the high bit with a negative number.
     file.indexedDb=Array.from(new Uint8Array(entry.contents));file.equal=file.memory.length===file.indexedDb.length&&file.memory.every((byte,i)=>byte===file.indexedDb[i]);
-    const bytes=new Uint8Array(file.indexedDb),pointer=Module._malloc(bytes.length);if(!pointer)throw Error('Native validation allocation failed');
-    try{Module.HEAPU8.set(bytes,pointer);file.nativeValid=(file.kind===1?Module._th15_mp_replay_validate(pointer,bytes.length):Module._th15_validate_file(file.kind,pointer,bytes.length))===1;}finally{Module._free(pointer);}
+    for(const [field,contents] of [['memoryNativeValid',file.memory],['nativeValid',file.indexedDb]]){
+      const bytes=new Uint8Array(contents),pointer=Module._malloc(bytes.length);if(!pointer)throw Error('Native validation allocation failed');
+      try{Module.HEAPU8.set(bytes,pointer);file[field]=(file.kind===1?Module._th15_mp_replay_validate(pointer,bytes.length):Module._th15_validate_file(file.kind,pointer,bytes.length))===1;}finally{Module._free(pointer);}
+    }
   }
   return {database:root,store:'FILE_DATA',capturedAt,readAt:performance.now(),saveEventCountBegin,
     saveEventCountEnd:globalThis.__th15Performance?.state?.saveEvents?.length??0,files:files.filter(file=>file.kind!==1),
@@ -292,7 +301,7 @@ function summarizeSaveEvidence(saved,host,persistence){
   if(!automatic.some(event=>event.completedAt!==null&&event.persistedAt!==null))failures.push('No periodic score request before Host sync was observed to complete and persist');
   if(host.inputAckBeforeSync!==true)failures.push('Live input ACK did not precede Host sync completion; concurrent input delivery was not demonstrated');
   if(persistence.error)failures.push(persistence.error);
-  if(persistence.files.length!==2||persistence.files.some(file=>!file.equal||!file.nativeValid))failures.push('Persisted score/config differ from MEMFS or fail native validation');
+  if(persistence.files.length!==2||persistence.files.some(file=>!file.equal||!file.nativeValid||file.memoryNativeValid===false))failures.push('Persisted score/config differ from MEMFS or fail native validation');
   return {periodicSavesRequestedBeforeHostSync:automatic,failures,passed:failures.length===0};
 }
 
@@ -318,16 +327,99 @@ async function waitProofCommit(plan,end,label,timeoutMs=10000){
     await pause(Math.min(100,deadline-performance.now()));
   }
 }
-async function savedProofCopies(label){
-  const observations=await awaitBeforeDeadline(Promise.all(frames.map((frame,seat)=>frame.evaluate(copySavedReplay,{label,seat}))),performance.now()+10000,label+' Replay read');
-  return observations.map((observation,seat)=>{const {bytes,...metadata}=observation,buffer=new Uint8Array(bytes),name='peer-'+seat+'-'+label+'.rpy';
-    writeFileSync(resolve(out,name),buffer);return {buffer,metadata:{...metadata,file:fileIdentity(resolve(out,name))}};});
+function retainProofCopy(observation,seat,label){
+  const {bytes,...metadata}=observation,buffer=new Uint8Array(bytes),path=resolve(out,'peer-'+seat+'-'+label+'.rpy');
+  writeFileSync(path,buffer,{flag:'wx'});return {buffer,metadata:{...metadata,file:fileIdentity(path)}};
+}
+async function savedProofCopies(label,deadline=performance.now()+10000){
+  const observations=await awaitBeforeDeadline(Promise.all(frames.map((frame,seat)=>frame.evaluate(copySavedReplay,{label,seat}))),deadline,label+' Replay read');
+  return observations.map((observation,seat)=>retainProofCopy(observation,seat,label));
 }
 async function hostProofPhase(label,method,timeoutMs=15000){
   mark(label);
   const deadline=performance.now()+timeoutMs;
   return awaitBeforeDeadline(Promise.all(pages.map(page=>page.evaluate(({label,method,timeoutMs})=>
     method==='proofSync'?window[method](label,timeoutMs):window[method](timeoutMs),{label,method,timeoutMs}))),deadline,label);
+}
+
+function readSaveEvidence(){return {timeOrigin:__th15Performance.state.timeOrigin,saveApi:__th15Performance.state.saveApi,
+  events:__th15Performance.state.saveEvents,status:__th15Performance.snapshot()};}
+
+// The save-only regression waits for the existing production timer. It never
+// invokes a native save/export or installs, advances or disables a timer.
+async function waitNaturalSaveAfterCopy(seat,copy,deadline,naturalSaveLines){
+  assert.ok(saveValidationOnly&&saveEvidenceSupersessionTest,'Natural-save supersession is restricted to save-only validation');
+  assertBeforeDeadline(performance.now(),deadline,'natural save supersession');
+  const handle=await awaitBeforeDeadline(frames[seat].waitForFunction(({count,lines})=>{
+    const events=__th15Performance.state.saveEvents.slice(count);
+    if(document.querySelector('#error').textContent)throw Error(document.querySelector('#error').textContent);
+    if(events.some(event=>event.error||event.nativeError||event.kind==='native-cancel'))throw Error('Natural-save regression observed a save failure');
+    for(const request of events.filter(event=>event.kind==='native-request')){
+      const stackLines=[...(request.stack||'').matchAll(/shell\.mjs:(\d+):\d+/g)].map(match=>Number(match[1]));
+      if(!stackLines.some(line=>lines.includes(line)))continue;
+      const completed=events.find(event=>event.kind==='native-poll'&&event.token===request.token&&event.result===1);
+      const start=completed&&events.find(event=>event.kind==='fs-sync-start'&&!event.populate&&event.at>=completed.at);
+      const end=start&&events.find(event=>event.kind==='fs-sync-complete'&&event.id===start.id&&!event.error);
+      if(end)return {token:request.token,requestEnteredAt:request.entered,completionObservedAt:completed.at,
+        fsId:start.id,filesystemStartedAt:start.at,filesystemCompletedAt:end.at,requestStack:request.stack};
+    }
+    return false;
+  },{count:copy.metadata.saveEventCount,lines:naturalSaveLines},{timeout:Math.max(1,deadline-performance.now()),polling:100}),deadline,'natural save supersession');
+  try{return await awaitBeforeDeadline(handle.jsonValue(),deadline,'natural save supersession evidence');}
+  finally{await handle.dispose();}
+}
+
+async function stableProofEvidence({plan,proofEnd,syncEvidence,baselineCopies,initialSyncs,initialCopies,deadline}){
+  const attempts=report.inputProof.persistenceAttempts=Array.from({length:players},()=>[]);
+  const naturalSaveLines=saveEvidenceSupersessionTest?readFileSync(resolve(runtime,'shell.mjs'),'utf8').split('\n')
+    .flatMap((line,index)=>line.includes('setInterval(')?[index+1]:[]):[];
+  if(saveEvidenceSupersessionTest)assert.ok(naturalSaveLines.length,'The frozen production shell has no natural save interval');
+  const remaining=phase=>{assertBeforeDeadline(performance.now(),deadline,phase);return deadline-performance.now();};
+  const outcomes=await Promise.allSettled(frames.map(async(frame,seat)=>{
+    const result=await collectStablePersistence({deadline,maxAttempts:report.saveEvidenceValidation.maxAttempts,
+      attempt:async(number,attemptDeadline,observation)=>{
+        const label='evidence-attempt-'+number,prefix='peer-'+seat+'-'+label;
+        Object.assign(observation,{reference:plan.references[seat],proofEnd,baselineReplay:baselineCopies[seat].buffer});
+        if(number===1){observation.sync=initialSyncs[seat];observation.copy=initialCopies[seat];}
+        else{
+          observation.sync=await awaitBeforeDeadline(pages[seat].evaluate(({label,timeoutMs})=>window.proofSync(label,timeoutMs),
+            {label,timeoutMs:Math.min(15000,remaining(label+' Host sync'))}),attemptDeadline,label+' Host sync');
+          const copy=await awaitBeforeDeadline(frame.evaluate(copySavedReplay,{label,seat}),
+            Math.min(attemptDeadline,performance.now()+10000),label+' Replay read');
+          observation.copy=retainProofCopy(copy,seat,label);
+        }
+        assertProofState(observation.copy.metadata.snapshot,plan.references[seat]);
+        const proofCopies=initialCopies.map(value=>value.buffer);proofCopies[seat]=observation.copy.buffer;
+        // Keep the original neutral interval, concurrent input/ACK transaction
+        // and required committed horizon for every replacement copy.
+        observation.inputProof=proveFire(proofCopies,plan,syncEvidence,proofEnd);
+        if(saveEvidenceSupersessionTest&&seat===players-1&&number===1){
+          observation.forcedSupersession=await waitNaturalSaveAfterCopy(seat,observation.copy,attemptDeadline,naturalSaveLines);
+        }
+        observation.persistence=await awaitBeforeDeadline(frame.evaluate(inspectPersistence,true),
+          Math.min(attemptDeadline,performance.now()+10000),label+' persistence read');
+        observation.persistenceFile=saveJsonExclusive(prefix+'-persistence.json',observation.persistence);
+        observation.saved=await awaitBeforeDeadline(frame.evaluate(readSaveEvidence),attemptDeadline,label+' native/FS evidence');
+        observation.saveFile=saveJsonExclusive(prefix+'-save.json',observation.saved);
+      },
+      retain:async(record,observation)=>{
+        const entry={...record,seat,source:record.attempt===1?'initial-evidence-sync':'fresh-host-sync',
+          sync:observation.sync??null,copy:observation.copy?.metadata??null,
+          persistence:observation.persistenceFile??null,saveEvidence:observation.saveFile??null,
+          inputProof:observation.inputProof??null,forcedSupersession:observation.forcedSupersession??null};
+        const file=saveJsonExclusive('peer-'+seat+'-evidence-attempt-'+record.attempt+'.final.json',entry);
+        attempts[seat].push({...entry,file});save();
+      }});
+    if(saveEvidenceSupersessionTest&&seat===players-1){
+      assert.equal(attempts[seat][0]?.state,'superseded','The deliberate natural save must supersede the first evidence copy');
+      assert.equal(result.selectedAttempt,2,'The deliberate save-only regression requires the second full transaction to be stable');
+      assert.ok(attempts[seat][0].forcedSupersession,'The first attempt must retain the real natural native/FS completion');
+    }
+    return result;
+  }));
+  const failures=outcomes.filter(value=>value.status==='rejected');
+  if(failures.length)throw new AggregateError(failures.map(value=>value.reason),'Stable post-window persistence evidence failed');
+  return outcomes.map(value=>value.value);
 }
 
 function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{const timeout=setTimeout(()=>{cleanup();no(Error('Lobby timeout'));},10000);
@@ -338,7 +430,7 @@ function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{const
 async function lobbySend(socket,message,predicate){const promise=nextJson(socket,predicate);socket.send(JSON.stringify(message));return promise;}
 
 try{
-  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs','performance-input-proof.mjs','performance-browser-environment.mjs',
+  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs','performance-input-proof.mjs','performance-persistence-proof.mjs','performance-browser-environment.mjs',
     ...(diagnostic?['performance-browser-diagnostic.mjs']:[])]
     .map(name=>[name,fileIdentity(resolve(import.meta.dirname,name))]));
   report.relaySource=fileIdentity(relayEntry);
@@ -466,36 +558,42 @@ try{
   for(const value of syncEvidence){assert.deepEqual(value.errors,[]);assert.equal(value.inputAckBeforeSync,true,'Concurrent input ACK must precede the tested sync ACK');}
   const proofEnd=report.inputProof.end=fireHorizon(syncEvidence,plan);
   report.inputProof.fireCommitted=await waitProofCommit(plan,proofEnd,'confirmed new fire barrier',15000);
-  report.inputProof.evidenceSync=await hostProofPhase('evidence-sync','proofSync');
-  const fireCopies=await savedProofCopies('evidence-sync');
-  fireCopies.forEach((value,seat)=>assertProofState(value.metadata.snapshot,plan.references[seat]));
+  const evidenceDeadline=performance.now()+report.saveEvidenceValidation.totalDeadlineMs;
+  const initialSyncs=report.inputProof.evidenceSync=await hostProofPhase('evidence-sync','proofSync',Math.min(15000,evidenceDeadline-performance.now()));
+  const initialCopies=await savedProofCopies('evidence-sync',Math.min(evidenceDeadline,performance.now()+10000));
+  initialCopies.forEach((value,seat)=>assertProofState(value.metadata.snapshot,plan.references[seat]));
+  report.inputProof.initialEvidenceSync=initialSyncs;
+  report.inputProof.initialEvidenceFiles=initialCopies.map(value=>value.metadata);
+  report.inputProof.fire=proveFire(initialCopies.map(value=>value.buffer),plan,syncEvidence,proofEnd);save();
+  const stableEvidence=await stableProofEvidence({plan,proofEnd,syncEvidence,baselineCopies,initialSyncs,initialCopies,deadline:evidenceDeadline});
+  const fireCopies=stableEvidence.map(value=>value.observation.copy),persistences=stableEvidence.map(value=>value.observation.persistence);
+  report.inputProof.evidenceSync=stableEvidence.map(value=>value.observation.sync);
   report.inputProof.evidenceFiles=fireCopies.map(value=>value.metadata);
+  report.inputProof.selectedPersistenceAttempts=stableEvidence.map((value,seat)=>({seat,attempt:value.selectedAttempt,
+    attemptFinal:report.inputProof.persistenceAttempts[seat].find(attempt=>attempt.attempt===value.selectedAttempt).file,
+    transaction:value.classification.transaction}));
   report.inputProof.fire=proveFire(fireCopies.map(value=>value.buffer),plan,syncEvidence,proofEnd);save();
-  // Read all actual save databases before issuing another control phase. A
-  // later automatic save is recorded, never mistaken for a corrupt old copy.
-  const persistences=await awaitBeforeDeadline(Promise.all(frames.map(frame=>frame.evaluate(inspectPersistence,true)
-    .catch(error=>({error:String(error),files:[]})))),performance.now()+10000,'evidence-sync persistence read');
   const released=report.inputProof.release=await hostProofPhase('input-proof-release','releaseProofInput',10000);
   released.forEach((value,seat)=>{assertProofState(value.snapshot,plan.references[seat]);syncEvidence[seat].after=value.snapshot;
     syncEvidence[seat].release=value;syncEvidence[seat].events.push({kind:'input-release-ack',at:value.ackAt});});
   report.saveValidationFailures=[];
   for(let seat=0;seat<players;++seat){
     const persistence=persistences[seat];
-    saveJson('peer-'+seat+'-persistence.json',persistence);
-    const saved=await frames[seat].evaluate(()=>({timeOrigin:__th15Performance.state.timeOrigin,saveApi:__th15Performance.state.saveApi,
-      events:__th15Performance.state.saveEvents,status:__th15Performance.snapshot()}));
+    const saved=await frames[seat].evaluate(readSaveEvidence);
     saveJson('peer-'+seat+'-save.json',{...saved,host:syncEvidence[seat]});
     const validation=report.results[seat].saveValidation={host:syncEvidence[seat],saveApi:saved.saveApi,
       ...summarizeSaveEvidence(saved,syncEvidence[seat],persistence),
-      evidence:fileIdentity(resolve(out,'peer-'+seat+'-save.json')),persistence:fileIdentity(resolve(out,'peer-'+seat+'-persistence.json')),
-      files:persistence.files.map(file=>({name:file.name,bytes:file.indexedDb.length,sha256:hash(new Uint8Array(file.indexedDb)),equal:file.equal,nativeValid:file.nativeValid})),
+      evidence:fileIdentity(resolve(out,'peer-'+seat+'-save.json')),persistence:stableEvidence[seat].observation.persistenceFile,
+      files:persistence.files.map(file=>({name:file.name,bytes:file.indexedDb.length,sha256:hash(new Uint8Array(file.indexedDb)),equal:file.equal,
+        nativeValid:file.nativeValid,memoryNativeValid:file.memoryNativeValid})),
       inputProof:report.inputProof.fire.seats[seat],persistenceSync:report.inputProof.evidenceSync[seat],
+      selectedPersistenceAttempt:report.inputProof.selectedPersistenceAttempts[seat],
       saveActivityAfterEvidenceCopy:saved.events.slice(fireCopies[seat].metadata.saveEventCount,persistence.saveEventCountEnd)};
     const persistedReplay=persistence.replay;
     if(persistedReplay){validation.persistedReplay={name:persistedReplay.name,bytes:persistedReplay.indexedDb.length,
-      sha256:hash(new Uint8Array(persistedReplay.indexedDb)),equal:persistedReplay.equal,nativeValid:persistedReplay.nativeValid,
+      sha256:hash(new Uint8Array(persistedReplay.indexedDb)),equal:persistedReplay.equal,nativeValid:persistedReplay.nativeValid,memoryNativeValid:persistedReplay.memoryNativeValid,
       matchesEvidenceCopy:Buffer.from(persistedReplay.indexedDb).equals(fireCopies[seat].buffer)};}
-    if(!validation.persistedReplay?.equal||!validation.persistedReplay.nativeValid||!validation.persistedReplay.matchesEvidenceCopy){
+    if(!validation.persistedReplay?.equal||!validation.persistedReplay.nativeValid||validation.persistedReplay.memoryNativeValid===false||!validation.persistedReplay.matchesEvidenceCopy){
       const superseded=validation.saveActivityAfterEvidenceCopy.some(event=>event.kind==='native-request'||event.kind==='fs-sync-start');
       validation.failures.push(superseded?'Another save started during persistence inspection; stable snapshot byte evidence was not established':
         'Completed evidence-sync Replay differs from MEMFS/IDB or fails native validation');validation.passed=false;}

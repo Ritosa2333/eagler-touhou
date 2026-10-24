@@ -69,7 +69,7 @@ test('save observer records status transitions and real FS callbacks without ext
 });
 
 const persistenceSource=source.slice(source.indexOf('async function inspectPersistence('),source.indexOf('\nfunction nextJson('));
-function persistenceFixture({mismatch=false,databaseError=false,signed=false,replay=false,replayMismatch=false}={}){
+function persistenceFixture({mismatch=false,databaseError=false,signed=false,replay=false,replayMismatch=false,nativeRejectByte=null}={}){
   const root='/savesth15mp',memory=new Map([[root+'/scoreth15.dat',new Uint8Array(signed?[0,127,128,197,255]:[1,2,3])],[root+'/th15.cfg',new Uint8Array([4,5])]]);
   if(replay)memory.set(root+'/replay/th15mp_01.rpy',new Uint8Array([69,65,71,76,82,80,89,49]));
   const disk=new Map([...memory].map(([path,bytes])=>{if(!signed)return [path,{contents:bytes.slice()}];
@@ -84,8 +84,8 @@ function persistenceFixture({mismatch=false,databaseError=false,signed=false,rep
   }};
   const context={performance:{now:()=>42},setTimeout,clearTimeout,
     Module:{HEAPU8:heap,FS:{readFile:path=>memory.get(path)},_malloc:()=>128,_free:()=>{},
-      _th15_validate_file:(kind,pointer,size)=>{calls.push(['validate',kind,Array.from(heap.subarray(pointer,pointer+size))]);return 1;},
-      _th15_mp_replay_validate:(pointer,size)=>{calls.push(['validate-replay',Array.from(heap.subarray(pointer,pointer+size))]);return 1;}},
+      _th15_validate_file:(kind,pointer,size)=>{calls.push(['validate',kind,Array.from(heap.subarray(pointer,pointer+size))]);return heap[pointer]===nativeRejectByte?0:1;},
+      _th15_mp_replay_validate:(pointer,size)=>{calls.push(['validate-replay',Array.from(heap.subarray(pointer,pointer+size))]);return heap[pointer]===nativeRejectByte?0:1;}},
     indexedDB:{databases:async()=>[{name:root}],open:name=>{calls.push(['open',name]);const request={};
       queueMicrotask(()=>{if(databaseError){request.error=Error('IDB unavailable');request.onerror();}
         else{request.result=db;request.onsuccess();}});return request;}},
@@ -96,9 +96,9 @@ function persistenceFixture({mismatch=false,databaseError=false,signed=false,rep
 test('post-window persistence inspection reads real IDBFS paths and validates stored bytes',async()=>{
   const f=persistenceFixture(),result=await f.context.inspectPersistence();
   assert.equal(result.database,'/savesth15mp');assert.equal(result.store,'FILE_DATA');assert.equal(result.files.length,2);
-  assert.ok(result.files.every(file=>file.equal&&file.nativeValid));assert.equal(f.closed,1);
+  assert.ok(result.files.every(file=>file.equal&&file.nativeValid&&file.memoryNativeValid));assert.equal(f.closed,1);
   assert.deepEqual(f.calls.find(call=>call[0]==='transaction'),['transaction','FILE_DATA','readonly']);
-  assert.deepEqual(f.calls.filter(call=>call[0]==='validate').map(call=>call[1]),[0,2]);
+  assert.deepEqual(f.calls.filter(call=>call[0]==='validate').map(call=>call[1]),[0,0,2,2]);
 });
 
 test('persistence inspection retains byte mismatch instead of claiming successful persistence',async()=>{
@@ -123,9 +123,20 @@ test('persistence inspection rejects actual IndexedDB read failure',async()=>{
 test('completed evidence Replay is compared to IDB bytes and uses the native MP reader',async()=>{
   const f=persistenceFixture({replay:true}),result=await f.context.inspectPersistence(true);
   assert.equal(result.files.length,2);assert.equal(result.replay.name,'replay/th15mp_01.rpy');
-  assert.equal(result.replay.equal,true);assert.equal(result.replay.nativeValid,true);
-  assert.deepEqual(f.calls.filter(call=>call[0]==='validate-replay'),[['validate-replay',[69,65,71,76,82,80,89,49]]]);
-  assert.deepEqual(f.calls.filter(call=>call[0]==='validate').map(call=>call[1]),[0,2]);
+  assert.equal(result.replay.equal,true);assert.equal(result.replay.nativeValid,true);assert.equal(result.replay.memoryNativeValid,true);
+  assert.deepEqual(f.calls.filter(call=>call[0]==='validate-replay'),[
+    ['validate-replay',[69,65,71,76,82,80,89,49]],['validate-replay',[69,65,71,76,82,80,89,49]]]);
+  assert.deepEqual(f.calls.filter(call=>call[0]==='validate').map(call=>call[1]),[0,0,2,2]);
+});
+
+test('MEMFS and IDB receive independent native validation even when a writer changed score or Replay bytes',async()=>{
+  for(const replay of [false,true])for(const rejectMemory of [false,true]){
+    const memoryFirstByte=replay?69:1,nativeRejectByte=rejectMemory?memoryFirstByte:9;
+    const f=persistenceFixture({mismatch:!replay,replay,replayMismatch:replay,nativeRejectByte});
+    const result=await f.context.inspectPersistence(replay),file=replay?result.replay:result.files[0];
+    assert.equal(file.equal,false);assert.equal(file.memoryNativeValid,!rejectMemory);assert.equal(file.nativeValid,rejectMemory);
+    assert.equal(file.memory[0],memoryFirstByte);assert.equal(file.indexedDb[0],9);assert.equal(f.closed,1);
+  }
 });
 
 test('a stale or changed persisted Replay remains a failed byte comparison',async()=>{
