@@ -40,7 +40,7 @@ node --test ports/th11/portable/production-build.test.mjs ports/th11/portable/pr
 MP 接收共享字段处理、诊断与准入回归，联机前进使用独立 `SimulationCadence`，保留每回调最多四 tick、100ms 债务上限和完成后扣账规则。联机驱动继续提交权威前沿，插值缓存采集在该模式下关闭；普通配置与 Lab 驱动分别验证高刷呈现。
 
 - MP 完整构建通过，WASM `834ccb907798c777c3f71053c8933076314221265d4dda0b60c711a7f76be0b8`。
-- MP 的三种宿主配置编译、五组呈现 CPU 契约和 31 项位移／生产包隔离回归通过。
+- MP 的三种宿主配置编译、六组呈现／时钟 CPU 契约和 31 项位移／生产包隔离回归通过。
 - 独立网络时钟通过 10 组、26,288 项账本检查，包含普通版显示时钟与网络追帧时钟的分离。
 - ANM 回滚夹具覆盖 ordinary 与 multiplayer 两条通道，校验注册表、VM、脚本文字和恢复事务。
 

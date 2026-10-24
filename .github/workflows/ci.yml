@@ -248,6 +248,9 @@ jobs:
         node ${{ matrix.directory }}/portable/check-high-refresh-contract.mjs
         node ${{ matrix.directory }}/portable/check-presentation-purity.mjs
         node --test ${{ matrix.directory }}/portable/production-build.test.mjs ${{ matrix.directory }}/portable/presentation-lab/flicker.test.mjs
+        if [ "${{ matrix.variant }}" = "multiplayer" ]; then
+          node --test ${{ matrix.directory }}/portable/multiplayer/package-isolation.test.mjs
+        fi
         node ${{ matrix.directory }}/portable/check-build-modes.mjs
         node ${{ matrix.directory }}/portable/check-presentation.mjs
     - uses: actions/upload-artifact@v4
