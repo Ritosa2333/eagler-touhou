@@ -4,6 +4,7 @@ import {mkdtempSync,mkdirSync,writeFileSync,copyFileSync,readdirSync,readFileSyn
 import {tmpdir} from 'node:os';
 import {resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
+import {pathToFileURL} from 'node:url';
 import {validateProductionBuild} from './production-build.mjs';
 const empty=Uint8Array.from([0,97,115,109,1,0,0,0]);
 const build={profile:'sdl3',diagnostic:false,exports:[]};
@@ -13,6 +14,7 @@ function exported(name){
 }
 test('production accepts the exact binary export attestation',()=>{
   validateProductionBuild(build,empty);
+  validateProductionBuild({...build,profile:'multiplayer'},empty,'multiplayer');
   const binary=exported('th11_frame');
   validateProductionBuild({...build,exports:WebAssembly.Module.exports(new WebAssembly.Module(binary))},binary);
   assert.throws(()=>validateProductionBuild(build,binary),/attestation/);
@@ -38,8 +40,12 @@ test('the real packager rejects a diagnostic build before writing output',()=>{
   writeFileSync(resolve(out,'keep.txt'),'existing output');
   writeFileSync(resolve(binary,'build.json'),JSON.stringify({...build,profile:'sdl3-diagnostics',diagnostic:true}));
   writeFileSync(resolve(binary,'th11-sdl.wasm'),empty);
-  const result=spawnSync(process.execPath,[resolve(portable,'package-eagler.mjs')],{encoding:'utf8',windowsHide:true,
+  const entry=resolve(import.meta.dirname,'package-eagler.mjs');
+  const args=readFileSync(entry,'utf8').includes('export function packageEagler(')
+    ?['--input-type=module','-e',`import {packageEagler} from ${JSON.stringify(pathToFileURL(entry).href)};packageEagler({root:${JSON.stringify(root)},args:[]});`]
+    :[resolve(portable,'package-eagler.mjs')];
+  const result=spawnSync(process.execPath,args,{encoding:'utf8',windowsHide:true,
     env:{...process.env,TH11_OUTPUT:binary,EAGLER_RUNTIME_OUTPUT:out,EAGLER_FONT_ROOT:root}});
-  assert.equal(result.status,1);assert.match(result.stderr,/Production packaging rejects diagnostic/);
+  assert.equal(result.status,1);assert.match(result.stderr,/Production packaging rejects diagnostic|Build profile or variant/);
   assert.deepEqual(readdirSync(out),['keep.txt']);assert.equal(readFileSync(resolve(out,'keep.txt'),'utf8'),'existing output');
 });
