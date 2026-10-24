@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../portable/sdl/FrameCadence.hpp"
+#include "SimulationCadence.hpp"
 #include <eagler/netplay/PendingFrameSchedule.hpp>
 #include <eagler/netplay/FrameBudget.hpp>
 #include <algorithm>
@@ -7,11 +7,11 @@
 #include <cstdint>
 
 namespace th11::multiplayer {
-// Title-local adapter only. Mode 1 / ordinary continue to use FrameCadence.
+// Network forward progress owns its clock independently of display cadence.
 // Time is nominal 60 Hz seconds; pace only newly elapsed wall time before
 // advance(). Input capture, restoration and forward ownership stay in driver.
 class FrameSchedule final {
-    using Cadence=touhou::sdl::FrameCadence;
+    using Cadence=SimulationCadence;
     Netplay::PendingFrameSchedule<Cadence> schedule_;
     unsigned offered_=0;
 public:

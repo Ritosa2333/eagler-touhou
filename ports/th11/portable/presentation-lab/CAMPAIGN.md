@@ -8,6 +8,7 @@
 - 在同一逻辑状态采样 alpha 0、0.25、0.5、0.75、1。
 - `referenceStep` 表示两端点的合成位移，`maxSampleStep` 表示相邻采样的最大位移，`maxError` 表示采样与线性路径的距离。
 - `large-interpolated-step` 和 `endpoint-mismatch` 保留在候选列表。300、512、1024 像素跳变与其他幅度使用同一套异常判据。
+- `authored-rebase` 由原生 STD 相机设置事件标记，并要求全部采样落在当前端点。标记与完整采样共同构成重基证据。
 - 位移幅度和端点形状用于分类，不构成作者重基的证明。出生、脚本切换与生命周期由对象身份和实际状态单独核对。
 - `complete` 表示请求的采样窗口全部执行且页面、驱动与采样没有错误。中断或异常保存报告并以非零状态退出。
 
@@ -38,6 +39,6 @@ node ports/th11/portable/presentation-lab/campaign.mjs --replay D:/replays/th11_
 
 ## 验证
 
-[2026-10-24 验收记录](../../docs/records/2026-10-24-display-high-refresh.md)登记当前源码上的构建、17 项准入与位移回归、三种 SDL 宿主编译配置及浏览器 Demo 巡检。
+[2026-10-24 验收记录](../../docs/records/2026-10-24-display-high-refresh.md)登记当前源码上的构建、24 项准入与位移回归、三种 SDL 宿主编译配置及浏览器 Demo 巡检。
 
 ANM 字段、对象身份与 CPU 提交几何负责定位帧间位移问题。GPU 像素、声音、存档与网络状态分别使用对应专项验收。
