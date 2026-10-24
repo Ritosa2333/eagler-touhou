@@ -16,6 +16,32 @@ Adonis 在实际游戏输入通道上测量 RTT，协商输入延迟 `D` 与预�
 
 Launcher 房间回报和 UI 状态展示测量结果；Native Runtime 在本地同一输入通道上验证、协商和固定运行参数。Replay/观战流收到的已确认逻辑帧按其协议时序播放，不重复应用玩家输入延迟。
 
+大厅网络检测中的 TURN 延迟是单个客户端到 TURN 服务的往返估计，通过同浏览器双端中转回环的实际 DataChannel 回显折算。游戏右下角延迟读取当前玩家间 ICE 候选对的完整往返时间；双方经同一 TURN 节点中转时，完整往返约为双方到节点的往返时间之和。
+
+## 房间手动丢包测试
+
+在房间中点击自己的玩家卡片，打开个人状态面板后选择「测试丢包率」。一次操作分别测量与房内其他玩家的直连和 TURN 路径，展示「你 → 对方」和「对方 → 你」的本次消息丢失比例，适用于全部多人作品。
+
+[`room-network.mts`](../../launcher/src/launcher/room-network.mts) 复用房间的独立 ICE 探测连接。直连连接只配置 STUN，TURN 连接强制 relay，测试结果按路径分开保留。[`room-packet-loss.mts`](../../launcher/src/launcher/room-packet-loss.mts) 使用可靠通道协调测试、交换收发摘要，使用 `ordered:false, maxRetransmits:0` 的专用通道发送 300 个 96 字节消息，间隔 16 ms。末尾保留 1 秒接收窗，再以唯一序号计数计算两个方向的比例；重复包不增加接收数，接收窗内的乱序正常计入。
+
+测试由按钮启动，两端均完成后发布结果。断开、离房、开局、页面挂起或本地发送拥塞会停止本次测试；路径未连接时显示「连接未就绪」。每次结果对应这次房间探测及其接收窗，游戏开局继续独立选择实际链路。验证入口为 `launcher/tests/test-room-packet-loss.mjs`、`launcher/tests/test-room-network.mjs` 和 `launcher/tests/browser/test-room-packet-loss.mjs`。
+
+专用探测通道兼容旧版房间的延迟回显，房间内不同前端版本可继续交换延迟样本。双向丢包测试由支持该协议的两端完成。
+
+### 优先使用 TURN
+
+同一个人面板提供「优先使用 TURN」开关。选择按本机保存，所有多人作品共用，默认关闭；下一次开局建立连接时生效。每名玩家独立选择，任一方启用即可让与其相连的游戏链路经过 TURN。
+
+Launcher 将本机偏好通过 `netplayPreferTurn` 传给 Runtime。公共 `BrowserPeerTransport` 在启用时使用 `iceTransportPolicy: 'relay'`，让游戏输入与可靠控制通道共同走 TURN；连接恢复继续沿用这项策略。TURN 无法连接时使用既有 WebSocket 服务器中转兜底。关闭后由浏览器在直连与 TURN 候选中选择路径。
+
+丢包测试持续分别测量直连和 TURN，方便按实际结果选择游戏链路。该设置属于本机传输偏好，房间规则与 Replay 玩法身份沿用各自配置。
+
+## 房间目录与成员
+
+公开目录展示至少有一个席位成员或在线旁观者的房间。旧对局保留的 Runtime、信令或旁观传输连接按自身生命周期退休；列表展示与这些连接的保留分开管理。席位与旁观均为空时，房间从公开列表移除；成员重新入席后恢复展示。短暂断线保留的席位和有旁观者的回放房间继续按原有成员状态展示。
+
+服务端 [`room-directory.mjs`](../../services/relay/src/room-directory.mjs) 按成员生成公开快照，启动器 [`lobby-directory.ts`](../../launcher/app/services/lobby-directory.ts) 同时过滤旧服务下发的空房间，并同步修正列表总数。自己的房间恢复入口继续由独立的 membership 信息提供。
+
 标题连接到 Adonis 的入口：
 
 - TH08/10/11/15 通过各自 `NetplayRuntime` 持有 `AdonisConnection`；详见 [TH08](../../ports/th08-mp/web/cpp/multiplayer/NetworkConnection.cpp)、[TH10](../../ports/th10-mp/web/cpp/multiplayer/NetplayRuntime.cpp)、[TH11](../../ports/th11-mp/web/cpp/multiplayer/NetplayRuntime.cpp)、[TH15](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp)。

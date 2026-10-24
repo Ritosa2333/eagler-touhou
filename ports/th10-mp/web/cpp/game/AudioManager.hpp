@@ -11,6 +11,8 @@ struct AudioCommandSink {
     virtual void capture_effect(i32 effect,i32 pan,const SoundDefinition*) noexcept=0;
     virtual void capture_stop(i32 effect) noexcept=0;
     virtual void capture_music(i32 kind,i32 argument,const char* filename)=0;
+    // Historical spectator SFX suppression keeps native music commands live.
+    virtual bool captures_music() const noexcept { return true; }
 };
 #endif
 struct AudioManager {

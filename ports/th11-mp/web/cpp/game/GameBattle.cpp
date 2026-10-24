@@ -74,7 +74,7 @@ bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     stage=std::make_unique<Stage>(animations,resources.stage->background,resources.core.text,compositor.clear_color,u16((resources.stage_number&1)+3));
     stage->active_camera=&compositor.world_camera;
 #ifdef TH_ENABLE_THPRAC
-    stage->practice_game_frame=&frame;stage->practice_replay_has_stage5=practice&&practice->enabled&&replaying&&practice_replay_has_stage5;
+    stage->practice_game_frame=&frame;stage->practice_replay_has_stage5=practice&&practice->enabled&&practice->fix_stage6_replay&&replaying&&practice_replay_has_stage5;
 #endif
     if(!stage->initialize(resources.stage->scene,resources.stage_number,compositor.world_camera)){last_error=-1008;error=stage->error;return false;}
     enemy_commands.stage=stage.get();
@@ -159,7 +159,7 @@ bool GameBattle::next_stage(GameResources& source,u32 number){
     stage=std::make_unique<Stage>(animations,resources.stage->background,resources.core.text,compositor.clear_color,u16((number&1)+3));
     stage->active_camera=&compositor.world_camera;
 #ifdef TH_ENABLE_THPRAC
-    stage->practice_game_frame=&frame;stage->practice_replay_has_stage5=practice&&practice->enabled&&replaying&&practice_replay_has_stage5;
+    stage->practice_game_frame=&frame;stage->practice_replay_has_stage5=practice&&practice->enabled&&practice->fix_stage6_replay&&replaying&&practice_replay_has_stage5;
 #endif
     if(!stage->initialize(resources.stage->scene,number,compositor.world_camera,false)){error=stage->error;return false;}
     enemy_commands.stage=stage.get();enemy_animations.resources[2]={&resources.stage->enemies,9};
@@ -266,6 +266,9 @@ bool GameBattle::spawn_root() {
 bool GameBattle::update(const std::function<bool()>& sample_input) {
     if(!initialized||last_error)return false;
     events.clear();dialogue_text_requests.clear();
+#ifdef TH_ENABLE_THPRAC
+    if(practice)practice->lock_tick_seen=false;
+#endif
     // Native tick priorities: overlay ANM 8, game globals 10, stage 12, shake/fade 14,
     // player 16, Bomb 17, enemies 18, lasers 19, bullets 20, items 21, spell 22,
     // dialogue/HUD 24, normal ANM 26. ECL-created shakes first run next tick.
@@ -275,6 +278,10 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
 #ifdef TH_ENABLE_THPRAC
     practice_time_lock=practice&&practice->enabled&&!replaying&&(practice->cheats&8);
     enemy_commands.practice_time_lock=spells.practice_time_lock=practice_time_lock;
+    practice_enemy_invincible=practice&&practice->enabled&&!replaying&&(practice->cheats&32);
+    enemy_commands.practice_boss_move_down=practice&&practice->enabled&&practice->force_boss_move_down;
+    enemy_commands.practice=practice;
+    if(practice&&practice->enabled){enemy_commands.practice_boss_move_down_range=practice->boss_move_down_range;if(!replaying&&(practice->force_boss_move_down||practice->lock_marisa_b||practice->all_clear_bonus))practice->assisted=true;}
     completion.mode.all_clear_bonus=practice&&practice->enabled&&practice->all_clear_bonus;
 #endif
     // 420752: the stage-six introduction holds the music cursor for 300 ticks.
@@ -365,6 +372,9 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
 #endif
     hitbox_presentation.rate=animations.rate;
     if(!hitbox_presentation.update(true)||!hitbox_presentation.update(false))return false;
+#ifdef TH_ENABLE_THPRAC
+    if(practice&&practice->enabled&&practice->lock_tick_seen){++practice->lock_frames;practice->lock_tick_seen=false;}
+#endif
     if(control_running)++frame;
     // Both VM registries have now consumed resource retirement markers.
     if(transitioning&&stage_active&&!outgoing_stage){
@@ -408,7 +418,13 @@ bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind) {
     case SceneDrawKind::Spell:
         if(spell_flags&1){
             for(auto& vm:spell_backgrounds)if(renderer.draw(vm)==-2)return false;
-            if(auto* title=animations.find(spell_titles[2]))return spells.queue_text(ascii,title->color);
+            if(auto* title=animations.find(spell_titles[2])){
+#ifdef TH_ENABLE_THPRAC
+                return spells.queue_text(ascii,title->color,practice&&practice->enabled&&practice->disable_master_display);
+#else
+                return spells.queue_text(ascii,title->color);
+#endif
+            }
             spell_titles[2]=0;
         }
         return true;
@@ -540,9 +556,6 @@ bool GameBattle::notify(i32 value) {events.push_back({BattleEventKind::Notificat
 bool GameBattle::display_lives(i32 lives,i32 fragments) {hud.display_lives(lives,fragments);events.push_back({BattleEventKind::Lives,lives,fragments});return true;}
 bool GameBattle::power_changed() { return player&&player->motion.rebuild_options(resources.core.shots[enemy_environment.character*3+enemy_environment.subtype].header,economy,enemy_environment.character*3+enemy_environment.subtype); }
 bool GameBattle::record_death() {
-#ifdef TH_ENABLE_THPRAC
-    if(practice)++practice->tracker_misses;
-#endif
     events.push_back({BattleEventKind::Death});return true;}
 bool GameBattle::enemy_death() {
     // 0x431307 increments manager +0x10 and resets +0x18. This is a player

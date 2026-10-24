@@ -3,6 +3,7 @@
 #include "PoolsJournal.hpp"
 #include "ResourcesJournal.hpp"
 #include "../game/ReplayRecording.hpp"
+#include "../game/PracticeConfig.hpp"
 #include <array>
 #include <deque>
 #include <vector>
@@ -56,6 +57,7 @@ public:
     void AuditBullets(bool enabled){pools.audit_bullets=enabled;}
     u32 BulletAuditRestores()const{return pools.bullet_audit_restores;}
     bool DiagnosticInputSampler();
+    bool DiagnosticPracticeMonitor();
     std::array<std::size_t,5> DiagnosticBytesForFrame(u32 frame)const;
     const std::array<double,5>& DiagnosticCaptureMs()const{return diagnostic_capture_ms;}
     std::size_t DiagnosticBlockCount()const{return blocks.size();}
@@ -72,7 +74,11 @@ public:
 private:
     enum class SnapshotMode:u8 {Always,Bomb,Shot,Record,PreviousRecord,TitleSpells,GuiTransitions};
     struct Block {void* address;std::size_t bytes;Group group;const char* name;SnapshotMode mode=SnapshotMode::Always;};
-    struct Record {u32 frame,end;std::unique_ptr<ReplayRecording> replay;};
+    struct Record {
+        u32 frame,end;
+        std::unique_ptr<ReplayRecording> replay;
+        std::unique_ptr<eagler::thprac::PracticeKeyMonitor> practice_monitor;
+    };
     BrowserRuntime* runtime=nullptr;GameApplication* app=nullptr;
     i32 stage=-1;const void *stdData=nullptr,*quads=nullptr,*msgData=nullptr;
     std::size_t stdSize=0,quadCount=0,msgSize=0;

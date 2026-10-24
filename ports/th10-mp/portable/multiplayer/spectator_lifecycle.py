@@ -8,7 +8,7 @@ import time
 
 
 def run(*, pages, viewer, setup, call, advance_sources, url, spectator_url,
-        spectator_id, loadouts, session, report):
+        spectator_id, loadouts, session, report, navigation_only=False):
     result = report['lifecycle'] = {'entries': [], 'sourceIdleFixture': 'source native pumps held; live relay sockets'}
 
     def state():
@@ -57,7 +57,8 @@ def run(*, pages, viewer, setup, call, advance_sources, url, spectator_url,
     result['phase'] = 'source-history'
     history_deadline = time.monotonic() + 300
     next_history_sample = time.monotonic()
-    while min(call(page, 'multiplayerSmoke.netStatus()')[3] for page in pages) < 1200:
+    history_frames = 300 if navigation_only else 1200
+    while min(call(page, 'multiplayerSmoke.netStatus()')[3] for page in pages) < history_frames:
         assert time.monotonic() < history_deadline, ('source history deadline',
             [call(page, 'multiplayerSmoke.netStatus()') for page in pages])
         advance_sources(pages)
@@ -67,9 +68,38 @@ def run(*, pages, viewer, setup, call, advance_sources, url, spectator_url,
         pages[0].wait_for_timeout(1)
     assert call(viewer, 'v=>multiplayerSmoke.spectatorConnect(...v)', [spectator_url, spectator_id])
     first = wait(lambda s: not s['seeking'], 'initial checkpoint')
-    assert not first['following'], first
+    assert not first['following'] and first['position'] == first['min'], first
     result['entries'].append({'position': first['position'], 'received': first['received'], 'wasmSha256': identity()})
-    result['initialPacing'] = pacing('initial historical playback')
+    result['initialPacing'] = pacing('initial historical playback', 10 if navigation_only else 90)
+
+    # The Boss button sends the same frame Seek as the timeline. Exercise
+    # forward navigation and a rewind through the real native stage loader.
+    result['phase'] = 'native-navigation'
+    origin = state()['min']; control('pause'); navigation = []
+    for offset in (45, 90, 45, 0, 90):
+        control('seek', origin + offset)
+        reached = wait(lambda s: not s['seeking'], 'native mark seek')
+        assert reached['paused'] and reached['position'] == origin + offset, reached
+        navigation.append(reached['position'])
+    result['nativeNavigation'] = navigation
+    control('play')
+    if navigation_only:
+        result['resumedPacing'] = pacing('native navigation resume', 10)
+        control('live'); target = state()['target']
+        assert tick()['seeking']
+        for _ in range(4):
+            advance_sources(pages)
+        during = tick()
+        assert during['seeking'] and during['edge'] > target, during
+        control('live')
+        assert state()['target'] == target, ('repeated Live changed target', target, state())
+        reached = wait(lambda s: not s['seeking'], 'fixed navigation live target')
+        assert reached['position'] == target and reached['following'], reached
+        result['fixedLiveTarget'] = target
+        result['afterLivePacing'] = pacing('native navigation live resume', 10)
+        assert not report['errors'], report['errors']
+        result['phase'] = 'complete'; result['passed'] = True; report['passed'] = True
+        return
 
     result['phase'] = 'cancel-seek'
     target = state()['edge']; control('seek', target)
@@ -82,7 +112,15 @@ def run(*, pages, viewer, setup, call, advance_sources, url, spectator_url,
     control('play'); result['resumedPacing'] = pacing('historical resume', 30)
 
     result['phase'] = 'live-budget'
-    control('live'); wait(lambda s: s['following'] and not s['seeking'], 'fixed live target')
+    control('live'); target = state()['target']
+    during = tick(); assert during['seeking'], during
+    for _ in range(4):
+        advance_sources(pages)
+    control('live')
+    assert state()['target'] == target, ('repeated Live changed target', target, state())
+    settled = wait(lambda s: s['following'] and not s['seeking'], 'fixed live target')
+    assert settled['position'] == target, (target, settled)
+    result['fixedLiveTarget'] = target
     # Deliver a burst ahead of the viewer. Following may wait but cannot
     # reactivate multi-input catch-up merely because the edge has advanced.
     deltas = []

@@ -8,6 +8,19 @@
 #include <cstring>
 namespace th10 {
 void PracticeConfig::reset(){std::memset(this,0,sizeof(*this));}
+i32 PracticeConfig::divine_virtues_delay_max(i32 difficulty){
+    constexpr i32 limits[]{140,120,100,50,160};
+    return limits[std::clamp(difficulty,0,4)];
+}
+void PracticeConfig::update_menu_difficulty(i32 difficulty,i32& previous_difficulty){
+    // Apply only to the editable menu, never to loaded replay parameters.
+    // Extra has no corresponding spell or State(1) override upstream.
+    if(difficulty>=0&&difficulty<4){
+        const auto maximum=divine_virtues_delay_max(difficulty);
+        st6_boss9_spd=difficulty!=previous_difficulty?maximum:std::clamp(st6_boss9_spd,0,maximum);
+    }
+    previous_difficulty=difficulty;
+}
 bool PracticeConfig::valid()const {
     // Warp 0..5 (None/Portion/Mid/End/NonSpell/Spell); th10 has no frame warp.
     if(mode<0||mode>1||stage<0||stage>6||warp<0||warp>5||phase<0||phase>1||frame<0||dlg<0||dlg>1)return false;

@@ -11,6 +11,9 @@ const codes: Record<string, [string, number]> = {...hostedKeyCodes,
 codes.Numpad5=['numpad5',101];
 for(let n=65;n<=90;n++)codes['Key'+String.fromCharCode(n)]=[String.fromCharCode(n).toLowerCase(),n];
 for(let n=0;n<=9;n++)codes['Digit'+n]=[String(n),48+n];
+for(let n=0;n<=9;n++)if(!codes['Numpad'+n])codes['Numpad'+n]=[String(n),96+n];
+Object.assign(codes,{Minus:['-',189],Period:['.',190],NumpadSubtract:['-',109],NumpadDecimal:['.',110],
+  Delete:['delete',46],Insert:['insert',45],End:['end',35],PageUp:['pageup',33],PageDown:['pagedown',34]});
 for(let n=1;n<=12;n++)codes['F'+n]=['f'+n,111+n];
 export interface CanonicalKeyTransition extends HostedKeySpec {down: boolean; location: number;}
 export interface KeyboardMappingPort {

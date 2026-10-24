@@ -4,7 +4,7 @@
 #include "../multiplayer/NetplayRuntime.hpp"
 #include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/ReplayArchive.hpp"
-#include "../multiplayer/SpectatorStageCheckpoint.hpp"
+#include "../multiplayer/SpectatorReplayStart.hpp"
 #include "../game/MultiplayerPilot.hpp"
 #endif
 #include "ThpracUi.hpp"
@@ -62,12 +62,12 @@ bool mp_tick(u32 held,bool physical=true){
  if(!network.Pump(true)){last_error=network.Error();return false;}
  if(network.StagePlaybackReady()){
   const auto begin=emscripten_get_now();auto& playback=network.StagePlayback();
-  // Bootstrap reconstruction and explicit, fixed-target seek/live requests
-  // may use a bounded rebuild budget. Passive live following stays at 1x.
+  // Reconstruction and delayed live inputs share a bounded catch-up budget.
+  // Historical Play consumes one native tick per presentation.
   const bool fast_forwarding=playback.FastForwarding();
   const bool ok=playback.Step([&](const Netplay::SpectatorStageEvent& cp){
     app->audio_device.spectator_silent(true);
-    return cp.schema==multiplayer::SpectatorStageState::Schema&&multiplayer::SpectatorStageCheckpoint::Restore(*app,network.Setup(),mp_menu,cp.frame,cp.state,last_error);
+    return cp.schema==multiplayer::SpectatorStageState::Schema&&multiplayer::SpectatorReplayStart::Restore(*app,network.Setup(),mp_menu,cp.frame,cp.state,last_error);
    },[&](const auto& input,bool historical){return mp_apply_confirmed(input,historical||fast_forwarding);},
    [&]{return app->pending_load||emscripten_get_now()-begin>=4;},fast_forwarding?240:1);
   app->audio_device.spectator_silent(playback.Paused()||playback.Seeking());
@@ -92,14 +92,19 @@ bool mp_tick(u32 held,bool physical=true){
  Netplay::SpectatorStagePublisher::Frame spectator;bool record_spectator=!network.ReadOnly()&&network.Setup().local_player==0;
  if(record_spectator){
   spectator.frame=frame;spectator.stage=mp_spectator_stage;spectator.inputs=decision.inputs;spectator.hasInputs=true;
-  if(app->scene()&&unsigned(app->progress.stage)!=mp_spectator_stage&&multiplayer::SpectatorStageCheckpoint::Boundary(*app)){
-   if(multiplayer::SpectatorStageCheckpoint::Capture(*app,network.Setup(),spectator_menu_before,frame,spectator.initializer,mp_spectator_error)){
+
+ }
+ const auto replay_activation=app->replay?app->replay->activation_count():0;
+ if(app->scene()){mp_stage=unsigned(app->progress.stage);app->scene()->battle.mp_input(lanes);}const auto stage=mp_stage;
+ if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
+ if(record_spectator){
+  if(app->scene()&&app->replay&&app->replay->activation_count()!=replay_activation&&
+     unsigned(app->progress.stage)!=mp_spectator_stage){
+   if(multiplayer::SpectatorReplayStart::Capture(*app,network.Setup(),spectator_menu_before,frame,spectator.initializer,mp_spectator_error)){
     spectator.schema=multiplayer::SpectatorStageState::Schema;spectator.stage=mp_spectator_stage=unsigned(app->progress.stage);
    }
   }
  }
- if(app->scene()){mp_stage=unsigned(app->progress.stage);app->scene()->battle.mp_input(lanes);}const auto stage=mp_stage;
- if(!app->step(mp_menu.held,mp_menu.pressed,mp_menu.repeated,60,false)){last_error=app->failure;return false;}
  if(mp_recording&&!mp_replay.Append(frame,stage,decision.inputs.data(),network.Setup().player_count)){last_error="MP recording capacity exhausted";return false;}
  if(record_spectator&&mp_spectator_stage)network.RecordSpectatorFrame(std::move(spectator));
  if(!network.MarkSimulated(frame,decision)){last_error=network.Error();return false;}

@@ -74,7 +74,7 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
 // Generated from eagler-common/browser/local-replay*.mjs.
 // The native adapter owns parsing, stage bootstrap, fixed ticks and EOF.
 // This host owns only asynchronous command ordering and presentation pacing.
-function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
+function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresentation=()=>false,stopLoop,prepare=async()=>{},audioState=()=>true,onState=()=>{},onError=()=>{},raf=fn=>requestAnimationFrame(fn),cancel=id=>cancelAnimationFrame(id),defer,cancelDeferred,now=()=>performance.now(),hidden=()=>document.hidden}) {
   let selected=null,path='',paused=false,rate=1,target=null,startFrame=0,last=null,credit=0,animation=0,continuation=0,closed=false,lastReport=-Infinity;
   let channel=null,pendingTask=null,taskSerial=0;
   function soon(fn){
@@ -87,10 +87,11 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
   }
   function cancelScheduled(){if(animation)cancel(animation);if(continuation){if(cancelDeferred)cancelDeferred(continuation);else pendingTask=null;}animation=continuation=0;}
   function report(){if(!selected)return;const native=state();onState({kind:'replay',path,difficulty:selected.difficulty,...native,startFrame,paused,rate,seeking:target!==null,target,description:selected});}
+  function syncAudio(){return audioState({paused:closed||!selected||paused,hidden:hidden(),seeking:target!==null,ended:!!selected&&!!state().ended})!==false;}
   function schedule(){if(animation||continuation||closed)return;if(target!==null&&!hidden())continuation=soon(draw);else animation=raf(draw);}
   function draw(time){animation=continuation=0;if(closed||!selected)return;
     try {
-      if(hidden()){last=null;schedule();return;}
+      if(!syncAudio()||hidden()){last=null;schedule();return;}
       const delta=last===null?0:Math.min(.25,Math.max(0,(time-last)/1000));last=time;
       const unlimited=target!==null||rate===0;
       credit=Math.min(240,credit+delta*60*rate);
@@ -107,8 +108,9 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
       if(count&&!shown)present();
       if(!unlimited)credit=Math.max(0,credit-count);
       if(target!==null&&!current.preparing&&(current.frame>=target||current.ended)){target=null;last=null;credit=0;report();}
+      syncAudio();
       if(time-lastReport>=100){lastReport=time;report();}schedule();
-    }catch(error){paused=true;target=null;report();onError(error);}
+    }catch(error){paused=true;target=null;syncAudio();report();onError(error);}
   }
   const reset=()=>{last=null;credit=0;target=null;};
   async function restart(nextPath,stage){
@@ -116,7 +118,7 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
     // complete. The startup picture's first-frame notification is too early.
     await prepare();if(closed)throw Error('录像播放器已关闭');
     cancelScheduled();stopLoop();
-    try{await open(nextPath,stage);}catch(error){selected=null;reset();onState(null);throw error;}
+    try{await open(nextPath,stage);}catch(error){selected=null;reset();syncAudio();onState(null);throw error;}
     if(closed)throw Error('录像播放器已关闭');
     reset();startFrame=state().bootstrapTarget??0;target=startFrame||state().preparing?startFrame:null;
   }
@@ -141,9 +143,9 @@ function createLocalReplay({inspect,open,step,state,present=()=>{},deferPresenta
         }else throw Error('不支持的录像操作');
         last=null;credit=0;cancelScheduled();schedule();
       }
-      report();return {};
+      syncAudio();report();return {};
     },
-    close(){closed=true;cancelScheduled();channel?.port1.close();channel?.port2.close();selected=null;},
+    close(){closed=true;cancelScheduled();channel?.port1.close();channel?.port2.close();selected=null;syncAudio();},
     get active(){return !!selected&&!closed;},
   };
 }
@@ -165,8 +167,27 @@ function listLocalReplayFiles(fs,root,validate,describe=(path)=>({path})) {
   return files;
 }
 // Adapt the small native ABI without teaching the host any Replay file format.
-function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,onState,onError}) {
+function createNativeLocalReplay({core: getCore,module: getModule,physical,openReplay,stepReplay,replayState,stopLoop,pauseAudio,resumeAudio,onState,onError}) {
   const api=key=>{const c=getCore();return c[key]??c['_'+key];};
+  let audioPaused=true,outputPaused=null,wasSeeking=false,resuming=null;
+  function discardTransientSounds(){const pool=getModule()?.eaglerSfxOutput;if(pool)for(const voice of pool.voices.values())if(!voice.loop)pool.stop(voice);}
+  function audioState({paused,hidden,seeking,ended}){
+    audioPaused=paused||hidden||seeking||ended;
+    if(seeking!==wasSeeking){discardTransientSounds();wasSeeking=seeking;}
+    const context=getModule()?.SDL3?.audioContext;
+    const gated=!!context&&context.state!=='running';
+    const stop=audioPaused||gated;
+    const changed=outputPaused!==stop;
+    if(changed){pauseAudio(stop);outputPaused=stop;}
+    // A policy-blocked resume may remain pending. It never owns the command
+    // queue, and logical playback waits for output instead of queuing SFX.
+    if(!audioPaused&&(changed||gated)&&resuming?.context!==context){
+      const pending={context};resuming=pending;
+      try{Promise.resolve(resumeAudio?resumeAudio():context?.resume()).catch(()=>{}).finally(()=>{if(resuming===pending)resuming=null;});}
+      catch{resuming=null;}
+    }
+    return !gated||audioPaused;
+  }
   const heap=()=>getModule().HEAPU8??new Uint8Array(getCore().memory.buffer);
   const text=p=>{if(!p)throw Error('录像无法解析');const b=heap(),end=b.indexOf(0,p);if(end<0||end-p>65536)throw Error('录像信息无效');return new TextDecoder().decode(b.subarray(p,end));};
   // Do not put a NUL escape in an inline shell string. HTML optimizers may
@@ -184,17 +205,18 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
       const bytes=getModule().FS.readFile(p);if(!bytes.length||bytes.length>64*1024*1024)throw Error('录像大小无效');
       return bytesCall(bytes,(ptr,size)=>bytesCall(cbytes(p),name=>{const d=JSON.parse(text(fn(ptr,size,name)));
         if(Array.isArray(d.nameBytes))d.name=new TextDecoder('shift_jis').decode(new Uint8Array(d.nameBytes)).replace(/\0.*$/,'').trim();return d;}));},
-    open(path,stage){if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
+    open(path,stage){outputPaused=null;if(openReplay)return openReplay(path,stage);const bytes=cbytes(physical(path));
       if(bytesCall(bytes,p=>api('eagler_replay_open')(p,stage))!==1)throw Error(api('eagler_replay_error')?text(api('eagler_replay_error')()):'录像原生启动失败');},
     step(render){const ok=stepReplay?stepReplay(render):api('eagler_replay_step')?.(+render)===1;
-      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));return ok;},
+      if(!ok&&api('eagler_replay_error'))throw Error(text(api('eagler_replay_error')()));
+      (api('eagler_replay_audio_pump')??api('sdl_audio_pump'))?.();return ok;},
     present(){api('eagler_replay_present')?.();},
     deferPresentation(){return typeof api('eagler_replay_present')==='function';},
     state(){const preparing=api('eagler_replay_preparing'),extra=preparing?{preparing:!!preparing()}:{};
       if(replayState)return {...replayState(),...extra};const p=api('eagler_replay_state')(),v=Array.from(new Uint32Array(heap().buffer,p,5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],...extra};},
-    stopLoop,onState,onError,
+    stopLoop,...(pauseAudio?{audioState}:{}),onState,onError,
   });
-  return bridge;
+  return {...bridge,get active(){return bridge.active;},get audioPaused(){return audioPaused;}};
 }
 // END GENERATED LOCAL REPLAY
 const protocol='eagler-touhou/1',game='th10',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
@@ -218,7 +240,7 @@ let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=fals
 let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0;
 let practice;
 let calibration=null,runtimeBuild='',runtimeBuildWords=[];
-const keyboard=createBrowserKeyboard({
+const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!closing,reset:clearKeyboard},
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
 });
@@ -398,12 +420,13 @@ function updateReplaySeek(){
 }
 function save(){if(app)core.application_save(app);return sync(false);}
 async function resumeForegroundAudio(forcePause=false){
+ if(localReplay.active&&localReplay.audioPaused)return false;
  if(!core||!app||!launched||closing||touchRetired||document.hidden||!ownsTouchDocument())return false;
  if(forcePause)core.sdl_loop_pause(1);
- return resumeRuntimeAudio(Module,core,()=>!!core&&!!app&&launched&&!closing&&!touchRetired&&!document.hidden&&ownsTouchDocument());
+ return resumeRuntimeAudio(Module,core,()=>(!localReplay.active||!localReplay.audioPaused)&&!!core&&!!app&&launched&&!closing&&!touchRetired&&!document.hidden&&ownsTouchDocument());
 }
 async function stop(){if(closing)return;if(roomOwned&&!options.replayViewer){closing=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{closing=false;}return;}closing=true;localReplay.close();spectatorPlayback.stop();invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
-const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>root()+'/'+replayFiles.physical(storage.relativeSave(value)),replayState:()=>{const v=Array.from(new Uint32Array(core.memory.buffer,core.eagler_replay_state(),multiplayerRuntime?6:5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:v[5]??0};},stopLoop:()=>{clearKeyboard();core.sdl_loop_stop();},onState:playback=>emit('runtime-info',{playback}),onError:error});
+const localReplay=createNativeLocalReplay({core:()=>core,module:()=>Module,physical:value=>root()+'/'+replayFiles.physical(storage.relativeSave(value)),replayState:()=>{const v=Array.from(new Uint32Array(core.memory.buffer,core.eagler_replay_state(),multiplayerRuntime?6:5));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:v[5]??0};},stopLoop:()=>{clearKeyboard();core.sdl_loop_stop();},pauseAudio:paused=>core.sdl_loop_pause(+paused),resumeAudio:()=>resumeForegroundAudio(),onState:playback=>emit('runtime-info',{playback}),onError:error});
 async function initializeTitle(seed){
  if(app)return;
  await installStartupBranding(Module,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
@@ -507,6 +530,7 @@ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearK
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(!core||!launched||closing||document.hidden)return;
+ if(keyboard.mapNative(event,name==='keydown')){event.preventDefault();event.stopImmediatePropagation();return;}
  const handled=keyboard.event(event,name==='keydown');
  if(handled&&options.thpracEnabled&&/^(Backspace|Tab|F[1-7]|F12)$/.test(event.code))event.preventDefault();
 },{capture:true});

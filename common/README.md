@@ -4,6 +4,10 @@
 
 C++ 手柄输入可包含 `<eagler/input/BrowserGamepad.hpp>`，同步读取 Launcher 的标准化动作并合并到本作键盘／扫描码路径。该入口使用共用浏览器桥头，供各作品直接接入。
 
+合作作品共用 [`gameplay/CooperativeRules.hpp`](include/eagler/gameplay/CooperativeRules.hpp) 的五次连按、24 帧间隔和标准化 Power 比较。各作在自身的回滚状态中保存手势计数。
+
+旁观重建使用 [`audio/ReplayMusicScope.hpp`](include/eagler/audio/ReplayMusicScope.hpp) 保留原生音乐载入、切曲和停止命令，历史音效独立静音。
+
 ## 开始
 
 需要 CMake 3.20、C++17 编译器；安装 Node.js 后，CTest 也会运行可用的 JavaScript 测试。从仓库根目录执行：
@@ -48,3 +52,7 @@ ctest --test-dir build/common -C Release --output-on-failure
 C++ 共享库使用 [MIT License](LICENSE)。`contracts/` 沿用其 [`GPL-3.0-or-later`](contracts/LICENSE) 许可。
 
 各作 thprac 共用的 ImGui 源码与许可证位于 `third_party/imgui/`，构建直接引用这一份源码。
+
+## thprac 数值键盘
+
+`PracticeKeyboard.hpp` 为练习菜单、暂停页和高级工具提供统一的数值与编辑键输入，SDL 接入使用 `PracticeSdlKeyboard.hpp`。作品按既有规则提供反应测试输入：th07 在键盘更新后写入游戏逻辑按键，保留手柄与触屏操作。可选 thprac 的 SDL／ImGui 引用位于功能条件编译块内，普通构建沿用自身依赖。

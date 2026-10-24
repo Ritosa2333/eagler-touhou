@@ -63,6 +63,8 @@ for(const locale of ['zh-CN','en']) for(const product of ['th09mp','th06mp']) {
       assert.equal(container.querySelectorAll('#mpLoadoutPrevSeat, #mpLoadoutNextSeat, #mpLoadoutPrev, #mpLoadoutNext').length,native?0:4);
       assert.equal(container.querySelectorAll('[data-mp-difficulty]').length,native?0:5);
       assert.equal(container.querySelector('#mpRoomDifficulty'),null);
+      assert.deepEqual([...container.querySelectorAll('[data-mp-difficulty]')].map(node=>node.textContent),
+        native?[]:owners.multiplayerConfigForProduct(product).difficulties);
       assert.equal(q('#difficultySelect').disabled,native);
       assert.equal(q('#difficultySelect').closest('label').hidden,native);
       if(native){

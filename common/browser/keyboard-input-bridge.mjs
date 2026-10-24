@@ -44,9 +44,10 @@ export function createKeyboardInputBridge({target=globalThis,protocol,game,epoch
     // same canonical keyboard without sampling or consuming gameplay pulses.
     scancodeState(scan){
       const owner=mapper();if(!owner)return -1;
-      const special={40:'Enter',41:'Escape',42:'Backspace',43:'Tab',44:'Space',74:'Home',
+      const special={40:'Enter',41:'Escape',42:'Backspace',43:'Tab',44:'Space',45:'Minus',55:'Period',
+        73:'Insert',74:'Home',75:'PageUp',76:'Delete',77:'End',78:'PageDown',86:'NumpadSubtract',98:'Numpad0',99:'NumpadDecimal',
         79:'ArrowRight',80:'ArrowLeft',81:'ArrowDown',82:'ArrowUp',88:'NumpadEnter',
-        224:'ControlLeft',225:'ShiftLeft',228:'ControlRight',229:'ShiftRight'};
+        224:'ControlLeft',225:'ShiftLeft',226:'AltLeft',227:'MetaLeft',228:'ControlRight',229:'ShiftRight',230:'AltRight',231:'MetaRight'};
       const code=scan>=4&&scan<=29?'Key'+String.fromCharCode(65+scan-4):scan>=30&&scan<=38?'Digit'+(scan-29):scan===39?'Digit0':
         scan>=58&&scan<=69?'F'+(scan-57):scan>=89&&scan<=97?'Numpad'+(scan-88):special[scan];
       return code&&owner.supports?.(code)?Number(held.has(code)):-1;

@@ -1,0 +1,591 @@
+{
+  "schema": "eagler-touhou/port-sync-receipt/1",
+  "date": "2026-10-23",
+  "sourceMonorepoHead": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+  "integratedMonorepoHead": "c974e87c93c0fadba24aa4caf58a421914c4a0c0",
+  "games": [
+    {
+      "game": "th08",
+      "normalHead": "f363ffa54301b9437d2dd1bfcbc2e1f23cfe207b",
+      "multiplayerHead": "c552a75020cc3839645e71eaa7f34f101030a79b",
+      "writebackCommit": "e4b1247a9f8657693c7c8ba8523537cdf2a06684",
+      "previousMultiplayerHead": "4bf9e27ed8ce7f743fb3d3ef8d991a2096ff7bbc",
+      "normalIsAncestor": true,
+      "normalOnlyCommits": 0,
+      "multiplayerOnlyCommits": 102,
+      "sourceTreeMatches": true,
+      "consumedNormalCommits": [
+        {
+          "commit": "e2dfcee7e7143af24a3fabd0d8b86eab03ff425d",
+          "subject": "合并紫练习并修复菜单触摸"
+        },
+        {
+          "commit": "732b44fe49d15e95c2ac6c3f8f02ae497e4ba225",
+          "subject": "同步正式合并记录"
+        },
+        {
+          "commit": "8d2885314029da444b700cfb133e3e9091a35a82",
+          "subject": "统一公共源码构建入口"
+        },
+        {
+          "commit": "6ca5e8d9a7734c3b70ba04a8aa5864bf4f963d35",
+          "subject": "补齐各模式音效输出"
+        },
+        {
+          "commit": "f81d08c0fec870d58ece6e1fb6e03ad7ca0ca543",
+          "subject": "补齐遗漏的录像接入"
+        },
+        {
+          "commit": "4d43097ce886eeaefdef0966b1a246a0f7519ab9",
+          "subject": "同步迁移候选已提交进展"
+        },
+        {
+          "commit": "1ae66ae327bd74642799b778b4d4efee248fccbe",
+          "subject": "补齐迁移编译和源码审计"
+        },
+        {
+          "commit": "a0ccd18f8b90d63a835ffa87b55ccb4ee7f9022b",
+          "subject": "整理贡献工作区与各作源码"
+        },
+        {
+          "commit": "8b2e2d2ea1e59133cc345d6208566882c875def2",
+          "subject": "记录逐作运行验收并修复重开"
+        },
+        {
+          "commit": "1bad9c1bfac840cc8401f690514315d25a586ad7",
+          "subject": "修复 CI 构建与适配检查"
+        },
+        {
+          "commit": "cc7c9bd8d983890fd539a1218e5d403a953ab62f",
+          "subject": "完善房间播放器与作品接入"
+        },
+        {
+          "commit": "202c68ed4f51c7728d64d4395c10174592eed19d",
+          "subject": "保留联机游戏并修复旁观重入"
+        },
+        {
+          "commit": "83cb6eb292ac1c91301e3d998130e20f3dd12bd9",
+          "subject": "修复录像音频并整理播放器"
+        },
+        {
+          "commit": "f363ffa54301b9437d2dd1bfcbc2e1f23cfe207b",
+          "subject": "建立目录历史并修复练习输入"
+        }
+      ],
+      "changedPaths": [
+        "ports/th08-mp/docs/DEVELOPMENT.md",
+        "ports/th08-mp/portable/audit-th08-purple-rsqrt.py",
+        "ports/th08-mp/portable/build-local-site-temp.mjs",
+        "ports/th08-mp/portable/build.mjs",
+        "ports/th08-mp/portable/check-eagler-touch.mjs",
+        "ports/th08-mp/portable/check-high-refresh-contract.mjs",
+        "ports/th08-mp/portable/check-th08-practice.mjs",
+        "ports/th08-mp/portable/check-th08-purple-ecl.cpp",
+        "ports/th08-mp/portable/check-th08-purple-graphics.cpp",
+        "ports/th08-mp/portable/check-th08-purple-history.cpp",
+        "ports/th08-mp/portable/check-th08-purple-hitbox.cpp",
+        "ports/th08-mp/portable/check-th08-purple-input.cpp",
+        "ports/th08-mp/portable/check-th08-purple-menu.cpp",
+        "ports/th08-mp/portable/check-th08-purple-menu.mjs",
+        "ports/th08-mp/portable/check-th08-purple-rsqrt.cpp",
+        "ports/th08-mp/portable/check-th08-purple-score.cpp",
+        "ports/th08-mp/portable/check-th08-purple-speed.cpp",
+        "ports/th08-mp/portable/check-th08-purple.mjs",
+        "ports/th08-mp/portable/check-th08-thprac.cpp",
+        "ports/th08-mp/portable/common-root.mjs",
+        "ports/th08-mp/portable/generate-thprac-tools.mjs",
+        "ports/th08-mp/portable/generate-thprac.mjs",
+        "ports/th08-mp/portable/multiplayer/world-journal-fixture.hpp",
+        "ports/th08-mp/portable/stage-purple-validation.mjs",
+        "ports/th08-mp/portable/test-eagler-host.mjs",
+        "ports/th08-mp/web/cpp/game/EclLifecycle.cpp",
+        "ports/th08-mp/web/cpp/game/EclProgram.cpp",
+        "ports/th08-mp/web/cpp/game/EclProgram.hpp",
+        "ports/th08-mp/web/cpp/game/EclVariables.cpp",
+        "ports/th08-mp/web/cpp/game/EclVm.hpp",
+        "ports/th08-mp/web/cpp/game/EnemyContact.cpp",
+        "ports/th08-mp/web/cpp/game/EnemyDamage.cpp",
+        "ports/th08-mp/web/cpp/game/EnemyPhases.cpp",
+        "ports/th08-mp/web/cpp/game/GameApplication.cpp",
+        "ports/th08-mp/web/cpp/game/GameplayScene.cpp",
+        "ports/th08-mp/web/cpp/game/GraphicsMath.cpp",
+        "ports/th08-mp/web/cpp/game/GraphicsMath.hpp",
+        "ports/th08-mp/web/cpp/game/GuiController.cpp",
+        "ports/th08-mp/web/cpp/game/GuiController.hpp",
+        "ports/th08-mp/web/cpp/game/PlayerLife.cpp",
+        "ports/th08-mp/web/cpp/game/PlayerScene.cpp",
+        "ports/th08-mp/web/cpp/game/PlayerScene.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeCadence.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeConfig.cpp",
+        "ports/th08-mp/web/cpp/game/PracticeConfig.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeHistoryDigits.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeLegacyPatches.inc",
+        "ports/th08-mp/web/cpp/game/PracticeLicense.hpp",
+        "ports/th08-mp/web/cpp/game/PracticePatches.inc",
+        "ports/th08-mp/web/cpp/game/PracticeRsqrtTables.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeRuntime.cpp",
+        "ports/th08-mp/web/cpp/game/PracticeSectionCatalog.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeSections.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeUiLabels.hpp",
+        "ports/th08-mp/web/cpp/game/PracticeVersion.hpp",
+        "ports/th08-mp/web/cpp/game/SpellDrawing.cpp",
+        "ports/th08-mp/web/cpp/game/SpellDrawing.hpp",
+        "ports/th08-mp/web/cpp/game/SpellHistory.cpp",
+        "ports/th08-mp/web/cpp/game/SpellHistory.hpp",
+        "ports/th08-mp/web/cpp/game/SpellSystem.cpp",
+        "ports/th08-mp/web/cpp/game/THPRAC-LICENSE.txt",
+        "ports/th08-mp/web/cpp/game/TitleScene.cpp",
+        "ports/th08-mp/web/cpp/multiplayer/WorldJournal.cpp",
+        "ports/th08-mp/web/cpp/multiplayer/WorldJournal.hpp",
+        "ports/th08-mp/web/cpp/platform/BrowserExports.cpp",
+        "ports/th08-mp/web/cpp/platform/BrowserRuntime.cpp",
+        "ports/th08-mp/web/cpp/sdl/AudioHost.cpp",
+        "ports/th08-mp/web/cpp/sdl/GameHost.cpp",
+        "ports/th08-mp/web/cpp/sdl/PlatformHost.hpp",
+        "ports/th08-mp/web/cpp/sdl/PracticeHitbox.inc",
+        "ports/th08-mp/web/cpp/sdl/ThpracUi.cpp",
+        "ports/th08-mp/web/cpp/sdl/ThpracUi.hpp",
+        "ports/th08-mp/web/sdl-runtime/directory-keyboard.mjs",
+        "ports/th08-mp/web/sdl-runtime/eagler-host.mjs",
+        "ports/th08-mp/web/sdl-runtime/practice-config.mjs",
+        "ports/th08-mp/web/sdl-runtime/practice-sections.mjs",
+        "ports/th08-mp/web/sdl-runtime/practice.mjs"
+      ],
+      "build": {
+        "sha256": "00bc37b78a0489de5f59ad89e3d88a98d447537179318e27d8bae1d7e5ccff59",
+        "sourceInventoryMatches": true,
+        "files": 538
+      }
+    },
+    {
+      "game": "th10",
+      "normalHead": "d71bd3fac1f652ecd763ee5c5720dbe3a0662245",
+      "multiplayerHead": "680850bc56daf6f5b8c2eefaa3ce8b065e21da06",
+      "writebackCommit": "04db8a803bcbd21b627e282270b5cb05d647c693",
+      "previousMultiplayerHead": "3a1e561f77839456ed68ce082fc4b6cf802cfed8",
+      "normalIsAncestor": true,
+      "normalOnlyCommits": 0,
+      "multiplayerOnlyCommits": 92,
+      "sourceTreeMatches": true,
+      "consumedNormalCommits": [
+        {
+          "commit": "8d38403a367102a228037fb3564366026615ba53",
+          "subject": "合并紫练习与结局文字修复"
+        },
+        {
+          "commit": "5c559ede5e6274d28ee3b28d98831a04f8478573",
+          "subject": "同步正式合并记录"
+        },
+        {
+          "commit": "70c3ff8f3a7665928d460a85dfeffe0d77a7c865",
+          "subject": "修复按键读取宽度"
+        },
+        {
+          "commit": "9e4c14246d4404ee9c8c75bf21d606f2b0167a74",
+          "subject": "合入音效优化与练习触屏修复"
+        },
+        {
+          "commit": "7eabaa48bfcf637a1545cfe3595d54cc521cae59",
+          "subject": "接入前端键盘与手柄改键"
+        },
+        {
+          "commit": "a816a02fd7babc313eea6f481a4fb061615cfa9f",
+          "subject": "接入原生录像管理与定位播放"
+        },
+        {
+          "commit": "8c3c14eb78b3c69c1504b163c563f656b4aee706",
+          "subject": "修复重建场景后的判定点设置"
+        },
+        {
+          "commit": "49cd97415fcc7fae132ebc57dde1eb9ec2d26e72",
+          "subject": "统一构建输入与并行限制"
+        },
+        {
+          "commit": "b30308c8cdda77287b3feec56e8665f8ab654eb5",
+          "subject": "补齐公共依赖内存保护"
+        },
+        {
+          "commit": "def5e0099d550b47de7ab3b0e7df697f307091c2",
+          "subject": "兼容共享工具链的触控校验"
+        },
+        {
+          "commit": "83db2a5fad70908e3c9e1403dc87db07f6dd6352",
+          "subject": "统一公共源码构建入口"
+        },
+        {
+          "commit": "abf87c4530d31b606a3b798695e6856e3f502d21",
+          "subject": "忽略本地检查缓存"
+        },
+        {
+          "commit": "70c8fbf7d2b1526d74754af1b8a0ed205bfba35d",
+          "subject": "同步迁移候选已提交进展"
+        },
+        {
+          "commit": "02fc57c4755fdbc8f59dfc58f2af946c1bc69ed4",
+          "subject": "补齐迁移编译和源码审计"
+        },
+        {
+          "commit": "8e3b24468875447039469cbf198e1252db189f1e",
+          "subject": "修复迁移后的跨平台验收入口"
+        },
+        {
+          "commit": "9ac1274847c17a54897d6aab7edfaf727dca0541",
+          "subject": "整理贡献工作区与各作源码"
+        },
+        {
+          "commit": "a9c0b33f0177e2fa0946d9a9b2c9480d33dde299",
+          "subject": "记录逐作运行验收并修复重开"
+        },
+        {
+          "commit": "f3ccdaeb051f9aa3ad6b0eeaf87e767de41f652a",
+          "subject": "修复 CI 构建与适配检查"
+        },
+        {
+          "commit": "2c5f70c8c772588aa105721f05c63b1ccf9534d9",
+          "subject": "完善房间播放器与作品接入"
+        },
+        {
+          "commit": "7e51ac1cbcd30761d78e3daafa06593f627eac4e",
+          "subject": "修复录像音频并整理播放器"
+        },
+        {
+          "commit": "d71bd3fac1f652ecd763ee5c5720dbe3a0662245",
+          "subject": "建立目录历史并修复练习输入"
+        }
+      ],
+      "changedPaths": [
+        "ports/th10-mp/.gitignore",
+        "ports/th10-mp/ADAPTATION.md",
+        "ports/th10-mp/README.md",
+        "ports/th10-mp/docs/DEVELOPMENT.md",
+        "ports/th10-mp/portable/build.mjs",
+        "ports/th10-mp/portable/check-high-refresh-contract.mjs",
+        "ports/th10-mp/portable/check-purple-browser.mjs",
+        "ports/th10-mp/portable/check-purple-matrix.mjs",
+        "ports/th10-mp/portable/check-th10-practice.mjs",
+        "ports/th10-mp/portable/check-th10-purple.mjs",
+        "ports/th10-mp/portable/check-th10-thprac.cpp",
+        "ports/th10-mp/portable/check-thcrap-font.mjs",
+        "ports/th10-mp/portable/check-thcrap-layout.mjs",
+        "ports/th10-mp/portable/common-root.mjs",
+        "ports/th10-mp/portable/eagler-touch-check.cpp",
+        "ports/th10-mp/portable/export-purple-candidate.mjs",
+        "ports/th10-mp/portable/generate-thprac-tools.mjs",
+        "ports/th10-mp/portable/generate-thprac.mjs",
+        "ports/th10-mp/portable/sdl/Renderer.cpp",
+        "ports/th10-mp/portable/sdl/Renderer.hpp",
+        "ports/th10-mp/portable/test-eagler-host.mjs",
+        "ports/th10-mp/portable/thcrap-font-check.cpp",
+        "ports/th10-mp/portable/thcrap-layout-check.cpp",
+        "ports/th10-mp/web/cpp/game/AnmText.cpp",
+        "ports/th10-mp/web/cpp/game/Enemy.hpp",
+        "ports/th10-mp/web/cpp/game/EnemyFrame.cpp",
+        "ports/th10-mp/web/cpp/game/EnemyFrame.hpp",
+        "ports/th10-mp/web/cpp/game/EnemyPhase.cpp",
+        "ports/th10-mp/web/cpp/game/EnemyPhase.hpp",
+        "ports/th10-mp/web/cpp/game/EnemySceneCommands.cpp",
+        "ports/th10-mp/web/cpp/game/EnemySceneEnvironment.hpp",
+        "ports/th10-mp/web/cpp/game/EnemyStateCommands.cpp",
+        "ports/th10-mp/web/cpp/game/GameSessionResources.cpp",
+        "ports/th10-mp/web/cpp/game/Item.hpp",
+        "ports/th10-mp/web/cpp/game/ItemFrame.cpp",
+        "ports/th10-mp/web/cpp/game/PlayerFrame.cpp",
+        "ports/th10-mp/web/cpp/game/PlayerLifecycle.cpp",
+        "ports/th10-mp/web/cpp/game/PlayerMovement.cpp",
+        "ports/th10-mp/web/cpp/game/PlayerMovement.hpp",
+        "ports/th10-mp/web/cpp/game/PracticeCadence.hpp",
+        "ports/th10-mp/web/cpp/game/PracticeConfig.cpp",
+        "ports/th10-mp/web/cpp/game/PracticeConfig.hpp",
+        "ports/th10-mp/web/cpp/game/PracticeGameplay.hpp",
+        "ports/th10-mp/web/cpp/game/PracticeLicense.hpp",
+        "ports/th10-mp/web/cpp/game/PracticePatches.inc",
+        "ports/th10-mp/web/cpp/game/PracticeRuntime.cpp",
+        "ports/th10-mp/web/cpp/game/PracticeRuntime.hpp",
+        "ports/th10-mp/web/cpp/game/PracticeUiLabels.hpp",
+        "ports/th10-mp/web/cpp/game/PracticeVersion.hpp",
+        "ports/th10-mp/web/cpp/platform/AnimationResources.cpp",
+        "ports/th10-mp/web/cpp/platform/AnimationResources.hpp",
+        "ports/th10-mp/web/cpp/platform/Application.cpp",
+        "ports/th10-mp/web/cpp/platform/Hud.cpp",
+        "ports/th10-mp/web/cpp/platform/TransitionResources.cpp",
+        "ports/th10-mp/web/cpp/platform/World.hpp",
+        "ports/th10-mp/web/cpp/platform/WorldEnemies.cpp",
+        "ports/th10-mp/web/cpp/platform/WorldObjects.cpp",
+        "ports/th10-mp/web/cpp/platform/WorldPlayer.cpp",
+        "ports/th10-mp/web/cpp/platform/WorldReplay.cpp",
+        "ports/th10-mp/web/cpp/sdl/ApplicationHost.cpp",
+        "ports/th10-mp/web/cpp/sdl/FontHost.cpp",
+        "ports/th10-mp/web/cpp/sdl/GameHost.cpp",
+        "ports/th10-mp/web/cpp/sdl/PracticeBlind.inc",
+        "ports/th10-mp/web/cpp/sdl/PracticeHints.inc",
+        "ports/th10-mp/web/cpp/sdl/ThcrapLayout.hpp",
+        "ports/th10-mp/web/cpp/sdl/ThpracUi.cpp",
+        "ports/th10-mp/web/cpp/sdl/ThpracUi.hpp",
+        "ports/th10-mp/web/sdl-runtime/directory-keyboard.mjs",
+        "ports/th10-mp/web/sdl-runtime/eagler-host.mjs",
+        "ports/th10-mp/web/sdl-runtime/practice-sections.mjs",
+        "ports/th10-mp/web/sdl-runtime/practice.mjs",
+        "ports/th10-mp/web/sdl-runtime/shell.mjs"
+      ],
+      "build": {
+        "sha256": "f6a2f401b705f04e621d2e6a667e40203f1b036798cdc3fc44b640c0b0be49c2",
+        "sourceInventoryMatches": true,
+        "files": 601
+      }
+    },
+    {
+      "game": "th11",
+      "normalHead": "6836906c528d25d95a725b7f912bc29ad4829b49",
+      "multiplayerHead": "aef010e29507271de89512a2b2b32609c7857b36",
+      "writebackCommit": "3025d4162b3435d6d371398964e20bfb81fc97f3",
+      "previousMultiplayerHead": "7e1bf13f6fd42346b1ebe990dfed62e3a657801a",
+      "normalIsAncestor": true,
+      "normalOnlyCommits": 0,
+      "multiplayerOnlyCommits": 42,
+      "sourceTreeMatches": true,
+      "consumedNormalCommits": [
+        {
+          "commit": "5f1c2c1d57f2ab5714615d8b9e2e072caff78dde",
+          "subject": "合并紫练习与弹幕绘制修复"
+        },
+        {
+          "commit": "7df9ef9fd22d044cb30c9f06fa656bc1cdb8560d",
+          "subject": "同步正式合并记录"
+        },
+        {
+          "commit": "bc8d67bc5761c84e2fbe59a767b969065292882b",
+          "subject": "降低游戏音效延迟"
+        },
+        {
+          "commit": "fee101ec51d28faeed6768c724c9d21db0850cee",
+          "subject": "接入前端键盘与手柄改键"
+        },
+        {
+          "commit": "51c371d8a33e5c79f3e23464f82458a8a8d088ba",
+          "subject": "更新共享运行时依赖"
+        },
+        {
+          "commit": "1f48d2a27c3d61ed872c4dbb425f0b3d6db8e144",
+          "subject": "接入原生录像管理与定位播放"
+        },
+        {
+          "commit": "461ee7ce832b3910efe5c7f9fb59180e9f5a008f",
+          "subject": "精简字体并补齐构建输入"
+        },
+        {
+          "commit": "e56c615b017da907f6b4d88335f49a12580ee129",
+          "subject": "补齐公共依赖内存保护"
+        },
+        {
+          "commit": "63661b9dede6475424dbebc5cdf0828d632e74af",
+          "subject": "统一公共源码构建入口"
+        },
+        {
+          "commit": "15e34f96bc207601aa4acc482b912c89c0423e5d",
+          "subject": "补齐迁移编译和源码审计"
+        },
+        {
+          "commit": "d53ee4d20f195b5473837bfdf267b152e99ad1f6",
+          "subject": "整理贡献工作区与各作源码"
+        },
+        {
+          "commit": "f457423da61bbd6130a814b25d2b90315946845e",
+          "subject": "记录逐作运行验收并修复重开"
+        },
+        {
+          "commit": "4ffe839cb3930504398bb9bbcbaa0cc8e763cb4d",
+          "subject": "修复 CI 构建与适配检查"
+        },
+        {
+          "commit": "c283b85931cc586127932c4991e7ee4b26aff1aa",
+          "subject": "稳定跨平台构建与依赖缓存"
+        },
+        {
+          "commit": "ac6a8fae48ca611068bbb09065b9534d87ef422f",
+          "subject": "完善房间播放器与作品接入"
+        },
+        {
+          "commit": "4d70a356cd6464c00d1c830226870ecb931fe605",
+          "subject": "修复录像音频并整理播放器"
+        },
+        {
+          "commit": "6836906c528d25d95a725b7f912bc29ad4829b49",
+          "subject": "建立目录历史并修复练习输入"
+        }
+      ],
+      "changedPaths": [
+        "ports/th11-mp/docs/DEVELOPMENT.md",
+        "ports/th11-mp/portable/build.mjs",
+        "ports/th11-mp/portable/check-th11-thprac.cpp",
+        "ports/th11-mp/portable/check-th11-thprac.mjs",
+        "ports/th11-mp/portable/common-root.mjs",
+        "ports/th11-mp/portable/generate-thprac-tools.mjs",
+        "ports/th11-mp/portable/generate-thprac.mjs",
+        "ports/th11-mp/web/cpp/game/EnemyCommands.hpp",
+        "ports/th11-mp/web/cpp/game/EnemyFrame.cpp",
+        "ports/th11-mp/web/cpp/game/EnemyFrame.hpp",
+        "ports/th11-mp/web/cpp/game/EnemyStateCommands.cpp",
+        "ports/th11-mp/web/cpp/game/GameBattle.cpp",
+        "ports/th11-mp/web/cpp/game/GameSession.cpp",
+        "ports/th11-mp/web/cpp/game/PlayerFrame.cpp",
+        "ports/th11-mp/web/cpp/game/PlayerMotion.cpp",
+        "ports/th11-mp/web/cpp/game/PlayerMotion.hpp",
+        "ports/th11-mp/web/cpp/game/PracticeCadence.hpp",
+        "ports/th11-mp/web/cpp/game/PracticeConfig.cpp",
+        "ports/th11-mp/web/cpp/game/PracticeConfig.hpp",
+        "ports/th11-mp/web/cpp/game/PracticeLicense.hpp",
+        "ports/th11-mp/web/cpp/game/PracticePatcher.cpp",
+        "ports/th11-mp/web/cpp/game/PracticePatches.inc",
+        "ports/th11-mp/web/cpp/game/PracticeReplay.cpp",
+        "ports/th11-mp/web/cpp/game/PracticeSections.hpp",
+        "ports/th11-mp/web/cpp/game/PracticeSiteChecks.hpp",
+        "ports/th11-mp/web/cpp/game/PracticeUiLabels.hpp",
+        "ports/th11-mp/web/cpp/game/PracticeVersion.hpp",
+        "ports/th11-mp/web/cpp/game/PracticeWave.hpp",
+        "ports/th11-mp/web/cpp/game/SpellController.cpp",
+        "ports/th11-mp/web/cpp/game/SpellController.hpp",
+        "ports/th11-mp/web/cpp/sdl/Application.cpp",
+        "ports/th11-mp/web/cpp/sdl/AudioDevice.cpp",
+        "ports/th11-mp/web/cpp/sdl/ThpracUi.cpp",
+        "ports/th11-mp/web/cpp/sdl/ThpracUi.hpp",
+        "ports/th11-mp/web/scripts/build-sdl.mjs",
+        "ports/th11-mp/web/scripts/build-viewer.mjs",
+        "ports/th11-mp/web/sdl-runtime/directory-keyboard.mjs",
+        "ports/th11-mp/web/sdl-runtime/eagler-host.mjs",
+        "ports/th11-mp/web/sdl-runtime/practice-sections.mjs",
+        "ports/th11-mp/web/sdl-runtime/shell.mjs",
+        "ports/th11-mp/web/tests/browser/mobile-thprac.test.mjs",
+        "ports/th11-mp/web/tests/browser/thprac.mjs"
+      ],
+      "build": {
+        "sha256": "161c6d9f74573f72fe1c388a8d8c3bbe1bba5bf2166f1739fad8fda774c6e8d5",
+        "sourceInventoryMatches": true,
+        "files": 342
+      }
+    },
+    {
+      "game": "th15",
+      "normalHead": "838da509cc579e59092ee73f7e87e225932b1d19",
+      "multiplayerHead": "f99749bb17540df82f5e6ac6a4d2a9fe617c9025",
+      "writebackCommit": "c974e87c93c0fadba24aa4caf58a421914c4a0c0",
+      "previousMultiplayerHead": "268c61e41a1a2ff69a1f037818372ffdb7463e04",
+      "normalIsAncestor": true,
+      "normalOnlyCommits": 0,
+      "multiplayerOnlyCommits": 47,
+      "sourceTreeMatches": true,
+      "consumedNormalCommits": [
+        {
+          "commit": "648dbf2fd364396c4e7779f3cded55c05e48146c",
+          "subject": "统一公共源码构建入口"
+        },
+        {
+          "commit": "655752c8b77186635da93e93ae17b695135e338b",
+          "subject": "补回普通版共享字体修复"
+        },
+        {
+          "commit": "9f8f976f2f2567694b957d47c7fec78a734f5a40",
+          "subject": "补齐各模式音效输出"
+        },
+        {
+          "commit": "a9e4432818548356731c6983ec72ff009c26f300",
+          "subject": "补齐遗漏的录像接入"
+        },
+        {
+          "commit": "374ce6a1c51b05ee05d61119bdc71d6eb9b515c0",
+          "subject": "同步迁移候选已提交进展"
+        },
+        {
+          "commit": "6e5c87ec204d8620721f1c699617130afc27c9c1",
+          "subject": "补齐迁移编译和源码审计"
+        },
+        {
+          "commit": "ed6b4423fb16938d6e0e6afcb52d7fcb1a8825fb",
+          "subject": "整理贡献工作区与各作源码"
+        },
+        {
+          "commit": "b7a09e6c7d0565751ee226b008faaa7e182a8133",
+          "subject": "记录逐作运行验收并修复重开"
+        },
+        {
+          "commit": "e5cd7f758113a466f0905281bf8825d748418b3b",
+          "subject": "修复 CI 构建与适配检查"
+        },
+        {
+          "commit": "ce2cdcbea303592552de9db080d03304054d62e2",
+          "subject": "稳定跨平台构建与依赖缓存"
+        },
+        {
+          "commit": "3d6145800a094448ef8c26a2e5cd1c89d425a768",
+          "subject": "迁移到monorepo，然后重新提交兔机的修复 (#106)"
+        },
+        {
+          "commit": "bdfa7769d3e11fd47519c99fba3e814b79aa4105",
+          "subject": "完善房间播放器与作品接入"
+        },
+        {
+          "commit": "70ae0f8563cd34b7d4c8802c3539cbb4ef91a113",
+          "subject": "修复录像音频并整理播放器"
+        },
+        {
+          "commit": "838da509cc579e59092ee73f7e87e225932b1d19",
+          "subject": "建立目录历史并修复练习输入"
+        }
+      ],
+      "changedPaths": [
+        "ports/th15-mp/docs/DEVELOPMENT.md",
+        "ports/th15-mp/web/cpp/sdl/ThpracUi.cpp",
+        "ports/th15-mp/web/sdl-runtime/directory-keyboard.mjs"
+      ],
+      "build": {
+        "sha256": "25e63a6f4b3875da7e063e45bccf3ad819d67f0aa58b63f00f38982be84defe8",
+        "sourceInventoryMatches": true,
+        "files": 613
+      }
+    }
+  ],
+  "remainingNormalCommits": 0,
+  "excludedFeatures": [],
+  "adaptations": [
+    "联机会话使用 MP 席位输入、同步时钟、回滚、旁观与多人录像所有者；离线练习源码和工具随普通版接收。",
+    "旧公共库 gitlink 更新由 monorepo common 源码接替。手柄边界直接读取 common/include/eagler/input/BrowserGamepad.hpp。",
+    "THPrac 开关继续由构建配方和会话选择；源码同步涵盖开关关闭的变体。",
+    "目录迁移按共同祖先的 thXX_web→web 映射合并，合并父节点保留普通版和 MP 的真实目录历史。"
+  ],
+  "validation": [
+    {
+      "scope": "th08、th10、th11、th15 多人完整构建",
+      "result": "passed"
+    },
+    {
+      "scope": "th10、th11 MP 源码目录的 THPrac ON 普通构建",
+      "result": "passed"
+    },
+    {
+      "scope": "th08 双人浏览器世界回滚：射击、集中炸弹、死亡、非集中炸弹，含按键监视器容器恢复",
+      "result": "passed",
+      "cases": 4
+    },
+    {
+      "scope": "th11 练习关卡、阶段、对话、章节、资源边界与失败事务恢复",
+      "result": "passed",
+      "cases": 366
+    },
+    {
+      "scope": "th08、th10 练习参数与录像往返，th08 ECL、rsqrt、输入、历史、判定、速度、分数",
+      "result": "passed"
+    },
+    {
+      "scope": "th10 汉化结局跨行制表、字体宽度、说话人对齐及字面回退",
+      "result": "passed"
+    },
+    {
+      "scope": "th08 合作生命周期、th08/th10 高刷边界、th10 两种模式菜单与呈现输入",
+      "result": "passed"
+    },
+    {
+      "scope": "公共键盘与目录同步回归",
+      "result": "passed",
+      "tests": 20
+    }
+  ]
+}

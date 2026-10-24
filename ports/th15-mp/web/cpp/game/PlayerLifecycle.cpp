@@ -9,7 +9,13 @@ bool PlayerLife::advance_state(u32 pressed,float& rate,bool hud_available,Player
         else if(!host.cancel_bullets_near(motion.position,640.f,0)||!host.cancel_lasers(0,true))return false;
         if(age.current<60)return true;state=1;age.set(0);[[fallthrough]];}
     case 1:if(bomb()<0)return false;return host.move();
-    case 4:if(age.current<8){const i32 result=bomb();if(result<0)return false;if(result)cancel_death();return true;}if(!commit_death())return false;[[fallthrough]];
+    case 4:if(age.current<
+#if TH15_MULTIPLAYER
+        16
+#else
+        8
+#endif
+    ){const i32 result=bomb();if(result<0)return false;if(result)cancel_death();return true;}if(!commit_death())return false;[[fallthrough]];
     case 2:
         if(!(session.mode_flags&0x300)&&age.current==3){if(!cheat(PracticePower)){session.power=wrapping_sub(session.power,session.power_step/2);if(session.power<session.power_step)session.power=session.power_step;}
             const float dy=float(float(motion.position.y-224.f)-motion.position.y),dx=float(-motion.position.x);const float angle=dy==0&&dx==0?0.f:float(std::atan2(double(dy),double(dx)));

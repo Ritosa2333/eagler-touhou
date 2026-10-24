@@ -15,6 +15,17 @@ add_executable(eagler_common_thprac_pointer_test thprac-pointer-test.cpp)
 target_link_libraries(eagler_common_thprac_pointer_test PRIVATE eagler::thprac)
 add_test(NAME eagler-common.thprac-pointer COMMAND eagler_common_thprac_pointer_test)
 
+find_package(Freetype QUIET)
+if(Freetype_FOUND)
+    add_executable(eagler_common_thprac_keyboard_test thprac-keyboard-test.cpp
+        ../third_party/imgui/imgui.cpp ../third_party/imgui/imgui_draw.cpp
+        ../third_party/imgui/imgui_widgets.cpp ../third_party/imgui/imgui_tables.cpp
+        ../third_party/imgui/imgui_freetype.cpp)
+    target_include_directories(eagler_common_thprac_keyboard_test PRIVATE ../third_party/imgui)
+    target_link_libraries(eagler_common_thprac_keyboard_test PRIVATE eagler::thprac Freetype::Freetype)
+    add_test(NAME eagler-common.thprac-keyboard COMMAND eagler_common_thprac_keyboard_test)
+endif()
+
 add_executable(eagler_common_assertions_enabled_test assertions-enabled-test.cpp)
 add_test(NAME eagler-common.assertions-enabled COMMAND eagler_common_assertions_enabled_test)
 
@@ -271,6 +282,12 @@ target_include_directories(eagler_common_adonis_startup_test PRIVATE "${CMAKE_CU
 target_link_libraries(eagler_common_adonis_startup_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.adonis-startup COMMAND eagler_common_adonis_startup_test)
 if(EAGLER_COMMON_NODE_EXECUTABLE)
+    add_test(NAME eagler-common.local-replay
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/local-replay-bridge.test.mjs)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../ports/th09/web/tests/server/replay-player.test.mjs")
+        add_test(NAME eagler-common.versus-replay
+            COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/../../ports/th09/web/tests/server/replay-player.test.mjs)
+    endif()
     add_test(NAME eagler-common.web-sfx-output
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/web-sfx-output.test.mjs)
     add_test(NAME eagler-common.browser-peer-receive-queue
@@ -279,6 +296,8 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-tail.test.mjs)
     add_test(NAME eagler-common.browser-peer-recovery
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-recovery.test.mjs)
+    add_test(NAME eagler-common.browser-peer-turn-preference
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-turn-preference.test.mjs)
     add_test(NAME eagler-common.save-sync
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/save-sync.test.mjs)
     add_test(NAME eagler-common.adonis-calibration
@@ -327,4 +346,10 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/direct-input-bridge-test.mjs)
     add_test(NAME eagler-common.keyboard-input-bridge
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/keyboard-input-bridge.test.mjs)
+    add_test(NAME eagler-common.thprac-keyboard-contract
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/thprac-keyboard-contract.test.mjs)
 endif()
+
+add_executable(eagler_common_cooperative_rules_test cooperative-rules-test.cpp)
+target_link_libraries(eagler_common_cooperative_rules_test PRIVATE eagler::netplay_headers)
+add_test(NAME eagler-common.cooperative-rules COMMAND eagler_common_cooperative_rules_test)

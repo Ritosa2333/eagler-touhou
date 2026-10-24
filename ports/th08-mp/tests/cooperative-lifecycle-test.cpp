@@ -1,5 +1,6 @@
 #include "../web/cpp/multiplayer/CooperativeLifecycle.hpp"
 #include <cstdio>
+#include <eagler/gameplay/CooperativeRules.hpp>
 using namespace th08::multiplayer;
 namespace {
 bool check(bool condition,const char* message){if(!condition)std::fprintf(stderr,"FAIL: %s\n",message);return condition;}
@@ -20,8 +21,8 @@ bool rescue_priority(){
     CooperativeState state;reset(state,3);auto input=adjacent();
     if(!enter_spirit(state,2,1,-1))return false;
     input.seats[2].available=false;input.seats[0].lives=2;
-    input.seats[0].focus=true;
-    for(int tick=1;tick<90;++tick){auto result=advance(state,input);if(result.count)return check(false,"rescue before 90 ticks");}
+    input.seats[0].focus=true;input.seats[0].focus_pressed=input.seats[1].focus_pressed=input.seats[2].focus_pressed=true;
+    for(int tick=1;tick<5;++tick){auto result=advance(state,input);if(result.count)return check(false,"rescue before fifth press");}
     const auto result=advance(state,input);
     if(!check(result.count==1&&result.events[0].kind==CooperativeEventKind::Revive&&result.events[0].target==2,"spirit takes priority over live low-life seat"))return false;
     if(!check(!state.seats[2].spirit&&state.seats[0].waiting_for_focus_release,"spirit revived once"))return false;
@@ -30,11 +31,11 @@ bool rescue_priority(){
     return check(!state.seats[0].waiting_for_focus_release,"focus release rearms transfer");
 }
 bool item_allocation(){
-    CooperativeState state;reset(state,2);auto input=adjacent();input.seats[0].lives=2;input.seats[1].lives=1;input.seats[0].focus=true;
+    CooperativeState state;reset(state,2);auto input=adjacent();input.seats[0].lives=2;input.seats[1].lives=1;input.seats[0].focus=true;input.seats[0].focus_pressed=input.seats[1].focus_pressed=input.seats[2].focus_pressed=true;
     bool accepted=false;
-    for(int tick=0;tick<90;++tick)if(advance(state,input,allocate,nullptr,&accepted).count)return check(false,"failed item allocation debited life");
+    for(int tick=0;tick<5;++tick)if(advance(state,input,allocate,nullptr,&accepted).count)return check(false,"failed item allocation debited life");
     accepted=true;
-    for(int tick=1;tick<90;++tick)if(advance(state,input,allocate,nullptr,&accepted).count)return check(false,"retry transferred before renewed hold");
+    for(int tick=1;tick<5;++tick)if(advance(state,input,allocate,nullptr,&accepted).count)return check(false,"retry transferred before renewed taps");
     const auto result=advance(state,input,allocate,nullptr,&accepted);
     return check(result.count==1&&result.events[0].kind==CooperativeEventKind::LifeItem&&result.events[0].target==1,"targeted item commits after allocation");
 }
@@ -58,8 +59,8 @@ bool seat_order_breaks_equal_resource_ties(){
     enter_spirit(state,0,1,-1);enter_spirit(state,1,-1,1);
     input.seats[0].available=input.seats[1].available=false;
     input.seats[0].lives=input.seats[1].lives=0;input.seats[2].lives=3;
-    input.seats[2].focus=true;
-    for(int tick=0;tick<89;++tick)advance(state,input);
+    input.seats[2].focus=true;input.seats[0].focus_pressed=input.seats[1].focus_pressed=input.seats[2].focus_pressed=true;
+    for(int tick=0;tick<4;++tick)advance(state,input);
     const auto life=advance(state,input);
     if(!check(life.count==1&&life.events[0].target==0,"equal Spirit lives choose lower seat"))return false;
 
@@ -110,8 +111,8 @@ bool simultaneous_rescue_is_single_transfer(){
     CooperativeState state;reset(state,3);auto input=adjacent();
     enter_spirit(state,2,1,-1);input.seats[2].available=false;
     input.seats[0].lives=input.seats[1].lives=2;
-    input.seats[0].focus=input.seats[1].focus=true;
-    for(int tick=0;tick<89;++tick)if(advance(state,input).count)return false;
+    input.seats[0].focus=input.seats[1].focus=true;input.seats[0].focus_pressed=input.seats[1].focus_pressed=input.seats[2].focus_pressed=true;
+    for(int tick=0;tick<4;++tick)if(advance(state,input).count)return false;
     const auto result=advance(state,input);
     return check(result.count==1&&result.events[0].kind==CooperativeEventKind::Revive&&
                  result.events[0].giver==0&&result.events[0].target==2,
@@ -119,7 +120,7 @@ bool simultaneous_rescue_is_single_transfer(){
 }
 bool donor_reserve_and_recipient_cap(){
     CooperativeState state;reset(state,2);auto input=adjacent();
-    input.seats[0].focus=true;input.seats[0].lives=0;input.seats[1].lives=0;
+    input.seats[0].focus=true;input.seats[0].focus_pressed=input.seats[1].focus_pressed=input.seats[2].focus_pressed=true;input.seats[0].lives=0;input.seats[1].lives=0;
     bool accepted=true;
     for(int tick=0;tick<100;++tick)if(advance(state,input,allocate,nullptr,&accepted).count)
         return check(false,"last playable life cannot be donated");
@@ -131,12 +132,12 @@ bool donor_reserve_and_recipient_cap(){
 bool rescue_range_and_replay(){
     CooperativeState state;reset(state,2);auto input=adjacent();
     enter_spirit(state,1,1,-1);input.seats[1].available=false;
-    input.seats[0].lives=2;input.seats[0].focus=true;
+    input.seats[0].lives=2;input.seats[0].focus=true;input.seats[0].focus_pressed=input.seats[1].focus_pressed=input.seats[2].focus_pressed=true;
     input.seats[1].x=input.seats[0].x+2001;
     for(int tick=0;tick<100;++tick)if(advance(state,input).count)
         return check(false,"outside 20px rescue range transferred a life");
     input.seats[1].x=input.seats[0].x+2000;
-    for(int tick=0;tick<89;++tick)if(advance(state,input).count)return false;
+    for(int tick=0;tick<4;++tick)if(advance(state,input).count)return false;
     const CooperativeState snapshot=state;
     const auto first=advance(state,input);const CooperativeState result=state;
     state=snapshot;const auto replay=advance(state,input);
@@ -159,4 +160,12 @@ bool wipe(){
     return check(state.wipe_progress==0&&!state.retry_pending,"revival clears wipe countdown");
 }
 }
-int main(){return rescue_priority()&&item_allocation()&&power_gift()&&seat_order_breaks_equal_resource_ties()&&power_gift_retry()&&stage_interactions()&&simultaneous_rescue_is_single_transfer()&&donor_reserve_and_recipient_cap()&&rescue_range_and_replay()&&wipe()?0:1;}
+int main(){
+    {
+        CooperativeState state;reset(state,2);auto input=adjacent();enter_spirit(state,1,1,-1);
+        input.seats[1].available=false;input.seats[0].lives=2;input.seats[0].focus=input.seats[0].focus_pressed=true;
+        advance(state,input);input.seats[0].focus_pressed=false;
+        for(unsigned i=0;i<100;++i)if(advance(state,input).count)return 1;
+        if(!state.seats[1].spirit)return 1;
+    }
+return rescue_priority()&&item_allocation()&&power_gift()&&seat_order_breaks_equal_resource_ties()&&power_gift_retry()&&stage_interactions()&&simultaneous_rescue_is_single_transfer()&&donor_reserve_and_recipient_cap()&&rescue_range_and_replay()&&wipe()?0:1;}

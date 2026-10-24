@@ -244,12 +244,27 @@ void firstSampleAndButtons() {
             f.capture();
             const auto decision = f.step();
             auto expected = held;
-            expected.buttons = std::uint16_t(1 | 4 | (distance <= 3 ? 0xf0 : 0));
+            expected.buttons = std::uint16_t(1 | 4 | 0xf0);
             CHECK(decision.predictedMask == 2);
             sameInput(decision.inputs[1], expected);
             CHECK(!(decision.inputs[1].buttons & (2 | 8)));
             CHECK(!decision.inputs[1].touchBomb);
         }
+    }
+}
+void keyboardHoldAndRelease() {
+    for (const unsigned direction : {16u,32u,64u,128u,80u,96u,144u,160u}) {
+        const FrameInput held(std::uint16_t(1 | 4 | direction));
+        MobileFixture f; f.seed(held);
+        f.predictThrough(9);
+        for (unsigned frame = 1; frame < 9; ++frame) sameInput(f.used[frame][1], held);
+        f.capture();
+        CHECK(!f.session.Prepare().canAdvance);
+        f.receive(1,8); f.pump();
+        CHECK(f.session.RollbackFrame() == INVALID_FRAME);
+        f.verify(9);
+        lateChange("keyboard-release", held, FrameInput(1 | 4));
+        lateChange("keyboard-turn", held, FrameInput(std::uint16_t(1 | 4 | (direction == 64 ? 128 : 64))));
     }
 }
 void packetOrderAndConflict() {
@@ -304,6 +319,7 @@ int main() {
     heldAndLimit(AnalogMode::Joystick);
     changedInputs();
     firstSampleAndButtons();
+    keyboardHoldAndRelease();
     packetOrderAndConflict();
     invalidAndRepeatedCapture();
     std::printf("TH09 mobile prediction component: held=3 changed=%u, D0/history8/full-input/once-only PASS\n", changedCases);

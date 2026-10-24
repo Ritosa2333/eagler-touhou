@@ -52,6 +52,8 @@ export interface RuntimeNetplaySnapshot {
   resimulated: number | null;
   advantage: number | null;
   pacing: number | null;
+  inputRepairs?: number | null;
+  missingInputs?: number | null;
   rtcPaths: RuntimeNetplayEntry[];
   lanPeers: RuntimeNetplayEntry[];
   peerCount: number | null;
@@ -128,6 +130,8 @@ export function readRuntimeNetplay(runtime: object | null, state: RuntimeNetplay
     resimulated: number("__eaglerNetplayLanResimulated"),
     advantage: number("__eaglerNetplayLanFrameAdvantage"),
     pacing: number("__eaglerNetplayLanPacingScale"),
+    inputRepairs: number("__eaglerNetplayInputRepairs"),
+    missingInputs: number("__eaglerNetplayMissingInputs"),
     rtcPaths,
     lanPeers,
     peerCount: Number.isFinite(peerSize) && peerSize >= 0 ? peerSize : null,

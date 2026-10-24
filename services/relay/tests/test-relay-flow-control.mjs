@@ -2,7 +2,7 @@
 // and optional spectator history. Fake clocks avoid timing-dependent limits.
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { RELAY_LIMITS, createRelayMessageGate, acceptRelayMessage, createBoundedRelaySender,
+import { RELAY_LIMITS, TH09_SPECTATOR_HISTORY_LIMITS, closeTh09HistoryAdmission, createRelayMessageGate, acceptRelayMessage, createBoundedRelaySender,
   normalizeRelaySignal, appendSpectatorHistory, clearSpectatorHistory, hasPendingSpectators,
   validRelayControlMessage } from '../src/relay-flow-control.mjs';
 
@@ -91,4 +91,24 @@ assert.equal(appendSpectatorHistory(bytes, Buffer.alloc(5), { historyFrames: 10,
 const clear = run(); appendSpectatorHistory(clear, view); clearSpectatorHistory(clear);
 assert.equal(clear.spectatorHistoryBytes, 0); assert.equal(clear.spectatorHistory.length, 0);
 clear.claimedSpectators.add('pending'); assert.equal(hasPendingSpectators(clear), false);
+const charged = run();
+for (const size of [40, 102])
+  assert.equal(appendSpectatorHistory(charged, Buffer.alloc(size), TH09_SPECTATOR_HISTORY_LIMITS), true);
+for (let frame = 0; frame < 72000; ++frame)
+  assert.equal(appendSpectatorHistory(charged, Buffer.alloc(126), TH09_SPECTATOR_HISTORY_LIMITS), true,
+    `charged input ${frame} must fit the complete native match window`);
+for (let round = 0; round < 1024; ++round)
+  assert.equal(appendSpectatorHistory(charged, Buffer.alloc(28), TH09_SPECTATOR_HISTORY_LIMITS), true);
+assert.equal(appendSpectatorHistory(charged, Buffer.alloc(24), TH09_SPECTATOR_HISTORY_LIMITS), true);
+assert.equal(charged.spectatorHistoryBytes, 72000 * 126 + 1024 * 28 + 40 + 102 + 24);
+assert.equal(charged.spectatorStopped, false);
+const live = run(), catchingUp = new Socket();catchingUp.spectatorReplaying=true;
+live.spectatorClients.set('catching-up',catchingUp);
+appendSpectatorHistory(live, Buffer.alloc(6), {historyFrames:10,historyBytes:10}, closeTh09HistoryAdmission);
+assert.equal(appendSpectatorHistory(live, Buffer.alloc(6), {historyFrames:10,historyBytes:10}, closeTh09HistoryAdmission), false);
+assert.equal(live.spectatorStopped,false);assert.equal(live.spectatorAdmissionOpen,false);
+assert.equal(live.spectatorHistoryUnavailable,true);assert.equal(live.spectatorHistory.length,0);
+assert.equal(live.spectatorClients.get('viewer').readyState,1,'live spectator survives history exhaustion');
+assert.equal(catchingUp.readyState,3,'an incomplete replay prefix cannot silently become live');
+assert.equal(live.clients.get(0).readyState,1);assert.equal(live.signalClients.get(0).readyState,1);
 console.log('PASS payload/rate budgets, bounded live/delayed sends, signaling schema and complete-history overflow isolation');

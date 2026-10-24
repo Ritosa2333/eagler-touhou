@@ -42,9 +42,8 @@ std::uint32_t gameplay_contract(const SessionSetup& setup,std::uint32_t version)
 }
 }
 std::uint32_t GameplayContract(const SessionSetup& setup) noexcept {
-    // Preserve the receiver's banked lives on rescue, alongside challenge rules.
-    // Existing live, spectator and Replay gates must reject the old semantics.
-    return gameplay_contract(setup,0x1000000cu);
+    // Nearest unfinished Power ownership is shared by peers and recordings.
+    return gameplay_contract(setup,0x1000000eu);
 }
 std::uint32_t LegacyGameplayContractV4(const SessionSetup& setup) noexcept {
     return gameplay_contract(setup,0x10000004u);

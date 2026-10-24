@@ -26,7 +26,8 @@ int main(){
     assert(p.Available(811,1400)==499); // never run unreceived input
     assert(p.Fast(1310,1600)&&p.target==1910);
     assert(!p.Fast(1910,2200)&&!p.Fast(1911,2500));
-    assert(!p.Control(2,40000,1911,2500));
+    assert(p.Control(2,72000,1911,2500)&&p.target==71910);
+    assert(p.Available(1911,2500)==499);
     assert(p.Control(1,950,500,1100));p.Boundary(600,2);
     assert(p.round==2&&p.target==950&&p.Fast(600,1100)==true);
     assert(p.Available(949,1100)==1&&p.Fast(950,1100)==false);
@@ -37,7 +38,8 @@ int main(){
     p.ended=false;
     assert(p.Control(4,1500,1000,1100)&&p.target==1500&&!p.following);
     assert(p.Available(1000,1100)==10); // Never run not-yet-fed local history.
-    assert(!p.Control(4,40000,1000,1100));
+    assert(p.Control(4,72000,1000,1100)&&p.target==72000);
+    assert(p.Available(1000,1100)==10);
     assert(!p.Control(5,0,1000,1100));
     puts("Spectator playback: forward-only, bounded target, unlimited forward fast-forward, delay, pause, boundaries, exact end PASS");
 }

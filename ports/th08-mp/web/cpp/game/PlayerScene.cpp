@@ -52,6 +52,8 @@ bool PlayerScene::prepare(){
     state.input.tampered=values.tampered();
 #endif
     state.context.cheats=state.bomb_input.cheats=u8(practice_cheats());
+    // Purple's life hook suppresses decrement only once no spare lives remain.
+    if(practice.map_inf_life_to_no_continue&&numbers.lives>=1)state.context.cheats&=~2u;
     for(u32 i=0;i<8;i++){auto* enemy=world->ecl.boss_slots[i];boss_owners[i]=enemy;state.bomb_input.bosses[i]=enemy?&boss_views[i]:nullptr;if(enemy)boss_views[i]={enemy->life,enemy->flags};}
     return !failed;
 }

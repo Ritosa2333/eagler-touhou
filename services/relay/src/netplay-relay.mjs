@@ -7,6 +7,7 @@ import {
 } from "../../../common/contracts/th15-chapter-reward.mjs";
 import { quickChatPhrase } from '../../../common/contracts/multiplayer-quick-chat.mjs';
 import { createHmac } from 'node:crypto';
+import { createTurnConfigReader } from './turn-config.mjs';
 import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
@@ -17,6 +18,8 @@ import {
 } from './relay-abuse-guard.mjs';
 import {
   RELAY_LIMITS,
+  TH09_SPECTATOR_HISTORY_LIMITS,
+  closeTh09HistoryAdmission,
   createRelayMessageGate,
   acceptRelayMessage,
   createBoundedRelaySender,
@@ -211,6 +214,9 @@ const turnUrls = envValue('EAGLER_NETPLAY_TURN_URLS', ['TH07_TURN_URLS'])
 const turnSharedSecret = envValue('EAGLER_NETPLAY_TURN_SHARED_SECRET', ['TH07_TURN_SHARED_SECRET']);
 const turnUsername = envValue('EAGLER_NETPLAY_TURN_USERNAME', ['TH07_TURN_USERNAME']);
 const turnCredential = envValue('EAGLER_NETPLAY_TURN_CREDENTIAL', ['TH07_TURN_CREDENTIAL']);
+const readTurnConfig = createTurnConfigReader(envValue('EAGLER_NETPLAY_TURN_CONFIG_FILE', []), {
+  urls: turnUrls, sharedSecret: turnSharedSecret,
+});
 const turnTtlSeconds = Math.max(
   60,
   Number.parseInt(
@@ -273,19 +279,20 @@ const sendBounded = createBoundedRelaySender();
 function iceServersFor(roomId, runId, player) {
   const servers = [];
   if (stunUrls.length) servers.push({ urls: stunUrls });
-  if (!turnUrls.length) return servers;
-  if (turnSharedSecret) {
+  const activeTurn = readTurnConfig();
+  if (!activeTurn.urls.length) return servers;
+  if (activeTurn.sharedSecret) {
     // coturn TURN REST API style ephemeral credentials. The shared secret
     // stays server-side; only the short-lived username/credential is sent to
     // the browser during signaling.
     const expires = Math.floor(Date.now() / 1000) + turnTtlSeconds;
     const username = `${expires}:${roomId}-${runId}-p${player}`;
-    const credential = createHmac('sha1', turnSharedSecret).update(username).digest('base64');
-    servers.push({ urls: turnUrls, username, credential });
+    const credential = createHmac('sha1', activeTurn.sharedSecret).update(username).digest('base64');
+    servers.push({ urls: activeTurn.urls, username, credential });
   } else if (turnUsername && turnCredential) {
     // Static credentials are supported for local testing only; production
     // deployments should prefer EAGLER_NETPLAY_TURN_SHARED_SECRET.
-    servers.push({ urls: turnUrls, username: turnUsername, credential: turnCredential });
+    servers.push({ urls: activeTurn.urls, username: turnUsername, credential: turnCredential });
   }
   return servers;
 }
@@ -361,6 +368,7 @@ function getRoom(id, socket) {
         difficulty: 1,
         visibility: 'public',
         disableCheatMovement: false,
+        ...(id.startsWith('th09mp-') ? {disableLocalChargePriority:false} : {}),
         ...(id.startsWith("th15mp-")
           ? {
               chapterThreshold: defaultTh15ChapterThreshold(
@@ -779,6 +787,7 @@ function lobbySnapshot(room) {
     difficulty: room.lobby.difficulty,
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
+    ...(room.id.startsWith('th09mp-') ? {disableLocalChargePriority:room.lobby.disableLocalChargePriority} : {}),
     ...(room.th15 ? { chapterThreshold: room.lobby.chapterThreshold } : {}),
     challengeMode: room.lobby.challengeMode,
     prankMode: room.lobby.prankMode,
@@ -945,6 +954,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   if (!existing && intent === 'create') {
     room.lobby.visibility = initialPolicy?.visibility === 'private' ? 'private' : 'public';
     room.lobby.disableCheatMovement = initialPolicy?.disableCheatMovement === true;
+    if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=initialPolicy?.disableLocalChargePriority===true;
     const modesSupported = room.multiplayer?.gameplay === 'cooperative';
     room.lobby.challengeMode = modesSupported && initialPolicy?.challengeMode === true;
     room.lobby.prankMode = false;
@@ -1441,6 +1451,11 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         typeof message.disableCheatMovement === 'boolean'
           ? message.disableCheatMovement
           : room.lobby.disableCheatMovement;
+      if(message.disableLocalChargePriority !== undefined &&
+         (!room.id.startsWith('th09mp-') || typeof message.disableLocalChargePriority !== 'boolean')){
+        sendLobby(socket,{type:'error',error:'invalid local charge priority setting'});return;
+      }
+      const disableLocalChargePriority=message.disableLocalChargePriority ?? room.lobby.disableLocalChargePriority;
       const modesSupported = room.multiplayer?.gameplay === 'cooperative';
       const challengeMode =
         modesSupported &&
@@ -1454,12 +1469,14 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         room.lobby.playerCount !== playerCount ||
         room.lobby.difficulty !== difficulty ||
         room.lobby.disableCheatMovement !== disableCheatMovement ||
+        room.lobby.disableLocalChargePriority !== disableLocalChargePriority ||
         room.lobby.challengeMode !== challengeMode ||
         room.lobby.prankMode !== prankMode ||
         (room.th15 && room.lobby.chapterThreshold !== chapterThreshold)
       ) {
         invalidateLobbyReady(room);
         room.lobby.disableCheatMovement = disableCheatMovement;
+        if(room.id.startsWith('th09mp-'))room.lobby.disableLocalChargePriority=disableLocalChargePriority;
         room.lobby.challengeMode = challengeMode;
         room.lobby.prankMode = prankMode;
         if (room.th15) room.lobby.chapterThreshold = chapterThreshold;
@@ -1662,6 +1679,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
   if (
     !room ||
     !run ||
+    run.spectatorHistoryUnavailable ||
     run.playerCount !== playerCount ||
     !run.admittedSpectators.has(spectatorId)
   ) {
@@ -1719,8 +1737,8 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
       }
       const batch = [first];
       index++;
-      if (first.length === 46)
-        while (batch.length < 64 && history[index]?.length === 46) batch.push(history[index++]);
+      if (first.length === 46 || first.length === 126)
+        while (batch.length < 64 && history[index]?.length === first.length) batch.push(history[index++]);
       if (!sendSpectatorPayload(socket, Buffer.concat(batch), roomId, runId, spectatorId)) return;
       socket.spectatorReplayTimer = setTimeout(replay, 0);
     };
@@ -1831,6 +1849,7 @@ server.on('connection', (socket, request) => {
     handleLobbyConnection(socket, roomId, lobbyClient, memberId, url.searchParams.get('intent'), {
       visibility: url.searchParams.get('visibility'),
       disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
+      disableLocalChargePriority: url.searchParams.get('disableLocalChargePriority') === '1',
       chapterThreshold: url.searchParams.has('chapterThreshold')
         ? Number(url.searchParams.get('chapterThreshold'))
         : undefined,
@@ -1968,7 +1987,7 @@ server.on('connection', (socket, request) => {
       if (player !== 0) return;
       const payload = incoming.subarray(1);
       if (acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload)) return;
-      if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0) return;
+      if (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0 && !run.spectatorHistoryUnavailable) return;
       const th09Stream = roomId.startsWith('th09mp-') && run.playerCount === 2;
       const ending =
         th09Stream &&
@@ -2011,8 +2030,13 @@ server.on('connection', (socket, request) => {
         // the same player connections keep running through native Retry.
         run.spectatorHistory = run.spectatorTiming ? [run.spectatorTiming] : [];
         run.spectatorHistoryBytes = run.spectatorTiming?.length || 0;
+        if (run.spectatorHistoryUnavailable) {
+          run.spectatorHistoryUnavailable = false;
+          run.spectatorAdmissionOpen = true;
+          run.onSpectatorAvailabilityChange?.();
+        }
       }
-      if (th09Stream && (payload.length === 46 || ending || roundStart)) {
+      if (th09Stream && (payload.length === 46 || payload.length === 126 || ending || roundStart)) {
         const frame = payload.readUInt32LE(8),
           build = payload.subarray(12, 24);
         if (
@@ -2043,11 +2067,13 @@ server.on('connection', (socket, request) => {
           run,
           payload,
           run.spectatorTimeline
-            ? { ...RELAY_LIMITS, historyFrames: 32401, historyBytes: 2 * 1024 * 1024 }
+            ? TH09_SPECTATOR_HISTORY_LIMITS
             : RELAY_LIMITS,
+          th09Stream && run.spectatorTimeline ? closeTh09HistoryAdmission : stopSpectatorStream,
         )
-      )
-        return;
+      ) {
+        if (run.spectatorStopped) return;
+      }
       for (const [spectatorId, target] of run.spectatorClients)
         if (!target.spectatorReplaying)
           sendSpectatorPayload(target, payload, roomId, runId, spectatorId);

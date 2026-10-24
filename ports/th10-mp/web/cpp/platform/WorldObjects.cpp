@@ -2,6 +2,9 @@
 #include "World.hpp"
 #include "../game/GameObjectResources.hpp"
 #include "../game/HighRefresh.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeGameplay.hpp"
+#endif
 #include <cstdlib>
 namespace th10::browser {
 namespace {
@@ -77,6 +80,9 @@ struct Items final:ItemFrameEnvironment,ItemDrawEnvironment {
 #endif
     }
     void popup(const Vec3& p,i32 value,u32 color) override{w.popup(p,value,color);}
+#ifdef TH_ENABLE_THPRAC
+    void point_collected(bool yellow) override{practice_point_collected(w.state.practice,yellow);}
+#endif
     void play_sound(i32 id,float x) override{w.sound(id,x);}
     void bind_item_sprite(AnmVm& vm,i32 sprite) override{animation_file->bind_sprite(vm,sprite);}
     void draw_animation(AnmVm& vm) override{w.engine.draw(vm);}
@@ -97,14 +103,14 @@ i32 World::update_items(){for(u32 i=0;i<150;++i){const auto& v=actors.items->reg
     for(u32 seat=0;seat<player_count;++seat){
         const auto& pilot=pilots[seat];const auto& p=*pilot.player;auto& c=candidates[seat];
         c.eligible=cooperation.seats[seat].lifeState==multiplayer::LifeState::Alive&&p.state!=2&&p.state!=4;
-        c.position=p.position;c.auto_collect=pilot.bomb&&pilot.bomb->active;c.focused=(pilot.input_keys&4)!=0;
+        c.power=pilot.game.power;c.position=p.position;c.auto_collect=pilot.bomb&&pilot.bomb->active;c.focused=(pilot.input_keys&4)!=0;
         c.pickup=*reinterpret_cast<const ItemRegion*>(&p.pickup_bounds);c.slow=*reinterpret_cast<const ItemRegion*>(&p.slow_pickup_bounds);c.fast=*reinterpret_cast<const ItemRegion*>(&p.fast_pickup_bounds);
     }
     actors.items->faith_count=actors.items->active_count=0;
     auto update=[&](Item& item,multiplayer::ItemOwnership& owner){
         if(!item.state){owner={};return;}
         const auto previous_claim=owner.homing;
-        const int seat=multiplayer::select_item_collector(owner,item,candidates,player_count);
+        const int seat=multiplayer::select_item_collector(owner,item,candidates,player_count,engine.speed);
         if((item.state==3||item.state==4)&&(seat<0||(previous_claim>=0&&owner.homing<0))){item.state=1;item.velocity={};}
         Items env(*this,seat);const auto result=item.update(env);
         if(!item.state)owner={};else if((item.state==3||item.state==4)&&seat>=0)owner.homing=std::int8_t(seat);

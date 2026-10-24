@@ -1,5 +1,19 @@
 /* Room layout uses the same surfaces, typography and permanent Player stage as
  * the Replay workspace. Rules stay scoped: native game/fullscreen is unchanged. */
+.room-packet-loss{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.room-packet-loss header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.room-packet-loss h3{margin:0;font-size:14px}
+.room-packet-loss p{margin:6px 0;font-size:12px;color:var(--muted);line-height:1.5}
+.room-packet-loss button{flex-shrink:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--paper);font:inherit;cursor:pointer}
+.room-packet-loss button:disabled{opacity:.45;cursor:default}
+.room-packet-loss-peer{margin-top:14px;font-size:12px}
+.room-packet-loss-row{display:grid;grid-template-columns:50px minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;padding-top:9px;font-variant-numeric:tabular-nums}
+.room-packet-loss-row b{font-weight:600;white-space:nowrap}
+.room-packet-loss-state{grid-column:2/-1;color:var(--muted)}
+.room-turn-preference{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;font-size:13px}
+.room-turn-preference>div{min-width:0}
+.room-turn-preference label{font-weight:600;cursor:pointer}
+.room-packet-loss .room-turn-preference button{padding:0}
 .room-resource-reload{position:absolute;top:12px;right:12px;z-index:8;width:380px;max-width:calc(100% - 24px);box-sizing:border-box;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--panel,#191a17);color:var(--paper);box-shadow:0 8px 24px #0004;pointer-events:auto;touch-action:pan-y}
 .room-resource-reload p{margin:0 0 14px;font:500 14px/1.65 var(--ui-font);overflow-wrap:anywhere}
 .room-resource-reload>div{display:flex;gap:10px}

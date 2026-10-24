@@ -26,6 +26,10 @@ struct Lifecycle final:PlayerLifecycleEnvironment {
     void show_caution(const Vec3& p) override{w.record_hint("Caution!",p,true);}
 };
 struct Movement final:PlayerMovementEnvironment {
+#ifdef TH_ENABLE_THPRAC
+    bool flip_vertical_step() const override{return w.state.practice.enabled&&w.state.practice.flip_screen_y;}
+    void practice_velocity(i32& x,i32& y) override{const auto& p=w.state.practice;if(p.enabled&&p.keep_player_speed){x=i32(x*60.f/p.speed.fps);y=i32(y*60.f/p.speed.fps);}}
+#endif
     World& w;explicit Movement(World& world):w(world){economy=&w.state.game;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;default_rate=&w.engine.speed;always_hitbox=&w.always_hitbox;input_keys=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.current);enemy_count=w.actors.enemies?&w.actors.enemies->count:nullptr;}
     void update_option(PlayerOption& option) override{if(option.on_update==callback_id::PlayerOptionInitialize)w.actors.player->update_trailing_option(option);else if(option.on_update==callback_id::PlayerOptionUpdate)w.actors.player->update_anchored_option(option,manager->registry);else __builtin_trap();}
     bool movement(const Player& p,i32 speed,i32& x,i32& y)override{

@@ -1,6 +1,14 @@
 #include "EclProgram.hpp"
 #include <algorithm>
 namespace th08 {
+bool EclProgram::append_practice_ecl(const u8* bytes,u32 length,u32& offset){
+    if(!bytes||!length||length>520||(storage.size()&3)||practice_extension_start||storage.capacity()-storage.size()<length)return false;
+    for(u32 p=0;p<length;){
+        if(length-p<12)return false;EclInstruction ins;std::memcpy(&ins,bytes+p,12);
+        if(ins.size<12||(ins.size&3)||u32(ins.size)>length-p)return false;p+=ins.size;
+    }
+    offset=storage.size();practice_extension_start=offset;storage.insert(storage.end(),bytes,bytes+length);return true;
+}
 bool EclProgram::has_instruction(const EclInstruction* instruction)const noexcept {
     const auto address=reinterpret_cast<std::uintptr_t>(instruction),base=reinterpret_cast<std::uintptr_t>(storage.data());
     if(address<base||address-base>=storage.size())return false;
@@ -11,6 +19,10 @@ bool EclProgram::has_instruction(const EclInstruction* instruction)const noexcep
         const u32 offset=u32(address-base);if(offset&3)return false;
         for(u32 i=0;i<subs.size();i++){const u32 start=u32(reinterpret_cast<const u8*>(subs[i])-storage.data()),end=start+sub_lengths[i];
             if(offset>=start&&offset<end){if(end-offset<12)return false;EclInstruction header;std::memcpy(&header,storage.data()+offset,12);return header.size>=12&&!(header.size&3)&&u32(header.size)<=end-offset;}}
+        if(practice_extension_start&&offset>=practice_extension_start&&storage.size()-offset>=12){
+            EclInstruction header;std::memcpy(&header,storage.data()+offset,12);
+            return header.size>=12&&!(header.size&3)&&u32(header.size)<=storage.size()-offset;
+        }
         return false;
     }
     return std::binary_search(instruction_offsets.begin(),instruction_offsets.end(),u32(address-base));
@@ -37,7 +49,7 @@ bool EclProgram::load(const u8* input,u32 size){
             if(instruction.size<8||(instruction.size&3)||u32(instruction.size)>end-cursor)return false;cursor+=instruction.size;
         }if(!terminated)return false;
     }
-    storage.assign(input,input+size);instruction_offsets=std::move(positions);subs.reserve(offsets.size());sub_lengths.reserve(offsets.size());
+    storage.reserve(size+520);storage.assign(input,input+size);instruction_offsets=std::move(positions);subs.reserve(offsets.size());sub_lengths.reserve(offsets.size());
     for(u32 i=0;i<offsets.size();++i){subs.push_back(reinterpret_cast<EclInstruction*>(storage.data()+offsets[i]));sub_lengths.push_back((i+1<offsets.size()?offsets[i+1]:header.timeline_offsets[0])-offsets[i]);}
     for(u32 i=0;i<u32(header.timeline_count);++i){timelines[i]=reinterpret_cast<EclTimelineInstruction*>(storage.data()+header.timeline_offsets[i]);timeline_lengths[i]=header.timeline_offsets[i+1]-header.timeline_offsets[i];}
     return true;

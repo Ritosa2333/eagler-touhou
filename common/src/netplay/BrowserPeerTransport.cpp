@@ -40,6 +40,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             rtcHealthTimer: null,
             iceServers: Array.isArray(Module.eaglerOptions?.netplayIceServers)
                 ? Module.eaglerOptions.netplayIceServers : [],
+            iceTransportPolicy: Module.eaglerOptions?.netplayPreferTurn === true ? 'relay' : 'all',
             sendSignal(payload) {
                 const message = JSON.stringify(payload);
                 if (this.signal?.readyState === WebSocket.OPEN) {
@@ -356,7 +357,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             async ensurePeer(peerId) {
                 if (peerId === this.localPlayer || this.peers.has(peerId) || typeof RTCPeerConnection !== 'function') return;
                 const peer = {
-                    pc: new RTCPeerConnection({ iceServers: this.iceServers }),
+                    pc: new RTCPeerConnection({ iceServers: this.iceServers, iceTransportPolicy: this.iceTransportPolicy }),
                     inputDc: null, controlDc: null, inputOpen: false, controlOpen: false,
                     pendingCandidates: [], recoveryTimer: null, restartWatchdog: null,
                     restartInFlight: false, restartAttempts: 0, recoveryPending: false,

@@ -32,6 +32,7 @@
 #include <emscripten/html5.h>
 #include "../../../portable/sdl/FrameCadence.hpp"
 #include "../../../portable/input/TouchController.hpp"
+#include <eagler/thprac/PracticePointer.hpp>
 #include <algorithm>
 EM_JS(int, th11_browser_keyboard, (), { return typeof Module["resetBrowserKeyboard"] === "function"; });
 EM_JS(void, th11_reset_browser_keyboard, (), { Module["resetBrowserKeyboard"]?.(); });
@@ -191,7 +192,7 @@ struct Application:StageResourceEffects {
         }
         return true;
     }
-    bool multiplayer_begin(u32 stage_override=0,bool reset_clock=true){
+    bool multiplayer_begin(u32 stage_override=0,bool reset_clock=true,const std::array<ReplayStageState,3>* stream=nullptr){
         rollback_release();
         if(!netplay.Spectator())audio.spectator_silent(false);
         if(reset_clock)reset_cadences();
@@ -210,7 +211,7 @@ struct Application:StageResourceEffects {
         auto& core=session.resources.core;
         for(AnmResource* file:{&core.text,&core.ascii,&core.bullet,&core.enemy,&core.front,&core.title,&core.title_variant,&core.players[0],&core.players[1]})graphics.unload(*file);
         if(session.resources.stage)for(AnmResource* file:{&session.resources.stage->background,&session.resources.stage->logo,&session.resources.stage->enemies})graphics.unload(*file);
-        if(!session.begin_multiplayer(resources,opts)){error=session.error;return false;}
+        if(!session.begin_multiplayer(resources,opts,stream)){error=session.error;return false;}
         for(AnmResource* file:{&core.text,&core.ascii,&core.bullet,&core.enemy,&core.front,&core.title,&core.title_variant,&core.players[0],&core.players[1],&session.resources.stage->background,&session.resources.stage->logo,&session.resources.stage->enemies})
             if(!graphics.preload(*file)){error=graphics.error;return false;}
         multiplayer_world=true;multiplayer_advanced=false;multiplayer_finish_pending=multiplayer_restart_pending=multiplayer_saved=multiplayer_pause_requested=false;clear_inputs();
@@ -221,8 +222,7 @@ struct Application:StageResourceEffects {
         refresh_multiplayer_touch_frontier();return true;
     }
     bool multiplayer_capture_spectator_checkpoint(u32 frame,u32& stage,std::vector<u8>& initializer){
-        const bool stable=session.state.phase==GameSessionPhase::stage&&session.battle&&session.battle->stage_active&&
-            !session.battle->transitioning&&!session.battle->outgoing_stage;
+        const bool stable=session.state.phase==GameSessionPhase::stage&&session.battle&&session.battle->stage_active;
         u32 previous=0;
         if(stable||!frame||!netplay.SpectatorRecordedStage(frame-1,previous))stage=session.state.stage;
         else stage=previous;
@@ -240,7 +240,7 @@ struct Application:StageResourceEffects {
             else if(!session.battle->stage)multiplayer_spectator_capture_reason=6;
             else for(u32 i=0;i<session.multiplayer_options.seat_count;++i)
                 if(!session.battle->pilots[i]||!session.battle->pilots[i]->player){multiplayer_spectator_capture_reason=7+i;break;}
-            if(!multiplayer_spectator_capture_reason)multiplayer_spectator_capture_reason=100+multiplayer::SpectatorShotAccess::Failure();
+            if(!multiplayer_spectator_capture_reason)multiplayer_spectator_capture_reason=10;
             return false;
         }
         multiplayer::SpectatorStageState decoded;
@@ -260,9 +260,9 @@ struct Application:StageResourceEffects {
             multiplayer_world=false;multiplayer_viewer=true;
             // The outer callback already owns its due forward tick. Native
             // construction must not erase that offer before it is completed.
-            if(!multiplayer_begin(state.stage,false))return false;
+            if(!multiplayer_begin(state.stage,false,&state.players))return false;
             if(!multiplayer::ApplySpectatorStageState(session,state)){
-                error="TH11 spectator checkpoint canonical hash mismatch";return false;
+                error="TH11 streaming Replay stage initialization failed";return false;
             }
             multiplayer_spectator_stage=state.stage;multiplayer_world=true;multiplayer_viewer=true;
             return true;
@@ -357,8 +357,8 @@ struct Application:StageResourceEffects {
         if(decision.predictedMask||!multiplayer::InputLanes::Decode(decision.inputs.data(),netplay.Setup().player_count,input)){error="TH11 multiplayer requires exact inputs";return false;}
         const auto before=session.state.phase;const auto stage=session.state.stage;
         std::vector<u8> spectator_initializer;u32 spectator_stage=stage;
-        if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);
-        {auto timed=rollback_timer(5);if(!session.update_multiplayer(input)){error=session.error;return false;}}
+
+        {auto timed=rollback_timer(5);if(!session.update_multiplayer(input,[&]{if(netplay.SpectatorPublisherOwner())multiplayer_capture_spectator_checkpoint(frame,spectator_stage,spectator_initializer);})){error=session.error;return false;}}
         const bool restart=before==GameSessionPhase::paused&&
             ((input[0].held&0x200000u)!=0||(session.pause_menu&&session.pause_menu->action==PauseAction::Restart));
         const auto after=session.state.phase;
@@ -718,7 +718,12 @@ Application app;
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
+eagler::thprac::PracticePointer practice_pointers;
+#ifdef TH_ENABLE_THPRAC
+PracticeCadence cadence;
+#else
 touhou::sdl::FrameCadence cadence;
+#endif
 #ifdef TH11_MULTIPLAYER
 multiplayer::FrameSchedule rollback_cadence,exact_cadence;
 unsigned recovery_tasks_remaining=0;
@@ -782,8 +787,10 @@ void neutralize_live_touch(){
 #endif
 }
 void clear_inputs(){
+    practice_pointers.reset();
 #ifdef TH_ENABLE_THPRAC
     browser::ThpracUi::cancel_pointer();
+    app.session.practice.input.reset();
 #endif
     th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();neutralize_live_touch();
 }
@@ -792,15 +799,16 @@ void touch_event(unsigned type,int id,float x,float y){
 #ifdef TH_ENABLE_THPRAC
     // Same normalized direct-touch -> native ImGui bridge as TH08/TH10.
     // Both the launcher carrier and canvas-origin SDL fingers enter here.
-    if(browser::ThpracUi::captures_game_input()){
-        const bool consumed=browser::ThpracUi::captures_pointer(x*640.f,y*480.f);
+    if(type==0&&practice_pointers.route(1,id,false))browser::ThpracUi::cancel_pointer();
+    if(practice_pointers.route(type,id,type==0&&browser::ThpracUi::captures_pointer(x*640.f,y*480.f))){
         browser::ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
-        if(consumed){gestures.cancel_transient();return;}
+        return;
     }
 #endif
     gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
 }
 void cancel_touch(){
+    practice_pointers.reset();
 #ifdef TH_ENABLE_THPRAC
     browser::ThpracUi::cancel_pointer();
 #endif
@@ -856,6 +864,7 @@ bool sample_and_tick(bool advance=true){
 #ifdef TH_ENABLE_THPRAC
     browser::ThpracUi::update_input(app.session,keys);
     const bool captured=browser::ThpracUi::captures_game_input();
+    browser::ThpracUi::apply_input(app.session,keys);
 #else
     const bool captured=false;
 #endif
@@ -1065,11 +1074,13 @@ EMSCRIPTEN_KEEPALIVE int th11_probe_practice_menu(int character,int subtype,int 
 EMSCRIPTEN_KEEPALIVE const double* th11_probe_practice_state(){static double words[20];const auto& s=th11::sdl::app.session;s.practice.run.encode(words);words[14]=s.practice.menu;words[15]=s.practice.active;words[16]=s.economy.power;words[17]=s.practice.cheats;words[18]=s.practice.tracker_bombs;words[19]=s.practice.tracker_misses;return words;}
 EMSCRIPTEN_KEEPALIVE const int* th11_probe_title_state(){static int words[4];const auto* t=th11::sdl::app.session.title.get();words[0]=t?int(t->screen):-1;words[1]=t?t->substate:-1;words[2]=t?t->cursor.selected:-1;words[3]=t?t->timer.current:-1;return words;}
 EMSCRIPTEN_KEEPALIVE int th11_probe_paused(){return th11::sdl::app.session.state.phase==th11::GameSessionPhase::paused;}
+EMSCRIPTEN_KEEPALIVE int th11_probe_tracker_death(){auto* b=th11::sdl::app.session.battle.get();if(!b||!b->player)return -1;b->events.clear();if(!b->player->die())return -1;int deaths=0;for(const auto& e:b->events)if(e.kind==th11::BattleEventKind::Death)++deaths;return deaths;}
 EMSCRIPTEN_KEEPALIVE int th11_probe_function_pose(int side){auto* b=th11::sdl::app.session.battle.get();if(!b||!b->player)return 0;auto& p=b->player->motion.state;p.x=side<0?-0x5c00:side>0?0x5c00:0;p.position.x=float(p.x)/128;p.warp=p.warp_timer=0;return 1;}
 EMSCRIPTEN_KEEPALIVE const int* th11_probe_function_state(){static int out[5];const auto* b=th11::sdl::app.session.battle.get();if(!b||!b->player)return out;const auto& p=b->player->motion.state;out[0]=p.x;out[1]=p.warp;out[2]=p.weapon_mode;out[3]=b->player_input.movement.enemies;out[4]=b->player_input.movement.bomb;return out;}
 EMSCRIPTEN_KEEPALIVE unsigned th11_probe_gameplay_held(){const auto* b=th11::sdl::app.session.battle.get();return b?b->player_input.movement.held:0;}
 EMSCRIPTEN_KEEPALIVE const char* th11_probe_spell_name(unsigned id,unsigned rank){return th11::Localization::SpellName(id,"original",rank);}
 EMSCRIPTEN_KEEPALIVE const double* th11_probe_practice_pending(){static double words[th11::PracticeConfig::word_count];th11::sdl::app.session.practice.configured.encode(words);return words;}
+EMSCRIPTEN_KEEPALIVE const int* th11_probe_practice_tools(){static int words[12];const auto& s=th11::sdl::app.session.practice;words[0]=s.input.disable_xkey;words[1]=s.input.disable_shiftkey;words[2]=s.input.disable_zkey;words[3]=s.input.force_shiftkey;words[4]=s.input.enable_fast_retry;words[5]=s.show_keyboard_monitor;words[6]=s.map_inf_life_to_no_continue;words[7]=s.force_boss_move_down;words[8]=s.disable_master_display;words[9]=s.lock_marisa_b;words[10]=s.show_lock_timer;words[11]=s.all_clear_bonus;return words;}
 EMSCRIPTEN_KEEPALIVE int th11_probe_practice_popup(){return th11::browser::ThpracUi::captures_pointer(-100,-100);}
 EMSCRIPTEN_KEEPALIVE int th11_probe_records(){
  auto& a=th11::sdl::app;auto& s=a.session;if(!s.open_title(a.resources,false,th11::TitleScreen::Records))return 0;
@@ -1122,7 +1133,7 @@ EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11
 EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
 #ifdef TH_ENABLE_THPRAC
 __attribute__((export_name("sdl_thprac_mouse"))) void sdl_thprac_mouse(int type,float x,float y){th11::browser::ThpracUi::mouse(type,x,y);}
-EMSCRIPTEN_KEEPALIVE int th11_practice_configure(const double* words,unsigned count){th11::PracticeConfig p;if(!p.decode(words,count))return 0;auto& s=th11::sdl::app.session;s.practice.configured=p;s.practice.warp=p.section>=10000?1:p.section?(th11::practice_sections[p.section].spell?5:4):0;if(p.section>0&&p.section<10000&&th11::practice_sections[p.section].appearance>7)s.practice.spell_category=th11::practice_sections[p.section].appearance-7;return 1;}
+EMSCRIPTEN_KEEPALIVE int th11_practice_configure(const double* words,unsigned count){th11::PracticeConfig p;if(!p.decode(words,count))return 0;auto& s=th11::sdl::app.session;s.practice.configured=p;s.practice.warp=p.section>=10000?1:p.section?(th11::practice_sections[p.section].spell?5:4):0;if(p.section>0&&p.section<10000)s.practice.spell_category=th11::practice_sections[p.section].appearance>7?th11::practice_sections[p.section].appearance-7:0;return 1;}
 #endif
 EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
@@ -1266,6 +1277,9 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
         if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
 #else
         if(suspended){cadence.reset();return EM_TRUE;}
+#ifdef TH_ENABLE_THPRAC
+        const auto period=th11::browser::ThpracUi::simulation_interval(app.session);if(period!=cadence.period){cadence.period=period;cadence.reset();}
+#endif
         const auto ticks=cadence.advance(delta);bool ok=true;app.graphics.backend.defer=true;
         for(unsigned n=0;n<ticks&&ok;++n)ok=sample_and_tick();
         app.graphics.backend.commit();app.graphics.backend.defer=false;

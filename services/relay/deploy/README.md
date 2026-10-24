@@ -19,3 +19,13 @@
 ## TURN
 
 TURN 独立于 Relay 部署，配置生成见 [`services/turn/`](../../turn/README.md)。Relay 与 coturn 的 `EAGLER_NETPLAY_TURN_SHARED_SECRET` 必须一致。
+
+设置 `EAGLER_NETPLAY_TURN_CONFIG_FILE` 后，Relay 按请求读取动态配置，每秒最多读取一次。JSON 将节点地址和对应密钥一起发布：
+
+```json
+{"urls":["turn:turn.example.com:3478?transport=udp","turn:turn.example.com:3478?transport=tcp"],"sharedSecret":"SAME_AS_COTURN"}
+```
+
+配置文件放在静态站点之外，授予 Relay 运行用户读取权限，并用临时文件加原子替换发布。文件最多 16 KiB，包含 1–8 个 `turn:` 或 `turns:` 地址和非空共享密钥。初始配置来自环境变量；动态配置通过校验后整体生效，读取失败或内容无效时继续使用上一份有效配置。短期凭据始终由对应节点的密钥签发，浏览器收到地址、短期用户名和凭据。
+
+房间测速的 `state.roomProbe.iceServers`、游戏信令的 `peers.iceServers` 和网络诊断的 `diagnostic-ready.iceServers` 共用当前配置。节点切换作用于后续下发，已建立的连接继续使用原节点。独立发布包包含同一读取逻辑；`npm test` 验证源码与发布包三个入口的配置和密钥同步切换。

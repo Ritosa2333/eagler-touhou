@@ -17,8 +17,12 @@
     "docs:index": "node tools/docs/check.mjs --write-index",
     "adaptation:new": "node tools/docs/new-adaptation.mjs",
     "ports:check": "node tools/ports/check.mjs",
+    "ports:sync": "node tools/ports/sync.mjs",
+    "test:port-sync": "node --test tools/ports/sync.test.mjs",
     "ports:status": "node tools/ports/check.mjs --write-status",
     "ports:runtime": "node tools/ports/runtime-browser.mjs",
-    "ports:rooms": "node tools/ports/room-browser.mjs"
+    "ports:rooms": "node tools/ports/room-browser.mjs",
+    "ports:history": "python tools/ports/project-history.py --repo .",
+    "ports:audit": "python tools/ports/audit-history.py --repo ."
   }
 }

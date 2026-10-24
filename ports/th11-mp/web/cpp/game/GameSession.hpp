@@ -78,6 +78,9 @@ public:
     PracticeState practice;
     std::string error;
 #ifdef TH11_MULTIPLAYER
+    u32 replay_stage_seed()const noexcept{return recording_seed;}
+    std::array<ReplayStageState,3> multiplayer_stream_entries{};
+    bool multiplayer_stream_pending=false;
     bool multiplayer_active=false;
     // Transaction control, not rewindable game state. A requested resource
     // boundary is undone, then retried with confirmed inputs and no history.
@@ -87,8 +90,8 @@ public:
     MultiplayerOptions multiplayer_options{};
     u32 multiplayer_frame=0;
     std::array<bool,3> multiplayer_pause_held{};
-    bool begin_multiplayer(GameResources&,const MultiplayerOptions&);
-    bool update_multiplayer(const std::array<MultiplayerInput,3>&);
+    bool begin_multiplayer(GameResources&,const MultiplayerOptions&,const std::array<ReplayStageState,3>* stream=nullptr);
+    bool update_multiplayer(const std::array<MultiplayerInput,3>&,const std::function<void()>& replay_entry={});
     MultiplayerSeatView multiplayer_seat(unsigned)const noexcept;
     u32 multiplayer_hash()const noexcept;
     bool multiplayer_open_result(bool completed,u32 held);

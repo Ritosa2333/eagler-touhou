@@ -9,6 +9,7 @@ const netplayRows = [
   ['frame', 'runtimeNetplayFrameDiag', '同步 --'],
   ['rollback', 'runtimeNetplayRollbackDiag', '回滚 --'],
   ['quality', 'runtimeNetplayQualityDiag', '质量 --'],
+  ['recovery', 'runtimeNetplayRecoveryDiag', '输入 --'],
   ['ice', 'runtimeNetplayIceDiag', 'ICE --'],
 ] as const;
 export type NetplayDiagnosticLines = Partial<Record<(typeof netplayRows)[number][1], string>>;

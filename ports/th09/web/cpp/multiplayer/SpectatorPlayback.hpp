@@ -7,7 +7,7 @@ namespace th09::multiplayer {
 // before accepting a fixed forward target. Never changes player pacing.
 struct SpectatorPlayback {
     static constexpr std::uint32_t Delay = 90;
-    static constexpr std::uint32_t Capacity = 32400;
+    static constexpr std::uint32_t Capacity = 131072;
     bool paused = false, following = false, seeking = false, ended = false;
     std::uint32_t target = 0, roundStart = 0, round = 0;
     void Boundary(std::uint32_t frame, std::uint32_t nextRound) {
@@ -24,8 +24,7 @@ struct SpectatorPlayback {
         if(action == 0) { paused = true; return true; }
         if(action == 3) { paused = false; return true; }
         if(action == 1 && (to < played || to > Limit(received))) return false;
-        if(action == 2 && to > played && to - played > Capacity) return false;
-        if(action == 4 && (to < played || to - played > Capacity)) return false;
+        if(action == 4 && to < played) return false;
         paused = false; following = action == 2;
         // JS may still be feeding already-received history in bounded batches.
         // Available() still limits every tick to native-validated input.

@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "Player.hpp"
 
 #include "AnmIdx.hpp"
@@ -547,6 +548,9 @@ void UpdateLifeTransfer(Player *giver)
         return;
     }
 
+    if (WAS_PRESSED_PLAYER(giver, TH_BUTTON_FOCUS) &&
+        !IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT)) { g_powerGiveTaps[giver->initParam] = g_powerGiveWindow[giver->initParam] = 0; }
+
     Player *receiver = SelectLifeTransferReceiver(giver);
     if (!receiver)
     {
@@ -560,20 +564,10 @@ void UpdateLifeTransfer(Player *giver)
         giver->lifeGiveTargetToken = receiver->initParam + 1;
     }
 
-    if (g_powerGiveTaps[giver->initParam] > 0)
-    {
-        giver->lifeGiveTimer = 0;
-        return;
-    }
-    if (!giver->isFocus || IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT))
-    {
-        giver->lifeGiveTimer = 0;
-        giver->lifeGiveTargetToken = 0;
-        return;
-    }
-
-    g_SoundPlayer.PlaySoundByIdx(SOUND_ITEM_GET, 0);
-    if (++giver->lifeGiveTimer < 90 || GetPlayerLives(giver->initParam) <= 0)
+    if (!eagler::cooperative::AdvanceLifeTransfer(
+            giver->lifeGiveTimer, WAS_PRESSED_PLAYER(giver, TH_BUTTON_FOCUS),
+            !IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT) &&
+            GetPlayerLives(giver->initParam) > 0))
         return;
 
     if (receiver->playerState == PLAYER_STATE_SPIRIT)
@@ -793,7 +787,8 @@ void DrawLifeTransferPrompt(const Player *giver)
 {
     if (!giver || GetPlayerLives(giver->initParam) <= 0 ||
         giver->lifeGiveTargetToken == LIFE_GIVE_WAIT_RELEASE_TOKEN ||
-        !SelectLifeTransferReceiver(giver) || !giver->isFocus ||
+        !SelectLifeTransferReceiver(giver) ||
+        eagler::cooperative::TapCount(giver->lifeGiveTimer) < 3 ||
         IS_PRESSED_PLAYER(giver, TH_BUTTON_SHOOT) ||
         g_powerGiveTaps[giver->initParam] > 0)
         return;
@@ -812,8 +807,8 @@ void DrawLifeTransferPrompt(const Player *giver)
     g_AsciiManager.color = 0xffffff00;
     g_AsciiManager.isGui = 1;
     g_AsciiManager.isSelected = 0;
-    AsciiManager::AddFormatText(&g_AsciiManager, &position, "%d%%",
-                                giver->lifeGiveTimer * 100 / 90);
+    AsciiManager::AddFormatText(&g_AsciiManager, &position, "L %u/5",
+                                eagler::cooperative::TapCount(giver->lifeGiveTimer));
     g_AsciiManager.scale = oldScale;
     g_AsciiManager.color = oldColor;
     g_AsciiManager.isGui = oldGui;
@@ -890,7 +885,7 @@ i32 UpdateMultiplayerDeath(Player *player)
             g_CurFrameRawInput = TH_BUTTON_BOMB;
         if (player->respawnTimer == 0)
         {
-            g_ReplayManager->replayEventFlags |= 4;
+            ReplayManager::RecordEventFlags(4);
             g_GameManager.powerItemCountForScore = 0;
             g_EnemyManager.spellcardInfo.captureScore = 0;
             g_EnemyManager.spellcardInfo.isCapturing = 0;
@@ -2285,7 +2280,7 @@ i32 Player::CalcKillboxCollision(ZunVec3 *center, ZunVec3 *size)
         return 0;
     }
 
-    g_ReplayManager->replayEventFlags = g_ReplayManager->replayEventFlags | 2;
+    ReplayManager::RecordEventFlags(2);
     if (this->playerState == PLAYER_STATE_BORDER)
     {
         this->BreakBorder();
@@ -2426,7 +2421,7 @@ i32 Player::CalcLaserHitbox(ZunVec3 *center, ZunVec3 *size, ZunVec3 *origin, f32
     return PLAYER_COLLISION_BOMB;
 
 LASER_COLLISION:
-    g_ReplayManager->replayEventFlags = g_ReplayManager->replayEventFlags | 2;
+    ReplayManager::RecordEventFlags(2);
     if (this->playerState == PLAYER_STATE_BORDER)
     {
         // this is already a member function of Player though
@@ -2527,8 +2522,13 @@ void Player::Die()
     // a nice person there's a 5 frame leniency for touch users (ONLY FOR IF YOU BOMBED WITH
     // TOUCH!!!!!)
     const bool touchUsed = PlayerUsedTouch(this);
-    this->respawnTimer = this->shooterData->initialRespawnTimer +
-                         (touchUsed ? Touch::DEATHBOMB_TOLERANCE : 0);
+    this->respawnTimer =
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        (MultiplayerGameplay::IsMultiplayer() ? eagler::cooperative::DeathbombFrames(this->shooterData->initialRespawnTimer) : this->shooterData->initialRespawnTimer) +
+#else
+        this->shooterData->initialRespawnTimer +
+#endif
+        (touchUsed ? Touch::DEATHBOMB_TOLERANCE : 0);
 }
 
 i32 Player::HandlePlayerInputs()
@@ -3372,7 +3372,7 @@ void Player::UpdateBorderAndBombState()
                         return;
                     }
                 }
-                g_ReplayManager->replayEventFlags |= 1;
+                ReplayManager::RecordEventFlags(1);
                 g_GameManager.AddBombsUsed(1);
                 // THOverlay F3 patches the -1 immediate at 0x440BC7 to 0.
                 if (!PracticeRuntime::OverlayInfiniteBombs())
@@ -3453,7 +3453,7 @@ i32 Player::UpdateDeath()
             g_CurFrameRawInput = TH_BUTTON_BOMB;
         if (this->respawnTimer == 0)
         {
-            g_ReplayManager->replayEventFlags |= 4;
+            ReplayManager::RecordEventFlags(4);
             g_GameManager.powerItemCountForScore = 0;
             g_EnemyManager.spellcardInfo.captureScore = 0;
             g_EnemyManager.spellcardInfo.isCapturing = 0;
@@ -3879,7 +3879,7 @@ void Player::ActivateBorder()
         g_Gui.ShowStatusPopup(0, 2);
         g_SoundPlayer.PlaySoundByIdx(SOUND_BORDER_ACTIVATE, 0);
         g_SoundPlayer.PlaySoundByIdx(SOUND_BORDER_ACTIVATE2, 0);
-        g_ReplayManager->replayEventFlags |= 8;
+        ReplayManager::RecordEventFlags(8);
         break;
     }
 }
@@ -3957,7 +3957,7 @@ void Player::BreakBorder()
     }
     g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB_MARISA_A_FOCUS, 0);
     g_SoundPlayer.PlaySoundByIdx(SOUND_BORDER_BREAK, 0);
-    g_ReplayManager->replayEventFlags = g_ReplayManager->replayEventFlags | 0x10;
+    ReplayManager::RecordEventFlags(0x10);
 }
 
 void Player::UpdateUI()

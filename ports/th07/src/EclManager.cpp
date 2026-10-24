@@ -81,7 +81,6 @@ ZunResult EclManager::Load(const char *path)
             "敵データの読み込みに失敗しました、データが壊れてるか失われています\n");
         return ZUN_ERROR;
     }
-    this->eclFileSize = g_LastFileSize;
 
     if (!RuntimeExtension::OnEclLoaded(path, (u8 *)this->eclFile, g_LastFileSize))
     {
@@ -118,7 +117,6 @@ void EclManager::Unload()
         free(this->eclFile);
     }
     this->eclFile = NULL;
-    this->eclFileSize = 0;
 }
 
 ZunResult EclManager::CallEclSub(EnemyEclContext *ctx, i16 subId)

@@ -42,6 +42,9 @@ bool PlayerFrame::restore_replay_position(const ReplayStageState& entry){
     if(entry.weapon){motion.state.option_count=0;return rebuild_options()&&rebuild_options();}
     return true;
 }
+bool PlayerFrame::restore_replay_stage(const ReplayStageState& entry){
+    return restore_replay_position(entry)&&(entry.weapon!=0||rebuild_options());
+}
 bool PlayerFrame::start_stage(){
     // 42fec0 resets lifecycle clocks but preserves position, weapon mode and
     // existing shots. Reinitializing the player here breaks replay entry state.
@@ -73,17 +76,25 @@ bool PlayerFrame::hit(){
     state.invincibility.set(6,&animations.rate);if(!motion.reset_body())return false;fail_spell();return true;
 }
 bool PlayerFrame::die(){
+#ifdef TH_ENABLE_THPRAC
+    if(practice&&practice->enabled&&!input.replay)practice->input.begin_retry(practice->active?practice->run.mode:0);
+#endif
     economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);
 #ifdef TH11_MULTIPLAYER
     if(!input.challenge)
 #endif
 #ifdef TH_ENABLE_THPRAC
-    if(!(practice&&practice->enabled&&!input.replay&&(practice->cheats&2)))
+    if(!(practice&&practice->enabled&&!input.replay&&(practice->cheats&2)&&(!practice->map_inf_life_to_no_continue||economy.lives<=0)))
 #endif
     economy.lives=wrapping_add(economy.lives,-1);economy.communication=0;
     if(economy.lives>=0&&!world.display_lives(economy.lives,i16(economy.life_fragments)))return false;
     state.life_state=2;state.state_timer.set(0,&animations.rate);state.invincibility.set(180,&animations.rate);
     if(!motion.reset_body())return false;motion.clear_options();
+    // Observation belongs to the real death transition, including Replay.
+    // The original score-record callback remains live-play only below.
+#ifdef TH_ENABLE_THPRAC
+    if(practice)++practice->tracker_misses;
+#endif
     if(!input.replay&&!world.record_death())return false;
     fail_spell();economy.add_rank(-1024);return true;
 }
@@ -92,7 +103,11 @@ bool PlayerFrame::active_frame(){
         if(!world.start_bomb())return false;input.special_active=true;if(!practice_power_locked())economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;
     }
     if(state.state_timer.current<30&&!cancel_all(true))return false;
-    motion.state.transition_timer=state.transition_timer.current;return motion.update(input.movement);
+    motion.state.transition_timer=state.transition_timer.current;
+#ifdef TH_ENABLE_THPRAC
+    motion.practice_locked_formation=practice&&practice->enabled&&practice->lock_marisa_b?practice->locked_formation:-1;
+#endif
+    return motion.update(input.movement);
 }
 bool PlayerFrame::death_frame(){
     economy.communication=0;
@@ -126,6 +141,9 @@ bool PlayerFrame::death_frame(){
 }
 void PlayerFrame::update_bounds(){const auto p=motion.state.position;state.hit=bounds(p,state.hit_half);state.pickup=bounds(p,state.pickup_size,.5);state.focused_attract=bounds(p,state.focused_half);state.unfocused_attract=bounds(p,state.pickup_size);}
 bool PlayerFrame::update(){
+#ifdef TH_ENABLE_THPRAC
+    if(practice&&practice->enabled&&practice->record_keys)practice->record_keys(input.movement.held);
+#endif
     switch(state.life_state){
     case 0:{
         economy.communication=0;auto& s=motion.state;s.y=wrapping_sub(0xf000,signed_bits(u32(state.state_timer.current)*0x2800)/60);s.position.y=float(double(s.y)/128);for(auto& o:motion.options)o.snap=1;s.warp=s.warp_timer=0;
@@ -141,7 +159,13 @@ bool PlayerFrame::update(){
 #ifdef TH_ENABLE_THPRAC
         if(practice&&practice->enabled&&!input.replay&&(practice->cheats&16))input.movement.held|=2;
 #endif
-        if(state.state_timer.current>7){if(!die()||!world.enemy_death()||!death_frame())return false;}
+        if(state.state_timer.current>=
+#ifdef TH11_MULTIPLAYER
+            16
+#else
+            8
+#endif
+        ){if(!die()||!world.enemy_death()||!death_frame())return false;}
         else if(input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step&&(input.movement.held&2)){
             state.state_timer.set(60,&animations.rate);if(!world.start_bomb())return false;input.special_active=true;if(!practice_power_locked())economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;state.life_state=1;
         }break;

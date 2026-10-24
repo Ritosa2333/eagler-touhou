@@ -55,6 +55,13 @@ export function createRoomDirectory({
     if (!match || !room.multiplayer || room.lobby.visibility === 'private') return null;
     const seats = room.lobby.seats.slice(0, room.lobby.playerCount);
     const occupied = seats.filter(Boolean);
+    const spectators = [...room.lobby.spectators.keys()].filter((id) =>
+      online(room.lobbyClients.get(id)),
+    ).length;
+    // A leftover Runtime/signaling socket can outlive every visible member.
+    // Discovery lists participant-owned rooms; transport retirement remains
+    // with its existing owner and never depends on directory visibility.
+    if (!occupied.length && !spectators) return null;
     const connected = occupied.filter((seat) => online(room.lobbyClients.get(seat.clientId)));
     if (!connected.length && !hasGame(room)) return null;
     const idle = Date.now() - room.lastActivityAt;
@@ -77,9 +84,7 @@ export function createRoomDirectory({
       disableCheatMovement: room.lobby.disableCheatMovement === true,
       challengeMode: room.lobby.challengeMode === true,
       prankMode: room.lobby.prankMode === true,
-      spectators: [...room.lobby.spectators.keys()].filter((id) =>
-        online(room.lobbyClients.get(id)),
-      ).length,
+      spectators,
       initials: seats.map((seat) => (seat ? initial(seat.name) : null)),
       seats: seats.map((seat) =>
         seat

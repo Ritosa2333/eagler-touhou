@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/CooperativeResources.hpp"
 #endif
@@ -208,6 +209,11 @@ void GameplayScene::synchronize(){
     for(u32 seat=0;seat<session.player_count;++seat)if(roster.seats[seat].player&&roster.seats[seat].player->status().unlimited_movement_used)
         session.multiplayer_cheat_movement_used=true;
 #endif
+    gui_context.practice_all_clear_bonus=session.practice.enabled&&session.practice.all_clear_bonus;
+    spell_drawing.disable_master=session.practice.enabled&&session.practice.disable_master;
+    globals.practice_force_last_spell=session.practice.enabled&&!session.practice.replay&&session.practice.force_last_spell;
+    globals.practice_enemy_invincible=session.practice.enabled&&!session.practice.replay&&(session.practice.cheats&64);
+    globals.practice_tools_enabled=session.practice.enabled;
     auto& p=player_state;auto& n=session.numbers;const auto& limits=session.thresholds;
     auto& m=menus.context;m.flags=globals.game_flags;m.show_retry=globals.stage_completion;m.stage=globals.stage;m.character=globals.shot;m.spell=globals.current_spell;m.difficulty=globals.difficulty;m.spell_captured=bool(globals.spell_flags&512);m.times=hud.times;
     paused=m.pause_state!=0;retrying=m.show_retry!=0;
@@ -299,7 +305,7 @@ JobResult GameplayScene::draw_players(bool impacts){
             const auto& p=pilot(seat).status().motion.movement.position;
             const auto& c=cooperation.seats[seat];
             if(c.power_taps>=3){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/5",u32(c.power_taps));}
-            else if(c.progress&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"%u%%",u32(c.progress)*100/multiplayer::rescue_ticks);}
+            else if(eagler::cooperative::TapCount(c.progress)>=3&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"L %u/5",eagler::cooperative::TapCount(c.progress));}
         }
         text.color=color;text.scale_x=scale.x;text.scale_y=scale.y;text.gui=gui;text.selected=selected;
         if(enhance&&!paused&&!retrying&&!menus.context.pause_state&&!menus.context.show_retry&&
@@ -434,6 +440,8 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     // Original RegisterChain: 0164d2ec=(8,16), 0164d2f4=(368,416).
     player_state.input.minimum={8,16};player_state.input.extent={368,416};
     display.dialogue.message=-1;globals.gui=&hud;hud.implementation=&display;
+    // Purple 00437AF3 resets the display sidecar when the GUI owner starts.
+    globals.practice_lock_frames=0;
     dialogue_context.text=get(0);ascii.state.ascii=dialogue_context.ascii=get(1);ascii.state.capture=dialogue_context.capture=get(3);
     if(!dialogue_context.text||!dialogue_context.ascii||!dialogue_context.capture){load_failure_step=5;return false;}
     if(initialize_values&&!startup.before_player(wanted.initial)){load_failure_step=6;return false;}
@@ -452,7 +460,9 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     }
     for(u32 seat=0;seat<session.player_count;++seat){
         pilot(seat).place_multiplayer_spawn(seat,session.player_count);
-        multiplayer::begin_next_stage_life(session.pilot_resources[seat],next_stage_spirit[seat],pilot(seat).profile(false).initial_bombs);
+        const bool legacy=session.netplay.Playback()&&session.replay_legacy_stage_bombs;
+        const bool ghost_refill=retain_counters&&!legacy&&multiplayer::netherworld_stage_bonus(session.player_characters[seat]);
+        multiplayer::begin_next_stage_life(session.pilot_resources[seat],next_stage_spirit[seat],pilot(seat).profile(false).initial_bombs,ghost_refill);
     }
 #endif
     if(initialize_values){
@@ -473,6 +483,14 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
         }
 #endif
         if(playing_replay){if(!playback.begin(wanted.stage,session,globals,player_state.context.miss_control)){load_failure_step=50;unload();return false;}playback.input.current=playback.input.previous=0;replay_stage_mask=playback.stage_mask();if(wanted.initial&&playback.metadata().header.unknown6)sample_replay_frame();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(replay_stage_start_pending.present){
+            multiplayer::ApplyReplayStageStart(replay_stage_start_pending,session,player_state.context.miss_control);
+            replay_stage_start_pending.present=false;
+            for(u32 seat=0;seat<session.player_count;++seat)pilot_services(seat).sync_values();
+        }
+        multiplayer::CaptureReplayStageStart(replay_stage_start,session,globals,player_state.context.miss_control);
+#endif
         startup.after_replay();std::memcpy(dialogue_context.clears,session.clears,sizeof(session.clears));
     }
     background_context={wanted.stage,false,bool(wanted.flags&0x4000),false};background_flow.context={wanted.keep_resources,dialogue_context.text};
@@ -553,6 +571,7 @@ bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
 #endif
     // Practice cheats run after input publication so F6 can press the bomb key.
     update_practice(*this,session);
+    if(session.practice.enabled&&session.practice.show_keyboard_monitor)session.practice.key_monitor.record(8,player_state.input.buttons);
     synchronize();return !invalid();
 }
 bool GameplayScene::update(u16 buttons,float rate,bool force_unit){presentation::CalculationScope presentation_tick;if(!prepare_frame(buttons,rate,force_unit))return false;failed|=chain.run()<0;return !invalid();}

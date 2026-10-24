@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #include "ItemSystem.hpp"
 #include "../multiplayer/ResourceTrace.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -149,15 +150,32 @@ bool ItemSystem::spawn_power_gift(const Vec3& position,u32 seat){
     }
     return true;
 }
+u32 ItemSystem::nearest_power_owner(const Vec3& origin,bool only_needy)const noexcept{
+    const int seat=eagler::cooperative::NearestPowerRecipient(3,
+        [&](unsigned s){const auto& o=owners[s];return o.available&&o.player&&o.resources&&
+            (!only_needy||o.input.power<128);},
+        [&](unsigned s){return owners[s].input.power<128;},
+        [&](unsigned s){const auto& p=owners[s].input.player;
+            const double dx=double(p.x)-origin.x,dy=double(p.y)-origin.y;return dx*dx+dy*dy;});
+    return seat<0?no_owner:u32(seat);
+}
+u32 ItemSystem::overflow_owner(ItemState& item,u32 collector){
+    if(collector>=3||!owners[collector].resources||owners[collector].input.power<128||
+       (item.type!=0&&item.type!=2&&item.type!=4))return collector;
+    const u32 seat=nearest_power_owner(item.position,true);
+    if(seat==no_owner)return collector;
+    item_owners[item_index(item)]=u8(seat);gift_recipients[item_index(item)]=no_owner;
+    item.state=1;return u32(seat);
+}
 u32 ItemSystem::owner_for(ItemState& item){
     const u32 index=item_index(item);if(index>=ItemPoolState::capacity)return no_owner;
     const u8 recipient=gift_recipients[index];
     if(recipient<3&&owners[recipient].available&&owners[recipient].player){
-        item_owners[index]=recipient;return recipient;
+        item_owners[index]=recipient;return overflow_owner(item,recipient);
     }
     gift_recipients[index]=no_owner;
     const u8 previous=item_owners[index];
-    if(item.state==1&&previous<3&&owners[previous].available&&owners[previous].player)return previous;
+    if(item.state==1&&previous<3&&owners[previous].available&&owners[previous].player)return overflow_owner(item,previous);
     const u32 result=nearest_owner(item.position);item_owners[index]=u8(result);
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     if(previous!=result)multiplayer::diagnostic::Event("item.owner",int(result),previous,&item);
@@ -178,6 +196,7 @@ u32 ItemSystem::auto_collect_owner(ItemState& item){
            (input.power>=128||input.focused||input.character==1||input.character==6)){claimant=seat;break;}
     }
     if(claimant==no_owner)return no_owner;
+    if(item.type==0||item.type==2||item.type==4)claimant=nearest_power_owner(item.position,false);
     // One retail player crossing the POC claims the field. Multiplayer keeps
     // that semantic; the seat order is only the deterministic tie-break for
     // the simultaneous multi-claim edge, never a round-robin item split.
@@ -185,7 +204,7 @@ u32 ItemSystem::auto_collect_owner(ItemState& item){
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     multiplayer::diagnostic::Event("item.poc",int(claimant),0,&item);
 #endif
-    return claimant;
+    return overflow_owner(item,claimant);
 }
 bool ItemSystem::touching(u32 seat,const Vec3& p,const Vec3& size){return seat<3&&owners[seat].available&&owners[seat].player&&owners[seat].player->collision().item(p,size);}
 void ItemSystem::collect(u32 seat,ItemState& item){

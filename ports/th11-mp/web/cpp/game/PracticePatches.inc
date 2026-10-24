@@ -1,4 +1,4 @@
-// Generated from thprac TH11 (MIT), sha256 af2c0a29b2d92bb41fca2d595614a5ea4aa08b0b5b9c0f0c3c5f3789663f6ea7.
+// Generated from thprac TH11 (MIT), sha256 6236d13b9c62ac981fc5bb625a81d0e93553b67bf64a2095fd4d6bd1c7a4abc0.
 // Only Win32 buffer ownership and bounds protection are adapted.
     void* THStage6STD()
     {
@@ -203,6 +203,10 @@
                 ecl << pair{0x67a4, 30};
                 break;
             case 4:
+                if (thPracParam.phase == 1) {
+                    ECLJump(ecl, 0x2BF8, 0x2AB0, 0, 0);
+                }
+                ecl << pair { 0x2A80, 40 - thPracParam.wave_passed };
                 ecl << pair{0x6790, 0};
                 ECLJump(ecl, 0x67a8, 0x6878);
                 break;
@@ -507,6 +511,14 @@
             break;
         case TH11_ST4_RA_BOSS5:
         case TH11_ST4_RA2:
+            switch (thPracParam.phase) {
+            case 0:
+                break;
+            case 1:
+                ecl << pair { 0x5438 + 0x8, thPracParam.boss_x };
+                ecl << pair { 0x5438 + 0xC, thPracParam.boss_y };
+                break;
+            }
             ECLSatoriJump(ecl, 0);
             ecl.SetFile(2);
             ECLJump(ecl, 0x1ac, 0x3f4);
@@ -530,22 +542,24 @@
             ECLSatoriJump(ecl, 1);
             ecl.SetFile(3);
             ECLJump(ecl, 0x24c, 0x1bd0);
-            ecl << pair{0x170, 4000};
+            ecl << pair { 0x170, 4000 };
             ECLVoid(ecl, 0x174, 0x1f8, 0x1e20, 0x1e58, 0x1e6c);
             break;
         case TH11_ST4_RB_BOSS6:
-        case TH11_ST4_RB3: {
+        case TH11_ST4_RB3:
+            {
             constexpr unsigned int st4BossRB3InvulnVal = 0x30fc + 0x10;
 
             ECLSatoriJump(ecl, 1);
             ecl.SetFile(3);
             ECLJump(ecl, 0x24c, 0x30e8);
-            ecl << pair{0x170, 1500};
+            ecl << pair { 0x170, 1500 };
             ECLVoid(ecl, 0x174, 0x1f8, 0x3334, 0x3344, 0x33b0);
-            ecl << pair{0x3390, 0x3c} << pair{0x33c0, 0x3c}
+            ecl << pair { 0x3390, 0x3c } << pair { 0x33c0, 0x3c }
                 << pair { st4BossRB3InvulnVal, 0 }; // note: we skip a bunch of waits that normally elapse the invuln timer before the spell even begins
             break;
-        } case TH11_ST4_RC_BOSS4:
+        }
+        case TH11_ST4_RC_BOSS4:
         case TH11_ST4_RC1:
             ECLSatoriJump(ecl, 2);
             break;
@@ -643,6 +657,26 @@
             ECLJump(ecl, 0x674c, 0x6844);
             ECLVoid(ecl, 0x29f8);
             ecl.SetFile(2);
+            switch (thPracParam.phase) {
+            case 0:
+                break;
+            case 1:
+                ECLJump(ecl, 0x239C, 0x2A60, 90, 90);
+                ECLJump(ecl, 0x3194, 0x3BC8, 90, 90);
+                break;
+            case 2:
+                {
+                const auto target = ecl.AppendWave(true);
+                ECLJump(ecl, 0x20f0, target);
+            }
+                break;
+            case 3:
+            {
+                const auto target = ecl.AppendWave(false);
+                ECLJump(ecl, 0x20f0, target);
+            }
+            break;
+            }
             ecl << pair{0x1b8, 1500} << pair{0x1f8, 1500};
             ecl.SetPos(0x1284);
             ecl << 0 << 0x0014014f << 0x01ff0000 << 0 << 60; // Invicible
@@ -723,7 +757,8 @@
             ECLTimeFix(ecl, 0x75e8, -60);
             ecl << pair { st5BossSp4InvulnVal, 0 }; // note: invuln timer normally elapses before the spell even begins
             break;
-        } case TH11_ST6_MID1:
+        }
+        case TH11_ST6_MID1:
             THStage6STD();
             THStage6ANM();
             ECLJump(ecl, 0x40b8, 0x41a4);
@@ -808,13 +843,14 @@
             ECLJump(ecl, 0x40b8, 0x42b8);
             ecl.SetFile(3);
             ECLSetHealth(ecl, 0x5f0, 3500);
-            ecl << pair{0x5a4, (int8_t)0x34} << pair{0x590, 3500};
+            ecl << pair { 0x5a4, (int8_t)0x34 } << pair { 0x590, 3500 };
             ECLVoid(ecl, 0x77dc, 0x787c, 0x78d0, 0x78fc, 0x7928);
             ecl.SetPos(0x785c);
             ecl << 0 << 0x00200118 << 0x02ff0000 << 0 << 0 << 0x43600000;
-            ecl << pair { st6BossSp4InvulnVal, 260 - 60 * 4 }; //accounting for skipped waits (=20f)
+            ecl << pair { st6BossSp4InvulnVal, 260 - 60 * 4 }; // accounting for skipped waits (=20f)
             break;
-        } case TH11_ST6_BOSS9:
+        }
+        case TH11_ST6_BOSS9:
             THStage6STD();
             THStage6ANM();
             ECLVoid(ecl, 0x460);
@@ -827,25 +863,25 @@
             ecl << 0 << 0x00200118 << 0x02ff0000 << 0 << 0 << 0x43600000;
 
             switch (thPracParam.phase) {
-            case 1:
+            case 1:// 2
                 ecl << pair{0x8cb0, 4999};
                 ECLJump(ecl, 0x9260, 0x9318);
                 ecl << pair{0x9344, (int16_t)0};
                 break;
-            case 2:
+            case 2:// 3
                 ecl << pair{0x8cb0, 2999};
                 ECLJump(ecl, 0x9260, 0x9318);
                 ECLJump(ecl, 0x9354, 0x940c);
                 ecl << pair{0x9344, (int16_t)0} << pair{0x9438, (int16_t)0};
                 break;
-            case 3:
+            case 3:// 4
                 ecl << pair{0x8cb0, 1499};
                 ECLJump(ecl, 0x9260, 0x9318);
                 ECLJump(ecl, 0x9354, 0x940c);
                 ECLJump(ecl, 0x946c, 0x9524);
                 ecl << pair{0x9344, (int16_t)0} << pair{0x9438, (int16_t)0} << pair{0x9550, (int16_t)0};
                 break;
-            case 4:
+            case 4://rage 4
                 ecl << pair{0x8cb0, 1499};
                 ECLJump(ecl, 0x9260, 0x9318);
                 ECLJump(ecl, 0x9354, 0x940c);
@@ -853,6 +889,25 @@
                 ecl << pair{0x9344, (int16_t)0} << pair{0x9438, (int16_t)0} << pair{0x9550, (int16_t)0};
                 ecl << pair{0x9f70, 2181}; // 2180
                 ecl << pair{0xa08c, (int16_t)0};
+                break;
+            case 5://rage 3
+                ecl << pair { 0x8cb0, 2999 };
+                ECLJump(ecl, 0x9260, 0x9318);
+                ECLJump(ecl, 0x9354, 0x940c);
+                ecl << pair { 0x9344, (int16_t)0 } << pair { 0x9438, (int16_t)0 };
+                ecl << pair { 0x9f70, 2181 }; // 2180
+                ecl << pair { 0xa08c, (int16_t)0 };
+                break;
+            case 6: // rage 2
+                ecl << pair { 0x8cb0, 4999 };
+                ECLJump(ecl, 0x9260, 0x9318);
+                ecl << pair { 0x9344, (int16_t)0 };
+                ecl << pair { 0x9f70, 2181 }; // 2180
+                ecl << pair { 0xa08c, (int16_t)0 };
+                break;
+            case 7: // rage 1
+                ecl << pair { 0x9f70, 2181 }; // 2180
+                ecl << pair { 0xa08c, (int16_t)0 };
                 break;
             default:
                 break;
@@ -1028,8 +1083,10 @@
             ecl << pair{0x44a0, 60} << pair{0x44b0, 60};
             ECLVoid(ecl, 0xc610, 0xc648);
             break;
-
-        case TH11_ST7_END_S9: { // Philosophy of a Hated Person
+        // Blue source SHA256 af2c0a29b2d92bb41fca2d595614a5ea4aa08b0b5b9c0f0c3c5f3789663f6ea7, replay only.
+        case TH11_ST7_END_S9:
+            if(thPracParam.legacy_blue) {
+ // Philosophy of a Hated Person
             constexpr unsigned int st7PostMaple = 0x4c00;
             constexpr unsigned int st7BossCreateCall = 0x4e5c;
             constexpr unsigned int st7bsDialogWait = 0x568;
@@ -1092,8 +1149,20 @@
                 break;
             }
             break;
-        }
 
+            }
+            ECLJump(ecl, 0x4c00, 0x4e5c);
+            ecl.SetFile(3);
+            ecl << pair{0x65c, (int8_t)0x38};
+            ECLTimeFix(ecl, 0x568, -60);
+            ECLVoid(ecl, 0x5b8);
+            ECLVoid(ecl, 0x441c, 0x4454);
+            ECLSetHealth(ecl, 0x44d0, 2000);
+            ecl << pair{0x44a0, 60} << pair{0x44b0, 60};
+            ECLVoid(ecl, 0xc610, 0xc648);
+            ecl << pair{0x42b4, 0x39};
+            ECLVoid(ecl, 0xd9e8, 0xda20, 0xda4c);
+            break;
         case TH11_ST7_END_S10:
             ECLJump(ecl, 0x4c00, 0x4e5c);
             ecl.SetFile(3);

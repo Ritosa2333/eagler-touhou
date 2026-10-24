@@ -204,7 +204,12 @@ RenderResult GameWindow::Render()
 #else
     constexpr bool limitPresentationTo60 = false;
 #endif
-    const bool preserveReplayCadence = g_GameManager.isInReplay != 0;
+#ifdef TH_ENABLE_NETPLAY
+    const bool spectatorViewing = Netplay::Th06LanStageProbe::SpectatorViewing();
+#else
+    constexpr bool spectatorViewing = false;
+#endif
+    const bool preserveReplayCadence = g_GameManager.isInReplay != 0 || spectatorViewing;
 
 #ifdef TH_DEV_TOOLS
     // Developer fast-forward: run extra 60 Hz simulation passes proportional
@@ -252,7 +257,7 @@ RenderResult GameWindow::Render()
     };
 
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::Th06LanStageProbe::Requested())
+    if (Netplay::Th06LanStageProbe::Requested() && !spectatorViewing)
     {
         // A stalled network tick consumes no deterministic simulation time.
         // Keep only a bounded backlog, then run several fixed ticks before the

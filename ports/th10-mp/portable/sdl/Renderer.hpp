@@ -52,6 +52,9 @@ public:
     // A missing record returns false and leaves out unchanged.
     bool cpu_texture_state(u32 handle,CpuTextureState& out) const noexcept;
     void render_imgui(const ImDrawData*,u32 target);
+    u32 create_imgui_texture(int width,int height,const u8* rgba);
+    void release_imgui_texture(u32 texture);
+    bool flip_present_y=false;
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:

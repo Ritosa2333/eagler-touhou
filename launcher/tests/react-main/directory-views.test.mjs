@@ -184,6 +184,8 @@ for (const locale of ['zh-CN', 'en']) test(`Original cooperative list shows room
   assert.equal(all('.lobby-seat').length,snapshot.visibleRooms[0].capacity);
   assert.equal(n('.lobby-player-count').textContent,`${snapshot.visibleRooms[0].players} / ${snapshot.visibleRooms[0].capacity}`);
   assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.recruiting'));
+  assert.equal(n('.lobby-room-watchers').getAttribute('aria-label'),t(locale,'th09.spectatorCount',{count:3}));
+  assert.equal(n('.lobby-room-watchers').textContent,t(locale,'th09.spectatorCount',{count:3}));
   assert.equal(env.document.querySelector('.coop-room-row'),null);
   assert.equal(env.document.querySelector('.room-elapsed'),null);
 });
@@ -271,6 +273,27 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   await click('#refreshRooms'); assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listHead').hidden, true);
   assert.equal(env.document.querySelector('#emptyState'), null); assert.deepEqual(f.socket.sent.at(-1), {type: 'refresh', product: 'th06mp'});
   await f.receive([room()]); assert.equal(n('#connectionNote').hidden, true);
+});
+test('empty rows from older relays disappear with consistent totals while spectator, reconnect and own recovery remain', async () => {
+  const empty=room({code:'1111',players:0,seats:[null,null,null]}), live=room({code:'2222'});
+  const replay=room({code:'3333',players:0,phase:'running',spectators:1,seats:[null,null,null],joinable:false,spectatable:true});
+  const reconnect=room({code:'4444',seats:[{initial:'R',online:false},null,null]});
+  const emptyRun=room({...empty,code:'5555',phase:'running',spectatable:true});
+  const mine={product:'th06mp',code:'1111',recoveryToken:'retained-recovery'};
+  const f=await fixture().live([empty,live,replay,reconnect,emptyRun],{total:5,mine,membershipRecovery:true});
+  await mountLobby(f);
+  assert.deepEqual(f.service.getSnapshot().rooms.map(r=>r.code),['2222','3333','4444']);
+  assert.equal(f.service.getSnapshot().total,3);
+  assert.equal(all('#roomList .lobby-room-row').length,3);
+  assert.equal(n('#connectionNote').hidden,true,'filtered rows do not create a false truncated-list notice');
+  assert.equal(f.service.getSnapshot().mine.recoveryToken,'retained-recovery');
+  assert.equal(n('#membership').hidden,false);
+  await f.receive([empty],{total:1,mine,membershipRecovery:true});
+  assert.equal(f.service.getSnapshot().total,0);assert.equal(all('#roomList .lobby-room-row').length,0);
+  assert.equal(n('#roomCount').textContent,t('en','lobby.roomCount',{count:0}));
+  assert.equal(n('#membership').hidden,false,'private recovery survives public row removal');
+  await f.receive([room({...empty,seats:[{initial:'A',online:true},null,null]})],{total:1});
+  assert.equal(all('#roomList .lobby-room-row').length,1,'a reseated member restores the row');
 });
 for (const [kind, title, hint] of [['offline', 'lobby.offline', 'lobby.refreshHint'], ['missing', 'lobby.offline', 'lobby.noService'], ['unsupported', 'lobby.unsupported', 'lobby.unsupportedHint']]) {
   test(`Lobby real ${kind} warning suppresses empty state and retries through service`, async () => {
@@ -437,6 +460,8 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
     }else{
       const state=phase==='playing'?'playing':players===2?'full':'recruiting';
       assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.'+state));
+      assert.equal(!!env.document.querySelector('.room-elapsed'),phase==='playing');
+      if(phase==='playing')assert.match(n('.room-elapsed').textContent,/1:0\d/);
       assert.equal(env.document.querySelector('.th09-room-duration'),null);
     }
   }

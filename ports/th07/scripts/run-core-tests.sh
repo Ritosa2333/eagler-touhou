@@ -48,7 +48,7 @@ python3 audit/source-contracts/texture-binding-contract-test.py
   -o "$OUT/netplay-input-test"
 "$OUT/netplay-input-test"
 
-"$CXX" -std=c++20 -Isrc \
+"$CXX" -std=c++20 -Isrc -I../../common/include \
   tests/netplay-side-effects-test.cpp src/netplay/NetplaySideEffects.cpp \
   -o "$OUT/netplay-side-effects-test"
 "$OUT/netplay-side-effects-test"

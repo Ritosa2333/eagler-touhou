@@ -5,27 +5,27 @@ import {spawn} from 'node:child_process';
 import net from 'node:net';
 import {existsSync,mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {createRequire} from 'node:module';
+import {launchBrowser} from '../../../../../tools/browser/launch.mjs';
 import {presentationServer} from '../../scripts/presentation-server.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
-const {chromium}=createRequire(process.env.BROWSER_TEST_PACKAGE||resolve(root,'package.json'))('playwright');
 const label=process.env.RUN_LABEL;if(!/^[\w-]+$/.test(label||''))throw Error('Unique RUN_LABEL required');
 const buildDir=resolve(process.env.PC_BUILD||resolve(root,'artifacts/in-game-selection-release-20261015'));
 const out=resolve(root,'artifacts/multiplayer-tests',label);if(existsSync(out))throw Error('Retained run already exists');mkdirSync(out,{recursive:true});
 const fallback=process.argv.includes('--relay'),mode=Number(process.env.ADONIS_MODE||0),selectionOnly=process.argv.includes('--selection-only'),packetDelay=Number(process.env.MENU_PACKET_DELAY_MS||0);
-const report={passed:false,scope:selectionOnly?'Local Chromium selection cadence, independent character inputs and shared difficulty/stage controls under delayed packets. Not full-match/public-network/device acceptance.':'Local Chromium, real Release worlds and shared transport. Natural match completion. Not public-network/device acceptance.',build:JSON.parse(readFileSync(resolve(buildDir,'build.json'))).sha256,fallback,mode,stages:[],errors:[]};
+const report={passed:false,scope:process.argv.includes('--reentry-only')?'Five room return/start cycles with real Release worlds and local Relay. Each restart compares a common confirmed frame hash.':selectionOnly?'Local Chromium selection cadence, independent character inputs and shared difficulty/stage controls under delayed packets. Not full-match/public-network/device acceptance.':'Local Chromium, real Release worlds and shared transport. Natural match completion. Not public-network/device acceptance.',build:JSON.parse(readFileSync(resolve(buildDir,'build.json'))).sha256,fallback,mode,stages:[],errors:[]};
 const stage=(name,details={})=>{const row={name,at:new Date().toISOString(),...details};report.stages.push(row);console.log(JSON.stringify(row));};
 const relayPort=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
 const relay=spawn(process.execPath,[resolve(process.env.TH09_SELECTION_RELAY||resolve(root,'../../eagler-touhou/services/netplay/netplay-relay.mjs'))],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(relayPort),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_TH09_SPECTATOR_TIMELINE:'1'},stdio:['ignore','pipe','pipe']});
 let relayLog='';relay.stderr.on('data',b=>relayLog+=b);await new Promise((ok,fail)=>{relay.stdout.on('data',b=>{relayLog+=b;if(relayLog.includes('netplay relay listening'))ok();});relay.on('error',fail);relay.on('exit',code=>fail(Error('relay '+code+' '+relayLog)));});
 const host=await presentationServer(0,{release:true,artifactDirectory:buildDir});
-const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,args:['--enable-gpu','--use-gl=angle','--use-angle=d3d11','--autoplay-policy=no-user-gesture-required']});
+const browser=await launchBrowser({headless:true,args:['--enable-gpu','--use-gl=angle','--use-angle=d3d11','--autoplay-policy=no-user-gesture-required']});
 const pages=[];
 async function actor(index){
   const page=await browser.newPage({viewport:{width:900,height:700}});pages.push(page);
   page.on('pageerror',e=>report.errors.push({index,error:e.stack}));
-  await page.goto(host.url);await page.evaluate(async({index,relayPort,fallback,packetDelay})=>{
+  await page.goto(host.url);await page.waitForFunction(()=>typeof window.openProbe==='function');
+  await page.evaluate(async({index,relayPort,fallback,packetDelay})=>{
     await openProbe(0,1,2,3,true);
     if(packetDelay&&index<2){const send=WebSocket.prototype.send;WebSocket.prototype.send=function(data){if(typeof data==='string')return send.call(this,data);const copy=data.slice?data.slice(0):data;setTimeout(()=>{if(this.readyState===1)send.call(this,copy);},packetDelay);};}
 if(fallback)window.RTCPeerConnection=undefined;
@@ -47,7 +47,7 @@ async function waitFor(page,predicate,name,timeout=30000){const until=Date.now()
 async function press(index,key){await pages[index].keyboard.press(key,{delay:100});await pages[index].waitForTimeout(180);}
 async function connect(index){await pages[index].evaluate(async({index,relayPort,mode})=>{
   const {SharedNetplay}=await import('/app/shared-netplay.mjs');const spectator=index>=2;
-  const options={netplayUrl:`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&run=1&players=2&member=selectionmember${index}&${spectator?'spectator=selectionpeer'+index:'player='+index}`,netplayPlayer:spectator?0:index,netplayPlayerCount:2,netplaySeed:12345,netplayDifficulty:3,netplayLoadouts:[{character:0},{character:1}],netplayInGameSelection:true,netplaySpectator:spectator,netplaySpectatorId:spectator?'selectionpeer'+index:'',netplaySpectatorCount:2,netplaySpectatorTimeline:true,netplayIceServers:[],netplayAdonisMode:mode,netplayInputDelay:mode?2:0,netplayInputDelayAuto:false};
+  const options={netplayUrl:`ws://127.0.0.1:${relayPort}/?room=th09mp-0777&run=${window.room.startSerial}&players=2&member=selectionmember${index}&${spectator?'spectator=selectionpeer'+index:'player='+index}`,netplayPlayer:spectator?0:index,netplayPlayerCount:2,netplaySeed:12345,netplayDifficulty:3,netplayLoadouts:[{character:0},{character:1}],netplayInGameSelection:true,netplaySpectator:spectator,netplaySpectatorId:spectator?'selectionpeer'+index:'',netplaySpectatorCount:2,netplaySpectatorTimeline:true,netplayIceServers:[],netplayAdonisMode:mode,netplayInputDelay:mode?2:0,netplayInputDelayAuto:false};
   core.eaglerOptions=options;window.play=new SharedNetplay(core,{onStatus:s=>notices.push(s),onClose:s=>closeEvents.push(s),onResult:()=>{}});
   const readHash=frame=>{const at=core._th09_confirmed_frame_hash(frame)/4;if(core.HEAPU32[at]===frame)hashes[frame+1]=core.HEAPU32[at+1];};
   core.onNetworkSpectatorBegin=(frame,bytes)=>{begins.push({frame,bytes:bytes.length});play.beginMatch(frame,bytes);};
@@ -58,7 +58,7 @@ async function connect(index){await pages[index].evaluate(async({index,relayPort
   core.onGameFrame=()=>{if(!spectator){const at=core._th09_rollback_info()/4;const confirmed=core.HEAPU32[at+1];for(let f=Math.max(0,confirmed-9);f<confirmed;f++)readHash(f);}
     if(spectator&&window.pauseAt!==undefined&&core._th09_spectator_frame()===window.pauseAt){core._th09_spectator_control(0,0);window.pauseAt=undefined;}
     play.frame();};
-  core._th09_loop_start();core._th09_loop_pause(1);await play.connect(options);
+  core._th09_room_preview(0);core._th09_loop_start();core._th09_loop_pause(1);await play.connect(options);
 },{index,relayPort,mode});}
 async function menu(screen){for(const page of pages.slice(0,2))await waitFor(page,s=>s.selection[1]===1&&s.title[2]===screen&&s.title[3]===1&&s.title[5]>=10,'menu '+screen);}
 try{selectionRun:{
@@ -102,6 +102,33 @@ try{selectionRun:{
   assert.equal(first.route,fallback?'relay':'rtc');
   assert.deepEqual(first.selection.slice(10,12),[1,1]);
   await waitFor(pages[2],s=>s.viewer[1]>first.begins[0].frame+20,'first spectator');
+  if(process.argv.includes('--reentry-only')){
+    for(let cycle=0;cycle<5;cycle++){
+      await pages[0].keyboard.down('KeyZ');await pages[0].keyboard.down('ShiftLeft');
+      await pages[0].waitForTimeout(500);
+      await pages[0].keyboard.up('ShiftLeft');await pages[0].keyboard.up('KeyZ');
+      await waitFor(pages[0],s=>s.session[1]>=300,'reentry running '+cycle);
+      for(const page of pages)await page.evaluate(()=>{core._th09_loop_stop();play.close();core._th09_room_return();});
+      await pages[0].waitForFunction(()=>room.phase==='lobby');
+      await pages[0].waitForTimeout(200);
+      for(const page of pages)await page.evaluate(()=>{closeEvents=[];notices=[];begins=[];ends=[];hashes={};});
+      for(let i=0;i<2;i++){
+        await pages[i].evaluate(()=>lobby.send(JSON.stringify({type:'set-ready',ready:true})));
+        await pages[i].waitForFunction(i=>room.seats[i].ready,i);
+      }
+      await pages[0].evaluate(mode=>lobby.send(JSON.stringify({type:'start',adonisMode:mode,inputDelay:mode?2:0,inputDelayAuto:false})),mode);
+      for(const page of pages)await page.waitForFunction(serial=>room.startSerial===serial,cycle+2);
+      await connect(2);await connect(0);await connect(1);await menu(7);
+      await press(0,'KeyZ');await menu(8);
+      await press(0,'KeyZ');await press(1,'KeyZ');await menu(16);await press(0,'KeyZ');
+      await waitFor(pages[0],s=>!s.selection[1]&&s.session[1]>=180,'reentry game '+cycle);
+      const states=await Promise.all(pages.slice(0,2).map(state)),confirmed=Math.min(...states.map(s=>s.rollback[1]))-20;
+      const hashes=await Promise.all(pages.slice(0,2).map(p=>p.evaluate(frame=>window.hashes[frame],confirmed)));
+      assert.ok(Number.isInteger(hashes[0]));assert.equal(hashes[0],hashes[1],'same-frame reentry hash '+cycle);
+      stage('reentry-confirmed',{cycle:cycle+1,serial:cycle+2,confirmed,hash:hashes[0]});
+    }
+    break selectionRun;
+  }
   if(selectionOnly){stage('both-stage-selection-and-launch');break selectionRun;}
   await pages[2].locator('#spectatorToggle').click();await pages[2].locator('#spectatorPause').click();const held=await state(pages[2]);
   for(const page of pages.slice(0,2)){await page.keyboard.down('KeyZ');await page.keyboard.down('ControlLeft');}

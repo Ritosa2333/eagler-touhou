@@ -39,3 +39,9 @@ npm --prefix launcher run dev:workspace
 | 多人运行时检查 | Node.js 22.18 以上；上方已设置的 `WASI_SDK_ROOT` | 运行 `node --test ports/th11-mp/portable/multiplayer/*.test.mjs`。 |
 
 原版文件放在 `ports/th11-mp/[th11] 东方地灵殿 (汉化版+日文版)/`。源码或测试输入变更后，先重建 WASI 模块，再运行对照测试。
+
+## 普通版修改同步
+
+普通版目录历史通过真实 Git 合并接入 MP，来源与接收范围见[普通版与多人版同步](../../../docs/adaptation/port-sync.md)。通用功能、练习源码和专项检查沿普通版更新，MP 保留席位输入、回滚、旁观与多人录像所有权。构建配方继续选择对应模式。
+
+音频采用 1024 帧请求块、2048/3072 帧补音阈值与最多三块补音，诊断和普通输出共用队列策略。并行编译前串行准备 SDL 与字体依赖。

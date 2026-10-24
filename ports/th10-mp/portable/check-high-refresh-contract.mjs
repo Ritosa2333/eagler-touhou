@@ -35,7 +35,8 @@ const ordinaryCadence=cadenceRegion.replace(mpPattern,(_,body)=>{
  assert(alternatives.length<=2);
  return alternatives[1]||'';
 });
-assert.match(ordinaryCadence,/const unsigned offered=cadence\.advance\(simulation_delta\);/);
+assert.match(ordinaryCadence,/unsigned offered=cadence\.advance\(simulation_delta\);/);
+assert.match(host,/practice_clock=!application->multiplayer_active\(\);/);
 assert.match(ordinaryCadence,/const bool tick_due=offered!=0;/);
 assert.match(ordinaryCadence,/while\(completed<offered&&!result\)/);
 assert.equal((ordinaryCadence.match(/\bwhile\s*\(/g)||[]).length,1);

@@ -265,7 +265,12 @@ RenderResult GameWindow::Render()
 #else
     constexpr bool limitPresentationTo60 = false;
 #endif
-    const bool preserveReplayCadence = g_GameManager.replay != 0;
+#ifdef TH_ENABLE_NETPLAY
+    const bool spectatorViewing = Netplay::Th07LanStageProbe::SpectatorViewing();
+#else
+    constexpr bool spectatorViewing = false;
+#endif
+    const bool preserveReplayCadence = g_GameManager.replay != 0 || spectatorViewing;
 #ifdef TH_DEV_TOOLS
     if (g_DevSpeedMultiplier > 1.0f)
         this->accumulator += elapsed * (g_DevSpeedMultiplier - 1.0f);
@@ -331,7 +336,7 @@ RenderResult GameWindow::Render()
     };
 
 #ifdef TH_ENABLE_NETPLAY
-    if (Netplay::Th07LanStageProbe::Requested())
+    if (Netplay::Th07LanStageProbe::Requested() && !spectatorViewing)
     {
         // A stalled netplay tick has not consumed simulation time. Keep a
         // bounded wall-clock backlog while presentation continues, then catch

@@ -77,7 +77,7 @@ export function RoomWorkspace(props: RoomViewProps) {
         <button className="mp-start-button" id="mpStartGame" type="button" disabled={locked || !owner || !state.canStart} onClick={service.start}>{t('multiplayer.startGame')}</button>
       </footer>
       <RoomPanel open={!!activePanel} kind={currentPanel.kind} peerId={currentPanel.peerId} trigger={trigger} onCloseRequest={props.onClosePanel} onClosed={()=>{}}>
-        <RoomPersonal state={state} service={service} assetUrl={assetUrl} th09NetworkOverlayOpen={context.th09NetworkOverlayOpen} hidden={currentPanel.kind!=='personal'}/>
+        <RoomPersonal state={state} service={service} network={network} assetUrl={assetUrl} th09NetworkOverlayOpen={context.th09NetworkOverlayOpen} hidden={currentPanel.kind!=='personal'}/>
         <RoomNetwork state={state} network={network} context={context} peerId={currentPanel.peerId} hidden={currentPanel.kind!=='network'}/>
         <RoomSpectators state={state} service={service} hidden={currentPanel.kind!=='spectators'}/>
       </RoomPanel>

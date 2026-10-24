@@ -1,4 +1,4 @@
-import {readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {readFileSync,writeFileSync,existsSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createPresentationLabServer,sha256} from '../../../../common/testkit/presentation-lab/server-core.mjs';
 import {createRuntimeManifest} from '../package-eagler.mjs';
@@ -20,6 +20,9 @@ files.set('/th08-sdl.wasm',wasm);
 const data=process.env.TH08_MP_DATA||resolve(workspace,'games/web-content/th08/th08.dat');
 if(!existsSync(data))throw Error('Set TH08_MP_DATA to your retail th08.dat; diagnostic tests never bundle retail DATA');
 files.set('/input/th08.dat',data);
+const ogg=process.env.TH08_MP_OGG;
+if(ogg)for(const name of readdirSync(ogg).filter(name=>/^th08_\d+\.ogg$/.test(name)))
+ files.set('/input/bgm/'+name,resolve(ogg,name));
 files.set('/host.html',resolve(import.meta.dirname,'runtime-host.html'));
 // The production shell binds admission to this build identity. Keep the local
 // host lane on the same manifest contract as a packaged Runtime.

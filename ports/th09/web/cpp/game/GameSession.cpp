@@ -3,6 +3,7 @@
 #include <algorithm>
 namespace th09 {
 bool GameSession::begin(const WorldConfiguration& configuration,const ReplayMetadata& metadata,const char* date){
+    charge_replay.clear();charge_input_recorded=false;
     motion.clear();clear_motion();resources.cancel_preload();warmed_stage=-1;world.reset();ending.reset();error.clear();animations.invalid=false;initial=current=configuration;replay_metadata=metadata;recording.begin(metadata);demo_input={};demo_frames=0;is_replay=demo=false;recordable=true;continues=0;frames=0;inputs[0]={};inputs[1]={};inputs[2]={};scores={};result={};
     if(date)std::copy_n(date,std::min(std::strlen(date),result.date.size()-1),result.date.data());
     current.selection.stage=configuration.selection.mode==GameMode::versus?9:0;current.selection.round=0;current.selection.visited={};current.selection.continued=0;
@@ -11,6 +12,8 @@ bool GameSession::begin(const WorldConfiguration& configuration,const ReplayMeta
 }
 bool GameSession::play(const ReplayFile& file,u32 stage,bool attract){
     if(stage>=10||file.data().size()<ReplayFile::metadata_end)return fail("Replay stage bounds");
+    if(!charge_replay.load(file.data().data(),u32(file.data().size())))return fail("Invalid local-charge replay track");
+    charge_frames={};charge_input_recorded=false;
     if(!motion.load(file.data().data(),file.data().size(),9))return fail("Invalid touch replay track");clear_motion();resources.cancel_preload();warmed_stage=-1;replay=file;is_replay=true;demo=attract;demo_input={};demo_frames=0;starting_replay_stage=stage;recordable=false;world.reset();ending.reset();error.clear();animations.invalid=false;current={};initial={};continues=0;frames=0;scores={};for(auto& in:inputs)in={};
     const auto* bytes=file.data().data();if(bytes[0x1e4]>2||bytes[0xd7]>4)return fail("Replay game mode");current.selection.mode=GameMode(bytes[0x1e4]);current.selection.stage=i32(stage);current.game_flags=4|8|(attract?2u:0u);return start_stage(true);
 }
@@ -45,19 +48,40 @@ bool GameSession::start_stage(bool first){
     // playback starts directly at a later stage (original 0041af2d).
     if(current.selection.mode!=GameMode::versus)scores[1]={};
     world=std::make_unique<GameWorld>(state,resources,animations,output);if(!world->initialize(current,false,&scores))return fail(world->error+" "+resources.error);
-    for(i32 side=0;side<2;++side){auto& p=*world->battle->fields[side].player;p.input=inputs[side];p.motion_source=this;motion.begin(current.selection.stage*2+side,false,is_replay,recordable);motion_input[side]={};}world->combined_input=inputs[2];resources.cancel_preload();warmed_stage=-1;phase=SessionPhase::match;return true;
+    charge_replay.begin(u32(current.selection.stage),is_replay);
+    for(i32 side=0;side<2;++side){auto& p=*world->battle->fields[side].player;p.input=inputs[side];p.motion_source=this;p.charge_frame=&charge_frames[side];motion.begin(current.selection.stage*2+side,false,is_replay,recordable);motion_input[side]={};}world->combined_input=inputs[2];resources.cancel_preload();warmed_stage=-1;phase=SessionPhase::match;return true;
 }
 void GameSession::capture_result(){if(!world)return;result.points=world->rules.scores[0].points;result.character=u8(world->configuration.selection.characters[0]);result.difficulty=u8(world->configuration.selection.difficulty);result.stage=0;result.continues=continues;}
 bool GameSession::update(u16 left,u16 right,u16 menu){
+    charge_input_recorded=false;
     if(!error.empty())return false;
     if(demo&&phase==SessionPhase::match){demo_input.update(menu);if(demo_input.pressed||++demo_frames==6120){finish();return true;}if(demo_frames==6000){world->screen_effects.create({4,120,0,0,0,35,2});output.fade_music();}}
     if(phase==SessionPhase::ending){ending->timing=timing;animations.timing=timing;inputs[2].device.update(menu);if(!ending->update(inputs[2].device)){if(!ending->error.empty())return fail(ending->error);phase=SessionPhase::finished;}return true;}
     if(phase!=SessionPhase::match||!world||world->paused)return true;
     world->timing=timing;world->copy_inputs(inputs);const bool focus[2]={world->battle->state.automatic_focus[0],world->battle->state.automatic_focus[1]};
-    if(is_replay){const auto action=playback.advance(world->battle->state.flags,inputs,focus);if(action==ReplayPlayback::Step::finished){finish();return true;}}
+    for(auto& charge:charge_frames)charge.instance=u32(world->rules.progress.stage)<<16;
+    if(is_replay){
+        const auto frame=playback.frame();const auto action=playback.advance(world->battle->state.flags,inputs,focus);
+        if(action==ReplayPlayback::Step::finished){finish();return true;}
+        if(charge_replay.enabled&&action==ReplayPlayback::Step::advanced){
+            const auto stage=u32(current.selection.stage);
+            for(const auto* entry=charge_replay.peek(stage);entry&&entry->frame==frame&&entry->hold;entry=charge_replay.peek(stage)){
+                for(u32 side=0;side<2;++side)if(!world->battle->fields[side].player->apply_charge_sample(entry->samples[side]))return fail("Invalid deferred charge replay action");
+                charge_replay.pop(stage);
+            }
+            const auto* entry=charge_replay.peek(stage);
+            if(!entry||entry->frame!=frame||entry->hold)return fail("Local-charge replay frame missing");
+            for(u32 side=0;side<2;++side){auto& step=charge_frames[side];step={};step.enabled=step.supplied=true;step.input=entry->samples[side];}
+            charge_replay.pop(stage);
+        }
+    }
     else{state.random.calls=0;const u16 keys[3]={left,right,menu};for(i32 n=0;n<3;++n){inputs[n].device.update(keys[n]);inputs[n].advance(keys[n]);}for(i32 s=0;s<2;++s)inputs[s].update_auto_focus(focus[s]);}
     if(!world->update_prepared(inputs))return fail(world->error);world->copy_inputs(inputs);
-    if(!is_replay){const bool cpu[2]={current.controllers[0]!=0,current.controllers[1]!=0};recording.record(world->battle->state.flags,false,inputs,cpu,60);}
+    for(const auto& charge:charge_frames)if(charge.enabled&&charge.failed)return fail("Invalid local charge progression");
+    if(!is_replay){
+        charge_recorded_frame=recording.frame();charge_recorded_stage=u32(current.selection.stage);
+        const bool cpu[2]={current.controllers[0]!=0,current.controllers[1]!=0};charge_input_recorded=recording.record(world->battle->state.flags,false,inputs,cpu,60);
+    }
     ++frames;if(!world->transition_pending)return true;capture_result();
     switch(world->transition){
     case SceneTransition::next_stage:return start_stage(false);
@@ -92,5 +116,22 @@ bool GameSession::movement(const PlayerMotion& p,float speed,float,float& x,floa
         if(!input.unlimited)touch::limit_vector(x,y,speed);}
     motion.record(track,enabled,x,y);return enabled;
 }
-ReplayFile GameSession::save_replay(const char* name){if(!recordable||is_replay){error="This run cannot be saved as a replay";return {};}const auto& c=world?world->configuration:current;auto file=recording.finish(state.random,name,result.date.data(),c.selection.characters[0],c.selection.characters[1]);if(file.data().empty()){error=recording.error;return file;}if(motion.used()){const auto tail=motion.trailer(9);if(tail.empty()){error="Touch replay recording exceeded its limit";return {};}auto extended=file.data();extended.insert(extended.end(),tail.begin(),tail.end());if(!file.assign(extended.data(),u32(extended.size()))){error="Touch replay size";return {};}}return file;}
+bool GameSession::record_charge_frame(const std::array<ChargeSample,2>& samples){
+    if(is_replay||!recordable||!world||(!charge_input_recorded&&phase!=SessionPhase::match))return true;
+    const u32 stage=charge_input_recorded?charge_recorded_stage:u32(world->rules.progress.stage);
+    const u32 frame=charge_input_recorded?charge_recorded_frame:recording.frame();
+    return charge_replay.record(stage,frame,!charge_input_recorded,samples)||fail("Local-charge replay recording exceeded its bounds");
+}
+ReplayFile GameSession::save_replay(const char* name){
+    if(!recordable||is_replay){error="This run cannot be saved as a replay";return {};}
+    const auto& c=world?world->configuration:current;auto file=recording.finish(state.random,name,result.date.data(),c.selection.characters[0],c.selection.characters[1]);
+    if(file.data().empty()){error=recording.error;return file;}
+    const auto append=[&](const std::vector<u8>& tail,const char* message){
+        if(tail.empty()||tail.size()>ReplayFile::max_size-file.data().size()){error=message;return false;}
+        auto extended=file.data();extended.insert(extended.end(),tail.begin(),tail.end());return file.assign(extended.data(),u32(extended.size()));
+    };
+    if(charge_replay.enabled&&!append(charge_replay.trailer(),"Local-charge replay recording exceeded its limit"))return {};
+    if(motion.used()&&!append(motion.trailer(9),"Touch replay recording exceeded its limit"))return {};
+    return file;
+}
 }

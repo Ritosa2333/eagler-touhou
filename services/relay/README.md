@@ -31,5 +31,6 @@ npm run package -- /absolute/path/to/new-relay-package
 | `EAGLER_NETPLAY_STUN_URLS` | `stun:stun.cloudflare.com:3478` | 客户端 ICE STUN 地址 |
 | `EAGLER_NETPLAY_TURN_URLS` | 空 | 可选 TURN 地址；需配置共享密钥或静态凭据 |
 | `EAGLER_NETPLAY_TURN_SHARED_SECRET` | 空 | 与 coturn 共用的短期凭据密钥 |
+| `EAGLER_NETPLAY_TURN_CONFIG_FILE` | 空 | 动态 TURN JSON 路径；统一更新房间测速、游戏信令与网络诊断 |
 
 完整客户端入口见[协议参考](docs/protocol.md)，反向代理与运行配置见[部署说明](deploy/README.md)。测试源码位于 [`tests/`](tests/)，服务许可见 [`LICENSE`](LICENSE)。

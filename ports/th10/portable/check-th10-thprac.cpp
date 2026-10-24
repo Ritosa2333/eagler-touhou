@@ -39,6 +39,22 @@ touhou::input::MotionTrack touched(){
 }
 }
 int main(){
+    const int delay_limits[]{140,120,100,50};
+    PracticeConfig menu; i32 previous_difficulty=-1;
+    for(int difficulty=0;difficulty<4;difficulty++){
+        assert(PracticeConfig::divine_virtues_delay_max(difficulty)==delay_limits[difficulty]);
+        menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==delay_limits[difficulty]);
+        menu.st6_boss9_spd=23;menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==23); // Reopening the same difficulty preserves edits.
+        menu.st6_boss9_spd=160;menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==delay_limits[difficulty]);
+        menu.st6_boss9_spd=0;menu.update_menu_difficulty(difficulty,previous_difficulty);
+        assert(menu.st6_boss9_spd==0);
+    }
+    menu.update_menu_difficulty(4,previous_difficulty);
+    menu.update_menu_difficulty(3,previous_difficulty);
+    assert(menu.st6_boss9_spd==50); // Returning from Extra resets like purple.
     {eagler::thprac::PracticeSpeed speed;assert(speed.interval(false,false,false,false)==1./60.);
     assert(speed.interval(true,false,true,false)==1./15.);speed.fps_replay_fast=240;
     assert(speed.interval(true,true,false,false)==1./240.);speed.fps=0;assert(speed.interval(false,false,false,false)==1.);

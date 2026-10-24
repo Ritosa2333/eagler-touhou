@@ -43,6 +43,9 @@ struct EclLiveValues {
     virtual i32 uncollected_time_items()const=0;
 };
 struct EclGlobals:SpellState {
+    bool practice_force_last_spell=false;
+    bool practice_enemy_invincible=false;
+    bool practice_tools_enabled=false;i32 practice_lock_frames=0;
     AnmLoaded* enemy_animation_files[2]{};
     BulletEmissionActions* bullet_actions=nullptr;
     LaserEmissionActions* laser_actions=nullptr;

@@ -5,7 +5,7 @@ import {isSpectatorFrameForRoom} from '../src/spectator-frame.mjs';
 
 function event(marker, count, {kind = 1, frame = 600, stage = 4, serial = 1, checkpoint = 1, node = 2, slots = 1} = {}) {
   const b = Buffer.alloc(kind === 1 ? 44 : kind === 2 ? 40 : 32);
-  b.set([69, marker, 83, 86, 1, kind, count, 0]);
+  b.set([69, marker, 83, 86, 2, kind, count, 0]);
   b.writeBigUInt64LE(0x123456789abcdef0n, 8); b.writeUInt32LE(0x10203040, 16);
   b.writeUInt32LE(frame, 20); b.writeUInt32LE(stage, 24); b.writeUInt32LE(serial, 28);
   if (kind === 1) { b.writeUInt32LE(7, 32); b.writeUInt32LE(4, 36); b.set([4, 10, 3, 2], 40); }
@@ -17,6 +17,23 @@ function input(marker, count, frame) {
   b.set([69, marker, 78, 80, 4, 3, count, 0]);
   b.writeBigUInt64LE(0x123456789abcdef0n, 8); b.writeUInt32LE(frame, 16); b.writeUInt32LE(0x10203040, 20);
   return b;
+}
+for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)) for (const count of [2, 3]) {
+  test(`${product}/${count}: published v1 clients retain their envelope and bootstrap version`, () => {
+    const initial = event(marker, count), large = Buffer.alloc(40 + 60 * 1024);
+    large.set(initial.subarray(0, 40)); large[4] = 1; large.writeUInt32LE(large.length - 40, 36);
+    const stream = new SpectatorStageRelay(marker, count);
+    assert.equal(stream.accept(large), 'checkpoint'); assert.equal(stream.bootstrap()[4], 1);
+    stream.accept(input(marker, count, 600));
+    const next = event(marker, count, {serial: 2, stage: 5, frame: 601});
+    assert.throws(() => stream.accept(next), /identity/);
+    assert.equal(stream.next, 601); assert.equal(stream.history.length, 2);
+    next[4] = 1; assert.equal(stream.accept(next), 'checkpoint'); assert.equal(stream.bootstrap()[4], 1);
+    const tooLarge = Buffer.concat([large, Buffer.from([0])]); tooLarge.writeUInt32LE(tooLarge.length - 40, 36);
+    assert.equal(parseSpectatorStageEvent(tooLarge, marker, count), null);
+    const current = new SpectatorStageRelay(marker, count); current.accept(initial);
+    next[4] = 1; assert.throws(() => current.accept(next), /identity/); assert.equal(current.bootstrap()[4], 2);
+  });
 }
 for (const [product, marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)) for (const count of [2, 3]) {
   test(`${product}/${count}: nonzero stage bootstrap, Boss dependency and exact next-stage replacement`, () => {
@@ -55,7 +72,7 @@ test('history limits fail before evicting a still-needed input prefix', () => {
   assert.throws(() => stream.accept(input(55, 2, 601)), /frame limit/);
   assert.equal(stream.history.length, 2); assert.equal(stream.next, 601);
 });
-test('portable object stage initializers fit inside the bounded relay envelope',()=>{
+test('native Replay stage headers fit inside the bounded relay envelope',()=>{
   const header=event(70,3),large=Buffer.alloc(40+SPECTATOR_STAGE_LIMITS.stateBytes);
   large.set(header.subarray(0,40));large.writeUInt32LE(large.length-40,36);
   assert.ok(large.length+1<64*1024);

@@ -26,11 +26,9 @@ bool spectator_silent(BrowserRuntime& runtime){
     if(!runtime.app.session.netplay.Spectator())return false;
     const auto* driver=runtime.network_driver();if(!driver)return true;
     const auto& playback=driver->Network().StagePlayback();
-    // Sound effects are useful while the observer follows the live stream, but
-    // seeking and replaying a backlog should not replay hundreds of historical
-    // cues into the viewer's device. Resume once playback reaches the edge.
-    return !playback.Ready()||playback.Paused()||playback.Seeking()||
-        (playback.Following()&&playback.Edge()>playback.Position()+1);
+    // Suppress historical sound-effect bursts during explicit navigation.
+    // Native Replay initialization and normal delayed playback remain audible.
+    return !playback.Ready()||playback.Paused()||playback.FastForwarding();
 #else
     (void)runtime;return false;
 #endif
@@ -154,7 +152,18 @@ u16 BrowserRuntime::poll_input(){
         return buttons;
     }
 #endif
-    const auto touch=u16(file_device().supplemental_input());return input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);
+    const auto touch=u16(file_device().supplemental_input());u16 result=input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);
+    auto& p=app.session.practice;
+    if(p.enabled&&!p.replay&&app.in_game()){
+#ifdef TH_NATIVE_PLATFORM
+        if(ThpracUi::captures_game_input())return result;
+#endif
+        u8 filtered[256]{};filtered[90]=(result&Shoot)?128:0;filtered[88]=(result&Bomb)?128:0;filtered[160]=filtered[161]=(result&Focus)?128:0;filtered[27]=(result&Menu)?128:0;filtered[82]=(result&Reset)?128:0;
+        p.input.apply(filtered);
+        result=u16((result&~(Shoot|Bomb|Focus|Menu|Reset))|(filtered[90]?Shoot:0)|(filtered[88]?Bomb:0)|((filtered[160]||filtered[161])?Focus:0)|(filtered[27]?Menu:0)|(filtered[82]?Reset:0));
+        if(p.input.disable_xkey||p.input.disable_zkey||p.input.disable_shiftkey||p.input.force_shiftkey||p.input.enable_fast_retry)p.assisted=true;
+    }
+    return result;
 }
 void BrowserRuntime::Graphics::bind_texture(u32 h){graphics_device().texture(h);}
 #ifdef TH_NATIVE_PLATFORM
@@ -373,17 +382,20 @@ void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){
 #endif
     if(!silent)audio->sound(i,m,x,p);
 }
-bool BrowserRuntime::play_music(i32 i,i32 s){return spectator_silent(*this)||audio->play_music(i,s);}
-void BrowserRuntime::load_music(i32 i,const char* p){if(!spectator_silent(*this))audio->load_music(i,p);}
-void BrowserRuntime::play_audio(const char* p,i32 s){if(!spectator_silent(*this))audio->play_audio(p,s);}
-void BrowserRuntime::stop_audio(){if(!spectator_silent(*this))audio->stop_audio();}
-void BrowserRuntime::fade_music(float s){if(!spectator_silent(*this))audio->fade_music(s);}
-void BrowserRuntime::menu_music(MenuMusic m,float s){if(!spectator_silent(*this))audio->menu_music(m,s);}
-void BrowserRuntime::midi_reset(){if(!spectator_silent(*this))audio->midi_reset();}
-void BrowserRuntime::start_bgm(){if(!spectator_silent(*this))audio->start_bgm();}
-void BrowserRuntime::process_sounds(){if(!spectator_silent(*this))audio->process_sounds();}
-void BrowserRuntime::update_audio_fades(){if(!spectator_silent(*this))audio->update_audio_fades();}
-void BrowserRuntime::apply_volume(const GameConfiguration& c){if(!spectator_silent(*this))audio->apply_volume(c);}
+// Music commands carry the native scene's persistent playback state. Replay
+// reconstruction must retain its load/start/stop sequence even when transient
+// historical sound effects are suppressed. SDL mixes after the callback batch.
+bool BrowserRuntime::play_music(i32 i,i32 s){return audio->play_music(i,s);}
+void BrowserRuntime::load_music(i32 i,const char* p){audio->load_music(i,p);}
+void BrowserRuntime::play_audio(const char* p,i32 s){audio->play_audio(p,s);}
+void BrowserRuntime::stop_audio(){audio->stop_audio();}
+void BrowserRuntime::fade_music(float s){audio->fade_music(s);}
+void BrowserRuntime::menu_music(MenuMusic m,float s){audio->menu_music(m,s);}
+void BrowserRuntime::midi_reset(){audio->midi_reset();}
+void BrowserRuntime::start_bgm(){audio->start_bgm();}
+void BrowserRuntime::process_sounds(){audio->process_sounds();}
+void BrowserRuntime::update_audio_fades(){audio->update_audio_fades();}
+void BrowserRuntime::apply_volume(const GameConfiguration& c){audio->apply_volume(c);}
 bool BrowserRuntime::audio_tick(u32 now){return spectator_silent(*this)||audio->audio_tick(now);}
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool BrowserRuntime::diagnostic_audio_clock_independent(){

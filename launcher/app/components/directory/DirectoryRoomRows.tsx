@@ -14,6 +14,7 @@ import {
 } from '../../services/lobby-directory';
 import { useLocale } from '../../i18n';
 import { Th09RoomCard } from './Th09RoomCard';
+import { RoomElapsed } from '../room/RoomElapsed';
 
 export interface DirectoryRoomRowsProps {
   snapshot: DirectorySnapshot;
@@ -116,6 +117,16 @@ function RoomRow({
           <span className="lobby-movement-rule lobby-challengeMode" hidden={!room.challengeMode}>
             {t('room.challengeMode')}
           </span>
+          <div className="lobby-room-facts">
+            <span className="lobby-room-watchers" aria-label={t('th09.spectatorCount', {count: room.spectators})}
+              title={t('th09.spectatorCount', {count: room.spectators})}>
+              <img src={assetUrl('assets/room-users.svg')} alt=""/>{t('th09.spectatorCount', {count: room.spectators})}
+            </span>
+            {room.phase !== 'lobby' && !!room.startedAt && <>
+              <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
+              <RoomElapsed phase={room.phase} startedAt={room.startedAt}/>
+            </>}
+          </div>
         </div>
       </div>
       <span className="lobby-difficulty" hidden={!difficulty}>{difficulty}</span>
@@ -136,7 +147,7 @@ function RoomRow({
                       ? 'lobby.seatReady'
                       : 'lobby.seatWaiting',
                 { seat: index + 1, name: seat?.name || seat?.initial || '?' },
-              ) + (control ? ` · ${control}` : '');
+              ) + (control ? ` | ${control}` : '');
             const controlCaption = seat?.controlMode && (
               <span className="lobby-seat-control" data-mode={seat.controlMode} title={control}>
                 {control}

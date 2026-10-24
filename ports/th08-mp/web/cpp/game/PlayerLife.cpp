@@ -18,13 +18,21 @@ void PlayerLife::die(){
     state.state=2;state.timer.set(0);actions.sound(4,movement.position.x);context.replay_flags|=0x200;
     if(!(context.game_flags&0x180)){
         context.gauge=0;
-        if(context.bombs<1)state.predead_count=2;
+        if(context.bombs<1)state.predead_count=
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            4;
+#else
+            2;
+#endif
         else {
             state.predead_count=signed_bits(u32(context.bombs)*6);
             if(context.time_orbs>=context.last_spell_requirement)state.predead_count=wrapping_add(state.predead_count,7);
             if(state.predead_count>15)state.predead_count=15;
             if(context.time_spell){state.predead_count=wrapping_add(state.predead_count,state.predead_count);if(state.predead_count>30)state.predead_count=30;}
             if(context.character==0||context.character==4||context.character==5)state.predead_count=signed_bits(u32(state.predead_count)*9)/5;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            state.predead_count*=2;
+#endif
             animation.color2.d3dColor=0xffffff|(u32(animation.color1.a)<<24);animation.flag17=1;
             state.predead_effect=actions.fixed_effect(59,movement.position,11,0xfff0404f);
             if(auto* e=state.predead_effect){
@@ -34,7 +42,13 @@ void PlayerLife::die(){
             }
             if(context.time_spell)context.game_flags|=0x400;
         }
-    }else {state.predead_count=2;state.auto_bomb=1;}
+    }else {state.predead_count=
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        4;
+#else
+        2;
+#endif
+        state.auto_bomb=1;}
     actions.cancel_item_homing();
 }
 bool PlayerLife::resolve_death(const ShotProfile& profile){
@@ -69,7 +83,7 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
         if(state.timer.current>=30){
             state.state=1;movement.position={Scalar::div(context.extent.x,2),Scalar::sub(context.extent.y,64),.2f};state.timer.set(0);animation.scale={3,3};
             actions.animation(((context.character<4&&!context.focused)||!(context.character&1))?0:5);
-            if(context.lives>0
+            if(context.lives>0||(context.cheats&2)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 ||context.challenge_mode
 #endif

@@ -1,3 +1,4 @@
+#include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH11_MULTIPLAYER
 #include "GameBattle.hpp"
 #include "GraphicsMath.hpp"
@@ -101,7 +102,17 @@ bool MultiplayerPilot::power_changed(){EffectOwner effect(world,seat);return pla
 bool MultiplayerPilot::lives_changed(i32 lives,i32 fragments){return display_lives(lives,fragments);}
 
 void GameBattle::enable_multiplayer(const MultiplayerOptions& options){mp_options=options;mp_enabled=true;hud.multiplayer=true;mp_rank=economy.rank;for(unsigned i=0;i<options.seat_count;++i){pilots[i]=std::make_unique<MultiplayerPilot>(*this,i);completion.multiplayer_economies[i]=&pilots[i]->economy;}completion.multiplayer_count=options.seat_count;}
-bool GameBattle::mp_initialize_players(){for(unsigned i=0;i<mp_options.seat_count;++i)if(!pilots[i]->initialize(mp_options.selections[i])){error="MP player initialization";return false;}return true;}
+bool GameBattle::mp_initialize_players(){
+ for(unsigned i=0;i<mp_options.seat_count;++i){
+  auto& pilot=*pilots[i];if(!pilot.initialize(mp_options.selections[i])){error="MP player initialization";return false;}
+  if(mp_replay_entries){
+   auto random=animations.script_rng;const auto& native=(*mp_replay_entries)[i];
+   native.restore(pilot.economy,random,true);
+   if(!pilot.player->restore_replay_stage(native))return false;
+  }
+ }
+ mp_replay_entries=nullptr;return true;
+}
 void GameBattle::mp_set_input(const std::array<MultiplayerInput,3>& frame_input){
     for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];const auto& in=frame_input[i];p.keys.update(mp_options.challenge?in.held&~2u:in.held,false);p.input.movement.held=p.ghost?0:p.keys.held;p.input.movement.pressed=p.ghost?0:p.keys.pressed;p.input.movement.touch_mode=p.ghost?0:in.touch_mode;p.input.movement.touch_x=in.touch_x;p.input.movement.touch_y=in.touch_y;}
     player_input=pilots[0]->input;
@@ -133,11 +144,28 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
     if(directed>=0&&power&&pilots[unsigned(directed)]->ghost){directed=-1;item.state=1;item.velocity={};}
     items.multiplayer_current_target=-1;
     auto snapshot=[&](unsigned seat,ItemPlayer& candidate){const auto& p=*pilots[seat];p.player->copy_item_state(candidate);candidate.force_attract=p.force_attract||(dialogue&&dialogue->active);};
+    auto nearest_power=[&](bool only_needy){return eagler::cooperative::NearestPowerRecipient(mp_options.seat_count,
+        [&](unsigned s){const auto& p=*pilots[s];return p.alive()&&p.player->state.life_state!=4&&
+            (!only_needy||p.economy.power<p.economy.max_power);},
+        [&](unsigned s){return pilots[s]->economy.power<pilots[s]->economy.max_power;},
+        [&](unsigned s){return distance2(item.position,pilots[s]->player->motion.state.position);});};
+    auto redirect=[&](int seat){
+        if(!power||pilots[unsigned(seat)]->economy.power<pilots[unsigned(seat)]->economy.max_power)return seat;
+        const int target=nearest_power(true);
+        if(target>=0){directed=-2-target;item.state=3;item.attraction_speed=8;return target;}
+        return seat;
+    };
     if(directed>=0){
-        const auto& p=*pilots[unsigned(directed)];snapshot(unsigned(directed),out);out.force_attract=true;
-        // Life gifts retain their existing reserve-life delivery semantics.
+        const int seat=redirect(directed);const auto& p=*pilots[unsigned(seat)];snapshot(unsigned(seat),out);out.force_attract=true;
         if(p.ghost){out.state=1;out.position=p.player->motion.state.position;out.pickup={out.position.x-20,out.position.y-20,out.position.x+20,out.position.y+20};}
-        items.multiplayer_current_target=directed;return true;
+        items.multiplayer_current_target=seat;return true;
+    }
+    if(directed<=-2){
+        const int owner=-2-directed;
+        if(pilots[unsigned(owner)]->alive()&&pilots[unsigned(owner)]->player->state.life_state!=4){
+            const int seat=redirect(owner);snapshot(unsigned(seat),out);items.multiplayer_current_target=seat;return true;
+        }
+        directed=-1;item.state=1;item.velocity={};
     }
     auto eligible=[&](const ItemPlayer& p){
         if(p.state==2||p.state==4||item.state==5)return false;
@@ -159,7 +187,13 @@ bool GameBattle::multiplayer_item_player(ItemState& item,ItemPlayer& out){
         for(unsigned seat=0;seat<mp_options.seat_count;++seat){const auto& p=*pilots[seat];if(!p.alive()||(needs_power&&p.economy.power>=p.economy.max_power))continue;snapshot(seat,candidate);if(!eligible(candidate))continue;const auto next=distance2(item.position,candidate.position);if(selected<0||next<distance){selected=i32(seat);distance=next;out=candidate;}}
         return selected;
     };
-    int selected=nearest(power);if(selected<0&&power)selected=nearest(false);
+    int selected=nearest(false);
+    if(selected>=0&&power&&item.state==1&&(out.force_attract||out.position.y<128||
+        (item.lifetime.current>=40&&out.communication>=10000))){
+        selected=nearest_power(false);
+        if(selected>=0){directed=-2-selected;item.state=3;item.attraction_speed=8;}
+    }else if(selected>=0)selected=redirect(selected);
+    if(selected>=0)snapshot(unsigned(selected),out);
     items.multiplayer_current_target=selected;return selected>=0;
 }
 bool GameBattle::mp_collect(ItemState& item,bool& convert){
@@ -169,13 +203,21 @@ bool GameBattle::mp_collect(ItemState& item,bool& convert){
 }
 bool GameBattle::mp_stage_reset(){
     mp_wipe_frames=0;mp_damage_remainders.clear();
-    for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];EffectOwner effect(*this,i);if(p.ghost&&!p.revive(false))return false;if(!p.player->start_stage())return false;p.communication.reset(&animations.rate);p.economy.communication=0;p.life_hold=p.power_taps=0;p.life_latched=false;p.keys={};}
+    for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];EffectOwner effect(*this,i);if(p.ghost&&!p.revive(false))return false;// A multiplayer Replay stage is an independent input segment. Use the
+    // same fresh projectile and option entry as a native Replay stage jump.
+    p.player->shots.clear_projectiles();p.player->shots.laser_active={};
+    p.player->shots.locked_target=nullptr;p.player->shots.target_locked=0;
+    for(auto& area:p.player->shots.damage_areas.areas)area.flags=0;
+    auto& motion=p.player->motion;motion.clear_options();motion.state.delta={};motion.state.last_delta={};
+    motion.state.dx=motion.state.dy=motion.state.previous_dx=motion.state.previous_dy=motion.state.direction=0;
+    motion.state.option_lerp=30;
+    if(!p.player->start_stage())return false;p.communication.reset(&animations.rate);p.economy.communication=0;p.life_hold=p.power_taps=0;p.life_latched=false;p.keys={};}
     return true;
 }
 int GameBattle::mp_life_receiver(unsigned giver)const noexcept{
     if(giver>=mp_options.seat_count||!pilots[giver])return -1;
     const auto& p=*pilots[giver];int receiver=-1;
-    if(!p.alive()||(p.keys.held&9)!=8||p.life_latched||p.economy.lives<=0||!stage_active)return -1;
+    if(!p.alive()||(p.keys.held&1)!=0||p.life_latched||p.economy.lives<=0||!stage_active)return -1;
     for(unsigned j=0;j<mp_options.seat_count;++j){if(giver==j)continue;const auto& q=*pilots[j];if((!q.alive()&&!q.ghost)||(!q.ghost&&q.economy.lives>=9)||distance2(p.player->motion.state.position,q.player->motion.state.position)>400)continue;
         if(receiver<0||q.ghost>pilots[unsigned(receiver)]->ghost||(q.ghost==pilots[unsigned(receiver)]->ghost&&q.economy.lives<pilots[unsigned(receiver)]->economy.lives))receiver=j;
     }
@@ -184,13 +226,14 @@ int GameBattle::mp_life_receiver(unsigned giver)const noexcept{
 bool GameBattle::mp_update_rules(){
     ++mp_tick;
     for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(!p.player)continue;const u32 held=p.keys.held;
-        if(!(held&8)){p.life_hold=0;p.life_latched=false;}
+        if((p.keys.pressed&8)&&!(held&1))p.power_taps=p.power_gap=0;
+        if(!(held&8))p.life_latched=false;
         if(p.power_gap<25)++p.power_gap;if(p.power_gap>24)p.power_taps=0;
-        if(!p.alive()||!stage_active)continue;
+        if(!p.alive()||!stage_active){p.life_hold=0;continue;}
         int receiver=-1;
-        if((held&9)==8&&!p.life_latched&&p.economy.lives>0){
+        if(!(held&1)&&!p.life_latched&&p.economy.lives>0){
             receiver=mp_life_receiver(i);
-            if(receiver>=0){if(++p.life_hold>=90){auto& q=*pilots[unsigned(receiver)];bool transferred=false;if(q.ghost){--p.economy.lives;transferred=q.revive(true);if(transferred&&!sound(0x2c,0,false))return false;}else if(items.spawn_transfer(7,p.player->motion.state.position,unsigned(receiver))){--p.economy.lives;transferred=true;}if(transferred){p.life_latched=true;p.life_hold=0;}}}else p.life_hold=0;
+            if(receiver>=0){if(eagler::cooperative::AdvanceLifeTransfer(p.life_hold,(p.keys.pressed&8)!=0,true)){auto& q=*pilots[unsigned(receiver)];bool transferred=false;if(q.ghost){--p.economy.lives;transferred=q.revive(true);if(transferred&&!sound(0x2c,0,false))return false;}else if(items.spawn_transfer(7,p.player->motion.state.position,unsigned(receiver))){--p.economy.lives;transferred=true;}if(transferred){p.life_latched=true;p.life_hold=0;}}}else p.life_hold=0;
         }else if(!p.life_latched)p.life_hold=0;
         if(p.keys.pressed&1){if(p.power_gap>24)p.power_taps=0;p.power_gap=0;++p.power_taps;
             if(p.power_taps>=5){p.power_taps=0;receiver=-1;

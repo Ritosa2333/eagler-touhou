@@ -1,2 +1,5 @@
 # Preserve immutable historical fixture bytes on every platform.
 launcher/tests/fixtures/ui-history/** -text whitespace=-blank-at-eol
+
+# Keep the shared versus player and its development copy byte-identical.
+ports/th09/web/sdl-runtime/replay-player.mjs text eol=lf

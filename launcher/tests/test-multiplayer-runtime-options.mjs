@@ -44,6 +44,12 @@ assert.deepEqual(buildMultiplayerRuntimeOptions(base, th06), {
   netplayLoadouts: base.loadouts.slice(0, 2),
 }, "Runtime options must use only the active player-count prefix of loadouts");
 const th08Timing=buildMultiplayerRuntimeOptions({ ...base, inputDelay: 4, predictionLimit: 2 }, th06);
+for (const product of ['th06mp','th07mp','th075mp','th08mp','th09mp','th10mp','th11mp','th15mp']) {
+  const input = {...base, difficulty: 1, inputDelay: 0, ...(product === 'th15mp' ? {adonisMode: 1} : {}), url: base.url.replace('th06mp', product)};
+  assert.equal(buildMultiplayerRuntimeOptions({...input, preferTurn: true}, th06).netplayPreferTurn, true, product);
+  assert.equal(buildMultiplayerRuntimeOptions({...input, preferTurn: false}, th06).netplayPreferTurn, undefined, product);
+}
+assert.throws(() => buildMultiplayerRuntimeOptions({...base, preferTurn: 'true'}, th06), /TURN/);
 assert.equal(th08Timing.netplayInputDelay, 0);
 assert.equal(th08Timing.netplayPredictionLimit, 2);
 const inputDelayOnly=buildMultiplayerRuntimeOptions({ ...base, inputDelay: 3 }, th06);

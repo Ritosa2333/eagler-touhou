@@ -31,6 +31,7 @@ void GameplayScene::update_cooperation(){
         lane.can_receive=lane.available&&live;
         lane.focus=(pilot_state.input.buttons&InputButton::Focus)!=0;
         lane.shoot=(pilot_state.input.buttons&InputButton::Shoot)!=0;
+        lane.focus_pressed=lane.focus&&(pilot_state.bomb_input.previous_buttons&InputButton::Focus)==0;
         lane.shoot_pressed=lane.shoot&&(pilot_state.bomb_input.previous_buttons&InputButton::Shoot)==0;
     }
     const auto allocate=[](void* raw,std::uint8_t giver,std::uint8_t target) noexcept {

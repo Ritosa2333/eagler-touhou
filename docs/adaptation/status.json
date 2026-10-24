@@ -6,7 +6,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "06f675ea09c5e3e29dd8942c70bd675fbc857ce93b8af68d992bf2c8b39e888d",
+      "sourceDigest": "25dd4c7fce248e4ba2f5f53144114ddfcfe3340eba4853d5b347e7d12e97b920",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -163,7 +163,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "ebaa329ea614dfa478f6187070bd5d5eba2ef96482d33a703abc594cfa6a37b3",
+      "sourceDigest": "d52e52820065dddda6d54b4203d2fc55b9e08ec4e6a3ea07684f14c8c323e367",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -339,7 +339,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "b7190155a9796e868e2b761e3ece357144da71935a2e573494aa88594901a955",
+      "sourceDigest": "35f3b5a3e406c94ee4a32f94b9112f199793210c65e77e6e1b37c40c9cb15421",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -496,7 +496,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "3d86f51547b79b9da7cd84ac21e81b84f89599e233f2c3d3b5c697ee90df8d85",
+      "sourceDigest": "e9ef97df6d9f428266c67de4fc0cf21d879e6fd9c2076bd2caf08f083446a436",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -672,7 +672,7 @@
       "game": "th075",
       "variant": "multiplayer",
       "directory": "ports/th075-mp",
-      "sourceDigest": "4d28fa522323b478195596e23a153980b8c1f1e748c173a27efbf988790130a5",
+      "sourceDigest": "dcfde95b2e4fa2f2c7e6007732633883343afa4190d2016cb773fc1bec553fff",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 207,
@@ -796,7 +796,7 @@
       "game": "th075",
       "variant": "normal",
       "directory": "ports/th075",
-      "sourceDigest": "76a5511aebfa40848d0aca4155f4c238a15be9118f375dbf7fec3688f371a093",
+      "sourceDigest": "383bb43e9884c20b199185fd9b263504f2b424ac13431b20acf4efc802a8ebd9",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 200,
@@ -938,7 +938,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "34530bd161c2ec888f3c16153c91740bf77b1ba861e7dc15ac48052845814a77",
+      "sourceDigest": "08aa1c52cb809a2d2ca1b0d1d6a25087643006704191f67033e25c1af42248ae",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -1063,7 +1063,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "c3e419abd8d3a7c2a9c19a246b1f7b4beef5b0c1a8fc1b3e33ce4fcdf2aa3b3d",
+      "sourceDigest": "24ed7105118937fd91fe7a53756e3c3982a15e98eda362ceac14d9684bd4008d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1206,10 +1206,10 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "97d5c454f69016adb1b36e466eb39fcadc8a96e6472bcd9d03fa1c49c4de235a",
+      "sourceDigest": "66e40552a2ad663516010fb93e803d9e072777e7bcf1986da1e25b65ddff6950",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 114,
+      "translationUnits": 116,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -1328,10 +1328,10 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "b5c3fff3edc5e254dbc5379664e8fc2e9a7224c5360e3ee240c38b583f3068ad",
+      "sourceDigest": "52a32635bd83c3fba685fb25cfbba2ec0fd5c33d0b919337f7a990c9a70d822a",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 114,
+      "translationUnits": 116,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -1469,10 +1469,10 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "4e626ccefd04607c594205587fd3e5a223acc2ce57f94caa6465a3ed20b29f23",
+      "sourceDigest": "e4d881460ebe02db4088682e36a73fa4d9de358752fa06a22388b76947874146",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 279,
+      "translationUnits": 277,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -1593,7 +1593,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "0167e12e700f18bb9d771e50e5e60af3e132967c79f54549183d7d90597ed3fa",
+      "sourceDigest": "fa0ff203a6ab09bc47d57cf25a4a07d97280c9b65596334e3d823c839ce551ea",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -1736,10 +1736,10 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "7be9a48d0e90917c9ca138242b92321bbea1d27d6898429142a58d3890f06429",
+      "sourceDigest": "024c0696cb1b656997a5fb67375197871b911581eddd0b19b53efe8800902006",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 138,
+      "translationUnits": 137,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -1860,7 +1860,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "4cfbebbbbeed6448ccddd9e945cd3424947e55bd462a8dd2234d0c5d2feace5d",
+      "sourceDigest": "5ae3023371b53ea2bdbc2d177b49c5ad44076d27775ea00e2df73229b23643f1",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 113,
@@ -2152,10 +2152,10 @@
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "f98e1dbd0f0f49fc338726c9745d73c193a25512e37e75897e23b7b4dbd65e6e",
+      "sourceDigest": "e86f103abec7620e78c4267dc361c0aeb68f48c5c9c586542f49da6375bf1d1d",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
-      "translationUnits": 266,
+      "translationUnits": 264,
       "features": {
         "thcrap": true,
         "thprac": false
@@ -2275,7 +2275,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "d74cad569489b54221bcb02640b796d9f3e20a9d91a4ec257ac89299c5edc9eb",
+      "sourceDigest": "81faf0e06f4901e78ca0c11d3ce6876aa970a33085dd455ebf1814aa3715cf8e",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -2417,7 +2417,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "84f7f02f8f4b71e2da47c212d17c6f52a1854ea7ce4aed327e556a7217a69b0a",
+      "sourceDigest": "bb0884f7a2fe5fb7ef28dcbfb1adaec195454f8d4b4949e67d44cadfb07ab063",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,

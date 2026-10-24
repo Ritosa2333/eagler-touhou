@@ -1,4 +1,5 @@
 #include "ThpracUi.hpp"
+#include <eagler/thprac/PracticeSdlKeyboard.hpp>
 #include "../platform/Application.hpp"
 #include "../platform/GameState.hpp"
 #include "../platform/World.hpp"
@@ -153,7 +154,7 @@ void draw_practice(Application& runtime){
  // Extra is its own difficulty. Every other stage needs a non-Extra difficulty,
  // otherwise returning from an Extra run leaves difficulty 4 and the normal
  // stages expose no valid sections (thprac's Extra names are empty for them).
- static int non_extra_difficulty=1;int difficulty=runtime.state.game.difficulty;
+ static int non_extra_difficulty=1;static i32 previous_menu_difficulty=-1;int difficulty=runtime.state.game.difficulty;
  if(difficulty<4)non_extra_difficulty=difficulty;
  difficulty=(p.stage==6)?4:non_extra_difficulty;
  if(!practice_was_open){practice_was_open=true;practice_keys_armed=false;practice_section_index=0;select_current_section(p,difficulty);}
@@ -164,6 +165,8 @@ void draw_practice(Application& runtime){
   ImGui::PushItemWidth(locale==1?-80.f:locale==2?-65.f:-60.f);ImGui::TextUnformatted(tr("练习选项","Option","オプション"));ImGui::Separator();
   const char* modes[]={tr("原版练习","Original","オリジナル"),tr("自定义练习","Custom","カスタム")};int mode=p.mode?1:0;if(ImGui::Combo(tr("模式","Mode","モード"),&mode,modes,2))p.mode=mode;
   const char* stages[]={"1","2","3","4","5","6","Extra"};if(ImGui::Combo(tr("关卡","Stage","ステージ"),&p.stage,stages,7)){p.section=0;practice_section_index=0;}
+  difficulty=p.stage==6?4:non_extra_difficulty;
+  p.update_menu_difficulty(difficulty,previous_menu_difficulty);
   if(p.mode==1){
    const char* warps[]={tr("无","None","なし"),tr("道中","Stage Portion","道中"),tr("道中Boss","Mid Boss","道中ボス"),tr("关底Boss","End Boss","ボス"),tr("非符","Non Spell","通常"),tr("符卡","Spell Card","スペカ")};
    // Stage 6 (zero-based 5) has no midboss: warp 2 is unavailable, like upstream.
@@ -175,7 +178,7 @@ void draw_practice(Application& runtime){
    else if(p.warp>=2&&p.warp<=5){auto matches=matching_sections(p,difficulty);if(!matches.empty()){select_current_section(p,difficulty);std::vector<const char*> names;for(auto* s:matches)names.push_back(s->names[std::clamp(difficulty,0,4)][locale]);if(ImGui::Combo(warps[p.warp],&practice_section_index,names.data(),int(names.size()))){p.section=matches[practice_section_index]->id;p.phase=0;}if(section_has_dialogue(p.section))ImGui::Checkbox(tr("对话","Dialog","会話"),reinterpret_cast<bool*>(&p.dlg));}}
    // thprac_th10.cpp:253-264: section-specific widgets.
    if(p.section==TH10_ST4_MID1||p.section==10408){const char* phases[]={tr("正常","Normal","普通"),p.section==TH10_ST4_MID1?tr("无限时间","Infinite Time","時間無限"):tr("无限模式","Infinite Mode","無限モード")};ImGui::Combo(tr("阶段","Phase","段階"),&p.phase,phases,2);}
-   else if(p.section==TH10_ST6_BOSS9)ImGui::SliderInt(tr("延迟","Delay","ディレイ"),&p.st6_boss9_spd,0,160);
+   else if(p.section==TH10_ST6_BOSS9)ImGui::SliderInt(tr("延迟","Delay","ディレイ"),&p.st6_boss9_spd,0,PracticeConfig::divine_virtues_delay_max(difficulty));
    else if(p.section==TH10_ST6_BOSS4||p.section==TH10_ST6_BOSS8)ImGui::Checkbox(tr("真实子弹贴图","Real bullet sprites","弾の見た目を変えない"),reinterpret_cast<bool*>(&p.real_bullet_sprite));
    else if(p.section==TH10_ST7_END_S10){const char* phases[]={tr("正常","Normal","普通"),tr("发狂","Rage","発狂")};int phase=std::clamp(p.phase,0,1);if(ImGui::Combo(tr("阶段","Phase","段階"),&phase,phases,2))p.phase=phase;}
    ImGui::SliderInt(tr("残机","Life","残機"),&p.life,0,9);
@@ -309,11 +312,8 @@ void render(Application& runtime,touhou::sdl::Renderer& renderer){if(!initialize
  ImGui::GetIO().UserData=&runtime;
  if(rendered_generation==input_generation){if(frame_drawn)renderer.render_imgui(ImGui::GetDrawData(),backbuffer(runtime));return;}
  rendered_generation=input_generation;auto& io=ImGui::GetIO();io.DeltaTime=1.f/60.f;io.DisplaySize={640,480};io.MousePos={mouse_x,mouse_y};if(!pointer_edges.empty()){const auto edge=pointer_edges.front();pointer_edges.pop_front();pointer_sample_down=edge.down;io.MousePos={edge.x,edge.y};}io.MouseDown[0]=pointer_sample_down;io.KeyCtrl=key_down[VK_CONTROL];io.KeyShift=key_down[VK_SHIFT];io.KeyAlt=key_down[VK_MENU];io.ConfigDragClickToInputText=desktop_pointer;for(int i=0;i<256;i++)io.KeysDown[i]=key_down[i];
- // Desktop thprac numeric fields should be directly editable: ImGui's drag
- // widgets can now switch to TempInputText on a click-release without a drag.
- // Queue numeric characters for the whole practice-menu frame; ImGui clears
- // unused characters at EndFrame, while an active TempInputText consumes them.
- if(runtime.state.practice.menu||advanced_open){for(int vk=48;vk<=57;vk++)if(pressed(vk))io.AddInputCharacter(ImWchar('0'+vk-48));for(int vk=96;vk<=105;vk++)if(pressed(vk))io.AddInputCharacter(ImWchar('0'+vk-96));if(pressed(189)||pressed(109))io.AddInputCharacter('-');if(pressed(190)||pressed(110))io.AddInputCharacter('.');}
+ // Numeric editing also applies to advanced tools outside the practice menu.
+ eagler::thprac::sdl_keyboard_frame(io);
  io.NavInputs[ImGuiNavInput_DpadUp]=key_down[VK_UP];io.NavInputs[ImGuiNavInput_DpadDown]=key_down[VK_DOWN];io.NavInputs[ImGuiNavInput_DpadLeft]=key_down[VK_LEFT];io.NavInputs[ImGuiNavInput_DpadRight]=key_down[VK_RIGHT];io.NavInputs[ImGuiNavInput_Activate]=key_down[VK_Z]||key_down[VK_RETURN];io.NavInputs[ImGuiNavInput_Cancel]=key_down[VK_X]||key_down[VK_ESCAPE];ImGui::NewFrame();frame_open=true;
  if(runtime.state.practice.menu)draw_practice(runtime);else if(!(key_down[VK_X]||key_down[VK_Z]||key_down[VK_ESCAPE]||key_down[VK_RETURN]))practice_was_open=false;draw_overlay(runtime);ImGui::Render();frame_open=false;renderer.render_imgui(ImGui::GetDrawData(),backbuffer(runtime));frame_drawn=true;
 }
