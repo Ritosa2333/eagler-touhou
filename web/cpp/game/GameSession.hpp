@@ -104,6 +104,9 @@ public:
                i32 subtype=0, i32 difficulty=1, bool demo=false, bool replay=false,bool practice=false,const PracticeConfig* parameters=nullptr);
     bool open_title(GameResources&,bool first=false,TitleScreen screen=TitleScreen::Main);
     bool begin_replay(GameResources&,const u8*,u32,u32 stage=0,bool demo=false);
+    // Diagnostic entry point: start one of the archive demos without the title
+    // menu. Used by the Presentation Lab campaign runner.
+    bool load_demo(u32 index);
     bool save_replay(const char* name,std::vector<u8>& output,bool terminal=true,float slowdown=0);
     bool load_scores(const u8*,u32);
     bool save_scores(std::vector<u8>&);

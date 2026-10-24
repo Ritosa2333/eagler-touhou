@@ -1,11 +1,24 @@
 #pragma once
+#include <cstring>
 #include "AnmResource.hpp"
 #include "Interpolation.hpp"
 #include "Rng.hpp"
 namespace th11 {
 struct AnmEnvironment;
 struct Matrix4 {float m[16];void identity() noexcept {std::memset(m,0,sizeof m);m[0]=m[5]=m[10]=m[15]=1;}};
+#ifdef TH_PRESENTATION_AUDIT
+// Diagnostic-only stable identity for embedded/stage VMs that never enter the
+// manager's id space. Reserved bytes keep the retail layout intact.
+inline u32 next_audit_identity=0x10000000u;
+#endif
 struct AnmVm {
+#ifdef TH_PRESENTATION_AUDIT
+    AnmVm() noexcept {
+        std::memset(this,0,sizeof(*this));
+        reserved_420[0]=next_audit_identity++;
+        reserved_420[1]=1;
+    }
+#endif
     u32 id;
     struct Node {AnmVm* value;Node* next;Node* previous;} registry,child;
     AnmVm* draw_next;

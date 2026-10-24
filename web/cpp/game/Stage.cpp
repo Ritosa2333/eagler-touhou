@@ -26,7 +26,7 @@ bool Stage::initialize(const StageResource& file,i32 number,const SceneCamera& c
     if(!rollback_structure_mutable())return false;
 #endif
     if(!object_animations.empty()||file.instructions.empty())return false;
-    resource=file;std::memset(&state,0,sizeof state);state.flags=2;state.stage_number=number;state.camera=camera;
+    resource=file;std::memset(&state,0,sizeof state);camera_discontinuity=false;camera_valid=false;state.flags=2;state.stage_number=number;state.camera=camera;
     state.camera.position={0,0,-600};state.camera.direction={0,300,600};state.camera.up={0,1,0};state.camera.eye_offset={};
     state.draw_distance_squared=9610000;state.draw_flags=1;state.script_timer.set(0,&manager.rate);
     return !start||start_objects();
@@ -65,6 +65,7 @@ bool Stage::update_objects(){
     }return true;
 }
 bool Stage::update(){
+    camera_discontinuity=false;
     if((state.draw_flags&8)||((state.draw_flags&4)&&state.fade_timer.current>=60))return true;
     state.camera.offset={};state.camera.animation_delta={};state.camera.reserved24=GraphicsMath::normalize(state.camera.direction);state.tint=0x00808080;
     if(!(state.draw_flags&4)||state.fade_timer.current<30){
