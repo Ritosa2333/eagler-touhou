@@ -61,7 +61,7 @@ async function main() {
     '_eagler_rb_touch', '_eagler_rb_config_address', '_eagler_rb_dirty_config_address',
     '_eagler_rb_dirty_config_abi', '_eagler_rb_instrumented'];
   const args = [
-    '-std=c++20', '-O2', '-UNDEBUG', '-DEAGLER_WRITE_JOURNAL=1', '-I', join(root, 'common/include'),
+    '-std=c++20', '-O2', '-UNDEBUG', '-DEAGLER_WRITE_JOURNAL=1', '-DEAGLER_WRITE_JOURNAL_TEST_HOOKS=1', '-I', join(root, 'common/include'),
     join(root, 'common/tests/write-journal-test.cpp'),
     ...backends.map(backendSource),
     '-sMODULARIZE=1', '-sEXPORT_ES6=1', '-sENVIRONMENT=node',
@@ -92,7 +92,7 @@ async function main() {
   assert.equal(uninstrumented._eagler_write_journal_test(-1), 0, 'raw Wasm must reject journal initialization');
   console.log('Uninstrumented module correctly rejects journal initialization');
 
-const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8], trapScopes = ['game', 'host'];
+const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], trapScopes = ['game', 'host'];
 for (const [name, options] of [
   ['wasm', { nativeFilter: false }],
   ['native-hook', { nativeFilter: true }],

@@ -21,6 +21,7 @@ void* eagler_sim_malloc(void*, std::size_t);
 void* eagler_sim_memalign(void*, std::size_t, std::size_t);
 void eagler_sim_free(void*, void*);
 std::size_t eagler_sim_used(void*);
+void eagler_sim_invalidate_used();
 alignas(32) volatile std::uint32_t eagler_rb_config[8]{};
 }
 
@@ -45,6 +46,7 @@ Statistics statistics{};
 bool Fail(const char* reason) {
     if (!failed) { failed=true; error=reason; }
     eagler_rb_config[0]=0;
+    eagler_sim_invalidate_used();
     return false;
 }
 Frame& At(std::size_t i) { return frames[(frameHead+i)%MaxFrames]; }
@@ -183,6 +185,9 @@ bool RestoreTo(std::uint32_t frame) {
         }
         entryUsed-=log.count; --frameCount; ++statistics.restored_frames;
     }
+    // Undo copies allocator metadata without passing through its mutators.
+    // The host cache must describe the restored heap on its next query.
+    eagler_sim_invalidate_used();
     ++statistics.restores;
     return true;
 }
@@ -196,6 +201,7 @@ void Clear() {
     if (open) Fail("Write journal abandoned an open frame");
     eagler_rb_config[0]=0;
     open=false; frameHead=frameCount=entryHead=entryUsed=0;
+    eagler_sim_invalidate_used();
     // A failure or abandoned transaction remains terminal: Clear cannot turn
     // partial history into evidence that the simulation is safe to continue.
 }

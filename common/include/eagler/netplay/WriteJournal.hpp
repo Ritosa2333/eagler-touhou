@@ -75,8 +75,9 @@ struct Statistics {
     std::uint32_t heap_used_kib=0, heap_capacity_kib=0;
 };
 Statistics Stats();
-// Constant-time seal accounting; Stats() also walks allocator chunks to report
-// live heap usage and belongs in diagnostics, not in every simulated frame.
+// Constant-time seal accounting. Stats() may walk allocator chunks on the first
+// query after a heap mutation or restore, then reuse that exact usage result;
+// keep full statistics in diagnostics rather than every simulated frame.
 std::uint32_t LastFrameBlocks();
 }
 

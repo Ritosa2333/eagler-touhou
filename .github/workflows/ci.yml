@@ -211,6 +211,7 @@ jobs:
       if: matrix.variant == 'multiplayer' && (matrix.game == 'th11' || matrix.game == 'th15')
       run: |
         node --test tools/rollback/instrument.test.mjs
+        node tools/rollback/heap-cache-test.mjs
         node tools/rollback/memory-test.mjs
     - name: Compile selected source and verify provenance
       shell: bash

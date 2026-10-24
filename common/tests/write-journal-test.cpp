@@ -11,6 +11,26 @@
 #include <emscripten.h>
 
 namespace J=Netplay::WriteJournal;
+extern "C" {
+std::size_t eagler_sim_used(void*);
+std::size_t eagler_sim_test_used_uncached(void*);
+std::size_t eagler_sim_test_used_scans();
+void* eagler_sim_test_last_created_space();
+}
+
+static std::size_t checked_heap_usage(void* space,bool miss) {
+    const auto scans=eagler_sim_test_used_scans();
+    const auto expected=eagler_sim_test_used_uncached(space);
+    assert(eagler_sim_used(space)==expected);
+    assert(eagler_sim_test_used_scans()==scans+unsigned(miss));
+    for(unsigned i=0;i<128;++i) {
+        assert(eagler_sim_used(space)==expected);
+        assert(J::Stats().heap_used_kib==expected/1024);
+    }
+    assert(eagler_sim_test_used_scans()==scans+unsigned(miss));
+    return expected;
+}
+
 struct Object { std::uint32_t number=17; std::string text="a simulation-owned string longer than SSO"; };
 struct State {
     std::uint32_t value=11;
@@ -315,6 +335,82 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
             assert(J::RestoreTo(frame)&&J::Ready()&&J::FrameCount()==0);
             ++frame;
         }
+    } else if (scenario==9) {
+        // The oracle always walks the real allocator. Count only scans made
+        // through the cached query, including Stats(), so repeated diagnostics
+        // cannot accidentally pass by rescanning or by estimating live bytes.
+        auto* space=eagler_sim_test_last_created_space();assert(space);
+        const auto initial=checked_heap_usage(space,true);
+        void* anchor=nullptr;
+        { J::GameScope game;anchor=J::Allocate(256); }
+        const auto baseline=checked_heap_usage(space,true);assert(baseline>initial);
+        { J::GameScope game;
+          { J::SystemScope system;
+            auto* host=J::Allocate(8192);auto* aligned=J::AllocateAligned(256,4096);
+            assert(!J::OwnedByGameHeap(host)&&!J::OwnedByGameHeap(aligned));
+            J::Release(host);J::Release(aligned); } }
+        assert(checked_heap_usage(space,false)==baseline);
+
+        assert(J::BeginFrame(10));
+        void* first=nullptr;
+        { J::GameScope game;first=J::Allocate(5000); }
+        const auto firstUsed=checked_heap_usage(space,true);assert(firstUsed>baseline);
+        std::memset(first,0x57,5000);
+        assert(checked_heap_usage(space,false)==firstUsed);
+        assert(J::EndFrame()&&J::RestoreTo(10));
+        assert(checked_heap_usage(space,true)==baseline);
+
+        assert(J::BeginFrame(20));
+        { J::GameScope game;assert(J::Allocate(8192)); }
+        assert(J::EndFrame());
+        const auto outerUsed=checked_heap_usage(space,true);assert(outerUsed>baseline);
+        assert(J::BeginFrame(21));
+        { J::GameScope game;
+          J::Release(anchor);assert(J::Allocate(16384));
+          auto* aligned=J::AllocateAligned(4096,6000);
+          assert(reinterpret_cast<std::uintptr_t>(aligned)%4096==0); }
+        const auto nestedUsed=checked_heap_usage(space,true);assert(nestedUsed>outerUsed);
+        assert(J::EndFrame()&&J::RestoreTo(21));
+        assert(checked_heap_usage(space,true)==outerUsed);
+        assert(J::BeginFrame(21));
+        { J::GameScope game;assert(J::Allocate(24000)); }
+        assert(checked_heap_usage(space,true)>outerUsed);
+        assert(J::EndFrame()&&J::RestoreTo(20));
+        assert(checked_heap_usage(space,true)==baseline);
+        J::Clear();assert(checked_heap_usage(space,true)==baseline);
+
+        assert(J::BeginFrame(30));
+        void* retained=nullptr;
+        { J::GameScope game;retained=J::Allocate(7000); }
+        assert(J::EndFrame());
+        const auto retainedUsed=checked_heap_usage(space,true);assert(retainedUsed>baseline);
+        // Clear discards history; it does not rewind the live allocation.
+        J::Clear();assert(checked_heap_usage(space,true)==retainedUsed);
+        J::Release(retained);assert(checked_heap_usage(space,true)==baseline);
+        assert(J::BeginFrame(31)&&J::EndFrame());
+        J::DiscardBefore(32);assert(checked_heap_usage(space,false)==baseline);
+        assert(J::BeginFrame(32));std::memset(anchor,0x65,256);
+        assert(checked_heap_usage(space,false)==baseline);
+        assert(J::EndFrame()&&J::RestoreTo(32));
+        assert(checked_heap_usage(space,true)==baseline);
+        J::Release(anchor);assert(checked_heap_usage(space,true)==initial);
+        J::Clear();assert(checked_heap_usage(space,true)==initial);
+    } else if (scenario==10||scenario==11) {
+        auto* space=eagler_sim_test_last_created_space();assert(space);
+        const auto initial=checked_heap_usage(space,true);
+        assert(J::BeginFrame(100));
+        void* allocation=nullptr;
+        { J::GameScope game;allocation=J::Allocate(16384); }
+        const auto current=checked_heap_usage(space,true);assert(current>initial);
+        if(scenario==10) assert(J::EndFrame());
+        // Missing target and open-boundary rejection both retain the live
+        // allocation. Neither may retain an old cache across the failed call.
+        assert(!J::RestoreTo(scenario==10?101:100)&&J::Failed());
+        assert(checked_heap_usage(space,true)==current);
+        assert(!J::RestoreTo(100));
+        assert(checked_heap_usage(space,true)==current);
+        J::Clear();assert(checked_heap_usage(space,true)==current);
+        J::Release(allocation);assert(checked_heap_usage(space,true)==initial);
     } else return 0;
     std::printf("write-journal scenario %d passed\n",scenario);
     return 1;
