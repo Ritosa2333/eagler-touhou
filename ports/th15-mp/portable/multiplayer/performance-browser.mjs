@@ -12,7 +12,7 @@ import {distribution,summarize,replayInputs} from './performance-browser-metrics
 import {installLongTaskDiagnostic,installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
 import {environmentOptions,browserLaunchSettings,inspectRuntimeWebGL,rendererIdentity,startCpuThrottle,coverRuntimeCpuThrottle,verifyCpuThrottleCoverage,closeCpuThrottle} from './performance-browser-environment.mjs';
 import {neutralPlan,committedHorizon,assertProofState,assertBeforeDeadline,awaitBeforeDeadline,proveNeutral,fireHorizon,proveFire} from './performance-input-proof.mjs';
-import {collectStablePersistence} from './performance-persistence-proof.mjs';
+import {collectStablePersistence,installPersistenceSyncMarkers} from './performance-persistence-proof.mjs';
 
 const root=resolve(import.meta.dirname,'../..'),repo=resolve(root,'../..');
 function option(name,fallback){const combined=process.argv.find(x=>x.startsWith(name+'='));if(combined)return combined.slice(name.length+1);
@@ -49,6 +49,7 @@ const report={schema:'eagler-touhou/th15-production-performance/1',startedAt:new
     ...(saveValidationOnly?{performanceEligibility:'Supplemental save/input acceptance only; workload timings cannot satisfy or replace a performance result.'}: {})},
   stages:[],errors:[],consoleErrors:[],cleanup:[],results:[]};
 report.saveEvidenceValidation={maxAttempts:3,totalDeadlineMs:35000,naturalSupersessionTest:saveEvidenceSupersessionTest,
+  syncAssociation:'Retained same-Runtime-clock start/ACK markers and half-open save-event indexes; original Host times remain recorded.',
   forcedSeat:saveEvidenceSupersessionTest?players-1:null,
   deadlineMeaning:'One fixed total deadline for the original 15s Host sync + 10s Replay read + 10s persistence-read budget, shared by all seats and attempts.'};
 if(diagnostic){report.thresholdsMet=null;report.diagnostics={mode:diagnosticMode,gl:cpuDiagnostic,cpuProfiler:cpuDiagnostic,longTasks:longTaskDiagnostic,samplingIntervalUs:cpuDiagnostic?4000:null,profiles:[],
@@ -221,9 +222,21 @@ function host(seat){
       snapshot:document.querySelector('iframe').contentWindow.__th15Performance.snapshot()};
   };
   window.proofSync=async(label,timeoutMs=15000)=>{
-    const start=performance.now(),reply=await rpc('sync',{},timeoutMs);
-    return {label,timeOrigin:performance.timeOrigin,start,ackAt:performance.now(),request:reply.request,
-      snapshot:document.querySelector('iframe').contentWindow.__th15Performance.snapshot()};
+    const child=document.querySelector('iframe').contentWindow,probe=child.__th15Performance,request=crypto.randomUUID();
+    const start=performance.now(),runtimeStart=probe.markPersistenceSync({request,label,edge:'start'});
+    // Keep the timed input RPC path unchanged. This post-window sync owns its
+    // request before sending so the retained Runtime markers bind to its ACK.
+    await new Promise((yes,no)=>{
+      const timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC sync timeout'));},timeoutMs);
+      function listen(event){if(event.source===child&&event.origin===location.origin&&event.data?.request===request){
+        clearTimeout(timer);removeEventListener('message',listen);event.data.ok?yes(event.data):no(Error(event.data.error));}}
+      addEventListener('message',listen);child.postMessage({protocol:'eagler-touhou/1',game:'th15',epoch:1,request,command:'sync'},location.origin);
+    });
+    const ackAt=performance.now();
+    if(document.querySelector('iframe').contentWindow!==child||child.__th15Performance!==probe)throw Error('Runtime changed during Host persistence sync');
+    const runtimeAck=probe.markPersistenceSync({request,label,edge:'ack'});
+    return {label,timeOrigin:performance.timeOrigin,start,ackAt,request,
+      runtimeWindow:{request,label,start:runtimeStart,ack:runtimeAck},snapshot:probe.snapshot()};
   };
   window.releaseProofInput=async(timeoutMs=10000)=>{
     const start=performance.now(),reply=await rpc('touch-controls',{controls:neutral},timeoutMs);
@@ -343,7 +356,7 @@ async function hostProofPhase(label,method,timeoutMs=15000){
 }
 
 function readSaveEvidence(){return {timeOrigin:__th15Performance.state.timeOrigin,saveApi:__th15Performance.state.saveApi,
-  events:__th15Performance.state.saveEvents,status:__th15Performance.snapshot()};}
+  events:__th15Performance.state.saveEvents,persistenceMarkers:__th15Performance.state.persistenceMarkers,status:__th15Performance.snapshot()};}
 
 // The save-only regression waits for the existing production timer. It never
 // invokes a native save/export or installs, advances or disables a timer.
@@ -542,6 +555,7 @@ try{
   // Keep the unmodified 15 s measurement intact. Exercise the real 30 s
   // autosave and then concurrent Host sync/input while all peers still run.
   mark('post-window-save-validation');
+  await Promise.all(frames.map(frame=>frame.evaluate(installPersistenceSyncMarkers)));
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>performance.now()>=31000,null,{timeout:20000,polling:250})));
   report.inputProof={status:'running',method:'all-seat confirmed neutral baseline, then a new fire command concurrent with Host sync and a later confirmed transition',
     persistenceSource:'During this neutral/fire proof, Replay is written only by normal Host saves. Evidence copies live in /tmp; probes never invoke native export or intercept FS. The runner retains its separate final confirmed-prefix export after stopping producers.'};save();

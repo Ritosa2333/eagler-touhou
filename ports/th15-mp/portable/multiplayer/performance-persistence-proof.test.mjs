@@ -37,6 +37,17 @@ function fixture(){
       files:[file('scoreth15.dat',0,[1,2,3]),file('th15.cfg',2,[4,5,6])],replay:file('replay/th15mp_01.rpy',1,buffer)},
     saved:{timeOrigin:1000,saveApi:true,events:cycle(),status:snapshot({capture:50})}};
 }
+function runtimeWindow(f,{startAt=95,ackAt=125,startCount=0,ackCount=4}={}){
+  const {request,label}=f.sync,timeOrigin=f.saved.timeOrigin;
+  const start={markerIndex:0,request,label,edge:'start',timeOrigin,at:startAt,saveEventCount:startCount};
+  const ack={markerIndex:1,request,label,edge:'ack',timeOrigin,at:ackAt,saveEventCount:ackCount};
+  f.saved.persistenceMarkers=[start,ack];
+  f.sync.runtimeWindow={request,label,start:{...start},ack:{...ack}};return f;
+}
+function changeMarker(f,edge,fields){
+  Object.assign(f.sync.runtimeWindow[edge],fields);
+  Object.assign(f.saved.persistenceMarkers[edge==='start'?0:1],fields);
+}
 function superseded({duringRead=false,sameBytes=false}={}){
   const f=fixture(),next=sameBytes?f.copy.buffer:replay(42);
   f.saved.events.push(...cycle({token:2,entered:duringRead?142:135,completed:duringRead?143:136,fsStart:duringRead?144:137,fsEnd:duringRead?146:138}));
@@ -79,6 +90,70 @@ test('a stable observation binds Host ACK to native Completed and its matching F
 test('Host sync can join the one already pending real native and filesystem save',()=>{
   const f=fixture();f.sync.start=105;
   const result=classifyPersistenceAttempt(f);assert.equal(result.state,'stable');assert.equal(result.transaction.joinedInFlight,true);
+});
+test('same-Runtime markers resolve a 0.1ms Host conversion offset without relaxing the legacy rule',()=>{
+  const f=fixture();f.sync.ackAt=119.9;
+  assert.throws(()=>classifyPersistenceAttempt(f),/No completed native request/);
+  runtimeWindow(f,{ackAt:120.1});
+  const result=classifyPersistenceAttempt(f);
+  assert.equal(result.state,'stable');assert.equal(result.transaction.token,1);
+  assert.equal(result.transaction.hostAckAt,120.1);assert.equal(result.transaction.associationClock,'runtime-markers');
+  assert.equal(f.sync.ackAt,119.9);assert.equal(result.observationWindow.runtimeSyncAck.saveEventCount,4);
+});
+test('new windows require matching request, label, origin and independently retained markers',()=>{
+  const changes=[f=>{f.sync.runtimeWindow.request='wrong-request';},f=>{f.sync.runtimeWindow.label='wrong-label';},
+    f=>{f.sync.runtimeWindow.start.request='wrong-request';},f=>{f.sync.runtimeWindow.ack.label='wrong-label';},
+    f=>changeMarker(f,'start',{timeOrigin:1001}),f=>changeMarker(f,'ack',{timeOrigin:1001}),
+    f=>{f.sync.runtimeWindow.start.at=94;},f=>{delete f.saved.persistenceMarkers;},
+    f=>{delete f.sync.runtimeWindow;},f=>{f.sync.runtimeWindow=null;},f=>changeMarker(f,'ack',{markerIndex:0})];
+  for(const change of changes){const f=runtimeWindow(fixture());change(f);assert.throws(()=>classifyPersistenceAttempt(f),/Runtime persistence/);}
+});
+test('completion membership uses the marker event-count half-open interval even at equal timestamps',()=>{
+  for(const bounds of [{startAt:120,startCount:4,ackAt:125,ackCount:4},
+                       {startAt:95,startCount:0,ackAt:120,ackCount:3}]){
+    const f=runtimeWindow(fixture(),bounds);
+    assert.throws(()=>classifyPersistenceAttempt(f),/No completed native request/);
+  }
+  const joined=runtimeWindow(fixture(),{startAt:119,startCount:3,ackAt:125,ackCount:4});
+  const result=classifyPersistenceAttempt(joined);
+  assert.equal(result.state,'stable');assert.equal(result.transaction.joinedInFlight,true);
+  assert.equal(result.transaction.filesystemCompletionEventIndex,joined.sync.runtimeWindow.start.saveEventCount);
+});
+test('new marker clocks and event counts must agree with each other and actual save events',()=>{
+  for(const [edge,fields] of [['start',{saveEventCount:1}],['ack',{saveEventCount:2}],
+                            ['ack',{saveEventCount:5}],['ack',{at:94}],['ack',{saveEventCount:3.5}]]){
+    const f=runtimeWindow(fixture());changeMarker(f,edge,fields);
+    assert.throws(()=>classifyPersistenceAttempt(f),/Runtime persistence/);
+  }
+});
+test('Runtime ACK must precede the retained copy, MEMFS and IDB snapshot boundaries',()=>{
+  for(const change of [f=>changeMarker(f,'ack',{at:131}),f=>{f.copy.metadata.saveEventCount=3;},
+    f=>{f.persistence.capturedAt=129;},f=>{f.persistence.readAt=139;}]){
+    const f=runtimeWindow(fixture());change(f);assert.throws(()=>classifyPersistenceAttempt(f),/timestamps|event count/);
+  }
+});
+test('a same-clock window can join an old pending save but cannot make its short Replay a fresh proof',()=>{
+  const f=runtimeWindow(fixture(),{startAt:105,startCount:1});
+  assert.equal(classifyPersistenceAttempt(f).transaction.joinedInFlight,true);
+  f.copy.buffer=replay(19);f.persistence.replay=file('replay/th15mp_01.rpy',1,f.copy.buffer);
+  assert.throws(()=>classifyPersistenceAttempt(f),/fixed all-seat proof horizon/);
+});
+test('same-clock correlation retains supersession, ambiguous transactions and hard input failures',()=>{
+  const supersededResult=classifyPersistenceAttempt(runtimeWindow(superseded()));
+  assert.equal(supersededResult.state,'superseded');assert.equal(supersededResult.transaction.token,1);
+  const ambiguous=fixture();ambiguous.saved.events.push(...cycle({token:2,entered:121,completed:122,fsStart:123,fsEnd:124}));
+  ambiguous.copy.metadata.saveEventCount=ambiguous.persistence.saveEventCountBegin=ambiguous.persistence.saveEventCountEnd=8;
+  const result=classifyPersistenceAttempt(runtimeWindow(ambiguous,{ackCount:8}));
+  assert.equal(result.state,'superseded');assert.equal(result.transaction,null);assert.equal(result.candidateTransactions.length,2);
+  const changed=runtimeWindow(superseded());changed.persistence.replay.indexedDb[180+18*2*12]^=1;changed.persistence.replay.equal=false;
+  assert.throws(()=>classifyPersistenceAttempt(changed),/common input prefix changed/);
+});
+test('new windows reject a reused retained request marker instead of fabricating another ACK pair',()=>{
+  const f=runtimeWindow(fixture()),first=f.saved.persistenceMarkers.map(marker=>({...marker}));
+  const second=first.map(marker=>({...marker,markerIndex:marker.markerIndex+2,at:125,saveEventCount:4}));
+  f.saved.persistenceMarkers.push(...second);
+  f.sync.runtimeWindow.start={...second[0]};f.sync.runtimeWindow.ack={...second[1]};
+  assert.throws(()=>classifyPersistenceAttempt(f),/request order changed/);
 });
 test('observed copy 59452.8 to autosave 60132.2 then stable MEMFS 60272.9/IDB 60385.9 is superseded even when Begin equals End 20',()=>{
   const f=raceFixture(),result=classifyPersistenceAttempt(f);

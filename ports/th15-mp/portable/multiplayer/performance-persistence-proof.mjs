@@ -39,6 +39,68 @@ function fileEvidence(file,name,kind){
     memoryNativeValid:file.memoryNativeValid===true||identical};
 }
 
+// Serialized into the same-origin Runtime only after the timed rows are saved.
+// Both clock reads and event counts execute synchronously in that realm.
+export function installPersistenceSyncMarkers(){
+  const probe=globalThis.__th15Performance,state=probe?.state;
+  if(!state?.saveApi||state.phase!=='complete'||!Array.isArray(state.saveEvents)
+    ||state.timeOrigin!==performance.timeOrigin)throw Error('Runtime persistence observer is not ready');
+  if(probe.markPersistenceSync||state.persistenceMarkers!==undefined)throw Error('Runtime persistence markers already installed');
+  const markers=state.persistenceMarkers=[],requests=new Map();
+  probe.markPersistenceSync=({request,label,edge})=>{
+    if(state.phase!=='complete'||state.timeOrigin!==performance.timeOrigin||state.overflow?.includes('saveEvents'))
+      throw Error('Runtime persistence observer changed or overflowed');
+    if(typeof request!=='string'||!request||typeof label!=='string'||!label||!['start','ack'].includes(edge))
+      throw Error('Invalid Runtime persistence marker identity');
+    if(markers.length>=64)throw Error('Runtime persistence marker limit exceeded');
+    const previous=requests.get(request);
+    if(edge==='start'?previous:!previous||previous.ack||previous.label!==label)
+      throw Error('Runtime persistence marker request order changed');
+    const marker=Object.freeze({markerIndex:markers.length,request,label,edge,timeOrigin:performance.timeOrigin,
+      at:performance.now(),saveEventCount:state.saveEvents.length});
+    markers.push(marker);
+    if(edge==='start')requests.set(request,{label,ack:false});else previous.ack=true;
+    return {...marker};
+  };
+}
+
+function runtimeSyncWindow(sync,saved,eventCount){
+  // Old archived observations keep their original cross-clock rule. A new
+  // observer cannot silently fall back by dropping its window or marker list.
+  if(sync.runtimeWindow===undefined&&saved.persistenceMarkers===undefined)return null;
+  const window=sync.runtimeWindow,markers=saved.persistenceMarkers;
+  require(window&&Array.isArray(markers),'Missing retained Runtime persistence window');
+  require(typeof sync.label==='string'&&sync.label.length>0&&window.request===sync.request&&window.label===sync.label,
+    'Runtime persistence window identity differs from Host sync');
+  const {start,ack}=window;
+  require(start&&ack&&integer(start.markerIndex)&&integer(ack.markerIndex)
+    &&start.markerIndex<ack.markerIndex&&ack.markerIndex<markers.length,'Runtime persistence marker indexes regressed');
+  for(const [edge,marker] of [['start',start],['ack',ack]]){
+    require(marker.edge===edge&&marker.request===sync.request&&marker.label===sync.label,
+      'Runtime persistence marker identity differs from Host sync');
+    const recorded=markers[marker.markerIndex];
+    require(recorded&&['markerIndex','request','label','edge','timeOrigin','at','saveEventCount']
+      .every(field=>recorded[field]===marker[field]),'Runtime persistence marker differs from retained evidence');
+  }
+  let lastAt=-Infinity,lastCount=0;const requests=new Map();
+  for(const [index,marker] of markers.slice(0,ack.markerIndex+1).entries()){
+    require(marker&&marker.markerIndex===index&&marker.timeOrigin===saved.timeOrigin&&finite(marker.at)
+      &&before(lastAt,marker.at)&&integer(marker.saveEventCount)&&lastCount<=marker.saveEventCount
+      &&marker.saveEventCount<=eventCount,'Runtime persistence marker clock or event count regressed');
+    require((marker.saveEventCount===0||before(saved.events[marker.saveEventCount-1].at,marker.at))
+      &&(marker.saveEventCount===eventCount||before(marker.at,saved.events[marker.saveEventCount].at)),
+      'Retained Runtime persistence marker event count contradicts timestamps');
+    require(typeof marker.request==='string'&&marker.request.length>0&&typeof marker.label==='string'&&marker.label.length>0
+      &&['start','ack'].includes(marker.edge),'Invalid retained Runtime persistence marker identity');
+    const previous=requests.get(marker.request);
+    require(marker.edge==='start'?!previous:previous&&!previous.ack&&previous.label===marker.label,
+      'Retained Runtime persistence request order changed');
+    if(marker.edge==='start')requests.set(marker.request,{label:marker.label,ack:false});else previous.ack=true;
+    lastAt=marker.at;lastCount=marker.saveEventCount;
+  }
+  return window;
+}
+
 export function classifyPersistenceAttempt({sync,copy,persistence,saved,reference,proofEnd,baselineReplay}){
   require(reference&&integer(proofEnd)&&proofEnd>0&&proofEnd<0xffffffff,'Invalid fixed persistence proof horizon');
   require(sync&&finite(sync.timeOrigin)&&finite(sync.start)&&finite(sync.ackAt)&&before(sync.start,sync.ackAt)
@@ -50,8 +112,12 @@ export function classifyPersistenceAttempt({sync,copy,persistence,saved,referenc
   require(copy.metadata.timeOrigin===saved.timeOrigin,'Replay copy belongs to a different Runtime clock');
   if(persistence.timeOrigin!==undefined)require(persistence.timeOrigin===saved.timeOrigin,'Persistence belongs to a different Runtime clock');
   if(sync.label!==undefined&&copy.metadata.label!==undefined)require(sync.label===copy.metadata.label,'Host sync and Replay copy labels disagree');
-  const originDifference=sync.timeOrigin-saved.timeOrigin;
-  const hostStart=sync.start+originDifference,hostAck=sync.ackAt+originDifference;
+  const copyCount=copy.metadata.saveEventCount,begin=persistence.saveEventCountBegin,end=persistence.saveEventCountEnd;
+  require([copyCount,begin,end].every(integer)&&copyCount<=begin&&begin<=end&&end<=saved.events.length,'Persistence event counts regressed or exceed the observer');
+  const runtimeWindow=runtimeSyncWindow(sync,saved,end),originDifference=sync.timeOrigin-saved.timeOrigin;
+  const hostStart=runtimeWindow?runtimeWindow.start.at:sync.start+originDifference;
+  const hostAck=runtimeWindow?runtimeWindow.ack.at:sync.ackAt+originDifference;
+  if(runtimeWindow)require(runtimeWindow.ack.saveEventCount<=copyCount,'Replay copy event count precedes Runtime ACK marker');
   const copiedAt=copy.metadata.copiedAt,capturedAt=persistence.capturedAt,readAt=persistence.readAt;
   require([hostStart,hostAck,copiedAt,capturedAt,readAt].every(finite)
     &&before(hostAck,copiedAt)&&before(copiedAt,capturedAt)&&before(capturedAt,readAt),'Persistence observation timestamps regressed');
@@ -86,8 +152,6 @@ export function classifyPersistenceAttempt({sync,copy,persistence,saved,referenc
     for(const value of parsed)require(value.frames>=baseline.frames
       &&equal(value.data.subarray(value.prefix,value.prefix+length),expected),'Original baseline input prefix changed');
   }
-  const copyCount=copy.metadata.saveEventCount,begin=persistence.saveEventCountBegin,end=persistence.saveEventCountEnd;
-  require([copyCount,begin,end].every(integer)&&copyCount<=begin&&begin<=end&&end<=saved.events.length,'Persistence event counts regressed or exceed the observer');
   // Everything after this captured event boundary belongs to a future
   // observation. In particular, a later autosave cannot invalidate this one.
   const events=saved.events.slice(0,end).map((event,index)=>({...event,eventIndex:index}));
@@ -98,6 +162,9 @@ export function classifyPersistenceAttempt({sync,copy,persistence,saved,referenc
     require(finite(at)&&before(lastAt,at)&&before(at,readAt),'Save event timestamps regressed');lastAt=at;
     require(index<copyCount?before(at,copiedAt):before(copiedAt,at),'Replay-copy event count contradicts timestamps');
     require(index<begin?before(at,capturedAt):before(capturedAt,at),'MEMFS event count contradicts timestamps');
+    if(runtimeWindow)for(const marker of [runtimeWindow.start,runtimeWindow.ack])
+      require(index<marker.saveEventCount?before(at,marker.at):before(marker.at,at),
+        'Runtime persistence marker event count contradicts timestamps');
     require(!event.error&&!event.nativeError,'Observed native or filesystem save error');
     if(kind.startsWith('native-')){
       require(finite(event.entered)&&before(event.entered,at),'Missing native call entry timestamp');
@@ -136,8 +203,11 @@ export function classifyPersistenceAttempt({sync,copy,persistence,saved,referenc
     }else throw Error('Unknown save event kind: '+kind);
   }
   const candidates=transactions.filter(transaction=>before(transaction.requestEnteredAt,hostAck)
-    &&before(hostStart,transaction.filesystemCompletedAt)&&before(transaction.filesystemCompletedAt,hostAck))
+    &&before(hostStart,transaction.filesystemCompletedAt)&&before(transaction.filesystemCompletedAt,hostAck)
+    &&(!runtimeWindow||(transaction.filesystemCompletionEventIndex>=runtimeWindow.start.saveEventCount
+      &&transaction.filesystemCompletionEventIndex<runtimeWindow.ack.saveEventCount)))
     .map(transaction=>({...transaction,hostRequest:sync.request,hostStartAt:hostStart,hostAckAt:hostAck,
+      associationClock:runtimeWindow?'runtime-markers':'legacy-host-time-origin',
       joinedInFlight:transaction.requestEnteredAt<hostStart-epsilon}));
   require(candidates.length>0,'No completed native request and filesystem transaction matches the Host sync interval');
   const first=candidates[0],transaction=candidates.length===1?first:null;
@@ -172,7 +242,8 @@ export function classifyPersistenceAttempt({sync,copy,persistence,saved,referenc
       supersedingEvents.length?'a new native request or outgoing filesystem write superseded the observation':'one completed native transaction and a stable byte-identical snapshot',
     supersedingEvents,comparisons,copyEqualsMemory,copyEqualsIndexedDb,proofEnd,
     commonInputFrames:commonFrames,baselineInputFrames:baseline?.frames??null,eventCount:end,ignoredEventsAfterRead:saved.events.length-end,
-    observationWindow:{filesystemCompletedAt:first.filesystemCompletedAt,copiedAt,capturedAt,readAt}};
+    observationWindow:{filesystemCompletedAt:first.filesystemCompletedAt,copiedAt,capturedAt,readAt,
+      ...(runtimeWindow?{runtimeSyncStart:runtimeWindow.start,runtimeSyncAck:runtimeWindow.ack}: {})}};
 }
 
 export async function collectStablePersistence({deadline,maxAttempts=3,attempt,retain,
