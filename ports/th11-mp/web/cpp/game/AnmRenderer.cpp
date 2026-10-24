@@ -1,4 +1,6 @@
 #include "AnmRenderer.hpp"
+#include "AnmPresentation.hpp"
+#include "PresentationAudit.hpp"
 #include <algorithm>
 #include <cmath>
 #ifdef TH11_MULTIPLAYER
@@ -107,6 +109,7 @@ int AnmRenderer::submit_quad(AnmVm& vm,Vec3 (&positions)[4],bool pixel,const u32
     float min_x=positions[0].x,max_x=min_x,min_y=positions[0].y,max_y=min_y;for(u32 i=1;i<4;++i){min_x=std::min(min_x,positions[i].x);max_x=std::max(max_x,positions[i].x);min_y=std::min(min_y,positions[i].y);max_y=std::max(max_y,positions[i].y);}
     if(max_x<double(viewport.x)||max_y<double(viewport.y)||min_x>double(viewport.x+viewport.width)||min_y>double(viewport.y+viewport.height))return 0;
     material(vm);const u32 diffuse=color(vm);AnmVertex quad[4];for(u32 i=0;i<4;++i)quad[i]={positions[i],1,colors?colors[i]:diffuse,{float(double(vm.uv[i].x)+vm.uv_offset.x),float(double(vm.uv[i].y)+vm.uv_offset.y)}};
+    presentation_audit::capture(vm,quad,4);
     for(u32 i:{0,1,2,1,2,3})vertices.push_back(quad[i]);if(vertices.size()>=6144)flush();return 0;
 }
 int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
@@ -120,7 +123,6 @@ int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
     const auto* root=&vm.child;for(unsigned depth=0;root->previous&&depth<4096;++depth)root=root->previous;
     for(const auto* hidden:multiplayer_hidden_hitboxes)if(&vm==hidden||root->value==hidden)return -1;
 #endif
-    if((vm.flags&3)!=3||!(vm.color>>24))return -1;
 #ifdef TH11_MULTIPLAYER
     if(&vm==multiplayer_hud_background){
         // The title/watermark is baked into the right frame's sprite, not a
@@ -137,57 +139,68 @@ int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
         return strip(0,16,0,16)&&strip(16,448,16,160)&&strip(464,16,464,16)?0:-2;
     }
 #endif
-    if(!vm.sprite||!vm.resource)return -2;const u32 mode=(vm.flags>>22)&15;
+    AnmVm smoothed;
+    AnmVm* target=&vm;
+    if(high_refresh::interpolating()){smoothed=vm;if(presentation::present(smoothed,vm))target=&smoothed;}
+    // Only an actually interpolated position may bypass retail pixel alignment.
+    const bool continuous_position=continuous&&(target!=&vm||high_refresh::smooth_submission);
+    const bool subpixel=preserve_subpixel||continuous_position;
+    AnmVm& v=*target;
+    if((v.flags&3)!=3||!(v.color>>24))return -1;
+    if(!v.sprite||!v.resource)return -2;const u32 mode=(v.flags>>22)&15;
     if(mode<=3){
-        Vec3 positions[4];const u32 saved_flags=vm.flags;
-        const bool pixel=mode==0||(mode==1&&vm.rotation.z==0);
-        const u32 geometry_mode=pixel?0:mode==3?(vm.rotation.z==0?2:1):mode;
-        vm.flags=(vm.flags&~0x3c00000u)|(geometry_mode<<22);const bool ok=anm_quad_positions(vm,positions,preserve_subpixel);vm.flags=saved_flags;if(!ok)return -2;
-        return submit_quad(vm,positions,pixel,nullptr,preserve_subpixel);
+        Vec3 positions[4];const u32 saved_flags=v.flags;
+        const bool pixel=mode==0||(mode==1&&v.rotation.z==0);
+        const u32 geometry_mode=pixel?0:mode==3?(v.rotation.z==0?2:1):mode;
+        v.flags=(v.flags&~0x3c00000u)|(geometry_mode<<22);const bool ok=anm_quad_positions(v,positions,subpixel);v.flags=saved_flags;if(!ok)return -2;
+        return submit_quad(v,positions,pixel,nullptr,subpixel);
     }
-    if(mode==4||mode==5){Vec3 positions[4];if(mode==4?!anm_billboard_quad(vm,camera,positions):!anm_projected_quad(vm,camera,positions))return -1;return submit_quad(vm,positions,false);}
+    if(mode==4||mode==5){Vec3 positions[4];if(mode==4?!anm_billboard_quad(v,camera,positions):!anm_projected_quad(v,camera,positions))return -1;return submit_quad(v,positions,false);}
     if(mode==6||mode==7){
         Vec3 positions[4];u32 colors[4];
         if(mode==6){
-            if(!anm_billboard_quad(vm,camera,positions))return -1;
-            const Vec3 center{float(double(float(double(vm.position.x)+vm.script_position.x))+vm.child_position.x),float(double(float(double(vm.position.y)+vm.script_position.y))+vm.child_position.y),float(double(float(double(vm.position.z)+vm.script_position.z))+vm.child_position.z)};
+            if(!anm_billboard_quad(v,camera,positions))return -1;
+            const Vec3 center{float(double(float(double(v.position.x)+v.script_position.x))+v.child_position.x),float(double(float(double(v.position.y)+v.script_position.y))+v.child_position.y),float(double(float(double(v.position.z)+v.script_position.z))+v.child_position.z)};
             const float amount=fog_amount(center,camera.position);if(amount>=1)return -1;
-            const u32 value=fog_color(color(vm),amount,true);for(auto& v:colors)v=value;
+            const u32 value=fog_color(color(v),amount,true);for(auto& c:colors)c=value;
         }else{
-            Matrix4 world;if(!anm_projected_quad(vm,camera,positions,&world))return -1;
-            const Vec3 corners[]={{-128,-128,0},{128,-128,0},{-128,128,0},{128,128,0}};u32 value=vm.flags&0x8000?vm.secondary_color:vm.color;
+            Matrix4 world;if(!anm_projected_quad(v,camera,positions,&world))return -1;
+            const Vec3 corners[]={{-128,-128,0},{128,-128,0},{-128,128,0},{128,128,0}};u32 value=v.flags&0x8000?v.secondary_color:v.color;
 #ifdef TH11_MULTIPLAYER
-            value=multiplayer_color(vm,value);
+            value=multiplayer_color(v,value);
 #endif
-            for(u32 i=0;i<4;++i){float p[4];GraphicsMath::transform(corners[i],world,p);colors[i]=fog_color(value,fog_amount({p[0],p[1],p[2]},fog_origin),false);}
+            for(u32 i=0;i<4;++i){float projected[4];GraphicsMath::transform(corners[i],world,projected);colors[i]=fog_color(value,fog_amount({projected[0],projected[1],projected[2]},fog_origin),false);}
         }
-        return submit_quad(vm,positions,false,colors);
+        return submit_quad(v,positions,false,colors);
     }
     if(mode==8){
-        flush();const auto world=anm_world_matrix(vm,true);material(vm);auto& p=graphics.pipeline();p.textureTransform=true;p.textureFactor=color(vm);p.color.second=p.alpha.second={ArgumentSource::Factor};
+        flush();const auto world=anm_world_matrix(v,true);material(v);auto& p=graphics.pipeline();p.textureTransform=true;p.textureFactor=color(v);p.color.second=p.alpha.second={ArgumentSource::Factor};
         graphics.set_matrix(MatrixKind::World,world);
         // The original tests horizontal scroll twice. A vertical-only change
         // on the same sprite retains the previous texture matrix.
-        if(uv_sprite!=vm.sprite||vm.uv_offset.x!=0){uv_sprite=vm.sprite;cached_uv=vm.uv_matrix;cached_uv.m[8]=float(double(vm.uv[0].x)+vm.uv_offset.x);cached_uv.m[9]=float(double(vm.uv[0].y)+vm.uv_offset.y);}
+        if(uv_sprite!=v.sprite||v.uv_offset.x!=0){uv_sprite=v.sprite;cached_uv=v.uv_matrix;cached_uv.m[8]=float(double(v.uv[0].x)+v.uv_offset.x);cached_uv.m[9]=float(double(v.uv[0].y)+v.uv_offset.y);}
         graphics.set_matrix(MatrixKind::Texture,cached_uv);
         struct Vertex{Vec3 position;Vec2 uv;};const Vertex quad[]={{{-128,-128,0},{0,0}},{{128,-128,0},{1,0}},{{-128,128,0},{0,1}},{{128,128,0},{1,1}}};
+        AnmVertex audit_quad[4];for(u32 i=0;i<4;++i)audit_quad[i]={quad[i].position,1,color(v),quad[i].uv};
+        presentation_audit::capture(v,audit_quad,4);
         graphics.set_layout(VertexLayout::WorldUv);graphics.primitives(Topology::Strip,2,quad,sizeof(Vertex));return 0;
     }
     if(mode==10)return 0; // Its registered draw callback submits the ripple.
     if(mode==9||mode==11||mode==12||mode==13){
-        if(!vm.geometry)return -2;flush();material(vm);auto& p=graphics.pipeline();p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);
-        const bool fan=mode==11;if(fan)p.depthWrite=false;const u32 count=u32(vm.integers[0])*2-2;
+        if(!v.geometry)return -2;flush();material(v);auto& p=graphics.pipeline();p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);
+        const bool fan=mode==11;if(fan)p.depthWrite=false;const u32 count=u32(v.integers[0])*2-2;
+        presentation_audit::capture(v,static_cast<const AnmVertex*>(v.geometry),std::min(count,16u),2);
 #ifdef TH11_MULTIPLAYER
-        multiplayer_geometry(vm,fan?Topology::Fan:Topology::Strip,count,static_cast<const AnmVertex*>(vm.geometry));
+        multiplayer_geometry(v,fan?Topology::Fan:Topology::Strip,count,static_cast<const AnmVertex*>(v.geometry));
 #else
-        graphics.primitives(fan?Topology::Fan:Topology::Strip,count,vm.geometry,sizeof(AnmVertex));
+        graphics.primitives(fan?Topology::Fan:Topology::Strip,count,v.geometry,sizeof(AnmVertex));
 #endif
         return 0;
     }
     return 0; // Reserved modes have no draw operation in the original dispatcher.
 }
 int AnmRenderer::draw_ripple(AnmVm& vm){
-    if(!vm.geometry||!vm.resource||!vm.sprite)return -2;flush();material(vm);auto& p=graphics.pipeline();p.depthWrite=false;p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);
+    if(!vm.geometry||!vm.resource||!vm.sprite)return -2;flush();material(vm);presentation_audit::capture(vm,static_cast<const AnmVertex*>(vm.geometry),16,3);auto& p=graphics.pipeline();p.depthWrite=false;p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);
 #ifdef TH11_MULTIPLAYER
     multiplayer_geometry(vm,Topology::Fan,31,static_cast<const AnmVertex*>(vm.geometry));
 #else

@@ -1,5 +1,8 @@
 #include "GameSession.hpp"
 #include "RuntimeCost.hpp"
+#include "AnmPresentation.hpp"
+#include "HighRefresh.hpp"
+#include "PresentationAudit.hpp"
 #include "MusicCatalog.hpp"
 
 namespace th11 {
@@ -37,6 +40,13 @@ void GameSession::reset_state() noexcept {
     error.clear();
 }
 
+bool GameSession::load_demo(u32 index){
+    if(!source)return fail("demo source missing");
+    std::vector<u8> bytes;
+    const std::string path=std::string("demo")+char('0'+char(3-(index&3)))+".rpy";
+    if(!source->read(path,bytes))return fail(("demo resource missing: "+path).c_str());
+    return begin_replay(*source,bytes.data(),u32(bytes.size()),0,true);
+}
 bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32 stage,bool demo){
     if(!playback.open(data,size))return fail(playback.error().c_str());
     if(!stage)for(u32 n=1;n<=7;++n)if(playback.stage(n)){stage=n;break;}
@@ -203,6 +213,14 @@ bool GameSession::update(const GameSessionInput& input) {
     if(multiplayer_active)return fail("MP requires a confirmed input frame");
 #endif
     if(!error.empty()) return false;
+    // One logical tick: publish the pre-update endpoints used by draw-only
+    // presentation frames. This never advances simulation state.
+    presentation::begin_tick();
+    compositor.snapshot_cameras();
+    if(battle){
+        if(battle->stage)battle->stage->snapshot_camera();
+        if(battle->outgoing_stage)battle->outgoing_stage->snapshot_camera();
+    }
     if(state.phase==GameSessionPhase::finished) return true;
     GameSessionInput edges=input;
     edges.pressed|=input.held&~last_held;
@@ -412,6 +430,9 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
 }
 
 bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
+    const bool presenting=high_refresh::interpolating();
+    if(presenting)compositor.begin_presentation(high_refresh::alpha);
+    struct RestoreCamera{SceneCompositor& compositor;bool active;~RestoreCamera(){if(active)compositor.end_presentation();}} restore{compositor,presenting};
     if(battle)battle->always_hitbox=always_hitbox;
 #ifdef TH11_MULTIPLAYER
     if(multiplayer_active&&battle){battle->mp_always_hitbox=always_hitbox||multiplayer_always_hitbox;battle->mp_local_visibility=multiplayer_local_visibility;battle->mp_prepare_presentation(renderer);}
@@ -434,6 +455,32 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
     renderer.fog_channels={fog.channels[0],fog.channels[1],fog.channels[2]};renderer.fog_start=fog.near_distance;
     for(const auto& pass:scene_draw_passes) {
         runtime_cost::Scope measured(2+u32(pass.kind));
+        u32 audit_owner=0;
+        switch(pass.kind){
+        case SceneDrawKind::StageBackground:audit_owner=1;break;
+        case SceneDrawKind::StageForeground:audit_owner=2;break;
+        case SceneDrawKind::Player:audit_owner=3;break;
+        case SceneDrawKind::Items:audit_owner=4;break;
+        case SceneDrawKind::Lasers:audit_owner=5;break;
+        case SceneDrawKind::Bullets:audit_owner=6;break;
+        case SceneDrawKind::Spell:audit_owner=7;break;
+        case SceneDrawKind::HudInner:case SceneDrawKind::HudOuter:audit_owner=8;break;
+        case SceneDrawKind::AsciiInner:case SceneDrawKind::AsciiOuter:audit_owner=9;break;
+        case SceneDrawKind::ScorePopups:audit_owner=10;break;
+        case SceneDrawKind::Animation:audit_owner=12+pass.layer;break;
+        default:audit_owner=11;break;
+        }
+        presentation_audit::scope(audit_owner);
+        // 3D scene objects live in world coordinates which the STD script may
+        // rebase; a small step limit snaps those authored resets.
+        high_refresh::position_limit=(pass.kind==SceneDrawKind::StageBackground||pass.kind==SceneDrawKind::StageForeground)?32.f:128.f;
+        // World-space passes may keep fractional presentation coordinates;
+        // UI, ASCII and compositor passes retain retail pixel alignment.
+        renderer.continuous=(pass.kind==SceneDrawKind::Animation&&pass.layer<=19)
+            ||pass.kind==SceneDrawKind::Player||pass.kind==SceneDrawKind::Items
+            ||pass.kind==SceneDrawKind::Lasers||pass.kind==SceneDrawKind::Bullets
+            ||pass.kind==SceneDrawKind::Spell||pass.kind==SceneDrawKind::StageBackground
+            ||pass.kind==SceneDrawKind::StageForeground;
         if(title)title_fades.draw(renderer,pass.priority);
         if(ending){ending->fades.draw(renderer,pass.priority);if(pass.kind==SceneDrawKind::End)ending->fades.draw(renderer,67);}
         if(pass.kind==SceneDrawKind::End&&battle_attached&&battle)battle->fades.draw(renderer,67);
@@ -457,6 +504,9 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
         }
         if(overlay&&pass.kind==SceneDrawKind::AsciiOuter&&!overlay->draw(renderer,0,compositor.full_camera,compositor.play_camera))return fail("frame statistics draw failed");
     }
+    presentation_audit::scope(0);
+    high_refresh::position_limit=128.f;
+    renderer.continuous=false;
     renderer.flush();
     return true;
 }

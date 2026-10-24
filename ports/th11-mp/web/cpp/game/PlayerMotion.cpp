@@ -1,4 +1,5 @@
 #include "PlayerMotion.hpp"
+#include "AnmPresentation.hpp"
 #include <algorithm>
 #include <cmath>
 namespace th11 {
@@ -11,7 +12,7 @@ float difference(float a,float b){constexpr double pi=3.1415927410125732,tau=6.2
 PlayerMotion::PlayerMotion(AnmResource& p,AnmResource& b,AnmManager& a,PlayerMotionWorld& w,u16 pf,u16 bf):player_resource(p),bullet_resource(b),animations(a),world(w),player_file(pf),bullet_file(bf){body.initialize();}
 void PlayerMotion::interrupt(u32 id,i16 label){family(animations.find(id),[&](AnmVm& a){a.pending_interrupt=label;});}
 void PlayerMotion::erase(u32 id){family(animations.find(id),[](AnmVm& a){a.flags|=0x4000000;});}
-void PlayerMotion::place(u32 id,Vec3 p){family(animations.find(id),[&](AnmVm& a){a.position=screen(p);});}
+void PlayerMotion::place(u32 id,Vec3 p){family(animations.find(id),[&](AnmVm& a){presentation::capture(a);a.position=screen(p);});}
 bool PlayerMotion::change_body(i32 script){if(!body.bind_script(player_resource,script,player_file,&animations.rate)||body.update(animations)<0){last_error=1;return false;}return true;}
 bool PlayerMotion::afterimage(){auto* a=animations.create(player_resource,19,player_file,11);if(!a){last_error=2;return false;}if(a->resource&&!a->bind_sprite(body.sprite_index)){last_error=3;return false;}place(a->id,state.position);return true;}
 void PlayerMotion::set_speeds(const ShtHeader& s)noexcept{state.normal_speed=truncate_int(double(s.speed)*128);state.focus_speed=truncate_int(double(s.focus_speed)*128);state.normal_diagonal=truncate_int(double(s.diagonal_speed)*128);state.focus_diagonal=truncate_int(double(s.focus_diagonal_speed)*128);}

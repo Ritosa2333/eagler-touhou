@@ -33,6 +33,11 @@ public:
 #endif
     // Continuous bullet submission preserves fractional positions; other ANM
     // owners retain their authored pixel-aligned presentation by default.
+    // Set by the scene schedule for world-space passes. Combined with an
+    // actual interpolated position, it preserves subpixel presentation.
+    bool continuous=false;
+    // Continuous world sprites may preserve fractional presentation coordinates;
+    // retail pixel-aligned UI and logical screen-UV geometry retain the default.
     int draw(AnmVm& vm,bool preserve_subpixel=false);
     int draw_ascii_sprite(AnmVm& vm);
     int draw_ripple(AnmVm& vm);
