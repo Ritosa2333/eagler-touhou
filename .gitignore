@@ -4,6 +4,7 @@
 /games/
 /node_modules/
 /.local/
+/.codex-tmp/
 
 # Local build caches and private inputs
 /.cache/

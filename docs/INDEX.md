@@ -266,4 +266,3 @@
 | 项目文档 | [docs/README.md](README.md) | 文档 |
 | 项目文档 | [docs/TOUHOU_PROGRESS.md](TOUHOU_PROGRESS.md) | 东方作品进度 |
 | 项目文档 | [docs/th075-thcrap.md](th075-thcrap.md) | th075 语言资源准备 |
-| 其他说明 | [.codex-tmp/issue-pr-plan-2026-10-24.md](../.codex-tmp/issue-pr-plan-2026-10-24.md) | eagler-touhou ｜ 开启 issue 筛选与 PR 审查 |
