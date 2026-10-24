@@ -24,7 +24,7 @@ public:
     std::uint32_t Score()const{return score_;}
     bool Completed()const{return completed_;}
     bool LegacyStageFlow()const{return legacy_stage_flow_;}
-    bool CompatibleBuild(const std::array<std::uint32_t,4>& build)const{return Loaded()&&(legacy_stage_flow_||setup_.build==build);}
+    bool CompatibleBuild(const std::array<std::uint32_t,4>& build)const;
     const std::string& Name()const{return name_;}
 private:
     static bool Metadata(const Netplay::InputReplayInfo&,SessionSetup&,std::uint64_t&,std::uint32_t&,bool&,std::string&,bool&);
