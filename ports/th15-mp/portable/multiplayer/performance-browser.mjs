@@ -9,7 +9,8 @@ import {createHash,randomUUID} from 'node:crypto';
 import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 import {createSenderDelayQueue} from './performance-sender-delay.mjs';
 import {distribution,summarize,replayInputs} from './performance-browser-metrics.mjs';
-import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
+import {installLongTaskDiagnostic,installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
+import {environmentOptions,browserLaunchSettings,inspectRuntimeWebGL,rendererIdentity,startCpuThrottle,coverRuntimeCpuThrottle,verifyCpuThrottleCoverage,closeCpuThrottle} from './performance-browser-environment.mjs';
 import {neutralPlan,committedHorizon,assertProofState,assertBeforeDeadline,awaitBeforeDeadline,proveNeutral,fireHorizon,proveFire} from './performance-input-proof.mjs';
 
 const root=resolve(import.meta.dirname,'../..'),repo=resolve(root,'../..');
@@ -17,8 +18,9 @@ function option(name,fallback){const combined=process.argv.find(x=>x.startsWith(
   const i=process.argv.indexOf(name);if(i<0)return fallback;assert.ok(process.argv[i+1]&&!process.argv[i+1].startsWith('--'),'Missing '+name);return process.argv[i+1];}
 const mode=Number(option('--mode','0')),players=Number(option('--players','2')),duration=Number(option('--duration','15'));
 assert.ok([0,1,2].includes(mode)&&[2,3].includes(players));assert.ok(duration>=5&&duration<=60);
-const diagnosticMode=option('--diagnostic','none');assert.ok(['none','gl-cpu'].includes(diagnosticMode),'Unsupported diagnostic mode');
-const diagnostic=diagnosticMode!=='none';
+const environment=environmentOptions({cpuThrottle:option('--cpu-throttle','1'),renderer:option('--renderer','swiftshader'),headless:!process.argv.includes('--headed')});
+const diagnosticMode=option('--diagnostic','none');assert.ok(['none','gl-cpu','longtasks','all'].includes(diagnosticMode),'Unsupported diagnostic mode');
+const diagnostic=diagnosticMode!=='none',cpuDiagnostic=['gl-cpu','all'].includes(diagnosticMode),longTaskDiagnostic=['longtasks','all'].includes(diagnosticMode);
 const saveValidationOnly=process.argv.includes('--save-validation-only');
 assert.ok(!(diagnostic&&saveValidationOnly),'Save validation is separate from profiler diagnostics');
 const runtime=resolve(option('--runtime',process.env.TH15_MP_PACKAGE||resolve(root,'build-eagler-multiplayer')));
@@ -34,21 +36,21 @@ function gitIdentity(){const run=args=>{const r=spawnSync('git',['-C',repo,...ar
   return {head:run(['rev-parse','HEAD']),tree:run(['rev-parse','HEAD^{tree}']),status:run(['status','--porcelain=v1']),diffSha256:hash(run(['diff','--binary','HEAD']))};}
 const report={schema:'eagler-touhou/th15-production-performance/1',startedAt:new Date().toISOString(),completedAt:null,
   status:'running',performanceMeasured:false,performanceEligible:!diagnostic&&!saveValidationOnly,diagnostic,saveValidationOnly,observationPassed:false,settings:{mode,players,durationSeconds:duration,inputDelayFrames:mode===0?0:2,
-    predictionFrames:mode===1?0:12,renderScale:1,cpuThrottle:1,route:'relay',oneWaySendDelayMs:50,jitterPlusMinusMs:5,
-    nominalRoundTripAddedMs:100,profiler:diagnostic,music:false,warmupMinimumFrames:180,tailThresholdMs:100},
-  scope:{productionPackage:true,independentBrowserProcesses:players,realRaf:true,managedHostInput:true,renderer:'SwiftShader',
+    predictionFrames:mode===1?0:12,renderScale:1,cpuThrottle:environment.cpuThrottle,rendererRequested:environment.renderer,headless:environment.headless,route:'relay',oneWaySendDelayMs:50,jitterPlusMinusMs:5,
+    nominalRoundTripAddedMs:100,profiler:cpuDiagnostic,music:false,warmupMinimumFrames:180,tailThresholdMs:100},
+  scope:{productionPackage:true,independentBrowserProcesses:players,realRaf:true,managedHostInput:true,renderer:'pending-verification',
     actualGpuScanout:false,performanceObserver:true,fullCampaign:false,phone:false,
     saveObserver:'Sparse native request/poll transitions and real FS.syncfs callbacks; reuse the previous rollback observation without extra journal Stats in the measurement window.',
     persistenceValidation:'After the fixed workload: confirmed all-seat neutral baseline, concurrent Host sync/new fire, confirmed neutral-to-fire transition, then completed evidence sync and real IDBFS/MEMFS/native validation.',
     ...(saveValidationOnly?{performanceEligibility:'Supplemental save/input acceptance only; workload timings cannot satisfy or replace a performance result.'}: {})},
   stages:[],errors:[],consoleErrors:[],cleanup:[],results:[]};
-if(diagnostic){report.thresholdsMet=null;report.diagnostics={mode:diagnosticMode,samplingIntervalUs:4000,profiles:[],
+if(diagnostic){report.thresholdsMet=null;report.diagnostics={mode:diagnosticMode,gl:cpuDiagnostic,cpuProfiler:cpuDiagnostic,longTasks:longTaskDiagnostic,samplingIntervalUs:cpuDiagnostic?4000:null,profiles:[],
   processCpu:{before:[],after:[],deltas:[],errors:[]},
-  performanceEligibility:'Diagnostic GL wrappers and CPU sampling add overhead. This run cannot satisfy the performance gate; thresholdsMet remains null.'};}
+  performanceEligibility:'Opt-in diagnostic observers, GL wrappers or CPU sampling add overhead. This run cannot satisfy the performance gate; thresholdsMet remains null.'};}
 if(saveValidationOnly)report.thresholdsMet=null;
 const save=()=>saveJson('receipt.json',report),mark=name=>{report.stages.push({name,at:new Date().toISOString()});save();};
 save();
-let server,relay,relayLog='',firstFailure,browserTemp;const browsers=[],contexts=[],pages=[],frames=[],lobbies=[],cpuProfiles=[];
+let server,relay,relayLog='',firstFailure,browserTemp;const browsers=[],contexts=[],pages=[],frames=[],lobbies=[],cpuProfiles=[],cpuThrottles=[];
 const originalTempEnv=Object.fromEntries(['TMPDIR','TMP','TEMP'].map(key=>[key,process.env[key]]));
 let shuttingDown=false,options=[];
 const observeError=(seat,kind,error)=>{(shuttingDown?report.cleanup:report.errors).push({seat,kind,error:String(error)});};
@@ -336,7 +338,7 @@ function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{const
 async function lobbySend(socket,message,predicate){const promise=nextJson(socket,predicate);socket.send(JSON.stringify(message));return promise;}
 
 try{
-  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs','performance-input-proof.mjs',
+  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs','performance-input-proof.mjs','performance-browser-environment.mjs',
     ...(diagnostic?['performance-browser-diagnostic.mjs']:[])]
     .map(name=>[name,fileIdentity(resolve(import.meta.dirname,name))]));
   report.relaySource=fileIdentity(relayEntry);
@@ -385,30 +387,41 @@ try{
   // Playwright allocates the profile in its own Node process before launching
   // Chromium. Its tmpdir must also be short, not only the child's environment.
   for(const key of Object.keys(originalTempEnv))process.env[key]=browserTemp;
-  report.browserProcesses=[];
+  report.browserProcesses=[];report.cpuThrottling=[];report.renderers=[];report.browserLaunch=browserLaunchSettings(environment);
   for(let seat=0;seat<players;++seat){
-    const browser=await chromium.launch({executablePath:process.env.EAGLER_CHROME_PATH,headless:true,args:[
-      '--no-sandbox','--disable-extensions','--no-first-run','--autoplay-policy=no-user-gesture-required','--use-angle=swiftshader','--enable-unsafe-swiftshader',
-      '--disable-background-timer-throttling','--disable-renderer-backgrounding','--disable-backgrounding-occluded-windows'],
+    const browser=await chromium.launch({executablePath:process.env.EAGLER_CHROME_PATH,...report.browserLaunch,
       env:{...process.env,TMPDIR:browserTemp}});browsers.push(browser);
     const browserCdp=await browser.newBrowserCDPSession();const processes=await browserCdp.send('SystemInfo.getProcessInfo');await browserCdp.detach();
     const gpuSession=await browser.newBrowserCDPSession();const systemInfo=await gpuSession.send('SystemInfo.getInfo');await gpuSession.detach();
     report.browserProcesses.push({seat,version:browser.version(),processes:processes.processInfo,systemInfo});
     const context=await browser.newContext({viewport:{width:640,height:480},deviceScaleFactor:1});contexts.push(context);
     await context.addInitScript({content:'('+installProbe.toString()+')('+JSON.stringify({seat,duration})+',('+createSenderDelayQueue.toString()+'));'+
-      (diagnostic?'('+installGlDiagnostic.toString()+')(__th15Performance.state);':'')});
+      (cpuDiagnostic?'('+installGlDiagnostic.toString()+')(__th15Performance.state);':'')+
+      (longTaskDiagnostic?'('+installLongTaskDiagnostic.toString()+')(__th15Performance.state);':'')});
     const page=await context.newPage();pages.push(page);page.on('pageerror',error=>observeError(seat,'pageerror',error));
     page.on('crash',()=>observeError(seat,'page-crash','Chromium page crashed'));
     page.on('console',message=>{if(message.type()==='error')report.consoleErrors.push({seat,at:new Date().toISOString(),text:message.text(),cleanup:shuttingDown});});
-    await page.goto(base+'/peer/'+seat);await page.waitForFunction(()=>window.ready,null,{timeout:60000});await page.evaluate(()=>launch());
+    const throttle=await startCpuThrottle(page,environment.cpuThrottle);cpuThrottles.push({seat,handle:throttle});
+    report.cpuThrottling.push({seat,metadata:throttle.metadata});save();
+    await page.goto(base+'/peer/'+seat);await page.waitForFunction(()=>window.ready,null,{timeout:60000});
     const frame=page.frames().find(f=>f.url().includes('/runtime/th15.html'));assert.ok(frame);frames.push(frame);
+    await coverRuntimeCpuThrottle(throttle,frame);save();await page.evaluate(()=>launch());
   }
   const pids=report.browserProcesses.map(b=>b.processes.find(p=>p.type==='browser')?.id);assert.ok(pids.every(Number.isFinite));assert.equal(new Set(pids).size,players,'Each peer must have its own browser process');
   mark('warmup');
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>{const p=Module._th15_mp_status()>>>2;return Module.HEAPU32[p+3]>=180||document.querySelector('#error').textContent;},null,{timeout:90000,polling:250})));
   report.warmup=await Promise.all(frames.map(frame=>frame.evaluate(()=>__th15Performance.snapshot())));
   for(const warm of report.warmup){assert.equal(warm.error,'');assert.equal(warm.nativePhase,1);assert.equal(warm.route,'relay');assert.equal(warm.rollback[0],1);}
-  if(diagnostic){mark('diagnostic-process-cpu-before');
+  for(let seat=0;seat<players;++seat){
+    const session=await browsers[seat].newBrowserCDPSession();let systemInfo;
+    try{systemInfo=await session.send('SystemInfo.getInfo');}finally{await session.detach();}
+    const webgl=await frames[seat].evaluate(inspectRuntimeWebGL),identity=rendererIdentity(environment.renderer,systemInfo,webgl);
+    report.renderers.push({seat,webgl,systemInfo,identity});save();
+    assert.equal(identity.matched,true,'Requested '+environment.renderer+' renderer was not verified for seat '+seat+' (observed '+identity.classification+')');
+    if(longTaskDiagnostic)assert.equal(await frames[seat].evaluate(()=>__th15Performance.state.longTaskDiagnostic?.supported),true,'Long-task diagnostics unavailable');
+  }
+  report.scope.renderer=environment.renderer==='swiftshader'?'SwiftShader':'hardware-verified';mark('environment-verified');
+  if(cpuDiagnostic){mark('diagnostic-process-cpu-before');
     for(let seat=0;seat<browsers.length;++seat)report.diagnostics.processCpu.before.push({seat,
       ...await captureProcessCpuDiagnostic(browsers[seat],'before-profiler-start')});
     mark('diagnostic-profiler-start');
@@ -420,7 +433,9 @@ try{
   // Neither path polls, screenshots, serializes or runs tests in the window.
   await pause(duration*1000+600);
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>__th15Performance.state.phase==='complete',null,{timeout:10000,polling:250})));
-  if(diagnostic){await finishCpuProfiles();await finishProcessCpuSnapshots();mark('diagnostic-profiler-stop');}
+  if(cpuDiagnostic){await finishCpuProfiles();await finishProcessCpuSnapshots();mark('diagnostic-profiler-stop');}
+  if(longTaskDiagnostic)await Promise.all(frames.map(frame=>frame.evaluate(()=>globalThis.__th15LongTaskDiagnosticStop?.())));
+  for(const {handle} of cpuThrottles)await verifyCpuThrottleCoverage(handle);
   mark(saveValidationOnly?'validation-workload-complete':'measurement-complete');report.performanceMeasured=!saveValidationOnly;
   await pause(800); // Let the final managed-input release and FIFO packets settle.
   for(let seat=0;seat<players;++seat){
@@ -430,7 +445,7 @@ try{
     metrics.actualSendDelay=distribution(sent.map(e=>e.actual-e.scheduled));metrics.sendTimerLateness=distribution(sent.map(e=>e.lateness));
     report.results.push({seat,metrics,input:{submitted:input.submitted,acknowledged:input.acknowledged,errors:input.errors},
       raw:fileIdentity(resolve(out,'peer-'+seat+'.json')),errors:raw.errors,overflow:raw.overflow,
-      ...(diagnostic?{glDiagnostic:raw.glDiagnostic}: {})});save();
+      ...(cpuDiagnostic?{glDiagnostic:raw.glDiagnostic}: {}),...(longTaskDiagnostic?{longTaskDiagnostic:raw.longTaskDiagnostic}: {})});save();
   }
   // Keep the unmodified 15 s measurement intact. Exercise the real 30 s
   // autosave and then concurrent Host sync/input while all peers still run.
@@ -534,9 +549,9 @@ try{
     if(!metrics.presentationSubmissions)failures.push('No submitted game presentation for seat '+seat);
   }
   if(report.errors.length)failures.push('Browser errors');
-  if(diagnostic&&report.diagnostics.profiles.filter(p=>p.stopped&&p.file&&!p.error).length!==players)failures.push('Incomplete diagnostic CPU profiles');
-  if(diagnostic&&report.diagnostics.processCpu.deltas.length!==players)failures.push('Incomplete diagnostic process CPU snapshots');
-  if(diagnostic&&report.diagnostics.processCpu.deltas.some(item=>!item.validMatchedCounters))failures.push('Regressed diagnostic process CPU counters');
+  if(cpuDiagnostic&&report.diagnostics.profiles.filter(p=>p.stopped&&p.file&&!p.error).length!==players)failures.push('Incomplete diagnostic CPU profiles');
+  if(cpuDiagnostic&&report.diagnostics.processCpu.deltas.length!==players)failures.push('Incomplete diagnostic process CPU snapshots');
+  if(cpuDiagnostic&&report.diagnostics.processCpu.deltas.some(item=>!item.validMatchedCounters))failures.push('Regressed diagnostic process CPU counters');
   report.observationFailures=failures;report.observationPassed=failures.length===0;
   report.thresholds={maximumMs:100,meaning:'The 100 ms comparison used for TH11, applied to complete native callback wall, presentation and forward-frontier window holds. This does not claim 60 fps.',
     peers:report.results.map(({seat,metrics:m})=>({seat,callbackMax:m.callbackWall.max,presentationMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max,
@@ -550,9 +565,11 @@ try{
   for(let seat=0;seat<frames.length;++seat)try{saveJson('peer-'+seat+'-partial.json',await frames[seat].evaluate(()=>({probe:globalThis.__th15Performance?.result(),error:document.querySelector('#error')?.textContent})));}catch{}
 }finally{
   mark('cleanup');shuttingDown=true;
-  if(diagnostic){await finishCpuProfiles();await finishProcessCpuSnapshots();}
+  if(cpuDiagnostic){await finishCpuProfiles();await finishProcessCpuSnapshots();}
+  if(longTaskDiagnostic)await Promise.allSettled(frames.map(frame=>frame.evaluate(()=>globalThis.__th15LongTaskDiagnosticStop?.())));
   await Promise.allSettled(pages.map(page=>page.evaluate(()=>window.stopInput?.())));
   await Promise.allSettled(frames.map(frame=>frame.evaluate(()=>{globalThis.__th15Performance?.close();globalThis.Module?._th15_loop_stop?.();globalThis.Module?._th15_mp_close?.();})));
+  for(const {seat,handle} of cpuThrottles)try{await closeCpuThrottle(handle);}catch(error){observeError(seat,'cpu-throttle-cleanup',error);}
   await Promise.allSettled(browsers.map(browser=>browser.close()));for(const socket of lobbies)socket.close();relay?.kill();
   if(server){server.closeAllConnections();await new Promise(yes=>server.close(yes));}if(browserTemp)rmSync(browserTemp,{recursive:true,force:true});
   for(const [key,value] of Object.entries(originalTempEnv))if(value===undefined)delete process.env[key];else process.env[key]=value;

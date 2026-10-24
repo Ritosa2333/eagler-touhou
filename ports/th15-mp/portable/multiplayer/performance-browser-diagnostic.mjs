@@ -1,6 +1,24 @@
 // Explicit diagnostic instrumentation. The production performance observer does
 // not install these wrappers or start the sampler unless requested by its CLI.
 // This function is serialized into each browser realm and has no dependencies.
+export function installLongTaskDiagnostic(state,{maximumEntries=2000}={}){
+  const diagnostic=state.longTaskDiagnostic={schema:'eagler-touhou/th15-long-task-diagnostic/1',maximumEntries,
+    supported:!!globalThis.PerformanceObserver?.supportedEntryTypes?.includes('longtask'),entries:[],droppedEntries:0,
+    meaning:'Browser long-task records (at least 50 ms) on the Runtime event loop, including attributed containers. They can overlap a native callback or a save, but that overlap does not establish the cause of a stall. Delivery is asynchronous, timing has observer overhead, and this run cannot satisfy the performance gate.'};
+  if(!diagnostic.supported)return diagnostic;
+  const append=entries=>{for(const entry of entries){
+    if(diagnostic.entries.length>=maximumEntries){++diagnostic.droppedEntries;continue;}
+    diagnostic.entries.push({name:entry.name,entryType:entry.entryType,start:entry.startTime,end:entry.startTime+entry.duration,
+      duration:entry.duration,observedAt:performance.now(),phaseAtDelivery:state.phase,
+      attribution:Array.from(entry.attribution??[],value=>({name:value.name,entryType:value.entryType,
+        containerType:value.containerType,containerName:value.containerName,containerId:value.containerId,containerSrc:value.containerSrc}))});
+  }};
+  const observer=new PerformanceObserver(list=>append(list.getEntries()));observer.observe({type:'longtask',buffered:false});
+  globalThis.__th15LongTaskDiagnosticStop=()=>{if(diagnostic.stoppedAt!==undefined)return;
+    append(observer.takeRecords());observer.disconnect();diagnostic.stoppedAt=performance.now();};
+  return diagnostic;
+}
+
 export function installGlDiagnostic(state,{longCallThresholdMs=25,maxLongCalls=2000}={}){
   const methods=['texImage2D','texSubImage2D','texImage3D','texSubImage3D','compressedTexImage2D','compressedTexSubImage2D',
     'bufferData','bufferSubData','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced',

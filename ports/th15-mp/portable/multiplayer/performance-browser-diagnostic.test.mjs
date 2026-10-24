@@ -1,7 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
-import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
+import {installLongTaskDiagnostic,installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
+
+test('long-task diagnostics are explicitly unsupported without the API and do not fabricate observations',()=>{
+  const state={phase:'warmup'},context={state};
+  runInNewContext('('+installLongTaskDiagnostic.toString()+')(state)',context);
+  assert.equal(state.longTaskDiagnostic.supported,false);assert.equal(state.longTaskDiagnostic.entries.length,0);
+  assert.equal(context.__th15LongTaskDiagnosticStop,undefined);
+});
+
+test('long-task diagnostic retains original timing and attribution, bounds storage, and drains once on stop',()=>{
+  const state={phase:'measure'},events=[];let deliver,pending=[];
+  const context={state,performance:{now:()=>250},PerformanceObserver:class {
+    static supportedEntryTypes=['longtask'];
+    constructor(callback){deliver=callback;}
+    observe(options){events.push(['observe',options]);}
+    takeRecords(){events.push(['take']);return pending;}
+    disconnect(){events.push(['disconnect']);}
+  }};
+  runInNewContext('('+installLongTaskDiagnostic.toString()+')(state,{maximumEntries:2})',context);
+  const entry={name:'self',entryType:'longtask',startTime:10,duration:75,attribution:[{name:'unknown',entryType:'taskattribution',containerType:'iframe',containerSrc:'/runtime/th15.html'}]};
+  deliver({getEntries:()=>[entry]});state.phase='complete';pending=[{...entry,startTime:90},entry];
+  context.__th15LongTaskDiagnosticStop();context.__th15LongTaskDiagnosticStop();
+  const diagnostic=state.longTaskDiagnostic;
+  assert.equal(diagnostic.entries.length,2);assert.equal(diagnostic.droppedEntries,1);
+  assert.equal(diagnostic.entries[0].start,10);assert.equal(diagnostic.entries[0].end,85);
+  assert.equal(diagnostic.entries[0].attribution[0].containerSrc,'/runtime/th15.html');
+  assert.equal(diagnostic.entries[1].phaseAtDelivery,'complete');assert.equal(diagnostic.stoppedAt,250);
+  assert.deepEqual(events.map(event=>event[0]),['observe','take','disconnect']);
+});
 
 function fixture(options={}){
   const clock={at:0},calls=[],state={phase:'measure',start:0,end:100,current:null};
