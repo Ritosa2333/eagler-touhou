@@ -83,7 +83,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_abandon(int hostScope) 
 
 extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
     if (scenario<0) return initialize()?1:0;
-    assert(initialize(scenario==5));
+    assert(initialize(scenario==5||scenario==8));
     if (scenario==0) {
         auto* original=root.state.object.get();
         const auto originalText=root.state.object->text;
@@ -288,6 +288,33 @@ extern "C" EMSCRIPTEN_KEEPALIVE int eagler_write_journal_test(int scenario) {
         assert(J::EndFrame()&&J::RestoreTo(0));
         assert(std::memcmp(buffer,before.data(),before.size())==0);
         J::Release(buffer);
+    } else if (scenario==8) {
+        // Direct real-Wasm hook calls probe the reserved heap edges without
+        // corrupting dlmalloc metadata or writing adjacent host allocations.
+        // Every overlapping scalar must capture exactly the clipped edge block;
+        // touching wholly outside it must neither save bytes nor disable tracing.
+        const auto* config=reinterpret_cast<const volatile std::uint32_t*>(
+            std::uintptr_t(eagler_rb_config_address()));
+        const auto lo=config[1],hi=lo+config[2];
+        assert(config[3]==0&&config[4]==0&&lo>16&&hi>lo&&hi<0xfffffff0u);
+        struct Probe { std::uint32_t address,bytes,blocks; };
+        const Probe probes[]{
+            {lo-16,16,0},{lo-15,16,1},{lo-1,1,0},{lo-1,2,1},
+            {lo,1,1},{lo,16,1},{hi-16,16,1},{hi-1,1,1},
+            {hi-1,2,1},{hi-1,16,1},{hi,1,0},{hi,16,0},{hi+1,16,0},
+            {0,16,0},{0xffffffffu,1,0},{0xfffffff8u,16,0},
+            // Bulk and zero-length calls retain their previous full clipping.
+            {lo-16,32,1},{hi-16,32,1},{lo-32,32,0},{hi,32,0},{lo,0,0},
+        };
+        std::uint32_t frame=0;
+        for (const auto& probe:probes) {
+            assert(J::BeginFrame(frame));
+            eagler_rb_touch(probe.address,probe.bytes);
+            assert(config[0]==1&&J::FrameOpen()&&!J::Failed());
+            assert(J::EndFrame()&&J::LastFrameBlocks()==probe.blocks);
+            assert(J::RestoreTo(frame)&&J::Ready()&&J::FrameCount()==0);
+            ++frame;
+        }
     } else return 0;
     std::printf("write-journal scenario %d passed\n",scenario);
     return 1;

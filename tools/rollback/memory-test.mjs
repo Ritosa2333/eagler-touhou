@@ -92,7 +92,7 @@ async function main() {
   assert.equal(uninstrumented._eagler_write_journal_test(-1), 0, 'raw Wasm must reject journal initialization');
   console.log('Uninstrumented module correctly rejects journal initialization');
 
-const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6, 7], trapScopes = ['game', 'host'];
+const profiles = [], scenarios = [0, 1, 2, 3, 4, 5, 6, 7, 8], trapScopes = ['game', 'host'];
 for (const [name, options] of [
   ['wasm', { nativeFilter: false }],
   ['native-hook', { nativeFilter: true }],

@@ -264,6 +264,16 @@ EMSCRIPTEN_KEEPALIVE void eagler_rb_touch(std::uint32_t address, std::uint32_t b
             first=heapOffset/BlockBytes;
             last=(heapOffset+bytes-1)/BlockBytes;
             contained=true;
+        } else if (!rootBlocks) {
+            // A heap-only scalar outside the fully contained fast path either
+            // clips one heap edge or is entirely host memory. Use differences
+            // to preserve overlap without computing a wrapping end address;
+            // ordinary host/stack stores avoid the general/root checks below.
+            if (heapOffset<heapHi-heapLo || (lo<heapLo && heapLo-lo<bytes)) {
+                eagler_rb_config[0]=0;
+                eagler_rb_capture(address,bytes);
+            }
+            return;
         } else if (lo>=rootLo && lo<rootHi && bytes<=rootHi-lo) {
             first=heapBlocks+(lo-rootBlockLo)/BlockBytes;
             last=heapBlocks+(lo+bytes-1-rootBlockLo)/BlockBytes;
