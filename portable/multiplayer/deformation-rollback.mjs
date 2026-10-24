@@ -69,7 +69,7 @@ if(process.argv.includes('--run-wasm')){
   }
   try{
     const game=resolve(root,'web/cpp/game'),common=resolve(root,'../../common');
-    const names=['ScreenDeformation.cpp','ScreenDeformationPool.cpp','EnemyAnimations.cpp','EclContext.cpp','Movement.cpp','AnmVm.cpp','AnmInterpreter.cpp','AnmGeometry.cpp','AnmProjection.cpp','AnmRenderer.cpp','AnmManager.cpp','AnmRollback.cpp','Interpolation.cpp','GraphicsMath.cpp','SceneCamera.cpp'];
+    const names=['ScreenDeformation.cpp','ScreenDeformationPool.cpp','EnemyAnimations.cpp','EclContext.cpp','Movement.cpp','AnmVm.cpp','AnmPresentation.cpp','AnmInterpreter.cpp','AnmGeometry.cpp','AnmProjection.cpp','AnmRenderer.cpp','AnmManager.cpp','AnmRollback.cpp','Interpolation.cpp','GraphicsMath.cpp','SceneCamera.cpp'];
     const sources=names.map(name=>resolve(game,name)).concat(resolve(import.meta.dirname,'deformation-rollback.cpp'));
     const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(resolve(dir,entry.name)):[resolve(dir,entry.name)]);
     const headers=[...walk(game),...walk(resolve(root,'portable/sdl'))].filter(path=>/\.(h|hpp|inc)$/.test(path));

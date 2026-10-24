@@ -26,7 +26,11 @@ bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFade
     const AuditRebaseScope audit_rebase(camera_discontinuity);
     using touhou::graphics::Compare;
     if(state.draw_flags&8)return true;
-    const bool draw_only=high_refresh::render_only;
+    const bool draw_only=high_refresh::render_only
+#ifdef TH11_MULTIPLAYER
+        ||multiplayer_frozen_draw
+#endif
+        ;
     SceneCamera stage_camera=high_refresh::interpolating()?display_camera(high_refresh::alpha):state.camera;
     stage_camera.offset=camera.offset;
     if(!(state.draw_flags&4)||state.fade_timer.current<60){
@@ -35,11 +39,7 @@ bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFade
         const u32 clear=(state.draw_flags&4)&&state.frame_count<=33?0:stage_camera.fog.color;
         if(!renderer.clear_target(clear,&camera.viewport)){error="stage background clear failed";return false;}
     }
-    if((state.draw_flags&4)&&!draw_only
-#ifdef TH11_MULTIPLAYER
-       &&!multiplayer_frozen_draw
-#endif
-    ){
+    if(state.draw_flags&4&&!draw_only){
         if(state.fade_timer.current<30){fades.start(3,30,0,10,&manager.rate);state.draw_flags|=1;state.fade_timer.set(1,&manager.rate);}
         else{state.tint&=0xffffff;state.draw_flags&=~1u;}
     }
@@ -57,11 +57,7 @@ bool Stage::draw_background(AnmRenderer& renderer,SceneCamera& camera,ScreenFade
         }
         renderer.pipeline().fog=true;
         for(u32 layer=0;layer<8;++layer)if(!draw_layer(renderer,camera,layer))return false;
-        renderer.flush();if(state.effects_enabled&&!draw_only
-#ifdef TH11_MULTIPLAYER
-           &&!multiplayer_frozen_draw
-#endif
-        )++state.effects_enabled;
+        renderer.flush();if(state.effects_enabled&&!draw_only)++state.effects_enabled;
     }
     restore_tint(renderer,state.frame_effect);auto& p=renderer.pipeline();p.depthWrite=false;p.depthCompare=Compare::Always;return true;
 }
@@ -69,7 +65,11 @@ bool Stage::draw_foreground(AnmRenderer& renderer,SceneCamera& camera){
     const AuditRebaseScope audit_rebase(camera_discontinuity);
     using touhou::graphics::Compare;
     if(state.draw_flags&8)return true;
-    const bool draw_only=high_refresh::render_only;
+    const bool draw_only=high_refresh::render_only
+#ifdef TH11_MULTIPLAYER
+        ||multiplayer_frozen_draw
+#endif
+        ;
     SceneCamera stage_camera=high_refresh::interpolating()?display_camera(high_refresh::alpha):state.camera;
     stage_camera.offset=camera.offset;
     if(!(state.draw_flags&4)||state.fade_timer.current<60){
@@ -80,20 +80,12 @@ bool Stage::draw_foreground(AnmRenderer& renderer,SceneCamera& camera){
         if(renderer.draw_layer(manager.layer_first(26))==-2){error="stage layer 26 draw failed";return false;}
         renderer.pipeline().depthCompare=Compare::LessEqual;camera_fog(renderer,stage_camera);
     }
-    if((state.draw_flags&4)&&!draw_only&&state.fade_timer.current>=30&&!draw_only
-#ifdef TH11_MULTIPLAYER
-       &&!multiplayer_frozen_draw
-#endif
-    )state.tint&=0xffffff;
+    if((state.draw_flags&4)&&state.fade_timer.current>=30&&!draw_only)state.tint&=0xffffff;
     if(state.draw_flags&1){auto& p=renderer.pipeline();p.depthWrite=false;p.fog=true;
         for(u32 layer=8;layer<12;++layer)if(!draw_layer(renderer,camera,layer))return false;
     }
     restore_tint(renderer,state.frame_effect);
-    if(state.fade_timer.current>0&&!draw_only
-#ifdef TH11_MULTIPLAYER
-       &&!multiplayer_frozen_draw
-#endif
-    ){state.fade_timer.advance(-1);if(state.fade_timer.current<1){
+    if(state.fade_timer.current>0&&!draw_only){state.fade_timer.advance(-1);if(state.fade_timer.current<1){
         if(state.draw_flags&2)state.draw_flags|=8;state.draw_flags&=~6u;state.tint=0xffffff;
     }}
     auto& p=renderer.pipeline();p.depthWrite=false;p.depthCompare=Compare::Always;p.fog=false;return true;

@@ -27,7 +27,7 @@ const profile = lab?'presentation-lab':multiplayer?'multiplayer':presentationDia
 const variant = multiplayer ? 'multiplayer' : 'normal';
 const out = process.env.TH11_OUTPUT
   ? resolve(root, process.env.TH11_OUTPUT)
-  : resolve(root, 'artifacts', profile + (diagnostic&&!lab&&!presentationDiagnostics ? '-diagnostic' : ''));
+  : resolve(root, lab?'artifacts/presentation-lab':presentationDiagnostics?'artifacts/presentation-diagnostics':'artifacts/'+profile+(diagnostic?'-diagnostic':''));
 
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, '../../common'));
 const sdk = process.env.EMSDK || [

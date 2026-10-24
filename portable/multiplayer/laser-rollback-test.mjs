@@ -69,7 +69,7 @@ if(process.argv.includes('--run-wasm')){
   }
   try{
     const game=resolve(root,'web/cpp/game'),common=resolve(root,'../../common');
-    const names=['LaserManager.cpp','LaserState.cpp','LaserLine.cpp','LaserInfinite.cpp','LaserCut.cpp','LaserInfiniteCut.cpp','BulletAppearance.cpp','BulletMotion.cpp','Movement.cpp','AnmVm.cpp','AnmInterpreter.cpp','AnmGeometry.cpp','AnmProjection.cpp','AnmRenderer.cpp','AnmManager.cpp','AnmRollback.cpp','Interpolation.cpp','GraphicsMath.cpp','SceneCamera.cpp'];
+    const names=['LaserManager.cpp','LaserState.cpp','LaserLine.cpp','LaserInfinite.cpp','LaserCut.cpp','LaserInfiniteCut.cpp','BulletAppearance.cpp','BulletMotion.cpp','Movement.cpp','AnmVm.cpp','AnmPresentation.cpp','AnmInterpreter.cpp','AnmGeometry.cpp','AnmProjection.cpp','AnmRenderer.cpp','AnmManager.cpp','AnmRollback.cpp','Interpolation.cpp','GraphicsMath.cpp','SceneCamera.cpp'];
     const sources=names.map(name=>resolve(game,name)).concat(resolve(import.meta.dirname,'laser-rollback-test.cpp'));
     const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(resolve(dir,entry.name)):[resolve(dir,entry.name)]);
     const headers=[...walk(game),...walk(resolve(root,'portable/sdl'))].filter(path=>/\.(h|hpp|inc)$/.test(path));

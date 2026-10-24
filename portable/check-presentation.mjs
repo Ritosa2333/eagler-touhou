@@ -42,3 +42,9 @@ execFileSync('python',[emcc,
   '-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-o',resolve(out,'presentation-audit-check.cjs'),
 ],{env,cwd:root,stdio:'inherit',windowsHide:true});
 execFileSync(process.execPath,[resolve(out,'presentation-audit-check.cjs')],{env,cwd:root,stdio:'inherit',windowsHide:true});
+execFileSync('python',[emcc,
+  resolve(root,'portable/multiplayer-presentation-check.cpp'),resolve(root,'web/cpp/game/AnmPresentation.cpp'),
+  '-std=c++17','-O1','-DTH11_MULTIPLAYER=1','-I'+resolve(root,'web/cpp/game'),
+  '-sDEFAULT_TO_CXX=1','-sENVIRONMENT=node','-o',resolve(out,'multiplayer-presentation-check.cjs'),
+],{env,cwd:root,stdio:'inherit',windowsHide:true});
+execFileSync(process.execPath,[resolve(out,'multiplayer-presentation-check.cjs')],{env,cwd:root,stdio:'inherit',windowsHide:true});

@@ -1,5 +1,6 @@
-// Real TH11 FrameCadence/common PendingFrameSchedule oracle, no wall-clock benchmark.
+// Real TH11 simulation cadence/common PendingFrameSchedule oracle, no wall-clock benchmark.
 #include "../../web/cpp/multiplayer/FrameSchedule.hpp"
+#include "../sdl/FrameCadence.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -13,21 +14,23 @@ void near(double actual,double expected,const char* why){check(std::abs(actual-e
 void group(const char* name){++groups;std::printf("GROUP %u %s\n",groups,name);}
 void consume(Clock& clock,unsigned count){for(unsigned n=0;n<count;++n)check(clock.complete(),"consume exactly one newly completed forward");check(clock.owed()==0,"all offered forward obligations consumed");}
 void ordinary_equivalence(){
+    {touhou::sdl::FrameCadence display;th11::multiplayer::SimulationCadence simulation;
+     check(display.advance(3*step)==1&&simulation.advance(3*step)==3,"display deadlines do not change network catch-up");}
     group("unchanged original cadence when every offered tick completes at high refresh rates");
     for(unsigned hz:{60u,90u,120u,144u,165u,240u}){
-        Clock clock;touhou::sdl::FrameCadence original;unsigned count=0;
+        Clock clock;th11::multiplayer::SimulationCadence original;unsigned count=0;
         for(unsigned callback=0;callback<5*hz;++callback){
             const double elapsed=1./hz;const auto due=clock.advance(elapsed);
-            check(due==original.advance(elapsed),"same due count as real ordinary helper");
+            check(due==original.advance(elapsed),"same due count as independent simulation helper");
             check(due<=4&&clock.owed()==due,"same four-tick cap and offered ledger");
             near(clock.phase(),original.debt,"exact nominal phase preserved");
             consume(clock,due);count+=due;check(!clock.retry_pending(),"ordinary progress creates no retry");
         }
         check(count==300,"five nominal seconds complete 300 logical ticks");
     }
-    Clock clock;touhou::sdl::FrameCadence original;
+    Clock clock;th11::multiplayer::SimulationCadence original;
     for(double elapsed:{0.,.001,.009,.03,.052,.2,0.,.004,.05}){
-        const auto due=clock.advance(elapsed);check(due==original.advance(elapsed),"irregular finite cadence matches original cap");
+        const auto due=clock.advance(elapsed);check(due==original.advance(elapsed),"irregular finite cadence retains the network cap");
         near(clock.phase(),original.debt,"irregular phase matches original");consume(clock,due);
     }
 }
@@ -51,7 +54,7 @@ void cpu_refund(){
 }
 void exact_loop_ledger(){
     group("exact playback and task continuation spend only previously offered CPU debt");
-    Clock fixed;touhou::sdl::FrameCadence old;unsigned before=0,after=0;
+    Clock fixed;th11::multiplayer::SimulationCadence old;unsigned before=0,after=0;
     for(unsigned cycle=0;cycle<100;++cycle){
         check(old.advance(3*step)==3&&fixed.advance(3*step)==3,"same delayed three-tick offer");
         ++before;++after;check(fixed.complete(),"one real forward frame completed");fixed.cpu_yield();
