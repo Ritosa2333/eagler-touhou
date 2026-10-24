@@ -10,6 +10,7 @@
 | --- | --- | --- |
 | [`RollbackCore`](../../common/include/eagler/netplay/NetplayCore.hpp) | 按帧保存各席位输入、实际输入前沿、已模拟决策和最早待纠正帧 | `RewindSimulationTo()` 只回退核心的模拟决策记录；它不恢复标题内存。 |
 | [`RollbackJournal`](../../common/include/eagler/netplay/RollbackJournal.hpp) | 有界、first-write-wins 的字节撤销存储 | 每个写入点先 `Touch()`；同一块重复触碰安全；部分重叠被拒绝。 |
+| [`WriteJournal`](../../common/include/eagler/netplay/WriteJournal.hpp) | 独立模拟堆、分配器元数据与按帧首次写入日志 | 最终 Wasm 对 32 字节块的首次写入保存旧值；模拟状态和分配器一起恢复，设备与发布输出另有系统生命周期。 |
 | `SessionChannel` | 网络时钟、序号、输入重传、确认、维修包和会话退休 | 网络状态留在回滚日志外；重传发送已采样输入，不重新读设备。 |
 | 标题帧驱动与各领域日志 | 游戏对象、管理器、池、资源引用及标题级恢复顺序 | 标题层负责完整恢复、重模拟、过期历史退休和生命周期边界。 |
 | 输出队列 | 音效、文件写入、Replay、观战帧等不可逆副作用 | 只在对应帧确认后发布；纠正时先撤销尚未提交的目标帧及之后输出。 |
@@ -22,7 +23,7 @@
 - TH09：[`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.cpp) 管理输入帧；[`Application.cpp`](../../ports/th09/web/cpp/sdl/Application.cpp) 的 `checkpoint`、`rollback_tick` 及 SDL 帧循环接管标题世界、恢复和重模拟。
 - TH10：[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 通过稀疏池捕获器和 `RollbackJournal` 接线各领域状态；`NetplayRuntime` 只提供网络和输入决策。
 - TH11：`NetplayRuntime` 持有帧前沿和提交水位；[`WorldRollback`](../../ports/th11-mp/web/cpp/game/WorldRollback.cpp) 与 `StageRollback`、`EnemyRollback`、`AnmRollback` 管理标题状态。
-- TH15：[`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 设 `allowPrediction=false`，当前多人运行按精确输入推进，不使用标题回滚日志。
+- TH15：[`MultiplayerRollback.inc`](../../ports/th15-mp/web/cpp/sdl/MultiplayerRollback.inc) 使用 384 MiB 模拟堆和公共 `WriteJournal`，mode 0/2 提供固定 12 帧回滚；[`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 分开维护采样、模拟和提交水位，mode 1 使用准确输入。
 
 ## 一帧的输入与恢复路径
 
@@ -39,6 +40,8 @@
 `RollbackCore` 的 `ConfirmedThroughAllRemotes()` 是所有远端连续确认前沿的最小值；`AcknowledgedLocalThroughAllRemotes()` 是其他席位已确认收到本地输入的前沿。会话退休和新一轮切换分别使用这些水位。分别读取这两个水位，完成各自对应的退休屏障。
 
 ## 检查点和日志规则
+
+本节的手动 `Touch()`、`UndoTo()` 和跨帧检查点规则适用于 `RollbackJournal`。TH15 使用 Wasm 写入插桩的 `WriteJournal`；其逐帧恢复、输出和 GPU 边界见[TH15 回滚开发说明](../../ports/th15-mp/docs/DEVELOPMENT.md#回滚状态与输出)。
 
 ### 写入捕获
 
@@ -101,7 +104,7 @@ TH09 输出环按“最旧未发布帧”保留空间，标题驱动同时管理
 | TH09MP | [`RollbackSession`](../../ports/th09/web/cpp/multiplayer/RollbackSession.hpp) `History=8`，仅 2 人；DirectTouch 表示绝对场地目标。 | `Application.cpp` 在 Present 后安排异步恢复，并由 `RecoverySchedule` ticket/loop epoch 取消过期回调。短缺输入不再通过放慢本地采样节奏解决。 |
 | TH10MP | [`core_config`](../../ports/th10-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 设置 `maxRollbackFrames=12`；[`RollbackState`](../../ports/th10-mp/web/cpp/multiplayer/RollbackState.cpp) 包含稀疏对象池捕获和多个 typed slot owner。 | 产品目录 `rollbackLimit=12`；其未设置 `sendPredictionLimit`，公共策略函数回退到 8。C++ 核心历史窗为 12，发送预测上限为 8；修改时分别核对这两个字段。 |
 | TH11MP | [`SessionSetup::MaxRollbackFrames=12`](../../ports/th11-mp/web/cpp/multiplayer/SessionSetup.hpp)；世界、阶段、敌人和 ANM 各自有日志。 | 固定的提交水位与阶段租约参与资源退休；`WorldRollback::CanCapture()` 会拒绝暂停状态及暂停菜单拥有期间的捕获。 |
-| TH15MP | [`NetplayRuntime`](../../ports/th15-mp/web/cpp/multiplayer/NetplayRuntime.cpp) 配置 `allowPrediction=false`；公共 core 保留 12 帧历史槽用于输入/ACK 管理。 | 产品目录 `rollbackLimit=0`，使用输入延迟模式；core 历史槽用于输入与 ACK。 |
+| TH15MP | [`WriteJournal`](../../common/include/eagler/netplay/WriteJournal.hpp) 捕获模拟堆与分配器；[`MultiplayerRollback.inc`](../../ports/th15-mp/web/cpp/sdl/MultiplayerRollback.inc) 在 mode 0/2 恢复并有界重演，mode 1 使用准确输入。 | 产品目录 `rollbackLimit=12`、`sendPredictionLimit=12`；音效、Replay 和观战按确认水位提交，暂停截图、资源、切关与结尾使用确认边界。[开发说明](../../ports/th15-mp/docs/DEVELOPMENT.md#回滚状态与输出)与[实际验收](../../ports/th15-mp/docs/ROLLBACK-ACCEPTANCE-20261023.md)。 |
 
 ## TH08 与 TH09 的可复用经验
 

@@ -86,7 +86,7 @@ B = max(1, ceil(floor(worst_p95_RTT_us / 2) * 60 / 1_000_000))
 
 接线分别位于 [`SessionChannel::Pump()`](../../common/src/netplay/SessionChannel.cpp) 的阶段样本收发和标题外层帧日程：TH08 `NetworkFrameSchedule`、TH09 `RollbackSession::PacedElapsedMs()`、TH10 `NetplayRuntime::PacedElapsedSeconds()`、TH11 `NetplayRuntime::PacedElapsed()`。标题选择何时消费建议值；`SessionChannel` 不模拟游戏帧。
 
-TH08/09/10/11 的混合/纯延迟模式可交换 AdonisPhase 信息；TH15 配置 `adonisPhase=true` 且 prediction allowance 为 0。TH15 按每席位真实输入推进，`maxRollbackFrames=12` 用于保存公共输入与 ACK 历史。
+TH08/09/10/11 的混合/纯延迟模式可交换 AdonisPhase 信息。TH15 在 mode 1/2 开启 `adonisPhase`：mode 1 的 prediction allowance 为 0，mode 2 使用提交的测量预测预算 0–2；mode 0 直接启动。TH15 的 `maxRollbackFrames=12` 同时限制输入预测与游戏状态恢复窗口。
 
 ## 输入捕获与帧零
 
@@ -108,13 +108,13 @@ TH08/09/10/11 的混合/纯延迟模式可交换 AdonisPhase 信息；TH15 配�
 | TH09MP | `rollbackLimit=8`、实测启动、手动延迟到 9；2 人 | `RollbackSession::History=8`；Rollback、Delay、Hybrid 共用标题输入核心 | 自有 `Application.cpp` 恢复/Present 调度和菜单生命周期输入边界。 |
 | TH10MP | `rollbackLimit=12`、实测启动；目录未显式设置 `sendPredictionLimit` | `NetplayRuntime.cpp` 设置 `CoreConfig::maxRollbackFrames=12` | 公共策略读取缺省发送预测上限 8；标题 C++ 状态窗为 12，两者字段含义和 owner 不同。 |
 | TH11MP | `rollbackLimit=12`、`sendPredictionLimit=12`、实测启动、手动延迟到 9 | `SessionSetup::MaxRollbackFrames=12`；Mode 0/2 可预测，Mode 1 精确输入 | 定时启动支持 2–3 人；直接回滚 Mode 0 可不运行测量，Mode 1/2 使用校准。 |
-| TH15MP | `rollbackLimit=0`、实测启动、手动延迟到 9 | 只允许 Adonis Delay；`CoreConfig::allowPrediction=false` | 校准之后严格等待每席位的真实帧输入；保留的 12 帧 core 槽位只用于输入和 ACK。 |
+| TH15MP | `rollbackLimit=12`、`sendPredictionLimit=12`、实测启动、手动延迟到 9 | mode 0/2 使用独立模拟堆与 `WriteJournal`，固定 12 帧回滚；mode 1 使用准确输入 | 2–3 人；物理采样和修正模拟前沿分离，确认水位提交音效、Replay 与观战；[验收记录](../../ports/th15-mp/docs/ROLLBACK-ACCEPTANCE-20261023.md)包含原生 mode 2 传输兼容。 |
 
 产品时序声明见 [`product-catalog.mjs`](../../common/contracts/product-catalog.mjs)；统一解释函数 `multiplayerInputTimingPolicy()` 的缺省预测上限为 8。TH10 当前目录未显式写 `sendPredictionLimit`，但标题 C++ `CoreConfig.maxRollbackFrames` 设为 12。审阅具体调度上限时要分别追踪 UI/Relay 产品值与 Native Runtime frame admission 字段。
 
 TH06/TH07 使用各自的时序策略。默认 UI 配方读取实际房间配置中的所选值，产品上限用于选项校验。
 
-测量启动只接受 Adonis Delay `mode=1` 或 Hybrid `mode=2`。TH08/09/10 可选择不启用 Adonis 的直接回滚路径；TH11 Mode 0 直接启动回滚，Mode 1/2 走 measured startup；TH15 仅使用 Mode 1 纯延迟。
+测量启动只接受 Adonis Delay `mode=1` 或 Hybrid `mode=2`。TH08/09/10 可选择不启用 Adonis 的直接回滚路径；TH11 Mode 0 直接启动回滚，Mode 1/2 走 measured startup。TH15 协议 7 的 mode 0 直接启动回滚，mode 1/2 使用测量启动；协议 6、玩法身份 20 的旧 Replay 保留纯延迟解释。常规 Launcher/Relay 将 TH15 回滚选项归一到 mode 0，原生 mode 2 继续支持传输、旁观和 Replay。
 
 ## 调试启动问题
 
@@ -157,7 +157,7 @@ TH09 的恢复与输出调度：恢复放在 Present 后分批执行；`Recovery
 | D 和实际感觉不符 | 把 RTT、D、P、显示采样延迟或产品上限当成同一数值 | 对照原始 RTT p95、fullDelay、Selected delay/prediction 与标题 capture frame。 |
 | 会话中节奏变慢，但 D 未变 | AdonisPhase 消费墙钟等待校正，或标题自己的 input-gap pacer | 查 `TakeAdonisDelayMs()` 的调用点、标题墙钟 accumulator 与固定逻辑步长。 |
 | Hybrid 仍发生回滚 | P 只是小范围预测允许，后续真实输入仍可能与预测不同 | 查预测位图、最早 RollbackFrame、实际输入前沿和 title journal 覆盖。 |
-| 纯延迟模式启动后仍出现推测状态 | Title `CoreConfig.allowPrediction`、模式编码或读取房间字段不一致 | 核对 `PrepareFrame().predictedMask`、TH15 `MarkSimulated()` 精确输入断言和运行时 setup。 |
+| 纯延迟模式启动后仍出现推测状态 | Title `CoreConfig.allowPrediction`、模式编码或读取房间字段不一致 | 核对 `PrepareFrame().predictedMask`、TH15 mode 1 的 `MarkSimulated()` 精确输入要求和运行时 setup；mode 0/2 的预测由状态日志与修正提交水位约束。 |
 
 ## 当前源码入口
 

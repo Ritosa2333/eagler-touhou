@@ -1,0 +1,413 @@
+{
+  "schema": "eagler-touhou/th15-rollback-acceptance-reconstruction/1",
+  "testDate": "2026-10-23",
+  "reconstruction": {
+    "date": "2026-10-24",
+    "basis": "Values preserved in tool outputs and the independent read-only review of the original execution.",
+    "rawReceiptsAvailable": false,
+    "gameTestsRerunForReconstruction": false,
+    "originalSummaryByteReproduction": false,
+    "note": "The temporary workspace and original raw reports were lost after the run. This is a new compact summary of recorded and previously verified results; it contains no reconstructed raw reports or original summary digest."
+  },
+  "branch": "experiment/th15-rollback-20261023",
+  "environment": {
+    "browser": "Chromium 151.0.7922.34",
+    "renderer": "SwiftShader",
+    "compiler": "Emscripten 6.0.9",
+    "platform": "Linux x86_64"
+  },
+  "inputs": {
+    "identityBasis": "SHA-256 values read during the original run",
+    "th15Dat": "f3802e71db30f99b86d61b6e98b8325716c5cbae892547c563dded7837862ae7",
+    "cp932Bin": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919",
+    "msgothicTtc": "4bde3e6392b96910fb59094c6c1a4dbfae18fee78d0bf13dc30616837c4f95db",
+    "unifontOtf": "7b62b50acbb186689dc30c446ce4367b87d79489e9907b83255f9fbe0dcfb9e1"
+  },
+  "builds": {
+    "oracle": {
+      "sourceRevision": "e8820e0dc4e69503739d36b83cf3e852690b538b",
+      "wasm": {
+        "bytes": 6017873,
+        "sha256": "d41e2108a851d19a93a7d341e5673e944e7d03af899266d9e5cd67461f252319"
+      },
+      "fixtureWasmSha256": "4451cf770005285bd5437a409078a51dce7f7720ba56fd93a2b9d5656474bf81",
+      "reusedProductionObjects": 265,
+      "executedSuites": [
+        "independentWorldAndPixels",
+        "lifecycle"
+      ]
+    },
+    "final": {
+      "sourceRevision": "c7ac36bf74a135a48e14b5ab5a0aeb31667235ad",
+      "wasm": {
+        "bytes": 6018030,
+        "sha256": "5f5bcba534e9fe29800ffdf1b2f100ae93fa592c213ed8c8869c333305e9979c"
+      },
+      "linkedFixtureWasmSha256": "5473ac111f0379b79d3a991413c4f2293c388f21d3ccafe573894b6240f8798f",
+      "executedSuites": [
+        "finalProductionNetwork",
+        "finalNativeChecks"
+      ]
+    },
+    "previouslyVerifiedSourceDelta": {
+      "sources": [
+        "common/src/netplay/SimulationHeap.cpp",
+        "common/src/netplay/WriteJournal.cpp"
+      ],
+      "headersChanged": false,
+      "changes": [
+        "Clear rejects an abandoned open write-journal frame.",
+        "Explicit EAGLER_WRITE_JOURNAL compilation guards isolate non-enabled consumers."
+      ]
+    },
+    "previouslyVerifiedExplicitOptInComparison": {
+      "productionWasmByteIdentical": true,
+      "linkedFixtureWasmByteIdentical": true
+    },
+    "simulationHeapBytes": 402653184,
+    "rollbackWindowFrames": 12
+  },
+  "results": {
+    "independentWorldAndPixels": {
+      "build": "oracle",
+      "result": "PASS",
+      "baseline": "A separate exact-input mode 1 instance linked from the same production game objects.",
+      "stateComparison": [
+        "semantic scalars",
+        "ECL",
+        "all players",
+        "projectile programs",
+        "item ownership",
+        "lasers",
+        "RNG"
+      ],
+      "framebufferCheckpoints": [
+        "nested correction",
+        "late pause",
+        "retired-resource late pause",
+        "twelve-frame recovery"
+      ],
+      "maximumRetainedFrameAssertion": 12,
+      "physicalCaptureMonotonic": true,
+      "committedPrefixOnly": true,
+      "replayEquality": [
+        "all-seat inputs",
+        "chapters",
+        "score",
+        "completion flag"
+      ],
+      "cases": [
+        {
+          "players": 2,
+          "mode": 0,
+          "renderScale": 1,
+          "result": "PASS",
+          "networkCorrections": 5,
+          "stateRestores": 7,
+          "replayedSimulationFrames": 19,
+          "restoredFrameRecords": 33,
+          "confirmedBarriers": 2,
+          "confirmedReplayFrames": 873,
+          "futureMatchingFrames": 600,
+          "framebufferBytes": 1228800,
+          "allFourComparedFramebufferHashesEqual": true
+        },
+        {
+          "players": 2,
+          "mode": 2,
+          "renderScale": 1,
+          "result": "PASS",
+          "networkCorrections": 5,
+          "stateRestores": 7,
+          "replayedSimulationFrames": 19,
+          "restoredFrameRecords": 33,
+          "confirmedBarriers": 2,
+          "confirmedReplayFrames": 873,
+          "futureMatchingFrames": 600,
+          "framebufferBytes": 1228800,
+          "allFourComparedFramebufferHashesEqual": true
+        },
+        {
+          "players": 3,
+          "mode": 0,
+          "renderScale": 1,
+          "result": "PASS",
+          "networkCorrections": 5,
+          "stateRestores": 7,
+          "replayedSimulationFrames": 19,
+          "restoredFrameRecords": 33,
+          "confirmedBarriers": 2,
+          "confirmedReplayFrames": 873,
+          "futureMatchingFrames": 600,
+          "framebufferBytes": 1228800,
+          "allFourComparedFramebufferHashesEqual": true
+        },
+        {
+          "players": 3,
+          "mode": 2,
+          "renderScale": 1,
+          "result": "PASS",
+          "networkCorrections": 5,
+          "stateRestores": 7,
+          "replayedSimulationFrames": 19,
+          "restoredFrameRecords": 33,
+          "confirmedBarriers": 2,
+          "confirmedReplayFrames": 873,
+          "futureMatchingFrames": 600,
+          "framebufferBytes": 1228800,
+          "allFourComparedFramebufferHashesEqual": true
+        },
+        {
+          "players": 3,
+          "mode": 2,
+          "renderScale": 2,
+          "result": "PASS",
+          "networkCorrections": 5,
+          "stateRestores": 7,
+          "replayedSimulationFrames": 19,
+          "restoredFrameRecords": 33,
+          "confirmedBarriers": 2,
+          "confirmedReplayFrames": 873,
+          "futureMatchingFrames": 600,
+          "framebufferBytes": 4915200,
+          "allFourComparedFramebufferHashesEqual": true
+        }
+      ]
+    },
+    "lifecycle": {
+      "build": "oracle",
+      "result": "PASS",
+      "players": 3,
+      "mode": 2,
+      "renderScale": 2,
+      "scope": "Native stage-completion and service-request ending/results lifecycle.",
+      "boundaryChecks": [
+        {
+          "kind": "stage-2-entry",
+          "frame": 319,
+          "blocked": {
+            "next": 319,
+            "capture": 320,
+            "committed": 318,
+            "boundary": 319,
+            "retainedFrames": 0,
+            "journalFrames": 0
+          },
+          "confirmedStateAndPixelsEqual": true
+        },
+        {
+          "kind": "ending-entry",
+          "frame": 500,
+          "blocked": {
+            "next": 500,
+            "capture": 501,
+            "committed": 499,
+            "boundary": 500,
+            "retainedFrames": 0,
+            "journalFrames": 0
+          },
+          "confirmedStateAndPixelsEqual": true
+        },
+        {
+          "kind": "results-entry",
+          "frame": 503,
+          "blocked": {
+            "next": 503,
+            "capture": 504,
+            "committed": 502,
+            "boundary": 503,
+            "retainedFrames": 0,
+            "journalFrames": 0
+          },
+          "confirmedStateAndPixelsEqual": true
+        }
+      ],
+      "stage2Active": {
+        "next": 500,
+        "committed": 499,
+        "phase": 1,
+        "stage": 2,
+        "heapUsedKiB": 258258
+      },
+      "endingActive": {
+        "next": 503,
+        "committed": 502,
+        "phase": 3
+      },
+      "retiredResults": {
+        "retired": true,
+        "next": 504,
+        "capture": 504,
+        "committed": 503,
+        "replayFrames": 504,
+        "replayComplete": 1,
+        "phase": 0,
+        "retainedFrames": 0,
+        "journalFrames": 0,
+        "extraDriverTicks": 5,
+        "frontiersStable": true,
+        "replayLengthStable": true
+      },
+      "finalFramebufferSha256": "f3c3b0ac0fe9e18cef0c56ca0b1863678ce53148b08827342a2fb04a7ed15be4"
+    },
+    "finalProductionNetwork": {
+      "build": "final",
+      "result": "PASS",
+      "rollbackReceiveDelayMs": 180,
+      "counterSource": "Native status[11] and status[9]; mode 1 explicitly asserts both values are zero.",
+      "transport": "Packaged Runtime with a local shared Relay room and production packet ingestion.",
+      "checks": [
+        "capture and committed frontiers",
+        "confirmed spectator admission in 2P cases",
+        "native Replay validation",
+        "fresh offline Viewer through EOF",
+        "mismatched executable rejection"
+      ],
+      "captureFenceRule": {
+        "rollbackNext": "C + D + 12",
+        "delayNext": "C + D",
+        "committedLastFrame": "C + D - 1",
+        "rollbackReplayFramesAtFence": "C + D",
+        "producerCaptureUnchangedAfterMs": 350
+      },
+      "cases": [
+        {
+          "mode": 1,
+          "players": 2,
+          "p1StateRestores": 0,
+          "p1ReplayedFrames": 0,
+          "offlineReplayFrames": 319,
+          "recordedSeat": 0,
+          "spectator": true,
+          "result": "PASS",
+          "nativeReplayValidated": true,
+          "offlineReplayEnded": true,
+          "frameZeroBarrier": true,
+          "missingInputWait": true,
+          "captureFence": {
+            "capture": 286,
+            "delay": 2,
+            "next": 288,
+            "committed": 287
+          }
+        },
+        {
+          "mode": 1,
+          "players": 3,
+          "p1StateRestores": 0,
+          "p1ReplayedFrames": 0,
+          "offlineReplayFrames": 240,
+          "recordedSeat": 2,
+          "spectator": false,
+          "result": "PASS",
+          "nativeReplayValidated": true,
+          "offlineReplayEnded": true,
+          "frameZeroBarrier": true,
+          "missingInputWait": true,
+          "captureFence": {
+            "capture": 206,
+            "delay": 2,
+            "next": 208,
+            "committed": 207
+          }
+        },
+        {
+          "mode": 0,
+          "players": 2,
+          "p1StateRestores": 3,
+          "p1ReplayedFrames": 13,
+          "offlineReplayFrames": 360,
+          "recordedSeat": 0,
+          "spectator": true,
+          "result": "PASS",
+          "nativeReplayValidated": true,
+          "offlineReplayEnded": true,
+          "frameZeroBarrier": true,
+          "missingInputWait": true,
+          "captureFence": {
+            "capture": 329,
+            "delay": 0,
+            "next": 341,
+            "committed": 328
+          }
+        },
+        {
+          "mode": 0,
+          "players": 3,
+          "p1StateRestores": 4,
+          "p1ReplayedFrames": 11,
+          "offlineReplayFrames": 294,
+          "recordedSeat": 2,
+          "spectator": false,
+          "result": "PASS",
+          "nativeReplayValidated": true,
+          "offlineReplayEnded": true,
+          "frameZeroBarrier": true,
+          "missingInputWait": true,
+          "captureFence": {
+            "capture": 258,
+            "delay": 0,
+            "next": 270,
+            "committed": 257
+          }
+        },
+        {
+          "mode": 2,
+          "players": 2,
+          "p1StateRestores": 3,
+          "p1ReplayedFrames": 6,
+          "offlineReplayFrames": 385,
+          "recordedSeat": 0,
+          "spectator": true,
+          "result": "PASS",
+          "nativeReplayValidated": true,
+          "offlineReplayEnded": true,
+          "frameZeroBarrier": true,
+          "missingInputWait": true,
+          "captureFence": {
+            "capture": 350,
+            "delay": 2,
+            "next": 364,
+            "committed": 351
+          }
+        },
+        {
+          "mode": 2,
+          "players": 3,
+          "p1StateRestores": 3,
+          "p1ReplayedFrames": 8,
+          "offlineReplayFrames": 342,
+          "recordedSeat": 2,
+          "spectator": false,
+          "result": "PASS",
+          "nativeReplayValidated": true,
+          "offlineReplayEnded": true,
+          "frameZeroBarrier": true,
+          "missingInputWait": true,
+          "captureFence": {
+            "capture": 307,
+            "delay": 2,
+            "next": 321,
+            "committed": 308
+          }
+        }
+      ]
+    },
+    "finalNativeChecks": {
+      "build": "final",
+      "result": "PASS",
+      "commands": [
+        "node ports/th15-mp/portable/multiplayer/network-native-test.mjs",
+        "node ports/th15-mp/portable/multiplayer/module-test.mjs --multiplayer-only",
+        "node ports/th15-mp/portable/multiplayer/config-test.mjs"
+      ]
+    }
+  },
+  "coverage": [
+    "The independent oracle uses the same production game objects with a separate exact-input instance; it is not a cross-build or original executable comparison.",
+    "Full story/staff script completion and live final ACK retirement are outside the private lifecycle case.",
+    "Native mode 2 transport, spectator and Replay compatibility is exercised directly. Normal Launcher/relay rollback selection continues to normalize to mode 0.",
+    "Framebuffer checks compare complete RGBA buffers at the named checkpoints. Physical devices, mobile browsers, full-campaign memory coverage and performance are separate checks.",
+    "Post-retirement assertions cover frontiers and Replay length, not a second full-byte Replay comparison after the extra ticks."
+  ]
+}

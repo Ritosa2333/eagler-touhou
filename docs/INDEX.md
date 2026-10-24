@@ -1,6 +1,6 @@
 # 文档总表
 
-共 226 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 229 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -32,7 +32,7 @@
 | 作品入口 | [ports/th075/README.md](../ports/th075/README.md) | 東方萃夢想 |
 | 作品入口 | [ports/th08-mp/README.md](../ports/th08-mp/README.md) | 東方永夜抄 TH08 多人版 |
 | 作品入口 | [ports/th08/README.md](../ports/th08/README.md) | 東方永夜抄 TH08 |
-| 作品入口 | [ports/th09/README.md](../ports/th09/README.md) | 東方花映塚 TH09 |
+| 作品入口 | [ports/th09/README.md](../ports/th09/README.md) | 東方花映塚 th09 |
 | 作品入口 | [ports/th10-mp/README.md](../ports/th10-mp/README.md) | 東方風神録 TH10 多人版 |
 | 作品入口 | [ports/th10/README.md](../ports/th10/README.md) | 東方風神録 TH10 |
 | 作品入口 | [ports/th11-mp/README.md](../ports/th11-mp/README.md) | 東方地霊殿 TH11 多人版 |
@@ -61,7 +61,7 @@
 | 作品源码文档 | [ports/th075/docs/DEVELOPMENT.md](../ports/th075/docs/DEVELOPMENT.md) | 萃梦想普通版开发 |
 | 作品源码文档 | [ports/th08-mp/docs/DEVELOPMENT.md](../ports/th08-mp/docs/DEVELOPMENT.md) | TH08 多人版开发指南 |
 | 作品源码文档 | [ports/th08/docs/DEVELOPMENT.md](../ports/th08/docs/DEVELOPMENT.md) | TH08 开发指南 |
-| 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | TH09 开发指南 |
+| 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | th09 开发指南 |
 | 作品源码文档 | [ports/th09/docs/NETPLAY-STOPS.md](../ports/th09/docs/NETPLAY-STOPS.md) | th09 联机技能停顿 |
 | 作品源码文档 | [ports/th09/web/reference/MIT-TH08-codec.txt](../ports/th09/web/reference/MIT-TH08-codec.txt) | MIT License |
 | 作品源码文档 | [ports/th10-mp/docs/DEVELOPMENT.md](../ports/th10-mp/docs/DEVELOPMENT.md) | TH10 多人版开发指南 |
@@ -69,6 +69,7 @@
 | 作品源码文档 | [ports/th11-mp/docs/DEVELOPMENT.md](../ports/th11-mp/docs/DEVELOPMENT.md) | TH11 多人版开发指南 |
 | 作品源码文档 | [ports/th11/docs/DEVELOPMENT.md](../ports/th11/docs/DEVELOPMENT.md) | TH11 开发指南 |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
+| 作品源码文档 | [ports/th15-mp/docs/ROLLBACK-ACCEPTANCE-20261023.md](../ports/th15-mp/docs/ROLLBACK-ACCEPTANCE-20261023.md) | TH15 多人回滚验收：2026-10-23 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
 | 公共库 | [common/README.md](../common/README.md) | common/ |
@@ -80,6 +81,7 @@
 | 公共库 | [common/testkit/presentation-lab/README.md](../common/testkit/presentation-lab/README.md) | Presentation Lab |
 | 公共库 | [common/testkit/replay-verifier/README.md](../common/testkit/replay-verifier/README.md) | Replay Verifier |
 | 公共库 | [common/testkit/replay-verifier/windows-present-observer/README.md](../common/testkit/replay-verifier/windows-present-observer/README.md) | Windows D3D8 Present 观察器 |
+| 公共库 | [common/third_party/dlmalloc/README.md](../common/third_party/dlmalloc/README.md) | Simulation allocator |
 | Launcher | [launcher/ASSETS.md](../launcher/ASSETS.md) | 资源来源与生成 |
 | Launcher | [launcher/README.en.md](../launcher/README.en.md) | launcher README |
 | Launcher | [launcher/README.md](../launcher/README.md) | launcher README |
@@ -126,6 +128,7 @@
 | 开发工具 | [tools/browser/README.md](../tools/browser/README.md) | 浏览器测试工具 |
 | 开发工具 | [tools/ci/README.md](../tools/ci/README.md) | CI 来源资产清单 |
 | 开发工具 | [tools/ports/README.md](../tools/ports/README.md) | 各作源码检查 |
+| 开发工具 | [tools/rollback/README.md](../tools/rollback/README.md) | Wasm 写入日志插桩 |
 | 架构说明 | [docs/architecture/netplay.md](architecture/netplay.md) | 联机输入时序与 Adonis |
 | 架构说明 | [docs/architecture/rollback.md](architecture/rollback.md) | 回滚运行参考 |
 | 架构说明 | [docs/architecture/source-layout.md](architecture/source-layout.md) | 游戏源码目录 |

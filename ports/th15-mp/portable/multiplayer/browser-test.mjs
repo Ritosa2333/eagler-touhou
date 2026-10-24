@@ -148,7 +148,9 @@ try{
   assert.equal(replay[21],recorder,'Replay metadata belongs to another seat');
   assert.equal(await frame(0).evaluate(bytes=>{const p=Module._malloc(bytes.length);try{Module.HEAPU8.set(bytes,p);return Module._th15_mp_replay_validate(p,bytes.length);}finally{Module._free(p);}},replay),1);
   await writeFile(resolve(out,label+'.rpy'),new Uint8Array(replay));
-  assert.deepEqual(errors,[]);report.push({mode,players:count,actualRestores:rollbackEvidence?.[0].status[11]??0,replayedFrames:rollbackEvidence?.[0].status[9]??0,frame:(await status(frame(0)))[3],recordedSeat:recorder,frameZeroBarrier:true,missingInputWait:true,captureFence:{...producer,next:boundedFrontier,committed:producer.capture+producer.delay-1},replayValidated:true,spectator:watcher});
+  const observedRollback=await rollback(frame(0));
+  if(mode===1){assert.equal(observedRollback[11],0,'Exact-input delay restored a predicted state');assert.equal(observedRollback[9],0,'Exact-input delay replayed a simulation frame');}
+  assert.deepEqual(errors,[]);report.push({mode,players:count,actualRestores:rollbackEvidence?.[0].status[11]??observedRollback[11],replayedFrames:rollbackEvidence?.[0].status[9]??observedRollback[9],frame:(await status(frame(0)))[3],recordedSeat:recorder,frameZeroBarrier:true,missingInputWait:true,captureFence:{...producer,next:boundedFrontier,committed:producer.capture+producer.delay-1},replayValidated:true,spectator:watcher});
   for(let seat=0;seat<count+(watcher?1:0);++seat)await frame(seat).evaluate(()=>{Module._th15_loop_stop();Module._th15_mp_close();});await context.close();for(const socket of lobbies)socket.close();
   // Fresh offline viewer: import and open through the current hosted Replay
   // workspace contract. Native playback owns its cursor and EOF report.
@@ -171,7 +173,7 @@ try{
   const playback=await replayPage.evaluate(()=>events.filter(e=>e.event==='runtime-info'&&e.playback).at(-1).playback);
   assert.equal(playback.frame,playback.total);assert.equal(playback.total,new DataView(Uint8Array.from(replay).buffer).getUint32(32,true));
   assert.equal(playback.ended,true);report.at(-1).offlinePlayback={frames:playback.frame,ended:true,stage:playback.startStage};await replayContext.close();
-  console.log('PASS '+label+' | real correction, capture/commit fence, confirmed spectator and offline Replay');
+  console.log('PASS '+label+' | '+(mode===1?'exact-input delay':'real correction')+', capture/commit fence, confirmed spectator and offline Replay');
  }
  await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }finally{await browser?.close();relay.kill();server.close();await writeFile(resolve(out,'relay.log'),relayLog);}

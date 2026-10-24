@@ -52,6 +52,8 @@ npm --prefix launcher run dev:workspace
 
 ### 回滚验收入口
 
+已执行的独立状态、完整分辨率画面、生命周期与最终生产网络矩阵见 [2026-10-23 回滚验收记录](ROLLBACK-ACCEPTANCE-20261023.md)，构建身份、指标和记录恢复来源见[机器摘要](ROLLBACK-ACCEPTANCE-20261023.json)。
+
 协议层可直接使用 C++17 编译器：`node ports/th15-mp/portable/multiplayer/network-native-test.mjs`；`CXX` 指定编译器路径。该检查覆盖 mode 0／2、两人／三人、修正中的再次回滚、不可变采样、提交边界、旧版纯延迟 Replay 和新版本 Replay 元数据。`node ports/th15-mp/portable/multiplayer/config-test.mjs` 检查浏览器配置桥。
 
 生产构建完成后，私有验收入口复用生产对象，仅重新链接一个包含诊断导出的 `BrowserRuntime`，并应用相同的 Wasm 插桩配置：
