@@ -11,7 +11,7 @@
 </section>
 <section class="viewer panel">
  <div class="section-head"><h2>游戏画面</h2><span id="scene">尚未启动</span></div>
- <div class="controls"><button id="play" disabled>继续游玩</button><button id="inspect" disabled class="primary">冻结并检查</button><button id="step" disabled>推进 1 帧</button><button id="step10" disabled>推进 10 帧</button><button id="stage1" disabled>测试进入一面</button></div>
+ <div class="controls"><button id="play" disabled>继续游玩</button><button id="inspect" disabled class="primary">冻结并检查</button><button id="step" disabled>推进 1 帧</button><button id="step10" disabled>推进 10 帧</button><button id="stage1" disabled>测试进入一面</button><label><input id="limit60" type="checkbox" disabled> 限制呈现到 60 Hz</label></div>
  <div class="viewport" id="gameViewport"><button id="fullscreen" class="fullscreen" type="button" aria-label="进入全屏" title="进入全屏（Alt+Enter）">⛶</button><div id="stage"><iframe id="runtime" title="TH08 diagnostic runtime" allow="autoplay; fullscreen" tabindex="0"></iframe><img id="reportFrame" alt="报告中保存的帧间采样画面" hidden><svg id="overlay" viewBox="0 0 640 480" aria-label="对象定位层" hidden></svg><div id="empty">启动后可正常操作游戏。<br>感觉不对时，点「冻结并检查」。</div></div></div>
  <div class="slider"><label for="alpha">帧间进度 α <output id="alphaValue">1.00</output></label><input id="alpha" type="range" min="0" max="1" step="0.01" value="1" disabled><div class="ends"><span>上一逻辑帧 · 0</span><span>当前逻辑帧 · 1</span></div></div>
  <div class="controls"><label>放大 <select id="zoom"><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><label><input type="checkbox" id="boxes" checked> 对象框</label><label><input type="checkbox" id="negative"> 负对照：注入画面与声音副作用</label></div>

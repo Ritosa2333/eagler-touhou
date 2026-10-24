@@ -17,4 +17,10 @@ export class LabController extends PresentationLabControllerCore{
       throw Error('Production frame callback cadence is not available for this Runtime');
     return this.driver.frameAt(nowMs);
   }
+  setPresentationLimit(enabled){
+    if(typeof enabled!=='boolean')throw new TypeError('Presentation limit must be boolean');
+    const options=this.runtime.Module?.eaglerOptions;
+    if(!options||typeof options!=='object')throw Error('Runtime presentation options are unavailable');
+    options.limitPresentationTo60=enabled;
+  }
 }

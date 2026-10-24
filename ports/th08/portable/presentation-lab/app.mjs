@@ -108,10 +108,10 @@ function showBuild(build,prefix='基线'){$('build').textContent=`${prefix} ${St
 showBuild(identity);
 for(let i=1;i<OWNERS.length;i++){const option=document.createElement('option');option.value=String(i);option.textContent=OWNERS[i];$('owner').append(option);}
 status(identity.dataAvailable?'已找到测试 DATA；点击「启动实验」。':'请选择自己的 th08.dat，再启动实验。');
-const controls=['play','inspect','step','step10','stage1','alpha','scan','export','frames'];
+const controls=['play','inspect','step','step10','stage1','alpha','scan','export','frames','limit60'];
 function enable(on){for(const id of controls)$(id).disabled=!on;}
 function failure(error){console.error(error);status(String(error?.message||error));$('health').className='notice error';$('health').textContent=String(error?.message||error);}
-async function action(fn){if(busy)return;busy=true;try{return await fn();}catch(e){failure(e);}finally{busy=false;}}
+async function action(fn){if(busy)return;busy=true;$('limit60').disabled=true;try{return await fn();}catch(e){failure(e);}finally{busy=false;$('limit60').disabled=!controller||readOnly;}}
 function installRuntimeHotkeys(target){
  if(runtimeHotkeyWindow&&runtimeHotkeyHandler)runtimeHotkeyWindow.removeEventListener('keydown',runtimeHotkeyHandler,true);
  runtimeHotkeyWindow=target;runtimeHotkeyHandler=event=>{if(event.code==='F8'&&!event.repeat){event.preventDefault();event.stopImmediatePropagation();void action(markIncident);}};
@@ -162,7 +162,7 @@ window.addEventListener('message',async event=>{
   installRuntimeHotkeys(w);
   w.__th08SfxLatencyProbeEnabled=pendingSfxEventProbe;
   w.Date.now=()=>100000; // Reproducible initialization seed, isolated iframe only.
-  await r.command({command:'configure',music:'none',options:{touchEnabled:false,thpracEnabled:false},sharedResources:[{path:'/msgothic.ttc',url:'/msgothic.ttc'}]});
+  await r.command({command:'configure',music:'none',options:{touchEnabled:false,thpracEnabled:false,limitPresentationTo60:$('limit60').checked},sharedResources:[{path:'/msgothic.ttc',url:'/msgothic.ttc'}]});
   // FileHost snapshots saves into BrowserRuntime when sdl_game_open runs.
   // Import through the real FS API before launch, not a post-launch memory poke.
   if(pendingReplay!==null){await r.command({command:'write',path:'replay/th8_01.rpy',bytes:pendingReplay});pendingReplay=null;}
@@ -290,6 +290,7 @@ async function markIncident(){const value=checked().mark();renderReport(value);c
 $('boot').onclick=()=>void action(boot);
 $('play').onclick=()=>{try{checked().play();$('overlay').hidden=true;$('runtime').contentWindow.document.querySelector('canvas').focus();status('正在正常游玩；冻结并加入多个场景窗口后，再记录一次整组结论。');}catch(e){failure(e);}};
 $('inspect').onclick=()=>void action(inspect);
+$('limit60').onchange=()=>void action(async()=>{const limit=$('limit60').checked;checked().setPresentationLimit(limit);clearReviewVerdict();status(limit?'已限制呈现到 60 Hz；游戏逻辑保持原频率。':'呈现跟随显示器刷新率；游戏逻辑保持原频率。');});
 for(const [id,n] of [['step',1],['step10',10]])$(id).onclick=()=>void action(async()=>{checked().step(n);return inspect();});
 $('stage1').onclick=()=>void action(async()=>{const c=checked();if(c.core.status(c.runtime.app,0)!==1)throw Error('请在初始标题菜单使用；可重新启动实验。');for(let i=0;i<5;i++){c.press('KeyZ');await new Promise(r=>setTimeout(r,0));}c.step(241);return inspect();});
 $('alpha').oninput=()=>{if(busy)return;try{const a=Number($('alpha').value);if(readOnly){showSavedFrame(a);return;}if(!controller)return;$('alphaValue').textContent=a.toFixed(2);const sample=checked().preview(a,{negativeControl:$('negative').checked});displayBounds=new Map(sample.records.map(r=>[keyOf(r),r.values.slice(21,25)]));drawBoxes();}catch(e){failure(e);}};

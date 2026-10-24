@@ -138,6 +138,7 @@ export class Th08ObservationAdapter{
   setNegativeControl(on){this.core.audit_fault(on?3:0);}
   captureImage(frame,alpha){return {alpha,png:this.runtime.Module.canvas?.toDataURL?.()||null,boxes:frame.records.map(record=>({key:keyOf(record),bounds:record.values.slice(21,25)}))};}
   analyze(input){const lifecycle=this.readLifecycleEvidence();return {...analyzeWindow({...input,lifecycle}),
+    presentationOptions:{limitPresentationTo60:this.runtime.Module?.eaglerOptions?.limitPresentationTo60??null},
     nativeFrames:{schema:'th08/presentation-native-frames/1',previous:input.previous,current:input.current,samples:input.samples},
     nativeLifecycle:lifecycle,interpolationReady:input.gate,
     displayTiming:summarizeDisplayTiming(this.readTiming())};}
