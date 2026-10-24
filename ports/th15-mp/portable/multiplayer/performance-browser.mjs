@@ -10,6 +10,7 @@ import {loadPlaywright} from '../../../../tools/browser/playwright.mjs';
 import {createSenderDelayQueue} from './performance-sender-delay.mjs';
 import {distribution,summarize,replayInputs} from './performance-browser-metrics.mjs';
 import {installGlDiagnostic,startCpuDiagnostic,stopCpuDiagnostic,captureProcessCpuDiagnostic,compareProcessCpuDiagnostics} from './performance-browser-diagnostic.mjs';
+import {neutralPlan,committedHorizon,assertProofState,assertBeforeDeadline,awaitBeforeDeadline,proveNeutral,fireHorizon,proveFire} from './performance-input-proof.mjs';
 
 const root=resolve(import.meta.dirname,'../..'),repo=resolve(root,'../..');
 function option(name,fallback){const combined=process.argv.find(x=>x.startsWith(name+'='));if(combined)return combined.slice(name.length+1);
@@ -18,6 +19,8 @@ const mode=Number(option('--mode','0')),players=Number(option('--players','2')),
 assert.ok([0,1,2].includes(mode)&&[2,3].includes(players));assert.ok(duration>=5&&duration<=60);
 const diagnosticMode=option('--diagnostic','none');assert.ok(['none','gl-cpu'].includes(diagnosticMode),'Unsupported diagnostic mode');
 const diagnostic=diagnosticMode!=='none';
+const saveValidationOnly=process.argv.includes('--save-validation-only');
+assert.ok(!(diagnostic&&saveValidationOnly),'Save validation is separate from profiler diagnostics');
 const runtime=resolve(option('--runtime',process.env.TH15_MP_PACKAGE||resolve(root,'build-eagler-multiplayer')));
 const launcher=resolve(option('--launcher-root',process.env.TH15_LAUNCHER_ROOT||resolve(repo,'launcher')));
 const relayEntry=resolve(process.env.EAGLER_RELAY_ROOT||resolve(repo,'services/relay'),'src/netplay-relay.mjs');
@@ -30,17 +33,19 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
 function gitIdentity(){const run=args=>{const r=spawnSync('git',['-C',repo,...args],{encoding:'utf8',maxBuffer:8*1024*1024});assert.equal(r.status,0,r.stderr);return r.stdout.trim();};
   return {head:run(['rev-parse','HEAD']),tree:run(['rev-parse','HEAD^{tree}']),status:run(['status','--porcelain=v1']),diffSha256:hash(run(['diff','--binary','HEAD']))};}
 const report={schema:'eagler-touhou/th15-production-performance/1',startedAt:new Date().toISOString(),completedAt:null,
-  status:'running',performanceMeasured:false,performanceEligible:!diagnostic,diagnostic,observationPassed:false,settings:{mode,players,durationSeconds:duration,inputDelayFrames:mode===0?0:2,
+  status:'running',performanceMeasured:false,performanceEligible:!diagnostic&&!saveValidationOnly,diagnostic,saveValidationOnly,observationPassed:false,settings:{mode,players,durationSeconds:duration,inputDelayFrames:mode===0?0:2,
     predictionFrames:mode===1?0:12,renderScale:1,cpuThrottle:1,route:'relay',oneWaySendDelayMs:50,jitterPlusMinusMs:5,
     nominalRoundTripAddedMs:100,profiler:diagnostic,music:false,warmupMinimumFrames:180,tailThresholdMs:100},
   scope:{productionPackage:true,independentBrowserProcesses:players,realRaf:true,managedHostInput:true,renderer:'SwiftShader',
     actualGpuScanout:false,performanceObserver:true,fullCampaign:false,phone:false,
     saveObserver:'Sparse native request/poll transitions and real FS.syncfs callbacks; reuse the previous rollback observation without extra journal Stats in the measurement window.',
-    persistenceValidation:'After the fixed performance window: concurrent Host sync/input, real IDBFS records compared to MEMFS bytes and native file validation.'},
+    persistenceValidation:'After the fixed workload: confirmed all-seat neutral baseline, concurrent Host sync/new fire, confirmed neutral-to-fire transition, then completed evidence sync and real IDBFS/MEMFS/native validation.',
+    ...(saveValidationOnly?{performanceEligibility:'Supplemental save/input acceptance only; workload timings cannot satisfy or replace a performance result.'}: {})},
   stages:[],errors:[],consoleErrors:[],cleanup:[],results:[]};
 if(diagnostic){report.thresholdsMet=null;report.diagnostics={mode:diagnosticMode,samplingIntervalUs:4000,profiles:[],
   processCpu:{before:[],after:[],deltas:[],errors:[]},
   performanceEligibility:'Diagnostic GL wrappers and CPU sampling add overhead. This run cannot satisfy the performance gate; thresholdsMet remains null.'};}
+if(saveValidationOnly)report.thresholdsMet=null;
 const save=()=>saveJson('receipt.json',report),mark=name=>{report.stages.push({name,at:new Date().toISOString()});save();};
 save();
 let server,relay,relayLog='',firstFailure,browserTemp;const browsers=[],contexts=[],pages=[],frames=[],lobbies=[],cpuProfiles=[];
@@ -170,8 +175,8 @@ function host(seat){
   window.events=[];window.ready=false;window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/data')).arrayBuffer()});
   window.addEventListener('message',event=>{if(event.source!==document.querySelector('iframe')?.contentWindow||event.origin!==location.origin)return;
     if(event.data?.protocol==='eagler-touhou/1'){events.push(event.data);if(event.data.event==='ready')ready=true;}});
-  window.rpc=(command,fields={})=>new Promise((yes,no)=>{const child=document.querySelector('iframe').contentWindow,request=crypto.randomUUID();
-    const timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC '+command+' timeout'));},60000);
+  window.rpc=(command,fields={},timeoutMs=60000)=>new Promise((yes,no)=>{const child=document.querySelector('iframe').contentWindow,request=crypto.randomUUID();
+    const timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC '+command+' timeout'));},timeoutMs);
     function listen(event){if(event.source===child&&event.origin===location.origin&&event.data?.request===request){clearTimeout(timer);removeEventListener('message',listen);event.data.ok?yes(event.data):no(Error(event.data.error));}}
     addEventListener('message',listen);child.postMessage({protocol:'eagler-touhou/1',game:'th15',epoch:1,request,command,...fields},location.origin);});
   window.launch=async()=>{const child=document.querySelector('iframe').contentWindow;child.__th15Performance.attach();
@@ -190,18 +195,46 @@ function host(seat){
       timer=setTimeout(pump,Math.max(1,start+(slot+1)*240-performance.now()));}
     pump();window.stopInput=()=>{active=false;clearTimeout(timer);send(0,false);};
   };
-  window.verifySave=async()=>{
+  const neutral={fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0};
+  const remaining=deadline=>{const ms=deadline-performance.now();if(ms<=0)throw Error('Host input-proof deadline expired');return ms;};
+  window.neutralize=async(timeoutMs=10000)=>{
+    const deadline=performance.now()+timeoutMs;window.stopInput?.();
+    // The measurement producer keeps its original hot path. Once stopped,
+    // submitted==acknowledged proves that all its live RPCs have settled.
+    while(window.inputEvidence&&inputEvidence.submitted!==inputEvidence.acknowledged){
+      if(inputEvidence.errors.length)throw Error('Measurement input producer failed');
+      await new Promise(resolve=>setTimeout(resolve,Math.min(100,remaining(deadline))));
+    }
+    if(window.inputEvidence?.errors.length)throw Error('Measurement input producer failed');
+    const start=performance.now(),reply=await rpc('touch-controls',{controls:neutral},remaining(deadline));
+    return {timeOrigin:performance.timeOrigin,start,ackAt:performance.now(),request:reply.request,controls:neutral,
+      settledProducer:window.inputEvidence?{submitted:inputEvidence.submitted,acknowledged:inputEvidence.acknowledged,errors:inputEvidence.errors}:null,
+      snapshot:document.querySelector('iframe').contentWindow.__th15Performance.snapshot()};
+  };
+  window.proofSync=async(label,timeoutMs=15000)=>{
+    const start=performance.now(),reply=await rpc('sync',{},timeoutMs);
+    return {label,timeOrigin:performance.timeOrigin,start,ackAt:performance.now(),request:reply.request,
+      snapshot:document.querySelector('iframe').contentWindow.__th15Performance.snapshot()};
+  };
+  window.releaseProofInput=async(timeoutMs=10000)=>{
+    const start=performance.now(),reply=await rpc('touch-controls',{controls:neutral},timeoutMs);
+    return {timeOrigin:performance.timeOrigin,start,ackAt:performance.now(),request:reply.request,controls:neutral,
+      snapshot:document.querySelector('iframe').contentWindow.__th15Performance.snapshot()};
+  };
+  window.verifySave=async(timeoutMs=15000)=>{
     const child=document.querySelector('iframe').contentWindow,probe=child.__th15Performance;
-    const evidence={timeOrigin:performance.timeOrigin,start:performance.now(),before:probe.snapshot(),events:[],errors:[]};
+    const evidence={label:'concurrent-sync',timeOrigin:performance.timeOrigin,start:performance.now(),before:probe.snapshot(),events:[],errors:[],commands:[]};
+    const deadline=evidence.start+timeoutMs;
+    const send=(command,fields={})=>{const record={command,...fields,requestedAt:performance.now()};evidence.commands.push(record);
+      return rpc(command,fields,remaining(deadline)).then(reply=>{record.request=reply.request;record.ackAt=performance.now();return reply;});};
     const note=kind=>evidence.events.push({kind,at:performance.now()});let syncDone=false;
-    note('sync-request');const saved=rpc('sync').then(()=>{syncDone=true;note('sync-ack');evidence.afterSync=probe.snapshot();});
-    note('input-request');const input=rpc('touch-controls',{controls:{fireEnabled:true,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:22000,joystickY:0}})
+    note('sync-request');const saved=send('sync').then(()=>{syncDone=true;note('sync-ack');evidence.afterSync=probe.snapshot();});
+    note('input-request');const input=send('touch-controls',{controls:{...neutral,fireEnabled:true,joystickX:22000}})
       .then(()=>{evidence.inputAckBeforeSync=!syncDone;note('input-ack');evidence.afterInput=probe.snapshot();});
     const outcomes=await Promise.allSettled([saved,input]);
     outcomes.forEach((result,i)=>{if(result.status==='rejected')evidence.errors.push({operation:i?'input':'sync',error:String(result.reason)});});
-    if(!evidence.errors.length)await new Promise(resolve=>setTimeout(resolve,350));
-    try{await rpc('touch-controls',{controls:{fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0}});note('input-release-ack');}
-    catch(error){evidence.errors.push({operation:'input-release',error:String(error)});}
+    // The coordinator holds this new input until every peer has committed
+    // post-ACK captures and a separate completed sync has saved the evidence.
     evidence.after=probe.snapshot();return evidence;
   };
   const iframe=document.createElement('iframe');iframe.src='/runtime/th15.html?managedData=1&hosted=1&runtimeEpoch=1';document.body.append(iframe);
@@ -209,9 +242,10 @@ function host(seat){
 
 // Read the actual IDBFS database after Host sync has acknowledged its real
 // callback. This observer neither invokes save nor changes the game files.
-async function inspectPersistence(){
+async function inspectPersistence(includeReplay=false){
   const root='/savesth15mp',files=[{name:'scoreth15.dat',kind:0},{name:'th15.cfg',kind:2}];
-  const capturedAt=performance.now();
+  if(includeReplay)files.push({name:'replay/th15mp_01.rpy',kind:1});
+  const capturedAt=performance.now(),saveEventCountBegin=globalThis.__th15Performance?.state?.saveEvents?.length??0;
   for(const file of files)file.memory=Array.from(Module.FS.readFile(root+'/'+file.name));
   const databases=await indexedDB.databases();if(!databases.some(db=>db.name===root))throw Error('IDBFS save database is missing');
   const stored=await new Promise((yes,no)=>{
@@ -233,13 +267,15 @@ async function inspectPersistence(){
     // of whether its JS view represents the high bit with a negative number.
     file.indexedDb=Array.from(new Uint8Array(entry.contents));file.equal=file.memory.length===file.indexedDb.length&&file.memory.every((byte,i)=>byte===file.indexedDb[i]);
     const bytes=new Uint8Array(file.indexedDb),pointer=Module._malloc(bytes.length);if(!pointer)throw Error('Native validation allocation failed');
-    try{Module.HEAPU8.set(bytes,pointer);file.nativeValid=Module._th15_validate_file(file.kind,pointer,bytes.length)===1;}finally{Module._free(pointer);}
+    try{Module.HEAPU8.set(bytes,pointer);file.nativeValid=(file.kind===1?Module._th15_mp_replay_validate(pointer,bytes.length):Module._th15_validate_file(file.kind,pointer,bytes.length))===1;}finally{Module._free(pointer);}
   }
-  return {database:root,store:'FILE_DATA',capturedAt,readAt:performance.now(),files};
+  return {database:root,store:'FILE_DATA',capturedAt,readAt:performance.now(),saveEventCountBegin,
+    saveEventCountEnd:globalThis.__th15Performance?.state?.saveEvents?.length??0,files:files.filter(file=>file.kind!==1),
+    ...(includeReplay?{replay:files.find(file=>file.kind===1)}: {})};
 }
 
 function summarizeSaveEvidence(saved,host,persistence){
-  const explicitAt=host.timeOrigin+host.start-saved.timeOrigin;
+  const explicitAt=host.timeOrigin+(host.periodicCutoff??host.start)-saved.timeOrigin;
   const automatic=saved.events.filter(event=>event.kind==='native-request'&&event.at>=29000&&event.at<explicitAt).map(request=>{
     const complete=saved.events.find(event=>event.kind==='native-poll'&&event.token===request.token&&event.result===1);
     const fsStart=complete&&saved.events.find(event=>event.kind==='fs-sync-start'&&!event.populate&&event.at>=complete.at);
@@ -258,6 +294,40 @@ function summarizeSaveEvidence(saved,host,persistence){
   return {periodicSavesRequestedBeforeHostSync:automatic,failures,passed:failures.length===0};
 }
 
+// Consume a completed Host save. The native exporter has no path parameter,
+// so probes never invoke it or intercept FS: only the validation copy is /tmp.
+function copySavedReplay({label,seat}){
+  const source='/save/replay/th15mp_01.rpy',temporary='/tmp/th15-input-proof/'+label+'-'+seat+'.rpy';
+  Module.FS.mkdirTree('/tmp/th15-input-proof');Module.FS.writeFile(temporary,Module.FS.readFile(source));
+  const bytes=Module.FS.readFile(temporary),pointer=Module._malloc(bytes.length);if(!pointer)throw Error('Replay proof validation allocation failed');
+  let valid;try{Module.HEAPU8.set(bytes,pointer);valid=Module._th15_mp_replay_validate(pointer,bytes.length);}finally{Module._free(pointer);}
+  if(valid!==1)throw Error('Completed Host Replay failed native validation');
+  return {label,source,temporary,copiedAt:performance.now(),timeOrigin:performance.timeOrigin,nativeValid:true,
+    saveEventCount:__th15Performance.state?.saveEvents?.length??0,bytes:Array.from(bytes),snapshot:__th15Performance.snapshot()};
+}
+async function waitProofCommit(plan,end,label,timeoutMs=10000){
+  const deadline=performance.now()+timeoutMs;
+  for(;;){
+    assertBeforeDeadline(performance.now(),deadline,label);
+    const snapshots=await awaitBeforeDeadline(Promise.all(frames.map(frame=>frame.evaluate(()=>__th15Performance.snapshot()))),deadline,label);
+    if(report.inputProof)report.inputProof.lastPoll={label,end,snapshots};
+    assertBeforeDeadline(performance.now(),deadline,label);
+    if(committedHorizon(snapshots,plan,end))return snapshots;
+    await pause(Math.min(100,deadline-performance.now()));
+  }
+}
+async function savedProofCopies(label){
+  const observations=await awaitBeforeDeadline(Promise.all(frames.map((frame,seat)=>frame.evaluate(copySavedReplay,{label,seat}))),performance.now()+10000,label+' Replay read');
+  return observations.map((observation,seat)=>{const {bytes,...metadata}=observation,buffer=new Uint8Array(bytes),name='peer-'+seat+'-'+label+'.rpy';
+    writeFileSync(resolve(out,name),buffer);return {buffer,metadata:{...metadata,file:fileIdentity(resolve(out,name))}};});
+}
+async function hostProofPhase(label,method,timeoutMs=15000){
+  mark(label);
+  const deadline=performance.now()+timeoutMs;
+  return awaitBeforeDeadline(Promise.all(pages.map(page=>page.evaluate(({label,method,timeoutMs})=>
+    method==='proofSync'?window[method](label,timeoutMs):window[method](timeoutMs),{label,method,timeoutMs}))),deadline,label);
+}
+
 function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{const timeout=setTimeout(()=>{cleanup();no(Error('Lobby timeout'));},10000);
   const receive=e=>{let message;try{message=JSON.parse(String(e.data));}catch(error){cleanup();no(error);return;}
     if(message.type==='error'){cleanup();no(Error(message.error));}else if(predicate(message)){cleanup();yes(message);}};
@@ -266,7 +336,7 @@ function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{const
 async function lobbySend(socket,message,predicate){const promise=nextJson(socket,predicate);socket.send(JSON.stringify(message));return promise;}
 
 try{
-  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs',
+  report.sourceBefore=gitIdentity();report.driverFiles=Object.fromEntries(['performance-browser.mjs','performance-browser-metrics.mjs','performance-sender-delay.mjs','performance-input-proof.mjs',
     ...(diagnostic?['performance-browser-diagnostic.mjs']:[])]
     .map(name=>[name,fileIdentity(resolve(import.meta.dirname,name))]));
   report.relaySource=fileIdentity(relayEntry);
@@ -343,7 +413,7 @@ try{
       ...await captureProcessCpuDiagnostic(browsers[seat],'before-profiler-start')});
     mark('diagnostic-profiler-start');
     for(let seat=0;seat<pages.length;++seat)cpuProfiles.push({seat,handle:await startCpuDiagnostic(pages[seat],{samplingIntervalUs:4000})});}
-  mark('measurement-start');
+  mark(saveValidationOnly?'validation-workload-start':'measurement-start');
   await Promise.all(pages.map(page=>page.evaluate(duration=>measure(duration),duration)));
   // The default measurement has no profiler or extra GL wrappers. Explicit
   // diagnostic runs keep their sampler active and are never performance eligible.
@@ -351,7 +421,7 @@ try{
   await pause(duration*1000+600);
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>__th15Performance.state.phase==='complete',null,{timeout:10000,polling:250})));
   if(diagnostic){await finishCpuProfiles();await finishProcessCpuSnapshots();mark('diagnostic-profiler-stop');}
-  mark('measurement-complete');report.performanceMeasured=true;
+  mark(saveValidationOnly?'validation-workload-complete':'measurement-complete');report.performanceMeasured=!saveValidationOnly;
   await pause(800); // Let the final managed-input release and FIFO packets settle.
   for(let seat=0;seat<players;++seat){
     const raw=await frames[seat].evaluate(()=>__th15Performance.result()),input=await pages[seat].evaluate(()=>inputEvidence);
@@ -366,10 +436,36 @@ try{
   // autosave and then concurrent Host sync/input while all peers still run.
   mark('post-window-save-validation');
   await Promise.all(frames.map(frame=>frame.waitForFunction(()=>performance.now()>=31000,null,{timeout:20000,polling:250})));
-  const syncEvidence=await Promise.all(pages.map(page=>page.evaluate(()=>verifySave()).catch(error=>({errors:[{operation:'host-verification',error:String(error)}]}))));
+  report.inputProof={status:'running',method:'all-seat confirmed neutral baseline, then a new confirmed fire transition during Host sync',
+    persistenceSource:'During this neutral/fire proof, Replay is written only by normal Host saves. Evidence copies live in /tmp; probes never invoke native export or intercept FS. The runner retains its separate final confirmed-prefix export after stopping producers.'};save();
+  const neutralEvidence=report.inputProof.neutralize=await hostProofPhase('neutralize','neutralize',10000);
+  const plan=report.inputProof.plan=neutralPlan(neutralEvidence.map(value=>value.snapshot));save();
+  report.inputProof.neutralCommitted=await waitProofCommit(plan,plan.end,'confirmed neutral barrier');
+  report.inputProof.baselineSync=await hostProofPhase('baseline-sync','proofSync');
+  const baselineCopies=await savedProofCopies('baseline-sync');
+  baselineCopies.forEach((value,seat)=>assertProofState(value.metadata.snapshot,plan.references[seat]));
+  report.inputProof.baselineFiles=baselineCopies.map(value=>value.metadata);
+  report.inputProof.neutral=proveNeutral(baselineCopies.map(value=>value.buffer),plan);save();
+  const syncEvidence=report.inputProof.concurrentSync=await hostProofPhase('concurrent-sync','verifySave');
+  syncEvidence.forEach((value,seat)=>{value.periodicCutoff=neutralEvidence[seat].start;});save();
+  for(const value of syncEvidence){assert.deepEqual(value.errors,[]);assert.equal(value.inputAckBeforeSync,true,'Concurrent input ACK must precede the tested sync ACK');}
+  const proofEnd=report.inputProof.end=fireHorizon(syncEvidence,plan);
+  report.inputProof.fireCommitted=await waitProofCommit(plan,proofEnd,'confirmed new fire barrier',15000);
+  report.inputProof.evidenceSync=await hostProofPhase('evidence-sync','proofSync');
+  const fireCopies=await savedProofCopies('evidence-sync');
+  fireCopies.forEach((value,seat)=>assertProofState(value.metadata.snapshot,plan.references[seat]));
+  report.inputProof.evidenceFiles=fireCopies.map(value=>value.metadata);
+  report.inputProof.fire=proveFire(fireCopies.map(value=>value.buffer),plan,syncEvidence,proofEnd);save();
+  // Read all actual save databases before issuing another control phase. A
+  // later automatic save is recorded, never mistaken for a corrupt old copy.
+  const persistences=await awaitBeforeDeadline(Promise.all(frames.map(frame=>frame.evaluate(inspectPersistence,true)
+    .catch(error=>({error:String(error),files:[]})))),performance.now()+10000,'evidence-sync persistence read');
+  const released=report.inputProof.release=await hostProofPhase('input-proof-release','releaseProofInput',10000);
+  released.forEach((value,seat)=>{assertProofState(value.snapshot,plan.references[seat]);syncEvidence[seat].after=value.snapshot;
+    syncEvidence[seat].release=value;syncEvidence[seat].events.push({kind:'input-release-ack',at:value.ackAt});});
   report.saveValidationFailures=[];
   for(let seat=0;seat<players;++seat){
-    const persistence=await frames[seat].evaluate(inspectPersistence).catch(error=>({error:String(error),files:[]}));
+    const persistence=persistences[seat];
     saveJson('peer-'+seat+'-persistence.json',persistence);
     const saved=await frames[seat].evaluate(()=>({timeOrigin:__th15Performance.state.timeOrigin,saveApi:__th15Performance.state.saveApi,
       events:__th15Performance.state.saveEvents,status:__th15Performance.snapshot()}));
@@ -377,9 +473,20 @@ try{
     const validation=report.results[seat].saveValidation={host:syncEvidence[seat],saveApi:saved.saveApi,
       ...summarizeSaveEvidence(saved,syncEvidence[seat],persistence),
       evidence:fileIdentity(resolve(out,'peer-'+seat+'-save.json')),persistence:fileIdentity(resolve(out,'peer-'+seat+'-persistence.json')),
-      files:persistence.files.map(file=>({name:file.name,bytes:file.indexedDb.length,sha256:hash(new Uint8Array(file.indexedDb)),equal:file.equal,nativeValid:file.nativeValid}))};
+      files:persistence.files.map(file=>({name:file.name,bytes:file.indexedDb.length,sha256:hash(new Uint8Array(file.indexedDb)),equal:file.equal,nativeValid:file.nativeValid})),
+      inputProof:report.inputProof.fire.seats[seat],persistenceSync:report.inputProof.evidenceSync[seat],
+      saveActivityAfterEvidenceCopy:saved.events.slice(fireCopies[seat].metadata.saveEventCount,persistence.saveEventCountEnd)};
+    const persistedReplay=persistence.replay;
+    if(persistedReplay){validation.persistedReplay={name:persistedReplay.name,bytes:persistedReplay.indexedDb.length,
+      sha256:hash(new Uint8Array(persistedReplay.indexedDb)),equal:persistedReplay.equal,nativeValid:persistedReplay.nativeValid,
+      matchesEvidenceCopy:Buffer.from(persistedReplay.indexedDb).equals(fireCopies[seat].buffer)};}
+    if(!validation.persistedReplay?.equal||!validation.persistedReplay.nativeValid||!validation.persistedReplay.matchesEvidenceCopy){
+      const superseded=validation.saveActivityAfterEvidenceCopy.some(event=>event.kind==='native-request'||event.kind==='fs-sync-start');
+      validation.failures.push(superseded?'Another save started during persistence inspection; stable snapshot byte evidence was not established':
+        'Completed evidence-sync Replay differs from MEMFS/IDB or fails native validation');validation.passed=false;}
     report.saveValidationFailures.push(...validation.failures.map(error=>({seat,error})));save();
   }
+  report.inputProof.status='PASS';
   report.saveValidationPassed=report.saveValidationFailures.length===0;save();
   // Stop one producer after measurement. Let peers consume its final captured
   // prefix; save only native-confirmed Replay data, then compare all-seat input.
@@ -401,21 +508,22 @@ try{
     const rangeEnd=result.metrics.finalCompleteWindowStatus.rollback[3]+raw.startSnapshot.net[7];
     result.replay={...fileIdentity(resolve(out,'peer-'+seat+'.rpy')),nativeValid:true,inputs:replayInputs(bytes,rangeBegin,rangeEnd)};
     const saveInput=result.saveValidation.host;
-    if(saveInput.before&&saveInput.after)result.saveValidation.confirmedInput=replayInputs(bytes,saveInput.before.rollback[3]+raw.startSnapshot.net[7],saveInput.after.rollback[3]+raw.startSnapshot.net[7]);
-    const lane=result.saveValidation.confirmedInput?.seats[seat];
-    if(!lane?.fire||!lane?.right){const error='Post-window right movement and shooting were not present in native-confirmed Replay input';
-      result.saveValidation.failures.push(error);result.saveValidation.passed=false;report.saveValidationFailures.push({seat,error});}
+    assertProofState(replay.status,plan.references[seat]);
+    assert.ok(replayInputs(bytes).frames>=proofEnd,'Final confirmed Replay must cover the entire input-proof interval');
+    result.saveValidation.confirmedInput=replayInputs(bytes,saveInput.before.rollback[3]+plan.references[seat].delay,proofEnd);
     result.finalStatus=replay.status;save();
   }
+  report.inputProof.final=proveFire(replays,plan,syncEvidence,proofEnd);
   report.saveValidationPassed=report.saveValidationFailures.length===0;
   const parsed=replays.map(bytes=>replayInputs(bytes)),commonFrames=Math.min(...parsed.map(p=>p.frames));
   const prefixBytes=commonFrames*players*12,reference=replays[0].subarray(parsed[0].prefix,parsed[0].prefix+prefixBytes);
   report.confirmedReplayComparison={commonFrames,allSeatPrefixBytes:prefixBytes,equal:replays.every((bytes,i)=>Buffer.from(bytes.subarray(parsed[i].prefix,parsed[i].prefix+prefixBytes)).equals(reference))};
   assert.equal(report.confirmedReplayComparison.equal,true,'Native-confirmed Replay input prefixes disagree');
   report.sourceAfter=gitIdentity();report.sourceStable=JSON.stringify(report.sourceBefore)===JSON.stringify(report.sourceAfter);
+  report.driverStable=Object.values(report.driverFiles).every(identity=>fileIdentity(identity.path).sha256===identity.sha256);
   report.runtimeStable=Object.entries(report.runtime.files).every(([name,identity])=>fileIdentity(resolve(runtime,name)).sha256===identity.sha256);
   const failures=[];
-  if(!report.sourceStable||!report.runtimeStable)failures.push('Source or Runtime identity changed');
+  if(!report.sourceStable||!report.driverStable||!report.runtimeStable)failures.push('Source, observer or Runtime identity changed');
   for(const result of report.results){const {seat,metrics}=result;
     if(result.errors.length||result.overflow.length||result.input.errors.length||result.input.submitted!==result.input.acknowledged)failures.push('Observer/input errors for seat '+seat);
     if(!metrics.completeNativeCallbacks||metrics.observations.nativeCallbackTokens.length!==1||metrics.observations.presentationOutsideNativeCallback)failures.push('Native callback/presentation coverage for seat '+seat);
@@ -433,9 +541,10 @@ try{
   report.thresholds={maximumMs:100,meaning:'The 100 ms comparison used for TH11, applied to complete native callback wall, presentation and forward-frontier window holds. This does not claim 60 fps.',
     peers:report.results.map(({seat,metrics:m})=>({seat,callbackMax:m.callbackWall.max,presentationMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max,
       met:[m.callbackWall.max,m.presentWindowHolds.max,m.frontierWindowHolds.max].every(v=>Number.isFinite(v)&&v<=100)}))};
-  report.thresholdsMet=diagnostic?null:report.observationPassed&&report.thresholds.peers.every(p=>p.met);
-  report.status=report.observationPassed?(diagnostic?'diagnostic-observed':'measured'):'observation-failed';if(!report.observationPassed||!report.saveValidationPassed)process.exitCode=1;
-}catch(error){firstFailure=error;report.status=report.performanceMeasured?'observation-failed':'startup-or-execution-failed';
+  report.thresholdsMet=diagnostic||saveValidationOnly?null:report.observationPassed&&report.thresholds.peers.every(p=>p.met);
+  report.status=report.observationPassed?(saveValidationOnly?(report.saveValidationPassed?'save-validation-passed':'save-validation-failed'):diagnostic?'diagnostic-observed':'measured'):'observation-failed';if(!report.observationPassed||!report.saveValidationPassed)process.exitCode=1;
+}catch(error){firstFailure=error;report.status=saveValidationOnly?'save-validation-failed':report.performanceMeasured?'observation-failed':'startup-or-execution-failed';
+  if(report.inputProof){report.inputProof.status='FAIL';report.inputProof.error=String(error);report.saveValidationPassed=false;}
   report.errors.push({kind:'runner',error:String(error),stack:error.stack});process.exitCode=1;
   // Preserve partial observations without turning startup failure into a measurement.
   for(let seat=0;seat<frames.length;++seat)try{saveJson('peer-'+seat+'-partial.json',await frames[seat].evaluate(()=>({probe:globalThis.__th15Performance?.result(),error:document.querySelector('#error')?.textContent})));}catch{}

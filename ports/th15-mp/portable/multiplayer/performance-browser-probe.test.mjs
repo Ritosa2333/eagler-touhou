@@ -69,11 +69,13 @@ test('save observer records status transitions and real FS callbacks without ext
 });
 
 const persistenceSource=source.slice(source.indexOf('async function inspectPersistence('),source.indexOf('\nfunction nextJson('));
-function persistenceFixture({mismatch=false,databaseError=false,signed=false}={}){
+function persistenceFixture({mismatch=false,databaseError=false,signed=false,replay=false,replayMismatch=false}={}){
   const root='/savesth15mp',memory=new Map([[root+'/scoreth15.dat',new Uint8Array(signed?[0,127,128,197,255]:[1,2,3])],[root+'/th15.cfg',new Uint8Array([4,5])]]);
+  if(replay)memory.set(root+'/replay/th15mp_01.rpy',new Uint8Array([69,65,71,76,82,80,89,49]));
   const disk=new Map([...memory].map(([path,bytes])=>{if(!signed)return [path,{contents:bytes.slice()}];
     const backing=new Int8Array(bytes.length+4);backing.set(bytes,2);return [path,{contents:backing.subarray(2,bytes.length+2)}];}));
   if(mismatch)disk.get(root+'/scoreth15.dat').contents[0]=9;
+  if(replayMismatch)disk.get(root+'/replay/th15mp_01.rpy').contents[0]=9;
   const heap=new Uint8Array(1024),calls=[];let closed=0;
   const db={close:()=>++closed,transaction:(name,mode)=>{calls.push(['transaction',name,mode]);let outstanding=0;
     const transaction={objectStore:()=>({get:path=>{++outstanding;const request={};queueMicrotask(()=>{
@@ -82,7 +84,8 @@ function persistenceFixture({mismatch=false,databaseError=false,signed=false}={}
   }};
   const context={performance:{now:()=>42},setTimeout,clearTimeout,
     Module:{HEAPU8:heap,FS:{readFile:path=>memory.get(path)},_malloc:()=>128,_free:()=>{},
-      _th15_validate_file:(kind,pointer,size)=>{calls.push(['validate',kind,Array.from(heap.subarray(pointer,pointer+size))]);return 1;}},
+      _th15_validate_file:(kind,pointer,size)=>{calls.push(['validate',kind,Array.from(heap.subarray(pointer,pointer+size))]);return 1;},
+      _th15_mp_replay_validate:(pointer,size)=>{calls.push(['validate-replay',Array.from(heap.subarray(pointer,pointer+size))]);return 1;}},
     indexedDB:{databases:async()=>[{name:root}],open:name=>{calls.push(['open',name]);const request={};
       queueMicrotask(()=>{if(databaseError){request.error=Error('IDB unavailable');request.onerror();}
         else{request.result=db;request.onsuccess();}});return request;}},
@@ -117,6 +120,19 @@ test('persistence inspection rejects actual IndexedDB read failure',async()=>{
   assert.equal(f.calls.some(call=>call[0]==='validate'),false);
 });
 
+test('completed evidence Replay is compared to IDB bytes and uses the native MP reader',async()=>{
+  const f=persistenceFixture({replay:true}),result=await f.context.inspectPersistence(true);
+  assert.equal(result.files.length,2);assert.equal(result.replay.name,'replay/th15mp_01.rpy');
+  assert.equal(result.replay.equal,true);assert.equal(result.replay.nativeValid,true);
+  assert.deepEqual(f.calls.filter(call=>call[0]==='validate-replay'),[['validate-replay',[69,65,71,76,82,80,89,49]]]);
+  assert.deepEqual(f.calls.filter(call=>call[0]==='validate').map(call=>call[1]),[0,2]);
+});
+
+test('a stale or changed persisted Replay remains a failed byte comparison',async()=>{
+  const f=persistenceFixture({replay:true,replayMismatch:true}),result=await f.context.inspectPersistence(true);
+  assert.equal(result.replay.equal,false);assert.equal(result.files.every(file=>file.equal),true);
+});
+
 function validSaveEvidence(){
   return {saved:{timeOrigin:1000,saveApi:true,events:[
     {kind:'native-request',at:30000,token:1},{kind:'native-poll',at:30050,token:1,result:1},
@@ -136,4 +152,14 @@ test('periodic persistence evidence must use the matching FS transaction callbac
   const f=persistenceFixture(),{saved,host,persistence}=validSaveEvidence();saved.events[3].id=99;
   const result=f.context.summarizeSaveEvidence(saved,host,persistence);
   assert.equal(result.periodicSavesRequestedBeforeHostSync[0].persistedAt,null);assert.equal(result.passed,false);
+});
+
+test('baseline proof sync cannot be counted as the required periodic autosave',()=>{
+  const f=persistenceFixture(),{saved,host,persistence}=validSaveEvidence();host.start=33000;host.periodicCutoff=31000;
+  const baseline=[{kind:'native-request',at:32000,token:2},{kind:'native-poll',at:32010,token:2,result:1},
+    {kind:'fs-sync-start',at:32011,id:2,populate:false},{kind:'fs-sync-complete',at:32020,id:2,populate:false,error:null}];
+  saved.events.push(...baseline);let result=f.context.summarizeSaveEvidence(saved,host,persistence);
+  assert.deepEqual(Array.from(result.periodicSavesRequestedBeforeHostSync,event=>event.token),[1]);assert.equal(result.passed,true);
+  saved.events=baseline;result=f.context.summarizeSaveEvidence(saved,host,persistence);assert.equal(result.passed,false);
+  assert.equal(result.periodicSavesRequestedBeforeHostSync.length,0);
 });
