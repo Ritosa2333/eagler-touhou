@@ -8,6 +8,7 @@ import {Renderer,readCoreAnimationPoses,readCoreMeshes} from '../src/renderer.mj
 import {readCoreDrawSchedule,orderPresentation} from '../src/draw-scheduler.mjs';
 import {StageBackground} from '../src/stage-background.mjs';
 import {AnimationSampler} from '../src/animation.mjs';
+import {VertexBatch} from '../src/vertex-batch.mjs';
 
 test('th12_14 stage05 STD17 registers sixteen real text81 strips with native layer28 scheduling and render-target UV',async()=>{
  const bytes=fs.readFileSync(new URL('../site/replays/th12_14.rpy',import.meta.url));
@@ -46,7 +47,7 @@ test('th12_14 stage05 STD17 registers sixteen real text81 strips with native lay
   for(const name of ['viewport','clearColor','clear','bindVertexArray','bindBuffer','enable','disable','scissor',
    'uniform3fv','bindTexture','texParameteri','blendFunc','bufferData','drawArrays','copyTexImage2D'])
    gl[name]=(...args)=>events.push([name,...args]);
-  gl.createTexture=()=>({created:true});renderer.gl=gl;renderer.batch=[];renderer.textures=new Map();
+  gl.createTexture=()=>({created:true});renderer.gl=gl;renderer.batch=new VertexBatch();renderer.textures=new Map();
   renderer.solid={texture:{},w:1,h:1};renderer.atlases=JSON.parse(fs.readFileSync(new URL('../site/assets/atlases.json',import.meta.url)));
   for(const [name,bank] of Object.entries(renderer.atlases))for(let entry=0;entry<bank.entries.length;entry++){
    const image=bank.entries[entry];if(image.image)renderer.textures.set(name+':'+entry,{texture:{},w:image.width,h:image.height,defaultWrap:gl.REPEAT});

@@ -36,18 +36,26 @@ export class SoundPlayer {
     const {context}=this,{buffer,record}=voice;
     if(!record.loop&&voice.offset>=buffer.duration){this.voices.delete(voice.id);return;}
     const source=context.createBufferSource(),gain=context.createGain();
-    const split=context.createChannelSplitter(2),left=context.createGain(),right=context.createGain(),merge=context.createChannelMerger(2);
     source.buffer=buffer;source.loop=!!record.loop;
     gain.gain.value=nativeSoundGain(record.volume,this.volume);
     // DirectSound attenuates only the channel away from the source. A
     // StereoPanner's equal-power crossfade changes the original centre level.
     gain.channelCount=2;gain.channelCountMode='explicit';gain.channelInterpretation='speakers';
     const pan=Math.max(-10000,Math.min(10000,voice.pan));
-    left.gain.value=pan>0?Math.pow(10,-pan/2000):1;
-    right.gain.value=pan<0?Math.pow(10,pan/2000):1;
-    source.connect(gain);gain.connect(split);split.connect(left,0);split.connect(right,1);
-    left.connect(merge,0,0);right.connect(merge,0,1);merge.connect(context.destination);
-    voice.source=source;voice.gain=gain;voice.nodes=[source,gain,split,left,right,merge];
+    source.connect(gain);voice.nodes=[source,gain];
+    if(pan===0){
+      // The explicit stereo gain already performs the same mono upmix and
+      // stereo pass-through as two unity-gain split channels.
+      gain.connect(context.destination);
+    }else{
+      const split=context.createChannelSplitter(2),left=context.createGain(),right=context.createGain(),merge=context.createChannelMerger(2);
+      left.gain.value=pan>0?Math.pow(10,-pan/2000):1;
+      right.gain.value=pan<0?Math.pow(10,pan/2000):1;
+      gain.connect(split);split.connect(left,0);split.connect(right,1);
+      left.connect(merge,0,0);right.connect(merge,0,1);merge.connect(context.destination);
+      voice.nodes.push(split,left,right,merge);
+    }
+    voice.source=source;voice.gain=gain;
     voice.startedAt=context.currentTime;
     source.onended=()=>{if(voice.source!==source)return;this.release(voice);if(this.voices.get(voice.id)===voice)this.voices.delete(voice.id);};
     source.start(0,record.loop?voice.offset%buffer.duration:voice.offset);

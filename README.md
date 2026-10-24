@@ -19,7 +19,7 @@ TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为�
 - `tools/frame-inspector/`：Windows 原版逐帧停帧、画面保存和内部数据对照；使用说明见其 README。
 - `tests/`：逻辑测试、测试程序和局部行为夹具，不包含原版游戏安装文件。
 - `decompiled/`：本地伪代码、原版指令对照和函数关系索引；生成物由 Git 忽略，准备方式见目录说明。
-- `docs/behavior/`：UFO、战斗、动画与界面的行为说明及尚待实现的关键项。
+- `docs/behavior/`：UFO、战斗、动画与界面的行为说明和实现路线。
 
 ## 构建与运行
 
@@ -53,17 +53,23 @@ ctest --test-dir artifacts/native --output-on-failure
 模块职责和验证范围见 [C++ 结构说明](docs/CPP-RESTORATION.md)。
 `decompiled/` 中的生成文件是本地分析材料，不参与构建和提交。
 
+## 渲染性能
+
+可复用顶点缓冲、绘制层整理和贴图状态缓存降低密集弹幕的绘制开销。呈现节奏适配 60 Hz 与高刷新率，游戏逻辑、输入和 Replay 保持原有步进。
+
+[2026-10-24 性能测量](../../docs/history/th12-performance-20261024.md) 收录 4× CPU 关卡帧率、绘制基准、一致性结果与复测方法。
+
 ## 还原边界
 
-`eagler` 是 Eagler Touhou Web 适配的集成分支；接入进度、包边界及尚未完成项见 [Web 适配](docs/WEB_ADAPTATION.md)。
+`eagler` 是 Eagler Touhou Web 适配的集成分支；接入架构、包边界及能力目录见 [Web 适配](docs/WEB_ADAPTATION.md)。
 使用真实 Launcher 的本地构建、资源包与启动入口见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
 `main` 保留建立 `eagler` 前的已提交版本，后续 Web 适配改动在 `eagler` 集成。
 `experiments` 保留已确认的还原基线；`eagler` 包含完整游戏流程：原版标题与选择菜单、
 六面连续游玩、Extra、Practice、Replay、成绩与符卡履历、音乐室、设置、闲置 Demo、
 暂停／续关／重试、十二种结局及staff、名字与录像保存。
-浏览器设置／成绩使用移植版存档结构；`.rpy`导出经过实际原版加载器、解密和解压的局部验证。
-整局实际跨关、菜单／结局的全部画面及时序仍需原版对照，不能把短流程测试当作整局 Oracle。
+浏览器设置／成绩使用移植版存档结构；`.rpy` 导出按原版加载器的加载、解密和解压路径验证。
+整局跨关、菜单与结局的画面及时序以原版逐帧对照为准；短流程测试验证对应场景的状态和输出。
 实现、原版依据及验证范围见 [完整游戏流程](docs/FULL_GAME_FLOW.md)。
 自动反编译结果不是原作者源码；寄存器入参、类型、函数边界和浮点表达式需要结合
 指令与原版执行核对。网页核心是手写的行为实现，不在浏览器中执行原版 EXE。

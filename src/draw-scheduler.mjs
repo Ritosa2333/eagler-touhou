@@ -14,11 +14,32 @@ export function readCoreDrawSchedule(core){
   }
   return schedule;
 }
-export function orderPresentation(poses,schedule=new Map()){
-  return poses.map((pose,index)=>{
+export function orderPresentation(poses,schedule=new Map(),{reusePoses=false}={}){
+  const ordered=[];
+  for(let index=0;index<poses.length;index++){
+    const pose=poses[index];
     const metadata=pose.logical||pose.mesh&&pose.renderPass===0?schedule.get(pose.id):null;
     const drawPriority=metadata?.drawPriority??(pose.mesh&&pose.renderPass===0?animationLayerPriority(pose.a?.layer):pose.drawPriority??animationLayerPriority(pose.a?.layer));
     const clip=metadata?.clip??pose.clip??(metadata?.clipped!==undefined?metadata.clipped?2:0:pose.clipped!==undefined?pose.clipped?2:0:drawPriority<43?2:0);
-    return {...pose,...metadata,drawPriority,order:metadata?.order??pose.order??index,index,clip,clipped:clip!==0};
-  }).filter(p=>p.drawPriority>=0).sort((a,b)=>a.drawPriority-b.drawPriority||a.order-b.order||a.index-b.index);
+    if(!(drawPriority>=0))continue;
+    const order=metadata?.order??pose.order??index,result=reusePoses?pose:{...pose};
+    if(metadata)Object.assign(result,metadata);
+    result.drawPriority=drawPriority;result.order=order;
+    result.index=index;result.clip=clip;result.clipped=clip!==0;ordered.push(result);
+  }
+  const buckets=[],orderedBuckets=[];
+  for(const pose of ordered){
+    const priority=pose.drawPriority;
+    if(!Number.isInteger(priority)||priority>100)return ordered.sort((a,b)=>a.drawPriority-b.drawPriority||a.order-b.order||a.index-b.index);
+    let bucket=buckets[priority];
+    if(!bucket){bucket=[];buckets[priority]=bucket;}
+    if(bucket.length&&bucket[bucket.length-1].order>pose.order)bucket.needsSort=true;
+    bucket.push(pose);
+  }
+  for(const bucket of buckets){
+    if(!bucket)continue;
+    if(bucket.needsSort)bucket.sort((a,b)=>a.order-b.order||a.index-b.index);
+    for(const pose of bucket)orderedBuckets.push(pose);
+  }
+  return orderedBuckets;
 }

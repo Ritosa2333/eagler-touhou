@@ -29,7 +29,7 @@ import {prepareLocalization,isLocalizationResourcePath} from '../src/localizatio
 import {PracticeBridge,createPracticeMetadata} from '../src/practice/bridge.mjs';
 import {PracticeOverlay} from '../src/practice/overlay.mjs';
 import {DamageSourceBridge} from '../src/practice/damage-sources.mjs';
-import {needsPresentationInterpolation,PresentationCadence} from '../src/presentation-cadence.mjs';
+import {needsPresentationInterpolation,PresentationCadence,PresentationLimiter,needsPresentationCapture} from '../src/presentation-cadence.mjs';
 
 const $=id=>document.getElementById(id),canvas=$('screen'),keys=new Set(),hostKeys=new Set(),meter=createFrameRateMeter(),TICK=1000/60;
 const assets=new RuntimeAssets(),keyDown=code=>keys.has(code)||hostKeys.has(code);
@@ -39,7 +39,8 @@ let presentationInterval=TICK;
 const presentationCadence=new PresentationCadence();
 let replayWorkspace=null,viewerMusic={id:null,ticks:0};
 let practiceBridge=null,practiceUI=null,damageSources=null,practiceCaptured=false,logicalStep=TICK,captureThisTick=true,localization=null;
-let emit=()=>{},launched=false,terminated=false,runtimeMusic='ogg',runtimeOptions={limitPresentationTo60:false},firstFrame=false,lastPresentation=0,renderedFrames=0,healthAt=0,maxFrameGap=0,backgrounded=document.hidden;
+const presentationLimiter=new PresentationLimiter();
+let emit=()=>{},launched=false,terminated=false,runtimeMusic='ogg',runtimeOptions={limitPresentationTo60:false},firstFrame=false,renderedFrames=0,healthAt=0,maxFrameGap=0,backgrounded=document.hidden;
 let core,renderer,loader,profile,store,resources,model,presentation,loadingScreen,corpus=[],musicIndex=[],soundIndex=[],session=null,ending=null,ready=false,busy=false,fatalError=false,last=0,accumulator=0,previousUI=0,previousPadUI=0,pendingKeys=0,pendingPressed=0,choiceSerial=-1,lastReplay=null,pendingResult=null,joyCaptureRelease=false;
 const audio={context:null,music:null,track:null,pendingTrack:null,musicPaused:false,browserPaused:false,request:0,effects:null,effectsReady:null,musicSerial:-1};
 const decoder=new TextDecoder();
@@ -433,8 +434,7 @@ function tick(){
 function frame(now){
   if(terminated)return;
   if(backgrounded||fatalError){last=now;accumulator=0;requestAnimationFrame(frame);return;}
-  if(runtimeOptions.limitPresentationTo60&&now-lastPresentation<TICK-.5){requestAnimationFrame(frame);return;}
-  lastPresentation=now;
+  if(!presentationLimiter.allows(now,!!runtimeOptions.limitPresentationTo60)){requestAnimationFrame(frame);return;}
   const elapsed=Math.max(0,Math.min(250,now-last));last=now;meter.frame(now);
   presentationInterval=elapsed;
   presentationCadence.observe(elapsed,logicalStep);
@@ -449,7 +449,7 @@ function frame(now){
       const rate=!toolSpeed&&session?.replay&&model.state.scene==='playing'&&fast&&!shoot?4:1;
       logicalStep=toolSpeed?1000*practiceBridge.interval({replay:!!session.replay,fast,slow,debug:keyDown('Space')}):session?.replay&&model.state.scene==='playing'&&slow?TICK*4:TICK;
       if(session?.replay&&model.state.scene==='playing'&&shoot)logicalStep=Math.min(logicalStep,TICK/4);accumulator+=elapsed*rate;
-      for(let count=0;accumulator>=logicalStep&&count<Math.min(240,Math.max(8,Math.ceil(TICK/logicalStep)*8)*rate)&&!busy;count++){accumulator-=logicalStep;captureThisTick=accumulator<2*logicalStep;tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
+      for(let count=0;accumulator>=logicalStep&&count<Math.min(240,Math.max(8,Math.ceil(TICK/logicalStep)*8)*rate)&&!busy;count++){accumulator-=logicalStep;captureThisTick=needsPresentationCapture(accumulator,logicalStep,interpolateGamePresentation());tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
       if(loadingScreen.waiting)loadingScreen.renderBase(meter.value);else{present();loadingScreen.renderOverlay();}
     }else if(ready){present();loadingScreen.renderOverlay();}
   }}catch(error){fail(error);}
