@@ -4,6 +4,9 @@
 namespace th11 { struct GameSession; }
 namespace th11::presentation_audit {
 constexpr u32 StateGroupCount=9;
+// Extra observation bit in Record::continuous; the low eight bits describe
+// authored continuous fields. The record layout and native ABI stay stable.
+constexpr u32 AuthoredRebase=1u<<8;
 #ifdef TH_PRESENTATION_AUDIT
 constexpr u32 MaxVertices=16;
 constexpr u32 MaxRecords=8192;
@@ -28,6 +31,8 @@ void begin_sample(float alpha) noexcept;
 void end_frame() noexcept;
 void scope(u32 owner) noexcept;
 u32 scope() noexcept;
+void authored_rebase(bool) noexcept;
+bool authored_rebase() noexcept;
 void fault(bool) noexcept;
 void capture(const AnmVm&,const AnmVertex* vertices,u32 count,u32 part=0) noexcept;
 void sample_state(GameSession&) noexcept;
@@ -38,6 +43,7 @@ inline u32 session_epoch() noexcept{return 0;} inline u32 current_tick() noexcep
 inline u32 current_draw_serial() noexcept{return 0;} inline void simulation_tick() noexcept{}
 inline void begin_reference() noexcept{} inline void begin_sample(float) noexcept{}
 inline void end_frame() noexcept{} inline void scope(u32) noexcept{} inline u32 scope() noexcept{return 0;}
+inline void authored_rebase(bool) noexcept{} inline bool authored_rebase() noexcept{return false;}
 inline void fault(bool) noexcept{} inline void capture(const AnmVm&,const AnmVertex*,u32,u32=0) noexcept{}
 inline void sample_state(GameSession&) noexcept{} inline const u32* state() noexcept{static const u32 z[StateGroupCount]{};return z;}
 #endif
