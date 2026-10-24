@@ -2,6 +2,7 @@ import {installStartupBranding,finishStartupAnimation} from './startup-branding.
 import createModule from './th15.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {scanCodes} from './keyboard.mjs';
+import {createScoreSave,isScoreSaveCancelled} from './score-save.mjs';
 // BEGIN GENERATED SPECTATOR PLAYBACK
 // Generated from eagler-common/browser/spectator-playback.mjs.
 // Native playback owns every cursor and restore. The shell only transports
@@ -232,7 +233,13 @@ function clearKeyboard(){keyboard.clear();core?._th15_keys_clear();}
 const err=()=>{let p=runtimeBuild.multiplayer?core._th15_mp_error():core._th15_error();if(runtimeBuild.multiplayer&&!core.HEAPU8[p])p=core._th15_error();const end=core.HEAPU8.indexOf(0,p);return new TextDecoder().decode(core.HEAPU8.subarray(p,end<0?p+256:end));};
 const fatal=e=>{const message=e?.message||String(e);$('#error').textContent=message;core?._th15_loop_pause(1);emit('error',{error:message});};
 const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
-const save=()=>{multiplayerBridge?.save();if(launched&&!core._th15_save_scores())throw Error(err());return sync();};
+const scoreSave=createScoreSave({
+ request:()=>{if(!launched)return null;if(runtimeBuild.multiplayer)return core._th15_mp_save_request();if(!core._th15_save_scores())throw Error(err());return null;},
+ poll:token=>core._th15_mp_save_poll(token),cancel:token=>core._th15_mp_save_cancel(token),error:err,
+ flushReplay:()=>multiplayerBridge?.save(),sync,
+});
+const save=()=>scoreSave.save();
+const backgroundSaveError=error=>{if(!isScoreSaveCancelled(error))fatal(error);};
 function closeAudio(){
  // The launcher owns the shared context. SDL owns and must disconnect its
  // stream, but closing that stream must not close the launcher's context.
@@ -240,7 +247,7 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core._th15_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop(){if(stopping)return;if(roomOwned&&!options.replayViewer){stopping=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{stopping=false;}return;}stopping=true;localReplay.close();spectatorPlayback.stop();try{core._th15_loop_stop();await save();multiplayerBridge?.close();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;if(roomOwned&&!options.replayViewer){stopping=true;try{await save();await command({command:'return-room'});emit('room-menu');}finally{stopping=false;}return;}stopping=true;localReplay.close();spectatorPlayback.stop();try{await save();core._th15_loop_stop();multiplayerBridge?.close();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth15(?:mp)?\//,'').replace(/^\//,'');if(!/^(?:scoreth15\.dat|th15\.cfg|replay\/(?:[^./\\\x00-\x1f][^/\\\x00-\x1f]{0,127}\/)?th15(?:mp)?_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?|autosave\/save[0-3]_[0-4]\.dat)$/.test(name))throw Error('存档路径无效');return name;}
 function apply(){core.eaglerOptions=options;core._th15_always_hitbox(+(options.alwaysHitbox===true));core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(runtimeBuild.multiplayer&&options.touchMovementMode==='joystick-free'?'joystick':options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
 async function resource(r){
@@ -268,7 +275,7 @@ async function installRuntimePack(pack){
 }
 const localReplay=createNativeLocalReplay({core:()=>core,module:()=>core,physical:value=>saveRoot+'/'+path(value),
  stopLoop:()=>{clearKeyboard();core._th15_loop_stop();},pauseAudio:paused=>core._th15_loop_pause(+paused),
- openReplay:async(value,stage)=>{if(runtimeBuild.multiplayer)return multiplayerBridge.openReplay(path(value),stage);const bytes=new TextEncoder().encode(saveRoot+'/'+path(value)+'\0'),p=core._malloc(bytes.length);try{core.HEAPU8.set(bytes,p);if(!core._eagler_replay_open(p,stage))throw Error(err());}finally{core._free(p);}},
+ openReplay:async(value,stage)=>{scoreSave.cancel('Replay selection changed before score save completed');if(runtimeBuild.multiplayer)return multiplayerBridge.openReplay(path(value),stage);const bytes=new TextEncoder().encode(saveRoot+'/'+path(value)+'\0'),p=core._malloc(bytes.length);try{core.HEAPU8.set(bytes,p);if(!core._eagler_replay_open(p,stage))throw Error(err());}finally{core._free(p);}},
  replayState:()=>{const p=core._eagler_replay_state(),v=Array.from(core.HEAPU32.subarray(p/4,p/4+6));return {frame:v[0],total:v[1],ended:!!v[2],stage:v[3],startStage:v[4],bootstrapTarget:v[5]};},
  onState:playback=>emit('runtime-info',{playback}),onError:fatal});
 async function initializeTitle(){
@@ -298,6 +305,7 @@ case 'thprac-mouse':{if(!options.thpracEnabled||!['down','move','up'].includes(m
 case 'spectator-playback':return spectatorPlayback.command(m);
 case 'return-room':roomOwned=true;
  if(!runtimeBuild.multiplayer||!core._th15_room_return)throw Error('Room menu return is unavailable');
+ scoreSave.cancel('Game returned to the room before score save completed');
  spectatorPlayback.stop();clearKeyboard();core._th15_loop_stop();multiplayerBridge.close();
  if(!core._th15_room_return()||!core._th15_room_preview())throw Error(err()||'Native room return rejected');
  roomPreview=true;launched=false;first=false;core._th15_loop_start();await new Promise(requestAnimationFrame);return {presented:true};
@@ -314,8 +322,15 @@ case 'write':{
 }
 case 'remove':if(launched&&!options.replayViewer)throw Error('请先退出游戏');core.FS.unlink(saveRoot+'/'+path(m.path));await sync();return {};
 default:throw Error('不支持的操作');}}
-window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}}).catch(fatal);});
-document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th15_touch_cancel();core._th15_loop_pause(+(document.hidden||(localReplay.active&&localReplay.audioPaused)));if(document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}}});
+function dispatchHostCommand(m){
+ const run=async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}};
+ // A pending sync keeps file/lifecycle commands ordered, while authenticated
+ // live input must still reach the running game and receive its own reply.
+ if(launched&&!stopping&&['keyboard','keyboard-clear','direct-touch','touch-controls','touch-cancel'].includes(m.command))void run().catch(fatal);
+ else queue=queue.then(run).catch(fatal);
+}
+window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;dispatchHostCommand(m);});
+document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th15_touch_cancel();core._th15_loop_pause(+(document.hidden||(localReplay.active&&localReplay.audioPaused)));if(document.hidden){scoreSave.cancel('Page was hidden before score save completed');void scoreSave.flushConfirmed().catch(backgroundSaveError);}else void save().catch(backgroundSaveError);}});
 window.addEventListener('blur',()=>{clearKeyboard();core?._th15_touch_cancel();});
 window.addEventListener('eagler-thprac-menu',e=>emit('thprac-menu',{open:!!e.detail?.open}));
 // Keyboard events in the child realm do not bubble to the launcher. SDL's
@@ -326,10 +341,10 @@ for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['
  if(!launched||!options.touchEnabled||e.pointerType==='mouse')return;if(e.type==='pointercancel'){core._th15_touch_cancel();return;}e.preventDefault();if(type===0)document.body.setPointerCapture(e.pointerId);const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th15_touch(type,e.pointerId,(e.clientX-b.left)/b.width,(e.clientY-b.top)/b.height);
 });
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();fatal(Error('图形环境失效，请退出后重新开始。'));});
-window.addEventListener('pagehide',()=>{clearKeyboard();core?._th15_touch_cancel();if(roomPreview){core._th15_loop_stop();closeAudio();}else if(launched){core._th15_loop_stop();try{void save().catch(fatal);}catch(e){fatal(e);}closeAudio();}});
+window.addEventListener('pagehide',()=>{clearKeyboard();core?._th15_touch_cancel();scoreSave.cancel('Page closed before score save completed');if(roomPreview){core._th15_loop_stop();closeAudio();}else if(launched){core._th15_loop_stop();void scoreSave.flushConfirmed().catch(backgroundSaveError);closeAudio();}});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.
-setInterval(()=>{if(launched&&!document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}},30000);
+setInterval(()=>{if(launched&&!document.hidden)void save().catch(backgroundSaveError);},30000);
 const initialized=(async()=>{
  let last=performance.now(),ticks=0,presents=0,maxFrameMs=0;
  core=await createModule({canvas,printErr:console.error,onGameFrame(ok,ms,count){if(!ok){fatal(Error(err()));return;}ticks+=count;presents++;maxFrameMs=Math.max(maxFrameMs,ms);multiplayerBridge?.frame();if(!first){first=true;last=performance.now();ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){const p=core._th15_audio_statistics();if(p){const a=Array.from(core.HEAPU32.subarray(p>>>2,(p>>>2)+11));emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});}emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs});last=now;ticks=0;presents=0;maxFrameMs=0;}if(core._th15_phase()===4)void stop().catch(fatal);}});

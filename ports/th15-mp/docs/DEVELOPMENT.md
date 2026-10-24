@@ -48,6 +48,8 @@ npm --prefix launcher run dev:workspace
 
 连续准确输入对应的模拟状态完成修正后，先释放这段撤销日志，再提交音效、多人 Replay 和旁观数据。音效事件复制到系统堆，按提交顺序播放。文件写入、资源创建与释放、GPU 截图和关卡切换进入已确认边界：此前的预测状态与输出全部处理完成后执行该操作。
 
+浏览器自动存档和显式同步使用原生保存请求。预测尾部尚未确认时，请求保持 pending，继续处理网络输入和修正，在新采样与前推之前等待确认屏障。提交前缀并清空撤销记录后，原生层实际保存配置与记录，再将请求标记 completed 并恢复推进；外壳随后保存确认 Replay、完成 IDBFS 同步。等待期间键盘与触屏输入继续接收，文件与生命周期命令保持顺序。退出先等待保存再停止循环；隐藏或关闭页面时取消未完成请求，只尽力持久化已有文件和确认 Replay，不把 pending 当作保存成功。
+
 图形、音频设备、字体缓存和网络传输保留独立的系统生命周期。CPU 字体图集随模拟恢复，制表位单独记录。每个保留帧引用前一帧的不可变绘制指令，恢复时重建 GPU 合成结果，为迟到的暂停输入提供准确背景。资源在完成绘制后释放时，保存一次完整分辨率的合成结果作为后续恢复基准；正常回滚重放绘制指令，60 Hz 下无需生成插值采样信息。
 
 ### 回滚验收入口
@@ -55,6 +57,8 @@ npm --prefix launcher run dev:workspace
 已执行的独立状态、完整分辨率画面、生命周期与最终生产网络矩阵见 [2026-10-23 回滚验收记录](ROLLBACK-ACCEPTANCE-20261023.md)，构建身份、指标和记录恢复来源见[机器摘要](ROLLBACK-ACCEPTANCE-20261023.json)。
 
 协议层可直接使用 C++17 编译器：`node ports/th15-mp/portable/multiplayer/network-native-test.mjs`；`CXX` 指定编译器路径。该检查覆盖 mode 0／2、两人／三人、修正中的再次回滚、不可变采样、提交边界、旧版纯延迟 Replay 和新版本 Replay 元数据。`node ports/th15-mp/portable/multiplayer/config-test.mjs` 检查浏览器配置桥。
+
+存档请求的原生状态机使用 `node ports/th15-mp/portable/multiplayer/pending-save-test.mjs` 检查，外壳的完成、取消、持久化和输入调度使用 `node --test ports/th15-mp/portable/multiplayer/score-save.test.mjs` 检查。正式导出身份检查覆盖 request／poll／cancel 三个接口；真实浏览器性能专项另行记录自动存档及实际文件持久化结果。
 
 生产构建完成后，私有验收入口复用生产对象，仅重新链接一个包含诊断导出的 `BrowserRuntime`，并应用相同的 Wasm 插桩配置：
 

@@ -26,7 +26,7 @@ if(multiplayer){
 for(const {name} of WebAssembly.Module.exports(new WebAssembly.Module(wasm)))
  if(/^(?:application_|th15_probe|th15_spectator_lab_|audit_|presentation_lab_)/.test(name))throw Error('Diagnostic export in production: '+name);
 const fontNames=['cp932.bin'];
-const names=['th15.html','manifest.json','startup-branding.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th15.mjs','th15.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
+const names=['th15.html','manifest.json','startup-branding.mjs','shell.mjs','score-save.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','th15.mjs','th15.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 if(multiplayer)names.push('multiplayer.mjs','adonis-calibration.mjs');
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}
@@ -39,7 +39,7 @@ const marker="/*TH15_BUILD_INFO*/{version:'development-incomplete',completeGame:
 const shell=readFileSync(resolve(shellRoot,'shell.mjs'),'utf8');
 if(!shell.includes(marker))throw Error('Missing build-info marker');
 put('shell.mjs',shell.replace(marker,JSON.stringify({version,completeGame:true,multiplayer})));
-for(const name of ['startup-branding.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs'])put(name,readFileSync(resolve(shellRoot,name)));
+for(const name of ['startup-branding.mjs','score-save.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs'])put(name,readFileSync(resolve(shellRoot,name)));
 if(multiplayer){
  const commonRoot=process.env.EAGLER_COMMON_NETPLAY_ROOT?resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT):resolve(root,'../../common');
  put('multiplayer.mjs',readFileSync(resolve(shellRoot,'multiplayer.mjs')));

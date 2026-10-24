@@ -5,6 +5,7 @@
 #include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/ReplayArchive.hpp"
 #include "../multiplayer/SpectatorReplayStart.hpp"
+#include "../multiplayer/PendingSave.hpp"
 #include "../game/MultiplayerPilot.hpp"
 #endif
 #include "ThpracUi.hpp"
@@ -41,7 +42,22 @@ multiplayer::NetplayRuntime network;multiplayer::ReplayArchive mp_replay;
 GameInput mp_menu;bool mp_started=false,mp_recording=false,mp_playback=false,mp_local_results=false;
 std::string mp_replay_path;std::string mp_saved_name="PLAYER";unsigned mp_stage=1;
 unsigned mp_spectator_stage=0;std::string mp_spectator_error;
+multiplayer::PendingSave mp_save_request;std::string mp_save_error;
+bool mp_complete_requested_save();
 #include "MultiplayerRollback.inc"
+bool mp_complete_requested_save(){
+ if(!mp_save_request.Waiting())return true;
+ const bool rollback=mp_started&&network.AllowsRollback();
+ unsigned retained=0,frames=0;
+#if TH15_WRITE_JOURNAL
+ retained=unsigned(mp_frames.size());frames=journal::FrameCount();
+#endif
+ const auto result=mp_save_request.Complete(rollback,network.Correcting(),network.InputsReconciledBeforeNext(),retained,frames,[]{
+  if(!app||app->save_settings())return true;
+  mp_save_error=app->failure.empty()?"TH15 score save failed":app->failure;last_error=mp_save_error;return false;
+ });
+ return result!=multiplayer::PendingSave::Failed;
+}
 touhou::input::TouchState mp_frontier_touch;
 bool mp_apply_confirmed(const Netplay::SpectatorFramePacket& packet,bool historical){
  if(app->loading_waiting()&&!app->complete_loading()){last_error=app->failure;return false;}
@@ -272,6 +288,20 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th15_mp_status(){return th15::sdl::network.
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_mp_rollback_status(){return th15::sdl::mp_rollback_status();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_mp_calibration_status(){return th15::sdl::network.CalibrationStatus();}
 EMSCRIPTEN_KEEPALIVE const char* th15_mp_error(){using namespace th15::sdl;return last_error.empty()?network.Error():last_error.c_str();}
+EMSCRIPTEN_KEEPALIVE unsigned th15_mp_save_request(){using namespace th15::sdl;
+ if(!mp_save_request.Waiting())mp_save_error.clear();const auto token=mp_save_request.Request();
+ if(token)mp_complete_requested_save();return token;
+}
+EMSCRIPTEN_KEEPALIVE int th15_mp_save_poll(unsigned token){using namespace th15::sdl;
+ if(mp_save_request.Poll(token)==th15::multiplayer::PendingSave::Pending){
+  const char* failure=app&&!app->failure.empty()?app->failure.c_str():*network.Error()?network.Error():last_error.c_str();
+  if(*failure){mp_save_error=failure;mp_save_request.Fail();}
+  else mp_complete_requested_save();
+ }
+ const auto status=mp_save_request.Poll(token);if(status==th15::multiplayer::PendingSave::Failed&&!mp_save_error.empty())last_error=mp_save_error;
+ return status;
+}
+EMSCRIPTEN_KEEPALIVE int th15_mp_save_cancel(unsigned token){using namespace th15::sdl;return mp_save_request.Cancel(token);}
 EMSCRIPTEN_KEEPALIVE const char* th15_mp_spectator_state(){return th15::sdl::network.SpectatorState();}
 EMSCRIPTEN_KEEPALIVE int th15_mp_spectator_control(const char* run,const char* action,unsigned frame){return th15::sdl::network.SpectatorControl(run,action,frame);}
 EMSCRIPTEN_KEEPALIVE int th15_mp_start(){using namespace th15::sdl;if(running||!app||!network.Configured())return 0;mp_reset_rollback();

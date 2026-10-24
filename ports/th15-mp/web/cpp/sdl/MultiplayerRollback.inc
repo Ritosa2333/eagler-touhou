@@ -15,6 +15,7 @@ struct MpRollbackFrame {
 std::deque<MpRollbackFrame> mp_frames;
 u32 mp_boundary=Netplay::INVALID_FRAME,mp_corrections=0,mp_replayed=0,mp_barriers=0;
 void mp_reset_rollback(){
+ mp_save_request.Clear();mp_save_error.clear();
  rollback::End();mp_frames.clear();journal::Clear();mp_boundary=Netplay::INVALID_FRAME;
  if(app)app->graphics.clear_rollback_history();
  mp_corrections=mp_replayed=mp_barriers=mp_advanced=mp_committed_score=0;mp_committed_complete=false;
@@ -160,6 +161,18 @@ bool mp_rollback_tick(u32 held,bool physical){
    if(!mp_commit_reconciled())return false;return true;
   }
   const bool correcting=network.Correcting();const auto frame=network.NextFrame();
+  if(!correcting&&mp_save_request.Waiting()){
+   // Freeze the local forward frontier before capturing another input. Every
+   // input required by this frontier has already been captured; keep pumping
+   // until its exact prefix is reconciled. A late difference re-enters the
+   // normal correction path before any file write is allowed.
+   if(!network.Pump(true)){last_error=network.Error();mp_save_request.Fail();return false;}
+   if(network.RollbackFrame()!=Netplay::INVALID_FRAME)continue;
+   if(!mp_commit_reconciled()||!mp_complete_requested_save())return false;
+   // Completion releases the fence immediately. The next driver call can
+   // capture and advance even if JS has not consumed the completed token yet.
+   return true;
+  }
   if(mp_boundary==frame){
    const auto confirmed=network.Confirmed();
    if(confirmed==Netplay::INVALID_FRAME||confirmed<frame||!network.InputsReconciledBeforeNext())return true;
@@ -205,7 +218,7 @@ const u32* mp_rollback_status(){
   mp_boundary,mp_committed_score,mp_committed_complete?1u:0u};return values.data();
 }
 #else
-void mp_reset_rollback(){mp_advanced=mp_committed_score=0;mp_committed_complete=false;}
+void mp_reset_rollback(){mp_save_request.Clear();mp_save_error.clear();mp_advanced=mp_committed_score=0;mp_committed_complete=false;}
 bool mp_rollback_tick(u32,bool){last_error="This TH15 build has no instrumented rollback state owner";return false;}
 const u32* mp_rollback_status(){static const std::array<u32,20> values{};return values.data();}
 #endif

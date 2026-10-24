@@ -18,6 +18,7 @@ const exports=WebAssembly.Module.exports(new WebAssembly.Module(readFileSync(res
 assert.equal(manifest.netplay.stateBackend,'write-journal-32');assert.equal(manifest.netplay.instrumentation,0x52424a31);
 assert.ok(exports.includes('eagler_rb_instrumented'));assert.ok(exports.includes('th15_mp_rollback_status'));
 assert.ok(exports.includes('th15_mp_start'));assert.ok(exports.includes('th15_mp_replay_load'));
+for(const name of ['th15_mp_save_request','th15_mp_save_poll','th15_mp_save_cancel'])assert.ok(exports.includes(name),name);
 assert.ok(!exports.some(n=>/^th15_probe|^th15_check_|^application_/.test(n)));
 if(!process.argv.includes('--multiplayer-only')){
 const ordinary=WebAssembly.Module.exports(new WebAssembly.Module(readFileSync(resolve(root,'build-eagler/th15.wasm')))).map(e=>e.name);
