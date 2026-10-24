@@ -144,7 +144,7 @@
     "th15": {
       "normal": "ports/th15",
       "multiplayer": "ports/th15-mp",
-      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+      "base": "38612dd9cc19e5bff3aea85ecf1e35165af92788",
       "history": [
         {
           "kind": "manual",
@@ -161,6 +161,25 @@
           "normalHistory": "838da509cc579e59092ee73f7e87e225932b1d19",
           "multiplayerHistory": "f99749bb17540df82f5e6ac6a4d2a9fe617c9025",
           "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
+        },
+        {
+          "kind": "git-merge",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "source": "38612dd9cc19e5bff3aea85ecf1e35165af92788",
+          "targetHead": "83acf723f8bb2713b941a1ebdba1fec7859a67cb",
+          "integration": "committed",
+          "normalHistory": "346eb6ab8824d398a58d14ae984ff236ec9586e7",
+          "multiplayerHistory": "046095739e5bc1ae295d2642daba9414a1fc5c93",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/web/cpp/game/AnmCheckpoint.cpp",
+            "ports/th15-mp/web/cpp/game/StageGameplay.cpp",
+            "ports/th15-mp/web/cpp/sdl/Application.cpp",
+            "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th15-mp/web/tests/cpp/anm-checkpoint-wide-tree.test.mjs",
+            "ports/th15-mp/web/tests/sdl/checkpoint-persistence-browser.test.mjs"
+          ],
+          "note": "PR #126 两侧已实现关卡交接，保留 MP 旧录像时序、房间预览与联机输入所有权。目录合并接收普通版历史，并补入检查点宽树与持久化测试。"
         }
       ],
       "origin": {
