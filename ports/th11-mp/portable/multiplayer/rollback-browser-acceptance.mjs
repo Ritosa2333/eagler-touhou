@@ -15,6 +15,9 @@ import {performance} from 'node:perf_hooks';
 const root=resolve(import.meta.dirname,'../..');
 function option(name,fallback){const i=process.argv.indexOf(name);if(i<0)return fallback;assert.ok(process.argv[i+1]&&!process.argv[i+1].startsWith('--'),'Missing '+name);return process.argv[i+1];}
 const duration=Number(option('--duration','15')),cpu=Number(option('--cpu','1'));
+const displayHz=Number(option('--display-hz','0')),compareDisplay=process.argv.includes('--compare-display');
+assert.ok([0,120,144].includes(displayHz),'display-hz: 0 (device), 120 or 144 (simulated callbacks)');
+assert.ok(!compareDisplay||displayHz>0,'Display comparison requires explicit simulated callbacks');
 const headed=process.argv.includes('--headed');
 const peerCpu=Number(option('--peer-cpu',String(cpu))),cpuRates=[cpu,peerCpu];
 const routeOption=option('--route','rtc'),route=routeOption==='direct'?'rtc':routeOption;
@@ -59,6 +62,8 @@ const report={schema:'th11-rollback-browser/1',startedAt:new Date().toISOString(
   stages:[],errors:[],cleanup:[],browser:[],processIds:[],network:[],http:[],results:[]};
 const save=()=>writeFileSync(resolve(out,'receipt.json'),JSON.stringify(report,null,2)+'\n');
 report.settings.headed=headed;
+report.settings.displayHz=displayHz;report.settings.compareDisplay=compareDisplay;
+report.scope.simulatedDisplayCallbacks=displayHz>0;
 const mark=(name,extra={})=>{report.stages.push({name,checkerMs:performance.now(),...extra});save();};
 const observeError=entry=>{if(report.stages.at(-1)?.name==='cleanup-start')report.cleanup.push({action:'owned-shutdown-event',...entry});else report.errors.push(entry);};
 save();
@@ -100,6 +105,21 @@ if(audioProfile){
 // Installed before WASM instantiation, in each real document. This changes only
 // transport scheduling / observation, never packet bytes or native input state.
 function installProbe(config){
+  if(config.displayHz){
+    const pending=new Map();let serial=0,timer=null,deadline=performance.now();
+    globalThis.requestAnimationFrame=callback=>{
+      const id=++serial;pending.set(id,callback);
+      if(timer===null){
+        const now=performance.now();deadline=Math.max(now,deadline+1000/config.displayHz);
+        timer=setTimeout(()=>{
+          timer=null;const jobs=[...pending.values()];pending.clear();const stamp=performance.now();
+          for(const job of jobs)job(stamp);
+        },Math.max(0,deadline-now));
+      }
+      return id;
+    };
+    globalThis.cancelAnimationFrame=id=>pending.delete(id);
+  }
   const state={timeOrigin:performance.timeOrigin,phase:'idle',start:0,end:0,raf:[],transport:[],motion:[],tail:[],
     overflow:[],errors:[],lastMotion:0,current:null,serial:0,wireSerial:0,queued:0,queuedBytes:0,maxQueued:0,
     maxQueuedBytes:0,realDelay:config.latency,profile:config.profile,attached:false,settleStarted:0};
@@ -265,10 +285,15 @@ function analysis(data){
   const rows=data.raf.filter(r=>r.phase==='measure'&&r.entry>=data.start&&r.entry<=data.end);
   const motion=data.motion.filter(r=>r.at>=data.start&&r.at<=data.end);
   const gaps=values=>values.slice(1).map((v,i)=>v-values[i]);
-  let lastPresent=null,highFrame=null;const presents=[],frontiers=[];
+  let lastPresent=null,highFrame=null,previous=null,extraDisplayCount=0;const presents=[],frontiers=[];
   for(const r of rows){const rb=r.rollback;
+    const prior=previous?.rollback;
+    if(rb?.length===24&&prior?.length===24&&r.nativeTicks===0&&rb[21]>prior[21]&&
+       rb[11]===prior[11]&&rb[20]===prior[20]&&r.net?.[3]===previous.net?.[3]&&
+       !rb[3]&&!prior[3]&&rb[4]===0xffffffff&&prior[4]===0xffffffff)++extraDisplayCount;
     if(rb?.length===24){if(lastPresent!==null&&rb[21]>lastPresent)presents.push(r.exit);lastPresent=rb[21];}
     if(r.net?.length===24){if(highFrame!==null&&r.net[3]>highFrame)frontiers.push(r.exit);highFrame=Math.max(highFrame??0,r.net[3]);}
+    previous=r;
   }
   const elapsed=rows.length>1?rows.at(-1).exit-rows[0].entry:0;
   const logical=rows.length>1?Math.max(0,rows.at(-1).net[3]-rows[0].net[3]):0;
@@ -289,7 +314,7 @@ function analysis(data){
     callbackEntryIntervals:distribution(gaps(rows.map(r=>r.entry))),callbackWall:distribution(rows.map(r=>r.exit-r.entry)),
     nativeReportedWall:distribution(rows.map(r=>r.nativeMs)),observerWall:distribution(rows.map(r=>r.observerMs)),
     existingShellHookWall:distribution(rows.map(r=>r.shellHookMs??0)),
-    presentCount:presents.length,frontierCount:frontiers.length,
+    presentCount:presents.length,frontierCount:frontiers.length,extraDisplayCount,
     presentIntervals:distribution(gaps(presents)),newFrontierIntervals:distribution(gaps(frontiers)),
     presentWindowHolds:distribution(edgeIntervals(presents)),frontierWindowHolds:distribution(edgeIntervals(frontiers)),
     windowEdgeMeaning:'Start/end intervals are censored lower bounds; presentation counter changes are observed at callback exit, not GPU scanout.',
@@ -448,7 +473,7 @@ try{
     assert.ok(browserPid,'Chrome process identity available');report.processIds.push(browserPid);
     report.browser.push({seat,version:browser.version(),pid:browserPid,args,gpu:system.gpu,processes:processes.processInfo});
     const context=await browser.newContext({viewport:{width:660,height:510},serviceWorkers:'block'});contexts.push(context);
-    await context.addInitScript(installProbe,{seat,route,latency:delayLocation==='sender'?latency:0,jitter:delayLocation==='sender'?jitter:0,duration,profile,nativeProfile,audioProfile});
+    await context.addInitScript(installProbe,{seat,route,latency:delayLocation==='sender'?latency:0,jitter:delayLocation==='sender'?jitter:0,duration,profile,nativeProfile,audioProfile,displayHz});
     const page=await context.newPage();pages.push(page);
     page.on('pageerror',e=>observeError({seat,kind:'pageerror',error:String(e),checkerMs:performance.now()}));
     page.on('crash',()=>observeError({seat,kind:'page-crash',checkerMs:performance.now()}));
@@ -490,7 +515,8 @@ try{
       inputDelayAuto:approved.inputDelayAuto,predictionReserve:approved.predictionReserve,
       adonisMode:approved.adonisMode,predictionLimit:approved.predictionLimit,challengeMode:approved.challengeMode,
       spectator:false,spectatorId:'',spectatorCount:approved.spectatorCount,iceServers:[],loadouts},policy),
-      touchEnabled:true,touchMovementMode:'touch',touchSensitivity:100,doubleTapBombEnabled:false};
+      touchEnabled:true,touchMovementMode:'touch',touchSensitivity:100,doubleTapBombEnabled:false,
+      limitPresentationTo60:compareDisplay&&seat===1};
     report.runtimeOptions.push(options);
     await pages[seat].evaluate(async({options,sharedResources})=>{await host.configure(options,sharedResources);await host.launch();document.querySelector('iframe').contentWindow.__rollbackAcceptance.attach();},{options,sharedResources});
   }
@@ -660,7 +686,7 @@ try{
     for(let seat=0;seat<2;++seat){
       const proof=await replayPrefixOracle({browser:browsers[seat],livePage:pages[seat],origin:base,
         expected:seat?report.confirmedBoundary.right:report.confirmedBoundary.left,out,seat,
-        runtimePath:referenceRuntime?'/reference-runtime/':'/runtime/',pixels:pixelOracle});
+        runtimePath:referenceRuntime?'/reference-runtime/':'/runtime/',pixels:pixelOracle,sharedResources});
       report.replayOracle.push(proof);save();
     }
     mark('exact-replay-oracle-complete');
@@ -687,6 +713,13 @@ try{
       failures.push({seat,kind:'launcher-input-rejected',touch:result.touch});
   }
   if(relayLogOverflow)failures.push({kind:'relay-log-overflow'});
+  if(compareDisplay){
+    const [high,limited]=report.results.map(r=>r.metrics);
+    const counts=m=>m?{presentations:m.presentCount,forwardCallbacks:m.frontierCount,extraDrawOnly:m.extraDisplayCount}:null;
+    report.displayComparison={simulatedHz:displayHz,high:counts(high),limited:counts(limited)};
+    if(!high||!limited||high.extraDisplayCount<20||limited.extraDisplayCount!==0)
+      failures.push({kind:'display-rate-separation',high:counts(high),limited:counts(limited)});
+  }
   const unexpectedErrors=report.errors.filter(entry=>!expectedDisconnectConsole(entry,report.disconnect));
   if(report.disconnect)report.disconnect.expectedConsoleNotifications=report.errors.filter(entry=>expectedDisconnectConsole(entry,report.disconnect));
   if(unexpectedErrors.length)failures.push({kind:'page-or-server-errors',errors:unexpectedErrors});
