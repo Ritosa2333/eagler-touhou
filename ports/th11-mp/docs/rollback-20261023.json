@@ -1,0 +1,510 @@
+{
+  "schema": "eagler-touhou/th11-rollback-reconstructed-verified-summary/1",
+  "recordType": "reconstructed verified results summary",
+  "executionDate": "2026-10-23",
+  "reconstructedOn": "2026-10-24",
+  "game": "th11",
+  "variant": "multiplayer",
+  "provenance": {
+    "basis": "Previously executed results, tool outputs and final documentation patches explicitly retained in this conversation.",
+    "originalRawReceiptsAvailable": false,
+    "originalRuntimeArtifactsAvailable": false,
+    "containsRawReceiptPayloads": false,
+    "recordedHashesRecomputedDuringReconstruction": false,
+    "gameBuildsOrWasmOrBrowserTestsRerunDuringReconstruction": false,
+    "reason": "Temporary workspace reset on 2026-10-24 removed original receipts, per-callback data, Replay files, RGBA and local build outputs.",
+    "hashMeaning": "Recorded SHA-256 values were checked before the reset. They identify previous evidence; they do not assert current file availability."
+  },
+  "checks": [
+    "BUILD-03",
+    "BUILD-04",
+    "MP-04",
+    "MP-10",
+    "MP-11",
+    "MP-12",
+    "MP-14"
+  ],
+  "primaryReport": "writeJournal",
+  "conclusion": {
+    "correctnessPassed": true,
+    "performancePassed": false,
+    "overallPassed": false,
+    "reason": "jr10 native fields, exact Replay fields and complete playfield pixels matched; presentation/frontier maxima 291.7 and 156 ms exceeded the 100 ms threshold."
+  },
+  "settings": {
+    "os": "Linux",
+    "browser": "Chrome 151.0.7922.34",
+    "independentChromeProcesses": 2,
+    "cpuRates": [
+      1,
+      1
+    ],
+    "gpu": "SwiftShader",
+    "webgl": 2,
+    "route": "relay",
+    "profile": "stable",
+    "seed": 1234,
+    "oneWaySendDelayMs": 50,
+    "jitterPlusMinusMs": 5,
+    "delayLocation": "sender",
+    "durationSeconds": 15,
+    "predictionFrames": 12,
+    "maxGapMs": 100,
+    "inputCarrier": "Host RPC",
+    "nativeProfile": true,
+    "replayOracle": true,
+    "pixelOracle": true
+  },
+  "scope": {
+    "seatOrder": [
+      0,
+      1
+    ],
+    "timingUnits": "milliseconds; displayed timings rounded to one decimal place",
+    "nativeFields": "game[1:5] + game[8:], same generation and frame",
+    "fullWorldMemoryDumpCompared": false,
+    "playfield": {
+      "sourceWidth": 640,
+      "sourceHeight": 480,
+      "x": 32,
+      "y": 16,
+      "width": 384,
+      "height": 448,
+      "channels": "RGBA",
+      "tolerance": 0
+    },
+    "sampleLimitPerPeer": 16,
+    "readbackLimitPerPeer": 64,
+    "cpu4xRuns": 0,
+    "timingMeaning": "Native stage times sum work within each callback, including resimulation. Capture covers frame setup and sidecar capture; first-write work during Update and Draw is charged to those stages.",
+    "presentationMeaning": "Presentation-counter changes observed at callback exit, not display scanout."
+  },
+  "finalPackageRecorded": {
+    "sourceCommit": "ab747c28177e90db7d371c3a02bcba41d4a8f8ab",
+    "builtAt": "2026-10-23T14:39:06.467Z",
+    "sourceDigest": "67c27df90a4140ea62c8e92c2050036253d545152c3f2ec229728205bd6410e9",
+    "buildMetadataRecordedSha256": "06aa574486cab52b983df76f43f0b2e3fa413faa86fcb217fe248259eb9cb27b",
+    "optimization": {
+      "level": "O2",
+      "linkTime": false,
+      "fastMath": false,
+      "fpContract": "off",
+      "simdExperiment": false
+    },
+    "identity": {
+      "wasm": {
+        "bytes": 5013140,
+        "sha256": "f9154a727e67077abfce409ee16b09374f9e4153a9221b3be747d0b68f661449"
+      },
+      "loaderSha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0",
+      "shellSha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2",
+      "manifestSha256": "098997b2abb6e32e5908cf955ecc87325e03150bf6914d253c61615a3a305db5",
+      "runtimeFilesSha256": "440520f7ae9e1f51de176b6cf21835b016e82be611f09685a6a2a40b87d53f9b"
+    },
+    "equalityToJr10VerifiedBeforeReset": {
+      "wasm": true,
+      "loader": true,
+      "shell": true,
+      "manifest": false,
+      "runtimeFiles": false
+    },
+    "newBrowserRunAfterFinalBuild": false
+  },
+  "testsPreviouslyVerified": {
+    "wasmInstrumentation": {
+      "passed": 22,
+      "total": 22
+    },
+    "inactiveBackendIsolation": {
+      "passed": true,
+      "wasmObjects": 4,
+      "macroValues": [
+        "undefined",
+        "0"
+      ],
+      "sources": [
+        "common/src/netplay/WriteJournal.cpp",
+        "common/src/netplay/SimulationHeap.cpp"
+      ],
+      "definedSymbolCounts": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "activeCppBackend": {
+      "passed": true,
+      "optimization": "O2",
+      "independentWasmInstances": 19,
+      "uninstrumentedRejected": true,
+      "profiles": [
+        "wasm",
+        "native-hook"
+      ],
+      "normalScenariosPerProfile": 7,
+      "realOutOfBoundsTrapCasesPerProfile": 2,
+      "trapScopes": [
+        "GameScope",
+        "nested HostScope"
+      ],
+      "trapHandling": "JavaScript catches WebAssembly.RuntimeError, then Clear makes the open transaction terminal and Ready/BeginFrame refuse reuse."
+    },
+    "backendResultOriginalLabel": "th11-journal-opt-in-isolation-20261023/result.json",
+    "backendResultRecordedSha256": "a1c5a90c52aa813c459d911f0492cbedefc6dee9936624bf31ff484d5814e45c",
+    "packageIsolation": {
+      "passed": 10,
+      "total": 10
+    },
+    "framebufferProof": {
+      "passed": 3,
+      "total": 3
+    },
+    "formalBuildAndPackageCompleted": true
+  },
+  "recordedSharedIdentity": {
+    "framebufferProofScriptSha256": "aa8ee6332e703234108c97bbde1d752614f21f575f1c154742140f5bfe826afe",
+    "replayOracleScriptSha256": "0b5db07ef3deb8e373a93f17bf3c3fd2d7a9e58c1bdec97a84133edaa4a3e97e",
+    "archive": {
+      "name": "th11.dat",
+      "bytes": 26610794,
+      "sha256": "3cb521c5d420d8cbad6494d53bcdb048bcc396abf95c18fac68e38fd2d19f8e2"
+    }
+  },
+  "crossBuildReplay": {
+    "comparisonExecuted": false,
+    "reason": "The existing same-Runtime-build admission check rejected the old baseline before cross-build native-field or pixel comparison."
+  },
+  "reports": {
+    "writeJournal": {
+      "label": "th11-jr-10",
+      "role": "final tested Wasm",
+      "startedAt": "2026-10-23T14:30:52.134Z",
+      "completedAt": "2026-10-23T14:31:42.781Z",
+      "sourceCommit": "0a748e9d1d9f2bd84beb70946ba9107325b91a0f",
+      "originalReceiptRecordedSha256": "a3ee27fe4a3d00d001c6c4f7169b345b6da7b79ce9810a3c25c47e976fbc9aa1",
+      "status": "failed",
+      "passed": false,
+      "correctnessPassed": true,
+      "performancePassed": false,
+      "sourceStable": true,
+      "errors": [],
+      "failures": [
+        {
+          "seat": 0,
+          "kind": "performance-threshold",
+          "nativeMaxMs": 57.3,
+          "presentMaxMs": 291.7,
+          "frontierMaxMs": 291.7
+        },
+        {
+          "seat": 1,
+          "kind": "performance-threshold",
+          "nativeMaxMs": 10.9,
+          "presentMaxMs": 156.0,
+          "frontierMaxMs": 156.0
+        }
+      ],
+      "correctness": {
+        "generation": 0,
+        "frame": 900,
+        "peerNativeFieldsEqual": true,
+        "exactReplayNativeFieldsEqualBySeat": [
+          true,
+          true
+        ],
+        "playfieldRgbaMismatchesBySeat": [
+          0,
+          0
+        ],
+        "postMeasurementReadbacksBySeat": [
+          3,
+          4
+        ],
+        "performanceWindowReadbacks": 0
+      },
+      "metricsBySeat": {
+        "nativeCallbackP95Ms": [
+          6.3,
+          5.1
+        ],
+        "nativeCallbackMaxMs": [
+          57.3,
+          10.9
+        ],
+        "callbackIncludingObserverP95Ms": [
+          6.6,
+          5.3
+        ],
+        "captureP95Ms": [
+          0.1,
+          0.1
+        ],
+        "restoreP95Ms": [
+          0.2,
+          0.2
+        ],
+        "updateP95Ms": [
+          1.7,
+          1.5
+        ],
+        "drawP95Ms": [
+          3.6,
+          2.9
+        ],
+        "sealMaxMs": [
+          0.1,
+          0.3
+        ],
+        "presentIntervalP95Ms": [
+          33.9,
+          32.3
+        ],
+        "presentIntervalMaxMs": [
+          291.7,
+          156.0
+        ],
+        "newFrontierIntervalMaxMs": [
+          291.7,
+          156.0
+        ],
+        "presentIntervalsOver100Ms": [
+          4,
+          2
+        ],
+        "callbacks": [
+          681,
+          745
+        ],
+        "restores": [
+          370,
+          315
+        ],
+        "historyTicks": [
+          1905,
+          1588
+        ]
+      },
+      "recordedRuntimeIdentity": {
+        "wasm": {
+          "bytes": 5013140,
+          "sha256": "f9154a727e67077abfce409ee16b09374f9e4153a9221b3be747d0b68f661449"
+        },
+        "manifestSha256": "7edd318de140ff203493dc0d914fa5ef66b9faa9a5fc8e849bafda0a20d50eaf",
+        "runtimeFilesSha256": "b036359448cc85a2ca1c8cb14bfef0b9631d106949ac2f34943d6b7dbce7df98",
+        "loaderSha256": "7c6202bc8450459cf89d2d7c7b332911aa839b810aced098f629852989d447f0",
+        "shellSha256": "bb9cb3deb91ba2c02872ee8d1eb058fc2f2b89a0a36abf26f6f0176df2cdc1b2"
+      },
+      "recordedRunnerSha256": "1479526c4f09e9238d0673d3fa1da41828278b1586e9962fa5c22c3f9a506f59"
+    },
+    "writeJournalEarlier": {
+      "label": "th11-jr-08",
+      "role": "earlier passing reference",
+      "startedAt": "2026-10-23T14:16:32.205Z",
+      "completedAt": "2026-10-23T14:17:24.773Z",
+      "sourceCommit": "ee393ee64b406d1f0013de0aa9ec861cb0ea4d62",
+      "originalReceiptRecordedSha256": "3e0998ef5d12676f7c21c16ba620188634970173cdce8103da3c991a2d7634c5",
+      "status": "passed",
+      "passed": true,
+      "correctnessPassed": true,
+      "performancePassed": true,
+      "sourceStable": true,
+      "errors": [],
+      "failures": [],
+      "correctness": {
+        "generation": 0,
+        "frame": 933,
+        "peerNativeFieldsEqual": true,
+        "exactReplayNativeFieldsEqualBySeat": [
+          true,
+          true
+        ],
+        "playfieldRgbaMismatchesBySeat": [
+          0,
+          0
+        ],
+        "postMeasurementReadbacksBySeat": [
+          6,
+          5
+        ],
+        "performanceWindowReadbacks": 0
+      },
+      "metricsBySeat": {
+        "nativeCallbackP95Ms": [
+          6.0,
+          5.4
+        ],
+        "nativeCallbackMaxMs": [
+          11.3,
+          10.4
+        ],
+        "callbackIncludingObserverP95Ms": [
+          6.2,
+          5.4
+        ],
+        "captureP95Ms": [
+          0.1,
+          0.1
+        ],
+        "restoreP95Ms": [
+          0.2,
+          0.2
+        ],
+        "updateP95Ms": [
+          1.7,
+          1.5
+        ],
+        "drawP95Ms": [
+          3.3,
+          3.0
+        ],
+        "sealMaxMs": [
+          0.2,
+          0.1
+        ],
+        "presentIntervalP95Ms": [
+          30.7,
+          29.6
+        ],
+        "presentIntervalMaxMs": [
+          44.8,
+          57.8
+        ],
+        "newFrontierIntervalMaxMs": [
+          62.1,
+          57.8
+        ],
+        "presentIntervalsOver100Ms": [
+          0,
+          0
+        ],
+        "callbacks": [
+          702,
+          753
+        ],
+        "restores": [
+          401,
+          342
+        ],
+        "historyTicks": [
+          2075,
+          1739
+        ]
+      },
+      "recordedRuntimeIdentity": {
+        "wasm": {
+          "bytes": 5012981,
+          "sha256": "29ce7a23e8719f61a390a54278a5ec4eebb445461b8ca4d987f32eaff600b28a"
+        },
+        "manifestSha256": "78494d8354334786f11747ded26c6c18dbc327ff5b116eaee251940ce4958e51",
+        "runtimeFilesSha256": "5740173aaf5d501da827e15185e4bac8918ee6389d4d9c92cd2a4ae56312dd95"
+      },
+      "recordedRunnerSha256": "1479526c4f09e9238d0673d3fa1da41828278b1586e9962fa5c22c3f9a506f59"
+    },
+    "baseline": {
+      "label": "th11-base-02",
+      "role": "original snapshot baseline",
+      "startedAt": "2026-10-23T13:37:35.916Z",
+      "completedAt": "2026-10-23T13:38:27.013Z",
+      "runtimeBuildCommit": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
+      "harnessCheckoutCommit": "5e66bd0f6242385f7d1ce82616b124f7600423a3",
+      "originalReceiptRecordedSha256": "799819dda46608387eaa38b948691a5ef059eb8c4fbae99866d2187df4a1f455",
+      "status": "passed",
+      "passed": true,
+      "correctnessPassed": true,
+      "performancePassed": true,
+      "sourceStable": true,
+      "errors": [],
+      "failures": [],
+      "correctness": {
+        "generation": 0,
+        "frame": 950,
+        "peerNativeFieldsEqual": true,
+        "exactReplayNativeFieldsEqualBySeat": [
+          true,
+          true
+        ],
+        "playfieldRgbaMismatchesBySeat": [
+          0,
+          0
+        ],
+        "postMeasurementReadbacksBySeat": [
+          3,
+          3
+        ],
+        "performanceWindowReadbacks": 0
+      },
+      "metricsBySeat": {
+        "nativeCallbackP95Ms": [
+          3.0,
+          3.1
+        ],
+        "nativeCallbackMaxMs": [
+          8.0,
+          13.0
+        ],
+        "callbackIncludingObserverP95Ms": [
+          3.1,
+          3.4
+        ],
+        "captureP95Ms": [
+          0.7,
+          0.8
+        ],
+        "restoreP95Ms": [
+          0.2,
+          0.2
+        ],
+        "updateP95Ms": [
+          0.5,
+          0.6
+        ],
+        "drawP95Ms": [
+          1.1,
+          1.3
+        ],
+        "sealMaxMs": [
+          0.1,
+          0.2
+        ],
+        "presentIntervalP95Ms": [
+          28.8,
+          28.9
+        ],
+        "presentIntervalMaxMs": [
+          36.4,
+          37.3
+        ],
+        "newFrontierIntervalMaxMs": [
+          50.6,
+          51.8
+        ],
+        "presentIntervalsOver100Ms": [
+          0,
+          0
+        ],
+        "callbacks": [
+          762,
+          757
+        ],
+        "restores": [
+          347,
+          360
+        ],
+        "historyTicks": [
+          1769,
+          1829
+        ]
+      },
+      "recordedRuntimeIdentity": {
+        "wasm": {
+          "bytes": 2977925,
+          "sha256": "eadafa7458db4eb9430365723d519cf60eb368e1f1a3230c104dd69ee10534f0"
+        },
+        "manifestSha256": "ca294b33b5c02eda1549481831f3015b2d4d4430f7a7176bbdd25104596dcd1a",
+        "runtimeFilesSha256": "774b16479645216f67a24a8c71b8b6d35904399ff9a18a54f9b0a8ea42211e46"
+      },
+      "recordedRunnerSha256": "81aa65383a1d501756c44a61cf5f9b9b823671dfe267923a77bf4312b250fc16"
+    }
+  }
+}
