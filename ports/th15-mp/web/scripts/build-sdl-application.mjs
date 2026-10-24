@@ -18,9 +18,12 @@ const thprac=process.argv.includes('--thprac');
 const lab=process.argv.includes('--presentation-lab');
 if(lab&&release)throw Error('Presentation Lab cannot be a production build');
 const multiplayer=process.argv.includes('--multiplayer');
-// Retain a production native-hook build for controlled guard comparisons.
-const inlineDirtyBlocks=multiplayer&&!process.argv.includes('--journal-native-filter');
-if(!multiplayer&&process.argv.includes('--journal-native-filter'))throw Error('Journal guard selection requires multiplayer');
+// Native filtering is the production default. The larger inline guard remains
+// an explicit experiment until it passes the same startup and gameplay gates.
+const inlineDirtyBlocks=process.argv.includes('--journal-inline-dirty-blocks');
+const nativeFilter=process.argv.includes('--journal-native-filter');
+if(inlineDirtyBlocks&&nativeFilter)throw Error('Select only one journal guard');
+if(!multiplayer&&(inlineDirtyBlocks||nativeFilter))throw Error('Journal guard selection requires multiplayer');
 if(multiplayer&&thprac)throw Error('Multiplayer is a separate Legacy build without THPrac');
 const netplayCommon=resolve(process.env.EAGLER_COMMON_NETPLAY_ROOT||resolve(workspace,'../../common'));
 const netplayRevision=()=>{
