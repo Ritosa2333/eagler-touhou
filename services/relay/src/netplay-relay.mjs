@@ -345,6 +345,14 @@ function rejectRoomCreation(socket) {
   socket.close(4008, 'room creation limit');
 }
 
+function rejectUnknownRoom(socket) {
+  sendLobby(socket, {
+    type: 'error',
+    error: '房间已关闭，请返回大厅刷新。',
+  });
+  socket.close(4007, 'room unavailable');
+}
+
 function getRoom(id, socket) {
   let room = rooms.get(id);
   if (!room) {
@@ -654,8 +662,13 @@ function maybeResolveRoute(roomId, runId, room, run) {
 }
 
 function handleSignalConnection(socket, roomId, runId, player, playerCount) {
-  const room = getRoom(roomId, socket);
-  if (!room) return;
+  // Only the lobby creates rooms. A socket naming an unknown room must not
+  // reserve one, or the global room quota becomes a denial primitive.
+  const room = rooms.get(roomId);
+  if (!room) {
+    rejectUnknownRoom(socket);
+    return;
+  }
   const run = getRun(room, runId);
   if (run.ended) {
     socket.close(1008, 'run already ended');
@@ -1926,8 +1939,11 @@ server.on('connection', (socket, request) => {
     return;
   }
 
-  const room = getRoom(roomId, socket);
-  if (!room) return;
+  const room = rooms.get(roomId);
+  if (!room) {
+    rejectUnknownRoom(socket);
+    return;
+  }
   const run = getRun(room, runId);
   if (run.ended) {
     socket.close(1008, 'run already ended');
@@ -2103,6 +2119,17 @@ server.on('connection', (socket, request) => {
         socket.close(1008, 'invalid relay target');
         return;
       }
+    }
+    // The connected seat is the only authenticated sender identity on this
+    // lane. Honest clients stamp their own seat into every wire family; the
+    // relay enforces it so a peer can neither speak, nor fail the receivers'
+    // fail-fast parsers, for a seat it does not hold.
+    if (forwardedPayload.length >= 7 && forwardedPayload[0] === 0x45 && forwardedPayload[2] === 0x4e && forwardedPayload[3] === 0x50) {
+      if (forwardedPayload[5] === 1 || forwardedPayload[5] === 2) forwardedPayload[6] = player;
+    } else if (forwardedPayload.length >= 6 && forwardedPayload[0] === 0x41 && forwardedPayload[1] === 0x44 && forwardedPayload[2] === 0x53) {
+      forwardedPayload[5] = player;
+    } else if (forwardedPayload.length >= 17 && forwardedPayload[0] === 0x41 && forwardedPayload[1] === 0x44 && forwardedPayload[2] === 0x50) {
+      forwardedPayload[16] = player;
     }
     for (const [peer, target] of run.clients) {
       if (peer === player || target.readyState !== WebSocket.OPEN) continue;

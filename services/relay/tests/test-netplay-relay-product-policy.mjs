@@ -280,36 +280,45 @@ async function verifyMeasuredTiming(port,mode,reserve,automatic,rttP95Us=90000,p
 
 async function verifyRelayOnlyBarrier(port) {
   const sockets = [];
-  const room = `fallback${Date.now().toString(36)}`;
-  function peer(player, players) {
-    const socket = new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&run=1&player=${player}&players=${players}`);
-    sockets.push(socket);
-    return socket;
-  }
-  function route(socket) {
-    return new Promise((resolveRoute, reject) => {
-      const timer = setTimeout(() => reject(new Error('relay-only route timeout')), 5000);
-      socket.addEventListener('message', event => {
-        const message = JSON.parse(String(event.data));
-        if (message.type === 'route') { clearTimeout(timer); resolveRoute(message.mode); }
-      });
-      socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('relay-only socket failed')); }, { once: true });
-    });
-  }
+  const room = `th06mp-fallback${Date.now().toString(36)}`;
+  const host = await openLobby(port, room, "barrier_host");
+  const guest = await openLobby(port, room, "barrier_guest");
   try {
-    const first = peer(0, 2), firstRoute = route(first);
-    const second = peer(1, 2), secondRoute = route(second);
-    assert.deepEqual(await Promise.all([firstRoute, secondRoute]), ['relay', 'relay']);
-    const invalid = peer(2, 3);
+    await sendAndMatch(host, {type:"take-seat",seat:0,loadout:0}, r => r.room?.seats?.[0]);
+    await sendAndMatch(guest, {type:"take-seat",seat:1,loadout:0}, r => r.room?.seats?.[1]);
+    await sendAndMatch(host, {type:"set-ready",ready:true}, r => r.room?.seats?.[0]?.ready);
+    await sendAndMatch(guest, {type:"set-ready",ready:true}, r => r.room?.seats?.[1]?.ready);
+    const started = await sendAndMatch(host, {type:"start"}, r => r.type === "start");
+    function peer(player, players, member) {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&run=${started.serial}&player=${player}&players=${players}&member=${member}`);
+      sockets.push(socket);
+      return socket;
+    }
+    function route(socket) {
+      return new Promise((resolveRoute, reject) => {
+        const timer = setTimeout(() => reject(new Error('relay-only route timeout')), 5000);
+        socket.addEventListener('message', event => {
+          const message = JSON.parse(String(event.data));
+          if (message.type === 'route') { clearTimeout(timer); resolveRoute(message.mode); }
+        });
+        socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('relay-only socket failed')); }, { once: true });
+        socket.addEventListener('close', () => { clearTimeout(timer); reject(new Error('relay-only socket closed')); }, { once: true });
+      });
+    }
+    const first = peer(0, 2, "m_barrier_host"), firstRoute = route(first);
+    // A mixed player count is refused before it can occupy the second seat.
+    const invalid = peer(1, 3, "m_barrier_guest");
     const closed = await new Promise((resolveClose, reject) => {
       const timer = setTimeout(() => reject(new Error('mixed player count was admitted')), 5000);
       invalid.addEventListener('close', event => { clearTimeout(timer); resolveClose(event); }, { once: true });
     });
     assert.equal(closed.code, 1008);
     assert.match(closed.reason, /player count mismatch/);
+    const second = peer(1, 2, "m_barrier_guest"), secondRoute = route(second);
+    assert.deepEqual(await Promise.all([firstRoute, secondRoute]), ['relay', 'relay']);
     assert.equal(first.readyState, WebSocket.OPEN);
     assert.equal(second.readyState, WebSocket.OPEN);
-  } finally { for (const socket of sockets) socket.close(); }
+  } finally { for (const socket of sockets) socket.close(); host.close(1000); guest.close(1000); }
 }
 
 // Unrelated and matching frames can be dispatched before an await resumes.
@@ -328,10 +337,17 @@ await assert.rejects(closedResponse, /socket closed/);
 
 async function verifyRtcDisconnectSignal(port) {
   const sockets=[];
+  const room=`th10mp-disconnect${Date.now().toString(36)}`;
+  const lobbies=[];
+  for(let player=0;player<3;player++) lobbies.push(await openLobby(port,room,`disc_seat_${player}`,player?'':'intent=create&players=3'));
   try {
-    const room=`th10mp-disconnect${Date.now().toString(36)}`;
+    for(let player=0;player<3;player++)
+      await sendAndMatch(lobbies[player],{type:"take-seat",seat:player,loadout:0},r=>r.room?.seats?.[player]);
+    for(let player=0;player<3;player++)
+      await sendAndMatch(lobbies[player],{type:"set-ready",ready:true},r=>r.room?.seats?.[player]?.ready);
+    const started=await sendAndMatch(lobbies[0],{type:"start"},r=>r.type==="start");
     for(let player=0;player<3;player++) {
-      const socket=new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&run=1&player=${player}&players=3&signal=1`);
+      const socket=new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&run=${started.serial}&player=${player}&players=3&signal=1&member=m_disc_seat_${player}`);
       sockets.push(socket);await nextJson(socket,message=>message.type==='peers');
     }
     const routes=sockets.map(socket=>nextJson(socket,message=>message.type==='route'));
@@ -340,7 +356,7 @@ async function verifyRtcDisconnectSignal(port) {
     const notifications=sockets.slice(1).map(socket=>nextJson(socket,message=>message.type==='peer-disconnected'));
     sockets[0].send(JSON.stringify({type:'peer-disconnected',from:2}));
     assert.deepEqual((await Promise.all(notifications)).map(message=>message.from),[0,0],'The server derives the ended participant from its admitted socket');
-  } finally {for(const socket of sockets)socket.close(1000);}
+  } finally {for(const socket of sockets)socket.close(1000);for(const lobby of lobbies)lobby.close(1000);}
 }
 
 const port = await freePort();

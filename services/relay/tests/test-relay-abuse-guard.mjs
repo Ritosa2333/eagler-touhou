@@ -96,8 +96,11 @@ try {
   }
   assert.equal((await first(lobby('0003'))).message.code, 'rate-limited');
   assert.equal((await first(lobby('0005').replace('&intent=create', ''))).message.code, 'rate-limited');
-  assert.equal((await first('room=th09mp-0006&run=1&player=0&players=2&signal=1')).message.code, 'rate-limited');
-  assert.equal((await first('room=th09mp-0007&run=1&player=0&players=2')).message.code, 'rate-limited');
+  // Signal and relay sockets to unknown rooms are refused without reserving
+  // one; only the lobby creates rooms.
+  const roomClosed = '房间已关闭，请返回大厅刷新。';
+  assert.equal((await first('room=th09mp-0006&run=1&player=0&players=2&signal=1')).message.error, roomClosed);
+  assert.equal((await first('room=th09mp-0007&run=1&player=0&players=2')).message.error, roomClosed);
   const extraJoin = await first(lobby('0001', 'join'));
   assert.equal(extraJoin.message.type, 'state');
   const directory = await first('directory=1&member=directory_member');
