@@ -95,6 +95,9 @@ test('inactive or immediate saves still wait for the real filesystem callback',a
 const shell=readFileSync(new URL('../../web/sdl-runtime/shell.mjs',import.meta.url),'utf8');
 const commandSource=shell.slice(shell.indexOf('async function command(m)'),shell.indexOf("document.addEventListener('visibilitychange'"));
 const stopSource=shell.slice(shell.indexOf('async function stop()'),shell.indexOf('\nfunction path('));
+const backgroundSaveSource=shell.slice(shell.indexOf('const backgroundSaveError='),shell.indexOf('\nfunction closeAudio('));
+const phaseExitSource=shell.match(/if\(core\._th15_phase\(\)===4\)void stop\(\)\.catch\([^)]+\);/)[0];
+const transportExitSource=shell.match(/onExit:(\(\)=>\{void stop\(\)\.catch\([^)]+\);\})/)[1];
 function hostFixture(){
   const disk=deferred(),calls=[],replies=[],listeners=new Map(),fatals=[];
   const context={queue:Promise.resolve(),initialized:Promise.resolve(true),launched:true,stopping:false,
@@ -109,9 +112,9 @@ function hostFixture(){
     clearKeyboard:()=>calls.push('clear-input'),spectatorPlayback:{stop:()=>calls.push('spectator-stop')},
     localReplay:{close:()=>calls.push('replay-close')},multiplayerBridge:{close:()=>calls.push('close-peer')},
     closeAudio:()=>calls.push('close-audio'),emit:(...args)=>calls.push(['emit',...args]),fatal:e=>fatals.push(e),path:value=>value,
-    requestAnimationFrame:fn=>Promise.resolve().then(fn),err:()=>'',
+    requestAnimationFrame:fn=>Promise.resolve().then(fn),err:()=>'',isScoreSaveCancelled,
   };
-  runInNewContext(commandSource+'\n'+stopSource,context);
+  runInNewContext(backgroundSaveSource+'\n'+commandSource+'\n'+stopSource,context);
   const dispatch=(command,fields={})=>context.dispatchHostCommand({command,request:command,...fields});
   return {disk,calls,replies,listeners,fatals,context,dispatch};
 }
@@ -157,4 +160,31 @@ test('failed stop save leaves the loop alive and never emits successful exit',as
   const h=hostFixture(),stopped=h.context.stop(),rejected=assert.rejects(stopped,/Disk unavailable/);
   h.disk.reject(Error('Disk unavailable'));await rejected;assert.equal(h.calls.includes('stop-loop'),false);assert.equal(h.context.launched,true);assert.equal(h.context.stopping,false);
   assert.equal(h.calls.some(c=>Array.isArray(c)&&c[0]==='emit'&&c[1]==='exit'),false);
+});
+
+test('phase exit consumes lifecycle cancellation without failing the new world',async()=>{
+  const h=hostFixture();h.context.core._th15_phase=()=>4;runInNewContext(phaseExitSource,h.context);
+  h.disk.reject(Object.assign(Error('World changed'),{code:'EAGLER_SCORE_SAVE_CANCELLED'}));await settle();
+  assert.equal(h.fatals.length,0);assert.equal(h.calls.includes('stop-loop'),false);
+  assert.equal(h.calls.some(c=>Array.isArray(c)&&c[0]==='emit'&&c[1]==='exit'),false);
+});
+
+test('phase exit still surfaces real filesystem failure',async()=>{
+  const h=hostFixture();h.context.core._th15_phase=()=>4;runInNewContext(phaseExitSource,h.context);
+  h.disk.reject(Error('Disk unavailable'));await settle();assert.equal(h.fatals.length,1);assert.match(h.fatals[0].message,/Disk unavailable/);
+});
+
+test('unsolicited sync cancellation is consumed while requested sync explicitly rejects',async()=>{
+  const background=hostFixture();background.context.dispatchHostCommand({command:'sync'});await settle();
+  background.disk.reject(Object.assign(Error('World changed'),{code:'EAGLER_SCORE_SAVE_CANCELLED'}));await background.context.queue;
+  assert.equal(background.fatals.length,0);assert.equal(background.replies.length,0);
+  const requested=hostFixture();requested.dispatch('sync');await settle();
+  requested.disk.reject(Object.assign(Error('World changed'),{code:'EAGLER_SCORE_SAVE_CANCELLED'}));await requested.context.queue;
+  assert.equal(requested.fatals.length,0);assert.equal(requested.replies.length,1);assert.equal(requested.replies[0].ok,false);assert.match(requested.replies[0].error,/World changed/);
+});
+
+test('transport exit consumes its asynchronous stop result and surfaces real failure',async()=>{
+  const h=hostFixture();runInNewContext('('+transportExitSource+')()',h.context);
+  h.disk.reject(Error('Disconnected before score confirmation'));await settle();
+  assert.equal(h.fatals.length,1);assert.match(h.fatals[0].message,/Disconnected before score confirmation/);
 });

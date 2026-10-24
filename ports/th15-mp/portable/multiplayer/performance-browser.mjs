@@ -31,7 +31,9 @@ const report={schema:'eagler-touhou/th15-production-performance/1',startedAt:new
     predictionFrames:mode===1?0:12,renderScale:1,cpuThrottle:1,route:'relay',oneWaySendDelayMs:50,jitterPlusMinusMs:5,
     nominalRoundTripAddedMs:100,profiler:false,music:false,warmupMinimumFrames:180,tailThresholdMs:100},
   scope:{productionPackage:true,independentBrowserProcesses:players,realRaf:true,managedHostInput:true,renderer:'SwiftShader',
-    actualGpuScanout:false,performanceObserver:true,fullCampaign:false,phone:false},
+    actualGpuScanout:false,performanceObserver:true,fullCampaign:false,phone:false,
+    saveObserver:'Sparse native request/poll transitions and real FS.syncfs callbacks; reuse the previous rollback observation without extra journal Stats in the measurement window.',
+    persistenceValidation:'After the fixed performance window: concurrent Host sync/input, real IDBFS records compared to MEMFS bytes and native file validation.'},
   stages:[],errors:[],consoleErrors:[],cleanup:[],results:[]};
 const save=()=>saveJson('receipt.json',report),mark=name=>{report.stages.push({name,at:new Date().toISOString()});save();};
 save();
@@ -47,7 +49,7 @@ const watchdog=setTimeout(()=>{report.errors.push({kind:'overall-timeout',error:
 function installProbe(config,createSenderDelayQueue){
   const state={timeOrigin:performance.timeOrigin,phase:'warmup',start:0,end:0,stoppedAt:null,rows:[],presentations:[],
     presentationsOutsideNativeCallback:0,transport:[],errors:[],overflow:[],queued:0,queuedBytes:0,maxQueued:0,maxQueuedBytes:0,
-    nativeTokens:[],current:null,serial:0,wireSerial:0,presentCount:0,attached:false,warmupHighFrame:0};
+    nativeTokens:[],current:null,serial:0,wireSerial:0,presentCount:0,attached:false,warmupHighFrame:0,saveEvents:[],saveApi:false};
   const push=(name,value,max=20000)=>{if(state[name].length<max)state[name].push(value);else if(!state.overflow.includes(name))state.overflow.push(name);};
   document.addEventListener('webglcontextlost',event=>{if(event.target?.id==='canvas')state.errors.push('Game WebGL context lost');},true);
   const queue=createSenderDelayQueue({state}),nativeCallbacks=new WeakSet(),tokens=new WeakMap();let tokenSerial=0,random=(0x713515+config.seat*1009)>>>0;
@@ -77,7 +79,8 @@ function installProbe(config,createSenderDelayQueue){
     };
   }
   const words=(name,count)=>{const core=globalThis.Module;if(!core?.[name])return [];const p=core[name]()>>>2;return Array.from(core.HEAPU32.subarray(p,p+count));};
-  function snapshot(){return {at:performance.now(),net:words('_th15_mp_status',24),rollback:words('_th15_mp_rollback_status',20),
+  let previousSnapshot=null;
+  function snapshot(){return previousSnapshot={at:performance.now(),net:words('_th15_mp_status',24),rollback:words('_th15_mp_rollback_status',20),
     nativePhase:globalThis.Module?._th15_phase?.(),wasmBytes:globalThis.Module?.HEAPU8?.buffer.byteLength??0,
     presentCount:state.presentCount,route:globalThis.__eaglerPeerTransport?.route??null,
     error:document.querySelector('#error')?.textContent||'',queued:state.queued};}
@@ -105,6 +108,33 @@ function installProbe(config,createSenderDelayQueue){
         else state.errors.push('Native frame notification outside observed rAF');
         const begin=performance.now();try{return previous?.(ok,ms,count);}finally{if(current)current.row.shellMs+=performance.now()-begin;}
       };
+      // Observe each request / terminal transition, not every poll. Journal
+      // statistics are reused from the ordinary callback observer; no extra
+      // mspace_mallinfo traversal is added to a measured save request.
+      const saveEvent=(kind,fields={})=>push('saveEvents',{kind,at:performance.now(),phase:state.phase,...fields,
+        net:words('_th15_mp_status',24),rollbackObservedAt:previousSnapshot?.at??null,rollback:previousSnapshot?.rollback??null},1000);
+      const nativeError=()=>{const address=Module._th15_mp_error?.();if(!address)return '';const end=Module.HEAPU8.indexOf(0,address);
+        return new TextDecoder().decode(Module.HEAPU8.subarray(address,end<0?address+256:end));};
+      const pollStates=new Map();let fsSerial=0;
+      state.saveApi=['request','poll','cancel'].every(name=>typeof Module['_th15_mp_save_'+name]==='function');
+      for(const kind of ['request','poll','cancel']){
+        const name='_th15_mp_save_'+kind,original=Module[name];if(typeof original!=='function')continue;
+        Module[name]=function(...args){const entered=performance.now();let result;
+          try{result=original.apply(this,args);}catch(error){saveEvent('native-'+kind,{entered,token:args[0]??null,error:String(error)});throw error;}
+          if(kind!=='poll'||pollStates.get(args[0])!==result){
+            saveEvent('native-'+kind,{entered,token:kind==='request'?result:args[0],result,
+              ...(kind==='request'?{stack:new Error('Score save request origin').stack}: {}),
+              ...((kind==='request'&&!result)||(kind==='poll'&&result<0)?{nativeError:nativeError()}: {})});
+            if(kind==='poll')pollStates.set(args[0],result);
+          }return result;
+        };
+      }
+      if(Module.FS?.syncfs){const original=Module.FS.syncfs;
+        Module.FS.syncfs=function(populate,callback){if(typeof populate==='function'){callback=populate;populate=false;}
+          const id=++fsSerial;saveEvent('fs-sync-start',{id,populate:!!populate});
+          return original.call(this,populate,error=>{saveEvent('fs-sync-complete',{id,populate:!!populate,error:error?String(error):null});callback?.(error);});
+        };
+      }
     },
     start(){if(!state.attached||!state.nativeTokens.length)throw Error('Native rAF not identified during warmup');
       state.startSnapshot=snapshot();state.startSnapshot.highFrame=Math.max(state.warmupHighFrame,state.startSnapshot.rollback[2]);
@@ -138,7 +168,70 @@ function host(seat){
       timer=setTimeout(pump,Math.max(1,start+(slot+1)*240-performance.now()));}
     pump();window.stopInput=()=>{active=false;clearTimeout(timer);send(0,false);};
   };
+  window.verifySave=async()=>{
+    const child=document.querySelector('iframe').contentWindow,probe=child.__th15Performance;
+    const evidence={timeOrigin:performance.timeOrigin,start:performance.now(),before:probe.snapshot(),events:[],errors:[]};
+    const note=kind=>evidence.events.push({kind,at:performance.now()});let syncDone=false;
+    note('sync-request');const saved=rpc('sync').then(()=>{syncDone=true;note('sync-ack');evidence.afterSync=probe.snapshot();});
+    note('input-request');const input=rpc('touch-controls',{controls:{fireEnabled:true,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:22000,joystickY:0}})
+      .then(()=>{evidence.inputAckBeforeSync=!syncDone;note('input-ack');evidence.afterInput=probe.snapshot();});
+    const outcomes=await Promise.allSettled([saved,input]);
+    outcomes.forEach((result,i)=>{if(result.status==='rejected')evidence.errors.push({operation:i?'input':'sync',error:String(result.reason)});});
+    if(!evidence.errors.length)await new Promise(resolve=>setTimeout(resolve,350));
+    try{await rpc('touch-controls',{controls:{fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0}});note('input-release-ack');}
+    catch(error){evidence.errors.push({operation:'input-release',error:String(error)});}
+    evidence.after=probe.snapshot();return evidence;
+  };
   const iframe=document.createElement('iframe');iframe.src='/runtime/th15.html?managedData=1&hosted=1&runtimeEpoch=1';document.body.append(iframe);
+}
+
+// Read the actual IDBFS database after Host sync has acknowledged its real
+// callback. This observer neither invokes save nor changes the game files.
+async function inspectPersistence(){
+  const root='/savesth15mp',files=[{name:'scoreth15.dat',kind:0},{name:'th15.cfg',kind:2}];
+  const capturedAt=performance.now();
+  for(const file of files)file.memory=Array.from(Module.FS.readFile(root+'/'+file.name));
+  const databases=await indexedDB.databases();if(!databases.some(db=>db.name===root))throw Error('IDBFS save database is missing');
+  const stored=await new Promise((yes,no)=>{
+    const request=indexedDB.open(root);let db=null,finished=false;
+    const finish=(error,entries)=>{if(finished)return;finished=true;clearTimeout(timer);db?.close();error?no(error):yes(entries);};
+    const timer=setTimeout(()=>finish(Error('IDBFS verification read timed out')),10000);
+    request.onerror=()=>finish(request.error||Error('IDBFS database open failed'));
+    request.onupgradeneeded=()=>{request.transaction.abort();finish(Error('IDBFS database unexpectedly requires creation'));};
+    request.onsuccess=()=>{db=request.result;if(finished){db.close();return;}
+      try{const transaction=db.transaction('FILE_DATA','readonly'),store=transaction.objectStore('FILE_DATA'),entries={};
+        transaction.oncomplete=()=>finish(null,entries);transaction.onabort=()=>finish(transaction.error||Error('IDBFS read aborted'));
+        transaction.onerror=()=>finish(transaction.error||Error('IDBFS read failed'));
+        for(const file of files){const read=store.get(root+'/'+file.name);read.onsuccess=()=>{entries[file.name]=read.result;};}
+      }catch(error){finish(error);}
+    };
+  });
+  for(const file of files){const entry=stored[file.name];if(!entry?.contents)throw Error('IDBFS file is missing: '+file.name);
+    file.indexedDb=Array.from(entry.contents);file.equal=file.memory.length===file.indexedDb.length&&file.memory.every((byte,i)=>byte===file.indexedDb[i]);
+    const bytes=new Uint8Array(file.indexedDb),pointer=Module._malloc(bytes.length);if(!pointer)throw Error('Native validation allocation failed');
+    try{Module.HEAPU8.set(bytes,pointer);file.nativeValid=Module._th15_validate_file(file.kind,pointer,bytes.length)===1;}finally{Module._free(pointer);}
+  }
+  return {database:root,store:'FILE_DATA',capturedAt,readAt:performance.now(),files};
+}
+
+function summarizeSaveEvidence(saved,host,persistence){
+  const explicitAt=host.timeOrigin+host.start-saved.timeOrigin;
+  const automatic=saved.events.filter(event=>event.kind==='native-request'&&event.at>=29000&&event.at<explicitAt).map(request=>{
+    const complete=saved.events.find(event=>event.kind==='native-poll'&&event.token===request.token&&event.result===1);
+    const fsStart=complete&&saved.events.find(event=>event.kind==='fs-sync-start'&&!event.populate&&event.at>=complete.at);
+    const persisted=fsStart&&saved.events.find(event=>event.kind==='fs-sync-complete'&&event.id===fsStart.id&&!event.error);
+    return {token:request.token,requestedAt:request.at,completedAt:complete?.at??null,fsStartedAt:fsStart?.at??null,
+      persistedAt:persisted?.at??null,requestStack:request.stack};
+  });
+  const failures=(host.errors||[]).map(e=>e.operation+': '+e.error);
+  if(!saved.saveApi)failures.push('Production Runtime has no pending score save API');
+  if(!saved.events.some(event=>event.kind==='native-poll'&&event.result===1))failures.push('No observed real native score completion');
+  if(!saved.events.some(event=>event.kind==='fs-sync-complete'&&!event.populate&&!event.error))failures.push('No observed real IDBFS completion');
+  if(!automatic.some(event=>event.completedAt!==null&&event.persistedAt!==null))failures.push('No periodic score request before Host sync was observed to complete and persist');
+  if(host.inputAckBeforeSync!==true)failures.push('Live input ACK did not precede Host sync completion; concurrent input delivery was not demonstrated');
+  if(persistence.error)failures.push(persistence.error);
+  if(persistence.files.length!==2||persistence.files.some(file=>!file.equal||!file.nativeValid))failures.push('Persisted score/config differ from MEMFS or fail native validation');
+  return {periodicSavesRequestedBeforeHostSync:automatic,failures,passed:failures.length===0};
 }
 
 function nextJson(socket,predicate=()=>true){return new Promise((yes,no)=>{const timeout=setTimeout(()=>{cleanup();no(Error('Lobby timeout'));},10000);
@@ -234,6 +327,25 @@ try{
     report.results.push({seat,metrics,input:{submitted:input.submitted,acknowledged:input.acknowledged,errors:input.errors},
       raw:fileIdentity(resolve(out,'peer-'+seat+'.json')),errors:raw.errors,overflow:raw.overflow});save();
   }
+  // Keep the unmodified 15 s measurement intact. Exercise the real 30 s
+  // autosave and then concurrent Host sync/input while all peers still run.
+  mark('post-window-save-validation');
+  await Promise.all(frames.map(frame=>frame.waitForFunction(()=>performance.now()>=31000,null,{timeout:20000,polling:250})));
+  const syncEvidence=await Promise.all(pages.map(page=>page.evaluate(()=>verifySave()).catch(error=>({errors:[{operation:'host-verification',error:String(error)}]}))));
+  report.saveValidationFailures=[];
+  for(let seat=0;seat<players;++seat){
+    const persistence=await frames[seat].evaluate(inspectPersistence).catch(error=>({error:String(error),files:[]}));
+    saveJson('peer-'+seat+'-persistence.json',persistence);
+    const saved=await frames[seat].evaluate(()=>({timeOrigin:__th15Performance.state.timeOrigin,saveApi:__th15Performance.state.saveApi,
+      events:__th15Performance.state.saveEvents,status:__th15Performance.snapshot()}));
+    saveJson('peer-'+seat+'-save.json',{...saved,host:syncEvidence[seat]});
+    const validation=report.results[seat].saveValidation={host:syncEvidence[seat],saveApi:saved.saveApi,
+      ...summarizeSaveEvidence(saved,syncEvidence[seat],persistence),
+      evidence:fileIdentity(resolve(out,'peer-'+seat+'-save.json')),persistence:fileIdentity(resolve(out,'peer-'+seat+'-persistence.json')),
+      files:persistence.files.map(file=>({name:file.name,bytes:file.indexedDb.length,sha256:hash(new Uint8Array(file.indexedDb)),equal:file.equal,nativeValid:file.nativeValid}))};
+    report.saveValidationFailures.push(...validation.failures.map(error=>({seat,error})));save();
+  }
+  report.saveValidationPassed=report.saveValidationFailures.length===0;save();
   // Stop one producer after measurement. Let peers consume its final captured
   // prefix; save only native-confirmed Replay data, then compare all-seat input.
   const producer=players-1;
@@ -253,8 +365,14 @@ try{
     const rangeBegin=raw.startSnapshot.rollback[3]+raw.startSnapshot.net[7];
     const rangeEnd=result.metrics.finalCompleteWindowStatus.rollback[3]+raw.startSnapshot.net[7];
     result.replay={...fileIdentity(resolve(out,'peer-'+seat+'.rpy')),nativeValid:true,inputs:replayInputs(bytes,rangeBegin,rangeEnd)};
+    const saveInput=result.saveValidation.host;
+    if(saveInput.before&&saveInput.after)result.saveValidation.confirmedInput=replayInputs(bytes,saveInput.before.rollback[3]+raw.startSnapshot.net[7],saveInput.after.rollback[3]+raw.startSnapshot.net[7]);
+    const lane=result.saveValidation.confirmedInput?.seats[seat];
+    if(!lane?.fire||!lane?.right){const error='Post-window right movement and shooting were not present in native-confirmed Replay input';
+      result.saveValidation.failures.push(error);result.saveValidation.passed=false;report.saveValidationFailures.push({seat,error});}
     result.finalStatus=replay.status;save();
   }
+  report.saveValidationPassed=report.saveValidationFailures.length===0;
   const parsed=replays.map(bytes=>replayInputs(bytes)),commonFrames=Math.min(...parsed.map(p=>p.frames));
   const prefixBytes=commonFrames*players*12,reference=replays[0].subarray(parsed[0].prefix,parsed[0].prefix+prefixBytes);
   report.confirmedReplayComparison={commonFrames,allSeatPrefixBytes:prefixBytes,equal:replays.every((bytes,i)=>Buffer.from(bytes.subarray(parsed[i].prefix,parsed[i].prefix+prefixBytes)).equals(reference))};
@@ -278,7 +396,7 @@ try{
     peers:report.results.map(({seat,metrics:m})=>({seat,callbackMax:m.callbackWall.max,presentationMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max,
       met:[m.callbackWall.max,m.presentWindowHolds.max,m.frontierWindowHolds.max].every(v=>Number.isFinite(v)&&v<=100)}))};
   report.thresholdsMet=report.observationPassed&&report.thresholds.peers.every(p=>p.met);
-  report.status=report.observationPassed?'measured':'observation-failed';if(!report.observationPassed)process.exitCode=1;
+  report.status=report.observationPassed?'measured':'observation-failed';if(!report.observationPassed||!report.saveValidationPassed)process.exitCode=1;
 }catch(error){firstFailure=error;report.status=report.performanceMeasured?'observation-failed':'startup-or-execution-failed';
   report.errors.push({kind:'runner',error:String(error),stack:error.stack});process.exitCode=1;
   // Preserve partial observations without turning startup failure into a measurement.
@@ -293,6 +411,6 @@ try{
   clearTimeout(watchdog);writeFileSync(resolve(out,'relay.log'),relayLog);report.completedAt=new Date().toISOString();save();
 }
 console.log(JSON.stringify({out,status:report.status,performanceMeasured:report.performanceMeasured,observationPassed:report.observationPassed,
-  thresholdsMet:report.thresholdsMet,results:report.results.map(({seat,metrics:m})=>({seat,logicHz:m.logicHz,presentationHz:m.presentationHz,
+  thresholdsMet:report.thresholdsMet,saveValidationPassed:report.saveValidationPassed,results:report.results.map(({seat,metrics:m})=>({seat,logicHz:m.logicHz,presentationHz:m.presentationHz,
     callbackP95:m.callbackWall.p95,callbackMax:m.callbackWall.max,presentationMax:m.presentWindowHolds.max,frontierMax:m.frontierWindowHolds.max,rollback:m.rollbackDelta}))},null,2));
 if(firstFailure)console.error(firstFailure.stack);

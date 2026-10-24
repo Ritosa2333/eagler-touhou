@@ -323,7 +323,7 @@ case 'write':{
 case 'remove':if(launched&&!options.replayViewer)throw Error('请先退出游戏');core.FS.unlink(saveRoot+'/'+path(m.path));await sync();return {};
 default:throw Error('不支持的操作');}}
 function dispatchHostCommand(m){
- const run=async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}};
+ const run=async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else backgroundSaveError(e);}};
  // A pending sync keeps file/lifecycle commands ordered, while authenticated
  // live input must still reach the running game and receive its own reply.
  if(launched&&!stopping&&['keyboard','keyboard-clear','direct-touch','touch-controls','touch-cancel'].includes(m.command))void run().catch(fatal);
@@ -347,7 +347,7 @@ window.addEventListener('pagehide',()=>{clearKeyboard();core?._th15_touch_cancel
 setInterval(()=>{if(launched&&!document.hidden)void save().catch(backgroundSaveError);},30000);
 const initialized=(async()=>{
  let last=performance.now(),ticks=0,presents=0,maxFrameMs=0;
- core=await createModule({canvas,printErr:console.error,onGameFrame(ok,ms,count){if(!ok){fatal(Error(err()));return;}ticks+=count;presents++;maxFrameMs=Math.max(maxFrameMs,ms);multiplayerBridge?.frame();if(!first){first=true;last=performance.now();ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){const p=core._th15_audio_statistics();if(p){const a=Array.from(core.HEAPU32.subarray(p>>>2,(p>>>2)+11));emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});}emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs});last=now;ticks=0;presents=0;maxFrameMs=0;}if(core._th15_phase()===4)void stop().catch(fatal);}});
+ core=await createModule({canvas,printErr:console.error,onGameFrame(ok,ms,count){if(!ok){fatal(Error(err()));return;}ticks+=count;presents++;maxFrameMs=Math.max(maxFrameMs,ms);multiplayerBridge?.frame();if(!first){first=true;last=performance.now();ticks=0;presents=0;maxFrameMs=0;emit('first-frame');}const now=performance.now();if(now-last>=1000){const p=core._th15_audio_statistics();if(p){const a=Array.from(core.HEAPU32.subarray(p>>>2,(p>>>2)+11));emit('audio-health',{ready:!!a[0],callbacks:a[1],renderedFrames:a[2],errorCode:a[3],queuedFrames:a[4],queuedMs:a[4]*1000/44100,backend:'SDL3',track:a[5],cursor:a[9],musicEnabled:music});}emit('frame-health',{fps:presents*1000/(now-last),simulationFps:ticks*1000/(now-last),maxGapMs:maxFrameMs});last=now;ticks=0;presents=0;maxFrameMs=0;}if(core._th15_phase()===4)void stop().catch(backgroundSaveError);}});
  core.SDL3=core.SDL3||{};if(parent!==window&&parent.__touhouAudioContext)core.SDL3.audioContext=parent.__touhouAudioContext;
  window.Module=core;window.FS=core.FS;core.resetBrowserKeyboard=()=>keyboard.clear();
  core.FS.mkdirTree(saveRoot);core.FS.mount(core.IDBFS,{},saveRoot);await sync(true);core.FS.mkdirTree(saveRoot+'/replay');core.FS.mkdirTree(saveRoot+'/autosave');core.FS.symlink(saveRoot,'/save');
@@ -358,6 +358,6 @@ const initialized=(async()=>{
  const response=await fetch('./resources.json');if(!response.ok)throw Error('资源清单加载失败');const manifest=await response.json();
  if(manifest.schema!=='eagler-sdl-resources/1'||manifest.game!==game||!Array.isArray(manifest.resources)||manifest.resources.length!==1||manifest.resources[0]?.path!=='/fonts/cp932.bin')throw Error('资源清单无效');
  for(const r of manifest.resources)await resource(r);
- if(runtimeBuild.multiplayer){const {createMultiplayerBridge}=await import('./multiplayer.mjs');const manifest=await(await fetch('./manifest.json')).json();multiplayerBridge=createMultiplayerBridge({core,getOptions:()=>options,manifest,emit,onError:fatal,onExit:stop});}
+ if(runtimeBuild.multiplayer){const {createMultiplayerBridge}=await import('./multiplayer.mjs');const manifest=await(await fetch('./manifest.json')).json();multiplayerBridge=createMultiplayerBridge({core,getOptions:()=>options,manifest,emit,onError:fatal,onExit:()=>{void stop().catch(backgroundSaveError);}});}
  emit('ready',{roomPreview:runtimeBuild.multiplayer===true,roomReturn:runtimeBuild.multiplayer===true&&typeof core._th15_room_return==='function'});
 })().catch(e=>{if(e?.name==='AbortError'&&e?.message==='EAGLER_RUNTIME_SESSION_SUPERSEDED')return false;fatal(e);throw e;});
