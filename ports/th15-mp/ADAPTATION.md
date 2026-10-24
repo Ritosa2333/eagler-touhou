@@ -171,6 +171,12 @@
 
 ## 运行验收记录
 
+### 2026-10-24 | 关卡交接与录像准入
+
+MP 规则版本 21 接入普通版关卡交接，并统一存活席位的换关重置。版本 20 使用[登记构建与原时序](../../docs/adaptation/multiplayer.md#mp-11)播放。
+
+使用 Emscripten 6.0.9 完整构建通过。`portable/multiplayer/network-test.mjs` 验证 2P／3P、延迟 0／2／9、版本 20 构建准入、版本 21 精确构建匹配及录像编码往返，CI 在 th15 MP 源码构建后执行同一检查。`native-test.mjs --ghost-stage-only` 使用原版素材验证全部席位换关后连续 720 帧幽灵漂移一致。两个检查入口均支持 `TH15_OUTPUT` 选择对应构建目录。
+
 ### 2026-10-20：检查点树与存档备份
 
 同步普通版检查点的显式栈读写；共用文件服务导出 score 与现有 autosave。验证范围见[Issue #113 运行记录](../../docs/adaptation/th15-pointdevice-issue113-20261020.md)，六面原生冷启动验证针对普通版。
