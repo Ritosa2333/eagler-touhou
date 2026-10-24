@@ -164,8 +164,10 @@ inline void light_copy_contract(const AnmVm& source){
   "RenderCopyTag copied or retained the source geometry payload");
  require(copy.presentation_generation==source.presentation_generation&&
   copy.presentation_motion==source.presentation_motion&&copy.presentation_part==source.presentation_part&&
-  copy.source_script==source.source_script&&copy.variables.position==source.variables.position&&
-  copy.variables.rotation==source.variables.rotation&&copy.visual.flags==source.visual.flags&&
+  copy.source_script==source.source_script&&
+  copy.variables.position.x==source.variables.position.x&&copy.variables.position.y==source.variables.position.y&&copy.variables.position.z==source.variables.position.z&&
+  copy.variables.rotation.x==source.variables.rotation.x&&copy.variables.rotation.y==source.variables.rotation.y&&copy.variables.rotation.z==source.variables.rotation.z&&
+  copy.visual.flags==source.visual.flags&&
   copy.visual.render_flags==source.visual.render_flags&&copy.interpolators.position.duration==source.interpolators.position.duration&&
   copy.rotation_parent==source.rotation_parent&&copy.creation_parent==source.creation_parent,
   "RenderCopyTag failed to retain required mutable/presentation state");
