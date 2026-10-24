@@ -1,4 +1,5 @@
 #include "AnmManager.hpp"
+#include <cstring>
 #include <cstdlib>
 namespace th11 {
 AnmManager::~AnmManager(){for(auto& [vm,size]:geometry_sizes){std::free(vm->geometry);vm->geometry=nullptr;}}
@@ -62,4 +63,17 @@ bool AnmManager::allocate_geometry(AnmVm& vm,u32 bytes){
 void AnmManager::release_geometry(AnmVm& vm){auto it=geometry_sizes.find(&vm);if(it!=geometry_sizes.end()){std::free(vm.geometry);vm.geometry=nullptr;geometry_sizes.erase(it);}}
 bool AnmManager::update_geometry(AnmVm& vm){auto it=geometry_sizes.find(&vm);return it!=geometry_sizes.end()&&anm_ring_vertices(vm,static_cast<AnmVertex*>(vm.geometry),it->second/sizeof(AnmVertex));}
 bool AnmManager::change_draw_mode(AnmVm& vm){if(!allocate_geometry(vm,sizeof(AnmRipple)))return false;anm_ripple_initialize(vm,*static_cast<AnmRipple*>(vm.geometry),script_rng);return true;}
+u32 AnmManager::fingerprint()const noexcept{
+    u32 hash=2166136261u;
+    const auto mix=[&](u32 value){hash^=value;hash*=16777619u;};
+    const auto mixf=[&](float value){u32 bits;std::memcpy(&bits,&value,4);mix(bits);};
+    for(const auto& entry:active){
+        const AnmVm& vm=*entry.second;
+        mix(vm.id);mix(vm.layer);mix(vm.flags);mix(u32(vm.script_index));mix(u32(vm.sprite_index));
+        mix(u32(vm.timer.current));mixf(vm.position.x);mixf(vm.position.y);mixf(vm.position.z);
+        mixf(vm.script_position.x);mixf(vm.script_position.y);mixf(vm.script_position.z);
+        mixf(vm.rotation.z);mixf(vm.scale.x);mixf(vm.scale.y);mix(vm.color);mix(vm.secondary_color);
+    }
+    return hash;
+}
 }
