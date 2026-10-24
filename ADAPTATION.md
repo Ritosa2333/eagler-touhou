@@ -171,6 +171,10 @@
 
 ## 运行验收记录
 
+### 2026-10-24 | 关卡交接
+
+普通版在开场与 Stage Clear 期间持续推进自机逻辑，换关保留键盘长按与按键边沿。使用 Emscripten 6.0.9 完整构建通过，源码回执为 `artifacts/validation/source-builds/th15-normal.json`。关卡交接规则见[输入规范](../../docs/adaptation/input.md)。
+
 ### 2026-10-20：无欠动画树与存档导出
 
 SAVE-01／SAVE-04：检查点存储回归见[Issue #113 运行记录](../../docs/adaptation/th15-pointdevice-issue113-20261020.md)：宽动画树序列化往返、六面 IDBFS 冷启动恢复，以及 score 和 autosave 的完整导出导入。原版格式保持一致。
