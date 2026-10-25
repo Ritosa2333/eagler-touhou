@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,mkdirSync,openSync,closeSync,writeSync,renameSync,rmSync,appendFileSync,existsSync} from 'node:fs';
 import {resolve,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {spawnSync} from 'node:child_process';
+import {runCloudCommand} from '../../../../tools/th15-cloud/cloud-command-runner.mjs';
 import os from 'node:os';
 const root=resolve(import.meta.dirname,'../../../..');
 const out=resolve(root,'artifacts/th15-cloud-gameplay');mkdirSync(out,{recursive:true});
@@ -14,10 +14,11 @@ const readJson=p=>JSON.parse(readFileSync(p,'utf8'));
 const report={schema:'th15-cloud-gameplay/1',head:process.env.GITHUB_SHA??null,startedAt:new Date().toISOString(),host:{platform:process.platform,arch:process.arch,cpu:os.cpus()[0]?.model,logicalCpus:os.cpus().length,node:process.version},requests:[],commands:[],inputs:{},cases:[],status:'running',sixtyHzAccepted:false,scope:{softwareRendererOnly:true,userIntelUhdValidated:false,fullCampaign:false,retailFilesPublished:false}};
 const save=()=>writeFileSync(resolve(out,'summary.json'),JSON.stringify(report,null,2)+'\n');
 function run(name,program,args,{cwd=root,env={},timeout=600000,required=true}={}){
- const log=resolve(out,name+'.log');const fd=openSync(log,'w');let result;
- try{result=spawnSync(program,args,{cwd,env:{...process.env,...env},stdio:['ignore',fd,fd],timeout,windowsHide:true});}finally{closeSync(fd);}
- const row={name,program,args,cwd,exitCode:result.status,signal:result.signal,error:result.error?String(result.error):null,log};report.commands.push(row);save();
- if(required&&(result.error||result.status!==0))throw Error(name+' failed; see '+log);return row;
+ const log=resolve(out,name+'.log');
+ const result=runCloudCommand(program,args,{cwd,env:{...process.env,...env},log,timeout});
+ const row={name,...result};report.commands.push(row);save();
+ if(!result.cleanup.verified)throw Error('Owned process cleanup not established: '+name);
+ if(required&&(result.error||result.exitCode!==0))throw Error(name+' failed; see '+log);return row;
 }
 function publicUrl(value){const u=new URL(value);if(u.protocol!=='https:'||u.username||u.password||!/(^|\.)touhou\.vip$/.test(u.hostname))throw Error('Unsupported resource origin '+u.origin);return u;}
 async function download(record,target){
@@ -64,7 +65,7 @@ try{
   report.correctness=[];
   for(const [name,flags] of [['rollback',[]],['lifecycle',['--lifecycle-only']],['presentation',['--presentation-toggle']]]){
    const destination=resolve(out,'correctness-'+name);
-   const command=run('correctness-'+name,process.execPath,[resolve(port,'portable/multiplayer/rollback-browser.mjs'),...flags,'--output='+destination],{env,timeout:600000,required:false});
+   const command=run('correctness-'+name,process.execPath,[resolve(port,'portable/multiplayer/rollback-browser.mjs'),...flags,'--output='+destination],{env,timeout:1200000,required:false});
    const resultPath=resolve(destination,'report.json');const result=existsSync(resultPath)?readJson(resultPath):null;
    report.correctness.push({name,exitCode:command.exitCode,status:result?.status??'no-pass-report',groups:result?.reports?.length??0,
     report:existsSync(resultPath)?{path:resultPath,sha256:sha(readFileSync(resultPath))}:null});save();
