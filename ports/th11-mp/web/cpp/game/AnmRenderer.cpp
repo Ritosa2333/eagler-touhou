@@ -54,7 +54,10 @@ u32 AnmRenderer::color(const AnmVm& vm)const noexcept {u32 original=vm.flags&0x8
 #endif
     if(!tint_enabled)return original;u32 out=0;for(u32 shift=0;shift<32;shift+=8)out|=std::min(255u,(((original>>shift)&255)*((tint>>shift)&255))>>7)<<shift;return out;}
 #ifdef TH11_MULTIPLAYER
-u32 AnmRenderer::multiplayer_color(const AnmVm& vm,u32 color)const noexcept{if(!multiplayer_animations)return color;const auto owner=multiplayer_animations->multiplayer_tag(vm);if(!owner||owner>=multiplayer_opacity.size())return color;return (color&0xffffff)|(((color>>24)*multiplayer_opacity[owner]/255)<<24);}
+unsigned AnmRenderer::multiplayer_owner(const AnmVm& vm)const noexcept{
+    return &vm==presentation_copy?presentation_owner:multiplayer_animations?multiplayer_animations->multiplayer_tag(vm):0;
+}
+u32 AnmRenderer::multiplayer_color(const AnmVm& vm,u32 color)const noexcept{const auto owner=multiplayer_owner(vm);if(!owner||owner>=multiplayer_opacity.size())return color;return (color&0xffffff)|(((color>>24)*multiplayer_opacity[owner]/255)<<24);}
 u32 AnmRenderer::multiplayer_tint(u32 value,unsigned owner)const noexcept{
     if(!owner||owner>=multiplayer_opacity.size())return value;
     const unsigned opacity=multiplayer_opacity[owner];if(opacity==255)return value;
@@ -63,7 +66,7 @@ u32 AnmRenderer::multiplayer_tint(u32 value,unsigned owner)const noexcept{
     u32 color=0;for(unsigned shift=0;shift<32;shift+=8){const unsigned source=(value>>shift)&255;const unsigned mixed=(source*opacity+128*(255-opacity)+127)/255;color|=mixed<<shift;}return color;
 }
 void AnmRenderer::multiplayer_geometry(const AnmVm& vm,Topology topology,u32 count,const AnmVertex* source){
-    const auto owner=multiplayer_animations?multiplayer_animations->multiplayer_tag(vm):0;
+    const auto owner=multiplayer_owner(vm);
     if(!owner||owner>=multiplayer_opacity.size()||multiplayer_opacity[owner]==255){graphics.primitives(topology,count,source,sizeof(AnmVertex));return;}
     // Draw-only copies preserve native ring/ripple/distortion vertices and RNG.
     multiplayer_geometry_vertices.assign(source,source+count+2);
@@ -75,7 +78,7 @@ void AnmRenderer::material(const AnmVm& vm){
     const auto handle=graphics.texture(*vm.resource,vm.sprite->texture);if(handle!=texture_handle){flush();texture_handle=handle;graphics.bind_texture(handle);}
     u32 blend=(vm.flags>>4)&7;
 #ifdef TH11_MULTIPLAYER
-    if(multiplayer_animations){const auto owner=multiplayer_animations->multiplayer_tag(vm);if(owner&&owner<multiplayer_opacity.size()&&multiplayer_opacity[owner]<255&&blend!=1)blend=0;}
+    if(multiplayer_animations){const auto owner=multiplayer_owner(vm);if(owner&&owner<multiplayer_opacity.size()&&multiplayer_opacity[owner]<255&&blend!=1)blend=0;}
 #endif
     if(blend!=blend_mode){flush();blend_mode=blend;auto& p=graphics.pipeline();
         switch(blend){
@@ -142,6 +145,13 @@ int AnmRenderer::draw(AnmVm& vm,bool preserve_subpixel){
     AnmVm smoothed;
     AnmVm* target=&vm;
     if(high_refresh::interpolating()){smoothed=vm;if(presentation::present(smoothed,vm))target=&smoothed;}
+#ifdef TH11_MULTIPLAYER
+    struct RestoreOwner {
+        AnmRenderer& renderer;const AnmVm* copy;unsigned owner;
+        ~RestoreOwner(){renderer.presentation_copy=copy;renderer.presentation_owner=owner;}
+    } restore{*this,presentation_copy,presentation_owner};
+    if(target==&smoothed){presentation_owner=multiplayer_owner(vm);presentation_copy=&smoothed;}
+#endif
     // Only an actually interpolated position may bypass retail pixel alignment.
     const bool continuous_position=continuous&&(target!=&vm||high_refresh::smooth_submission);
     const bool subpixel=preserve_subpixel||continuous_position;

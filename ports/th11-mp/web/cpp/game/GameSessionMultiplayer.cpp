@@ -1,5 +1,6 @@
 #ifdef TH11_MULTIPLAYER
 #include "GameSession.hpp"
+#include "AnmPresentation.hpp"
 #include <cmath>
 namespace th11 {
 namespace {u32 menu_keys(u32 held){return (held&~256u)|((held&256u)?0x80000u:0u);}}
@@ -29,6 +30,10 @@ bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions
 }
 bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& inputs,const std::function<void()>& replay_entry){
     if(!multiplayer_active||!battle||!error.empty())return false;
+    presentation::begin_tick();
+    compositor.snapshot_cameras();
+    if(battle->stage)battle->stage->snapshot_camera();
+    if(battle->outgoing_stage)battle->outgoing_stage->snapshot_camera();
     bool pause_edge=false;
     for(unsigned i=0;i<multiplayer_options.seat_count;++i){const auto& in=inputs[i];if(in.touch_mode<0||in.touch_mode>3||!std::isfinite(in.touch_x)||!std::isfinite(in.touch_y))return fail("Invalid MP movement input");pause_edge|=in.pause&&!multiplayer_pause_held[i];multiplayer_pause_held[i]=in.pause;}
     ++multiplayer_frame;

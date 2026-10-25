@@ -40,11 +40,12 @@ bool SceneCompositor::draw(AnmRenderer& renderer,SceneDrawKind kind){
 }
 
 void SceneCompositor::begin_presentation(float alpha){
-    if(!camera_valid){presenting=false;return;}
     saved_full=full_camera;saved_play=play_camera;saved_world=world_camera;
-    full_camera=blend_camera(previous_full,full_camera,alpha);
-    play_camera=blend_camera(previous_play,play_camera,alpha);
-    world_camera=blend_camera(previous_world,world_camera,alpha);
+    if(camera_valid){
+        full_camera=blend_camera(previous_full,full_camera,alpha);
+        play_camera=blend_camera(previous_play,play_camera,alpha);
+        world_camera=blend_camera(previous_world,world_camera,alpha);
+    }
     presenting=true;
 }
 void SceneCompositor::end_presentation(){
