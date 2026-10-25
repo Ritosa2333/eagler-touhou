@@ -40,7 +40,7 @@ source=source.replace(viewerTrace,()=>viewerTrace+'\n'+trace);
 source=source.replace('multiplayer_spectator_capture_bytes=u32(candidate.size());',()=>
  'multiplayer_spectator_capture_bytes=u32(candidate.size());\nEM_ASM({Module.onSpectatorLabCheckpoint?.($0,$1);},session.multiplayer_frame,session.multiplayer_hash());');
 source=source.replace(/#include "([^"]+)"/g,(_,p)=>'#include "'+resolve(sdl,p).replaceAll('\\','/')+'"');
-source+='\nextern "C" EMSCRIPTEN_KEEPALIVE int th11_spectator_lab_next(){auto& a=th11::sdl::app;if(!a.session.battle||a.session.state.stage!=1)return 0;a.session.battle->completion.state.next_stage=2;a.session.battle->completion.state.exit=th11::StageExit::NextStage;return 1;}\n';
+source+=`\nextern "C" EMSCRIPTEN_KEEPALIVE int th11_spectator_lab_next(){auto& a=th11::sdl::app;if(!a.session.battle||a.session.state.stage!=${initialStage})return 0;a.session.battle->completion.state.next_stage=${initialStage+1};a.session.battle->completion.state.exit=th11::StageExit::NextStage;return 1;}\n`;
 // Project exactly the existing semantic hash inputs, including its portable
 // ECL cursors. This diagnostic emits values, never native object bytes.
 const nativeHash=readFileSync(resolve(root,'web/cpp/game/MultiplayerBattle.cpp'),'utf8');

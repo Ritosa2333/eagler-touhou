@@ -109,7 +109,14 @@ bool Stage::update_deformation(){
             phase_x=normalize_angle(float(double(phase_x)+pi*.5));phase_y=normalize_angle(float(double(phase_y)-.6981317400932312));
         }
         state.phase_x=normalize_angle(float(double(state.phase_x)+.04908738657832146));
-        const float delta=float(double(manager.script_rng.unit())*pi/40+.039269909262657166);
+        // Stage Replay entries rebuild the background on its native clock.
+        // Its deformation must not advance the battle's ECL/bullet RNG.
+#ifdef TH11_MULTIPLAYER
+        auto& deformation_random=manager.visual_rng;
+#else
+        auto& deformation_random=manager.script_rng;
+#endif
+        const float delta=float(double(deformation_random.unit())*pi/40+.039269909262657166);
         state.phase_y=normalize_angle(float(double(state.phase_y)+delta));
     }return true;
 }
