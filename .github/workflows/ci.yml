@@ -219,7 +219,16 @@ jobs:
     - name: Compile TH15 opacity draw reference oracle
       if: matrix.game == 'th15' && matrix.variant == 'multiplayer'
       shell: bash
-      run: TH15_OUTPUT=build/web/multiplayer node ports/th15-mp/portable/multiplayer/visual-test.mjs --compile-only
+      run: TH15_OUTPUT=artifacts/sdl-multiplayer node ports/th15-mp/portable/multiplayer/visual-test.mjs --compile-only
+    - uses: actions/upload-artifact@v4
+      if: always() && matrix.game == 'th15' && matrix.variant == 'multiplayer'
+      with:
+        name: th15-opacity-oracle-${{ github.sha }}
+        if-no-files-found: warn
+        path: |
+          ports/th15-mp/web/artifacts/sdl-multiplayer/build.json
+          ports/th15-mp/web/artifacts/sdl-multiplayer/visual-test-compile-only.json
+          ports/th15-mp/web/artifacts/sdl-multiplayer/visual-test-result.json
     - uses: actions/upload-artifact@v4
       if: always()
       with:
