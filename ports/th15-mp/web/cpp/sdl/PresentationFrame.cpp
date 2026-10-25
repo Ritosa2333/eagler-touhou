@@ -54,8 +54,32 @@ void PresentationFrame::begin(){TH15_HOST_SCOPE;
  // samples to match. Do not mistake the recycled working buffer for its frame.
  if(enabled&&!pooled_current)previous.swap(current);else previous.clear();
  pooled_current=false;written=0;pending.clear();occurrences.clear();endpoints.clear();
- if(enabled)for(u32 i=0;i<previous.size();++i)for(u32 j=0;j<previous[i].samples.size();++j)endpoints.push_back({previous[i].samples[j].key,{i,j}});
- std::sort(endpoints.begin(),endpoints.end(),[](const auto& a,const auto& b){return a.first<b.first;});recording=true;ready=false;
+ reset_endpoint_index();
+#if TH15_MULTIPLAYER
+ if(enabled){
+  indexed_endpoints=true;
+  for(u32 i=0;i<previous.size();++i)for(u32 j=0;j<previous[i].samples.size();++j){
+   const auto entry=endpoint_index.emplace(previous[i].samples[j].key);
+   if(entry.second)*entry.first={i,j};else indexed_endpoints=false;
+  }
+ }
+ // Occurrence numbers make production keys unique. Preserve the old sorted
+ // lookup even for malformed/overflowed duplicate keys rather than silently
+ // choosing a new winner. The original sort and lower_bound stay the fallback.
+ if(!indexed_endpoints)
+#endif
+ {
+  if(enabled)for(u32 i=0;i<previous.size();++i)for(u32 j=0;j<previous[i].samples.size();++j)endpoints.push_back({previous[i].samples[j].key,{i,j}});
+  std::sort(endpoints.begin(),endpoints.end(),[](const auto& a,const auto& b){return a.first<b.first;});
+ }
+ recording=true;ready=false;
+}
+const PresentationFrame::Endpoint* PresentationFrame::endpoint(const Key& key)const{
+#if TH15_MULTIPLAYER
+ if(indexed_endpoints)return endpoint_index.find(key);
+#endif
+ const auto found=std::lower_bound(endpoints.begin(),endpoints.end(),key,[](const auto& a,const Key& b){return a.first<b;});
+ return found!=endpoints.end()&&found->first==key?&found->second:nullptr;
 }
 PresentationFrame::Command& PresentationFrame::next(){TH15_SYSTEM_SCOPE;
  if(written==current.size())current.emplace_back();auto& c=current[written++];c.clear=c.direct=c.camera=false;c.bytes.clear();c.samples.clear();c.rect.clear();return c;
@@ -98,7 +122,7 @@ bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool
   // without mixing camera, geometry, UV or color. Gameplay still interpolates.
   if(c.camera&&!background_interpolation){if(c.direct)renderer.draw_batch(c.count,c.bytes.data(),c.stride);else renderer.draw(c.topology,c.count,c.bytes.data(),c.stride);continue;}
   const void* data=c.bytes.data();bool copied=false;
-  for(const auto& s:c.samples){if(std::get<0>(s.key)==observed&&s.first*c.stride+4<=c.bytes.size())std::memcpy(&last_x,c.bytes.data()+s.first*c.stride,4);auto found=std::lower_bound(endpoints.begin(),endpoints.end(),s.key,[](const auto& a,const Key& key){return a.first<key;});if(found==endpoints.end()||found->first!=s.key)continue;const auto& old=previous[found->second.first];const auto& before=old.samples[found->second.second];const float weight=frozen&&(s.world||c.camera)?1:alpha;
+  for(const auto& s:c.samples){if(std::get<0>(s.key)==observed&&s.first*c.stride+4<=c.bytes.size())std::memcpy(&last_x,c.bytes.data()+s.first*c.stride,4);const auto* found=endpoint(s.key);if(!found)continue;const auto& old=previous[found->first];const auto& before=old.samples[found->second];const float weight=frozen&&(s.world||c.camera)?1:alpha;
    if(weight==1||s.script!=before.script||s.resource!=before.resource||s.age<before.age||(s.flags&0x3fe00003u)!=(before.flags&0x3fe00003u)||s.count!=before.count||c.stride!=old.stride||c.state.target!=old.state.target||c.state.texture!=old.state.texture||c.state.layout!=old.state.layout)continue;
    if(!same(s.size,before.size))continue;
    // Extra STD loops reset camera and world coordinates together. Retain the
@@ -140,14 +164,14 @@ std::array<float,6> PresentationFrame::background_diagnostics()const{TH15_SYSTEM
  for(const auto& c:current)if(c.camera&&!c.clear){
   ++result[0];if(c.samples.size()>1)++result[1];
   for(const auto& s:c.samples){
-   const auto found=std::lower_bound(endpoints.begin(),endpoints.end(),s.key,[](const auto& a,const Key& key){return a.first<key;});
-   if(found==endpoints.end()||found->first!=s.key)continue;
-   const auto& old=previous[found->second.first];if(!old.camera)continue;++result[2];
+   const auto* found=endpoint(s.key);
+   if(!found)continue;
+   const auto& old=previous[found->first];if(!old.camera)continue;++result[2];
    for(u32 k=1;k<3;k++)for(u32 j=0;j<16;j++){
     const float delta=std::abs(c.state.matrix[k][j]-old.state.matrix[k][j]);
     result[3]=std::max(result[3],delta);if(delta>=128)++result[4];
    }
-   const auto& before=old.samples[found->second.second];
+   const auto& before=old.samples[found->second];
    if((s.fields|before.fields)&32)for(u32 j=8;j<=9;j++){
     const auto address=j==8?c.state.pipeline.addressU:c.state.pipeline.addressV;
     if(address==touhou::graphics::Address::Repeat&&std::abs(c.state.matrix[3][j]-old.state.matrix[3][j])>.5f){

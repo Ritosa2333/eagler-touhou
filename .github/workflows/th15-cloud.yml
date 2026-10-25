@@ -1,0 +1,61 @@
+name: TH15 Cloud
+on:
+  push:
+    branches: [experiment/th15-rollback-20261023]
+    paths:
+      - '.github/workflows/th15-cloud.yml'
+      - 'ports/th15-mp/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: th15-cloud-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15-mp
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm --prefix launcher ci --ignore-scripts
+      - run: npm --prefix tools/rollback ci --ignore-scripts
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - name: Native presentation identity regression
+        run: node ports/th15-mp/portable/multiplayer/presentation-identity-test.mjs
+      - name: Production multiplayer build
+        run: node launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+      - name: Link the production-object opacity oracle
+        run: TH15_EMSDK="$EMSDK" node ports/th15-mp/portable/multiplayer/visual-test.mjs --compile-only
+      - name: Check public TH15 input metadata
+        run: node ports/th15-mp/portable/multiplayer/cloud-input-probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-cloud-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            ports/th15-mp/web/artifacts/sdl-multiplayer/build.json
+            ports/th15-mp/web/artifacts/sdl-multiplayer/th15.mjs
+            ports/th15-mp/web/artifacts/sdl-multiplayer/th15.wasm
+            ports/th15-mp/web/artifacts/sdl-multiplayer/visual-gameplay.cjs
+            ports/th15-mp/web/artifacts/sdl-multiplayer/visual-gameplay.wasm
+            ports/th15-mp/web/artifacts/sdl-multiplayer/visual-test-compile-only.json
+            ports/th15-mp/web/artifacts/presentation-identity/**/receipt.json
+            ports/th15-mp/web/artifacts/presentation-identity/**/*.log
+            artifacts/validation/source-builds/th15-multiplayer.json
+            artifacts/th15-cloud-input/*.json
