@@ -184,10 +184,25 @@ void Manager::tick(const FrameView& frame, const EventSink& sink) {
     e.colorElapsed = value;
     e.colorTimer = int(value);
   };
+  const auto advanceVisual = [&](Entity& e) {
+    if (frame.animate)
+      frame.animate(e);
+    setAge(e, add(e.elapsed, rate));
+    ++e.visualAge;
+    ++e.visualInterruptAge;
+  };
   for (auto& e : entities) {
     if (!e.active())
       continue;
     if (frame.selectPlayer) frame.selectPlayer(e, p);
+    if (frame.selectPlayer && p.state == 2 &&
+        (e.state == State::Automatic || e.state == State::CollectedAbove ||
+         e.state == State::CollectedNear || e.state == State::Aggregate)) {
+      // Every pilot may be in a death/respawn transition together. Keep the
+      // reward in place until a real recipient is available; never invent one.
+      advanceVisual(e);
+      continue;
+    }
     if (e.state == State::DelayedPoint) {
       if (--e.delay < 0) {
         e.state = State::Automatic;
@@ -196,7 +211,7 @@ void Manager::tick(const FrameView& frame, const EventSink& sink) {
       }
       continue;
     }
-    if (e.state == State::Falling &&
+    if (e.state == State::Falling && (!frame.selectPlayer || p.state != 2) &&
         ((p.state != 2 && p.state != 4 && p.position.y < 128) || frame.dialogue)) {
       e.state = State::CollectedAbove;
       e.attractionSpeed = p.attractionSpeed;
@@ -348,11 +363,7 @@ void Manager::tick(const FrameView& frame, const EventSink& sink) {
       e.state = State::CollectedNear;
       e.attractionSpeed = float(double(p.attractionSpeed) / 3);
     }
-    if (frame.animate)
-      frame.animate(e);
-    setAge(e, add(e.elapsed, rate));
-    ++e.visualAge;
-    ++e.visualInterruptAge;
+    advanceVisual(e);
   }
 }
 
@@ -393,18 +404,19 @@ RewardDelta difference(const ResourceState& before, const ResourceState& after) 
           after.rank - before.rank};
 }
 
-void smallPower(ResourceState& r) {
+void smallPower(ResourceState& r, int amount) {
   if (r.power >= r.maxPower) {
     r.score(10);
     return;
   }
   const int previous = r.power;
-  r.power = std::min(r.maxPower, r.power + 1);
+  r.power = std::min(r.maxPower, r.power + amount);
   if (previous / r.powerStep != r.power / r.powerStep)
     r.addRank(12);
 }
 
-RewardDelta collectOrdinary(ResourceState& r, const Entity& item, const PlayerView& player) {
+RewardDelta collectOrdinary(ResourceState& r, const Entity& item, const PlayerView& player,
+                            int smallPowerAmount) {
   const ResourceState before = r;
   const auto increasePower = [&](int amount, int rank) {
     const int previous = r.power;
@@ -414,7 +426,7 @@ RewardDelta collectOrdinary(ResourceState& r, const Entity& item, const PlayerVi
   };
   switch (item.type) {
   case 1:
-    smallPower(r);
+    smallPower(r, smallPowerAmount);
     break;
   case 2: {
     int value = r.pointValue();
@@ -479,10 +491,10 @@ RewardDelta collectOrdinary(ResourceState& r, const Entity& item, const PlayerVi
   return difference(before, r);
 }
 
-RewardDelta collectAggregate(ResourceState& r, const Entity& item) {
+RewardDelta collectAggregate(ResourceState& r, const Entity& item, int smallPowerAmount) {
   const ResourceState before = r;
   for (int i = 0; i < item.bucketA; i++)
-    smallPower(r);
+    smallPower(r, smallPowerAmount);
   const int value = r.pointValue();
   int displayed;
   if (item.aggregateKind == 1)

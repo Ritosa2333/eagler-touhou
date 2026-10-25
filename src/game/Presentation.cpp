@@ -10,6 +10,7 @@ std::vector<Sprite> drawState;
 std::array<float, 41> hud;
 std::vector<AnimationPose> animationDrawState;
 std::vector<AnimationDrawSchedule> animationScheduleState;
+std::vector<std::array<u32,2>> multiplayerVisualOwners;
 namespace {
 // 45dfa0 installs wrappers that invoke4611d0 for each registered layer.
 constexpr int LayerPriority[32] = {4,  6,  8,  9,  11, 13, 16, 17, 18, 19, 20, 23, 25, 26, 28, 30,
@@ -62,29 +63,41 @@ AnimationTransform resolveAnimationTransform(const anm_logic::Node& node, int de
 void captureAnimationDraw() {
   animationDrawState.clear();
   animationScheduleState.clear();
-  std::vector<const anm_logic::Node*> nodes;
+  multiplayerVisualOwners.clear();
+  static std::vector<const anm_logic::Node*> nodes;
+  nodes.clear();
+  nodes.reserve(animationScene.nodes().size());
   // 460fe0 rebuilds layer lists in registered chain order, including head
   // insertion. A node id sort would silently discard that ordering.
   for (const auto membership : {anm_logic::Membership::Primary, anm_logic::Membership::Secondary,
                                 anm_logic::Membership::Embedded}) {
-    const auto chain = animationScene.chain(membership);
-    nodes.insert(nodes.end(), chain.begin(), chain.end());
+    animationScene.appendChain(membership, nodes);
   }
   u32 order = 0;
-  std::unordered_map<u32, u32> bulletOrder;
-  std::unordered_map<u32, const Projectile*> hostileDraw;
+  struct HostileDraw {
+    u32 owner;
+    const Projectile* bullet;
+    u32 order;
+  };
+  static std::vector<HostileDraw> hostileDraw;
+  hostileDraw.clear();hostileDraw.reserve(bullets.size());
   // 40a020 appends surviving physical slots in ascending order to six
   // appearance groups;40a220 draws group0..5, not allocation/id order.
   for (const auto& bullet : bullets)
     if (!bullet.friendly && bullet.active && bullet.physicalSlot >= 0 && bullet.enemy.type >= 0 &&
         bullet.enemy.type < int(bullet_visuals::appearances.size())) {
-      hostileDraw[0x10000000u + bullet.entityId] = &bullet;
-      bulletOrder[0x10000000u + bullet.entityId] =
+      hostileDraw.push_back({0x10000000u + bullet.entityId,
+          &bullet,
           u32(bullet_visuals::appearances[bullet.enemy.type].group * bullet_pool::Slots::capacity +
-              bullet.physicalSlot);
+              bullet.physicalSlot)});
     }
+  std::stable_sort(hostileDraw.begin(),hostileDraw.end(),[](const auto& a,const auto& b){return a.owner<b.owner;});
   for (const auto* pointer : nodes) {
     const auto& node = *pointer;
+    if(multiplayer::active && ((node.owner>>16)==0xffffu ||
+       (node.owner>>28)==5u || (node.owner>>28)==10u ||
+       ((node.owner>>28)==1u && node.vm.state().spriteBank>=4 && node.vm.state().spriteBank<=6)))
+      multiplayerVisualOwners.push_back({node.owner,node.seat});
     multiplayer::Scope owner(node.seat);
     const bool leafGeometry =
         node.customGeometry &&
@@ -98,9 +111,13 @@ void captureAnimationDraw() {
     const auto& s = node.vm.state();
     const int priority = drawPriority(node);
     u32 drawOrder = order++;
+    const HostileDraw* hostile = nullptr;
     if (priority == 31)
-      if (const auto at = bulletOrder.find(node.owner); at != bulletOrder.end())
-        drawOrder = at->second;
+      if (const auto at = std::upper_bound(hostileDraw.begin(),hostileDraw.end(),node.owner,
+          [](u32 owner,const auto& entry){return owner<entry.owner;}); at != hostileDraw.begin()&&std::prev(at)->owner==node.owner) {
+        hostile = &*std::prev(at);
+        drawOrder = hostile->order;
+      }
     // 460c90 selects camera2 at layer4; the battle callbacks and HUD44
     // inherit it. Layer21 switches to full1; secondary31 uses camera0.
     const u32 clip = node.membership == anm_logic::Membership::Secondary && s.layer == 31 ? 1u
@@ -112,13 +129,12 @@ void captureAnimationDraw() {
     if (s.mode == 9 || s.mode == 13)
       continue;
     auto transform = resolveAnimationTransform(node);
-    if (priority == 31 && (s.flags & 0x20000000u))
-      if (const auto at = hostileDraw.find(node.owner); at != hostileDraw.end()) {
+    if (hostile && (s.flags & 0x20000000u)) {
         // 40a1a2 computes the embedded VM heading at draw time. Opcode82
         // supplies this flag even when no ETEX rotation command was present.
         transform.rotation =
-            anm_logic::normalized(float(double(at->second->enemy.angle) + 1.5707963705062866));
-      }
+            anm_logic::normalized(float(double(hostile->bullet->enemy.angle) + 1.5707963705062866));
+    }
     animationDrawState.push_back({transform.x + node.viewportX,
                                   transform.y + node.viewportY,
                                   transform.z,

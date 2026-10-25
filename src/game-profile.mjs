@@ -148,6 +148,11 @@ export class GameProfile {
       if(!continues)this.data.clears[practiceKey(character,shot,difficulty)]=true;
     }
   }
+  highScore(character,shot,difficulty,stage=0){
+    const ranked=this.rankings(character,shot,difficulty,stage).reduce((best,run)=>Math.max(best,run.score??0),0);
+    const practice=stage?this.data.nativePractice?.[practiceKey(character,shot,difficulty)]?.[stage-1]?.scoreStored??0:0;
+    return Math.max(ranked,practice*10);
+  }
   rankings(character,shot,difficulty,stage=0){
     return this.data.scores.filter(r=>matchesRun(r,{character,shot,difficulty})&&r.nativeEligible!==false&&r.ranked!==false&&
       (r.native||!nonnegative(r.continueCount??r.continues))&&r.mode!=='replay'&&r.mode!=='demo'&&

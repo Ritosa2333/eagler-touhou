@@ -17,7 +17,7 @@ import {readCoreSoundEvents} from '../src/sound-events.mjs';
 import {parseReplay,replayInputEnded} from '../src/replay.mjs';
 import {startReplayStage} from '../src/replay-session.mjs';
 import {ReplayRecorder,defaultReplayConfig} from '../src/replay-recorder.mjs';
-import {createFrameRateMeter} from '../src/fps-presentation.mjs';
+import {createFrameRateMeter,createPresentationFrameRateMeter} from '../src/fps-presentation.mjs';
 import {decodeSpellTitle} from '../src/spell-presentation.mjs';
 import {LoadingPresentation} from '../src/loading-presentation.mjs';
 import {RuntimeAssets} from '../src/managed-data.mjs';
@@ -32,7 +32,7 @@ import {PracticeOverlay} from '../src/practice/overlay.mjs';
 import {DamageSourceBridge} from '../src/practice/damage-sources.mjs';
 import {needsPresentationInterpolation,PresentationCadence,PresentationLimiter,needsPresentationCapture} from '../src/presentation-cadence.mjs';
 
-const $=id=>document.getElementById(id),canvas=$('screen'),keys=new Set(),hostKeys=new Set(),meter=createFrameRateMeter(),TICK=1000/60;
+const $=id=>document.getElementById(id),canvas=$('screen'),keys=new Set(),hostKeys=new Set(),meter=createFrameRateMeter(),gameMeter=createPresentationFrameRateMeter(),TICK=1000/60;
 const assets=new RuntimeAssets(),keyDown=code=>keys.has(code)||hostKeys.has(code);
 const managedInput=new ManagedInput(),touch=new TouchInput();
 let previousPresentation=null,currentPresentation=null;
@@ -51,12 +51,23 @@ const hud=()=>[...new Float32Array(core.HEAPU8.buffer,core._th12_hud(),core._th1
 async function bytes(url){const r=await assets.fetch(url);if(!r.ok)throw Error('资源加载失败 '+url);return new Uint8Array(await r.arrayBuffer());}
 function notice(text=''){$('notice').textContent=text;}
 function fail(error){if(fatalError)return;fatalError=true;busy=true;audio.musicPaused=true;audio.pendingTrack=null;++audio.request;audio.music?.stop();audio.effects?.stop();clearKeys();notice('运行中断：'+error.message);console.error(error);emit({event:'error',message:error.message});}
-function clearKeys({touchToo=true,practiceToo=true,preserveFocus=false}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel({preserveFocus});if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);resetGamePresentation();}
-function resetGamePresentation(){previousPresentation=currentPresentation=null;renderer?.resetPresentation();}
-function interpolateGamePresentation(){if(multiplayer?.active)return false;return !runtimeOptions.limitPresentationTo60&&presentationCadence.fastFrames===4&&needsPresentationInterpolation(presentationInterval,logicalStep);}
-function gamePresentationOptions(){return {presentationContinuity:interpolateGamePresentation(),currentFps:meter.value,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,multiplayer:multiplayer?.active?multiplayer.state():null,localSeat:runtimeOptions.netplaySpectator||runtimeOptions.replayViewer?-1:runtimeOptions.netplayPlayer??0,localPlayerVisibility:!!runtimeOptions.multiplayerLocalPlayerVisibility,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
-function captureGamePresentation(){if(!session||!ready)return;previousPresentation=currentPresentation;currentPresentation=renderer.capturePresentation(core,gamePresentationOptions());}
-function drawGamePresentation(interpolate=false){if(!currentPresentation)captureGamePresentation();if(currentPresentation)renderer.renderPresentation(previousPresentation,currentPresentation,interpolate&&interpolateGamePresentation()?Math.min(1,accumulator/logicalStep):1);}
+function clearKeys({touchToo=true,practiceToo=true,preserveFocus=false}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel({preserveFocus});if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);gameMeter.reset(last);resetGamePresentation();}
+function resetGamePresentation(options){previousPresentation=currentPresentation=null;renderer?.resetPresentation(options);}
+function interpolateGamePresentation(){if(multiplayer?.active&&(multiplayerResult||multiplayer.state().paused))return false;return !runtimeOptions.limitPresentationTo60&&presentationCadence.fastFrames===4&&needsPresentationInterpolation(presentationInterval,logicalStep);}
+function gamePresentationOptions(){return {presentationContinuity:interpolateGamePresentation(),currentFps:meter.value,wallTime:multiplayer?.active&&!runtimeOptions.replayViewer&&!runtimeOptions.netplaySpectator?performance.now():null,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,highScore:session?.highScore??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,multiplayer:multiplayer?.active?multiplayer.state():null,localSeat:runtimeOptions.netplaySpectator||runtimeOptions.replayViewer?-1:runtimeOptions.netplayPlayer??0,localPlayerVisibility:!!runtimeOptions.multiplayerLocalPlayerVisibility,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
+function captureGamePresentation(){
+  if(!session||!ready)return;
+  // A missing input can leave many browser ticks on the same native world.
+  // Hold its endpoint without rebuilding every pose or restarting interpolation.
+  if(session.mode==='multiplayer'&&currentPresentation?.frame===session.clock&&currentPresentation.stage===session.stage){previousPresentation=currentPresentation;return;}
+  session.highScore=Math.max(session.highScore??0,core._th12_score_stored()*10+(session.continues??0));warmNextStage();previousPresentation=currentPresentation;currentPresentation=renderer.capturePresentation(core,gamePresentationOptions());
+}
+function drawGamePresentation(interpolate=true){
+  if(!currentPresentation)captureGamePresentation();if(!currentPresentation)return;
+  const alpha=interpolate&&interpolateGamePresentation()?Math.min(1,accumulator/logicalStep):1;
+  const fps=gameMeter.frame(performance.now(),previousPresentation,currentPresentation,alpha,['playing','demo'].includes(model.state.scene));
+  renderer.renderPresentation(previousPresentation,currentPresentation,alpha,{currentFps:fps});
+}
 function updatePracticeUI(){
   if(!practiceUI||!model)return;
   practiceUI.update({scene:model.state.scene,replay:!!session?.replay,menu:model.state.scene==='practice'?model.practiceMenu:null,menuReady:model.ready()});
@@ -64,7 +75,7 @@ function updatePracticeUI(){
 }
 function practicePointer(message){if(runtimeOptions.replayViewer)return false;const consumed=practiceUI?.pointer(message,down=>touch.pointer({...down,...pointerPosition(down.x,down.y)},touchState()))??false;if(consumed)updatePracticeUI();return consumed;}
 function checkDamageEntry(){const state=damageSources.state();if(state.error&&state.entryResult===-1)throw Error(state.error);}
-function initializeReplayStage(replay,part){
+function initializeReplayStage(replay,part,{fadeIn=false}={}){
   practiceBridge.setReplay(true);
   const practice=replay.extension?.practice;
   if(practice?.params.mode){
@@ -72,7 +83,7 @@ function initializeReplayStage(replay,part){
     practiceBridge.configure(practice.params,{replay:true,difficulty:replay.difficulty});
     if(core._th12_practice_prepare_replay(replay.difficulty)!==1)throw Error(practiceBridge.snapshot().error||'练习录像脚本准备失败');
   }
-  startReplayStage(core,replay,part);core._th12_set_full_game_mode(replay.practice?1:0);checkDamageEntry();
+  startReplayStage(core,replay,part);if(core._th12_replay_stage_flow(replay.practice?1:0,fadeIn?1:0)!==1)throw Error('Replay stage flow initialization failed');checkDamageEntry();
 }
 function touchState(){
   const scene=model?.state.scene,playing=ready&&!busy&&session&&scene==='playing';
@@ -185,6 +196,15 @@ function viewerTransport(){
 }
 function loadSpellHistory(){const words=profile.spellHistoryWords(),p=core._malloc(words.length*4);try{new Int32Array(core.HEAPU8.buffer,p,words.length).set(words);if(core._th12_load_spell_history(p,words.length)!==1)throw Error('符卡记录载入失败');}finally{core._free(p);}}
 function saveProfile(){profile.updateSpellHistory(readJSON('spell_history').records);return profile.save().catch(error=>notice('记录保存失败：'+error.message));}
+function warmNextStage(){
+  if(!session||session.mode==='demo'||session.mode==='practice'||session.replay?.practice)return;
+  const flow=readJSON('stage_flow');if(flow.status!=='stage-clear')return;
+  const stage=session.replay?session.replay.stages.find(part=>part.number>session.stage)?.number:flow.nextStage;
+  if(!stage||session.stagePreparation?.stage===stage)return;
+  const owner=session,promise=Promise.all([loader.prepare(stage),renderer.prepareStage(stage,{activate:false}),
+    audio.context&&runtimeMusic!=='none'?audio.music.preload(musicIndex.filter(t=>[stageMusic[stage],bossMusic[stage]].includes(t.id))):null]);
+  owner.stagePreparation={stage,promise};promise.catch(error=>{if(session===owner)fail(error);});
+}
 async function prepareStage(stage,{demo=false}={}){await renderer.prepareStage(stage);if(!await loader.load(stage))throw Error('关卡准备被取消');if(audio.context){const tracks=demo||runtimeMusic==='none'?[]:musicIndex.filter(t=>[stageMusic[stage],bossMusic[stage]].includes(t.id));await Promise.all([audio.music.preload(tracks),audio.effectsReady]);}}
 function recordedHeader(flow){const h=flow.recordHeader;if(!h)throw Error('缺少关卡开始记录');return {number:flow.stage,seed:h.seed,initial:{x:h.x,y:h.y,power:h.power,lives:h.lives,bombs:h.bombs,score:h.scoreStored,pointValue:h.pointValueStored,lifeFragments:h.lifeFragments,bombFragments:h.bombFragments,ufoColors:h.ufoColors,rank:h.rank,nativeGlobals:h.nativeGlobals}};}
 function recordStage(){const flow=readJSON('stage_flow');session.recorder?.recordStage(recordedHeader(flow));session.resultKey=null;session.spellCount=0;}
@@ -206,7 +226,7 @@ async function begin(settings,replay=null,id=null){
     if(replay?.extension?.damage&&!runtimeOptions.thpracEnabled)throw Error('这份录像带有 THPrac 跨关状态，请在启动器启用 THPrac');
     practiceBridge.reset();practiceBridge.setReplay(!!replay);
     damageSources.begin({replay:!!replay,practice:settings.mode==='practice'||!!replay?.practice,character:settings.character,shot:settings.shot,metadata:replay?.extension?.damage});
-    session={...settings,stage,replay,id,cursor:0,previous:0,clock:0,playTicks:0,hudAge:0,resultKey:null,spellCount:0,continues:0,transitioning:false,clearRecorded:false,resultRecorded:false,unlimitedMovement:!!replay?.extension?.unlimited,assisted:!!replay?.extension?.practice?.assisted};
+    session={...settings,stage,replay,id,highScore:profile.highScore(settings.character,settings.shot,settings.difficulty,settings.mode==='practice'||replay?.practice?stage:0),cursor:0,previous:0,clock:0,playTicks:0,hudAge:0,resultKey:null,spellCount:0,continues:0,transitioning:false,clearRecorded:false,resultRecorded:false,unlimitedMovement:!!replay?.extension?.unlimited,assisted:!!replay?.extension?.practice?.assisted};
     if(replay){const part=replay.stages.find(s=>s.number===stage);if(!part)throw Error('录像不包含关卡');initializeReplayStage(replay,part);}
     else{
       const seed=crypto.getRandomValues(new Uint16Array(1))[0];
@@ -238,30 +258,31 @@ async function viewerStage(stage){
     if(core._th12_practice_damage_transition(session.stage,stage)!==1)throw Error(damageSources.state().error||'录像跨关状态保存失败');
     localization?.setContext({stage,character:session.character,shot:session.shot});
     await prepareStage(stage);resetGamePresentation();session.stage=stage;session.cursor=0;session.previous=0;session.clock=0;
-    initializeReplayStage(session.replay,session.replay.stages.find(part=>part.number===stage));
+    initializeReplayStage(session.replay,session.replay.stages.find(part=>part.number===stage),{fadeIn:true});
     audio.musicSerial=core._th12_music_serial();await playMusic(musicIndex[core._th12_music_track()]?.id??stageMusic[stage]);
   }finally{if(!fatalError){loadingScreen.completeResources();busy=false;}last=performance.now();accumulator=0;}
 }
+function holdStagePresentation(){
+  // Keep the last complete battle picture, including the live player and HUD,
+  // while native stage resources are installed. Loading never clears to black.
+  const held=currentPresentation;
+  loadingScreen.startResources({renderBase:()=>{if(held)renderer.renderPresentation(null,held,1,{currentFps:meter.value});}});
+}
 async function nextStage(){
   if(session?.mode==='demo'){model.returnTitle();return;}
-  if(!session||session.transitioning)return;session.transitioning=true;busy=true;
+  if(!session||session.transitioning)return;session.transitioning=true;busy=true;holdStagePresentation();
   try{
     const flow=readJSON('stage_flow');session.recorder?.finishStage();
     if(!session.replay&&session.mode!=='practice')profile.recordStageClear(session.character,session.shot,session.difficulty,session.stage,core._th12_score_stored()*10);
     const stage=session.replay?session.replay.stages.find(s=>s.number>session.stage)?.number:flow.nextStage;
     if(!stage){completeRun(true);return;}
     if(session.replay&&core._th12_practice_damage_transition(session.stage,stage)!==1)throw Error(damageSources.state().error||'录像跨关状态保存失败');
-    const heldPresentation=currentPresentation??renderer.capturePresentation(core,gamePresentationOptions());
-    loadingScreen.startResources({renderBase:()=>{
-      renderer.renderPresentation(null,heldPresentation,1);
-      renderer.renderMenu([],[],null,{overlay:true,shade:1,shadeBounds:[32,16,416,464]});
-      practiceUI?.render();
-    }});
+    if(session.stagePreparation?.stage===stage)await session.stagePreparation.promise;
     localization?.setContext({stage,character:session.character,shot:session.shot});
     await prepareStage(stage);resetGamePresentation();touch.cancel();session.stage=stage;session.cursor=0;session.previous=0;session.resultKey=null;session.spellCount=0;
-    if(session.replay){initializeReplayStage(session.replay,session.replay.stages.find(s=>s.number===stage));}
-    else{if(core._th12_start_next_stage()!==1)throw Error('跨关资源继承失败');recordStage();profile.recordStageEntry(session.character,session.shot,session.difficulty,stage);await saveProfile();}
-    audio.musicSerial=core._th12_music_serial();const track=musicIndex[core._th12_music_track()]?.id??stageMusic[stage];if(!session.replay)profile.unlockMusic(track);await playMusic(track);
+    if(session.replay){initializeReplayStage(session.replay,session.replay.stages.find(s=>s.number===stage),{fadeIn:true});}
+    else{if(core._th12_start_next_stage()!==1)throw Error('跨关资源继承失败');recordStage();profile.recordStageEntry(session.character,session.shot,session.difficulty,stage);saveProfile().catch(fail);}
+    audio.musicSerial=core._th12_music_serial();const track=musicIndex[core._th12_music_track()]?.id??stageMusic[stage];if(!session.replay)profile.unlockMusic(track);captureGamePresentation();void playMusic(track).catch(fail);
   }finally{if(session)session.transitioning=false;if(!fatalError){loadingScreen.completeResources();busy=false;}last=performance.now();meter.reset(last);accumulator=0;}
 }
 function resultData(clear){const flow=readJSON('stage_flow'),scoreStored=core._th12_score_stored(),timestamp=Math.floor(Date.now()/1000);session.assisted||=!!practiceBridge?.snapshot().assisted;const assisted=session.unlimitedMovement||session.assisted;return {mode:session.mode,practice:session.mode==='practice',character:session.character,shot:session.shot,difficulty:session.difficulty,stage:session.stage,scoreStored,score:scoreStored*10+flow.continueCount,timestamp,date:new Date(timestamp*1000).toISOString(),playSeconds:session.playTicks/60,clear,continueCount:flow.continueCount,continues:flow.continueCount,canContinue:flow.canContinue,canSaveReplay:!session.replay&&flow.continueCount===0,ranked:flow.continueCount===0&&!assisted,slowdown:assisted?100:0};}
@@ -285,7 +306,10 @@ function completeRun(clear,{saveOnly=false}={}){
 }
 function beginEnding(){
   pendingResult=resultData(true);recordClear(pendingResult);session.recorder?.finishStage({end:true});stopEffects();saveProfile();
-  const id=selectEnding(session.character,session.shot,pendingResult.continueCount>0);
+  playEnding(pendingResult);
+}
+function playEnding(result,loadout=session){
+  pendingResult=result;const id=selectEnding(loadout.character,loadout.shot,pendingResult.continueCount>0);
   model.enter('ending',0,{readyAt:0});ending=new EndingTimeline({resources,atlases:renderer.atlases,ending:resources.endings[id],difficulty:session.difficulty,seen:profile.data.endingsSeen.includes(id),onMusic:id=>playMusic(id).catch(fail),onFadeMusic:()=>fadeMusic(3),onSound:id=>effect({id})});clearKeys();
 }
 function returnTitle(){if(session&&session.mode!=='demo')stopMusic();loadingScreen.startResources();session=null;ending=null;stopEffects();clearKeys();practiceBridge?.reset();damageSources?.reset();saveProfile();}
@@ -308,7 +332,10 @@ function gameTick(input){
     session.unlimitedMovement||=!!resolved[3];session.recorder?.recordMotion(resolved[0],resolved[1],session.unlimitedMovement);
     core._th12_set_wall_time(performance.now());
   }
-  const h=hud(),flow=readJSON('stage_flow');session.continues=flow.continueCount;
+  const flow=readJSON('stage_flow');session.continues=Math.max(0,Math.trunc(flow.continueCount??0));
+  // The low score digit is the continue counter. Read the stored score as an
+  // integer so Float32 HUD rounding cannot create a false HI SCORE.
+  session.highScore=Math.max(session.highScore??0,core._th12_score_stored()*10+session.continues);
   readCoreSoundEvents(core)?.forEach(effect);
   const serial=core._th12_music_serial();if(serial!==audio.musicSerial){audio.musicSerial=serial;if(session.mode!=='demo'){const track=musicIndex[core._th12_music_track()]?.id;if(track){if(!session.replay)profile.unlockMusic(track);playMusic(track).catch(fail);}}}
   if(!session.replay){
@@ -418,19 +445,34 @@ function present(){
   if(session&&!session.replay&&!multiplayer?.active)core._th12_set_wall_time(performance.now());choices();practiceUI?.render();
 }
 function tick(){
-  if(roomPreview){model.actions.length=0;model.state.age=Math.min(600,model.state.age);model.tick({held:0,pressed:0});presentation.tick(model.state);return;}
+  if(roomPreview){
+    // The attract-mode clock is independent of the title animation age.
+    // Keep the title moving without scheduling a Replay in the waiting room.
+    if(model.state.scene==='demo')model.returnTitle();
+    model.actions.length=0;model.idleFrames=0;
+    model.tick({held:0,pressed:0});presentation.tick(model.state);return;
+  }
   updatePracticeUI();
   const sampled=input(),controller=padInput(),pad=controller.value;
   // Outside-window menu gestures must reach THPrac before its keyboard
   // capture blocks the title menu. Widget-owned pointers never enter TouchInput.
   const touched=touch.sample(touchState(),{arrows:!!((sampled.held|pad)&0xf0)});
+  if(ending){
+    const ui=sampled.ui|pad|touched.held,pressed=sampled.pressed|(pad&~previousPadUI)|touched.pressed;previousPadUI=pad;
+    ending.tick({held:ui,pressed});
+    if(ending.finished){profile.recordEndingSeen(ending.message.id);profile.save().catch(fail);ending=null;
+      if(pendingResult.mode==='multiplayer')model.finishMultiplayer(pendingResult);else model.finish({kind:'clear',...pendingResult});}
+    return;
+  }
   if(multiplayer?.active){
     if(multiplayerResult){
       const ui=sampled.ui|pad|touched.held,pressed=sampled.pressed|(pad&~previousPadUI)|touched.pressed;previousPadUI=pad;
       model.tick({held:ui,pressed});presentation.tick(model.state);return;
     }
     const held=sampled.held|pad|touched.held|((sampled.ui&0x80000)?0x1000:0)|((sampled.ui&0x200000)?0x2000:0);
+    const rollbackBefore=multiplayer.rollbackCount;
     multiplayer.tick({held,pause:!!((sampled.ui|pad|touched.held)&256),motion:touched.motion}).forEach(effect);
+    if(multiplayer.rollbackCount!==rollbackBefore)resetGamePresentation({retainSamples:true});
     const world=multiplayer.state();
     if(world.paused){
       const scene=world.menuConfirm?'pause-confirm':'pause';
@@ -447,7 +489,6 @@ function tick(){
   if(controller.capturing){previousPadUI=0;model.tick({held:0,pressed:0});presentation.tick(model.state);return;}
   if(practiceCaptured){if(['playing','demo'].includes(model.state.scene)){gameTick({held:0});if(captureThisTick)captureGamePresentation();}else{model.tick({held:0,pressed:0});presentation.tick(model.state);}updatePracticeUI();return;}
   const ui=sampled.ui|pad|touched.held,pressed=sampled.pressed|(pad&~previousPadUI)|touched.pressed;previousPadUI=pad;
-  if(ending){ending.tick({held:ui,pressed});if(ending.finished){profile.recordEndingSeen(ending.message.id);profile.save().catch(fail);ending=null;model.finish({kind:'clear',...pendingResult});}return;}
   if(model.state.scene==='playing'&&(pressed&(256|0x200000))){model.openPause(resultData(false));clearKeys({preserveFocus:true});if(pressed&0x200000)model.tick({held:0x200000,pressed:0x200000});presentation.tick(model.state);return;}
   model.tick({held:ui,pressed});presentation.tick(model.state);
   // A scene may queue start/continue/retry/resume before the async action
@@ -474,14 +515,15 @@ function frame(now){
       const rate=!toolSpeed&&session?.replay&&model.state.scene==='playing'&&fast&&!shoot?4:1;
       logicalStep=toolSpeed?1000*practiceBridge.interval({replay:!!session.replay,fast,slow,debug:keyDown('Space')}):session?.replay&&model.state.scene==='playing'&&slow?TICK*4:TICK;
       if(session?.replay&&model.state.scene==='playing'&&shoot)logicalStep=Math.min(logicalStep,TICK/4);accumulator+=(multiplayer?.pace(elapsed)??elapsed)*rate;
-      for(let count=0;accumulator>=logicalStep&&count<Math.min(240,Math.max(8,Math.ceil(TICK/logicalStep)*8)*rate)&&!busy;count++){accumulator-=logicalStep;captureThisTick=needsPresentationCapture(accumulator,logicalStep,interpolateGamePresentation());tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
+      const tickBudget=Math.min(240,Math.max(8,Math.ceil(TICK/logicalStep)*8)*rate);
+      for(let count=0;accumulator>=logicalStep&&count<tickBudget&&!busy;count++){accumulator-=logicalStep;captureThisTick=count+1===tickBudget||needsPresentationCapture(accumulator,logicalStep,interpolateGamePresentation());tick();if(model.actions.length){busy=true;actions().catch(fail).finally(()=>{if(!fatalError)busy=false;last=performance.now();accumulator=0;});break;}}
       if(loadingScreen.waiting)loadingScreen.renderBase(meter.value);else{present();loadingScreen.renderOverlay();}
     }else if(ready){present();loadingScreen.renderOverlay();}
   }}catch(error){fail(error);}
   if(ready&&launched){
     renderedFrames++;maxFrameGap=Math.max(maxFrameGap,elapsed);
     if(!firstFrame){firstFrame=true;emit({event:'first-frame',launchSerial});healthAt=now;renderedFrames=0;maxFrameGap=0;}
-    if(now-healthAt>=1000){emit({event:'frame-health',fps:renderedFrames*1000/(now-healthAt),maxGapMs:maxFrameGap});emit({event:'audio-health',backend:'WebAudio',contextState:audio.context?.state??'uninitialized',musicMode:runtimeMusic,voices:audio.effects?.voices.size??0});healthAt=now;renderedFrames=0;maxFrameGap=0;}
+    if(now-healthAt>=1000){emit({event:'frame-health',fps:currentPresentation&&['playing','demo'].includes(model.state.scene)?gameMeter.value:renderedFrames*1000/(now-healthAt),maxGapMs:maxFrameGap});emit({event:'audio-health',backend:'WebAudio',contextState:audio.context?.state??'uninitialized',musicMode:runtimeMusic,voices:audio.effects?.voices.size??0});healthAt=now;renderedFrames=0;maxFrameGap=0;}
   }
   requestAnimationFrame(frame);
 }
@@ -538,7 +580,11 @@ async function initialize(){
   const [atlases,menus,index,music,sounds]=await Promise.all(['/assets/atlases.json','/assets/menu-resources.json','/replays/index.json','/assets/music-index.json','/assets/sound-index.json'].map(async url=>{if(assets.managed&&url==='/replays/index.json')return {fixtures:[]};const r=url.startsWith('/assets/')?await assets.fetch(url):await fetch(url);if(!r.ok)throw Error('资源清单加载失败');return r.json();}));
   resources=validateMenuResources(localization?.applyMenuResources(menus)??menus);musicIndex=music;soundIndex=sounds;Object.assign(atlases,resources.atlases);
   Object.assign(renderer.atlases,atlases);await renderer.prepare();await renderer.loadAtlases(['title','title_v','staff',...resources.endings.map(e=>e.bank)]);
-  core=await createCore();if(!core._th12_start_full_game||!core._th12_load_spell_history)throw Error('请更新完整游戏核心');loader=new StageLoader(core,atlases,file=>bytes('/assets/'+file));
+  core=await createCore();if(!core._th12_start_full_game||!core._th12_load_spell_history)throw Error('请更新完整游戏核心');
+  // The Launcher reads the same Module/peer transport contract as TH10/11/15
+  // before revealing gameplay and routing input to the retained room Runtime.
+  window.Module=core;
+  loader=new StageLoader(core,atlases,file=>bytes('/assets/'+file));
   corpus=await Promise.all(index.fixtures.filter(r=>!/^demo/.test(r.id)).map(async fixture=>{
     //The local fixture index describes inputs. Its menu metadata must come
     //from the actual retail header, as it does for imported/saved replays.
@@ -576,16 +622,22 @@ async function finishMultiplayerRun(){
     score:world.score,scoreStored:world.score/10,timestamp:Math.floor(Date.now()/1000),date:new Date().toISOString(),
     playSeconds:flow.totalFrames/60,clear,continues:0,continueCount:0,canContinue:false,canSaveReplay:true,ranked:true,slowdown:0};
   model.run={...session};
+  if(flow.status==='ending'&&!multiplayer.readOnly){playEnding(pendingResult,session.storyLoadout??session);return;}
   if(world.saveRequested)model.openReplaySave(pendingResult,profile.data.lastName,'pause');
   else model.finishMultiplayer(pendingResult);
 }
-async function multiplayerStage(stage,loadout){
-  busy=true;loadingScreen.startResources();
+async function multiplayerStage(stage,loadout,storyLoadout,replayDifficulty){
+  const crossing=!!multiplayer?.active&&session?.mode==='multiplayer'&&session.stage!==stage;
+  busy=true;if(crossing)holdStagePresentation();else loadingScreen.startResources();
   try{
     const selected=loadout??runtimeOptions.netplayLoadouts?.[runtimeOptions.netplayPlayer??0]??{character:0,shot:0};
-    localization?.setContext({stage,...selected});
-    await prepareStage(stage);resetGamePresentation();
-    session={mode:'multiplayer',...selected,difficulty:runtimeOptions.netplayDifficulty??1,stage,cursor:0,clock:0,hudAge:0,continues:0};
+    const difficulty=replayDifficulty??runtimeOptions.netplayDifficulty??1;
+    // Native shared ECL/MSG follows seat zero, including on guest and Replay views.
+    const story=storyLoadout??session?.storyLoadout??runtimeOptions.netplayLoadouts?.[0]??selected;
+    localization?.setContext({stage,...story});
+    if(crossing&&session.stagePreparation?.stage===stage)await session.stagePreparation.promise;
+    await prepareStage(stage);resetGamePresentation();if(!crossing)renderer.spellWallClock?.reset();
+    session={mode:'multiplayer',...selected,storyLoadout:story,highScore:Math.max(crossing?(session?.highScore??0):0,profile.highScore(selected.character,selected.shot,difficulty)),difficulty,stage,cursor:0,clock:0,hudAge:0,continues:0};
   }finally{loadingScreen.completeResources();busy=false;last=performance.now();accumulator=0;}
 }
 async function initializeMultiplayer(){
@@ -613,8 +665,8 @@ async function returnMultiplayerRoom(){
 async function launchRuntime(message={}){
   if(terminated)throw Error('此运行会话已结束，请从启动器重新打开');
   if(multiplayer?.active)throw Error('游戏已启动');
-  launchSerial=Number(message.launchSerial)||0;await initializeMultiplayer();
-  multiplayerResult=false;roomPreview=false;launched=true;firstFrame=false;clearKeys();
+  launchSerial=Number(message.launchSerial)||0;await initializeMultiplayer();renderer.spellWallClock?.reset();
+  multiplayerResult=false;roomPreview=false;launched=false;firstFrame=false;clearKeys();
   try{
     if(runtimeOptions.replayViewer){
       if(!runtimeOptions.replayPath){notice('请在启动器录像列表选择多人录像');return;}
@@ -623,6 +675,7 @@ async function launchRuntime(message={}){
     model.enter('playing',0,{readyAt:0});model.actions.length=0;
     audio.musicSerial=core._th12_music_serial();await playMusic(stageMusic[session.stage]);captureGamePresentation();
     emit({event:'runtime-info',renderer:'WebGL2',architecture:'C++20 / WebAssembly',multiplayer:true,language:localization.language});
+    launched=true;
   }catch(error){launched=false;console.error(error);throw error;}
 }
 async function bootstrap(){
@@ -640,9 +693,14 @@ async function bootstrap(){
           if(!data.length||total>96*1024*1024)throw Error('语言包安装大小无效');installed.set(file.path,data);
         }
       }
-      if(settings.language!=='ja'&&!assets.fonts.has('/unifont.otf'))throw Error('语言字体尚未安装');
-      const provider=await prepareLocalization({language:settings.language,manifest:pack?.manifest,readFile:path=>installed.get(path),fontReady:installRuntimeFonts(assets.fonts)});
-      localization?.deactivate();localization=provider;assets.localization=provider;runtimeOptions=settings.options;runtimeMusic=settings.music;touch.configure(runtimeOptions);
+      // Room binding only replaces network options; installed language resources
+      // remain local to this retained engine when the host omits the pack.
+      if(pack||!localization||localization.language!==settings.language){
+        if(settings.language!=='ja'&&!assets.fonts.has('/unifont.otf'))throw Error('语言字体尚未安装');
+        const provider=await prepareLocalization({language:settings.language,manifest:pack?.manifest,readFile:path=>installed.get(path),fontReady:installRuntimeFonts(assets.fonts)});
+        localization?.deactivate();localization=provider.activate();assets.localization=provider;
+      }
+      runtimeOptions=settings.options;runtimeMusic=settings.music;touch.configure(runtimeOptions);
     },
     resources:async items=>{await assets.install(items,message=>emit(message));await installRuntimeFonts(assets.fonts);},launch:launchRuntime,prepareRoom:prepareMultiplayerRoom,returnRoom:returnMultiplayerRoom,spectatorPlayback:message=>multiplayer.spectatorCommand(message),validateReplay:async bytes=>{await initializeMultiplayer();return multiplayer.inspect(bytes);},
     playback:async message=>{await initializeMultiplayer();const result=await multiplayer.playback(message);if(message.action==='open'){roomPreview=false;launched=true;firstFrame=false;clearKeys();model.enter('playing',0,{readyAt:0});model.actions.length=0;captureGamePresentation();}return result;},

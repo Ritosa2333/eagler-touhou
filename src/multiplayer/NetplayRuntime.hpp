@@ -126,7 +126,6 @@ public:
     Netplay::RemoteInputResult SubmitRemote(unsigned,std::uint32_t,const Netplay::FrameInput&);
 private:
     bool Configure(const SessionSetup&,unsigned delay,bool read_only=false);
-    void UpdatePacing(bool expects_input);
     bool Feed(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool DrainSpectator();
     void Publish();
@@ -151,12 +150,10 @@ private:
     std::uint32_t generation_=0,publish_frame_=0,receive_frame_=0;
     std::uint32_t next_=0,next_capture_=0,correction_end_=Netplay::INVALID_FRAME,commit_limit_=Netplay::INVALID_FRAME;
     double phase_debt_ms_=0;
-    double network_interval_scale_=1;
     // Read-only wall-clock accounting, never recorded in Replay or rollback.
-    // version, words, input seconds, credited seconds, legacy-rule seconds,
-    // current legacy shortage scale, current peer-lead scale, sample count.
+    // version, words, input milliseconds, credited milliseconds, baseline credit,
+    // reserved unity scale, current peer-lead scale, sample count.
     std::array<double,8> pacing_statistics_{{1,8,0,0,0,1,1,0}};
-    std::uint64_t network_pace_ms_=0;
     std::string error_;
     std::deque<Netplay::SpectatorFramePacket> spectator_frames_;
     struct SpectatorRecordedFrame {std::uint32_t frame=Netplay::INVALID_FRAME,stage=0;};

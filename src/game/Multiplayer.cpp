@@ -90,23 +90,25 @@ void resetPilot(unsigned s, bool carry) {
   const auto resources = p.resources;
   const auto graze = p.graze;
   const auto misses = p.misses;
+  const int x=p.px,y=p.py;const bool focused=p.playerFocused;
   const bool ghost = p.ghost;
   std::destroy_at(&p);
   std::construct_at(&p);
   p.seat = s; p.character = options.selections[s] / 2; p.shot = options.selections[s] % 2;
   p.resources = carry ? resources : item_system::ResourceState::initial(options.difficulty);
-  p.resources.bombs = carry ? resources.bombs : 1;
   p.resources.rank = teamRank;
   p.graze = carry ? graze : 0; p.misses = carry ? misses : 0;
   p.ghostRandom = options.seed ^ (0x9e3779b9u * (s + 1));
   if (!p.ghostRandom) p.ghostRandom = 1;
-  p.px = int((float(s) - float(options.count - 1) * .5f) * (options.count == 2 ? 48 : 56) * 128);
-  if (carry && ghost) { p.resources.lives = std::max(0, p.resources.lives); p.resources.power = p.resources.maxPower / 2; p.resources.bombs = 1; }
+  p.px = carry?x:int((float(s) - float(options.count - 1) * .5f) * (options.count == 2 ? 48 : 56) * 128);
+  if(carry){p.py=y;p.playerFocused=focused;}
+  if (carry && ghost) { p.resources.lives = std::max(0, p.resources.lives); p.resources.power = p.resources.maxPower / 2; p.resources.bombs = std::max(2, p.resources.bombs); }
   if (options.challenge) { p.resources.bombs = 0; p.resources.lives = 2; }
   if (pendingStageEntry) {
     p.resources=pendingStageEntry->resources[s]; p.graze=pendingStageEntry->graze[s]; p.misses=pendingStageEntry->misses[s];
+    if(pendingStageEntry->version>=2){p.px=pendingStageEntry->x[s];p.py=pendingStageEntry->y[s];p.playerFocused=pendingStageEntry->focused[s]!=0;}
   }
-  p.playerMotion.updateOptions(loadouts[options.selections[s]], p.resources.power, p.px, p.py, false, true);
+  p.playerMotion.updateOptions(loadouts[options.selections[s]], p.resources.power, p.px, p.py, p.playerFocused, true);
   Scope owner(s); initializePlayerAnimation();
 }
 }
@@ -175,7 +177,7 @@ void revive(unsigned seat, bool rescued) {
   Scope owner(seat); auto& p = pilot();
   p.ghost = false; p.ghostClock = p.lifeTaps = p.powerTaps = 0; p.lifeLatched = false;
   p.resources.lives = std::max(p.resources.lives, 0); p.resources.power = p.resources.maxPower / 2;
-  p.resources.bombs = options.challenge ? 0 : 1;
+  p.resources.bombs = options.challenge ? 0 : std::max(2, p.resources.bombs);
   p.playerState = 1; p.playerStateTicks = 60; p.playerStateTime = 60;
   p.invuln = rescued ? 280 : 120; p.playerInvulnerabilityTime = float(p.invuln);
   p.playerDamageSources.reset(); p.playerBomb.reset(); p.playerFlags = 0;
@@ -246,8 +248,12 @@ void tickRules() {
   else wipeFrames=0;
 }
 int bossDamage(const Enemy& e,int amount) {
-  if(amount<=0||(!(e.flags&0x400000u)&&!e.boss))return amount;
-  const auto count=operableCount(),factor=count<2?12u:count==2?9u:8u;
+  if(!active||amount<=0||(!(e.flags&0x400000u)&&!e.boss&&!e.isUfo))return amount;
+  // Match TH15: an exhausted pilot leaves the damage coefficient immediately,
+  // including the death animation before the ghost transition completes.
+  unsigned count=0;for(unsigned s=0;s<options.count;++s)
+    count+=!pilots[s].ghost&&pilots[s].resources.lives>=0;
+  const auto factor=count<2?12u:count==2?9u:8u;
   auto& remainder=damageRemainders[e.id];const uint64_t scaled=uint64_t(unsigned(amount))*factor+remainder;
   remainder=unsigned(scaled%12);return int(scaled/12);
 }
@@ -337,15 +343,20 @@ void collectSharedPiece(int type) {
 void itemPlayer(item_system::Entity& item, item_system::PlayerView& out) {
   using S=item_system::State;
   const bool power=item.type==1||item.type==3||item.type==8||item.type==16||item.type==18;
+  const bool homing=item.state==S::DelayedPoint||item.state==S::Automatic||item.state==S::Aggregate||
+    item.state==S::CollectedAbove||item.state==S::CollectedNear;
   int seat=item.recipient;
   if (seat >= int(options.count)) item.recipient = seat = -1;
-  if(seat>=0&&(!alive(unsigned(seat)))) {item.recipient=seat=-1;item.state=S::Falling;item.velocity={};}
+  if(seat>=0&&(!alive(unsigned(seat)))) {item.recipient=seat=-1;if(!homing){item.state=S::Falling;item.velocity={};}}
   auto choosePower=[&]{return eagler::cooperative::NearestPowerRecipient(options.count,
     [&](unsigned s){return alive(s);},[&](unsigned s){return pilots[s].resources.power<pilots[s].resources.maxPower;},
     [&](unsigned s){return distance2(pilots[s],item.position.x,item.position.y);});};
   if(seat>=0&&power&&pilots[unsigned(seat)].resources.power>=pilots[unsigned(seat)].resources.maxPower) {
-    const int next=choosePower();if(next>=0&&pilots[unsigned(next)].resources.power<pilots[unsigned(next)].resources.maxPower){seat=next;item.recipient=seat;item.state=S::CollectedAbove;item.attractionSpeed=8;}
+    const int next=choosePower();if(next>=0&&pilots[unsigned(next)].resources.power<pilots[unsigned(next)].resources.maxPower){seat=next;item.recipient=seat;if(item.state!=S::Aggregate){item.state=S::CollectedAbove;item.attractionSpeed=8;}}
   }
+  // Cancellation points and UFO aggregates already home without contact or
+  // crossing the collection line. Bind their target before Item22 moves them.
+  if(seat<0&&homing){seat=power?choosePower():nearest(item.position.x,item.position.y);if(seat>=0)item.recipient=seat;}
   if(seat<0) {
     double best=0;
     for(unsigned s=0;s<options.count;++s)if(alive(s)) {

@@ -65,8 +65,9 @@ export class RuntimeAssets {
     const overlay=this.localization?.fetchOverride(path);if(overlay)return overlay;
     const response=await this.fetchBase(path);
     if(response.ok&&this.localization?.language!=='ja'&&/^\/assets\/st0[1-7]_0[012][ab]\.msg$/.test(path)){
-      const original=new Uint8Array(await response.arrayBuffer()),patched=await this.localization?.patchMessage(path,original);
-      return new Response(patched??original,{headers:response.headers,status:response.status});
+      const original=new Uint8Array(await response.arrayBuffer());
+      await this.localization?.prepareMessage(path,original);
+      return new Response(original,{headers:response.headers,status:response.status});
     }
     return response;
   }

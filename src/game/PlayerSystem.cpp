@@ -137,7 +137,7 @@ void explodeReimuBOrb(pw::ReimuBOrb& orb) {
   eventBits |= 1;
 }
 bool startPlayerBomb() {
-  if (pilot().playerBomb.active)
+  if (pilot().playerBomb.active || (multiplayer::active && multiplayer::anyBomb()))
     return false;
   const int loadout = pilot().character * 2 + pilot().shot;
   if (loadout < 0 || loadout > 5) {
@@ -1200,8 +1200,8 @@ void tickPlayer(int held, int pressed) {
         pilot().px = 0;
         pilot().py = 480 * 128;
         pilot().invuln = 280;
-        if (pilot().resources.bombs < 1 && !multiplayer::options.challenge) {
-          pilot().resources.bombs = 1;
+        if (pilot().resources.bombs < 2 && !multiplayer::options.challenge) {
+          pilot().resources.bombs = 2;
           // 436f0f -> 422f60 restores stock only; HUD receives the retained
           // fragment count at4b0ca4, including a partially earned next Bomb.
         }

@@ -340,10 +340,7 @@ void resetPhase(Enemy& e, const std::string& sub) {
 void dropItems(Enemy& e) {
   const auto ordinary = [](float x, float y, int type, int source) {
     if (type >= 1 && type <= 18)
-      {
-        const unsigned copies=(type==1||type==3)?multiplayer::options.count:(type==6||type==7)?std::max(1u,multiplayer::options.count-1):1u;
-        for(unsigned n=0;n<copies;++n)itemManager.spawn(type,{x+(float(n)-float(copies-1)*.5f)*8,y});
-      }
+      itemManager.spawn(type,{x,y});
     else if (type != 0)
       unsupported[source]++;
   };

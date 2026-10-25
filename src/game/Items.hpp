@@ -161,9 +161,10 @@ struct RewardDelta {
       bombFragments = 0, rank = 0;
 };
 RewardDelta difference(const ResourceState& before, const ResourceState& after);
-void smallPower(ResourceState& resources);
-RewardDelta collectOrdinary(ResourceState& resources, const Entity& item, const PlayerView& player);
-RewardDelta collectAggregate(ResourceState& resources, const Entity& item);
+void smallPower(ResourceState& resources, int amount = 1);
+RewardDelta collectOrdinary(ResourceState& resources, const Entity& item, const PlayerView& player,
+                            int smallPowerAmount = 1);
+RewardDelta collectAggregate(ResourceState& resources, const Entity& item, int smallPowerAmount = 1);
 struct DeathDropPlan {
   RewardDelta immediate{};
   std::vector<SpawnRequest> spawns;

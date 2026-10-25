@@ -7,5 +7,6 @@ class WorldState {
 public:
   WorldState();
   void restore() const;
+  static void clearPool();
 };
 }

@@ -52,6 +52,24 @@ int main(int argc,char**argv){
     require(th12_draw()>0&&th12_anm_draw()>0,"retail draw records populated");
     std::printf("retail stage=%d seats=%u first=%d frames=780 hash=%08x ANM=%d\n",stage,o.count,first,after,th12_anm_draw());
   }
+  {
+    load(7);mp::Options setup;setup.count=3;setup.stage=7;setup.difficulty=4;setup.selections={0,3,5};
+    require(mp::begin(setup),"checkpoint reuse start");
+    for(auto& p:mp::pilots){p.resources.power=400;p.invuln=100000;p.playerInvulnerabilityTime=100000;}
+    advance(0,120);const auto hash=mp::canonicalHash();const auto rng=th12::random;
+    auto owner=std::make_unique<mp::WorldState>();const auto retained=*owner;owner.reset();
+    mp::WorldState::clearPool();
+    for(unsigned f=120;f<200;++f){
+      require(mp::update(input(f)),"checkpoint reuse actual world tick");
+      const auto current=mp::canonicalHash();mp::WorldState scratch;
+      require(mp::update(input(f+1)),"checkpoint reuse divergent future");
+      scratch.restore();require(mp::canonicalHash()==current,"reused checkpoint restores changing animation graph and inputs");
+    }
+    retained.restore();require(mp::canonicalHash()==hash&&th12::random.seed==rng.seed&&th12::random.calls==rng.calls,
+      "retained shared checkpoint survives repeated buffer reuse and cache clearing");
+    mp::WorldState::clearPool();
+    retained.restore();require(mp::canonicalHash()==hash,"clearing unused buffers cannot invalidate a live checkpoint");
+  }
   load(1);mp::Options o;o.count=3;o.selections={0,3,5};require(mp::begin(o),"shared UFO start");
   for(unsigned s=0;s<3;++s){
     auto& p=mp::pilots[s];p.playerState=1;p.py=200*128;
@@ -66,8 +84,10 @@ int main(int argc,char**argv){
   load(1);require(mp::begin(o),"cross-stage start");
   for(int stage=2;stage<=6;++stage){
     mp::pilots[0].misses=7;mp::pilots[1].resources.power=278;ufoManager.inventory.clearSlots();ufoManager.inventory.append(3);
+    for(unsigned seat=0;seat<o.count;++seat){auto& p=mp::pilots[seat];p.px=-12000+int(seat)*7000;p.py=17000+int(seat)*6000;p.playerFocused=seat!=1;}
     fullGameFlow.carry=captureSessionCarry();fullGameFlow.status=FullGameStatus::NextStage;fullGameFlow.nextStage=stage;
     load(stage);require(startNextStage(),"retail next-stage start");require(mp::pilots[0].misses==7&&mp::pilots[1].resources.power==278,"all seats carry resources");
+    for(unsigned seat=0;seat<o.count;++seat){const auto& p=mp::pilots[seat];require(p.px==-12000+int(seat)*7000&&p.py==17000+int(seat)*6000&&p.playerFocused==(seat!=1),"each seat retains position/focus across stages");}
     const auto hash=mp::canonicalHash();mp::StageEntry entry;require(mp::decodeStageEntry(mp::encodeStageEntry(),entry)&&mp::restoreStageEntry(entry),"retail cross-stage restore");
     require(mp::canonicalHash()==hash&&ufoManager.inventory.count==1,"retail cross-stage RNG/UFO hash");
     advance(0,120);

@@ -9,7 +9,7 @@ namespace th12::multiplayer {
 Session session;
 bool Session::fail(const char* message) { if(error_.empty())error_=message; return false; }
 const char* Session::error() const {return error_.empty()?network.Error():error_.c_str();}
-void Session::stop(){network.Clear();records_.clear();replay_.Clear();playback_.Clear();pendingStage_=0;audio_.clear();error_.clear();started_=loading_=false;active=false;committed_=restores_=resimulated_=0;}
+void Session::stop(){network.Clear();records_.clear();WorldState::clearPool();replay_.Clear();playback_.Clear();pendingStage_=0;audio_.clear();error_.clear();started_=loading_=false;active=false;committed_=restores_=resimulated_=checkpoints_=0;}
 bool Session::configure(const uint32_t* words,unsigned count){
   SessionSetup setup; if(!DecodeSessionSetup(setup,words,count))return fail("Invalid TH12 room setup");
   stop(); return network.Reset(setup);
@@ -28,7 +28,11 @@ bool Session::simulate(const Netplay::FrameDecision& decision){
   std::array<Input,3> inputs;
   if(!InputLanes::Decode(decision.inputs.data(),options.count,inputs))return fail("Invalid TH12 frame inputs");
   const auto f=network.NextFrame();
-  Record record{f,uint32_t(stageNumber),network.AllowsRollback()?std::optional<WorldState>{std::in_place}:std::nullopt,decision.inputs,{}, {}};
+  // An all-actual frame can never acquire a correction request. Earlier
+  // speculative frames retain their own checkpoints until confirmation.
+  const bool checkpoint=network.AllowsRollback()&&decision.predictedMask;
+  Record record{f,uint32_t(stageNumber),checkpoint?std::optional<WorldState>{std::in_place}:std::nullopt,decision.inputs,{}, {}};
+  checkpoints_+=checkpoint;
   if(th12::frame==0)record.initializer=encodeStageEntry();
   if(!update(inputs))return fail("TH12 gameplay rejected a frame");
   record.sounds=sound_system::queue.events();
@@ -73,7 +77,8 @@ bool Session::step(uint32_t held,bool pause,int motion,float x,float y,double no
   }
   if(network.AllowsRollback()&&!network.Correcting()&&!network.WorldReady()&&!network.SetWorldReady(true))return fail("TH12 world frontier rejected");
   for(unsigned budget=0;budget<13;++budget){
-    if(finished||fullGameFlow.status==FullGameStatus::NextStage)break;
+    if(finished||fullGameFlow.status==FullGameStatus::NextStage||
+       (network.Setup().mode==1&&network.NextFrame()>=network.CaptureFrame()))break;
     const auto decision=network.Prepare(network.NextFrame());if(!decision.canAdvance||(paused&&decision.predictedMask))break;
     const bool correcting=network.Correcting();
     if(!simulate(decision))return false;
@@ -82,7 +87,9 @@ bool Session::step(uint32_t held,bool pause,int motion,float x,float y,double no
        ((finished||fullGameFlow.status==FullGameStatus::NextStage)&&network.InputsReconciledBeforeNext()))){
       if(!network.EndCorrection(network.NextFrame()!=network.CorrectionEnd()))return fail("TH12 correction completion failed");
     }
-    if(!network.Correcting())break;
+    // Replaying an old input does not consume this callback's new game tick.
+    // The 13-frame budget covers the 12-frame correction plus one fresh tick.
+    if(!correcting&&network.Setup().mode!=1)break;
   }
   if(!commit())return false;
   if(replay_.AtCapacity()&&settled())finished=true;
@@ -94,6 +101,7 @@ bool Session::stageNeeded() const {return started_&&!loading_&&(pendingStage_||(
 bool Session::beginStageLoad(){
   if(!stageNeeded()||!records_.empty())return fail("TH12 stage boundary has unconfirmed input");
   if(!network.ReadOnly()&&network.WorldReady()&&!network.SetWorldReady(false))return fail("TH12 stage barrier rejected");
+  WorldState::clearPool();
   loading_=true;return true;
 }
 bool Session::stageLoaded(){

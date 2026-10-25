@@ -1,9 +1,24 @@
 import {easing as ease} from './easing.mjs';
 import {AnimationSampler} from './animation.mjs';
-const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),sub=(a,b)=>a.map((v,i)=>v-b[i]);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const unit=a=>{const n=Math.hypot(...a)||1;return a.map(v=>v/n);};
 const f32=Math.fround;
+const corners=[[-.5,-.5,0,0],[.5,-.5,1,0],[.5,.5,1,1],[-.5,.5,0,1]];
+function clipPolygon(input,output,plane,near,scratch){
+  output.length=0;
+  for(let i=0;i<input.length;i++){
+    const a=input[i],b=input[(i+1)%input.length],inside=near?a.depth-plane>=0:a.depth-plane<=0,
+      nextInside=near?b.depth-plane>=0:b.depth-plane<=0;
+    if(inside)output.push(a);
+    if(inside!==nextInside){
+      const t=(plane-a.depth)/(b.depth-a.depth),at=scratch.used++,p=scratch.vertices[at]??(scratch.vertices[at]={});
+      p.cx=a.cx+(b.cx-a.cx)*t;p.cy=a.cy+(b.cy-a.cy)*t;p.depth=a.depth+(b.depth-a.depth)*t;
+      p.distance=a.distance+(b.distance-a.distance)*t;p.u=a.u+(b.u-a.u)*t;p.v=a.v+(b.v-a.v)*t;
+      output.push(p);
+    }
+  }
+  return output;
+}
 // TH12's STD draw routine overwrites the ANM scale for every nonzero
 // primitive dimension (0x4047f8..0x404839), including cloud script 4.
 export function primitiveSize(q,a,sprite){return [q.size[0]||(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:sprite.w)*a.sx,q.size[1]||(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:sprite.h)*a.sy];}
@@ -20,7 +35,19 @@ function logicalAnimation(row){
     visible:(flags&3)===3&&(row[14]>>>24)!==0,noFog:!!(flags&0x1000),point:!!(row[17]&2),mode:row[18],blend:row[19],layer:row[20],nativeWidth:row[21],nativeHeight:row[22]};
 }
 export class StageBackground {
-  constructor(data,atlases){this.data=data;this.bank=data.bank||'stage01';this.atlases=atlases;this.animations=new AnimationSampler(atlases);this.frames=[];this.pc=0;this.clock=0;this.tracks=new Map();this.offsets=new Map(data.commands.map((c,i)=>[c.offset,i]));this.camera={position:[0,0,-400],direction:[0,0,1],up:[0,1,0],fov:Math.PI/5,fog:[1,1,1,200,1100]};this.slots=new Map();let slot=0;for(const object of data.objects)for(const q of object.quads)this.slots.set(q,slot++);}
+  constructor(data,atlases){
+    this.data=data;this.bank=data.bank||'stage01';this.atlases=atlases;this.animations=new AnimationSampler(atlases);this.frames=[];this.pc=0;this.clock=0;this.tracks=new Map();this.offsets=new Map(data.commands.map((c,i)=>[c.offset,i]));this.camera={position:[0,0,-400],direction:[0,0,1],up:[0,1,0],fov:Math.PI/5,fog:[1,1,1,200,1100]};
+    this.slots=new Map();let slot=0;for(const object of data.objects)for(const q of object.quads)this.slots.set(q,slot++);
+    // Asset topology and instance origins stay fixed across display frames.
+    this.primitives=[];
+    for(const instance of data.instances){const object=data.objects[instance.object];
+      for(const q of object.quads)if(!q.kind)this.primitives.push({q,slot:this.slots.get(q),layer:object.layer,
+        origin:q.position.map((v,i)=>v+instance.position[i])});
+    }
+    // Scratch vertices are private to clipping; projected output is copied
+    // before publishing, so retained presentation endpoints never change.
+    this.clipScratch={vertices:[],a:[],b:[],used:0};
+  }
   tick(){
     const s=this.camera,vector=(c,i)=>c.floats.slice(i,i+3),fog=(c,i)=>{const n=c.ints[i]>>>0;return [((n>>>16)&255)/255,((n>>>8)&255)/255,(n&255)/255,c.floats[i+1],c.floats[i+2]];};
     for(let budget=0;budget<200&&this.data.commands[this.pc]?.time<=this.clock;budget++){
@@ -40,38 +67,48 @@ export class StageBackground {
   }
   sample(frame){frame=Math.max(0,Math.min(100000,frame|0));while(this.frames.length<=frame)this.tick();return this.frames[frame];}
   geometry(frame,logicalState=null){
-    const authoritative=!!logicalState?.loaded,flags=logicalState?.flags??1,poses=authoritative?new Map(logicalState.poses.map(row=>[row[0],row])):null;
+    const authoritative=!!logicalState?.loaded,flags=logicalState?.flags??1,poses=authoritative?new Map():null;
+    if(poses)for(const row of logicalState.poses)poses.set(row[0],logicalAnimation(row));
     //430a70 builds View/Projection without Camera+e8/ec. It copies those
     //screen offsets only to ANMManager+b0/b4 for later XYZRHW quads. The
     //Main81 render-target copy applies them after this3D background pass.
     const camera=authoritative?logicalBackgroundCamera(logicalState.camera):this.sample(frame),z=unit(camera.viewDirection??camera.direction),x=unit(cross(camera.up,z)),y=cross(z,x),viewport=this.data.viewport??[13,0,422,480],viewportCenter=[viewport[0]+viewport[2]/2,viewport[1]+viewport[3]/2],focal=viewport[3]/2/Math.tan(camera.fov/2),triangles=[];
     if(authoritative&&(flags&8))return {camera,triangles,authoritative,frame:logicalState.frame};
-    for(const instance of this.data.instances){const object=this.data.objects[instance.object];
+    const scratch=this.clipScratch;
+    for(const {q,slot,layer,origin} of this.primitives){
       // 40396e/403d45 gates both STD object-layer groups0..7 and8..11.
       // Independent Scene/Spell ANM layers26/27 are not STD primitives here.
-      if(authoritative&&!(flags&1)&&object.layer>=0&&object.layer<=11)continue;
-      for(const q of object.quads){if(q.kind&&q.kind!==0)continue;const row=poses?.get(this.slots.get(q)),animation=authoritative?(row?logicalAnimation(row):null):this.animations.sample(this.bank,q.script,frame),sprite=this.atlases[this.bank].sprites[animation?.sprite];
-        if(!sprite||!animation.visible||animation.alpha<=0)continue;const rotation=[animation.rx,animation.ry,animation.rotation],center=q.position.map((v,i)=>v+instance.position[i]+[animation.x,animation.y,animation.z][i]),size=primitiveSize(q,animation,sprite);
-        let polygon=[[-.5,-.5,0,0],[.5,-.5,1,0],[.5,.5,1,1],[-.5,.5,0,1]].map(([a,b,u,v])=>{
-          let px=a*size[0],py=b*size[1],pz=0;
-          // ANM mode 8: the STD primitive determines dimensions, and the
-          // script supplies the rotation, including the mirrored snow edges.
-          const cx=Math.cos(rotation[0]),sx=Math.sin(rotation[0]),cy=Math.cos(rotation[1]),sy=Math.sin(rotation[1]),cz=Math.cos(rotation[2]),sz=Math.sin(rotation[2]);
-          [py,pz]=[py*cx-pz*sx,py*sx+pz*cx];[px,pz]=[px*cy+pz*sy,-px*sy+pz*cy];[px,py]=[px*cz-py*sz,px*sz+py*cz];
-          const d=sub([center[0]+px,center[1]+py,center[2]+pz],camera.position);return {cx:dot(d,x),cy:dot(d,y),depth:dot(d,z),distance:Math.hypot(...d),u:sprite.x+u*sprite.w,v:sprite.y+v*sprite.h};
-        });
-        // Clip the near plane before projection; never discard a whole tile
-        // just because one corner is behind the camera.
-        for(const [plane,keep]of [[this.data.near??30,d=>d>=0],[this.data.far??1800,d=>d<=0]]){const clipped=[];for(let i=0;i<polygon.length;i++){const a=polygon[i],b=polygon[(i+1)%polygon.length],inside=keep(a.depth-plane);if(inside)clipped.push(a);if(inside!==keep(b.depth-plane)){const t=(plane-a.depth)/(b.depth-a.depth);clipped.push(Object.fromEntries(Object.keys(a).map(k=>[k,a[k]+(b[k]-a[k])*t])));}}polygon=clipped;}
-        const texture=this.atlases[this.bank].entries[sprite.entry];
-        // Original device setup disables table fog and selects linear vertex
-        // fog (0x451326..0x45134f); range fog is not enabled. Use view Z.
-        polygon=polygon.map(p=>({...p,x:viewportCenter[0]+p.cx/p.depth*focal,y:viewportCenter[1]-p.cy/p.depth*focal,u:sprite.x+(p.u-sprite.x)*(animation.uvScaleX??1)+animation.u*texture.width,v:sprite.y+(p.v-sprite.y)*(animation.uvScaleY??1)+animation.v*texture.height,alpha:animation.alpha,r:animation.r,g:animation.g,b:animation.b,fog:animation.noFog?0:Math.max(0,Math.min(1,(p.depth-camera.fog[3])/(camera.fog[4]-camera.fog[3])))}));
-        if(polygon.length<3||polygon.every(p=>p.x<32)||polygon.every(p=>p.x>416)||polygon.every(p=>p.y<16)||polygon.every(p=>p.y>464))continue;
-        for(let i=1;i<polygon.length-1;i++)triangles.push({bank:this.bank,layer:object.layer,entry:sprite.entry,blend:animation.blend,point:animation.point,vertices:[polygon[0],polygon[i],polygon[i+1]]});
+      if(authoritative&&!(flags&1)&&layer>=0&&layer<=11)continue;
+      const animation=authoritative?poses.get(slot):this.animations.sample(this.bank,q.script,frame),sprite=this.atlases[this.bank].sprites[animation?.sprite];
+      if(!sprite||!animation.visible||animation.alpha<=0)continue;
+      const centerX=origin[0]+animation.x,centerY=origin[1]+animation.y,centerZ=origin[2]+animation.z,size=primitiveSize(q,animation,sprite);
+      // All four corners share the authored rotation.
+      const cx=Math.cos(animation.rx),sx=Math.sin(animation.rx),cy=Math.cos(animation.ry),sy=Math.sin(animation.ry),cz=Math.cos(animation.rotation),sz=Math.sin(animation.rotation);
+      scratch.a.length=4;scratch.used=4;
+      for(let i=0;i<4;i++){
+        const [a,b,u,v]=corners[i];
+        let px=a*size[0],py=b*size[1],pz=0;
+        // ANM mode 8: the STD primitive determines dimensions, and the
+        // script supplies the rotation, including the mirrored snow edges.
+        let next=py*cx-pz*sx;pz=py*sx+pz*cx;py=next;
+        next=px*cy+pz*sy;pz=-px*sy+pz*cy;px=next;
+        next=px*cz-py*sz;py=px*sz+py*cz;px=next;
+        const dx=centerX+px-camera.position[0],dy=centerY+py-camera.position[1],dz=centerZ+pz-camera.position[2],p=scratch.vertices[i]??(scratch.vertices[i]={});
+        p.cx=0+dx*x[0]+dy*x[1]+dz*x[2];p.cy=0+dx*y[0]+dy*y[1]+dz*y[2];p.depth=0+dx*z[0]+dy*z[1]+dz*z[2];
+        p.distance=Math.hypot(dx,dy,dz);p.u=sprite.x+u*sprite.w;p.v=sprite.y+v*sprite.h;scratch.a[i]=p;
       }
+      // Clip the near plane before projection; never discard a whole tile
+      // just because one corner is behind the camera.
+      clipPolygon(scratch.a,scratch.b,this.data.near??30,true,scratch);
+      let polygon=clipPolygon(scratch.b,scratch.a,this.data.far??1800,false,scratch);
+      const texture=this.atlases[this.bank].entries[sprite.entry];
+      // Original device setup disables table fog and selects linear vertex
+      // fog (0x451326..0x45134f); range fog is not enabled. Use view Z.
+      polygon=polygon.map(p=>({...p,x:viewportCenter[0]+p.cx/p.depth*focal,y:viewportCenter[1]-p.cy/p.depth*focal,u:sprite.x+(p.u-sprite.x)*(animation.uvScaleX??1)+animation.u*texture.width,v:sprite.y+(p.v-sprite.y)*(animation.uvScaleY??1)+animation.v*texture.height,alpha:animation.alpha,r:animation.r,g:animation.g,b:animation.b,fog:animation.noFog?0:Math.max(0,Math.min(1,(p.depth-camera.fog[3])/(camera.fog[4]-camera.fog[3])))}));
+      if(polygon.length<3||polygon.every(p=>p.x<32)||polygon.every(p=>p.x>416)||polygon.every(p=>p.y<16)||polygon.every(p=>p.y>464))continue;
+      for(let i=1;i<polygon.length-1;i++)triangles.push({bank:this.bank,layer,entry:sprite.entry,blend:animation.blend,point:animation.point,depthSum:0+polygon[0].depth+polygon[i].depth+polygon[i+1].depth,vertices:[polygon[0],polygon[i],polygon[i+1]]});
     }
     // STD tiles share a plane; sorting also makes their few z offsets stable.
-    triangles.sort((a,b)=>a.layer-b.layer||b.vertices.reduce((s,v)=>s+v.depth,0)-a.vertices.reduce((s,v)=>s+v.depth,0));return {camera,triangles,authoritative,frame:authoritative?logicalState.frame:frame};
+    triangles.sort((a,b)=>a.layer-b.layer||b.depthSum-a.depthSum);return {camera,triangles,authoritative,frame:authoritative?logicalState.frame:frame};
   }
 }

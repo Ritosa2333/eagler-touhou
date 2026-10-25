@@ -1,6 +1,10 @@
 import {inspectMultiplayerReplay} from './multiplayer-replay.mjs';
 import {createAdonisCalibration} from '../../../common/browser/adonis-calibration.mjs';
 import {createSpectatorPlaybackBridge} from '../../../common/browser/spectator-playback.mjs';
+export function replayStageLoadout(meta){
+ const loadout=meta?.loadouts?.[meta.recordedPlayer];
+ return loadout?[loadout,meta.loadouts[0],meta.difficulty]:[undefined,undefined,undefined];
+}
 
 export function multiplayerBuildWords(manifest) {
  const digest=manifest?.execution?.sha256;
@@ -47,11 +51,18 @@ export async function multiplayerSetupWords(options,buildWords,cryptoProvider=gl
  words.push(config.timingMode,+config.automatic,config.reserve,...buildWords,+config.challenge);
  return {config,words};
 }
+export function rollbackDiagnostics(core,status){
+ const pointer=core._th12_mp_rollback_status?.();
+ const raw=pointer===undefined?null:new Uint32Array(core.HEAPU8.buffer,pointer,8);
+ const missing=status[4]===0xffffffff?status[3]:Math.max(0,status[3]-status[4]-1);
+ return {restores:raw?.[1]??0,resimulated:raw?.[2]??0,committed:raw?.[3]??0,
+  correcting:!!raw?.[4],request:raw?.[5]??0xffffffff,frontier:status[3],missingInputs:missing};
+}
 // The shared native runtime owns input scheduling, prediction and confirmation.
 // This adapter translates only TH12 browser input, assets and presentation.
 export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStage,onError,onExit,store}) {
  const buildWords=multiplayerBuildWords(manifest);
- let active=false,readOnly=false,lastReport=0,savedAt=0,exitPending=false,transitioning=false;
+ let active=false,readOnly=false,lastReport=0,savedAt=0,exitPending=false,transitioning=false,rollbackCount=0;
  let replayPaused=false,replayRate=1,seekTarget=null,replayPath=null,halfFrame=false,replayMeta=null,savePending=Promise.resolve(),playbackReported=-Infinity;
  const cstring=pointer=>{const heap=core.HEAPU8,end=heap.indexOf(0,pointer);return pointer?new TextDecoder().decode(heap.subarray(pointer,end<0?heap.length:end)):'';};
  const error=()=>Error(cstring(core._th12_mp_error())||'TH12 多人运行失败');
@@ -80,7 +91,7 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  async function launch(){
   exitPending=false;savedAt=performance.now();replayPath=null;replayMeta=null;core.eaglerOptions=getOptions();
   const {config,words:setup}=await multiplayerSetupWords(getOptions(),buildWords);
-  await loadStage(getOptions().netplayDifficulty===4?7:1,config.loadouts[config.seat]);
+  await loadStage(getOptions().netplayDifficulty===4?7:1,config.loadouts[config.seat],config.loadouts[0]);
   if(!withBytes(new Uint8Array(new Uint32Array(setup).buffer),p=>core._th12_mp_configure(p,setup.length)))throw error();
   const connected=withString(getOptions().netplayUrl,url=>config.spectator?withString(getOptions().netplaySpectatorId,id=>core._th12_mp_spectator_connect(url,id)):core._th12_mp_connect(url));
   if(!connected||!core._th12_mp_start())throw error();
@@ -90,7 +101,11 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  }
  async function transition(stage){
   if(transitioning)return;transitioning=true;
-  try{if(!core._th12_mp_stage_begin())throw error();await loadStage(stage);if(!core._th12_mp_stage_loaded())throw error();}
+  try{
+   if(!core._th12_mp_stage_begin())throw error();
+   await loadStage(stage,...replayStageLoadout(replayMeta));
+   if(!core._th12_mp_stage_loaded())throw error();
+  }
   finally{transitioning=false;}
  }
  function sounds(){
@@ -100,10 +115,15 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  }
  function report(now){
   const status=words();globalThis.__eaglerNetplayLanActive=status[9]===1;globalThis.__eaglerNetplayLanFrame=status[3];
+  const rollback=rollbackDiagnostics(core,status);rollbackCount=rollback.restores;
+  globalThis.__eaglerNetplayLanRollback=rollback.restores;globalThis.__eaglerNetplayLanResimulated=rollback.resimulated;
+  globalThis.__eaglerNetplayMissingInputs=rollback.missingInputs;
+  globalThis.__eaglerNetplayLanFrameAdvantage=rollback.missingInputs;
+  globalThis.__eaglerNetplayInputRepairs=status[17];
   globalThis.__eaglerNetplayInputDelayFrames=status[7];globalThis.__eaglerNetplayLanConfirmed=status[4]===0xffffffff?undefined:status[4];
   globalThis.__eaglerNetplayTransport=status[20]===1?'rtc':status[20]===2?'relay':readOnly?'spectator':'';
   globalThis.__eaglerNetplayPath=globalThis.__eaglerPeerTransport?.route||globalThis.__eaglerNetplayTransport||'connecting';
-  if(now-lastReport>=1000){lastReport=now;globalThis.__eaglerNetplayDiagnostics={frame:status[3],confirmed:status[4],inputDelay:status[7],prediction:status[8],nativeHash:core._th12_mp_hash()};
+  if(now-lastReport>=1000){lastReport=now;globalThis.__eaglerNetplayDiagnostics={frame:status[3],confirmed:status[4],inputDelay:status[7],prediction:status[8],rollback};
    emit({event:'runtime-info',netplayInputDelayFrames:status[7],netplayPredictionFrames:status[8],multiplayer:state()});}
   if(!readOnly&&now-savedAt>=15000){savedAt=now;void save().catch(onError);}
   if(status[13]&&!exitPending){exitPending=true;void save().then(async()=>{if(state().restart&&!readOnly){await loadStage(getOptions().netplayDifficulty===4?7:1);if(!core._th12_mp_restart())throw error();exitPending=false;replayPath=null;calibration.start();}else await onExit();}).catch(onError);}
@@ -123,7 +143,7 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
   }
   report(now);playbackReport(now);return sounds();
  }
- function stop(){calibration.stop();spectator.stop();core._th12_mp_stop();active=false;replayMeta=null;seekTarget=null;exitPending=false;globalThis.__eaglerNetplayLanActive=false;globalThis.__eaglerNetplaySpectator=false;}
+ function stop(){calibration.stop();spectator.stop();core._th12_mp_stop();active=false;rollbackCount=0;globalThis.__eaglerNetplayLanRollback=globalThis.__eaglerNetplayLanResimulated=0;replayMeta=null;seekTarget=null;exitPending=false;globalThis.__eaglerNetplayLanActive=false;globalThis.__eaglerNetplaySpectator=false;}
  function inspect(bytes){
   if(!withBytes(bytes,(p,n)=>core._th12_mp_replay_validate(p,n)))throw Error('不是有效的 TH12 多人录像');
   return inspectMultiplayerReplay(bytes,{validate:b=>!!withBytes(b,(p,n)=>core._th12_mp_replay_validate(p,n)),buildWords});
@@ -141,7 +161,7 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  }
  async function openReplay(path,stage){
   const bytes=await store().read(path);if(!bytes)throw Error('录像不存在');inspect(bytes);stop();
-  const meta=inspect(bytes);await loadStage(meta.difficulty===4?7:1,meta.loadouts[meta.recordedPlayer]);
+  const meta=inspect(bytes);await loadStage(meta.difficulty===4?7:1,...replayStageLoadout(meta));
   if(!withBytes(new Uint8Array(new Uint32Array(buildWords).buffer),build=>withBytes(bytes,(p,n)=>core._th12_mp_replay_load(p,n,build))))throw error();
   const chapter=stage===undefined?meta.chapters[0]:meta.chapters.find(c=>c.stage===stage);if(!chapter)throw Error('录像没有此关卡');
   active=readOnly=true;replayMeta=meta;replayPath=path;replayPaused=false;replayRate=1;seekTarget=chapter.frame||null;halfFrame=false;
@@ -165,5 +185,6 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  }
  return {launch,tick,save,saveAs,stop,state,playback,spectatorCommand:spectator.command,inspect,openReplay,
   get active(){return active;},get transitioning(){return transitioning;},get readOnly(){return readOnly;},
+  get rollbackCount(){return rollbackCount;},
   pace:elapsed=>active&&!readOnly?core._th12_mp_paced_elapsed(elapsed):elapsed};
 }

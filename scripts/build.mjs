@@ -18,6 +18,7 @@ fs.mkdirSync(outputDirectory,{recursive:true});
 const exports=['_malloc','_free','_th12_load_ecl','_th12_load_msg','_th12_select_stage','_th12_load_sht','_th12_start','_th12_state','_th12_state_size','_th12_tick','_th12_draw','_th12_draw_ptr','_th12_draw_stride','_th12_draw_version','_th12_hud','_th12_hud_size'];
 exports.push(...['configure','connect','spectator_connect','start','restart','pump','step','stop','error','status','calibration_status','rollback_status','hash','state','stage_needed','stage_begin','stage_loaded','sounds','sounds_count','sounds_clear','replay_encode','replay_data','replay_validate','replay_load','replay_frames','replay_rewind','paced_elapsed','spectator_state','spectator_control'].map(name=>'_th12_mp_'+name));
 if(diagnostic)exports.push('_th12_diagnostic_build','_th12_diagnostic_state','_th12_diagnostic_state_size','_th12_oracle_fixture','_th12_set_initial','_th12_set_replay_economy','_th12_unsupported','_th12_rng16','_th12_rng32');
+exports.push('_th12_mp_visual_owners','_th12_mp_visual_owners_count');
 const cache=path.join(root,'artifacts/emscripten-cache');fs.mkdirSync(cache,{recursive:true});
 const temporary=path.join(root,'artifacts/emscripten-temp',diagnostic?'diagnostic-core':'core');fs.mkdirSync(temporary,{recursive:true});
 const thprac=process.env.TH12_THPRAC==='1',sharedSourceFiles={},buildFlags=[],sharedSources=[];
@@ -52,7 +53,7 @@ exports.push('_th12_laser_draw','_th12_laser_draw_ptr','_th12_laser_draw_stride'
 exports.push('_th12_mesh_draw','_th12_mesh_draw_ptr','_th12_mesh_draw_stride','_th12_mesh_vertices_ptr','_th12_mesh_vertices_count','_th12_mesh_vertex_stride');
 exports.push('_th12_score_popups','_th12_score_popups_ptr','_th12_score_popups_stride');
 exports.push('_th12_score_stored');
-exports.push('_th12_start_full_game','_th12_set_full_game_mode','_th12_start_next_stage','_th12_continue_game','_th12_stage_flow','_th12_stage_flow_size');
+exports.push('_th12_start_full_game','_th12_set_full_game_mode','_th12_replay_stage_flow','_th12_start_next_stage','_th12_continue_game','_th12_stage_flow','_th12_stage_flow_size');
 exports.push('_th12_motion','_th12_motion_result','_th12_player_state','_th12_player_instance','_th12_player_speed');
 exports.push('_th12_presentation_motion','_th12_presentation_motion_size','_th12_presentation_motion_binary');
 exports.push('_th12_practice_enabled','_th12_practice_reset','_th12_practice_configure','_th12_practice_start','_th12_practice_prepare_replay','_th12_practice_replay','_th12_practice_tools','_th12_practice_speed','_th12_practice_interval','_th12_practice_state','_th12_practice_state_size','_th12_practice_boss_music','_th12_practice_everlasting_bgm');

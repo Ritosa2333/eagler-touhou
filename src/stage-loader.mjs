@@ -14,8 +14,11 @@ export class StageLoader {
   constructor(core,atlases,readBytes){this.core=core;this.atlases=atlases;this.readBytes=readBytes;this.cache=new Map();this.epoch=0;}
   async bytes(file){if(!this.cache.has(file))this.cache.set(file,Promise.resolve().then(()=>this.readBytes(file)).catch(error=>{this.cache.delete(file);throw error;}));return this.cache.get(file);}
   cancel(){this.epoch++;}
+  async prepare(number){
+    return Promise.all(stageResources(number,this.atlases).map(async r=>({...r,bytes:await this.bytes(r.file)})));
+  }
   async load(number,isCurrent=()=>true){
-    const epoch=++this.epoch,resources=stageResources(number,this.atlases),bundle=await Promise.all(resources.map(async r=>({...r,bytes:await this.bytes(r.file)})));
+    const epoch=++this.epoch,bundle=await this.prepare(number),resources=bundle;
     if(epoch!==this.epoch||!isCurrent())return false;
     const c=this.core;c._th12_select_stage(number);
     if(!resources.some(r=>r.method==='_th12_load_anm'&&r.index===3))c._th12_unload_anm?.(3);

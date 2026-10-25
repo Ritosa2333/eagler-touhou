@@ -10,7 +10,42 @@
 
 namespace th12 {
 std::string presentationMotionBuffer;
+void collectPresentationRevisions() {
+  // IDs are not reused within a stage. Retired owners cannot participate in
+  // interpolation again; retaining them would make every rollback copy grow
+  // with the total shots fired rather than the current world.
+  static std::vector<uint32_t> live;
+  live.clear();
+  for (const auto& [id,node] : animationScene.nodes()) if (node->owner) live.push_back(node->owner);
+  for (const auto& enemy : enemies) if (enemy->active) live.push_back(enemy->id);
+  for (const auto& bullet : bullets) if (bullet.active) live.push_back(0x10000000u+bullet.entityId);
+  for (const auto& item : itemManager.entities) if (item.active())
+    for (auto prefix : {0x20000000u,0x30000000u,0x40000000u}) live.push_back(prefix+item.id);
+  for (const auto* laser : laserManager.ordered()) live.push_back(0xb0000000u+laser->state.serialId);
+  std::sort(live.begin(),live.end());
+  for (auto at=presentation::ownerRevisions.begin();at!=presentation::ownerRevisions.end();)
+    if (at->first<0xff000000u&&!std::binary_search(live.begin(),live.end(),at->first))
+      at=presentation::ownerRevisions.erase(at);
+    else ++at;
+}
 namespace {
+template<class F> void presentationPilots(F&& visit) {
+  if(multiplayer::active) for(unsigned seat=0;seat<multiplayer::options.count;++seat)visit(multiplayer::pilots[seat]);
+  else visit(pilot());
+}
+uint32_t focusMotionOwner(const anm_logic::Node& node) {
+  uint32_t result=node.owner;
+  presentationPilots([&](const auto& player){
+    if(node.owner!=player.owner()+0x20u||!player.playerFocusAnimation)return;
+    const auto* focus=animationScene.find(player.playerFocusAnimation);if(!focus)return;
+    const auto* ancestor=&node;
+    for(int depth=0;ancestor&&depth<16;++depth){
+      if(ancestor->id==focus->id){result=player.owner();break;}
+      const auto at=animationScene.nodes().find(ancestor->parent);ancestor=at==animationScene.nodes().end()?nullptr:at->second.get();
+    }
+  });
+  return result;
+}
 uint32_t continuousFields(const anm_logic::Node& node) {
   return node.vm.continuousFields()|((node.owner>>28)==1?2u:0u);
 }
@@ -35,7 +70,7 @@ const std::string& capturePresentationMotion(){
     if(comma)out<<',';comma=true;
     out<<"{\"id\":"<<id<<",\"revision\":"<<revision<<",\"position\":["<<x<<','<<y<<','<<z<<"],\"kind\":\""<<kind<<"\"}";
   };
-  owner(0xffff0000u,pilot().px/128.f+224,pilot().py/128.f+16,0,presentation::revision(0xffff0000u)*8u+uint32_t(pilot().playerState),"player");
+  presentationPilots([&](const auto& p){owner(p.owner(),p.px/128.f+224,p.py/128.f+16,0,presentation::revision(p.owner())*8u+uint32_t(p.playerState),"player");});
   for(const auto& pointer:enemies){const auto& e=*pointer;if(e.active)
     owner(e.id,e.x+224,e.y+16,e.z,presentation::revision(e.id)+
       (e.isUfo?presentation::revision(0xfffd0001u)+presentation::revision(0xfffd0003u):0),"enemy");}
@@ -61,20 +96,16 @@ const std::string& capturePresentationMotion(){
   for(const auto& enemy:enemies)if(enemy->active&&enemy->extraBombShieldAnimation)
     attachedEnemies.emplace(enemy->extraBombShieldAnimation,enemy->id);
   out<<"],\"nodes\":[";comma=false;
+  static std::vector<const anm_logic::Node*> registeredNodes;
+  registeredNodes.clear();
+  registeredNodes.reserve(animationScene.nodes().size());
   for(const auto membership:{anm_logic::Membership::Primary,anm_logic::Membership::Secondary,anm_logic::Membership::Embedded})
-    for(const auto* pointer:animationScene.chain(membership)){
+    animationScene.appendChain(membership,registeredNodes);
+    for(const auto* pointer:registeredNodes){
       const auto& node=*pointer;const auto& s=node.vm.state();
       if(!node.alive)continue;if(comma)out<<',';comma=true;
-      uint32_t motionOwner=node.owner;
+      uint32_t motionOwner=focusMotionOwner(node);
       const char* meshKind="";
-      if(node.owner==0xffff0020u)motionOwner=focus&&focus->id==node.id?0xffff0000u:node.owner;
-      // Attached focus descendants resolve through their real ancestor IDs.
-      if(node.owner==0xffff0020u&&focus){
-        const auto* ancestor=&node;for(int depth=0;ancestor&&depth<16;++depth){
-          if(ancestor->id==focus->id){motionOwner=0xffff0000u;break;}
-          const auto at=animationScene.nodes().find(ancestor->parent);ancestor=at==animationScene.nodes().end()?nullptr:at->second.get();
-        }
-      }
       if(node.owner==0xfffd0001u||node.owner==0xfffd0003u)motionOwner=ufoManager.enemyId;
       if(node.owner==0xfffe0200u)if(const auto* boss=primaryBoss())motionOwner=boss->id;
       if(const auto attached=attachedEnemies.find(node.key);attached!=attachedEnemies.end())motionOwner=attached->second;
@@ -120,13 +151,14 @@ const std::array<uint32_t,17>& capturePresentationMotionBinary(){
   static std::vector<Laser> lasers;
   static std::vector<uint32_t> lineages;
   static std::array<uint32_t,17> header;
+  static std::vector<const anm_logic::Node*> registeredNodes;
   owners.clear();nodes.clear();lasers.clear();lineages.clear();
   const auto* focus=animationScene.find(pilot().playerFocusAnimation);
   std::unordered_set<uint32_t> seen;
   const auto owner=[&](uint32_t id,float x,float y,float z,uint32_t revision,uint32_t kind){
     if(seen.insert(id).second)owners.push_back({id,revision,kind,{x,y,z}});
   };
-  owner(0xffff0000u,pilot().px/128.f+224,pilot().py/128.f+16,0,presentation::revision(0xffff0000u)*8u+uint32_t(pilot().playerState),0);
+  presentationPilots([&](const auto& p){owner(p.owner(),p.px/128.f+224,p.py/128.f+16,0,presentation::revision(p.owner())*8u+uint32_t(p.playerState),0);});
   for(const auto& pointer:enemies){const auto& e=*pointer;if(e.active)
     owner(e.id,e.x+224,e.y+16,e.z,presentation::revision(e.id)+(e.isUfo?presentation::revision(0xfffd0001u)+presentation::revision(0xfffd0003u):0),1);}
   for(const auto& b:bullets)if(b.active)
@@ -143,13 +175,13 @@ const std::array<uint32_t,17>& capturePresentationMotionBinary(){
   }
   std::unordered_map<uint64_t,uint32_t> attached;
   for(const auto& e:enemies)if(e->active&&e->extraBombShieldAnimation)attached.emplace(e->extraBombShieldAnimation,e->id);
+  registeredNodes.clear();
+  registeredNodes.reserve(animationScene.nodes().size());
   for(const auto membership:{anm_logic::Membership::Primary,anm_logic::Membership::Secondary,anm_logic::Membership::Embedded})
-    for(const auto* pointer:animationScene.chain(membership)){
+    animationScene.appendChain(membership,registeredNodes);
+    for(const auto* pointer:registeredNodes){
       const auto& n=*pointer;const auto& s=n.vm.state();if(!n.alive)continue;
-      uint32_t motionOwner=n.owner,meshKind=0;
-      if(n.owner==0xffff0020u)motionOwner=focus&&focus->id==n.id?0xffff0000u:n.owner;
-      if(n.owner==0xffff0020u&&focus){const auto* a=&n;for(int depth=0;a&&depth<16;++depth){
-        if(a->id==focus->id){motionOwner=0xffff0000u;break;}const auto at=animationScene.nodes().find(a->parent);a=at==animationScene.nodes().end()?nullptr:at->second.get();}}
+      uint32_t motionOwner=focusMotionOwner(n),meshKind=0;
       if(n.owner==0xfffd0001u||n.owner==0xfffd0003u)motionOwner=ufoManager.enemyId;
       if(n.owner==0xfffe0200u)if(const auto* boss=primaryBoss())motionOwner=boss->id;
       if(const auto at=attached.find(n.key);at!=attached.end())motionOwner=at->second;

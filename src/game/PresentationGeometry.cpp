@@ -54,11 +54,15 @@ void append(custom_geometry::Mesh mesh, const anm_logic::Node& node) {
 void captureCustomGeometry() {
   meshDrawState.clear();
   meshVertexState.clear();
+  static std::vector<const anm_logic::Node*> registeredNodes;
+  registeredNodes.clear();
+  registeredNodes.reserve(animationScene.nodes().size());
   // Registered chain order is shared by ordinary ANM and custom callbacks.
   // Summon trails must retain that order when drawing in the same layer.
   for (const auto membership : {anm_logic::Membership::Primary, anm_logic::Membership::Secondary,
                                 anm_logic::Membership::Embedded})
-    for (const auto* pointer : animationScene.chain(membership)) {
+    animationScene.appendChain(membership, registeredNodes);
+    for (const auto* pointer : registeredNodes) {
       const auto& node = *pointer;
       multiplayer::Scope owner(node.seat);
       if (node.customGeometry && ufoEffects.owns(node.id)) {

@@ -1,5 +1,6 @@
 // Installed data-only thcrap overlay. Network/package installation belongs to
 // Launcher. This module never imports code or fetches a translation URL.
+import {messagePresentation} from './message-presentation.mjs';
 export const LOCALIZATION_PREFIX='/thcrap/th12/';
 export const LOCALIZATION_SCHEMA='th12-localization-overlay/2';
 const ORIGINAL_EXE='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417';
@@ -241,6 +242,7 @@ class Localization {
     this.language=overlay?.language??'ja';this.context=null;
     this.dialogue=uniqueIndex(Object.values(overlay?.dialogue??{}).flatMap(records=>Object.values(records)));
     this.spells=uniqueIndex(Object.values(overlay?.spells??{}));
+    this.messagePresentations=new Map();
   }
   activate(){active=this;return this;}
   deactivate(){if(active===this)active=null;}
@@ -279,6 +281,16 @@ class Localization {
     if(await hash(data)!==patch.sourceSha256)throw Error('语言补丁与原版对话源文件不匹配');
     return rebuildMessage(data,patch);
   }
+  async prepareMessage(path,originalBytes){
+    const name=path.match(/^\/assets\/(st0[1-7]_0[012][ab]\.msg)$/)?.[1];
+    if(!name||!this.overlay||!has(this.overlay.dialoguePatches,name))return;
+    const data=bytes(originalBytes),patch=this.overlay.dialoguePatches[name];
+    if(await hash(data)!==patch.sourceSha256)throw Error('语言补丁与原版对话源文件不匹配');
+    // Validate the complete text-only patch before indexing local surfaces.
+    rebuildMessage(data,patch);
+    this.messagePresentations.set(name,messagePresentation(data,patch));
+  }
+  presentMessage(message){return this.messagePresentations.get(this.context)?.(message)??message;}
   applyMenuResources(base){
     if(!this.overlay)return base;
     if(!JAPANESE_EXES.has(base?.originalExeSha256))throw Error('语言覆盖的原版菜单版本不匹配');
@@ -315,7 +327,8 @@ class Localization {
   }
 }
 
-// Small presentation hooks. The native ECL and all non-text MSG commands stay
-// original; only rebuilt dialogue text payloads use the overlay's known UTF-8.
+// Native ECL and MSG stay original. Local text surfaces use the overlay's
+// validated UTF-8 records without advancing the shared VM or its animations.
 export function localizedHex(kind,source,options){return active?.textForHex(kind,source,options)??null;}
 export function localizedFontFamily(){return active?.fontFamily??null;}
+export function localizedMessage(message){return active?.presentMessage(message)??message;}

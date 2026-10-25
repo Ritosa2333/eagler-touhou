@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {StageBackground,logicalBackgroundCamera,primitiveSize} from '../src/stage-background.mjs';
 import {readCoreBackground,Renderer} from '../src/renderer.mjs';
-const atlases=JSON.parse(fs.readFileSync(new URL('../site/assets/atlases.json',import.meta.url))),data=JSON.parse(fs.readFileSync(new URL('../site/assets/stage01-background.json',import.meta.url)));
+const assets=new URL(process.env.TH12_ASSETS?new URL('file:///'+process.env.TH12_ASSETS.replaceAll('\\','/')+'/'):fs.existsSync(new URL('../site/assets/atlases.json',import.meta.url))?'../site/assets/':'../../th12/site/assets/',import.meta.url);
+const atlases=JSON.parse(fs.readFileSync(new URL('atlases.json',assets))),data=JSON.parse(fs.readFileSync(new URL('stage01-background.json',assets)));
 const cameraSamples=JSON.parse(fs.readFileSync(new URL('fixtures/presentation-original.json',import.meta.url))).camera,viewSamples=JSON.parse(fs.readFileSync(new URL('fixtures/std-view-inputs-original.json',import.meta.url)));
 const canonicalPose=(slot,sprite)=>[slot,sprite,0,0,0,0,0,0,1,1,0,0,1,1,0xffffffff,0,7,0,8,0,0];
 function snapshot(frame=0){const original=cameraSamples.find(c=>c.frame===frame)??cameraSamples[0],argb=Number(original.fogArgb);return {loaded:1,flags:1,frame,clock:frame,camera:{position:[...original.position],direction:[...original.direction],up:[...original.up],offset:[0,0,0],eyeOffset:[0,0,1],fov:original.fov,fog:[(argb>>>16&255)/255,(argb>>>8&255)/255,(argb&255)/255,...original.fogRange]},poses:[0,0,1,1,2].map((sprite,i)=>canonicalPose(i,sprite))};}

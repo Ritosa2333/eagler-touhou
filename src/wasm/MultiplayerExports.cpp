@@ -23,6 +23,8 @@ const uint32_t* th12_mp_rollback_status(){
 }
 uint32_t th12_mp_hash(){return th12::multiplayer::canonicalHash();}
 const char* th12_mp_state(){return th12::multiplayer::snapshot().c_str();}
+const void* th12_mp_visual_owners(){return th12::multiplayerVisualOwners.data();}
+int th12_mp_visual_owners_count(){return int(th12::multiplayerVisualOwners.size());}
 int th12_mp_stage_needed(){return th12::multiplayer::session.stageNeeded()?int(th12::multiplayer::session.nextStage()):0;}
 int th12_mp_stage_begin(){return th12::multiplayer::session.beginStageLoad();}
 int th12_mp_stage_loaded(){return th12::multiplayer::session.stageLoaded();}

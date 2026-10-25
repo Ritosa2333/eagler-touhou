@@ -47,6 +47,23 @@ test('renderer draws the missing texts and retains native layers without clippin
   assert.deepEqual(get('bullet:16').box,[13,0,422,480]);
   assert.equal(events.at(-1).label,'hud');
 });
+test('multiplayer power uses the original large orange digits and smaller decimal sprites for every seat',()=>{
+  const core=fixture(),before=core.HEAPU8.slice(),r=Object.create(Renderer.prototype);
+  Object.assign(r,{lastFrame:-1,stageBackgrounds:new Map([[1,{geometry:()=>({camera:{fog:[0,0,0]},triangles:[]})}]]),stageJobs:new Map(),atlases:{text:{sprites:{}}},
+    animations:{beginFrame(){},endFrame(){},sampleAll(){return [];}}});
+  const players=[137,400,0].map((power,seat)=>({seat,power,maxPower:400,lives:2,bombs:1,lifeFragments:0,bombFragments:0,pointValue:1000000,graze:0}));
+  const texts=r.capturePresentation(core,{multiplayer:{players},localSeat:1,presentationContinuity:false}).poses.flatMap(p=>p.nativeText?[p.nativeText]:[]);
+  for(const [seat,decimal]of ['37','00','00'].entries()){
+    const large=texts.find(p=>p.x===540&&p.y===154+seat*80),small=texts.find(p=>p.x===560&&p.y===161+seat*80);
+    assert.equal(large.font,4);assert.equal(large.colorARGB,0xffff8030);assert.equal(large.scaleX??1,1);
+    assert.equal(small.text,decimal);assert.equal(small.font,4);assert.equal(small.scaleX,.6);assert.equal(small.scaleY,.6);
+    assert.equal(texts.find(p=>p.x===574&&p.y===large.y).text,'/4.');
+    assert(asciiGlyphs(large).every(g=>g.id>=243&&g.id<=254));
+  }
+  assert.equal(texts.find(p=>p.text==='2P').colorARGB,0xffffff00);
+  assert(!texts.some(p=>p.text.includes('* ')||p.text.includes(' / ')));
+  assert.deepEqual(core.HEAPU8,before,'HUD capture does not mutate game state or RNG');
+});
 test('glyph rendering uses original Failed and timer sprites, ARGB alpha and native rounding',()=>{
   const calls=[],r=Object.create(Renderer.prototype);r.atlases={ascii:{sprites:Object.fromEntries([227,228,238,241,262].map(id=>[id,{entry:0,x:0,y:0,w:id===262?32:8,h:10}]))}};r.region=(...args)=>calls.push(args);
   const p={font:2,text:'$01:%',x:10.5,y:20.5,colorARGB:0xc080ffc0};r.nativeText(p);

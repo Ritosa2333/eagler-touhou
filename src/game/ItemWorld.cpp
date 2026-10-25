@@ -58,6 +58,8 @@ void tickUfo() {
 
 void tickItems(bool focus) {
   const auto hooks = ufoHooks();
+  // TH15 awards one hundredth of power per room seat for each small P.
+  const int smallPowerAmount = multiplayer::active ? int(multiplayer::options.count) : 1;
   item_system::FrameView itemFrame;
   itemFrame.rate = gameSpeed;
   itemFrame.animate = itemPresentationTick;
@@ -79,10 +81,17 @@ void tickItems(bool focus) {
     case K::CollectOrdinary: {
       const auto before = pilot().resources;
       if(event.entity.type==4||event.entity.type==5)multiplayer::collectSharedPiece(event.entity.type);
-      else item_system::collectOrdinary(pilot().resources, event.entity, itemFrame.player);
+      else if(multiplayer::active&&!event.entity.gift&&(event.entity.type==6||event.entity.type==7)) {
+        // Natural stock drops are single world entities with a reward per seat.
+        // A donated life remains addressed to its one recipient.
+        for(unsigned s=0;s<multiplayer::options.count;++s) {
+          if(event.entity.type==7&&multiplayer::options.challenge)continue;
+          item_system::collectOrdinary(multiplayer::pilots[s].resources,event.entity,itemFrame.player,smallPowerAmount);
+        }
+      }else item_system::collectOrdinary(pilot().resources, event.entity, itemFrame.player, smallPowerAmount);
       const int type = event.entity.type;
       // 422d70 displays front45 when the award overflows the power cap.
-      const int powerAward = type == 3 ? before.powerStep : type == 8 ? before.maxPower : 0;
+      const int powerAward = type == 1 ? smallPowerAmount : type == 3 ? before.powerStep : type == 8 ? before.maxPower : 0;
       if (before.power < before.maxPower && before.power + powerAward > before.maxPower)
         showFullPowerNotice();
       if (type == 3 || type == 8 || before.power / before.powerStep != pilot().resources.power / pilot().resources.powerStep)
@@ -103,7 +112,7 @@ void tickItems(bool focus) {
       sound_system::queue.play(39, event.entity.position.x);
       {
         const int previous = pilot().resources.power / pilot().resources.powerStep;
-        item_system::collectAggregate(pilot().resources, event.entity);
+        item_system::collectAggregate(pilot().resources, event.entity, smallPowerAmount);
         for (int level = previous; level < pilot().resources.power / pilot().resources.powerStep; ++level)
           sound_system::queue.play(13, event.entity.position.x);
       }

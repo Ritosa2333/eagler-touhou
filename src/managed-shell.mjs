@@ -33,18 +33,19 @@ async function importedFile(path,bytes,api){
   validateNativeProfile(path,bytes);
 }
 export function managedCommandHandler(api){
-  let configured=false;
+  let configured=false,configuredLanguage='ja',configuredPresentationLimit;
   return async message=>{
     switch(message.command){
     case 'configure':{
       if(api.running())throw Error('游戏运行中不能重新配置');
       if(!['ogg','none'].includes(message.music))throw Error('星莲船未支持此音乐模式');
-      const language=message.language||message.runtimePack?.language||'ja';
+      const language=message.language||message.runtimePack?.language||configuredLanguage;
       if(language!=='ja'&&!/^lang_[a-z0-9-]+$/i.test(language))throw Error('尚未安装此语言的星莲船资源');
       if(message.runtimePack&&message.runtimePack.language!==language)throw Error('语言包与所选语言不匹配');
       const options=runtimeOptions(message.options),resources=[];
+      if(message.options?.limitPresentationTo60===undefined&&configuredPresentationLimit!==undefined)options.limitPresentationTo60=configuredPresentationLimit;
       for(const key of ['resources','runtimeResources','sharedResources']){if(message[key]!==undefined&&!Array.isArray(message[key]))throw Error('附加资源列表无效');resources.push(...(message[key]??[]));}
-      await api.resources(resources);await api.configure({options,music:message.music,language,runtimePack:message.runtimePack??null});configured=true;return {};
+      await api.resources(resources);await api.configure({options,music:message.music,language,runtimePack:message.runtimePack??null});configured=true;configuredLanguage=language;configuredPresentationLimit=options.limitPresentationTo60;return {};
     }
     case 'resources':await api.resources(message.resources);return {};
     case 'prepare-room':if(!configured)throw Error('请先配置游戏');return api.prepareRoom();
@@ -103,6 +104,6 @@ export function installManagedShell(api,environment=window,{announceReady=true}=
     }
     queue=queue.then(async()=>{try{if(!announced)throw Error('运行资源尚未准备');const result=await command(message);if(typeof message.request==='string')emit({request:message.request,ok:true,...result});}catch(error){if(typeof message.request==='string')emit({request:message.request,ok:false,error:error.message});else emit({event:'error',message:error.message});}});
   });
-  emit.ready=()=>{if(announced)return;announced=true;emit({event:'ready',saveRoot:'/savesth12'});};
+  emit.ready=()=>{if(announced)return;announced=true;emit({event:'ready',saveRoot:'/savesth12',roomPreview:true,roomReturn:true});};
   if(announceReady)emit.ready();return emit;
 }

@@ -33,6 +33,7 @@ struct AnimationTransform {
 extern std::vector<Sprite> drawState;
 extern std::vector<AnimationPose> animationDrawState;
 extern std::vector<AnimationDrawSchedule> animationScheduleState;
+extern std::vector<std::array<u32,2>> multiplayerVisualOwners;
 extern std::array<float, 41> hud;
 AnimationTransform resolveAnimationTransform(const anm_logic::Node& node, int depth = 0);
 void captureAnimationDraw();

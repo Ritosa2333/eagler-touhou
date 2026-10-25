@@ -1,3 +1,4 @@
+import {SpellWallClock} from './spell-wall-clock.mjs';
 // Ordered WebGL2 sprite batches. Presentation is a reader of core draw state.
 import {AnimationSampler} from './animation.mjs';
 import {StageBackground} from './stage-background.mjs';
@@ -7,11 +8,13 @@ import {asciiGlyphs} from './ascii-presentation.mjs';
 import {fpsTextDescriptors} from './fps-presentation.mjs';
 import {stageClearText,stageTransitionPose} from './stage-clear-presentation.mjs';
 import {readCoreDrawSchedule,orderPresentation,animationLayerPriority} from './draw-scheduler.mjs';
-import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
+import {localizedHex,localizedFontFamily,localizedMessage} from './localization/loader.mjs';
 import {thcrapLayout} from './localization/layout.mjs';
 import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
 import {VertexBatch} from './vertex-batch.mjs';
-export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10;if(size>40)exact[40]=score*10;return exact;}
+import {copyMeshPose,meshVertexCount,meshCoordinate,translateMesh} from './mesh-vertices.mjs';
+import {applyMultiplayerOpacity,readMultiplayerVisualOwners} from './multiplayer-presentation.mjs';
+export function readCoreHud(core,{highScore=0,scoreLowDigit=0}={}){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10+scoreLowDigit;if(size>40)exact[40]=Math.max(exact[3],Number.isSafeInteger(highScore)&&highScore>=0?highScore:0);return exact;}
 export function readCoreBossHud(core){
   if(!core._th12_boss_hud||!core._th12_boss_hud_size)return null;
   const ptr=core._th12_boss_hud(),size=core._th12_boss_hud_size();
@@ -57,8 +60,20 @@ const zeroOffset=Object.freeze([0,0]);
 export function beamSegmentVertices(x,y,angle,length,width,start,end){const dx=Math.cos(angle)*length/2,dy=Math.sin(angle)*length/2,nx=-Math.sin(angle)*width/2,ny=Math.cos(angle)*width/2;return [{x:x-dx-nx,y:y-dy-ny,color:start},{x:x-dx+nx,y:y-dy+ny,color:start},{x:x+dx+nx,y:y+dy+ny,color:end},{x:x+dx-nx,y:y+dy-ny,color:end}];}
 export function dialogueMetrics(width=354,height=17){return {width,height,sourceWidth:Math.min(1024,2*width+22),sourceHeight:36};}
 export function messageTextPoses(message,logicalPoses,atlases,{logicalText=false}={}){
+  message=localizedMessage(message);
   const roots=logicalPoses.filter(p=>p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4),colors=[0xf8f08f,0x8088ff,0xd8d8d8],records=message?.textRecords??(message?.textHex??[]).map(textHex=>({textHex,offset:0,spacing:0,style:(message.flags>>1)&1,color:colors[message.speaker]??colors[2]}));
   const make=(p,slot)=>{let record=records[slot];if(!record?.textHex||!p.a.visible)return null;const translation=localizedHex('dialogue',record.textHex,{entry:message?.entry,offset:record.offset,spacing:record.spacing}),text=translation?.text??originalMessageHex(record.textHex),sprite=atlases.text.sprites[slot];if(translation)record={...record,offset:translation.offset??record.offset,spacing:translation.spacing??record.spacing,localizedWidths:translation.byteWidths,localizedRuby:translation.ruby};return {...p,dialogue:true,text,record,metrics:dialogueMetrics(sprite.w,sprite.h)};};
+  if(message?.localizedPresentation&&roots.length){
+    // Ruby and translated line counts are local layout. Reuse each original
+    // line's animated pose without creating text VMs in the shared world.
+    return records.map((record,slot)=>{
+      const line=slot%2,visible=p=>p.a.visible&&p.a.alpha>0,
+        source=roots.find(p=>p.a.sprite===line&&visible(p))??roots.find(p=>p.a.sprite<2&&visible(p));
+      if(!source)return null;
+      const pose={...source,y:source.y+22*(line-source.a.sprite)-(slot>=2?6:0),a:{...source.a,sprite:slot}};
+      return make(pose,slot);
+    }).filter(Boolean);
+  }
   if(roots.length||logicalText)return roots.map(p=>make(p,p.a.sprite)).filter(Boolean);
   if(!message?.active)return [];
   // Older cores have no logical text VMs. Coordinates below come from the
@@ -96,13 +111,14 @@ export function readCoreMeshes(core,stage=1){
   if(!core._th12_mesh_draw)return [];
   const count=core._th12_mesh_draw(),ptr=core._th12_mesh_draw_ptr(),stride=core._th12_mesh_draw_stride(),vertexPtr=core._th12_mesh_vertices_ptr(),vertexCount=core._th12_mesh_vertices_count(),vertexStride=core._th12_mesh_vertex_stride(),limit=core.HEAPU8.byteLength;
   if(!Number.isInteger(count)||count<0||count>65536||stride!==56||vertexStride!==28||!Number.isInteger(vertexCount)||vertexCount<0||vertexCount>4000000||ptr<0||ptr+count*stride>limit||vertexPtr<0||vertexPtr+vertexCount*vertexStride>limit)throw Error('网格绘制记录无效');
-  const view=new DataView(core.HEAPU8.buffer),meshes=[];
+  const heap=core.HEAPU8,view=new DataView(heap.buffer,heap.byteOffset,heap.byteLength),meshes=[];
+  // One owned copy before another export can grow WASM memory or replace
+  // the draw queue. All meshes share views of this immutable snapshot.
+  const bytes=heap.slice(vertexPtr,vertexPtr+vertexCount*vertexStride),floats=new Float32Array(bytes.buffer,bytes.byteOffset,vertexCount*7),colors=new Uint32Array(bytes.buffer,bytes.byteOffset,vertexCount*7);
   for(let i=0;i<count;i++){
     const at=ptr+i*stride,I=n=>view.getInt32(at+n*4,true),U=n=>view.getUint32(at+n*4,true),offset=U(10),length=U(11),primitive=U(5),pass=U(6);
     if(offset+length>vertexCount||![3,4,5].includes(primitive)||pass>2)throw Error('网格顶点范围无效');
-    const vertices=[];
-    for(let j=0;j<length;j++){const a=vertexPtr+(offset+j)*vertexStride,F=n=>view.getFloat32(a+n*4,true),color=view.getUint32(a+16,true);vertices.push({x:F(0),y:F(1),z:F(2),rhw:F(3),color,u:F(5),v:F(6)});}
-    meshes.push({mesh:true,vertices,primitive,untextured:I(0)===-1&&I(1)===-1,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:i,filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}});
+    meshes.push(copyMeshPose({mesh:true,vertexData:{floats,colors,offset,count:length},primitive,untextured:I(0)===-1&&I(1)===-1,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:i,filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}}));
   }return meshes;
 }
 // Stage draw2/5 installs camera2's screen offset; draw42 clears it before
@@ -113,7 +129,7 @@ export function shakePresentation(pose,offset=zeroOffset){
   const shift=(x,y)=>[Math.fround(x+offset[0]),Math.fround(y+offset[1])];
   // 459e50 shifts flat textured quads. 45c3a0/45d5d0 submits already formed
   // XYZRHW strips/lines without camera translation; solid14..20 do likewise.
-  if(pose.mesh)return pose.primitive===4&&!pose.untextured?{...pose,vertices:pose.vertices.map(v=>{const [x,y]=shift(v.x,v.y);return {...v,x,y};})}:pose;
+  if(pose.mesh)return pose.primitive===4&&!pose.untextured?translateMesh(pose,offset[0],offset[1],true):pose;
   if(pose.a?.mode>=14)return pose;
   // Ordinary quads construct their native corners before camera translation.
   // Pre-shifting a center would change mode0's floor/nearest-even boundaries.
@@ -191,12 +207,12 @@ export class Renderer {
   async prepare(){
     await this.loadAtlases(['pl00','pl01','pl02','bullet','enemy','front','ascii','text']);await this.prepareStage(1);
   }
-  async prepareStage(stage){
+  async prepareStage(stage,{activate=true}={}){
     if(!Number.isInteger(stage)||stage<1||stage>7)throw Error('关卡编号无效');
-    this.requestedStage=stage;
+    if(activate)this.requestedStage=stage;
     if(!this.stageJobs.has(stage)){const name='stage'+String(stage).padStart(2,'0'),enemy='stgenm'+String(stage).padStart(2,'0'),logo='st'+String(stage).padStart(2,'0')+'logo';
       const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]));this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
-    const background=await this.stageJobs.get(stage);if(this.requestedStage===stage)this.background=background;return background;
+    const background=await this.stageJobs.get(stage);if(activate&&this.requestedStage===stage)this.background=background;return background;
   }
   async loadAtlases(names){
     const gl=this.gl;
@@ -252,12 +268,18 @@ export class Renderer {
     this.material(p.a.blend);this.texture(texture,p.untextured||p.filter===1,p.addressFlags);
     this.primitive(p.primitive===3?this.gl.LINE_STRIP:this.gl.TRIANGLES);
     const ox=Math.fround(screenShake[0]),oy=Math.fround(screenShake[1]),shake=p.primitive===4&&!p.untextured&&(ox||oy);
-    const emit=v=>this.batch.push(shake?Math.fround(v.x+ox):v.x,shake?Math.fround(v.y+oy):v.y,p.untextured ? .5 : v.u,p.untextured ? .5 : texture.flipY?1-v.v:v.v,((v.color>>>16)&255)/255,((v.color>>>8)&255)/255,(v.color&255)/255,(v.color>>>24)/255,v.rhw?1/v.rhw:1,0);
+    const data=p.vertexData,count=meshVertexCount(p);
+    const emit=data?i=>{
+      const at=(data.offset+i)*7,f=data.floats,color=data.colors[at+4],x=meshCoordinate(p,i,0),y=meshCoordinate(p,i,1);
+      this.batch.push(shake?Math.fround(x+ox):x,shake?Math.fround(y+oy):y,p.untextured ? .5 : f[at+5],p.untextured ? .5 : texture.flipY?1-f[at+6]:f[at+6],((color>>>16)&255)/255,((color>>>8)&255)/255,(color&255)/255,Math.round((color>>>24)*(p.meshOpacity??1))/255,f[at+3]?1/f[at+3]:1,0);
+    }:i=>{
+      const v=p.vertices[i];this.batch.push(shake?Math.fround(v.x+ox):v.x,shake?Math.fround(v.y+oy):v.y,p.untextured ? .5 : v.u,p.untextured ? .5 : texture.flipY?1-v.v:v.v,((v.color>>>16)&255)/255,((v.color>>>8)&255)/255,(v.color&255)/255,(v.color>>>24)/255,v.rhw?1/v.rhw:1,0);
+    };
     // Native45d5d0 submits each trail separately; batching two line strips
     // together would draw a spurious segment between their endpoints.
-    if(p.primitive===3){this.flush();for(const v of p.vertices)emit(v);this.flush();return;}
-    if(p.primitive===4)for(const v of p.vertices)emit(v);
-    else for(let i=2;i<p.vertices.length;i++)for(const index of i&1?[i-1,i-2,i]:[i-2,i-1,i])emit(p.vertices[index]);
+    if(p.primitive===3){this.flush();for(let i=0;i<count;i++)emit(i);this.flush();return;}
+    if(p.primitive===4)for(let i=0;i<count;i++)emit(i);
+    else for(let i=2;i<count;i++){emit(i&1?i-1:i-2);emit(i&1?i-2:i-1);emit(i);}
   }
   stageSurface(priority,screenShake=zeroOffset,clip=1){
     //431630 aliases text@R entry2 to the first native target.42f200 ends
@@ -429,16 +451,21 @@ export class Renderer {
     for(const text of fpsTextDescriptors({currentFps:fps}))this.nativeText(text);
     this.flush();
   }
-  resetPresentation(){
+  resetPresentation({retainSamples=false}={}){
     // Call on start/restart, stage load, replay seek, pause/resume, focus
     // loss or any host discontinuity; the host also discards its old pair.
-    this.presentationEpoch++;this.lastFrame=-1;this.animations=new AnimationSampler(this.atlases);
+    this.presentationEpoch++;this.lastFrame=-1;
+    // These tracks are pure atlas/age samples. A rollback invalidates the
+    // endpoint pair; rebuilding every long-lived HUD track from age zero
+    // makes correction cost grow with the length of the run. sample() already
+    // rebuilds an individual track when its own requested age moves backwards.
+    if(!retainSamples)this.animations=new AnimationSampler(this.atlases);
   }
   capturePresentation(core,fps={}){
-    const h=[...readCoreHud(core)],frame=h[0];if(fps.scoreLowDigit){h[3]+=fps.scoreLowDigit;if(h.length>40)h[40]+=fps.scoreLowDigit;}if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
+    const h=[...readCoreHud(core,fps)],frame=h[0];if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0],backgroundVisible=background.authoritative||(core._th12_background_visible?.()??true);
-    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=(this.spellWallClock??=new SpellWallClock()).observe(readCoreSpell(core),fps.wallTime),bossHud=readCoreBossHud(core);
     const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
     if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
     const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
@@ -479,17 +506,21 @@ export class Renderer {
     add('front',0,fps.hudAge??frame,0,0,0,1,null,{alpha:1,clipped:false});
     for(const rectangle of bossHealthRectangles(bossHud))poses.push({rectangle,drawPriority:44,clip:2,order:poses.length});
     if(fps.multiplayer){
-      const text=(value,x,y,font=2,alignX=1)=>poses.push({nativeText:{text:value,x,y,font,alignX},drawPriority:69,clip:0,order:poses.length});
+      const text=(value,x,y,font=2,alignX=1,style={})=>poses.push({nativeText:{text:value,x,y,font,alignX,...style},drawPriority:69,clip:0,order:poses.length});
       text(groupedNumber(h[3]),620,72,3,2);text(groupedNumber(h[40]??h[3]),620,48,3,2);
       for(const p of fps.multiplayer.players){
         const y=104+p.seat*80;
-        text((p.seat===fps.localSeat?'* ':'')+(p.seat+1)+'P'+(p.ghost?' GHOST':''),428,y-14,1);
+        text((p.seat+1)+'P'+(p.ghost?' GHOST':''),428,y-14,1,1,{colorARGB:p.seat===fps.localSeat?0xffffff00:0xffffffff});
         for(const [script,dy]of [[8,y-102],[10,y+24-126],[9,y+48-150]])add('front',script,frame,0,dy,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,entityId:'label-'+p.seat+'-'+script});
         for(let i=0;i<8;i++){
           add('front',13+i,frame,0,y-102,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,Math.max(0,p.lives),p.lifeFragments),entityId:'life-'+p.seat+'-'+i});
           add('front',21+i,frame,0,y+24-126,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,p.bombs,p.bombFragments),entityId:'bomb-'+p.seat+'-'+i});
         }
-        text((p.power/100).toFixed(2)+' / '+(p.maxPower/100).toFixed(2),620,y+50,2,2);
+        const powerStyle={colorARGB:0xffff8030},decimalStyle={...powerStyle,scaleX:.6,scaleY:.6};
+        text(Math.floor(p.power/100)+'.',540,y+50,4,1,powerStyle);
+        text(String(p.power%100).padStart(2,'0'),560,y+57,4,1,decimalStyle);
+        text('/'+Math.floor(p.maxPower/100)+'.',574,y+50,4,1,powerStyle);
+        text(String(p.maxPower%100).padStart(2,'0'),606,y+57,4,1,decimalStyle);
         const transfer=p.lifeTaps>=3?'L '+p.lifeTaps+'/5':p.powerTaps>=3?'P '+p.powerTaps+'/5':null;
         if(transfer)poses.push({nativeText:{text:transfer,x:p.x+224,y:p.y,alignX:0,font:2},drawPriority:45,clip:2,order:poses.length});
       }
@@ -515,6 +546,7 @@ export class Renderer {
     }
     // These pose wrappers were created for this capture. Annotate them before
     // publishing the immutable endpoint; older endpoints and appearances stay intact.
+    if(fps.multiplayer)applyMultiplayerOpacity(poses,fps.multiplayer,fps.localSeat,readMultiplayerVisualOwners(core));
     const ordered=orderPresentation(poses,schedule,{reusePoses:true});
     this.animations.endFrame();
     // Modern cores already publish authoritative owner/lineage data. Do not
@@ -527,7 +559,7 @@ export class Renderer {
     // Ordinary 60 Hz callers retain current-endpoint rendering.
     return this.renderPresentation(null,this.capturePresentation(core,{...fps,presentationContinuity:false}),1);
   }
-  renderPresentation(previous,current,interpolationAlpha=1){
+  renderPresentation(previous,current,interpolationAlpha=1,live={}){
     const endpoint=interpolatePresentation(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
       source=this.stageBackgrounds.get(endpoint.stage),background=source&&endpoint.logicalBackground!==current.logicalBackground&&endpoint.logicalBackground?.loaded
         ?source.geometry(endpoint.logicalBackground.frame,endpoint.logicalBackground):endpoint.background;
@@ -546,8 +578,10 @@ export class Renderer {
         else{p=shakePresentation(p,roundedShake);poseShake=p.screenShake;}
       }
       if(p.clip!==currentClip){this.flush();if(p.clip){g.enable(g.SCISSOR_TEST);if(p.clip===2)g.scissor(13,0,422,480);else g.scissor(32,16,384,448);}else g.disable(g.SCISSOR_TEST);currentClip=p.clip;}
-      if(p.nativeText)this.nativeText(p.nativeText,poseShake);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p,p.drawPriority<42?roundedShake:zeroOffset);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:poseShake,presentationOffset:p.presentationOffset});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,poseShake,p.presentationOffset);
+      if(p.nativeText){if(p.nativeText.kind!=='current-fps'||!Number.isFinite(live.currentFps))this.nativeText(p.nativeText,poseShake);}else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p,p.drawPriority<42?roundedShake:zeroOffset);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:poseShake,presentationOffset:p.presentationOffset});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,poseShake,p.presentationOffset);
     }
-    this.flush();g.disable(g.SCISSOR_TEST);return [...h];
+    this.flush();g.disable(g.SCISSOR_TEST);
+    for(const text of fpsTextDescriptors({currentFps:live.currentFps}))this.nativeText(text);
+    this.flush();return [...h];
   }
 }

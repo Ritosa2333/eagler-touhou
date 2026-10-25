@@ -2,9 +2,66 @@
 #include "AnmScene.hpp"
 #include "Multiplayer.hpp"
 #include "PresentationTracking.hpp"
+#include <algorithm>
 
 namespace th12::anm_logic {
 Scene::Scene(const Scene& other) { *this = other; }
+Scene::Snapshot Scene::snapshot() const {
+  Snapshot saved;
+  snapshot(saved);
+  return saved;
+}
+void Scene::snapshot(Snapshot& saved) const {
+  saved.registry = registry; saved.runtime = runtime; saved.nextId = nextId_;
+  saved.nodes.resize(nodes_.size());
+  size_t index = 0;
+  for (const auto& [id, node] : nodes_) saved.nodes[index++] = *node;
+  saved.roots.clear();
+  saved.roots.reserve(roots_.size());
+  for (const auto& [key, node] : roots_) saved.roots.emplace_back(key, node->id);
+  const std::array<const std::list<std::shared_ptr<Node>>*, 3> lists{&primary_, &secondary_, &embedded_};
+  for (size_t i = 0; i < lists.size(); ++i) {
+    saved.chains[i].clear();
+    saved.chains[i].reserve(lists[i]->size());
+    for (const auto& node : *lists[i]) saved.chains[i].push_back(node->id);
+  }
+}
+void Scene::restore(const Snapshot& saved) {
+  registry = saved.registry; runtime = saved.runtime; nextId_ = saved.nextId; executing_ = nullptr;
+  // Most IDs survive a short rewind. Retain their VM/vector storage instead
+  // of destroying the whole graph, while restoring every semantic value.
+  for (const auto& node : saved.nodes) {
+    const auto at = nodes_.find(node.id);
+    if (at == nodes_.end()) nodes_.emplace(node.id, std::make_shared<Node>(node));
+    else *at->second = node;
+  }
+  if (nodes_.size() > saved.nodes.size()) {
+    restoreNodeIds_.clear(); restoreNodeIds_.reserve(saved.nodes.size());
+    for (const auto& node : saved.nodes) restoreNodeIds_.push_back(node.id);
+    std::sort(restoreNodeIds_.begin(), restoreNodeIds_.end());
+    for (auto at = nodes_.begin(); at != nodes_.end();)
+      if (!std::binary_search(restoreNodeIds_.begin(), restoreNodeIds_.end(), at->first)) at = nodes_.erase(at);
+      else ++at;
+  }
+  for (const auto& [key, id] : saved.roots) roots_.insert_or_assign(key, nodes_.at(id));
+  if (roots_.size() > saved.roots.size()) {
+    restoreRootKeys_.clear(); restoreRootKeys_.reserve(saved.roots.size());
+    for (const auto& [key, id] : saved.roots) restoreRootKeys_.push_back(key);
+    std::sort(restoreRootKeys_.begin(), restoreRootKeys_.end());
+    for (auto at = roots_.begin(); at != roots_.end();)
+      if (!std::binary_search(restoreRootKeys_.begin(), restoreRootKeys_.end(), at->first)) at = roots_.erase(at);
+      else ++at;
+  }
+  const std::array<std::list<std::shared_ptr<Node>>*, 3> lists{&primary_, &secondary_, &embedded_};
+  for (size_t i = 0; i < lists.size(); ++i) {
+    auto& list = *lists[i]; auto at = list.begin();
+    for (const auto id : saved.chains[i]) {
+      if (at == list.end()) list.push_back(nodes_.at(id));
+      else *at++ = nodes_.at(id);
+    }
+    list.erase(at, list.end());
+  }
+}
 Scene& Scene::operator=(const Scene& other) {
   if (this == &other) return *this;
   primary_.clear(); secondary_.clear(); embedded_.clear(); roots_.clear(); nodes_.clear();
@@ -147,14 +204,18 @@ const std::unordered_map<uint32_t, std::shared_ptr<Node>>& Scene::nodes() const 
 }
 
 std::vector<const Node*> Scene::chain(Membership membership) const {
+  std::vector<const Node*> result;
+  appendChain(membership, result);
+  return result;
+}
+
+void Scene::appendChain(Membership membership, std::vector<const Node*>& output) const {
   const auto& list = membership == Membership::Primary     ? primary_
                      : membership == Membership::Secondary ? secondary_
                                                            : embedded_;
-  std::vector<const Node*> result;
   for (const auto& node : list)
     if (node->alive)
-      result.push_back(node.get());
-  return result;
+      output.push_back(node.get());
 }
 
 std::vector<const Node*> Scene::children(uint32_t id) const {

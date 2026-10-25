@@ -37,9 +37,9 @@ void selectStage(int number) {
   backgroundEnemyOrigin = {};
 }
 void startGame(int c, int s, int d, int seed, const int* replayInitial, const SessionCarry* carry) {
-  struct RetainedPilot { item_system::ResourceState resources; int graze; unsigned misses; bool ghost; };
+  struct RetainedPilot { item_system::ResourceState resources; int graze; unsigned misses; bool ghost; int x,y; bool focused; };
   std::optional<RetainedPilot> retainedPilot;
-  if(multiplayer::active&&carry)retainedPilot=RetainedPilot{pilot().resources,pilot().graze,pilot().misses,pilot().ghost};
+  if(multiplayer::active&&carry)retainedPilot=RetainedPilot{pilot().resources,pilot().graze,pilot().misses,pilot().ghost,pilot().px,pilot().py,pilot().playerFocused};
   if (!carry) practice::resetTracker();
   pilot().adaptedMotion = {};
   gameSpeed = animationScene.runtime.delta = 1;
@@ -176,6 +176,7 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial, const Se
       auto& first=multiplayer::pilots[0];
       first.resources=retainedPilot->resources; first.graze=retainedPilot->graze;
       first.misses=retainedPilot->misses; first.ghost=retainedPilot->ghost;
+      first.px=retainedPilot->x;first.py=retainedPilot->y;first.playerFocused=retainedPilot->focused;
     }
     multiplayer::initializePilots(carry != nullptr);
     // The entry captures inventory before its presentation events are consumed.
@@ -184,6 +185,8 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial, const Se
       entry.resources[seat]=multiplayer::pilots[seat].resources;
       entry.graze[seat]=multiplayer::pilots[seat].graze;
       entry.misses[seat]=multiplayer::pilots[seat].misses;
+      entry.x[seat]=multiplayer::pilots[seat].px;entry.y[seat]=multiplayer::pilots[seat].py;
+      entry.focused[seat]=multiplayer::pilots[seat].playerFocused;
     }
   }
   spawn("main", 0, 0, 10000, 0, 0);

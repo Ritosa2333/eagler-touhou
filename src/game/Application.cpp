@@ -8,6 +8,7 @@
 #include "ItemPresentation.hpp"
 #include "LaserWorld.hpp"
 #include "Practice.hpp"
+#include "PresentationMotion.hpp"
 
 namespace th12 {
 void tick(int held, int pressed) {
@@ -58,6 +59,7 @@ void tickGameplay(int held, int pressed) {
   enemies.erase(std::remove_if(enemies.begin(), enemies.end(), [](auto& e) { return !e->active; }),
                 enemies.end());
   ++frame;
+  if (frame%120==0) collectPresentationRevisions();
   practice::afterTick();
 }
 

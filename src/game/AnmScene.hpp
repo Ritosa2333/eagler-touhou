@@ -20,11 +20,26 @@ struct Node {
   uint32_t childNext = 0, childPrevious = 0;
 };
 class Scene {
+public:
+  // Rollback owns compact values and chain IDs, rather than rebuilding three
+  // linked lists and two hash tables just to retain an immutable checkpoint.
+  class Snapshot {
+    friend class Scene;
+    Registry registry;
+    Runtime runtime;
+    uint32_t nextId = 1;
+    std::vector<Node> nodes;
+    std::vector<std::pair<uint64_t, uint32_t>> roots;
+    std::array<std::vector<uint32_t>, 3> chains;
+  };
+private:
   std::list<std::shared_ptr<Node>> primary_, secondary_, embedded_;
   std::unordered_map<uint64_t, std::shared_ptr<Node>> roots_;
   std::unordered_map<uint32_t, std::shared_ptr<Node>> nodes_;
   Node* executing_ = nullptr;
   uint32_t nextId_ = 1;
+  std::vector<uint32_t> restoreNodeIds_;
+  std::vector<uint64_t> restoreRootKeys_;
   Runtime runtimeFor(Node& node);
   void tickNode(Node& node);
   void traverse(std::list<std::shared_ptr<Node>>& list);
@@ -33,12 +48,17 @@ public:
   Scene() = default;
   Scene(const Scene&);
   Scene& operator=(const Scene&);
+  Snapshot snapshot() const;
+  void snapshot(Snapshot&) const;
+  void restore(const Snapshot&);
   Registry registry;
   Runtime runtime;
   void reset();
   Node* find(uint64_t key);
   const std::unordered_map<uint32_t, std::shared_ptr<Node>>& nodes() const;
   std::vector<const Node*> chain(Membership membership) const;
+  // Append a read-only traversal to caller-owned scratch storage.
+  void appendChain(Membership membership, std::vector<const Node*>& output) const;
   std::vector<const Node*> children(uint32_t id) const;
   Node* bind(uint64_t key, uint32_t owner, int bank, int script,
              Membership membership = Membership::Primary, float x = 0, float y = 0,

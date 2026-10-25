@@ -1,5 +1,6 @@
 // TH12 1.00b draw-chain priorities installed by45dfa0. An ANM layer is
 // only one kind of draw callback; embedded manager VMs bypass that chain.
+import {copyMeshPose} from './mesh-vertices.mjs';
 const layerPriorities=[4,6,8,9,11,13,16,17,18,19,20,23,25,26,28,30,34,36,38,41,42,50,51,52,63,64,-1,-1,14,39,66,65];
 export const animationLayerPriority=layer=>layerPriorities[layer]??-1;
 export function readCoreDrawSchedule(core){
@@ -22,7 +23,7 @@ export function orderPresentation(poses,schedule=new Map(),{reusePoses=false}={}
     const drawPriority=metadata?.drawPriority??(pose.mesh&&pose.renderPass===0?animationLayerPriority(pose.a?.layer):pose.drawPriority??animationLayerPriority(pose.a?.layer));
     const clip=metadata?.clip??pose.clip??(metadata?.clipped!==undefined?metadata.clipped?2:0:pose.clipped!==undefined?pose.clipped?2:0:drawPriority<43?2:0);
     if(!(drawPriority>=0))continue;
-    const order=metadata?.order??pose.order??index,result=reusePoses?pose:{...pose};
+    const order=metadata?.order??pose.order??index,result=reusePoses?pose:copyMeshPose(pose);
     if(metadata)Object.assign(result,metadata);
     result.drawPriority=drawPriority;result.order=order;
     result.index=index;result.clip=clip;result.clipped=clip!==0;ordered.push(result);

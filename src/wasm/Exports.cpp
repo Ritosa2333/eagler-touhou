@@ -147,6 +147,13 @@ int th12_start_full_game(int c, int s, int d, int seed, int practice) {
 void th12_set_full_game_mode(int practice) {
   th12::setFullGameMode(practice != 0);
 }
+int th12_replay_stage_flow(int practice, int fade_in) {
+  if (!th12::spellState.replayWallClock || (practice != 0 && practice != 1) ||
+      (fade_in != 0 && fade_in != 1)) return 0;
+  th12::setFullGameMode(practice != 0);
+  if (fade_in) th12::fullGameFlow.entryFadeAge = 0;
+  return 1;
+}
 int th12_start_next_stage() { return th12::startNextStage(); }
 int th12_continue_game() { return th12::continueFullGame(); }
 const char* th12_stage_flow() { return th12::captureStageFlow().c_str(); }
@@ -219,13 +226,15 @@ int th12_draw() {
   // particular, Cir00 waits before binding its yin-yang body: exporting the
   // default animation0 here invented a fairy throughout that entry delay.
   for (auto& b : bullets)
-    if (b.active)
+    if (b.active) {
+      if(multiplayer::active&&b.friendly)multiplayerVisualOwners.push_back({0x10000000u+b.entityId,b.ownerSeat});
       drawState.push_back(
           {b.x + 224, b.y + 16, b.angle + pi / 2,
            b.friendly && b.type == 2 ? b.hitHeight / 448.f : 1, b.friendly ? 4 + multiplayer::pilots[b.ownerSeat].character : 2,
            b.friendly ? b.animation : b.enemy.animation, b.friendly ? (b.type == 2 ? 6 : 2) : 1,
            b.type * 16 + b.color, b.friendly ? b.weapon.visualAge : b.enemy.visualAge,
            0x10000000u + b.entityId, b.friendly ? b.weapon.interrupt : b.enemy.interrupt});
+    }
   for(unsigned seat=0;seat<(multiplayer::active?multiplayer::options.count:1);++seat) {
   multiplayer::Scope owner(seat);
   for (const auto& v : pilot().playerBomb.visuals)
@@ -240,6 +249,7 @@ int th12_draw() {
     for (size_t i = 1; i < trail.points.size(); i++) {
       const auto& a = trail.points[i - 1];
       const auto& b = trail.points[i];
+      if(multiplayer::active)multiplayerVisualOwners.push_back({0x60000000u+trail.id*16+u32(i),seat});
       const float dx = b.x - a.x, dy = b.y - a.y;
       const float viewportX = trail.kind == 13 ? 0 : 224, viewportY = trail.kind == 13 ? 0 : 16;
       drawState.push_back(

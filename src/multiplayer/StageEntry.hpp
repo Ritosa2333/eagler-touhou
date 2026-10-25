@@ -4,13 +4,14 @@
 #include <optional>
 namespace th12::multiplayer {
 struct StageEntry {
-  uint32_t version = 1, stage = 1, seed = 1, displaySeed = 0x1234, displayCalls = 0;
+  uint32_t version = 2, stage = 1, seed = 1, displaySeed = 0x1234, displayCalls = 0;
   uint32_t ticks = 0, lifePieces = 0, bombPieces = 0;
   int score = 0, rank = 0;
   bool continuation = false;
   std::array<int,4> nativeGlobals{};
   std::array<item_system::ResourceState, 3> resources{};
   std::array<int, 3> graze{}, misses{};
+  std::array<int, 3> x{},y{{51200,51200,51200}},focused{};
   ufo_system::Inventory inventory{};
 };
 extern std::optional<StageEntry> pendingStageEntry;

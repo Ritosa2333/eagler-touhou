@@ -51,7 +51,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay,bool rea
     setup_=setup;configured_=true;retired_=world_ready_=false;
     next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
     capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
-    network_interval_scale_=1;network_pace_ms_=now_ms_;pacing_statistics_={{1,8,0,0,0,1,1,0}};return true;
+    pacing_statistics_={{1,8,0,0,0,1,1,0}};return true;
 }
 void NetplayRuntime::Clear(){
     capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
@@ -62,7 +62,6 @@ void NetplayRuntime::Clear(){
     spectator_stage_playback_.Clear();spectator_stage_view_.Clear();spectator_stage_publisher_={};
     spectator_recorded_frames_={};
     world_ready_=false;next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
-    network_interval_scale_=1;network_pace_ms_=0;
 }
 bool NetplayRuntime::Reset(const SessionSetup& setup){Clear();base_session_=setup.session_id;return Configure(setup,setup.input_delay);}
 bool NetplayRuntime::Connect(const char* url){
@@ -89,7 +88,7 @@ bool NetplayRuntime::ConnectSpectator(const char* url,const char* id){
 bool NetplayRuntime::BeginPlayback(const SessionSetup& setup){Clear();if(!Configure(setup,0,true))return false;playback_=timing_ready_=true;return true;}
 bool NetplayRuntime::CanStart()const{return configured_&&error_.empty()&&(playback_||(spectator_?timing_ready_:!calibration_.Waiting()&&gate_.CanStart()));}
 bool NetplayRuntime::NeedsCapture()const{return CanStart()&&!ReadOnly()&&!retired_&&!Correcting()&&
-    capture_clock_.CanCapture(next_capture_,next_,capture_ui_,capture_now_us_)&&!core_.HasLocalCapture(next_capture_);}
+    capture_clock_.CanCapture(next_capture_,next_,setup_.mode==1||capture_ui_,capture_now_us_)&&!core_.HasLocalCapture(next_capture_);}
 bool NetplayRuntime::Capture(std::uint32_t frame,const Netplay::FrameInput& input){
     if(!NeedsCapture()||frame!=next_capture_||!valid_input(input)||!core_.ScheduleLocalInput(frame,input))return Fail("Invalid or repeated TH12 physical capture");
     ++next_capture_;
@@ -116,11 +115,10 @@ bool NetplayRuntime::Pump(bool ready,bool capture_follows){
         if(!Configure(setup,choice.delay)||!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(setup.mode,choice.prediction)))return Fail("TH12 calibration commit failed");
         calibration_.Applied();timing_ready_=true;
     }
-    if(calibration_.Waiting()){UpdatePacing(false);return true;}
+    if(calibration_.Waiting())return true;
     const bool active=ready&&InitialInputsReady()&&!retired_;
     const bool defer=capture_follows&&active&&setup_.mode==0&&NeedsCapture();
     if(!channel_.Pump(gate_,core_,now_ms_,active,defer))return Fail(channel_.ErrorText());
-    UpdatePacing(active);
     if(ready&&CanStart()&&!InitialInputsReady()){
         if(!initial_wait_)initial_wait_=now_ms_;
         if(now_ms_-initial_wait_>=45'000)return Fail("Timed out waiting for TH12 frame-zero inputs");
@@ -384,28 +382,18 @@ bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
         else calibration_.Prepare(gate_.Config(),Mode(),setup.automatic,setup.requested_delay,setup.prediction_reserve,&previous);
     }return true;
 }
-void NetplayRuntime::UpdatePacing(bool expects_input){
-    if(!network_||ReadOnly()||setup_.mode||!CanStart()||!expects_input){network_interval_scale_=1;network_pace_ms_=now_ms_;return;}
-    const auto elapsed=now_ms_>=network_pace_ms_?now_ms_-network_pace_ms_:0;network_pace_ms_=now_ms_;
-    // The highest simulated frontier retains outstanding debt during rewind.
-    // Four frames are a fixed network dead zone, never a device-load heuristic.
-    const double target=1+std::clamp((double(MissingRemoteInputs())-4)/3,0.,1.);
-    const double step=double(elapsed)/(target>network_interval_scale_?50.:150.);
-    network_interval_scale_+=std::clamp(target-network_interval_scale_,-step,step);
-}
-
 double NetplayRuntime::PacedElapsed(double elapsed){
     if(!std::isfinite(elapsed)||elapsed<0)return 0;if(!network_||ReadOnly())return elapsed;
     if(!setup_.mode){
-        // Keep original pacing: r39's removal saved only ~5% of clock credit
-        // and did not establish a cadence gain. Retain explicit accounting.
-        const auto scale=channel_.IntervalScale();const auto credited=elapsed/std::max(network_interval_scale_,scale);
+        // Peer lead uses the shared bounded time sync (0.98..1.02). Missing
+        // inputs consume the rollback window, never an extra half-speed clock.
+        const auto scale=channel_.IntervalScale();const auto credited=elapsed/scale;
         pacing_statistics_[2]+=elapsed;pacing_statistics_[3]+=credited;
-        pacing_statistics_[4]+=elapsed/std::max(network_interval_scale_,scale);
-        pacing_statistics_[5]=network_interval_scale_;pacing_statistics_[6]=scale;++pacing_statistics_[7];
+        pacing_statistics_[4]+=credited;
+        pacing_statistics_[5]=1;pacing_statistics_[6]=scale;++pacing_statistics_[7];
         return credited;
     }
-    phase_debt_ms_+=channel_.TakeAdonisDelayMs();const double used=std::min(elapsed*1000,phase_debt_ms_);phase_debt_ms_-=used;return elapsed-used*.001;
+    phase_debt_ms_+=channel_.TakeAdonisDelayMs();const double used=std::min(elapsed,phase_debt_ms_);phase_debt_ms_-=used;return elapsed-used;
 }
 const std::uint32_t* NetplayRuntime::Status(){
     status_.fill(0);status_[0]=1;status_[1]=configured_;status_[2]=CanStart();status_[3]=NextFrame();status_[4]=Confirmed();

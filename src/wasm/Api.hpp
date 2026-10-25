@@ -41,6 +41,7 @@ void th12_select_stage(int);
 void th12_start(int character, int shot, int difficulty, int seed);
 int th12_start_full_game(int character, int shot, int difficulty, int seed, int practice);
 void th12_set_full_game_mode(int practice);
+int th12_replay_stage_flow(int practice, int fade_in);
 int th12_start_next_stage();
 int th12_continue_game();
 const char* th12_stage_flow();
