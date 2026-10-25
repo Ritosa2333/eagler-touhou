@@ -3,6 +3,12 @@
 #include "AnmOverlay.hpp"
 #include <algorithm>
 #include <cmath>
+#if TH15_MULTIPLAYER && TH15_WRITE_JOURNAL
+#include <eagler/netplay/WriteJournal.hpp>
+#define TH15_DRAW_SCRATCH_SCOPE Netplay::WriteJournal::HostScope th15_draw_scratch_scope
+#else
+#define TH15_DRAW_SCRATCH_SCOPE
+#endif
 #if TH15_DEVELOPMENT_HARNESS
 #include <emscripten.h>
 namespace {std::array<unsigned,32> render_modes{};}
@@ -15,11 +21,33 @@ namespace {u32 multiply_color(u32 a,u32 b){u32 out=0;for(u32 shift=0;shift<32;sh
 namespace {
 u32 opacity_color(u32 color,u32 opacity){return (color&0xffffffu)|(((color>>24)*opacity/255)<<24);}
 template<class Vertex> void opacity_vertices(std::vector<Vertex>& output,const std::vector<Vertex>& source,u32 count,u32 opacity){
+    TH15_DRAW_SCRATCH_SCOPE;
     output.assign(source.begin(),source.begin()+count);for(auto& vertex:output)vertex.color=opacity_color(vertex.color,opacity);
 }
 }
 #endif
-void AnmRenderer::flush(){if(vertices.empty())return;graphics.set_layout(VertexLayout::ScreenColorUv);graphics.triangles(vertices.size()/3,vertices.data(),sizeof(AnmGeometryVertex));vertices.clear();}
+std::unique_ptr<AnmRenderer::Scratch> AnmRenderer::make_scratch(){
+    TH15_DRAW_SCRATCH_SCOPE;
+    auto result=std::make_unique<Scratch>();
+    result->vertices.reserve(6144);result->shapes.reserve(192);return result;
+}
+AnmRenderer::AnmRenderer(ZunGraphics& device):graphics(device),scratch(make_scratch()),
+    vertices(scratch->vertices),shapes(scratch->shapes)
+#if TH15_MULTIPLAYER
+    ,opacity_screen_vertices(scratch->opacity_screen),opacity_world_vertices(scratch->opacity_world)
+#endif
+{}
+void AnmRenderer::discard_draw_scratch(){
+    TH15_DRAW_SCRATCH_SCOPE;
+    vertices.clear();shapes.clear();
+#if TH15_MULTIPLAYER
+    opacity_screen_vertices.clear();opacity_world_vertices.clear();
+#endif
+}
+// Only synchronous output copying/submission belongs to this host-only scope.
+// material(), quad transforms and total_rotation() retain ordinary journaling:
+// they can change renderer state, VM state, and the rotation-parent chain.
+void AnmRenderer::flush(){TH15_DRAW_SCRATCH_SCOPE;if(vertices.empty())return;graphics.set_layout(VertexLayout::ScreenColorUv);graphics.triangles(vertices.size()/3,vertices.data(),sizeof(AnmGeometryVertex));vertices.clear();}
 void AnmRenderer::invalidate(){flush();bound_texture=~0u;}
 void AnmRenderer::set_viewport(const GraphicsViewport& value){invalidate();viewport=value;graphics.set_viewport(value);}
 void AnmRenderer::set_camera(const AnmCamera& value){flush();graphics.presentation_camera(false);camera=value;graphics.set_matrix(MatrixKind::View,camera.view);graphics.set_matrix(MatrixKind::Projection,camera.projection);}
@@ -58,10 +86,10 @@ int AnmRenderer::shape(AnmVm& vm){
     const u32 resolution=v.render_flags>>20&7;if(resolution==1||resolution==2){if(!vm.environment){error="Primitive animation scene scale unavailable";return -2;}const float factor=resolution==1?vm.environment->resolution_scale:float(vm.environment->resolution_scale*.5f);width=float(factor*width);height=float(factor*height);}
     flush();if(!material(vm,false))return -2;auto& state=graphics.pipeline();state.textureTransform=false;state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColor);
     if(mode==16||mode>=20){const u32 ax=v.flags>>21&3,ay=v.flags>>23&3;if(ax>2||ay>2){error="Primitive animation anchor outside range";return -2;}constexpr float xs[3][2]={{-.5f,.5f},{0,1},{-1,0}},ys[3][2]={{-.5f,.5f},{0,1},{-1,0}};const float sine=float(std::sin(double(angle))),cosine=float(std::cos(double(angle)));const u32 primary=v.color,secondary=mode==20||mode==22?v.secondary_color:v.color;
-        const auto rectangle=[&](float w,float h,u32 a,u32 b){ColorVertex data[4];for(u32 i=0;i<4;i++){const float x=float(xs[ax][i&1]*w),y=float(ys[ay][i>>1]*h);data[i]={{float(float(float(x*cosine)-float(y*sine))+center.x),float(float(float(y*cosine)+float(x*sine))+center.y),0},1,i&1?b:a};}submit(vm,Topology::Strip,2,data,sizeof(ColorVertex));};
+        const auto rectangle=[&](float w,float h,u32 a,u32 b){TH15_DRAW_SCRATCH_SCOPE;ColorVertex data[4];for(u32 i=0;i<4;i++){const float x=float(xs[ax][i&1]*w),y=float(ys[ay][i>>1]*h);data[i]={{float(float(float(x*cosine)-float(y*sine))+center.x),float(float(float(y*cosine)+float(x*sine))+center.y),0},1,i&1?b:a};}submit(vm,Topology::Strip,2,data,sizeof(ColorVertex));};
         if(mode==21||mode==22)rectangle(float(width+1),float(height+1),((primary>>1)&0x7f000000)|(primary&0xffffff),((secondary>>1)&0x7f000000)|(secondary&0xffffff));rectangle(width,height,primary,secondary);return 0;
     }
-    const i32 count=vm.variables.integers[0];if(count<1||count>0x100000){error="Primitive animation segment count invalid";return -2;}shapes.clear();const float step=float(6.283185482025146484375f/float(count));if(mode==17)shapes.push_back({{center.x,center.y,0},1,v.color});
+    const i32 count=vm.variables.integers[0];if(count<1||count>0x100000){error="Primitive animation segment count invalid";return -2;}TH15_DRAW_SCRATCH_SCOPE;shapes.clear();const float step=float(6.283185482025146484375f/float(count));if(mode==17)shapes.push_back({{center.x,center.y,0},1,v.color});
     for(i32 i=0;i<=count;i++){const auto point=[&](float radius){return Vec3{float(float(std::cos(double(angle))*double(radius))+center.x),float(float(std::sin(double(angle))*double(radius))+center.y),0};};if(mode==19){shapes.push_back({point(float(width-float(height*.5f))),1,v.color});shapes.push_back({point(float(float(height*.5f)+width)),1,v.color});}else shapes.push_back({point(width),1,mode==17?v.secondary_color:v.color});angle=normalize_angle(float(angle+step));}
     if(mode==17){state.cull=Cull::None;submit(vm,Topology::Fan,count,shapes.data(),sizeof(ColorVertex));}else if(mode==18)submit(vm,Topology::LineStrip,count,shapes.data(),sizeof(ColorVertex));else submit(vm,Topology::Strip,count*2,shapes.data(),sizeof(ColorVertex));return 0;
 }
@@ -84,6 +112,7 @@ int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied
     auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;u32 colors[4];if(supplied)std::copy(supplied,supplied+4,colors);else if(color_mode<2){u32 color=color_mode?v.secondary_color:v.color;if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);v.inherited_color=color;for(auto& c:colors)c=tint_color(color);}else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}
     if(!material(vm))return -2;Vec2 uv[4];uv[0]={float(v.uv_offset.x+v.uv[0].x),float(v.uv[0].y+v.uv_offset.y)};uv[1]={float(float(float(v.uv[1].x-v.uv[0].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[0].x,float(v.uv_offset.y+v.uv[1].y)};uv[2]={float(v.uv_offset.x+v.uv[2].x),float(float(float(v.uv[2].y-v.uv[0].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[0].y};uv[3]={float(float(float(v.uv[3].x-v.uv[2].x)*v.uv_scale.x)+v.uv_offset.x)+v.uv[2].x,float(float(float(v.uv[3].y-v.uv[1].y)*v.uv_scale.y)+v.uv_offset.y)+v.uv[1].y};
     graphics.presentation_offset(offset);graphics.presentation_range(vm,vertices.size(),6,presentation_instance);
+    TH15_DRAW_SCRATCH_SCOPE;
     for(u32 index:{0u,1u,2u,1u,2u,3u})vertices.push_back({p[index],1,colors[index],uv[index]});if(vertices.size()>=6144)flush();return 0;
 }
 int AnmRenderer::projected_quad(AnmVm& vm,bool fog){
@@ -116,7 +145,7 @@ int AnmRenderer::mesh(AnmVm& vm,const AnmGeometry& geometry,u32 opacity){
 }
 int AnmRenderer::trail(AnmVm& vm,const AnmTrail& data){
     const i32 count=data.age.current;if(count<1||count>64){error="Particle trail vertex count outside range";return -2;}const auto& v=vm.visual;const auto& p=vm.variables.position;Vec3 center{float(float(v.child_anchor.x+v.translation.x)+p.x),float(float(v.child_anchor.y+p.y)+v.translation.y),float(float(v.child_anchor.z+p.z)+v.translation.z)};if(!anm_adjust_position(vm,center)){error="Particle trail position unavailable";return -2;}
-    flush();if(!material(vm,false))return -2;graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,data.colors[u32(i)]});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
+    flush();if(!material(vm,false))return -2;TH15_DRAW_SCRATCH_SCOPE;graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,data.colors[u32(i)]});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
 }
 int AnmRenderer::draw(AnmVm& vm){
 #if TH15_MULTIPLAYER
@@ -166,6 +195,7 @@ int AnmRenderer::draw_body(AnmVm& vm,const AnmGeometry& geometry,u32 opacity){
 bool AnmRenderer::draw_layer(const std::vector<AnmVm*>& layer){for(auto* vm:layer)if(draw(*vm)==-2)return false;return true;}
 int AnmRenderer::draw_screen_strip(AnmVm& vm,const AnmGeometryVertex* data,u32 count){
     if((vm.visual.flags&3)!=3||!vm.sprite)return -1;if(count<3)return 0;if(!data||count>0x200000){error="Screen strip vertex range invalid";return -2;}if(!material(vm))return -2;
+    TH15_DRAW_SCRATCH_SCOPE;
     if(count<18){if(vertices.size()+(count-2)*3>6144)flush();graphics.presentation_offset({});graphics.presentation_range(vm,vertices.size(),(count-2)*3,presentation_instance);for(u32 i=0;i+2<count;i++){const u32 order[3]={i+(i&1),i+((i&1)^1u),i+2};for(u32 j:order)vertices.push_back(data[j]);if(vertices.size()>=6144)flush();}return 0;}
     // Curved lasers already own their complete strip. Submit it to the shared
     // renderer, which copies/joins it safely, instead of expanding it into

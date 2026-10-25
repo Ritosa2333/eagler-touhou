@@ -19,7 +19,7 @@ void mp_reset_rollback(){
  rollback_cadence.reset();mp_frame_wait=multiplayer::FrameWait::Network;
  mp_save_request.Clear();mp_save_error.clear();
  rollback::End();mp_frames.clear();journal::Clear();mp_boundary=Netplay::INVALID_FRAME;
- if(app)app->graphics.clear_rollback_history();
+ if(app){app->renderer.discard_draw_scratch();app->graphics.clear_rollback_history();}
  mp_corrections=mp_replayed=mp_barriers=mp_advanced=mp_committed_score=0;mp_committed_complete=false;
 }
 bool mp_journal_error(const char* operation){
@@ -34,6 +34,9 @@ bool mp_restore(u32 first){
  if(!journal::RestoreTo(first))return mp_journal_error("TH15 state restore failed");
  mp_menu=menu;mp_stage=stage;mp_spectator_stage=spectator;AnmVm::presentation_counter=anm;
  app->fonts.restore_layout(found->font_tabs);
+ // Host scratch can contain a partially authored future batch. Discard it
+ // before invalidate() flushes; the retained transaction restores the image.
+ app->renderer.discard_draw_scratch();
  app->graphics.backend.state=state;app->graphics.rollback_restore(!found->presentation_before);app->renderer.invalidate();
  app->graphics.presentation.restore(std::move(found->presentation_before),app->graphics.backend);
  mp_frames.erase(found,mp_frames.end());mp_boundary=Netplay::INVALID_FRAME;

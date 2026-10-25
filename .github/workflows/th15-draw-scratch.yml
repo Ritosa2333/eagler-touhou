@@ -1,0 +1,51 @@
+name: TH15 Draw Scratch
+on:
+  push:
+    branches: [experiment/th15-rollback-20261023]
+    paths:
+      - '.github/workflows/th15-draw-scratch.yml'
+      - 'tools/th15-cloud/draw-scratch-*'
+      - 'ports/th15-mp/web/cpp/game/AnmRenderer.*'
+      - 'ports/th15-mp/web/cpp/sdl/MultiplayerRollback.inc'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  undo-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15-mp
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm --prefix launcher ci --ignore-scripts
+      - run: npm --prefix tools/rollback ci --ignore-scripts
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - name: Build production multiplayer objects
+        run: node launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+      - name: Instrument and execute scratch ownership and undo contract
+        run: node tools/th15-cloud/draw-scratch-test.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-draw-scratch-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            artifacts/th15-draw-scratch/**/receipt.json
+            artifacts/th15-draw-scratch/**/*.log
+            artifacts/th15-draw-scratch/**/*.wasm
+            artifacts/th15-draw-scratch/**/*.cjs
+            ports/th15-mp/web/artifacts/sdl-multiplayer/build.json
