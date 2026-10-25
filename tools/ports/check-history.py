@@ -90,9 +90,7 @@ def verify_subtree(repo, head, record, workspace):
     joins = record["subtree"]
     verify_join(repo, head, directory, joins["initialJoin"], joins["initialSplit"])
     verify_join(repo, head, directory, joins["latestJoin"], joins["currentSplit"])
-    changes = repo.git("rev-list", "--max-count=1", f"{joins['latestJoin']}..{head}", "--", directory)
-    split = (repo.git("subtree", "split", f"--prefix={directory}", "--quiet", head)
-             if changes else joins["currentSplit"])
+    split = repo.git("subtree", "split", f"--prefix={directory}", "--quiet", head)
     if not repo.ancestor(upstream, split):
         raise RuntimeError(f"{directory}: original upstream {upstream} is not an ancestor of exported history")
     if not repo.ancestor(joins["currentSplit"], split):
