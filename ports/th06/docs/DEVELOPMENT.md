@@ -25,6 +25,10 @@ npm --prefix launcher run dev:workspace
 
 游戏逻辑在 `src/`，网络和多人代码在 `src/netplay/`、`src/multiplayer/`，浏览器适配在 `portable/`。核心检查从 `ports/th06/` 运行：`bash scripts/run-core-tests.sh`。CI CMake 预设位于 `CMakePresets.json`；它们是外置资源编译检查，不生成上面的含资源运行包。
 
-旁观以普通 Replay 节奏播放，进度积压由时间线操作定位。原生关卡与 Boss 音乐在重建中跟随场景切换。跨作持续播放检查位于 `ports/th07/tests/netplay-spectator-natural-browser.py`，传入作品、`--runtime-directory`、`--music-directory`、`--font`、`--relay` 和 `--output`；`--physical-input` 覆盖射击、方向、低速和 Bomb 输入。
+旁观以普通 Replay 节奏播放，进度积压由时间线操作定位。原生关卡与 Boss 音乐在重建中跟随场景切换。跨作持续播放检查位于 `ports/th07/tests/netplay-spectator-natural-browser.py`，传入作品、`--runtime-directory`、`--music-directory`、`--font`、`--relay` 和 `--output`；`--physical-input` 覆盖射击、方向、低速和 Bomb 输入，`--difficulty=4` 从原生 Extra 入口检查持续播放与定位后的状态一致性。`--join-frame=1800` 覆盖中途加入，`--join-stage=5` 在来源端切入第五关后开始计数。`--frames` 指定当前关头之后的检查长度，`--challenge` 使用原生挑战规则持续演算。`--until-end` 核对普通局尾帧消费与原生结果菜单，`--music=none` 运行独立的游戏状态场景。旁观游标直接读取原生报告，结算后的本机菜单状态单独记录。
 
 旁观播完局末输入后进入本机原生结算界面，沿用选槽、署名与 Replay 保存流程。结算界面自行加载标题资源包，直接从 Replay 关头进入的游戏实例同样能够完整呈现结果页。
+
+私有观测构建通过 `private-spectator.json` 登记原生起始关、受保护席位、来源对象和 WASM 身份。驱动按实际接收关头选择音乐与比较范围，并记录各席位的死亡、复活和幽灵状态。
+
+具体场景与结果见[合作旁观状态验收](records/2026-10-26-spectator-browser.md)。
