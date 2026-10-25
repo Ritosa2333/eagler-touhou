@@ -73,7 +73,7 @@ node tools/workspace.mjs select th10 --variant=both
 
 目录来自 [`workspace.json`](../config/workspace.json)，构建模式来自 [`runtime-builds.json`](../config/runtime-builds.json)。TH06/07 的 SDL 子模块在各作指南中初始化。
 
-th11 与 th11mp 均提供高刷新呈现设置。两种入口共用 Product Catalog 的显示能力声明，高刷开关直接控制 Runtime 的显示限频，游戏逻辑保持 60 Hz。
+th11 与 th11mp 均提供高刷新呈现设置，首次开放时默认关闭，用户主动开启后保存选择。两种入口共用 Product Catalog 的显示能力声明，高刷开关直接控制 Runtime 的显示限频，游戏逻辑保持 60 Hz。
 
 ## 6. 检查改动
 
