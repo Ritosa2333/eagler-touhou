@@ -348,7 +348,16 @@ JobResult GameplayScene::update_replay(){
     synchronize();return JobResult::Continue;
 }
 void GameplayScene::publish_input(const ReplayInputState& input){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // prepare_frame already installed each seat's committed gameplay input.
+    // The native recorder receives shared menu keys, which must stay outside
+    // the primary pilot's movement, shooting and previous-button state.
+    if(session.player_count<2){
+        player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;
+    }
+#else
     player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;
+#endif
     dialogue_context.input=input.current;dialogue_context.previous_input=input.previous;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // Dialogue is shared. The replay recorder updates input.current later in
