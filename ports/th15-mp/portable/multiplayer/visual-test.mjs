@@ -2,7 +2,7 @@ import {spawnSync} from 'node:child_process';
 import {readFileSync,writeFileSync,readdirSync,existsSync} from 'node:fs';
 import {resolve,basename} from 'node:path';
 const root=resolve(import.meta.dirname,'../..');
-const sdk=resolve(process.env.TH15_EMSDK||resolve(root,'tools/emsdk'));
+const sdk=resolve(process.env.TH15_EMSDK||process.env.EMSDK||resolve(root,'tools/emsdk'));
 const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
 if(!compiler)throw Error('Set TH15_EMSDK');
 const out=resolve(root,'web',process.env.TH15_OUTPUT||'artifacts/sdl-multiplayer');
