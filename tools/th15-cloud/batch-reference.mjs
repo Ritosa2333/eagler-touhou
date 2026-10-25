@@ -36,7 +36,10 @@ try{
  }
  let source=readFileSync(driver,'utf8');
  function replace(before,after){assert.equal(source.split(before).length,2,'One frozen driver anchor required: '+before.slice(0,100));source=source.replace(before,after);}
- replace("import createModule from '/th15.mjs';", "const {default:createModule}=await import(new URL(location.href).searchParams.has('reference')?'/reference/th15.mjs':'/th15.mjs');");
+ replace("import createModule from '/th15.mjs';", "const loadModule=()=>import(new URL(location.href).searchParams.has('reference')?'/reference/th15.mjs':'/th15.mjs');");
+ // Publish the readiness promise before the asynchronous import can yield.
+ // page.goto() does not wait for top-level dynamic import completion.
+ replace("window.moduleReady=(async()=>{", "window.moduleReady=(async()=>{ const {default:createModule}=await loadModule();");
  replace("await page.goto(base+'/?scale='+scale);", "await page.goto(base+'/?scale='+scale+(mode===1?'&reference=1':''));");
  replace("if(!['/th15.mjs','/th15.wasm'].includes(path)){", `if(['/reference/th15.mjs','/reference/th15.wasm'].includes(path)){res.setHeader('Content-Type',path.endsWith('.mjs')?'application/javascript':'application/wasm');res.end(await readFile(resolve(${JSON.stringify(reference)},path.slice('/reference/'.length))));return;}\n if(!['/th15.mjs','/th15.wasm'].includes(path)){`);
  replace("oracle:'independent v7 pure-delay exact-input WASM'", "oracle:'frozen b7e7bed GPU renderer; independent exact-input WASM'");
