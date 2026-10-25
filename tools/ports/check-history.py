@@ -19,6 +19,7 @@ class Repository:
 
     def git(self, *arguments):
         command = ["git", "-C", str(self.path), *arguments]
+        environment = None
         if arguments[:1] == ("subtree",) and os.name != "nt":
             helper = pathlib.Path(self.git("--exec-path")) / "git-subtree"
             bash = shutil.which("bash")
@@ -26,8 +27,10 @@ class Repository:
             # caps nested functions at 1000, below imported source parent chains.
             if bash and helper.is_file():
                 command = [bash, str(helper), *arguments[1:]]
+                environment = {**os.environ, "GIT_EXEC_PATH": str(helper.parent),
+                               "PATH": str(helper.parent) + os.pathsep + os.environ.get("PATH", "")}
         result = subprocess.run(
-            command, cwd=self.path,
+            command, cwd=self.path, env=environment,
             capture_output=True, text=True, encoding="utf-8",
         )
         if result.returncode:

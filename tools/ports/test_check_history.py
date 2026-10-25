@@ -87,7 +87,9 @@ class SourceHistoryTests(unittest.TestCase):
         helpers = self.repo / "helpers"
         helpers.mkdir()
         (helpers / "git-subtree").write_text(
-            '#!/bin/sh\n[ -n "$BASH_VERSION" ] || exit 91\nprintf "%s\\n" "$*"\n',
+            '#!/bin/sh\n[ -n "$BASH_VERSION" ] || exit 91\n'
+            '[ "$GIT_EXEC_PATH" = "${PATH%%:*}" ] || exit 92\n'
+            'printf "%s\\n" "$*"\n',
             encoding="utf-8",
         )
 
