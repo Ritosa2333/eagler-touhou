@@ -377,7 +377,7 @@ export const PRODUCT_GAMES = Object.freeze({
         musicCapabilities: Object.freeze({ midi: false }),
         musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
         touchFire: TOGGLE_TOUCH_FIRE,
-        support: Object.freeze({ highRefreshRate: false,
+        support: Object.freeze({ highRefreshRate: true,
             sourceRepository: "https://github.com/YomotsuHisami/th11",
             adaptationNotice: "early-test",
         }),

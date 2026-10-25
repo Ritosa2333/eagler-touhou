@@ -30,7 +30,7 @@ before(async () => {
   const outfile = resolve(work, 'actual-owners.mjs');
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {createPackageAcquisition} from './app/services/package-acquisition.ts';
-    export {prepareGame, prepareGameCheck, prepareFilePlan, prepareRoomResourcePlan} from './app/services/game-preparation.ts';
+    export {prepareGame, prepareGameCheck, prepareFilePlan, prepareRoomResourcePlan, gameRuntimeOptions} from './app/services/game-preparation.ts';
     export {packageResourceIds, ensureOggStartup} from './app/services/game-resources.ts';
     export {validatePackageDescriptor} from './package/package-descriptor.mjs';
     export {createRuntimeService} from './app/services/runtime.ts';
@@ -142,6 +142,20 @@ function gameInput(fixture, state = settingsFixture(), extra = {}) {
   return {productId: 'th06', settings: state.snapshot, acquisition: fixture.acquisition, baseUrl, translate: t,
     touchLayout: null, prepareMidi: async () => {}, ...extra};
 }
+
+for (const productId of ['th11', 'th11mp']) test(`${productId} high refresh setting reaches Runtime without changing room options`, () => {
+  const state = settingsFixture({productId});
+  const multiplayer = productId.endsWith('mp') ? {kind: 'room', options: {
+    netplayMode: 'lan', netplayUrl: 'wss://relay.invalid/?room=th11mp-1234', netplayPlayer: 1,
+    netplayPlayerCount: 2, netplaySeed: 42, netplayDifficulty: 1,
+  }} : undefined;
+  const configure = () => api.gameRuntimeOptions({productId, settings: state.model.getSnapshot(), multiplayer}, 'ja', 'none', null);
+  state.model.setOption('frameLimit60Enabled', false);
+  const unlimited = configure();
+  assert.equal(unlimited.limitPresentationTo60, false);
+  state.model.setOption('frameLimit60Enabled', true);
+  assert.deepEqual(configure(), {...unlimited, limitPresentationTo60: true});
+});
 
 for (const kind of ['room', 'room-preload']) test(`${kind} program version policy reaches code preparation before native ready and configure`, async () => {
   const calls=[],f=acquisitionFixture(),state=settingsFixture({productId:'th06mp'});
