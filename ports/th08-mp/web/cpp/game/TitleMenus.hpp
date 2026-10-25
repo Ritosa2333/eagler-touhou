@@ -160,6 +160,7 @@ class TitleMenus {
     friend class TitleFlow;
 public:
     TitleState state;
+    bool room_preview=false;
     // Owned by GameplaySession; lets the replay menu drive the THGuiRep
     // State(1/2/3) practice-parameter lifecycle.
     PracticeState* practice=nullptr;

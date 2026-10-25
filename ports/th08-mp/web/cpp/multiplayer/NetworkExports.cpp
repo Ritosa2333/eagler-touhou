@@ -2,6 +2,12 @@
 #include "../platform/BrowserRuntime.hpp"
 #include <cstring>
 namespace th08 {
+extern "C" __attribute__((export_name("multiplayer_spectator_result")))
+u32 multiplayer_spectator_result(BrowserRuntime* r,const u8* bytes,u32 size){
+    multiplayer::ReplayArchive candidate;
+    if(!r||!r->network_driver()||!candidate.Load(bytes,size)||!r->network_driver()->Network().EnterSpectatorResults())return 0;
+    r->replay_archive=std::move(candidate);return r->app.enter_spectator_results();
+}
 extern "C" __attribute__((export_name("multiplayer_calibration_status")))
 const u32* multiplayer_calibration_status(BrowserRuntime* r){static u32 empty[32]{};
     return r&&r->network_driver()?r->network_driver()->CalibrationStatus():empty;}

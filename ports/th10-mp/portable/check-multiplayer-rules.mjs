@@ -205,6 +205,8 @@ for (const [name, sources, flags = []] of [
   ]],
   ['cooperative-rollback', [
     resolve(root, 'tests/cooperative-rollback-test.cpp'),
+    resolve(root, 'web/cpp/multiplayer/InputLanes.cpp'),
+    resolve(root, 'web/cpp/game/GameInput.cpp'),
     resolve(common, 'src/netplay/NetplayCore.cpp'),
     resolve(common, 'src/netplay/NetplayProtocol.cpp'),
     resolve(common, 'src/netplay/RollbackJournal.cpp'),

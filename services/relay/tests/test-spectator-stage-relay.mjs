@@ -9,7 +9,7 @@ import {multiplayerConfigForProduct} from '../../../common/contracts/product-cat
 const port=await new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p));});});
 const child=spawn(process.execPath,[fileURLToPath(new URL('../src/netplay-relay.mjs',import.meta.url))],{windowsHide:true,
   env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',
-    EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'16',EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'120',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
+    EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'24',EAGLER_NETPLAY_ROOM_LOOKUPS_PER_MINUTE:'24',EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP:'160',EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE:'480',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
 let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);const sockets=[];
 async function wait(check,label){const end=Date.now()+6000;while(!check()){if(Date.now()>end)throw Error(label+' timeout\n'+log);await new Promise(r=>setTimeout(r,5));}}
 async function open(query){const ws=new WebSocket(`ws://127.0.0.1:${port}/?${query}`),r={ws,json:[],binary:[],closed:false};sockets.push(ws);ws.binaryType='arraybuffer';
@@ -22,7 +22,7 @@ function input(marker,frame){const b=Buffer.alloc(48);b.set([69,marker,78,80,4,3
 function upload(p,b){p.ws.send(Buffer.concat([Buffer.from([0xe8]),b]));}
 try{
  await wait(()=>log.includes('listening'),'relay');let n=0;
- for(const [product,marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)){
+ for(const ending of ['failure','upload','signal'])for(const [product,marker] of Object.entries(COOPERATIVE_SPECTATOR_MARKERS)){
   const id=`${product}-${6300+n++}`,base=`room=${id}&run=1&players=2`,prefix=product+'_';
   const host=await open(`room=${id}&lobby=${prefix}host&member=${prefix}member_host`),guest=await open(`room=${id}&lobby=${prefix}guest&member=${prefix}member_guest`);
   send(host,{type:'take-seat',seat:0,loadout:0});send(guest,{type:'take-seat',seat:1,loadout:1});
@@ -101,11 +101,25 @@ try{
     assert.equal(reopened.closed,false);assert.equal(p0.closed,false);assert.equal(p1.closed,false);
     returning=reopened;
   }
-  // A gap kills only the optional stream. Both players retain their route.
-  upload(p0,input(marker,900));await wait(()=>early.closed&&viewer.closed&&returning.closed,'bad stream closes viewers');
+  if(ending==='failure'){
+    // A gap kills only the optional stream. Both players retain their route.
+    upload(p0,input(marker,900));await wait(()=>early.closed&&viewer.closed&&returning.closed,'bad stream closes viewers');
+  }else{
+    upload(p0,event(marker,3,next+1,5,4));
+    await wait(()=>[early,viewer,returning].every(s=>s.binary.at(-1)?.[2]===83&&s.binary.at(-1)?.[5]===3),'continuous replay reaches End');
+    const lengths=[early,viewer,returning].map(s=>s.binary.length);
+    const stop=Buffer.from([0xe8,0x53,0x54,0x4f,0x50,1]);
+    if(ending==='upload')p0.ws.send(stop);else send(s0,{type:'spectator-stop'});
+    send(s0,{type:'signal',to:1,candidate:{candidate:'after-completion'}});
+    await wait(()=>s1.json.some(m=>m.type==='signal'&&m.candidate?.candidate==='after-completion'),'stop signaling barrier');
+    p0.ws.send(Buffer.from([0xe7,1,4,5,6]));
+    await wait(()=>p1.binary.some(b=>b.equals(Buffer.from([4,5,6]))),'stop upload barrier');
+    assert.ok([early,viewer,returning].every(s=>!s.closed),'completed replay stays available to buffered viewers');
+    assert.deepEqual([early,viewer,returning].map(s=>s.binary.length),lengths,'stop adds no replay packet');
+  }
   assert.equal(p0.closed,false);assert.equal(p1.closed,false);p0.ws.send(new Uint8Array([0xe7,1,9,8,7]));
   await wait(()=>p1.binary.some(b=>b.equals(Buffer.from([9,8,7]))),'player traffic survives');
   for(const s of sockets)s.close();await wait(()=>sockets.every(s=>s.readyState===3),'cleanup');sockets.length=0;
  }
- console.log('PASS six cooperative products: native-gated admission, current-stage prefix, Boss dependency, explicit entry frontier, stage rollover, repeated same-run spectator return and player failure isolation');
+ console.log('PASS six cooperative products: native-gated admission, current-stage prefix, Boss dependency, explicit entry frontier, stage rollover, repeated same-run spectator return, completed replay retention after upload/signal stop and player failure isolation');
 }finally{for(const s of sockets)s.close();child.kill();}

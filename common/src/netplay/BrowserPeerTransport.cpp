@@ -36,6 +36,12 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             route: null, failed: false, disconnected: false, error: String(), closed: false,
             spectatorCount: Math.max(0, Number(Module.eaglerOptions?.netplaySpectatorCount) || 0),
             retainSpectatorHistory: !!stageSpectatorHistory && localPlayer === 0,
+            flushSpectatorSession() {
+                if (!this.pendingSpectatorSession) return true;
+                if (this.relay?.readyState !== WebSocket.OPEN || this.relay.bufferedAmount > 64000) return false;
+                try { this.relay.send(JSON.stringify(this.pendingSpectatorSession)); this.pendingSpectatorSession = null; return true; }
+                catch { return false; }
+            },
             rtcReadySent: false, signalReconnectTimer: null, signalReconnectDelayMs: 500,
             rtcHealthTimer: null,
             iceServers: Array.isArray(Module.eaglerOptions?.netplayIceServers)
@@ -549,8 +555,12 @@ EM_JS(int, eagler_spectator_connect,
             // remaining comfortably inside its byte budget. Keep both bounded.
             maxReceivedBytes: stageSpectatorHistory ? 16 * 1024 * 1024 : Infinity,
             receivedBytes: 0, pendingReceivedBytes: 0, pendingReceivedPackets: 0,
+            receiveEpoch: 0, reconnectAttempt: 0, reconnectTimer: null, connectTimer: null,
             close() {
                 this.closed = true;
+                if (this.reconnectTimer !== null) clearTimeout(this.reconnectTimer);
+                if (this.connectTimer !== null) clearTimeout(this.connectTimer);
+                this.reconnectTimer = null;
                 try { this.relay?.close(1000, 'spectator close'); } catch {}
                 this.received.length = 0;
                 this.receivedHead = 0;
@@ -574,6 +584,7 @@ EM_JS(int, eagler_spectator_connect,
                     return;
                 }
                 if (this.closed || this.failed) return;
+                const epoch = this.receiveEpoch;
                 const bytes = data instanceof Blob ? data.size : data?.byteLength;
                 if (!Number.isSafeInteger(bytes) || bytes <= 0) return;
                 if (this.received.length - this.receivedHead + this.pendingReceivedPackets >= this.maxReceivedPackets ||
@@ -583,7 +594,7 @@ EM_JS(int, eagler_spectator_connect,
                     return;
                 }
                 const append = packet => {
-                    if (this.closed || this.failed) return;
+                    if (this.closed || this.failed || this.receiveEpoch !== epoch) return;
                     if (this.received.length - this.receivedHead >= this.maxReceivedPackets) {
                         this.failed = true;
                         this.error = 'Spectator fell too far behind';
@@ -597,7 +608,7 @@ EM_JS(int, eagler_spectator_connect,
                 else if (data instanceof Blob) {
                     ++this.pendingReceivedPackets; this.pendingReceivedBytes += bytes;
                     const release = () => {
-                        if (this.closed) return false;
+                        if (this.closed || this.receiveEpoch !== epoch) return false;
                         --this.pendingReceivedPackets; this.pendingReceivedBytes -= bytes; return true;
                     };
                     data.arrayBuffer().then(buffer => {if (release()) append(new Uint8Array(buffer));}, release);
@@ -608,17 +619,67 @@ EM_JS(int, eagler_spectator_connect,
         globalThis[legacyGlobal] = state;
         globalThis.__eaglerNetplayTransport = 'spectator';
         globalThis.__eaglerNetplayPath = 'relay';
-        state.relay = new WebSocket(relay.href);
-        state.relay.binaryType = 'arraybuffer';
-        state.relay.onmessage = event => {
-            if (typeof event.data !== 'string') state.receiveBinary(event.data);
+        const open = () => {
+            if (state.closed) return;
+            const socket = state.relay = new WebSocket(relay.href);
+            socket.binaryType = 'arraybuffer';
+            if (stageSpectatorHistory && socket.readyState === WebSocket.CONNECTING)
+                state.connectTimer = setTimeout(() => {if (state.relay === socket && socket.readyState === WebSocket.CONNECTING) socket.close();}, 8000);
+            socket.onopen = () => {if (state.relay === socket && state.connectTimer !== null) {clearTimeout(state.connectTimer);state.connectTimer = null;}};
+            socket.onmessage = event => {
+                if (state.closed || state.relay !== socket) return;
+                if(stageSpectatorHistory&&event.data instanceof ArrayBuffer){
+                    const wire=new Uint8Array(event.data);
+                    if(wire[0]===0xe9){
+                        if(wire.length<=20||wire.length>32788||wire[1]!==1||wire[2]>1||wire[3])return;
+                        const v=new DataView(wire.buffer),total=v.getUint32(12,true),offset=v.getUint32(16,true);
+                        const session=v.getUint32(8,true).toString(16).padStart(8,'0')+v.getUint32(4,true).toString(16).padStart(8,'0');
+                        if(session!==state.spectatorSession?.session||!total||total>8388608||offset>total||wire.length-20>total-offset)return;
+                        if(!state.replayReceiving){if(offset)return;state.replayReceiving={session,bytes:new Uint8Array(total),offset:0,extended:!!wire[2]};}
+                        const file=state.replayReceiving;
+                        if(file.session!==session||file.offset!==offset||file.bytes.length!==total||file.extended!==!!wire[2])return;
+                        file.bytes.set(wire.subarray(20),offset);file.offset+=wire.length-20;
+                        if(file.offset===total){
+                            const prefix=({th06:'th6',th07:'th7',th08:'th8',th10:'th10',th11:'th11',th15:'th15mp'})[tag]||tag;
+                            const suffix=((parseInt(session.slice(0,8),16)^parseInt(session.slice(8),16))>>>0).toString(36).slice(-4).padStart(4,'0');
+                            state.spectatorReplay={session,bytes:file.bytes,name:prefix+'_ud'+suffix+(file.extended?'.rpyx':'.rpy')};state.replayReceiving=null;
+                        }
+                        return;
+                    }
+                }
+                if (typeof event.data !== 'string') { state.receiveBinary(event.data); return; }
+                if (!stageSpectatorHistory) return;
+                let message; try { message = JSON.parse(event.data); } catch { return; }
+                if (message.type !== 'spectator-session') return;
+                if (typeof message.session !== 'string' || !/^[a-f0-9]{16}$/.test(message.session) || /^0+$/.test(message.session) ||
+                    !Number.isInteger(message.seed) || message.seed < 0 || message.seed > 65535 ||
+                    !Number.isSafeInteger(message.generation) || message.generation < 0) return;
+                ++state.receiveEpoch;
+                state.received = []; state.receivedHead = 0;
+                state.receivedBytes = state.pendingReceivedBytes = state.pendingReceivedPackets = 0;
+                state.pendingSpectatorSession = message;
+                state.spectatorSession = message;
+                state.replayReceiving=null;state.spectatorReplay=null;
+                state.failed = false; state.error = '';
+            };
+            socket.onerror = () => {
+                if (!stageSpectatorHistory && !state.closed && state.relay === socket) {
+                    state.failed = true; state.error = 'Spectator relay error';
+                }
+            };
+            socket.onclose = event => {
+                if (state.closed || state.relay !== socket) return;
+                if (state.connectTimer !== null) {clearTimeout(state.connectTimer);state.connectTimer = null;}
+                if (stageSpectatorHistory && !state.failed &&
+                    [1006, 1012, 1013].includes(event.code) && state.reconnectAttempt < 3) {
+                    state.reconnectTimer = setTimeout(() => {state.reconnectTimer = null; open();},
+                        500 * 2 ** state.reconnectAttempt++);
+                    return;
+                }
+                state.failed = true; state.error = event.reason || 'Spectator relay closed';
+            };
         };
-        state.relay.onerror = () => {
-            if (!state.closed) { state.failed = true; state.error = 'Spectator relay error'; }
-        };
-        state.relay.onclose = event => {
-            if (!state.closed) { state.failed = true; state.error = event.reason || 'Spectator relay closed'; }
-        };
+        open();
         return 1;
     } catch (error) {
         const failed = { failed: true, error: String(error), close() {}, legacyGlobal };
@@ -723,7 +784,7 @@ EM_JS(int, eagler_peer_send_repair_to, (int peerId, const unsigned char *data, i
 EM_JS(int, eagler_peer_send_spectator, (const unsigned char *data, int size), {
     const state = globalThis.__eaglerPeerTransport;
     if (!state || state.closed || state.spectatorStopped || size <= 0 ||
-        state.relay?.readyState !== WebSocket.OPEN) return 0;
+        state.relay?.readyState !== WebSocket.OPEN || (state.flushSpectatorSession && !state.flushSpectatorSession())) return 0;
     // Do not move an unbounded local backlog into the browser's socket queue.
     // A single large title packet is allowed only on an empty queue; subsequent
     // packets wait until it drains. TH09's 40/46-byte packets stay below 64 KiB.
@@ -737,6 +798,46 @@ EM_JS(int, eagler_peer_send_spectator, (const unsigned char *data, int size), {
         state.relay.send(envelope);
         return 1;
     } catch { return 0; }
+});
+
+EM_JS(void, eagler_peer_begin_spectator_session, (unsigned low, unsigned high, unsigned seed), {
+    const state = globalThis.__eaglerPeerTransport;
+    if (!state || state.closed || !state.retainSpectatorHistory || seed > 65535) return;
+    const session = (high >>> 0).toString(16).padStart(8, '0') + (low >>> 0).toString(16).padStart(8, '0');
+    if (state.spectatorSession?.session === session && state.spectatorSession.seed === seed) return;
+    const generation = state.spectatorSession ? state.spectatorSession.generation + 1 : 0;
+    state.spectatorSession = state.pendingSpectatorSession = {type: 'spectator-session', session, seed, generation};
+    state.spectatorStopped = false;
+    if(state.replayTimer)clearTimeout(state.replayTimer);state.replayTimer=null;state.sharedReplaySession=null;
+    state.flushSpectatorSession();
+});
+
+EM_JS(void, eagler_peer_share_replay, (const unsigned char* data,int size,int extended), {
+    const state=globalThis.__eaglerPeerTransport,session=state?.spectatorSession?.session;
+    if(!state||state.closed||!state.retainSpectatorHistory||state.localPlayer!==0||!session||size<=0||size>8388608||state.sharedReplaySession===session)return;
+    const bytes=HEAPU8.slice(data,data+size),deadline=Date.now()+15000;let offset=0;
+    state.sharedReplaySession=session;
+    const flush=()=>{
+        state.replayTimer=null;
+        if(state.closed||state.spectatorSession?.session!==session||Date.now()>deadline||offset===bytes.length)return;
+        if(state.relay?.readyState===WebSocket.OPEN&&state.relay.bufferedAmount<=32768&&(!state.flushSpectatorSession||state.flushSpectatorSession())){
+            const part=bytes.subarray(offset,offset+32768),wire=new Uint8Array(20+part.length),v=new DataView(wire.buffer);
+            wire.set([0xe9,1,extended?1:0,0]);v.setUint32(4,parseInt(session.slice(8),16),true);v.setUint32(8,parseInt(session.slice(0,8),16),true);
+            v.setUint32(12,size,true);v.setUint32(16,offset,true);wire.set(part,20);
+            try{state.relay.send(wire);offset+=part.length;}catch{return;}
+        }
+        state.replayTimer=setTimeout(flush,16);
+    };state.replayTimer=setTimeout(flush,0);
+});
+
+EM_JS(int, eagler_peer_take_spectator_session, (unsigned *words), {
+    const state = globalThis.__eaglerPeerTransport, session = state?.pendingSpectatorSession;
+    if (state?.route !== 'spectator' || !session) return 0;
+    HEAPU32[words >>> 2] = parseInt(session.session.slice(8), 16);
+    HEAPU32[(words >>> 2) + 1] = parseInt(session.session.slice(0, 8), 16);
+    HEAPU32[(words >>> 2) + 2] = session.seed;
+    state.pendingSpectatorSession = null;
+    return 1;
 });
 
 EM_JS(int, eagler_peer_has_spectators, (), {
@@ -759,7 +860,7 @@ EM_JS(void, eagler_peer_stop_spectators, (int graceful), {
     // terminal marker is sent ONCE even under backpressure. RTC signaling can
     // notify the server without waiting behind a blocked spectator upload.
     try {
-        if (!graceful && state.route === 'rtc') state.sendSignal?.({type: 'spectator-stop'});
+        if (!graceful && state.route === 'rtc') state.sendSignal?.({type: 'spectator-stop', generation: state.spectatorSession?.generation});
     } catch {}
     try {
         if (state.relay?.readyState === WebSocket.OPEN)
@@ -961,6 +1062,27 @@ bool BrowserPeerTransport::SendSpectator(const std::uint8_t *data, std::size_t s
 #endif
 }
 
+void BrowserPeerTransport::BeginSpectatorSession(std::uint64_t sessionId, std::uint32_t seed)
+{
+#ifdef __EMSCRIPTEN__
+    if (sessionId && seed <= 65535)
+        eagler_peer_begin_spectator_session(std::uint32_t(sessionId), std::uint32_t(sessionId >> 32), seed);
+#else
+    (void)sessionId; (void)seed;
+#endif
+}
+
+bool BrowserPeerTransport::TakeSpectatorSession(std::uint64_t *sessionId, std::uint32_t *seed)
+{
+#ifdef __EMSCRIPTEN__
+    std::uint32_t words[3]{};
+    if (!sessionId || !seed || !eagler_peer_take_spectator_session(words)) return false;
+    *sessionId = words[0] | (std::uint64_t(words[1]) << 32); *seed = words[2]; return true;
+#else
+    (void)sessionId; (void)seed; return false;
+#endif
+}
+
 bool BrowserPeerTransport::HasSpectators() const
 {
 #ifdef __EMSCRIPTEN__
@@ -985,6 +1107,14 @@ void BrowserPeerTransport::StopSpectators(bool graceful)
     eagler_peer_stop_spectators(graceful ? 1 : 0);
 #else
     (void)graceful;
+#endif
+}
+
+void BrowserPeerTransport::ShareSpectatorReplay(const std::uint8_t* bytes,std::size_t size,bool extended){
+#ifdef __EMSCRIPTEN__
+    if(bytes&&size<=8388608)eagler_peer_share_replay(bytes,int(size),extended?1:0);
+#else
+    (void)bytes;(void)size;(void)extended;
 #endif
 }
 

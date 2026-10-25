@@ -8,6 +8,8 @@ Launcher 手柄动作通过共用浏览器桥同步进入本地原生采样，�
 
 联机高刷沿完整原生事务生成连续画面。网络逻辑由 `SimulationCadence` 计账，显示帧由 `PresentationSchedule` 从最后两个完整端点取样。缺输入时画面到达当前端点后保持，纠正过程中保留已有画面；恢复、换关、暂停和 Replay 定位分别重新建立插值对。`limitPresentationTo60` 控制额外呈现。
 
+旁观按当前原生动画归属展示所有玩家与低速判定点，双人、三人重叠时保持相同可见性。玩家视角继续显示本地判定点；回滚和额外绘制沿同一归属表重建。`native-test.mjs --ui` 覆盖两种视角切换与原生低速动画。
+
 使用 `rollback-browser-acceptance.mjs --launcher-root launcher --display-hz 120 --compare-display --replay-oracle`，可在真实双端中比较高刷与 60Hz 限制。驱动统计纯显示绘制，剔除前进和纠正提交，并把共用字体传给实时与独立 Replay 两个入口。源码和结果见[高刷验证记录](records/2026-10-24-display-high-refresh.md#mp-接收与逻辑时钟)。
 
 ## 构建并在 Launcher 启动

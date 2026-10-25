@@ -61,9 +61,8 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
   }
   const forward: EventListener = raw => {
     const event = raw as KeyboardEvent;
-    const state = options.runtime.getSnapshot();
-    if (!state.launched || !options.playerOpen() || !options.frame.contentWindow) {keyboard.clear(); return;}
     const context = options.runtime.getInputContext();
+    if (!context.launched || !options.playerOpen() || !options.frame.contentWindow) {keyboard.clear(); return;}
     if (mapping && keyboardInputBridge(context)) {
       if (event.type === 'keydown' && event.isComposing) return;
       if (options.launcherOwnsTarget(event.target) && event.type === 'keydown') return;
@@ -81,7 +80,7 @@ export function createPlayerKeyboard(options: PlayerKeyboardOptions) {
     const context = options.runtime.getInputContext();
     const bridge = keyboardInputBridge(context);
     if (bridge && bridge.submit({protocol:context.protocol,game:context.game,epoch:context.epoch,command:'keyboard-clear'})) return;
-    if (!options.runtime.getSnapshot().launched || !options.frame.contentWindow) return;
+    if (!context.launched || !options.frame.contentWindow) return;
     options.runtime.postInput('keyboard-clear', {});
   }
   function rebind() {

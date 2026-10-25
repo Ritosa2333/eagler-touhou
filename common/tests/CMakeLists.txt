@@ -342,6 +342,10 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/spectator-playback-bridge.test.mjs)
     add_test(NAME eagler-common.browser-peer-stage-history
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-stage-history.test.mjs)
+    add_test(NAME eagler-common.browser-peer-spectator-session
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-session.test.mjs)
+    add_test(NAME eagler-common.browser-peer-spectator-replay
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-replay.test.mjs)
     add_test(NAME eagler-common.direct-input-bridge
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/direct-input-bridge-test.mjs)
     add_test(NAME eagler-common.keyboard-input-bridge
@@ -351,5 +355,8 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
 endif()
 
 add_executable(eagler_common_cooperative_rules_test cooperative-rules-test.cpp)
+add_executable(eagler_common_cooperative_menu_input_test cooperative-menu-input-test.cpp)
+target_link_libraries(eagler_common_cooperative_menu_input_test PRIVATE eagler::netplay_headers)
+add_test(NAME eagler-common.cooperative-menu-input COMMAND eagler_common_cooperative_menu_input_test)
 target_link_libraries(eagler_common_cooperative_rules_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.cooperative-rules COMMAND eagler_common_cooperative_rules_test)

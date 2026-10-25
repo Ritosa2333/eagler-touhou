@@ -171,7 +171,7 @@ void Application::multiplayer_observe_authored_boundary(bool submitted){
 bool Application::multiplayer_active()const{
     const auto& session=state.multiplayer_session;
     return session.sessionId&&session.started&&world&&!world->loading&&world->actors.session&&
-           state.netplay_runtime.Configured();
+           state.netplay_runtime.Configured()&&!state.netplay_runtime.Retired();
 }
 
 multiplayer::RemotePlayerPresentation::Progress Application::remote_player_presentation_progress()const{
@@ -215,7 +215,17 @@ bool Application::multiplayer_pump_network(bool capture_follows){
     // confirmed-input timeout from the now-stopped simulation.
     if(error)return false;
     if(state.netplay_runtime.PumpNetwork(multiplayer_active(),
-        capture_follows&&state.pending_screen==value.screen))return true;
+        capture_follows&&state.pending_screen==value.screen)){
+        // Admission can already name a later source generation while this
+        // receiver is building its first native scene. Install the validated
+        // route before loading/activation can inspect its Replay checkpoint.
+        if(state.netplay_runtime.Spectator()){
+            const auto started=state.multiplayer_session.started;
+            state.multiplayer_session=state.netplay_runtime.Setup();
+            state.multiplayer_session.started=started;
+        }
+        return true;
+    }
     const auto& runtime=state.netplay_runtime;
     const auto& channel=runtime.Channel();
     const auto frame=[](u32 value)->i32{
@@ -384,6 +394,13 @@ i32 Application::multiplayer_update(){
     // Reconcile first: late input can cancel a predicted transition. Clearing
     // the journal as soon as confirmation arrives loses that required restore.
     // Whole resource lifetimes only cross a fully reconciled, confirmed fence.
+    if(!runtime.ReadOnly()&&world->actors.results&&world->actors.results->state>=6){
+        if(!runtime.FinishGameplay()){multiplayer_waiting=true;return 1;}
+        std::vector<u8> replay;if(state.multiplayer_replay.Encode(replay))Netplay::BrowserPeerTransport::ShareSpectatorReplay(replay.data(),replay.size(),true);
+        engine.rollback_state=nullptr;engine.netplay_frame=Netplay::INVALID_FRAME;
+        if(rollback)rollback->Clear();
+        return engine.update_all();
+    }
     if(state.pending_screen!=value.screen){
         if(runtime.Spectator()&&runtime.StagePlaybackReady()){
             // Let the native startup and title screens finish their resource
@@ -409,7 +426,8 @@ i32 Application::multiplayer_update(){
         // the current input/ACK tail over the reliable lane before waiting,
         // otherwise one lost final RTC fast packet can strand both endpoints
         // at this fence and eventually surface as network error -5.
-        if(!runtime.PrepareTransitionFence()){
+        const bool terminal=!runtime.ReadOnly()&&(state.pending_screen==3||state.pending_screen==4||state.pending_screen==14||state.pending_screen==15);
+        if(!runtime.PrepareTransitionFence(terminal)){
             multiplayer_waiting=true;return 1;
         }
         if(world->scores.multiplayer_active()&&!world->scores.replay_read_only()&&
@@ -426,6 +444,8 @@ i32 Application::multiplayer_update(){
                 state.pending_screen=4;
             }else multiplayer_generation_pending=true;
         }
+        if(terminal&&!runtime.FinishGameplay()){multiplayer_waiting=true;return 1;}
+        if(terminal){std::vector<u8> replay;if(state.multiplayer_replay.Encode(replay))Netplay::BrowserPeerTransport::ShareSpectatorReplay(replay.data(),replay.size(),true);}
         const i32 result=engine.update_all();
         if(world&&!world->loading&&rollback&&runtime.AllowsRollback()&&!rollback->Reset()){multiplayer_fail("Reset rollback history");return -1;}
         if(result&&result!=-1)presentation_audit::simulation_tick();

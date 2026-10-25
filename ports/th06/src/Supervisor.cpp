@@ -22,6 +22,7 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #include <eagler/netplay/NetplayInput.hpp>
+#include <eagler/netplay/CooperativeMenuInput.hpp>
 #endif
 #ifdef TH_ENABLE_NETPLAY
 #include "netplay/NetplaySideEffects.hpp"
@@ -179,6 +180,9 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
     g_LastFrameInput = g_CurFrameInput;
     g_CurFrameInput = Controller::GetInput();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (Netplay::Input::PlayerButtonOverridesActive())
+        g_LastFrameInput &= ~Netplay::CooperativePressedButtons(
+            g_CurFrameGameInputs, g_LastFrameGameInputs, TH06_MULTI_MAX_PLAYERS);
     // A multiplayer-capable binary must still behave exactly like ordinary
     // TH06 before a room/driver installs synchronized logical lanes. Once
     // NetplayInput owns the lanes it performs this current/previous handoff

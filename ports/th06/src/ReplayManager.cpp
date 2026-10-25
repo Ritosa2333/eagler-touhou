@@ -1,4 +1,5 @@
 #include <array>
+#include <algorithm>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
@@ -26,6 +27,7 @@
 #endif
 #ifdef TH_ENABLE_NETPLAY
 #include <eagler/netplay/NetplayInput.hpp>
+#include <eagler/netplay/BrowserPeerTransport.hpp>
 #include "netplay/NetplaySideEffects.hpp"
 #include "netplay/Th06LanStageProbe.hpp"
 #endif
@@ -744,8 +746,40 @@ void ReplayManager::StopRecording()
     }
 }
 
-void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
+namespace {
+std::vector<u8> spectatorReplay;
+bool savingSpectatorReplay=false;
+}
+bool ReplayManager::SetSpectatorReplay(const u8* bytes,unsigned size){
+    if(!bytes||!size){spectatorReplay.clear();return true;}
+    if(size>8u*1024u*1024u)return false;
+    std::vector<u8> decoded(bytes,bytes+size);
+    if(ValidateReplayData(reinterpret_cast<ReplayHeader*>(decoded.data()),size)!=ZUN_SUCCESS)return false;
+    if(!ReplayExtension::LoadPlayback(bytes,size))return false;
+    spectatorReplay.assign(bytes,bytes+size);return true;
+}
+static bool SaveSpectatorReplay(const char* path,char* name){
+    if(spectatorReplay.empty())return false;
+    if(!ReplayExtension::LoadPlayback(spectatorReplay.data(),spectatorReplay.size()))return true;
+    auto decoded=spectatorReplay;auto* header=reinterpret_cast<ReplayHeader*>(decoded.data());
+    if(ReplayManager::ValidateReplayData(header,int(decoded.size()))!=ZUN_SUCCESS)return true;
+    ReplayData data{};data.header=header;ReplayManager temporary{};temporary.isDemo=false;temporary.replayData=&data;
+    const auto base=ReplayExtension::BaseFileSize(spectatorReplay.data(),spectatorReplay.size());
+    for(unsigned i=0;i<7;++i)if(const auto offset=header->stageReplayDataOffsets[i]){
+        unsigned end=unsigned(base);for(auto next:header->stageReplayDataOffsets)if(next>offset)end=std::min(end,next);
+        data.stageReplayData[i]=reinterpret_cast<StageReplayData*>(decoded.data()+offset);
+        temporary.replayInputStageBookmarks[i]=reinterpret_cast<ReplayDataInput*>(decoded.data()+end);
+    }
+    std::string target(path);const auto dot=target.rfind('.');if(dot!=std::string::npos)target.resize(dot);target+=".rpyx";
+    auto* original=g_ReplayManager;g_ReplayManager=&temporary;savingSpectatorReplay=true;
+    ReplayManager::SaveReplay(target.c_str(),name,true);
+    savingSpectatorReplay=false;g_ReplayManager=original;
+    return true;
+}
+
+void ReplayManager::SaveReplay(const char *replayPath, char *replayName,bool keepRecording)
 {
+    if(!keepRecording){if(replayPath&&replayName&&SaveSpectatorReplay(replayPath,replayName))return;if(!replayPath)spectatorReplay.clear();}
     ReplayManager *mgr;
     SDL_IOStream *file;
     const u8 *checksumCursor;
@@ -773,10 +807,10 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
         mgr = g_ReplayManager;
         if (!mgr->IsDemo())
         {
-            if (replayPath != NULL && !spectatorViewing)
+            if (replayPath != NULL && (!spectatorViewing||savingSpectatorReplay))
             {
                 replayCopy = *mgr->replayData->header;
-                ReplayManager::StopRecording();
+                if(!savingSpectatorReplay)ReplayManager::StopRecording();
                 stageReplayPos = sizeof(ReplayHeader);
                 for (stageIdx = 0; stageIdx < ARRAY_SIZE_SIGNED(g_ReplayManager->replayData->stageReplayData);
                      stageIdx += 1)
@@ -788,7 +822,7 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
                                                    (u8 *)mgr->replayData->stageReplayData[stageIdx]);
                     }
                 }
-                const std::string actualReplayPath = ReplayExtension::ResolveSavePath(replayPath);
+                const std::string actualReplayPath = savingSpectatorReplay?std::string(replayPath):ReplayExtension::ResolveSavePath(replayPath);
                 utils::DebugPrint2("%s write ...\n", actualReplayPath.c_str());
                 replayCopy.score = g_GameManager.guiScore;
                 slowDown = (g_Supervisor.unk1b4 / g_Supervisor.unk1b8 - 0.5f) * 2.0f;
@@ -885,12 +919,12 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
                     }
                 }
                 SDL_CloseIO(file);
-                PracticeRuntime::SaveReplayMetadata(actualReplayPath.c_str());
-                if (ReplayExtension::AppendRecording(actualReplayPath.c_str()))
+                if(!keepRecording)PracticeRuntime::SaveReplayMetadata(actualReplayPath.c_str());
+                if (savingSpectatorReplay?ReplayExtension::AppendPlayback(actualReplayPath.c_str()):ReplayExtension::AppendRecording(actualReplayPath.c_str()))
                 {
                     ReplayExtension::RemoveAlternateSave(actualReplayPath.c_str());
 #if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-                    if (MultiplayerGameplay::IsMultiplayer())
+                    if (MultiplayerGameplay::IsMultiplayer()&&!keepRecording)
                     {
                         const std::string storagePath = FileSystem::GetPrefPath(actualReplayPath.c_str());
                         EM_ASM({
@@ -902,6 +936,7 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
 #endif
                 }
             }
+            if(keepRecording)return;
             for (stageIdx = 0; stageIdx < ARRAY_SIZE_SIGNED(mgr->replayData->stageReplayData); stageIdx += 1)
             {
                 if (g_ReplayManager->replayData->stageReplayData[stageIdx] != NULL)
@@ -916,4 +951,22 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
         g_Chain.Cut(g_ReplayManager->calcChain);
     }
     return;
+}
+
+void ReplayManager::ShareSpectatorReplay(){
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_ENABLE_NETPLAY)
+    auto* manager=g_ReplayManager;if(!manager||manager->IsDemo()||!manager->replayData||MultiplayerGameplay::GetLocalPlayerSlot()!=0)return;
+    FileSystem::CreateDir("replay");
+    const auto saved=*manager;const auto header=*manager->replayData->header;const auto random=g_Rng;
+    std::array<std::vector<u8>,7> stages;
+    for(unsigned i=0;i<7;++i)if(auto* stage=manager->replayData->stageReplayData[i])stages[i].assign(reinterpret_cast<u8*>(stage),reinterpret_cast<u8*>(stage)+sizeof(StageReplayData));
+    const char* path="replay/th6_stream.rpyx";char name[]="PLAYER";
+    const auto actual=FileSystem::GetPrefPath(ReplayExtension::ResolveSavePath(path).c_str());SDL_RemovePath(actual.c_str());
+    SaveReplay(path,name,true);
+    *manager=saved;*manager->replayData->header=header;g_Rng=random;
+    for(unsigned i=0;i<7;++i)if(!stages[i].empty())std::memcpy(manager->replayData->stageReplayData[i],stages[i].data(),stages[i].size());
+    size_t size=0;
+    if(auto* bytes=static_cast<u8*>(SDL_LoadFile(actual.c_str(),&size))){Netplay::BrowserPeerTransport::ShareSpectatorReplay(bytes,size,true);SDL_free(bytes);}
+    SDL_RemovePath(actual.c_str());
+#endif
 }

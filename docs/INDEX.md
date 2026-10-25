@@ -16,6 +16,7 @@
 | 适配指南 | [docs/adaptation/desktop-20261018.md](adaptation/desktop-20261018.md) | 桌面逐作运行记录 |
 | 适配指南 | [docs/adaptation/input.md](adaptation/input.md) | 键盘、手柄与触控 |
 | 适配指南 | [docs/adaptation/localization.md](adaptation/localization.md) | 语言与练习 |
+| 适配指南 | [docs/adaptation/multiplayer-lifecycle-20261025.md](adaptation/multiplayer-lifecycle-20261025.md) | 合作多人生命周期 ｜ 2026-10-25 |
 | 适配指南 | [docs/adaptation/multiplayer.md](adaptation/multiplayer.md) | 多人接入与规则 |
 | 适配指南 | [docs/adaptation/port-sync.md](adaptation/port-sync.md) | 普通版与多人版同步 |
 | 适配指南 | [docs/adaptation/presentation.md](adaptation/presentation.md) | 画面与声音 |

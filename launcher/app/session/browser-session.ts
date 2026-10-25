@@ -564,6 +564,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (!element || element === frame) return;
     if (frame) throw new Error('Launcher cannot replace its live Runtime iframe');
     frame = element;
+    let nativeFailure: {epoch:number; reason:string}|null=null;
     unbindPixelPerfectDisplay = bindPixelPerfectDisplay(element, () => activeSettings?.options.pixelPerfectEnabled === true);
     runtime = createRuntimeService({frame: element, hostWindow: window, baseUrl, translate: t, network, worker: appShellDeployment ? appShell!.activeWorker() : undefined, onLocalResourceProgress: transfer.localProgress, onWarning: reportError,
       onUpdateReady: (game, epoch) => {
@@ -576,7 +577,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         const parent = element.parentNode, next = element.nextSibling;
         if (element.isConnected && parent) {element.remove(); parent.insertBefore(element, next);}
       },
-      onEvent: (message, context) => {const ownsPresentation = !context.fileOnly || fileRuntimePresentation?.() !== false; if (ownsPresentation) transfer.runtimeEvent(message); if (ownsPresentation && message.event === 'ready') gameData.finish();
+      onEvent: (message, context) => {const ownsPresentation = !context.fileOnly || fileRuntimePresentation?.() !== false; if (ownsPresentation) transfer.runtimeEvent(message); if (ownsPresentation && message.event === 'ready') {nativeFailure=null;gameData.finish();}
       if (ownsPresentation && message.event === 'first-frame' && runtime?.getSnapshot().firstFrame) {reportGameLoaded(); transfer.launchAcknowledged();}
       if (message.event === 'network-request') titleNetwork.open();
       if (message.event === 'runtime-info' && message.netplayTiming) {calibration.record(message.netplayTiming, runtime!.getSnapshot().epoch ?? 0); roomSession?.service.acceptMeasuredTiming(message.netplayTiming);}
@@ -588,9 +589,17 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
         publish({playerOpen:false,touchHelpOpen:false,startupError:null,roomLaunchStage:null,spectatorViewer:false});
         requiredNavigation().completeRuntimeClose({titleOverlayWasOpen:false});
       }
-      if (ownsPresentation && message.event === 'error') feedback.playerStatus(errorText(message.error || t('runtime.startFailed')));
+      if (ownsPresentation && message.event === 'error') {
+        const reason=errorText(message.error || t('runtime.startFailed'));
+        nativeFailure={epoch:context.epoch,reason};
+        feedback.playerStatus(reason);feedback.toast(reason,8000);
+      }
       if (ownsPresentation && message.event === 'exit') {
-        feedback.playerStatus(t(message.status === 'success' ? 'runtime.gameExited' : 'runtime.gameExitedAbnormally'));
+        const exitedNormally=message.status==='success'&&(message.code===undefined||message.code===0);
+        feedback.playerStatus(t(exitedNormally ? 'runtime.gameExited' : 'runtime.gameExitedAbnormally'));
+        if(!exitedNormally){
+          feedback.toast(nativeFailure?.epoch===context.epoch?nativeFailure.reason:errorText(message.error||t('runtime.gameExitedAbnormally')),8000);
+        }
         const titleOverlayWasOpen = titleNetwork.getSnapshot().open;
         const roomAtExit = roomSession?.service.getSnapshot();
         const leaveRoom = !context.fileOnly && message.returnToMenu === true && roomAtExit?.product && isMultiplayerProductId(roomAtExit.product);

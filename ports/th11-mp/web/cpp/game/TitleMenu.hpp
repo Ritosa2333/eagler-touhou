@@ -25,6 +25,7 @@ public:
     TitleMenu(AnmManager& a,AnmResource& t,AnmResource& v,AnmResource& ascii,ScoreFile& s)
         :animations(a),title(t),variant(v),ascii(ascii),scores(s){cursor.wrap=1;timer.set(0,&a.rate);}
     TitleScreen screen=TitleScreen::Main;
+    bool room_preview=false;
     i32 substate=0;
     MenuCursor cursor;
     MenuCursor secondary,page;

@@ -20,6 +20,10 @@ static char g_WebMidiPaths[32][256] = {};
 #include "AsciiManager.hpp"
 #include "Chain.hpp"
 #include "Controller.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <eagler/netplay/CooperativeMenuInput.hpp>
+#include <eagler/netplay/NetplayInput.hpp>
+#endif
 #include "Ending.hpp"
 #include "FileSystem.hpp"
 #include "GameErrorContext.hpp"
@@ -289,6 +293,11 @@ u32 Supervisor::OnUpdate(Supervisor *arg)
     {
         g_LastFrameRawInput = g_CurFrameRawInput;
         g_CurFrameRawInput = Controller::GetInput();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (Netplay::Input::PlayerButtonOverridesActive())
+            g_LastFrameRawInput &= ~Netplay::CooperativePressedButtons(
+                g_CurFrameGameInputs, g_LastFrameGameInputs, TH07_MULTI_MAX_PLAYERS);
+#endif
         g_IsEighthFrameOfHeldInput = 0;
         if (g_LastFrameRawInput == g_CurFrameRawInput)
         {

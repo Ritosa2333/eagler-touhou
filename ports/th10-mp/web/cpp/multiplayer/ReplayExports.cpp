@@ -3,6 +3,20 @@
 #include <algorithm>
 
 using namespace th10;
+extern "C" __attribute__((export_name("multiplayer_spectator_result")))
+u32 multiplayer_spectator_result(browser::Application* app,const u8* bytes,u32 size){
+    multiplayer::ReplayArchive candidate;
+    if(!app||!candidate.Load(bytes,size)||!app->state.netplay_runtime.EnterSpectatorResults())return 0;
+    const bool completed=candidate.Complete();
+    app->state.multiplayer_replay=std::move(candidate);app->engine.rollback_state=nullptr;app->engine.netplay_frame=Netplay::INVALID_FRAME;
+    if(app->world&&app->world->actors.session&&app->world->actors.results&&app->world->actors.results->state<6){
+        // The observer's result UI starts at the sealed gameplay boundary.
+        app->state.pending_screen=app->value.screen;
+        app->world->actors.session->replay_mode=0;
+        app->world->show_results(completed);
+    }
+    return 1;
+}
 extern "C" __attribute__((export_name("multiplayer_replay_validate")))
 u32 multiplayer_replay_validate(const u8* bytes,u32 size){
     Netplay::InputReplayInfo info;multiplayer::ReplayDescription description;

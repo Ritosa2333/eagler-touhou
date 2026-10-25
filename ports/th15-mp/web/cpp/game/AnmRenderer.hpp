@@ -16,6 +16,7 @@ public:
     std::vector<const AnmVm*> multiplayer_hidden_hud;
     std::unordered_map<const AnmVm*,u8> multiplayer_player_opacity;
     std::vector<const AnmVm*> multiplayer_hidden_hitboxes;
+    std::vector<const AnmVm*> multiplayer_hidden_pause;
     std::unordered_map<u32,unsigned> multiplayer_hitbox_owners;
 #endif
     void submit(AnmVm&,touhou::graphics::Topology,u32,const void*,u32);

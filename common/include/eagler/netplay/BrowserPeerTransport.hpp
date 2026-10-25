@@ -51,6 +51,10 @@ public:
     // Best-effort, relay-only confirmed input stream. Failure is deliberately
     // isolated from gameplay transport health.
     bool SendSpectator(const std::uint8_t *data, std::size_t size);
+    // Ordered upload metadata separates native retries on one player transport.
+    void BeginSpectatorSession(std::uint64_t sessionId, std::uint32_t seed);
+    // A new source session or recovered receiver rebuilds from its Replay entry.
+    bool TakeSpectatorSession(std::uint64_t *sessionId, std::uint32_t *seed);
     bool HasSpectators() const;
     // Optional output only: -1 unavailable/stopped, 0 connecting, 1 open.
     // SendSpectator separately enforces actual socket backpressure.
@@ -59,6 +63,8 @@ public:
     // Graceful completion queues the stop marker on the same reliable relay
     // stream as the final frames. Failure keeps the immediate signaling path.
     void StopSpectators(bool graceful = false);
+    // One completed, title-encoded Replay. Optional output never owns gameplay.
+    static void ShareSpectatorReplay(const std::uint8_t*,std::size_t,bool extended=false);
     bool Poll(std::vector<std::uint8_t> *packet) override;
     std::size_t BufferedAmount() const override;
     // Read-only RTC lane diagnostics; relay bytes remain in BufferedAmount.

@@ -176,6 +176,8 @@ MP 在完整原生事务之间生成高刷画面，独立 SimulationCadence 保�
 
 ## 运行验收记录
 
+2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。
+
 2026-10-19 multiplayer：修复符卡结算显示 `999.99s`，改用同步逻辑帧并沿用原有时间编码；测试与发布身份见[符卡计时记录](../../docs/adaptation/th11-spell-time-20261019.md)。
 
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。

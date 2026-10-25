@@ -58,7 +58,7 @@ bool WorldRollback::BeginRollbackFrame(Netplay::RollbackJournal& journal,WorldRo
     active_=&frame;s.multiplayer_rollback_boundary_requested=false;b.mp_rollback_boundary_requested=false;
     bool ok=true;
     const auto capture=[&](auto&... values){if(!rollback_capture_contiguous_values(journal,values...))ok=false;};
-    capture(s.state,s.multiplayer_frame,s.multiplayer_pause_held,s.game_input,
+    capture(s.state,s.multiplayer_frame,s.multiplayer_pause_held,s.multiplayer_menu_input,s.game_input,
         s.battle_attached,s.last_held,s.last_pause,s.paused_rate,s.menu_input,
         s.spell_records,s.clear_records);
     if(!economy_values(journal,s.economy,true))ok=false;

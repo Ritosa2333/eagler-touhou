@@ -17,6 +17,7 @@
 #include <eagler/netplay/ConfirmedInputWatchdog.hpp>
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorPublicationTail.hpp>
 #include "ReplayStageStart.hpp"
 #include <eagler/netplay/SpectatorStageView.hpp>
 
@@ -159,6 +160,7 @@ bool g_HavePendingSpectatorBootstrap = false;
 std::uint8_t g_SpectatorBossSlotsThisFrame = 0;
 bool g_SpectatorNativeStageReady = false;
 bool g_SpectatorPublisherReady = false;
+SpectatorPublicationTail g_SpectatorPublicationTail;
 bool g_SpectatorPublisherEligible = false;
 bool g_SpectatorLaneStopped = false;
 bool g_TestUsePauseCycle = false;
@@ -247,6 +249,7 @@ bool RestoreSpectatorReplayStart(const SpectatorStageEvent& event) {
     SideEffects::SetSpeculative(true);
     GameManager::CutChain();
     ReplayManager::SaveReplay(nullptr,nullptr);
+    SpectatorReplayStart::prepared.setup.spectator=true;
     if(!MultiplayerGameplay::Configure(SpectatorReplayStart::prepared.setup)){
         SpectatorReplayStart::Finish();SideEffects::SetSpeculative(false);return false;
     }
@@ -352,16 +355,29 @@ bool UseEndingCycle()
 
 void RetireGameplaySession()
 {
+    if(g_Initialized&&g_SimFrame&&!g_SpectatorMode&&g_Supervisor.curState!=SUPERVISOR_STATE_GAMEMANAGER_RESTART)
+        {ReplayManager::ShareSpectatorReplay();g_SpectatorRunRetired=true;}
+    if(!g_SpectatorMode&&g_Initialized&&g_SimFrame&&ProductionLanMode()&&g_ProductionTransportStarted){
+        for(std::uint8_t peer=0;peer<g_PlayerCount;++peer)if(peer!=g_LocalPlayer){
+            auto packet=g_Core.BuildInputPacket(peer,g_SimFrame-1,g_Sequence++,g_LastReceivedSequence);
+            packet.senderFrame=g_SimFrame;std::vector<std::uint8_t> wire;
+            if(EncodeInputPacket(packet,&wire)){
+                g_BrowserPeerTransport.SendTo(peer,wire.data(),wire.size());
+                g_BrowserPeerTransport.SendRepairTo(peer,wire.data(),wire.size());
+            }
+        }
+    }
     if (!g_SpectatorMode && g_LocalPlayer == 0 && g_SpectatorPublisherReady &&
         g_ProductionTransportStarted && g_BrowserPeerTransport.IsOpen())
     {
-        // End at the contiguous confirmed cursor. Viewers can then consume
-        // their buffered tail instead of waiting forever behind the live delay.
-        PublishConfirmedSpectatorFrames();
-        const bool ended = g_SpectatorPublisherReady && g_SpectatorPublisher.Finish(
-            g_SpectatorPublisher.Published(), [](const std::vector<std::uint8_t>& wire) {
-                return g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size());
-            });
+        const bool ended = g_SimFrame && g_SpectatorPublicationTail.Freeze(
+            g_SpectatorPublisher, g_Core.ConfirmedThroughAllRemotes(), g_SimFrame - 1,
+            [](std::uint32_t frame, std::array<FrameInput, MAX_PLAYERS>& inputs) {
+                const auto decision = g_Core.PrepareFrame(frame);
+                if (!decision.canAdvance || decision.predictedMask) return false;
+                inputs = decision.inputs; return true;
+            }, SDL_GetTicks(), {},
+            g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_RESTART);
         if (!ended) g_BrowserPeerTransport.StopSpectators(false);
         g_SpectatorPublisherReady = false;
     }
@@ -643,6 +659,12 @@ void DisableSpectatorPublisher(std::uint32_t frame, const char *reason)
 
 bool DrainSpectatorFrames()
 {
+    std::uint64_t session;std::uint32_t seed;
+    if(g_BrowserPeerTransport.TakeSpectatorSession(&session,&seed)){
+        g_SpectatorPlayback.Clear();g_HavePendingSpectatorBootstrap=false;
+        g_PendingSpectatorBootstrap={};g_SpectatorNativeStageReady=false;g_NextSpectatorReceiveFrame=0;
+        g_GameplayStartSeed=static_cast<std::uint16_t>(seed);
+    }
     std::vector<std::uint8_t> wire;
     while (TransportPoll(&wire))
     {
@@ -1678,6 +1700,10 @@ bool Initialize()
     g_SpectatorPublisherReady = g_SpectatorPublisherEligible &&
                                 g_SpectatorPublisher.Reset('6', g_PlayerCount,
                                                            CurrentSessionId(), GameplayAbi());
+    if(g_SpectatorPublisherReady){
+        g_SpectatorPublicationTail.Clear();
+        g_BrowserPeerTransport.BeginSpectatorSession(CurrentSessionId(),sessionConfig.seed);
+    }
     g_SpectatorBossSlotsThisFrame = 0;
     g_Active = true;
 #ifdef __EMSCRIPTEN__
@@ -2672,6 +2698,7 @@ bool Requested()
 
 void ReturnToRoom()
 {
+    g_SpectatorPublicationTail.Clear();
     g_BrowserPeerTransport.Close();
     g_ProductionTransportStarted = false;
     RetireGameplaySession();
@@ -2686,6 +2713,7 @@ void ReturnToRoom()
 
 void BeginRoomRun()
 {
+    g_SpectatorPublicationTail.Clear();
     // Wire generations start together for each relay run. Keep the local
     // lifetime generation monotonic for audio and other confirmed side effects.
     g_RoomRunGenerationBase = g_SessionGeneration;
@@ -2703,6 +2731,13 @@ double SimulationIntervalScale()
 
 int RunCalcChain()
 {
+    const auto tail = g_SpectatorPublicationTail.Drain(SDL_GetTicks(),
+        g_BrowserPeerTransport.SpectatorState() < 0,
+        [](const std::vector<std::uint8_t>& wire) {
+            return g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size());
+        }, []() {return SDL_GetTicksNS() / 1000;});
+    if (tail == SpectatorPublicationTail::Result::Complete || tail == SpectatorPublicationTail::Result::Failed)
+        g_BrowserPeerTransport.StopSpectators(tail == SpectatorPublicationTail::Result::Complete);
     g_LastTickAdvanced = false;
     if (!RequestedInternal())
     {
@@ -3107,3 +3142,15 @@ extern "C" int th06_mp_spectator_control(const char *run, const char *action,
 {
     return Netplay::Th06LanStageProbe::SpectatorControl(run, action, frame);
 }
+
+#ifdef __EMSCRIPTEN__
+extern "C" EMSCRIPTEN_KEEPALIVE int th06_mp_spectator_result(const unsigned char* bytes,unsigned size){
+    using namespace Netplay::Th06LanStageProbe;
+    const auto& p=g_SpectatorPlayback;
+    if(!g_SpectatorMode||g_SpectatorRunRetired||!p.History().Ended()||p.Paused()||p.Seeking()||p.Position()<p.History().Received()||!ReplayManager::SetSpectatorReplay(bytes,size))return 0;
+    RetireGameplaySession();
+    auto setup=MultiplayerGameplay::GetState();setup.spectator=false;if(!MultiplayerGameplay::Configure(setup))return 0;
+    g_GameManager.isInReplay=false;g_Supervisor.curState=SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
+    return 1;
+}
+#endif

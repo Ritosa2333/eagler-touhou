@@ -63,6 +63,8 @@ th08 的音效记录 `6ca5e8d9a7` 与 `69a4945bf3` 有 4/8 个修改块对应；
 
 ## 原分支历史投影
 
+来源校验沿完整 Git 父链导出子树。Linux 通过 Bash 执行 Git 自带的子树工具，覆盖深层导入历史，并核对来源祖先与当前目录内容。
+
 `tools/ports/project-history.py` 将原仓库历史与 monorepo 中各自目录的修改接为独立 Git 分支。原仓库提交保持原样；monorepo 提交按所属目录投影，保留作者、时间和有效合并父节点，并用 `Monorepo-Source` 标明对应的原提交。目录迁移沿 `runtimes/<title>` 和 `ports/<title>` 衔接。
 
 工具从选定提交读取迁移表和源码，只处理已提交的快照。先在临时克隆验证：

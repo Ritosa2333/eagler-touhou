@@ -123,6 +123,16 @@ for (const test of cases) {
   if (!replies.some(reply => reply.event === "exit" && reply.status === "success")) {
     throw new Error(`${test.game}: successful game exit was not forwarded`);
   }
+  context.__eaglerNetplayFailed = true;
+  context.__eaglerNetplayError = "spectator stream stopped; players continue";
+  await context.EaglerTouhouGameExited(1);
+  assert.equal(replies.at(-1).event, "exit");
+  assert.equal(replies.at(-1).status, "failure", "native failure overrides normal application return");
+  assert.equal(replies.at(-1).error, context.__eaglerNetplayError, "exit preserves the native failure reason");
+  context.__eaglerNetplayError = "";
+  await context.EaglerTouhouGameExited(1);
+  assert.equal(replies.at(-1).error, "Multiplayer connection failed");
+  context.__eaglerNetplayFailed = false;
   if (typeof context.EaglerTouhouFirstFrame !== "function") throw new Error(`${test.game}: first-frame bridge missing`);
   context.EaglerTouhouFirstFrame();
   if (!replies.some(reply => reply.event === "first-frame")) {

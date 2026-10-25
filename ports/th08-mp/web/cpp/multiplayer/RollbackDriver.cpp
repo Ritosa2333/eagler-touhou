@@ -82,6 +82,7 @@ bool RollbackDriver::FlushInputs(){
     return network.FlushDeferredInputs()||FailNetwork("deferred input send failed");
 }
 bool RollbackDriver::Reconcile(){
+    if(runtime.app.session.netplay.Retired())return Pump();
     if(failed||open||!Pump())return false;
     if(!initialized||!runtime.app.session.netplay.CanStart())return true;
     return (!runtime.app.session.netplay.AllowsRollback()||Correct())&&Commit();
@@ -149,6 +150,15 @@ bool RollbackDriver::Admit(){
         if(!net.SetWorldReady(false))return Fail("world retirement failed");
     }
     const auto target=th08::Scene(a.supervisor.state.target);
+    if(!net.ReadOnly()&&a.supervisor.state.active==i32(th08::Scene::Game)&&
+       (target==th08::Scene::Ending||target==th08::Scene::GameResults||target==th08::Scene::Title||target==th08::Scene::Exit)){
+        if(!net.CanRetire()){a.session.network_waiting=true;return true;}
+        if(!Commit()||!network.Retire(true))return FailNetwork("terminal retirement failed");
+        std::vector<u8> replay;
+        if(runtime.replay_archive.Encode(replay))Netplay::BrowserPeerTransport::ShareSpectatorReplay(replay.data(),replay.size(),true);
+        runtime.bind_audio_events(nullptr);audio.Reset();files.Reset();
+        return true;
+    }
     if(!generation_transition_pending&&a.supervisor.state.active==i32(th08::Scene::Game)&&
        (target==th08::Scene::Restart||target==th08::Scene::SpellRestart)){
         if(!network.CanRetire()){a.session.network_waiting=true;return true;}
@@ -208,7 +218,7 @@ bool RollbackDriver::RunFrame(bool render){
     }
     pending_spectator_frame=Netplay::INVALID_FRAME;pending_spectator_initializer.clear();
     pending_spectator_checkpoint=false;pending_spectator_boss_slots=0;
-    if(!net.Spectator()&&net.Generation()==0&&net.Setup().local_player==0&&
+    if(!net.Spectator()&&net.Setup().local_player==0&&
        !network.SpectatorPublishFailed()){
         const auto stage=u32(a.game.globals.stage)|(u32(session.multiplayer_route_state)<<8);
         const auto& previous=spectator_stage_tags[(frame-1u)%spectator_stage_tags.size()];
@@ -433,7 +443,7 @@ bool RollbackDriver::RunSpectatorInput(const Netplay::SpectatorFramePacket& pack
     if(packet.frame==0)gameplay[0]=StripRouteBootstrap(gameplay[0]);
     if(app.in_game()&&!app.game.commit_frame_inputs(gameplay.data(),packet.playerCount))return false;
     u16 supervisor_buttons=packet.inputs[0].buttons;
-    for(u32 seat=1;seat<packet.playerCount;++seat)supervisor_buttons|=packet.inputs[seat].buttons&InputButton::Menu;
+    for(u32 seat=1;seat<packet.playerCount;++seat)supervisor_buttons|=packet.inputs[seat].buttons;
     app.set_spectator_playback_input(supervisor_buttons);
     return app.update()&&!runtime.capture_failed;
 }
@@ -497,6 +507,7 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
     callback_yielded=false;
     if(failed||open||session.network_frame_open||!runtime.prepared||runtime.capture_failed){FlushInputs();return false;}
     session.network_waiting=false;
+    if(net.Retired())return network.Pump(false)&&runtime.app.update()&&(!render||runtime.app.draw());
     // Resource transitions remain confirmed. Once outside the combat graph,
     // do not let waiting for one UI frame stop the next physical input slot.
     net.SetCapturePhase(initialized&&!generation_transition_pending&&
@@ -561,6 +572,7 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
     // forward tick. Its indivisible cost can extend this callback beyond the
     // history slice budget; the SDL host still gates further catch-up ticks.
     if(!Commit()||!Admit())return false;
+    if(net.Retired())return runtime.app.update()&&(!render||runtime.app.draw());
     if(session.network_waiting)return PresentCorrection();
     // The outer SDL callback owns the shared observer catch-up budget.
     const auto frame=net.NextFrame();

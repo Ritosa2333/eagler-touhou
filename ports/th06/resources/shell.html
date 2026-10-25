@@ -102,7 +102,10 @@
       };
       globalThis.EaglerTouhouGameExited = result => {
         spectatorPlayback.stop();
-        const finish = () => emit("exit", { status: result === 1 ? "success" : "failure" });
+        const finish = () => emit("exit", {
+          status: result === 1 && !globalThis.__eaglerNetplayFailed ? "success" : "failure",
+          ...(globalThis.__eaglerNetplayFailed ? {error: String(globalThis.__eaglerNetplayError || "Multiplayer connection failed")} : {})
+        });
         // Flush IDBFS while the Runtime is still alive. The parent must not
         // wait for a post-mortem sync RPC after it receives exit, because the
         // main loop may already be gone and that RPC can sit until timeout.
@@ -561,11 +564,16 @@ async function installStartupBranding(core, {game, builtAt, fs = core.FS} = {}) 
 // Native playback owns every cursor and restore. The shell only transports
 // authenticated Launcher commands and publishes native reports.
 function createSpectatorPlaybackBridge({active,memory,state,control,allocate,deallocate,emit,
+  replay=()=>globalThis.__eaglerPeerTransport?.spectatorReplay,
+  complete,
   schedule=globalThis.setInterval,cancel=globalThis.clearInterval}) {
-  let timer=null,last=null;
+  let timer=null,last=null,menuSession=null;
   const clear=()=>{if(last){last=null;emit('runtime-info',{spectatorPlayback:null});}};
+  const closeMenu=()=>{if(menuSession){menuSession=null;globalThis.__eaglerSpectatorMenu=false;emit('runtime-info',{spectatorMenu:false});}};
   function poll() {
-    if(!active()){clear();return null;}
+    if(!active()){closeMenu();clear();return null;}
+    const file=replay();
+    if(menuSession){clear();return null;}
     try {
       const pointer=state();
       if(!pointer){clear();return null;}
@@ -579,6 +587,15 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
       if(report?.version!==1||typeof report.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(report.run)||
          !Number.isInteger(report.revision)||report.revision<1||report.revision>0xfffffffe||
          !Array.isArray(report.nodes)||report.nodes.length>512)throw Error('Invalid native spectator report');
+      if(complete&&!menuSession&&report.ended&&!report.paused&&!report.seeking&&report.position>=report.received&&
+         report.run.startsWith('s'+file?.session+'_')&&file?.bytes instanceof Uint8Array){
+        const pointer=allocate(file.bytes.length);
+        if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator result allocation failed');
+        try{const heap=memory();if(pointer>heap.length-file.bytes.length)throw Error('Invalid spectator result allocation');heap.set(file.bytes,pointer);
+          if(complete(pointer,file.bytes.length)){menuSession=file.session;globalThis.__eaglerSpectatorMenu=true;emit('runtime-info',{spectatorMenu:true});}
+        }finally{deallocate(pointer);}
+        if(menuSession){clear();return null;}
+      }
       if(last?.run===report.run&&(report.revision<=last.revision||report.received<last.received))return last;
       last=report;emit('runtime-info',{spectatorPlayback:report});return report;
     } catch(error) {
@@ -613,7 +630,7 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
   }
   return Object.freeze({poll,command,
     start(){if(timer===null)timer=schedule(poll,250);poll();},
-    stop(){if(timer!==null)cancel(timer);timer=null;clear();},
+    stop(){if(timer!==null)cancel(timer);timer=null;closeMenu();clear();},
   });
 }
 // END GENERATED SPECTATOR PLAYBACK
@@ -624,6 +641,7 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
         control: (run, action, frame) => Module._th06_mp_spectator_control?.(run, action, frame) || 0,
         allocate: size => (Module._malloc || Module._SDL_malloc)(size),
         deallocate: pointer => (Module._free || Module._SDL_free)(pointer), emit,
+          complete: (pointer,size) => Module._th06_mp_spectator_result(pointer,size),
       });
 // BEGIN GENERATED LOCAL REPLAY
 // Generated from eagler-common/browser/local-replay*.mjs.
@@ -1038,17 +1056,18 @@ function createNativeLocalReplay({core: getCore,module: getModule,physical,openR
           Module.eaglerControls.thpracKeyboardBits = 0;
         }
       };
+      function runtimeInputActive(){return (launched||Module.eaglerRoomPreview&&Module.eaglerOptions?.netplayMode!=='lan')&&!document.hidden;}
       keyboardInput = createKeyboardInputBridge({protocol,game,epoch,origin:location.origin,
-        ready:()=>launched&&!document.hidden&&!Module.eaglerOptions?.netplaySpectator,
+        ready:()=>runtimeInputActive()&&(!Module.eaglerOptions?.netplaySpectator||globalThis.__eaglerSpectatorMenu===true),
         dispatch:(event,down)=>applyBrowserKeyboardEvent(event,down),reset:clearBrowserKeyboard});
       window.addEventListener("keydown", event => {
-        if (!launched) return;
+        if (!runtimeInputActive()) return;
         if (keyboardInput.event(event,true)) {event.preventDefault();event.stopImmediatePropagation();return;}
         if (event.metaKey || event.altKey) return;
         if (applyBrowserKeyboardEvent(event, true)) event.preventDefault();
       }, true);
       window.addEventListener("keyup", event => {
-        if (!launched) return;
+        if (!runtimeInputActive()) return;
         if (keyboardInput.event(event,false)) {event.preventDefault();event.stopImmediatePropagation();return;}
         if (applyBrowserKeyboardEvent(event, false)) event.preventDefault();
       }, true);

@@ -10,6 +10,7 @@ struct MultiplayerOptions {
     std::array<int,3> selections{};
     i32 chapter_threshold=0;
     bool replay_legacy_stage_flow=false;
+    bool spectator=false;
     bool valid()const noexcept {
         if(chapter_threshold&&!valid_multiplayer_chapter_threshold(u32(chapter_threshold)))return false;
         if(seat_count<2||seat_count>3||local_seat>=seat_count||stage<1||stage>7||difficulty<0||difficulty>4)return false;

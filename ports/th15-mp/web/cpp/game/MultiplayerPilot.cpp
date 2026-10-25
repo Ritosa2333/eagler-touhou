@@ -261,7 +261,7 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
     const auto local_position=pilots[mp_options.local_seat]->player->motion.position;
     for(unsigned s=0;s<mp_options.seat_count;++s){auto& pilot=*pilots[s];const auto position=pilot.player->motion.position;
         const double dx=double(local_position.x)-position.x,dy=double(local_position.y)-position.y;
-        const u8 opacity=multiplayer_player_opacity(s==mp_options.local_seat,pilot.ghost,dx*dx+dy*dy);
+        const u8 opacity=multiplayer_player_opacity(mp_options.spectator||s==mp_options.local_seat,pilot.ghost,mp_options.spectator?1e20:dx*dx+dy*dy);
         auto& visuals=pilot.player->visuals;
         // Keep ownership until the generation-tagged VM is actually retired,
         // including fade-out and subsequent changes of the selected viewpoint.
@@ -279,7 +279,7 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& r){
         for(const auto& pair:visuals.option_handles)for(auto handle:pair)tag(tag,animations.registry.find(handle));
         for(const auto& shot:pilot.player->shots.shots)if(shot.state)tag(tag,animations.registry.find(shot.animation));
     }
-    for(const auto& entry:r.multiplayer_hitbox_owners)if(entry.second!=mp_options.local_seat)
+    for(const auto& entry:r.multiplayer_hitbox_owners)if(!mp_options.spectator&&entry.second!=mp_options.local_seat)
         if(auto* vm=animations.registry.find(entry.first))r.multiplayer_hidden_hitboxes.push_back(vm);
 }
 bool GameBattle::mp_draw(AnmRenderer& r){
@@ -290,7 +290,7 @@ bool GameBattle::mp_draw(AnmRenderer& r){
         // independently of native death hiding and invulnerability flashing.
         auto body=pilot.player->visuals.root;body.visual.flags=(body.visual.flags|3u)&~0x60000u;
         body.visual.render_flags=(body.visual.render_flags&~0x80060u)|0x40000u;
-        const unsigned base_alpha=s==mp_options.local_seat?112u:88u;unsigned alpha=base_alpha;
+        const unsigned base_alpha=mp_options.spectator||s==mp_options.local_seat?112u:88u;unsigned alpha=base_alpha;
         // TH11 rescue feedback: the recipient becomes opaque as the donor's
         // confirmed 90-tick hold progresses. No authoritative ANM mutation.
         for(unsigned giver=0;giver<mp_options.seat_count;++giver){const auto& donor=*pilots[giver];

@@ -1,4 +1,5 @@
 #include "../web/cpp/multiplayer/CooperativeRules.hpp"
+#include "../web/cpp/multiplayer/InputLanes.hpp"
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/RollbackJournal.hpp>
 
@@ -12,9 +13,19 @@ using namespace th10::multiplayer;
 
 namespace {
 constexpr std::uint16_t focus = 4;
-constexpr std::uint32_t correctionFrame = 89;
-constexpr std::uint32_t arrivalFrame = 96;
-constexpr std::uint32_t totalFrames = 110;
+constexpr std::uint32_t correctionFrame = 15;
+constexpr std::uint32_t arrivalFrame = 22;
+constexpr std::uint32_t totalFrames = 36;
+
+struct Model {
+    State rules;
+    InputLanes::State lanes{};
+};
+
+std::uint16_t buttons(std::uint32_t frame) {
+    return frame == 0 || frame == 3 || frame == 6 || frame == 9 ||
+           frame == correctionFrame ? focus : 0;
+}
 
 State initial_state() {
     State state{};
@@ -24,10 +35,14 @@ State initial_state() {
     return state;
 }
 
-FrameInput rule_input(std::uint16_t remoteButtons) {
+FrameInput rule_input(InputLanes::State& lanes, const Netplay::FrameInput* captured) {
+    assert(InputLanes::Commit(lanes, captured, 2));
+    const auto& remote = lanes.seats[1];
     FrameInput input{};
-    input.seats[0] = {0, 10000, false, false, false, false, false, false};
-    input.seats[1] = {1000, 10000, true, true, true, (remoteButtons & focus) != 0, false, false};
+    input.seats[0] = {0, 10000, false, false, false, false, false, false, false};
+    input.seats[1] = {1000, 10000, true, true, true,
+                     (remote.current & focus) != 0, false, false,
+                     (remote.pressed & focus) != 0};
     return input;
 }
 
@@ -37,12 +52,20 @@ auto seat_values(const SeatState& seat) {
                           seat.waitingForFocusRelease);
 }
 
-void compare(const State& expected, const State& actual, std::uint32_t frame) {
+void compare(const Model& expectedModel, const Model& actualModel, std::uint32_t frame) {
+    const auto& expected = expectedModel.rules;
+    const auto& actual = actualModel.rules;
     bool equal = expected.seatCount == actual.seatCount &&
                  expected.wipeTicks == actual.wipeTicks &&
                  expected.retryPending == actual.retryPending;
-    for (std::uint8_t seat = 0; seat < kMaxSeats; ++seat)
+    for (std::uint8_t seat = 0; seat < kMaxSeats; ++seat) {
         equal = equal && seat_values(expected.seats[seat]) == seat_values(actual.seats[seat]);
+        const auto& left = expectedModel.lanes.seats[seat];
+        const auto& right = actualModel.lanes.seats[seat];
+        equal = equal && left.current == right.current && left.previous == right.previous &&
+                left.pressed == right.pressed && left.released == right.released &&
+                left.raw == right.raw && left.raw_pressed == right.raw_pressed;
+    }
     if (!equal) {
         std::fprintf(stderr, "cooperative owner diverged after frame %u\n", frame);
         std::abort();
@@ -51,13 +74,15 @@ void compare(const State& expected, const State& actual, std::uint32_t frame) {
 }
 
 int main() {
-    // A missing release on the 90th rescue tick predicts a rescue that never
-    // happened. Correcting it must restore the donor life, recipient state,
-    // release latch and progress, not merely their displayed positions.
-    std::array<State, totalFrames> expected{};
-    State reference = initial_state();
+    // Four confirmed Focus taps precede a missing fifth press. Prediction
+    // keeps the previous released input, so rescue waits for the correction.
+    // Replay restores both the policy state and the real per-seat edge owner.
+    std::array<Model, totalFrames> expected{};
+    Model reference{initial_state()};
     for (std::uint32_t frame = 0; frame < totalFrames; ++frame) {
-        AdvanceOneTick(reference, rule_input(frame == correctionFrame ? 0 : focus));
+        std::array<Netplay::FrameInput, 2> captured{};
+        captured[1] = Netplay::FrameInput(buttons(frame));
+        AdvanceOneTick(reference.rules, rule_input(reference.lanes, captured.data()));
         expected[frame] = reference;
     }
 
@@ -70,14 +95,14 @@ int main() {
     config.predictableButtons = focus;
     assert(core.Reset(config));
     Netplay::RollbackJournal journal;
-    assert(journal.Reset({8, sizeof(State), 1}));
-    State actual = initial_state();
+    assert(journal.Reset({8, sizeof(Model), 1}));
+    Model actual{initial_state()};
     const auto simulate = [&](std::uint32_t frame) {
         const auto decision = core.PrepareFrame(frame);
         assert(decision.canAdvance);
         assert(journal.BeginFrame(frame));
         assert(journal.Touch(&actual, sizeof(actual)));
-        AdvanceOneTick(actual, rule_input(decision.inputs[1].buttons));
+        AdvanceOneTick(actual.rules, rule_input(actual.lanes, decision.inputs.data()));
         assert(journal.EndFrame());
         assert(core.MarkSimulated(frame, decision));
     };
@@ -85,15 +110,16 @@ int main() {
     for (std::uint32_t frame = 0; frame < totalFrames; ++frame) {
         assert(core.ScheduleLocalInput(frame, std::uint16_t{0}));
         if (frame != correctionFrame)
-            assert(core.SubmitRemoteInput(1, frame, focus) == Netplay::RemoteInputResult::Accepted);
+            assert(core.SubmitRemoteInput(1, frame, buttons(frame)) == Netplay::RemoteInputResult::Accepted);
         simulate(frame);
         if (frame == correctionFrame) {
-            assert(actual.seats[0].lifeState == LifeState::Alive);
-            assert(actual.seats[1].lives == 1);
-            assert(expected[frame].seats[0].lifeState == LifeState::Spirit);
+            assert(actual.rules.seats[0].lifeState == LifeState::Spirit);
+            assert(actual.rules.seats[1].lives == 2);
+            assert(expected[frame].rules.seats[0].lifeState == LifeState::Alive);
+            assert(expected[frame].rules.seats[1].lives == 1);
         }
         if (frame == arrivalFrame) {
-            assert(core.SubmitRemoteInput(1, correctionFrame, std::uint16_t{0}) ==
+            assert(core.SubmitRemoteInput(1, correctionFrame, focus) ==
                    Netplay::RemoteInputResult::RollbackRequired);
             assert(core.RollbackFrame() == correctionFrame);
             std::uint32_t restoredFrame = Netplay::INVALID_FRAME;
@@ -111,5 +137,5 @@ int main() {
     }
     assert(!journal.Failed());
     assert(core.ConfirmedThroughAllRemotes() == totalFrames - 1);
-    std::puts("TH10 cooperative owner + eagler-common late-input rollback: PASS");
+    std::puts("TH10 five-Focus rescue + real input-edge owner + late-input rollback: PASS");
 }

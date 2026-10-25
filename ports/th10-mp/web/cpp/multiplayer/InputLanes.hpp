@@ -19,7 +19,7 @@ constexpr u16 kDirection = 0xf0;
 
 // This is the complete title-owned input owner for a rollback frame. It has
 // no native object, platform handle, clock, or pointer, so a snapshot can
-// copy it as one value. `host` is the menu/dialogue view derived from seat 0;
+// copy it as one value. `host` is the menu/dialogue view of all seats;
 // it is kept in the owner so replay and resimulation do not sample anything.
 struct State {
     GameInput seats[kSeatCount]{};
@@ -61,10 +61,8 @@ bool ResolveMovement(const Netplay::FrameInput& input, i32 speed,
                      i32 fixedX, i32 fixedY, float rate,
                      i32& x, i32& y) noexcept;
 
-// Return the menu/dialogue lane. `raw` and raw edge fields come from the host
-// seat; raw_pressed additionally carries one Pause event when any seat newly
-// pressed Pause during the committed frame. Native current/pressed fields stay
-// host-only for title dialogue and gameplay code.
+// Return the menu/dialogue lane. Held, repeat and independent press edges are
+// merged across seats. The individual player lanes retain their own controls.
 const GameInput& HostControls(State& state) noexcept;
 const GameInput& HostControls(const State& state) noexcept;
 

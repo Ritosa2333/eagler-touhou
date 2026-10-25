@@ -75,7 +75,7 @@ async function openLobby(port, room, clientId, policy = '') {
     socket.addEventListener("error", () => reject(new Error("lobby open failed")), { once: true });
   });
   const initial = await first;
-  assert.equal(initial.type, "state");
+  assert.equal(initial.type, "state", `${room}: ${JSON.stringify(initial)}`);
   assert.equal(initial.room.prankMode, false, 'prank mode stays disabled at room creation');
   const initialPolicy = multiplayerInputTimingPolicy(multiplayerConfigForProduct(room.split('-')[0]));
   assert.equal(initial.room.predictionLimit, initialPolicy.predictionLimit, `${room}: initial prediction policy`);
@@ -145,7 +145,9 @@ async function verifyModes(port, product) {
   const challengeSupported = capability.gameplay === "cooperative";
   const timingPolicy = multiplayerInputTimingPolicy(capability);
   const room = `${product}-modes${Date.now().toString(36)}`;
-  const host = await openLobby(port, room, 'modes_host', 'intent=create&prankMode=1'), guest = await openLobby(port, room, 'modes_guest');
+  // Distinct cases must not race an earlier room's asynchronous close using
+  // the same member identity. Each pair represents independent participants.
+  const host = await openLobby(port, room, `${product}_modes_host`, 'intent=create&prankMode=1'), guest = await openLobby(port, room, `${product}_modes_guest`);
   try {
     await sendAndMatch(host, {type:'take-seat',seat:0,loadout:0}, r => r.room?.seats[0]);
     await sendAndMatch(guest, {type:'take-seat',seat:1,loadout:1}, r => r.room?.seats[1]);

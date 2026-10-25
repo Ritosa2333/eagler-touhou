@@ -380,7 +380,8 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     }
     return { target, targetOrigin: origin, protocol: HOST_PROTOCOL,
       game: snapshot.game ?? '', epoch: sessions.current()?.id ?? 0,
-      launched: snapshot.launched, ready: snapshot.ready, spectator: snapshot.spectator };
+      launched: snapshot.launched || (snapshot.roomPreview === true && snapshot.phase === 'prepared' && !launchRequested && preparedPlan?.configure.options?.netplayMode !== 'lan'),
+      ready: snapshot.ready, spectator: snapshot.spectator && snapshot.runtimeInfo.spectatorMenu !== true };
   }
   function getLauncherControlContext(): RuntimeLauncherControlContext | null {
     const token = sessions.current();

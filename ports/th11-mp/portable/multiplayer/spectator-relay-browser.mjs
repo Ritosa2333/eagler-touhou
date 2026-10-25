@@ -34,6 +34,8 @@ const playerCount=Number(process.env.TH11_TEST_PLAYER_COUNT||2);
 const uninterruptedFrames=Number(process.env.TH11_TEST_UNINTERRUPTED_FRAMES||0);
 const stageOneOnly=process.env.TH11_TEST_STAGE_ONE_ONLY==='1';
 const lifecycleOnly=process.argv.includes('--lifecycle-only')||process.env.TH11_TEST_LIFECYCLE_ONLY==='1';
+const backpressureOnly=process.argv.includes('--backpressure-only');
+const challengeMode=process.argv.includes('--challenge');
 const softwareRenderer=process.env.TH11_TEST_SOFTWARE_RENDERER==='1';
 assert.ok(playerCount===2||playerCount===3);
 const seats=Array.from({length:playerCount},(_,i)=>i),viewerSeat=playerCount,lateSeat=playerCount+1;
@@ -148,7 +150,7 @@ try{
  options=Array.from({length:playerCount+1},(_,seat)=>({netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(started.serial),member:seat<playerCount?members[seat].member:viewerMember}),
   netplayPlayer:seat<playerCount?seat:0,netplayPlayerCount:playerCount,netplayDifficulty:0,netplaySeed:417,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0},{character:0,shot:2}].slice(0,playerCount),
   netplayInputDelay:2,netplayInputDelayAuto:false,netplayAdonisMode:1,netplayPredictionLimit:0,netplayPredictionReserve:2,netplaySpectator:seat===viewerSeat,
-  netplaySpectatorId:seat===viewerSeat?viewerId:'',netplaySpectatorCount:1,netplayChallengeMode:false,thpracEnabled:false,renderScale:1}));
+  netplaySpectatorId:seat===viewerSeat?viewerId:'',netplaySpectatorCount:1,netplayChallengeMode:challengeMode,thpracEnabled:false,renderScale:1}));
  const contexts=[],pages=new Map(),epochs=new Map(),errors=[];
  const frame=seat=>pages.get(seat).frames().find(f=>f.url().includes('runtimeEpoch='+epochs.get(seat)));
  const readGame=f=>f.evaluate(()=>{const p=core.th11_mp_game_status(),a=Array.from(new Uint32Array(core.memory.buffer,p,56));if(core.th11_spectator_lab_replay_hash)a[1]=core.th11_spectator_lab_replay_hash()>>>0;return a;});
@@ -212,7 +214,34 @@ try{
  await waitPosition(viewerSeat,s=>s.position>=180&&!s.paused&&!s.seeking,'first independent native restore',Number(process.env.TH11_FIRST_VIEWER_TIMEOUT_MS||120000));
  await recordGraphics(viewerSeat);
  const firstState=await readPlayback(firstViewer);assert.ok(firstState.min>=0&&firstState.position>=180,firstState);
- if(lifecycleOnly){
+ if(backpressureOnly){
+  phase('transient-spectator-upload-recovery');
+  const before=await readPlayback(firstViewer),sourcesBefore=await Promise.all(seats.map(s=>readGame(frame(s))));
+  await frame(0).evaluate(()=>{
+   const state=globalThis.__eaglerPeerTransport,socket=state.relay;
+   globalThis.spectatorUploadWait={reads:0,armedAt:performance.now()};
+   const release=()=>{delete socket.bufferedAmount;spectatorUploadWait.finishedAt=performance.now();};
+   const unused=setTimeout(release,5000);
+   Object.defineProperty(socket,'bufferedAmount',{configurable:true,get(){
+    if(!spectatorUploadWait.reads++){clearTimeout(unused);spectatorUploadWait.startedAt=performance.now();setTimeout(release,150);}return 70000;
+   }});
+  });
+  await waitPosition(viewerSeat,s=>s.received>before.received+120&&s.position>before.position+120,'viewer resumes after 150ms upload wait',30000);
+  const after=await readPlayback(firstViewer),sourcesAfter=await Promise.all(seats.map(s=>readGame(frame(s))));
+  const probe=await frame(0).evaluate(()=>({...spectatorUploadWait,stopped:!!__eaglerPeerTransport.spectatorStopped,failed:!!__eaglerPeerTransport.failed}));
+  report.backpressure={before,after,probe,sourcesBefore,sourcesAfter};
+  assert.ok(probe.reads>0&&probe.finishedAt>probe.startedAt);assert.equal(probe.stopped,false);assert.equal(probe.failed,false);
+  assert.ok(sourcesAfter.every((s,i)=>s[4]>sourcesBefore[i][4]+30),'players must advance during spectator recovery');
+  await control(viewerSeat,'pause');await waitPosition(viewerSeat,s=>s.paused,'pause after recovered upload');
+  const paused=await readPlayback(firstViewer);await new Promise(r=>setTimeout(r,400));
+  assert.equal((await readPlayback(firstViewer)).position,paused.position);
+  await control(viewerSeat,'play');await waitPosition(viewerSeat,s=>!s.paused&&s.position>paused.position+60,'resume after recovered upload');
+  report.backpressure={before,after,probe,sourcesBefore,sourcesAfter,pause:paused};report.challengeMode=challengeMode;
+  report.playerCount=playerCount;report.passed=true;
+  await pages.get(viewerSeat).screenshot({path:resolve(out,'recovered-viewer.png'),fullPage:true});
+  await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
+  console.log(JSON.stringify({passed:true,backpressureOnly:true,challengeMode,playerCount,output:out}));
+ }else if(lifecycleOnly){
   assert.equal(fixtures,false,'focused lifecycle requires the final production Runtime, not the fixture build');
   const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const status=async seat=>frame(seat).evaluate(()=>Array.from(new Uint32Array(core.memory.buffer,core.th11_mp_status(),24)));

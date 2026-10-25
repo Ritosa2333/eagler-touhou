@@ -295,7 +295,8 @@ async function start() {
   await click('#decisionConfirm');
 }
 
-for (const exitStatus of ['success', 'error']) test(`actual BrowserLauncher: original warning, fullscreen, ready/configure/ACK launch and native ${exitStatus} Exit preserve one frame`, async () => {
+for (const exitScenario of ['success', 'error', 'error-on-exit', 'error-without-reason', 'success-with-error-code']) test(`actual BrowserLauncher: original warning, fullscreen, ready/configure/ACK launch and native ${exitScenario} Exit preserve one frame`, async () => {
+  const exitStatus=exitScenario.startsWith('success')?'success':'error';
   const f = await mountBrowser(), frame = node('#gameFrame'), before = currentUrl();
   await start(); await until(() => commands().includes('launch'), 'actual Runtime issues launch');
   assert.equal(playerOpen(), true); assert.equal(node('#gameFrame'), frame); assert.equal(env.document.querySelectorAll('iframe').length, 1);
@@ -310,11 +311,22 @@ for (const exitStatus of ['success', 'error']) test(`actual BrowserLauncher: ori
   assert.equal(env.document.querySelector('#touchLayoutEditor'), null); assert.equal(playerOpen(), true);
   assert.equal(currentUrl(), before); assert.equal(f.router.state.location.key, locationKey);
   assert.equal(f.native.document, nativeDocument); assert.equal(f.native.location.href, source); assert.deepEqual(commands(), commandsBeforeEdit);
-  await React.act(async () => {f.native.emit('exit', {status: exitStatus});});
+  if(exitScenario==='error'){
+    await React.act(async()=>{f.native.emit('error',{error:'Spectator stream stopped; players continue'});});
+    assert.equal(node('#toast').classList.contains('show'),true);
+    assert.match(node('#toastText').textContent,/Spectator stream stopped; players continue/);
+  }
+  await React.act(async () => {f.native.emit('exit', {status: exitStatus,...(exitScenario==='success-with-error-code'?{code:1}:{}),...(exitScenario==='error-on-exit'?{error:'spectator transport disconnected'}:{})});});
   await until(() => !playerOpen() && currentUrl() === before, 'native Exit retires the completed engine and returns to its options');
   assert.equal(commands().includes('sync'), false, 'native Exit has no surviving sync receiver (main app5493–5522)'); assert.equal(node('#gameFrame'), frame);
   assert.equal(node('#decisionDialog').open, false, 'main app5502–5506 skips sync and save decisions for either native exit status');
   assert.equal(f.navigations.at(-1), 'about:blank');
+  if(exitScenario==='error')assert.match(node('#toastText').textContent,/Spectator stream stopped; players continue/,'native error remains visible after the player closes');
+  if(exitScenario==='error-on-exit')assert.equal(node('#toastText').textContent,'spectator transport disconnected');
+  if(exitScenario==='error-without-reason'||exitScenario==='success-with-error-code'){
+    assert.equal(node('#toast').classList.contains('show'),true);
+    assert.equal(node('#toastText').textContent,'Game exited unexpectedly');
+  }
 });
 
 const touchStartupDevices = [
