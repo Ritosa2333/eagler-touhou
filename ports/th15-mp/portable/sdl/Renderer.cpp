@@ -25,20 +25,13 @@ Renderer* active=nullptr;
 struct DrawStateCache {
  PipelineState pipeline{};Viewport viewport{};bool valid=false,has_viewport=false;
 } drawState;
-constexpr u32 instanceStride=68;
 constexpr std::array<float,16> identity{1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1};
 float bits(u32 n){float f;std::memcpy(&f,&n,4);return f;}
 std::array<float,4> color(u32 n){return {float(n>>16&255)/255,float(n>>8&255)/255,float(n&255)/255,float(n>>24)/255};}
 void replace(std::string& s,const std::string& a,const std::string& b){size_t p=0;while((p=s.find(a,p))!=std::string::npos){s.replace(p,a.size(),b);p+=b.size();}}
 GLuint shader(GLenum type,const std::string& source){GLuint s=glCreateShader(type);const char* p=source.c_str();glShaderSource(s,1,&p,nullptr);glCompileShader(s);GLint ok=0;glGetShaderiv(s,GL_COMPILE_STATUS,&ok);if(!ok){char log[2048];glGetShaderInfoLog(s,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL shader: %s\n",log);std::abort();}return s;}
 
-bool equal(const State& a,const State& b,bool world=false){
- if(a.layout!=b.layout||a.stride!=b.stride||a.texture!=b.texture||a.target!=b.target||a.depth!=b.depth||std::memcmp(&a.viewport,&b.viewport,sizeof(Viewport)))return false;
- if(!a.pipeline.compatible(b.pipeline,world))return false;
- if(world){for(int i=1;i<4;i++)if(a.matrix[i]!=b.matrix[i])return false;}
- else if(!a.layout.screen&&a.matrix!=b.matrix)return false;
- return true;
-}
+
 }
 Renderer* current(){return active;}void set_current(Renderer* r){active=r;}
 State::State(){for(auto& m:matrix)m=identity;}
@@ -78,12 +71,7 @@ void Renderer::bind_framebuffer(GLenum target,GLuint id){TH15_SYSTEM_SCOPE;
 // Pause write tracking while copying/converting those host buffers. Keep
 // read() tracked: its final conversion writes back into game-owned textures.
 // ImGui also retains SystemScope because UserCallback can call arbitrary code.
-void Renderer::draw_batch(u32 count,const void* data,u32 stride){TH15_HOST_SCOPE;
- // The game already coalesced these triangles. Consume while its arena is
- // valid, without retaining a pointer to a buffer the next sprite can reuse.
- flush();++stats.calls;state.stride=stride;stats.directBytes+=count*3*stride;
- issue(state,Topology::Triangles,count,data,count*3*stride,nullptr,IndexType::UInt16,nullptr,0);
-}
+#include "RendererBatch.inc"
 void Renderer::transform(MatrixKind kind,const void* p){TH15_HOST_SCOPE;auto& m=state.matrix[u32(kind)];if(std::memcmp(m.data(),p,64))std::memcpy(m.data(),p,64);}
 void Renderer::viewport(const Viewport& v){TH15_HOST_SCOPE;state.viewport=v;}
 void Renderer::select(const State& s){TH15_SYSTEM_SCOPE;
@@ -156,32 +144,7 @@ Renderer::GPU& Renderer::surface(u32 h){TH15_SYSTEM_SCOPE;
 }
 Renderer::GPU& Renderer::target(u32 id,u32 depthId){TH15_SYSTEM_SCOPE;auto& g=surface(id);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width*s.renderScale,s.height*s.renderScale);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;}return g;}
 void Renderer::prepare(u32 h){TH15_HOST_SCOPE;surface(h);}
-void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){TH15_HOST_SCOPE;
- stats.calls++;state.stride=stride;
- if(index||primitive<Topology::Triangles||primitive>Topology::Fan){flush();issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
- const bool instance=version==10&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
- if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+instanceStride);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);if(worlds.size()>=1024*instanceStride)flush();return;}
- if(batching&&(instancing||!equal(batchState,state)))flush();if(!batching){batchState=state;batching=true;instancing=false;batchTopology=Topology::Triangles;}
- // Keep an isolated long strip/fan in its original topology. If a following
- // draw joins the batch, normalize it backwards before appending, preserving
- // triangle order and winding without retaining caller-owned vertex memory.
- if(version==10&&!batchCount&&count>=16&&(primitive==Topology::Strip||primitive==Topology::Fan)){
-  const auto* src=static_cast<const u8*>(data);const size_t size=(count+2)*stride;
-  batchTopology=primitive;batchBytes.assign(src,src+size);stats.copiedBytes+=size;batchCount=count;if(size>=1048576)flush();return;
- }
- if(batchTopology!=Topology::Triangles){
-  batchScratch.resize(3*stride);batchBytes.resize(size_t(batchCount)*3*stride);
-  for(u32 i=batchCount;i-->0;){const u32 a=batchTopology==Topology::Fan?0:i&1?i+1:i,b=batchTopology==Topology::Fan?i+1:i&1?i:i+1,c=i+2;u32 j=0;
-   for(u32 v:{a,b,c}){std::memcpy(batchScratch.data()+j*stride,batchBytes.data()+v*stride,stride);++j;}
-   std::memcpy(batchBytes.data()+size_t(i)*3*stride,batchScratch.data(),3*stride);
-  }stats.copiedBytes+=batchCount*3*stride;batchTopology=Topology::Triangles;
- }
- const auto* src=static_cast<const u8*>(data);const size_t start=batchBytes.size(),size=count*3*stride;stats.copiedBytes+=size;batchBytes.resize(start+size);auto* dest=batchBytes.data()+start;
- if(primitive==Topology::Triangles)std::memcpy(dest,src,size);else if(count){std::memcpy(dest,src,3*stride);dest+=3*stride;for(u32 i=1;i<count;i++){u32 a=primitive==Topology::Fan?0:i&1?i+1:i,b=primitive==Topology::Fan?i+1:i&1?i:i+1,c=i+2;for(u32 v:{a,b,c}){std::memcpy(dest,src+v*stride,stride);dest+=stride;}}}batchCount+=count;if(batchBytes.size()>=1048576)flush();
-}
-void Renderer::flush(){TH15_HOST_SCOPE;if(!batching)return;batching=false;if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>instanceStride?worlds.data():nullptr,worlds.size()>instanceStride?worlds.size():0);else issue(batchState,batchTopology,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
-void Renderer::discard(){TH15_HOST_SCOPE;batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;}
-void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize){TH15_SYSTEM_SCOPE;
+void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize){TH15_HOST_SCOPE;
  stats.batches++;const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
  if(all||cached.dither!=p.dither)p.dither?glEnable(GL_DITHER):glDisable(GL_DITHER);
  GPU* texture=d.texture?&surface(d.texture):nullptr;auto& g=target(d.target,d.depth);const auto& v=d.viewport;

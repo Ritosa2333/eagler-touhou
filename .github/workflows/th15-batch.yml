@@ -1,0 +1,102 @@
+name: TH15 Ordered Batches
+on:
+  push:
+    branches: [experiment/th15-rollback-20261023]
+    paths:
+      - '.github/workflows/th15-batch.yml'
+      - 'tools/th15-cloud/batch-*'
+      - 'ports/th15*/portable/sdl/RendererBatch.inc'
+      - 'ports/th15*/portable/sdl/Renderer.cpp'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  packing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            tools/th15-cloud
+            ports/th15/portable/sdl
+            ports/th15-mp/portable/sdl
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - run: node tools/th15-cloud/batch-test.mjs --wasm
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-batch-contract-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            artifacts/th15-batch/**/receipt.json
+            artifacts/th15-batch/**/*.log
+  frozen-gpu-reference:
+    needs: packing
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15-mp
+      - uses: actions/checkout@v7
+        with:
+          ref: b7e7bed8a9c5f1161f8fececdc7c0026300d8a40
+          path: .batch-reference
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15-mp
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node ports/th15-mp/portable/multiplayer/cloud-gameplay-check.mjs --inputs-only
+      - name: Install build and browser dependencies
+        run: |
+          npm --prefix launcher ci --ignore-scripts
+          npm --prefix tools/rollback ci --ignore-scripts
+          npm --prefix .batch-reference/launcher ci --ignore-scripts
+          npm --prefix .batch-reference/tools/rollback ci --ignore-scripts
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+          python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print('EAGLER_CHROME_PATH='+p.chromium.executable_path); p.stop()" >> "$GITHUB_ENV"
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - name: Build frozen and candidate production objects
+        run: |
+          echo "TH15_EMSDK=$EMSDK" >> "$GITHUB_ENV"
+          node .batch-reference/launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+          node launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+      - name: Execute seven frozen-renderer GPU comparisons
+        run: node tools/th15-cloud/batch-reference.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-batch-reference-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            artifacts/th15-batch-reference/receipt.json
+            artifacts/th15-batch-reference/*.log
+            artifacts/th15-batch-reference/**/*.json
+            artifacts/th15-cloud-gameplay/summary.json
