@@ -25,7 +25,7 @@ void Renderer::render_imgui(const ImDrawData* data,u32 targetHandle){
  if(!data||data->CmdListsCount<=0||data->TotalVtxCount<=0||data->TotalIdxCount<=0)return;
  // TH11's backbuffer is handle 1 and depth buffer is handle 2. The TH10
  // sentinel 0xffffffff is not a valid TH11 surface; ImGui needs no depth.
- flush();auto& output=target(targetHandle,0);
+ synchronize();auto& output=target(targetHandle,0);
  if(!imguiProgram){
   const auto vs=shader(GL_VERTEX_SHADER,imguiVertexSource),fs=shader(GL_FRAGMENT_SHADER,imguiFragmentSource);imguiProgram=glCreateProgram();glAttachShader(imguiProgram,vs);glAttachShader(imguiProgram,fs);glLinkProgram(imguiProgram);glDeleteShader(vs);glDeleteShader(fs);
   GLint linked=0;glGetProgramiv(imguiProgram,GL_LINK_STATUS,&linked);if(!linked){char log[1024]{};glGetProgramInfoLog(imguiProgram,sizeof(log),nullptr,log);failure=std::string("ImGui program: ")+log;return;}

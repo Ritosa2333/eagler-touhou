@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include "GraphicsState.hpp"
+#include "GpuCommandLiveness.hpp"
 #include <GLES3/gl3.h>
 #include <array>
 #include <cstdint>
@@ -29,8 +30,9 @@ class Renderer : public StateCommands {
 public:
     using Resolve=Surface(*)(void*,u32);
     Statistics stats{};State state{};bool defer=false,flip_present_y=false;
+    bool defer_gpu_commands=false; // Enabled only by the multiplayer rollback owner.
     Renderer(int version,Resolve,void*);~Renderer();
-    bool initialize();void flush();void discard();bool commit();
+    bool initialize();void synchronize();void flush();void discard();bool commit();
 #if TH_ENABLE_THPRAC
     void render_imgui(const struct ::ImDrawData*,u32);
     u32 create_imgui_texture(u32 width,u32 height,const u8* rgba);
@@ -64,6 +66,26 @@ private:
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;
     u32 batchCount=0,pending=0;std::string failure;
+    // Host-owned GPU transactions. They contain bytes and numeric resource
+    // handles, never game pointers. A synchronization boundary drains them.
+    struct DeferredCommand {
+        State state;bool clear=false;Topology topology{};u32 count=0;
+        IndexType indexFormat=IndexType::UInt16;
+        u32 vertexOffset=0,vertexBytes=0,indexOffset=0,indexBytes=0,instanceOffset=0,instanceBytes=0;
+        std::vector<i32> rectangles;
+        u32 flags=0,color=0,stencil=0;float depth=1;
+        deferred::Effect effect;
+    };
+    std::vector<DeferredCommand> commands;
+    std::vector<u8> retained_commands,command_storage;
+    std::size_t command_count=0,command_bytes=0;
+    std::uint64_t queued_draws=0,pruned_draws=0,drained_draws=0;
+    bool draining_commands=false;
+    bool command_surface_ready(u32)const;
+    DeferredCommand& command();
+    void drain_commands();
+    void issue_now(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32);
+    void clear_now(u32,u32,float,u32,const i32*,u32);
     GPU& surface(u32);GPU& target(u32,u32);void issue(const State&,Topology,u32,const void*,u32,const void*,IndexType,const void*,u32);
     void bind_texture(GLuint);void bind_framebuffer(GLenum,GLuint);
     void select(const State&);void uniform(int,int,const float*);void integer(int,int);

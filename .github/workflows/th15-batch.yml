@@ -5,6 +5,9 @@ on:
     paths:
       - '.github/workflows/th15-batch.yml'
       - 'tools/th15-cloud/batch-*'
+      - 'tools/th15-cloud/queue-*'
+      - 'ports/th15*/portable/sdl/RendererQueue.inc'
+      - 'ports/th15*/portable/sdl/GpuCommandLiveness.hpp'
       - 'ports/th15*/portable/sdl/RendererBatch.inc'
       - 'ports/th15*/portable/sdl/Renderer.cpp'
   workflow_dispatch:
@@ -31,6 +34,7 @@ jobs:
           version: 6.0.9
           actions-cache-folder: emsdk-cache
       - run: node tools/th15-cloud/batch-test.mjs --wasm
+      - run: node tools/th15-cloud/queue-test.mjs --wasm
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -40,6 +44,8 @@ jobs:
           path: |
             artifacts/th15-batch/**/receipt.json
             artifacts/th15-batch/**/*.log
+            artifacts/th15-queue/**/receipt.json
+            artifacts/th15-queue/**/*.log
   frozen-gpu-reference:
     needs: packing
     runs-on: ubuntu-latest

@@ -16,6 +16,7 @@ struct MpRollbackFrame {
 std::deque<MpRollbackFrame> mp_frames;
 u32 mp_boundary=Netplay::INVALID_FRAME,mp_corrections=0,mp_replayed=0,mp_barriers=0;
 void mp_reset_rollback(){
+ if(app){app->graphics.backend.synchronize();app->graphics.backend.defer_gpu_commands=false;}
  rollback_cadence.reset();mp_frame_wait=multiplayer::FrameWait::Network;
  mp_save_request.Clear();mp_save_error.clear();
  rollback::End();mp_frames.clear();journal::Clear();mp_boundary=Netplay::INVALID_FRAME;
@@ -31,6 +32,8 @@ bool mp_restore(u32 first){
  const auto menu=found->menu_before;const auto stage=found->stage_before,spectator=found->spectator_before;
  const auto anm=found->anm_before;const auto state=found->graphics_before;
  app->graphics.backend.cancel_present();
+ // Complete submitted host commands before restoring game-owned CPU textures.
+ app->graphics.backend.synchronize();
  if(!journal::RestoreTo(first))return mp_journal_error("TH15 state restore failed");
  mp_menu=menu;mp_stage=stage;mp_spectator_stage=spectator;AnmVm::presentation_counter=anm;
  app->fonts.restore_layout(found->font_tabs);
@@ -146,6 +149,7 @@ MpStep mp_execute_rollback(const Netplay::FrameDecision& decision,bool capture_u
 }
 bool mp_rollback_tick(u32 held,bool physical){
  if(!journal::Ready())return mp_journal_error("TH15 rollback backend unavailable");
+ app->graphics.backend.defer_gpu_commands=true;
  if(!network.CanStart())return true;
  if(!network.WorldReady()&&!network.SetWorldReady(true)){last_error="TH15 rollback world admission failed";return false;}
  if(!mp_recording){
