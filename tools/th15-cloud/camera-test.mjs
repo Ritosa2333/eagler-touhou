@@ -21,7 +21,12 @@ function run(name,program,args){
 try{
  assert.ok(process.env.TH15_EMSDK||process.env.EMSDK,'Set TH15_EMSDK or EMSDK');sdk=resolve(process.env.TH15_EMSDK||process.env.EMSDK);
  const compiler=['install','upstream'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);assert.ok(compiler,'Missing selected compiler');
- const build=JSON.parse(readFileSync(resolve(production,'build.json'),'utf8'));assert.equal(build.kind,'th15-sdl3-application-release');assert.equal(build.features.multiplayer,multiplayer);
+ const build=JSON.parse(readFileSync(resolve(production,'build.json'),'utf8'));assert.equal(build.kind,'th15-sdl3-application-release');
+ // The normal builder predates the explicit multiplayer=false field. Only
+ // absence means false; malformed null/string values must still be rejected.
+ const declared=build.features?.multiplayer;
+ assert.equal(declared===undefined?false:declared,multiplayer,'Production variant mismatch');
+ receipt.declaredMultiplayer=declared===undefined?'absent-normal':declared;
  for(const [p,sha] of Object.entries({...build.sources,...build.headers}))assert.equal(hash(readFileSync(resolve(root,p))),sha,'Changed release input '+p);
  assert.equal(hash(readFileSync(resolve(production,'th15.wasm'))),build.sha256);receipt.productionWasm=build.sha256;
  const frozen=readFileSync(resolve(import.meta.dirname,'camera-reference.inc'));

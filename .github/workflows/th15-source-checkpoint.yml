@@ -1,0 +1,39 @@
+name: TH15 Source Checkpoint
+on:
+  push:
+    branches: [experiment/th15-rollback-20261023]
+    paths: ['.github/workflows/th15-source-checkpoint.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            common
+            tools
+            ports/th15
+            ports/th15-mp
+            docs/multiplayer
+      - name: Retain tracked source only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/th15-source
+          paths=(common/include common/src common/third_party/dlmalloc tools/th15-cloud tools/rollback tools/browser ports/th15/web/cpp ports/th15/web/scripts ports/th15/portable ports/th15-mp/web/cpp ports/th15-mp/web/scripts ports/th15-mp/web/sdl-runtime ports/th15-mp/portable docs/multiplayer .github/workflows)
+          git archive --format=tar.gz -o artifacts/th15-source/source.tar.gz HEAD "${paths[@]}"
+          git ls-tree -r HEAD -- "${paths[@]}" > artifacts/th15-source/tree.txt
+          git rev-parse HEAD HEAD^{tree} > artifacts/th15-source/identity.txt
+          sha256sum artifacts/th15-source/source.tar.gz > artifacts/th15-source/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: th15-source-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: artifacts/th15-source/
