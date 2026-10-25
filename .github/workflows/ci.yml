@@ -112,6 +112,10 @@ jobs:
 
           common/contracts
 
+          ports/th12/scripts
+
+          ports/th12/src
+
           services/relay'
     - uses: actions/setup-node@v7
       with:
