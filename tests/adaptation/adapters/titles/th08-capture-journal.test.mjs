@@ -72,7 +72,22 @@ test('native dialogue and fast playback batches retain matching Replay and trace
   }
   const capture={journal:metadata,applicationTicks:3,cursorLedger};
   assert.equal((await inspectTh08CaptureJournal(capture,{rows:cursorLedger.map(row)})).status,'passed');
-  for(const mutate of [s=>s[1].traceFrame++,s=>{s[1].traceFrame=8;s[1].replay.frame=8;s[1].replay.inputCursor=16;}]){
+  for(const mutate of [s=>s[1].traceFrame++,s=>s[1].replay.inputBytes+=2]){
+    const changed=structuredClone(cursorLedger);mutate(changed);
+    assert.equal((await inspectTh08CaptureJournal({...capture,cursorLedger:changed},{rows:changed.map(row)})).status,'incomplete');
+  }
+});
+
+test('combined native periods accept fifteen consumed frames while a sixteenth or a detached receipt fails',async()=>{
+  const cursorLedger=samples();
+  for(const [index,frame]of [14,29,44].entries()){
+    cursorLedger[index].traceFrame=frame;
+    Object.assign(cursorLedger[index].replay,{frame,inputCursor:frame*2,timingCursor:Math.ceil(frame/30)});
+  }
+  const capture={journal:metadata,applicationTicks:3,cursorLedger};
+  assert.equal((await inspectTh08CaptureJournal(capture,{rows:cursorLedger.map(row)})).status,'passed');
+  for(const mutate of [s=>{s[1].traceFrame=30;Object.assign(s[1].replay,{frame:30,inputCursor:60,timingCursor:1});},
+    s=>s[1].replay.inputCursor-=2,s=>s[1].applicationTick++]){
     const changed=structuredClone(cursorLedger);mutate(changed);
     assert.equal((await inspectTh08CaptureJournal({...capture,cursorLedger:changed},{rows:changed.map(row)})).status,'incomplete');
   }

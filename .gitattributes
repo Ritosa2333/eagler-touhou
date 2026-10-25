@@ -7,4 +7,5 @@ launcher/public/content/FIRST_USE_NOTICE.html text eol=lf
 launcher/public/content/MULTIPLAYER.html text eol=lf
 
 # Keep the shared versus player and its development copy byte-identical.
+common/browser/versus-replay-th09.mjs text eol=lf
 ports/th09/web/sdl-runtime/replay-player.mjs text eol=lf

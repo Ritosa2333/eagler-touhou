@@ -45,7 +45,17 @@ void GameplayScene::capture_gameplay_initial_snapshot(){
     out[60]=enemies.population.practice_familiar;out[61]=enemies.state.frames;out[62]=control.state.frames;
     out[63]=u8(player_state.life.state);out[64]=p.familiar_pending;out[65]=p.cheats;
     out[66]=p.everlasting_bgm;out[67]=globals.stage;out[68]=globals.difficulty;out[69]=globals.shot;
+    // Frozen consumer observations use the reserved tail without changing the
+    // existing resource/configuration layout or advancing a timeline.
+    const auto& timeline=enemies.state.timelines[0];out[70]=1;out[71]=program.timeline_count();out[72]=timeline.timer.current;
+    out[73]=-1;out[74]=-1;out[75]=program.size();out[76]=program.allows_practice_instructions();
+    out[77]=timeline.timer.previous;out[78]=timeline.timer.fraction;
+    const auto instruction=reinterpret_cast<std::uintptr_t>(timeline.instruction),base=reinterpret_cast<std::uintptr_t>(program.data());
+    if(instruction>=base&&instruction-base<=program.size()&&program.size()-(instruction-base)>=sizeof(EclTimelineInstruction)){
+        out[73]=instruction-base;out[74]=timeline.instruction->opcode;out[79]=1;
+    }
     if(custom_practice){
+        practice_initial_program_bytes.assign(program.data(),program.data()+program.size());
         std::copy(out,out+practice_initial_snapshot_word_count,practice_initial_snapshot_words);
         practice_initial_snapshot_words[1]=u32(out[1])&3u;
     }
@@ -224,6 +234,7 @@ void GameplayScene::bind_jobs(){
 }
 bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     if(loaded||wanted.stage<0||wanted.stage>=9||wanted.character<0||wanted.character>=12||wanted.difficulty<0||wanted.difficulty>4||((wanted.flags&0x4000)&&(wanted.spell<0||wanted.spell>=222)))return false;
+    practice_initial_program_bytes.clear();
     touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=gameplay_initial_snapshot_words[i]=0;
     practice_initial_snapshot_words[0]=gameplay_initial_snapshot_words[0]=1.0;
     const bool retain_counters=!wanted.initial&&!(wanted.flags&0x4001)&&wanted.difficulty<4;
@@ -287,6 +298,7 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     bind_jobs();loaded=true;synchronize();return ready();
 }
 void GameplayScene::unload(bool keep,bool release_all){
+    practice_initial_program_bytes.clear();
     if(loaded&&recording_game)recording.stop();
     touch_action_state.reset();for(u32 i=0;i<practice_initial_snapshot_word_count;i++)practice_initial_snapshot_words[i]=gameplay_initial_snapshot_words[i]=0;
     practice_initial_snapshot_words[0]=gameplay_initial_snapshot_words[0]=1.0;

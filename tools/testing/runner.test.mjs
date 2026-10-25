@@ -12,6 +12,13 @@ import {acquireOutputLock} from './output-lock.mjs';
 
 const task = (id, source, extra={}) => ({id, command:process.execPath,
   args:['-e', source], cwd:process.cwd(), timeoutMs:10000, ...extra});
+
+test('Windows records naturally exiting descendants without authorizing unknown process termination as success',{skip:process.platform!=='win32'},()=>fixture(async output=>{
+  const driver=`const child=require('node:child_process').spawn(process.execPath,['-e','setTimeout(()=>{},250)'],{stdio:'ignore',detached:true,windowsHide:true});child.unref();`;
+  const report=await runTasks([task('natural-child-exit',driver)],{output});assert.equal(report.status,'passed');
+  const cleanup=report.results[0].processCleanup;assert.equal(cleanup.status,'passed');assert.deepEqual(cleanup.remaining,[]);
+  const saved=JSON.parse(await readFile(cleanup.reportFile,'utf8'));assert.equal(saved.status,'passed');assert.deepEqual(saved.remaining,[]);
+}));
 async function sha256File(path) {
   const hash=createHash('sha256');
   for await (const chunk of createReadStream(path)) hash.update(chunk);

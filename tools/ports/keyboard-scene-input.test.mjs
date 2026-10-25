@@ -25,3 +25,17 @@ test('no-op releases do not invent physical events, and a rejected mapper cannot
   await assert.rejects(sendOwnedPhysicalKey({...io,down:true}),/did not reach the production mapper/);
   assert.equal(heldKeys.has('KeyZ'),true,'cleanup must know a physical down was sent even when its mapper rejected it');
 });
+test('remapped physical ownership reads the canonical bridge state without inventing another key',async()=>{
+  const heldKeys=new Set(),canonicalHeld=new Set(),observed=[];
+  const io={heldKeys,code:'KeyL',canonical:'ShiftLeft',readBridge:async code=>{
+    observed.push(code);return{active:true,held:canonicalHeld.has(code)};
+  },dispatch:async(code,down)=>{
+    if(down)canonicalHeld.add('ShiftLeft');else canonicalHeld.delete('ShiftLeft');
+    return{source:'physical',code,down,transitions:[{code:'ShiftLeft',down}]};
+  }};
+  const receipt=await sendOwnedPhysicalKey({...io,down:true});assert.equal(receipt.code,'KeyL');assert.equal(receipt.canonical,'ShiftLeft');
+  assert.equal(heldKeys.has('KeyL'),true);assert.equal(heldKeys.has('ShiftLeft'),false);
+  await sendOwnedPhysicalKey({...io,down:false});assert.equal(canonicalHeld.size,0);
+  assert.deepEqual(observed,['ShiftLeft','ShiftLeft','ShiftLeft','ShiftLeft']);
+  await assert.rejects(sendOwnedPhysicalKey({...io,canonical:'KeyL',down:true}),/canonical KeyL/);
+});

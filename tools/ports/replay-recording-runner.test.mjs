@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {TH08_REPLAY_SEMANTICS} from '../../tests/adaptation/adapters/titles/th08-replay-format.mjs';
@@ -37,6 +37,8 @@ function makeIo(mode='normal'){
       return{sequence:state.traceSequence,boundary:1,stage:STAGE,controlFrame:state.recordFrame,
         pollSequence:state.recordFrame,liveInput:input,
         recording:{active:true,stage:STAGE,frame:state.recordFrame,cursor:state.recordFrame*2,physical:input},
+        consumer:{phase:1,validMask:2,sequence:state.recordFrame,controlFrame:state.recordFrame,stage:STAGE,
+          current:state.frames.get(state.recordFrame-1)??0,previous:state.frames.get(state.recordFrame-2)??0},
         motion:{playing:false,stage:STAGE,tick:state.recordFrame,movementCursor:0,movementCount:0,
           touchCursor:0,touchCount:state.pointerEvents.length,pointCount:0,point:null}};
     }
@@ -117,7 +119,7 @@ function makeIo(mode='normal'){
       return{status:'passed',gap:false,samples:[state.pending],nextSequence:state.traceSequence+1};
     },
     async releaseAll(){state.releaseCalls++;state.live={keys:new Set(),gamepad:new Set(),controls:false};return{status:'passed'};},
-    async finalize(){return{status:'passed',path:REPLAY_PATH,sha256:HASH};},
+    async finalize(){(state.finalizePointerCounts??=[]).push(state.pointerEvents.length);return{status:'passed',path:REPLAY_PATH,sha256:HASH};},
     async readFile(){
       if(mode==='savedByteMismatch')return Buffer.concat([state.file,Buffer.from(' changed')]);
       return Buffer.from(state.file);
@@ -135,6 +137,17 @@ function makeIo(mode='normal'){
     return{schema:'eagler-touhou/replay-input-receipt/1',status:'passed',receiptId:'touchControl',
       fields:{context:3,fire:mode==='receiptAlwaysFalse'?0:inconsistent?1:Number(state.phase==='playback'&&state.live.controls)}};
   };
+  if(mode.startsWith('original'))io.titleParser.inspectOriginal=(bytes,{expectedSha256})=>{
+    assert.equal(state.pointerEvents.length,0,'Original export is saved before the first pointer extension event');
+    assert.equal(expectedSha256,HASH);
+    if(mode==='original-invalid')throw Error('appended extension');
+    return{format:'fixture-v1',sha256:expectedSha256,bytes:bytes.length,extensionBytes:0};
+  };
+  if(mode.startsWith('version-'))io.rejectImport=async({bytes,path})=>{
+    const sent={protocol:'eagler-touhou/1',game:'th08',epoch:7,command:'write',path,request:'version-control',bytes:Array.from(bytes)};
+    return{sent,responses:[{protocol:sent.protocol,game:sent.game,epoch:7,request:sent.request,ok:mode==='version-accepted',error:TH08_REPLAY_SEMANTICS.pointerExtension.rejection.error}],
+      barrier:{game:'th08',epoch:7,request:'live-list-after',ok:true},lists:{before:[],after:[]},originalBefore:Array.from(FILE),originalAfter:Array.from(FILE)};
+  };
   return{io,state};
 }
 
@@ -144,6 +157,32 @@ async function run(mode='normal'){
   const report=await runReplayRecordingGroup({semantics:TH08_REPLAY_SEMANTICS,io,outputDir,stage:STAGE,windowTicks:12});
   return{report,state,outputDir};
 }
+
+test('version negative follows the valid playback windows and preserves failed observations',async()=>{
+  for(const mode of ['version-rejected','version-accepted']){
+    const {report,outputDir}=await run(mode);
+    try{
+      assert.equal(report.versionRejection.status,mode==='version-rejected'?'passed':'failed');
+      assert.equal(report.status,mode==='version-rejected'?'passed':'failed');
+      assert.equal(report.cases.find(row=>row.id==='record-pointer-trajectory').status,'passed');
+      assert.ok(report.versionRejection.sent);assert.ok((await readFile(report.versionRejection.artifact)).length>0);
+    }finally{await rm(outputDir,{recursive:true,force:true});}
+  }
+});
+test('original export checkpoints the same recording before pointer extension and saves separate bytes',async()=>{
+  const {report,state,outputDir}=await run('original');
+  try{
+    assert.equal(report.status,'passed');assert.equal(report.originalExport.status,'passed');
+    assert.deepEqual(await readFile(report.originalExport.artifact),FILE);
+    assert.equal(state.finalizePointerCounts.length,2);assert.equal(state.finalizePointerCounts[0],0);
+    assert.ok(state.finalizePointerCounts[1]>0);
+  }finally{await rm(outputDir,{recursive:true,force:true});}
+});
+test('an invalid original export cannot disappear behind successful extended recording scenes',async()=>{
+  const {report,outputDir}=await run('original-invalid');
+  try{assert.equal(report.status,'failed');assert.match(report.originalExport.reason,/appended extension/);}
+  finally{await rm(outputDir,{recursive:true,force:true});}
+});
 
 test('one recording group saves a shared Replay and validates finite browser/native playback windows',async()=>{
   const {report,state,outputDir}=await run();

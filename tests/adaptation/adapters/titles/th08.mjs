@@ -1,29 +1,45 @@
-import {TH08_REPLAY_SEMANTICS,inspectTh08ReplayInputFrames,inspectTh08ReplayMetadata,parseTh08MotionTrailer} from './th08-replay-format.mjs';
+import {TH08_REPLAY_SEMANTICS,inspectTh08ReplayInputFrames,inspectTh08ReplayMetadata,inspectTh08OriginalReplay,parseTh08MotionTrailer} from './th08-replay-format.mjs';
 import {TH08_PRACTICE_ADAPTER} from './th08-practice.mjs';
-import {classifyTh08LanguageDiagnostic} from './th08-language.mjs';
+import {classifyTh08LanguageDiagnostic,TH08_LANGUAGE_CONSUMERS,parseTh08DialogueText} from './th08-language.mjs';
 import {TH08_DIALOGUE_SCENE_CONTRACT} from './th08-dialogue.mjs';
 import {TH08_MENU_CONTRACT} from './th08-menu.mjs';
+import {TH08_TITLE_FLOW} from './th08-flow.mjs';
 import {TH08_STORAGE_CONTRACT} from './th08-storage.mjs';
+import {parseTh08MusicCatalog,parseTh08MessageMusicCues} from './th08-music.mjs';
 
 /** Title-owned meanings. Operations, assertions and evidence belong to shared drivers. */
 const declarations=[{
   schema:'eagler-touhou/adaptation-adapter/1',game:'th08',variant:'normal',
   runtime:{global:'__th08Runtime',core:'core',module:'Module',app:'app'},
+  viewOptions:{schema:'eagler-touhou/view-options-adapter/1',snapshot:{export:'view_options_snapshot_v1',wordCount:32,wordType:'f64',app:true},markerOffset:{x:32,y:16},
+    source:'ports/th08/web/cpp/game/PlayerForm.cpp | PlayerMovement.cpp | PlayerCollision.cpp | EffectSystem.hpp arcade origin and draw_list | view_options_snapshot_v1'},
+  inputLifecycle:{schema:'eagler-touhou/input-lifecycle-adapter/1',audioRole:'th08-sdl3-mixer',audioContextPath:['SDL3','audioContext'],
+    source:'ports/th08/web/sdl-runtime/shell.mjs | SDL3 audio context and stop | Launcher player-input ownership'},
   replay:TH08_REPLAY_SEMANTICS,
   practice:TH08_PRACTICE_ADAPTER,
   storage:TH08_STORAGE_CONTRACT,
+  music:{schema:'eagler-touhou/native-music/1',titleFile:'th08_01.ogg',stageFile:'th08_00.ogg',stageSong:1,
+    titleMidi:'bgm/th08_01.mid',stageMidi:'bgm/th08_00.mid',parseCatalog:parseTh08MusicCatalog,
+    parseCues:parseTh08MessageMusicCues,buildCueRecipe:buildTh08MusicCue,
+    gameplayRestart:{pauseKey:'Escape',restartKey:'KeyR',stage:0,minimumFrame:180,
+      source:'ports/th08/web/cpp/game/GameplayStart.cpp | after_resources | UiMenus.cpp | native pause restart'},
+    normalizeRestart:normalizeTh08MusicRestart,
+    source:'ports/th08/web/cpp/game/TitleFlow.cpp | MusicControl.cpp | GameplayControl.cpp | musiccmt.txt and thbgm.fmt'},
   parseReplayFrames:inspectTh08ReplayInputFrames,
   parseReplayMetadata:inspectTh08ReplayMetadata,
+  inspectOriginalReplay:inspectTh08OriginalReplay,
   parseReplayExtension:parseTh08MotionTrailer,
   dialogueTouchScene:TH08_DIALOGUE_SCENE_CONTRACT,
   originalMenu:TH08_MENU_CONTRACT,
   observation:{kind:'legacy-th08-status-trace',sampleBoundary:'after-application-update',
     inputSource:'diagnostics[11] | player_state.input.buttons',inputSemantics:'queued-for-next-movement'},
-  flow:{strategy:'confirm',needsControlWarmup:true},
+  flow:TH08_TITLE_FLOW,
   clock:{tickApp:true,startApp:false,stopExport:'sdl_loop_stop',tickExport:'sdl_loop_tick',
     startExport:'sdl_loop_start',pauseExport:'sdl_loop_pause',
     source:'ports/th08/web/cpp/sdl/GameHost.cpp | sdl_loop_tick'},
   movement:{
+    directionMasks:{ArrowUp:16,ArrowDown:32,ArrowLeft:64,ArrowRight:128},
+    directionSource:'ports/th08/web/cpp/game/InputController.hpp | InputButton | InputController.cpp keyboard',
     inputBoundary:'queued-for-next-movement',
     inputBoundarySource:'ports/th08/web/cpp/game/GameplayScene.cpp | publish_input | PlayerMotion.cpp | update_player_motion',
     precision:{unitsPerPixel:1,rounding:'float',scalePlacement:'before-limit'},
@@ -41,6 +57,7 @@ const declarations=[{
     },
   },
   actions:{schema:'eagler-touhou/stg-actions/1',stateExport:'touch_action_state_v1',wordCount:20,stateApp:true,
+    bombResource:{cost:1,unit:'bomb',source:'ports/th08/web/cpp/game/PlayerBomb.cpp | ordinary Bomb inventory consumption'},
     sampleBoundary:'after-player-consumer',inputMasks:{fire:1,focus:4,bomb:2,escape:8},
     escapePulseTicks:3,escapePulseSource:'ports/th08/portable/input/TouchController.hpp | controls and sample | escape_ticks',
     source:['ports/th08/web/cpp/game/PlayerSimulation.cpp | PlayerSimulation::update actual player-frame consumer',
@@ -79,6 +96,7 @@ const declarations=[{
   },
   deriveSfxContract:deriveTh08NormalSfxContract,
   language:{schema:'eagler-touhou/language-scenes/1',enableExport:'language_trace_enable_v1',
+    ...TH08_LANGUAGE_CONSUMERS,
     sizeExport:'language_trace_json_size_v1',copyExport:'language_trace_json_v1',allocateExport:'allocate',freeExport:'deallocate',
     table:'/thcrap/th08/localization/strings.etl',missingKey:'th07 Menu Replay',
     source:'ports/th08/web/cpp/game/Localization.cpp | JapaneseFonts.cpp | sdl/FontHost.cpp | BrowserRuntime::present',
@@ -90,6 +108,7 @@ const declarations=[{
     ],
   },
   classifyLanguageDiagnostic:classifyTh08LanguageDiagnostic,
+  parseDialogueText:parseTh08DialogueText,
   audioLatency:{
     game:'th08',variant:'normal',logicalIndex:10,sampleIndex:8,sample:'se_ok00.wav',handle:11,queueRate:44100,
     probeGlobal:'__th08SfxLatencyProbe',enabledGlobal:'__th08SfxLatencyProbeEnabled',traceGlobal:'__th08SfxLatencyTrace',
@@ -111,6 +130,20 @@ const declarations=[{
 }];
 
 export default declarations;
+
+function normalizeTh08MusicRestart(sample,{mode,identity,protocol}){
+  const world=sample.runtime.worldProgress,audio=mode==='ogg'?sample.native:sample.midi;
+  return{identity,protocol,frame:sample.runtime.frames.enemy,stage:world.counters.stage,paused:world.state.paused,
+    ready:world.comparable===true&&!world.state.loading&&!world.state.inTransition,
+    audio:mode==='ogg'?{source:String(audio.name??'').replace(/\.wav$/i,'.ogg'),cursor:audio.cursorFrames,playing:audio.playing}:
+      {source:audio.path,cursor:audio.elapsedTicks,opens:audio.openCount,noteOns:audio.noteOnCount,playing:audio.active}};
+}
+function buildTh08MusicCue(parsed){
+  const cue=parsed.cues.find(cue=>cue.slot===1);if(!cue)throw Error('Stage 1 message has no Boss music cue');
+  return{stage:0,entry:cue.entry,beforeFile:parsed.stage.paths[0].slice(4).replace(/\.mid$/,'.ogg'),afterFile:cue.file,
+    maxPolls:600,releaseInputs:['fire','skip'],maxCleanupPolls:30,acceptedStatus:TH08_DIALOGUE_SCENE_CONTRACT.request.acceptedStatus,
+    cueSource:{asset:'msg1a.dat',bytes:parsed.message.bytes,hash:{algorithm:'fnv1a64',value:parsed.message.fnv64},entryCount:parsed.message.entryCount}};
+}
 
 function fail(reason){throw new Error(`TH08 normal SFX production contract: ${reason}`);}
 

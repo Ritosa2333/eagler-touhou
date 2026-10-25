@@ -1,5 +1,6 @@
 #include "ThpracUi.hpp"
 #include <eagler/thprac/PracticeSdlKeyboard.hpp>
+#include <eagler/thprac/PracticeButton.hpp>
 #include "../platform/BrowserRuntime.hpp"
 #include "../game/PracticeSectionCatalog.hpp"
 #include "../game/PracticeSections.hpp"
@@ -40,6 +41,38 @@ bool show_license=false,reset_speed_ui=true;
 // new ImGui frame per present consumed edge-triggered input (typed digits)
 // several times per press and ran ImGui's clock several times fast.
 unsigned input_generation=0,rendered_generation=~0u;bool frame_drawn=false;
+struct HotkeyObservation {unsigned key=0,id=0,generation=0;bool value=false;ImVec2 min{},max{};};
+std::array<HotkeyObservation,8> hotkey_observations{};unsigned hotkey_observation_count=0;
+struct ControlObservation {unsigned semantic=0,id=0,generation=0,activations=0;double value=0;bool visible=false,enabled=true,popup=false;ImVec2 min{},max{};ImRect clip{};};
+std::array<ControlObservation,56> control_observations{};
+std::array<unsigned,64> control_activations{};unsigned control_count=0,control_overflow=0;
+double advanced_scroll[8]{};
+std::array<double,40> display_observation{};
+void observe_bullet_hitbox(ImDrawList* draw,int index,const BulletState& bullet,float player_width,ImVec2 p1,ImVec2 p2,int vertices){
+ auto& o=display_observation;++o[13];o[26]+=vertices;
+ if(o[13]==1){o[15]=index;o[16]=bullet.since_fired.current;o[17]=bullet.position.x;o[18]=bullet.position.y;
+  o[19]=bullet.sprites.hitbox.x;o[20]=bullet.sprites.hitbox.y;o[21]=player_width;o[22]=p1.x;o[23]=p1.y;o[24]=p2.x;o[25]=p2.y;}
+}
+void license_text(const char* text){
+ auto* draw=ImGui::GetWindowDrawList();const int before=draw->VtxBuffer.Size;ImGui::TextUnformatted(text);
+ std::uint32_t hash=2166136261u;unsigned length=0;for(auto* p=reinterpret_cast<const unsigned char*>(text);*p;p++){hash=(hash^*p)*16777619u;++length;}
+ display_observation[32]=length;display_observation[33]=hash;display_observation[34]=draw->VtxBuffer.Size-before;
+}
+void observe_control(unsigned semantic,double value,bool activated=false,bool enabled=true,ImGuiWindow* owner=nullptr){
+ if(!semantic||semantic>=control_activations.size()||control_count==control_observations.size()){++control_overflow;return;}
+ if(activated)++control_activations[semantic];auto& out=control_observations[control_count++];
+ if(!owner)owner=ImGui::GetCurrentWindow();const auto& item=owner->DC.LastItemRect;
+ out.semantic=semantic;out.id=owner->DC.LastItemId;out.generation=input_generation;out.activations=control_activations[semantic];
+ out.value=value;out.visible=owner->ClipRect.Overlaps(item);out.enabled=enabled;out.min=item.Min;out.max=item.Max;out.clip=owner->ClipRect;out.popup=(owner->Flags&ImGuiWindowFlags_Popup)!=0;
+}
+bool control_checkbox(unsigned id,const char* text,bool* value){const bool changed=ImGui::Checkbox(text,value);observe_control(id,*value,changed);return changed;}
+bool control_button(unsigned id,const char* text,bool enabled=true){const bool clicked=eagler::thprac::button(text,enabled);observe_control(id,clicked,clicked,enabled);return clicked;}
+bool control_header(unsigned id,const char* text,ImGuiTreeNodeFlags flags=0){const bool open=ImGui::CollapsingHeader(text,flags);observe_control(id,open,ImGui::IsItemActivated());return open;}
+void observe_hotkey(const char* key,bool value){
+ if(hotkey_observation_count>=hotkey_observations.size())return;
+ auto& out=hotkey_observations[hotkey_observation_count++];out.key=key[0]=='F'?111u+unsigned(key[1]-'0'):unsigned(key[0]);
+ out.id=ImGui::GetItemID();out.generation=input_generation;out.value=value;out.min=ImGui::GetItemRectMin();out.max=ImGui::GetItemRectMax();
+}
 
 enum Vk {VK_BACK=8,VK_TAB=9,VK_RETURN=13,VK_SHIFT=16,VK_CONTROL=17,VK_MENU=18,VK_ESCAPE=27,VK_SPACE=32,VK_PRIOR=33,VK_NEXT=34,VK_END=35,VK_HOME=36,VK_LEFT=37,VK_UP=38,VK_RIGHT=39,VK_DOWN=40,VK_INSERT=45,VK_DELETE=46,VK_1=49,VK_2=50,VK_3=51,VK_X=88,VK_Z=90,VK_F1=112,VK_F7=118,VK_F12=123};
 const char* tr(const char* zh,const char* en,const char* ja){return locale==0?zh:locale==2?ja:en;}
@@ -61,32 +94,38 @@ void help_marker(const char* const* values){ImGui::SameLine();ImGui::TextDisable
 void draw_advanced(BrowserRuntime& runtime){
  auto& state=runtime.app.session.practice;auto& input=state.input;
  ImGui::TextUnformatted(label(practice_TH_ADV_OPT));ImGui::Separator();ImGui::BeginChild("Adv. Options",{0,0});
- if(ImGui::CollapsingHeader(label(practice_TH_GAME_SPEED)))if(GameFPSOpt(state.speed,true,&reset_speed_ui))sdl_audio_music_speed(float(state.speed.fps)/60.f);
- if(ImGui::CollapsingHeader(label(practice_TH_GAMEPLAY),ImGuiTreeNodeFlags_DefaultOpen)){
-  ImGui::Checkbox(label(practice_TH_ADV_DISABLE_X_KEY),&input.disable_xkey);help_marker(practice_TH_ADV_DISABLE_X_KEY_DESC);
-  ImGui::Checkbox(label(practice_TH_ADV_DISABLE_SHIFT_KEY),&input.disable_shiftkey);help_marker(practice_TH_ADV_DISABLE_SHIFT_KEY_DESC);
-  ImGui::Checkbox(label(practice_TH_ADV_DISABLE_Z_KEY),&input.disable_zkey);help_marker(practice_TH_ADV_DISABLE_Z_KEY_DESC);
-  ImGui::Checkbox(label(practice_TH_ADV_DISABLE_C_KEY_SAMETIME),&input.disable_Ckey_at_same_time);ImGui::Checkbox(label(practice_TH_ADV_FORCE_SHIFT_KEY),&input.force_shiftkey);
-  ImGui::Checkbox(label(practice_THPRAC_FAST_RETRY),&input.enable_fast_retry);help_marker(practice_THPRAC_FAST_RETRY_DESC2);
-  ImGui::Checkbox(label(practice_THPRAC_KB_OPEN),&state.show_keyboard_monitor);
-  if(state.show_keyboard_monitor){auto& monitor=state.key_monitor;if(ImGui::Button(label(monitor.g_record_key_aps?practice_THPRAC_KB_RECORD_STOP:practice_THPRAC_KB_RECORD_START))){if(!monitor.g_record_key_aps)monitor.clear_record();monitor.g_record_key_aps=!monitor.g_record_key_aps;}ImGui::SameLine();if(ImGui::Button(label(practice_THPRAC_KB_OUTPUT))){const auto csv=monitor.csv();EM_ASM({const url=URL.createObjectURL(new Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='APS.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},csv.c_str());}}
-  ImGui::Checkbox(label(practice_THPRAC_INFLIVES_MAP),&state.map_inf_life_to_no_continue);
-  if(ImGui::Button(label(practice_TH_ONE_KEY_DIE))&&runtime.app.in_game()&&!state.replay){auto& n=runtime.app.session.numbers;n.lives=n.bombs=0;runtime.app.game.player_state.life.state=2;runtime.app.game.player_state.life.predead_count=0;runtime.app.game.globals.player_state=2;runtime.app.session.values.refresh_integrity();state.assisted=true;}help_marker(practice_TH_ONE_KEY_DIE_DESC);
-  ImGui::Checkbox(label(practice_THPRAC_FIX_RSQRT),&state.use_custom_rsqrt);help_marker(practice_THPRAC_FIX_RSQRT_DESC);
+ const auto* child=ImGui::GetCurrentWindow();advanced_scroll[0]=child->InnerClipRect.Min.x;advanced_scroll[1]=child->InnerClipRect.Min.y;
+ advanced_scroll[2]=child->InnerClipRect.Max.x;advanced_scroll[3]=child->InnerClipRect.Max.y;advanced_scroll[4]=child->Scroll.y;advanced_scroll[5]=child->ScrollMax.y;advanced_scroll[6]=child->ID;advanced_scroll[7]=ImGui::GetStyle().ScrollbarSize;
+ if(control_header(22,label(practice_TH_GAME_SPEED)))if(GameFPSOpt(state.speed,true,&reset_speed_ui))sdl_audio_music_speed(float(state.speed.fps)/60.f);
+ if(control_header(23,label(practice_TH_GAMEPLAY),ImGuiTreeNodeFlags_DefaultOpen)){
+  control_checkbox(1,label(practice_TH_ADV_DISABLE_X_KEY),&input.disable_xkey);help_marker(practice_TH_ADV_DISABLE_X_KEY_DESC);
+  control_checkbox(2,label(practice_TH_ADV_DISABLE_SHIFT_KEY),&input.disable_shiftkey);help_marker(practice_TH_ADV_DISABLE_SHIFT_KEY_DESC);
+  control_checkbox(3,label(practice_TH_ADV_DISABLE_Z_KEY),&input.disable_zkey);help_marker(practice_TH_ADV_DISABLE_Z_KEY_DESC);
+  control_checkbox(5,label(practice_TH_ADV_FORCE_SHIFT_KEY),&input.force_shiftkey);
+  control_checkbox(6,label(practice_THPRAC_FAST_RETRY),&input.enable_fast_retry);help_marker(practice_THPRAC_FAST_RETRY_DESC2);
+  control_checkbox(7,label(practice_THPRAC_KB_OPEN),&state.show_keyboard_monitor);
+  if(state.show_keyboard_monitor){auto& monitor=state.key_monitor;if(control_button(8,label(monitor.g_record_key_aps?practice_THPRAC_KB_RECORD_STOP:practice_THPRAC_KB_RECORD_START))){if(!monitor.g_record_key_aps)monitor.clear_record();monitor.g_record_key_aps=!monitor.g_record_key_aps;}ImGui::SameLine();if(control_button(9,label(practice_THPRAC_KB_OUTPUT))){const auto csv=monitor.csv();EM_ASM({const url=URL.createObjectURL(new Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='APS.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},csv.c_str());}}
+  control_checkbox(10,label(practice_THPRAC_INFLIVES_MAP),&state.map_inf_life_to_no_continue);
+  if(control_button(11,label(practice_TH_ONE_KEY_DIE),runtime.app.in_game()&&!state.replay)){auto& n=runtime.app.session.numbers;n.lives=n.bombs=0;runtime.app.game.player_state.life.state=2;runtime.app.game.player_state.life.predead_count=0;runtime.app.game.globals.player_state=2;runtime.app.session.values.refresh_integrity();state.assisted=true;}help_marker(practice_TH_ONE_KEY_DIE_DESC);
+  control_checkbox(12,label(practice_THPRAC_FIX_RSQRT),&state.use_custom_rsqrt);help_marker(practice_THPRAC_FIX_RSQRT_DESC);
   if(state.use_custom_rsqrt){
-   ImGui::SetNextItemWidth(200.f);ImGui::Combo(label(practice_THPRAC_SELECT_CPU),&state.rsqrt_cpu,label(practice_THPRAC_SELECT_CPU_COMBO));
-   if(ImGui::Button(label(practice_THPRAC_EXPORT_CUSTOM))){const auto& data=PracticeRsqrtTables::custom();EM_ASM({const url=URL.createObjectURL(new Blob([HEAPU8.slice($0,$0+$1)]));const a=document.createElement('a');a.href=url;a.download='custom_bin.bin';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},data.data(),data.size());}help_marker(practice_THPRAC_EXPORT_CUSTOM_DESC);
-   ImGui::SameLine();if(ImGui::Button(label(practice_THPRAC_IMPORT_CUSTOM)))EM_ASM({const input=document.createElement('input');input.type='file';input.onchange=async()=>{const f=input.files?.[0];if(!f)return;if(f.size<8388608){alert('RSQRT: 8 MiB table required');return;}try{FS.writeFile('/thprac-rsqrt-import.bin',new Uint8Array(await f.slice(0,8388608).arrayBuffer()));Module.eaglerRsqrtImportReady=true;}catch(e){alert(String(e));}};input.click();});help_marker(practice_THPRAC_IMPORT_CUSTOM_DESC);
+   ImGui::SetNextItemWidth(200.f);const char* choices[3]{};const char* text=label(practice_THPRAC_SELECT_CPU_COMBO);
+   for(int i=0;i<3;i++){choices[i]=text;text+=std::strlen(text)+1;}
+   auto* cpu_owner=ImGui::GetCurrentWindow();const bool cpu_open=ImGui::BeginCombo(label(practice_THPRAC_SELECT_CPU),choices[std::clamp(state.rsqrt_cpu,0,2)]);
+   observe_control(13,state.rsqrt_cpu,cpu_open?ImGui::IsWindowAppearing():ImGui::IsItemActivated(),true,cpu_owner);
+   if(cpu_open){for(int i=0;i<3;i++){ImGui::PushID(i);const bool selected=ImGui::Selectable(choices[i],state.rsqrt_cpu==i);observe_control(27+i,i,selected);if(selected)state.rsqrt_cpu=i;ImGui::PopID();}ImGui::EndCombo();}
+   if(control_button(14,label(practice_THPRAC_EXPORT_CUSTOM))){const auto& data=PracticeRsqrtTables::custom();EM_ASM({const url=URL.createObjectURL(new Blob([HEAPU8.slice($0,$0+$1)]));const a=document.createElement('a');a.href=url;a.download='custom_bin.bin';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},data.data(),data.size());}help_marker(practice_THPRAC_EXPORT_CUSTOM_DESC);
+   ImGui::SameLine();if(control_button(15,label(practice_THPRAC_IMPORT_CUSTOM)))EM_ASM({const input=document.createElement('input');input.type='file';input.onchange=async()=>{const f=input.files?.[0];if(!f)return;if(f.size<8388608){alert('RSQRT: 8 MiB table required');return;}try{FS.writeFile('/thprac-rsqrt-import.bin',new Uint8Array(await f.slice(0,8388608).arrayBuffer()));Module.eaglerRsqrtImportReady=true;}catch(e){alert(String(e));}};input.click();});help_marker(practice_THPRAC_IMPORT_CUSTOM_DESC);
   }
-  ImGui::Checkbox(label(practice_THPRAC_TH08_FORCE_LS),&state.force_last_spell);
-  ImGui::Checkbox(label(practice_TH_ENABLE_LOCK_TIMER),&state.show_lock_timer);
-  ImGui::Checkbox(label(practice_TH_DISABLE_MASTER),&state.disable_master);
-  ImGui::Checkbox(label(practice_THPRAC_SHOW_BULLET_HITBOX),&state.show_bullet_hitbox);
-  ImGui::Checkbox(label(practice_TH_FACTOR_ACB),&state.all_clear_bonus);help_marker(practice_TH_FACTOR_ACB_DESC);
-  ImGui::Checkbox(label(practice_TH08_DOSWNC),&state.doswnc);
+  control_checkbox(16,label(practice_THPRAC_TH08_FORCE_LS),&state.force_last_spell);
+  control_checkbox(17,label(practice_TH_ENABLE_LOCK_TIMER),&state.show_lock_timer);
+  control_checkbox(18,label(practice_TH_DISABLE_MASTER),&state.disable_master);
+  control_checkbox(19,label(practice_THPRAC_SHOW_BULLET_HITBOX),&state.show_bullet_hitbox);
+  control_checkbox(20,label(practice_TH_FACTOR_ACB),&state.all_clear_bonus);help_marker(practice_TH_FACTOR_ACB_DESC);
+  control_checkbox(21,label(practice_TH08_DOSWNC),&state.doswnc);
  }
- if(ImGui::CollapsingHeader(label(practice_THPRAC_TOOLS_REACTION_TEST)))reaction_test.GuiUpdate(true);else reaction_test.Reset();
- if(ImGui::CollapsingHeader(label(practice_TH_ABOUT_THPRAC))){ImGui::Text(label(practice_TH_ABOUT_VERSION),practice_source_version);ImGui::TextUnformatted(label(practice_TH_ABOUT_AUTHOR));ImGui::TextUnformatted(label(practice_TH_ABOUT_WEBSITE));ImGui::Text(label(practice_TH_ABOUT_THANKS),"You!");if(ImGui::Button(label(show_license?practice_TH_ABOUT_HIDE_LICENCE:practice_TH_ABOUT_SHOW_LICENCE)))show_license=!show_license;if(show_license)ImGui::TextUnformatted(practice_license);}
+ if(control_header(24,label(practice_THPRAC_TOOLS_REACTION_TEST)))reaction_test.GuiUpdate(true);else reaction_test.Reset();
+ if(control_header(25,label(practice_TH_ABOUT_THPRAC))){auto* draw=ImGui::GetWindowDrawList();const int before=draw->VtxBuffer.Size;ImGui::Text(label(practice_TH_ABOUT_VERSION),practice_source_version);ImGui::TextUnformatted(label(practice_TH_ABOUT_AUTHOR));ImGui::TextUnformatted(label(practice_TH_ABOUT_WEBSITE));ImGui::Text(label(practice_TH_ABOUT_THANKS),"You!");display_observation[27]=4;display_observation[35]=draw->VtxBuffer.Size-before;if(control_button(26,label(show_license?practice_TH_ABOUT_HIDE_LICENCE:practice_TH_ABOUT_SHOW_LICENCE)))show_license=!show_license;if(show_license)license_text(practice_license);}
  ImGui::EndChild();
 }
 bool pressed(int vk){return vk>=0&&vk<256&&key_pressed[vk];}
@@ -106,9 +145,9 @@ void toggle_cheat(BrowserRuntime& runtime,int bit){
  auto& p=runtime.app.session.practice;if(p.replay)return;p.cheats^=1u<<bit;if(p.cheats)p.assisted=true;
 }
 void hotkey_line(const char* key,const char* label,bool& value){
- if(MobileThprac::enabled){MobileThprac::checkbox(key,label,value);return;}
+ if(MobileThprac::enabled){MobileThprac::checkbox(key,label,value);observe_hotkey(key,value);return;}
  const auto cursor=ImGui::GetCursorPos();if(value)ImGui::TextColored({0,1,0,1},"[%s: %s]",key,label);else ImGui::Text("%s: %s",key,label);
- ImGui::SetCursorPos(cursor);const ImVec2 size{ImGui::GetWindowWidth()-ImGui::GetStyle().WindowPadding.x*2,ImGui::GetTextLineHeight()};if(ImGui::InvisibleButton(key,size))value=!value;
+ ImGui::SetCursorPos(cursor);const ImVec2 size{ImGui::GetWindowWidth()-ImGui::GetStyle().WindowPadding.x*2,ImGui::GetTextLineHeight()};if(ImGui::InvisibleButton(key,size))value=!value;observe_hotkey(key,value);
 }
 bool section_has_dialogue(int section){
  switch(section){case 3:case 10:case 18:case 25:case 35:case 47:case 55:case 57:case 66:case 67:case 69:case 83:case 86:return true;default:return false;}
@@ -194,7 +233,7 @@ void draw_practice(BrowserRuntime& runtime){
 void draw_overlay(BrowserRuntime& runtime){
  auto& state=runtime.app.session.practice;if(!state.enabled)return;
  RenderBtHitbox(ImGui::GetOverlayDrawList(),runtime);
- if(state.show_lock_timer&&runtime.app.in_game()&&(state.cheats&16)&&MobileThprac::draw_tool(MobileThprac::Indicators,"Tools###th08-mobile-tools",{120,65},locale)){char text[32];std::snprintf(text,sizeof text,"%.2f",float(runtime.app.game.globals.practice_lock_frames)/60.f);const auto size=ImGui::CalcTextSize(text);auto* p=ImGui::GetOverlayDrawList();p->AddRectFilled({32,0},{110,size.y},0xffffffff);p->AddText({110-size.x,0},0xff000000,text);}
+ if(state.show_lock_timer&&runtime.app.in_game()&&(state.cheats&16)&&MobileThprac::draw_tool(MobileThprac::Indicators,"Tools###th08-mobile-tools",{120,65},locale)){char text[32];std::snprintf(text,sizeof text,"%.2f",float(runtime.app.game.globals.practice_lock_frames)/60.f);const auto size=ImGui::CalcTextSize(text);auto* p=ImGui::GetOverlayDrawList();p->AddRectFilled({32,0},{110,size.y},0xffffffff);const int before=p->VtxBuffer.Size;p->AddText({110-size.x,0},0xff000000,text);display_observation[1]=1;display_observation[2]=runtime.app.game.globals.practice_lock_frames;display_observation[3]=std::strlen(text);for(unsigned i=0;i<std::min(size_t(8),std::strlen(text));i++)display_observation[4+i]=text[i];display_observation[12]=p->VtxBuffer.Size-before;}
  if(state.show_keyboard_monitor&&runtime.app.in_game()&&MobileThprac::draw_tool(MobileThprac::Keyboard,"Keys###th08-mobile-keys",{420,65},locale)){current_key_monitor=&state.key_monitor;KeyRectStyle style;style.text_color_press=style.text_color_release=IM_COL32(32,32,32,255);KeysHUD(8,{1280,0},{840,0},style,true,false);}
  if(MobileThprac::show(MobileThprac::Cheats,menu_open)){ImGui::SetNextWindowPos({10,10},ImGuiCond_Always);ImGui::SetNextWindowSize({0,0});ImGui::SetNextWindowBgAlpha(.5f);constexpr auto flags=ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_AlwaysAutoResize|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoFocusOnAppearing|ImGuiWindowFlags_NoNav;
   if(MobileThprac::begin(MobileThprac::Cheats, "Mod Menu###th08-thprac-overlay", flags, locale)){static const char* keys[]{"F1","F2","F3","F4","F5","F6"};const char* labels[]{tr("无敌","Invincibility","無敵"),tr("锁残","Inf. Lives","残機減らない"),tr("锁Bomb","Inf. Bombs","ボム減らない"),tr("锁火力","Inf. Power","霊力減らない"),tr("锁时","Time Lock","残り時間減らない"),tr("自动B","Auto Bomb","自動喰らいボム")};
@@ -231,6 +270,8 @@ void shutdown(){
  initialized=frame_open=menu_open=tracker_open=advanced_open=practice_was_open=practice_keys_armed=text_editing=desktop_pointer=frame_drawn=false;
  std::fill(std::begin(key_down),std::end(key_down),false);std::fill(std::begin(key_pressed),std::end(key_pressed),false);
  cancel_pointer();input_generation=0;rendered_generation=~0u;current_key_monitor=nullptr;
+ hotkey_observation_count=0;hotkey_observations={};
+ control_count=control_overflow=0;control_observations={};control_activations={};std::fill(std::begin(advanced_scroll),std::end(advanced_scroll),0.);
  practice_section_index=0;non_extra_difficulty=1;gauge_type=-2;show_license=false;reset_speed_ui=true;reaction_test=THGuiTestReactionTest{};
 }
 void process_event(const SDL_Event& event){if(!initialized)return;if(event.type==SDL_EVENT_MOUSE_MOTION){if(event.motion.which==SDL_TOUCH_MOUSEID||event.motion.which==SDL_PEN_MOUSEID)return;desktop_pointer=true;mouse(0,event.motion.x,event.motion.y);}else if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN||event.type==SDL_EVENT_MOUSE_BUTTON_UP){if(event.button.which==SDL_TOUCH_MOUSEID||event.button.which==SDL_PEN_MOUSEID)return;desktop_pointer=true;if(event.button.button==SDL_BUTTON_LEFT)mouse(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN?1:2,event.button.x,event.button.y);}else if(event.type==SDL_EVENT_MOUSE_WHEEL){ImGui::GetIO().MouseWheel+=event.wheel.y;ImGui::GetIO().MouseWheelH+=event.wheel.x;}}
@@ -254,6 +295,50 @@ void update_input(BrowserRuntime& runtime){
  if(pressed(VK_ESCAPE)&&advanced_open)advanced_open=false;publish_menu(menu_open);
 }
 bool captures_game_input(){return MobileThprac::captures_advanced(advanced_open)||practice_was_open;}
+void observation(std::uint32_t* out,std::uint32_t count){
+ if(!out||count<128)return;std::fill(out,out+count,0u);out[0]=1;
+ if(!initialized||!ImGui::GetCurrentContext())return;
+ auto bits=[](float value){std::uint32_t word=0;std::memcpy(&word,&value,sizeof word);return word;};
+ out[1]=1;out[2]=input_generation;out[3]=rendered_generation;out[4]=menu_open;out[5]=tracker_open;out[6]=advanced_open;
+ out[7]=MobileThprac::enabled;out[8]=MobileThprac::visible;out[9]=frame_drawn;out[10]=mouse_down||pointer_sample_down;out[11]=unsigned(pointer_edges.size());
+ const char* names[]{"Mod Menu###th08-thprac-overlay","Advanced Options###th08-thprac-advanced","Tracker###th08-thprac-tracker"};
+ const int panels[]{MobileThprac::Cheats,MobileThprac::Advanced,MobileThprac::Information};
+ for(unsigned i=0;i<3;i++){const auto* window=ImGui::FindWindowByName(names[i]);auto* p=out+12+i*8;
+  if(!window)continue;p[0]=1u|(window->Active?2u:0u)|(window->Hidden?4u:0u);p[1]=bits(window->Pos.x);p[2]=bits(window->Pos.y);
+  p[3]=bits(window->Size.x);p[4]=bits(window->Size.y);p[5]=unsigned(window->DrawList->VtxBuffer.Size);p[6]=MobileThprac::expanded[panels[i]];p[7]=window->ID;
+ }
+ out[36]=unsigned(locale);out[37]=hotkey_observation_count;out[38]=text_editing;out[39]=practice_was_open;
+ for(unsigned i=0;i<hotkey_observation_count;i++){const auto& item=hotkey_observations[i];auto* p=out+40+i*8;
+  p[0]=item.key;p[1]=item.value;p[2]=bits(item.min.x);p[3]=bits(item.min.y);p[4]=bits(item.max.x);p[5]=bits(item.max.y);p[6]=item.generation;p[7]=item.id;
+ }
+ // PUK1 extends the reserved tail with actual UI input, preserving the prefix.
+ out[104]=practice_keys_armed;out[105]=text_editing||MobileThprac::captures_advanced(advanced_open);
+ out[106]=key_down[VK_Z]||key_down[VK_RETURN];out[107]=key_down[VK_X]||key_down[VK_ESCAPE];
+ out[110]=0x50554b31u;out[111]=1;
+ for(unsigned key=0;key<256;key++){if(key_down[key])out[112+key/32]|=1u<<(key%32);if(key_pressed[key])out[120+key/32]|=1u<<(key%32);}
+}
+void controls_observation(BrowserRuntime& runtime,double* out,std::uint32_t count){
+ if(!out||count<1024)return;std::fill(out,out+count,0.);out[0]=2;if(!initialized)return;
+ const auto& a=runtime.app;const auto& g=a.game;const auto& p=a.session.practice;const auto& n=a.session.numbers;
+ out[1]=1;out[2]=input_generation;out[3]=rendered_generation;out[4]=advanced_open;out[5]=locale;out[6]=control_count;out[7]=control_overflow;
+ std::copy(std::begin(advanced_scroll),std::end(advanced_scroll),out+8);
+ out[16]=a.in_game();out[17]=g.control.state.frames;const auto& input=g.player.consumed_input();out[18]=input.sequence;out[19]=input.current;out[20]=input.previous;
+ out[21]=g.player_state.life.state;out[22]=n.bombs;out[23]=n.power;out[24]=n.lives;out[25]=n.score;out[26]=n.deaths;out[27]=n.bombs_used;out[28]=g.globals.game_flags;out[29]=g.player_state.context.game_over;
+ out[32]=p.input.disable_xkey;out[33]=p.input.disable_shiftkey;out[34]=p.input.disable_zkey;out[35]=p.input.force_shiftkey;out[36]=p.input.enable_fast_retry;
+ out[37]=p.show_keyboard_monitor;out[38]=p.key_monitor.g_record_key_aps;out[39]=p.key_monitor.g_recorded_keys.size();out[40]=p.key_monitor.g_recorded_aps.size();
+ out[41]=p.key_monitor.g_recorded_keys.empty()?0:p.key_monitor.g_recorded_keys.back();out[42]=p.key_monitor.g_aps_cur;
+ out[43]=p.map_inf_life_to_no_continue;out[44]=p.use_custom_rsqrt;out[45]=p.rsqrt_cpu;out[46]=p.force_last_spell;out[47]=p.show_lock_timer;
+ out[48]=p.disable_master;out[49]=p.show_bullet_hitbox;out[50]=p.all_clear_bonus;out[51]=p.doswnc;out[52]=p.input.fast_retry_count_down;
+ out[53]=p.speed.fps;out[54]=p.speed.fps_status;out[55]=p.speed.fps_replay_slow;out[56]=p.speed.fps_replay_fast;out[57]=p.speed.fps_debug_acc;
+ out[58]=g.globals.practice_force_last_spell;out[59]=g.globals.practice_enemy_invincible;out[60]=g.globals.practice_lock_frames;out[61]=g.gui_context.practice_all_clear_bonus;out[62]=g.spell_drawing.disable_master;out[63]=show_license;
+ GraphicsMath::practice_normalization_observation(out+64);
+ std::copy(display_observation.begin(),display_observation.end(),out+76);
+ for(unsigned i=0;i<control_count;i++){const auto& c=control_observations[i];auto* row=out+128+i*16;
+  row[0]=c.semantic;row[1]=c.id;row[2]=c.min.x;row[3]=c.min.y;row[4]=c.max.x-c.min.x;row[5]=c.max.y-c.min.y;
+  row[6]=c.value;row[7]=c.visible;row[8]=c.enabled;row[9]=c.generation;row[10]=c.activations;row[11]=c.popup;
+  row[12]=c.clip.Min.x;row[13]=c.clip.Min.y;row[14]=c.clip.Max.x;row[15]=c.clip.Max.y;
+ }
+}
 double simulation_interval(BrowserRuntime& runtime){auto& state=runtime.app.session.practice;return state.enabled?state.speed.interval(state.replay,key_down[VK_CONTROL],key_down[VK_SHIFT],key_down[VK_SPACE]):1./60.;}
 void render(BrowserRuntime& runtime,touhou::sdl::Renderer& renderer){if(!initialized)return;
  if(EM_ASM_INT({const ready=!!Module.eaglerRsqrtImportReady;Module.eaglerRsqrtImportReady=false;return ready?1:0;})){if(auto* file=std::fopen("/thprac-rsqrt-import.bin","rb")){std::vector<char> data(PracticeRsqrtTables::custom_size);if(std::fread(data.data(),1,data.size(),file)==data.size())PracticeRsqrtTables::import_custom(data.data(),data.size());std::fclose(file);std::remove("/thprac-rsqrt-import.bin");}}
@@ -262,6 +347,6 @@ void render(BrowserRuntime& runtime,touhou::sdl::Renderer& renderer){if(!initial
  // Numeric editing also applies to advanced tools outside the practice menu.
  eagler::thprac::sdl_keyboard_frame(io);
  io.NavInputs[ImGuiNavInput_DpadUp]=key_down[VK_UP];io.NavInputs[ImGuiNavInput_DpadDown]=key_down[VK_DOWN];io.NavInputs[ImGuiNavInput_DpadLeft]=key_down[VK_LEFT];io.NavInputs[ImGuiNavInput_DpadRight]=key_down[VK_RIGHT];io.NavInputs[ImGuiNavInput_Activate]=key_down[VK_Z]||key_down[VK_RETURN];io.NavInputs[ImGuiNavInput_Cancel]=key_down[VK_X]||key_down[VK_ESCAPE];ImGui::NewFrame();frame_open=true;
- if(runtime.app.session.practice.menu)draw_practice(runtime);else practice_was_open=false;draw_overlay(runtime);auto& practice=runtime.app.session.practice;GraphicsMath::practice_rsqrt(practice.enabled&&practice.use_custom_rsqrt,"iac"[std::clamp(practice.rsqrt_cpu,0,2)]);ImGui::Render();frame_open=false;renderer.render_imgui(ImGui::GetDrawData(),runtime.backbuffer());frame_drawn=true;
+ display_observation={};display_observation[0]=input_generation;hotkey_observation_count=control_count=control_overflow=0;std::fill(std::begin(advanced_scroll),std::end(advanced_scroll),0.);if(runtime.app.session.practice.menu)draw_practice(runtime);else practice_was_open=false;draw_overlay(runtime);auto& practice=runtime.app.session.practice;GraphicsMath::practice_rsqrt(practice.enabled&&practice.use_custom_rsqrt,"iac"[std::clamp(practice.rsqrt_cpu,0,2)]);ImGui::Render();frame_open=false;renderer.render_imgui(ImGui::GetDrawData(),runtime.backbuffer());frame_drawn=true;
 }
 }

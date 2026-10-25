@@ -81,6 +81,19 @@ test('published fixture uses the real second ZIP descriptor and publishes its de
   assert.deepEqual(catalog.games[game],{revision:archive.descriptor.revision,descriptor:fixture.descriptor.path});
   assert.deepEqual(await readFile(resolve(site,'games/th08/th08.dat')),Buffer.from('same private game data'));
   assert.ok((await readFile(resolve(site,fixture.descriptor.path),'utf8')).includes(archive.descriptor.revision));
+  for(const file of Object.values(archive.descriptor.files)){
+    const resolvedUrl=new URL(file.source,new URL(fixture.descriptor.path,'https://fixture.invalid/'));
+    const bytes=await readFile(resolve(site,resolvedUrl.pathname.slice(1)));
+    assert.equal(sha256(bytes),file.sha256,'Actual installer relative URL must reach the declared file');
+  }
+}));
+
+test('interruption fixture serves real files without publishing a background update',async()=>withTemp(async temporary=>{
+  const site=resolve(temporary,'site');await mkdir(site);const catalog=JSON.stringify({schema:'eagler-touhou/release-catalog/1',games:{}});
+  await writeFile(resolve(site,'release-catalog.json'),catalog);const archive=packageZip(),archivePath=resolve(temporary,'update.zip');await writeFile(archivePath,archive.bytes);
+  const fixture=await createPublishedPackageFixture({siteDirectory:site,game,archivePath,expectedRevision:archive.descriptor.revision,publishCatalog:false});
+  assert.equal(fixture.catalog,null);assert.equal(await readFile(resolve(site,'release-catalog.json'),'utf8'),catalog);
+  assert.ok((await readFile(resolve(site,fixture.descriptor.path))).length>0);
 }));
 
 test('published fixture rejects wrong revision, cross-game identity and unsafe resource routes',async()=>withTemp(async temporary=>{

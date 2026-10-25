@@ -44,6 +44,8 @@ test('serialized offline observer reads actual generation keys and Blob/ArrayBuf
   const current=await observer.readCurrentPackageGeneration('th08');
   assert.equal(current.installation.currentGeneration,'revision-a');
   assert.equal(current.generation.files.data.objectId,'data-object');
+  assert.equal((await observer.readPackageGeneration('th08','revision-a')).id,'revision-a');
+  assert.equal(await observer.readPackageGeneration('th08','missing'),null);
   for(const [id,expected] of [['data-object',[0,17,255]],['blob-object',[9,8,7]]]){
     const value=await observer.readPackageObject(id);
     assert.deepEqual([...new Uint8Array(await value.blob.arrayBuffer())],expected);
@@ -51,7 +53,7 @@ test('serialized offline observer reads actual generation keys and Blob/ArrayBuf
   assert.equal(await observer.readPackageObject('missing-object'),null);
   const missing=await observer.readCurrentPackageGeneration('th09');
   assert.equal(missing.installation,null);assert.equal(missing.generation,null);
-  assert.deepEqual(modes,Array(5).fill('readonly'));assert.equal(closed.length,5);
+  assert.deepEqual(modes,Array(7).fill('readonly'));assert.equal(closed.length,7);
   // Reads retain both schema and the fixture's original records.
   const db=await requestResult(factory.open(schema.name)),tx=db.transaction('objects','readonly');
   assert.deepEqual([...new Uint8Array((await requestResult(tx.objectStore('objects').get('data-object'))).data)],[0,17,255]);

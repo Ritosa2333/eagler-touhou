@@ -8,6 +8,7 @@
 #include "ItemSystem.hpp"
 #include "EffectSystem.hpp"
 #include "DeathbombStimulus.hpp"
+#include <array>
 namespace th08 {
 struct BulletSystemAudio {
     virtual ~BulletSystemAudio()=default;
@@ -22,6 +23,9 @@ class BulletSystem:public BulletEmissionActions,public LaserEmissionActions,priv
     Vec2 arcade{32,16};bool failed=false,ready=false,presentation_prepared=false;
     DeathbombStimulusReceiptV1 deathbomb_stimulus;
     BulletState* deathbomb_projectile=nullptr;
+    // The tagged projectile's ordinary collision is also observable when F1
+    // prevents a death window. This does not change the Deathbomb receipt ABI.
+    std::array<u32,5> validation_hit{};
     void synchronize();void publish_collision();
     void sound(i32 index,float position,bool panned)override{audio.sound(index,position,panned);}
     void reemit(BulletEmission& emission)override{emit(emission);}
@@ -43,8 +47,9 @@ public:
     LaserState* laser(BulletEmission&)override;
     void clear(i32 mode)override;
     bool update();
-    bool validation_deathbomb_eligible(bool scene_enabled,bool write_lock_valid,bool quiet_scene)const noexcept;
-    bool request_validation_deathbomb_hit(bool scene_enabled,bool write_lock_valid,bool quiet_scene);
+    bool validation_deathbomb_eligible(bool scene_enabled,bool write_lock_valid,bool quiet_scene,bool custom_practice=false)const noexcept;
+    bool request_validation_deathbomb_hit(bool scene_enabled,bool write_lock_valid,bool quiet_scene,bool custom_practice=false);
+    const std::array<u32,5>& validation_hit_observation()const noexcept{return validation_hit;}
     const DeathbombStimulusReceiptV1& validation_deathbomb_receipt()const noexcept{return deathbomb_stimulus;}
     u32 validation_deathbomb_projectile_state()const noexcept{return deathbomb_projectile?deathbomb_projectile->state:0;}
     void snapshot_presentation(){if(ready){drawing.snapshot();presentation_prepared=true;}}

@@ -39,6 +39,9 @@ export function createReplayCaptureJournal(controller){
     capturedRows:state.capturedRows,filters:{...state.filters}}};rows=[];ledger=[];return batch;}};
 }
 
+// ReplayPlayback::after_update combines periods 3 and 5; both may be active.
+export const TH08_MAX_REPLAY_BATCH=15;
+
 /** Reviewable cursor invariants, shared by the browser capture and its independent reader. */
 export function createReplayLedgerInspector(){
   let applicationTick=0,capturedRows=0,previous=null,activeSamples=0;
@@ -63,8 +66,9 @@ export function createReplayLedgerInspector(){
       const before=previous.replay,delta=r.frame-before.frame;
       // ReplayPlayback::after_update restarts Chain inside one application
       // update: dialogue batches end at frame % 3 == 2, fast mode at % 5 == 4.
+      // Their combined continuation condition can consume fifteen frames.
       // These are native simulation steps, not missing application receipts.
-      if(delta<0||delta>5||sample.traceFrame-previous.traceFrame!==delta||
+      if(delta<0||delta>TH08_MAX_REPLAY_BATCH||sample.traceFrame-previous.traceFrame!==delta||
         r.stride!==before.stride||r.inputBytes!==before.inputBytes||r.timingBytes!==before.timingBytes)
         fail('Replay consumption skipped, moved backwards or changed its selected block');
     }

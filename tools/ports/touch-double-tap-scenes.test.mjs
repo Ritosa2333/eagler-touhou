@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {runTouchDoubleTapBombScene} from './touch-double-tap-scenes.mjs';
+import {runTouchDoubleTapBombScene,assertTouchDoubleTapBombEvidence} from './touch-double-tap-scenes.mjs';
 
 const inputMasks={fire:1,focus:4,bomb:2,escape:8};
-const options=enabled=>({inputMasks,launchOptions:{doubleTapBombEnabled:enabled,source:'runtime-launch-options'},
+const options=enabled=>({inputMasks,bombResource:{cost:1,unit:'bomb',source:'fixture native Bomb rule'},launchOptions:{doubleTapBombEnabled:enabled,source:'runtime-launch-options'},
   gesture:{firstTapMaxMs:220,interTapMaxMs:320,bombPulseTicks:3,source:'TouchController::pointer | TouchController::sample'},
   geometry:{movementEpsilon:.01,primary:{id:41,start:{x:.48,y:.76},move:{x:.55,y:.76},bombMove:{x:.62,y:.76}},
     secondary:{id:42,point:{x:.8,y:.6}}},
@@ -13,9 +13,9 @@ const options=enabled=>({inputMasks,launchOptions:{doubleTapBombEnabled:enabled,
 function makeIO({enabled=true,singleTapBomb=false,disabledDoubleTapBomb=false,repeatBombOnPulse=false,dropPrimaryOnBomb=false,
   noDoubleTapActivation=false,missingAction=false,omitCheckpoint=false,lateSecondTap=false,queuedMovementTicks=2,
   delayedSecondDownReceiptMs=0,cleanupPointerFailure=false,cleanupControlFailure=false,missingInitialControlsAck=false,
-  timeoutFirstTouchBatch=false,timeoutActions=false}={}){
+  timeoutFirstTouchBatch=false,timeoutActions=false,bombCost=1}={}){
   let now=0,frame=0,sequence=0,primaryDown=false,primaryDropped=false,armedAt=null,secondaryDownAt=null,pendingBomb=false,pulse=0,
-    activeTicks=0,bombsRemaining=3,bombsUsed=0,bombsUsedStage=0,controlCalls=0,touchBatchCalls=0,position={x:320,y:350},
+    activeTicks=0,bombsRemaining=3*bombCost,bombsUsed=0,bombsUsedStage=0,controlCalls=0,touchBatchCalls=0,position={x:320,y:350},
     latest={available:true,complete:false,phase:'none',sequence:0};
   const history=[],pendingMoves=[];
   const snapshot=()=>({available:true,complete:true,phase:'consumer-run',sequence,frame,stage:1,
@@ -29,7 +29,7 @@ function makeIO({enabled=true,singleTapBomb=false,disabledDoubleTapBomb=false,re
       if(pendingBomb){pendingBomb=false;pulse=3;}
       const current=pulse>0?inputMasks.bomb:0;
       if(current&inputMasks.bomb){
-        if(activeTicks===0||repeatBombOnPulse){bombsRemaining--;bombsUsed++;bombsUsedStage++;}
+        if(activeTicks===0||repeatBombOnPulse){bombsRemaining-=bombCost;bombsUsed++;bombsUsedStage++;}
         activeTicks=Math.max(activeTicks,20);
       }
       if(activeTicks>0)activeTicks--;
@@ -116,6 +116,7 @@ test('enabled double tap ignores the first click, consumes one native Bomb, and 
   assert.ok(result.evidence.positionChecks.some(row=>row.label==='primary-finger-during-native-bomb'));
   assert.equal(result.evidence.cleanup.pointerReleased,true);
   assert.equal(result.evidence.cleanup.controlsNeutral,true);
+  assertTouchDoubleTapBombEvidence(JSON.parse(JSON.stringify(result.evidence)));
 });
 
 test('disabled double tap option is a real paired-gesture negative control',async()=>{
@@ -123,6 +124,22 @@ test('disabled double tap option is a real paired-gesture negative control',asyn
   assert.equal(result.checkStatus,'passed');
   assert.equal(result.evidence.bombObservation.observedBombsUsedDelta,0);
   assert.equal(result.evidence.samples.some(sample=>sample.action?.consumed?.bomb===true),false);
+  assertTouchDoubleTapBombEvidence(JSON.parse(JSON.stringify(result.evidence)));
+});
+
+for(const [name,mutate] of [
+  ['single tap Bomb',e=>e.touchBatches[1].batch.checkpoints[0].samples[0].action.consumed.current=2],
+  ['double native inventory use',e=>e.touchBatches[1].batch.checkpoints[1].samples.at(-1).action.inventory.bombsUsed++],
+  ['missing consumer tick',e=>e.samples.splice(3,1)],
+  ['detached movement',e=>e.touchBatches[0].batch.checkpoints[0].samples[0].observation.position.x+=9],
+  ['lost primary ownership',e=>e.touchBatches[1].operations[6].id=42],
+  ['late transport bracket',e=>e.touchBatches[1].batch.events[2].completedAtMs+=400],
+  ['missing raw release',e=>delete e.cleanup.releaseBatch],
+  ['unacknowledged release',e=>e.cleanup.releaseBatch.events[0].acknowledged=false],
+  ['non-neutral cleanup',e=>e.controls.at(-1).controls.fireEnabled=true],
+])test(`saved double-tap evidence rejects ${name} despite a passing scene verdict`,async()=>{
+  const result=await runTouchDoubleTapBombScene(makeIO(),options(true));assert.equal(result.checkStatus,'passed');
+  const evidence=JSON.parse(JSON.stringify(result.evidence));mutate(evidence);assert.throws(()=>assertTouchDoubleTapBombEvidence(evidence));
 });
 
 test('a single click that consumes Bomb cannot be hidden by a later successful double tap',async()=>{
@@ -212,4 +229,12 @@ test('movement assertions wait through the title-declared queued-consumption bud
   assert.equal(result.checkStatus,'passed');
   assert.equal(result.evidence.positionChecks[0].after.x-result.evidence.positionChecks[0].before.x,1);
   assert.ok(result.evidence.positionChecks[1].settlingSamples.length>=2);
+});
+
+test('double-tap Bomb shares the declared native Power cost and never normalizes it into one unit',async()=>{
+  const bombResource={cost:20,unit:'power-point',source:'fixture native Power rule'},config={...options(true),bombResource};
+  const result=await runTouchDoubleTapBombScene(makeIO({bombCost:20}),config);assert.equal(result.checkStatus,'passed');
+  assertTouchDoubleTapBombEvidence(result.evidence,{bombResource});
+  await assert.rejects(runTouchDoubleTapBombScene(makeIO({bombCost:20}),options(true)),/consume one native Bomb inventory unit/);
+  const absent=await runTouchDoubleTapBombScene(makeIO(),{...options(true),bombResource:undefined});assert.equal(absent.checkStatus,'incomplete');
 });

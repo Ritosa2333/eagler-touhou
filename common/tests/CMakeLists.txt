@@ -324,7 +324,10 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
     add_test(
         NAME eagler-common.replay-verifier
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
+            --test --test-concurrency=2 --test-timeout=30000
             ${CMAKE_CURRENT_SOURCE_DIR}/../testkit/replay-verifier/replay-verifier.test.mjs
+            ${CMAKE_CURRENT_SOURCE_DIR}/../testkit/replay-verifier/suite.test.mjs
+            ${CMAKE_CURRENT_SOURCE_DIR}/../testkit/replay-verifier/capture-file.test.mjs
     )
 endif()
 

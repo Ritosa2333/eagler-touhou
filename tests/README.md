@@ -1,11 +1,35 @@
 # 测试
 
+`--profile=adaptation --suite=package-imports --game=th08 --variant=normal --check=PACKAGE-04` 在独立存储中比较本地 ZIP、在线安装和已声明的原版文件导入。输入沿用 Runtime、包与封面清单；实际 DATA 保留原版文件声明的文件名。共享判据核对版本、代次、来源、首帧与重新打开后的完整 DATA 身份。
+
 从仓库根目录运行。测试源码由各组件维护，`tests/suites.mjs` 统一登记执行入口、范围、资源和时间预算。功能怎样判定、观察什么以及新作品如何接入，见[验收方法](../docs/adaptation/test-methods.md)。
 
 通用适配要求使用共享场景与断言，作品模块提供本作接口、状态含义和格式解析，普通版与 MP 分别登记。原版数值、脚本和特有玩法使用本作样本与夹具，复用执行、输入校验和报告处理。新增作品沿用已有共享断言；生产行为缺失时，适配实现按同一要求补齐。
 
+`--profile=adaptation --suite=launcher-lifecycle --game=th08 --variant=normal --check=RUNTIME-04` 在真实 Launcher 执行后台恢复、持有输入退出与新代重入。输入清单提供 Runtime、完整游戏包和 artwork，复用现有准备与队列。下一作登记 `inputLifecycle` 中的混音 AudioContext 路径和来源，原生输入、动作与导航沿用作品适配器。
+
+`--profile=adaptation --suite=practice-controls --game=th08 --variant=normal --check=PRACTICE-06` 验证真实 Launcher 中的原生练习功能键与浏览器触摸。复用相同输入，作品接口提供 `practice.uiSnapshot`、`controlKeys` 和既有练习导航。场景按实际提交的原生控件矩形操作，逐项核对可逆功能值、松键、触点释放和面板展开。
+
+`--profile=adaptation --suite=practice-parameters --game=th08 --variant=normal --check=PRACTICE-04` 运行本作参数类别矩阵。共用 Runtime 输入与准备复用一次，每个参数场景使用独立冷启动实例。本作声明参数样例、实际消费者观察与独立预期，中央从冻结初始化和原始 ECL 字节复算。其他作品和 MP 按各自接口登记，缺项在计划阶段显示。
+
+`--profile=adaptation --suite=view-options --game=th08 --variant=normal --check=RUNTIME-06` 共用正式 Launcher 安装输入，检查常显判定点消费、原生对象、高低速及碰撞盒尺寸、松键、暂停与重开。机器部分通过后，关闭／低速／常显三张画面进入显示场景集统一人审；人审完成前保留整项未完成状态。
+
+判定点素材通过 `tools/ports/view-options-review.mjs --prepare` 集中准备，人审后使用同一入口接纳整组结论。命令与证据绑定见 [RUNTIME-06](../docs/adaptation/runtime.md#runtime-06)。
+
+`--profile=adaptation --suite=language --game=th08 --variant=normal` 使用 Runtime、`languageManifest` 和 artwork 输入，在每种语言的同一实例中检查标题、Result 统计与真实 MSG 对白。下一作声明原生 UI 字段、有限菜单流程、归档成员与对白解码器，共用驱动负责操作、独立源字节比较、字形和呈现证明。图片与练习语言材料合为一组人审；机器通过与整项人工完成分别记录。
+
+文字素材用 `node tools/ports/language-review.mjs --game=th08 --report=<语言原始报告> --prepare --output=<材料目录>` 准备。打开其中的 `review.md` 集中查看，在 `review.json` 的文字场景组填写一个结论；接纳命令与素材绑定方式见[语言验收](../docs/adaptation/localization.md#lang-05)。准备和接纳均复用原采集证据，不启动新浏览器。
+
+已封存诊断报告的参考保护由 `tools/ports/diagnostic-reference-review.mjs` 独立复核。文字、判定点和参考复核报告均进入统一结果读取器，中央判据重开原始文件校验；实际游戏比较失败与复核通过分别保留。操作见 [VERIFY-04](../docs/adaptation/validation.md#verify-04)。
+
+`replay-method` 组通过当前共享比较器复算原始捕获与固定参考，独立验收 VERIFY-06 的首差定位和故意篡改检查。各作提供原始轨迹适配接口，共用驱动执行比较，中央汇总与续跑再次读取实际文件。输入与命令见 [VERIFY-06](../docs/adaptation/validation.md#verify-06)。
+
+原生定长观察统一由 `native-snapshot.mjs` 读取。声明指定 f64／u32／i32 与最多 4096 字；读取器验证导出、对齐、内存范围及内存所属，导出调用完成后重新取得可能增长的内存并复制原始数组。作品解码留在 Node，浏览器读取器供练习、视图和语言复用。
+
 | 入口 | 内容 |
 | --- | --- |
+| `npm run test:adaptation -- --game=th08 --variant=normal --suite=practice-effects --inputs=<本地输入>` | 共用训练效果场景：真实碰撞、死亡与复活资源、Bomb 消费、Tracker 计数；作品登记成本和状态语义 |
+| `practice-effects` 的 `options` 任务 | 同局通过原生控件设置 Z、Shift、X 禁用和强制低速，物理位图、真实玩家输入与开关对照共同验证；任务边界支持独立重跑 |
 | `npm test` | 工具、Launcher 核心与三个服务的快速回归 |
 | `npm run test:integration` | 快速回归、React、逐作公共夹具、共享触控与实际音效输出、浏览器接线与源码检查、common 原生测试 |
 | `npm run test:acceptance` | 当前打包 Runtime、键盘与触控、语言与练习、Replay、音乐 PCM、离线存储、多人生命周期与旁观 |
@@ -20,6 +44,8 @@ node tests/run.mjs --suite=launcher-core,launcher-support
 ```
 
 执行器为每项启动独立进程。共享源码、构建目录或浏览器的任务通过资源锁安排；配置、编译和执行按依赖顺序运行。超时会终止该任务的进程树。失败、取消、缺输入或空选择均返回非零状态。
+
+Windows 队列为每个受监管任务保存进程清理记录。主进程结束后，所属控制台与子进程有固定一秒的自然退出窗口；超时存活的进程继续判失败并按 Job Object 清理，记录实际进程路径与哈希。已声明工具助手按各自的精确路径和哈希核验。
 
 各组按选择顺序运行，`--jobs` 控制组内任务并发。React 测试按文件隔离，最多两个进程；冷构建测试共用排他资源。前端模块在测试前准备一次，临时工作区各自创建和释放。
 
@@ -58,6 +84,8 @@ th07 portable Replay／补丁入口通过 `--mode=unit|retail|all` 选择范围�
 该输入绑定 tooling 的编译夹具、common configure/build/test、Launcher 模块构建、native-gamepad、共享 STG gate 子任务和 th06／th07 cooperative rules 任务，缺省为空。清单用于不写测试产物的编译器辅助进程；路径或哈希不符、其他后代残留都会使测试失败。此清理方式由 Windows Job Object 提供，Linux 收到清单时明确报错。common 原生任务设置 `MSBUILDDISABLENODEREUSE=1`，让构建节点随任务结束。
 
 浏览器 Shell 回归执行真实 Shell 的初始化、监听器与 Launcher 改键路径。Runtime 验收加载带文件哈希清单的正式包，并从原生运行状态观察输入、帧推进和生命周期。
+
+`browser-shell` 从产品目录选择 STG 普通版与 MP。手柄源码入口的 `--games` 和键盘 Shell 的 `--variants` 明确记录选择范围；完整产品目录归属继续单独核对。th075 的格斗输入沿本作接入流程检查。th06／th07 的 Replay 节奏回归编译生产声明与分支条件，覆盖普通、Replay、旁观、限帧和不同步长，并用移除 Replay 归属的反例核对失败。逐作模块与该原生回归同样绑定已核实的编译器辅助进程清单。
 
 共用 protocol-host 使用独立 localhost HTTPS 站点，并校验浏览器实际收到的响应字节。需要 OpenSSL，`EAGLER_OPENSSL` 可指定路径。测试浏览器按本次临时证书的 SPKI 指纹连接；站点退出后清理证书和连接。
 
@@ -113,7 +141,7 @@ Presentation Lab 的共用控制器、报告判定、人工记录绑定和 th08 
 
 触控基础使用 `--profile=adaptation --suite=touch-motion`，并沿用同一份 Runtime 输入清单。`--variant=both --plan` 展示产品目录中的普通版与 MP 接入情况；`--game=th08 --variant=normal` 执行单作。共用场景以键盘原生速度为参考，连续检查三档灵敏度、微移、斜向限速、自由摇杆、焦点与释放，并在无限速之后重新核对限速。每种配置在同一局完成整组操作，支持的 Runtime 复用正式手动步进入口。
 
-音效队列时序使用 `--profile=adaptation --suite=audio-latency --game=th08 --variant=normal`，沿用相同 Runtime 输入清单。共用桌面驱动在一次标题导航中测量真实逻辑事件、目标 voice 的实际 PCM，以及事件发生时的 SDL 混合队列末端；第二个菜单操作把同一目标音效延迟到实测队尾，要求相同判据拒绝该反例。[音频适配器](adaptation/adapters/audio.mjs)登记本作音效映射与标题就绪状态，共用判据按实际采样率转换时间。其他作品与 MP 的接口缺项直接显示 blocked。该组记录所选音效的时序，AUDIO-02 全部玩法音效与音乐分轨按[验收方法](../docs/adaptation/presentation.md#audio-02)合并审查。
+音效队列时序使用 `--profile=adaptation --suite=audio-latency --game=th08 --variant=normal`，沿用相同 Runtime 输入清单。共用桌面驱动先测量标题确认音的真实逻辑事件、实际 PCM 和 SDL 混合队尾，再把同一目标音效延迟到实测队尾，要求相同判据拒绝反例。随后在同一实例进入受控 Gameplay，执行真实射击、原生子弹消费与输出 PCM 关联，并核对无输入窗口静音。[音频适配器](adaptation/adapters/audio.mjs)维护本作音效映射和标题就绪语义，中央判据共同核对三条证据。其他作品与 MP 的接口缺项直接显示 blocked。BGM 切曲、分轨和生命周期按[验收方法](../docs/adaptation/presentation.md#audio-02)执行各自场景。
 
 `browser-shell` 同时执行共用原生触控组件和真实 WebAudio 队列检查，CI 使用同一集合。独立任务按顺序全部执行，再汇总失败。原生组件夹具按产品目录枚举 STG 普通版和 MP source owner；th06／th07 保留已锚定原生路径的 reference-only，其余 owner 必须成功执行生产组件，缺少组件会使任务失败。固定预期取自 th06 已验证规则；五个定向破坏检查验证灵敏度、微移、限速、解析器和释放。编译器由 `CXX` 与既有原生编译入口选择，Windows helper 身份由执行器环境统一提供。
 

@@ -142,11 +142,11 @@ test('known input assessors recompute raw Launcher evidence instead of trusting 
   const gamepad=gamepadEvidence();
   gamepad.entry.observation.complete=false;
   assert.deepEqual(assessRuntimeInputEvidence({...gamepad,product}),
-    {available:true,valid:true,reason:null,kind:'launcher-gamepad-mapping'});
+    {available:true,valid:true,reason:null,kind:'launcher-gamepad-mapping',checks:['INPUT-03']});
   assert.deepEqual(assessRuntimeInputEvidence({...layoutEvidence(),product}),
-    {available:true,valid:true,reason:null,kind:'launcher-touch-layout'});
+    {available:true,valid:true,reason:null,kind:'launcher-touch-layout',checks:['TOUCH-17']});
   assert.deepEqual(assessRuntimeInputEvidence({...magnifierEvidence(),product}),
-    {available:true,valid:true,reason:null,kind:'launcher-touch-magnifier'});
+    {available:true,valid:true,reason:null,kind:'launcher-touch-magnifier',checks:['TOUCH-19']});
 });
 
 test('gamepad negative rows require actual other-device stimulus and same-tick neutral native consumer',()=>{
@@ -219,6 +219,26 @@ test('known check rejects a foreign/duplicate Runtime target while unknown check
   assert.equal(assessRuntimeInputEvidence({...fixture,product}).valid,false);
   assert.deepEqual(assessRuntimeInputEvidence({driver:{},entry:{id:'shared-not-registered'},product}),
     {available:false,valid:false,reason:'No Runtime input assessor for shared-not-registered',kind:null});
+});
+
+test('fresh confirm standalone uses the same native trial gate and cannot pass from a summary flag',()=>{
+  const value=report('shared-touch-dialogue-confirm','TOUCH-13',{complete:true,trials:[]});
+  assert.match(assessRuntimeInputEvidence({...value,product}).reason,/native trial and final gameplay restoration/);
+  value.entry.observation.trials=[{checkStatus:'passed',evidence:{}},{checkStatus:'passed'}];
+  const result=assessRuntimeInputEvidence({...value,product});
+  assert.equal(result.available,true);assert.equal(result.valid,false);
+});
+
+test('menu evidence accepts its declared keyboard support without granting that support completion',()=>{
+  const value=report('shared-original-menu-dialogue-input','INPUT-07',{});
+  value.entry.adaptationIds.unshift('INPUT-01');
+  const verdict=assessRuntimeInputEvidence({...value,product});
+  assert.deepEqual(verdict.checks,['INPUT-07']);
+  assert.doesNotMatch(verdict.reason,/declared supporting IDs/);
+  for(const ids of [['INPUT-01'],['INPUT-07','INPUT-02'],['INPUT-07','INPUT-07']]){
+    value.entry.adaptationIds=ids;
+    assert.match(assessRuntimeInputEvidence({...value,product}).reason,/declared supporting IDs/);
+  }
 });
 
 function th10ControlledReceipt(frame=100){

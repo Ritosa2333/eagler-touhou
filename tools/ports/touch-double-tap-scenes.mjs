@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {assertBombResource} from './bomb-resource-contract.mjs';
 
 const SCHEMA='eagler-touhou/touch-double-tap-scenes/1';
 const MAX_BUDGET_TICKS=120;
@@ -20,7 +21,8 @@ function point(value,label){
     `${label} must be a normalized Runtime-canvas point`);
   return{x:value.x,y:value.y};
 }
-function validateOptions({launchOptions,gesture,geometry,budgets,inputMasks}={}){
+function validateOptions({launchOptions,gesture,geometry,budgets,inputMasks,bombResource}={}){
+  const bombCost=assertBombResource(bombResource);
   validateInputMasks(inputMasks);
   assert.equal(typeof launchOptions?.doubleTapBombEnabled,'boolean','Double-tap Bomb scene requires the actual startup option receipt');
   assert.ok(typeof launchOptions.source==='string'&&launchOptions.source.length>0,'Double-tap Bomb option receipt needs its launch source');
@@ -48,7 +50,7 @@ function validateOptions({launchOptions,gesture,geometry,budgets,inputMasks}={})
   const totalBudgetTicks=budgets.baselineTicks+budgets.movementSettlingTicks+1+budgets.triggerTicks+
     budgets.movementSettlingTicks+budgets.pulseDrainTicks;
   assert.ok(totalBudgetTicks<=MAX_SCENE_TICKS,`Double-tap Bomb scene exceeds its ${MAX_SCENE_TICKS}-tick total budget`);
-  return{primaryId,secondaryId,points,movementEpsilon:geometry.movementEpsilon,totalBudgetTicks};
+  return{primaryId,secondaryId,points,movementEpsilon:geometry.movementEpsilon,totalBudgetTicks,bombCost};
 }
 function positionOf(observation,label){
   const position=observation?.position;
@@ -69,6 +71,82 @@ function assertNoBomb(action,inventory,label,bombMask){
 }
 function pointer(type,id,p){return{type,id,x:p.x,y:p.y};}
 
+/** Recompute the two-finger gesture from transport brackets and native consumer samples. */
+export function assertTouchDoubleTapBombEvidence(evidence,{gesture=evidence?.gesture,inputMasks=evidence?.inputMasks,bombResource=evidence?.bombResource}={}){
+  assert.deepEqual(evidence.bombResource,bombResource);
+  assert.equal(evidence?.schema,SCHEMA);
+  assert.deepEqual(evidence.gesture,gesture);assert.deepEqual(evidence.inputMasks,inputMasks);
+  const config=validateOptions(evidence),enabled=evidence.launchOptions.doubleTapBombEnabled;
+  const rows=evidence.samples.filter(row=>row.action?.complete===true);
+  assert.ok(rows.length>0&&rows.length<=MAX_SCENE_TICKS,'Double-tap native ledger is missing or unbounded');
+  for(const [index,row] of rows.entries()){
+    assert.equal(row.action.phase,'consumer-run');assert.equal(row.runtime.pause?.active,false);
+    if(index){assert.equal(row.action.sequence,rows[index-1].action.sequence+1);assert.equal(row.action.stage,rows[0].action.stage);}
+  }
+  assert.equal(rows[0].label,'initial-native-baseline');
+  const baseline=inventoryOf(rows[0].action,'Double-tap baseline');
+  assert.ok(baseline.bombsRemaining>0);assertNoBomb(rows[0].action,baseline,'Double-tap baseline',inputMasks.bomb);
+  const primary=[pointer('down',config.primaryId,config.points.primaryStart),pointer('move',config.primaryId,config.points.primaryMove),
+    {type:'checkpoint',label:'primary-movement-settle',ticks:evidence.budgets.movementSettlingTicks}];
+  const secondary=[pointer('down',config.secondaryId,config.points.secondary),pointer('up',config.secondaryId,config.points.secondary),
+    {type:'checkpoint',label:'single-tap',ticks:1},pointer('down',config.secondaryId,config.points.secondary),pointer('up',config.secondaryId,config.points.secondary),
+    {type:'checkpoint',label:'double-tap-consumer',ticks:evidence.budgets.triggerTicks},pointer('move',config.primaryId,config.points.primaryBombMove),
+    {type:'checkpoint',label:'primary-movement-during-bomb',ticks:evidence.budgets.movementSettlingTicks},
+    {type:'checkpoint',label:'bomb-pulse-drain',ticks:evidence.budgets.pulseDrainTicks}];
+  assert.equal(evidence.touchBatches.length,2);
+  let nextRow=1;
+  for(const [index,expected] of [primary,secondary].entries()){
+    const record=evidence.touchBatches[index],batch=record.batch;
+    assert.deepEqual(record.operations,expected,'Double-tap pointer ownership or checkpoint changed');
+    assert.equal(batch.acknowledged,true);
+    const events=expected.map((operation,operationIndex)=>({...operation,operationIndex})).filter(operation=>operation.type!=='checkpoint');
+    assert.equal(batch.events.length,events.length);
+    for(const [eventIndex,event] of batch.events.entries()){
+      assert.equal(event.acknowledged,true);assert.equal(event.type,events[eventIndex].type);assert.equal(event.id,events[eventIndex].id);
+      assert.equal(event.operationIndex,events[eventIndex].operationIndex);
+      assert.ok(Number.isFinite(event.startedAtMs)&&Number.isFinite(event.completedAtMs)&&event.completedAtMs>=event.startedAtMs);
+      if(eventIndex)assert.ok(event.startedAtMs>=batch.events[eventIndex-1].completedAtMs);
+    }
+    for(const operation of expected.filter(operation=>operation.type==='checkpoint')){
+      const matches=batch.checkpoints.filter(checkpoint=>checkpoint.label===operation.label);assert.equal(matches.length,1);
+      assert.equal(matches[0].samples.length,operation.ticks);
+      for(const [tick,sample] of matches[0].samples.entries()){
+        const row=rows[nextRow++];assert.equal(row?.label,`${operation.label}-tick-${tick+1}`);
+        assert.deepEqual(row.action,sample.action,'Checkpoint consumer differs from the native ledger');
+        assert.deepEqual(row.runtime.position,sample.observation.position,'Checkpoint movement differs from the native ledger');
+      }
+    }
+  }
+  assert.equal(nextRow,rows.length,'Unaccounted native consumers in double-tap ledger');
+  const batches=evidence.touchBatches,group=batches[1].batch;
+  const checkpoint=label=>internalCheckpoint(group,label).samples;
+  const move=internalCheckpoint(batches[0].batch,'primary-movement-settle').samples;
+  const initial=positionOf(rows[0].runtime,'Initial movement');
+  assert.ok(move.some(sample=>{const p=positionOf(sample.observation,'Primary movement');return Math.hypot(p.x-initial.x,p.y-initial.y)>config.movementEpsilon;}),'Primary pointer never moved');
+  assertNoBomb(checkpoint('single-tap')[0].action,baseline,'Single tap',inputMasks.bomb);
+  const [firstDown,firstUp,secondDown,secondUp]=group.events;
+  assert.ok(firstUp.completedAtMs-firstDown.startedAtMs<=gesture.firstTapMaxMs&&secondUp.completedAtMs-secondDown.startedAtMs<=gesture.firstTapMaxMs);
+  assert.ok(secondDown.startedAtMs>=firstUp.completedAtMs&&secondDown.completedAtMs-firstUp.startedAtMs<=gesture.interTapMaxMs,'Double-tap transport exceeded native timing');
+  const after=checkpoint('double-tap-consumer'),during=checkpoint('primary-movement-during-bomb'),drain=checkpoint('bomb-pulse-drain');
+  if(enabled){
+    const trigger=after.findIndex(sample=>sample.action.bomb.triggered&&sample.action.bomb.active&&Boolean(sample.action.consumed.current&inputMasks.bomb));
+    assert.ok(trigger>=0,'Enabled double tap never activated the native Bomb');
+    for(const sample of after.slice(0,trigger))assertNoBomb(sample.action,baseline,'Before double tap trigger',inputMasks.bomb);
+    for(const sample of [...after.slice(trigger),...during,...drain])assert.deepEqual(inventoryOf(sample.action,'One native Bomb'),
+      {bombsRemaining:baseline.bombsRemaining-config.bombCost,bombsUsed:baseline.bombsUsed+1,bombsUsedStage:baseline.bombsUsedStage+1},'Double tap did not consume exactly one native Bomb');
+    const start=positionOf(after.at(-1).observation,'Position before Bomb movement');
+    assert.ok(during.some(sample=>{const p=positionOf(sample.observation,'Movement during Bomb');return sample.action.bomb.active&&Math.hypot(p.x-start.x,p.y-start.y)>config.movementEpsilon;}),'Primary pointer stopped during native Bomb');
+    assert.ok(after.length-trigger-1+during.length+drain.length>=gesture.bombPulseTicks+1);
+    assert.equal(drain.at(-1).action.consumed.current&inputMasks.bomb,0,'Bomb pulse remained held');
+  }else for(const sample of [...after,...during,...drain])assertNoBomb(sample.action,baseline,'Disabled double tap',inputMasks.bomb);
+  const release=evidence.cleanup?.releaseBatch;assert.equal(release?.acknowledged,true,'Pointer release acknowledgement is missing');
+  assert.deepEqual(release.events.map(event=>({type:event.type,id:event.id,acknowledged:event.acknowledged})),
+    [{type:'up',id:config.primaryId,acknowledged:true},{type:'up',id:config.secondaryId,acknowledged:true}]);
+  const cleanup=evidence.controls.filter(row=>row.label==='final-neutral-cleanup');assert.equal(cleanup.length,1);
+  assert.equal(cleanup[0].acknowledgement?.acknowledged,true);
+  assert.deepEqual(cleanup[0].controls,{fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0,touchSensitivity:100});
+}
+
 /**
  * Verify one real launcher-to-player double-tap trial. The launch option is
  * supplied by the caller; this scene never changes Runtime configuration.
@@ -78,6 +156,7 @@ function pointer(type,id,p){return{type,id,x:p.x,y:p.y};}
  */
 export async function runTouchDoubleTapBombScene(io,options={}){
   const evidence={schema:SCHEMA,launchOptions:options.launchOptions?structuredClone(options.launchOptions):null,
+    bombResource:options.bombResource?structuredClone(options.bombResource):null,
     gesture:options.gesture?structuredClone(options.gesture):null,geometry:options.geometry?structuredClone(options.geometry):null,
     budgets:options.budgets?structuredClone(options.budgets):null,inputMasks:options.inputMasks?structuredClone(options.inputMasks):null,
     controls:[],touchBatches:[],samples:[],positionChecks:[],bombObservation:null,cleanup:null};
@@ -85,6 +164,7 @@ export async function runTouchDoubleTapBombScene(io,options={}){
   if(missing.length)return incomplete(`Double-tap Bomb IO is missing ${missing.join(', ')}`,evidence);
   if(!options.inputMasks||!options.launchOptions||!options.gesture||!options.geometry||!options.budgets)
     return incomplete('Double-tap Bomb scene requires launch option, title gesture, geometry, and bounded wait declarations.',evidence);
+  if(!options.bombResource)return incomplete('Declare the native ordinary Bomb resource cost and unit',evidence);
   const config=validateOptions(options);
   evidence.budgets.totalSceneTicks=config.totalBudgetTicks;
   const enabled=options.launchOptions.doubleTapBombEnabled;
@@ -166,7 +246,7 @@ export async function runTouchDoubleTapBombScene(io,options={}){
     await neutralize('neutral-baseline');
     baseline=(await tickForConsumer('initial-native-baseline',options.budgets.baselineTicks)).action;
     baselineInventory=inventoryOf(baseline,'Initial native Bomb baseline');
-    assert.ok(baselineInventory.bombsRemaining>0,'Double-tap Bomb scene needs at least one native Bomb in inventory');
+    if(baselineInventory.bombsRemaining<config.bombCost)throw new SceneIncomplete(`Prepare at least ${config.bombCost} native ${options.bombResource.unit} before the double-tap Bomb scene`);
     assert.equal(baseline.bomb.active,false,'Double-tap Bomb scene requires no active native Bomb at baseline');
     assert.equal(baseline.bomb.triggered,false,'Double-tap Bomb scene requires no pending native Bomb at baseline');
     const beforeMovement=positionOf(evidenceSamples.at(-1).runtime,'Initial native sample');
@@ -235,14 +315,14 @@ export async function runTouchDoubleTapBombScene(io,options={}){
       for(const action of afterDouble.slice(0,triggerIndex))assertNoBomb(action,baselineInventory,
         'Before native double-tap activation',masks.bomb);
       const trigger=afterDouble[triggerIndex];
-      assert.equal(inventoryOf(trigger,'Native Bomb trigger').bombsRemaining,baselineInventory.bombsRemaining-1,
+      assert.equal(inventoryOf(trigger,'Native Bomb trigger').bombsRemaining,baselineInventory.bombsRemaining-config.bombCost,
         'Double-tap did not consume one native Bomb inventory unit');
       assert.equal(inventoryOf(trigger,'Native Bomb trigger').bombsUsedStage,baselineInventory.bombsUsedStage+1,
         'Double-tap did not increment native stage Bomb use exactly once');
       for(const action of afterDouble.slice(triggerIndex)){
         if(action?.complete!==true)continue;
         assert.equal(usedDelta(action),1,'Double-tap caused more than one native Bomb use');
-        assert.equal(inventoryOf(action,'Double-tap consumer').bombsRemaining,baselineInventory.bombsRemaining-1,
+        assert.equal(inventoryOf(action,'Double-tap consumer').bombsRemaining,baselineInventory.bombsRemaining-config.bombCost,
           'Double-tap consumed more than one native Bomb');
         assert.equal(inventoryOf(action,'Double-tap consumer').bombsUsedStage,baselineInventory.bombsUsedStage+1,
           'Double-tap repeated a native stage Bomb use');
@@ -298,7 +378,7 @@ export async function runTouchDoubleTapBombScene(io,options={}){
         const batch=await callIO('final-pointer-release',()=>io.directTouchBatch([pointer('up',config.primaryId,config.points.primaryBombMove),
           pointer('up',config.secondaryId,config.points.secondary)]));
         const expectedIds=new Set([config.primaryId,config.secondaryId]);
-        evidence.cleanup={...(evidence.cleanup??{}),pointerReleased:batch?.acknowledged===true&&batch.events?.length===2&&
+        evidence.cleanup={...(evidence.cleanup??{}),releaseBatch:structuredClone(batch??null),pointerReleased:batch?.acknowledged===true&&batch.events?.length===2&&
           batch.events.every(row=>row?.acknowledged===true&&row.type==='up'&&expectedIds.delete(row.id))&&expectedIds.size===0};
         if(evidence.cleanup.pointerReleased!==true)cleanupErrors.push(new Error('Runtime did not acknowledge release of both scene pointers'));
       }else evidence.cleanup={...(evidence.cleanup??{}),pointerReleased:true};

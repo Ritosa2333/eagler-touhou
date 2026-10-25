@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 import {assessPracticeParameters,createPracticeReplayObservationInput,practiceSnapshotRequest,readPracticeMenuRaw,
   readPracticeSnapshotRaw,runPracticeGameplayStage,syncPracticeIdbfsRaw} from './practice.mjs';
 import {resolveAdaptationAdapter} from './registry.mjs';
+import {assertPracticeLifecycleEvidence,assessRuntimePracticeLifecycleEvidence} from './practice-lifecycle-evidence.mjs';
 import {assessTh08PracticeConsumption,assessTh08PracticeLifecycle,requireTh08PracticeLifecycleComplete,decodeGameplayInitialSnapshot,decodePracticeInitialSnapshot,decodePracticeSnapshot,
   assessTh08PracticeReplayRoundTrip,parseTh08PracticeReplayMetadata,TH08_PRACTICE_FRESH_CONFIG,
   th08ReplayListConfirmReady,th08PracticeFeatureInventory,th08PracticeRuntimeStage,TH08_PRACTICE_SELECTION_CASE} from './titles/th08-practice.mjs';
@@ -63,6 +64,12 @@ function practiceReplayEvidence(){
       stream:{available:true,loaded:true,stage,gameFlags:8,frame:2,inputCursor:4,timingCursor:1,inputBytes:6,timingBytes:2}}};
 }
 
+test('title confirmation readiness has an explicit available bit and preserves old snapshots',()=>{
+  const words=validWords();assert.equal(decodePracticeSnapshot({available:true,words}).state.titleInputReady,undefined);
+  words[19]=2;assert.equal(decodePracticeSnapshot({available:true,words}).state.titleInputReady,false);
+  words[19]=3;assert.equal(decodePracticeSnapshot({available:true,words}).state.titleInputReady,true);
+  words[19]=1;assert.throws(()=>decodePracticeSnapshot({available:true,words}));
+});
 test('th08 PracticeSnapshot decodes independent configured, accepted and consumed owners',()=>{
   const snapshot=decodePracticeSnapshot({available:true,words:validWords()});
   assert.equal(snapshot.schema,'eagler-touhou/th08-practice-snapshot/1');
@@ -238,7 +245,7 @@ test('shared gameplay stage recomputes parameter evidence instead of trusting me
 function th08PracticeMenuIo({waitForGameplay}={}){
   const calls={predicates:0,keys:[]};
   let state={schema:'eagler-touhou/th08-practice-snapshot/1',validMask:8,
-    state:{titleScreen:0,titlePhase:1,titleCursor:0,menu:false,enabled:true,active:false,replayCandidateValid:false},applied:null};
+    state:{titleScreen:0,titlePhase:1,titleCursor:0,titleInputReady:true,menu:false,enabled:true,active:false,replayCandidateValid:false},applied:null};
   const snapshot=()=>({...state,state:{...state.state},applied:state.applied&&{...state.applied}});
   const read=async()=>snapshot();
   const waitUntil=async(label,predicate)=>{
@@ -263,7 +270,7 @@ function th08PracticeMenuIo({waitForGameplay}={}){
     else if(key==='KeyZ'&&state.state.titleScreen===11)
       state={...state,state:{...state.state,active:true},applied:{score:123456}};
   };
-  return{calls,run:()=>resolveAdaptationAdapter('th08','normal').practice.enterMenu({read,waitUntil,press,waitForGameplay})};
+  return{calls,run:()=>resolveAdaptationAdapter('th08','normal').practice.enterMenu({read,waitUntil,press,waitForGameplay,waitForPracticeInput:async()=>({armed:true})})};
 }
 
 test('registered th08 menu awaits the async gameplay operation and returns its Runtime observation',async()=>{
@@ -377,6 +384,53 @@ function validLifecycleEvidence(){
   return{before,retried,practiceTitle,replayMenu,replay,replayTitle,ordinary,fresh:structuredClone(retried),initials,identities,
     ordinaryProgress:{counters:{enemySceneFrame:5}},retryBeforeFrame:400,replayConfig:structuredClone(replay.run),replayStream:{loaded:true,frame:10,inputCursor:20},activeReplayExit:true};
 }
+
+function lifecycleDriver(){
+  const evidence=validLifecycleEvidence();
+  for(const id of Object.values(evidence.identities))id.epoch=1;
+  const locales=[['ja-JP',true],['en-US',true],['zh-CN',true],['en-US',false]].map(([locale,enabled],index)=>({
+    epoch:index+1,locale,enabled,status:'passed',before:{open:false,events:[]},
+    opened:{open:enabled,options:{thpracEnabled:enabled,thpracLocale:locale},events:enabled?[{open:true}]:[]},
+    closed:{open:false,events:enabled?[{open:true},{open:false}]:[]},
+    ...(index===0?{practiceLifecycle:{evidence,status:'observed',complete:true}}:{}),
+  }));
+  const identity={runtime:{packageSha256:'1'.repeat(64)},data:{sha256:'2'.repeat(64)}};
+  const target={game:'th08',variant:'normal',status:'passed',feature:true,identity,postflight:structuredClone(identity),
+    finalErrorAudit:{status:'passed'},locales};
+  target.checks=practiceAdaptationChecks({game:'th08',variant:'normal',productSupported:true,feature:true,locales,finalErrorAudit:target.finalErrorAudit});
+  return{schema:'eagler-touhou/practice-browser/1',targets:[target]};
+}
+
+test('shared practice completion recomputes raw native lifecycle and only claims its own ID',()=>{
+  const driver=lifecycleDriver(),entry=driver.targets[0].checks.find(row=>row.id==='PRACTICE-03');
+  assert.equal(entry.complete,true);
+  assertPracticeLifecycleEvidence(driver,entry,{game:'th08',variant:'normal'});
+  assert.deepEqual(assessRuntimePracticeLifecycleEvidence({driver,entry,product:{game:'th08',variant:'normal'}}),
+    {available:true,valid:true,kind:'native-practice-lifecycle',checks:['PRACTICE-03']});
+  assert.equal(driver.targets[0].checks.find(row=>row.id==='PRACTICE-06').complete,false);
+});
+
+for(const [name,mutate] of [
+  ['missing immutable boundary',t=>delete t.locales[0].practiceLifecycle.evidence.initials.retried],
+  ['stale practice in ordinary start',t=>t.locales[0].practiceLifecycle.evidence.ordinary.state.active=true],
+  ['retry did not rebuild the world',t=>t.locales[0].practiceLifecycle.evidence.retried.applied.enemyFrame=401],
+  ['new application in place of same owner',t=>t.locales[0].practiceLifecycle.evidence.identities.fresh.app=88],
+  ['wrong runtime epoch',t=>{for(const id of Object.values(t.locales[0].practiceLifecycle.evidence.identities))id.epoch=2;}],
+  ['replay never advanced',t=>t.locales[0].practiceLifecycle.evidence.replayStream.inputCursor=0],
+  ['replay ended instead of active exit',t=>t.locales[0].practiceLifecycle.evidence.activeReplayExit=false],
+  ['disabled control missing',t=>t.locales.pop()],
+  ['disabled menu opens',t=>t.locales[3].opened.open=true],
+  ['menu close event absent',t=>t.locales[1].closed.events=[{open:true}]],
+  ['native locale differs',t=>t.locales[2].opened.options.thpracLocale='ja-JP'],
+  ['package changed',t=>t.postflight.runtime.packageSha256='3'.repeat(64)],
+  ['browser errors',t=>t.finalErrorAudit.status='failed'],
+  ['detached claim evidence',t=>{const entry=t.checks.find(row=>row.id==='PRACTICE-03');entry.observation.observation.lifecycleEvidence=structuredClone(t.locales[0].practiceLifecycle.evidence);entry.observation.observation.lifecycleEvidence.activeReplayExit=false;}],
+])test(`shared practice lifecycle rejects ${name} despite stored passing verdicts`,()=>{
+  const driver=lifecycleDriver(),target=driver.targets[0],entry=target.checks.find(row=>row.id==='PRACTICE-03');
+  mutate(target);
+  assert.throws(()=>assertPracticeLifecycleEvidence(driver,entry,{game:'th08',variant:'normal'}));
+  assert.equal(assessRuntimePracticeLifecycleEvidence({driver,entry,product:{game:'th08',variant:'normal'}}).valid,false);
+});
 
 test('same Runtime Practice lifecycle preserves configured/sticky owners while rebuilding actual game resources',()=>{
   assert.equal(assessTh08PracticeLifecycle(validLifecycleEvidence()).status,'observed');

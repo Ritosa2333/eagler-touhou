@@ -4,7 +4,8 @@ const CONSUMED_INPUT_VALID=1<<1;
 const REQUIRED_STATUS_FIELDS=['schema','nextSequence','firstAvailable','count','capacity','samplesStart'];
 const TRACE_FIELDS={
   base:['sequence','boundary','stage'],
-  recording:['pollSequence','liveInput','recordingActive','recordingStage','recordingFrame','recordingInputCursor','recordingPhysicalInput'],
+  recording:['pollSequence','liveInput','recordingActive','recordingStage','recordingFrame','recordingInputCursor','recordingPhysicalInput',
+    'consumerPhase','consumerValidMask','consumerSequence','consumerControlFrame','consumerStage','consumerCurrent','consumerPrevious'],
   playback:['pollSequence','liveInput','playbackLoaded','playbackStage','playbackFrame','playbackInputCursor',
     'playbackCurrent','playbackPrevious','consumerPhase','consumerValidMask','consumerSequence','consumerControlFrame',
     'consumerStage','consumerCurrent','consumerPrevious'],
@@ -105,9 +106,15 @@ export function createReplayRecordingScenes({semantics,stage=0,windowTicks=12}={
     if(!input.operation||!input.release||!mask(input.logicalMask)||!input.anchor?.trim()||!validFinalizer(finalizer)){
       cases.push(blocked(`record-${route}`,`The ${route} declaration or production Replay finalizer is incomplete.`));continue;
     }
+    const consumer=semantics.recording?.consumer;
+    if(!consumer||![-1,0].includes(consumer.frameOffset)||!consumer.source?.trim()||!Number.isInteger(consumer.initialInput)){
+      cases.push(blocked(`record-${route}`,'Declare recording-to-player consumer frame alignment and its production source.'));continue;
+    }
     cases.push({id:`record-${route}`,status:'ready',kind:'recording-input',route,stage,
       press:structuredClone(input.operation),release:structuredClone(input.release),logicalMask:input.logicalMask,
       finalizer:structuredClone(finalizer),
+      consumer:semantics.recording?.consumer?{...structuredClone(semantics.recording.consumer),
+        phase:semantics.nativeTrace?.values?.consumerRunPhase,validBit:semantics.nativeTrace?.values?.consumedInputValidBit}:null,
       anchor:input.anchor,window:{warmupTicks:1,pressedTicks:2,neutralTicks:2,totalTicks:5},
       evidence:['native poll sequence','recorded physical input','Replay recording frame and cursor','independently parsed saved Replay input words']});
   }
@@ -189,7 +196,11 @@ export function assessReplayRecordingInputWindow({samples,scene,rawFrames,expect
   if(!/^[a-f0-9]{64}$/.test(expectedSha256??'')||!rawFrames||rawFrames.sha256!==expectedSha256||
     !Array.isArray(rawFrames?.frames)||!Number.isSafeInteger(rawFrames.stride)||rawFrames.stride<1)
     return{status:'incomplete',reason:'Independent raw Replay input words are missing or do not cover the recorded window.'};
-  const mismatches=[];let previousFrame=null,previousPoll=null;
+  const contract=scene.consumer;
+  if(!contract||![-1,0].includes(contract.frameOffset)||!contract.source?.trim()||!Number.isInteger(contract.phase)||
+    !Number.isInteger(contract.validBit)||contract.validBit<=0||!Number.isInteger(contract.initialInput))
+    return{status:'incomplete',reason:'Recording has no source-owned player-consumer alignment contract.'};
+  const mismatches=[];let previousFrame=null,previousPoll=null,previousConsumer=null,consumedPressed=0,releasedAfterPress=false;
   for(let index=0;index<samples.length;index++){
     const sample=samples[index];
     const recording=sample.recording;
@@ -200,6 +211,19 @@ export function assessReplayRecordingInputWindow({samples,scene,rawFrames,expect
     const raw=rawFrames.frames.find(item=>item.frame===recording.frame);
     if(!Number.isSafeInteger(raw?.buttons))
       return{status:'incomplete',reason:`Independent Replay frame ${recording.frame} is not available.`};
+    const consumer=sample.consumer,consumerFrame=recording.frame+contract.frameOffset;
+    const consumed=rawFrames.frames.find(item=>item.frame===consumerFrame);
+    const preceding=consumerFrame===0?contract.initialInput:rawFrames.frames.find(item=>item.frame===consumerFrame-1)?.buttons;
+    if(!consumer||consumer.phase!==contract.phase||!(consumer.validMask&contract.validBit)||
+      ![consumer.sequence,consumer.controlFrame,consumer.stage,consumer.current,consumer.previous,consumed?.buttons,preceding].every(Number.isSafeInteger))
+      return{status:'incomplete',reason:`Recording trace ${sample.sequence} has no aligned native player-consumer and independent input bytes.`};
+    if(consumer.stage!==scene.stage||consumer.controlFrame!==sample.controlFrame||
+      consumer.current!==consumed.buttons||consumer.previous!==preceding||
+      previousConsumer!==null&&consumer.sequence!==previousConsumer+1)
+      mismatches.push({sequence:sample.sequence,consumer,consumerFrame,expectedCurrent:consumed.buttons,expectedPrevious:preceding});
+    if(consumer.current&scene.logicalMask)consumedPressed++;
+    else if(consumedPressed)releasedAfterPress=true;
+    previousConsumer=consumer.sequence;
     const held=(sample.liveInput&scene.logicalMask)!==0;
     const recordedHeld=(recording.physical&scene.logicalMask)!==0;
     if(sample.stage!==scene.stage||recording.stage!==scene.stage||held!==recordedHeld||recording.physical!==raw.buttons||recording.frame<=0||
@@ -214,10 +238,10 @@ export function assessReplayRecordingInputWindow({samples,scene,rawFrames,expect
   if(mismatches.length)return{status:'failed',reason:'Native polling, Replay recording, and independent raw input words disagree.',mismatches};
   const pressed=samples.filter(sample=>sample.liveInput&scene.logicalMask).length;
   const released=samples.filter(sample=>(sample.liveInput&scene.logicalMask)===0).length;
-  if(pressed<scene.window.pressedTicks||released<scene.window.neutralTicks)
-    return{status:'incomplete',reason:'The finite scene did not capture both the declared press and release windows.',pressed,released};
+  if(pressed<scene.window.pressedTicks||released<scene.window.neutralTicks||consumedPressed<scene.window.pressedTicks||!releasedAfterPress)
+    return{status:'incomplete',reason:'The finite scene did not capture both polled and player-consumed press/release windows.',pressed,released,consumedPressed,releasedAfterPress};
   return{status:'passed',scope:'finite-recording-input-window',completeReplay:false,
-    source:scene.route,logicalMask:scene.logicalMask,samples:samples.length,pressed,released,
+    source:scene.route,logicalMask:scene.logicalMask,samples:samples.length,pressed,released,consumedPressed,releasedAfterPress,
     replaySha256:rawFrames.sha256};
 }
 

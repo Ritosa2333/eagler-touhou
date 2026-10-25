@@ -98,6 +98,8 @@ npm run test:adaptation -- --game=th08 --variant=normal --suite=desktop-input --
 | `source-review` | `sourceReview` | 来源文件、素材与已接纳原版参考的身份核对 |
 | `rooms`、`spectator` | `launcherUrl`，按安装方式提供 `packages` | 所选 MP 的支持人数与通道 |
 
+录制接入同时声明 `replay.recording.consumer` 的原生消费帧偏移和源码依据。计划在启动前列出缺失声明；共享录制判据把设备输入、保存字节与实际玩家消费关联，复用有限窗口核对按下和释放。
+
 多人单独选择模式并使用该模式的本地输入：
 
 ```sh

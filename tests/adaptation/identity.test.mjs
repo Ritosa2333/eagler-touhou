@@ -14,6 +14,9 @@ test('the browser identity follows actual desktop driver flags rather than a gro
   assert.equal(adaptationBrowserMode(task('--background-only')),'headed');
   assert.equal(adaptationBrowserMode(task()),'headed');
   assert.equal(adaptationBrowserMode({group:'desktop-background',task:{args:['tools/ports/runtime-browser.mjs']}}),'headless');
+  assert.equal(adaptationBrowserMode({task:{args:['tools/ports/offline-runtime-browser.mjs','--input-lifecycle-only']}}),'headed');
+  assert.equal(adaptationBrowserMode({task:{args:['tools/ports/music-browser.mjs','--check=AUDIO-04']}}),'headed');
+  assert.equal(adaptationBrowserMode({task:{args:['tools/ports/music-browser.mjs','--check=MIDI-03']}}),'headed');
   assert.throws(()=>adaptationBrowserMode(task('--background-only','--touch-only')),/one|combine|exclusive|mode/i);
   assert.equal(adaptationBrowserImplementation(task('--input-only')),'node-playwright');
   assert.equal(adaptationBrowserImplementation({task:{args:['tools/ports/diagnostic-browser.mjs']}}),'python-playwright');
@@ -52,13 +55,14 @@ test('diagnostic reuse follows selected bytes and rejects changed native sources
   for(const path of ['font.ttf','data.dat','inputs/demo0.rpy','daily.rpy','unused.rpy','runtime/game.wasm',
     'golden/manifest.json','lab/style.css','native.cpp','corpus.json'])await put(path,path);
   for(const path of ['lab/server.mjs','quick-gate.mjs','daily-gate.mjs'])await put(path,'export const version=1;');
+  await put('shared/suite.mjs',"export {version} from './control.mjs';");await put('shared/control.mjs','export const version=1;');
   for(const path of ['lab/verify.py','quick.py','daily.py'])await put(path,'# capture source\n');
   await put('build.json',JSON.stringify({diagnostic:true,sourceFiles:{'native.cpp':(await fileIdentity(resolve(directory,'native.cpp'))).sha256}}));
   const profile={serverScript:local('lab/server.mjs'),browserVerifier:local('lab/verify.py'),quickCapture:local('quick.py'),
     dailyCapture:local('daily.py'),quickGate:local('quick-gate.mjs'),dailyGate:local('daily-gate.mjs'),
     buildReceipt:local('build.json'),sourceRoot:local('.'),runtimeDirectory:local('runtime'),
     presentationDirectory:local('lab'),goldenManifest:local('golden/manifest.json'),quickInputs:['demo0.rpy'],
-    dailyFixtures:[{id:'sample',replayKey:'sample',stage:0}],decisionInputs:{quick:[local('corpus.json')]}};
+    dailyFixtures:[{id:'sample',replayKey:'sample',stage:0}],decisionInputs:{quick:[local('corpus.json'),local('shared/suite.mjs')]}};
   const manifestPath=resolve(directory,'diagnostics.json');
   await put('diagnostics.json',JSON.stringify({schema:'eagler-touhou/diagnostic-inputs/1',products:{th08:{normal:{
     font:resolve(directory,'font.ttf'),data:resolve(directory,'data.dat'),inputRoot:resolve(directory,'inputs'),
@@ -69,12 +73,28 @@ test('diagnostic reuse follows selected bytes and rejects changed native sources
   await put('unused.rpy','unselected bytes changed');
   assert.equal(identityDigest(await read(['presentation'])),presentation);
   assert.equal(identityDigest(await read(['quick'])),quick);
+  const originalGolden=(await read(['quick'])).golden;
+  await put('golden/nested/unregistered-trace.json','reference trace');
+  const addedGolden=(await read(['quick'])).golden;
+  assert.notDeepEqual(addedGolden,originalGolden,'an unlisted reference file must invalidate the complete golden inventory');
+  await put('golden/nested/unregistered-trace.json','changed reference trace');
+  assert.notDeepEqual((await read(['quick'])).golden,addedGolden,'reference bytes must remain unchanged');
+  await rm(resolve(directory,'golden/nested/unregistered-trace.json'));
+  assert.deepEqual((await read(['quick'])).golden,originalGolden,'removing the added file restores the original inventory');
+  await rm(resolve(directory,'golden/manifest.json'));
+  assert.notDeepEqual((await read(['quick'])).golden,originalGolden,'deleting an accepted reference must invalidate its inventory');
+  await put('golden/manifest.json','golden/manifest.json');
+  assert.equal(identityDigest(await read(['quick'])),quick);
+  assert.equal(identityDigest(await read(['presentation'])),presentation,'reference checks stay scoped to Replay lanes');
   await put('inputs/demo0.rpy','selected bytes changed');
   assert.equal(identityDigest(await read(['presentation'])),presentation);
   assert.notEqual(identityDigest(await read(['quick'])),quick);
   const beforeCorpus=identityDigest(await read(['quick']));
   await put('corpus.json','new fixture selection or Replay hash');
   assert.notEqual(identityDigest(await read(['quick'])),beforeCorpus);
+  assert.equal(identityDigest(await read(['presentation'])),presentation);
+  const beforeShared=identityDigest(await read(['quick']));await put('shared/control.mjs','export const version=2;');
+  assert.notEqual(identityDigest(await read(['quick'])),beforeShared,'transitive decision helpers invalidate Replay evidence');
   assert.equal(identityDigest(await read(['presentation'])),presentation);
   await put('runtime/game.wasm','new build bytes');
   assert.notEqual(identityDigest(await read(['presentation'])),presentation);

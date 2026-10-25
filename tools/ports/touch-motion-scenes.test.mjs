@@ -1245,3 +1245,9 @@ test('missing adapter interface is rejected with evidence before dispatch', asyn
   assert.equal(reads, 0, 'adapter shape is validated before any trace or game interaction');
 });
 
+test('Pointer command recording preserves missing-interface validation before any IO',async()=>{
+  let calls=0;
+  await assert.rejects(runTouchMotionSceneGroup({readTrace:async()=>{calls++;},controls:async()=>{calls++;},
+    key:async()=>{calls++;},wait:async()=>{calls++;}}, {mode:1}),/requires pointer\(\)/);
+  assert.equal(calls,0);
+});

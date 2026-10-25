@@ -4,10 +4,10 @@
     {
       "id": "display-scenes",
       "label": "显示场景集",
-      "checks": ["DISPLAY-02", "DISPLAY-04", "DISPLAY-05", "DISPLAY-06", "DISPLAY-08"],
+      "checks": ["RUNTIME-06", "DISPLAY-02", "DISPLAY-04", "DISPLAY-05", "DISPLAY-06", "DISPLAY-08"],
       "method": "presentation.md#人工显示审查表",
-      "judgement": "集中查看连续运动、出生销毁、瞬移与暂停素材，在实际高刷屏比较限帧开关，判断抖动、拖线、残影及菜单观感。",
-      "preparation": "机器准备同一构建的对象与边界素材、自动结果和帧范围。实体屏幕记录当前刷新设置。"
+      "judgement": "集中对照判定点显示与碰撞区域。高刷部分查看连续运动、出生销毁、瞬移与暂停素材，在实际屏幕比较限帧开关，判断抖动、拖线、残影及菜单观感。",
+      "preparation": "机器准备同一构建的判定点开关与低速对照、对象与边界素材、自动结果和帧范围。高刷素材附当前实体刷新设置。"
     },
     {
       "id": "text-presentation",

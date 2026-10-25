@@ -1,5 +1,11 @@
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
+import {assertReplayStateFields} from '../../../../common/testkit/replay-verifier/state-fields.mjs';
+
+// BrowserExports.cpp browser_trace: u32 counters, two Float32 coordinates and 228 raw bytes.
+const stateFields={uint32:['frame','stage','gameFrames','controlFrames','flags','rng','rngCalls','playerState','keys'],
+  vectors:{player:2},byteArrays:{numbers:228}};
+const validateRow=row=>assertReplayStateFields(row,stateFields);
 
 const observableNumbers = [
   ...Array.from({length: 72}, (_, index) => index).filter(index => ![25, 26, 27, 42, 43].includes(index)),
@@ -27,6 +33,7 @@ function comparableFlags(row) {
 }
 
 function ticksFromRows(rows, digestCanonicalJson) {
+  rows.forEach(validateRow);
   return rows.map(row => { const flags = comparableFlags(row); return ({
     replaySampleIndex: row.frame, clockDisposition: 'advanced', appliedInput: row.keys,
     clocks: {replayFrame: row.frame, gameFrames: row.gameFrames},
@@ -52,6 +59,7 @@ function contiguousStages(rows) {
 function gameplayRows(rows) {
   let stage = null, gameFrames = null;
   return rows.filter(row => {
+    validateRow(row);
     const advanced = row.stage !== stage || row.gameFrames !== gameFrames;
     stage = row.stage; gameFrames = row.gameFrames;
     return advanced;
@@ -117,6 +125,7 @@ export async function* recordsFromLongJsonLines({fixture, rows, provider, identi
   let sequence = 0, logicalTick = 0, tickCount = 0, segmentCount = 0, stage = null, segmentId = null;
   let previousRawStage = null, previousGameFrames = null;
   for await (const row of rows) {
+    validateRow(row);
     const advanced = row.stage !== previousRawStage || row.gameFrames !== previousGameFrames;
     previousRawStage = row.stage; previousGameFrames = row.gameFrames;
     if (!advanced) continue;

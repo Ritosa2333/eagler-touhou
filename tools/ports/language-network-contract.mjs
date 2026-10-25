@@ -33,6 +33,17 @@ export function resolveLanguageRuntimeSource({browserDiagnostics,runtimeGroup,pr
 export function classifyLanguageBrowserEvents(events,{responses=[],runtimeSource=null,fontPaths=[],classifyDiagnostic}={}){
   const expected=[],blocking=[];
   for(const event of events){
+    const controlledAbort=event.type==='requestfailed'&&event.error==='net::ERR_ABORTED'&&responses.some(response=>
+      response.url===event.url&&response.status===200&&response.contentIdentity==='passed'&&response.fromServiceWorker===false&&
+      response.expected?.kind==='controlled-resource-response'&&response.expected?.purpose==='language-corrupt-archive'&&
+      response.expected.status===200&&Number.isSafeInteger(response.expected.bytes)&&response.expected.bytes>0&&
+      /^[a-f0-9]{64}$/.test(response.expected.sha256??'')&&
+      response.semanticReceipt?.kind==='controlled-resource-response'&&response.semanticReceipt?.purpose==='language-corrupt-archive'&&
+      response.semanticReceipt?.bodyConsumption==='complete'&&
+      response.actual?.bytes===response.expected.bytes&&response.actual?.sha256===response.expected.sha256&&
+      response.semanticReceipt.bytes===response.actual.bytes&&response.semanticReceipt.sha256===response.actual.sha256&&
+      response.transport?.event==='loadingFailed'&&response.transport.error==='net::ERR_ABORTED'&&response.transport.canceled===true);
+    if(controlledAbort){expected.push(event);continue;}
     if(event.type==='console'&&runtimeSource&&event.location?.url===runtimeSource&&typeof classifyDiagnostic==='function'){
       let diagnostic=null;
       try{diagnostic=classifyDiagnostic({text:event.text,fontPaths});}catch{}

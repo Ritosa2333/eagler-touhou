@@ -4,11 +4,14 @@
 #include "PracticeRsqrtTables.hpp"
 #include <cmath>
 #include <initializer_list>
+#include <algorithm>
+#include <iterator>
 
 namespace th08 {
 namespace {
 GraphicsArithmetic arithmetic_path=GraphicsArithmetic::Simd;
 bool practice_rsqrt_enabled=false;char practice_rsqrt_cpu='i';
+double practice_normalization[12]{};
 float from_bits(u32 bits) { float value; std::memcpy(&value,&bits,4); return value; }
 u32 to_bits(float value) { u32 bits; std::memcpy(&bits,&value,4); return bits; }
 void rotation_sine_cosine(float angle, float& sin, float& cos) {
@@ -58,6 +61,7 @@ Extended negative_dot(const Vec3& a, const Vec3& b) {
 
 void GraphicsMath::arithmetic(GraphicsArithmetic path) { arithmetic_path=path; }
 void GraphicsMath::practice_rsqrt(bool enabled,char cpu){practice_rsqrt_enabled=enabled;practice_rsqrt_cpu=cpu;if(enabled)PracticeRsqrtTables::initialize();}
+void GraphicsMath::practice_normalization_observation(double* output){std::copy(std::begin(practice_normalization),std::end(practice_normalization),output);}
 
 void GraphicsMath::multiply(Matrix4& output, const Matrix4& first, const Matrix4& second) {
     // D3DX's initialized scalar dispatch (0x486fd6) sums even and odd
@@ -101,6 +105,10 @@ void GraphicsMath::normalize(Vec3& output, const Vec3& input) {
         const float product=(square*seed)*seed;
         const float scale=(.5f*seed)*(3.0f-product);
         output={scale*v.x,scale*v.y,scale*v.z};
+        ++practice_normalization[0];practice_normalization[1]=practice_rsqrt_enabled;practice_normalization[2]=practice_rsqrt_cpu;
+        practice_normalization[3]=to_bits(square);practice_normalization[4]=to_bits(seed);
+        practice_normalization[5]=to_bits(v.x);practice_normalization[6]=to_bits(v.y);practice_normalization[7]=to_bits(v.z);
+        practice_normalization[8]=to_bits(output.x);practice_normalization[9]=to_bits(output.y);practice_normalization[10]=to_bits(output.z);practice_normalization[11]=to_bits(scale);
         return;
     }
     const auto extended_square=number(v.x)*number(v.x)+number(v.y)*number(v.y)+number(v.z)*number(v.z);

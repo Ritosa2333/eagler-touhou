@@ -6,6 +6,8 @@ Replay Verifier 按每个完整模拟 tick 比较标准化的权威状态。comm
 
 首差异同时列出分段比较行号 `logicalTick`、本作原始采样号 `replaySampleIndex` 与 `clocks`。暂停、对话等经过过滤的原始帧继续保留自己的编号；诊断窗口按原始采样号和本作时钟定位。
 
+套件可用 `methodControls: true` 从本作实际参考提供器读取前三个 tick，集中验证固定第二帧的输入改动、每个必需状态摘要、所有已提供的时钟与标量字段、丢帧、重复帧和采样号错位。相同前缀保持 `INCOMPLETE`，每个反例保存实际首差异；报告中的窗口带 Replay 身份。该方法检查复用已有适配器，作品无需另写反例驱动。th08 Quick／Daily 默认执行它；全套比较与自然终点仍按完整样本独立验收。
+
 ## 比较两份轨迹
 
 轨迹为 JSON Lines。运行比较命令：
@@ -24,6 +26,8 @@ node common/testkit/replay-verifier/cli.mjs compare \
 | 文件 | 用途 |
 | --- | --- |
 | `adapter.mjs` | 分段生命周期封装及兼容的 JSON 摘要 |
+| `state-fields.mjs` | 按作品声明核对原始整数、坐标与固定字节块，合格状态再进入摘要 |
+| `method-controls.mjs` | 用真实参考窗口检查输入、状态、时钟、漏帧、重复帧与错位的首差定位 |
 | `capture-file.mjs`、`golden-files.mjs`、`file-suite.mjs` | th11/th15 文件提供器采集和金标套件 |
 | `join-traces.mjs` | 合并分段轨迹并保留原始 tick |
 | `fetch-fixtures.mjs` | 下载带 SHA-256 校验值的公开样本 |
@@ -32,7 +36,7 @@ node common/testkit/replay-verifier/cli.mjs compare \
 运行本工具测试：
 
 ```sh
-node --test common/testkit/replay-verifier/replay-verifier.test.mjs common/testkit/replay-verifier/capture-file.test.mjs
+node --test common/testkit/replay-verifier/replay-verifier.test.mjs common/testkit/replay-verifier/suite.test.mjs common/testkit/replay-verifier/capture-file.test.mjs
 ```
 
 下一步：[Windows Present 采集器](windows-present-observer/README.md) 或[公共开发入口](../../../docs/README.md)。

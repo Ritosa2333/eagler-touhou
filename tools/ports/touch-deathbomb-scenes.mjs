@@ -120,6 +120,110 @@ function requireActions(value,label){
 function rejected(result){return result===false||result?.accepted===false||result?.acknowledged===false||result?.ok===false;}
 function delta(a,b){return Math.hypot(b.x-a.x,b.y-a.y);}
 
+/** Re-evaluate the saved native consumer ledger without using its stored verdict. */
+export function assertTouchDeathbombEvidence(evidence,{contract=evidence?.contract}={}){
+  assert.equal(evidence?.schema,SCHEMA);
+  assert.deepEqual(evidence.contract,contract,'Deathbomb semantics differ from the registered title');
+  const budgets=evidence.budgets,{states,geometry}=validateContract(contract,budgets);
+  const rows=evidence.samples;
+  assert.ok(Array.isArray(rows)&&rows.length>3&&rows.length<=MAX_SCENE_TICKS,'Deathbomb native ledger is missing or unbounded');
+  const member=(row,label)=>{
+    assert.ok(row&&rows.filter(value=>value.consumerSequence===row.consumerSequence).length===1,`${label}: missing native ledger row`);
+    const actual=rows.find(value=>value.consumerSequence===row.consumerSequence);
+    assert.deepEqual(actual,row,`${label}: detached native observation`);return actual;
+  };
+  const named=label=>{const matches=rows.filter(row=>row.label===label);assert.equal(matches.length,1,`Missing or duplicate ${label}`);return matches[0];};
+  let prior=null;
+  for(const row of rows){
+    assert.equal(row.actions.sequence,row.consumerSequence);
+    assert.ok(Number.isSafeInteger(row.consumerSequence)&&row.consumerSequence>0);
+    assert.ok([row.position.x,row.position.y].every(Number.isFinite));
+    if(prior){assert.equal(row.consumerSequence,(prior.consumerSequence+1)>>>0,'Deathbomb consumer skipped or repeated');assert.equal(row.actions.stage,prior.actions.stage);}
+    assert.equal(row.fixture.enabled,true);assert.equal(row.fixture.writeLocked,true);
+    const collisionHere=row.collision.source===1&&row.collision.result===1&&row.collision.sequence===1&&
+      row.collision.consumerSequence===row.actions.sequence&&row.collision.beforeLife===row.actions.lifeState&&
+      row.collision.afterLife===row.life.state&&row.actions.lifeState===states.alive&&row.life.state===states.deathWindow;
+    assert.ok(row.actions.lifeState===row.life.state||collisionHere,'Native life owners disagree');
+    assert.equal(row.actions.inventory.bombsRemaining,row.inventory.bombs);assert.equal(row.actions.inventory.bombsUsed,row.inventory.bombsUsed);
+    for(const field of ['active','triggered','type'])assert.equal(row.actions.bomb[field],row.bomb[field]);
+    prior=row;
+  }
+  const initial=named('initial-native-baseline'),inventory=initial.inventory;
+  assert.equal(initial,rows[0]);assert.equal(initial.request.sequence,0);assert.equal(initial.request.status,0);
+  assert.equal(initial.collision.sequence,0);assert.equal(initial.collision.source,0);
+  assert.equal(initial.projectile.state,0);assert.equal(initial.projectile.liveCount,0);
+  assert.ok(inventory.bombs>=contract.bombCost&&inventory.lives>=1);
+  assert.equal(evidence.hitRequest?.accepted,true);
+  const pre=evidence.movement.initial;assert.equal(pre.length,budgets.movementSettleTicks);
+  let before=rows[rows.indexOf(member(pre[0],'calibration'))-1].position,maxDelta=0,settled=0;
+  const calibrationStart={...before};
+  for(const [index,row] of pre.entries()){assert.deepEqual(row,named(`pre-hit-movement-${index+1}`));member(row,'calibration');assert.equal(row.life.state,states.alive);
+    const amount=delta(before,row.position);maxDelta=Math.max(maxDelta,amount);settled=amount<=budgets.movementEpsilon?settled+1:0;before=row.position;}
+  assert.ok(maxDelta>budgets.movementEpsilon&&delta(calibrationStart,before)>budgets.movementEpsilon&&settled>=2,'Pre-hit native movement was not calibrated and settled');
+  const collision=member(evidence.collision,'collision');
+  assert.equal(collision.collision.source,1);assert.equal(collision.collision.sequence,1);assert.equal(collision.collision.result,1);
+  assert.equal(collision.collision.consumerSequence,collision.consumerSequence);
+  assert.equal(collision.collision.beforeLife,states.alive);assert.equal(collision.collision.afterLife,states.deathWindow);
+  assert.equal(collision.life.state,states.deathWindow);assert.ok(collision.life.remainingTicks>0);
+  assert.equal(collision.request.sequence,1);assert.equal(collision.request.status,1);assert.equal(collision.projectile.state,2);
+  assert.ok(collision.projectile.liveCount===0||collision.projectile.liveCount===1&&contract.retiringProjectileStates.includes(collision.projectile.nativeState));
+  const request=member(evidence.requestBoundary,'request boundary'),window=member(evidence.windowBoundary,'consumer boundary');
+  assert.ok(request.consumerSequence>=collision.consumerSequence&&request.consumerSequence-collision.consumerSequence<=budgets.deathbombWindowTicks);
+  assert.equal(window.consumerSequence-request.consumerSequence,contract.consumerLatencyTicks);
+  assert.ok(['last-window','late'].includes(evidence.timing));assert.ok(['keyboard','touch'].includes(evidence.source));
+  assert.equal(request.life.remainingTicks,evidence.timing==='last-window'?1+contract.consumerLatencyTicks:0);
+  assert.equal(request.life.deathbomb,evidence.timing==='last-window');
+  assert.equal(window.life.remainingTicks,evidence.timing==='last-window'?1:0);
+  let remaining=collision.life.remainingTicks;
+  for(const row of rows.filter(row=>row.consumerSequence>collision.consumerSequence&&row.consumerSequence<=window.consumerSequence)){
+    assert.equal(row.life.state,states.deathWindow);assert.equal(row.life.remainingTicks,Math.max(0,remaining-1),'Native Deathbomb window skipped or grew');remaining=row.life.remainingTicks;
+  }
+  for(const row of rows.filter(row=>row.consumerSequence>request.consumerSequence&&row.consumerSequence<=window.consumerSequence)){
+    assert.equal(row.actions.current&contract.inputMasks.bomb,0,'Bomb consumed before the declared input boundary');assert.equal(row.inventory.bombsUsed,inventory.bombsUsed);
+  }
+  const consumed=named(`${evidence.timing}-bomb-input-consumer`);
+  assert.equal(consumed.consumerSequence,window.consumerSequence+1);assert.ok(consumed.actions.current&contract.inputMasks.bomb);
+  const cost=Math.min(contract.bombCost,inventory.bombs);
+  if(evidence.timing==='last-window'){
+    assert.equal(consumed.life.state,states.bombRecovery);assert.equal(consumed.bomb.active,true);assert.equal(consumed.bomb.triggered,true);
+    assert.ok(contract.deathbombTypes.includes(consumed.bomb.type));assert.equal(consumed.bomb.consumed,cost);
+    for(const row of rows.filter(row=>row.consumerSequence>=consumed.consumerSequence)){
+      assert.equal(row.inventory.bombs,inventory.bombs-cost);assert.equal(row.inventory.bombsUsed,inventory.bombsUsed+1);
+      assert.equal(row.inventory.regularBombs,inventory.regularBombs);assert.equal(row.inventory.lives,inventory.lives);assert.equal(row.inventory.deaths,inventory.deaths);
+    }
+  }else{
+    assert.equal(consumed.life.state,states.deathWindow);assert.equal(consumed.inventory.deaths,inventory.deaths+1);
+    const recovery=member(evidence.recovery,'natural recovery');assert.ok(states.movementAllowed.includes(recovery.life.state));
+    assert.equal(recovery.inventory.lives,inventory.lives-1);assert.equal(recovery.inventory.deaths,inventory.deaths+1);
+    for(const row of rows.filter(row=>row.consumerSequence>=consumed.consumerSequence)){
+      assert.equal(row.bomb.active,false,'Late Bomb activated after the window');assert.equal(row.bomb.triggered,false,'Late Bomb trigger was cached');
+      assert.equal(row.inventory.bombs,inventory.bombs);assert.equal(row.inventory.bombsUsed,inventory.bombsUsed);
+    }
+  }
+  const respawn=contract.respawnPositionRule==='initial-player-position'?initial.position:contract.respawnPosition;
+  for(const row of rows.filter(row=>row.consumerSequence>collision.consumerSequence&&states.movementBlocked.includes(row.life.state))){
+    assert.ok(delta(row.life.state===states.respawning?respawn:collision.position,row.position)<=budgets.movementEpsilon,'Blocked life-state moved the player');
+  }
+  const recovered=evidence.movement.recovered;assert.equal(recovered.length,budgets.movementSettleTicks);
+  before=named('post-recovery-input-owner-sample').position;const recoveryStart={...before};
+  for(const [index,row] of recovered.entries()){assert.deepEqual(row,named(`recovered-movement-${index+1}`));member(row,'recovered movement');assert.ok(states.movementAllowed.includes(row.life.state));
+    assert.ok(delta(before,row.position)<=maxDelta+budgets.movementEpsilon,'Recovery exceeded the measured movement envelope');before=row.position;}
+  assert.ok(delta(recoveryStart,before)>budgets.movementEpsilon,'Held movement did not resume');
+  assert.equal(rows.at(-1).projectile.liveCount,0,'Real projectile did not retire');
+  const accepted=result=>!rejected(result)&&(result?.acknowledged===true||result?.accepted===true||result?.ok===true);
+  const expectedTouch=[['down',geometry.start],['move',geometry.nudge],['move',geometry.blockedMove],['move',geometry.recoveryMove]];
+  assert.equal(evidence.touch.length,expectedTouch.length,'Held movement pointer was released or replaced during the trial');
+  for(const [index,[type,point]] of expectedTouch.entries()){
+    const actual=evidence.touch[index];assert.deepEqual({type:actual.type,id:actual.id,point:actual.point},{type,id:geometry.pointerId,point});
+    assert.ok(accepted(actual.result),'Held movement input was not acknowledged');
+  }
+  assert.ok(evidence.controls.length&&evidence.controls.every(row=>accepted(row.result)&&row.payload.fireEnabled===false));
+  if(evidence.source==='keyboard')for(const down of [true,false])assert.equal(evidence.keys.filter(row=>row.code==='KeyX'&&row.down===down&&!rejected(row.result)).length,1);
+  else{assert.equal(evidence.bombEvents.length,1);assert.equal(evidence.bombEvents[0].pulseTicks,contract.pulseTicks);assert.ok(!rejected(evidence.bombEvents[0].result));
+    assert.ok(evidence.controls.some(row=>row.label==='touch-Bomb-pulse'&&row.payload.bombSerial===evidence.bombEvents[0].serial));}
+  assert.ok(evidence.cleanup.some(row=>row.label==='movement-pointer-up')&&evidence.cleanup.some(row=>row.label==='neutral-controls')&&evidence.cleanup.every(row=>row.ok&&accepted(row.result)),'Deathbomb input owners were not released');
+}
+
 /**
  * Run one bounded real-input Deathbomb trial in the already-running Runtime.
  * The title supplies its state meanings, native bomb costs/types, input masks,

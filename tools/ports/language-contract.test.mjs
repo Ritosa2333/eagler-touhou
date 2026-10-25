@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {assessLanguageScene} from './language-contract.mjs';
+import {assessLanguageScene,assessMessageTextRasters,planLanguageScenes} from './language-contract.mjs';
 const hex=text=>Buffer.from(text).toString('hex');
 const profile={samples:[{key:'start',operation:'string-by-id'},{key:'replay',operation:'string-by-id'}]};
 const trace=(values=['Start','Replay'])=>({schema:'eagler-touhou/language-trace/1',enabled:true,eventCapacity:256,
@@ -11,6 +11,39 @@ const trace=(values=['Start','Replay'])=>({schema:'eagler-touhou/language-trace/
     {kind:'present',phase:'runtime',scene:1,first:5,last:5,count:1,a:1,b:1},
   ]});
 const expected={entries:[{key:'start',value:'Start',hasTranslation:true},{key:'replay',value:'Replay',hasTranslation:true}]};
+
+test('selected language checks keep their independent baseline and omit unrelated cold launches',()=>{
+  const plan=checks=>planLanguageScenes({checks,languages:['en','zh']});
+  assert.deepEqual(plan(['LANG-01']).scenes.map(s=>s.id),['japanese-offline']);assert.equal(plan(['LANG-01']).consumers,true);
+  assert.deepEqual(plan(['LANG-04']).scenes.map(s=>s.id),['japanese-offline','network-failure','corrupt-archive']);assert.equal(plan(['LANG-04']).consumers,false);
+  assert.deepEqual(plan(['LANG-02','LANG-06']).scenes.map(s=>s.id),['japanese-offline','translated-en','translated-zh','partial-key']);
+  assert.equal(plan(['LANG-05']).consumers,true);assert.equal(plan().scenes.length,6);
+  assert.throws(()=>plan(['LANG-99']));assert.throws(()=>plan([]));
+});
+
+function messageTrace(){return{schema:'eagler-touhou/language-trace/1',enabled:true,droppedEvents:0,events:[
+  {kind:'glyph',phase:'runtime',scene:2,a:15,b:400,c:0x3042,d:0x3042,flags:33,source:'msgothic',first:3,last:3},
+  {kind:'raster',phase:'runtime',scene:2,a:15,b:400,encoding:'cp932',textHex:'82a0',first:4,last:4},
+  {kind:'present',phase:'runtime',scene:2,count:1,a:1,b:1,first:5,last:5},
+]};}
+const messageExpected={entry:0,rows:[{offset:12,time:0,opcode:16,textHex:'82a0'}]};
+test('loaded MSG text proves original glyphs and present without inventing a localization lookup',()=>{
+  const value=assessMessageTextRasters({trace:messageTrace(),expected:messageExpected,scene:2,after:1});assert.equal(value.status,'observed');assert.equal(value.rows[0].text,'あ');
+});
+for(const [name,mutate]of Object.entries({
+  'missing real raster':t=>t.events=t.events.filter(e=>e.kind!=='raster'),
+  'missing glyph':t=>t.events=t.events.filter(e=>e.kind!=='glyph'),
+  'missing present':t=>t.events=t.events.filter(e=>e.kind!=='present'),
+  'wrong loaded text':t=>t.events[1].textHex='82a2',
+  'wrong scene':t=>t.events[1].scene=3,
+  'preparation glyph':t=>t.events[0].phase='prepare',
+  'prior-only present':t=>{t.events[2].first=1;t.events[2].last=2;},
+}))test(`original MSG proof rejects ${name}`,()=>{const trace=messageTrace();mutate(trace);assert.equal(assessMessageTextRasters({trace,expected:messageExpected,scene:2,after:1}).status,'incomplete');});
+test('original MSG proof rejects stale windows, overflow and substituted glyphs',()=>{
+  assert.equal(assessMessageTextRasters({trace:messageTrace(),expected:messageExpected,scene:2,after:6}).status,'incomplete');
+  const overflow=messageTrace();overflow.droppedEvents=1;assert.throws(()=>assessMessageTextRasters({trace:overflow,expected:messageExpected,scene:2}));
+  const notdef=messageTrace();Object.assign(notdef.events[0],{flags:2,d:-1});assert.throws(()=>assessMessageTextRasters({trace:notdef,expected:messageExpected,scene:2}));
+});
 
 test('translated and missing-key values use independent pack and cold-baseline evidence',()=>{
   assert.equal(assessLanguageScene({trace:trace(),profile,expected}).status,'observed');

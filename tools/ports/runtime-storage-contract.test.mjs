@@ -3,11 +3,23 @@ import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import test from 'node:test';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
-import {deriveReplayStorageLocations,parseReplayStoragePolicy,readRuntimeReplayApis,readRuntimeStorageMount,runtimeReplayFilePath,validateReplayInspection} from './runtime-storage-contract.mjs';
+import {deriveReplayStorageLocations,parseReplayStoragePolicy,readRuntimeReplayApis,readRuntimeStorageMount,readRuntimeUserFileBoundary,runtimeReplayFilePath,validateReplayInspection} from './runtime-storage-contract.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const policySource=await readFile(resolve(root,'launcher/src/launcher/replay-storage-policy.mts'),'utf8');
 const policy=parseReplayStoragePolicy(policySource);
+test('native user-file reader copies bytes and canonical mount identity without invoking game logic',t=>{
+  const previous=globalThis.location;t.after(()=>{delete globalThis.__storageBoundaryFixture;if(previous===undefined)delete globalThis.location;else globalThis.location=previous;});
+  globalThis.location={href:'https://fixture/runtime?runtimeEpoch=3'};
+  const node={mode:1,mount:{mountpoint:'/save'}},files=new Map([['/save/config',node]]);
+  globalThis.__storageBoundaryFixture={app:12,Module:{FS:{getPath:()=>'/save/config',lookupPath:path=>{if(!files.has(path))throw{errno:44};return{node:files.get(path)};},isFile:mode=>mode===1,readFile:()=>Uint8Array.of(1,2)}}};
+  const args={runtime:{global:'__storageBoundaryFixture',module:'Module',app:'app'},root:'/save',paths:['config']};
+  const result=readRuntimeUserFileBoundary(args);assert.deepEqual(result.files,[{path:'config',absolutePath:'/save/config',resolvedPath:'/save/config',mountpoint:'/save',bytes:[1,2]}]);
+  assert.equal(result.document.epoch,3);assert.equal(result.outside.exists,false);
+  files.set('/save/../outside-offline-acceptance.dat',node);assert.equal(readRuntimeUserFileBoundary(args).outside.exists,true);
+  node.mode=2;assert.throws(()=>readRuntimeUserFileBoundary(args),/regular file/);
+  assert.throws(()=>readRuntimeUserFileBoundary({...args,paths:['../config']}),/relative/);
+});
 
 test('normal and multiplayer database paths are derived from the production policy and product root',()=>{
   const th08=deriveReplayStorageLocations({game:'th08',product:PRODUCT_GAMES.th08,policy});

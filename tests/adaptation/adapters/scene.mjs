@@ -100,6 +100,7 @@ function assertControlledSceneReceipt(receipt){
     throw Error('Controlled input world has not withheld an original ECL timeline update');
   return receipt;
 }
+export {assertControlledSceneReceipt as assertControlledSceneOwner};
 
 function assertController(receipt){
   const expected=receipt.game&&receipt.variant?resolveAdaptationAdapter(receipt.game,receipt.variant)?.controlledScene?.controller:null;

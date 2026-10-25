@@ -28,6 +28,24 @@ test('shared normal entry waits on native readiness and bounds confirmation inpu
   assert.equal(flow.needsControlWarmup,false);
 });
 
+test('th08 confirms only its three native menu gates and waits through gameplay loading',async()=>{
+  const flow=resolveTitleFlow({game:'th08',variant:'normal'}),pressed=[];
+  let state={status:{supervisorActive:1,active:1,loading:0,titleScreen:0,titlePhase:1,titleInputReady:true,titleStateTimer2:10,cursor:0}};
+  const result=await flow.enterGameplay({observe:async()=>state,press:async code=>{
+    pressed.push(code);assert.equal(code,'KeyZ');
+    if(state.status.titleScreen===0)state.status={...state.status,titleScreen:4,titlePhase:0,titleInputReady:false};
+    else if(state.status.titleScreen===4)state.status={...state.status,titleScreen:5,titlePhase:0,titleInputReady:false,titleStateTimer2:0};
+    else {assert.equal(state.status.titleScreen,5);assert.equal(state.status.titleStateTimer2,8);state.status={...state.status,supervisorActive:2,loading:1};}
+  },waitUntil:async(_label,predicate)=>{
+    if(state.status.supervisorActive===2)state={...state,status:{...state.status,loading:0},capabilities:{input:true,position:true,phase:true},
+      input:{value:0},position:{x:192,y:384},phase:{name:'stage'},pause:{active:false}};
+    else if(state.status.titleScreen===4)state.status={...state.status,titlePhase:1,titleInputReady:true};
+    else if(state.status.titleScreen===5)state.status={...state.status,titlePhase:1,titleStateTimer2:8};
+    assert.equal(predicate(state),true);return structuredClone(state);
+  }});
+  assert.deepEqual(pressed,['KeyZ','KeyZ','KeyZ']);assert.equal(flow.isGameplayReady(result),true);
+});
+
 test('TH20 entry selects the ordinary route and accepts only the observed default stone path',async()=>{
   const flow=resolveTitleFlow({game:'th20',variant:'normal'}),calls=[];
   let state={status:{titleState:1,titlePhase:2,titleCursor:1}};

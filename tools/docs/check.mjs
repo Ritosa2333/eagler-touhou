@@ -3,7 +3,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, posix, relative, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { adaptationMarkdown, notApplicable, portDefinitions } from './new-adaptation.mjs';
+import { adaptationMarkdown, notApplicable, portDefinitions, readVerificationSnapshot } from './new-adaptation.mjs';
 import {checkStates, readStatusReport, validateStatusReport} from '../ports/status.mjs';
 
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -273,7 +273,7 @@ export function validateAcceptanceMethods(checklist, guides) {
   return issues;
 }
 
-export function validateAdaptationMarkdown(markdown, { port, checklist, notApplicableFor = notApplicable, evidence }) {
+export function validateAdaptationMarkdown(markdown, { port, checklist, notApplicableFor = notApplicable, evidence, verification = null }) {
   const issues = [];
   const tables = parseAdaptationTables(markdown);
   const expectedVariants = port.variants;
@@ -282,7 +282,7 @@ export function validateAdaptationMarkdown(markdown, { port, checklist, notAppli
   if (!tables.length) return [`${port.directory}/ADAPTATION.md 缺少检查表。`];
 
   for (const table of tables) {
-    const expectedHeaders = [...expectedVariants, '记录'];
+    const expectedHeaders = [...expectedVariants.flatMap(variant => verification ? [`${variant} 源码检查`, `${variant} 验收记录`] : [variant]), '记录'];
     const actualHeaders = table.headers.slice(2);
     if (table.separatorMissing) issues.push(`${port.directory}/ADAPTATION.md:${table.line} 缺少表格分隔行。`);
     if (actualHeaders.length !== expectedHeaders.length || actualHeaders.some((header, index) => header !== expectedHeaders[index])) {
@@ -304,7 +304,14 @@ export function validateAdaptationMarkdown(markdown, { port, checklist, notAppli
       const note = row.cells.at(-1) ?? '';
       for (let column = 0; column < expectedVariants.length; column++) {
         const variant = expectedVariants[column];
-        const status = row.cells[column + 2];
+        const sourceColumn = column * (verification ? 2 : 1) + 2;
+        const status = row.cells[sourceColumn];
+        if (verification) {
+          const review = verification.variants[variant]?.[id];
+          const expected = review ? `[${review.status}](docs/verification/adaptation.md#${id.toLowerCase()})` : '本轮未验';
+          if (row.cells[sourceColumn + 1] !== expected)
+            issues.push(`${port.directory}/ADAPTATION.md:${row.line} ${id}/${variant} 验收记录与快照不一致。`);
+        }
         if (evidence && (['已实现','检查失败'].includes(status) || id==='BUILD-01') && evidence[variant]?.[id]?.status !== status)
           issues.push(`${port.directory}/ADAPTATION.md:${row.line} ${id}/${variant} 与执行结果不一致。`);
         if (!STATES.has(status)) {
@@ -843,7 +850,10 @@ function adaptationChecks(root, allPaths, checklist) {
         });
         if (!hasVisibleAdaptationLink) issues.push(`${path} 顶部缺少指向 ADAPTATION.md 的明显适配链接。`);
       } else {
-        issues.push(...validateAdaptationMarkdown(content, { port, checklist, evidence }));
+        let verification = null;
+        try { verification = readVerificationSnapshot(port, root); }
+        catch (error) { issues.push(`${port.directory} 验收快照无效：${error.message}`); }
+        issues.push(...validateAdaptationMarkdown(content, { port, checklist, evidence, verification }));
       }
     }
   }

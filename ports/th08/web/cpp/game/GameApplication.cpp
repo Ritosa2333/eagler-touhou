@@ -61,8 +61,6 @@ bool GameApplication::enter_game(){
     if(from_title){const auto& c=title.context;g.stage=c.currentStage;g.difficulty=c.difficulty;g.shot=c.character;g.current_spell=c.currentSpellCardNumber;g.game_flags=flag_bits(c.flags);supervisor.state.stage=g.stage;supervisor.state.difficulty=g.difficulty;supervisor.state.practice=g.game_flags&1;}
     else if(target==Scene::Restart)g.stage=supervisor.state.stage;
     const bool validation_requested=platform.take_validation_scene_request();
-    const bool validation_candidate=validation_requested&&validation_scene_request_eligible(from_title,initial,g.game_flags);
-    if(validation_requested&&!validation_candidate)platform.finish_validation_scene_request(false,false);
     const auto request=GameplayLoad{i32(g.stage),i32(g.difficulty),g.shot,g.current_spell,g.game_flags,initial,supervisor.state.keep_resources,initial,i32(target)};
     if(from_title){
         auto& p=session.practice;p.cheats=0;p.assisted=false;p.replay=bool(g.game_flags&8);p.active=false;
@@ -76,6 +74,9 @@ bool GameApplication::enter_game(){
         }else p.active=p.enabled&&(g.game_flags&1)&&!(g.game_flags&2)&&p.run.mode==1&&
             (!(g.game_flags&0x4000)||practice_last_word_matches(p.run,i32(g.stage),g.current_spell));
     }
+    const bool validation_candidate=validation_requested&&validation_scene_request_eligible(from_title,initial,g.game_flags,
+        session.practice.active&&session.practice.run.mode==1);
+    if(validation_requested&&!validation_candidate)platform.finish_validation_scene_request(false,false);
     title.detach();show_loading(from_title?Vec3{500,440,0}:Vec3{280,430,0},true);if(from_title)start_effect();
     GameplayLoad prepared=request;if((prepared.flags&0x60)>=0x40)prepared.flags=(prepared.flags&~0x60u)|0x20;
     platform.validation_scene_load_scope(true);

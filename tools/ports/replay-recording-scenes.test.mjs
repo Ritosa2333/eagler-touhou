@@ -43,20 +43,33 @@ test('Replay scene plan exposes every required route and a bounded pointer traje
 
 test('recording input window must align native poll, recorder, independent raw bytes, and release',()=>{
   const scene=plan.cases.find(item=>item.id==='record-keyboard');
-  const frames=[0,1,1,0].map((buttons,index)=>({frame:index+1,cursor:(index+1)*2,buttons}));
-  const samples=frames.map((raw,index)=>sample(10+index,{stage:4,pollSequence:50+index,liveInput:raw.buttons,
-    recording:{active:true,stage:4,frame:raw.frame,cursor:raw.cursor,physical:raw.buttons}}));
+  const recorded=[0,1,1,0,0].map((buttons,index)=>({frame:index+1,cursor:(index+1)*2,buttons}));
+  const frames=[{frame:0,cursor:0,buttons:0},...recorded];
+  const samples=recorded.map((raw,index)=>sample(10+index,{stage:4,pollSequence:50+index,liveInput:raw.buttons,
+    recording:{active:true,stage:4,frame:raw.frame,cursor:raw.cursor,physical:raw.buttons},
+    consumer:{sequence:10+index,controlFrame:10+index,stage:4,phase:1,validMask:2,
+      current:frames[index].buttons,previous:frames[index-1]?.buttons??0}}));
   const good=assessReplayRecordingInputWindow({samples,scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash});
   assert.equal(good.status,'passed');assert.equal(good.completeReplay,false);
   const wrongBoundary=samples.map(item=>({...item,boundary:0}));
   assert.equal(assessReplayRecordingInputWindow({samples:wrongBoundary,scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash}).status,'incomplete');
   assert.equal(assessReplayRecordingInputWindow({samples,scene,rawFrames:{sha256:'b'.repeat(64),stride:2,frames},expectedSha256:hash}).status,'incomplete');
-  assert.equal(assessReplayRecordingInputWindow({samples:samples.slice(1),scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash}).status,'incomplete',
+  assert.equal(assessReplayRecordingInputWindow({samples:samples.slice(2),scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash}).status,'incomplete',
     'recorded window without the required pressed dwell is incomplete');
   const broken=samples.map(item=>structuredClone(item));broken[1].recording.physical=0;
   assert.equal(assessReplayRecordingInputWindow({samples:broken,scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash}).status,'failed');
   const gap=samples.map(item=>structuredClone(item));gap[2].sequence++;
   assert.equal(assessReplayRecordingInputWindow({samples:gap,scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash}).status,'incomplete');
+  for(const mutate of [
+    rows=>{rows[2].consumer.current=0;},rows=>{rows[3].consumer.previous=0;},
+    rows=>{rows[4].consumer.current=1;},rows=>{rows[2].consumer.sequence=rows[1].consumer.sequence;},
+  ]){
+    const rows=structuredClone(samples);mutate(rows);
+    assert.equal(assessReplayRecordingInputWindow({samples:rows,scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash}).status,'failed',
+      'matching poll/recorder/file cannot hide an incorrect actual player consumer');
+  }
+  const missing=structuredClone(samples);delete missing[2].consumer;
+  assert.equal(assessReplayRecordingInputWindow({samples:missing,scene,rawFrames:{sha256:hash,stride:2,frames},expectedSha256:hash}).status,'incomplete');
 });
 
 test('playback window requires raw-frame identity and a real aligned player-consumer receipt',()=>{

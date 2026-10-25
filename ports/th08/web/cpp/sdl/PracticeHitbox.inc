@@ -26,8 +26,10 @@ static_assert(offsetof(LaserState,position)==0x548 && offsetof(LaserState,in_use
 
                     ImVec2 p1 = { pos.x - hit.x * 0.5f - plhit * 0.5f + stage_pos.x, pos.y - hit.y * 0.5f - plhit * 0.5f + stage_pos.y };
                     ImVec2 p2 = { pos.x + hit.x * 0.5f + plhit * 0.5f + stage_pos.x, pos.y + hit.y * 0.5f + plhit * 0.5f + stage_pos.y };
+                    const int vertices_before=p->VtxBuffer.Size;
                     p->AddRectFilled(p1, p2, 0x88002288);
                     p->AddRect(p1, p2, 0xFFFFFFFF, 0.0f);
+                    observe_bullet_hitbox(p,i,bullet,plhit,p1,p2,p->VtxBuffer.Size-vertices_before);
                 }
                 // laser hitbox
                 for (int i = 0; i < 256; i++) {
@@ -93,6 +95,7 @@ static_assert(offsetof(LaserState,position)==0x548 && offsetof(LaserState,in_use
                             }
                             p->AddQuad(hitpos[0], hitpos[1], hitpos[2], hitpos[3], 0xFFFFFF00);
                             p->AddQuadFilled(hitpos[0], hitpos[1], hitpos[2], hitpos[3], 0x88002288);
+                            ++display_observation[14];
                         }
                     }
                 }

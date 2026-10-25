@@ -226,6 +226,7 @@ export async function runTouchMotionSceneGroup(adapter, {
     calibration: {},
     scenarios: [],
     keyboardTransitions: [],
+    pointerCommands: [],
     keyboardDrainRows: [],
     nativeMode: traceMode,
     nativeRows: [],
@@ -243,6 +244,11 @@ export async function runTouchMotionSceneGroup(adapter, {
   let traceAbiVersion = null;
   let traceLocalSeat = null;
   let pointerId = 700;
+  const pointerOwner=adapter,pointerIO=adapter.pointer;
+  if(typeof pointerIO==='function')adapter={...adapter,pointer:async(type,id,x,y)=>{
+    const beforeSequence=cursor,result=await pointerIO.call(pointerOwner,type,id,x,y);
+    evidence.pointerCommands.push({type,id,x,y,beforeSequence,result:result??null});return result;
+  }};
   let latestSnapshot = null;
   const requireQueuedMovementBoundary = inputBoundary === 'queued-for-next-movement';
   const keyboardTouchTakeoverEnabled = queuedMovementPolicy?.keyboardTouchOwnership?.semantics ===

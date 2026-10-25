@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import {PRODUCT_GAMES} from '../../../common/contracts/product-catalog.mjs';
-import {validateTitleFlow} from './flow-steps.mjs';
+import {validateTitleFlow,validateObservationFlow} from './flow-steps.mjs';
+import {assertBombResource} from '../../../tools/ports/bomb-resource-contract.mjs';
 import th08 from './titles/th08.mjs';
 import th10 from './titles/th10.mjs';
 
 const SCHEMA='eagler-touhou/adaptation-adapter/1';
 const identifier=/^[A-Za-z_$][\w$]*$/;
-const capabilities=new Set(['runtime','observation','flow','clock','movement','actions','doubleTapBomb','deathbomb','runBoundaries','dialogueTouchScene','originalMenu','controlledScene','audioLatency','deriveSfxContract','language','classifyLanguageDiagnostic','replay','parseReplayFrames','parseReplayMetadata','parseReplayExtension','practice','storage']);
+const capabilities=new Set(['runtime','observation','flow','clock','movement','actions','doubleTapBomb','deathbomb','runBoundaries','dialogueTouchScene','originalMenu','controlledScene','audioLatency','deriveSfxContract','language','classifyLanguageDiagnostic','parseDialogueText','replay','parseReplayFrames','parseReplayMetadata','parseReplayExtension','inspectOriginalReplay','practice','storage','music','inputLifecycle','viewOptions']);
 const name=(value,label)=>assert.ok(typeof value==='string'&&identifier.test(value),`${label} must be a JavaScript/native identifier`);
 function freeze(value){
   if(value&&typeof value==='object'){
@@ -26,9 +27,21 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
   assert.ok(Array.isArray(declarations),'Adapter declarations must be an array');
   const entries=new Map();
   for(const original of declarations){
-    const {deriveSfxContract,classifyLanguageDiagnostic,parseReplayFrames,parseReplayMetadata,parseReplayExtension,practice,storage,...declaration}=original;
+    const {deriveSfxContract,classifyLanguageDiagnostic,parseDialogueText,parseReplayFrames,parseReplayMetadata,parseReplayExtension,inspectOriginalReplay,practice,storage,music,...declaration}=original;
     const adapter=structuredClone(declaration);
-    for(const [key,value] of Object.entries({deriveSfxContract,classifyLanguageDiagnostic,parseReplayFrames,parseReplayMetadata,parseReplayExtension})){
+    if(adapter.viewOptions){
+      const view=adapter.viewOptions;assert.equal(view.schema,'eagler-touhou/view-options-adapter/1');assert.ok(view.source?.trim());
+      name(view.snapshot?.export,'View option snapshot');assert.equal(view.snapshot.wordCount,32);assert.equal(view.snapshot.wordType,'f64');assert.equal(view.snapshot.app,true);
+      assert.ok(Number.isFinite(view.markerOffset?.x)&&Number.isFinite(view.markerOffset?.y),'View option consumers need the declared native-to-canvas origin');
+    }
+    if(adapter.inputLifecycle){
+      const declaration=adapter.inputLifecycle;
+      assert.equal(declaration.schema,'eagler-touhou/input-lifecycle-adapter/1');
+      assert.ok(declaration.source?.trim()&&declaration.audioRole?.trim(),'Input lifecycle needs source-owned mixer identity');
+      assert.ok(Array.isArray(declaration.audioContextPath)&&declaration.audioContextPath.length>0);
+      for(const part of declaration.audioContextPath)name(part,'Input lifecycle audio context path');
+    }
+    for(const [key,value] of Object.entries({deriveSfxContract,classifyLanguageDiagnostic,parseDialogueText,parseReplayFrames,parseReplayMetadata,parseReplayExtension,inspectOriginalReplay})){
       if(value===undefined)continue;
       assert.equal(typeof value,'function',`${key} must be a title-owned derivation function`);
       adapter[key]=value;
@@ -46,6 +59,23 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
         assert.ok(['configuration','score'].includes(file.kind)&&typeof file.inspect==='function','Native storage requires an independent file reader');
       }
       adapter.storage=cloneWithFunctions(storage);
+    }
+    if(music!==undefined){
+      assert.equal(music.schema,'eagler-touhou/native-music/1');
+      assert.equal(typeof music.parseCatalog,'function','Music needs an independent title catalog reader');
+      for(const key of ['titleFile','stageFile','titleMidi','stageMidi','source'])assert.ok(music[key]?.trim(),`Music needs ${key}`);
+      assert.ok(Number.isSafeInteger(music.stageSong)&&music.stageSong>=0,'Music needs the native first-stage song index');
+      if(music.gameplayRestart!==undefined){
+        assert.equal(typeof music.normalizeRestart,'function','Native music restart needs a title observation normalizer');
+        const restart=music.gameplayRestart;
+        assert.ok(Number.isSafeInteger(restart.minimumFrame)&&restart.minimumFrame>0&&restart.minimumFrame<=3600&&
+          Number.isSafeInteger(restart.stage)&&restart.stage>=0&&restart.source?.trim(),'Native music restart needs bounded frame and stage expectations');
+        for(const key of ['pauseKey','restartKey'])assert.match(restart[key],/^[A-Za-z][A-Za-z0-9]{0,31}$/);
+      }
+      if(music.parseCues!==undefined||music.buildCueRecipe!==undefined){
+        assert.equal(typeof music.parseCues,'function');assert.equal(typeof music.buildCueRecipe,'function');
+      }
+      adapter.music=cloneWithFunctions(music);
     }
     assert.equal(adapter.schema,SCHEMA,'Unsupported adaptation adapter schema');
     const product=products[adapter.game];
@@ -135,6 +165,7 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
     }
     if(adapter.actions){
       const a=adapter.actions;
+      if(a.bombResource)assertBombResource(a.bombResource);
       assert.equal(a.schema,'eagler-touhou/stg-actions/1','Unknown STG action observation schema');
       name(a.stateExport,'actions.stateExport');
       assert.equal(a.wordCount,20,'STG action observation v1 has 20 words');
@@ -149,6 +180,12 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
         new Set(masks).size===masks.length,'Declare distinct native action input bits');
     }
     if(adapter.movement){
+      if(adapter.movement.directionMasks){
+        const masks=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].map(key=>adapter.movement.directionMasks[key]);
+        assert.ok(masks.every(value=>Number.isSafeInteger(value)&&value>0&&value<=0xffff&&(value&(value-1))===0)&&new Set(masks).size===4,
+          'Direction input masks need four distinct native bits');
+        assert.ok(adapter.movement.directionSource?.trim(),'Direction input masks need their production source');
+      }
       assert.ok(adapter.movement.source?.trim(),'Native movement source is required');
       assert.ok(['queued-for-next-movement','synchronous-consumption'].includes(adapter.movement.inputBoundary),
         'Declare whether native movement input is queued or consumed synchronously');
@@ -204,6 +241,24 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
         assert.ok(sample.source?.trim(),'Language sample needs its production consumer anchor');
       }
       assert.ok(language.samples.some(sample=>sample.key===language.missingKey),'Missing language control must select a declared key');
+      if(language.consumers){
+        const spec=language.uiSnapshot;name(spec?.export,'language.uiSnapshot.export');assert.equal(spec.wordType,'f64');assert.equal(typeof spec.app,'boolean');
+        assert.ok(Number.isSafeInteger(spec.wordCount)&&spec.wordCount>=2&&spec.wordCount<=4096&&spec.source?.trim());
+        const indexes=Object.entries(spec.fields);assert.ok(indexes.length>0&&new Set(indexes.map(([,index])=>index)).size===indexes.length);
+        for(const [field,index]of indexes){name(field,'language consumer field');assert.ok(Number.isSafeInteger(index)&&index>=2&&index<spec.wordCount);}
+        assert.ok(Array.isArray(spec.booleans)&&new Set(spec.booleans).size===spec.booleans.length&&spec.booleans.every(field=>Object.hasOwn(spec.fields,field)));
+        for(const phase of ['enter','exit'])assert.equal(validateObservationFlow(language.consumers.statistics[phase]).status,'passed','Language consumer navigation must use finite observed steps');
+        const navigation=language.navigation;assert.ok(navigation&&Object.hasOwn(spec.fields,navigation.inputField));
+        assert.ok(Array.isArray(navigation.transitionFields)&&navigation.transitionFields.length>0&&navigation.transitionFields.every(field=>Object.hasOwn(spec.fields,field)));
+        assert.ok(Object.keys(navigation.masks).length>0&&Object.values(navigation.masks).every(mask=>Number.isSafeInteger(mask)&&mask>0&&mask<=0x80000000&&Number.isInteger(Math.log2(mask))));
+        assert.equal(typeof adapter.parseDialogueText,'function','Dialogue text needs its independent source codec');
+        assert.equal(language.consumers.dialogue.archiveKind,'pbgz');
+        const dialogue=language.consumers.dialogue;assert.match(dialogue.mountRoot,/^\/[A-Za-z0-9_/-]+\/$/);assert.ok(!dialogue.mountRoot.includes('..'));
+        assert.ok(Number.isSafeInteger(dialogue.captureWaitTicks)&&dialogue.captureWaitTicks>0&&dialogue.captureWaitTicks<=60);
+        assert.ok(Number.isSafeInteger(dialogue.minimumTextAlpha)&&dialogue.minimumTextAlpha>0&&dialogue.minimumTextAlpha<=255);
+        assert.ok(Array.isArray(dialogue.textAlphaFields)&&dialogue.textAlphaFields.length>0&&dialogue.textAlphaFields.every(field=>Object.hasOwn(spec.fields,field)));
+        for(const path of language.consumers.dialogue.assets)assert.match(path,/^[A-Za-z0-9_.-]+$/);
+      }
       if(language.browserDiagnostics!==undefined||adapter.classifyLanguageDiagnostic!==undefined){
         const diagnostics=language.browserDiagnostics;
         assert.equal(typeof adapter.classifyLanguageDiagnostic,'function',
@@ -269,6 +324,45 @@ export function createAdapterRegistry(declarations,{products=PRODUCT_GAMES}={}){
     }else assert.ok(parseReplayFrames===undefined&&parseReplayExtension===undefined,'Replay parsers require explicit title semantics');
     if(adapter.practice){
       const p=adapter.practice;
+      if(p.bossEffects){const b=p.bossEffects;assert.ok(b.source?.trim());assert.equal(typeof b.snapshot?.decode,'function');
+        assert.ok(Number.isInteger(b.stage)&&Number.isInteger(b.slot)&&b.slot>=0&&b.slot<2);
+        for(const field of ['protectedMask','vulnerableMask','unlockedMask'])assert.ok(Number.isInteger(b[field])&&b[field]>=0);
+        assert.ok(new Set([b.protectedMask,b.vulnerableMask,b.unlockedMask]).size===3);
+        for(const key of ['playerGuard','enemyGuard','timeLock','fire'])assert.ok(typeof b.keys?.[key]==='string');
+      }
+      if(p.options){const o=p.options;name(o.snapshot?.export,'practice.options.snapshot');assert.equal(o.snapshot.wordCount,1024);assert.equal(o.snapshot.wordType,'f64');assert.equal(o.snapshot.app,true);
+        assert.ok(o.source?.trim()&&o.width>0&&o.height>0);assert.ok(Number.isInteger(o.consumerLatencyTicks)&&o.consumerLatencyTicks>=0&&o.consumerLatencyTicks<=8);
+        if(o.lifecycle){const l=o.lifecycle;assert.ok(l.source?.trim());
+          for(const value of Object.values(l.fields))assert.ok(Number.isInteger(value)&&value>=16&&value<128);
+          assert.ok(l.cases.length>0&&l.cases.every(c=>['fast-retry','one-key-death'].includes(c.kind)));}
+        for(const key of ['inGame','frame','sequence','current','life'])assert.ok(Number.isInteger(o.consumerFields?.[key])&&o.consumerFields[key]>=16&&o.consumerFields[key]<128);
+        assert.ok(o.filters?.length>0&&new Set(o.filters.map(row=>row.id)).size===o.filters.length);
+        for(const row of o.filters){assert.ok(Number.isInteger(row.semantic)&&row.semantic>0&&row.semantic<64);assert.ok(Number.isInteger(row.stateWord)&&row.stateWord>=16&&row.stateWord<128);
+          assert.ok(Number.isInteger(row.vk)&&row.vk>=0&&row.vk<=255);assert.ok(Number.isInteger(row.mask)&&row.mask>0);}
+        if(o.keyMonitor){const k=o.keyMonitor;assert.ok(k.source?.trim());assert.equal(k.window,60);assert.equal(k.inputMasks.length,10);
+          for(const value of Object.values(k.fields))assert.ok(Number.isInteger(value)&&value>=16&&value<128);
+          for(const id of [k.toggle,k.record,k.download])assert.ok(Number.isInteger(id)&&id>0&&id<64);
+          assert.ok(k.pulses.length>0&&k.pulses.every(p=>p.keys.length>0&&Number.isInteger(p.ticks)&&p.ticks>=4&&Number.isInteger(p.release)&&p.release>=3));
+        }
+      }
+      if(p.trainer){
+        const t=p.trainer;assert.ok(t.source?.length&&t.cases?.length&&t.cases.length<=32,'Trainer cases need bounded source-owned consumers');
+        assert.equal(new Set(t.cases.map(row=>row.id)).size,t.cases.length,'Trainer cases need unique IDs');
+        for(const key of ['snapshot','tracker']){const s=t[key];name(s?.export,`practice.trainer.${key}`);
+          assert.ok(Number.isSafeInteger(s.wordCount)&&s.wordCount>0&&s.wordCount<=4096);assert.ok(['f64','u32','i32'].includes(s.wordType));assert.equal(s.app,true);}
+        assert.equal(typeof t.snapshot.decode,'function');
+        for(const row of t.cases){assert.match(row.id,/^[a-z][a-z0-9-]*$/,'Trainer case ID must be portable');assert.ok(Array.isArray(row.keys)&&row.keys.every(key=>typeof key==='string'));
+          assert.ok(Number.isSafeInteger(row.mask)&&row.mask>=0);assert.ok(['hit','bomb'].includes(row.stimulus));
+          assert.ok(['miss','invincible','bomb','hit-bomb','late-hit-bomb','auto-bomb'].includes(row.kind));}
+      }
+      if(p.uiSnapshot?.keyboard!==undefined)assert.equal(p.uiSnapshot.keyboard,'vk256/1','Unknown native Practice UI keyboard contract');
+      if(p.localeReview){
+        const review=p.localeReview;
+        assert.ok(Array.isArray(review.locales)&&review.locales.length>0&&review.locales.every(value=>typeof value==='string'&&value.trim())&&
+          new Set(review.locales).size===review.locales.length,'Practice review needs unique locales');
+        assert.ok(typeof review.font==='string'&&review.font.startsWith('/shared/')&&review.source?.trim(),
+          'Practice review needs the actual shared font and native locale source');
+      }
       assert.equal(p.schema,'eagler-touhou/practice-title/1','Unknown title practice contract');
       assert.ok(p.source?.trim(),'Practice capability needs a production source anchor');
       assert.ok(p.parameterCase&&typeof p.parameterCase==='object'&&!Array.isArray(p.parameterCase),

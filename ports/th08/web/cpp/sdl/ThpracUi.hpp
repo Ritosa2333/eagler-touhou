@@ -15,6 +15,9 @@ void cancel_pointer();
 bool captures_pointer(float x,float y);
 void render(BrowserRuntime&,touhou::sdl::Renderer&);
 bool captures_game_input();
+// Read-only submitted native panel/widget geometry for shared browser acceptance.
+void observation(std::uint32_t* words,std::uint32_t count);
+void controls_observation(BrowserRuntime&,double* words,std::uint32_t count);
 double simulation_interval(BrowserRuntime&);
 }
 }

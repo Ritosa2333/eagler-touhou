@@ -9,6 +9,21 @@ import {createFixtureResponseProbe} from './runtime-fixture-site.mjs';
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const allowedHeaders=['cache-control','content-type','etag','last-modified','location','service-worker-allowed','vary'];
 
+/** Static route discovery is optional; classify its exact verified 404, never a general transport failure. */
+export function classifyStaticDiscoveryEvents(events,responses){
+  const expected=[],blocking=[];
+  for(const event of events){
+    const response=responses.find(row=>row.url===(event.url??event.location?.url)&&row.status===404&&row.contentIdentity==='passed'&&
+      row.semanticReceipt?.kind==='static-resource-route-discovery');
+    const known=event.type==='http'&&event.status===404||event.type==='console'&&[
+      'Failed to load resource: the server responded with a status of 404 (Not Found)',
+      'Failed to load resource: the server responded with a status of 404 ()',
+    ].includes(event.text)||event.type==='requestfailed'&&event.error==='net::ERR_ABORTED'&&response?.semanticReceipt?.bodyConsumption==='not-read';
+    (response&&known?expected:blocking).push(event);
+  }
+  return{expected,blocking};
+}
+
 function requestBackend(url,method){
   return new Promise((accept,reject)=>{
     const request=requestHttp(url,{method,headers:{'accept-encoding':'identity','connection':'close'}},response=>{
@@ -40,8 +55,20 @@ export async function createOfflineStaticTlsProxy({backendBase,port=0,responseOv
         assert.equal(controlled.kind,'controlled-resource-response','Static response override needs an explicit control contract');
         assert.equal(sha256(controlled.body),controlled.sha256,'Controlled response bytes changed');
         assert.equal(controlled.body.length,controlled.bytes,'Controlled response size changed');
+        const paced=controlled.holdAfterBytes!==undefined||controlled.holdMs!==undefined;
+        if(paced){
+          assert.ok(Number.isSafeInteger(controlled.holdAfterBytes)&&controlled.holdAfterBytes>0&&controlled.holdAfterBytes<controlled.bytes,
+            'Controlled transfer prefix must leave an unfinished body');
+          assert.ok(Number.isSafeInteger(controlled.holdMs)&&controlled.holdMs>0&&controlled.holdMs<=30_000,
+            'Controlled transfer hold must be bounded by 30 seconds');
+        }
         response.writeHead(controlled.status,{'content-type':controlled.contentType,'cache-control':'no-store',
           'content-length':String(controlled.bytes)});
+        if(paced&&request.method!=='HEAD'){
+          response.write(controlled.body.subarray(0,controlled.holdAfterBytes));
+          const timer=setTimeout(()=>response.end(controlled.body.subarray(controlled.holdAfterBytes)),controlled.holdMs);
+          response.once('close',()=>clearTimeout(timer));return;
+        }
         response.end(request.method==='HEAD'?undefined:controlled.body);return;
       }
       const upstream=await requestBackend(url,request.method);

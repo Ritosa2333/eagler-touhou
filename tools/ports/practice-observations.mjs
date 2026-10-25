@@ -80,7 +80,8 @@ export function practiceAdaptationChecks({game,variant='normal',productSupported
   rows.push(boundPracticeCheck({id:'PRACTICE-02',game,variant,
     status:statusWithAudit(withLauncher(anyFailed?'failed':optionsValid?'observed':'incomplete')),
     scope:'native options consumed for enabled locales and disabled control',
-    observation:{...(launcher?{launcher}:{}),locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,locale:expected.locale,
+    observation:{complete:optionsValid&&expectedRows.every(({item})=>item?.startup?.firstFrame!==undefined),
+      ...(launcher?{launcher}:{}),locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,locale:expected.locale,
       observedEnabled:item?.opened?.options?.thpracEnabled??null,observedLocale:item?.opened?.options?.thpracLocale??null,
       status:item?.status??'missing'}))}}));
 
@@ -99,7 +100,8 @@ export function practiceAdaptationChecks({game,variant='normal',productSupported
   rows.push(boundPracticeCheck({id:'PRACTICE-03',game,variant,
     status:statusWithAudit(anyFailed||lifecycle?.status==='failed'?'failed':menuValid&&lifecycleValid?'observed':'incomplete'),
     scope:practiceAdapter?.lifecycle?'native practice menu and same Runtime retry, Replay exit, ordinary start and fresh Practice':'actual gameplay practice menu open and close state',
-    observation:{...(practiceAdapter?.lifecycle?{lifecycle,lifecycleEvidence:lifecycleRecord?.evidence??null}:{}),locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,
+    observation:{complete:Boolean(practiceAdapter?.lifecycle)&&lifecycleValid&&menuValid,
+      ...(practiceAdapter?.lifecycle?{lifecycle,lifecycleEvidence:lifecycleRecord?.evidence??null}:{}),locales:expectedRows.map(({expected,item})=>({epoch:expected.epoch,enabled:expected.enabled,
       beforeOpen:item?.before?.open??null,opened:item?.opened?.open??null,closed:item?.closed?.open??null,
       openEvent:(item?.opened?.events??[]).some(event=>event?.open===true),
       closeEvent:(item?.closed?.events??[]).slice(item?.opened?.events?.length??0).some(event=>event?.open===false),

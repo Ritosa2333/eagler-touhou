@@ -56,7 +56,7 @@ test('diagnostic registry validates title profiles and explicitly partitions uns
   const th08=resolveDiagnosticProfile('th08','normal');
   const next={...structuredClone(th08),game:'th06',lanes:['presentation']};
   for(const key of ['quickCapture','quickCaptureSchema','quickGate','quickFixtureCount','quickInputs','quickPartialChecks',
-    'dailyCapture','dailyCaptureSchema','dailyGate','dailyGateReplayOptions','dailyFixtures','dailyPartialChecks','goldenManifest'])delete next[key];
+    'dailyCapture','dailyCaptureSchema','dailyGate','dailyGateReplayOptions','dailyFixtures','dailyPartialChecks','goldenManifest','replayReview'])delete next[key];
   delete next.laneScope.quick;delete next.laneScope.daily;delete next.laneScope.otherVerification;
   delete next.decisionInputs.quick;delete next.decisionInputs.daily;
   delete next.presentation.pairedReplay;

@@ -86,6 +86,23 @@ export function readRuntimeStorageMount({runtime: mapping, expectedDatabase} = {
   return {available: true, expectedDatabase,runtimeGlobal:mapping.global,moduleField:mapping.module,mountpoint,typeName,idbfs};
 }
 
+/** Copy actual user-file paths and bytes from the selected Runtime filesystem. */
+export function readRuntimeUserFileBoundary({runtime:mapping,root:directory,paths=[]}){
+  const owner=globalThis[mapping.global],fs=owner?.[mapping.module]?.FS;
+  if(!fs||typeof fs.getPath!=='function')throw Error('The selected Runtime has no inspectable filesystem');
+  if(typeof directory!=='string'||!directory.startsWith('/')||directory.includes('..'))throw Error('Declare an absolute save root');
+  const outsidePath=directory+'/../outside-offline-acceptance.dat';
+  const exists=path=>{try{fs.lookupPath(path);return true;}catch(error){if(error.errno===44||error.code==='ENOENT')return false;throw error;}};
+  const files=paths.map(path=>{
+    if(typeof path!=='string'||!path||path.startsWith('/')||path.includes('..')||path.includes('\\'))throw Error('Declare relative user-file paths');
+    const absolutePath=directory+'/'+path,node=fs.lookupPath(absolutePath).node;
+    if(!fs.isFile(node.mode))throw Error(`User-file path is not a regular file: ${path}`);
+    return{path,absolutePath,resolvedPath:fs.getPath(node),mountpoint:node.mount.mountpoint,bytes:Array.from(fs.readFile(absolutePath))};
+  });
+  return{root:directory,document:{url:location.href,epoch:Number(new URL(location.href).searchParams.get('runtimeEpoch')),app:owner[mapping.app]},
+    outside:{path:outsidePath,exists:exists(outsidePath)},files};
+}
+
 /** Read native format entry points without invoking the parser or playback. */
 export function readRuntimeReplayApis({runtime: mapping} = {}) {
   const root = typeof window === 'object' ? window : globalThis;
@@ -110,4 +127,3 @@ export function validateReplayInspection({description, inspectedPath, expectedPa
   return Object.freeze({status: 'passed', method: 'official-runtime-inspection', path: inspectedPath,
     stageCount: description.stages.length, naturalEndpointClaimed: false});
 }
-

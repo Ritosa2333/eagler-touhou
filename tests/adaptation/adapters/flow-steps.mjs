@@ -166,7 +166,7 @@ function validateSteps(steps,path,flow,issues,{entry=false}={}){
 }
 
 /** Validate legacy strategies and finite title-owned flow data without executing it. */
-export function validateTitleFlow(flow){
+function validateFlow(flow,{gameplayEntry=true}={}){
   const issues=[];
   try{jsonData(flow,'flow',issues);}catch(error){
     issues.push({path:'flow',reason:`declaration could not be inspected: ${error?.message??String(error)}`});
@@ -210,10 +210,17 @@ export function validateTitleFlow(flow){
     }
   }
   const safeFlow={...flow,predicates};
-  validateSteps(flow.enter,'flow.enter',safeFlow,issues,{entry:true});
+  validateSteps(flow.enter,'flow.enter',safeFlow,issues,{entry:gameplayEntry});
   if(flow.restart!==undefined)validateSteps(flow.restart,'flow.restart',safeFlow,issues);
   const status=issues.length?'failed':'passed';
   return{status,issues};
+}
+
+export function validateTitleFlow(flow){return validateFlow(flow);}
+/** The same finite input grammar may end at a declared non-gameplay scene. */
+export function validateObservationFlow(flow){
+  if(flow?.schema!==TITLE_FLOW_STEPS_SCHEMA)return{status:'failed',issues:[{path:'flow.schema',reason:'observation flow requires bounded steps'}]};
+  return validateFlow(flow,{gameplayEntry:false});
 }
 
 function readPath(state,path){
@@ -286,9 +293,9 @@ async function withinBudget(operation,deadline,details){
 }
 
 /** Execute a validated finite flow through production observation, input and wait callbacks. */
-export async function executeTitleFlowSteps({flow,phase='enter',observe,press,waitUntil,
-  isGameplayReady,onTitleReady,labelSuffix='',timeoutMs}={}){
-  const validation=validateTitleFlow(flow);
+async function executeFlowSteps({flow,phase='enter',observe,press,waitUntil,
+  isGameplayReady,onTitleReady,labelSuffix='',timeoutMs}={},validate){
+  const validation=validate(flow);
   if(validation.status!=='passed'||flow.schema!==TITLE_FLOW_STEPS_SCHEMA)
     throw new TypeError(`Invalid declarative title flow: ${validation.issues.map(item=>`${item.path}: ${item.reason}`).join('; ')}`);
   if(phase!=='enter'&&phase!=='restart')throw new RangeError(`Unknown title-flow phase ${String(phase)}`);
@@ -368,4 +375,11 @@ export async function executeTitleFlowSteps({flow,phase='enter',observe,press,wa
     lastState=state;
   }
   return lastState;
+}
+
+export function executeTitleFlowSteps(options){return executeFlowSteps(options,validateTitleFlow);}
+export function executeObservationFlowSteps(options){return executeFlowSteps(options,validateObservationFlow);}
+export function matchesObservationFlowEnd(flow,state){
+  const validation=validateObservationFlow(flow);if(validation.status!=='passed')throw new TypeError('Invalid observed scene flow');
+  return testNamedPredicate(flow,flow.enter.at(-1).until,state,()=>false)===true;
 }

@@ -12,18 +12,18 @@ bool BulletSystem::initialize(AnmLoaded& file,Rng& rng){state.animation=&file;re
 void BulletSystem::emit(BulletEmission& parameters){
     if(!ready){failed=true;return;}synchronize();creation.emit(parameters,bullet_aim(parameters.position,globals.player),&player.status().context.replay_flags);failed|=creation.failure!=BulletCreation::Failure::None;
 }
-bool BulletSystem::validation_deathbomb_eligible(bool scene_enabled,bool write_lock_valid,bool quiet_scene)const noexcept{
+bool BulletSystem::validation_deathbomb_eligible(bool scene_enabled,bool write_lock_valid,bool quiet_scene,bool custom_practice)const noexcept{
     const auto& p=player.status();const auto& type=state.templates.types[0];
     bool no_lasers=true;for(const auto& laser:state.lasers)if(laser.in_use){no_lasers=false;break;}
-    const bool normal_game=validation_scene_request_eligible(true,true,globals.game_flags)&&
+    const bool normal_game=validation_scene_request_eligible(true,true,globals.game_flags,custom_practice)&&
         !globals.paused&&!p.context.pause&&!p.context.game_over;
     const bool quiet=quiet_scene&&state.live_bullet_count()==0&&no_lasers;
     const bool template_ready=type.animation[0].loadedSprite!=nullptr;
     return validation_deathbomb_stimulus_eligible(scene_enabled,write_lock_valid,ready&&!failed,
         normal_game,quiet,template_ready,p.life.state,deathbomb_stimulus.request_sequence!=0);
 }
-bool BulletSystem::request_validation_deathbomb_hit(bool scene_enabled,bool write_lock_valid,bool quiet_scene){
-    if(!validation_deathbomb_eligible(scene_enabled,write_lock_valid,quiet_scene)){
+bool BulletSystem::request_validation_deathbomb_hit(bool scene_enabled,bool write_lock_valid,bool quiet_scene,bool custom_practice){
+    if(!validation_deathbomb_eligible(scene_enabled,write_lock_valid,quiet_scene,custom_practice)){
         deathbomb_stimulus.refuse();return false;
     }
     const auto& position=player.status().motion.movement.position;
@@ -53,6 +53,7 @@ i32 BulletSystem::collision(i32 kind,BulletState& bullet){
     const i32 before=tracked?player.status().life.state:0;
     auto& collision=player.collision();const i32 result=kind==1?collision.graze(bullet.position,bullet.sprites.hitbox):collision.bullet(bullet.position,bullet.sprites.hitbox);
     if(tracked){const auto& state=player.status();const auto& input=player.consumed_input();
+        if(input.valid&&result==1)validation_hit={input.sequence,u32(before),u32(state.life.state),u32(result),validation_hit[4]+1};
         deathbomb_stimulus.observe_collision(before,state.life.state,state.life.predead_count,result,input.sequence,input.valid);}
     publish_collision();return result;
 }

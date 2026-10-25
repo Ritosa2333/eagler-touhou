@@ -4,6 +4,13 @@ import { readFile } from "node:fs/promises";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 import { runNativeCpp } from "./support/native-cpp.mjs";
+import {assertCliArguments} from '../../tools/testing/cli-options.mjs';
+
+assertCliArguments(process.argv.slice(2),{values:['games']});
+const requested=process.argv.find(value=>value.startsWith('--games='))?.slice(8).split(',');
+assert.ok(!requested||requested.length&&new Set(requested).size===requested.length&&requested.every(game=>Object.hasOwn(PRODUCT_GAMES,game)),
+  'Select distinct registered game IDs with --games=game,game');
+const selectedProducts=Object.entries(PRODUCT_GAMES).filter(([game])=>!requested||requested.includes(game));
 
 const runtimeBuilds = JSON.parse(await readFile(workspacePath("launcher", "config", "runtime-builds.json"), "utf8"));
 const hostCandidates = [
@@ -26,7 +33,7 @@ assert.deepEqual(catalogIds, expectedIds,
   "runtime-builds and Product Catalog must expose the same formal gamepad variants");
 
 const variants = [];
-for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+for (const [game, product] of selectedProducts) {
   const definition = runtimeBuilds.games[game];
   assert.ok(definition, `${game}: missing Runtime build registration`);
   for (const variant of formalVariants(product)) {
@@ -47,8 +54,8 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
       source:host.source});
   }
 }
-assert.deepEqual(variants.map(target => target.id).sort(), expectedIds,
-  "every formal Runtime variant must resolve to its configured source owner");
+assert.deepEqual(variants.map(target => target.id).sort(), selectedProducts.flatMap(([game,product])=>formalVariants(product).map(variant=>`${game}-${variant}`)).sort(),
+  "every selected Runtime variant must resolve to its configured source owner");
 
 function assertNativeSampling(target, originalSource = target.source) {
   const source = codeOnly(originalSource);
@@ -191,4 +198,5 @@ int main(){
   ApplyGamepadVirtualKeys(keys,0);assert(keys[90]==128);
 }`, {includes:[workspacePath("common", "include")]});
 
-console.log(`All-game normalized gamepad contract: PASS (${variants.length} Runtime variants; SDL owners: ${uniqueTargets.filter(target => ["th06", "th07", "th08", "th09", "th10"].includes(target.game)).map(target => target.repository).join("/")}; shared native bridge helper and broken-wiring negative control passed)`);
+console.log(JSON.stringify({gamepadContract:'PASS',selectedGames:selectedProducts.map(([game])=>game),selectedVariants:variants.map(row=>row.id),catalogVariants:expectedIds.length,
+  scope:'Selected native Launcher mapping, SDL owners, compiled shared bridge and broken-wiring negative control'}));

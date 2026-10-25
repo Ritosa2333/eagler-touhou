@@ -27,6 +27,8 @@ function validate(options={}){
   const b=options.budgets??{};
   for(const name of ['baselineTicks','openTicks','waitTicks','skipTicks'])
     assert.ok(Number.isSafeInteger(b[name])&&b[name]>0&&b[name]<=MAX_TICKS,`Dialogue Skip needs a bounded ${name}`);
+  if(b.minimumWaitTicks!==undefined)assert.ok(Number.isSafeInteger(b.minimumWaitTicks)&&b.minimumWaitTicks>=0&&b.minimumWaitTicks<=b.waitTicks,
+    'Dialogue material wait must fit the existing bounded wait budget');
   assert.ok(typeof b.source==='string'&&b.source.length>0,'Dialogue Skip budgets need their production source anchor');
   assert.ok(baselineControls(options.controls),'Dialogue Skip needs held-Fire and neutral touch-control snapshots');
   if(options.ingress==='touch'){
@@ -186,7 +188,8 @@ export async function runLoadedDialogueSkipScene(io,options={}){
     if(!waitState)throw new SceneIncomplete('Real MessageProgram entry did not reach its initial Wait within the declared open budget');
     if(waitState.dialogue.skippable!==true)throw new SceneIncomplete('Selected real MessageProgram Wait is not skippable under the native Dialogue state');
     let waited=0;
-    while(waitState.dialogue.pausedFrames<waitState.dialogue.minimumWait&&waited<options.budgets.waitTicks){
+    const targetWait=Math.max(waitState.dialogue.minimumWait,options.budgets.minimumWaitTicks??0);
+    while(waitState.dialogue.pausedFrames<targetWait&&waited<options.budgets.waitTicks){
       if(candidate.message.timeoutFrames-waitState.dialogue.pausedFrames<=1)throw new SceneIncomplete('MessageProgram Wait times out before native Skip becomes eligible');
       waitState=await stepObserve('wait-for-native-dialogue-skip-eligibility');evidence.wait.push(structuredClone(waitState));++waited;
       assert.equal(waitState.dialogue.present,true,'MessageProgram retired before the native Skip trial');
@@ -195,7 +198,7 @@ export async function runLoadedDialogueSkipScene(io,options={}){
       assert.equal(waitState.dialogue.freshConfirmEdge,false,'No-input wait unexpectedly generated a confirm edge');
     }
     assert.equal(waitState.touch?.fireEnabled,true,'Touch Fire owner changed before the native Skip trial');
-    if(waitState.dialogue.pausedFrames<waitState.dialogue.minimumWait)
+    if(waitState.dialogue.pausedFrames<targetWait)
       throw new SceneIncomplete('Dialogue did not reach its native minimum-input interval within the declared wait budget');
     evidence.wait.push(structuredClone(waitState));
     let holdStartedAt=null,holdEndedAt=null;

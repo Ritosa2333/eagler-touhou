@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import assert from 'node:assert/strict';
 import {workspacePath} from "../lib/workspace-layout.mjs";
+import {runNativeCpp} from './support/native-cpp.mjs';
 
 const read = rel => {
   const [owner, ...segments] = rel.split("/");
@@ -8,9 +10,28 @@ const read = rel => {
 const requireText = (source, needle, label) => {
   if (!source.includes(needle)) throw new Error(`missing ${label}: ${needle}`);
 };
-const requireMatch = (source, pattern, label) => {
-  if (!pattern.test(source)) throw new Error(`missing ${label}: ${pattern}`);
-};
+
+async function assertReplayCadence(source,game,{fastCatchup}){
+  const declaration=source.match(/\bconst bool preserveReplayCadence\s*=[^;]+;/)?.[0];
+  const condition=source.match(/\bif\s*\(([^\n]*\bpreserveReplayCadence\b[^\n]*)\)/)?.[1];
+  assert.ok(declaration&&condition,`${game}: native Replay cadence binding is missing`);
+  const exercise=declaration=>runNativeCpp(`#include <initializer_list>
+struct { int isInReplay=0,replay=0; } g_GameManager;
+int main(){
+ constexpr double baseTargetDt=1.0/60.0;
+ for(bool replay:{false,true})for(bool spectatorViewing:{false,true})for(bool limitPresentationTo60:{false,true})for(double targetDt:{baseTargetDt,baseTargetDt/2}){
+  g_GameManager.isInReplay=g_GameManager.replay=replay;
+  ${declaration}
+  const bool oneTick=(${condition});
+  const bool expected=(replay||spectatorViewing||limitPresentationTo60)&&(${fastCatchup?'targetDt==baseTargetDt':'true'});
+  if(oneTick!=expected)return 19;
+ }
+}`);
+  await exercise(declaration);
+  const broken=declaration.replace(/g_GameManager\.(?:isInReplay|replay)\s*!=\s*0/,'false');
+  assert.notEqual(broken,declaration,`${game}: native Replay flag was not identified`);
+  await assert.rejects(()=>exercise(broken),error=>error.status===19,`${game}: removing Replay ownership must fail the native policy matrix`);
+}
 
 const th06Replay = read("th06-eagler/src/ReplayManager.cpp");
 const th06Priorities = read("th06-eagler/src/ChainPriorities.hpp");
@@ -24,9 +45,7 @@ requireText(th06Replay, "g_GameManager.rank = replayData->rank", "TH06 rank rest
 requireText(th06Replay, "g_GameManager.livesRemaining = replayData->livesRemaining", "TH06 lives restore");
 requireText(th06Replay, "g_GameManager.bombsRemaining = replayData->bombsRemaining", "TH06 bombs restore");
 requireText(th06Replay, "g_GameManager.currentPower = replayData->power", "TH06 power restore");
-requireText(th06Window, "const bool preserveReplayCadence = g_GameManager.isInReplay != 0;", "TH06 original-style replay presentation cadence");
-requireMatch(th06Window, /if \(\(limitPresentationTo60 \|\| preserveReplayCadence\) && targetDt\s*==\s*baseTargetDt\)/,
-  "th06 normal-speed replay uses the one-tick presentation branch");
+await assertReplayCadence(th06Window,'th06',{fastCatchup:true});
 
 const th07Replay = read("th07-eagler/src/ReplayManager.cpp");
 const th07Window = read("th07-eagler/src/GameWindow.cpp");
@@ -51,8 +70,7 @@ requireText(th07SupervisorHeader, "CheckIntegrity(const char *version, i32 exeSi
 requireText(th07Replay, "g_Supervisor.CheckIntegrity(parsed->data.replayStr, parsed->data.exeSize", "TH07 original replay executable identity validation");
 requireText(th07Replay, "if (parsed->data.cfg.slowMode)", "TH07 slow-mode replay rejection");
 requireText(th07Replay, "memcmp(&g_Supervisor.cfg, &mgr->data->data.cfg", "TH07 mid-run config save guard");
-requireText(th07Window, "const bool preserveReplayCadence = g_GameManager.replay != 0;", "TH07 original-style replay presentation cadence");
-requireText(th07Window, "if (limitPresentationTo60 || preserveReplayCadence)", "TH07 replay cannot multi-tick catch up inside one presentation callback");
+await assertReplayCadence(th07Window,'th07',{fastCatchup:false});
 
 const updateStart = th07Game.indexOf("u32 GameManager::OnUpdate(GameManager *arg)");
 const drawStart = th07Game.indexOf("u32 GameManager::OnDraw(GameManager *arg)");
@@ -63,4 +81,4 @@ const draw = th07Game.slice(drawStart, drawEnd);
 requireText(update, "if (arg->isInPauseMenu == 1)", "TH07 pause transition is simulation-owned");
 if (draw.includes("isInPauseMenu = 2")) throw new Error("TH07 presentation must not advance pause simulation state");
 
-console.log("TH06/TH07 replay determinism contract: PASS");
+console.log("th06/th07 replay determinism contract: PASS");

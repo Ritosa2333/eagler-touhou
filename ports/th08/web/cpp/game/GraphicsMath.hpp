@@ -7,6 +7,8 @@ enum class GraphicsArithmetic { Simd, Scalar };
 struct GraphicsMath {
     static void arithmetic(GraphicsArithmetic path);
     static void practice_rsqrt(bool enabled,char cpu);
+    // Last real SIMD normalization. Reading this never executes a math consumer.
+    static void practice_normalization_observation(double* output);
     static void multiply(Matrix4& output, const Matrix4& first, const Matrix4& second);
     static void rotation(Matrix4& output, u32 axis, float radians);
     static void quaternion(Matrix4& output,const float* xyzw);

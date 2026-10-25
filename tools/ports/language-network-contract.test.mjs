@@ -99,3 +99,22 @@ test('failure control addresses the production versioned archive URL',()=>{
   assert.equal(new URL(source.url).searchParams.get('v'),sha256);
   assert.equal(new URL(source.url).pathname,'/games/th08/language/lang_en.zip');
 });
+
+test('only a complete verified controlled corrupt archive may classify its exact cancellation as expected',()=>{
+  const url='https://127.0.0.1/games/th08/language/lang_en.zip?v=original',sha256='a'.repeat(64);
+  const event={type:'requestfailed',url,error:'net::ERR_ABORTED'};
+  const response={url,status:200,contentIdentity:'passed',fromServiceWorker:false,
+    expected:{kind:'controlled-resource-response',purpose:'language-corrupt-archive',status:200,bytes:10,sha256},
+    actual:{bytes:10,sha256},semanticReceipt:{kind:'controlled-resource-response',purpose:'language-corrupt-archive',bodyConsumption:'complete',bytes:10,sha256},
+    transport:{event:'loadingFailed',error:'net::ERR_ABORTED',canceled:true}};
+  assert.equal(classifyLanguageBrowserEvents([event],{responses:[response]}).blocking.length,0);
+  for(const mutate of [
+    r=>{r.url+='-other';},r=>{r.expected.purpose='other';},r=>{r.semanticReceipt.bodyConsumption='partial';},
+    r=>{r.actual.bytes--;},r=>{r.actual.sha256='b'.repeat(64);},r=>{r.transport.canceled=false;},
+    r=>{r.fromServiceWorker=true;},r=>{delete r.expected.bytes;delete r.actual.bytes;delete r.semanticReceipt.bytes;},
+  ]){
+    const changed=structuredClone(response);mutate(changed);
+    assert.equal(classifyLanguageBrowserEvents([event],{responses:[changed]}).blocking.length,1);
+  }
+  assert.equal(classifyLanguageBrowserEvents([{...event,error:'net::ERR_NETWORK_CHANGED'}],{responses:[response]}).blocking.length,1);
+});

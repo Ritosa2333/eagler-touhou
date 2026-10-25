@@ -9,13 +9,20 @@ const rawBytes = value => new TextEncoder().encode(JSON.stringify(value)).byteLe
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const clone = value => JSON.parse(JSON.stringify(value));
 
-function canonical(value) {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (isRecord(value)) return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`;
-  return JSON.stringify(value);
+// Compare retained JSON observations directly. Object order is irrelevant;
+// array order, every field and every native number remain authoritative.
+function same(left,right){
+  if(left===right)return true;
+  if(Array.isArray(left)||Array.isArray(right)){
+    if(!Array.isArray(left)||!Array.isArray(right)||left.length!==right.length)return false;
+    for(let i=0;i<left.length;i++)if(!same(left[i],right[i]))return false;
+    return true;
+  }
+  if(!isRecord(left)||!isRecord(right))return false;
+  const keys=Object.keys(left);if(keys.length!==Object.keys(right).length)return false;
+  for(const key of keys)if(!Object.hasOwn(right,key)||!same(left[key],right[key]))return false;
+  return true;
 }
-
-const same = (left, right) => canonical(left) === canonical(right);
 
 function checkCheckpoint(value) {
   const issues = [];

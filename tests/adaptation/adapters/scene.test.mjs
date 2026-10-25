@@ -6,6 +6,26 @@ import {runNativeCpp} from '../../../launcher/tests/support/native-cpp.mjs';
 import {assertControlledScene,assertControlledSceneStimulus,assertControlledSceneRequest,assertControlledScenePauseBoundary,assertControlledSceneArmed,controlValidationScene,validationSceneRequest} from './scene.mjs';
 import {resolveAdaptationAdapter} from './registry.mjs';
 
+test('custom Practice collision eligibility follows the active run and never accepts Replay or mismatched stages',async()=>{
+  const output=await runNativeCpp(`#include "ValidationScene.hpp"
+#include <cassert>
+#include <iostream>
+int main(){
+  using namespace th08;
+  assert(validation_custom_practice_eligible(true,true,false,1,2,2));
+  assert(!validation_custom_practice_eligible(false,true,false,1,2,2));
+  assert(!validation_custom_practice_eligible(true,false,false,1,2,2));
+  assert(!validation_custom_practice_eligible(true,true,true,1,2,2));
+  assert(!validation_custom_practice_eligible(true,true,false,0,2,2));
+  assert(!validation_custom_practice_eligible(true,true,false,1,2,3));
+  assert(!validation_scene_request_eligible(true,true,1));
+  assert(validation_scene_request_eligible(true,true,1,true));
+  for(auto flags:{2u,8u,0x20u,0x40u,0x4000u})assert(!validation_scene_request_eligible(true,true,flags|1u,true));
+  std::cout<<"only active matching Practice and ordinary worlds";
+}`,{includes:[resolve(import.meta.dirname,'../../../ports/th08/web/cpp/game')]});
+  assert.match(output,/only active matching Practice/);
+});
+
 function th10Receipt(frame=100){
   const contract=resolveAdaptationAdapter('th10','normal').controlledScene;
   return{...receipt,game:'th10',variant:'normal',enemies:1,controlFrame:frame,enemyFrame:frame-2,
@@ -162,7 +182,7 @@ test('native pause entry and exit freeze the world without relaxing acceptance o
     assert.throws(()=>assertControlledScenePauseBoundary({...paused,...patch},receipt,{after:{active:true}}));
 });
 
-test('the production gate accepts only a fresh normal world before its first timeline and reset restores defaults',async()=>{
+test('the production gate accepts fresh ordinary or accepted custom Practice worlds before their first timeline',async()=>{
   const output=await runNativeCpp(`#include "ValidationScene.hpp"
 #include <cassert>
 #include <initializer_list>
@@ -173,6 +193,11 @@ int main(){
   assert(!th08::validation_scene_request_eligible(false,true,normal));
   assert(!th08::validation_scene_request_eligible(true,false,normal));
   for(unsigned flags:{practice,demo,replay,game_state,spell_practice})assert(!th08::validation_scene_request_eligible(true,true,flags));
+  assert(th08::validation_scene_request_eligible(true,true,practice,true));
+  for(unsigned flags:{demo,replay,game_state,spell_practice,practice|replay,practice|demo})
+    assert(!th08::validation_scene_request_eligible(true,true,flags,true));
+  assert(!th08::validation_scene_request_eligible(false,true,practice,true));
+  assert(!th08::validation_scene_request_eligible(true,false,practice,true));
   th08::ValidationSceneGate ordinary;
   assert(!ordinary.enabled()&&!ordinary.update_started()&&ordinary.allow_timeline()&&!ordinary.first_timeline_withheld());
   th08::ValidationSceneGate gate;
@@ -195,7 +220,7 @@ int main(){
   assert(!gate.accepted_before_first_update()&&!gate.allow_timeline()&&!gate.first_timeline_withheld());
   gate=th08::ValidationSceneGate{};gate.note_update_started();
   assert(!gate.begin_before_first_update(true,false,false,0,0,0));
-  std::cout<<"normal route only; pre-first-timeline acceptance; reset restores ordinary execution";
+  std::cout<<"ordinary or accepted custom Practice; pre-first-timeline acceptance; reset restores ordinary execution";
 }`,{includes:[resolve(import.meta.dirname,'../../../ports/th08/web/cpp/game')]});
   assert.match(output,/pre-first-timeline acceptance/);
 });

@@ -1,4 +1,21 @@
 import {TH08_MIDI_PCM_ROLE,TH08_MIDI_VOICE_PCM_ROLE,TH08_OGG_PCM_ROLE,runtimePcmTargetIdentity,runtimePcmSourceHorizonFrames} from './music-browser-helpers.mjs';
+import assert from 'node:assert/strict';
+
+export function selectMusicChecks(game,value){
+  const allowed=musicAdaptationIds(game);if(value===undefined)return allowed;
+  const selected=value.split(',');assert.ok(selected.length&&selected.every(id=>allowed.includes(id)),`Unsupported music checks for ${game}`);
+  assert.equal(new Set(selected).size,selected.length,'Duplicate music checks');return selected;
+}
+
+export function musicModesForChecks(game,checks,{baseline=false}={}){
+  if(game!=='th08')return['none','ogg'];
+  const modes=new Set(baseline?['none']:[]);
+  for(const id of checks){
+    for(const mode of id==='AUDIO-05'?['corrupt-ogg','missing-ogg']:
+      id==='MIDI-04'?['ogg','ogg-full','midi']:id.startsWith('MIDI-')?['midi']:['ogg','ogg-full'])modes.add(mode);
+  }
+  return['none','ogg','ogg-full','midi','corrupt-ogg','missing-ogg'].filter(mode=>modes.has(mode));
+}
 
 /** IDs whose operations and observations are implemented by this music driver. */
 export function musicAdaptationIds(game){
@@ -165,7 +182,7 @@ export function th08OggAcceptanceOutcome({title,stage,expectedStageSong=1,errors
 }
 
 /** Decoder policy is observed at every real lifecycle boundary, alongside existing source/PCM checks. */
-export function th08OggDecodeVariantOutcome({mode,record,errors=[]}={}){
+export function th08OggDecodeVariantOutcome({mode,record,errors=[],requiredBoundaries=['title','stage','pause','background','restart']}={}){
   const expected=mode==='ogg'?0:mode==='ogg-full'?1:null;
   const title=th08OggTitleOutcome({...record?.title,errors});
   const source=th08OggAcceptanceOutcome({title,stage:record?.start?.audio,errors});
@@ -173,21 +190,23 @@ export function th08OggDecodeVariantOutcome({mode,record,errors=[]}={}){
   const boundaries={title:[record?.title?.decoder],stage:[record?.start?.audio?.decoder],
     pause:pause?.decoderSamples,background:background?.decoderSamples,restart:restart?.decoderSamples};
   const counts={title:1,stage:1,pause:4,background:5,restart:3};
-  const decoderMatched=expected!==null&&Object.entries(counts).every(([name,count])=>
-    Array.isArray(boundaries[name])&&boundaries[name].length===count&&boundaries[name].every(decoder=>
+  assert.ok(Array.isArray(requiredBoundaries)&&requiredBoundaries.includes('title')&&requiredBoundaries.includes('stage')&&
+    requiredBoundaries.every(name=>Object.hasOwn(counts,name))&&new Set(requiredBoundaries).size===requiredBoundaries.length);
+  const decoderMatched=expected!==null&&requiredBoundaries.every(name=>
+    Array.isArray(boundaries[name])&&boundaries[name].length===counts[name]&&boundaries[name].every(decoder=>
       decoder?.enabled===true&&decoder.decodeMode===expected));
   const recomputed={pause:th08OggPauseOutcome(pause?.observationInput),
     background:background?.observationInput?.mode==='ogg'?th08BackgroundContinuityOutcome(background.observationInput):null,
     restart:th08OggRestartOutcome(restart?.observationInput)};
-  const passed=source.passed&&decoderMatched&&Object.values(recomputed).every(outcome=>outcome?.passed===true)&&errors.length===0;
+  const passed=source.passed&&decoderMatched&&requiredBoundaries.filter(name=>Object.hasOwn(recomputed,name)).every(name=>recomputed[name]?.passed===true)&&errors.length===0;
   return{mode,expectedDecodeMode:expected,passed,status:passed?'partial':'failed',complete:false,
-    source,decoderMatched,decoderBoundaries:boundaries,recomputed,pause:pause??null,background:background??null,restart:restart??null,
+    source,decoderMatched,requiredBoundaries,decoderBoundaries:boundaries,recomputed,pause:pause??null,background:background??null,restart:restart??null,
     scope:'Verified title/stage OGG sources and PCM, native decoder policy, pause, background recovery and same-frame close/reopen'};
 }
 
-export function th08OggDecodeVariantsOutcome({stream,full,errors=[]}={}){
-  const variants=[th08OggDecodeVariantOutcome({mode:'ogg',record:stream,errors:errors.filter(error=>error.mode==='ogg')}),
-    th08OggDecodeVariantOutcome({mode:'ogg-full',record:full,errors:errors.filter(error=>error.mode==='ogg-full')})];
+export function th08OggDecodeVariantsOutcome({stream,full,errors=[],requiredBoundaries}={}){
+  const variants=[th08OggDecodeVariantOutcome({mode:'ogg',record:stream,errors:errors.filter(error=>error.mode==='ogg'),requiredBoundaries}),
+    th08OggDecodeVariantOutcome({mode:'ogg-full',record:full,errors:errors.filter(error=>error.mode==='ogg-full'),requiredBoundaries})];
   const passed=variants.every(variant=>variant.passed);
   return{passed,status:passed?'partial':'failed',complete:false,variants,
     scope:'Stream and full decoding share source, PCM and lifecycle semantics; other scenes and listening remain separately scoped'};

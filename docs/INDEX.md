@@ -1,6 +1,6 @@
 # 文档总表
 
-共 234 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 235 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -50,6 +50,7 @@
 | 作品适配表 | [ports/th075/ADAPTATION.md](../ports/th075/ADAPTATION.md) | th075 适配检查 |
 | 作品适配表 | [ports/th08-mp/ADAPTATION.md](../ports/th08-mp/ADAPTATION.md) | th08 MP 适配检查 |
 | 作品适配表 | [ports/th08/ADAPTATION.md](../ports/th08/ADAPTATION.md) | th08 适配检查 |
+| 作品适配表 | [ports/th08/docs/verification/adaptation.md](../ports/th08/docs/verification/adaptation.md) | th08 普通版 ｜ 运行验收记录 |
 | 作品适配表 | [ports/th09/ADAPTATION.md](../ports/th09/ADAPTATION.md) | th09 适配检查 |
 | 作品适配表 | [ports/th10-mp/ADAPTATION.md](../ports/th10-mp/ADAPTATION.md) | th10 MP 适配检查 |
 | 作品适配表 | [ports/th10/ADAPTATION.md](../ports/th10/ADAPTATION.md) | th10 适配检查 |

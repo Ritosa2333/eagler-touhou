@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {assertConsumerCoverage,assertMutationWaitsForTail,assertOtherAudioCoverage,assertRenderedSamples,
-  buildSfxProductCoverage,extractWebSfxBody,makeQueueTailMutation,SFX_AUDIO_OWNERS} from './sfx-queue-invariants.mjs';
+  buildSfxProductCoverage,extractWebSfxBody,makeQueueTailMutation,SFX_AUDIO_OWNERS,sfxQueueScenarios,parseHighWater} from './sfx-queue-invariants.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const startSamples=[[0.375,-0.625],[0.625,-0.375]];
@@ -12,9 +12,30 @@ const queueTailSample=[0.125,-0.125];
 const delayedSamples={queuedFrames:3072,renderedFrames:3074,firstSamples:[[0.125,-0.125],[0.125,-0.125]],
   queueTailSamples:[[0.25,-0.5],[0.5,-0.25]],queueTailSample:[0.125,-0.125]};
 
-test('PCM assertions require the new effect to overlap both production queue depths',()=>{
+test('queue scenarios bind current production depths and label additional stress independently',()=>{
+  assert.deepEqual(sfxQueueScenarios([{path:'a',frames:3072},{path:'b',frames:3072}]),[
+    {frames:3072,kind:'production-high-water',sources:['a','b']},{frames:6144,kind:'synthetic-double-high-water',sources:[]}]);
+  assert.deepEqual(sfxQueueScenarios([{path:'a',frames:2048},{path:'b',frames:4096}]).map(row=>row.frames),[2048,4096,8192]);
+  for(const rows of [[],[{path:'a',frames:0}],[{path:'a',frames:NaN}],[{path:'a',frames:1.5}]])assert.throws(()=>sfxQueueScenarios(rows));
+});
+
+test('PCM assertions require the new effect to overlap declared production and stress queue depths',()=>{
   for(const queuedFrames of [3072,6144])assert.equal(assertRenderedSamples({queuedFrames,renderedFrames:queuedFrames+2,
     firstSamples:startSamples,queueTailSample}),true);
+});
+
+test('native queue literals are read from active code and unsupported expressions fail explicitly',()=>{
+  assert.equal(parseHighWater('// high = 6144;\nconstexpr auto high = 3072u;','fixture'),3072);
+  assert.equal(parseHighWater('constexpr i32 low_water=2048,high_water=3072,chunk_frames=1024;','fixture'),3072);
+  assert.equal(parseHighWater('if(queued >= 2048) return;','fixture'),2048);
+  for(const source of ['/* high = 6144; */','high = 3072 * 2;','if(queued >= 3072 * 2)return;'])assert.throws(()=>parseHighWater(source,'fixture'));
+});
+
+test('queue depths are readable from both current native producer declarations',async()=>{
+  for(const path of ['ports/th07/src/SoundPlayer.cpp','ports/th11-mp/web/cpp/sdl/AudioDevice.cpp']){
+    const frames=parseHighWater(await readFile(resolve(root,path),'utf8'),path);
+    assert.ok(Number.isSafeInteger(frames)&&frames>0,path);
+  }
 });
 
 test('queue-tail delayed-to-play mutation renders after old PCM and fails the production invariant',()=>{

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {runTouchUnlimitedResultSceneGroup} from './touch-unlimited-result-scenes.mjs';
+import {runTouchUnlimitedResultSceneGroup,assertTouchUnlimitedResultEvidence} from './touch-unlimited-result-scenes.mjs';
 
 const replayBytes=Buffer.from('independent-normal-replay-bytes');
 const replayHash=createHash('sha256').update(replayBytes).digest('hex');
@@ -71,6 +71,23 @@ test('shared TOUCH-10 scene verifies zero-control contrast, consumed nonzero mov
   assert.equal(result.evidence.result.lag,100);
   assert.equal(result.evidence.replay.metadataLag,100);
   assert.equal(sample.io.setNeutralTarget!==undefined,true);
+  assertTouchUnlimitedResultEvidence(result.evidence,{contract:sample.contract,parsed:await sample.contract.inspectReplay(replayBytes,{expectedSha256:replayHash})});
+});
+
+test('retained unlimited Result proof rejects marker shortcuts, wrong run, skipped stage and altered Replay metadata',async()=>{
+  const sample=fixture(),result=await runTouchUnlimitedResultSceneGroup(sample.io,{contract:sample.contract,preparation,maxWaitTicks:4});
+  const parsed=await sample.contract.inspectReplay(replayBytes,{expectedSha256:replayHash});
+  for(const mutate of [
+    e=>e.states.afterZero.cheatMovementUsed=true,
+    e=>e.states.afterMove.cheatMovementUsed=false,
+    e=>e.states.afterStage.runId='another-run',
+    e=>e.states.afterStage.stage=e.states.afterMove.stage,
+    e=>e.steps[1].row.after=e.steps[1].row.before,
+    e=>e.steps[1].row.runtimeEpoch++,
+    e=>e.states.result.resultLag.value=0,
+    e=>e.cleanup.neutralized=false,
+  ]){const e=structuredClone(result.evidence);mutate(e);assert.throws(()=>assertTouchUnlimitedResultEvidence(e,{contract:sample.contract,parsed}));}
+  assert.throws(()=>assertTouchUnlimitedResultEvidence(result.evidence,{contract:sample.contract,parsed:{...parsed,metadata:{lag:0,practice:false}}}));
 });
 
 test('missing runtime or replay observations stay incomplete',async()=>{

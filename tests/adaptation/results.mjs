@@ -4,10 +4,12 @@ import {resolve} from 'node:path';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {fileIdentity,identityDigest} from '../../tools/testing/dependency-snapshot.mjs';
 import {assessCompleteEvidence} from './complete-evidence.mjs';
+import {diagnosticReplayClaim,assessDiagnosticReplayEvidence} from './adapters/diagnostic-replay-evidence.mjs';
 
 const DRIVER_SCHEMAS=new Set(['runtime-browser','runtime-desktop-probes','practice-browser','replay-browser',
   'music-browser','offline-runtime-browser','room-browser','diagnostic-browser','language-browser','build-acceptance',
-  'minimal-runtime-browser','adaptation-source-review-result'].map(name=>`eagler-touhou/${name}/1`));
+  'minimal-runtime-browser','adaptation-source-review-result','practice-language-review',
+  'language-review','view-options-review','diagnostic-reference-review','diagnostic-replay-review'].map(name=>`eagler-touhou/${name}/1`));
 const failed=value=>value?.status==='failed'||value?.passed===false&&
   !['incomplete','partial','blocked','not-run','not-applicable','preflight-only'].includes(value?.status);
 const checkIds=entry=>[...new Set([
@@ -142,7 +144,7 @@ function plannedResultGaps(testCase,driver,scopes,checks,scenarios){
 }
 
 /** Preserve the driver's exact scope; a zero process exit cannot hide failed assertions. */
-export function assessDriverReport(testCase,processResult,driver){
+export function assessDriverReport(testCase,processResult,driver,{assessEvidence=assessCompleteEvidence}={}){
   const issues=[];
   if(!driver||!DRIVER_SCHEMAS.has(driver.schema))issues.push('Unknown or missing driver report schema');
   if(!driver?.runId||!driver.finishedAt||driver.status==='running')issues.push('Driver report is not sealed');
@@ -166,12 +168,13 @@ export function assessDriverReport(testCase,processResult,driver){
       try{proof=checkProof(driver,entry,`${pointer}/checks/${index}`,product);}
       catch(error){issues.push(`Invalid observation evidence for ${entry.id}: ${error.message}`);}
       if(entry.complete===true||entry.machineComplete===true){
-        completeEvidence=assessCompleteEvidence({driver,entry,product});
+        completeEvidence=assessEvidence({driver,entry,product});
         if(completeEvidence.available&&!completeEvidence.valid)
           issues.push(`Invalid complete evidence for ${entry.id}: ${completeEvidence.reason}`);
       }
       for(const id of checkIds(entry))checks.push({id,status:entry.status??(entry.passed===true?'passed':'unknown'),
-        complete:entry.complete===true&&proof!==null&&completeEvidence?.valid===true,claimedComplete:entry.complete===true,proof,
+        complete:entry.complete===true&&proof!==null&&completeEvidence?.valid===true&&(!completeEvidence.checks||completeEvidence.checks.includes(id)),
+        claimedComplete:entry.complete===true&&(!completeEvidence?.checks||completeEvidence.checks.includes(id)),proof,
         ...(entry.machineComplete!==undefined?{machineComplete:entry.machineComplete===true&&proof!==null&&completeEvidence?.valid===true,
           claimedMachineComplete:entry.machineComplete===true}:{}),
         scope:entry.scope??entry.id,error:entry.error??null,
@@ -220,10 +223,22 @@ export function assessDriverReport(testCase,processResult,driver){
     adaptationComplete:driver?.coverage?.complete===true};
 }
 
+/** Streaming Replay proofs are reopened before the existing synchronous aggregation. */
+export async function assessDriverReportAsync(testCase,processResult,driver){
+  const proofs=new Map();
+  for(const scope of [driver,...(driver?.targets??[])])for(const entry of scope?.checks??[]){
+    if((entry.complete===true||entry.machineComplete===true)&&diagnosticReplayClaim(driver,entry)){
+      const product={game:scope.game??driver.scope?.game??testCase.game,variant:scope.variant??driver.scope?.variant??testCase.variant};
+      proofs.set(entry,await assessDiagnosticReplayEvidence({driver,entry,product}));
+    }
+  }
+  return assessDriverReport(testCase,processResult,driver,{assessEvidence:request=>proofs.get(request.entry)??assessCompleteEvidence(request)});
+}
+
 export async function readCaseReport(testCase,processResult){
   try{
     const identity=await fileIdentity(testCase.reportPath),driver=JSON.parse(await readFile(testCase.reportPath,'utf8'));
-    return{...assessDriverReport(testCase,processResult,driver),report:{path:testCase.reportPath,...identity}};
+    return{...await assessDriverReportAsync(testCase,processResult,driver),report:{path:testCase.reportPath,...identity}};
   }catch(error){return{status:processResult.status==='timeout'?'timeout':processResult.status==='cancelled'?'cancelled':'failed',
     issues:[`Cannot verify sealed driver report: ${error.message}`],checks:[],scenarios:[],report:null};}
 }
@@ -242,7 +257,7 @@ export async function reusableResult(previous,currentFingerprint){
       const path=resolve(previous.task.cwd,input.path),current=await fileIdentity(path);
       if(current.bytes!==input.bytes||current.sha256!==input.sha256)return false;
     }
-    const assessed=assessDriverReport(previous,previous.process,driver);
+    const assessed=await assessDriverReportAsync(previous,previous.process,driver);
     if(assessed.status!==previous.status||assessed.driverRunId!==previous.driverRunId)return false;
     // Coverage is derived from the sealed child, including on resume. A parent
     // summary cannot upgrade partial observations into complete evidence.
@@ -331,7 +346,7 @@ export function adaptationCoverage(cases,{checks=[],unmappedChecks=[],targets,hu
     const selected=cases.filter(item=>item.game===game&&item.variant===variant);
     const expected=requirements??(checks.length?checks:[...new Set(selected.flatMap(item=>item.checksMapped??[]))]).map(id=>({id}));
     for(const {id,reason} of expected){
-      const related=selected.filter(item=>item.checksMapped?.includes(id));
+      const related=selected.filter(item=>(item.requiredChecks??item.checksMapped)?.includes(id));
       const supporting=selected.filter(item=>!related.includes(item)&&item.supportingChecks?.includes(id));
       const evidence=[...related,...supporting].flatMap(item=>(item.checks??[]).filter(check=>check.id===id)
         .map(check=>({...check,caseId:item.id,execution:item.execution,role:related.includes(item)?'required':'supporting'})));

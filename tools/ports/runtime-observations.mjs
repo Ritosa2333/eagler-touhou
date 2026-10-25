@@ -110,7 +110,7 @@ export function readRuntimeObservation(target) {
         ?Array.from(new Type(currentBuffer,pointer,count)):null;
     };
     if(app!=null){
-      if(statusExport)status=Array.from({length:11},(_,index)=>finite(statusExport(app,index)));
+      if(statusExport)status=Array.from({length:12},(_,index)=>finite(statusExport(app,index)));
       const replayState=replayStateExport?wasmArray(replayStateExport,5,Uint32Array):null;
       const replaySlots=statusExport?Array.from({length:10},(_,index)=>finite(statusExport(app,12+index))):null;
       if(replayState){
@@ -168,7 +168,8 @@ export function readRuntimeObservation(target) {
       result.pause=diagnostics?{active:diagnostics[6]!==0,raw:diagnostics[6]}:null;
       result.capabilities.pause=result.pause!==null;
       if(status)result.status={supervisorActive:status[0],active:status[1],invalid:status[2],stage:status[3],
-        loading:status[7],titleScreen:status[8],cursor:status[9],supervisorState:diagnostics?.[9]??null};
+        loading:status[7],titleScreen:status[8],cursor:status[9],supervisorState:diagnostics?.[9]??null,
+        ...(variant==='normal'?{titlePhase:status[11],titleInputReady:statusExport(app,25)===1,titleStateTimer2:finite(statusExport(app,26))}:{})};
       result.capabilities.restartFrame=variant==='multiplayer'?null:'enemy';
       if(variant==='normal'&&status&&status[0]===2&&status[1]===1&&!status[2]&&!status[7]){
         const resultScreen=Boolean(diagnostics?.[7]||diagnostics?.[8]);

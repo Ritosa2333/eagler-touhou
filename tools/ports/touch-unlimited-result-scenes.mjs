@@ -74,7 +74,7 @@ function verifyTraceRow(row,{afterSequence,state,target,contract,label}){
   requireSource(row.source,contract.sources?.touchTrace,`${label} movement row`);
   const before=finitePoint(row.before,`${label} movement row`),after=finitePoint(row.after,`${label} movement row`),actualTarget=finitePoint(row.target,`${label} movement row`);
   assert.deepEqual(actualTarget,target,`${label} movement row did not consume the requested target`);
-  return{sequence:row.sequence,runId:row.runId,stage:row.stage,before,after,target:actualTarget,
+  return{sequence:row.sequence,runId:row.runId,stage:row.stage,runtimeEpoch:row.runtimeEpoch,storageIdentity:structuredClone(row.storageIdentity),before,after,target:actualTarget,
     mode:row.mode,gameplayTick:row.gameplayTick,source:row.source};
 }
 async function nextMotion(io,{afterSequence,state,target,contract,label,maxWaitTicks}){
@@ -129,7 +129,7 @@ function bytesOf(value,label){
  */
 export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation,slot=1,name='TCH10',maxWaitTicks=8}={}){
   const evidence={schema:SCHEMA,product:contract?{game:contract.game,variant:contract.variant}:null,
-    preparation:preparation?structuredClone(preparation):null,steps:[],transitions:[],result:null,replay:null,cleanup:null};
+    preparation:preparation?structuredClone(preparation):null,states:{},steps:[],transitions:[],result:null,replay:null,cleanup:null};
   const missing=REQUIRED_IO.filter(key=>typeof io?.[key]!=='function');
   if(typeof contract?.inspectReplay!=='function')missing.push('contract.inspectReplay');
   if(typeof contract?.nonzeroTarget!=='function')missing.push('contract.nonzeroTarget');
@@ -148,11 +148,13 @@ export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation
     assert.notEqual(initialNeutral.accepted,false,'Runtime rejected initial neutral input');
 
     const baseline=identityOf(await io.readState(),preparation,contract,'Initial gameplay');
+    evidence.states.baseline=structuredClone(baseline);
     assert.equal(baseline.scene,'gameplay','Touch-unlimited scene must start in gameplay');
     assert.equal(baseline.cheatMovementUsed,false,'A fresh ordinary run must not start with the unlimited marker');
     const position=finitePoint(baseline.playerPosition,'Initial gameplay state');
     const traceBefore=await io.readTouchTrace({afterSequence:null});
     const initialSequence=traceCursor(traceBefore,'Initial movement trace');
+    evidence.traceInitialSequence=initialSequence;
 
     const zeroTarget=typeof contract.stationaryTarget==='function'?
       finitePoint(contract.stationaryTarget(baseline),'Stationary target'):position;
@@ -166,6 +168,7 @@ export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation
       label:'Stationary unlimited-touch control',maxWaitTicks});
     assert.deepEqual(zeroRow.before,zeroRow.after,'Stationary unlimited-touch input moved the player');
     const afterZero=identityOf(await io.readState(),preparation,contract,'Stationary movement result');
+    evidence.states.afterZero=structuredClone(afterZero);
     assert.equal(afterZero.scene,'gameplay');assert.equal(afterZero.cheatMovementUsed,false,
       'A zero-displacement unlimited-touch sample must not set the run marker');
     assert.deepEqual(afterZero.playerPosition,zeroRow.after,'Stationary movement trace differs from the native player position');
@@ -185,6 +188,7 @@ export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation
     assert.ok(movingRow.after.x!==movingRow.before.x||movingRow.after.y!==movingRow.before.y,
       'Unlimited-touch movement was not nonzero at the gameplay consumer');
     const afterMove=identityOf(await io.readState(),preparation,contract,'Nonzero movement result');
+    evidence.states.afterMove=structuredClone(afterMove);
     assert.equal(afterMove.scene,'gameplay');assert.equal(afterMove.cheatMovementUsed,true,
       'A consumed nonzero unlimited-touch movement did not set the run marker');
     assert.deepEqual(afterMove.playerPosition,movingRow.after,'Movement trace differs from the native player position');
@@ -195,6 +199,7 @@ export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation
       contract.sources.stageTransition,'Production stage transition');
     const afterStage=await waitForState(io,{preparation,contract,label:'Next gameplay stage',maxWaitTicks,
       predicate:state=>state.scene==='gameplay'&&!Object.is(state.stage,afterMove.stage)});
+    evidence.states.afterStage=structuredClone(afterStage);
     assert.equal(afterStage.cheatMovementUsed,true,'The run marker was cleared across the stage transition');
     if(afterStage.resultLag!==null&&afterStage.resultLag!==undefined)
       throw new SceneIncomplete('Result data appeared before the production Result transition');
@@ -205,6 +210,7 @@ export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation
       contract.sources.resultTransition,'Production Result transition');
     const resultState=await waitForState(io,{preparation,contract,label:'Production Result',maxWaitTicks,
       predicate:state=>state.scene==='result'&&state.resultLag?.available===true});
+    evidence.states.result=structuredClone(resultState);
     assert.equal(resultState.cheatMovementUsed,true,'The Result belongs to a run without the unlimited marker');
     const resultLag=resultState.resultLag;
     if(!resultLag||resultLag.available!==true||!Number.isFinite(resultLag.value))
@@ -232,6 +238,7 @@ export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation
     assert.equal(parsed.metadata.practice,false,'Saved Replay is not an ordinary normal-game recording');
     assert.equal(parsed.metadata.lag,EXPECTED_DROP_RATE,'Saved Replay did not store 100% processing drop');
     evidence.replay={path:saved.path,method:saved.source,bytes:raw.length,sha256,
+      ...(replayRead.artifact?{artifact:replayRead.artifact}:{}),
       storageIdentity:structuredClone(replayRead.storageIdentity),metadataLag:parsed.metadata.lag,
       practice:parsed.metadata.practice,parser:parsed.source};
     result={schema:SCHEMA,checkStatus:'passed',reason:null,evidence};
@@ -250,4 +257,37 @@ export async function runTouchUnlimitedResultSceneGroup(io,{contract,preparation
   if(failure){failure.evidence=evidence;throw failure;}
   if(cleanupError)throw cleanupError;
   return result;
+}
+
+/** Recompute the ordinary-run marker and native Result from retained observations. */
+export function assertTouchUnlimitedResultEvidence(e,{contract,parsed}={}){
+  assert.equal(e.schema,SCHEMA);assert.deepEqual(e.product,{game:contract.game,variant:contract.variant});
+  const p=e.preparation;validPreparation(p,contract);
+  assert.deepEqual(Object.keys(e.states),['baseline','afterZero','afterMove','afterStage','result']);
+  for(const [label,state] of Object.entries(e.states))identityOf(state,p,contract,label);
+  const {baseline,afterZero,afterMove,afterStage,result}=e.states;
+  for(const state of [baseline,afterZero,afterMove,afterStage])assert.equal(state.scene,'gameplay');
+  assert.equal(baseline.cheatMovementUsed,false);assert.equal(afterZero.cheatMovementUsed,false);
+  for(const state of [afterMove,afterStage,result])assert.equal(state.cheatMovementUsed,true);
+  assert.deepEqual(e.steps.map(row=>row.kind),['zero-displacement-unlimited','nonzero-unlimited']);
+  const zero=e.steps[0],moving=e.steps[1],target=finitePoint(contract.nonzeroTarget(afterZero),'Independent movement target');
+  assert.equal(zero.receipt.available,true);assert.equal(zero.receipt.accepted,true);assert.deepEqual(zero.receipt.target,baseline.playerPosition);
+  verifyTraceRow(zero.row,{afterSequence:e.traceInitialSequence,state:baseline,target:baseline.playerPosition,contract,label:'Stationary control'});
+  assert.deepEqual(zero.row.before,zero.row.after);assert.deepEqual(afterZero.playerPosition,zero.row.after);
+  assert.equal(moving.receipt.available,true);assert.equal(moving.receipt.accepted,true);assert.deepEqual(moving.receipt.target,target);
+  verifyTraceRow(moving.row,{afterSequence:zero.row.sequence,state:afterZero,target,contract,label:'Nonzero control'});
+  assert.deepEqual(moving.row.before,afterZero.playerPosition);assert.notDeepEqual(moving.row.before,moving.row.after);
+  assert.deepEqual(moving.row.after,target);assert.deepEqual(afterMove.playerPosition,moving.row.after);
+  assert.notEqual(afterStage.stage,afterMove.stage);assert.equal(afterStage.resultLag,null);
+  assert.deepEqual(e.transitions.map(row=>row.kind),['stage','result']);
+  validateTransitionReceipt(e.transitions[0].request,contract.sources.stageTransition,'Stage');
+  validateTransitionReceipt(e.transitions[1].request,contract.sources.resultTransition,'Result');
+  assert.equal(e.transitions[0].from,afterMove.stage);assert.equal(e.transitions[0].to,afterStage.stage);
+  assert.equal(result.scene,'result');assert.equal(result.resultLag.available,true);assert.equal(result.resultLag.value,EXPECTED_DROP_RATE);
+  requireSource(result.resultLag.source,contract.sources.resultLag,'Result lag');
+  requireSource(e.replay.method,contract.sources.replayFinalizer,'Replay finalizer');
+  requireSource(parsed.source,contract.sources.replayParser,'Replay parser');assert.equal(parsed.sha256,e.replay.sha256);
+  assert.equal(parsed.metadata.practice,false);assert.equal(parsed.metadata.lag,EXPECTED_DROP_RATE);
+  assert.deepEqual(e.replay.storageIdentity,p.storageIdentity);
+  assert.equal(e.cleanup.neutralized,true);assert.equal(e.cleanup.receipt.available,true);assert.equal(e.cleanup.receipt.accepted,true);
 }

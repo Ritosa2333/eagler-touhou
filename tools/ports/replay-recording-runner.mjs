@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {mkdir, readFile, writeFile, access} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
+import {unsupportedReplayVersion,assertReplayVersionRejection} from './replay-version-rejection.mjs';
 import {
   assessReplayInputIsolation,
   assessReplayPlaybackWindow,
@@ -368,7 +369,7 @@ export async function runReplayRecordingGroup({semantics,io,outputDir,stage=0,wi
   try {
     if(!targetDir)throw new RunnerIssue('incomplete','An outputDir is required to preserve the raw Replay and evidence report.');
     await mkdir(targetDir,{recursive:true});
-    for(const name of ['replay-recording-finite.rpy','replay-recording-evidence.json']){
+    for(const name of ['replay-recording-finite.rpy','replay-recording-original.rpy','replay-recording-evidence.json']){
       try {await access(join(targetDir,name));throw new RunnerIssue('incomplete',`Refusing to overwrite existing Replay evidence ${name}.`);}
       catch(error){if(error instanceof RunnerIssue)throw error;}
     }
@@ -387,6 +388,19 @@ export async function runReplayRecordingGroup({semantics,io,outputDir,stage=0,wi
         mapIssue(record,error);
         report.errors.push({case:scene.id,reason:error?.message??String(error)});
       }
+    }
+
+    if(typeof io?.titleParser?.inspectOriginal==='function'){
+      try{
+        const checkpoint=await requireMethod(io,'finalize')({finalizer:plan.finalizer,stage});
+        if(checkpoint?.status!=='passed'||checkpoint.path!==plan.finalizer.path)
+          throw new RunnerIssue('failed','Original-format Replay finalization did not use the declared production path.',{checkpoint});
+        const file=await copyVerifiedReplay(io,checkpoint.path,checkpoint.sha256);
+        const artifact=join(targetDir,'replay-recording-original.rpy');await writeFile(artifact,file.bytes,{flag:'wx'});
+        report.originalExport={status:'running',finalized:checkpoint,sha256:file.sha256,bytes:file.bytes.length,artifact,
+          recordingCases:report.cases.filter(record=>record.kind==='recording-input').map(record=>record.id)};
+        report.originalExport.inspection=io.titleParser.inspectOriginal(file.bytes,{expectedSha256:file.sha256});report.originalExport.status='passed';
+      }catch(error){report.originalExport={...report.originalExport,status:error?.status??'failed',reason:error?.message??String(error)};}
     }
 
     if(pointerScene){
@@ -558,6 +572,18 @@ export async function runReplayRecordingGroup({semantics,io,outputDir,stage=0,wi
     }
   }
 
+  if(rawBytes&&semantics.pointerExtension?.rejection&&typeof io.rejectImport==='function'){
+    const contract=semantics.pointerExtension.rejection;
+    try{
+      const mutation=unsupportedReplayVersion(rawBytes,contract),artifact=join(targetDir,'replay-recording-unsupported-version.rpyx');
+      await writeFile(artifact,mutation.bytes,{flag:'wx'});
+      report.versionRejection={status:'running',mutation:mutation.mutation,artifact};
+      const observed=await io.rejectImport({bytes:mutation.bytes,path:contract.path,originalPath:finalized.path});
+      const evidence=Object.assign(report.versionRejection,observed,{status:'passed'});
+      assertReplayVersionRejection(evidence,{contract,game:plan.title.game,epoch:evidence.sent.epoch,bytes:rawBytes});
+      report.versionRejection=evidence;
+    }catch(error){report.versionRejection={...report.versionRejection,status:'failed',reason:error.message};report.errors.push({phase:'unsupported-extension-version',reason:error.message});}
+  }
   for(const scene of plan.cases){
     const record=records.get(scene.id);
     if(scene.status!=='ready'&&record.status==='blocked')continue;
@@ -568,6 +594,8 @@ export async function runReplayRecordingGroup({semantics,io,outputDir,stage=0,wi
   report.counts=Object.fromEntries(['passed','failed','incomplete','blocked'].map(status=>[status,report.cases.filter(item=>item.status===status).length]));
   report.status=report.cases.some(item=>item.status==='failed')?'failed':
     report.cases.every(item=>item.status==='passed')?'passed':'incomplete';
+  if(report.originalExport&&report.originalExport.status!=='passed')report.status='failed';
+  if(report.versionRejection&&report.versionRejection.status!=='passed')report.status='failed';
   report.completedAt=new Date().toISOString();
   if(targetDir){
     const reportPath=join(targetDir,'replay-recording-evidence.json');

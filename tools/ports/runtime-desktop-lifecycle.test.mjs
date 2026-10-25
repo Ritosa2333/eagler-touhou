@@ -204,15 +204,15 @@ test('native target lookup must be unambiguous and use actual page targets',()=>
   assert.equal(selectNativePageTarget({targetInfos:[{...page,targetId:''}],url:page.url}).status,'incomplete');
 });
 
-test('background-only mode requires identity and exactly its three lifecycle checks',()=>{
+test('background-only mode requires native window, pointer cancellation, gamepad reconnect and audio evidence',()=>{
   assert.deepEqual(backgroundOnlyRequiredChecks,[
-    'package-and-private-data-identity','window-minimize-foreground-and-release','background-tab-foreground-release',
+    'package-and-private-data-identity','window-minimize-foreground-and-release','touch-pointer-cancel-and-release',
+    'gamepad-disconnect-and-reconnect','background-input-lifecycle-contract','background-tab-foreground-release',
     'background-audio-recovery','package-and-private-data-identity-postflight',
   ]);
   assert.ok(backgroundOnlyOmittedChecks.includes('shared-touch-limited'));
   assert.ok(backgroundOnlyOmittedChecks.includes('shared-touch-unlimited'));
-  assert.ok(!desktopAdaptationIdsForMode('background-only').some(id=>id.startsWith('TOUCH-')),
-    'Background checks observe keyboard release and audio recovery, not a touch lifecycle');
+  assert.ok(desktopAdaptationIdsForMode('background-only').includes('TOUCH-16'));
 });
 
 test('background-only scope never counts omitted checks as passes',()=>{
@@ -249,12 +249,12 @@ test('input-only scope retains all input, pause, new-epoch, and foreground SFX c
   assert.throws(()=>selectDesktopExecutionMode({backgroundOnly:true,inputOnly:true}),/mutually exclusive/);
 });
 
-test('audio latency mode requires actual PCM timing and its live negative control without gameplay checks',()=>{
+test('audio latency mode requires PCM timing, live negative control and native gameplay SFX',()=>{
   assert.equal(selectDesktopExecutionMode({audioLatencyOnly:true}),'audio-latency-only');
   for(const flags of [{inputOnly:true},{touchOnly:true},{backgroundOnly:true}])
     assert.throws(()=>selectDesktopExecutionMode({...flags,audioLatencyOnly:true}),/mutually exclusive/);
   const scope=desktopCheckScope('audio-latency-only');
-  assert.deepEqual(scope.requiredIds,['package-and-private-data-identity','native-sfx-before-mixed-queue-tail',
+  assert.deepEqual(scope.requiredIds,['package-and-private-data-identity','audio-output-with-music-disabled','audio-none-contract','native-sfx-before-mixed-queue-tail',
     'negative-control-sfx-delayed-to-mixed-queue-tail','package-and-private-data-identity-postflight']);
   assert.ok(scope.omittedIds.includes('shared-touch-limited'));
   assert.deepEqual(desktopAdaptationIdsForMode('audio-latency-only'),['AUDIO-02']);
@@ -304,7 +304,7 @@ test('action-only scope requires native action effects and both identity gates',
   assert.equal(desktopExecutionBrowserMode('actions-only'),'headless');
   assert.throws(()=>selectDesktopExecutionMode({actionsOnly:true,inputOnly:true}),/mutually exclusive/);
   const scope=desktopCheckScope('actions-only');
-  assert.deepEqual(scope.requiredIds,['package-and-private-data-identity','launcher-touch-native-consumers','shared-touch-restart','shared-touch-actions',
+  assert.deepEqual(scope.requiredIds,['package-and-private-data-identity','launcher-touch-native-consumers','shared-launcher-touch-focus','shared-touch-restart','shared-touch-actions',
     'shared-touch-double-tap-bomb','shared-touch-deathbomb','shared-touch-dialogue-confirm','shared-touch-unlimited-result',
     'shared-touch-menu-dialogue-gestures','shared-launcher-touch-layout','shared-launcher-touch-magnifier',
     'package-and-private-data-identity-postflight']);

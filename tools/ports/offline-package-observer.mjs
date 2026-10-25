@@ -53,6 +53,12 @@ export function installOfflinePackageStoreObserver(options) {
         };
       });
     },
+    readPackageGeneration(game,id){
+      if(typeof game!=='string'||!game||typeof id!=='string'||!id)throw Error('Generation observation needs game and pinned id');
+      return read([generations],(transaction,done)=>{
+        const request=transaction.objectStore(generations).get([game,id]);request.onsuccess=()=>done(request.result||null);
+      });
+    },
     async readPackageObject(id){
       const value=await read([objects],(transaction,done)=>{
         const request=transaction.objectStore(objects).get(id);

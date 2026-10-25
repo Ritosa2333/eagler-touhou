@@ -8,6 +8,7 @@ CMake 使用 `eagler::thprac`。脚本构建把 `common/include` 加入头文件
 
 | 文件 | 接入位置 |
 | --- | --- |
+| [`PracticeButton.hpp`](../include/eagler/thprac/PracticeButton.hpp) | 普通与禁用按钮，按固定 ImGui 接口成对处理控件与透明度状态 |
 | [`PracticeInput.hpp`](../include/eagler/thprac/PracticeInput.hpp) | 逻辑输入、自动射击与禁用键顺序 |
 | [`PracticeKeyMonitor.hpp`](../include/eagler/thprac/PracticeKeyMonitor.hpp) | 会话拥有的按键统计、60 帧 APS 与 CSV |
 | [`PracticeSpeed.hpp`](../include/eagler/thprac/PracticeSpeed.hpp) | 逻辑速度；显示插值仍由绘制层负责 |

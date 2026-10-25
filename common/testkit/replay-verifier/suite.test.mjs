@@ -8,11 +8,11 @@ const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const identity = replaySha256 => ({game:'th08',profile:'original/v1',replaySha256,
   executableSha256:'a'.repeat(64),resourceSha256:'b'.repeat(64),stateSchema:'state/v1',
   traceCodec:'jsonl/v1',digestAlgorithm:'sha256-truncated-128/canonical-json-v1'});
-function trace(replaySha256, value, complete = true) {
+function trace(replaySha256, value, complete = true, ticks=1) {
   return [...recordsFromSegments({comparisonIdentity:identity(replaySha256),
     coverage:{requiredCategories:['world'],optionalCategories:[]},provenance:{provider:'fixture'},
-    segments:[{route:'stage-0',ticks:[{replaySampleIndex:1,clockDisposition:'advanced',appliedInput:0,
-      clocks:{gameFrame:1},scalars:{stage:0},categories:{world:digest(Buffer.from(value)).slice(0,32)}}],complete}],
+    segments:[{route:'stage-0',ticks:Array.from({length:ticks},(_,index)=>({replaySampleIndex:index+1,clockDisposition:'advanced',appliedInput:0,
+      clocks:{gameFrame:index+1},scalars:{stage:0},categories:{world:digest(Buffer.from(value)).slice(0,32)}})),complete}],
     runReason:complete?'natural-terminal':'capture-incomplete'})];
 }
 
@@ -35,6 +35,17 @@ test('shared Replay suite verifies every selected fixture through the common tic
   assert.equal(result.status,'PASS');assert.equal(result.complete,true);
   assert.deepEqual(result.results.map(item=>item.comparison.comparedTicks),[1,1]);
   assert.equal(inspected,2);assert.equal(closed,4);
+});
+
+test('opt-in method controls are mandatory and their failure cannot inherit a passing full comparison',async()=>{
+  const item=fixture('three-ticks');
+  for(const failControls of [false,true]){
+    let opened=0;const backend=adapter({candidateTrace:row=>trace(row.replaySha256,'same',true,3)});
+    backend.openOriginal=async({fixture})=>({records:trace(fixture.replaySha256,'same',true,failControls&&++opened>1?1:3),close:()=>{}});
+    const result=await runReplaySuite({adapter:backend,cases:[item],expectedIds:[item.id],methodControls:true});
+    assert.equal(result.results[0].status,'PASS');assert.equal(result.methodControls.passed,!failControls);
+    assert.equal(result.complete,!failControls);assert.equal(result.status,failControls?'ERROR':'PASS');
+  }
 });
 
 test('missing, withheld, and wrong-identity fixture bytes cannot silently shrink a selected lane',async()=>{

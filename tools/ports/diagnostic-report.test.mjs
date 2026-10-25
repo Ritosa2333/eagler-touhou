@@ -70,6 +70,16 @@ test('structured diagnostic receipt fixtures retain product binding and partial 
   }
 });
 
+test('changed reference identity fails the sealed diagnostic report even when every lane passed',()=>{
+  const report=sampleReport(),target=report.targets[0];
+  finalizeDiagnosticTarget(target,lanes.map(lane=>({lane,status:'passed'})),lanes,false);
+  finalizeDiagnosticReport(report,target);
+  assert.equal(report.status,'failed');assert.equal(report.passed,false);
+  const assessed=assessDriverReport(testCase,{code:1,status:'failed'},report);
+  assert.equal(assessed.status,'failed');
+  assert.ok(assessed.checks.every(check=>check.complete===false));
+});
+
 test('a diagnostic receipt fixture cannot claim a complete native capture',()=>{
   const report=sampleReport({claimComplete:true}),assessed=assessDriverReport(testCase,processResult,report);
   assert.equal(assessed.status,'failed');

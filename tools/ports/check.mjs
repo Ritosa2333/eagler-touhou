@@ -6,7 +6,7 @@ import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {targets, root, inspectInputs, sourceDependencies, sourceIdentity, slash} from './inputs.mjs';
 import {checkRuntimeSource, runtimeSourceFiles} from './runtime-contracts.mjs';
 import {STATUS_SCHEMA, checkStates, retainedVerification, validateStatusReport, readStatusReport} from './status.mjs';
-import {adaptationMarkdown, preserveManualEvidence, portDefinitions, notApplicable} from '../docs/new-adaptation.mjs';
+import {adaptationMarkdown, preserveManualEvidence, portDefinitions, notApplicable, readVerificationSnapshot} from '../docs/new-adaptation.mjs';
 import {runTasks} from '../testing/runner.mjs';
 import {parseWindowsCompilerHelpers} from '../testing/compiler-helpers.mjs';
 
@@ -189,7 +189,8 @@ async function main(args) {
         return [variant, result ? checkStates({port,variant,checks:spec.checks,gates:result.gates,notApplicableFor:notApplicable}) : {}];
       }));
       const path=resolve(root,port.directory,'ADAPTATION.md');
-      writeFileSync(path,preserveManualEvidence(adaptationMarkdown(port,{evidence}),existsSync(path)?readFileSync(path,'utf8'):''));
+      const verification=readVerificationSnapshot(port);
+      writeFileSync(path,preserveManualEvidence(adaptationMarkdown(port,{evidence,verification}),existsSync(path)?readFileSync(path,'utf8'):''));
     }
   }
   if (options.checkStatus) {

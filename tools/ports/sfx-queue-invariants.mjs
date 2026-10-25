@@ -348,37 +348,45 @@ async function runLiveWebAudioProbe(browser,body){
   }
 }
 
-function parseHighWater(source,path){
+export function parseHighWater(source,path){
+  source=source.replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/[^\n]*/g,'');
   const patterns=[
-    /HIGH_WATER_FRAMES\s*=\s*(\d+)/,
-    /high_water\s*=\s*(\d+)/,
-    /high\s*=\s*(\d+)/,
-    /queued\s*>=\s*(\d+)/,
+    /\bHIGH_WATER_FRAMES\s*=\s*(\d+)[uUlL]*(?=\s*[,;])/,
+    /\bhigh_water\s*=\s*(\d+)[uUlL]*(?=\s*[,;])/,
+    /\bhigh\s*=\s*(\d+)[uUlL]*(?=\s*[,;])/,
+    /\bqueued\s*>=\s*(\d+)[uUlL]*(?=\s*[)&|;])/,
   ];
   for(const pattern of patterns){const match=pattern.exec(source);if(match)return Number(match[1]);}
   throw new Error(`could not identify a production PCM queue high-water mark in ${path}`);
 }
 
+export function sfxQueueScenarios(rows){
+  assert.ok(Array.isArray(rows)&&rows.length>0);
+  const lengths=new Map();
+  for(const row of rows){assert.ok(typeof row.path==='string'&&row.path.length>0&&Number.isSafeInteger(row.frames)&&row.frames>0&&row.frames<=1048576);
+    const paths=lengths.get(row.frames)??[];paths.push(row.path);lengths.set(row.frames,paths);}
+  const scenarios=[...lengths].map(([frames,sources])=>({frames,kind:'production-high-water',sources}));
+  scenarios.push({frames:Math.max(...lengths.keys())*2,kind:'synthetic-double-high-water',sources:[]});return scenarios;
+}
+
 async function productionQueueDepths(){
   const specs=[
-    {path:'ports/th07/src/SoundPlayer.cpp',expected:3072},
-    {path:'ports/th11-mp/web/cpp/sdl/AudioDevice.cpp',expected:6144},
+    {path:'ports/th07/src/SoundPlayer.cpp'},
+    {path:'ports/th11-mp/web/cpp/sdl/AudioDevice.cpp'},
   ];
   const rows=[];
   for(const spec of specs){
     const source=await readFile(resolve(root,spec.path),'utf8');
     const frames=parseHighWater(source,spec.path);
-    assert.equal(frames,spec.expected,`${spec.path}: queue depth fixture no longer matches the production high-water mark`);
     rows.push({path:spec.path,frames});
   }
-  assert.equal(new Set(rows.map(row=>row.frames)).size,2,'production queue-depth scenarios must exercise distinct lengths');
   return rows;
 }
 
 export async function runSfxQueueInvariant({output}){
   return runWithReport({output,schema:'eagler-touhou/sfx-queue-invariants/1'},async(result,save)=>{
     const evidence=await sourceEvidence();
-    const depths=await productionQueueDepths();
+    const depths=await productionQueueDepths(),scenarios=sfxQueueScenarios(depths);
     const {launchBrowser}=await import('../browser/launch.mjs');
     const browser=await launchBrowser();
     try{
@@ -386,7 +394,7 @@ export async function runSfxQueueInvariant({output}){
       const page=await browser.newPage();
       await page.setContent('<!doctype html><meta charset="utf-8"><title>SFX queue invariant</title>');
       const baseline=[],negativeControls=[];
-      for(const {frames} of depths){
+      for(const {frames} of scenarios){
         const rendered=await renderScenario(page,evidence.body,frames,'production');
         assertRenderedSamples(rendered);baseline.push(rendered);
         const mutation=makeQueueTailMutation(evidence.body);
@@ -406,7 +414,7 @@ export async function runSfxQueueInvariant({output}){
           publicOwner:sourcePath,publicOwnerSha256:evidence.headerHash,
           sfxPcmFixture:{path:existingPcmFixture,samples:sfxSamples},
           queuePcm:{source:'offline BufferSource representing already queued SDL mixed PCM',channels:{left:oldQueueSamples.left,right:oldQueueSamples.right},
-            productionHighWaterFrames:depths},
+            productionHighWaterFrames:depths,renderedScenarios:scenarios},
           negativeControl:{mutation:'node.start(Module["eaglerSfxQueuedFrames"] / ctx.sampleRate, v.offset)',
             expected:'SFX samples begin at the prequeued PCM tail and fail the overlap assertion'}},
         consumerSourceWiring:{coverage:'static source wiring only; does not prove in-game audible output',

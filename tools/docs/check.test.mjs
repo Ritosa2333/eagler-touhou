@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { adaptationMarkdown, notApplicable, portDefinitions } from './new-adaptation.mjs';
+import { adaptationMarkdown, notApplicable, portDefinitions, readVerificationSnapshot, preserveManualEvidence } from './new-adaptation.mjs';
 import {
   assertIndexWriteAllowed,
   checkDocumentLinks,
@@ -98,6 +98,45 @@ function rowWithStatus(markdown, id, variantColumn, status, note) {
 test('generated adaptation table covers all 117 IDs and matches recipe columns', () => {
   const markdown = adaptationMarkdown(port);
   assert.deepEqual(validateAdaptationMarkdown(markdown, { port, checklist }), []);
+});
+
+test('runtime review survives source regeneration without upgrading source status or partial coverage', () => {
+  const root = mkdtempSync(resolve(tmpdir(), 'eagler-review-docs-'));
+  const owner = portDefinitions().find(item => item.game === 'th08' && item.variants.includes('normal'));
+  const directory = resolve(root, owner.directory, 'docs/verification');
+  mkdirSync(directory, {recursive:true});
+  const rows = Object.fromEntries(checklist.checks.map(check => [check.id, {
+    status:notApplicable(check, owner.game, 'normal') ? '不适用' : '本轮未验',
+    complete:false, detail:'Declared scope', evidence:[],
+  }]));
+  rows['INPUT-01'] = {status:'部分验证',complete:false,detail:'Keyboard movement only',evidence:['input']};
+  const snapshot = {schema:'eagler-touhou/adaptation-review/1',game:'th08',date:'2026-10-24',
+    reviewedAtCommit:'a'.repeat(40),record:'docs/verification/adaptation.md',
+    evidence:[{id:'input',report:'input/report.json',scope:'Keyboard movement',bytes:1,sha256:'b'.repeat(64)}],
+    variants:{normal:rows}};
+  const path = resolve(directory, 'adaptation.json');
+  const save = () => writeFileSync(path, JSON.stringify(snapshot));
+  try {
+    writeFileSync(resolve(directory, 'adaptation.md'), '# Review\n');
+    save();
+    const verification = readVerificationSnapshot(owner, root);
+    const generated = adaptationMarkdown(owner, {verification});
+    assert.match(generated, /\| INPUT-01 \|.*\| 待核对 \| \[部分验证\]/);
+    assert.deepEqual(validateAdaptationMarkdown(generated, {port:owner,checklist,verification}), []);
+    const existing = generated + '\nUser review retained\n';
+    assert.match(preserveManualEvidence(adaptationMarkdown(owner, {verification:readVerificationSnapshot(owner,root)}), existing), /User review retained/);
+    assert.ok(validateAdaptationMarkdown(generated.replace('[部分验证]', '[已验证]'), {port:owner,checklist,verification}).some(issue => issue.includes('验收记录与快照不一致')));
+    rows['INPUT-01'].complete = true; save();
+    assert.throws(() => readVerificationSnapshot(owner, root), /completeness/);
+    rows['INPUT-01'].complete = false;
+    rows['INPUT-01'].evidence = ['missing']; save();
+    assert.throws(() => readVerificationSnapshot(owner, root), /Missing review evidence/);
+    rows['INPUT-01'].evidence = ['input'];
+    delete rows['TOUCH-01']; save();
+    assert.throws(() => readVerificationSnapshot(owner, root), /every checklist item/);
+  } finally {
+    rmSync(root, {recursive:true,force:true});
+  }
 });
 
 test('cooperative multiplayer rules do not apply to TH09 versus mode', () => {

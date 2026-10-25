@@ -21,6 +21,7 @@ export default [{
     source:'ports/th10/web/cpp/sdl/ApplicationHost.cpp | sdl_loop_tick'},
   movement:TH10_MOVEMENT_CONTRACT,
   actions:{schema:'eagler-touhou/stg-actions/1',stateExport:'th10_touch_action_state_v1',wordCount:20,stateApp:true,
+    bombResource:{cost:20,unit:'power-point',source:'ports/th10/web/cpp/game/PlayerFrame.cpp | consume_bomb'},
     sampleBoundary:'after-player-consumer',inputMasks:{fire:1,focus:4,bomb:2,escape:8},
     escapePulseTicks:3,escapePulseSource:'ports/th10/portable/input/TouchController.hpp | escape_ticks',
     source:['ports/th10/web/cpp/platform/WorldPlayer.cpp | post Player::update snapshot',

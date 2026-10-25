@@ -8,7 +8,7 @@ import {tmpdir} from 'node:os';
 import {resolve,join,relative} from 'node:path';
 import {createRuntimeFixtureSite} from './runtime-fixture-site.mjs';
 import {parseTh08MusicCatalog,parseTh08MessageMusicCues} from '../../tests/adaptation/adapters/titles/th08-music.mjs';
-import {th08MusicRoomOutcome,mergeMusicBehaviorResult,isVerifiedRuntimePcmWindow,th08OggDecodeVariantsOutcome,th08MusicStopDrainFrames} from './music-browser-result.mjs';
+import {selectMusicChecks,musicModesForChecks,th08MusicRoomOutcome,mergeMusicBehaviorResult,isVerifiedRuntimePcmWindow,th08OggDecodeVariantsOutcome,th08MusicStopDrainFrames} from './music-browser-result.mjs';
 import {runtimePcm as fixtureRuntimePcm} from './fixtures/music-pcm-window.mjs';
 import {assessDriverReport} from '../../tests/adaptation/results.mjs';
 import {attachMusicStageErrors,attachTh08OggFaultModeAssessment,correlateTh08MidiSends,musicScenarioErrors,musicScenarioPassed,musicTitleSceneOutcome,th08BackgroundContinuityOutcome,th08MidiCapabilityOutcome,th08MidiPauseOutcome,
@@ -20,6 +20,19 @@ import {describeNativeMusic,describeNoneMusicControl,installMusicProtocolCapture
 
 const root=resolve(import.meta.dirname,'../..');
 const runtimePcm=(role,options={})=>fixtureRuntimePcm(role,{startTime:1,...options});
+test('music selection preserves explicit requirements and rejects empty, duplicate and foreign checks',()=>{
+  assert.equal(selectMusicChecks('th08').length,8);
+  assert.deepEqual(selectMusicChecks('th08','AUDIO-01,MIDI-02'),['AUDIO-01','MIDI-02']);
+  for(const value of ['',',','MIDI-02,MIDI-02','INPUT-01'])assert.throws(()=>selectMusicChecks('th08',value));
+  assert.throws(()=>selectMusicChecks('th11','MIDI-02'));
+});
+test('numbered music reruns execute only their source modes and retain the full default matrix',()=>{
+  assert.deepEqual(musicModesForChecks('th08',['AUDIO-01']),['ogg','ogg-full']);
+  assert.deepEqual(musicModesForChecks('th08',['MIDI-02']),['midi']);
+  assert.deepEqual(musicModesForChecks('th08',['MIDI-04']),['ogg','ogg-full','midi']);
+  assert.deepEqual(musicModesForChecks('th08',['AUDIO-05']),['corrupt-ogg','missing-ogg']);
+  assert.deepEqual(musicModesForChecks('th08',selectMusicChecks('th08'),{baseline:true}),['none','ogg','ogg-full','midi','corrupt-ogg','missing-ogg']);
+});
 
 test('menu input waits for slow native consumption and release instead of a short wall-clock pulse',async()=>{
   let requested=0,current=0,previous=0,polls=0,edges=0;

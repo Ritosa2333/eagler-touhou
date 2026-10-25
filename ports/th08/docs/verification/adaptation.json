@@ -1,0 +1,2146 @@
+{
+  "schema": "eagler-touhou/adaptation-review/1",
+  "game": "th08",
+  "date": "2026-10-25",
+  "reviewedAtCommit": "fd534069c87a01236d0a83ca1ee952f1a02cfaf8",
+  "record": "docs/verification/adaptation.md",
+  "scope": "normal | 各次封存报告的审查快照；运行身份分别保存",
+  "evidence": [
+    {
+      "id": "scope-audit",
+      "report": "remaining-scope-audit.json",
+      "scope": "逐项历史证据与缺口审计",
+      "bytes": 203273,
+      "sha256": "a16dd7a31bb91a27b0b0bc75d476276a8f12e6d2209eaff2f51998b8419c165e"
+    },
+    {
+      "id": "desktop",
+      "report": "main-validation-v75/adaptation/adaptation/desktop-input-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 7556527,
+      "sha256": "31903075da468516d133457631fee9b10d9075e6850817f3d7963fd3f74db5ab",
+      "startedAt": "2026-10-24T05:10:10.266Z",
+      "finishedAt": "2026-10-24T05:12:42.044Z",
+      "commit": "bf97c087f7c70c27521d012b8a1229bc31bdbf05"
+    },
+    {
+      "id": "practice",
+      "report": "main-validation-v75/adaptation/adaptation/practice-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 1138028,
+      "sha256": "4e89e18e56e881795c6a35fa55a6838beaeef9649755e59ca13f02ea5a380268",
+      "startedAt": "2026-10-24T05:12:42.437Z",
+      "finishedAt": "2026-10-24T05:14:30.357Z"
+    },
+    {
+      "id": "display",
+      "report": "main-validation-v75/adaptation/adaptation/display-replay-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 275572801,
+      "sha256": "a64656aaed64815cff494bd0357140bb448b69f306d824d3f04d86cccaf50fd7",
+      "startedAt": "2026-10-24T05:18:41.286Z",
+      "finishedAt": "2026-10-24T05:25:40.754Z"
+    },
+    {
+      "id": "audio02",
+      "report": "focused-followups-v76/audio02/adaptation/desktop-input-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 1143418,
+      "sha256": "d870dc11236097729f874c9fa756e611b59508090d901b8c4fad8ee0e10a9769",
+      "startedAt": "2026-10-24T05:34:38.797Z",
+      "finishedAt": "2026-10-24T05:35:18.553Z",
+      "commit": "bf97c087f7c70c27521d012b8a1229bc31bdbf05"
+    },
+    {
+      "id": "music",
+      "report": "focused-followups-v76/music/adaptation/music-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 92286540,
+      "sha256": "ef9e3b9249f7eded582beff0c7f48148c5a18148e11774caa47522fb02ca4831",
+      "startedAt": "2026-10-24T05:35:28.652Z",
+      "finishedAt": "2026-10-24T05:40:45.619Z",
+      "commit": "bf97c087f7c70c27521d012b8a1229bc31bdbf05"
+    },
+    {
+      "id": "storage",
+      "report": "remaining-normal-v16/storage/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 917027,
+      "sha256": "a10b5cc0b84028ee3d65ad98934dac01f1f2535c52e046dc80923527a844d612",
+      "startedAt": "2026-10-23T12:58:17.165Z",
+      "finishedAt": "2026-10-23T12:59:05.218Z"
+    },
+    {
+      "id": "recording",
+      "report": "remaining-normal-v16/recording/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 4089266,
+      "sha256": "92c5a3e30432776bc2966b5914fe9400ce1215464de9f611bfcd0e1b283c570e",
+      "startedAt": "2026-10-23T12:57:16.194Z",
+      "finishedAt": "2026-10-23T12:58:16.846Z",
+      "commit": "bf97c087f7c70c27521d012b8a1229bc31bdbf05"
+    },
+    {
+      "id": "background",
+      "report": "remaining-input-clear-v17/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 600573,
+      "sha256": "81cb25563835f94f5fa2614df35997e5890e6e7e2db07de210895025537859eb",
+      "startedAt": "2026-10-23T13:05:02.834Z",
+      "finishedAt": "2026-10-23T13:06:01.019Z",
+      "commit": "bf97c087f7c70c27521d012b8a1229bc31bdbf05"
+    },
+    {
+      "id": "build",
+      "report": "main-validation-v75/normal/source-build/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 6260,
+      "sha256": "7dfa85e6764586211d1d531332bef7aacfd60ebf665dc6c2a46754e0b4f3a229",
+      "startedAt": "2026-10-24T05:07:23.411Z",
+      "finishedAt": "2026-10-24T05:08:44.710Z"
+    },
+    {
+      "id": "package",
+      "report": "main-validation-v75/normal/package/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 5162,
+      "sha256": "8074edc98282b396a4446fd11ef5ca045c09a19cace65f3c59f7cbf89e6cebf7",
+      "startedAt": "2026-10-24T05:08:44.934Z",
+      "finishedAt": "2026-10-24T05:08:47.921Z"
+    },
+    {
+      "id": "seven-desktop-input",
+      "report": "seven-current-final/adaptation/desktop-input-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 1949757,
+      "sha256": "1944958768ec1fc583c5aacdc8784335bc3089a475be654154167bafe55d323d",
+      "startedAt": "2026-10-23T08:32:25.805Z",
+      "finishedAt": "2026-10-23T08:33:58.388Z",
+      "commit": "9896421d52233b6e04a8c5a64a4bc3eb7691cd91"
+    },
+    {
+      "id": "seven-touch-actions",
+      "report": "seven-current-final/adaptation/touch-actions-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 1650429,
+      "sha256": "e4c3a93ad575bd817fbfc7dfd28ce6a197777e4cbc5c629f991c287b0e9e7f34",
+      "startedAt": "2026-10-23T08:33:58.853Z",
+      "finishedAt": "2026-10-23T08:35:48.744Z",
+      "commit": "9896421d52233b6e04a8c5a64a4bc3eb7691cd91"
+    },
+    {
+      "id": "seven-single-game",
+      "report": "seven-current/queue/adaptation/single-game-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 718592,
+      "sha256": "c19ee7d5084a1e1d4a0e50bba5d4a49557dbafd2e30a2f5c945fdcc6330b7aae",
+      "startedAt": "2026-10-23T07:55:37.104Z",
+      "finishedAt": "2026-10-23T07:56:19.000Z"
+    },
+    {
+      "id": "seven-installation-authority",
+      "report": "seven-current-fixed/adaptation/installation-authority-normal-th08/report.json",
+      "scope": "独立复算本次报告中的完整性声明",
+      "bytes": 757713,
+      "sha256": "901829aef4fd7cd6035adec0529f5b08a7e78833c914c8949f113628e2522f81",
+      "startedAt": "2026-10-23T08:30:21.962Z",
+      "finishedAt": "2026-10-23T08:30:59.783Z"
+    },
+    {
+      "id": "human-confirmation",
+      "report": "human-review-v88/user-confirmation-v92.json",
+      "scope": "用户“均ok”确认显示与高刷、日英中练习面板两组",
+      "bytes": 3029,
+      "sha256": "4d0df09187f7d9df317307d48ba7ad71121cc0de95e8b1aed34c330ffe81e29d"
+    },
+    {
+      "id": "limiter",
+      "report": "lab-limit-control-v87/report.json",
+      "scope": "真实浏览器切换生产限帧选项；受控回调与原生提交",
+      "bytes": 342519,
+      "sha256": "96d55f88b1824dac8e4b89de77cae8b65c53a149c1b503f577b8ca46abdab559"
+    },
+    {
+      "id": "build-freshness",
+      "report": "reconciliation-v93/build-revalidation/summary.json",
+      "scope": "当前源码构建收据预检；未编译、未启动浏览器",
+      "bytes": 5967,
+      "sha256": "d04b56b5016c66370aae589a0b27373d773c4503a8e903565625a0de9e24abc0"
+    },
+    {
+      "id": "input-facts",
+      "report": "source-review-facts-v90.json",
+      "scope": "原版 EXE 与 DATA 字节身份",
+      "bytes": 1359,
+      "sha256": "90746c5af147f75c7890d8f99d1c6ca5200daecf5eed132864a977d79657faea"
+    },
+    {
+      "id": "source-review",
+      "report": "source-review-facts-v90-run/summary.json",
+      "scope": "来源材料预检；缺输入封存为 blocked",
+      "bytes": 5433,
+      "sha256": "1831377319beb68f6c123c514296e4325e6c0f088ca76a3ea0a13dda0f4816d5"
+    },
+    {
+      "id": "retained-state",
+      "report": "current-results-v92.json",
+      "scope": "保留的原版差异及本轮结果身份索引",
+      "bytes": 12705,
+      "sha256": "f2fceb412b7e63ab0d0d79920790774dbe5dc9340b6227dc2a7eb7781cf77675"
+    },
+    {
+      "id": "touch-last-window",
+      "report": "prior/input-gaps-v52/behavior/report.json",
+      "scope": "本作触控动作专项报告；各编号分别读取，保留整组失败",
+      "bytes": 2808683,
+      "sha256": "cdb3950e39bdb359b01b8e89e06b0dd5f9d8f28d82524db486c55ed4672695ea",
+      "startedAt": "2026-10-21T08:55:32.633Z",
+      "finishedAt": "2026-10-21T08:58:54.485Z",
+      "commit": "b2cdb5329ee22601f32a2f84a50e2d65f627ba54"
+    },
+    {
+      "id": "touch-other-actions",
+      "report": "prior/input-gaps-v50/behavior/report.json",
+      "scope": "本作触控动作专项报告；各编号分别读取，保留整组失败",
+      "bytes": 3022320,
+      "sha256": "b37d1b9f99e3a0f0f71ec2a048e114dc98492ec0e40b5c61bf88adce49a4335a",
+      "startedAt": "2026-10-21T08:30:59.466Z",
+      "finishedAt": "2026-10-21T08:34:05.083Z",
+      "commit": "b2cdb5329ee22601f32a2f84a50e2d65f627ba54"
+    },
+    {
+      "id": "current-build",
+      "report": "motion-v95/build-revalidation/summary.json",
+      "scope": "正式源码构建、打包与当前收据复验通过，源码、工具链、WASM 和包身份关联本次有效构建。",
+      "bytes": 61024,
+      "sha256": "11463a77b98e3255d6f6e4eff2b7c6bafa3c6552c01abba6287513d0daf38eff",
+      "startedAt": "2026-10-24T08:53:48.829Z",
+      "finishedAt": "2026-10-24T08:53:56.326Z"
+    },
+    {
+      "id": "motion-complete",
+      "report": "motion-v95/motion/summary.json",
+      "scope": "当前产物实跑通过；中央判据重算原生连续账本、键盘实测速率、自由方向、微移、灵敏度、低速与限速恢复。",
+      "bytes": 72005,
+      "sha256": "02de95ee3647bda078663f1739263b6d406169b9bd8b936b19d9f96ff4a91398",
+      "startedAt": "2026-10-24T08:53:56.688Z",
+      "finishedAt": "2026-10-24T08:55:45.476Z"
+    },
+    {
+      "id": "language-complete",
+      "report": "language-v98/summary.json",
+      "scope": "当前产物六个冷启动场景通过；独立归档、发布选择器、首帧挂载、实际文字消费、404／错哈希回退与单键缺译完整判据通过。",
+      "bytes": 106164,
+      "sha256": "4d2cb5a1961090f73e4fc47a786470b076cc8e08a8034d1d2a0a79b2c30489a4",
+      "startedAt": "2026-10-24T09:31:22.992Z",
+      "finishedAt": "2026-10-24T09:33:07.659Z"
+    },
+    {
+      "id": "recording-complete",
+      "report": "core-behavior-v97/adaptation/replay-recording-normal-th08/report.json",
+      "scope": "当前产物键盘、手柄和触控录制实跑通过；独立解析保存文件，逐帧核对原生采样、录制器与实际玩家消费，验证按下与释放。",
+      "bytes": 4128894,
+      "sha256": "d27fe09a52a72700d61129ff117d5a71810fe9dde4003b88e0191240d855f93b",
+      "startedAt": "2026-10-24T09:23:14.628Z",
+      "finishedAt": "2026-10-24T09:24:19.400Z",
+      "commit": "fd534069c87a01236d0a83ca1ee952f1a02cfaf8"
+    },
+    {
+      "id": "practice-lifecycle-complete",
+      "report": "practice-v100/summary.json",
+      "scope": "当前产物四种 locale／开关实例及同一原生世界的重开、标题、Replay 主动退出、普通开局和再次练习实跑通过，中央完整判据重算每个状态边界。",
+      "bytes": 47860,
+      "sha256": "966ffe5eb7d4088fd235746c7a544e3e03cef06eb37f98527887259c7e3f63b1",
+      "startedAt": "2026-10-24T09:40:13.729Z",
+      "finishedAt": "2026-10-24T09:41:19.486Z"
+    },
+    {
+      "id": "deathbomb-complete",
+      "report": "deathbomb-v104/summary.json",
+      "scope": "当前产物真实碰撞后三条路线实跑通过；键盘与触控末帧有效、迟到脉冲经过自然死亡和复活保持无 Bomb，同一移动触点恢复并遵守命中前实测速度，输入与清理回执绑定本次代次。",
+      "bytes": 56389,
+      "sha256": "fee6989688438deb0dbd785fc02857c29229e4e6e2ad0dd9499df931f9625577",
+      "startedAt": "2026-10-24T09:54:27.774Z",
+      "finishedAt": "2026-10-24T09:56:53.710Z"
+    },
+    {
+      "id": "native-music-background-complete",
+      "report": "music-background-v176/acceptance/summary.json",
+      "scope": "完整 Chrome 同窗口真实标签切换中，Host／Runtime 的可信隐藏与恢复事件、原生曲目游标和实际源绑定 PCM 实跑通过；stream／full 两条解码策略均由中央判据复算。Windows 窗口遮挡推断的标签隔离配置随浏览器参数保存。",
+      "bytes": 64542,
+      "sha256": "7c03c19a3cae200d01d9e6bb37afce8d55a943f85adc08fa9fa73436485b70b8",
+      "startedAt": "2026-10-24T16:31:19.635Z",
+      "finishedAt": "2026-10-24T16:32:51.936Z"
+    },
+    {
+      "id": "reviewed-practice-locales",
+      "report": "music-close-v180/practice-review/report.json",
+      "scope": "原生日英中菜单开闭、locale、真实 Unifont 交付与三张原始截图身份复算通过，并关联用户已确认的整组文字结论。保留原采集时间及包／DATA 身份，复算未重新运行浏览器。",
+      "bytes": 13157,
+      "sha256": "a03f5fe6006ebb6e900030740f6b05e32c5a284968bbe4e70bd91f8cba6ee764",
+      "startedAt": "2026-10-24T17:03:07.968Z",
+      "finishedAt": "2026-10-24T17:03:08.072Z"
+    },
+    {
+      "id": "staged-http-update-complete",
+      "report": "package-interruption-v177/acceptance/summary.json",
+      "scope": "生产安装器下载并暂存真实新增 OGG，再取消第二个 HTTP 200 响应体；浏览器实际请求取消、旧代不变、暂存代及无引用对象清理均通过。旧 Runtime 重新首帧、完整 ZIP 提交新代、配置／成绩／Replay 保留和离线启动实跑通过。",
+      "bytes": 79176,
+      "sha256": "36735e9c2a5adb060308699276925a70d1fd86ea9d0a62cefe51050ae515398d",
+      "startedAt": "2026-10-24T16:33:03.554Z",
+      "finishedAt": "2026-10-24T16:34:28.614Z"
+    },
+    {
+      "id": "practice-capability-complete",
+      "report": "practice-capability-v161/acceptance/summary.json",
+      "scope": "实际构建计划与正式 manifest 的字节身份、编译开关及产品能力核对通过；真实 Launcher 开启、关闭和 Host 关闭三个场景验证原生 owner 与菜单开闭。",
+      "bytes": 64760,
+      "sha256": "85cd7101b8f0522f7380a896eaf9069833a3c14de321c9f5188b8eda2094e908",
+      "startedAt": "2026-10-24T15:11:26.911Z",
+      "finishedAt": "2026-10-24T15:13:18.843Z"
+    },
+    {
+      "id": "replay-extension-version-complete",
+      "report": "replay-version-v163/acceptance/summary.json",
+      "scope": "同一真实录制旅程独立解析有效 v2 指针扩展并核对原生逐点消费，再只改版本字段，通过实际 Shell 请求验证明确拒绝；后续有效命令、文件列表和原有效录像字节保持正常。",
+      "bytes": 64616,
+      "sha256": "e7c15e2a535e87277b3a94d7b1ec13b84c473b8620f9a5b8d62ed6b2fc5db175",
+      "startedAt": "2026-10-24T15:23:44.381Z",
+      "finishedAt": "2026-10-24T15:24:09.236Z"
+    },
+    {
+      "id": "music-source-and-output-complete",
+      "report": "music-storage-v158/acceptance/summary.json",
+      "scope": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。",
+      "bytes": 147081,
+      "sha256": "b3a979e005f4d3cf64d5b99c757c973aad3497e5ccb2da00ff10f7238fe5dba5",
+      "startedAt": "2026-10-24T14:42:55.814Z",
+      "finishedAt": "2026-10-24T14:50:23.082Z"
+    },
+    {
+      "id": "native-user-paths-complete",
+      "report": "music-storage-v158/acceptance/summary.json",
+      "scope": "同一正式包的原生成绩、配置和 Replay 在真实 IDBFS 根读取并逐字节比较；目录外 read、write、remove 的请求及明确拒绝、操作前后文件列表与挂载外探针实跑通过。",
+      "bytes": 147081,
+      "sha256": "b3a979e005f4d3cf64d5b99c757c973aad3497e5ccb2da00ff10f7238fe5dba5",
+      "startedAt": "2026-10-24T14:42:55.814Z",
+      "finishedAt": "2026-10-24T14:50:23.082Z"
+    },
+    {
+      "id": "music-mode-change-complete",
+      "report": "music-mode-change-v159/acceptance/summary.json",
+      "scope": "同一个 Chrome 存储环境中正常退出 MIDI，关闭原页面后读取原 MIDI 偏好并切换 OGG；两个真实页面 target、同一 browserContextId、退出消息、同一安装代次和各自输出实跑通过。",
+      "bytes": 67953,
+      "sha256": "1653eac53a0c2f7c44880758842124b2fed8dc924a7ce46a194be2a3db9896c7",
+      "startedAt": "2026-10-24T14:57:26.941Z",
+      "finishedAt": "2026-10-24T15:02:51.196Z"
+    },
+    {
+      "id": "native-keyboard-complete",
+      "report": "keyboard-native-v132/summary.json",
+      "scope": "实际键盘四向、低速、射击、普通 Bomb、暂停与释放实跑通过；原作菜单／对话和两种映射桥断线反例纳入同一中央判据。",
+      "bytes": 65473,
+      "sha256": "8b61c41f7f77b3643c061e5cfa4ea4cd82e27ec7ae41091458c690a7b1431843",
+      "startedAt": "2026-10-24T12:11:13.181Z",
+      "finishedAt": "2026-10-24T12:16:02.536Z"
+    },
+    {
+      "id": "keyboard-layouts-original-export",
+      "report": "keyboard-original-export-v135/summary.json",
+      "scope": "WASD、自定义布局持久保存和默认恢复的三个实例逐边沿及原生动作实跑通过；原版 Replay 导出单独保留文件，校验 v6 原始块与 USER 信息，并重新对照键盘、手柄的实际录制帧。",
+      "bytes": 124383,
+      "sha256": "d4360a1634d7eff145a416015e83b1db7a2097b0166cf7da955d7fcff8b67328",
+      "startedAt": "2026-10-24T12:44:22.590Z",
+      "finishedAt": "2026-10-24T12:48:26.210Z"
+    },
+    {
+      "id": "practice-startup-complete",
+      "report": "practice-startup-v139/summary.json",
+      "scope": "真实 Launcher 预启动配置与四个普通版实例的原生首帧实跑通过；日英中启用及英语关闭分别核对 configure、launch、first-frame 顺序与原生开关。",
+      "bytes": 63053,
+      "sha256": "d9b8d1ff70ba7bce338d45445b51b953657bfbe7f10f52820ce034118a9ad5e7",
+      "startedAt": "2026-10-24T12:51:14.971Z",
+      "finishedAt": "2026-10-24T12:56:04.797Z"
+    },
+    {
+      "id": "native-inputs-complete",
+      "report": "native-inputs-v143/summary.json",
+      "scope": "原生键盘、WASD、自定义持久布局、恢复默认和手柄输入同批实跑通过；Dpad 与摇杆各八向、原生动作、原作菜单和对话由共享判据复算。",
+      "bytes": 73843,
+      "sha256": "954e13b20bd08c5b032281ec8eb7a9f9d1d7c880378c159dc553a0587eb0a141",
+      "startedAt": "2026-10-24T13:06:22.486Z",
+      "finishedAt": "2026-10-24T13:09:12.166Z"
+    },
+    {
+      "id": "background-inputs-complete",
+      "report": "rebuild-v152/motion/summary.json",
+      "scope": "真实窗口最小化及同窗口换页、触控取消和手柄断连／重连实跑通过；持有输入清空、重连中立门槛和恢复后的原生移动逐项复算。",
+      "bytes": 71227,
+      "sha256": "36903d2faf282b8581523309e21d325d5cddb458f2be77e1ddc1411e0bc44969",
+      "startedAt": "2026-10-24T13:55:02.386Z",
+      "finishedAt": "2026-10-24T13:55:28.928Z"
+    },
+    {
+      "id": "rebuilt-current-source",
+      "report": "rebuild-v152/build-revalidation/summary.json",
+      "scope": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。",
+      "bytes": 68767,
+      "sha256": "30231f528b6a06814db8ea553fa46baa8999cede8e98a92f2eb6bc4719de4c65",
+      "startedAt": "2026-10-24T13:54:54.458Z",
+      "finishedAt": "2026-10-24T13:55:02.046Z"
+    },
+    {
+      "id": "motion-rechecked-complete",
+      "report": "motion-complete-v121/summary.json",
+      "scope": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。",
+      "bytes": 81886,
+      "sha256": "293f4210306d7cd20c981102352ebf14df5ef584080ab32399ba40ece76bd8fc",
+      "startedAt": "2026-10-24T11:22:59.905Z",
+      "finishedAt": "2026-10-24T11:27:08.895Z"
+    },
+    {
+      "id": "audio-no-bgm-complete",
+      "report": "audio-complete-v125/summary.json",
+      "scope": "同一正式 Runtime 的菜单音效正向、实测 PCM 队尾延迟负控和无 BGM 真实射击实跑通过；中央判据复算源文件映射、原生子弹消费、原始起播记录和可归属 PCM，并重新读取静音基线与射击采样文件。",
+      "bytes": 62521,
+      "sha256": "b492082f7eb18f612924fd543a6a775d87967c7df7ef343a28e1d4752c6f8e2e",
+      "startedAt": "2026-10-24T11:38:20.741Z",
+      "finishedAt": "2026-10-24T11:39:07.481Z"
+    },
+    {
+      "id": "bomb-resource-rechecked",
+      "report": "bomb-resource-v128/summary.json",
+      "scope": "按本作声明的原生资源单位与消耗量重新实跑动作及双击场景通过；库存与一次激活次数分别核对，普通 Bomb、暂停与双指移动继续由同一套原生判据复算。",
+      "bytes": 61915,
+      "sha256": "b1c2a53a64e8bc5b717db83e598cf6cc831fa44eb9c89529144b74036ca6252c",
+      "startedAt": "2026-10-24T11:52:23.652Z",
+      "finishedAt": "2026-10-24T11:53:19.428Z"
+    },
+    {
+      "id": "protocol-storage-complete",
+      "report": "protocol-gesture-v111/summary.json",
+      "scope": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。",
+      "bytes": 119592,
+      "sha256": "b8a779274886b3eb3d49be8fe67138bacd566d6dbbfbe22e55302f63731509dd",
+      "startedAt": "2026-10-24T10:46:08.435Z",
+      "finishedAt": "2026-10-24T10:48:07.027Z"
+    },
+    {
+      "id": "gesture-complete",
+      "report": "protocol-gesture-v111/summary.json",
+      "scope": "双击 Bomb 启用／关闭与保持射击后的对话确认实跑通过，指针批次、原生消费、Bomb 消耗与新的确认边沿由共享判据重算。",
+      "bytes": 119592,
+      "sha256": "b8a779274886b3eb3d49be8fe67138bacd566d6dbbfbe22e55302f63731509dd",
+      "startedAt": "2026-10-24T10:46:08.435Z",
+      "finishedAt": "2026-10-24T10:48:07.027Z"
+    },
+    {
+      "id": "actions-complete",
+      "report": "actions-v110/summary.json",
+      "scope": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。",
+      "bytes": 65036,
+      "sha256": "1e8d5a29680af90cbaa8a3675e94e080085e47d9fb72c789f188b33c835ab58b",
+      "startedAt": "2026-10-24T10:36:42.657Z",
+      "finishedAt": "2026-10-24T10:39:04.908Z"
+    },
+    {
+      "id": "focus-buttons-complete",
+      "report": "focus-v112/summary.json",
+      "scope": "生产 DOM 焦点按钮的按住、切换及切换配置重载实跑通过；三个独立实例各自用键盘高速与 Shift 低速校准，再比较原生焦点、位移、持续持有、释放和取消。",
+      "bytes": 63606,
+      "sha256": "55075ec41490d9545c8d5386811a6660e21a430b471d3ab3fac27f2e69a78966",
+      "startedAt": "2026-10-24T10:53:37.092Z",
+      "finishedAt": "2026-10-24T10:54:44.272Z"
+    },
+    {
+      "id": "replay-isolation-complete",
+      "report": "replay-isolation-v113/summary.json",
+      "scope": "真实录制和四条回放扰动路线实跑通过；中央判据重开保存文件，独立解析每帧，逐条核对键盘方向／射击、手柄和触控实际进入、释放及玩家消费隔离。",
+      "bytes": 62193,
+      "sha256": "f06c597e80ac1b47ea8d3944a759134d07843f5c9913102e6140b1071c91b461",
+      "startedAt": "2026-10-24T10:57:02.927Z",
+      "finishedAt": "2026-10-24T10:57:54.545Z"
+    },
+    {
+      "id": "unlimited-result-complete",
+      "report": "unlimited-result-v114/summary.json",
+      "scope": "普通录制局零位移对照、实际无限速移动、跨关标记、生产结算与保存 Replay 实跑通过；五个状态边界、实际移动和独立解码的 100% 落率由中央完整判据重算。",
+      "bytes": 58474,
+      "sha256": "e48e971cc225a176f779ec5809221aab19d3caa62891a2d8a0fce180d92229ef",
+      "startedAt": "2026-10-24T11:01:03.033Z",
+      "finishedAt": "2026-10-24T11:01:56.879Z"
+    },
+    {
+      "id": "native-ogg-lifecycle-complete",
+      "report": "music-close-v180/ogg-native-lifecycle/summary.json",
+      "scope": "stream／full 正式包的原生暂停恢复、同局暂停后 R 重开、退出再启动与实际源绑定 PCM 通过；21 曲 Music Room、自然循环、淡出和 DATA 独立解析的 Boss 切曲共同验算。",
+      "bytes": 64785,
+      "sha256": "b8d22b0d8da16a9fc1a29088ae06226206134e5a6acdafddcd14c4557eccee9e",
+      "startedAt": "2026-10-24T16:59:05.514Z",
+      "finishedAt": "2026-10-24T17:02:07.895Z"
+    },
+    {
+      "id": "native-midi-lifecycle-complete",
+      "report": "midi-resume-v184/acceptance/summary.json",
+      "scope": "原生标题／开局曲目、暂停时序、同局 R 重开、真实后台恢复、退出静音与标题重启实跑通过。恢复按同一合成器与 tap 的完整分析窗分阶段采样，保留过渡状态与实际 PCM。",
+      "bytes": 64615,
+      "sha256": "7c0c7261e0c65f734ff004c4b3ccbad6931eb9b56723612afb5725054cabe363",
+      "startedAt": "2026-10-24T17:19:22.510Z",
+      "finishedAt": "2026-10-24T17:21:07.474Z"
+    },
+    {
+      "id": "launcher-lifecycle-complete",
+      "report": "launcher-lifecycle-v193/acceptance/summary.json",
+      "scope": "真实 Launcher 中关闭默认自动射击后，按住实体方向键与可见触控低速控件，实际标签切后台清空输入并恢复画面和八窗混音 PCM。通过浏览器返回完成旧输入桥释放和文档退役，新 epoch 单次按键生效且宿主／Runtime 监听器数量与位置一致；中央完整判据通过。",
+      "bytes": 63049,
+      "sha256": "caf8fa623d70824b03304f2d49907e9221ee623d2672f06dc88a342eca5b9e68",
+      "startedAt": "2026-10-24T17:53:14.800Z",
+      "finishedAt": "2026-10-24T17:54:43.529Z"
+    },
+    {
+      "id": "native-practice-controls-complete",
+      "report": "practice-controls-v206/acceptance/summary.json",
+      "scope": "正式 Launcher 安装当前产物后进入同一原生 Practice 无出怪场景，F1–F7／U 实体键改变原生状态，真实浏览器触摸可见控件恢复原值，其他开关保持不变。Tab／F12 与移动 Tracker／Advanced 展开、可信 Pointer 坐标、同局零写入和最终释放通过中央原始证据复算。",
+      "bytes": 64187,
+      "sha256": "06b05406e22337dc4cab2c2e3d3b1846662e9914febe2a6087879684820f93a5",
+      "startedAt": "2026-10-24T18:50:10.055Z",
+      "finishedAt": "2026-10-24T18:51:56.978Z"
+    },
+    {
+      "id": "native-practice-parameters-complete",
+      "report": "practice-parameters-v213/acceptance/summary.json",
+      "scope": "11 个独立冷启动场景覆盖资源上下界、非零帧、章节、对话开关、阶段与特殊定点。配置经原生练习菜单接受，冻结资源值、ECL 时钟与指令地址、定点坐标及追加脚本的进入／返回跳转通过中央复算，全部场景保持有效原生 owner。",
+      "bytes": 55081,
+      "sha256": "3ce1322e0d07248deec1f253d4725353743827fdb0b9539f91b5df0f515b9c74",
+      "startedAt": "2026-10-24T19:22:56.054Z",
+      "finishedAt": "2026-10-24T19:26:09.302Z"
+    },
+    {
+      "id": "native-view-options-machine",
+      "report": "view-options-v216/acceptance/adaptation/view-options-normal-th08/report.json",
+      "scope": "RUNTIME-06 machine invariants | grouped display material awaits review",
+      "bytes": 493849,
+      "sha256": "5ece21f7a02c34012c8761d1b757eec5c41685fdb4baca65c24dda830e1c559d",
+      "startedAt": "2026-10-24T19:40:09.897Z",
+      "finishedAt": "2026-10-24T19:41:48.244Z"
+    },
+    {
+      "id": "package-import-sources-complete",
+      "report": "package-imports-v223/acceptance/summary.json",
+      "scope": "本地 ZIP、在线发布包与声明的原版 DATA 文件分别在独立浏览器存储中安装，每条路径两次实际启动与重开通过。Runtime 固定代次和当前安装分别读取，同一描述符、基础对象、版本、来源及实际 managed DATA 字节通过中央复算；在线可选资源扩充保留基础身份。",
+      "bytes": 67904,
+      "sha256": "66a691f4ec2ed520b62f0dd4bb1fb411a1e98f0c765c440301a5ed2819088a2a",
+      "startedAt": "2026-10-24T20:30:47.638Z",
+      "finishedAt": "2026-10-24T20:34:06.640Z"
+    },
+    {
+      "id": "practice-input-regression",
+      "report": "regressions-v239/acceptance/adaptation/practice-parameters-normal-th08/report.json",
+      "bytes": 9771236,
+      "sha256": "4137c459d713da6fec93ed95b4d05cb537d48668ad57e5e14638c48e7d5b97a3",
+      "startedAt": "2026-10-24T22:03:59.281Z",
+      "finishedAt": "2026-10-24T22:07:11.870Z",
+      "scope": "11 个参数案例中 10 个通过。首个冷启动案例停在原生练习菜单确认，保留实际未消费输入。"
+    },
+    {
+      "id": "language-consumers-complete",
+      "report": "language-v234/language/summary.json",
+      "scope": "LANG-01／02／03／04／06 完整判据通过，LANG-05 的声明字符样本机器判据通过，文字场景集集中人审。",
+      "bytes": 124593,
+      "sha256": "730c6342d37a5f705dfa29ae0531ae01a2597933f795da9739c54149d6cdf55e",
+      "startedAt": "2026-10-24T21:42:32.147Z",
+      "finishedAt": "2026-10-24T21:48:16.891Z"
+    },
+    {
+      "id": "language-native-scenes",
+      "report": "language-v234/language/adaptation/language-normal-th08/report.json",
+      "scope": "日英中标题、Result 统计与实际 MSG 对白，同实例原生菜单、源成员、字形、文字透明度及呈现证据。",
+      "bytes": 19779860,
+      "sha256": "e20998387cb4de6b686e8459683381803fdcdde964cd58a110d0bb45c3954ec8",
+      "startedAt": "2026-10-24T21:42:49.411Z",
+      "finishedAt": "2026-10-24T21:47:59.725Z"
+    },
+    {
+      "id": "language-evidence-negatives",
+      "report": "language-evidence-audit-v235a/report.json",
+      "scope": "47 项真实证据复算与定向破坏检查。保留原采集时间。",
+      "bytes": 7244,
+      "sha256": "93295ea76fd6d6d9439b501c51c586ea083a9033d90095949c343e5854216ac5"
+    },
+    {
+      "id": "current-observer-build",
+      "report": "native-observers-v232/build-revalidation/summary.json",
+      "scope": "当前原生观察构建、正式包与源码身份复核通过。",
+      "bytes": 74420,
+      "sha256": "ec494e4d68dc146603abc171847626bbed1c0c92362a1d92a55a3e9fe6d9d28a",
+      "startedAt": "2026-10-24T21:33:24.700Z",
+      "finishedAt": "2026-10-24T21:33:44.659Z"
+    },
+    {
+      "id": "practice-lifecycle-current",
+      "report": "practice-lifecycle-v244/acceptance/summary.json",
+      "scope": "PRACTICE-03／05 完整流程重跑通过，保留本次原生菜单键码与持久化证据。",
+      "bytes": 62710,
+      "sha256": "4242fd04adbc6fa3fdf112af5830b12b0058622450dada9faf641708a67668ea",
+      "startedAt": "2026-10-24T22:40:48.498Z",
+      "finishedAt": "2026-10-24T22:42:45.392Z"
+    },
+    {
+      "id": "practice-parameter-current",
+      "report": "practice-menus-v243/acceptance/adaptation/practice-parameters-normal-th08/report.json",
+      "scope": "PRACTICE-04 的 11 个独立参数案例通过。",
+      "bytes": 15640615,
+      "sha256": "7db11d357d7b53e8386a263731b8f3186ffafb4d72f573bd81fd7fc4e6a3648a",
+      "startedAt": "2026-10-24T22:32:21.125Z",
+      "finishedAt": "2026-10-24T22:35:16.246Z"
+    },
+    {
+      "id": "practice-controls-current",
+      "report": "practice-menus-v243/acceptance/adaptation/practice-controls-normal-th08/report.json",
+      "scope": "PRACTICE-06 原生键盘、触控控件与面板通过。",
+      "bytes": 2320325,
+      "sha256": "6db001dc8e27a998369ad390a54d46e9196a418a5bc1b92759ef52c87b5de20d",
+      "startedAt": "2026-10-24T22:30:57.276Z",
+      "finishedAt": "2026-10-24T22:32:17.622Z"
+    },
+    {
+      "id": "practice-trainer-effects",
+      "report": "practice-consumers-v250/acceptance/adaptation/practice-effects-trainers-normal-th08/report.json",
+      "scope": "9 个真实命中、死亡、资源与 Bomb 时点对照通过。原构建 249。",
+      "bytes": 7114846,
+      "sha256": "bfae9187ffe376eb2a1a8cc91c938b800a40e58a1e34ff6ef404d323072125e9",
+      "startedAt": "2026-10-24T23:13:58.064Z",
+      "finishedAt": "2026-10-24T23:16:35.040Z"
+    },
+    {
+      "id": "practice-input-options",
+      "report": "practice-options-v252/adaptation/practice-effects-options-normal-th08/report.json",
+      "scope": "4 组高级输入开关对照通过。原构建 251。",
+      "bytes": 4099764,
+      "sha256": "1347ff4c79bb4e18a95b2d773b14a8d7a49fd5f2c3d67d4471cfeae0d46e1d0a",
+      "startedAt": "2026-10-24T23:25:05.338Z",
+      "finishedAt": "2026-10-24T23:25:47.677Z"
+    },
+    {
+      "id": "practice-boss-effects",
+      "report": "practice-boss-v253/adaptation/practice-effects-bosses-normal-th08/report.json",
+      "scope": "实际 Boss 的 F5 锁时和 U 伤害／生命对照通过。原构建 251。",
+      "bytes": 1859500,
+      "sha256": "9902dc0f66a147afd9987130f39424dbe07718741ae631daaa108c594c161bda",
+      "startedAt": "2026-10-24T23:28:25.621Z",
+      "finishedAt": "2026-10-24T23:28:58.438Z"
+    },
+    {
+      "id": "practice-key-monitor",
+      "report": "practice-key-monitor-v254/adaptation/practice-effects-key-monitor-normal-th08/report.json",
+      "scope": "104 条原生按键记录、60 Tick APS 窗口和实际 CSV 下载核对通过。原构建 251。",
+      "bytes": 4109336,
+      "sha256": "6b71f10e6e450a4ca66ab590c8020c580620b59cc1d41e37c36eae9a2607dcdf",
+      "startedAt": "2026-10-24T23:40:08.191Z",
+      "finishedAt": "2026-10-24T23:40:43.316Z"
+    },
+    {
+      "id": "practice-consumer-build",
+      "report": "native-observers-v251/build-revalidation/summary.json",
+      "scope": "原生观察和按钮接口修正后的构建、正式包与来源复核通过。",
+      "bytes": 75507,
+      "sha256": "6c9549e683cce46158db316a0084bbf9d6f94f4f182ff863b5c7818705827fbd",
+      "startedAt": "2026-10-24T23:23:39.274Z",
+      "finishedAt": "2026-10-24T23:23:58.963Z"
+    },
+    {
+      "id": "practice-mapped-life",
+      "report": "practice-gameplay-v256/adaptation/practice-effects-gameplay-normal-th08/report.json",
+      "scope": "原生高级控件、F2 与真实命中覆盖有储备扣残机和零储备保护。原构建 251。",
+      "bytes": 2433948,
+      "sha256": "fb177fbbe3107b56fbb13e05326b7af5349fb3f737611dae55cffdaa5ace90ee",
+      "startedAt": "2026-10-24T23:51:00.737Z",
+      "finishedAt": "2026-10-24T23:51:48.133Z"
+    },
+    {
+      "id": "practice-lifecycle-options",
+      "report": "practice-lifecycle-options-v257/adaptation/practice-effects-lifecycle-normal-th08/report.json",
+      "scope": "真实命中自动暂停重开，以及标题禁用／实玩一键死亡到 Game Over。原构建 251。",
+      "bytes": 4976019,
+      "sha256": "ebdcb5ad41c654afbc6a5385805a2bbd2b43d7247625e39911bd9d6262d921ed",
+      "startedAt": "2026-10-24T23:58:52.528Z",
+      "finishedAt": "2026-10-24T23:59:51.603Z"
+    },
+    {
+      "id": "practice-math",
+      "report": "practice-math-v268/adaptation/practice-effects-math-normal-th08/report.json",
+      "scope": "Intel、AMD、默认与导入后自定义表各 8 次实际归一化，8 MiB 真实导出／导入／再导出字节相等。原构建 266。",
+      "bytes": 3099745,
+      "sha256": "24d74072c15e41e54baf0df381de595dc041a9450e94b704faa53a382c6ab506",
+      "startedAt": "2026-10-25T00:31:56.889Z",
+      "finishedAt": "2026-10-25T00:32:31.411Z"
+    },
+    {
+      "id": "practice-display-tools",
+      "report": "practice-display-v272/adaptation/practice-effects-display-normal-th08/report.json",
+      "scope": "真实弹体开启／关闭各 6 Tick 几何及顶点，许可展开／隐藏的文本、可见顶点与图片。原构建 266。",
+      "bytes": 3014372,
+      "sha256": "11f11a141f649d1eab01e5f4f56e9d2fdaf92be1b588e31455373136b1e0b1f0",
+      "startedAt": "2026-10-25T00:38:44.157Z",
+      "finishedAt": "2026-10-25T00:39:34.195Z"
+    },
+    {
+      "id": "practice-lock-text",
+      "report": "practice-lock-text-v271/adaptation/practice-effects-bosses-normal-th08/report.json",
+      "scope": "同一实际 Boss 的 40 Tick 锁时、17 个伤害样本、40 Tick 解锁及 4 Tick 隐藏对照；实际文字与原生计数相符。原构建 266。",
+      "bytes": 4983487,
+      "sha256": "20314cff3a2ce539df320b07b1c05672fde0a86513079325f95626d117cd24a5",
+      "startedAt": "2026-10-25T00:39:34.682Z",
+      "finishedAt": "2026-10-25T00:39:48.886Z"
+    },
+    {
+      "id": "launcher-lifecycle-current",
+      "report": "regressions-v274/acceptance/adaptation/launcher-lifecycle-normal-th08/report.json",
+      "scope": "正式 Launcher 后台／恢复、退出清理与新实例单次输入。本轮原生构建 266。",
+      "bytes": 915864,
+      "sha256": "42a433b17c2d003eba83bf6ab575ed42443e14f52e13203d7b13e8533b964ec4",
+      "startedAt": "2026-10-25T00:48:55.450Z",
+      "finishedAt": "2026-10-25T00:49:54.941Z"
+    },
+    {
+      "id": "native-view-options-current",
+      "report": "regressions-v274/acceptance/adaptation/view-options-normal-th08/report.json",
+      "scope": "关闭／低速／常显三图、原生对象位置与碰撞盒、运动及同实例暂停重开。机器完整判据通过，画面组按用户安排稍后审查。",
+      "bytes": 517648,
+      "sha256": "4402ff4c004eaeed79ffb2427f9728dbdfd478f11a42045a2b1cd27df8b15d14",
+      "startedAt": "2026-10-25T00:49:59.411Z",
+      "finishedAt": "2026-10-25T00:51:41.809Z"
+    },
+    {
+      "id": "mp-build-revalidation",
+      "report": "mp-revalidation-v280/acceptance/summary.json",
+      "scope": "th08 MP 的 BUILD-01 至 BUILD-04：本轮源码构建、正式包及当前来源独立复核。",
+      "bytes": 76652,
+      "sha256": "65acec399c0da57205e29e8eda20bb83d32e7e871310eb710b404225b56d04e0",
+      "startedAt": "2026-10-25T01:23:48.257Z",
+      "finishedAt": "2026-10-25T01:23:56.387Z"
+    },
+    {
+      "id": "reference-guard-negatives",
+      "report": "reference-guard-v284/report.json",
+      "scope": "隔离目录实际新增／删除／改写完整参考清单，身份变化使所有 lane 通过的汇总仍失败。16 项组件回归，不替代本作 Quick／Daily 对照。",
+      "bytes": 1354,
+      "sha256": "052145d003a76f8e26be00e8c0ebcc806787973dd1d0ed40d36fd1713ce820f2",
+      "startedAt": "2026-10-25T01:32:23.997Z",
+      "finishedAt": "2026-10-25T01:32:25.068Z"
+    },
+    {
+      "id": "reference-integrity-complete",
+      "report": "reference-final-v289/acceptance/summary.json",
+      "scope": "Quick 与 Daily 原始采集保持原时间；独立复核其完整 7 份 golden 文件与声明外部输入前后身份、原候选队列和 gate，统一入口完整通过。",
+      "bytes": 58060,
+      "sha256": "2ae8a34e023e9244a05ab13c7d06513a1387c90212dab77f7c5f3cf1ea84a025",
+      "startedAt": "2026-10-25T01:51:07.949Z",
+      "finishedAt": "2026-10-25T01:51:10.068Z"
+    },
+    {
+      "id": "reference-integrity-resume",
+      "report": "reference-resume-v290/summary.json",
+      "scope": "统一入口续跑：本轮 executed=0、retained=1，重新核对原始依赖并保留原复核结果。",
+      "bytes": 58580,
+      "sha256": "b8db5ef0bb4893550b7f7c89bf87cc879c87b36892e29ed6ba8cfb51cdced23f",
+      "startedAt": "2026-10-25T01:52:41.185Z",
+      "finishedAt": "2026-10-25T01:52:42.582Z"
+    },
+    {
+      "id": "replay-method-complete",
+      "report": "replay-method-final-v306/acceptance/summary.json",
+      "scope": "独立复算原始 Quick 4 份与 Daily 2 份捕获。共用比较器执行每条 lane 的 14 个实际参考窗口反例，中央流式复核接纳 VERIFY-06；游戏差异保留。",
+      "bytes": 75976,
+      "sha256": "bc0528fdaa0097ee2e18ac72710e9f7d0d87380cf9a14d917b2c9ebf95c9ea78",
+      "startedAt": "2026-10-25T02:53:01.181Z",
+      "finishedAt": "2026-10-25T02:53:05.816Z"
+    },
+    {
+      "id": "replay-method-resume",
+      "report": "replay-method-final-v306/resume/summary.json",
+      "scope": "统一入口续跑 executed=0、retained=1，输入身份预检读取文件，中央再次复算原证据。",
+      "bytes": 76525,
+      "sha256": "ed899f88a4968b044ccc3357158959deb81f6ab380fe3f2ecc8df96f3603530b",
+      "startedAt": "2026-10-25T02:53:17.626Z",
+      "finishedAt": "2026-10-25T02:53:20.185Z"
+    },
+    {
+      "id": "replay-method-guards",
+      "report": "replay-method-final-v306/negative-controls/report.json",
+      "scope": "真实报告的缺反例、伪造游戏通过、篡改窗口、错误来源字节、伪称新运行、借用变体和父摘要伪造共 7 个反例均拒收。",
+      "bytes": 16683,
+      "sha256": "953a5e02953e150f6f10f2b5b6abd1b3a9a382006733d9e8bdfda4a6a58af6e3",
+      "startedAt": "2026-10-25T02:53:06.233Z",
+      "finishedAt": "2026-10-25T02:53:17.064Z"
+    },
+    {
+      "id": "replay-current-regressions",
+      "report": "replay-regressions-v308/queue/report.json",
+      "scope": "220 项针对性回归及正式 CTest Replay 入口通过，包含原生 15 帧推进矩阵、状态字段、游标账本与中央证据。",
+      "bytes": 4643,
+      "sha256": "6f8c720b038eeda6714caf9c7e2b6f656d017be207eb1383fad199e8536c6fa3",
+      "startedAt": "2026-10-25T02:54:44.019Z",
+      "finishedAt": "2026-10-25T02:54:55.515Z"
+    }
+  ],
+  "variants": {
+    "normal": {
+      "BUILD-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "build",
+          "build-freshness",
+          "current-build",
+          "rebuilt-current-source",
+          "current-observer-build"
+        ],
+        "observed": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。",
+        "remaining": "",
+        "detail": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。"
+      },
+      "BUILD-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "build",
+          "build-freshness",
+          "current-build",
+          "rebuilt-current-source",
+          "current-observer-build"
+        ],
+        "observed": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。",
+        "remaining": "",
+        "detail": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。"
+      },
+      "BUILD-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "build",
+          "build-freshness",
+          "current-build",
+          "rebuilt-current-source",
+          "current-observer-build"
+        ],
+        "observed": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。",
+        "remaining": "",
+        "detail": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。"
+      },
+      "BUILD-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "audio02",
+          "recording",
+          "background",
+          "package",
+          "seven-desktop-input",
+          "seven-touch-actions",
+          "build-freshness",
+          "current-build",
+          "rebuilt-current-source",
+          "current-observer-build"
+        ],
+        "observed": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。",
+        "remaining": "",
+        "detail": "当前工具来源重新执行增量源码构建及正式打包，并以新的构建凭据重新验证工具链、输出和包绑定。"
+      },
+      "BUILD-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "seven-single-game",
+          "current-observer-build"
+        ],
+        "observed": "最小检出、单作构建与 Launcher 安装首帧的独立判据复算通过。",
+        "remaining": "",
+        "detail": "最小检出、单作构建与 Launcher 安装首帧的独立判据复算通过。"
+      },
+      "BUILD-06": {
+        "status": "待材料",
+        "complete": false,
+        "evidence": [
+          "source-review",
+          "input-facts"
+        ],
+        "observed": "已定位原版 EXE、DATA，并核对其 SHA-256 与现有参考一致。",
+        "remaining": "待源码作者与许可、DATA／字体来源和独立审阅材料。",
+        "detail": "已定位原版 EXE、DATA，并核对其 SHA-256 与现有参考一致。 后续：待源码作者与许可、DATA／字体来源和独立审阅材料。"
+      },
+      "RUNTIME-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "protocol-storage-complete"
+        ],
+        "observed": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。",
+        "remaining": "",
+        "detail": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。"
+      },
+      "RUNTIME-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "protocol-storage-complete"
+        ],
+        "observed": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。",
+        "remaining": "",
+        "detail": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。"
+      },
+      "RUNTIME-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "protocol-storage-complete"
+        ],
+        "observed": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。",
+        "remaining": "",
+        "detail": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。"
+      },
+      "RUNTIME-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "background",
+          "launcher-lifecycle-complete",
+          "launcher-lifecycle-current"
+        ],
+        "observed": "真实 Launcher 中关闭默认自动射击后，按住实体方向键与可见触控低速控件，实际标签切后台清空输入并恢复画面和八窗混音 PCM。通过浏览器返回完成旧输入桥释放和文档退役，新 epoch 单次按键生效且宿主／Runtime 监听器数量与位置一致；中央完整判据通过。",
+        "remaining": "",
+        "detail": "真实 Launcher 中关闭默认自动射击后，按住实体方向键与可见触控低速控件，实际标签切后台清空输入并恢复画面和八窗混音 PCM。通过浏览器返回完成旧输入桥释放和文档退役，新 epoch 单次按键生效且宿主／Runtime 监听器数量与位置一致；中央完整判据通过。"
+      },
+      "RUNTIME-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage"
+        ],
+        "observed": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。",
+        "remaining": "",
+        "detail": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。"
+      },
+      "RUNTIME-06": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "native-view-options-machine",
+          "native-view-options-current"
+        ],
+        "observed": "正式 Launcher 关闭／开启／关闭三次启动，原生常显消费、判定点与角色位置对齐、高速保持、低速区分、碰撞盒尺寸、松键静止及同实例暂停重开通过。关闭／低速／常显 PNG 保存实际字节身份，中央复算通过。",
+        "remaining": "对应画面组按用户安排稍后集中审查。",
+        "detail": "正式 Launcher 关闭／开启／关闭三次启动，原生常显消费、判定点与角色位置对齐、高速保持、低速区分、碰撞盒尺寸、松键静止及同实例暂停重开通过。关闭／低速／常显 PNG 保存实际字节身份，中央复算通过。 后续：对应画面组按用户安排稍后集中审查。",
+        "machineComplete": true
+      },
+      "MP-RULE-01": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-RULE-02": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-RULE-03": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-RULE-04": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-RULE-05": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "INPUT-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "native-keyboard-complete",
+          "native-inputs-complete"
+        ],
+        "observed": "原生键盘、WASD、自定义持久布局、恢复默认和手柄输入同批实跑通过；Dpad 与摇杆各八向、原生动作、原作菜单和对话由共享判据复算。",
+        "remaining": "",
+        "detail": "原生键盘、WASD、自定义持久布局、恢复默认和手柄输入同批实跑通过；Dpad 与摇杆各八向、原生动作、原作菜单和对话由共享判据复算。"
+      },
+      "INPUT-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "keyboard-layouts-original-export",
+          "native-inputs-complete"
+        ],
+        "observed": "原生键盘、WASD、自定义持久布局、恢复默认和手柄输入同批实跑通过；Dpad 与摇杆各八向、原生动作、原作菜单和对话由共享判据复算。",
+        "remaining": "",
+        "detail": "原生键盘、WASD、自定义持久布局、恢复默认和手柄输入同批实跑通过；Dpad 与摇杆各八向、原生动作、原作菜单和对话由共享判据复算。"
+      },
+      "INPUT-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "desktop",
+          "seven-desktop-input"
+        ],
+        "observed": "Launcher 生产手柄映射和席位归属观察通过，完整判据复算通过。",
+        "remaining": "",
+        "detail": "Launcher 生产手柄映射和席位归属观察通过，完整判据复算通过。"
+      },
+      "INPUT-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "native-inputs-complete"
+        ],
+        "observed": "原生键盘、WASD、自定义持久布局、恢复默认和手柄输入同批实跑通过；Dpad 与摇杆各八向、原生动作、原作菜单和对话由共享判据复算。",
+        "remaining": "",
+        "detail": "原生键盘、WASD、自定义持久布局、恢复默认和手柄输入同批实跑通过；Dpad 与摇杆各八向、原生动作、原作菜单和对话由共享判据复算。"
+      },
+      "INPUT-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "actions-complete"
+        ],
+        "observed": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。",
+        "remaining": "",
+        "detail": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。"
+      },
+      "INPUT-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "background",
+          "background-inputs-complete"
+        ],
+        "observed": "真实窗口最小化及同窗口换页、触控取消和手柄断连／重连实跑通过；持有输入清空、重连中立门槛和恢复后的原生移动逐项复算。",
+        "remaining": "",
+        "detail": "真实窗口最小化及同窗口换页、触控取消和手柄断连／重连实跑通过；持有输入清空、重连中立门槛和恢复后的原生移动逐项复算。"
+      },
+      "INPUT-07": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "desktop",
+          "seven-desktop-input"
+        ],
+        "observed": "本作实际菜单、确认、取消和对话输入观察通过，完整判据复算通过。",
+        "remaining": "",
+        "detail": "本作实际菜单、确认、取消和对话输入观察通过，完整判据复算通过。"
+      },
+      "TOUCH-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "motion-complete",
+          "motion-rechecked-complete"
+        ],
+        "observed": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。",
+        "remaining": "",
+        "detail": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。"
+      },
+      "TOUCH-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "motion-complete",
+          "motion-rechecked-complete"
+        ],
+        "observed": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。",
+        "remaining": "",
+        "detail": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。"
+      },
+      "TOUCH-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "motion-rechecked-complete"
+        ],
+        "observed": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。",
+        "remaining": "",
+        "detail": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。"
+      },
+      "TOUCH-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "motion-complete",
+          "motion-rechecked-complete"
+        ],
+        "observed": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。",
+        "remaining": "",
+        "detail": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。"
+      },
+      "TOUCH-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "focus-buttons-complete"
+        ],
+        "observed": "生产 DOM 焦点按钮的按住、切换及切换配置重载实跑通过；三个独立实例各自用键盘高速与 Shift 低速校准，再比较原生焦点、位移、持续持有、释放和取消。",
+        "remaining": "",
+        "detail": "生产 DOM 焦点按钮的按住、切换及切换配置重载实跑通过；三个独立实例各自用键盘高速与 Shift 低速校准，再比较原生焦点、位移、持续持有、释放和取消。"
+      },
+      "TOUCH-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "focus-buttons-complete"
+        ],
+        "observed": "生产 DOM 焦点按钮的按住、切换及切换配置重载实跑通过；三个独立实例各自用键盘高速与 Shift 低速校准，再比较原生焦点、位移、持续持有、释放和取消。",
+        "remaining": "",
+        "detail": "生产 DOM 焦点按钮的按住、切换及切换配置重载实跑通过；三个独立实例各自用键盘高速与 Shift 低速校准，再比较原生焦点、位移、持续持有、释放和取消。"
+      },
+      "TOUCH-07": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "motion-rechecked-complete"
+        ],
+        "observed": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。",
+        "remaining": "",
+        "detail": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。"
+      },
+      "TOUCH-08": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "bomb-resource-rechecked",
+          "actions-complete"
+        ],
+        "observed": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。",
+        "remaining": "",
+        "detail": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。"
+      },
+      "TOUCH-09": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "touch-last-window",
+          "deathbomb-complete"
+        ],
+        "observed": "当前产物真实碰撞后三条路线实跑通过；键盘与触控末帧有效、迟到脉冲经过自然死亡和复活保持无 Bomb，同一移动触点恢复并遵守命中前实测速度，输入与清理回执绑定本次代次。",
+        "remaining": "",
+        "detail": "当前产物真实碰撞后三条路线实跑通过；键盘与触控末帧有效、迟到脉冲经过自然死亡和复活保持无 Bomb，同一移动触点恢复并遵守命中前实测速度，输入与清理回执绑定本次代次。"
+      },
+      "TOUCH-10": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "touch-other-actions",
+          "unlimited-result-complete"
+        ],
+        "observed": "普通录制局零位移对照、实际无限速移动、跨关标记、生产结算与保存 Replay 实跑通过；五个状态边界、实际移动和独立解码的 100% 落率由中央完整判据重算。",
+        "remaining": "",
+        "detail": "普通录制局零位移对照、实际无限速移动、跨关标记、生产结算与保存 Replay 实跑通过；五个状态边界、实际移动和独立解码的 100% 落率由中央完整判据重算。"
+      },
+      "TOUCH-11": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "touch-other-actions",
+          "bomb-resource-rechecked",
+          "gesture-complete"
+        ],
+        "observed": "双击 Bomb 启用／关闭与保持射击后的对话确认实跑通过，指针批次、原生消费、Bomb 消耗与新的确认边沿由共享判据重算。",
+        "remaining": "",
+        "detail": "双击 Bomb 启用／关闭与保持射击后的对话确认实跑通过，指针批次、原生消费、Bomb 消耗与新的确认边沿由共享判据重算。"
+      },
+      "TOUCH-12": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "seven-touch-actions"
+        ],
+        "observed": "生产触控菜单／对话手势完整判据复算通过。",
+        "remaining": "",
+        "detail": "生产触控菜单／对话手势完整判据复算通过。"
+      },
+      "TOUCH-13": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "touch-other-actions",
+          "gesture-complete"
+        ],
+        "observed": "双击 Bomb 启用／关闭与保持射击后的对话确认实跑通过，指针批次、原生消费、Bomb 消耗与新的确认边沿由共享判据重算。",
+        "remaining": "",
+        "detail": "双击 Bomb 启用／关闭与保持射击后的对话确认实跑通过，指针批次、原生消费、Bomb 消耗与新的确认边沿由共享判据重算。"
+      },
+      "TOUCH-14": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "motion-complete",
+          "motion-rechecked-complete"
+        ],
+        "observed": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。",
+        "remaining": "",
+        "detail": "当前包六项共用运动验收同批实跑通过；中央判据复算连续原生轨迹、固定输入向量、八向方向位、限速恢复、双指低速与灵敏度。"
+      },
+      "TOUCH-15": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "actions-complete"
+        ],
+        "observed": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。",
+        "remaining": "",
+        "detail": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。"
+      },
+      "TOUCH-16": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "background-inputs-complete"
+        ],
+        "observed": "真实窗口最小化及同窗口换页、触控取消和手柄断连／重连实跑通过；持有输入清空、重连中立门槛和恢复后的原生移动逐项复算。",
+        "remaining": "",
+        "detail": "真实窗口最小化及同窗口换页、触控取消和手柄断连／重连实跑通过；持有输入清空、重连中立门槛和恢复后的原生移动逐项复算。"
+      },
+      "TOUCH-17": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "seven-touch-actions"
+        ],
+        "observed": "共用布局编辑器的生产交互及恢复完整判据复算通过。",
+        "remaining": "",
+        "detail": "共用布局编辑器的生产交互及恢复完整判据复算通过。"
+      },
+      "TOUCH-18": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "actions-complete"
+        ],
+        "observed": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。",
+        "remaining": "",
+        "detail": "正式 Runtime 射击／Bomb／暂停、键盘／手柄／触控交叉持有和原生重开实跑通过；输入清理保持当前代次的动作序号，新 DOM 控制器按新实例接入。"
+      },
+      "TOUCH-19": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "seven-touch-actions"
+        ],
+        "observed": "共用双指放大镜的生产交互及退出完整判据复算通过。",
+        "remaining": "",
+        "detail": "共用双指放大镜的生产交互及退出完整判据复算通过。"
+      },
+      "DISPLAY-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "display"
+        ],
+        "observed": "同 Replay 在不同呈现节奏下的逻辑、RNG、时钟和输入轨迹完整判据复算通过。",
+        "remaining": "",
+        "machineComplete": true,
+        "detail": "同 Replay 在不同呈现节奏下的逻辑、RNG、时钟和输入轨迹完整判据复算通过。"
+      },
+      "DISPLAY-02": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "display",
+          "limiter",
+          "human-confirmation"
+        ],
+        "observed": "限帧开关的原生提交／逻辑步数已验证，用户高刷与显示观感结论通过。",
+        "remaining": "实体刷新时序、设备参数与 Lab 窗口导出记录尚未提供。",
+        "detail": "限帧开关的原生提交／逻辑步数已验证，用户高刷与显示观感结论通过。 后续：实体刷新时序、设备参数与 Lab 窗口导出记录尚未提供。"
+      },
+      "DISPLAY-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "display"
+        ],
+        "observed": "重复绘制权威状态、生命周期及音频操作纯度的完整判据复算通过。",
+        "remaining": "",
+        "machineComplete": true,
+        "detail": "重复绘制权威状态、生命周期及音频操作纯度的完整判据复算通过。"
+      },
+      "DISPLAY-04": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "display",
+          "human-confirmation"
+        ],
+        "observed": "相应对象、边界、暂停的机器证据复算通过，用户显示审查结论通过。",
+        "remaining": "用户结论已登记；Lab 窗口素材集导出记录尚未随回复提供。",
+        "machineComplete": true,
+        "detail": "相应对象、边界、暂停的机器证据复算通过，用户显示审查结论通过。 后续：用户结论已登记；Lab 窗口素材集导出记录尚未随回复提供。"
+      },
+      "DISPLAY-05": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "display",
+          "human-confirmation"
+        ],
+        "observed": "相应对象、边界、暂停的机器证据复算通过，用户显示审查结论通过。",
+        "remaining": "用户结论已登记；Lab 窗口素材集导出记录尚未随回复提供。",
+        "machineComplete": true,
+        "detail": "相应对象、边界、暂停的机器证据复算通过，用户显示审查结论通过。 后续：用户结论已登记；Lab 窗口素材集导出记录尚未随回复提供。"
+      },
+      "DISPLAY-06": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "display",
+          "human-confirmation"
+        ],
+        "observed": "相应对象、边界、暂停的机器证据复算通过，用户显示审查结论通过。",
+        "remaining": "用户结论已登记；Lab 窗口素材集导出记录尚未随回复提供。",
+        "machineComplete": true,
+        "detail": "相应对象、边界、暂停的机器证据复算通过，用户显示审查结论通过。 后续：用户结论已登记；Lab 窗口素材集导出记录尚未随回复提供。"
+      },
+      "DISPLAY-07": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "display"
+        ],
+        "observed": "正式包冷启动／刷新后的实际合成画面与 first-frame 时序完整判据复算通过。",
+        "remaining": "",
+        "machineComplete": true,
+        "detail": "正式包冷启动／刷新后的实际合成画面与 first-frame 时序完整判据复算通过。"
+      },
+      "DISPLAY-08": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "display",
+          "limiter",
+          "human-confirmation"
+        ],
+        "observed": "限帧开关的原生提交／逻辑步数已验证，用户高刷与显示观感结论通过。",
+        "remaining": "实体刷新时序、设备参数与 Lab 窗口导出记录尚未提供。",
+        "detail": "限帧开关的原生提交／逻辑步数已验证，用户高刷与显示观感结论通过。 后续：实体刷新时序、设备参数与 Lab 窗口导出记录尚未提供。"
+      },
+      "REPLAY-01": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "retained-state"
+        ],
+        "observed": "正式 Shell 导入与原生 Replay 推进已有观察。",
+        "remaining": "同一 Replay 哈希的独立自然结束游标待原版复验。",
+        "detail": "正式 Shell 导入与原生 Replay 推进已有观察。 后续：同一 Replay 哈希的独立自然结束游标待原版复验。"
+      },
+      "REPLAY-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "recording",
+          "keyboard-layouts-original-export"
+        ],
+        "observed": "WASD、自定义布局持久保存和默认恢复的三个实例逐边沿及原生动作实跑通过；原版 Replay 导出单独保留文件，校验 v6 原始块与 USER 信息，并重新对照键盘、手柄的实际录制帧。",
+        "remaining": "",
+        "detail": "WASD、自定义布局持久保存和默认恢复的三个实例逐边沿及原生动作实跑通过；原版 Replay 导出单独保留文件，校验 v6 原始块与 USER 信息，并重新对照键盘、手柄的实际录制帧。"
+      },
+      "REPLAY-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "recording",
+          "recording-complete",
+          "replay-isolation-complete"
+        ],
+        "observed": "真实录制和四条回放扰动路线实跑通过；中央判据重开保存文件，独立解析每帧，逐条核对键盘方向／射击、手柄和触控实际进入、释放及玩家消费隔离。",
+        "remaining": "",
+        "detail": "真实录制和四条回放扰动路线实跑通过；中央判据重开保存文件，独立解析每帧，逐条核对键盘方向／射击、手柄和触控实际进入、释放及玩家消费隔离。"
+      },
+      "REPLAY-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "recording",
+          "replay-extension-version-complete"
+        ],
+        "observed": "同一真实录制旅程独立解析有效 v2 指针扩展并核对原生逐点消费，再只改版本字段，通过实际 Shell 请求验证明确拒绝；后续有效命令、文件列表和原有效录像字节保持正常。",
+        "remaining": "",
+        "detail": "同一真实录制旅程独立解析有效 v2 指针扩展并核对原生逐点消费，再只改版本字段，通过实际 Shell 请求验证明确拒绝；后续有效命令、文件列表和原有效录像字节保持正常。"
+      },
+      "REPLAY-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "protocol-storage-complete"
+        ],
+        "observed": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。",
+        "remaining": "",
+        "detail": "正式包实跑通过；启动顺序、两个代次的协议正负控、官方 Replay 文件管理与新实例恢复／删除的中央完整判据通过，实际读取字节分别保存并重新复核。"
+      },
+      "REPLAY-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "recording",
+          "replay-isolation-complete"
+        ],
+        "observed": "真实录制和四条回放扰动路线实跑通过；中央判据重开保存文件，独立解析每帧，逐条核对键盘方向／射击、手柄和触控实际进入、释放及玩家消费隔离。",
+        "remaining": "",
+        "detail": "真实录制和四条回放扰动路线实跑通过；中央判据重开保存文件，独立解析每帧，逐条核对键盘方向／射击、手柄和触控实际进入、释放及玩家消费隔离。"
+      },
+      "REPLAY-07": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "display"
+        ],
+        "observed": "正式 Replay 在三种呈现节奏下的权威状态与输入消费完整判据复算通过。",
+        "remaining": "",
+        "machineComplete": true,
+        "detail": "正式 Replay 在三种呈现节奏下的权威状态与输入消费完整判据复算通过。"
+      },
+      "VERIFY-01": {
+        "status": "检查失败",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "retained-state"
+        ],
+        "observed": "保留比较中 demo3 一致，demo0／1／2 存在差异。",
+        "remaining": "按用户安排稍后做原版复验，基准保持原值。",
+        "detail": "保留比较中 demo3 一致，demo0／1／2 存在差异。 后续：按用户安排稍后做原版复验，基准保持原值。"
+      },
+      "VERIFY-02": {
+        "status": "检查失败",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "retained-state"
+        ],
+        "observed": "保留比较中 Lunatic／Extra 存在差异。",
+        "remaining": "按用户安排稍后做原版复验，基准保持原值。",
+        "detail": "保留比较中 Lunatic／Extra 存在差异。 后续：按用户安排稍后做原版复验，基准保持原值。"
+      },
+      "VERIFY-03": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "input-facts",
+          "source-review"
+        ],
+        "observed": "原版 EXE 和 DATA 哈希与 golden 一致，样本及 trace 各有字节身份。",
+        "remaining": "独立来源、采集与接纳记录待补。",
+        "detail": "原版 EXE 和 DATA 哈希与 golden 一致，样本及 trace 各有字节身份。 后续：独立来源、采集与接纳记录待补。"
+      },
+      "VERIFY-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "retained-state",
+          "reference-guard-negatives",
+          "reference-integrity-complete",
+          "reference-integrity-resume"
+        ],
+        "observed": "Quick 4 份与 Daily 2 份输入的原采集前后快照独立复核通过，完整 7 份 golden 文件、声明外部输入、原候选队列和 gate 均绑定原字节。新增／删除／改写参考反例及中央判据通过，统一入口完整接纳；续跑保留原结果。游戏对照差异在 VERIFY-01／02 单独记录。",
+        "remaining": "",
+        "detail": "Quick 4 份与 Daily 2 份输入的原采集前后快照独立复核通过，完整 7 份 golden 文件、声明外部输入、原候选队列和 gate 均绑定原字节。新增／删除／改写参考反例及中央判据通过，统一入口完整接纳；续跑保留原结果。游戏对照差异在 VERIFY-01／02 单独记录。"
+      },
+      "VERIFY-05": {
+        "status": "待材料",
+        "complete": false,
+        "evidence": [
+          "source-review"
+        ],
+        "observed": "已定位与 golden 哈希一致的原版输入。",
+        "remaining": "待独立采集、staging 维护与单独接纳审查记录。",
+        "detail": "已定位与 golden 哈希一致的原版输入。 后续：待独立采集、staging 维护与单独接纳审查记录。"
+      },
+      "VERIFY-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "retained-state",
+          "replay-method-complete",
+          "replay-method-resume",
+          "replay-method-guards",
+          "replay-current-regressions"
+        ],
+        "observed": "原始 Quick 4 份与 Daily 2 份捕获由当前共用比较器复算，两条 lane 各 14 个实际参考窗口反例通过。首差帧、字段、漏帧、重复、错位及各状态类别由统一入口和中央流式判据重新核对；7 个伪造证据反例拒收，续跑保持原采集时间与结果。游戏比较差异在 VERIFY-01／02 保留。",
+        "remaining": "",
+        "detail": "原始 Quick 4 份与 Daily 2 份捕获由当前共用比较器复算，两条 lane 各 14 个实际参考窗口反例通过。首差帧、字段、漏帧、重复、错位及各状态类别由统一入口和中央流式判据重新核对；7 个伪造证据反例拒收，续跑保持原采集时间与结果。游戏比较差异在 VERIFY-01／02 保留。"
+      },
+      "VERIFY-07": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "display"
+        ],
+        "observed": "正式包与诊断构建同输入观察、读取纯度与生产 Replay 行为的完整判据复算通过。",
+        "remaining": "",
+        "machineComplete": true,
+        "detail": "正式包与诊断构建同输入观察、读取纯度与生产 Replay 行为的完整判据复算通过。"
+      },
+      "VERIFY-08": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "retained-state",
+          "replay-current-regressions"
+        ],
+        "observed": "逐帧账本、输入与 timing 游标、状态映射及首差异定位已有记录。编译实际 ReplayPlayback.cpp 验证重入上限 15 帧；账本拒绝 16 帧、游标脱离和应用步缺口。普通版与 MP 共用原始字段判据，拒绝非法整数、非有限坐标、截短状态块及冻结帧中的无效字段。",
+        "remaining": "本作状态映射的完整证据判据待接入；Quick／Daily 原版差异与独立 Replay 自然终点按用户安排稍后验证。",
+        "detail": "逐帧账本、输入与 timing 游标、状态映射及首差异定位已有记录。编译实际 ReplayPlayback.cpp 验证重入上限 15 帧；账本拒绝 16 帧、游标脱离和应用步缺口。普通版与 MP 共用原始字段判据，拒绝非法整数、非有限坐标、截短状态块及冻结帧中的无效字段。"
+      },
+      "SAVE-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "native-user-paths-complete"
+        ],
+        "observed": "同一正式包的原生成绩、配置和 Replay 在真实 IDBFS 根读取并逐字节比较；目录外 read、write、remove 的请求及明确拒绝、操作前后文件列表与挂载外探针实跑通过。",
+        "remaining": "",
+        "detail": "同一正式包的原生成绩、配置和 Replay 在真实 IDBFS 根读取并逐字节比较；目录外 read、write、remove 的请求及明确拒绝、操作前后文件列表与挂载外探针实跑通过。"
+      },
+      "SAVE-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage",
+          "native-user-paths-complete"
+        ],
+        "observed": "同一正式包的原生成绩、配置和 Replay 在真实 IDBFS 根读取并逐字节比较；目录外 read、write、remove 的请求及明确拒绝、操作前后文件列表与挂载外探针实跑通过。",
+        "remaining": "",
+        "detail": "同一正式包的原生成绩、配置和 Replay 在真实 IDBFS 根读取并逐字节比较；目录外 read、write、remove 的请求及明确拒绝、操作前后文件列表与挂载外探针实跑通过。"
+      },
+      "SAVE-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage"
+        ],
+        "observed": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。",
+        "remaining": "",
+        "detail": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。"
+      },
+      "SAVE-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage"
+        ],
+        "observed": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。",
+        "remaining": "",
+        "detail": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。"
+      },
+      "SAVE-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage"
+        ],
+        "observed": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。",
+        "remaining": "",
+        "detail": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。"
+      },
+      "SAVE-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage"
+        ],
+        "observed": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。",
+        "remaining": "",
+        "detail": "配置、成绩和 Replay 经真实原生操作写入、同步、新实例恢复及离线读取，完整判据复算通过。"
+      },
+      "AUDIO-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "retained-state",
+          "music-source-and-output-complete"
+        ],
+        "observed": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。",
+        "remaining": "",
+        "detail": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。"
+      },
+      "AUDIO-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "audio02",
+          "audio-no-bgm-complete"
+        ],
+        "observed": "同一正式 Runtime 的菜单音效正向、实测 PCM 队尾延迟负控和无 BGM 真实射击实跑通过；中央判据复算源文件映射、原生子弹消费、原始起播记录和可归属 PCM，并重新读取静音基线与射击采样文件。",
+        "remaining": "",
+        "detail": "同一正式 Runtime 的菜单音效正向、实测 PCM 队尾延迟负控和无 BGM 真实射击实跑通过；中央判据复算源文件映射、原生子弹消费、原始起播记录和可归属 PCM，并重新读取静音基线与射击采样文件。"
+      },
+      "AUDIO-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "retained-state",
+          "native-ogg-lifecycle-complete"
+        ],
+        "observed": "stream／full 正式包的原生暂停恢复、同局暂停后 R 重开、退出再启动与实际源绑定 PCM 通过；21 曲 Music Room、自然循环、淡出和 DATA 独立解析的 Boss 切曲共同验算。",
+        "remaining": "",
+        "detail": "stream／full 正式包的原生暂停恢复、同局暂停后 R 重开、退出再启动与实际源绑定 PCM 通过；21 曲 Music Room、自然循环、淡出和 DATA 独立解析的 Boss 切曲共同验算。"
+      },
+      "AUDIO-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "background",
+          "native-music-background-complete"
+        ],
+        "observed": "完整 Chrome 同窗口真实标签切换中，Host／Runtime 的可信隐藏与恢复事件、原生曲目游标和实际源绑定 PCM 实跑通过；stream／full 两条解码策略均由中央判据复算。Windows 窗口遮挡推断的标签隔离配置随浏览器参数保存。",
+        "remaining": "",
+        "detail": "完整 Chrome 同窗口真实标签切换中，Host／Runtime 的可信隐藏与恢复事件、原生曲目游标和实际源绑定 PCM 实跑通过；stream／full 两条解码策略均由中央判据复算。Windows 窗口遮挡推断的标签隔离配置随浏览器参数保存。"
+      },
+      "AUDIO-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "music-source-and-output-complete"
+        ],
+        "observed": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。",
+        "remaining": "",
+        "detail": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。"
+      },
+      "AUDIO-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "display"
+        ],
+        "observed": "高刷及回放窗口的音频事件计数、来源与守恒完整判据复算通过。",
+        "remaining": "",
+        "machineComplete": true,
+        "detail": "高刷及回放窗口的音频事件计数、来源与守恒完整判据复算通过。"
+      },
+      "PACKAGE-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage"
+        ],
+        "observed": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。",
+        "remaining": "",
+        "detail": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。"
+      },
+      "PACKAGE-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "desktop",
+          "audio02",
+          "storage",
+          "recording",
+          "background",
+          "seven-desktop-input",
+          "seven-touch-actions"
+        ],
+        "observed": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。",
+        "remaining": "",
+        "detail": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。"
+      },
+      "PACKAGE-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage",
+          "staged-http-update-complete"
+        ],
+        "observed": "生产安装器下载并暂存真实新增 OGG，再取消第二个 HTTP 200 响应体；浏览器实际请求取消、旧代不变、暂存代及无引用对象清理均通过。旧 Runtime 重新首帧、完整 ZIP 提交新代、配置／成绩／Replay 保留和离线启动实跑通过。",
+        "remaining": "",
+        "detail": "生产安装器下载并暂存真实新增 OGG，再取消第二个 HTTP 200 响应体；浏览器实际请求取消、旧代不变、暂存代及无引用对象清理均通过。旧 Runtime 重新首帧、完整 ZIP 提交新代、配置／成绩／Replay 保留和离线启动实跑通过。"
+      },
+      "PACKAGE-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage",
+          "package-import-sources-complete"
+        ],
+        "observed": "本地 ZIP、在线发布包与声明的原版 DATA 文件分别在独立浏览器存储中安装，每条路径两次实际启动与重开通过。Runtime 固定代次和当前安装分别读取，同一描述符、基础对象、版本、来源及实际 managed DATA 字节通过中央复算；在线可选资源扩充保留基础身份。",
+        "remaining": "",
+        "detail": "本地 ZIP、在线发布包与声明的原版 DATA 文件分别在独立浏览器存储中安装，每条路径两次实际启动与重开通过。Runtime 固定代次和当前安装分别读取，同一描述符、基础对象、版本、来源及实际 managed DATA 字节通过中央复算；在线可选资源扩充保留基础身份。"
+      },
+      "PACKAGE-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "storage"
+        ],
+        "observed": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。",
+        "remaining": "",
+        "detail": "线上安装、实际资源边界、离线重开的对应完整判据复算通过。"
+      },
+      "PACKAGE-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "seven-installation-authority"
+        ],
+        "observed": "安装、更新提示与 Runtime 消费代次的完整判据复算通过。",
+        "remaining": "",
+        "detail": "安装、更新提示与 Runtime 消费代次的完整判据复算通过。"
+      },
+      "MP-01": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-02": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-03": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-04": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-05": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-06": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-07": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-08": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-09": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-10": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-11": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-12": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-13": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-14": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "MP-15": {
+        "status": "不适用",
+        "complete": false,
+        "evidence": [],
+        "observed": "普通版为单人模式。",
+        "remaining": "",
+        "detail": "普通版为单人模式。"
+      },
+      "PRACTICE-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "practice-capability-complete"
+        ],
+        "observed": "正式启用包下，真实 Launcher 用户开启、用户关闭与 Host 关闭三场景通过，设置、configure 和原生菜单相符。",
+        "remaining": "当前完整判据尚需把产品上限、发布包关闭的合法对照与已测 Host／UI 矩阵共同核对。",
+        "detail": "正式启用包下，真实 Launcher 用户开启、用户关闭与 Host 关闭三场景通过，设置、configure 和原生菜单相符。 后续：当前完整判据尚需把产品上限、发布包关闭的合法对照与已测 Host／UI 矩阵共同核对。"
+      },
+      "PRACTICE-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "practice-startup-complete"
+        ],
+        "observed": "真实 Launcher 预启动配置与四个普通版实例的原生首帧实跑通过；日英中启用及英语关闭分别核对 configure、launch、first-frame 顺序与原生开关。",
+        "remaining": "",
+        "detail": "真实 Launcher 预启动配置与四个普通版实例的原生首帧实跑通过；日英中启用及英语关闭分别核对 configure、launch、first-frame 顺序与原生开关。"
+      },
+      "PRACTICE-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "practice-lifecycle-complete",
+          "practice-lifecycle-current"
+        ],
+        "observed": "当前产物四种 locale／开关实例及同一原生世界的重开、标题、Replay 主动退出、普通开局和再次练习实跑通过，中央完整判据重算每个状态边界。",
+        "remaining": "",
+        "detail": "当前产物四种 locale／开关实例及同一原生世界的重开、标题、Replay 主动退出、普通开局和再次练习实跑通过，中央完整判据重算每个状态边界。"
+      },
+      "PRACTICE-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "native-practice-parameters-complete",
+          "practice-input-regression",
+          "practice-parameter-current"
+        ],
+        "observed": "11 个冷启动参数案例通过，资源上下界、关卡、时间线、章节、对话、阶段与特殊定点分别核对冻结初始化和实际 ECL 字节。菜单确认前核对原生输入已武装、松键和完成绘制。",
+        "remaining": "",
+        "detail": "11 个冷启动参数案例通过，资源上下界、关卡、时间线、章节、对话、阶段与特殊定点分别核对冻结初始化和实际 ECL 字节。菜单确认前核对原生输入已武装、松键和完成绘制。"
+      },
+      "PRACTICE-05": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "practice-lifecycle-current"
+        ],
+        "observed": "保存文件经独立解析、持久化、新实例恢复和原生 Replay 消费，完整判据复算通过。",
+        "remaining": "",
+        "detail": "保存文件经独立解析、持久化、新实例恢复和原生 Replay 消费，完整判据复算通过。"
+      },
+      "PRACTICE-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "native-practice-controls-complete",
+          "practice-controls-current"
+        ],
+        "observed": "正式 Launcher 安装当前产物后进入同一原生 Practice 无出怪场景，F1–F7／U 实体键改变原生状态，真实浏览器触摸可见控件恢复原值，其他开关保持不变。Tab／F12 与移动 Tracker／Advanced 展开、可信 Pointer 坐标、同局零写入和最终释放通过中央原始证据复算。",
+        "remaining": "",
+        "detail": "正式 Launcher 安装当前产物后进入同一原生 Practice 无出怪场景，F1–F7／U 实体键改变原生状态，真实浏览器触摸可见控件恢复原值，其他开关保持不变。Tab／F12 与移动 Tracker／Advanced 展开、可信 Pointer 坐标、同局零写入和最终释放通过中央原始证据复算。"
+      },
+      "PRACTICE-07": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "human-confirmation",
+          "reviewed-practice-locales"
+        ],
+        "observed": "原生日英中菜单开闭、locale、真实 Unifont 交付与三张原始截图身份复算通过，并关联用户已确认的整组文字结论。保留原采集时间及包／DATA 身份，复算未重新运行浏览器。",
+        "remaining": "",
+        "detail": "原生日英中菜单开闭、locale、真实 Unifont 交付与三张原始截图身份复算通过，并关联用户已确认的整组文字结论。保留原采集时间及包／DATA 身份，复算未重新运行浏览器。"
+      },
+      "PRACTICE-08": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "practice",
+          "native-practice-controls-complete",
+          "native-practice-parameters-complete",
+          "practice-trainer-effects",
+          "practice-input-options",
+          "practice-boss-effects",
+          "practice-key-monitor",
+          "practice-consumer-build",
+          "practice-mapped-life",
+          "practice-lifecycle-options",
+          "practice-math",
+          "practice-display-tools",
+          "practice-lock-text"
+        ],
+        "observed": "训练资源 9 场景、高级输入 4 组、按键／APS／CSV、残机边界、自动重开与一键死亡，以及真实 CPU 数学／表文件往返、弹体矩形／许可和 Boss 锁时文字均有实跑证据。",
+        "remaining": "Practice 后续专项按用户安排暂缓。",
+        "detail": "训练资源 9 场景、高级输入 4 组、按键／APS／CSV、残机边界、自动重开与一键死亡，以及真实 CPU 数学／表文件往返、弹体矩形／许可和 Boss 锁时文字均有实跑证据。 后续：Practice 后续专项按用户安排暂缓。"
+      },
+      "LANG-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "language-consumers-complete",
+          "language-native-scenes"
+        ],
+        "observed": "正式包经已安装 App Shell 在断网新页面启动，日语标题、Result 统计和真实加载的 MSG 对白通过原文字节、字形与呈现核验。同一原生实例完成菜单进入、返回与对白操作。",
+        "remaining": "",
+        "detail": "正式包经已安装 App Shell 在断网新页面启动，日语标题、Result 统计和真实加载的 MSG 对白通过原文字节、字形与呈现核验。同一原生实例完成菜单进入、返回与对白操作。"
+      },
+      "LANG-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "language-complete",
+          "language-consumers-complete",
+          "language-native-scenes"
+        ],
+        "observed": "日英中正式选择器、持久语言偏好、本次发布归档与实际挂载成员逐一核对，归档成员、字节数和 SHA-256 由中央重新读取。",
+        "remaining": "",
+        "detail": "日英中正式选择器、持久语言偏好、本次发布归档与实际挂载成员逐一核对，归档成员、字节数和 SHA-256 由中央重新读取。"
+      },
+      "LANG-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "language-complete",
+          "language-consumers-complete",
+          "language-native-scenes"
+        ],
+        "observed": "所选翻译与字体在原生世界构造前配置，标题、Result 统计及实际翻译 MSG 的源字节、真实字形和后续呈现通过独立核验。",
+        "remaining": "",
+        "detail": "所选翻译与字体在原生世界构造前配置，标题、Result 统计及实际翻译 MSG 的源字节、真实字形和后续呈现通过独立核验。"
+      },
+      "LANG-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "language-complete",
+          "language-consumers-complete",
+          "language-native-scenes"
+        ],
+        "observed": "独立冷存储分别注入实际 404 与同长度错哈希归档，本次返回原文并保留原语言偏好，响应来源与控制字节通过中央复算。",
+        "remaining": "",
+        "detail": "独立冷存储分别注入实际 404 与同长度错哈希归档，本次返回原文并保留原语言偏好，响应来源与控制字节通过中央复算。"
+      },
+      "LANG-05": {
+        "status": "部分验证",
+        "complete": false,
+        "evidence": [
+          "scope-audit",
+          "human-confirmation",
+          "language-consumers-complete",
+          "language-native-scenes",
+          "language-evidence-negatives"
+        ],
+        "observed": "日英中声明的标题、统计与对白字符样本均通过源成员、码点、真实字形来源、文字透明度与呈现核验。六张统计／对白图片分别绑定同一次原生实例与哈希。",
+        "remaining": "对应画面组按用户安排稍后集中审查。",
+        "detail": "日英中声明的标题、统计与对白字符样本均通过源成员、码点、真实字形来源、文字透明度与呈现核验。六张统计／对白图片分别绑定同一次原生实例与哈希。 后续：对应画面组按用户安排稍后集中审查。",
+        "machineComplete": true
+      },
+      "LANG-06": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "language-complete",
+          "language-consumers-complete",
+          "language-native-scenes"
+        ],
+        "observed": "有效部分翻译包保留的键显示本次译文，缺失键与独立离线日语基线一致，两条路径均经过实际栅格、字形与呈现。",
+        "remaining": "",
+        "detail": "有效部分翻译包保留的键显示本次译文，缺失键与独立离线日语基线一致，两条路径均经过实际栅格、字形与呈现。"
+      },
+      "MIDI-01": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "music-source-and-output-complete"
+        ],
+        "observed": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。",
+        "remaining": "",
+        "detail": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。"
+      },
+      "MIDI-02": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "music-source-and-output-complete"
+        ],
+        "observed": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。",
+        "remaining": "",
+        "detail": "当前正式包的 OGG 标题／首关、流式／完整解码、MIDI 新曲实际音符和输出、缺失／损坏诊断、生产 Launcher 设置与恢复实跑通过；中央重新读取原始源文件、实际交付字节、消息和采样窗口。"
+      },
+      "MIDI-03": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "native-midi-lifecycle-complete"
+        ],
+        "observed": "原生标题／开局曲目、暂停时序、同局 R 重开、真实后台恢复、退出静音与标题重启实跑通过。恢复按同一合成器与 tap 的完整分析窗分阶段采样，保留过渡状态与实际 PCM。",
+        "remaining": "",
+        "detail": "原生标题／开局曲目、暂停时序、同局 R 重开、真实后台恢复、退出静音与标题重启实跑通过。恢复按同一合成器与 tap 的完整分析窗分阶段采样，保留过渡状态与实际 PCM。"
+      },
+      "MIDI-04": {
+        "status": "已验证",
+        "complete": true,
+        "evidence": [
+          "scope-audit",
+          "music",
+          "music-mode-change-complete"
+        ],
+        "observed": "同一个 Chrome 存储环境中正常退出 MIDI，关闭原页面后读取原 MIDI 偏好并切换 OGG；两个真实页面 target、同一 browserContextId、退出消息、同一安装代次和各自输出实跑通过。",
+        "remaining": "",
+        "detail": "同一个 Chrome 存储环境中正常退出 MIDI，关闭原页面后读取原 MIDI 偏好并切换 OGG；两个真实页面 target、同一 browserContextId、退出消息、同一安装代次和各自输出实跑通过。"
+      }
+    }
+  }
+}

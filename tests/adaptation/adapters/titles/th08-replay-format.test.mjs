@@ -1,36 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {decodeTh08ReplayFile,inspectTh08ReplayInputFrames,inspectTh08ReplayMetadata,parseTh08MotionTrailer,TH08_REPLAY_SEMANTICS} from './th08-replay-format.mjs';
+import {decodeTh08ReplayFile,inspectTh08ReplayInputFrames,inspectTh08ReplayMetadata,inspectTh08OriginalReplay,parseTh08MotionTrailer,TH08_REPLAY_SEMANTICS} from './th08-replay-format.mjs';
 
-function packBits(bits){
-  const bytes=[];
-  for(let start=0;start<bits.length;start+=8){let byte=0;for(let i=0;i<8;i++)byte=(byte<<1)|(bits[start+i]??0);bytes.push(byte);}
-  return Buffer.from(bytes);
-}
-function encodeLiteralPayload(payload){
-  const bits=[];for(const byte of payload){bits.push(1);for(let shift=7;shift>=0;shift--)bits.push((byte>>shift)&1);}
-  bits.push(0,...Array(13).fill(0));return packBits(bits);
-}
+import {replayFile} from '../../fixtures/th08-replay-file.mjs';
+
 function fnv1a(bytes){let hash=2166136261;for(const byte of bytes)hash=Math.imul(hash^byte,16777619)>>>0;return hash;}
 
-function replayFile({debugRecords=false,inputFrames=[0,1,128,0,4],timingBytes=2,lag=0,practice=false}={}){
-  const stride=debugRecords?6:2,inputBytes=inputFrames.length*stride,stageOffset=0x134;
-  const timingOffset=stageOffset+0x24+inputBytes,payloadEnd=Math.max(0x134+0xcc,timingOffset+timingBytes+1);
-  const payload=Buffer.alloc(payloadEnd-0x68),putU32=(buffer,offset,value)=>buffer.writeUInt32LE(value>>>0,offset);
-  payload.writeUInt8(practice?1:0,0x7b-0x68);payload.writeFloatLE(lag,0x118-0x68);
-  for(let index=0;index<inputFrames.length;index++)payload.writeUInt16LE(inputFrames[index],stageOffset-0x68+0x24+index*stride);
-  payload.fill(0x1d,timingOffset-0x68,timingOffset-0x68+timingBytes);
-  const compressed=encodeLiteralPayload(payload),plain=Buffer.alloc(0x68+compressed.length);
-  putU32(plain,0,0x50523854);plain.writeUInt16LE(6,4);plain[6]=debugRecords?1:0;
-  putU32(plain,12,plain.length);plain[21]=37;putU32(plain,24,compressed.length);putU32(plain,28,payload.length);
-  putU32(plain,32,stageOffset);putU32(plain,68,timingOffset);putU32(plain,72,timingOffset+timingBytes);
-  compressed.copy(plain,0x68);let checksum=0x3f000318;
-  for(let i=21;i<plain.length;i++)checksum=(checksum+plain[i])>>>0;putU32(plain,16,checksum);
-  const encoded=Buffer.from(plain);let key=encoded[21];
-  for(let i=24;i<encoded.length;i++){encoded[i]=(encoded[i]+key)&0xff;key=(key+7)&0xff;}
-  return encoded;
-}
 function withThMotion(replay,{version=2,game=8}={}){
   const counts=Buffer.alloc(36),payloadParts=[counts],movements=[{tick:0,x:1.5,y:-2.25}],touch=[
     {tick:1,id:7101,x:.42,y:.64,action:0},{tick:2,id:7101,x:.48,y:.61,action:1},{tick:3,id:7101,x:.52,y:.58,action:2},
@@ -52,6 +28,24 @@ function withThMotion(replay,{version=2,game=8}={}){
   return Buffer.concat([replay,payload,footer]);
 }
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+test('original export inspection checks identity and exact original file extent',()=>{
+  const bytes=replayFile(),proof=inspectTh08OriginalReplay(bytes,{expectedSha256:sha(bytes)});
+  assert.equal(proof.originalBytes,bytes.length);assert.equal(proof.extensionBytes,0);
+  assert.throws(()=>inspectTh08OriginalReplay(bytes,{expectedSha256:'0'.repeat(64)}),/SHA-256/);
+  const extended=withThMotion(bytes);
+  assert.throws(()=>inspectTh08OriginalReplay(extended,{expectedSha256:sha(extended)}),/appended extension/);
+  const stray=Buffer.concat([bytes,Buffer.from([0])]);
+  assert.throws(()=>inspectTh08OriginalReplay(stray,{expectedSha256:sha(stray)}),/USER header/);
+  const user=Buffer.alloc(16);user.write('USER');user.writeUInt32LE(16,4);user.write('abc',12);
+  const original=Buffer.concat([bytes,user]);
+  assert.equal(inspectTh08OriginalReplay(original,{expectedSha256:sha(original)}).userBytes,16);
+  for(const [offset,value] of [[4,18],[4,15],[8,1]]){
+    const bad=Buffer.from(original);bad.writeUInt32LE(value,bytes.length+offset);
+    assert.throws(()=>inspectTh08OriginalReplay(bad,{expectedSha256:sha(bad)}),/USER/);
+  }
+  const extendedUser=withThMotion(original);
+  assert.throws(()=>inspectTh08OriginalReplay(extendedUser,{expectedSha256:sha(extendedUser)}),/appended extension/);
+});
 
 test('TH08 title parser reads literal v6 frame words at declared stage stride and identity',()=>{
   const bytes=replayFile(),expectedSha256=sha(bytes),decoded=decodeTh08ReplayFile(bytes);

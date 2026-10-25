@@ -305,8 +305,8 @@
 
                 InstallPointSetup(code_cave, sizeof(code_cave));
             }
-            ECLCallSub(ecl, 0x1ed8, 27, 0);
             ECLTimeFix(0x1ed8, 0, 7);
+            ECLCallSub(ecl, 0x1ed8, 27, 0);
             ECLWarp(4870, 0xc020, 0, -1);
             ECLTimeFix(0x1f98, 0, 3);
             ecl << ECLX(0xc026, (int8_t)0x50) << ECLX(0x1f9c, (int16_t)0);

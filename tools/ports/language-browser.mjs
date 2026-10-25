@@ -1,4 +1,4 @@
-import {chooseSetting} from './launcher-ui-controls.mjs';
+import {chooseSetting,openAdvancedSettings} from './launcher-ui-controls.mjs';
 import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -10,7 +10,7 @@ import {selectRuntimeTargets,verifyRuntimePackage,verifyPrivateData} from './acc
 import {languageObservationRequest,readLanguageObservation} from '../../tests/adaptation/adapters/language.mjs';
 import {selectLanguageInputs,inspectLanguageInputs,languageInputReceipt} from './language-inputs.mjs';
 import {prepareLanguageFixture} from './language-fixture-site.mjs';
-import {assessLanguageScene} from './language-contract.mjs';
+import {assessLanguageScene,planLanguageScenes} from './language-contract.mjs';
 import {explicitLanguageSelectionSteps,normalGameLanguagePreferenceKey} from './language-selection-contract.mjs';
 import {installLanguageHostObserver} from './language-host-observer.mjs';
 import {languageFailureResponse,classifyLanguageBrowserEvents,resolveLanguageRuntimeSource} from './language-network-contract.mjs';
@@ -19,13 +19,17 @@ import {availableFixturePort,startStaticServer,stopChild} from './launcher-fixtu
 import {createOfflineStaticTlsProxy,captureOfflineSiteIdentity,watchOfflineSiteResponses,verifyOfflineSiteIdentity} from './offline-runtime-https.mjs';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {resolveAdaptationAdapter} from '../../tests/adaptation/adapters/registry.mjs';
+import {launchLauncherRuntime} from './launcher-runtime-start.mjs';
+import {prepareLanguageTextSources} from './language-text-sources.mjs';
+import {runLanguageConsumers} from './language-consumer-browser.mjs';
 
 const root=resolve(import.meta.dirname,'../..'),arg=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const required=name=>{const value=arg(name);if(!value)throw Error(`Required: --${name}=VALUE`);return value;};
 const output=resolve(required('output')),pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
 const report=await runWithReport({output,schema:'eagler-touhou/language-browser/1'},async(report,save)=>{
-  assertCliArguments(process.argv.slice(2),{values:['output','manifest','language-manifest','artwork-dir','game','variant']});
+  assertCliArguments(process.argv.slice(2),{values:['output','manifest','language-manifest','artwork-dir','game','variant','checks']});
+  report.outputDirectory=output;
   const game=required('game'),variant=required('variant');assert.equal(variant,'normal','Select normal for the current Launcher language journey');
   const preferenceKey=normalGameLanguagePreferenceKey(game);
   const configPath=resolve(required('manifest')),config=JSON.parse(await readFile(configPath,'utf8'));
@@ -45,9 +49,10 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
   report.inputs={manifest:{path:configPath,...await fileIdentity(configPath)},languageManifest:{path:languageManifestPath,...await fileIdentity(languageManifestPath)},
     languages:languageInputReceipt(inspected),data:dataIdentity,shared:sharedIdentity};
   report.scope={game,variant,statement:'Current packaged Launcher and Runtime; selected translations, cold offline Japanese, per-key partial translation and exact unavailable/corrupt archive controls; no visual approval'};
+  report.originalTextSources=await prepareLanguageTextSources({root,output,target,adapter:titleAdapter,dataIdentity,packs:inspected.packs});
   const record={game,variant,id:target.id,status:'running',checks:[],scenes:[],errors:[]};report.targets.push(record);await save();
   const prepared=await prepareLanguageFixture({root,output,target,identity,dataIdentity,shared,artwork:resolve(required('artwork-dir')),inspected,profile});
-  report.preparation={packaging:prepared.packaging,partialIdentity:prepared.partialIdentity};await save();
+  report.preparation={packaging:prepared.packaging,partialIdentity:prepared.partialIdentity,partialInput:prepared.partialInput};await save();
   let server,tls,browser,snapshot;const teardownErrors=[],responseOverrides=new Map();
   let japaneseBaseline;
   try{
@@ -60,15 +65,14 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
     assert.ok(runtimeGroup?.current?.generation,'The packaged language site has no current normal Runtime');
     report.site={base:tls.base,identity:snapshot.identity,deployment,runtimeGroup};
     const {launchBrowser}=await import('../browser/launch.mjs');
-    browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required',
+    browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required','--no-proxy-server',
       `--ignore-certificate-errors-spki-list=${tls.tlsIdentity.spkiSha256}`]});
-    report.browser={engine:'Chromium',version:browser.version()};
-    const scenes=[{id:'japanese-offline',language:'ja',offline:true},
-      ...Object.keys(inspected.packs).map(language=>({id:`translated-${language}`,language})),
-      {id:'partial-key',language:prepared.partialLanguage},
-      ...['network-failure','corrupt-archive'].map(failure=>({id:failure,language:prepared.baseLanguage,failure}))];
+    report.browser={engine:'Chromium',version:browser.version(),network:{proxy:'disabled',scope:'loopback TLS fixture'}};
+    const scenePlan=planLanguageScenes({checks:arg('checks')?.split(','),languages:Object.keys(inspected.packs)});
+    report.scenePlan=scenePlan;const scenes=scenePlan.scenes;
     for(const scene of scenes){
       const observed={...scene,status:'running',browserEvents:[]};record.scenes.push(observed);await save();
+      const consumerSelected=scenePlan.consumers&&profile.consumers&&(scene.id==='japanese-offline'||scene.id.startsWith('translated-'));
       if(scene.failure){
         const entry=prepared.manifest.games[game].languages.find(entry=>entry.id===scene.language);
         const url=new URL(resolveLanguagePackSource(entry,tls.base).url),control=languageFailureResponse(
@@ -98,6 +102,11 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
           await settleBoot();
         };
         const launch=async(language)=>{
+          if(consumerSelected){
+            await openAdvancedSettings(page);const mobile=page.locator('#mobileOptionsToggle');if(await mobile.getAttribute('aria-expanded')!=='true')await mobile.click();
+            const touch=page.locator('#touchToggle');if(await touch.getAttribute('aria-checked')!=='true')await touch.click();
+            observed.consumerSettings={touchEnabled:await touch.getAttribute('aria-checked')==='true'};assert.equal(observed.consumerSettings.touchEnabled,true);
+          }
           if(await page.locator('#musicOption').getAttribute('hidden')===null){
             await chooseSetting(page,'musicSelect','none');observed.musicChoice={value:'none',source:'Launcher visible music menu'};
           }else observed.musicChoice={value:await page.locator('#musicSelect').inputValue(),source:'Launcher default for this published music profile'};
@@ -110,16 +119,11 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
           assert.equal(await page.locator('#languageSelect').inputValue(),language,'Launcher language selection did not settle');
           assert.equal(await page.evaluate(key=>localStorage.getItem(key),preferenceKey),language,
             'Launcher did not persist the selected language under its production preference key');
-          await page.locator('#launch').click();
-          const launchDeadline=Date.now()+180000;
-          while(true){
-            await page.waitForFunction(()=>window.__languageHostReceipt?.events.some(event=>event.event==='first-frame')||
-              document.querySelector('#decisionDialog')?.open,null,{timeout:Math.max(1,launchDeadline-Date.now())});
-            if(await page.evaluate(()=>window.__languageHostReceipt.events.some(event=>event.event==='first-frame')))break;
-            await page.locator('#decisionConfirm').click();
-            await page.waitForFunction(()=>!document.querySelector('#decisionDialog')?.open||
-              window.__languageHostReceipt.events.some(event=>event.event==='first-frame'),null,
-              {timeout:Math.max(1,launchDeadline-Date.now())});
+          const started=await launchLauncherRuntime(page,{game,music:observed.musicChoice.value,journal:{global:'__languageHostReceipt',field:'events'}});
+          (observed.startups??=[]).push(started.evidence);
+          if(consumerSelected){
+            if(await page.locator('#touchHelp').isVisible())await page.locator('#touchHelpClose').click();
+            const fire=page.locator('#touchFire');if(await fire.getAttribute('aria-pressed')==='true')await fire.click();
           }
           const host=await page.evaluate(()=>window.__languageHostReceipt);
           assert.equal(host.enables.length,1,'Native observation must be enabled once at the real Runtime ready boundary');
@@ -200,6 +204,10 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
         observed.preference=await page.evaluate(key=>localStorage.getItem(key),preferenceKey);
         assert.equal(observed.preference,scene.language,'Language scene changed the durable preference');
         await page.screenshot({path:resolve(output,`${scene.id}.png`)});observed.screenshot=`${scene.id}.png`;
+        if(consumerSelected){
+          observed.consumers=await runLanguageConsumers({page,frame:launched.frame,target,adapter:titleAdapter,expected,language:scene.language,original:scene.language==='ja',
+            sources:report.originalTextSources,output,label:scene.id,save:async value=>{observed.consumers=value;await save();}});
+        }
         await watcher.flush();
         const responses=observed.responseIntegrity.flatMap(phase=>phase.responses);
         const runtimeSource=resolveLanguageRuntimeSource({browserDiagnostics:profile.browserDiagnostics,runtimeGroup,
@@ -236,13 +244,17 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
       }
     }
     const resultFor=id=>record.scenes.find(scene=>scene.id===id),translated=record.scenes.filter(scene=>scene.id.startsWith('translated-'));
-    const add=(id,scenes,reason)=>record.checks.push({id,status:scenes.every(scene=>scene?.status==='observed')?'observed':
-      scenes.some(scene=>scene?.status==='failed')?'failed':'incomplete',complete:false,
+    const completeLanguageIds=[...(profile.consumers&&scenePlan.consumers?['LANG-01']:[]),'LANG-02','LANG-03','LANG-04','LANG-06'];
+    record.languageEvidence={game,variant,adaptationIds:scenePlan.checks,observation:{scenes:record.scenes}};
+    const add=(id,scenes,reason)=>{if(!scenePlan.checks.includes(id))return;record.checks.push({id,status:scenes.length>0&&scenes.every(scene=>scene?.status==='observed')?'observed':
+      scenes.some(scene=>scene?.status==='failed')?'failed':'incomplete',complete:completeLanguageIds.includes(id),
+      ...(id==='LANG-05'&&profile.consumers?{machineComplete:scenePlan.checks.includes('LANG-05')&&record.scenes.filter(scene=>scene.id==='japanese-offline'||scene.id.startsWith('translated-')).every(scene=>scene.status==='observed'&&scene.consumers?.dialogueAssessment.status==='observed')}:{}),
+      ...(completeLanguageIds.includes(id)||id==='LANG-05'&&profile.consumers?{evidenceRefs:['/targets/0/languageEvidence']}:{}),
       observation:{game,variant,adaptationIds:[id],observation:{sceneIds:scenes.map(scene=>scene?.id??'missing'),reason,
         results:scenes.map(scene=>({id:scene?.id,status:scene?.status,assessment:scene?.assessment,
           host:scene?.host,languageChoices:scene?.languageChoices,preference:scene?.preference,screenshot:scene?.screenshot,
-          musicChoice:scene?.musicChoice,control:scene?.control,eventClassification:scene?.eventClassification}))}}});
-    add('LANG-01',[resultFor('japanese-offline')],'Cold offline Japanese title text after an actual installed-package warmup');
+          musicChoice:scene?.musicChoice,control:scene?.control,eventClassification:scene?.eventClassification}))}}});};
+    add('LANG-01',[resultFor('japanese-offline')],'Cold offline Japanese title, native result statistics and independently decoded loaded dialogue text');
     add('LANG-02',translated,'Published archive identities and actual Launcher language selection');
     add('LANG-03',translated,'Pack selected before native construction and naturally consumed by the title text renderer');
     add('LANG-04',[resultFor('network-failure'),resultFor('corrupt-archive')],
@@ -259,6 +271,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
     report.teardownErrors=teardownErrors;
     if(snapshot)report.sitePostflight=await verifyOfflineSiteIdentity(snapshot);
     report.inputPostflight=languageInputReceipt(await inspectLanguageInputs(languageProduct));
+    assert.deepEqual(await fileIdentity(prepared.partialInput.path),prepared.partialIdentity,'Partial language control changed during the scenes');
     assert.deepEqual(report.inputPostflight,report.inputs.languages,'Language inputs changed during the scene group');
     assert.deepEqual(await fileIdentity(configPath),{bytes:report.inputs.manifest.bytes,sha256:report.inputs.manifest.sha256},'Runtime input manifest changed');
     assert.deepEqual(await fileIdentity(languageManifestPath),{bytes:report.inputs.languageManifest.bytes,sha256:report.inputs.languageManifest.sha256},'Language input manifest changed');
@@ -266,6 +279,9 @@ const report=await runWithReport({output,schema:'eagler-touhou/language-browser/
     for(const [name,input] of Object.entries(sharedIdentity))assert.deepEqual(await fileIdentity(input.path),
       {bytes:input.bytes,sha256:input.sha256},`Shared input changed during language acceptance: ${name}`);
     await verifyRuntimePackage(target,{repoRoot:root});
+    if(report.originalTextSources)for(const file of [
+      ...Object.values(report.originalTextSources.files),...Object.values(report.originalTextSources.translations).flatMap(value=>Object.values(value.files)),
+    ])assert.deepEqual(await fileIdentity(file.path),{bytes:file.bytes,sha256:file.sha256},'Text source changed during language acceptance');
     report.sourceSnapshotEnd=sourceSnapshot(root);report.sourceStable=report.sourceSnapshotEnd.sha256===report.sourceSnapshotStart.sha256;
     assert.deepEqual(report.sourceSnapshotEnd,report.sourceSnapshotStart,'Source changed during language acceptance');
     assert.deepEqual(teardownErrors,[],'Language scene cleanup failed');

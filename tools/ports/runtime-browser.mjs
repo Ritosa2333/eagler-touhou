@@ -19,6 +19,7 @@ import {resolveTitleFlow} from '../../tests/adaptation/adapters/title-flow.mjs';
 import {titleFlowKeyFields} from '../../tests/adaptation/adapters/flow-steps.mjs';
 import {createFirstFrameCapture} from './presentation-first-frame.mjs';
 import {captureProductionReplay,readProductionReplayInput} from './presentation-production-replay.mjs';
+import {probeRuntimeProtocol} from './runtime-protocol-probe.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
 const requestedOutput=argument('output');
@@ -65,7 +66,7 @@ report.storagePolicySource={path:'launcher/src/launcher/replay-storage-policy.mt
 const observationReader=`export const readRuntimeObservation = (${readRuntimeObservation.toString()});\n`;
 report.observationReaderSha256=hash(observationReader);
 await writeFile(resolve(output,'observation-reader.mjs'),observationReader);
-for(const name of ['runtime-observations','runtime-desktop-readiness','practice-observations','replay-fixtures','runtime-storage-contract','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','presentation-first-frame','presentation-production-replay','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options','../../common/contracts/product-catalog','../../tests/adaptation/adapters/title-flow']){
+for(const name of ['runtime-protocol-probe','runtime-observations','runtime-desktop-readiness','practice-observations','replay-fixtures','runtime-storage-contract','navigation-abort-evidence','acceptance-contracts','runtime-fixture-site','presentation-first-frame','presentation-production-replay','../browser/fixture-server','../browser/response-body-capture','../testing/cli-report','../testing/cli-options','../../common/contracts/product-catalog','../../tests/adaptation/adapters/title-flow']){
   const contents=await readFile(new URL(`./${name}.mjs`,import.meta.url));
   (report.helperSha256??={})[name]=hash(contents);
   await writeFile(resolve(output,basename(`${name}.mjs`)),contents);
@@ -84,7 +85,7 @@ try{
   const titleFlow=resolveTitleFlow({game:target.game,variant:target.variant});
     const record={game:target.game,variant:target.variant,id:target.id,checks:[],errors:[],protocolErrors:[],consoleErrors:[],httpErrors:[],expectedNavigationAborts:[],observations:{}};
     report.targets.push(record);
-      const check=async(id,checks,operation,{complete=false,fatal=true,verified=()=>true}={})=>{try{const observation=await operation();record.checks.push({id,checks,complete,status:verified(observation)?'passed':'observed',observation});return observation;}catch(error){record.checks.push({id,checks,complete,status:'failed',error:String(error.stack||error)});if(fatal)throw error;}finally{await save();}};
+      const check=async(id,checks,operation,{complete=false,completeChecks,fatal=true,verified=()=>true}={})=>{try{const observation=await operation();record.checks.push({id,checks,complete,...(completeChecks?{completeChecks}:{}),status:verified(observation)?'passed':'observed',observation});return observation;}catch(error){record.checks.push({id,checks,complete,status:'failed',error:String(error.stack||error)});if(fatal)throw error;}finally{await save();}};
     const context=await browser.newContext({viewport:{width:1100,height:820}});
     if(gamepad)await prepareVirtualGamepad(context,gamepadBundle,gamepadTargetFor(target.game,target.variant,0));
     const page=await context.newPage();
@@ -194,7 +195,7 @@ try{
         if(['th06','th07'].includes(target.game))for(const font of ['msgothic.ttc','unifont.otf'])
           assert.ok(config.shared?.[font]&&report.sharedInputs[`/shared/${font}`],`Required shared font input: ${font}`);
         const sharedResources=Object.keys(config.shared??{}).map(name=>({path:`/${name}`,url:`/shared/${name}`}));
-        await page.evaluate(({sharedResources,options})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],sharedResources,thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,thpracEnabled:false,limitPresentationTo60:false,...options}}),{sharedResources,options:target.options??{}});
+        const configured=await page.evaluate(({sharedResources,options})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],sharedResources,thpracCatalog:[],options:{alwaysHitbox:false,touchEnabled:false,thpracEnabled:false,limitPresentationTo60:false,...options}}),{sharedResources,options:target.options??{}});
         if(['th06','th07'].includes(target.game)){
           record.sharedResourceConsumers=await frame.evaluate(async({game,resources})=>{
             const module=window[`__${game}Runtime`]?.Module??window.Module,fs=module?.FS??window.FS;
@@ -215,19 +216,22 @@ try{
           }
         }
         if(firstFrameProbe)await firstFrameProbe.begin({kind:'cold',epoch:1,frame});
-        await page.evaluate(()=>rpc('launch'));
+        const launched=await page.evaluate(()=>rpc('launch'));
         await page.waitForFunction(()=>events.some(event=>event.event==='first-frame'),null,{timeout:120000});
         await responseProbe.flush();
         if(firstFrameProbe)await retainFirstFrame('cold');
         await page.waitForTimeout(2500);
-        const snapshot=await inspect();assert.ok(snapshot.canvas?.width>0&&snapshot.canvas?.height>0);return snapshot;
-      });
+        const snapshot=await inspect();assert.ok(snapshot.canvas?.width>0&&snapshot.canvas?.height>0);
+        const events=await page.evaluate(()=>window.events);
+        return{...snapshot,startup:{ready:events.find(event=>event.event==='ready'),configured,launched,firstFrame:events.find(event=>event.event==='first-frame'),events}};
+      },{complete:true});
       record.observations.title=await inspect();
       await page.screenshot({path:resolve(output,target.id+'-title.png')});
       await check('reject-unknown-command',['RUNTIME-03'],async()=>{
         const error=await page.evaluate(async()=>{try{await rpc('acceptance-invalid-command');return null;}catch(error){return error.message;}});
         assert.ok(error);assert.ok(!error.startsWith('Timeout:'));return error;
       },{fatal:false});
+      record.protocolSessions=[await probeRuntimeProtocol(page,{game:target.game,epoch:1})];
       await check('save-list-and-flush',['SAVE-02'],async()=>{
         const result=await page.evaluate(()=>rpc('list'));
         assert.ok(Array.isArray(result.files));await page.evaluate(()=>rpc('sync'));
@@ -358,6 +362,7 @@ try{
         record.priorSessionEvents=evidenceEvents(await page.evaluate(()=>window.events));
         await navigate(site.hostUrl(target,2));
         await page.waitForFunction(()=>events.some(event=>event.event==='ready'&&event.epoch===2),null,{timeout:120000});
+        record.protocolSessions.push(await probeRuntimeProtocol(page,{game:target.game,epoch:2}));
         for(const [path,expected] of Object.entries(contents)){
           const actual=await page.evaluate(path=>rpc('read',{path}),path);assert.deepEqual(actual.bytes,expected,path);}
         const stale='old-epoch-request';
@@ -424,19 +429,23 @@ try{
         journey.storage.observedNormalMount=initial.mount;
         journey.storage.normalMountStatus=storageRootPassed?'passed':'unavailable';
         const beforeWrite=(await page.evaluate(()=>rpc('list'))).files;
+        journey.lists={beforeWrite};
         assert.ok(Array.isArray(beforeWrite));
         assert.ok(!beforeWrite.some(file=>file.path===path),`${target.id}: generated Replay path already exists`);
         await page.evaluate(({path,bytes})=>rpc('write',{path,bytes}),{path,bytes});
         const stored=await page.evaluate(path=>rpc('read',{path}),path),storedBytes=new Uint8Array(stored.bytes);
         assert.deepEqual(Array.from(storedBytes),bytes,`${target.id}: Runtime read differs from the fixture bytes`);
-        const listed=(await page.evaluate(()=>rpc('list'))).files.find(file=>file.path===path);
+        journey.lists.afterWrite=(await page.evaluate(()=>rpc('list'))).files;
+        const listed=journey.lists.afterWrite.find(file=>file.path===path);
         assert.ok(listed,`${target.id}: official Runtime list omitted the imported Replay`);
         assert.equal(listed.size,bytes.length,`${target.id}: Runtime list size differs from the Replay bytes`);
         const fixtureDigest=hash(fixture.contents),storedDigest=hash(storedBytes);
         assert.equal(storedDigest,fixtureDigest,`${target.id}: Runtime stored Replay hash differs from the verified fixture`);
         await page.evaluate(()=>rpc('sync'));
         journey.operations.push({operation:'write',path,bytes:storedBytes.length,sha256:storedDigest});
-        journey.operations.push({operation:'read',path,bytes:storedBytes.length,sha256:storedDigest});
+        const readArtifact=resolve(output,`${target.id}-replay-storage-read.bin`);
+        await writeFile(readArtifact,storedBytes);
+        journey.operations.push({operation:'read',path,bytes:storedBytes.length,sha256:storedDigest,artifact:readArtifact});
         journey.operations.push({operation:'list',path,size:listed.size});
         journey.operations.push({operation:'sync',status:'passed'});
 
@@ -495,11 +504,14 @@ try{
 
         await openReplayStorageRuntime(4);
         const afterRestoreList=(await page.evaluate(()=>rpc('list'))).files;
+        journey.lists.afterRestore=afterRestoreList;
         assert.ok(afterRestoreList.some(file=>file.path===path),`${target.id}: synchronized Replay is absent in the new Runtime epoch`);
         const restored=await page.evaluate(path=>rpc('read',{path}),path),restoredBytes=new Uint8Array(restored.bytes);
         assert.deepEqual(Array.from(restoredBytes),bytes,`${target.id}: restored Runtime bytes differ from the imported fixture`);
         const restoredDigest=hash(restoredBytes);assert.equal(restoredDigest,fixtureDigest,`${target.id}: restored Replay hash changed`);
-        journey.operations.push({operation:'fresh-epoch-read',epoch:4,path,bytes:restoredBytes.length,sha256:restoredDigest});
+        const restoredArtifact=resolve(output,`${target.id}-replay-storage-restored.bin`);
+        await writeFile(restoredArtifact,restoredBytes);
+        journey.operations.push({operation:'fresh-epoch-read',epoch:4,path,bytes:restoredBytes.length,sha256:restoredDigest,artifact:restoredArtifact});
         await page.evaluate(path=>rpc('remove',{path}),path);
         await page.evaluate(()=>rpc('sync'));
         assert.ok(!(await page.evaluate(()=>rpc('list'))).files.some(file=>file.path===path),`${target.id}: remove did not update the current Runtime list`);
@@ -508,6 +520,7 @@ try{
 
         await openReplayStorageRuntime(5);
         const afterDeleteList=(await page.evaluate(()=>rpc('list'))).files;
+        journey.lists.afterDelete=afterDeleteList;
         assert.ok(!afterDeleteList.some(file=>file.path===path),`${target.id}: deleted Replay returned after a fresh Runtime epoch`);
         const missingRead=await page.evaluate(async path=>{try{await rpc('read',{path});return null;}catch(error){return String(error.message??error);}},path);
         assert.ok(missingRead&&!missingRead.startsWith('Timeout:'),`${target.id}: deleted Replay remained readable after reopen`);
@@ -529,7 +542,7 @@ try{
           product:journey.product,storage:journey.storage,path,storagePath:`${locations.normal.root}/${path}`,
           fixture:fixture.identity,bytes:storedBytes.length,sha256:fixtureDigest,restoredAcrossNewInstance:true,deletionPersisted:true,
           operations:journey.operations,negativeControls:journey.negativeControls,fixtureValidation:validity,coverage:journey.coverage};
-      },{complete:false,fatal:false,verified:observation=>observation.normalComplete===true});
+      },{complete:true,completeChecks:['REPLAY-05'],fatal:false,verified:observation=>observation.normalComplete===true});
       if(presentationReplay)await check('production-replay-capture',['VERIFY-07'],async()=>{
         const epoch=6;
         await navigate(site.hostUrl(target,epoch));
@@ -559,6 +572,7 @@ try{
         record.presentationProduction=artifact;
         return artifact;
       },{complete:false,fatal:true,verified:artifact=>artifact.status==='passed'});
+      await check('runtime-protocol-fields',['RUNTIME-01','RUNTIME-03'],async()=>({sessions:record.protocolSessions}),{complete:true});
       await check('runtime-errors',[],async()=>{
         await responseProbe.flush();
         const packageAfter=await verifyRuntimePackage(target,{repoRoot:root}),dataAfter=await verifyPrivateData(target.data);

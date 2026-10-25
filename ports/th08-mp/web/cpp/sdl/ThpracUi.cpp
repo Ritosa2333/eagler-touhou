@@ -1,5 +1,6 @@
 #include "ThpracUi.hpp"
 #include <eagler/thprac/PracticeSdlKeyboard.hpp>
+#include <eagler/thprac/PracticeButton.hpp>
 #include "../platform/BrowserRuntime.hpp"
 #include "../game/PracticeSectionCatalog.hpp"
 #include "../game/PracticeSections.hpp"
@@ -66,12 +67,12 @@ void draw_advanced(BrowserRuntime& runtime){
   ImGui::Checkbox(label(practice_TH_ADV_DISABLE_X_KEY),&input.disable_xkey);help_marker(practice_TH_ADV_DISABLE_X_KEY_DESC);
   ImGui::Checkbox(label(practice_TH_ADV_DISABLE_SHIFT_KEY),&input.disable_shiftkey);help_marker(practice_TH_ADV_DISABLE_SHIFT_KEY_DESC);
   ImGui::Checkbox(label(practice_TH_ADV_DISABLE_Z_KEY),&input.disable_zkey);help_marker(practice_TH_ADV_DISABLE_Z_KEY_DESC);
-  ImGui::Checkbox(label(practice_TH_ADV_DISABLE_C_KEY_SAMETIME),&input.disable_Ckey_at_same_time);ImGui::Checkbox(label(practice_TH_ADV_FORCE_SHIFT_KEY),&input.force_shiftkey);
+  ImGui::Checkbox(label(practice_TH_ADV_FORCE_SHIFT_KEY),&input.force_shiftkey);
   ImGui::Checkbox(label(practice_THPRAC_FAST_RETRY),&input.enable_fast_retry);help_marker(practice_THPRAC_FAST_RETRY_DESC2);
   ImGui::Checkbox(label(practice_THPRAC_KB_OPEN),&state.show_keyboard_monitor);
   if(state.show_keyboard_monitor){auto& monitor=state.key_monitor;if(ImGui::Button(label(monitor.g_record_key_aps?practice_THPRAC_KB_RECORD_STOP:practice_THPRAC_KB_RECORD_START))){if(!monitor.g_record_key_aps)monitor.clear_record();monitor.g_record_key_aps=!monitor.g_record_key_aps;}ImGui::SameLine();if(ImGui::Button(label(practice_THPRAC_KB_OUTPUT))){const auto csv=monitor.csv();EM_ASM({const url=URL.createObjectURL(new Blob([UTF8ToString($0)],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='APS.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},csv.c_str());}}
   ImGui::Checkbox(label(practice_THPRAC_INFLIVES_MAP),&state.map_inf_life_to_no_continue);
-  if(ImGui::Button(label(practice_TH_ONE_KEY_DIE))&&runtime.app.in_game()&&!state.replay){auto& n=runtime.app.session.numbers;n.lives=n.bombs=0;runtime.app.game.player_state.life.state=2;runtime.app.game.player_state.life.predead_count=0;runtime.app.game.globals.player_state=2;runtime.app.session.values.refresh_integrity();state.assisted=true;}help_marker(practice_TH_ONE_KEY_DIE_DESC);
+  if(eagler::thprac::button(label(practice_TH_ONE_KEY_DIE),runtime.app.in_game()&&!state.replay)){auto& n=runtime.app.session.numbers;n.lives=n.bombs=0;runtime.app.game.player_state.life.state=2;runtime.app.game.player_state.life.predead_count=0;runtime.app.game.globals.player_state=2;runtime.app.session.values.refresh_integrity();state.assisted=true;}help_marker(practice_TH_ONE_KEY_DIE_DESC);
   ImGui::Checkbox(label(practice_THPRAC_FIX_RSQRT),&state.use_custom_rsqrt);help_marker(practice_THPRAC_FIX_RSQRT_DESC);
   if(state.use_custom_rsqrt){
    ImGui::SetNextItemWidth(200.f);ImGui::Combo(label(practice_THPRAC_SELECT_CPU),&state.rsqrt_cpu,label(practice_THPRAC_SELECT_CPU_COMBO));

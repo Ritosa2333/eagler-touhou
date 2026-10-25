@@ -16,12 +16,89 @@ import {profiles,suites} from '../suites.mjs';
 const root=resolve(import.meta.dirname,'../..');
 const env=(values={})=>({EAGLER_TEST_RUNTIME_MANIFEST:'runtime-input.json',...values});
 
+test('reference integrity has one independent non-browser owner and keeps comparison observations supporting',()=>{
+  const environment={EAGLER_TEST_DIAGNOSTIC_REPORT:'/private/sealed-diagnostic.json'};
+  const plan=buildAdaptationPlan({root,environment,games:['th08'],variant:'normal',groups:['reference-integrity'],checks:['VERIFY-04']});
+  assert.equal(plan.cases.length,1);const item=plan.cases[0];assert.equal(item.status,'ready');
+  assert.deepEqual(item.requiredChecks,['VERIFY-04']);assert.equal(item.requiresLauncherBuild,false);
+  assert.deepEqual(item.requiredInputs,['EAGLER_TEST_DIAGNOSTIC_REPORT']);assert.deepEqual(item.task.resources,[]);
+  assert.ok(item.task.args.includes('--report=/private/sealed-diagnostic.json'));
+  const both=buildAdaptationPlan({root,environment:env({...environment,EAGLER_TEST_DIAGNOSTIC_MANIFEST:'diagnostics.json'}),games:['th08'],variant:'normal',
+    groups:['verify-quick','reference-integrity'],checks:['VERIFY-04']});
+  assert.ok(both.cases.find(row=>row.group==='diagnostic').supportingChecks.includes('VERIFY-04'));
+  assert.deepEqual(both.cases.find(row=>row.group==='reference-integrity').requiredChecks,['VERIFY-04']);
+  const blocked=buildAdaptationPlan({root,environment:{},games:['th08'],variant:'normal',groups:['reference-integrity']});
+  assert.equal(blocked.cases[0].status,'blocked');assert.equal(blocked.cases[0].task,null);
+});
+
+test('package source parity selects one shared owner without title navigation or Replay input',()=>{
+  const options={root,environment:env({EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'}),checks:['PACKAGE-04'],variant:'normal'};
+  for(const game of ['th08','th10','th20']){
+    const p=buildAdaptationPlan({...options,games:[game]});assert.equal(p.cases.length,1);assert.equal(p.cases[0].status,'ready');
+    assert.equal(p.cases[0].group,'package-imports');assert.equal(p.cases[0].requiresLauncherBuild,true);
+    assert.ok(p.cases[0].task.args.includes('--import-parity-only'));assert.deepEqual(p.cases[0].requiredChecks,['PACKAGE-04']);
+  }
+  const mp=buildAdaptationPlan({...options,games:['th08'],variant:'multiplayer',groups:['package-imports']});assert.equal(mp.cases[0].status,'blocked');
+});
+
+test('view options select one shared native journey and keep every missing title or MP mapping explicit',()=>{
+  const options={root,environment:env({EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'}),checks:['RUNTIME-06']};
+  const p=buildAdaptationPlan({...options,games:['th08'],variant:'normal'});assert.equal(p.cases.length,1);
+  assert.equal(p.cases[0].group,'view-options');assert.equal(p.cases[0].requiresLauncherBuild,true);assert.ok(p.cases[0].task.args.includes('--view-options-only'));
+  const mp=buildAdaptationPlan({...options,games:['th08'],variant:'multiplayer',groups:['view-options']});
+  assert.equal(mp.cases[0].status,'blocked');assert.equal(mp.cases[0].task,null);
+  const absent=buildAdaptationPlan({...options,games:['th10'],variant:'normal',groups:['view-options']});assert.equal(absent.cases[0].status,'blocked');
+});
+
+test('Launcher lifecycle has one selectable owner, shared preparation and an explicit next-title interface gate',()=>{
+  const options={root,environment:env({EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'}),variant:'normal',groups:['launcher-lifecycle'],checks:['RUNTIME-04']};
+  const plan=buildAdaptationPlan({...options,games:['th08']});assert.equal(plan.cases.length,1);
+  const item=plan.cases[0];assert.equal(item.status,'ready');assert.deepEqual(item.requiredChecks,['RUNTIME-04']);
+  assert.equal(item.requiresLauncherBuild,true);assert.ok(item.task.args.includes('--input-lifecycle-only'));
+  assert.deepEqual(item.scenarioIds,['launcher-input-lifecycle']);
+  const next=buildAdaptationPlan({...options,games:['th10']}).cases[0];assert.equal(next.status,'blocked');assert.match(next.reason,/mixer identity/);
+});
+
+test('overlapping selectors declare one complete owner and retain auxiliary observations',()=>{
+  const plan=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:['INPUT-05','RUNTIME-03','TOUCH-18']});
+  for(const [id,group] of [['INPUT-05','touch-actions'],['RUNTIME-03','runtime'],['TOUCH-18','touch-actions']]){
+    const selected=plan.cases.filter(row=>row.checks.includes(id));assert.ok(selected.length);
+    assert.deepEqual(selected.filter(row=>row.requiredChecks.includes(id)).map(row=>row.group),[group]);
+    for(const row of selected.filter(row=>row.group!==group))assert.ok(row.supportingChecks.includes(id));
+  }
+});
+
+test('a selected scene group accepts its own requirements while preserving auxiliary observations',()=>{
+  const plan=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',groups:['touch-motion']});
+  const ids=plan.coverageTargets[0].requirements.map(row=>row.id);
+  assert.ok(ids.includes('TOUCH-01')&&ids.includes('TOUCH-07')&&!ids.includes('TOUCH-16'));
+  assert.ok(plan.cases[0].supportingChecks.includes('TOUCH-16'));
+  assert.ok(!ids.includes('RUNTIME-01')&&!ids.includes('TOUCH-05')&&!ids.includes('TOUCH-15'));
+  assert.ok(plan.cases[0].checks.includes('RUNTIME-01'));
+  assert.ok(plan.cases[0].supportingChecks.includes('RUNTIME-01'));
+  const exact=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',groups:['touch-motion'],checks:['RUNTIME-01']});
+  assert.deepEqual(exact.coverageTargets[0].requirements.map(row=>row.id),['RUNTIME-01'],'Explicit IDs retain their obligation even when the primary group was excluded');
+});
+
+test('music forwards exact requirements and prepares Launcher UI only for UI obligations',()=>{
+  const environment=env({EAGLER_TEST_MUSIC_MANIFEST:'music.json'});
+  const source=buildAdaptationPlan({root,environment,games:['th08'],variant:'normal',checks:['AUDIO-01']}).cases[0];
+  assert.equal(source.status,'ready');assert.ok(source.task.args.includes('--check=AUDIO-01'));
+  assert.ok(!source.task.args.includes('--launcher-ui'));
+  for(const id of ['AUDIO-05','MIDI-01','MIDI-04']){
+    const ui=buildAdaptationPlan({root,environment,games:['th08'],variant:'normal',checks:[id]}).cases[0];
+    assert.deepEqual(ui.blockedInputs.map(row=>row.name),['EAGLER_TEST_PACKAGES','EAGLER_TEST_ARTWORK']);
+    const ready=buildAdaptationPlan({root,environment:{...environment,EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'},games:['th08'],variant:'normal',checks:[id]}).cases[0];
+    assert.ok(ready.task.args.includes(`--check=${id}`));assert.ok(ready.task.args.includes('--launcher-ui'));
+  }
+});
+
 test('practice Host and UI requirements schedule real package inputs while parameter-only reruns stay focused',()=>{
   for(const check of ['PRACTICE-01','PRACTICE-02']){
     const blocked=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:[check]}).cases[0];
     assert.deepEqual(blocked.blockedInputs.map(item=>item.name),['EAGLER_TEST_PACKAGES','EAGLER_TEST_ARTWORK']);
     const ready=buildAdaptationPlan({root,environment:env({EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'}),games:['th08'],variant:'normal',checks:[check]}).cases[0];
-    assert.equal(ready.requiresLauncherBuild,true);assert.ok(ready.task.args.includes('--launcher-ui'));
+    assert.equal(ready.requiresLauncherBuild,true);assert.ok(ready.task.args.includes(check==='PRACTICE-01'?'--launcher-ui-only':'--launcher-ui'));
   }
   const parameters=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:['PRACTICE-04']}).cases[0];
   assert.equal(parameters.status,'ready');assert.equal(parameters.requiresLauncherBuild,false);assert.ok(!parameters.task.args.includes('--launcher-ui'));
@@ -77,7 +154,8 @@ test('whole-product verification retains every checklist requirement, including 
   assert.ok(build?.task.resources.includes('runtime')&&!build?.task.resources.includes('browser'));
   const scenes=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',groups:['touch-motion']});
   assert.equal(scenes.scope,'scenes');
-  assert.deepEqual(scenes.coverageTargets[0].requirements.map(check=>check.id),scenes.cases[0].checks);
+  assert.deepEqual(scenes.coverageTargets[0].requirements.map(check=>check.id),
+    ['TOUCH-01','TOUCH-02','TOUCH-03','TOUCH-04','TOUCH-07','TOUCH-14']);
 });
 
 test('build group revalidates one selected existing report pair without browser or Launcher preparation',()=>{
@@ -191,13 +269,30 @@ test('diagnostic selections share one owned server while preserving each request
 });
 
 test('practice parameter consumption, native controls and feature inventory select the actual practice driver',()=>{
-  for(const id of ['PRACTICE-04','PRACTICE-05','PRACTICE-06','PRACTICE-08']){
+  for(const id of ['PRACTICE-05']){
     const plan=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:[id]});
     assert.equal(plan.cases.length,1);assert.equal(plan.cases[0].group,'practice');
     assert.deepEqual(plan.cases[0].checks,[id]);
     assert.ok(plan.cases[0].task.args[0].endsWith('practice-browser.mjs'));
     assert.deepEqual(plan.unmappedChecks,[]);
   }
+  const effects=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:['PRACTICE-08']}).cases;
+  assert.equal(effects.length,8);assert.ok(effects.every(row=>row.group==='practice-effects'&&row.status==='ready'));
+  assert.ok(effects[0].task.args.includes('--effects-only'));assert.deepEqual(effects[0].requiredChecks,['PRACTICE-08']);
+  assert.ok(effects[1].task.args.includes('--options-only'));
+  assert.ok(effects[2].task.args.includes('--boss-only'));
+  assert.ok(effects[3].task.args.includes('--key-monitor-only'));
+  assert.ok(effects[4].task.args.includes('--gameplay-options-only'));
+  assert.ok(effects[5].task.args.includes('--lifecycle-options-only'));
+  assert.ok(effects[6].task.args.includes('--math-options-only'));
+  assert.ok(effects[7].task.args.includes('--display-options-only'));
+  const parameters=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:['PRACTICE-04']}).cases;
+  assert.equal(parameters.length,1);assert.equal(parameters[0].group,'practice-parameters');assert.equal(parameters[0].requiresLauncherBuild,false);
+  assert.ok(parameters[0].task.args.includes('--parameters-only'));assert.deepEqual(parameters[0].requiredChecks,['PRACTICE-04']);
+  const controls=buildAdaptationPlan({root,environment:env({EAGLER_TEST_PACKAGES:'packages.json',EAGLER_TEST_ARTWORK:'artwork'}),
+    games:['th08'],variant:'normal',checks:['PRACTICE-06']}).cases;
+  assert.equal(controls.length,1);assert.equal(controls[0].group,'practice-controls');assert.equal(controls[0].requiresLauncherBuild,true);
+  assert.ok(controls[0].task.args.includes('--practice-controls-only'));assert.deepEqual(controls[0].requiredChecks,['PRACTICE-06']);
   for(const [game,product] of Object.entries(PRODUCT_GAMES).filter(([game])=>!resolvePracticeAdapter(game,'normal'))){
     const item=buildAdaptationPlan({root,environment:env(),games:[game],variant:'normal',groups:['practice']}).cases[0];
     assert.equal(item.status,product.features?.thprac?'blocked':'not-applicable');
@@ -212,6 +307,9 @@ test('language obligations select one production journey and never inherit a nor
   assert.equal(normal[0].requiresLauncherBuild,true,'language journeys need one shared Launcher build');
   assert.deepEqual(normal[0].checks,['LANG-01','LANG-02','LANG-03','LANG-04','LANG-05','LANG-06']);
   assert.ok(normal[0].task.args[0].endsWith('language-browser.mjs'));
+  assert.ok(normal[0].task.args.includes('--checks=LANG-01,LANG-02,LANG-03,LANG-04,LANG-05,LANG-06'));
+  const narrow=buildAdaptationPlan({root,environment,games:['th08'],variant:'normal',checks:['LANG-01']}).cases[0];
+  assert.ok(narrow.task.args.includes('--checks=LANG-01'));
   const mp=buildAdaptationPlan({root,environment,games:['th08'],variant:'multiplayer',groups:['language']}).cases[0];
   assert.equal(mp.status,'blocked');assert.equal(mp.task,null);
   const missing=buildAdaptationPlan({root,environment:env(),games:['th08'],variant:'normal',checks:['LANG-06']}).cases[0];
@@ -242,7 +340,7 @@ test('diagnostic inputs and missing per-variant interfaces remain explicit block
 
   const nextProfile={...structuredClone(resolveDiagnosticProfile('th08','normal')),game:'th06',lanes:['presentation']};
   for(const key of ['quickCapture','quickCaptureSchema','quickGate','quickFixtureCount','quickInputs','quickPartialChecks',
-    'dailyCapture','dailyCaptureSchema','dailyGate','dailyGateReplayOptions','dailyFixtures','dailyPartialChecks','goldenManifest'])delete nextProfile[key];
+    'dailyCapture','dailyCaptureSchema','dailyGate','dailyGateReplayOptions','dailyFixtures','dailyPartialChecks','goldenManifest','replayReview'])delete nextProfile[key];
   delete nextProfile.laneScope.quick;delete nextProfile.laneScope.daily;delete nextProfile.laneScope.otherVerification;
   delete nextProfile.decisionInputs.quick;delete nextProfile.decisionInputs.daily;
   const nextRegistry=createDiagnosticsRegistry([nextProfile]);
@@ -275,7 +373,7 @@ test('desktop groups use distinct explicit driver modes',()=>{
   assert.ok(background.task.args.includes('--background-only'));
   assert.deepEqual([...input.checks].sort(),desktopAdaptationIdsForMode('input-only',{game:'th08'}).sort());
   assert.deepEqual([...background.checks].sort(),desktopAdaptationIdsForMode('background-only',{game:'th08'}).sort());
-  assert.ok(!background.checks.includes('TOUCH-16'),'The background driver does not cancel or observe touch input');
+  assert.ok(background.checks.includes('TOUCH-16'),'Background acceptance owns held production touch cancellation and native window lifecycle');
   assert.ok(input.checks.includes('TOUCH-03'),'The eight-direction native joystick probe is required in the input group');
   assert.ok(input.checks.includes('TOUCH-01')&&input.checks.includes('TOUCH-02')&&input.checks.includes('TOUCH-04'));
   assert.ok(input.checks.every(check=>typeof check==='string')&&!Object.hasOwn(input,'complete'),
@@ -421,7 +519,7 @@ test('offline base scenarios remain runnable while absent update evidence is exp
     assert.ok(item.task.args.includes('--artwork-dir=artwork'));
   }
   for(const target of plan.coverageTargets){
-    const planned=plan.cases.filter(item=>item.game===target.game&&item.variant===target.variant).flatMap(item=>item.checks);
+    const planned=plan.cases.filter(item=>item.game===target.game&&item.variant===target.variant).flatMap(item=>item.requiredChecks);
     assert.ok(planned.every(id=>target.requirements.some(check=>check.id===id)),
       'merged update obligations must remain visible in scene-selected coverage and review');
     assert.ok(target.requirements.some(check=>check.id==='PACKAGE-03'));
@@ -450,7 +548,7 @@ test('available update manifest merges into one offline task for each selected u
       assert.deepEqual(item.inputs,['EAGLER_TEST_RUNTIME_MANIFEST','EAGLER_TEST_PACKAGES','EAGLER_TEST_ARTWORK','EAGLER_TEST_UPDATE_PACKAGES']);
       assert.deepEqual(item.requiredInputs,['EAGLER_TEST_RUNTIME_MANIFEST','EAGLER_TEST_PACKAGES','EAGLER_TEST_ARTWORK','EAGLER_TEST_UPDATE_PACKAGES']);
       assert.ok(item.task.args.some(argument=>argument===`--update-manifest=${path}`));
-      assert.deepEqual(item.checks,['RUNTIME-05','PACKAGE-01','PACKAGE-02','PACKAGE-04','PACKAGE-05','SAVE-02','SAVE-03','SAVE-04','SAVE-05','PACKAGE-03','SAVE-06']);
+      assert.deepEqual(item.checks,['RUNTIME-05','PACKAGE-01','PACKAGE-02','PACKAGE-04','PACKAGE-05','SAVE-01','SAVE-02','SAVE-03','SAVE-04','SAVE-05','PACKAGE-03','SAVE-06']);
     }
   }finally{await rm(directory,{recursive:true,force:true});}
 });

@@ -12,6 +12,8 @@ import {selectLanguageInputs,inspectLanguageInputs,languageInputReceipt} from '.
 import {inspectExistingBuildAcceptance} from '../../tools/ports/build-acceptance.mjs';
 import {inspectSourceReview} from '../../tools/ports/adaptation-source-review.mjs';
 import {inspectMinimalRuntimeInputs} from '../../tools/ports/minimal-runtime-browser.mjs';
+import {reviewDiagnosticReference} from './adapters/diagnostic-reference-evidence.mjs';
+import {inspectDiagnosticReplayInputs} from './adapters/diagnostic-replay-evidence.mjs';
 
 async function identityTree(path,file=fileIdentity,exclude=()=>false){
   const rows=[];
@@ -74,9 +76,7 @@ export async function diagnosticCaseIdentity({root,manifestPath,game,variant,lan
     assert.ok(Array.isArray(paths),`Diagnostic ${lane} decision inputs must be a file list`);
     for(const path of paths)decisionPaths.add(path);
   }
-  const decisionInputs=await Promise.all([...decisionPaths].sort().map(async name=>{
-    const path=inside(resolve(root,name));return{path:relative(root,path).replaceAll('\\','/'),...await fileIdentity(path)};
-  }));
+  const decisionInputs=await dependencySnapshot(root,[...decisionPaths].sort().map(name=>inside(resolve(root,name))));
   return{profile,manifest:{path:inputs.path,selection:{game,variant}},files,
     receipt:await fileIdentity(receiptPath),sources:sources.sort((a,b)=>a.path.localeCompare(b.path,'en')),
     runtime:await identityTree(inside(resolve(root,profile.runtimeDirectory))),
@@ -90,6 +90,8 @@ export async function diagnosticCaseIdentity({root,manifestPath,game,variant,lan
 /** Fingerprint the executable selected by the actual driver flags. */
 export function adaptationBrowserMode(testCase){
   const args=testCase.task?.args??[];
+  if(args[0]?.endsWith('offline-runtime-browser.mjs')&&args.includes('--input-lifecycle-only'))return'headed';
+  if(args[0]?.endsWith('music-browser.mjs')&&args.some(arg=>arg.startsWith('--check=')&&arg.slice(8).split(',').some(id=>['AUDIO-04','MIDI-03'].includes(id))))return'headed';
   if(!args[0]?.endsWith('runtime-desktop-probes.mjs'))return'headless';
   return desktopExecutionBrowserMode(selectDesktopExecutionMode({
     inputOnly:args.includes('--input-only'),touchOnly:args.includes('--touch-only'),
@@ -160,6 +162,18 @@ export function createCaseIdentityReader({root,environment,inputOnly=false,inspe
       data:await verifyPrivateData(target.data)};
   });
   return async testCase=>{
+    if(['reference-integrity','replay-method'].includes(testCase.group)){
+      const name='EAGLER_TEST_DIAGNOSTIC_REPORT',path=environment[name];assert.ok(path,`Required input: ${name}`);
+      assert.ok(testCase.task.args.includes(`--report=${path}`),'Reference review task and source report differ');
+      const absolute=resolve(root,path),sourceReport={path:absolute,...await fileIdentity(absolute)},product={game:testCase.game,variant:testCase.variant};
+      const reviewed=testCase.group==='replay-method'?await inspectDiagnosticReplayInputs({sourceReport,product}):reviewDiagnosticReference({sourceReport,product});
+      if(inputOnly)return{inputPreflight:{status:'passed',targetIds:[`${testCase.game}-${testCase.variant}`],inputs:[name]}};
+      const dependencies=await dependencySnapshot(root,[testCase.task.args[0],
+        'tests/adaptation/catalog.mjs','tests/adaptation/results.mjs','tests/adaptation/complete-evidence.mjs','tests/adaptation/identity.mjs','tools/testing/runner.mjs']);
+      const identity={version:1,...product,group:testCase.group,checks:testCase.checks,
+        command:testCase.task.command,args:testCase.task.args.map(arg=>arg.startsWith('--output=')?'--output=<CASE>':arg),dependencies,sourceReport,reviewed};
+      return{identity,fingerprint:identityDigest(identity)};
+    }
     if(['source-review','single-game'].includes(testCase.group)){
       const name=testCase.group==='source-review'?'EAGLER_TEST_SOURCE_REVIEW':'EAGLER_TEST_MINIMAL_RUNTIME';
       const manifest=environment[name];assert.ok(manifest,`Required input: ${name}`);
@@ -220,7 +234,8 @@ export function createCaseIdentityReader({root,environment,inputOnly=false,inspe
     ]));
     const inputs={products,shared};
     if(isLauncherJourney&&!inputOnly)inputs.launcherSources=await once('launcher-sources',()=>launcherSourceIdentity(root));
-    if(/(?:runtime-browser|replay-browser|offline-runtime-browser)\.mjs$/.test(testCase.task.args[0]))
+    if(/(?:runtime-browser|replay-browser|offline-runtime-browser)\.mjs$/.test(testCase.task.args[0])&&
+        !testCase.task.args.some(arg=>['--input-lifecycle-only','--practice-controls-only','--view-options-only','--import-parity-only'].includes(arg)))
       inputs.replays=await Promise.all(targets.filter(target=>!isOffline||target.variant==='normal').map(target=>
         once(`replay:${target.id}`,async()=>(await loadRuntimeReplayFixture(target)).identity)));
     const names=testCase.inputs??testCase.requiredInputs??[];
@@ -260,6 +275,7 @@ export function createCaseIdentityReader({root,environment,inputOnly=false,inspe
     if(inputOnly)return{inputPreflight:{status:'passed',targetIds:products.map(item=>item.target.id),inputs:Object.keys(inputs).sort()}};
     const browserMode=adaptationBrowserMode(testCase),browserImplementation=adaptationBrowserImplementation(testCase);
     const identity={version:3,game:testCase.game,variant:testCase.variant,group:testCase.group,checks:testCase.checks,
+      requiredChecks:testCase.requiredChecks??testCase.checksMapped??testCase.checks??[],
       supportingChecks:testCase.supportingChecks??[],browserMode,browserImplementation,
       command:testCase.task.command,args:testCase.task.args.map(arg=>arg.startsWith('--output=')?'--output=<CASE>':arg),
       dependencies,inputs,tools:await toolIdentity(browserMode==='headed',browserImplementation)};

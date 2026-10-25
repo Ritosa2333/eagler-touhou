@@ -6,8 +6,7 @@ import {execFileSync} from 'node:child_process';
 import {build} from '../../launcher/node_modules/esbuild/lib/main.js';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {selectRuntimeTargets,verifyPrivateData,verifyRuntimePackage,readVerifiedRuntimeFile} from './acceptance-contracts.mjs';
-import {sourceSnapshot} from '../testing/source-snapshot.mjs';
-import {dependencySnapshot} from '../testing/dependency-snapshot.mjs';
+import {dependencySnapshot,identityDigest} from '../testing/dependency-snapshot.mjs';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {runWithReport} from '../testing/cli-report.mjs';
 import {assertCliArguments} from '../testing/cli-options.mjs';
@@ -29,8 +28,13 @@ import {controlValidationScene,assertControlledScene,assertControlledSceneStimul
 import {touchMovementContract} from '../../tests/adaptation/adapters/movement.mjs';
 import {readTouchMotionBoundary,readTouchMotionTrace,decodeTouchMotionTrace} from './touch-motion-contract.mjs';
 import {runTouchMotionSceneGroup} from './touch-motion-scenes.mjs';
+import {motionCompleteChecks,assessRuntimeTouchMotionEvidence} from '../../tests/adaptation/adapters/touch-motion-evidence.mjs';
+import {assessRuntimeDeathbombEvidence} from '../../tests/adaptation/adapters/deathbomb-evidence.mjs';
 import {touchActionsRequest,readTouchActionState} from '../../tests/adaptation/adapters/actions.mjs';
 import {runTouchActionSceneGroup} from './touch-action-scenes.mjs';
+import {createKeyboardActionInput} from './keyboard-action-input.mjs';
+import {createGamepadActionInput} from './gamepad-action-input.mjs';
+import {runGamepadDirections} from './gamepad-direction-scenes.mjs';
 import {runTouchDoubleTapBombScene} from './touch-double-tap-scenes.mjs';
 import {runTouchBatch} from './touch-batch-runtime.mjs';
 import {runTouchUnlimitedResultSceneGroup} from './touch-unlimited-result-scenes.mjs';
@@ -42,7 +46,7 @@ import {runTouchDialogueFreshConfirmScene} from './touch-dialogue-confirm-scenes
 import {runOriginalMenuInputScene,waitForOriginalMenuScene} from './original-menu-input-scenes.mjs';
 import {runLoadedDialogueSkipScene} from './loaded-dialogue-skip-scenes.mjs';
 import {readOriginalMenuState} from '../../tests/adaptation/adapters/menu.mjs';
-import {runLauncherTouchScenes} from './launcher-touch-scenes.mjs';
+import {runLauncherTouchScenes,runLauncherFocusScene} from './launcher-touch-scenes.mjs';
 import {runLauncherInputRuntime} from './launcher-input-runtime.mjs';
 import {sendOwnedPhysicalKey} from './keyboard-scene-input.mjs';
 import {resolveAdaptationAdapter} from '../../tests/adaptation/adapters/registry.mjs';
@@ -53,7 +57,8 @@ import {gamepadProbeBundle,prepareVirtualGamepad,bindProtocolHostGamepad} from '
 import {deriveSfxLatencyContract,readSfxLatencySceneState,resolveSfxLatencyContract,resolveSfxLatencyScenes,sfxLatencySceneRequest} from '../../tests/adaptation/adapters/audio.mjs';
 import {assertQueueTailMutationIsRejected,classifySfxLatencyEvidence,sfxLatencyProbeInitSource} from './sfx-latency-contract.mjs';
 import {inspectDesktopTerminalErrors} from './runtime-desktop-lifecycle.mjs';
-import {inspectDesktopInputCleanup,restoreNativeForeground,inspectForegroundPcmWindow,inspectResumedKeyboardMovement,shouldAssessResumedMovement} from './runtime-desktop-lifecycle.mjs';
+import {installTouchControlSerialObserver,neutralTouchControlsFromReceipt} from './runtime-desktop-lifecycle.mjs';
+import {inspectDesktopInputCleanup,restoreNativeForeground,runNativeForegroundOperation,inspectForegroundPcmWindow,inspectResumedKeyboardMovement,shouldAssessResumedMovement} from './runtime-desktop-lifecycle.mjs';
 import {createHeadlessLifecycleDiagnostics} from './headless-lifecycle-diagnostics.mjs';
 import {activateOwnedBrowserWindow,setOwnedBrowserWindowState} from '../browser/owned-window.mjs';
 
@@ -98,8 +103,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
   const touchOnly=process.argv.includes('--touch-only');
   const actionsOnly=process.argv.includes('--actions-only');
   const replayRecordingOnly=process.argv.includes('--replay-recording-only');
-  const controlledInput=inputOnly||touchOnly||actionsOnly;
   const audioLatencyOnly=process.argv.includes('--audio-latency-only');
+  const controlledInput=inputOnly||touchOnly||actionsOnly||audioLatencyOnly||backgroundOnly;
   const executionMode=selectDesktopExecutionMode({backgroundOnly,inputOnly,touchOnly,actionsOnly,replayRecordingOnly,audioLatencyOnly});
   const headlessProbe=desktopExecutionBrowserMode(executionMode)==='headless';
   const readinessEvidence=audioLatencyOnly?requiredAudioTitleReadinessEvidence:requiredDesktopReadinessEvidence;
@@ -144,7 +149,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     './sfx-latency-contract.mjs','../../tests/adaptation/adapters/audio.mjs',
     '../../launcher/public/styles.css','../../launcher/app/components/player/workspace-viewport.css',
     './music-browser-helpers.mjs','./runtime-desktop-audio.mjs',
-    './touch-action-scenes.mjs','./launcher-touch-scenes.mjs','./launcher-touch-fixture.ts','./launcher-input-runtime.mjs',
+    '../../launcher/src/launcher/keyboard-mapping.mts','../../launcher/src/launcher/keyboard-preferences.mts',
+    './touch-action-scenes.mjs','./bomb-resource-contract.mjs','./keyboard-action-input.mjs','./launcher-touch-scenes.mjs','./launcher-touch-fixture.ts','./launcher-input-runtime.mjs',
     './original-menu-input-scenes.mjs','./loaded-dialogue-skip-scenes.mjs','../../tests/adaptation/adapters/menu.mjs',
     '../../tests/adaptation/adapters/actions.mjs',
     './replay-recording-runner.mjs','../../tests/adaptation/adapters/replay-trace.mjs',
@@ -226,7 +232,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
     writeFile(resolve(output,probeArtifacts.launcherTouchBundle.path),launcherTouchBundleBytes),
     writeFile(resolve(output,probeArtifacts.audioProbeSource.path),audioProbeBytes),
   ]);
-  const sourceSnapshotStart=sourceSnapshot(root);
+  const sourceSnapshotStart={scope:'driver-dependencies',files:touchDependencies.length,sha256:identityDigest(touchDependencies)};
   await Promise.all(touchModules.map(({path,bytes})=>writeFile(resolve(output,path),bytes)));
   Object.assign(report,{commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
     sourceSnapshotStart,manifest:manifestIdentity,
@@ -274,11 +280,12 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
       'The same Replay bytes under baseline and each live-input perturbation'];
   }
   if(audioLatencyOnly){
-    report.scope='Packaged normal Runtime | native title input and logical sound | production target-voice PCM | live delay-to-queue-tail negative control. Title scenes share one session; gameplay and BGM lifecycle have separate acceptance.';
+    report.scope='Packaged normal Runtime | no-BGM title confirmation and native gameplay firing | actual target-voice PCM | live delay-to-queue-tail negative control';
     report.protocols.audio='Silent parallel AudioWorklet tap of the actual target WebSfx voice | event-time SDL mixed-queue tail';
     report.requiredChecks=['Package and private DATA identity before and after execution',
       'Native logical event, successful upload, direct route and actual target PCM before the measured mixed queue tail',
-      'The same live target delayed to its measured queue tail must fail the unchanged classifier'];
+      'The same live target delayed to its measured queue tail must fail the unchanged classifier',
+      'Real gameplay firing creates a native shot and attributable output PCM while BGM is disabled'];
   }
   report.requiredReadinessEvidence={...readinessEvidence};
   report.requiredCheckIds=checkScope.requiredIds;
@@ -373,7 +380,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
       focusEmulationPolicy:'Controller Emulation.setFocusEmulationEnabled enabled=true commands are audited and forwarded with enabled=false; Chrome receives the request and generates lifecycle events natively.'};
     }
     for(const target of selection.targets){
-      const titleFlow=audioLatencyOnly?null:resolveTitleFlow({game:target.game,variant:target.variant});
+      const titleFlow=resolveTitleFlow({game:target.game,variant:target.variant});
       const sfxContract=audioLatencyOnly?resolveSfxLatencyContract(target.game,target.variant):null;
       const audioRuntimeMount=resolveAdaptationAdapter(target.game,target.variant)?.runtime??null;
       const record={game:target.game,variant:target.variant,id:target.id,status:'running',checks:[],stages:[],events:[],lifecycleEvents:[],errors:[],consoleErrors:[],httpErrors:[],audio:{},
@@ -431,7 +438,47 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           await save();return null;
         }
         const entry={id,adaptationIds,status:'running'};record.checks.push(entry);await save();try{entry.observation=await operation();if(entry.observation?.checkStatus){entry.status=entry.observation.checkStatus;delete entry.observation.checkStatus;}else entry.status='passed';
-          if(['shared-original-menu-dialogue-input','shared-touch-menu-dialogue-gestures','shared-launcher-gamepad-mapping','shared-launcher-touch-layout','shared-launcher-touch-magnifier'].includes(id))
+          if(motionCompleteChecks(id).length){
+            entry.completeChecks=motionCompleteChecks(id);
+            entry.complete=entry.status==='passed'&&entry.observation?.evidence?.status==='passed';
+          }
+          if(['shared-touch-deathbomb','shared-touch-double-tap-bomb'].includes(id)){
+            entry.completeChecks=[id==='shared-touch-deathbomb'?'TOUCH-09':'TOUCH-11'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='shared-replay-recording-and-isolation'){
+            entry.completeChecks=['REPLAY-03','REPLAY-06',...(entry.observation?.originalExport?.status==='passed'?['REPLAY-02']:[]),...(entry.observation?.versionRejection?.status==='passed'?['REPLAY-04']:[])];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(['shared-touch-actions','native-keyboard-actions'].includes(id)){
+            entry.completeChecks=[id==='shared-touch-actions'?'TOUCH-08':'INPUT-01'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='shared-touch-restart'){
+            entry.completeChecks=['TOUCH-18'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='launcher-touch-native-consumers'){
+            entry.completeChecks=['TOUCH-15','INPUT-05'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='shared-launcher-touch-focus'){
+            entry.completeChecks=['TOUCH-05','TOUCH-06'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='shared-touch-unlimited-result'){
+            entry.completeChecks=['TOUCH-10'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='runtime-epoch-touch-mode-joystick'){
+            entry.completeChecks=['TOUCH-03'];entry.complete=entry.status==='passed';
+          }
+          if(id==='audio-none-contract'){
+            entry.completeChecks=['AUDIO-02'];entry.complete=entry.status==='passed';
+          }
+          if(id==='shared-keyboard-layouts'){
+            entry.completeChecks=['INPUT-02'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='shared-gamepad-native-input'){
+            entry.completeChecks=['INPUT-04'];entry.complete=entry.status==='passed'&&entry.observation?.complete===true;
+          }
+          if(id==='background-input-lifecycle-contract'){
+            entry.completeChecks=['INPUT-06','TOUCH-16'].filter(id=>!selectedChecks.length||selectedChecks.includes(id));entry.complete=entry.status==='passed';
+          }
+          if(['shared-original-menu-dialogue-input','shared-touch-menu-dialogue-gestures','shared-touch-dialogue-confirm','shared-launcher-gamepad-mapping','shared-launcher-touch-layout','shared-launcher-touch-magnifier'].includes(id))
             entry.complete=entry.status==='passed'&&entry.observation?.complete===true;}
         catch(error){entry.status='failed';entry.error=String(error.stack||error);if(error.evidence||error.touchMotionEvidence||error.touchActionEvidence)entry.observation=error.evidence??error.touchMotionEvidence??error.touchActionEvidence;record.errors.push({check:id,error:entry.error});await save();if(!actionsOnly)await resetInputState().catch(()=>{});}await save();return entry;};
       const observe=()=>frame.evaluate(readRuntimeObservation,runtimeObservationRequest(target));
@@ -554,14 +601,14 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           ()=>frame.evaluate(readRuntimeObservation,runtimeObservationRequest(target)):undefined,
         policy:activeQueuedMovementPolicy,
       });
-      const touchSceneKey=async(code,down)=>{
+      const touchSceneKey=async(code,down,canonical=code)=>{
         const clockBoundary=await frame.evaluate(game=>globalThis.__eaglerTouchMotionClock?.game===game,
           target.game);
-        const readBridge=()=>frame.evaluate(code=>{
+        const readBridge=canonical=>frame.evaluate(code=>{
           const bridge=window.__eaglerKeyboardInputBridge;
           return bridge?{active:bridge.active?.()===true,held:bridge.keyDown?.(code)===true}:null;
-        },code);
-        const physical=await sendOwnedPhysicalKey({heldKeys,code,down,readBridge,dispatch:async(code,down)=>{
+        },canonical);
+        const physical=await sendOwnedPhysicalKey({heldKeys,code,canonical,down,readBridge,dispatch:async(code,down)=>{
           const start=await page.evaluate(()=>keyboardMapEvents.length);
           if(down)await page.keyboard.down(playwrightKey(code));else await page.keyboard.up(playwrightKey(code));
           const receipt={start,code,down,epoch:activeEpoch};
@@ -657,11 +704,14 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         const keyErrors=[];
         for(const code of cleanupKeys)await keyUp(code).catch(error=>keyErrors.push(`${code}: ${error.message}`));
         let result=null,evaluationError=null;
-        if(required)try{result=await page.evaluate(async({game,epoch})=>{
+        if(required)try{
+          await page.evaluate(()=>rpc('keyboard-clear'));
+          const serialReceipt=await frame.evaluate(()=>globalThis.__eaglerAcceptanceTouchSerials??null);
+          const neutral=neutralTouchControlsFromReceipt(serialReceipt,{game:target.game,epoch});
+          result=await page.evaluate(async({game,epoch,neutral})=>{
           const runtimeFrame=document.querySelector('iframe')?.contentWindow,bridge=runtimeFrame?.__eaglerKeyboardInputBridge;
           window.__desktopKeyboardOwner?.clear();
           const keyboardCleared=bridge?.submit({protocol:'eagler-touhou/1',game,epoch,command:'keyboard-clear'})??false;
-          const neutral={fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0,touchSensitivity:100};
           const sendErrors=[];
           try{send('keyboard-clear');send('touch-cancel');send('touch-controls',neutral);}
           catch(error){sendErrors.push(String(error.message||error));}
@@ -670,7 +720,8 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             rpc('touch-controls',neutral,750).then(()=>true).catch(()=>false),
           ]);
           return{keyboardCleared,liveRuntime:!!bridge,touchCancelAcknowledged:acknowledgements[0],touchControlsAcknowledged:acknowledgements[1],sendErrors};
-        },{game:target.game,epoch});}catch(error){evaluationError=String(error.message||error);}
+        },{game:target.game,epoch,neutral});result.touchSerialReceipt=serialReceipt;
+        }catch(error){evaluationError=String(error.message||error);}
         const cleanup={epoch,...inspectDesktopInputCleanup({required,result,keyErrors,evaluationError})};
         (record.inputCleanup??=[]).push(cleanup);
         if(cleanup.status==='failed')record.failure??=`Input cleanup failed: ${cleanup.missing.join('; ')}`;
@@ -684,7 +735,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         cdp=await browser.newBrowserCDPSession();
         context=await runLifecyclePhase('target-context-create',()=>browser.newContext({viewport:{width:1100,height:820}}),{activeEpoch});
         if(headlessLifecycle)detachHeadlessContext=headlessLifecycle.attachContext(context);
-        if(replayRecordingOnly||actionsOnly||inputOnly)await prepareVirtualGamepad(context,await gamepadProbeBundle());
+        if(replayRecordingOnly||actionsOnly||inputOnly||backgroundOnly)await prepareVirtualGamepad(context,await gamepadProbeBundle());
         if(audioLatencyOnly){
           assert.ok(sfxContract,`No SFX latency adapter for ${target.game}/${target.variant}`);
           const sources={};record.sfxProductionSources=[];
@@ -712,6 +763,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         const ready=await stage('ready',{epoch:1,event:'ready'},async()=>{const event=await waitRuntimeEvent('ready',1,'desktop-ready');await flushFixtureAudit();return event;});ensureFrame();
         assert.equal(ready.protocol,'eagler-touhou/1');assert.equal(ready.game,target.game);assert.equal(ready.epoch,1);
         await stage('keyboard-bridge',{epoch:1},()=>frame.waitForFunction(()=>Boolean(window.__eaglerKeyboardInputBridge),undefined,{timeout:30000}));
+        await frame.evaluate(installTouchControlSerialObserver,{game:target.game,epoch:1});
         await page.evaluate(({game,epoch})=>window.__desktopInstallKeyboardMapping({game,epoch,layout:'arrows'}),{game:target.game,epoch:1});
         const sharedResources=Object.keys(config.shared??{}).map(name=>({path:`/${name}`,url:`/shared/${name}`}));
         const configureEpoch=async(mode,focusMode='hold-button',extraOptions={})=>{
@@ -724,13 +776,26 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         };
         const prepareForeground=epoch=>acquireForeground(epoch,'foreground',{runtime:true});
         const prepareLaunchForeground=epoch=>acquireForeground(epoch,'launch-foreground',{runtime:true});
+        const launchWithForeground=async epoch=>{
+          if(headlessProbe)return page.evaluate(()=>rpc('launch'));
+          const evidence={epoch,samples:[],restores:[]};(record.launchForegroundGuards??=[]).push(evidence);
+          try{return await runNativeForegroundOperation({evidence,operation:()=>page.evaluate(()=>rpc('launch')),
+            readState:async()=>{
+              const host=await nativeFocusState(page),runtime=await nativeFocusState(frame),identity=await readPageTargetWindow(cdp,page);
+              const ownership=inspectNativeForegroundIdentity({expected:expectedNativePageIdentity,observed:identity,requireNormal:false});
+              const ready=ownership.ready&&inspectNativePageFocus(host).ready&&inspectNativePageFocus(runtime).ready&&identity.window.currentBounds.windowState==='normal';
+              return{at:new Date().toISOString(),ready,owned:ownership.ready,host,runtime,identity};
+            },restore:()=>restoreForeground({runtime:true}),pause:()=>page.waitForTimeout(500)});}
+          finally{await save();}
+        };
         const launchEpoch=async(epoch,mode,focusMode,extraOptions={},preparation={})=>{
           activeEpoch=epoch;
+          await frame.evaluate(installTouchControlSerialObserver,{game:target.game,epoch});
           await page.evaluate(({game,epoch})=>window.__desktopInstallKeyboardMapping({game,epoch,layout:'arrows'}),{game:target.game,epoch});
           await prepareForeground(epoch);
           await stage('configure',{epoch,mode,focusMode},()=>configureEpoch(mode,focusMode,extraOptions));
           await prepareLaunchForeground(epoch);
-          await stage('launch',{epoch},()=>page.evaluate(()=>rpc('launch')));
+          await stage('launch',{epoch},()=>launchWithForeground(epoch));
           await stage('first-frame',{epoch,event:'first-frame'},async()=>{const event=await waitRuntimeEvent('first-frame',epoch,`desktop-first-frame-${epoch}`);await flushFixtureAudit();return event;});
           ensureFrame();await page.evaluate(()=>document.body.focus());
           return preparation.titleOnly?observe():enterNativeGameplay(epoch);
@@ -738,11 +803,178 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
         await prepareForeground(1);
         await stage('configure',{epoch:1,mode:'touch'},()=>configureEpoch('touch',actionsOnly?'toggle-button':'hold-button'));
         await prepareLaunchForeground(1);
-        await stage('launch',{epoch:1},()=>page.evaluate(()=>rpc('launch')));
+        await stage('launch',{epoch:1},()=>launchWithForeground(1));
         await stage('first-frame',{epoch:1,event:'first-frame'},async()=>{const event=await waitRuntimeEvent('first-frame',1,'desktop-first-frame');await flushFixtureAudit();return event;});
         await page.evaluate(()=>document.body.focus());
         const canvas=await nativePeek();assert.ok(canvas.canvas?.width>0&&canvas.canvas?.height>0);record.initial={ready,canvas,audioContexts:canvas.audioContexts,audioProbe:canvas.audioProbe};
         await captureRuntimeScreenshot('title',resolve(output,`${target.id}-title.png`));
+        const sampleAudio=async(label,durationMs)=>{
+          const captures=[],voiceSamples=[],start=Date.now(),end=start+durationMs;do{
+            const sample=await frame.evaluate(game=>window.__eaglerDesktopAudioProbe?.capture?.(game)??
+              {clock:null,captures:[],voices:{available:false,voiceCount:0,voices:[]}},target.game);
+            const elapsedMs=Date.now()-start,localTaps=new Map();
+            for(const capture of sample.captures){captures.push(capture);localTaps.set(capture.tapIndex,capture);}
+            voiceSamples.push({elapsedMs,clock:sample.clock,voices:sample.voices,localTaps});
+            await page.waitForTimeout(25);
+          }while(Date.now()<end);
+          const captureWindowEndedAtMs=Date.now();
+          const frames=captures.map(item=>item.samples),nonZeroSamples=captures.reduce((sum,item)=>sum+item.nonZero,0),peakAbs=captures.reduce((peak,item)=>Math.max(peak,item.peakAbs),0),rmsMax=captures.reduce((peak,item)=>Math.max(peak,item.rms),0);
+          const pcmByTap=new Map();for(const capture of captures){const total=pcmByTap.get(capture.tapIndex)??{tapIndex:capture.tapIndex,captures:0,nonZeroSamples:0,peakAbs:0,rmsMax:0};
+            total.captures++;total.nonZeroSamples+=capture.nonZero;total.peakAbs=Math.max(total.peakAbs,capture.peakAbs);total.rmsMax=Math.max(total.rmsMax,capture.rms);pcmByTap.set(capture.tapIndex,total);}
+          let voiceDiagnostics=null;
+          if(voiceSamples.length){
+            const activations=[],activeObservations=[],previous=new Map(),observedTapIndexes=new Set();
+            for(let captureSequence=0;captureSequence<voiceSamples.length;captureSequence++){
+              const sample=voiceSamples[captureSequence];
+              for(const voice of sample.voices?.voices??[]){
+                const key=voice.id,active=voice.playing||voice.node,prior=previous.get(key),tapPcm=sample.localTaps.get(voice.outputTapIndex);
+                const clockEvidence={contextIndex:sample.clock?.contextIndex??null,contextSampleRate:sample.clock?.sampleRate??null,
+                  observedAtContextTime:sample.clock?.currentTime??null,captureSequence};
+                if(active&&(!prior?.active||prior.started!==voice.started))activations.push({elapsedMs:sample.elapsedMs,...clockEvidence,...voice,
+                  pcm:tapPcm?{nonZero:tapPcm.nonZero,peakAbs:tapPcm.peakAbs,rms:tapPcm.rms}:null});
+                if(active){activeObservations.push({elapsedMs:sample.elapsedMs,...clockEvidence,...voice,
+                  pcm:tapPcm?{nonZero:tapPcm.nonZero,peakAbs:tapPcm.peakAbs,rms:tapPcm.rms}:null});
+                  if(Number.isInteger(voice.outputTapIndex)&&voice.outputTapIndex>=0)observedTapIndexes.add(voice.outputTapIndex);}
+                previous.set(key,{active,started:voice.started});
+              }
+            }
+            const first=voiceSamples[0].voices,last=voiceSamples.at(-1).voices;
+            voiceDiagnostics={available:voiceSamples.every(sample=>sample.voices?.available===true&&Array.isArray(sample.voices.voices)),
+              clockSource:'SDL3.audioContext.currentTime',clockStart:voiceSamples[0].clock??null,clockEnd:voiceSamples.at(-1).clock??null,
+              voiceCountStart:first?.voiceCount??null,voiceCountEnd:last?.voiceCount??null,
+              snapshots:{start:first?.voices??null,end:last?.voices??null},activationEvents:activations,activeObservations,
+              associatedOutputPcm:[...observedTapIndexes].sort((a,b)=>a-b).map(index=>pcmByTap.get(index)??{tapIndex:index,captures:0,nonZeroSamples:0,peakAbs:0,rmsMax:0})};
+          }
+          const samplePath=resolve(output,`${target.id}-${label}-webaudio.f32`);const flat=frames.flat(),buffer=Buffer.alloc(flat.length*4);flat.forEach((value,index)=>buffer.writeFloatLE(value,index*4));await writeFile(samplePath,buffer);
+          const audioState=await nativePeek();
+          return{durationMs,captureStartedAtMs:start,captureWindowEndedAtMs,captureFinishedAtMs:Date.now(),captureCount:captures.length,
+            contextState:captures.at(-1)?.contextState??Object.values(audioState.audioContexts??{})[0]?.state??null,
+            clockSource:'SDL3.audioContext.currentTime',clockStart:voiceSamples[0]?.clock??null,clockEnd:voiceSamples.at(-1)?.clock??null,
+            contextStates:captures.map(item=>item.contextState),sampleRate:captures.find(item=>item.sampleRate)?.sampleRate??null,
+            tapCount:audioState.audioProbe?.tapCount??0,contexts:audioState.audioProbe?.contexts??[],nonZeroSamples,peakAbs,rmsMax,
+            ...(voiceDiagnostics?{nativeSfx:voiceDiagnostics}:{}),samplePath,bytes:buffer.length,sha256:hash(buffer)};
+        };
+        const checkAudioOutputWithMusicDisabled=()=>check('audio-output-with-music-disabled',async()=>{
+          await resetInputState(activeEpoch);
+          const actionRequest=touchActionsRequest(target);
+          if(!actionRequest.contract)return{checkStatus:'incomplete',mode:'none',
+            reason:'Register the actual native player-consumer action observer before attributing a firing sound.'};
+          const waitAction=async(label,predicate,timeoutMs=2500)=>{
+            const start=Date.now();let action;
+            do{
+              action=await frame.evaluate(readTouchActionState,actionRequest);
+              if(!action.available)return action;
+              if(action.complete&&action.phase==='consumer-run'&&predicate(action))return action;
+              await page.waitForTimeout(25);
+            }while(Date.now()-start<timeoutMs);
+            throw Error(`${label}: actual player-consumer condition not reached: ${JSON.stringify(action)}`);
+          };
+          const preflight=await observe(),eligibility=incompleteGameplayPrecondition(preflight,target.game);
+          if(eligibility){record.audio={audioContexts:(await nativePeek()).audioContexts,mode:'none',nativeInputWindow:{before:preflight,held:null,after:null}};
+            return{checkStatus:'incomplete',...record.audio,reason:'Native gameplay and input eligibility were not established before the firing sample.',eligibility:eligibility.eligibility};}
+          const idle=await sampleAudio('idle',400);
+          const preKey=await waitObservation('Native input returns to neutral before the firing sample',state=>state.input.value===0,2500);
+          const preKeyEligibility=incompleteGameplayPrecondition(preKey,target.game);
+          if(preKeyEligibility){record.audio={idle,audioContexts:(await nativePeek()).audioContexts,mode:'none',nativeInputWindow:{before:preKey,held:null,after:null}};
+            return{checkStatus:'incomplete',...record.audio,reason:'Native gameplay eligibility ended before the firing sample.',eligibility:preKeyEligibility.eligibility};}
+          const baselineConsumer=await waitAction('Neutral player-consumer before firing',action=>action.consumed.fire===false);
+          if(!baselineConsumer.available)return{checkStatus:'incomplete',idle,mode:'none',reason:baselineConsumer.reason};
+          await frame.locator('canvas').focus();
+          const inputFocus=await frame.evaluate(()=>({focused:document.hasFocus(),
+            canvasActive:document.activeElement===document.querySelector('canvas'),
+            visibilityState:document.visibilityState,hidden:document.hidden}));
+          if(!inputFocus.focused||!inputFocus.canvasActive||inputFocus.hidden||inputFocus.visibilityState!=='visible')
+            return{checkStatus:'incomplete',idle,mode:'none',inputFocus,
+              reason:'The Runtime canvas did not acquire visible document focus before the trusted fire-key capture.'};
+          const inputStart=await frame.evaluate(({game,code})=>window.__eaglerDesktopAudioProbe?.beginInputWindow?.(game,code)??null,
+            {game:target.game,code:'KeyZ'});
+          if(!inputStart?.clock?.available||!Number.isSafeInteger(inputStart.sessionId)||inputStart.historyReady!==true){await frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.endInputWindow?.());
+            return{checkStatus:'incomplete',idle,mode:'none',sfxHistory:{ready:inputStart?.historyReady===true,error:inputStart?.historyError??null,
+              taps:inputStart?.historyTaps??[],capacityBytes:inputStart?.historyCapacityBytes??null,readiness:inputStart?.historyReadiness??null},
+              reason:inputStart?.historyError??inputStart?.historyReadiness?.reason??'The SDL3 audio clock, input-session identity, or rendered post-output PCM history was unavailable before sending the real fire key.'};}
+          const waitForSfxStart=async(timeoutMs=2500)=>{
+            const startedAt=Date.now();let snapshot;
+            do{
+              snapshot=await frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.startJournalSnapshot?.()??null);
+              if(snapshot?.available!==true||snapshot.sessionId!==inputStart.sessionId||snapshot.game!==target.game||snapshot.code!=='KeyZ')
+                return{status:'incomplete',snapshot,reason:'The Runtime SFX start journal is unavailable or belongs to another input session.'};
+              if(snapshot.drops!==0||snapshot.unattributed!==0||snapshot.errors!==0||!Array.isArray(snapshot.inputEvents)||!Array.isArray(snapshot.events))
+                return{status:'incomplete',snapshot,reason:'The bounded Runtime SFX start journal dropped or could not attribute an event.'};
+              const downs=snapshot.inputEvents.filter(event=>event.type==='keydown'&&event.code==='KeyZ'&&event.isTrusted===true);
+              if(downs.length>1)return{status:'incomplete',snapshot,reason:'The Runtime SFX session contains multiple trusted fire-key downs.'};
+              if(downs.length===1){
+                const starts=snapshot.events.filter(event=>event.contextIndex===downs[0].contextIndex&&event.startContextTime>=downs[0].contextTime);
+                if(starts.length){
+                  if(starts.some(event=>event.tapMatchCount!==1||!Number.isInteger(event.outputTapIndex)||event.outputTapIndex<0||
+                    !Number.isInteger(event.sourceNodeIdentity?.nodeId)||!event.voiceId))
+                    return{status:'incomplete',snapshot,reason:'A Runtime start occurred but its voice and output tap identity were not unique.'};
+                  return{status:'observed',snapshot,firstSequence:starts[0].sequence,startCount:starts.length};
+                }
+              }
+              await page.waitForTimeout(10);
+            }while(Date.now()-startedAt<timeoutMs);
+            return{status:'timeout',snapshot,reason:'No Runtime SFX start was journaled before the bounded fire-key wait ended.'};
+          };
+          let held,firing,postKey,inputCapture,actionError,heldConsumer,releasedConsumer,sfxStartWait;
+          try{
+            await keyDown('KeyZ');
+            heldConsumer=await waitAction('Player-consumer creates a shot for the held fire key',action=>
+              action.sequence>baselineConsumer.sequence&&action.stage===baselineConsumer.stage&&
+              action.consumed.fire===true&&action.activePlayerShots>baselineConsumer.activePlayerShots);
+            assert.equal(heldConsumer.available,true,'The actual player-consumer observer disappeared while firing');
+            held=await waitObservation('Native fire input remains held after shot creation',state=>state.input.value!==preKey.input.value,2500);
+            sfxStartWait=await waitForSfxStart();
+          }catch(error){actionError=error;}
+          finally{await keyUp('KeyZ').catch(()=>{});}
+          ({firing,inputCapture}=await collectDesktopSfxWindow({
+            capture:()=>sampleAudio('firing',1000),
+            operation:async()=>{
+              releasedConsumer=await waitAction('Player-consumer releases the fire key',action=>
+                action.sequence>(heldConsumer?.sequence??baselineConsumer.sequence)&&action.stage===baselineConsumer.stage&&action.consumed.fire===false);
+              postKey=await waitObservationWithAudioClock('Native fire input releases to its prior value',
+                state=>state.input.value===preKey.input.value,2500);
+            },
+            finish:()=>frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.endInputWindow?.()??null),
+          }));
+          if(actionError)throw actionError;
+          const startClock=inputStart.clock,endClock=postKey.audioClock;
+          firing.actionWindow={source:'SDL3.audioContext.currentTime',game:target.game,code:'KeyZ',sessionId:inputStart.sessionId,
+            startContextTime:startClock.currentTime,endContextTime:endClock?.currentTime,
+            contextIndex:startClock.contextIndex,sampleRate:startClock.sampleRate,inputCapture,inputFocus,
+            sfxStartWait,historyReadiness:inputStart.historyReadiness,
+            clockEvidence:{start:startClock,end:endClock},releaseEvidence:{source:'readRuntimeObservation.input',
+              baselineValue:preKey.input.value,consumedValue:held.input.value,nativeValue:postKey.input.value,
+              contextIndex:endClock?.contextIndex,currentTime:endClock?.currentTime,
+              consumer:{baseline:baselineConsumer,held:heldConsumer,released:releasedConsumer}}};
+          const inputWindowValidation=validateDesktopSfxInputWindow(firing.actionWindow);
+          firing.actionWindow.validation=inputWindowValidation;
+          const postEligibility=incompleteGameplayPrecondition(postKey,target.game);
+          record.audio={idle,firing,audioContexts:(await nativePeek()).audioContexts,mode:'none',
+            nativeInputWindow:{before:preKey,held,after:postKey,consumedValue:held.input.value,releasedValue:postKey.input.value}};
+          if(!inputWindowValidation.valid)return{checkStatus:'incomplete',...record.audio,
+            reason:inputWindowValidation.reason};
+          if(postEligibility)return{checkStatus:'incomplete',...record.audio,
+            reason:'Native gameplay eligibility was lost before the firing sample completed.',eligibility:postEligibility.eligibility};
+          if(sfxStartWait?.status==='incomplete')return{checkStatus:'incomplete',...record.audio,
+            reason:sfxStartWait.reason,sfxStartWait};
+          const startEvidence=mapDesktopSfxStartJournal(inputCapture,firing.nativeSfx);
+          firing.nativeSfx={...firing.nativeSfx,sampledActivationEvents:firing.nativeSfx?.activationEvents??[],
+            sampledActiveObservations:firing.nativeSfx?.activeObservations??[],
+            activationEvents:startEvidence.activationEvents,activeObservations:startEvidence.activeObservations,
+            sourceIntervals:startEvidence.sourceIntervals,
+            startJournalEvidence:{available:startEvidence.available,reason:startEvidence.reason,sessionId:startEvidence.sessionId,
+              drops:startEvidence.drops,unattributed:startEvidence.unattributed,errors:startEvidence.errors}};
+          record.audio.firing=firing;
+          if(!startEvidence.available)return{checkStatus:'incomplete',...record.audio,nativeSfxStartEvidence:startEvidence,
+            reason:startEvidence.reason};
+          const sfxCorrelation=correlateInputSfxWindow(idle,firing);
+          if(sfxCorrelation.status==='failed')assert.fail(sfxCorrelation.reason);
+          if(sfxCorrelation.status==='incomplete')return{checkStatus:'incomplete',...record.audio,nativeSfxCorrelation:sfxCorrelation,
+            reason:sfxCorrelation.reason};
+          assert.equal(firing.contextState,'running','The Runtime WebAudio context must be running');
+          assert.ok(firing.tapCount>0,'No real WebAudio destination path was observed');
+          return{...record.audio,nativeSfxCorrelation:sfxCorrelation};
+        });
         if(audioLatencyOnly){
           const readAudioScene=()=>frame.evaluate(readSfxLatencySceneState,sfxLatencySceneRequest(target));
           const waitAudioScene=async(expected,timeout=15000)=>{
@@ -815,6 +1047,9 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
               await frame.evaluate(probeGlobal=>globalThis[probeGlobal]?.restoreQueueTailMutation(),sfxContract.probeGlobal).catch(()=>{});
             }
           });
+          await enterNativeGameplay(activeEpoch,'native gameplay after title SFX latency');
+          await checkAudioOutputWithMusicDisabled();
+          await check('audio-none-contract',async()=>({mode:record.audio.mode,nativeInputWindow:record.audio.nativeInputWindow}));
         }else{
         let started=await enterNativeGameplay(activeEpoch,'native gameplay eligibility epoch 1');
         record.gameplayStart=started;
@@ -935,6 +1170,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
                 await page.evaluate(pressed=>EaglerAcceptanceInputs.virtualButton(acceptancePad,0,pressed?1:0),pressed);
                 await frame.waitForFunction(pressed=>Boolean(window.__eaglerGamepadMapping?.sample?.(0)&1)===pressed,
                   pressed,{timeout:2000});
+                return frame.evaluate(()=>({source:'production-gamepad-mapping',bits:window.__eaglerGamepadMapping.sample(0)}));
               },
               step:async ticks=>{for(let n=0;n<ticks;n++){
                 await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'tick'}));
@@ -942,7 +1178,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
                 controlledScene.receipts.push(receipt);previous=receipt;
               }},
             },{fireMode:PRODUCT_GAMES[target.game].touchFire.mode});
-            return{...evidence,fixture,epoch:activeEpoch,clock,controlledScene};
+            return{...evidence,complete:true,fixture,epoch:activeEpoch,clock,controlledScene};
           }catch(error){failure=error;throw error;}
           finally{
             const cleanupErrors=[];
@@ -961,18 +1197,65 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             }
           }
         });
-        if(actionsOnly)await check('shared-touch-actions',async()=>{
+        if(actionsOnly)await check('shared-launcher-touch-focus',async()=>{
+          const request=touchActionsRequest(target),trials=[];
+          if(!request.contract)return{checkStatus:'incomplete',reason:'Register the native focus consumer'};
+          for(const mode of ['hold-button','toggle-button','toggle-button']){
+            const transition=await retireAndLaunch(activeEpoch+1,'touch',mode);
+            const clock=await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'begin'}));
+            assert.equal(clock.mode,'native-manual');
+            let failure;
+            try{
+              const acceptance=assertControlledScene(await frame.evaluate(controlValidationScene,validationSceneRequest(target)));
+              const controlledScene={acceptance,receipts:[]};let previous=acceptance;
+              const fixture=await page.evaluate(value=>EaglerLauncherTouchFixture.install(value),{game:target.game,epoch:activeEpoch,focus:mode});
+              const evidence=await runLauncherFocusScene({key:touchSceneKey,
+                pointer:value=>page.evaluate(value=>EaglerLauncherTouchFixture.pointer(value),value),
+                cancel:()=>page.evaluate(()=>EaglerLauncherTouchFixture.cancel()),observe,
+                readActions:()=>frame.evaluate(readTouchActionState,request),
+                step:async ticks=>{for(let i=0;i<ticks;i++){
+                  await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'tick'}));
+                  const receipt=assertControlledScene(await frame.evaluate(controlValidationScene,validationSceneRequest(target)),previous);
+                  controlledScene.receipts.push(receipt);previous=receipt;
+                }},
+              },{mode});
+              trials.push({mode,epoch:activeEpoch,transition,clock,fixture,controlledScene,evidence});
+            }catch(error){failure=error;error.evidence={trials,current:error.evidence};throw error;}
+            finally{
+              const errors=[];
+              for(const perform of [()=>page.evaluate(()=>EaglerLauncherTouchFixture.dispose()),()=>resetInputState(activeEpoch),
+                ()=>frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'end'}))])
+                try{await perform();}catch(error){errors.push(String(error));}
+              if(errors.length){if(failure)failure.cleanupErrors=errors;else throw Error(`Focus scene cleanup failed: ${JSON.stringify(errors)}`);}
+            }
+          }
+          return{complete:true,trials};
+        });
+        const setGamepadInput=async descriptor=>{
+          const device=await page.evaluate(descriptor=>{
+            if(!window.acceptancePad?.connected)throw Error('The selected standard gamepad is unavailable');
+            if(descriptor.vector){
+              const {mode,x,y}=descriptor.vector;
+              for(const index of [12,13,14,15])EaglerAcceptanceInputs.virtualButton(acceptancePad,index,0);
+              acceptancePad.axes[0]=mode==='axes'?x:0;acceptancePad.axes[1]=mode==='axes'?y:0;
+              if(mode==='buttons')for(const index of [x<0?14:x>0?15:null,y<0?12:y>0?13:null].filter(value=>value!==null))
+                EaglerAcceptanceInputs.virtualButton(acceptancePad,index,1);
+            }else EaglerAcceptanceInputs.virtualButton(acceptancePad,descriptor.button,descriptor.down?1:0);
+            return{connected:acceptancePad.connected,index:acceptancePad.index,buttons:acceptancePad.buttons.map(button=>button.value),axes:[...acceptancePad.axes]};
+          },descriptor);
+          const bits=await frame.evaluate(()=>window.__eaglerGamepadInputBridge.sample(0));
+          return{acknowledged:true,source:'production-gamepad',epoch:activeEpoch,...descriptor,device,bits};
+        };
+        const runNativeActionScene=async({physicalKeyboard=false,codes={},gamepad=false,beforeActions}={})=>{
           const request=touchActionsRequest(target);
           if(!request.contract)return{checkStatus:'incomplete',reason:'Register the actual native player-consumer action observer'};
           const clock=await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'begin'}));
           if(clock.mode!=='native-manual')return{checkStatus:'incomplete',reason:'Native action scenes require the production manual clock',clock};
-          let controlledScene,previousScene,previousPause,evidence,failure;
+          let controlledScene,previousScene,previousPause,evidence,failure,actionInput,preparation;
           try{
             controlledScene={acceptance:assertControlledScene(await frame.evaluate(controlValidationScene,validationSceneRequest(target))),receipts:[]};
             previousScene=controlledScene.acceptance;previousPause=(await observe()).pause;
-            evidence=await runTouchActionSceneGroup({controls:touchControls,directTouch,observe,
-              readActions:()=>frame.evaluate(readTouchActionState,request),
-              step:async ticks=>{
+            const step=async ticks=>{
                 assert.ok(Number.isInteger(ticks)&&ticks>0&&ticks<=600,'Action step count is outside the declared scene budget');
                 for(let n=0;n<ticks;n++){
                   await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'tick'}));
@@ -984,18 +1267,32 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
                   previousPause=pause;
                   controlledScene.receipts.push(receipt);previousScene=receipt;
                 }
-              }},{inputMasks:request.contract.inputMasks,escapePulseTicks:request.contract.escapePulseTicks});
-            return{...evidence,complete:false,epoch:activeEpoch,clock,controlledScene,
-              scope:'Runtime touch protocol | actual player-consumer actions | Launcher button DOM has its own integration scope'};
+              };
+            if(beforeActions)preparation=await beforeActions({step,observe});
+            if(physicalKeyboard)actionInput=createKeyboardActionInput({key:(physical,down)=>touchSceneKey(physical,down,
+              Object.entries(codes).find(([,value])=>value===physical)?.[0]??physical),step},{pulseTicks:request.contract.escapePulseTicks,codes});
+            if(gamepad)actionInput=createGamepadActionInput({button:(button,down)=>setGamepadInput({button,down}),step},{pulseTicks:request.contract.escapePulseTicks});
+            evidence=await runTouchActionSceneGroup({controls:actionInput?.controls??touchControls,directTouch,observe,
+              readActions:()=>frame.evaluate(readTouchActionState,request),step:actionInput?.step??step},
+              {inputMasks:request.contract.inputMasks,escapePulseTicks:request.contract.escapePulseTicks,bombResource:request.contract.bombResource,
+                worldFrameKey:(await observe()).capabilities.restartFrame});
+            return{...evidence,complete:evidence.checkStatus==='passed',epoch:activeEpoch,clock,controlledScene,
+              ...(actionInput?{[gamepad?'gamepad':'keyboard']:actionInput.evidence}:{}),...(preparation?{preparation}:{}),
+              inputSource:gamepad?'production-gamepad':physicalKeyboard?'physical-keyboard':'runtime-touch-protocol',
+              scope:'Shared action assertions | actual player-consumer actions | input source recorded separately'};
           }catch(error){failure=error;throw error;}
           finally{
             const cleanup=evidence?.cleanupControls??failure?.touchActionCleanupControls;
-            if(cleanup)await touchControls(cleanup);
-            record.touchClock??=[];
-            record.touchClock.push(await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'end'})));
+            const errors=[];
+            try{if(actionInput)await actionInput.dispose();else if(cleanup)await touchControls(cleanup);}catch(error){errors.push(error);}
+            try{record.touchClock??=[];record.touchClock.push(await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'end'})));}catch(error){errors.push(error);}
+            if(errors.length){if(failure)failure.cleanupErrors=errors.map(String);else throw new AggregateError(errors,'Native action input and clock cleanup failed');}
           }
-        });
+        };
+        if(actionsOnly)await check('shared-touch-actions',()=>runNativeActionScene());
+        if(inputOnly)await check('native-keyboard-actions',()=>runNativeActionScene({physicalKeyboard:true}));
         if(actionsOnly)await check('shared-touch-restart',async()=>{
+          const transition=await retireAndLaunch(activeEpoch+1,'touch','toggle-button');
           if(!audioRuntimeMount)return{checkStatus:'incomplete',reason:'The selected Runtime has no declared mount identity for restart evidence'};
           const initial=await observe(),restartFrame=initial.capabilities?.restartFrame;
           if(!initial.capabilities?.pause||!restartFrame||!Number.isFinite(initial.frames?.[restartFrame]))
@@ -1126,7 +1423,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
               {expectedEpoch:activeEpoch});
             if(betweenRuns.status==='incomplete')return{checkStatus:'incomplete',reason:betweenRuns.reason,keyboardBaseline,touchButton,betweenRuns};
             if(betweenRuns.status!=='same')throw Error(betweenRuns.reason);
-            return{checkStatus:'passed',complete:true,keyboardBaseline,touchButton,betweenRuns,
+            return{checkStatus:'passed',complete:true,transition,keyboardBaseline,touchButton,betweenRuns,
               scope:'Independent physical KeyR baseline and production Launcher Restart DOM action | native frame reset and same Runtime epoch'};
           }catch(error){failure=error;throw error;}
           finally{
@@ -1365,7 +1662,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
                   await frame.evaluate(controlTouchMotionClock,clockRequest);
                   const receipt=await frame.evaluate(controlValidationScene,sceneRequest);
                   assertControlledScene(receipt,previous);previous=receipt;
-                }}},{inputMasks:adapter.actions.inputMasks,gesture:adapter.doubleTapBomb,
+                }}},{inputMasks:adapter.actions.inputMasks,gesture:adapter.doubleTapBomb,bombResource:adapter.actions.bombResource,
                 launchOptions:{doubleTapBombEnabled:launch.options.doubleTapBombEnabled,source:launch.source,epoch:launch.epoch},
                 geometry:{primary:{id:9417,start:{x:.5,y:.75},move:{x:.58,y:.75},bombMove:{x:.51,y:.70}},
                   secondary:{id:9427,point:{x:.3,y:.45}},movementEpsilon:.0001},
@@ -1418,46 +1715,9 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             reason:failed?.error??incomplete?.reason??null,
             scope:'Tagged production projectile | keyboard and touch at the last original window tick | late pulse through respawn | held movement'};
         });
-        if(actionsOnly)await check('shared-touch-dialogue-confirm',async()=>{
-          const request=dialogueTouchSceneRequest(target),contract=request.contract;
-          if(!contract)return{checkStatus:'incomplete',reason:'Register the real modal consumer, loaded script manifest and confirmation gesture'};
-          const transition=await retireAndLaunch(activeEpoch+1,'touch','hold-button');
-          const clockRequest=touchClockRequest({...target,action:'tick'}),sceneRequest=validationSceneRequest(target);
-          const clock=await frame.evaluate(controlTouchMotionClock,{...clockRequest,action:'begin'});
-          if(clock.mode!=='native-manual')return{checkStatus:'incomplete',reason:'Modal input scenes require the native manual clock',clock};
-          try{
-            let previous=assertControlledScene(await frame.evaluate(controlValidationScene,sceneRequest));
-            const neutral={fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0,touchSensitivity:100};
-            const result=await runTouchDialogueFreshConfirmScene({controls:touchControls,
-              readManifest:async()=>{
-                const manifest=normalizeDialogueTouchManifest(await frame.evaluate(readDialogueTouchWords,{contract,operation:'manifest'}),contract);
-                if(manifest.available!==true)return manifest;
-                const observation=normalizeDialogueTouchObservation(await frame.evaluate(readDialogueTouchWords,{contract,operation:'observation'}),contract);
-                if(observation.available!==true)return observation;
-                assert.deepEqual(manifest.runtime,observation.runtime,'Loaded script and fixture receipts must belong to the same stopped Runtime');
-                return{...manifest,fixture:observation.fixture,fixtureSource:contract.observation.source};
-              },
-              observe:async()=>normalizeDialogueTouchObservation(await frame.evaluate(readDialogueTouchWords,{contract,operation:'observation'}),contract),
-              readActions:()=>frame.evaluate(readTouchActionState,touchActionsRequest(target)),
-              requestMessage:entry=>frame.evaluate(requestDialogueTouchMessage,{contract,entry}),
-              directTouchBatch:nativeTouchBatch,
-              step:async ticks=>{for(let n=0;n<ticks;n++){
-                await frame.evaluate(controlTouchMotionClock,clockRequest);
-                const receipt=await frame.evaluate(controlValidationScene,sceneRequest);
-                assertControlledSceneStimulus(receipt,previous,{kind:'dialogue'});previous=receipt;
-              }}},{expected:{variant:target.variant,stage:contract.stage,touchContext:contract.touchContext},waitOpcode:contract.waitOpcode,
-              consumerLatencyTicks:contract.consumerLatencyTicks,consumerLatencySource:contract.consumerLatencySource,
-              inputMasks:{fire:resolveAdaptationAdapter(target.game,target.variant).actions.inputMasks.fire,confirm:contract.observation.confirmMask},
-              pointer:{id:9487,point:{x:.5,y:.75}},gesture:contract.gesture,
-              controls:{neutral,heldFire:{...neutral,fireEnabled:true}},
-              budgets:{baselineTicks:8,dialogueOpenTicks:120,waitTicks:60,source:contract.sources.confirmConsumer}});
-            return{...result,complete:result.checkStatus==='passed',epoch:activeEpoch,transition,clock,
-              scope:'Real ECL-referenced loaded dialogue | held gameplay Fire | no-touch contrast | one fresh modal confirm edge'};
-          }finally{
-            record.touchClock??=[];
-            record.touchClock.push(await frame.evaluate(controlTouchMotionClock,{...clockRequest,action:'end'}));
-          }
-        });
+        if(actionsOnly)await check('shared-touch-dialogue-confirm',()=>collectInputTrials([
+          ()=>dialogueInputTrial('touch',{shortTap:true}),
+        ]));
         if(actionsOnly)await check('shared-touch-unlimited-result',async()=>{
           const adapter=resolveAdaptationAdapter(target.game,target.variant),boundary=adapter?.runBoundaries;
           if(!boundary||!adapter.parseReplayMetadata)return{checkStatus:'incomplete',reason:'Register ordinary run/Result boundaries and the independent saved Replay metadata parser'};
@@ -1524,7 +1784,9 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
               },
               readReplayBytes:async({path})=>{
                 const result=await page.evaluate(path=>rpc('read',{path},10000),path);
-                return{available:true,bytes:Buffer.from(result.bytes),storageIdentity};
+                const bytes=Buffer.from(result.bytes),artifact=resolve(output,`${target.id}-unlimited-result.rpy`);
+                await writeFile(artifact,bytes);
+                return{available:true,bytes,storageIdentity,artifact};
               }};
             const result=await runTouchUnlimitedResultSceneGroup(io,{preparation,maxWaitTicks:120,
               contract:{game:target.game,variant:target.variant,sources,
@@ -1600,9 +1862,17 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
                   fileIdentity:{source:'Shell read before and after the declared native opener',before:hash(persisted),after:hash(postOpen)},
                   nativeOpen:opened,bootstrapOwner:'shared Replay trace scene'};
               },
-              titleParser:{parseFrames:adapter.parseReplayFrames,parseExtension:adapter.parseReplayExtension},releaseAll,
+              rejectImport:async({bytes,path,originalPath})=>page.evaluate(async({bytes,path,originalPath,game,epoch})=>{
+                const before=await rpc('list'),originalBefore=(await rpc('read',{path:originalPath})).bytes;
+                const request='replay-version-rejection-'+crypto.randomUUID(),sent={protocol:'eagler-touhou/1',game,epoch,command:'write',request,path,bytes};
+                const start=events.length;send('write',{epoch,request,path,bytes});
+                const barrier=await rpc('list'),responses=events.slice(start).filter(event=>event.request===request);
+                const originalAfter=(await rpc('read',{path:originalPath})).bytes;
+                return{sent,responses,barrier,lists:{before:before.files,after:barrier.files},originalBefore,originalAfter};
+              },{bytes:Array.from(bytes),path,originalPath,game:target.game,epoch:activeEpoch}),
+              titleParser:{parseFrames:adapter.parseReplayFrames,parseExtension:adapter.parseReplayExtension,inspectOriginal:adapter.inspectOriginalReplay},releaseAll,
             }});
-            return{...result,checkStatus:result.status,complete:false,epoch:activeEpoch,clock,
+            return{...result,checkStatus:result.status,complete:result.status==='passed',epoch:activeEpoch,clock,
               scope:'Finite production recording and same-file input isolation | natural Replay endpoint has its own acceptance'};
           }finally{
             const cleanup=[];
@@ -1625,9 +1895,9 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           }
         });
         if(gameplayReady(started))await captureRuntimeScreenshot('gameplay',resolve(output,`${target.id}-gameplay.png`));
-        const directionCase=async(layout,entries)=>{
+        const directionCase=async(layout,entries,{host=false}={})=>{
           const selectionState=await page.evaluate(layout=>window.__desktopSelectLayout(layout),layout);assert.equal(selectionState.selected,layout);
-          if(layout==='wasd')await page.evaluate(()=>document.body.focus());else await frame.locator('canvas').focus();
+          if(host||layout==='wasd')await page.evaluate(()=>document.body.focus());else await frame.locator('canvas').focus();
           const initial=await observe();
           const initialEligibility=incompleteGameplayPrecondition(initial,target.game);
           if(initialEligibility)return{...initialEligibility,layout,selection:selectionState};
@@ -1716,172 +1986,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           }finally{await keyUp(directionKey);await resetInputState(activeEpoch);}
           return{neutralStart,before,held,clearAccepted:cleared,neutral,afterKeyup,clearIntervalMs:180,directionKey};
         });
-        const sampleAudio=async(label,durationMs)=>{
-          const captures=[],voiceSamples=[],start=Date.now(),end=start+durationMs;do{
-            const sample=await frame.evaluate(game=>window.__eaglerDesktopAudioProbe?.capture?.(game)??
-              {clock:null,captures:[],voices:{available:false,voiceCount:0,voices:[]}},target.game);
-            const elapsedMs=Date.now()-start,localTaps=new Map();
-            for(const capture of sample.captures){captures.push(capture);localTaps.set(capture.tapIndex,capture);}
-            voiceSamples.push({elapsedMs,clock:sample.clock,voices:sample.voices,localTaps});
-            await page.waitForTimeout(25);
-          }while(Date.now()<end);
-          const captureWindowEndedAtMs=Date.now();
-          const frames=captures.map(item=>item.samples),nonZeroSamples=captures.reduce((sum,item)=>sum+item.nonZero,0),peakAbs=captures.reduce((peak,item)=>Math.max(peak,item.peakAbs),0),rmsMax=captures.reduce((peak,item)=>Math.max(peak,item.rms),0);
-          const pcmByTap=new Map();for(const capture of captures){const total=pcmByTap.get(capture.tapIndex)??{tapIndex:capture.tapIndex,captures:0,nonZeroSamples:0,peakAbs:0,rmsMax:0};
-            total.captures++;total.nonZeroSamples+=capture.nonZero;total.peakAbs=Math.max(total.peakAbs,capture.peakAbs);total.rmsMax=Math.max(total.rmsMax,capture.rms);pcmByTap.set(capture.tapIndex,total);}
-          let voiceDiagnostics=null;
-          if(voiceSamples.length){
-            const activations=[],activeObservations=[],previous=new Map(),observedTapIndexes=new Set();
-            for(let captureSequence=0;captureSequence<voiceSamples.length;captureSequence++){
-              const sample=voiceSamples[captureSequence];
-              for(const voice of sample.voices?.voices??[]){
-                const key=voice.id,active=voice.playing||voice.node,prior=previous.get(key),tapPcm=sample.localTaps.get(voice.outputTapIndex);
-                const clockEvidence={contextIndex:sample.clock?.contextIndex??null,contextSampleRate:sample.clock?.sampleRate??null,
-                  observedAtContextTime:sample.clock?.currentTime??null,captureSequence};
-                if(active&&(!prior?.active||prior.started!==voice.started))activations.push({elapsedMs:sample.elapsedMs,...clockEvidence,...voice,
-                  pcm:tapPcm?{nonZero:tapPcm.nonZero,peakAbs:tapPcm.peakAbs,rms:tapPcm.rms}:null});
-                if(active){activeObservations.push({elapsedMs:sample.elapsedMs,...clockEvidence,...voice,
-                  pcm:tapPcm?{nonZero:tapPcm.nonZero,peakAbs:tapPcm.peakAbs,rms:tapPcm.rms}:null});
-                  if(Number.isInteger(voice.outputTapIndex)&&voice.outputTapIndex>=0)observedTapIndexes.add(voice.outputTapIndex);}
-                previous.set(key,{active,started:voice.started});
-              }
-            }
-            const first=voiceSamples[0].voices,last=voiceSamples.at(-1).voices;
-            voiceDiagnostics={available:voiceSamples.every(sample=>sample.voices?.available===true&&Array.isArray(sample.voices.voices)),
-              clockSource:'SDL3.audioContext.currentTime',clockStart:voiceSamples[0].clock??null,clockEnd:voiceSamples.at(-1).clock??null,
-              voiceCountStart:first?.voiceCount??null,voiceCountEnd:last?.voiceCount??null,
-              snapshots:{start:first?.voices??null,end:last?.voices??null},activationEvents:activations,activeObservations,
-              associatedOutputPcm:[...observedTapIndexes].sort((a,b)=>a-b).map(index=>pcmByTap.get(index)??{tapIndex:index,captures:0,nonZeroSamples:0,peakAbs:0,rmsMax:0})};
-          }
-          const samplePath=resolve(output,`${target.id}-${label}-webaudio.f32`);const flat=frames.flat(),buffer=Buffer.alloc(flat.length*4);flat.forEach((value,index)=>buffer.writeFloatLE(value,index*4));await writeFile(samplePath,buffer);
-          const audioState=await nativePeek();
-          return{durationMs,captureStartedAtMs:start,captureWindowEndedAtMs,captureFinishedAtMs:Date.now(),captureCount:captures.length,
-            contextState:captures.at(-1)?.contextState??Object.values(audioState.audioContexts??{})[0]?.state??null,
-            clockSource:'SDL3.audioContext.currentTime',clockStart:voiceSamples[0]?.clock??null,clockEnd:voiceSamples.at(-1)?.clock??null,
-            contextStates:captures.map(item=>item.contextState),sampleRate:captures.find(item=>item.sampleRate)?.sampleRate??null,
-            tapCount:audioState.audioProbe?.tapCount??0,contexts:audioState.audioProbe?.contexts??[],nonZeroSamples,peakAbs,rmsMax,
-            ...(voiceDiagnostics?{nativeSfx:voiceDiagnostics}:{}),samplePath,bytes:buffer.length,sha256:hash(buffer)};
-        };
-        await check('audio-output-with-music-disabled',async()=>{
-          await resetInputState(activeEpoch);
-          const actionRequest=touchActionsRequest(target);
-          if(!actionRequest.contract)return{checkStatus:'incomplete',mode:'none',
-            reason:'Register the actual native player-consumer action observer before attributing a firing sound.'};
-          const waitAction=async(label,predicate,timeoutMs=2500)=>{
-            const start=Date.now();let action;
-            do{
-              action=await frame.evaluate(readTouchActionState,actionRequest);
-              if(!action.available)return action;
-              if(action.complete&&action.phase==='consumer-run'&&predicate(action))return action;
-              await page.waitForTimeout(25);
-            }while(Date.now()-start<timeoutMs);
-            throw Error(`${label}: actual player-consumer condition not reached: ${JSON.stringify(action)}`);
-          };
-          const preflight=await observe(),eligibility=incompleteGameplayPrecondition(preflight,target.game);
-          if(eligibility){record.audio={audioContexts:(await nativePeek()).audioContexts,mode:'none',nativeInputWindow:{before:preflight,held:null,after:null}};
-            return{checkStatus:'incomplete',...record.audio,reason:'Native gameplay and input eligibility were not established before the firing sample.',eligibility:eligibility.eligibility};}
-          const idle=await sampleAudio('idle',400);
-          const preKey=await waitObservation('Native input returns to neutral before the firing sample',state=>state.input.value===0,2500);
-          const preKeyEligibility=incompleteGameplayPrecondition(preKey,target.game);
-          if(preKeyEligibility){record.audio={idle,audioContexts:(await nativePeek()).audioContexts,mode:'none',nativeInputWindow:{before:preKey,held:null,after:null}};
-            return{checkStatus:'incomplete',...record.audio,reason:'Native gameplay eligibility ended before the firing sample.',eligibility:preKeyEligibility.eligibility};}
-          const baselineConsumer=await waitAction('Neutral player-consumer before firing',action=>action.consumed.fire===false);
-          if(!baselineConsumer.available)return{checkStatus:'incomplete',idle,mode:'none',reason:baselineConsumer.reason};
-          await frame.locator('canvas').focus();
-          const inputFocus=await frame.evaluate(()=>({focused:document.hasFocus(),
-            canvasActive:document.activeElement===document.querySelector('canvas'),
-            visibilityState:document.visibilityState,hidden:document.hidden}));
-          if(!inputFocus.focused||!inputFocus.canvasActive||inputFocus.hidden||inputFocus.visibilityState!=='visible')
-            return{checkStatus:'incomplete',idle,mode:'none',inputFocus,
-              reason:'The Runtime canvas did not acquire visible document focus before the trusted fire-key capture.'};
-          const inputStart=await frame.evaluate(({game,code})=>window.__eaglerDesktopAudioProbe?.beginInputWindow?.(game,code)??null,
-            {game:target.game,code:'KeyZ'});
-          if(!inputStart?.clock?.available||!Number.isSafeInteger(inputStart.sessionId)||inputStart.historyReady!==true){await frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.endInputWindow?.());
-            return{checkStatus:'incomplete',idle,mode:'none',sfxHistory:{ready:inputStart?.historyReady===true,error:inputStart?.historyError??null,
-              taps:inputStart?.historyTaps??[],capacityBytes:inputStart?.historyCapacityBytes??null,readiness:inputStart?.historyReadiness??null},
-              reason:inputStart?.historyError??inputStart?.historyReadiness?.reason??'The SDL3 audio clock, input-session identity, or rendered post-output PCM history was unavailable before sending the real fire key.'};}
-          const waitForSfxStart=async(timeoutMs=2500)=>{
-            const startedAt=Date.now();let snapshot;
-            do{
-              snapshot=await frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.startJournalSnapshot?.()??null);
-              if(snapshot?.available!==true||snapshot.sessionId!==inputStart.sessionId||snapshot.game!==target.game||snapshot.code!=='KeyZ')
-                return{status:'incomplete',snapshot,reason:'The Runtime SFX start journal is unavailable or belongs to another input session.'};
-              if(snapshot.drops!==0||snapshot.unattributed!==0||snapshot.errors!==0||!Array.isArray(snapshot.inputEvents)||!Array.isArray(snapshot.events))
-                return{status:'incomplete',snapshot,reason:'The bounded Runtime SFX start journal dropped or could not attribute an event.'};
-              const downs=snapshot.inputEvents.filter(event=>event.type==='keydown'&&event.code==='KeyZ'&&event.isTrusted===true);
-              if(downs.length>1)return{status:'incomplete',snapshot,reason:'The Runtime SFX session contains multiple trusted fire-key downs.'};
-              if(downs.length===1){
-                const starts=snapshot.events.filter(event=>event.contextIndex===downs[0].contextIndex&&event.startContextTime>=downs[0].contextTime);
-                if(starts.length){
-                  if(starts.some(event=>event.tapMatchCount!==1||!Number.isInteger(event.outputTapIndex)||event.outputTapIndex<0||
-                    !Number.isInteger(event.sourceNodeIdentity?.nodeId)||!event.voiceId))
-                    return{status:'incomplete',snapshot,reason:'A Runtime start occurred but its voice and output tap identity were not unique.'};
-                  return{status:'observed',snapshot,firstSequence:starts[0].sequence,startCount:starts.length};
-                }
-              }
-              await page.waitForTimeout(10);
-            }while(Date.now()-startedAt<timeoutMs);
-            return{status:'timeout',snapshot,reason:'No Runtime SFX start was journaled before the bounded fire-key wait ended.'};
-          };
-          let held,firing,postKey,inputCapture,actionError,heldConsumer,releasedConsumer,sfxStartWait;
-          try{
-            await keyDown('KeyZ');
-            heldConsumer=await waitAction('Player-consumer creates a shot for the held fire key',action=>
-              action.sequence>baselineConsumer.sequence&&action.stage===baselineConsumer.stage&&
-              action.consumed.fire===true&&action.activePlayerShots>baselineConsumer.activePlayerShots);
-            assert.equal(heldConsumer.available,true,'The actual player-consumer observer disappeared while firing');
-            held=await waitObservation('Native fire input remains held after shot creation',state=>state.input.value!==preKey.input.value,2500);
-            sfxStartWait=await waitForSfxStart();
-          }catch(error){actionError=error;}
-          finally{await keyUp('KeyZ').catch(()=>{});}
-          ({firing,inputCapture}=await collectDesktopSfxWindow({
-            capture:()=>sampleAudio('firing',1000),
-            operation:async()=>{
-              releasedConsumer=await waitAction('Player-consumer releases the fire key',action=>
-                action.sequence>(heldConsumer?.sequence??baselineConsumer.sequence)&&action.stage===baselineConsumer.stage&&action.consumed.fire===false);
-              postKey=await waitObservationWithAudioClock('Native fire input releases to its prior value',
-                state=>state.input.value===preKey.input.value,2500);
-            },
-            finish:()=>frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.endInputWindow?.()??null),
-          }));
-          if(actionError)throw actionError;
-          const startClock=inputStart.clock,endClock=postKey.audioClock;
-          firing.actionWindow={source:'SDL3.audioContext.currentTime',game:target.game,code:'KeyZ',sessionId:inputStart.sessionId,
-            startContextTime:startClock.currentTime,endContextTime:endClock?.currentTime,
-            contextIndex:startClock.contextIndex,sampleRate:startClock.sampleRate,inputCapture,inputFocus,
-            sfxStartWait,historyReadiness:inputStart.historyReadiness,
-            clockEvidence:{start:startClock,end:endClock},releaseEvidence:{source:'readRuntimeObservation.input',
-              baselineValue:preKey.input.value,consumedValue:held.input.value,nativeValue:postKey.input.value,
-              contextIndex:endClock?.contextIndex,currentTime:endClock?.currentTime,
-              consumer:{baseline:baselineConsumer,held:heldConsumer,released:releasedConsumer}}};
-          const inputWindowValidation=validateDesktopSfxInputWindow(firing.actionWindow);
-          firing.actionWindow.validation=inputWindowValidation;
-          const postEligibility=incompleteGameplayPrecondition(postKey,target.game);
-          record.audio={idle,firing,audioContexts:(await nativePeek()).audioContexts,mode:'none',
-            nativeInputWindow:{before:preKey,held,after:postKey,consumedValue:held.input.value,releasedValue:postKey.input.value}};
-          if(!inputWindowValidation.valid)return{checkStatus:'incomplete',...record.audio,
-            reason:inputWindowValidation.reason};
-          if(postEligibility)return{checkStatus:'incomplete',...record.audio,
-            reason:'Native gameplay eligibility was lost before the firing sample completed.',eligibility:postEligibility.eligibility};
-          if(sfxStartWait?.status==='incomplete')return{checkStatus:'incomplete',...record.audio,
-            reason:sfxStartWait.reason,sfxStartWait};
-          const startEvidence=mapDesktopSfxStartJournal(inputCapture,firing.nativeSfx);
-          firing.nativeSfx={...firing.nativeSfx,sampledActivationEvents:firing.nativeSfx?.activationEvents??[],
-            activationEvents:startEvidence.activationEvents,activeObservations:startEvidence.activeObservations,
-            sourceIntervals:startEvidence.sourceIntervals,
-            startJournalEvidence:{available:startEvidence.available,reason:startEvidence.reason,sessionId:startEvidence.sessionId,
-              drops:startEvidence.drops,unattributed:startEvidence.unattributed,errors:startEvidence.errors}};
-          record.audio.firing=firing;
-          if(!startEvidence.available)return{checkStatus:'incomplete',...record.audio,nativeSfxStartEvidence:startEvidence,
-            reason:startEvidence.reason};
-          const sfxCorrelation=correlateInputSfxWindow(idle,firing);
-          if(sfxCorrelation.status==='failed')assert.fail(sfxCorrelation.reason);
-          if(sfxCorrelation.status==='incomplete')return{checkStatus:'incomplete',...record.audio,nativeSfxCorrelation:sfxCorrelation,
-            reason:sfxCorrelation.reason};
-          assert.equal(firing.contextState,'running','The Runtime WebAudio context must be running');
-          assert.ok(firing.tapCount>0,'No real WebAudio destination path was observed');
-          return{...record.audio,nativeSfxCorrelation:sfxCorrelation};
-        });
+        await checkAudioOutputWithMusicDisabled();
         async function retireAndLaunch(epoch,mode,focusMode,extraOptions={},preparation={}){
           const priorEpoch=activeEpoch;
           assert.ok(Number.isSafeInteger(epoch)&&epoch>priorEpoch,`Next Runtime epoch ${epoch} must be greater than active epoch ${priorEpoch}`);
@@ -1918,14 +2023,29 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             actions.push({kind:'drag',before,moved,neutral,sign,deltaX:moved.position.x-before.position.x});
           }else{
             const vectors=[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,1],[-1,1],[1,-1]];
+            const directionMasks=resolveAdaptationAdapter(target.game,target.variant)?.movement?.directionMasks;
+            if(mode==='joystick'&&!directionMasks)return{checkStatus:'incomplete',reason:'Register four source-owned native direction masks before directional joystick acceptance',mode,epoch,start};
             for(const [x,y] of vectors){
               await touchControls();await waitObservation(`${mode} neutral before ${x},${y}`,touchNeutral,1500);
-              const before=await observe();await touchControls({joystickX:x*32767,joystickY:y*32767});
+              const before=await observe(),input={joystickX:x*32767,joystickY:y*32767};
+              const press=await touchControls(input);let release;
               let held;try{held=await waitObservation(`${mode} joystick ${x},${y} native movement`,value=>
                 gameplayReady(value)&&(x===0||((value.position.x-before.position.x)*x>0))&&(y===0||((value.position.y-before.position.y)*y>0)),2000);}
-              finally{await touchControls();}
+              finally{release=await touchControls();}
               const released=await waitObservation(`${mode} joystick release ${x},${y}`,touchNeutral,1500);
-              actions.push({kind:'joystick-direction',x,y,before,held,released});
+              const settled=[];
+              if(mode==='joystick'){
+                const clock=before.capabilities.restartFrame;assert.ok(clock&&Number.isSafeInteger(released.frames[clock]));
+                let previous=released;
+                for(let n=0;n<3;n++){
+                  const state=await waitObservation(`Direction joystick stable neutral ${x},${y} tick ${n+1}`,value=>
+                    gameplayReady(value)&&value.frames[clock]>previous.frames[clock],1500);
+                  assert.equal(state.input.value,baseInput,'Joystick direction returned after recenter');
+                  assert.deepEqual(state.position,released.position,'Joystick kept moving after its released queue');
+                  settled.push(state);previous=state;
+                }
+              }
+              actions.push({kind:'joystick-direction',x,y,input,press,release,before,held,released,settled});
             }
             if(mode==='joystick-free'){
               const magnitudes=[];
@@ -1952,6 +2072,39 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           const matrix=await directionCase('wasd',[
             ['w','ArrowUp','y',-1],['s','ArrowDown','y',1],['a','ArrowLeft','x',-1],['d','ArrowRight','x',1]]);
           return{epoch:activeEpoch,reusedRuntime:true,...matrix};
+        });
+        await check('shared-keyboard-layouts',async()=>{
+          const bindings={up:'KeyI',down:'KeyK',left:'KeyU',right:'KeyO',shoot:'KeyF',bomb:'KeyG',focus:'KeyT',pause:'KeyP'};
+          const saved=await page.evaluate(bindings=>{
+            const preferences=window.__desktopKeyboardPreferences;preferences.selectLayout('arrows');
+            for(const [action,code] of Object.entries(bindings))preferences.bind(action,code);
+            const id=preferences.saveLayout('Acceptance');if(!id)throw Error('Custom keyboard layout did not persist');
+            const before={layout:preferences.getLayoutSnapshot(),aliases:preferences.getSnapshot()};
+            window.__desktopKeyboardPreferences=EaglerDesktopKeyboard.createKeyboardPreferences(localStorage);
+            const after={layout:window.__desktopKeyboardPreferences.getLayoutSnapshot(),aliases:window.__desktopKeyboardPreferences.getSnapshot()};
+            window.__desktopInstallKeyboardMapping({epoch});
+            return{id,before,after};
+          },bindings);
+          const trials=[];
+          for(const mode of ['wasd','custom','arrows']){
+            const transition=await retireAndLaunch(activeEpoch+1,'touch','hold-button');
+            const layout=mode==='custom'?saved.id:mode;
+            const codes=mode==='custom'?{ShiftLeft:'KeyT',KeyZ:'KeyF',KeyX:'KeyG',Escape:'KeyP'}:
+              mode==='wasd'?{ShiftLeft:'KeyL',KeyZ:'KeyJ',KeyX:'KeyK'}:{};
+            const keys=mode==='wasd'?['KeyW','KeyS','KeyA','KeyD']:mode==='custom'?['KeyI','KeyK','KeyU','KeyO']:['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+            const start=await page.evaluate(()=>keyboardMapEvents.length);
+            const directions=await directionCase(layout,keys.map((key,index)=>[key,['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'][index],index<2?'y':'x',index%2?1:-1]),{host:true});
+            const actions=await runNativeActionScene({physicalKeyboard:true,codes});
+            const events=await page.evaluate(start=>keyboardMapEvents.slice(start),start);
+            trials.push({mode,transition,layout,codes,directions,actions,events});
+          }
+          return{saved,bindings,trials,complete:true};
+        });
+        await check('shared-gamepad-native-input',async()=>{
+          const transition=await retireAndLaunch(activeEpoch+1,'touch','hold-button');
+          await bindProtocolHostGamepad(page,target.game,activeEpoch);
+          const actions=await runNativeActionScene({gamepad:true,beforeActions:io=>runGamepadDirections({...io,set:vector=>setGamepadInput({vector})})});
+          return{transition,actions,complete:actions.complete};
         });
         for(const mode of ['touch-unlimited','joystick','joystick-free']){
           const modeChecks=[`runtime-epoch-touch-mode-${mode}`,
@@ -2063,6 +2216,40 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           return{...(!worldFreezeVerified?{checkStatus:'incomplete'}:{}),paused,frozen,worldClock,worldFreezeVerified,controlTickEvidence,reason:worldFreezeVerified?null:'No authoritative world-progress observation is available; application tick is not used as a substitute'};
         });
         let backgroundTabEvidence;
+        const lifecycleTouchRead=()=>page.evaluate(()=>window.__acceptanceTouch.touch.getSnapshot());
+        const lifecyclePointer=async fields=>{
+          const snapshot=await page.evaluate(fields=>EaglerLauncherTouchFixture.pointer(fields),fields);
+          const barrier=await page.evaluate(()=>rpc('list'));
+          return{source:'production-dom-pointer',fields,snapshot,barrier};
+        };
+        const lifecycleTouchHold=async()=>{
+          const fixture=await page.evaluate(value=>EaglerLauncherTouchFixture.install(value),{game:target.game,epoch:activeEpoch,focus:'hold-button'});
+          const down=await lifecyclePointer({control:'focus',type:'pointerdown',id:9811});
+          const held=await waitObservation('Native focus held before background transition',state=>
+            (state.input.value&resolveAdaptationAdapter(target.game,target.variant).actions.inputMasks.focus)!==0,3000);
+          return{fixture,down,held,before:await lifecycleTouchRead()};
+        };
+        await check('touch-pointer-cancel-and-release',async()=>{
+          await resetInputState(activeEpoch);
+          const fixture=await page.evaluate(value=>EaglerLauncherTouchFixture.install(value),{game:target.game,epoch:activeEpoch,focus:'hold-button'});
+          const clock=await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'begin'}));
+          if(clock.mode!=='native-manual')return{checkStatus:'incomplete',reason:'Pointer cancellation needs the native manual clock'};
+          const tick=async()=>{await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'tick'}));return observe();};
+          try{
+            const before=await observe(),commands=[];
+            commands.push(await lifecyclePointer({control:'directSurface',type:'pointerdown',id:9812,x:.5,y:.75}));
+            commands.push(await lifecyclePointer({control:'directSurface',type:'pointermove',id:9812,x:.7,y:.7}));
+            const moving=[];for(let n=0;n<4;n++)moving.push(await tick());
+            commands.push(await lifecyclePointer({control:'directSurface',type:'pointercancel',id:9812,x:.7,y:.7}));
+            const cancelled=[];for(let n=0;n<4;n++)cancelled.push(await tick());
+            assert.ok(moving.some(state=>state.position.x!==before.position.x||state.position.y!==before.position.y),'The real Player pointer must move the native player before cancellation');
+            for(const state of cancelled){assert.equal(state.input.value,0);assert.deepEqual(state.position,moving.at(-1).position);}
+            return{epoch:activeEpoch,fixture,clock,before,commands,moving,cancelled};
+          }finally{
+            await page.evaluate(()=>EaglerLauncherTouchFixture.dispose());
+            await frame.evaluate(controlTouchMotionClock,touchClockRequest({...target,action:'end'}));
+          }
+        });
         await check('window-minimize-foreground-and-release',async()=>{
           await resetInputState(activeEpoch);
           const before=await waitObservation('Native keyboard input is neutral before window minimize',state=>state.input.value===0,2000),eligibility=incompleteGameplayPrecondition(before,target.game);
@@ -2071,6 +2258,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           const nativePage=await readPageTargetWindow(cdp,page);
           if(!nativeFocusBefore.ready)return{checkStatus:'incomplete',before,nativeFocusBefore,nativePage,reason:'The game page did not have native visible and focused state before minimizing.'};
           if(nativePage.status!=='matched')return{checkStatus:'incomplete',before,nativeFocusBefore,nativePage,reason:'The game page could not be matched to one native Chrome target and window.'};
+          const touch=await lifecycleTouchHold();
           windowInfo=nativePage.window;
           let held,minimized,focused,events,hostEvents,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,nativeFocusAfter,
             boundsAtHiddenSample,hiddenInput,eventsWhileMinimized,hostEventsWhileMinimized,minimizedKeyboardClear,resumedMovement;
@@ -2086,6 +2274,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           await page.waitForFunction(index=>hostKeyboardLifecycle.slice(index).some(item=>(item.reason==='host-blur'||item.reason==='host-hidden')&&item.accepted===true),
             hostLifecycleStart,{timeout:1400}).catch(()=>{});
           hostEventsWhileMinimized=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);
+          touch.hidden=await lifecycleTouchRead();
           const minimizedInputObservation=await sampleMinimizedNativeInput(before.input.value,1400);
           hiddenInput=minimizedInputObservation.state;
           boundsAtHiddenSample=await cdp.send('Browser.getWindowBounds',{windowId:windowInfo.windowId});
@@ -2103,6 +2292,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           const resumedClock=hiddenInput?.capabilities?.restartFrame;
           focused=typeof resumedClock==='string'&&Number.isSafeInteger(hiddenInput?.frames?.[resumedClock])?
             await waitObservation('First observed movement tick after window restore',state=>shouldAssessResumedMovement(hiddenInput,state),3000):await observe();
+          touch.restored=await lifecycleTouchRead();
           resumedMovement=inspectResumedKeyboardMovement({hidden:hiddenInput,restored:focused,neutralInputValue:before.input.value});
           events=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);hostEvents=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);released=focused.input.value===before.input.value;
           await keyUp(directionKey);afterKeyup=await observe();
@@ -2113,7 +2303,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           const activeEvents=events.filter(item=>item.epoch===activeEpoch),lifecycle=inspectNativeBackgroundEvents({state:minimized.nativeState,events:activeEvents});
           const backgroundVisibilityReached=lifecycle.visibilityHidden||lifecycle.visibilityChange,
             focusEventReached=lifecycle.blur||hostEvents.some(item=>item.reason==='host-blur'),
-            minimizeEvidence={before,nativeFocusBefore,nativePage,held,minimized,focused,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,minimizedKeyboardClear,resumedMovement,
+            minimizeEvidence={before,nativeFocusBefore,nativePage,held,minimized,focused,released,afterKeyup,boundsAfterMinimize,boundsAfterRestore,minimizedKeyboardClear,resumedMovement,touch,
               nativeFocusAfter,lifecycleEvents:events,hostKeyboardLifecycle:hostEvents,backgroundVisibilityReached,focusEventReached,
               directionKey:before.position.x>320?'ArrowLeft':'ArrowRight'};
           if(minimized.windowState!=='minimized')return{checkStatus:'incomplete',...minimizeEvidence,reason:'Chrome did not report the owned window in minimized state.'};
@@ -2137,13 +2327,14 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
           if(gamePageTarget.status!=='matched')return{checkStatus:'incomplete',initial,nativeFocusBefore,gamePageTarget,reason:'The game page could not be matched to one native Chrome target and window.'};
           await resetInputState(activeEpoch);const neutralStart=await waitObservation('Native keyboard input is neutral before tab switch',state=>state.input.value===0,2000);
           await page.waitForTimeout(180);const before=await observe();assert.equal(before.input.value,neutralStart.input.value,'Native input must remain neutral before tab switch');
+          const touch=await lifecycleTouchHold();
           const directionKey=before.position.x>320?'ArrowLeft':'ArrowRight',sign=directionKey==='ArrowRight'?1:-1;
           await page.evaluate(()=>document.body.focus());const lifecycleStart=await page.evaluate(()=>lifecycleEvents.length),hostLifecycleStart=await page.evaluate(()=>hostKeyboardLifecycle.length);
           backgroundAudioEventStart=await frame.evaluate(()=>window.__eaglerDesktopAudioProbe?.events?.length??0);const audioBefore=await nativePeek();
           let held,movementDuringHold,hidden,events,hostEvents,restored,afterReturn,afterKeyup,audioAfterReturn,backgroundPageTarget,windowComparison;
           let backgroundPage,backgroundPageClose={status:'not-created'};const backgroundTitle=`eagler-desktop-background-${randomUUID()}`;
           try{
-            await keyDown(directionKey);held=await waitObservation(`native direction input held before background tab (${directionKey})`,state=>state.input.value!==before.input.value,3000);
+            await keyDown(directionKey);held=await waitObservation(`native direction input held before background tab (${directionKey})`,state=>state.input.value!==before.input.value&&(state.position.x-before.position.x)*sign>0,3000);
             movementDuringHold=Number.isFinite(held.position?.x)&&Number.isFinite(before.position?.x)?(held.position.x-before.position.x)*sign>0:null;
             backgroundPage=await context.newPage();await backgroundPage.setContent(`<!doctype html><title>${backgroundTitle}</title><body>background tab target</body>`);
             backgroundPageTarget=await readPageTargetWindow(cdp,backgroundPage,{title:backgroundTitle});
@@ -2169,7 +2360,9 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             hidden={...backgroundState,backgroundTarget:backgroundPageTarget,windowComparison,
               bounds:(await cdp.send('Browser.getWindowBounds',{windowId:backgroundPageTarget.window.windowId})).bounds,
               lifecycle:inspectNativeBackgroundEvents({state:backgroundState.state,events:backgroundEvents.filter(item=>item.epoch===activeEpoch)})};
+            touch.hidden=await lifecycleTouchRead();
             await page.bringToFront();const nativeFocusAfter=await waitForNativeFocus(page,5000);
+            touch.restored=await lifecycleTouchRead();
             restored={...(await nativeFocusState(page)),focus:nativeFocusAfter,
               bounds:(await cdp.send('Browser.getWindowBounds',{windowId:gamePageTarget.window.windowId})).bounds};
             events=await page.evaluate(index=>lifecycleEvents.slice(index),lifecycleStart);hostEvents=await page.evaluate(index=>hostKeyboardLifecycle.slice(index),hostLifecycleStart);
@@ -2181,7 +2374,7 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
               backgroundVisibilityReached=lifecycle.visibilityHidden||lifecycle.visibilityChange,
               focusEventReached=lifecycle.blur||hostEvents.some(item=>item.reason==='host-blur'),
               hostClearReached=hostEvents.some(item=>(item.reason==='host-blur'||item.reason==='host-hidden')&&item.accepted===true);
-            const lifecycleEvidence={neutralStart,before,nativeFocusBefore,gamePageTarget,backgroundPageTarget,windowComparison,held,movementDuringHold,hidden,restored,audioBefore,audioAfterReturn,
+            const lifecycleEvidence={neutralStart,before,nativeFocusBefore,gamePageTarget,backgroundPageTarget,windowComparison,held,movementDuringHold,hidden,restored,audioBefore,audioAfterReturn,touch,
               backgroundAudioLifecycle,backgroundAudioEvents,
               lifecycleEvents:events,hostKeyboardLifecycle:hostEvents,backgroundVisibilityReached,focusEventReached,hostClearReached,directionKey,
               browserPages:context.pages().map(item=>({url:item.url(),isGamePage:item===page,isBackgroundPage:item===backgroundPage}))};
@@ -2213,6 +2406,39 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             reason:'After closing the temporary tab, the game page did not retain native foreground state on its original Chrome target and window.'};
           return backgroundTabEvidence;
         });
+        await check('gamepad-disconnect-and-reconnect',async()=>{
+          const evidence={epoch:activeEpoch};
+          const connection=async connected=>{
+            const device=await page.evaluate(connected=>{acceptancePad.connected=connected;window.acceptancePads=connected?[acceptancePad]:[];
+              return{connected:acceptancePad.connected,index:acceptancePad.index,buttons:acceptancePad.buttons.map(button=>button.value)};},connected);
+            return{device,bits:await frame.evaluate(()=>window.__eaglerGamepadInputBridge.sample(0)),epoch:activeEpoch};
+          };
+          try{
+            evidence.foreground=await restoreForeground({runtime:true});assert.equal(evidence.foreground.ready,true);
+            evidence.resetBefore=await observe();await page.evaluate(()=>EaglerLauncherTouchFixture.dispose());await resetInputState(activeEpoch);
+            const clock=evidence.resetBefore.capabilities.restartFrame;
+            evidence.resetDrained=await waitObservation('Native reset drains before gamepad rearming',state=>state.input.value===0&&state.frames[clock]>=evidence.resetBefore.frames[clock]+3,3000);
+            await bindProtocolHostGamepad(page,target.game,activeEpoch);
+            evidence.neutral=await setGamepadInput({vector:{mode:'buttons',x:0,y:0}});
+            evidence.before=await observe();
+            evidence.left=await setGamepadInput({vector:{mode:'buttons',x:-1,y:0}});
+            evidence.held=await waitObservation('Native gamepad left before disconnect',state=>
+              state.input.value===resolveAdaptationAdapter(target.game,target.variant).movement.directionMasks.ArrowLeft&&state.position.x<evidence.before.position.x,3000);
+            evidence.disconnect=await connection(false);evidence.released=await waitObservation('Native gamepad released on disconnect',state=>state.input.value===0,3000);
+            evidence.reconnectHeld=await connection(true);await page.waitForTimeout(150);evidence.suppressed=await observe();
+            assert.equal(evidence.suppressed.input.value,0);assert.deepEqual(evidence.suppressed.position,evidence.released.position);
+            evidence.rearm=await setGamepadInput({vector:{mode:'buttons',x:0,y:0}});evidence.right=await setGamepadInput({vector:{mode:'buttons',x:1,y:0}});
+            evidence.resumed=await waitObservation('Native gamepad direction after neutral reconnect',state=>
+              state.input.value===resolveAdaptationAdapter(target.game,target.variant).movement.directionMasks.ArrowRight&&state.position.x>evidence.suppressed.position.x,3000);
+            evidence.release=await setGamepadInput({vector:{mode:'buttons',x:0,y:0}});
+            evidence.final=await waitObservation('Native gamepad neutral after reconnect action',state=>state.input.value===0,3000);
+            return evidence;
+          }catch(error){
+            error.evidence={...evidence,focus:{host:await nativeFocusState(page),runtime:await nativeFocusState(frame)},
+              terminal:await observe().catch(()=>null)};throw error;
+          }finally{await connection(true);await setGamepadInput({vector:{mode:'buttons',x:0,y:0}});}
+        });
+        await check('background-input-lifecycle-contract',async()=>({epoch:activeEpoch}));
         await check('background-audio-recovery',async()=>{
           if(!backgroundTabEvidence?.backgroundVisibilityReached||!backgroundTabEvidence.postCleanupForeground?.ready)
             return{checkStatus:'incomplete',backgroundTabEvidence,reason:'A hidden-to-visible transition and post-cleanup native foreground state on the original game page were not both established'};
@@ -2405,6 +2631,14 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
             return{packageSha256:packageIdentity.packageSha256,sourceBuild:packageIdentity.sourceBuild,privateData:dataIdentity};
           });
         }
+        for(const entry of record.checks.filter(check=>motionCompleteChecks(check.id).length&&check.complete)){
+          const assessed=assessRuntimeTouchMotionEvidence({driver:report,entry,product:target});
+          if(!assessed.valid){entry.status='failed';entry.complete=false;entry.error=`Native touch motion evidence: ${assessed.reason}`;}
+        }
+        for(const entry of record.checks.filter(check=>check.id==='shared-touch-deathbomb'&&check.complete)){
+          const assessed=assessRuntimeDeathbombEvidence({driver:report,entry,product:target});
+          if(!assessed.valid){entry.status='failed';entry.complete=false;entry.error=`Native Deathbomb evidence: ${assessed.reason}`;}
+        }
         const scopeSummary=checkScope.requiredIds?summarizeDesktopCheckScope(record.checks,checkScope):null;
         const startupEvidenceSummary=summarizeDesktopStartupEvidence({stages:record.stages,
           readinessByEpoch:audioLatencyOnly?record.audioTitleReadinessByEpoch:record.gameplayReadinessByEpoch,readinessEvidence});
@@ -2457,7 +2691,10 @@ const report=await runWithReport({output,schema:'eagler-touhou/runtime-desktop-p
       activeHeadlessLifecycleDiagnostics=null;detachActiveHeadlessBrowserListener=null;
     }
     await fixture?.close();
-    report.finishedAt=new Date().toISOString();report.sourceSnapshotEnd=sourceSnapshot(root);
+    report.finishedAt=new Date().toISOString();
+    const endDependencies=await dependencySnapshot(root,[fileURLToPath(import.meta.url),
+      ...touchEntrypoints.map(name=>fileURLToPath(new URL(name,import.meta.url)))]);
+    report.sourceSnapshotEnd={scope:'driver-dependencies',files:endDependencies.length,sha256:identityDigest(endDependencies)};
     report.sourceStable=report.sourceSnapshotStart.sha256===report.sourceSnapshotEnd.sha256;
     const currentHarness=await readFile(new URL(import.meta.url));
     report.touchModulesStable=true;

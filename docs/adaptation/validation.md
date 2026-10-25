@@ -63,6 +63,14 @@ th11 normal／MP 的历史核心对照从私有 receipt 读取基准文件位置
 - 反例：候选测试改写、添加或删除一个参考文件，必须使本次结果失败。
 - 当前入口：frozen-oracle 的 `acceptedReference`、`baselineChanged` 和各组输入前后快照；维护回归包含参考改变的反例。
 
+th08 Quick／Daily 的前后身份包含完整 golden 目录清单与每份文件字节，未在 manifest 中列出的文件也进入快照。新增、删除或改写参考均改变身份；驱动将本轮检查标为失败。`tests/adaptation/identity.test.mjs` 在隔离目录执行三类实际文件变更，`diagnostic-report.test.mjs` 核对身份变化时的失败汇总。参考保护与游戏逐帧是否一致分别取证。
+
+VERIFY-04 的中央判据重新读取前后快照、已封存的候选任务记录与实际 gate 文件，核对完整参考清单、选定输入、命令、时间和执行边界。游戏比较发现差异时，该编号仍独立报告参考是否保持原值；总体验收继续保留比较失败。缺少文件身份、候选任务未执行或输入变化时，不生成完整通过。
+
+`node tools/ports/diagnostic-reference-review.mjs --game=th08 --report=<诊断原始报告> --output=<新目录>` 独立复核同一报告的 Quick 与 Daily 参考保护。旧报告内嵌的任务清单须与原任务目录中的封存文件完全相同；复核记录绑定原始报告、队列和 gate 字节，保留原采集时间、Runtime 与比较结果。该入口不启动游戏、不修改参考，中央汇总再次读取原文件验算。
+
+统一队列使用 `--profile=adaptation --suite=reference-integrity --game=th08 --variant=normal --check=VERIFY-04 --inputs=<本地输入>`。本地输入的 `diagnosticReport` 指向该作品已封存的诊断原始报告；每次选择明确的作品和模式。该组独立承担 VERIFY-04，Quick／Daily 继续提供各自比较结果与辅助参考观察。预检与续跑重新核对原报告及其实际快照、队列和 gate 文件。
+
 ### VERIFY-05 | 原版参考维护
 
 统一队列的 `source-review` 组同时检查已接纳的参考来源。本地审查清单的 `products.<game>.<variant>.reference` 记录独立 provider、采集方法、单独接纳方法、采集程序与原版 EXE／DATA 身份、已接纳 golden manifest 和审查材料。每份 golden trace 的文件哈希、Replay 身份与有效帧范围均进入本次检查。清单显式声明候选不可更新 golden、维护输出写入 staging；普通验收读取这些证据，参考重新采集由显式维护入口执行。
@@ -77,6 +85,16 @@ th11 normal／MP 的历史核心对照从私有 receipt 读取基准文件位置
 - 反例：修改固定一帧的输入或一个受比较字段，要求报告检出；删除、重复和错位帧也必须失败。
 - 当前入口：共用 Replay verifier、各作 native 对照以及字节证据辅助器；每种状态映射和样本由本作声明。
 
+共用套件的 `methodControls` 从实际参考会话读取三帧窗口，固定第二帧注入输入、各必需状态摘要、时钟、标量与采样号差异，并分别删除、重复一帧。检查要求报告对应首差异或序号缺口；未修改的开放前缀保持未完成。th08 的 Quick／Daily gate 保存窗口、Replay 身份和逐项反例结果。相同方法适用于其他已接入标准 Replay 适配器的作品；窗口反例与完整游戏对照分别记录。
+
+诊断 profile 的 `decisionInputs` 登记动态加载的共用套件与适配入口，来源指纹继续跟随其静态导入闭集。共用比较器、方法反例或其他传递依赖变化，会使既有 Replay 证据失效；未消费这些入口的呈现场景保持自己的来源范围。
+
+统一队列的 `replay-method` 组独立承担 VERIFY-06：重新读取封存的 Quick／Daily 捕获、原候选任务、原始输入身份和固定参考，使用当前共享比较器复算真实样本与反例。中央汇总和续跑均等待流式复算完成，再接纳该编号。方法检查通过时，游戏自身的差异继续记录在 VERIFY-01／02。各作通过诊断 profile 的 `replayReview` 登记套件构建器：`module` 与 `export` 指向接收 `{lane,captureRoot,inputs}` 的函数，返回标准 `adapter`、`cases`、`expectedIds` 与 `requiredCategories`。共享驱动调用比较器和反例检查，作品接口提供原始数据与状态语义。
+
+预检与任务前后身份核对读取输入清单、参考、捕获和依赖文件的身份，不重复执行流式比较。实际执行与中央接纳分别复算行为，续跑再次复核旧结论及原文件，保留原任务运行时间。
+
+执行 `node tests/run.mjs --profile=adaptation --suite=replay-method --game=th08 --variant=normal --check=VERIFY-06 --inputs=<本地输入>`。本地输入的 `diagnosticReport` 可直接指向同时包含两条 lane 的诊断报告，也可指向 `eagler-touhou/diagnostic-replay-inputs/1` 清单；清单的 `sources.quick` 与 `sources.daily` 分别填写原诊断报告路径，相对路径按清单目录解析。复核保留每条 lane 的原始采集时间与 Runtime 身份，不启动游戏或原版程序。
+
 ### VERIFY-07 | 观察与正式行为
 
 - 对照诊断核心和正式 Runtime 的编译选项、生产源码与观察接口。重复读取状态前后比较权威数据，要求观察只复制；再通过正式入口播放 Demo 或接收真实输入。
@@ -87,7 +105,11 @@ th11 normal／MP 的历史核心对照从私有 receipt 读取基准文件位置
 
 th08 的 Quick／Daily 共用同一逐步采集器。v3 捕获为每个应用步保存 ReplayStream 的 loaded、frame、输入游标／块长度、timing 游标／块长度和 stride；权威行绑定自己的应用步与游标，筛选原因独立计数。读取器重新核对账本与行文件，缺行、重复、倒序或不符合原生推进规则的游标变化均保留未完成证据。原生 `ReplayPlayback::after_update` 在对话中按三帧、快进模式按五帧重入 Chain；同一应用步内的消费增量必须与 trace 帧增量一致。实际导入的 Replay 与 DATA 身份来自本次 Runtime 会话。
 
+对话与快放条件同时生效时，原生重入可累计到十五帧。`th08-replay-policy.test.mjs` 编译生产 `ReplayPlayback.cpp`，枚举模式、暂停位、对话、等待、Boss 状态和起始帧验证上限；账本接受十五帧的匹配消费，拒绝十六帧、游标脱离及应用步缺口。该边界来自实际原生条件，逐行对照继续约束完整捕获。
+
 捕获身份同时核对作品、采集适配器版本、当前原生 ABI 与正整数 Runtime 代次；不同作品、旧接口或缺失代次的记录在比较前拒收。
+
+原始状态进入摘要前，由共用 `assertReplayStateFields` 按本作声明核对字段类型。th08 普通版与 MP 对应 `BrowserExports.cpp` 的 `browser_trace`：计数与标志使用无符号 32 位整数，角色位置使用两个有限坐标，数值状态块固定 228 字节。缺失字段、非有限坐标、截短状态块和非法字节在 Quick 与流式长回放路径均拒收，冻结帧也保留同样的输入检查。
 
 RNG 首差异可在诊断构建中按 Chain 优先级定位消费来源。`audit_rng_enable(1)` 开启只读计数，`audit_rng_counts()` 返回本应用步的129个32位计数：0–63为计算优先级，64–127为 Draw 优先级，128为 Chain 外调用。统计限定为当前 GameApplication 的共享 RNG，默认关闭，普通构建不导出该接口。先保留不可变参考的最早差异，再读取该窗口的 owner 增量，继续追查具体 ECL、实体或动画路径。
 

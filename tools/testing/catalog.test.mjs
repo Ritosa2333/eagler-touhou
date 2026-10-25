@@ -133,7 +133,7 @@ test('Windows compiler helper parser remains exported and cleanup attaches to in
   const cleanupTasks=selected.filter(task=>task.cleanupImages);
   assert.deepEqual(cleanupTasks.map(task=>task.id).sort(),[
     'common-build','common-configure','common-test','native-gamepad','touch-native-invariants',
-    'th06-cooperative-rules','th07-cooperative-rules','tooling',
+    'th06-cooperative-rules','th07-cooperative-rules','tooling','per-title-module-unit-fixtures','th06-th07-replay-source-contract',
   ].sort());
   assert.ok(!selected.find(task=>task.id==='ports-source').cleanupImages,
     'ports-source delegates helper cleanup to its executable child gates');
@@ -191,6 +191,14 @@ test('runtime-browser and gamepad targets follow new STG product registration',(
     multiplayer:{gameplay:'cooperative',playerCounts:[2,4]}}};
   assert.equal(gamepadTargetFor('new-coop','multiplayer',3,{products:multiplayerProducts}).mappingSeat,0);
   assert.throws(()=>gamepadTargetFor('new-coop','multiplayer',4,{products:multiplayerProducts}),/invalid local seat/);
+});
+
+test('STG Shell tasks explicitly select every STG variant while retaining the full catalog checks',()=>{
+  const tasks=suites()['browser-shell'].tasks(),games=runtimeBrowserStgGames();
+  assert.equal(tasks.find(task=>task.id==='native-gamepad').args.find(arg=>arg.startsWith('--games=')),`--games=${games.join(',')}`);
+  const shell=tasks.find(task=>task.id==='browser-shell'),selected=shell.args.slice(shell.args.indexOf('--variants')+1);
+  assert.deepEqual(selected,games.flatMap(game=>[`${game}-normal`,...(PRODUCT_GAMES[game].multiplayer?[`${game}-multiplayer`]:[])]));
+  assert.ok(selected.every(id=>!id.startsWith('th075-')));assert.ok(tasks.find(task=>task.id==='browser-shell-negative').args.includes('--negative-control'));
 });
 
 test('behavior acceptance schedules each title and keeps distinct user journeys mandatory',()=>{

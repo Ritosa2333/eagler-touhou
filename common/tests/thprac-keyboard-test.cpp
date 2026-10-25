@@ -1,4 +1,5 @@
 #include <eagler/thprac/PracticeKeyboard.hpp>
+#include <eagler/thprac/PracticeButton.hpp>
 #include <imgui_internal.h>
 #include <array>
 #include <cassert>
@@ -22,6 +23,15 @@ static void frame(bool click=false) {
     else ImGui::DragInt("Value",&value,1,-100000,100000);
     auto a=ImGui::GetItemRectMin(),b=ImGui::GetItemRectMax();
     field={(a.x+b.x)*.5f,(a.y+b.y)*.5f};
+    // Exercise the pinned ImGui extension with both conditions, including
+    // repeated enabled buttons. The item/style stacks must remain balanced.
+    auto& context=*ImGui::GetCurrentContext();
+    const int items=context.ItemFlagsStack.Size,styles=context.StyleVarStack.Size;
+    const float alpha=ImGui::GetStyle().Alpha;
+    eagler::thprac::button("Enabled",true);
+    assert(!eagler::thprac::button("Disabled",false));
+    assert(context.ItemFlagsStack.Size==items&&context.StyleVarStack.Size==styles);
+    assert(ImGui::GetStyle().Alpha==alpha);
     ImGui::End();ImGui::Render();
 }
 static void tap(int scan){keys[scan]=true;frame();keys[scan]=false;frame();}

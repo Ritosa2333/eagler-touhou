@@ -31,6 +31,9 @@ const laserFields={554:'angle',564:'width',558:'start_offset','55C':'end_offset'
 hitbox=hitbox.replace(/\*\((?:float|DWORD)\*\)\(pls \+ 0x([0-9A-F]+)\)/g,(_,offset)=>{if(!laserFields[offset])throw Error('Unmapped laser offset '+offset);return 'laser.'+laserFields[offset];});
 if(/\b(?:DWORD|WORD|pbt|pls|GetMemContent|GAMEMODE_ADDR)\b|0x0(?:17D|0F5|15B)/.test(hitbox))throw Error('Unmapped hitbox owner');
 const hitboxLayout=`static_assert(offsetof(BulletState,position)==0xd44 && offsetof(BulletState,sprites)+offsetof(BulletTemplate,hitbox)==0xd34);\nstatic_assert(offsetof(BulletState,since_fired)+offsetof(Timer,current)==0xd88);\nstatic_assert(offsetof(LaserState,position)==0x548 && offsetof(LaserState,in_use)==0x584 && offsetof(LaserState,timer)+offsetof(Timer,current)==0x590 && offsetof(LaserState,state)==0x598);\n`;
+hitbox=hitbox.replace('                    p->AddRectFilled(p1, p2, 0x88002288);','                    const int vertices_before=p->VtxBuffer.Size;\n                    p->AddRectFilled(p1, p2, 0x88002288);')
+ .replace('                    p->AddRect(p1, p2, 0xFFFFFFFF, 0.0f);','                    p->AddRect(p1, p2, 0xFFFFFFFF, 0.0f);\n                    observe_bullet_hitbox(p,i,bullet,plhit,p1,p2,p->VtxBuffer.Size-vertices_before);')
+ .replace('                            p->AddQuadFilled(hitpos[0], hitpos[1], hitpos[2], hitpos[3], 0x88002288);','                            p->AddQuadFilled(hitpos[0], hitpos[1], hitpos[2], hitpos[3], 0x88002288);\n                            ++display_observation[14];');
 // Extract the native decompressor verbatim. Wasm cannot capture host RSQRTSS:
 // Custom defaults to the browser reference seed; importing a native capture
 // replaces that table atomically without pretending to identify the host CPU.

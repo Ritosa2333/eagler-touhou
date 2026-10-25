@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {runTouchDeathbombScene} from './touch-deathbomb-scenes.mjs';
+import {runTouchDeathbombScene,assertTouchDeathbombEvidence} from './touch-deathbomb-scenes.mjs';
 
 const contract={schema:'eagler-touhou/stg-deathbomb/1',wordCount:36,
   source:['PlayerBomb.cpp | update_player_bomb','PlayerLife.cpp | resolve_death','PlayerFrame.cpp | update_player_frame'],
@@ -115,6 +115,7 @@ test('last-window keyboard and touch trials prove a real hit, Bomb consumer, sur
     assert.equal(result.evidence.bombEvents.length,source==='touch'?1:0);
     assert.ok(result.evidence.movement.blocked.length>0);
     assert.ok(result.evidence.movement.recovered.length>0);
+    assertTouchDeathbombEvidence(JSON.parse(JSON.stringify(result.evidence)),{contract});
   }
 });
 
@@ -124,6 +125,7 @@ test('a queued command is scheduled early while the actual Bomb is consumed on t
       contract:{...contract,consumerLatencyTicks:1},source,timing:'last-window',budgets});
     assert.equal(result.checkStatus,'passed',result.reason);
     assert.equal(result.evidence.requestBoundary.life.remainingTicks,2);
+    assertTouchDeathbombEvidence(JSON.parse(JSON.stringify(result.evidence)),{contract:{...contract,consumerLatencyTicks:1}});
     assert.equal(result.evidence.windowBoundary.life.remainingTicks,1);
   }
 });
@@ -145,6 +147,33 @@ test('late input is consumed outside the window but cannot activate or survive i
   assert.equal(result.evidence.recovery.inventory.deaths,1);
   assert.equal(result.evidence.recovery.inventory.lives,1);
   assert.ok(result.evidence.movement.blocked.length>0);
+  assertTouchDeathbombEvidence(JSON.parse(JSON.stringify(result.evidence)),{contract});
+});
+
+for(const [name,mutate] of [
+  ['no actual collision',e=>e.collision.collision.source=0],
+  ['wrong input boundary',e=>e.requestBoundary.life.remainingTicks=3],
+  ['duplicate consumer',e=>e.samples[2].consumerSequence=e.samples[1].consumerSequence],
+  ['wrong native cost',e=>e.samples.find(row=>row.label==='last-window-bomb-input-consumer').bomb.consumed=1],
+  ['life loss after rescue',e=>e.samples.at(-1).inventory.lives--],
+  ['recovery teleport',e=>e.movement.recovered[0].position.x+=10],
+  ['missing held pointer',e=>e.touch=e.touch.filter(row=>row.type!=='down')],
+  ['pointer released before recovery',e=>e.touch.splice(2,0,{...e.touch[0],type:'up'})],
+  ['missing input acknowledgement',e=>e.touch[0].result=null],
+  ['missing cleanup acknowledgement',e=>e.cleanup[0].result=null],
+  ['input cleanup failed',e=>e.cleanup[0].ok=false],
+  ['unretired projectile',e=>e.samples.at(-1).projectile.liveCount=1],
+])test(`saved Deathbomb evidence rejects ${name} despite stored passing verdict`,async()=>{
+  const result=await runTouchDeathbombScene(makeIO(),{contract,source:'touch',timing:'last-window',budgets});
+  assert.equal(result.checkStatus,'passed');const evidence=JSON.parse(JSON.stringify(result.evidence));mutate(evidence);
+  assert.throws(()=>assertTouchDeathbombEvidence(evidence,{contract}));
+});
+
+test('saved late-input evidence rejects a Bomb cached until respawn',async()=>{
+  const result=await runTouchDeathbombScene(makeIO(),{contract,source:'touch',timing:'late',budgets});
+  assert.equal(result.checkStatus,'passed');const evidence=JSON.parse(JSON.stringify(result.evidence));
+  evidence.samples.at(-1).bomb.active=true;evidence.samples.at(-1).actions.bomb.active=true;
+  assert.throws(()=>assertTouchDeathbombEvidence(evidence,{contract}),/Late Bomb/);
 });
 
 test('an accepted button without a real collision cannot pass',async()=>{

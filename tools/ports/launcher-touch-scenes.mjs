@@ -1,9 +1,107 @@
 import assert from 'node:assert/strict';
 
+/** Button modes share the same physical-key calibration and native tick ledger. */
+export async function runLauncherFocusScene(io,{mode}={}){
+  assert.ok(['hold-button','toggle-button'].includes(mode));
+  for(const name of ['key','pointer','cancel','step','readActions','observe'])assert.equal(typeof io[name],'function');
+  const e={schema:'eagler-touhou/launcher-focus-scene/1',mode,samples:[],operations:[],phases:{}};
+  const operation=async(kind,...args)=>{const result=await io[kind](...args);e.operations.push({kind,args,result:result??null,afterSequence:e.samples.at(-1)?.action.sequence??null});};
+  const sample=async label=>{const action=await io.readActions(),runtime=await io.observe();
+    assert.equal(action.available,true);assert.equal(action.complete,true);assert.equal(action.phase,'consumer-run');
+    const row={label,action,position:runtime.position};const previous=e.samples.at(-1);
+    if(previous)assert.equal(action.sequence,previous.action.sequence+1);e.samples.push(row);return row;};
+  const ticks=async(label,n)=>{const rows=[];for(let i=0;i<n;i++){await io.step(1);rows.push(await sample(label));}return rows;};
+  const phase=async label=>{await ticks(label+'-drain',2);e.phases[label]=await ticks(label,3);};
+  let failure;
+  try{
+    await operation('cancel');await io.step(2);await sample('baseline');
+    await operation('key','ArrowRight',true);await phase('keyboard-fast');
+    await operation('key','ShiftLeft',true);await phase('keyboard-slow');
+    await operation('key','ShiftLeft',false);await phase('keyboard-restored');
+    await operation('pointer',{control:'focus',type:'pointerdown'});await phase('button-held');
+    await operation('pointer',{control:'focus',type:'pointerup'});await phase('button-released');
+    if(mode==='toggle-button'){
+      await operation('pointer',{control:'focus',type:'pointerdown'});await phase('second-held');
+      await operation('pointer',{control:'focus',type:'pointerup'});await phase('second-released');
+    }
+    await operation('pointer',{control:'focus',type:'pointerdown'});await phase('before-cancel');
+    await operation('cancel');await phase('after-cancel');
+  }catch(error){failure=error;error.evidence=e;throw error;}
+  finally{
+    try{await operation('key','ArrowRight',false);await operation('key','ShiftLeft',false);await operation('cancel');await phase('cleanup');}
+    catch(error){if(failure)failure.cleanupError=String(error);else throw error;}
+  }
+  assertLauncherFocusEvidence(e);return e;
+}
+
+export function assertLauncherFocusEvidence(e,{inputMasks,epsilon=.0001}={}){
+  assert.equal(e.schema,'eagler-touhou/launcher-focus-scene/1');assert.ok(['hold-button','toggle-button'].includes(e.mode));
+  const samples=e.samples;assert.ok(samples.length>30);
+  for(const [index,row] of samples.entries()){
+    assert.equal(row.action.complete,true);assert.equal(row.action.phase,'consumer-run');
+    assert.ok(Number.isFinite(row.position?.x)&&Number.isFinite(row.position?.y));
+    if(index)assert.equal(row.action.sequence,samples[index-1].action.sequence+1);
+    if(inputMasks)assert.equal(Boolean(row.action.consumed.current&inputMasks.focus),row.action.consumed.focus);
+  }
+  const measured=label=>{const rows=e.phases[label];assert.equal(rows.length,3);
+    return rows.map(row=>{const i=samples.findIndex(sample=>sample.action.sequence===row.action.sequence);assert.ok(i>0);assert.deepEqual(row,samples[i]);
+      return{x:row.position.x-samples[i-1].position.x,y:row.position.y-samples[i-1].position.y};});};
+  const fast=measured('keyboard-fast')[0].x,slow=measured('keyboard-slow')[0].x;assert.ok(fast>slow&&slow>0);
+  const phases={'keyboard-fast':[false,fast],'keyboard-slow':[true,slow],'keyboard-restored':[false,fast],
+    'button-held':[true,slow],'button-released':e.mode==='hold-button'?[false,fast]:[true,slow],
+    ...(e.mode==='toggle-button'?{'second-held':[false,fast],'second-released':[false,fast]}:{}),
+    'before-cancel':[true,slow],'after-cancel':[false,fast],'cleanup':[false,0]};
+  assert.deepEqual(Object.keys(e.phases),Object.keys(phases));
+  for(const [label,[focus,speed]] of Object.entries(phases)){
+    const vectors=measured(label);
+    for(const [index,row] of e.phases[label].entries()){
+      assert.equal(row.action.focused,focus,`${label}: native focus`);assert.equal(row.action.consumed.focus,focus,`${label}: consumed focus`);
+      assert.ok(Math.abs(vectors[index].x-speed)<=epsilon&&Math.abs(vectors[index].y)<=epsilon,`${label}: actual movement differs from physical keyboard reference`);
+    }
+  }
+  const pointers=e.operations.filter(row=>row.kind==='pointer').map(row=>row.args[0]);
+  assert.deepEqual(pointers,(e.mode==='toggle-button'?['pointerdown','pointerup','pointerdown','pointerup','pointerdown']:['pointerdown','pointerup','pointerdown']).map(type=>({control:'focus',type})));
+  assert.ok(e.operations.some(row=>row.kind==='key'&&row.args[0]==='ShiftLeft'&&row.args[1]===true));
+  assert.ok(e.operations.filter(row=>row.kind==='cancel').length>=3);
+}
+
+export function assertLauncherTouchOwnershipEvidence(e,{fireMode=e?.fireMode,inputMasks}={}){
+  assert.equal(e.schema,'eagler-touhou/launcher-touch-scenes/1');assert.equal(e.fireMode,fireMode);
+  assert.ok(['toggle','held-key'].includes(fireMode));const rows=e.samples;assert.ok(rows.length>20);
+  for(const [index,row] of rows.entries()){
+    assert.equal(row.action.complete,true);assert.equal(row.action.phase,'consumer-run');
+    if(index)assert.equal(row.action.sequence,rows[index-1].action.sequence+1);
+    if(inputMasks)for(const name of ['fire','focus'])assert.equal(Boolean(row.action.consumed.current&inputMasks[name]),row.action.consumed[name]);
+  }
+  const matching=label=>rows.filter(row=>row.label.startsWith(label+'-'));
+  const last=label=>{const matches=matching(label);assert.ok(matches.length,`Missing native ${label}`);return matches.at(-1);};
+  const speed=label=>{const after=last(label+'-measure'),index=rows.indexOf(after),before=rows[index-1];return Math.hypot(after.position.x-before.position.x,after.position.y-before.position.y);};
+  const fast=speed('physical-fast'),slow=speed('physical-slow');assert.ok(fast>0&&slow>0&&slow<fast);
+  assert.ok(Math.abs(speed('toggle-slow')-slow)<=.02);assert.ok(Math.abs(speed('toggle-fast')-fast)<=.02);
+  const persists=matching('toggle-persists');assert.equal(persists.length,3);for(const row of persists)assert.equal(row.action.focused,true);
+  assert.equal(last('toggle-focus-off').action.focused,false);
+  for(const owner of ['physical','gamepad']){
+    for(const label of ['fire-on','and-touch-fire','fire-again','with-touch-focus'])assert.equal(last(`${owner}-${label}`).action.consumed.fire,true);
+    const touchRemains=matching(`${owner}-release-touch-remains`);assert.ok(touchRemains.length>=8);for(const row of touchRemains)assert.equal(row.action.consumed.fire,true);
+    for(const prefix of [`${owner}-fire-remains`,`cancel-retains-${owner}`]){const matches=matching(prefix);assert.equal(matches.length,3);for(const row of matches)assert.equal(row.action.consumed.fire,true);}
+    assert.equal(last(`${owner}-cancel-focus-release`).action.focused,false);
+    assert.equal(last(`${owner}-all-fire-released`).action.consumed.fire,false);
+  }
+  for(const prefix of ['keyboard-released-gamepad-remains','gamepad-released-keyboard-remains']){
+    const matches=matching(prefix);assert.equal(matches.length,3);for(const row of matches)assert.equal(row.action.consumed.fire,true);
+  }
+  assert.equal(last('keyboard-gamepad-all-released').action.consumed.fire,false);
+  const keyDown=e.operations.filter(operation=>operation.kind==='key'&&operation.args[0]==='KeyZ'&&operation.args[1]===true);
+  const padDown=e.operations.filter(operation=>operation.kind==='gamepad'&&operation.args[0]===true);
+  assert.ok(keyDown.length>=3&&padDown.length>=3,'Missing independent owner stimuli');
+  assert.deepEqual(e.cleanup.errors,[]);assert.equal(e.cleanup.samples.at(-1).action.consumed.fire,false);assert.equal(e.cleanup.samples.at(-1).action.focused,false);
+  if(fireMode==='held-key')for(const [label,expected] of [['held-touch-before-cancel',true],['held-touch-cancel-released',false],['held-touch-new-contact',true],['held-touch-new-contact-released',false]])assert.equal(last(label).action.consumed.fire,expected);
+}
+
 /** Shared DOM -> production controller -> native consumer checks.
  * Native keyboard samples supply the speed reference independently of touch. */
 export async function runLauncherTouchScenes(io,{timeoutTicks=8,positionEpsilon=.02,fireMode}={}){
-  const evidence={schema:'eagler-touhou/launcher-touch-scenes/1',fireMode,samples:[],gestures:[],comparisons:[]};
+  const evidence={schema:'eagler-touhou/launcher-touch-scenes/1',fireMode,samples:[],gestures:[],comparisons:[],operations:[],cleanup:{errors:[],samples:[]}};
   for(const name of ['pointer','key','gamepad','step','readActions','observe','cancel'])
     assert.equal(typeof io?.[name],'function',`Launcher touch scene needs ${name}`);
   assert.ok(Number.isInteger(timeoutTicks)&&timeoutTicks>0&&timeoutTicks<=32);
@@ -17,6 +115,10 @@ export async function runLauncherTouchScenes(io,{timeoutTicks=8,positionEpsilon=
     const entry={label,action,position:{...runtime.position}};evidence.samples.push(entry);return entry;
   };
   let previous;
+  const ownerIO=io;
+  io={...ownerIO,...Object.fromEntries(['key','gamepad','cancel'].map(kind=>[kind,async(...args)=>{
+    const result=await ownerIO[kind](...args);evidence.operations.push({kind,args,result:result??null,afterConsumer:previous?.action.sequence??null});return result;
+  }]))};
   const ticks=async(label,predicate=()=>true)=>{
     for(let n=0;n<timeoutTicks;n++){
       await io.step(1);const current=await sample(`${label}-${n+1}`);
@@ -82,6 +184,12 @@ export async function runLauncherTouchScenes(io,{timeoutTicks=8,positionEpsilon=
       await gesture('fire','pointerdown');await ticks('held-touch-new-contact',s=>s.action.consumed.fire);
       await gesture('fire','pointerup');await ticks('held-touch-new-contact-released',s=>!s.action.consumed.fire);
     }
+    await io.key('KeyZ',true);await ticks('keyboard-gamepad-keyboard-first',s=>s.action.consumed.fire);
+    await io.gamepad(true);await ticks('keyboard-gamepad-both-held',s=>s.action.consumed.fire);
+    await io.key('KeyZ',false);for(let n=0;n<3;n++)assert.equal((await ticks('keyboard-released-gamepad-remains')).action.consumed.fire,true);
+    await io.key('KeyZ',true);await ticks('keyboard-gamepad-both-again',s=>s.action.consumed.fire);
+    await io.gamepad(false);for(let n=0;n<3;n++)assert.equal((await ticks('gamepad-released-keyboard-remains')).action.consumed.fire,true);
+    await io.key('KeyZ',false);await ticks('keyboard-gamepad-all-released',s=>!s.action.consumed.fire);
     return{...evidence,complete:false,scope:'Production touch controller DOM gestures and native focus/fire consumers | measured fixture geometry'};
   }catch(error){failure=error;error.evidence=evidence;throw error;}
   finally{
@@ -90,6 +198,8 @@ export async function runLauncherTouchScenes(io,{timeoutTicks=8,positionEpsilon=
       ()=>io.gamepad(false),()=>io.cancel()]){
       try{await perform();}catch(error){errors.push(String(error));}
     }
+    evidence.cleanup.errors=errors;
+    if(!failure&&!errors.length)for(let n=0;n<2;n++){await io.step(1);evidence.cleanup.samples.push(await sample(`cleanup-native-neutral-${n+1}`));}
     if(errors.length){
       if(failure)failure.cleanupErrors=errors;
       else throw Error(`Launcher input cleanup failed: ${errors.join(' | ')}`);

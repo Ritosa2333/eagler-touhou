@@ -202,5 +202,12 @@ export async function runTh08ReplaySuite(options={}){
   const suite=await createTh08ReplaySuite(options);
   const commonRoot=resolve(options.commonRoot??join(REPO_ROOT,'common'));
   const {runReplaySuite}=await import(pathToFileURL(join(commonRoot,'testkit','replay-verifier','suite.mjs')));
-  return{...(await runReplaySuite(suite)),lane:options.lane,golden:suite.golden};
+  return{...(await runReplaySuite({...suite,methodControls:true})),lane:options.lane,golden:suite.golden};
+}
+
+/** The shared offline method review supplies the original lane's declared inputs. */
+export async function createReplayReviewSuite({lane,captureRoot,inputs}={}){
+  const options=lane==='quick'?{inputRoot:dirname(inputs.quickInputs[0].path)}:
+    {replayFiles:Object.fromEntries(Object.entries(inputs.dailyReplays).map(([key,row])=>[key,row.path]))};
+  return createTh08ReplaySuite({lane,captureRoot,...options});
 }

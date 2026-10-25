@@ -115,7 +115,7 @@ async function writeFixtureFile(siteRoot,source,bytes){
  * update ZIP. The generated Launcher site is first verified in import mode;
  * this fixture adds only the standard catalog, descriptor and declared files.
  */
-export async function createPublishedPackageFixture({siteDirectory,game,archivePath,expectedRevision}){
+export async function createPublishedPackageFixture({siteDirectory,game,archivePath,expectedRevision,publishCatalog=true}){
   assert.ok(typeof siteDirectory==='string'&&siteDirectory&&typeof game==='string'&&game&&
     typeof archivePath==='string'&&archivePath&&typeof expectedRevision==='string'&&expectedRevision,
   'Published Package fixture inputs are required');
@@ -129,7 +129,7 @@ export async function createPublishedPackageFixture({siteDirectory,game,archiveP
   const existingCatalog=JSON.parse(await readFile(resolve(siteRoot,'release-catalog.json'),'utf8'));
   validateReleaseCatalog(existingCatalog);
   assert.deepEqual(existingCatalog.games,{},'The base import-profile site must not already publish another package');
-  const descriptorName=`packages/${game}-${descriptor.revision}.package.json`;
+  const descriptorName=`${game}-${descriptor.revision}.package.json`;
   const descriptorPath=resolve(siteRoot,descriptorName),descriptorBytes=Buffer.from(`${JSON.stringify(descriptor,null,2)}\n`);
   const descriptorRel=relative(siteRoot,descriptorPath);
   assert.ok(descriptorRel&&!descriptorRel.startsWith(`..${sep}`),`${game}: Published Package descriptor escapes the local site`);
@@ -146,9 +146,9 @@ export async function createPublishedPackageFixture({siteDirectory,game,archiveP
   const releaseCatalog=validateReleaseCatalog({schema:RELEASE_CATALOG_SCHEMA,
     games:{[game]:{revision:descriptor.revision,descriptor:descriptorName}}});
   const catalogBytes=Buffer.from(`${JSON.stringify(releaseCatalog,null,2)}\n`);
-  await writeFile(resolve(siteRoot,'release-catalog.json'),catalogBytes);
+  if(publishCatalog)await writeFile(resolve(siteRoot,'release-catalog.json'),catalogBytes);
   return{game,revision:descriptor.revision,descriptor:{path:descriptorName,bytes:descriptorBytes.length,sha256:sha256(descriptorBytes)},
-    catalog:{path:'release-catalog.json',bytes:catalogBytes.length,sha256:sha256(catalogBytes)},
+    catalog:publishCatalog?{path:'release-catalog.json',bytes:catalogBytes.length,sha256:sha256(catalogBytes)}:null,
     sourceArchive:{bytes:archive.length,sha256:sha256(archive)},files};
 }
 

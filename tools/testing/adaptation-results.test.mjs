@@ -12,6 +12,15 @@ const sealed=()=>({schema:'eagler-touhou/runtime-browser/1',runId:'test-run',sta
 const observedProof=()=>({source:'driver-report',references:[{pointer:'/targets/0/checks/0/observation',
   sha256:identityDigest({before:{x:10,y:20},after:{x:14,y:20}})}]});
 
+for(const [schema,id]of [['language-review','LANG-05'],['view-options-review','RUNTIME-06'],['diagnostic-reference-review','VERIFY-04']])
+  test(schema+' is recognized while an unbound complete claim remains rejected',()=>{
+    const report={schema:`eagler-touhou/${schema}/1`,runId:'review-test',startedAt:'2026-10-19T01:00:00Z',finishedAt:'2026-10-19T01:00:01Z',
+      status:'passed',passed:true,scope:{game:'th08',variant:'normal'},newBrowserRun:false,checks:[{id,status:'passed',complete:true,observation:{unchecked:true}}]};
+    const result=assessDriverReport({game:'th08',variant:'normal',checksMapped:[id]},processResult,report);
+    assert.equal(result.status,'failed');assert.ok(!result.issues.some(issue=>issue.includes('Unknown or missing driver report schema')));
+    assert.ok(result.issues.some(issue=>issue.includes('Invalid complete evidence')));
+  });
+
 test('machine-only flags need independent evidence and never satisfy whole-check coverage',()=>{
   const report=sealed();
   report.targets[0].checks=[{id:'INPUT-01',status:'passed',complete:false,machineComplete:true,
@@ -312,6 +321,20 @@ test('every selected applicable route must carry its own complete numbered proof
   cases[1].checks=[{id:'INPUT-01',status:'passed',complete:false}];assert.equal(adaptationCoverage(cases).complete,false);
   cases[1].checks[0].complete=true;assert.equal(adaptationCoverage(cases).complete,false);
   cases[1].checks[0].proof=observedProof();assert.equal(adaptationCoverage(cases).complete,true);
+});
+
+test('explicit responsibility keeps overlapping checks visible without allowing support to replace the required route',()=>{
+  const owner={...selected,id:'actions',game:'th08',checksMapped:['INPUT-05'],requiredChecks:['INPUT-05'],status:'passed',
+    checks:[{id:'INPUT-05',status:'passed',complete:true,proof:observedProof()}]};
+  const support={...owner,id:'input',requiredChecks:[],supportingChecks:['INPUT-05'],
+    checks:[{id:'INPUT-05',status:'passed',complete:false}]};
+  const options={checks:['INPUT-05']};
+  const result=adaptationCoverage([owner,support],options);assert.equal(result.complete,true);
+  assert.deepEqual(result.rows[0].caseIds,['actions']);assert.deepEqual(result.rows[0].supportingCaseIds,['input']);
+  support.checks[0].complete=true;support.checks[0].proof=observedProof();
+  assert.equal(adaptationCoverage([support],options).complete,false,'Support cannot satisfy an absent primary route');
+  support.checks[0].status='failed';assert.equal(adaptationCoverage([owner,support],options).rows[0].status,'failed');
+  const relay={...owner,id:'relay',checks:[]};assert.equal(adaptationCoverage([owner,relay],options).complete,false);
 });
 
 test('coverage preserves requirements with no driver and product applicability',()=>{

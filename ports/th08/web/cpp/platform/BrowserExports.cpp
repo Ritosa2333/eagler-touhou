@@ -2,8 +2,10 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cstring>
+#include "../game/ValidationScene.hpp"
 #ifdef TH_SDL3
 #include "../sdl/GraphicsHost.hpp"
+#include "../sdl/ThpracUi.hpp"
 #endif
 using namespace th08;
 #ifdef __EMSCRIPTEN__
@@ -39,6 +41,11 @@ bool validation_deathbomb_quiet_world(const GameplayScene& g){
     for(const auto& shot:g.player_state.shots.shots)if(shot.state)return false;
     return true;
 }
+bool validation_custom_practice(const GameApplication& app){
+    const auto& p=app.session.practice;
+    return validation_custom_practice_eligible(p.enabled,p.active,p.replay,p.run.mode,
+        practice_runtime_stage(p.run),i32(app.game.globals.stage));
+}
 void validation_deathbomb_snapshot(BrowserRuntime* r,u32* out){
     std::fill(out,out+deathbomb_stimulus_word_count,0);out[0]=deathbomb_stimulus_version;if(!r)return;
     const auto& app=r->app;const auto& g=app.game;const auto& receipt=g.bullets.validation_deathbomb_receipt();
@@ -47,7 +54,7 @@ void validation_deathbomb_snapshot(BrowserRuntime* r,u32* out){
     const bool quiet=validation_deathbomb_quiet_world(g);
     const auto& input=g.player.consumed_input();
     out[1]=app.in_game()&&!app.loading_game()&&g.ready();out[2]=gate.enabled();out[3]=lock_valid;
-    out[4]=g.bullets.validation_deathbomb_eligible(fixture,lock_valid,quiet);
+    out[4]=g.bullets.validation_deathbomb_eligible(fixture,lock_valid,quiet,validation_custom_practice(app));
     out[5]=receipt.request_status;out[6]=receipt.request_sequence;out[7]=receipt.projectile_status;
     out[8]=receipt.collision_source;out[9]=receipt.collision_sequence;out[10]=receipt.consumer_sequence_at_collision;
     out[11]=input.sequence;out[12]=input.valid;out[13]=u32(i32(g.player_state.life.state));
@@ -105,7 +112,7 @@ EX("validation_deathbomb_hit_v1") bool browser_validation_deathbomb_hit_v1(Brows
     if(!r)return false;auto& app=r->app;auto& g=app.game;const auto& gate=g.enemies.validation_scene();
     const bool fixture=app.in_game()&&!app.loading_game()&&g.ready()&&gate.enabled()&&r->validation_scene_used;
     return g.bullets.request_validation_deathbomb_hit(fixture,validation_deathbomb_write_lock_valid(*r),
-        validation_deathbomb_quiet_world(g));
+        validation_deathbomb_quiet_world(g),validation_custom_practice(app));
 }
 EX("validation_deathbomb_state_v1") const u32* browser_validation_deathbomb_state_v1(BrowserRuntime* r){
     static u32 out[deathbomb_stimulus_word_count]{};validation_deathbomb_snapshot(r,out);return out;
@@ -131,6 +138,7 @@ EX("practice_snapshot_v1") const double* browser_practice_snapshot_v1(BrowserRun
     out[12]=a.title.menus.state.cursor;out[13]=g.globals.stage;out[14]=a.title.context.difficulty;
     out[15]=a.title.context.character;out[16]=a.title.context.shotType;out[17]=g.globals.game_flags;
     out[18]=a.title.menus.state.stateTimer;
+    out[19]=2u|(a.title.confirmation_ready()?1u:0u);
     if(configured)p.configured.encode(out+20);
     if(run)p.run.encode(out+46);
     if(candidate)p.replay_candidate.encode(out+72);
@@ -161,10 +169,61 @@ EX("gameplay_initial_snapshot_v1") const double* browser_gameplay_initial_snapsh
     static const double unavailable[80]={1.0};
     return r?r->app.game.gameplay_initial_snapshot_data():unavailable;
 }
+// Navigation observation only: no menu input, string lookup or game transition.
+EX("language_ui_snapshot_v1") const double* browser_language_ui_snapshot_v1(BrowserRuntime* r){
+    static double out[20]{};std::fill(out,out+20,0.);out[0]=1;if(!r)return out;
+    const auto& app=r->app;const auto& title=app.title;const auto& result=app.results.controls.state;
+    out[1]=1;out[2]=app.supervisor.state.active;out[3]=app.active();out[4]=app.loading_game();
+    out[5]=title.menus.state.currentScreen;out[6]=title.menus.state.currentScreenState;out[7]=title.menus.state.cursor;out[8]=title.confirmation_ready();
+    out[9]=app.results.active();out[10]=result.currentState;out[11]=result.menuDepth;out[12]=result.cursor;out[13]=result.frameTimer;out[14]=result.frameTimer2;
+    out[15]=app.in_game();
+    if(app.supervisor.state.active==1){out[16]=title.context.input.current;out[17]=title.context.input.previous;}
+    else if(app.results.active()){out[16]=app.results.controls.context.input.current;out[17]=app.results.controls.context.input.previous;}
+    out[18]=app.game.display.dialogue.lines[0].color1.a;out[19]=app.game.display.dialogue.lines[1].color1.a;return out;
+}
 EX("practice_tracker_status") const i32* browser_practice_tracker_status(BrowserRuntime* r){static i32 out[7]{};std::fill(out,out+7,0);if(!r)return out;
     const auto& app=r->app;if(!app.in_game())return out;const auto& n=app.session.numbers;
     out[0]=1;out[1]=app.game.globals.shot;out[2]=Scalar::truncate(n.deaths);out[3]=app.session.practice.tracker_dissolve_count;
     out[4]=Scalar::truncate(n.bombs_used);out[5]=n.captured_spells;out[6]=app.session.practice.tracker_last_spell_captures;return out;}
+// Trainer consumers: resources, actual tagged collision and boss clocks/damage.
+// Reads only copy existing owners; no menu or gameplay actions occur here.
+EX("practice_effects_snapshot_v1") const double* browser_practice_effects_snapshot_v1(BrowserRuntime* r){
+    static double out[48]{};std::fill(out,out+48,0.);out[0]=1;if(!r||!r->app.in_game())return out;
+    const auto& a=r->app;const auto& g=a.game;const auto& n=a.session.numbers;const auto& p=a.session.practice;
+    out[1]=1;out[2]=g.control.state.frames;out[3]=g.globals.stage;out[4]=p.cheats;
+    out[5]=n.lives;out[6]=n.bombs;out[7]=n.power;out[8]=n.deaths;out[9]=n.bombs_used;
+    out[10]=p.tracker_dissolve_count;out[11]=n.captured_spells;out[12]=p.tracker_last_spell_captures;
+    out[13]=g.player_state.life.state;out[14]=g.player_state.life.predead_count;
+    out[15]=g.player_state.bomb.active;out[16]=g.player_state.bomb.type;out[17]=g.player_state.bomb.consumed;
+    const auto& input=g.player.consumed_input();out[18]=input.sequence;out[19]=input.valid;
+    const auto& hit=g.bullets.validation_hit_observation();for(unsigned i=0;i<hit.size();i++)out[20+i]=hit[i];
+    for(unsigned i=0;i<2;i++)if(const auto* boss=g.globals.boss_slots[i]){
+        auto* b=out+25+i*8;b[0]=1;b[1]=boss->life;b[2]=boss->timeout;b[3]=boss->lifetime.current;
+        b[4]=boss->last_damage;b[5]=boss->flags;b[6]=reinterpret_cast<std::uintptr_t>(boss);
+    }
+    out[41]=p.active;out[42]=p.replay;out[43]=p.accepted;out[44]=p.enabled;out[45]=g.globals.game_flags;
+    return out;
+}
+#ifdef TH_SDL3
+EX("practice_controls_snapshot_v1") const double* browser_practice_controls_snapshot_v1(BrowserRuntime* r){static double out[1024]{};std::fill(out,out+1024,0.);out[0]=1;if(r)ThpracUi::controls_observation(*r,out,1024);return out;}
+EX("practice_ui_snapshot_v1") const u32* browser_practice_ui_snapshot_v1(BrowserRuntime* r){static u32 out[128]{};std::fill(out,out+128,0u);out[0]=1;if(r)ThpracUi::observation(out,128);return out;}
+#endif
+EX("view_options_snapshot_v1") const double* browser_view_options_snapshot_v1(BrowserRuntime* r){
+    static double out[32]{};std::fill(out,out+32,0.);out[0]=1;if(!r||!r->app.in_game())return out;
+    const auto& g=r->app.game;const auto& p=g.player_state;const auto& m=p.motion;const auto* effect=m.form.focus_effect;
+    out[1]=1;out[2]=g.always_hitbox;out[3]=p.input.always_hitbox;out[4]=m.form.focused;out[5]=effect!=nullptr;
+    if(effect){out[6]=effect->visible;out[7]=effect->flags;out[8]=effect->scriptIndex;out[9]=effect->activeSpriteIndex;
+        out[10]=effect->color1.a;out[11]=effect->pos.x;out[12]=effect->pos.y;}
+    out[13]=m.movement.position.x;out[14]=m.movement.position.y;out[15]=p.input.buttons;
+    for(unsigned i=0;i<3;i++){out[16+i*2]=m.movement.half_boxes[i].x;out[17+i*2]=m.movement.half_boxes[i].y;}
+    out[22]=g.enemies.state.frames;return out;
+}
+// Frozen actual ECL bytes after PracticeRuntime application, before gameplay jobs.
+EX("practice_program_snapshot_v1") const u32* browser_practice_program_snapshot_v1(BrowserRuntime* r){
+    static u32 out[4]{};std::fill(out,out+4,0u);out[0]=1;if(!r)return out;
+    const auto& bytes=r->app.game.practice_initial_program();if(bytes.empty())return out;
+    out[1]=1;out[2]=u32(reinterpret_cast<std::uintptr_t>(bytes.data()));out[3]=u32(bytes.size());return out;
+}
 EX("practice_configure") bool browser_practice_configure(BrowserRuntime* r,const double* words,u32 count,bool accept){
     if(!r||!r->app.session.practice.enabled||r->app.in_game())return false;auto& p=r->app.session.practice;PracticeConfig config;
     if(!config.decode(words,count)||(accept&&!p.menu))return false;p.configured=config;

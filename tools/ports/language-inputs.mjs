@@ -41,6 +41,22 @@ function catalogEntries(value,game){
   assert.equal(value.game,game,'Language catalog belongs to another game');return value.languages;
 }
 
+/** Bounded archive parsing shared by input preflight and raw-evidence reassessment. */
+export function decodeLanguageArchive(archive,{game,language}={}){
+  assert.ok(archive instanceof Uint8Array&&archive.length>0&&archive.length<=64*1024*1024,'Language archive size is invalid');
+  let memberCount=0,unpackedBytes=0;
+  const unzipped=unzipSync(archive,{filter:file=>{
+    assert.ok(++memberCount<=257,'Language archive exceeds its member limit');
+    assert.ok(file.originalSize<=64*1024*1024,'Language archive member is too large');
+    unpackedBytes+=file.originalSize;
+    assert.ok(unpackedBytes<=256*1024*1024,'Language archive exceeds its unpacked byte limit');
+    return true;
+  }});
+  const validated=validateStaticLanguagePackEntries(unzipped,{game,language});
+  const members=Object.fromEntries(validated.files.map(file=>[file.path,{bytes:file.bytes.length,sha256:sha256(file.bytes)}]));
+  return{...validated,members};
+}
+
 /** The current production archive validator is used after catalog byte/hash verification. */
 export async function inspectLanguageInputs(product){
   const catalogIdentity=await fileIdentity(product.catalog),catalogBytes=await readFile(product.catalog);
@@ -65,19 +81,7 @@ export async function inspectLanguageInputs(product){
     assert.equal(identity.sha256,declaration.sha256.toLowerCase(),`Language ${language} archive SHA-256 differs from its catalog`);
     const archive=await readFile(path);
     assert.equal(sha256(archive),identity.sha256,`Language ${language} archive changed before parsing`);
-    let memberCount=0,unpackedBytes=0;
-    const unzipped=unzipSync(archive,{filter:file=>{
-      assert.ok(++memberCount<=257,'Language archive exceeds its member limit');
-      assert.ok(file.originalSize<=64*1024*1024,'Language archive member is too large');
-      unpackedBytes+=file.originalSize;
-      assert.ok(unpackedBytes<=256*1024*1024,'Language archive exceeds its unpacked byte limit');
-      return true;
-    }});
-    const validated=validateStaticLanguagePackEntries(unzipped,{game:product.game,language});
-    const members={};
-    for(const file of validated.files){
-      members[file.path]={bytes:file.bytes.length,sha256:sha256(file.bytes)};
-    }
+    const validated=decodeLanguageArchive(archive,{game:product.game,language}),members=validated.members;
     packs[language]={path,identity,declaration:structuredClone(declaration),manifest:validated.manifest,
       files:validated.files,members};
     assert.deepEqual(await fileIdentity(path),identity,`Language ${language} archive changed during preflight`);

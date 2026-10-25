@@ -1,11 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {assertReplayStateFields} from './state-fields.mjs';
 import {compareTraces} from './compare.mjs';
 import {digestCanonicalJson, recordsFromSegments} from './adapter.mjs';
 import {corpusReadiness, validateCorpus} from './corpus.mjs';
 import {formatResult} from './report.mjs';
+import {replayMethodControls} from './method-controls.mjs';
+import {createHash} from 'node:crypto';
 
 const digest = value => value.toString(16).padStart(32, '0');
+
+test('raw state field validation rejects missing, sparse, nonfinite and out-of-range values before hashing',()=>{
+  const row={frame:0xffffffff,point:[-192.5,384],state:[0,255]},shape={uint32:['frame'],vectors:{point:2},byteArrays:{state:2}};
+  assert.equal(assertReplayStateFields(row,shape),row);
+  for(const mutate of [r=>delete r.frame,r=>r.frame=-1,r=>r.frame=0x100000000,r=>r.frame=1.5,
+    r=>r.point[0]=NaN,r=>r.point[0]=Infinity,r=>delete r.point[0],r=>r.point.pop(),
+    r=>r.state.pop(),r=>r.state[0]=256,r=>r.state[0]=-1,r=>delete r.state[0]]){
+    const changed=structuredClone(row);mutate(changed);assert.throws(()=>assertReplayStateFields(changed,shape));
+  }
+});
 function trace({game = 'th08', ticks = 3, mutate, complete = true, omitCategory,
   coverage = {requiredCategories: ['rng', 'player'], optionalCategories: []}} = {}) {
   const records = [{
@@ -32,6 +45,34 @@ test('equal complete traces pass with declared coverage', async () => {
   const result = await compareTraces(trace(), trace());
   assert.equal(result.status, 'PASS');
   assert.equal(result.comparedTicks, 3);
+});
+
+function methodFixture({ticks=3,wrongGame=false,wrongReplay=false,closeError=false}={}){
+  const replayBytes=Buffer.from('method-control-replay'),replaySha256=createHash('sha256').update(replayBytes).digest('hex');
+  const records=trace({ticks});records[0].comparisonIdentity.replaySha256=wrongReplay?'0'.repeat(64):replaySha256;
+  if(wrongGame)records[0].comparisonIdentity.game='th10';
+  let closed=0,returned=false;
+  return{records,state:()=>({closed,returned}),fixture:{id:'real-window-fixture',replayBytes,replaySha256},requiredCategories:['rng','player'],
+    adapter:{describe:()=>({adapterApiVersion:1,game:'th08',adapterVersion:'method-fixture/1',features:{original:true,candidate:true}}),
+      inspectReplay:()=>({}),openCandidate:()=>{throw Error('Method controls must not open the game candidate');},openOriginal:async()=>({records:(async function*(){try{yield* records;}finally{returned=true;}})(),
+        close:()=>{closed++;if(closeError)throw Error('fixture close failure');}})}};
+}
+
+test('real-provider method controls cover inputs, every required state category and all supplied clocks/scalars without certifying a prefix',async()=>{
+  const f=methodFixture(),before=structuredClone(f.records),result=await replayMethodControls(f);
+  assert.equal(result.passed,true,result.error);assert.equal(result.unchangedPrefix.status,'INCOMPLETE');
+  assert.equal(result.unchangedPrefix.comparedTicks,3);assert.deepEqual(result.controls.map(row=>row.id),['input','state:rng','state:player','clocks:game','scalars:score','drop','duplicate','shift']);
+  assert.deepEqual(f.records,before);assert.deepEqual(f.state(),{closed:1,returned:true});
+});
+
+for(const [name,options]of Object.entries({short:{ticks:2},'other game':{wrongGame:true},'other Replay':{wrongReplay:true},'close failure':{closeError:true}}))
+  test('method controls fail on '+name+' rather than publishing a passed method',async()=>{
+    const f=methodFixture(options),result=await replayMethodControls(f);assert.equal(result.passed,false);assert.equal(f.state().closed,1);
+  });
+
+test('cancelled method controls do not open a reference session',async()=>{
+  const f=methodFixture(),result=await replayMethodControls({...f,signal:AbortSignal.abort()});
+  assert.equal(result.passed,false);assert.equal(f.state().closed,0);
 });
 
 test('reports the earliest category divergence without shifting frames', async () => {

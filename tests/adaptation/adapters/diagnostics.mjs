@@ -138,9 +138,9 @@ function validateProfile(profile){
       throw new Error('Quick fixtures require ordered IDs, safe input files and safe capture files');
     requireCheckIds(profile.quickPartialChecks,'quickPartialChecks');
     const quickPrimary=DIAGNOSTIC_LANE_CHECKS.quick[0];
-    const expectedQuickPartial=DIAGNOSTIC_LANE_CHECKS.quick.slice(1);
-    if(profile.quickPartialChecks.includes(quickPrimary)||expectedQuickPartial.some(id=>!profile.quickPartialChecks.includes(id)))
-      throw new Error('Quick lane must preserve every mapped non-primary check as partial');
+    const expectedQuickPartial=DIAGNOSTIC_LANE_CHECKS.quick.slice(1).filter(id=>id!=='VERIFY-04');
+    if(profile.quickPartialChecks.includes(quickPrimary)||profile.quickPartialChecks.includes('VERIFY-04')||expectedQuickPartial.some(id=>!profile.quickPartialChecks.includes(id)))
+      throw new Error('Quick lane must preserve comparison support as partial and assess reference integrity independently');
   }
   if(profile.lanes.includes('daily')){
     for(const key of ['dailyCapture','dailyGate','goldenManifest'])requirePath(profile[key],key);
@@ -159,14 +159,20 @@ function validateProfile(profile){
     if(profile.dailyGateReplayOptions.length!==replayKeys.size)throw new Error('Daily Replay options must select every daily fixture exactly once');
     requireCheckIds(profile.dailyPartialChecks,'dailyPartialChecks');
     const dailyPrimary=DIAGNOSTIC_LANE_CHECKS.daily[0];
-    const expectedDailyPartial=DIAGNOSTIC_LANE_CHECKS.daily.slice(1);
-    if(profile.dailyPartialChecks.includes(dailyPrimary)||expectedDailyPartial.some(id=>!profile.dailyPartialChecks.includes(id)))
-      throw new Error('Daily lane must preserve every mapped non-primary check as partial');
+    const expectedDailyPartial=DIAGNOSTIC_LANE_CHECKS.daily.slice(1).filter(id=>id!=='VERIFY-04');
+    if(profile.dailyPartialChecks.includes(dailyPrimary)||profile.dailyPartialChecks.includes('VERIFY-04')||expectedDailyPartial.some(id=>!profile.dailyPartialChecks.includes(id)))
+      throw new Error('Daily lane must preserve comparison support as partial and assess reference integrity independently');
   }
   for(const lane of ['quick','daily'])if(profile.lanes.includes(lane)){
     const inputs=profile.decisionInputs?.[lane];
     if(!Array.isArray(inputs))throw new Error(`Diagnostic profile requires decisionInputs.${lane}`);
     for(const [index,path] of inputs.entries())requirePath(path,`decisionInputs.${lane}[${index}]`);
+  }
+  if(profile.replayReview!==undefined){
+    requirePath(profile.replayReview.module,'replayReview.module');
+    requireString(profile.replayReview.export,'replayReview.export');
+    if(!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(profile.replayReview.export))throw new Error('Invalid Replay review export');
+    if(!['quick','daily'].every(lane=>profile.lanes.includes(lane)))throw new Error('Replay review requires Quick and Daily lanes');
   }
 }
 
@@ -219,9 +225,10 @@ const TH08_NORMAL_PROFILE={
   quickGate:'ports/th08/tools/replay-verifier/run-current-candidate-gate.mjs',
   dailyGate:'ports/th08/tools/replay-verifier/run-daily-gate.mjs',
   goldenManifest:'ports/th08/tools/replay-verifier/golden/manifest.json',
+  replayReview:{module:'tests/adaptation/adapters/titles/th08-replay.mjs',export:'createReplayReviewSuite'},
   decisionInputs:{
-    quick:['ports/th08/tools/replay-verifier/corpus.json'],
-    daily:['ports/th08/tools/replay-verifier/corpus.json'],
+    quick:['ports/th08/tools/replay-verifier/corpus.json','common/testkit/replay-verifier/suite.mjs','common/testkit/replay-verifier/adapter.mjs'],
+    daily:['ports/th08/tools/replay-verifier/corpus.json','common/testkit/replay-verifier/suite.mjs','common/testkit/replay-verifier/adapter.mjs'],
   },
   runtimeDirectory:'ports/th08/artifacts/presentation-lab/runtime',
   envNames:{font:'TH08_LAB_FONT',data:'TH08_LAB_DATA',inputRoot:'TH08_LAB_INPUT_ROOT',snapshot:'TH08_LAB_SNAPSHOT'},
@@ -261,10 +268,10 @@ const TH08_NORMAL_PROFILE={
     presentation:'DISPLAY-03 draw purity plus a same-window Replay comparison on the production native frame loop at 60, 120 and 144 Hz',
     quick:'VERIFY-01 across the registered immutable demo captures',
     daily:'VERIFY-02 across the registered immutable daily captures',
-    otherVerification:'VERIFY-03 through VERIFY-08 remain partial unless another evidence owner supplies the required boundary',
+    otherVerification:'VERIFY-04 independently checks immutable reference inputs; VERIFY-03, VERIFY-06 and VERIFY-08 retain their own completion boundaries',
   },
-  quickPartialChecks:['VERIFY-03','VERIFY-04','VERIFY-06','VERIFY-08'],
-  dailyPartialChecks:['VERIFY-03','VERIFY-04','VERIFY-06','VERIFY-08'],
+  quickPartialChecks:['VERIFY-03','VERIFY-06','VERIFY-08'],
+  dailyPartialChecks:['VERIFY-03','VERIFY-06','VERIFY-08'],
 };
 
 export const DIAGNOSTIC_REGISTRY=createDiagnosticsRegistry([TH08_NORMAL_PROFILE]);

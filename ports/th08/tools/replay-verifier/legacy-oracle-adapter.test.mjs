@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compareTraces} from '../../../../common/testkit/replay-verifier/compare.mjs';
 import * as common from '../../../../common/testkit/replay-verifier/adapter.mjs';
-import {recordsFromLongRows} from './legacy-oracle-adapter.mjs';
+import {recordsFromRows,recordsFromLongRows,recordsFromLongJsonLines} from './legacy-oracle-adapter.mjs';
 
 const fixture = {replaySha256: 'a'.repeat(64)};
 const identity = {executableSha256: 'b'.repeat(64), resourceSha256: 'c'.repeat(64)};
@@ -17,6 +17,15 @@ function row(frame, gameFrames, {flags = 0xc, rng = frame, rngCalls = frame * 2}
 function trace(rows, provider) {
   return recordsFromLongRows({fixture, rows, provider, identity, complete: true}, common);
 }
+
+test('all raw paths reject malformed state, including rows hidden by a frozen gameplay clock',async()=>{
+  for(const mutate of [r=>r.numbers.pop(),r=>r.numbers[0]=256,r=>r.player[1]=NaN,r=>r.flags=-1,r=>delete r.keys]){
+    const rows=[row(1,10),row(2,10),row(3,11)];mutate(rows[1]);
+    assert.throws(()=>[...recordsFromRows(fixture,rows,'bad-state',common)]);
+    assert.throws(()=>[...trace(rows,'bad-state')]);
+    await assert.rejects(async()=>{for await(const item of recordsFromLongJsonLines({fixture,rows,provider:'bad-state',identity,complete:true},common))void item;});
+  }
+});
 
 test('long traces ignore route provenance and frozen Present cadence', async () => {
   const expected = [row(1, 10, {flags: 0x80c}), row(2, 10), row(3, 10), row(4, 11, {flags: 0x80c})];

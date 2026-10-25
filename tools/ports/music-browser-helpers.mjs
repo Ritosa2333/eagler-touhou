@@ -9,6 +9,7 @@ export const TH08_OGG_PCM_ROLE='th08-sdl3-mixer';
 export const TH08_MIDI_PCM_ROLE='launcher-tinysynth';
 export const TH08_MIDI_VOICE_PCM_ROLE='launcher-tinysynth-voice';
 export const RUNTIME_PCM_SAMPLE_INTERVAL_MS=80;
+export const MUSIC_PCM_ANALYSIS_FRAMES=2048;
 export const MUSIC_PCM_HISTORY_GAP_RANGE_LIMIT=64;
 
 /** Emit one edge and wait for the native consumer on both press and release. */
@@ -172,7 +173,7 @@ export const MUSIC_PCM_PROBE_SOURCE=`(()=>{
   const context=source.context;
   recordContext(context);
   try{
-   const analyser=context.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0;
+   const analyser=context.createAnalyser();analyser.fftSize=${MUSIC_PCM_ANALYSIS_FRAMES};analyser.smoothingTimeConstant=0;
    const mute=context.createGain();mute.gain.value=0;
    nativeConnect.call(source,analyser);nativeConnect.call(analyser,mute);nativeConnect.call(mute,context.destination);
    analyser.__eaglerMusicPcmTapId=this.taps.length;analyser.__eaglerMusicPcmRole=role;analyser.__eaglerMusicPcmMute=mute;
@@ -243,7 +244,7 @@ export const MUSIC_PCM_PROBE_SOURCE=`(()=>{
    const context=this.context;
    try{
     recordContext(context);
-    const analyser=context.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0;
+    const analyser=context.createAnalyser();analyser.fftSize=${MUSIC_PCM_ANALYSIS_FRAMES};analyser.smoothingTimeConstant=0;
     const mute=context.createGain();mute.gain.value=0;
     const output=Number.isInteger(args[0])?args[0]:0;
     nativeConnect.call(this,analyser,output,0);nativeConnect.call(analyser,mute);nativeConnect.call(mute,destination);
@@ -568,7 +569,7 @@ export function summarizeRuntimePcmWindow(windows,{role,expectedTarget,minimumWi
     nonZeroSamples,peakAbs:selected.reduce((max,capture)=>Math.max(max,capture.peakAbs),0),
     maxRms:selected.reduce((max,capture)=>Math.max(max,capture.rms),0),outputObserved:nonZeroSamples>0,
     windows:samples.map((sample,index)=>({index,target:{role:sample?.target?.role??null,available:sample?.target?.available??false,
-      contextIndex:sample?.target?.contextIndex??null,state:sample?.target?.state??null,sampleRate:sample?.target?.sampleRate??null,
+      contextIndex:sample?.target?.contextIndex??null,tapIds:[...(sample?.target?.tapIds??[])],state:sample?.target?.state??null,sampleRate:sample?.target?.sampleRate??null,
       sourceIdentity:sample?.target?.sourceIdentity??null,
       currentTime:sample?.target?.currentTime??null,stateChangeCount:sample?.target?.stateChangeCount??null,
       stateChangeDrops:sample?.target?.stateChangeDrops??null,stateChanges:sample?.target?.stateChanges??[]},taps:(Array.isArray(sample?.captures)?sample.captures:[])

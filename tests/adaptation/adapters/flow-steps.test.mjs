@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {TITLE_FLOW_STEPS_SCHEMA,executeTitleFlowSteps,titleFlowKeyFields,validateTitleFlow} from './flow-steps.mjs';
+import {TITLE_FLOW_STEPS_SCHEMA,executeTitleFlowSteps,executeObservationFlowSteps,titleFlowKeyFields,validateTitleFlow,validateObservationFlow} from './flow-steps.mjs';
 
 const source='ports/th99/web/cpp/game/Title.cpp:120';
 function makeFlow(overrides={}){
@@ -28,6 +28,16 @@ test('title flow validator accepts legacy strategies and bounded serializable st
   const flow=makeFlow();
   assert.deepEqual(validateTitleFlow(flow),{status:'passed',issues:[]});
   assert.deepEqual(flow.enter[1],{op:'press-until',input:'ArrowUp',when:'titleReady',until:'ordinaryRoute',maxPresses:2,source});
+});
+
+test('scene flows reuse the finite grammar while gameplay entry keeps its mandatory gameplay boundary',async()=>{
+  const flow=makeFlow();flow.enter.at(-1).until='ordinaryRoute';
+  assert.equal(validateTitleFlow(flow).status,'failed');assert.equal(validateObservationFlow(flow).status,'passed');
+  const events=[],state={status:{menuReady:true,route:'normal'}};
+  const result=await executeObservationFlowSteps({flow,observe:async()=>state,press:async key=>events.push(key),
+    waitUntil:async(_label,predicate)=>{assert.equal(predicate(state),true);return state;}});
+  assert.equal(result,state);assert.deepEqual(events,['KeyZ']);
+  const bad=structuredClone(flow);bad.enter[1].maxPresses=100;assert.equal(validateObservationFlow(bad).status,'failed');
 });
 
 test('title flow validator rejects code, open-ended steps, unsafe paths and missing source anchors',()=>{

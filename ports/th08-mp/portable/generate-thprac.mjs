@@ -27,6 +27,11 @@ const caveEnd=body.indexOf('\n            }',caveStart);
 if(!legacy){
  if(caveStart<0||caveEnd<caveStart)throw Error('Purple TH08 point-setup boundary changed');
  body=body.slice(0,caveStart)+'                InstallPointSetup(code_cave, sizeof(code_cave));'+body.slice(caveEnd);
+ // Retime the original 32-byte instructions before replacing the first one
+ // with a 16-byte call. Reading lengths after replacement walks its operands.
+ const callThenRetime='            ECLCallSub(ecl, 0x1ed8, 27, 0);\n            ECLTimeFix(0x1ed8, 0, 7);';
+ if(body.split(callThenRetime).length!==2)throw Error('TH08 point-setup instruction ordering boundary changed');
+ body=body.replace(callThenRetime,'            ECLTimeFix(0x1ed8, 0, 7);\n            ECLCallSub(ecl, 0x1ed8, 27, 0);');
 }
 if(/GetMem|\*\([^\n]*\*\)/.test(body))throw Error('Unmapped executable address in upstream patch');
 body=body.replace(/[ \t]+$/gm,'');

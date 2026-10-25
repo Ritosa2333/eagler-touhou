@@ -13,18 +13,26 @@ import {notApplicable} from '../../tools/docs/new-adaptation.mjs';
 
 const DEFAULT_ROOT=resolve(import.meta.dirname,'../..');
 export const ADAPTATION_GROUPS=Object.freeze([
-  'runtime','desktop-input','touch-motion','touch-actions','audio-latency','desktop-background','practice','language','replay','replay-recording','music','presentation','display-replay','verify-quick','verify-daily','offline','offline-update','installation-authority','build','single-game','source-review','rooms','spectator',
+  'runtime','desktop-input','touch-motion','touch-actions','audio-latency','desktop-background','launcher-lifecycle','view-options','practice-controls','practice-parameters','practice-effects','practice','language','replay','replay-recording','music','presentation','display-replay','verify-quick','verify-daily','reference-integrity','replay-method','offline','offline-update','installation-authority','package-imports','build','single-game','source-review','rooms','spectator',
 ]);
 const DIAGNOSTIC_GROUP_LANES=Object.freeze({presentation:'presentation','verify-quick':'quick','verify-daily':'daily'});
 const UPDATE_CHECKS=Object.freeze(['PACKAGE-03','SAVE-06']);
 const MUSIC_AUDIO_CHECKS=Object.freeze(['AUDIO-01','AUDIO-03','AUDIO-04','AUDIO-05']);
 const MIDI_MUSIC_CHECKS=Object.freeze(['MIDI-01','MIDI-02','MIDI-03','MIDI-04']);
-const OFFLINE_CHECKS=Object.freeze(['RUNTIME-05','PACKAGE-01','PACKAGE-02','PACKAGE-04','PACKAGE-05','SAVE-02','SAVE-03','SAVE-04','SAVE-05']);
+const OFFLINE_CHECKS=Object.freeze(['RUNTIME-05','PACKAGE-01','PACKAGE-02','PACKAGE-04','PACKAGE-05','SAVE-01','SAVE-02','SAVE-03','SAVE-04','SAVE-05']);
 const GROUP_CHECKS=Object.freeze({
   build:Object.freeze(['BUILD-01','BUILD-02','BUILD-03','BUILD-04']),
   'single-game':Object.freeze(['BUILD-05']),
   'source-review':Object.freeze(['BUILD-06','VERIFY-05']),
+  'reference-integrity':Object.freeze(['VERIFY-04']),
+  'replay-method':Object.freeze(['VERIFY-06']),
   'installation-authority':Object.freeze(['PACKAGE-06']),
+  'package-imports':Object.freeze(['PACKAGE-04']),
+  'launcher-lifecycle':Object.freeze(['RUNTIME-04']),
+  'practice-controls':Object.freeze(['PRACTICE-06']),
+  'practice-parameters':Object.freeze(['PRACTICE-04']),
+  'practice-effects':Object.freeze(['PRACTICE-08']),
+  'view-options':Object.freeze(['RUNTIME-06']),
   'display-replay':PAIRED_PRESENTATION_CHECKS,
   runtime:Object.freeze(['RUNTIME-01','RUNTIME-02','RUNTIME-03','RUNTIME-06','INPUT-04','INPUT-06','REPLAY-05','SAVE-01']),
   replay:Object.freeze(['REPLAY-01']),
@@ -36,15 +44,31 @@ const GROUP_CHECKS=Object.freeze({
   rooms:Object.freeze(['MP-01','MP-02','MP-03','MP-04','MP-05','MP-10','MP-12','MP-15']),
   spectator:Object.freeze(['MP-06','MP-07','MP-08','MP-09']),
 });
+// Selectors retain overlapping observations. Complete acceptance has an explicit owner.
+const NORMAL_CHECK_OWNERS=Object.freeze({
+  'VERIFY-04':'reference-integrity',
+  'VERIFY-06':'replay-method',
+  'RUNTIME-01':'runtime','RUNTIME-02':'runtime','RUNTIME-03':'runtime','REPLAY-05':'runtime',
+  'RUNTIME-04':'launcher-lifecycle',
+  'RUNTIME-06':'view-options',
+  'PACKAGE-04':'package-imports',
+  'PRACTICE-06':'practice-controls',
+  'PRACTICE-04':'practice-parameters',
+  'PRACTICE-08':'practice-effects',
+  'INPUT-03':'desktop-input','INPUT-04':'desktop-input','INPUT-05':'touch-actions','INPUT-06':'desktop-background','TOUCH-16':'desktop-background',
+  'AUDIO-02':'audio-latency',
+  'SAVE-01':'offline','SAVE-02':'offline',
+  ...Object.fromEntries(['TOUCH-05','TOUCH-06','TOUCH-08','TOUCH-11','TOUCH-12','TOUCH-13','TOUCH-15','TOUCH-18'].map(id=>[id,'touch-actions'])),
+});
 const INPUT={runtime:'EAGLER_TEST_RUNTIME_MANIFEST',packages:'EAGLER_TEST_PACKAGES',artwork:'EAGLER_TEST_ARTWORK',
   music:'EAGLER_TEST_MUSIC_MANIFEST',launcherUrl:'EAGLER_TEST_LAUNCHER_URL',update:'EAGLER_TEST_UPDATE_PACKAGES',
   diagnostics:'EAGLER_TEST_DIAGNOSTIC_MANIFEST',language:'EAGLER_TEST_LANGUAGE_MANIFEST',
-  sourceReview:'EAGLER_TEST_SOURCE_REVIEW',minimalRuntime:'EAGLER_TEST_MINIMAL_RUNTIME'};
+  sourceReview:'EAGLER_TEST_SOURCE_REVIEW',minimalRuntime:'EAGLER_TEST_MINIMAL_RUNTIME',diagnosticReport:'EAGLER_TEST_DIAGNOSTIC_REPORT'};
 const NATIVE_GROUP_INTERFACES=Object.freeze({
   runtime:['runtime','observation','flow'],
   'desktop-input':['runtime','observation','flow','movement','clock','controlledScene','actions'],
   'touch-motion':['runtime','observation','flow','movement','clock','controlledScene'],
-  'desktop-background':['runtime','observation','flow'],
+  'desktop-background':['runtime','observation','flow','movement','clock','controlledScene','actions'],
 });
 
 function checksForGroup(group,game,requirements,product=PRODUCT_GAMES[game]){
@@ -113,12 +137,15 @@ function makeCase({root,output,id,game,variant,group,scenarioIds,checks,script,a
   if(status==='ready'&&!blockedInputs.length)task={command:process.execPath,args:[script,...resolvedArgs,`--output=${reportDirectory}`],cwd:root,timeoutMs,resources:[...resources]};
   if(blockedInputs.length&&status==='ready')status='blocked';
   const blockedChecks=[...new Set(blockedScenarios.flatMap(scenario=>scenario.checks))];
+  const supporting=variant==='normal'?checks.filter(check=>NORMAL_CHECK_OWNERS[check]&&NORMAL_CHECK_OWNERS[check]!==group):[];
+  const requiredChecks=checks.filter(check=>!supporting.includes(check));
   return{
     id,game,variant,group,scenarioIds:[...scenarioIds],...(scenarioIds.length===1?{scenarioId:scenarioIds[0]}:{}),
-    checks:[...checks],status,task,requiresLauncherBuild:['offline','offline-update','installation-authority','language'].includes(group)||game==='th08'&&(group==='music'||group==='practice'&&checks.some(id=>['PRACTICE-01','PRACTICE-02'].includes(id))),
+    checks:[...checks],status,task,requiresLauncherBuild:['offline','offline-update','installation-authority','package-imports','launcher-lifecycle','view-options','practice-controls','language'].includes(group)||game==='th08'&&(group==='music'||group==='practice'&&checks.some(id=>['PRACTICE-01','PRACTICE-02'].includes(id))),
     requiredInputs:[...requiredInputs],inputs:inputNames,blockedInputs,
     blockedScenarios:blockedScenarios.map(scenario=>({...scenario,checks:[...scenario.checks]})),blockedChecks,
-    reportPath,...(reason?{reason}:{}),...extra.caseFields,
+    reportPath,...(reason?{reason}:{}),...extra.caseFields,requiredChecks,
+    supportingChecks:[...new Set([...(extra.caseFields?.supportingChecks??[]),...supporting])],
   };
 }
 
@@ -136,6 +163,10 @@ function addNormalCases({cases,game,product,groups,selectedChecks,root,output,en
       'touch-motion':'native-touch-motion-contract','touch-actions':'native-touch-action-consumers','replay-recording':'finite-replay-recording-and-live-isolation','audio-latency':'native-sfx-queue-latency','desktop-background':'desktop-background-and-resume',practice:'native-practice-menu-and-locale',music:'title-ogg-pcm'}[group];
     const mapped=checksForGroup(group,game,requirements,product).filter(check=>selectedChecks===null||selectedChecks.has(check));
     if(selectedChecks!==null&&!mapped.length)continue;
+    if(group==='practice'&&groups.has('practice-controls')&&selectedChecks!==null&&mapped.every(id=>id==='PRACTICE-06'))continue;
+    if(group==='practice'&&groups.has('practice-parameters')&&selectedChecks!==null&&mapped.every(id=>id==='PRACTICE-04'))continue;
+    if(group==='practice'&&groups.has('practice-effects')&&selectedChecks!==null&&mapped.every(id=>id==='PRACTICE-08'))continue;
+    if(group==='runtime'&&groups.has('view-options')&&selectedChecks!==null&&mapped.every(id=>id==='RUNTIME-06'))continue;
     const desktopMode={'desktop-input':'input-only','touch-motion':'touch-only','touch-actions':'actions-only',
       'replay-recording':'replay-recording-only','audio-latency':'audio-latency-only','desktop-background':'background-only'}[group];
     let common={root,output,game,variant:'normal',group,scenarioIds:[scenarioId],checks:mapped,
@@ -187,6 +218,10 @@ function addNormalCases({cases,game,product,groups,selectedChecks,root,output,en
         cases.push(makeCase({...common,id:`replay-recording-normal-${game}`,status:'blocked',
           reason:'Register the native Replay trace, independent file parser, recording semantics and production clock'}));continue;
       }
+      if(!adapter.replay.recording?.consumer){
+        cases.push(makeCase({...common,id:`replay-recording-normal-${game}`,status:'blocked',
+          reason:'Register replay.recording.consumer frameOffset, initialInput and the native player-consumer source'}));continue;
+      }
     }
     if((group==='touch-motion'||group==='touch-actions')&&product.inputProfile==='fighting'){
       cases.push(makeCase({...common,id:`${group}-normal-${game}`,status:'not-applicable',reason:'Fighting profile uses its directional movement contract'}));continue;
@@ -197,6 +232,10 @@ function addNormalCases({cases,game,product,groups,selectedChecks,root,output,en
         reason:'Register the actual player-consumer snapshot, native input bits, production clock and controlled scene in the title adapter'}));continue;
     }
     if(group==='touch-actions'){
+      if(mapped.some(id=>['TOUCH-08','TOUCH-11'].includes(id))&&!actionAdapter.actions.bombResource){
+        cases.push(makeCase({...common,id:`touch-actions-normal-${game}`,status:'blocked',
+          reason:'Declare actions.bombResource with the ordinary Bomb native resource unit, cost and production source'}));continue;
+      }
       const obligations={'TOUCH-09':['deathbomb'],'TOUCH-10':['runBoundaries','parseReplayMetadata'],
         'TOUCH-11':['doubleTapBomb'],'TOUCH-12':['originalMenu','dialogueTouchScene'],'TOUCH-13':['dialogueTouchScene']};
       const missing=mapped.flatMap(check=>(obligations[check]??[]).filter(capability=>!actionAdapter[capability])
@@ -221,11 +260,26 @@ function addNormalCases({cases,game,product,groups,selectedChecks,root,output,en
     if(group==='desktop-background')args.push('--background-only');
       if(selectedChecks!==null&&['desktop-input','touch-motion','touch-actions','audio-latency','desktop-background','replay-recording'].includes(group))
         args.push(`--check=${mapped.join(',')}`);
-    if(group==='music')args.push(argFor(environment,INPUT.music,'music-manifest'));
+    if(group==='music'){
+      args.push(argFor(environment,INPUT.music,'music-manifest'));
+      if(selectedChecks!==null)args.push(`--check=${mapped.join(',')}`);
+    }
     const requiredInputs=group==='music'?[INPUT.runtime,INPUT.music]:[INPUT.runtime];
-    if(game==='th08'&&(group==='music'||group==='practice'&&mapped.some(id=>['PRACTICE-01','PRACTICE-02'].includes(id)))){
-      args.push('--launcher-ui',argFor(environment,INPUT.packages,'packages'),argFor(environment,INPUT.artwork,'artwork-dir'));
+    if(game==='th08'&&(group==='music'&&mapped.some(id=>['AUDIO-05','MIDI-01','MIDI-04'].includes(id))||group==='practice'&&mapped.some(id=>['PRACTICE-01','PRACTICE-02'].includes(id)))){
+      args.push(group==='practice'&&mapped.every(id=>id==='PRACTICE-01')?'--launcher-ui-only':'--launcher-ui',argFor(environment,INPUT.packages,'packages'),argFor(environment,INPUT.artwork,'artwork-dir'));
       requiredInputs.push(INPUT.packages,INPUT.artwork);
+    }
+    if(group==='desktop-input'&&mapped.some(id=>['INPUT-01','INPUT-02','INPUT-04'].includes(id))){
+      const adapter=resolveAdaptationAdapter(game,'normal');
+      const missing=(mapped.some(id=>['INPUT-01','INPUT-04'].includes(id))?['actions','originalMenu','dialogueTouchScene']:['actions']).filter(name=>!adapter?.[name]);
+      if(!adapter?.movement?.directionMasks)missing.push('movement.directionMasks');
+      if(!adapter?.actions?.bombResource)missing.push('actions.bombResource');
+      if(missing.length){cases.push(makeCase({...common,id:`desktop-input-normal-${game}`,status:'blocked',
+        reason:`Register native keyboard effects and original input flow | ${missing.join(' | ')}`}));continue;}
+    }
+    if(group==='desktop-background'&&mapped.includes('INPUT-06')&&!resolveAdaptationAdapter(game,'normal')?.movement?.directionMasks){
+      cases.push(makeCase({...common,id:`desktop-background-normal-${game}`,status:'blocked',
+        reason:'Declare source-owned movement.directionMasks before native gamepad disconnect and reconnect acceptance'}));continue;
     }
     const resources=['browser','runtime'];
     cases.push(makeCase({...common,id:`${group}-normal-${game}`,script,args,requiredInputs,timeoutMs:1800000,resources}));
@@ -275,7 +329,7 @@ function addLanguageCases({cases,products,root,output,environment,groups,selecte
       cases.push(makeCase({...common,status:'blocked',reason:'Register the selected mode language observation, text consumers and Launcher journey'}));continue;
     }
     cases.push(makeCase({...common,script:'tools/ports/language-browser.mjs',args:[argFor(environment,INPUT.runtime,'manifest'),
-      argFor(environment,INPUT.language,'language-manifest'),argFor(environment,INPUT.artwork,'artwork-dir'),`--game=${game}`,`--variant=${variant}`],
+      argFor(environment,INPUT.language,'language-manifest'),argFor(environment,INPUT.artwork,'artwork-dir'),`--game=${game}`,`--variant=${variant}`,`--checks=${checks.join(',')}`],
       requiredInputs:[INPUT.runtime,INPUT.language,INPUT.artwork],resources:['browser','runtime','launcher-build'],timeoutMs:1800000}));
   }
 }
@@ -329,6 +383,91 @@ function addInstallationAuthorityCases({cases,products,root,output,environment,g
         argFor(environment,INPUT.artwork,'artwork-dir'),argFor(environment,INPUT.update,'update-manifest'),`--game=${game}`,'--installation-authority-only'],
       requiredInputs:[INPUT.runtime,INPUT.packages,INPUT.artwork,INPUT.update],timeoutMs:1200000,
       resources:['browser','runtime','launcher-build'],extra:{environment}}));
+  }
+}
+
+function addLauncherLifecycleCases({cases,products,root,output,environment,groups,selectedChecks}){
+  if(!groups.has('launcher-lifecycle')||selectedChecks&&!selectedChecks.has('RUNTIME-04'))return;
+  for(const {game,variant,product} of products){
+    const adapter=resolveAdaptationAdapter(game,variant),applicable=variant==='normal';
+    const ready=applicable&&adapter?.inputLifecycle&&adapter.movement?.directionMasks&&adapter.actions;
+    cases.push(makeCase({root,output,id:`launcher-lifecycle-${variant}-${game}`,game,variant,group:'launcher-lifecycle',checks:['RUNTIME-04'],
+      scenarioIds:['launcher-input-lifecycle'],status:ready?'ready':!applicable&&!product.multiplayerRuntime?'not-applicable':'blocked',
+      reason:ready?undefined:'Register title-owned mixer identity, native input and gameplay flow for the Launcher lifecycle journey',
+      script:'tools/ports/offline-runtime-browser.mjs',args:[argFor(environment,INPUT.runtime,'manifest'),argFor(environment,INPUT.packages,'packages'),
+        argFor(environment,INPUT.artwork,'artwork-dir'),`--game=${game}`,'--input-lifecycle-only'],
+      requiredInputs:[INPUT.runtime,INPUT.packages,INPUT.artwork],timeoutMs:900000,resources:['browser','runtime','launcher-build'],extra:{environment}}));
+  }
+}
+
+function addPackageImportCases({cases,products,root,output,environment,groups,selectedChecks}){
+  if(!groups.has('package-imports')||selectedChecks&&!selectedChecks.has('PACKAGE-04'))return;
+  for(const {game,variant,product} of products){
+    const ready=variant==='normal';
+    cases.push(makeCase({root,output,id:`package-imports-${variant}-${game}`,game,variant,group:'package-imports',checks:['PACKAGE-04'],
+      scenarioIds:['package-import-source-parity'],status:ready?'ready':product.multiplayerRuntime?'blocked':'not-applicable',
+      reason:ready?undefined:'Register room-owned package import startup',
+      script:'tools/ports/offline-runtime-browser.mjs',args:[argFor(environment,INPUT.runtime,'manifest'),argFor(environment,INPUT.packages,'packages'),
+        argFor(environment,INPUT.artwork,'artwork-dir'),`--game=${game}`,'--import-parity-only'],
+      requiredInputs:[INPUT.runtime,INPUT.packages,INPUT.artwork],timeoutMs:1200000,resources:['browser','runtime','launcher-build'],extra:{environment}}));
+  }
+}
+
+function addPracticeControlCases({cases,products,root,output,environment,groups,selectedChecks}){
+  if(!groups.has('practice-controls')||selectedChecks&&!selectedChecks.has('PRACTICE-06'))return;
+  for(const {game,variant,product} of products){
+    const adapter=resolveAdaptationAdapter(game,variant),applicable=product.features?.thprac===true;
+    const ready=applicable&&variant==='normal'&&adapter?.controlledScene&&adapter?.practice?.enterMenu&&adapter.practice.uiSnapshot&&adapter.practice.controlKeys;
+    cases.push(makeCase({root,output,id:`practice-controls-${variant}-${game}`,game,variant,group:'practice-controls',checks:['PRACTICE-06'],
+      scenarioIds:['launcher-practice-controls'],status:ready?'ready':!applicable?'not-applicable':'blocked',
+      reason:ready?undefined:'Register native practice widget observations and function-key meanings for the shared control scene',
+      script:'tools/ports/offline-runtime-browser.mjs',args:[argFor(environment,INPUT.runtime,'manifest'),argFor(environment,INPUT.packages,'packages'),
+        argFor(environment,INPUT.artwork,'artwork-dir'),`--game=${game}`,'--practice-controls-only'],
+      requiredInputs:[INPUT.runtime,INPUT.packages,INPUT.artwork],timeoutMs:900000,resources:['browser','runtime','launcher-build'],extra:{environment}}));
+  }
+}
+
+function addPracticeParameterCases({cases,products,root,output,environment,groups,selectedChecks}){
+  if(!groups.has('practice-parameters')||selectedChecks&&!selectedChecks.has('PRACTICE-04'))return;
+  for(const {game,variant,product} of products){
+    const p=resolveAdaptationAdapter(game,variant)?.practice,applicable=product.features?.thprac===true;
+    const ready=applicable&&variant==='normal'&&p?.parameterMatrix?.length&&p.assessParameterMatrix&&p.programSnapshot;
+    cases.push(makeCase({root,output,id:`practice-parameters-${variant}-${game}`,game,variant,group:'practice-parameters',checks:['PRACTICE-04'],
+      scenarioIds:['native-practice-parameter-consumers'],status:ready?'ready':!applicable?'not-applicable':'blocked',
+      reason:ready?undefined:'Register native parameter classes, frozen consumer observations and independent title expectations',
+      script:'tools/ports/practice-browser.mjs',args:[argFor(environment,INPUT.runtime,'manifest'),`--game=${game}`,'--variant=normal','--parameters-only'],
+      requiredInputs:[INPUT.runtime],timeoutMs:900000,resources:['browser','runtime'],extra:{environment}}));
+  }
+}
+
+function addPracticeEffectCases({cases,products,root,output,environment,groups,selectedChecks}){
+  if(!groups.has('practice-effects')||selectedChecks&&!selectedChecks.has('PRACTICE-08'))return;
+  for(const {game,variant,product} of products){
+    const adapter=resolveAdaptationAdapter(game,variant),applicable=product.features?.thprac===true;
+    for(const phase of ['trainers','options','bosses','key-monitor','gameplay','lifecycle','math','display']){
+    const capability={trainers:'trainer',options:'options',bosses:'bossEffects','key-monitor':'options',gameplay:'options',lifecycle:'options',math:'options',display:'options'}[phase];
+    const ready=applicable&&variant==='normal'&&adapter?.practice?.[capability]&&adapter.practice.enterMenu&&adapter.practice.uiSnapshot?.keyboard&&
+      adapter.clock&&(phase==='bosses'||adapter.controlledScene)&&(!['trainers','gameplay','lifecycle'].includes(phase)||adapter.deathbomb)&&
+      (phase!=='key-monitor'||adapter.practice.options.keyMonitor)&&(phase!=='gameplay'||adapter.practice.trainer&&adapter.practice.options.gameplay)&&
+      (phase!=='lifecycle'||adapter.practice.options.lifecycle)&&(phase!=='math'||adapter.practice.options.math)&&(phase!=='display'||adapter.practice.options.display&&adapter.deathbomb);
+    cases.push(makeCase({root,output,id:`practice-effects-${phase}-${variant}-${game}`,game,variant,group:'practice-effects',checks:['PRACTICE-08'],
+      scenarioIds:[`native-practice-${phase}-consumers`],status:ready?'ready':!applicable?'not-applicable':'blocked',
+      reason:ready?undefined:'Register native control geometry, consumer meanings, physical input, clock and guarded arena',
+      script:'tools/ports/practice-browser.mjs',args:[argFor(environment,INPUT.runtime,'manifest'),`--game=${game}`,'--variant=normal',{trainers:'--effects-only',options:'--options-only',bosses:'--boss-only','key-monitor':'--key-monitor-only',gameplay:'--gameplay-options-only',lifecycle:'--lifecycle-options-only',math:'--math-options-only',display:'--display-options-only'}[phase]],
+      requiredInputs:[INPUT.runtime],timeoutMs:900000,resources:['browser','runtime'],extra:{environment}}));
+    }
+  }
+}
+
+function addViewOptionCases({cases,products,root,output,environment,groups,selectedChecks}){
+  if(!groups.has('view-options')||selectedChecks&&!selectedChecks.has('RUNTIME-06'))return;
+  for(const {game,variant} of products){
+    const adapter=resolveAdaptationAdapter(game,variant),ready=variant==='normal'&&adapter?.viewOptions&&adapter.clock&&adapter.controlledScene;
+    cases.push(makeCase({root,output,id:`view-options-${variant}-${game}`,game,variant,group:'view-options',checks:['RUNTIME-06'],
+      scenarioIds:['launcher-view-options'],status:ready?'ready':'blocked',reason:ready?undefined:'Register native view option consumers, production clock and controlled world',
+      script:'tools/ports/offline-runtime-browser.mjs',args:[argFor(environment,INPUT.runtime,'manifest'),argFor(environment,INPUT.packages,'packages'),
+        argFor(environment,INPUT.artwork,'artwork-dir'),`--game=${game}`,'--view-options-only'],
+      requiredInputs:[INPUT.runtime,INPUT.packages,INPUT.artwork],timeoutMs:900000,resources:['browser','runtime','launcher-build'],extra:{environment}}));
   }
 }
 
@@ -478,9 +617,9 @@ export function buildAdaptationPlan({root=DEFAULT_ROOT,output=resolve(root,'arti
   }
   if(selectedGroups.has('offline')){
     for(const game of normalGames){
-      const baseChecks=OFFLINE_CHECKS.filter(check=>selectedChecks===null||selectedChecks.has(check));
+      const baseChecks=OFFLINE_CHECKS.filter(check=>(selectedChecks===null||selectedChecks.has(check))&&!(check==='PACKAGE-04'&&selectedGroups.has('package-imports')));
       const updateChecks=updateSelected?UPDATE_CHECKS.filter(check=>selectedChecks===null||selectedChecks.has(check)):[];
-      const includeBase=selectedChecks===null||baseChecks.length>0,includeUpdate=updateChecks.length>0;
+      const includeBase=baseChecks.length>0,includeUpdate=updateChecks.length>0;
       if(!includeBase&&!includeUpdate)continue;
       const updateBlocked=includeUpdate&&(!updateState.available||!updateState.games.has(game));
       const blockedScenarios=updateBlocked?[{id:'package-update-and-user-data-recovery',checks:updateChecks,
@@ -508,12 +647,29 @@ export function buildAdaptationPlan({root=DEFAULT_ROOT,output=resolve(root,'arti
   const selectedBase=[...new Set(products.map(entry=>entry.game))].map(game=>({game,product:PRODUCT_GAMES[game]}));
   if(variant!=='normal')addRoomCases({cases,products:selectedBase,root,output,environment,groups:selectedGroups,selectedChecks});
   addDiagnosticCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks,diagnosticRegistry});
+  for(const [group,check,script]of [['reference-integrity','VERIFY-04','diagnostic-reference-review'],['replay-method','VERIFY-06','diagnostic-replay-review']])
+  if(selectedGroups.has(group)&&(selectedChecks===null||selectedChecks.has(check)))
+    for(const {game,variant:mode}of products){
+      const profile=diagnosticRegistry.resolve(game,mode),supported=profile?.lanes.includes('quick')&&profile.lanes.includes('daily')&&
+        (group!=='replay-method'||Boolean(profile.replayReview));
+      cases.push(makeCase({root,output,id:`${group}-${mode}-${game}`,game,variant:mode,group,
+        scenarioIds:[group==='replay-method'?'sealed-quick-and-daily-comparator-method':'sealed-quick-and-daily-reference-immutability'],checks:[check],script:`tools/ports/${script}.mjs`,
+        args:[`--game=${game}`,`--variant=${mode}`,argFor(environment,INPUT.diagnosticReport,'report')],requiredInputs:[INPUT.diagnosticReport],
+        status:supported?'ready':'blocked',reason:supported?undefined:`Register ${game}/${mode} Quick and Daily diagnostic mappings${group==='replay-method'?' and a Replay review adapter':''} before reviewing its evidence`,
+        timeoutMs:180000,resources:[],extra:{environment}}));
+    }
   addLanguageCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
   addBuildCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
   addSourceJourneyCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
   addInstallationAuthorityCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks,updateState});
+  addPackageImportCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
+  addLauncherLifecycleCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
+  addPracticeControlCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
+  addPracticeParameterCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
+  addPracticeEffectCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
+  addViewOptionCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks});
   addPairedPresentationCases({cases,products,root,output,environment,groups:selectedGroups,selectedChecks,diagnosticRegistry});
-  for(const item of cases)if(item.status==='ready'&&!['audio-latency','diagnostic','language','music','source-review','single-game'].includes(item.group)&&!TITLE_FLOW_GAMES.includes(item.game)){
+  for(const item of cases)if(item.status==='ready'&&!['audio-latency','diagnostic','reference-integrity','replay-method','language','music','source-review','single-game','package-imports'].includes(item.group)&&!TITLE_FLOW_GAMES.includes(item.game)){
     item.status='blocked';item.task=null;item.reason=`Register ${item.game} native observations and scenario flow before executing this driver`;
   }
   const mappedChecks=new Set(cases.flatMap(item=>item.checks));
@@ -522,9 +678,15 @@ export function buildAdaptationPlan({root=DEFAULT_ROOT,output=resolve(root,'arti
   const selectedRequirementIds=checks.length?new Set(checks):scope==='product'?knownChecks:
     new Set([...cases.flatMap(item=>item.checks),
       ...[...selectedGroups].flatMap(group=>products.flatMap(({game})=>checksForGroup(group,game,requirements)))]);
-  const coverageTargets=products.map(({game,variant:mode,product})=>({game,variant:mode,
-    requirements:requirements.filter(check=>selectedRequirementIds.has(check.id)).map(check=>({id:check.id,
+  const coverageTargets=products.map(({game,variant:mode,product})=>{
+    const scopedIds=scope==='scenes'?new Set([
+      ...cases.filter(item=>item.game===game&&item.variant===mode).flatMap(item=>item.requiredChecks??item.checks),
+      ...[...selectedGroups].flatMap(group=>checksForGroup(group,game,requirements,product)
+        .filter(id=>mode!=='normal'||!NORMAL_CHECK_OWNERS[id]||NORMAL_CHECK_OWNERS[id]===group)),
+    ]):selectedRequirementIds;
+    return{game,variant:mode,requirements:requirements.filter(check=>scopedIds.has(check.id)).map(check=>({id:check.id,
       reason:mode==='multiplayer'&&!product.multiplayerRuntime?'Product directory declares no multiplayer Runtime':
-        notApplicable(check,game,mode)}))}));
+        notApplicable(check,game,mode)}))};
+  });
   return{cases,unmappedChecks,scope,coverageTargets};
 }

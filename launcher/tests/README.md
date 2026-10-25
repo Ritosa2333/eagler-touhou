@@ -12,6 +12,8 @@
 
 核心计划在 [`test-plan.mjs`](test-plan.mjs)，由 [`scripts/check.mjs`](../scripts/check.mjs) 执行，每个测试入口在同一计划中执行一次。新测试归入计划或稳定 npm 入口；`test-test-ownership.mjs` 检查归属。
 
+房间丢包状态机进入核心计划，`npm run test:room-packet-loss:browser` 使用两个本地真实 ICE 对端、非可靠 DataChannel 和生产个人面板，检查双向统计、重试、退出和手机布局。浏览器夹具明确记录 TURN 未配置的范围。
+
 `npm run test:replay-audio:browser -- --help` 列出录像音频测试的输入，支持 th08、th10、th11、th15 的普通版与多人版。共享录像桥测试为异步定位保留有超时的状态等待，覆盖暂停归属和定位前后的音效输出。房间组件测试通过实际管理菜单与产品目录声明的难度选项验证成员管理和原生选角边界。
 
 `react-main/directory-views.test.mjs` 在中英文环境中遍历完整作品目录，检查已发布多人作品的房间信息和创建表单。采用原生菜单选择的作品隐藏大厅难度，其余作品展示房间声明的难度。

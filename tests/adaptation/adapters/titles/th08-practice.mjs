@@ -1,6 +1,10 @@
 import {createHash} from 'node:crypto';
 import {practiceSnapshotRequest,readPracticeSnapshotRaw} from '../practice.mjs';
 import {deriveTh08ReplayInputExpectation} from './th08-replay-format.mjs';
+import {decodePracticeUiSnapshot,decodePracticeApplicationSnapshot} from '../practice-ui.mjs';
+import {th08PracticeParameterCases,assertTh08PracticeParameters} from './th08-practice-parameters.mjs';
+import {TH08_PRACTICE_TRAINER} from './th08-practice-effects.mjs';
+import {TH08_PRACTICE_OPTIONS} from './th08-practice-options.mjs';
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const REPLAY_HEADER_BYTES=0x68;
 const SNAPSHOT_WORDS=128,INITIAL_SNAPSHOT_WORDS=80;
@@ -334,6 +338,7 @@ export function decodePracticeSnapshot(raw){
   if(words.some(value=>typeof value!=='number'||!Number.isFinite(value)))throw new Error('PracticeSnapshot contains a non-finite word');
   if(words[0]!==1)throw new Error(`Unsupported PracticeSnapshot version ${words[0]}`);
   if(!Number.isSafeInteger(words[18])||words[18]<0)throw new Error('PracticeSnapshot title timer is invalid');
+  if(![0,2,3].includes(words[19]))throw new Error('PracticeSnapshot title input-ready extension is invalid');
   const validMask=words[1];
   if(!Number.isInteger(validMask)||(validMask&~0x0f)!==0)throw new Error('PracticeSnapshot has an unknown validity bit');
   const flag=index=>{
@@ -359,7 +364,8 @@ export function decodePracticeSnapshot(raw){
     schema:'eagler-touhou/th08-practice-snapshot/1',validMask,
     state:{enabled:flag(2),menu:flag(3),accepted:flag(4),active:flag(5),replay:flag(6),assisted:flag(7),
       replayCandidateValid:flag(8),inGame:flag(9),titleScreen:words[10],titlePhase:words[11],titleCursor:words[12],
-      stage:words[13],difficulty:words[14],character:words[15],shotType:words[16],gameFlags:words[17],titleTimer:words[18]},
+      stage:words[13],difficulty:words[14],character:words[15],shotType:words[16],gameFlags:words[17],titleTimer:words[18],
+      ...(words[19]?{titleInputReady:Boolean(words[19]&1)}:{})},
     configured:config(1,20),run:config(2,46),replayCandidate:config(4,72),applied,
     source:{configured:'PracticeState::configured via normal Runtime options',run:'PracticeState::run after native practice-menu acceptance',
       replayCandidate:'PracticeState::replay_candidate from Replay menu inspection',
@@ -529,7 +535,10 @@ export function assessTh08PracticeConsumption(snapshot,requested=TH08_PRACTICE_P
   if(!(initial.validMask&1))return{status:'incomplete',complete:false,missing:['available immutable initialization boundary'],mismatches:[]};
   const check=(ok,field,expected,actual)=>{if(!ok)mismatches.push({field,expected,actual});};
   check(JSON.stringify(observed.identityBefore)===JSON.stringify(observed.identityAfter),'identity','same document/epoch/app',observed.identityAfter);
-  for(const field of CONFIG_FIELDS.filter(name=>name!=='sentinel'))for(const owner of ['configured','run'])check(snapshot[owner][field]===requested[field],`${owner}.${field}`,requested[field],snapshot[owner][field]);
+  for(const field of CONFIG_FIELDS.filter(name=>name!=='sentinel'))for(const owner of ['configured','run']){
+    const expected=owner==='run'&&field==='warp'?0:requested[field];
+    check(snapshot[owner][field]===expected,`${owner}.${field}`,expected,snapshot[owner][field]);
+  }
   check(snapshot.state.active&&snapshot.state.inGame&&!snapshot.state.replay&&(snapshot.state.gameFlags&9)===1,'state.owner','active live Practice',snapshot.state);
   check(initial.state.customPractice&&!initial.state.replay&&(initial.state.gameFlags&9)===1,'initial.owner','custom Practice initialization',initial.state);
   check(JSON.stringify(initial.run)===JSON.stringify(snapshot.run),'initial.run',snapshot.run,initial.run);
@@ -543,12 +552,12 @@ export function assessTh08PracticeConsumption(snapshot,requested=TH08_PRACTICE_P
 }
 
 /** Native title-menu route and configured-value consumption, expressed through shared driver operations. */
-export async function enterTh08PracticeMenu({read,waitUntil,press,waitForGameplay,readInitial,readIdentity,parameterCase=TH08_PRACTICE_PARAMETER_CASE,
+export async function enterTh08PracticeMenu({read,waitUntil,press,waitForGameplay,waitForPracticeInput,readInitial,readIdentity,parameterCase=TH08_PRACTICE_PARAMETER_CASE,
   selectionCase=TH08_PRACTICE_SELECTION_CASE}={}){
-  if(typeof read!=='function'||typeof waitUntil!=='function'||typeof press!=='function'||typeof waitForGameplay!=='function')
-    throw new TypeError('TH08 practice menu adapter needs native read, synchronous-predicate wait, key and async gameplay wait operations');
+  if(typeof read!=='function'||typeof waitUntil!=='function'||typeof press!=='function'||typeof waitForGameplay!=='function'||typeof waitForPracticeInput!=='function')
+    throw new TypeError('TH08 practice menu adapter needs native read, synchronous-predicate wait, input-ready wait, key and gameplay operations');
   const identityBefore=typeof readIdentity==='function'?await readIdentity():null;
-  let practice=await waitUntil('TH08 start menu ready',state=>state.state.titleScreen===0&&state.state.titlePhase===1);
+  let practice=await waitUntil('TH08 start menu ready',state=>state.state.titleScreen===0&&state.state.titlePhase===1&&state.state.titleInputReady===true);
   for(let count=0;count<9&&!(practice.state.titleScreen===0&&practice.state.titlePhase===1&&practice.state.titleCursor===3);count++){
     await press('ArrowDown');practice=await read();
   }
@@ -569,13 +578,13 @@ export async function enterTh08PracticeMenu({read,waitUntil,press,waitForGamepla
   practice=await waitUntil('TH08 native practice options ready',state=>state.state.menu&&state.state.titleScreen===11,15000);
   if(!practice.state.menu||practice.state.titleScreen!==11)throw new Error('Native thprac stage-select menu did not open');
   if(!practice.state.enabled)throw new Error('Practice feature was not enabled in the native owner');
-  await new Promise(resolve=>setTimeout(resolve,250));await press('KeyZ');
+  const menuInput=await waitForPracticeInput();await press('KeyZ');
   practice=await waitUntil('TH08 custom practice consumption',state=>state.state.active&&state.applied,20000);
   if(!practice.state.active||!practice.applied)throw new Error('Native custom practice was not consumed by GameplayScene');
   const snapshot=await waitForGameplay();practice=await read();
   const initialRaw=typeof readInitial==='function'?await readInitial():null;
   const identityAfter=typeof readIdentity==='function'?await readIdentity():null;
-  return{initialRaw,identityBefore,identityAfter,titleSelection:{screen:practice.state.titleScreen,cursor:practice.state.titleCursor},snapshot,practice,
+  return{initialRaw,identityBefore,identityAfter,menuInput,titleSelection:{screen:practice.state.titleScreen,cursor:practice.state.titleCursor},snapshot,practice,
     featureInventory:th08PracticeFeatureInventory(practice)};
 }
 
@@ -661,7 +670,7 @@ export function assessTh08PracticeLifecycle(evidence={}){
   return{status:problems.length?'failed':missing.length?'incomplete':'observed',complete:problems.length===0&&missing.length===0,missing,problems};
 }
 
-export async function runTh08PracticeLifecycle({read,waitUntil,readInitial,readIdentity,readRuntime,waitRuntime,press,restartFromPause,enterOrdinary,enterReplay,
+export async function runTh08PracticeLifecycle({read,waitUntil,readInitial,readIdentity,readRuntime,waitRuntime,press,waitForPracticeInput,restartFromPause,enterOrdinary,enterReplay,
   replayConfig,record={},stage,save}={}){
   const evidence=record.evidence={replayConfig,initials:{},identities:{}};record.status='running';
   const capture=async(name)=>{evidence[name]=await read();evidence.identities[name]=await readIdentity();if(['before','retried','ordinary','fresh'].includes(name))evidence.initials[name]=await readInitial();await save();return evidence[name];};
@@ -698,7 +707,7 @@ export async function runTh08PracticeLifecycle({read,waitUntil,readInitial,readI
       await capture('ordinary');evidence.ordinaryProgress=(await readRuntime()).worldProgress;await save();
     });
     await stage('practice-same-runtime-fresh-practice',{},async()=>{
-      await toTitle();await enterTh08PracticeMenu({read,waitUntil,press,readInitial,readIdentity,waitForGameplay:()=>waitRuntime('fresh Practice gameplay',s=>s.pause?.active===false&&s.worldProgress?.comparable===true,15000)});
+      await toTitle();await enterTh08PracticeMenu({read,waitUntil,press,waitForPracticeInput,readInitial,readIdentity,waitForGameplay:()=>waitRuntime('fresh Practice gameplay',s=>s.pause?.active===false&&s.worldProgress?.comparable===true,15000)});
       await capture('fresh');
     });
     Object.assign(record,assessTh08PracticeLifecycle(evidence));await save();
@@ -708,10 +717,26 @@ export async function runTh08PracticeLifecycle({read,waitUntil,readInitial,readI
 }
 
 export const TH08_PRACTICE_ADAPTER=Object.freeze({
+  trainer:TH08_PRACTICE_TRAINER,
+  options:TH08_PRACTICE_OPTIONS,
+  bossEffects:{snapshot:TH08_PRACTICE_TRAINER.snapshot,stage:0,slot:0,protectedMask:81,vulnerableMask:17,unlockedMask:65,
+    lockTimer:{snapshot:TH08_PRACTICE_OPTIONS.snapshot,toggle:17,menuKey:'F12',fields:{option:47,frame:17,consumer:60,generation:76,visible:77,frames:78,length:79,text:80,vertices:88}},
+    keys:{playerGuard:'F1',enemyGuard:'KeyU',timeLock:'F5',fire:'KeyZ'},parameters:{stage:0,warp:3,section:3,frame:0},
+    source:'PracticePatches::THStageWarp first Boss | PracticeRuntime::update_practice | EnemyDamage::damage_enemy | EnemyPopulation::check_timeout'},
+  uiSnapshot:{export:'practice_ui_snapshot_v1',wordCount:128,wordType:'u32',app:true,decode:decodePracticeUiSnapshot,keyboard:'vk256/1'},
+  applicationSnapshot:{decode:decodePracticeApplicationSnapshot,source:'GameplayScene::capture_gameplay_initial_snapshot | actual ECL timeline state before bind_jobs'},
+  controlKeys:[...Array.from({length:6},(_,index)=>({key:'F'+(index+1),kind:'cheat-mask',mask:1<<index})),
+    {key:'F7',kind:'everlasting-bgm'},{key:'KeyU',kind:'cheat-mask',mask:64}],
+  localeReview:{locales:['ja-JP','en-US','zh-CN'],font:'/shared/unifont.otf',
+    source:'ports/th08/web/cpp/sdl/ThpracUi.cpp | initialize | locale selection and io.FontDefault'},
   lifecycle:{minimumRecordingFrames:360,run:runTh08PracticeLifecycle,assess:assessTh08PracticeLifecycle},
   schema:'eagler-touhou/practice-title/1',
   source:'ports/th08/web/cpp/game/TitleMenus.cpp | PracticeStart | PracticeRuntime::apply_practice',
   parameterCase:TH08_PRACTICE_PARAMETER_CASE,
+  parameterMatrix:th08PracticeParameterCases(TH08_PRACTICE_PARAMETER_CASE),
+  programSnapshot:{export:'practice_program_snapshot_v1',source:'GameplayScene::capture_gameplay_initial_snapshot | frozen actual ECL bytes'},
+  assessParameterMatrix:rows=>assertTh08PracticeParameters(rows,{cases:th08PracticeParameterCases(TH08_PRACTICE_PARAMETER_CASE),decodeSnapshot:decodePracticeSnapshot,
+    assessConsumption:(native,params,observation)=>assessTh08PracticeConsumption(native,params,TH08_PRACTICE_SELECTION_CASE,observation)}),
   selectionCase:TH08_PRACTICE_SELECTION_CASE,
   snapshot:{export:'practice_snapshot_v1',wordCount:128,wordType:'f64',app:true,decode:decodePracticeSnapshot},
   gameplayInitialSnapshot:{export:'gameplay_initial_snapshot_v1',wordCount:80,wordType:'f64',app:true,decode:decodeGameplayInitialSnapshot},
@@ -745,8 +770,8 @@ export function th08ReplayListConfirmReady(snapshot){
 }
 
 export async function enterTh08PracticeReplayMenu({page,frame,target,runtime,practice,readRuntimeObservation,
-  runtimeObservationRequest,stage,importPath,caseRecord,save,sourcePractice,epoch,systemSlot=false,captureInitial=true}={}){
-  if(!page||!frame||typeof stage!=='function'||typeof save!=='function'||typeof readRuntimeObservation!=='function')
+  runtimeObservationRequest,stage,press,importPath,caseRecord,save,sourcePractice,epoch,systemSlot=false,captureInitial=true}={}){
+  if(!page||!frame||typeof stage!=='function'||typeof save!=='function'||typeof readRuntimeObservation!=='function'||typeof press!=='function')
     throw new TypeError('TH08 Replay menu adapter needs the shared page, native frame and evidence operations');
   const read=async()=>decodePracticeSnapshot(await frame.evaluate(readPracticeSnapshotRaw,
     practiceSnapshotRequest({runtime,contract:practice})));
@@ -757,11 +782,10 @@ export async function enterTh08PracticeReplayMenu({page,frame,target,runtime,pra
     throw new Error(`${label}: native condition not reached: ${JSON.stringify(state)}`);
   };
   const initial=await stage(systemSlot?'practice-same-runtime-title-before-replay':'practice-replay-default-state-before-menu',{epoch},()=>wait(
-    'TH08 fresh Runtime title menu',state=>state.state.titleScreen===0&&state.state.titlePhase===1));
+    'TH08 fresh Runtime title menu',state=>state.state.titleScreen===0&&state.state.titlePhase===1&&state.state.titleInputReady===true));
   if(!systemSlot)caseRecord.p05FreshEpoch={epoch,configured:initial.configured,
     title:{screen:initial.state.titleScreen,phase:initial.state.titlePhase,cursor:initial.state.titleCursor},
     importedBeforeLaunch:true,customParametersSupplied:false};
-  const press=async key=>{await page.keyboard.press(key,{delay:90});await page.waitForTimeout(140);};
   let title=initial;
   for(let count=0;count<12&&title.state.titleCursor!==4;count++){await press('ArrowDown');title=await read();}
   if(title.state.titleScreen!==0||title.state.titlePhase!==1||title.state.titleCursor!==4)

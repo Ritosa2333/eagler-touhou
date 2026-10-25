@@ -3,7 +3,7 @@ import test from 'node:test';
 import {createRequire} from 'node:module';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {runLauncherTouchScenes,runLauncherGamepadMappingScene,runLauncherTouchLayoutScene,runLauncherTouchMagnifierScene} from './launcher-touch-scenes.mjs';
+import {runLauncherTouchScenes,runLauncherGamepadMappingScene,runLauncherTouchLayoutScene,runLauncherTouchMagnifierScene,assertLauncherTouchOwnershipEvidence,runLauncherFocusScene,assertLauncherFocusEvidence} from './launcher-touch-scenes.mjs';
 const run=(io,options={})=>runLauncherTouchScenes(io,{fireMode:'toggle',...options});
 const launcherRequire=createRequire(new URL('../../launcher/package.json',import.meta.url));
 const {build}=launcherRequire('esbuild');
@@ -16,7 +16,7 @@ const {defaultGamepadProfile,gamepadActionBits}=await import(`data:text/javascri
  * native consumer. They do not replace the browser fixture or prove that the
  * production DOM controller reaches a real Runtime.
  */
-function nativeConsumer({fault,fireMode='toggle'}={}){
+function nativeConsumer({fault,fireMode='toggle',focusMode='toggle-button'}={}){
   const state={sequence:0,steps:0,x:0,y:0,right:false,physicalFocus:false,
     touchFocus:false,physicalFire:false,gamepadFire:false,touchFire:false};
   const effectiveFocus=()=>state.physicalFocus||state.touchFocus;
@@ -33,15 +33,14 @@ function nativeConsumer({fault,fireMode='toggle'}={}){
       }
     },
     async pointer({control,type}){
-      if(control==='fire'&&fireMode==='held-key'){state.touchFire=type==='pointerdown';return;}
-      if(type!=='pointerup'){
-        if(fault==='focus-pointerup-releases'&&control==='focus'&&type==='pointerdown')state.touchFocus=true;
+      if(control==='focus'&&focusMode==='hold-button'){state.touchFocus=type==='pointerdown';return;}
+      if(control==='focus'){
+        if(type==='pointerdown')state.touchFocus=!state.touchFocus;
+        if(type==='pointerup'&&fault==='focus-pointerup-releases')state.touchFocus=false;
         return;
       }
-      if(control==='focus'){
-        if(fault==='focus-pointerup-releases')state.touchFocus=false;
-        else state.touchFocus=!state.touchFocus;
-      }
+      if(control==='fire'&&fireMode==='held-key'){state.touchFire=type==='pointerdown';return;}
+      if(type!=='pointerup')return;
       if(control==='fire')state.touchFire=!state.touchFire;
     },
     async gamepad(down){
@@ -72,6 +71,22 @@ function nativeConsumer({fault,fireMode='toggle'}={}){
   };
 }
 
+for(const mode of ['hold-button','toggle-button'])test(`shared focus button scene checks ${mode} against physical speed and release`,async()=>{
+  const e=await runLauncherFocusScene(nativeConsumer({focusMode:mode}),{mode});assertLauncherFocusEvidence(e);
+  for(const mutate of [
+    row=>row.phases['button-held'][0].action.focused=false,
+    row=>row.phases['button-held'][1].position.x+=.01,
+    row=>row.samples[10].action.sequence++,
+    row=>row.phases.cleanup[0].position.y+=.01,
+    row=>row.operations=row.operations.filter(operation=>operation.kind!=='pointer'),
+  ]){const invalid=structuredClone(e);mutate(invalid);assert.throws(()=>assertLauncherFocusEvidence(invalid));}
+});
+
+test('focus button scene rejects a toggle released on pointerup and fake slowdown',async()=>{
+  await assert.rejects(runLauncherFocusScene(nativeConsumer({fault:'focus-pointerup-releases'}),{mode:'toggle-button'}));
+  await assert.rejects(runLauncherFocusScene(nativeConsumer({fault:'toggle-has-no-slowdown'}),{mode:'toggle-button'}));
+});
+
 test('Launcher touch scene accepts independent native focus, fire and position observations',async()=>{
   const result=await run(nativeConsumer());
   assert.equal(result.schema,'eagler-touhou/launcher-touch-scenes/1');
@@ -80,6 +95,17 @@ test('Launcher touch scene accepts independent native focus, fire and position o
   assert.ok(result.samples.some(sample=>sample.action.consumed.fire));
   assert.ok(result.samples.some(sample=>sample.action.consumed.focus));
   assert.ok(result.samples.every(sample=>Number.isFinite(sample.position.x)&&Number.isFinite(sample.position.y)));
+  assertLauncherTouchOwnershipEvidence(JSON.parse(JSON.stringify(result)));
+});
+
+test('saved mixed-owner proof rejects lost ownership, missing stimuli and leftover inputs',async()=>{
+  const result=await run(nativeConsumer());
+  for(const mutate of [
+    e=>e.samples.find(row=>row.label.startsWith('keyboard-released-gamepad-remains')).action.consumed.fire=false,
+    e=>e.samples.find(row=>row.label.startsWith('cancel-retains-physical')).action.consumed.fire=false,
+    e=>e.operations=e.operations.filter(operation=>operation.kind!=='gamepad'),
+    e=>e.cleanup.samples.at(-1).action.consumed.fire=true,
+  ]){const e=JSON.parse(JSON.stringify(result));mutate(e);assert.throws(()=>assertLauncherTouchOwnershipEvidence(e));}
 });
 
 test('held-key products use the same ownership assertions with a held touch contact',async()=>{

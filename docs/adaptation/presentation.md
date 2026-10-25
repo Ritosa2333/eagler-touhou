@@ -4,7 +4,11 @@
 
 固定逻辑频率，画面跟随显示器刷新。声音事件按真实游戏事件输出。
 
+共用音效队列回归读取当前生产 PCM 高水位并合并相同长度，再增加两倍最大高水位的合成压力场景。报告分别列出生产来源与压力输入；两组均要求新音效早于既有 PCM 队尾起音，延迟到队尾的反例必须失败。
+
 ## 准备
+
+配对 Replay 判据直接逐字段比较 JSON 观察，忽略对象字段顺序，保留数组顺序、数值和全部权威字段。三个刷新率的完整 600 步、重复读取与原始文件哈希继续进入同一次验收，避免为相等比较反复生成整份排序文本。
 
 准备一台 60 Hz 设备和一台高刷新率设备。使用固定输入或 Replay 比较游戏状态，再观察角色、弹幕、激光、特效、背景、菜单与暂停画面。
 
@@ -53,6 +57,18 @@ th08 工作台将多个已导出的窗口加入一组素材，集中选择一次
 ## 可审查的验收方法
 
 以下方法供逐项审查，当前入口说明实际覆盖范围。
+
+### 音乐统一验收
+
+统一入口把 `--check` 的编号选择传给音乐驱动。检查标题／开局、选项和故障恢复时复用源与输出场景；自然循环、Music Room、Boss 及暂停／重开旅程按对应生命周期编号执行。省略的场景不生成完成声明。
+
+`music` 场景组复用同一批 Runtime 与真实 Launcher 音乐旅程。作品适配器在 `music` 声明标题／首关曲目、原生曲目编号和独立 DATA 曲目表读取器。中央判据重新读取曲目表与 OGG 文件，核对文件字节、原生播放源、流式／完整解码策略、音频输出采样窗口和 MIDI 原生消息到合成器的逐字节传输。
+
+th08 的 AUDIO-01、AUDIO-05、MIDI-01、MIDI-02、MIDI-04 以这些原始记录判断完整验收。Launcher 部分检查实际选项可用性、设置重载持久化、无音乐／MIDI 启动提示，以及安装资源缺失后的逐文件提示和 MIDI 恢复。MIDI 场景同时检查零 OGG 请求，再用新实例验证 OGG 选择。原始记录与包、DATA 及输入文件身份一起保存，成功标志不能替代这些观察。
+
+反例覆盖曲目错误、源缓冲未排空、错误解码策略、MIDI 消息丢失／改变、输出暂停、输入文件替换和缺少实际菜单／故障恢复记录。自然可见性事件、完整生命周期和人工显示审查按各自编号收集。
+
+MIDI-04 的连续切换保留同一个真实浏览器存储环境：先运行 MIDI，经生产 stop 退出，再用新页面读取仍为 MIDI 的设置并选择 OGG。报告关联 Chrome 的 browserContextId、两个页面 target、退出消息、持久偏好和同一安装代次；各模式的输出分别验证。MIDI 开局还要求首关新打开的 SMF 与新增音符，先前标题音乐的消息不能替代首关输出。
 
 th08 的 `node ports/th08/portable/presentation-lab/test-visual.mjs` 使用共用 WASI 编译入口执行生产视觉头文件的插值、离散切换和对象身份断言，并进入 CI 的 `ports-touch-wasi` 共用编译任务组。设置 `WASI_SDK_PATH` 或 `EAGLER_WASI_SDK` 指向 WASI SDK；临时编译产物由入口自动清理。配对证据单测按编号和反例分开执行，复用生成的完整 600 tick 输入，每项独立写入原始文件并重新验算，遵循 CI 的单项 30 秒限制。
 
@@ -152,6 +168,8 @@ OGG 重启前的观测单独记录原生 playing／ready／paused 状态、当�
 
 正式包的精确时序通过 `--suite=audio-latency` 执行。th08 普通版的场景由[音频适配器](../../tests/adaptation/adapters/audio.mjs)锚定到生产音效表、成功上传的 buffer 和标题菜单；[共享判据](../../tools/ports/sfx-latency-contract.mjs)检查实际 PCM。
 
+同一组继续进入受控 Gameplay，复用真实射击与原生声源采集：无输入窗口的 PCM 保持静音，可信射击按键创建实际子弹，并在相同 AudioContext 时钟内产生可归属的非零 PCM。中央 AUDIO-02 判据共同重算菜单正向、队尾延迟负控与 Gameplay 射击，重新打开采样文件，并从原始起播记录复核声源及输出连接。桌面输入组保留射击辅助观察，完整验收由音效组负责。
+
 该组在无界面 Chromium 中运行正式包和真实 AudioContext／AudioWorklet，按原生时钟采样，适合进入自动队列。窗口前后台行为由专门的桌面生命周期场景验证，实体声音设备的延迟由设备会话记录。
 
 原生记录在 `SDL_GetAudioStreamQueued` 前后读取同一 AudioContext 时钟，并保留两个时刻及对应帧。队尾因此表现为上下界：正向通过要求有效起音早于下界，live 负控排到上界；时钟缺失或顺序异常时记录不完整，不用固定时长容差代替边界测量。
@@ -182,7 +200,11 @@ AudioWorklet 的 `markerReceivedAtFrame` 记录标记消息被处理的渲染块
 
 ### AUDIO-03 | 切曲、渐变、暂停、停止
 
+游戏内重开与 Runtime 退出分开执行。共享 `music-gameplay-restart.mjs` 在同一 document、epoch 和原生 app 中通过 Host 键盘协议暂停并按 R，核对暂停帧停止、关卡帧重建、输入释放及新曲输出；原生曲目状态由作品适配器归一化。th08 普通关的独立预期来自 `GameplayStart::after_resources`：OGG 重置当前曲目游标，MIDI 重新打开当前 SMF 并产生新音符。Runtime stop／launch 继续独立检查静音、voice 清理与标题恢复。中央判据重新读取 DATA 中的 Music Room／Boss 源信息，并复算每个转换的原始观察。
+
 切曲观察保留停止与打开阶段的原生 pending、就绪、播放和暂停状态，目标源就绪后再结束轮询并检查输出 PCM。失败记录同时保存来源、操作请求、逐次原生观察和清理结果。
+
+暂停与继续分别等待玩法状态和音乐消费状态同时到达边界。继续时要求原曲恢复 playing 且游标实际推进，报告保留过渡采样；玩法先解除暂停、音乐命令随后消费的中间状态单独记录。
 
 切曲共用场景读取已加载的原生来源、实际曲目、Runtime 身份和帧进度，再触发本作真实入口。预期曲目来自独立资源解析；验收核对一次原生请求、来源字节身份、曲目变化和输入释放。th08 从一面 MSG 的 Music 指令与 StageHeader 音乐槽解析 Boss 曲目，普通版的 stream／full 分别执行 ECL 消息入口，并验证新曲目解码模式和实际 PCM。各作提供来源、只读观察、触发与释放操作，共用轮询和判据。
 
@@ -196,11 +218,15 @@ AudioWorklet 的 `markerReceivedAtFrame` 记录标记消息被处理的渲染块
 
 ### AUDIO-04 | 返回前台后恢复声音
 
+音乐标签场景关闭 Windows 窗口遮挡推断，使同窗标签切换能独立复验；标签的 hidden／visible 和可信事件由 Chrome 生成。报告声明此范围并保留实际启动参数。窗口最小化与系统前台行为沿用 `desktop-background`，记录实际窗口和进程身份。音乐驱动按传递导入及显式 MIDI／合成器输入核对工具身份，原生构建、Runtime 包、DATA 与 OGG 输入各自保留前后字节核验。
+
+启动至首帧复用桌面组的有界前台监测器，持续核对所属标签、窗口和两个文档的原生状态，最多恢复两次。启动采样保留原生 app 与阶段标记；页面换代或重复丢失前台直接结束该场景。后台切换在启动完成后单独采集。
+
 - 操作：播放期间隐藏页面或切后台，再返回并按游戏需要恢复音频的真实手势。
 - 观察与独立预期：记录 AudioContext 状态、选中曲目、输出 PCM 和当前位置；返回前后按音频连续状态及曲目循环规则比较。
 - 判定：前台后，输出 tap 对应的 AudioContext 在 KeyZ 前已处于 running；Host 键盘桥已接受且原生输入观察确认的射击动作在 Runtime 输出 tap 上产生非零 PCM，释放后原生输入回到中立。后台连续运行与挂起后恢复分别记录。源节点播放区间具有完整采集且持续为零时判失败；焦点、桥接、原生输入、时钟或采集覆盖缺失时记 incomplete。恢复证据同时记录 KeyZ 前的 running 状态。
 - 反例：已消费的射击输入对应完整输出窗口，但 PCM 持续为零，应失败；截断采样窗口或移除源节点身份，应保留未完成状态。
-- 当前入口/边界：th08 normal 音乐场景对 Runtime 文档派发 `visibilitychange`，核对隐藏期间原生 OGG 输出暂停与游标稳定，再检查恢复后继续推进；该场景提供页面生命周期信号的自动证据。设备实际切后台、系统音频策略与用户恢复手势由桌面会话记录。`runtime-desktop-probes.mjs` 另核对真实同窗标签切换后的原生前台状态及音效输出，不能替代 OGG 曲目位置场景。audio-health 与 MidiBridge 单测覆盖恢复策略。
+- 当前入口/边界：`music-browser.mjs --check=AUDIO-04` 使用完整 Chrome 和既有焦点网关，在原窗口创建另一个真实标签页。Host 与 Runtime 的原生 `hidden`／`visibilityState`、可信 visibilitychange、文档 timeOrigin、page target 和 window ID 逐项关联，要求隐藏期间同一 OGG 来源与游标保持、返回后继续推进并输出源绑定 PCM。stream／full 分别核对五个边界的实际解码策略。该编号独立选择时运行曲目恢复场景；暂停、退出重开和 Music Room 按 AUDIO-03 选择。`runtime-desktop-probes.mjs` 的真实标签恢复场景另检查 KeyZ 前 AudioContext、原生射击和音效输出。两条场景分别记录音乐来源连续性和音效恢复。audio-health 与 MidiBridge 模块检查恢复策略。
 
 ### AUDIO-05 | 音乐资源错误信息
 
@@ -252,6 +278,10 @@ AudioWorklet 的 `markerReceivedAtFrame` 记录标记消息被处理的渲染块
 - 当前入口/边界：`--suite=music` 选择 `tools/ports/music-browser.mjs`；当前登记的真实 MIDI Runtime 场景为 th08 normal。正式包观察标题 SMF `bgm/th08_01.mid`、原生 Note 消息、Launcher MIDI bridge 发送字节和 TinySynth AudioContext PCM。原生事件与 TinySynth 成功发送的字节按事件顺序逐项核对；输出窗口与原生源身份共同判定。该窗口验证实际桥接输出与可听 PCM。th06／th07 的静态 transport 接线检查与该 Runtime PCM 场景分开记录。
 
 ### MIDI-03 | MIDI 生命周期
+
+同一共享原生重开场景核对暂停后 R 的关卡重建、SMF 打开计数、新音符和输出；实际标签切换核对 Chrome 可信可见性事件、原生 sequencer 与合成 PCM。暂停、游戏内重开、Runtime close／relaunch 分别保留原始参数，汇总时重新调用对应判据。
+
+MIDI 恢复先记录合成器从 suspended 到 running 的过程，要求同一输出 tap 的真实音频时钟推进完整分析窗后才开始输出采样。该边界使用 PCM 探针共用的窗长，中央核对状态事件前缀、tap 身份、时钟和首个输出样本；每个 PCM 窗口保留源节点与 tap 编号，恢复过程中的挂起观察保留在独立阶段。
 
 - 操作：在曲目播放时切曲、暂停、重开并退出，捕获每个转换前后的 MIDI 消息与合成 PCM。
 - 观察与独立预期：把 Note On/Off、控制器重置、合成器活动音符和本作阶段对应；边界预期由原版行为或正式音乐规则给出。

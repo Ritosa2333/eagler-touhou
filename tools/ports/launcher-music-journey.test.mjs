@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import {assessLauncherMusicScene,assessLauncherMusicFault,installLauncherMusicObserver,matchesMusicLaunchConsent} from './launcher-music-journey.mjs';
+import {assessLauncherMusicScene,assessLauncherMusicFault,assertLauncherMusicModeTransition,installLauncherMusicObserver,matchesMusicLaunchConsent} from './launcher-music-journey.mjs';
 import {runtimePcm} from './fixtures/music-pcm-window.mjs';
 import {TH08_OGG_PCM_ROLE,TH08_MIDI_PCM_ROLE} from './music-browser-helpers.mjs';
 
@@ -54,6 +54,32 @@ function fallbackScene(){
   scene.audio.midiHost={contextState:'running',nativeEvents:[{epoch:4,bytes:[0x90,60,100]},{epoch:4,bytes:[0x80,60,0]}],sentMessages:[[0x90,60,100],[0x80,60,0]]};
   return scene;
 }
+
+function modeTransition(){
+  const previous=fallbackScene();Object.assign(previous,{scenario:'midi',mode:'midi',
+    preference:{music:'midi',musicPreferenceExplicit:true},reloadedPreference:'midi',installation:{generationId:'same-generation'},
+    browserTarget:{browserContextId:'context-1',targetId:'page-1'},document:{origin:'https://fixture.test',timeOrigin:1000},
+    modeChangeClose:{pageClosed:true,exitAbsentBeforeStop:true,exit:{protocol:'eagler-touhou/1',event:'exit',game:'th08',epoch:4,code:0,status:'success'}}});
+  previous.launchConsent.message='The game will continue with MIDI music. If you want normal music playback, choose OGG under Music.';
+  const next=quietScene();Object.assign(next,{scenario:'ogg-stream',mode:'ogg-stream',moduleMode:'ogg',
+    preference:{music:'ogg-stream',musicPreferenceExplicit:true},reloadedPreference:'ogg-stream',installation:{generationId:'same-generation'},
+    browserTarget:{browserContextId:'context-1',targetId:'page-2'},document:{origin:'https://fixture.test',timeOrigin:2000},
+    modeTransition:{selectionBefore:'midi',storedBefore:{music:'midi'}},sourceIdentityMatched:true,pcm:runtimePcm(TH08_OGG_PCM_ROLE,{windowCount:8})});
+  next.host.configures[0]={epoch:4,music:'ogg',decodeMode:'stream',at:100};
+  next.audio.decoder={enabled:true,decodeMode:0};next.audio.musicObservation={playing:true};
+  return[previous,next];
+}
+test('MIDI to OGG requires the same real storage context, old Runtime exit and persisted former selection',()=>{
+  assert.doesNotThrow(()=>assertLauncherMusicModeTransition(...modeTransition()));
+  for(const mutate of [
+    ([a,b])=>b.browserTarget.browserContextId='another-context',([a,b])=>b.browserTarget.targetId=a.browserTarget.targetId,
+    ([a,b])=>b.document.timeOrigin=a.document.timeOrigin,([a,b])=>b.modeTransition.selectionBefore='none',
+    ([a,b])=>b.modeTransition.storedBefore.music='ogg-stream',([a,b])=>b.installation.generationId='new-generation',
+    ([a])=>a.modeChangeClose.exit.epoch=3,([a])=>a.modeChangeClose.exit.code=1,([a])=>a.modeChangeClose.pageClosed=false,
+    ([a])=>a.modeChangeClose.exitAbsentBeforeStop=false,
+    ([a,b])=>delete b.modeTransition,
+  ]){const scenes=modeTransition();mutate(scenes);assert.throws(()=>assertLauncherMusicModeTransition(...scenes));}
+});
 
 test('isolated missing-object fallback requires the actual toast, unchanged references and verified MIDI',()=>{
   assert.equal(assessLauncherMusicScene(fallbackScene()).status,'passed');

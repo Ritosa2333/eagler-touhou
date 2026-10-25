@@ -1,0 +1,35 @@
+import {TH08_PRACTICE_MATH} from './th08-practice-math.mjs';
+import {TH08_PRACTICE_DISPLAY} from './th08-practice-display.mjs';
+export const TH08_PRACTICE_OPTIONS=Object.freeze({
+  snapshot:{export:'practice_controls_snapshot_v1',wordCount:1024,wordType:'f64',app:true},width:640,height:480,
+  source:'ports/th08/web/cpp/sdl/ThpracUi.cpp | draw_advanced | BrowserRuntime::poll_input | PlayerSimulation::consumed_input',
+  consumerLatencyTicks:1,math:TH08_PRACTICE_MATH,display:TH08_PRACTICE_DISPLAY,
+  consumerFields:{inGame:16,frame:17,sequence:18,current:19,life:21},
+  lifecycle:{menuKey:'F12',retryControl:6,deathControl:11,aliveState:0,deathState:2,retryVirtualKey:82,pauseVirtualKey:27,
+    fields:{life:21,bombs:22,lives:24,gameOver:29,fastRetry:36,retryCountdown:52},
+    cases:[{id:'fast-retry',kind:'fast-retry'},{id:'one-key-death',kind:'one-key-death'}],
+    source:'PracticeInput::begin_retry/gui_tick/apply | PlayerScene::dissolve | ThpracUi::draw_advanced one-key death | PlayerLife::resolve_death'},
+  gameplay:{source:'PlayerScene::prepare | map_inf_life_to_no_continue | PlayerLife::resolve_death',
+    cases:[
+      {id:'mapped-life-with-reserves',keys:['F2'],mask:2,stimulus:'hit',kind:'miss',keepLife:false,keepPower:false,startLives:4,
+        options:[{semantic:10,stateWord:43,value:1}]},
+      {id:'mapped-last-life',keys:['F2'],mask:2,stimulus:'hit',kind:'miss',keepLife:true,keepPower:false,startLives:0,allowZeroLives:true,expectedPower:0,
+        params:{life:0,score:0,point_total:0,point_stage:0},options:[{semantic:10,stateWord:43,value:1}]},
+    ]},
+  keyMonitor:{toggle:7,record:8,download:9,menuKey:'F12',window:60,
+    fields:{recording:38,count:39,apsCount:40,keys:41,aps:42},
+    header:'frame,aps,up,down,left,right,Z,X,C,D,Ctrl,Shift\n',inputMasks:[16,32,64,128,1,2,0,0,256,4],
+    pulses:[{keys:['KeyZ'],expected:1,ticks:6,release:70},{keys:['ArrowRight','ShiftLeft'],expected:132,ticks:6,release:4},
+      {keys:['ControlLeft'],expected:256,ticks:4,release:8}],
+    source:'common/include/eagler/thprac/PracticeKeyMonitor.hpp | record(8), 60-frame APS and csv | GameplayScene::prepare_frame'},
+  filters:[
+    {id:'disable-fire',semantic:3,stateWord:34,key:'KeyZ',vk:90,mask:1,enabledMask:0,disabledMask:1},
+    {id:'disable-focus',semantic:2,stateWord:33,key:'ShiftLeft',vk:16,mask:4,enabledMask:0,disabledMask:4},
+    {id:'disable-bomb',semantic:1,stateWord:32,key:'KeyX',vk:88,mask:2,enabledMask:0,disabledMask:2},
+    {id:'force-focus',semantic:5,stateWord:35,key:null,vk:16,mask:4,enabledMask:4,disabledMask:0},
+  ],
+  controls:{disableBomb:1,disableFocus:2,disableFire:3,forceFocus:5,fastRetry:6,keyboardMonitor:7,record:8,csv:9,
+    mapInfiniteLives:10,oneKeyDeath:11,rsqrt:12,cpu:13,exportTable:14,importTable:15,forceLastSpell:16,lockTimer:17,
+    fullHistory:18,bulletHitbox:19,allClearBonus:20,preserveSpellHistory:21,speed:22,gameplay:23,reaction:24,about:25,license:26,
+    cpuChoices:[27,28,29]},
+});

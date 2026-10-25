@@ -61,5 +61,7 @@ export async function prepareLanguageFixture({root,output,target,identity,dataId
   const manifest=JSON.parse(await readFile(resolve(site,'site-manifest.json'),'utf8'));
   assert.equal(manifest.games[game].gameData.sha256,dataIdentity.sha256,'Hosted DATA differs from the acceptance input');
   assert.equal(manifest.games[game].gameData.bytes,dataIdentity.bytes,'Hosted DATA size differs from the acceptance input');
-  return{site,manifest,packaging,expected,mounts,baseLanguage,partialLanguage,partialIdentity:{bytes:partial.archive.length,sha256:partial.sha256}};
+  const partialIdentity={bytes:partial.archive.length,sha256:partial.sha256};
+  return{site,manifest,packaging,expected,mounts,baseLanguage,partialLanguage,partialIdentity,
+    partialInput:{path:resolve(packsRoot,partial.catalog.pack.url),language:partialLanguage,...partialIdentity}};
 }

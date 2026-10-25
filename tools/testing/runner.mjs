@@ -40,17 +40,18 @@ async function execute(task, {output, environment, unsetEnvironment, signal, cle
   const startedAt = new Date().toISOString(), start = performance.now();
   const log = resolve(output, `${task.id}.log`), stream = createWriteStream(log);
   const hasCleanupDeclaration = cleanupImages?.length > 0;
-  const cleanupReportPath = hasCleanupDeclaration ? resolve(output, `${task.id}.cleanup-${randomUUID()}.json`) : undefined;
+  const syntaxOnly=task.command === process.execPath && task.args?.[0] === '--check';
+  const captureCleanup=hasCleanupDeclaration||process.platform==='win32'&&!syntaxOnly;
+  const cleanupReportPath = captureCleanup ? resolve(output, `${task.id}.cleanup-${randomUUID()}.json`) : undefined;
   let child, timer, timedOut = false, cancelled = false, logError;
   stream.on('error', error => {logError=error.message; if (child) stop(child);});
   const result = await new Promise(accept => {
     const finish = (code, exitSignal, error) => accept({code, signal:exitSignal, ...(error ? {error} : {})});
-    const syntaxOnly=task.command === process.execPath && task.args?.[0] === '--check';
     const supervised= !syntaxOnly || hasCleanupDeclaration;
     const command=supervised ? process.env.TH_PYTHON ?? process.env.PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3') : task.command;
     const args=supervised ? [fileURLToPath(new URL('./supervise.py', import.meta.url)),
-      ...(hasCleanupDeclaration ? ['--cleanup-report', cleanupReportPath,
-        ...cleanupImages.flatMap(image=>['--cleanup-image', image.path, image.sha256])] : []),
+      ...(captureCleanup ? ['--cleanup-report', cleanupReportPath,
+        ...(cleanupImages??[]).flatMap(image=>['--cleanup-image', image.path, image.sha256])] : []),
       '--', task.command, ...(task.args ?? [])] : task.args;
     const childEnvironment={...process.env};
     for (const key of unsetEnvironment) delete childEnvironment[key];
@@ -75,7 +76,7 @@ async function execute(task, {output, environment, unsetEnvironment, signal, cle
   clearTimeout(timer);
   if (!stream.destroyed) await new Promise(accept => {stream.once('error', accept); stream.end(accept);});
   let cleanupEvidence;
-  if (hasCleanupDeclaration) {
+  if (captureCleanup) {
     try {
       cleanupEvidence = {...JSON.parse(await readFile(cleanupReportPath, 'utf8')), reportFile:cleanupReportPath};
     } catch (error) {
@@ -88,7 +89,7 @@ async function execute(task, {output, environment, unsetEnvironment, signal, cle
   return {id:task.id, command:[task.command, ...(task.args ?? [])], cwd:task.cwd,
     startedAt, durationMs:Math.round(performance.now() - start), log,
     status:timedOut ? 'timeout' : cancelled ? 'cancelled' : result.code === 0 && !result.error && !logError && cleanupStatusOk ? 'passed' : 'failed',
-    ...result, ...(cleanupEvidence ? {cleanupImages:cleanupEvidence} : {}), ...(logError ? {error:`Test log failed: ${logError}`} : {})};
+    ...result, ...(cleanupEvidence ? {[hasCleanupDeclaration?'cleanupImages':'processCleanup']:cleanupEvidence} : {}), ...(logError ? {error:`Test log failed: ${logError}`} : {})};
 }
 
 /** A selected task must finish successfully. Missing inputs and timeouts fail. */

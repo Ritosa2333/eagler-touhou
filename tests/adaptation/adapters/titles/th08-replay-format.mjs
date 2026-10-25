@@ -70,6 +70,23 @@ export function inspectTh08ReplayMetadata(input,{expectedSha256}={}){
     source:'ReplayMetadata::lag and ReplayMetadata::practice from the independently decoded v6 header'};
 }
 
+/** Original v6 permits its USER information block after the encoded payload. */
+export function inspectTh08OriginalReplay(input,{expectedSha256}={}){
+  const parsed=decodeTh08ReplayFile(input),metadata=inspectTh08ReplayMetadata(input,{expectedSha256});
+  let originalBytes=parsed.fileSize,userBytes=0;
+  if(parsed.raw.length>originalBytes){
+    requireRange(parsed.raw,originalBytes,12,'USER header');
+    if(parsed.raw.toString('ascii',originalBytes,originalBytes+4)!=='USER')throw new Error('Original th08 Replay has an appended extension instead of USER information');
+    userBytes=readU32(parsed.raw,originalBytes+4,'USER length');
+    if(userBytes<12||userBytes%2||readU32(parsed.raw,originalBytes+8,'USER reserved')!==0)throw new Error('Original th08 USER information header is invalid');
+    originalBytes+=userBytes;
+    if(originalBytes!==parsed.raw.length)throw new Error('Original th08 Replay has an appended extension or invalid USER length');
+  }
+  if(metadata.metadata.practice)throw new Error('Original th08 Replay must describe an ordinary run');
+  return{schema:'eagler-touhou/original-replay-inspection/1',format:'th08-v6',version:6,
+    sha256:metadata.sha256,bytes:parsed.raw.length,originalBytes,userBytes,extensionBytes:0};
+}
+
 /** Read the exact u16 values ReplayStream can fetch from one verified v6 stage. */
 export function inspectTh08ReplayInputFrames(input,{stage,expectedSha256,firstFrame=0,frameCount}={}){
   const expected=deriveTh08ReplayInputExpectation(input,{stage,expectedSha256});
@@ -188,7 +205,9 @@ export const TH08_REPLAY_SEMANTICS=Object.freeze({
   recording:{sampleBoundary:'GameplayScene::prepare_frame receives SupervisorFrame input',
     commitBoundary:'GameplayScene::update_recording | priority 17 | ReplayStream::record',
     source:'ports/th08/web/cpp/game/GameplayScene.cpp | bind_jobs | update_recording',
-    initialRawFrames:1,initialRawFrameValue:0,frameToRawIndex:'recorded-frame-number'},
+    initialRawFrames:1,initialRawFrameValue:0,frameToRawIndex:'recorded-frame-number',
+    consumer:{frameOffset:-1,initialInput:0,
+      source:'ports/th08/web/cpp/game/GameplayScene.cpp | update_player priority 9 | update_recording priority 17 publishes next movement input'}},
   playback:{readBoundary:'ReplayStream::play | priority 6',consumerBoundary:'GameplayScene::update_player | priority 9',
     rawIndexOffset:-1,source:'ports/th08/web/cpp/game/GameplayScene.cpp | bind_jobs | update_replay | update_player',
     frameToRawIndex:'post-update-playback-frame-minus-one'},
@@ -201,6 +220,8 @@ export const TH08_REPLAY_SEMANTICS=Object.freeze({
       logicalMask:1,anchor:'ports/th08/portable/input/TouchController.hpp | sample | fire => VK_Z'},
   ],
   pointerExtension:{id:'THMOTION',versions:[1,2],requiredVersion:2,
+    rejection:{versionOffsetFromEnd:12,unsupportedVersion:0xffffffff,path:'replay/th8_udvers.rpyx',
+      error:'Error: 触摸录像数据损坏或不属于这款游戏',source:'ports/th08/portable/browser/motion-replay.mjs | validateMotionReplay | version'},
     trajectory:[
       {kind:'pointer',action:'down',id:7101,x:0.42,y:0.64},
       {kind:'pointer',action:'move',id:7101,x:0.48,y:0.61},

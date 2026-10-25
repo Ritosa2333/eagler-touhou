@@ -221,7 +221,10 @@ def windows(command, cleanup_images=(), cleanup_report_path=None):
             except OSError as error:
                 cleanup_report["error"] = f"Cannot inspect Job Object descendants: {error}"
         accounting = Accounting()
-        for _ in range(10):
+        # Console hosts can outlive their exiting compiler briefly. Wait for
+        # natural shutdown within a fixed budget; surviving children still fail.
+        natural_exit_deadline = time.monotonic() + 1.0
+        while True:
             if not kernel.QueryInformationJobObject(job, 1, ctypes.byref(accounting), ctypes.sizeof(accounting), None):
                 raise ctypes.WinError(ctypes.get_last_error())
             if not accounting.active:
@@ -233,6 +236,8 @@ def windows(command, cleanup_images=(), cleanup_report_path=None):
                     cleanup_report["status"] = "passed"
                 write_cleanup_report(cleanup_report_path, cleanup_report)
                 return code.value if code.value else (1 if cleanup_report.get("error") else 0)
+            if time.monotonic() >= natural_exit_deadline:
+                break
             time.sleep(0.01)
         try:
             _, remaining_pids = job_process_ids(kernel, job)

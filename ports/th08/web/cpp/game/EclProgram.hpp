@@ -21,6 +21,7 @@ public:
     bool append_practice_ecl(const u8* bytes,u32 length,u32& offset);
     u8* mutable_data()noexcept{return storage.data();}
     void enable_practice_instructions()noexcept{practice_instructions=true;}
+    bool allows_practice_instructions()const noexcept{return practice_instructions;}
     const u8* data()const noexcept{return storage.data();}
     u32 size()const noexcept{return storage.size();}
     u32 sub_count()const noexcept{return subs.size();}

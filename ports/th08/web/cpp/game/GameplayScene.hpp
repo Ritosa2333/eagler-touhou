@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "PlayerScene.hpp"
 #include "BackgroundFlow.hpp"
 #include "BulletFlow.hpp"
@@ -120,9 +121,11 @@ public:
     // first bound gameplay job. The live PracticeSnapshot remains separate.
     double practice_initial_snapshot_words[practice_initial_snapshot_word_count]{};
     double gameplay_initial_snapshot_words[practice_initial_snapshot_word_count]{};
+    std::vector<u8> practice_initial_program_bytes;
     static constexpr u32 practice_initial_snapshot_words_count()noexcept{return practice_initial_snapshot_word_count;}
     const double* practice_initial_snapshot_data()const noexcept{return practice_initial_snapshot_words;}
     const double* gameplay_initial_snapshot_data()const noexcept{return gameplay_initial_snapshot_words;}
+    const std::vector<u8>& practice_initial_program()const noexcept{return practice_initial_program_bytes;}
     const TouchActionStateV1& touch_actions()const noexcept{return touch_action_state;}
     bool time_stopped=false,paused=false,retrying=false,always_hitbox=false;
     GameplayScene(GameplaySession&,TextureStore&,AnmLibrary&,AnmRenderer&,GameplayPlatform&,Chain* shared_chain=nullptr,AsciiManager* shared_ascii=nullptr);

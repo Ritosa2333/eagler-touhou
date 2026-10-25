@@ -66,6 +66,15 @@ function makeIO({noSkip=false,skipAlsoConfirm=false,wrongEntry=false,sequenceGap
   };
 }
 
+test('material preparation waits inside the same native Wait before sending Skip',async()=>{
+  const declaration=options('keyboard');declaration.budgets.minimumWaitTicks=5;
+  const result=await runLoadedDialogueSkipScene(makeIO(),declaration);assert.equal(result.checkStatus,'passed');
+  assert.ok(result.evidence.wait.at(-1).dialogue.pausedFrames>=5);
+});
+test('material wait cannot exceed the existing scene wait budget',async()=>{
+  const declaration=options('keyboard');declaration.budgets.minimumWaitTicks=7;
+  await assert.rejects(runLoadedDialogueSkipScene(makeIO(),declaration),/bounded wait budget/);
+});
 for(const ingress of ['keyboard','gamepad'])test(`${ingress} Skip reaches the real Dialogue consumer and advances the loaded MessageProgram`,async()=>{
   const result=await runLoadedDialogueSkipScene(makeIO(),options(ingress));
   assert.equal(result.checkStatus,'passed');

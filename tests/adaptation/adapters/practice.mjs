@@ -1,3 +1,6 @@
+import {readNativeSnapshotRaw} from './native-snapshot.mjs';
+export {readNativeSnapshotRaw as readPracticeSnapshotRaw};
+
 /** Shared practice evidence helpers. Title codecs normalize native state before these checks run. */
 export function practiceBuildFeature(manifest,product){
   if(typeof manifest.features?.thprac!=='boolean')throw new TypeError('Current practice acceptance requires an explicit boolean package feature');
@@ -49,39 +52,14 @@ export function assessPracticeParameters({snapshot,expectedConfig,expectedApplie
 
 /** Project a title descriptor onto the data-only ABI sent across Playwright's frame boundary. */
 export function practiceSnapshotRequest({runtime,contract,kind='snapshot'}={}){
-  if(!['snapshot','initial','gameplayInitial'].includes(kind))throw new TypeError('Practice snapshot kind must be snapshot or initial');
-  const spec=kind==='gameplayInitial'?contract?.gameplayInitialSnapshot:kind==='initial'?contract?.initialSnapshot:contract?.snapshot;
+  if(!['snapshot','initial','gameplayInitial','ui'].includes(kind))throw new TypeError('Unknown practice snapshot kind');
+  const spec=kind==='ui'?contract?.uiSnapshot:kind==='gameplayInitial'?contract?.gameplayInitialSnapshot:kind==='initial'?contract?.initialSnapshot:contract?.snapshot;
   if(!runtime||['global','core','module','app'].some(key=>typeof runtime[key]!=='string'||!runtime[key].trim())||
     !spec||!Number.isSafeInteger(spec.wordCount)||spec.wordCount<=0||
     !['f64','u32','i32'].includes(spec.wordType)||typeof spec.export!=='string'||typeof spec.app!=='boolean')
     throw new TypeError('Practice snapshot descriptor cannot be projected to a native ABI request');
   return{runtime:{global:runtime.global,core:runtime.core,module:runtime.module,app:runtime.app},
     snapshot:{export:spec.export,wordCount:spec.wordCount,wordType:spec.wordType,app:spec.app}};
-}
-
-/** Serialized for frame.evaluate; accepts only the projected mounting names and ABI width. */
-export function readPracticeSnapshotRaw({runtime,snapshot:spec}={}){
-  const invalid=reason=>({available:false,reason});
-  if(!runtime||!spec||!Number.isSafeInteger(spec.wordCount)||spec.wordCount<=0||
-    !['f64','u32','i32'].includes(spec.wordType)||typeof spec.export!=='string'||typeof spec.app!=='boolean')
-    return invalid('Practice snapshot contract is incomplete');
-  const root=typeof window==='object'?window:globalThis;
-  const mounted=root[runtime.global];
-  const module=mounted?.[runtime.module];
-  const core=mounted?.[runtime.core]??module;
-  const app=mounted?.[runtime.app];
-  if(!mounted||(spec.app&&!Number.isInteger(app)))return invalid('Runtime iframe identity unavailable');
-  let snapshot;
-  for(const owner of [core,module]){
-    const candidate=owner?.[spec.export]??owner?.[`_${spec.export}`];
-    if(typeof candidate==='function'){snapshot=candidate.bind(owner);break;}
-  }
-  const buffer=core?.memory?.buffer??module?.HEAPU8?.buffer;
-  if(typeof snapshot!=='function'||!buffer)return invalid('Practice snapshot export or wasm memory unavailable');
-  const ArrayType=spec.wordType==='f64'?Float64Array:spec.wordType==='u32'?Uint32Array:Int32Array;
-  const pointer=spec.app?snapshot(app):snapshot(),bytes=spec.wordCount*ArrayType.BYTES_PER_ELEMENT;
-  if(!Number.isInteger(pointer)||pointer<=0||pointer+bytes>buffer.byteLength)return invalid('Practice snapshot pointer is outside wasm memory');
-  return{available:true,words:Array.from(new ArrayType(buffer,pointer,spec.wordCount))};
 }
 
 /** Read the shared practice-menu contract only from the title-declared Runtime mount. */
@@ -94,6 +72,19 @@ export function readPracticeMenuRaw({runtime}={}){
   return{available:true,open:module.eaglerThpracMenuOpen===true,options:options?{
     thpracEnabled:options.thpracEnabled,thpracLocale:options.thpracLocale}:null,
     events:root.__practiceBrowserEvents??[]};
+}
+
+/** Copy the immutable program observation; never evaluates or edits script data. */
+export function readPracticeProgramRaw({runtime,contract}={}){
+  const owner=globalThis[runtime?.global],core=owner?.[runtime?.core],module=owner?.[runtime?.module],app=owner?.[runtime?.app],
+    memory=core?.memory?.buffer??module?.HEAPU8?.buffer,read=core?.[contract?.programSnapshot?.export];
+  if(!memory||typeof read!=='function'||!Number.isInteger(app))return{available:false,reason:'Immutable Practice program observer unavailable'};
+  const pointer=read(app);
+  if(!Number.isInteger(pointer)||pointer<=0||pointer%4||pointer+16>memory.byteLength)throw Error('Practice program header is outside native memory');
+  const header=Array.from(new Uint32Array(memory,pointer,4));
+  if(header[0]!==1||header[1]!==1||!header[2]||header[3]<72||header[3]>2*1024*1024||header[2]+header[3]>memory.byteLength)
+    throw Error('Practice program bytes are unavailable or outside the bounded native observation');
+  return{available:true,header,bytes:Array.from(new Uint8Array(memory,header[2],header[3]))};
 }
 
 /** Run the driver's explicit IDBFS save sync through the declared Runtime mount. */

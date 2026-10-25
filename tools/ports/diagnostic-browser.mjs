@@ -15,6 +15,7 @@ import {DIAGNOSTIC_LANE_CHECKS,PAIRED_PRESENTATION_CHECKS,pairedPresentationCapa
   resolveDiagnosticProfile} from '../../tests/adaptation/adapters/diagnostics.mjs';
 import {buildPresentationPairedReport,readProductionPresentationEvidence} from './presentation-paired-report.mjs';
 import {diagnosticCaseIdentity} from '../../tests/adaptation/identity.mjs';
+import {recordDiagnosticReferenceChecks} from '../../tests/adaptation/adapters/diagnostic-reference-evidence.mjs';
 import {assertDiagnosticCaptureBuild,finalizeDiagnosticReport,finalizeDiagnosticTarget,plannedDiagnosticChecks,recordDiagnosticLane} from './diagnostic-report.mjs';
 import {stopDiagnosticChild,trackDiagnosticChild} from './diagnostic-lifecycle.mjs';
 import {runTasks} from '../testing/runner.mjs';
@@ -434,6 +435,7 @@ async function runLane({lane,profile,server,product,productIdentities,targetId,o
   const run=await runTasks(tasks,{output:runnerRoot,concurrency:1,failFast:false,
     metadata:{game:profile.game,variant:profile.variant,lane}});
   const laneReport={lane,game:profile.game,variant:profile.variant,targetId,evidenceRoot,runnerReport:run,
+    runnerArtifact:{path:resolve(runnerRoot,'report.json'),...await fileIdentity(resolve(runnerRoot,'report.json'))},
     productInputs:productIdentities,status:'failed',complete:false};
   if(lane==='presentation'){
     const task=run.results.find(item=>item.id==='presentation-browser');
@@ -704,6 +706,7 @@ const result=await runWithReport({output,schema:'eagler-touhou/diagnostic-browse
       targetRecord.error=`Post-run diagnostic identity snapshot failed: ${error.message}`;
       for(const check of targetRecord.checks){check.status='failed';check.complete=false;check.error=targetRecord.error;}
     }
+    recordDiagnosticReferenceChecks(report,{game,variant});
     finalizeDiagnosticTarget(targetRecord,report.evidence.lanes,lanes,
       report.identity.stable&&!report.server?.shutdownError);
     if(pairedReplayRequested&&targetRecord.checks.some(check=>PAIRED_PRESENTATION_CHECKS.includes(check.id)&&

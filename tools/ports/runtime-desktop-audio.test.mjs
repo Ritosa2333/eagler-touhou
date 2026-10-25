@@ -5,6 +5,7 @@ import {MUSIC_PCM_PROBE_SOURCE} from './music-browser-helpers.mjs';
 import {readRuntimeObservation,runtimeObservationRequest} from './runtime-observations.mjs';
 import {collectDesktopSfxWindow,DESKTOP_AUDIO_PROBE_ADAPTER_SOURCE,mapDesktopSfxStartJournal,validateDesktopSfxHistoryReadiness,validateDesktopSfxInputWindow} from './runtime-desktop-audio.mjs';
 import {correlateInputSfxWindow} from './runtime-desktop-readiness.mjs';
+import {assertGameplaySfxEvidence} from '../../tests/adaptation/adapters/audio-none-evidence.mjs';
 
 const consumerSnapshot=(sequence,fire,activePlayerShots)=>({available:true,complete:true,phase:'consumer-run',sequence,stage:2,
   consumed:{fire},activePlayerShots});
@@ -147,6 +148,19 @@ async function runRenderedSfxAction(runtime,{disconnectProductionOutput=false,vo
   return{capture,actionWindow,mapped,result:correlateInputSfxWindow({nativeSfx:{available:true,snapshots:{end:[]}}},
     {actionWindow,nativeSfx:{available:true,...mapped}})};
 }
+
+test('central no-BGM firing proof recomputes the actual start journal, rendered PCM and native shot creation',async()=>{
+  const runtime=createInjectedRuntime(),r=await runRenderedSfxAction(runtime);
+  const e={mode:'none',idle:{nativeSfx:{available:true,snapshots:{end:[]}}},
+    firing:{actionWindow:r.actionWindow,nativeSfx:{available:true,...r.mapped,sampledActiveObservations:[]}}};
+  assert.doesNotThrow(()=>assertGameplaySfxEvidence(e,{game:'th08'}));
+  for(const mutate of [
+    value=>value.firing.nativeSfx.activationEvents[0].sourceNodeIdentity.nodeId++,
+    value=>value.firing.actionWindow.releaseEvidence.consumer.held.activePlayerShots=4,
+    value=>value.firing.actionWindow.inputCapture.sfxStartJournal.events=[],
+    value=>value.mode='ogg',
+  ]){const invalid=JSON.parse(JSON.stringify(e));mutate(invalid);assert.throws(()=>assertGameplaySfxEvidence(invalid,{game:'th08'}));}
+});
 
 test('Desktop SFX adapter samples the shared parallel PCM tap and leaves the production direct edge intact',()=>{
   const runtime=createInjectedRuntime(),probe=runtime.window.__eaglerDesktopAudioProbe;

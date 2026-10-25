@@ -17,7 +17,8 @@ export function installLanguageHostObserver({game,contract}){
   addEventListener('message',event=>{
     const frame=document.getElementById('gameFrame'),message=event.data;
     if(event.origin!==location.origin||event.source!==frame?.contentWindow||message?.protocol!=='eagler-touhou/1'||message.game!==game)return;
-    if(message.event){receipt.events.push({event:message.event,epoch:message.epoch,at:performance.now()});
+    if(message.event){receipt.events.push({event:message.event,epoch:message.epoch,at:performance.now(),game:message.game,protocol:message.protocol,
+      ...(message.presentation?{presentation:message.presentation}:{}),...(message.error?{error:message.error}:{})});
       if(['error','abort'].includes(message.event))receipt.errors.push({event:message.event,message:message.message??message.error});}
     if(message.event!=='ready')return;
     const runtime=event.source[contract.runtime.global],core=runtime?.[contract.runtime.core];

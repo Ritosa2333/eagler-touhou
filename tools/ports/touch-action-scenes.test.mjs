@@ -1,17 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {runTouchActionSceneGroup} from './touch-action-scenes.mjs';
+import {runTouchActionSceneGroup as runTouchActionSceneGroupCore,assertTouchActionEvidence} from './touch-action-scenes.mjs';
+const bombResource={cost:1,unit:'bomb',source:'fixture native Bomb rule'};
+const runTouchActionSceneGroup=(io,options={})=>runTouchActionSceneGroupCore(io,{bombResource,...options});
 
 const inputMasks={fire:1,focus:4,bomb:2,escape:8};
 
 function makeIO({focusStuck=false,bombInventoryStuck=false,escapeStuck=false,delayBombPress=false,skipSequenceOnDelayedBomb=false,
-  initialBombActive=false,initialBombTriggered=false,dropSecondEscapeSerial=false}={}){
+  initialBombActive=false,initialBombTriggered=false,dropSecondEscapeSerial=false,bombCost=1}={}){
   const controlsHistory=[];
   const processedEscapeSerials=[];
   let controls={fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:0,joystickX:0,joystickY:0,touchSensitivity:100};
   let pointerDown=false,position={x:320,y:360},pauseActive=false;
   let sequence=0,frame=0,previousButtons=0,seenBombSerial=0,seenEscapeSerial=0,bombTicks=0,bombDelayUsed=false;
-  let bombsRemaining=3,bombsUsed=0,bombsUsedStage=0,shots=0;
+  let bombsRemaining=3*bombCost,bombsUsed=0,bombsUsedStage=0,shots=0;
   let action={available:true,complete:false,phase:'none',sequence:0};
   const snapshot=()=>({available:true,complete:true,phase:'consumer-run',sequence,frame,stage:1,
     consumed:{current:action.current??0,previous:action.previous??0,
@@ -38,6 +40,7 @@ function makeIO({focusStuck=false,bombInventoryStuck=false,escapeStuck=false,del
       if(type==='down')pointerDown=true;
       if(type==='up')pointerDown=false;
       if(type==='move'||type==='down'||type==='up')position={x:position.x+(x-.5)*20,y:position.y+(y-.75)*20};
+      return{acknowledged:true};
     },
     async step(count){
       for(let i=0;i<count;i++){
@@ -55,7 +58,7 @@ function makeIO({focusStuck=false,bombInventoryStuck=false,escapeStuck=false,del
           if(delayBombPress&&!bombDelayUsed){bombDelayUsed=true;delayedBombRow=true;}
           else{bombPressed=true;seenBombSerial=controls.bombSerial;}
         }
-        if(bombPressed){if(!bombInventoryStuck){bombsRemaining--;bombsUsed++;bombsUsedStage++;}bombTicks=8;}
+        if(bombPressed){if(!bombInventoryStuck){bombsRemaining-=bombCost;bombsUsed++;bombsUsedStage++;}bombTicks=8;}
         const current=(controls.fireEnabled?inputMasks.fire:0)|(controls.focusEnabled?inputMasks.focus:0)|(bombPressed?inputMasks.bomb:0);
         sequence+=delayedBombRow&&skipSequenceOnDelayedBomb?2:1;
         if(controls.fireEnabled)shots++;
@@ -68,7 +71,7 @@ function makeIO({focusStuck=false,bombInventoryStuck=false,escapeStuck=false,del
         if(bombTicks>0)bombTicks--;
       }
     },
-    async observe(){return{position:{...position},pause:{active:pauseActive},worldProgress:{frame}};},
+    async observe(){return{position:{...position},pause:{active:pauseActive},worldProgress:{frame},frames:{simulation:sequence},capabilities:{restartFrame:'simulation'}};},
     async readActions(){return action.complete?snapshot():action;},
   };
 }
@@ -98,6 +101,25 @@ test('the shared action scene keeps complete controls, monotonic edge serials an
   assert.ok(resumed.sample.action.sequence>resumed.consumerSequenceBefore);
 });
 
+test('saved action proof requires actual projectile, resource use, frozen world and released input',async()=>{
+  const result=await runTouchActionSceneGroup(makeIO(),{inputMasks,timeoutTicks:24,escapePulseTicks:3,worldFrameKey:'simulation'});
+  assert.equal(result.checkStatus,'passed');assertTouchActionEvidence(JSON.parse(JSON.stringify(result.evidence)));
+  const held=JSON.parse(JSON.stringify(result.evidence));
+  for(const row of held.samples.filter(row=>row.runtime.pause.active)){
+    const prior=held.samples[held.samples.indexOf(row)-1];row.action=structuredClone(prior.action);
+  }
+  assertTouchActionEvidence(held);
+  held.samples.find(row=>row.runtime.pause.active).action.inventory.bombsUsed++;
+  assert.throws(()=>assertTouchActionEvidence(held),/Paused player receipt changed/);
+  for(const mutate of [
+    e=>{for(const row of e.samples)row.action.activePlayerShots=0;},
+    e=>e.samples.find(row=>row.label.startsWith('ordinary-bomb-tick')).action.inventory.bombsUsed++,
+    e=>e.pauseTransitions.find(row=>row.label==='old-escape-pulse-expired').samples[0].runtime.frames.simulation++,
+    e=>e.cleanup.samples.at(-1).action.consumed.current=1,
+    e=>delete e.cleanup.pointerReceipt,
+  ]){const e=JSON.parse(JSON.stringify(result.evidence));mutate(e);assert.throws(()=>assertTouchActionEvidence(e));}
+});
+
 test('a native focus transition failure remains a hard failure and carries cleanup serials',async()=>{
   const io=makeIO({focusStuck:true});
   await assert.rejects(runTouchActionSceneGroup(io,{inputMasks,escapePulseTicks:3}),error=>{
@@ -110,7 +132,7 @@ test('a native focus transition failure remains a hard failure and carries clean
 });
 
 test('bomb resource loss and a missing pause transition cannot pass the action scene',async()=>{
-  await assert.rejects(runTouchActionSceneGroup(makeIO({bombInventoryStuck:true}),{inputMasks,escapePulseTicks:3}),/did not spend one native inventory unit/);
+  await assert.rejects(runTouchActionSceneGroup(makeIO({bombInventoryStuck:true}),{inputMasks,escapePulseTicks:3}),/did not spend its declared native resource cost/);
   await assert.rejects(runTouchActionSceneGroup(makeIO({escapeStuck:true}),{inputMasks,escapePulseTicks:3}),/did not open the native pause menu/);
 });
 
@@ -193,4 +215,14 @@ test('missing Escape pulse duration is incomplete instead of using an assumed wa
   const result=await runTouchActionSceneGroup(makeIO(),{inputMasks});
   assert.equal(result.checkStatus,'incomplete');
   assert.match(result.reason,/declare a bounded Escape pulse duration/);
+});
+
+test('ordinary Bomb uses title-native resource units while counting exactly one activation',async()=>{
+  const resource={cost:20,unit:'power-point',source:'fixture native Power consumption'};
+  const result=await runTouchActionSceneGroup(makeIO({bombCost:20}),{inputMasks,escapePulseTicks:3,worldFrameKey:'simulation',bombResource:resource});
+  assert.equal(result.checkStatus,'passed');assertTouchActionEvidence(result.evidence,{bombResource:resource});
+  assert.equal(result.evidence.samples.find(row=>row.label.startsWith('ordinary-bomb-tick')).action.inventory.bombsRemaining,40);
+  await assert.rejects(runTouchActionSceneGroup(makeIO({bombCost:20}),{inputMasks,escapePulseTicks:3,bombResource}),/declared native resource cost/);
+  const absent=await runTouchActionSceneGroupCore(makeIO(),{inputMasks,escapePulseTicks:3});
+  assert.equal(absent.checkStatus,'incomplete');assert.match(absent.reason,/resource cost and unit/);
 });

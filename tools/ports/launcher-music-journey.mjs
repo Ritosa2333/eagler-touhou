@@ -168,6 +168,23 @@ export function assessLauncherMusicScene(scene){
   return{status:failures.length?'failed':missing.length?'incomplete':'passed',passed:!failures.length&&!missing.length,missing,failures};
 }
 
+/** A mode switch retains actual browser storage while retiring the former Runtime. */
+export function assertLauncherMusicModeTransition(previous,next){
+  assert.equal(previous.scenario,'midi');assert.equal(next.scenario,'ogg-stream');
+  assert.equal(assessLauncherMusicScene(previous).passed,true);assert.equal(assessLauncherMusicScene(next).passed,true);
+  const transition=next.modeTransition;assert.ok(transition,'MIDI to OGG did not use one persistent browser context');
+  assert.ok(previous.browserTarget.browserContextId);assert.equal(next.browserTarget.browserContextId,previous.browserTarget.browserContextId);
+  assert.notEqual(next.browserTarget.targetId,previous.browserTarget.targetId);
+  assert.equal(next.document.origin,previous.document.origin);assert.ok(next.document.timeOrigin>previous.document.timeOrigin);
+  assert.equal(transition.selectionBefore,'midi');assert.equal(transition.storedBefore.music,'midi');
+  assert.deepEqual(next.installation,previous.installation,'Changing music mode replaced the installed package');
+  assert.equal(previous.modeChangeClose.pageClosed,true);
+  assert.equal(previous.modeChangeClose.exitAbsentBeforeStop,true);
+  const exit=previous.modeChangeClose.exit;assert.equal(exit.event,'exit');assert.equal(exit.protocol,'eagler-touhou/1');
+  assert.equal(exit.game,'th08');assert.equal(exit.epoch,previous.runtime.epoch);assert.equal(exit.status,'success');assert.equal(exit.code,0);
+  assert.equal(next.reloadedPreference,'ogg-stream');assert.equal(next.moduleMode,'ogg');
+}
+
 /** Real Launcher UI scenes. A supplied browser remains caller-owned; callback-created browsers close here. */
 export async function runLauncherMusicJourney({root,output,target,identity,dataIdentity,shared,artwork,packageMap,musicInputs,
   browser,pcmProbeSource,readAudioState,launchBrowser}){
@@ -191,17 +208,24 @@ export async function runLauncherMusicJourney({root,output,target,identity,dataI
     if(launchBrowser){ownedBrowser=await launchBrowser({tlsIdentity:tls.tlsIdentity});browser=ownedBrowser;}
     assert.ok(browser,'Supply launchBrowser({tlsIdentity}) or an already certificate-configured browser');
     const runtime=resolveAdaptationAdapter(target.game,'normal').runtime;
+    let retainedContext=null;
     for(const scenario of ['none','midi','ogg-stream','ogg-full','missing-object-fallback']){
       const fallback=scenario==='missing-object-fallback',mode=fallback?'ogg-stream':scenario,effectiveMidi=mode==='midi'||fallback;
       const scene={scenario,mode,status:'running',browserErrors:[],protocolErrors:[]};report.scenes.push(scene);await save();
       let context,watcher,page;
       try{
-        context=await browser.newContext({viewport:{width:1280,height:900}});
-        await context.addInitScript({content:'window.__eaglerMusicPcmProbeTop=true;\n'+pcmProbeSource});
-        await context.addInitScript(installLauncherMusicObserver,{game:target.game});
-        await context.addInitScript(installOfflinePackageStoreObserver,{name:PACKAGE_STORE_DB,version:PACKAGE_STORE_DB_VERSION,
-          installations:PACKAGE_INSTALLATIONS,generations:PACKAGE_GENERATIONS,objects:PACKAGE_OBJECTS});
+        const reused=scenario==='ogg-stream'&&retainedContext!==null;
+        context=reused?retainedContext:await browser.newContext({viewport:{width:1280,height:900}});retainedContext=null;
+        if(!reused){
+          await context.addInitScript({content:'window.__eaglerMusicPcmProbeTop=true;\n'+pcmProbeSource});
+          await context.addInitScript(installLauncherMusicObserver,{game:target.game});
+          await context.addInitScript(installOfflinePackageStoreObserver,{name:PACKAGE_STORE_DB,version:PACKAGE_STORE_DB_VERSION,
+            installations:PACKAGE_INSTALLATIONS,generations:PACKAGE_GENERATIONS,objects:PACKAGE_OBJECTS});
+        }
         page=await context.newPage();
+        const cdp=await context.newCDPSession(page);
+        try{const {targetInfo}=await cdp.send('Target.getTargetInfo');scene.browserTarget={targetId:targetInfo.targetId,browserContextId:targetInfo.browserContextId};}
+        finally{await cdp.detach();}
         await page.exposeBinding('__captureLauncherMusicFailure',(source,value)=>{
           if(source.page!==page||source.frame!==page.mainFrame())scene.protocolErrors.push({error:'Protocol mirror came from another page/frame'});
           else scene.protocolErrors.push(value);
@@ -216,8 +240,14 @@ export async function runLauncherMusicJourney({root,output,target,identity,dataI
           if(await page.locator('#firstUseNoticeDialog').evaluate(node=>node.open))await page.locator('#firstUseNoticeClose').click();
         };
         await page.goto(new URL('?game='+target.game,tls.base).href);await boot();
-        await page.locator('#gamePackageImport').click();await page.locator('#gameDataImportInput').setInputFiles(resolve(packageMap[target.game]));
-        await page.waitForFunction(()=>{const node=document.querySelector('#gameDataImportWindow');return node&&node.hidden&&node.getAttribute('aria-busy')!=='true';},null,{timeout:180000});
+        scene.document=await page.evaluate(()=>({origin:location.origin,href:location.href,timeOrigin:performance.timeOrigin}));
+        if(!reused){
+          await page.locator('#gamePackageImport').click();await page.locator('#gameDataImportInput').setInputFiles(resolve(packageMap[target.game]));
+          await page.waitForFunction(()=>{const node=document.querySelector('#gameDataImportWindow');return node&&node.hidden&&node.getAttribute('aria-busy')!=='true';},null,{timeout:180000});
+        }else{
+          scene.modeTransition={selectionBefore:await page.locator('#musicSelect').inputValue(),
+            storedBefore:await page.evaluate(game=>JSON.parse(localStorage.getItem('eagler-touhou-game-options-v1-'+game)),target.game)};
+        }
         scene.installation=await page.evaluate(async game=>{
           const observer=window.__offlinePackageStoreObserver,{generation}=await observer.readCurrentPackageGeneration(game);
           if(!generation)throw Error('Launcher UI import did not install a package');
@@ -229,7 +259,7 @@ export async function runLauncherMusicJourney({root,output,target,identity,dataI
         assert.equal(scene.installation.sha256,dataIdentity.sha256);assert.equal(scene.installation.bytes,dataIdentity.bytes);
         scene.choices=await page.locator('#musicSelect option').evaluateAll(nodes=>nodes.map(node=>({value:node.value,disabled:node.disabled})));
         assert.ok(scene.choices.some(choice=>choice.value===mode&&!choice.disabled),'Selected music mode is unavailable in the production menu');
-        const alternative=mode==='none'?'midi':'none';await chooseSetting(page,'musicSelect',alternative);await chooseSetting(page,'musicSelect',mode);
+        const alternative=mode==='none'?'midi':'none';if(!reused)await chooseSetting(page,'musicSelect',alternative);await chooseSetting(page,'musicSelect',mode);
         const key='eagler-touhou-game-options-v1-'+target.game;
         scene.preference=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),key);
         await page.reload();await boot();scene.reloadedPreference=await page.locator('#musicSelect').inputValue();
@@ -292,10 +322,23 @@ export async function runLauncherMusicJourney({root,output,target,identity,dataI
         if(page){try{await page.evaluate(async()=>{await window.__flushLauncherMusicFailures();});scene.host=await page.evaluate(()=>window.__launcherMusicReceipt);}catch(error){scene.browserErrors.push({type:'protocol-tail',error:String(error)});}}
         scene.rawBrowserErrors=[...scene.browserErrors];
         const classified=classifyLanguageBrowserEvents(scene.browserErrors,{responses:watcher?.responses??[]});scene.browserErrors=classified.blocking;scene.expectedBrowserEvents=classified.expected;
-        if(context)await context.close().catch(error=>scene.browserErrors.push({type:'context-close',error:String(error)}));
+        if(context&&scenario==='midi'&&!scene.error&&assessLauncherMusicScene(scene).passed){
+          try{
+            const handle=await page.locator('#gameFrame').elementHandle(),frame=await handle.contentFrame();
+            const exitAbsentBeforeStop=await page.evaluate(epoch=>!window.__launcherMusicReceipt.events.some(event=>event.event==='exit'&&event.epoch===epoch),scene.runtime.epoch);
+            assert.equal(exitAbsentBeforeStop,true,'The MIDI Runtime had already exited before the mode switch');
+            await frame.evaluate(mapping=>globalThis[mapping.global].stop(),runtime);
+            await page.waitForFunction(epoch=>window.__launcherMusicReceipt.events.some(event=>event.event==='exit'&&event.epoch===epoch),scene.runtime.epoch,{timeout:30000});
+            const exit=await page.evaluate(epoch=>window.__launcherMusicReceipt.events.find(event=>event.event==='exit'&&event.epoch===epoch),scene.runtime.epoch);
+            await page.evaluate(()=>window.__flushLauncherMusicFailures());scene.host=await page.evaluate(()=>window.__launcherMusicReceipt);
+            await page.close();scene.modeChangeClose={exit,exitAbsentBeforeStop,pageClosed:page.isClosed()};retainedContext=context;
+          }catch(error){scene.browserErrors.push({type:'mode-change-close',error:String(error)});await context.close();}
+        }else if(context)await context.close().catch(error=>scene.browserErrors.push({type:'context-close',error:String(error)}));
         Object.assign(scene,assessLauncherMusicScene(scene));if(scene.error){if(scene.observedFailure)scene.status='failed';else if(scene.status!=='failed')scene.status='incomplete';scene.passed=false;scene.missing.push(scene.error);}await save();
+        if(scene.passed!==true&&retainedContext===context){await context.close();retainedContext=null;}
       }
     }
+    assertLauncherMusicModeTransition(report.scenes.find(scene=>scene.scenario==='midi'),report.scenes.find(scene=>scene.scenario==='ogg-stream'));
     report.packagePostflight=await verifyRuntimePackage(target,{repoRoot:root});assert.deepEqual(report.packagePostflight,identity);
     assert.deepEqual(await verifyPrivateData(target.data),dataIdentity);
     report.archivePostflight=await verifyRoomResourcePostflight({target,prepared:prepared.resource});

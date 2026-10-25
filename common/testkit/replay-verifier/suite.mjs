@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {compareTraces} from './compare.mjs';
 import {RESULT_STATUS} from './contracts.mjs';
 import {validateAdapter} from './contracts.mjs';
+import {replayMethodControls} from './method-controls.mjs';
 
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const nonEmpty = value => typeof value === 'string' && value.length > 0;
@@ -38,7 +39,7 @@ function aggregate(results) {
 }
 
 /** Run a title-owned Replay lane through shared identity, lifecycle and tick comparison. */
-export async function runReplaySuite({adapter, cases, expectedIds, requiredCategories = [], signal} = {}) {
+export async function runReplaySuite({adapter, cases, expectedIds, requiredCategories = [], signal,methodControls=false} = {}) {
   const description = validateAdapter(adapter);
   if (description.features.original !== true)
     throw new TypeError('Replay comparison adapters must provide an immutable original trace');
@@ -109,7 +110,9 @@ export async function runReplaySuite({adapter, cases, expectedIds, requiredCateg
       }
     }
   }
+  const controls=methodControls?await replayMethodControls({adapter,fixture:cases.find(item=>!normalizeCase(item)),requiredCategories,signal}):null;
   return {schema: 'eagler/replay-suite-result/v1', game: description.game,
-    adapterVersion: description.adapterVersion, expectedIds: [...expectedIds], status: aggregate(results),
-    complete: results.length === expectedIds.length && results.every(result => result.status === RESULT_STATUS.PASS), results};
+    adapterVersion: description.adapterVersion, expectedIds: [...expectedIds], status:controls&&!controls.passed?RESULT_STATUS.ERROR:aggregate(results),
+    complete:results.length===expectedIds.length&&results.every(result=>result.status===RESULT_STATUS.PASS)&&(!controls||controls.passed),
+    results,...(controls?{methodControls:controls}:{})};
 }

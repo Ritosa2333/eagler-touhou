@@ -265,6 +265,7 @@ export function selectNativePageTarget({targetInfos=[],url,title}={}) {
 const DESKTOP_CHECK_DECLARATIONS=Object.freeze([
   Object.freeze({id:'package-and-private-data-identity',role:'prerequisite',adaptationIds:['BUILD-04','PACKAGE-02'],modes:['background-only','input-only','touch-only','actions-only','replay-recording-only','audio-latency-only']}),
   Object.freeze({id:'launcher-touch-native-consumers',adaptationIds:['TOUCH-06','TOUCH-15','INPUT-05'],modes:['actions-only']}),
+  Object.freeze({id:'shared-launcher-touch-focus',adaptationIds:['TOUCH-05','TOUCH-06'],modes:['actions-only']}),
   Object.freeze({id:'shared-touch-restart',adaptationIds:['TOUCH-18'],modes:['actions-only']}),
   Object.freeze({id:'shared-replay-recording-and-isolation',adaptationIds:['REPLAY-02','REPLAY-03','REPLAY-04','REPLAY-06'],modes:['replay-recording-only']}),
   Object.freeze({id:'shared-touch-actions',adaptationIds:['TOUCH-08','RUNTIME-04'],modes:['actions-only']}),
@@ -272,7 +273,8 @@ const DESKTOP_CHECK_DECLARATIONS=Object.freeze([
   Object.freeze({id:'shared-touch-deathbomb',adaptationIds:['TOUCH-09'],modes:['actions-only']}),
   Object.freeze({id:'shared-touch-dialogue-confirm',adaptationIds:['TOUCH-13'],modes:['actions-only']}),
   Object.freeze({id:'shared-touch-unlimited-result',adaptationIds:['TOUCH-10'],modes:['actions-only']}),
-  Object.freeze({id:'shared-original-menu-dialogue-input',adaptationIds:['INPUT-07'],modes:['input-only']}),
+  Object.freeze({id:'shared-original-menu-dialogue-input',adaptationIds:['INPUT-01','INPUT-04','INPUT-07'],modes:['input-only']}),
+  Object.freeze({id:'native-keyboard-actions',adaptationIds:['INPUT-01'],modes:['input-only']}),
   Object.freeze({id:'shared-touch-menu-dialogue-gestures',adaptationIds:['TOUCH-12'],modes:['actions-only']}),
   Object.freeze({id:'shared-launcher-gamepad-mapping',adaptationIds:['INPUT-03'],modes:['input-only']}),
   Object.freeze({id:'shared-launcher-touch-layout',adaptationIds:['TOUCH-17'],modes:['actions-only']}),
@@ -281,20 +283,26 @@ const DESKTOP_CHECK_DECLARATIONS=Object.freeze([
   Object.freeze({id:'negative-control-suppressed-iframe-runtime-listener-keyboard-mapping',adaptationIds:['INPUT-01'],modes:['input-only']}),
   Object.freeze({id:'negative-control-suppressed-host-runtime-bridge-keyboard-mapping',adaptationIds:['INPUT-01'],modes:['input-only']}),
   Object.freeze({id:'native-key-clear-while-held',adaptationIds:['INPUT-06'],modes:['input-only']}),
-  Object.freeze({id:'audio-output-with-music-disabled',adaptationIds:['AUDIO-02'],modes:['input-only']}),
+  Object.freeze({id:'audio-output-with-music-disabled',adaptationIds:['AUDIO-02'],modes:['input-only','audio-latency-only']}),
+  Object.freeze({id:'audio-none-contract',adaptationIds:['AUDIO-02'],modes:['audio-latency-only']}),
   Object.freeze({id:'native-sfx-before-mixed-queue-tail',adaptationIds:['AUDIO-02'],modes:['audio-latency-only']}),
   Object.freeze({id:'negative-control-sfx-delayed-to-mixed-queue-tail',adaptationIds:['AUDIO-02'],modes:['audio-latency-only']}),
   Object.freeze({id:'shared-touch-limited',adaptationIds:['TOUCH-01','TOUCH-05','TOUCH-14','TOUCH-16'],modes:['input-only','touch-only']}),
   Object.freeze({id:'shared-touch-unlimited',adaptationIds:['TOUCH-02','TOUCH-14','TOUCH-16'],modes:['input-only','touch-only']}),
   Object.freeze({id:'shared-touch-joystick-free',adaptationIds:['TOUCH-04','TOUCH-05','TOUCH-16'],modes:['input-only','touch-only']}),
-  Object.freeze({id:'shared-touch-limited-restored',adaptationIds:['TOUCH-01','TOUCH-14','TOUCH-16'],modes:['input-only','touch-only']}),
+  Object.freeze({id:'shared-touch-limited-restored',adaptationIds:['TOUCH-01','TOUCH-02','TOUCH-14','TOUCH-16'],modes:['input-only','touch-only']}),
   Object.freeze({id:'shared-touch-two-finger-focus',adaptationIds:['TOUCH-07','TOUCH-15'],modes:['input-only','touch-only']}),
   Object.freeze({id:'native-four-direction-wasd',adaptationIds:['INPUT-02'],modes:['input-only']}),
+  Object.freeze({id:'shared-keyboard-layouts',adaptationIds:['INPUT-02'],modes:['input-only']}),
+  Object.freeze({id:'shared-gamepad-native-input',adaptationIds:['INPUT-04'],modes:['input-only']}),
   Object.freeze({id:'touch-fire-focus-and-mixed-input',adaptationIds:['TOUCH-15','INPUT-05'],adaptationIdsByGame:{th09:[]},modes:['input-only']}),
   Object.freeze({id:'native-pause-state-and-freeze',adaptationIds:['RUNTIME-04'],modes:['input-only']}),
   Object.freeze({id:'iframe-exit-and-new-epoch',adaptationIds:['RUNTIME-01','RUNTIME-04'],modes:['input-only']}),
-  Object.freeze({id:'window-minimize-foreground-and-release',adaptationIds:['RUNTIME-04','INPUT-06'],modes:['background-only']}),
-  Object.freeze({id:'background-tab-foreground-release',adaptationIds:['RUNTIME-04','INPUT-06'],modes:['background-only']}),
+  Object.freeze({id:'window-minimize-foreground-and-release',adaptationIds:['RUNTIME-04','INPUT-06','TOUCH-16'],modes:['background-only']}),
+  Object.freeze({id:'touch-pointer-cancel-and-release',adaptationIds:['TOUCH-16'],modes:['background-only']}),
+  Object.freeze({id:'gamepad-disconnect-and-reconnect',adaptationIds:['INPUT-06'],modes:['background-only']}),
+  Object.freeze({id:'background-input-lifecycle-contract',adaptationIds:['INPUT-06','TOUCH-16'],modes:['background-only']}),
+  Object.freeze({id:'background-tab-foreground-release',adaptationIds:['RUNTIME-04','INPUT-06','TOUCH-16'],modes:['background-only']}),
   Object.freeze({id:'background-audio-recovery',adaptationIds:['AUDIO-04'],modes:['background-only']}),
   Object.freeze({id:'runtime-epoch-touch-mode-touch-unlimited',adaptationIds:['RUNTIME-01'],modes:[]}),
   Object.freeze({id:'runtime-epoch-touch-mode-joystick',adaptationIds:['RUNTIME-01','TOUCH-03'],modes:['input-only','touch-only']}),
@@ -384,4 +392,46 @@ export function summarizeDesktopCheckScope(checks,{requiredIds=[],omittedIds=[]}
   const status=failedRequired.length||unexpectedChecks.length||duplicateRequired.length?'failed':missingRequired.length||incompleteRequired.length?'incomplete':'passed';
   return {status,requiredResults,missingRequired,failedRequired,incompleteRequired,unexpectedChecks,duplicateRequired,
     omittedIds:[...omittedIds]};
+}
+/** Read-only journal of the selected parent's actual touch-control serial stream. */
+export function installTouchControlSerialObserver({game,epoch}){
+  const key='__eaglerAcceptanceTouchSerials',prior=globalThis[key];
+  if(prior){if(prior.game!==game||prior.epoch!==epoch)throw Error('Touch serial observer belongs to another Runtime');return prior;}
+  const receipt={game,epoch,bombSerial:0,escapeSerial:0,observations:0,source:'parent touch-controls MessageEvent'};
+  globalThis[key]=receipt;
+  addEventListener('message',event=>{
+    const value=event.data;
+    if(event.source!==parent||event.origin!==location.origin||value?.protocol!=='eagler-touhou/1'||
+      value.game!==game||value.epoch!==epoch||value.command!=='touch-controls')return;
+    for(const field of ['bombSerial','escapeSerial'])if(!Number.isSafeInteger(value[field])||value[field]<0||value[field]>0xffffffff)return;
+    receipt.bombSerial=value.bombSerial;receipt.escapeSerial=value.escapeSerial;receipt.observations++;
+  });
+  return receipt;
+}
+
+/** Neutral controls preserve edge-stream counters; zero is a new edge after a nonzero serial. */
+export function neutralTouchControlsFromReceipt(receipt,{game,epoch}){
+  if(receipt?.game!==game||receipt?.epoch!==epoch||!Number.isSafeInteger(receipt.bombSerial)||receipt.bombSerial<0||
+    !Number.isSafeInteger(receipt.escapeSerial)||receipt.escapeSerial<0)throw Error('Current Runtime touch serial receipt is missing');
+  return{fireEnabled:false,focusEnabled:false,bombSerial:receipt.bombSerial,escapeSerial:receipt.escapeSerial,
+    joystickX:0,joystickY:0,touchSensitivity:100};
+}
+
+/** Keep startup on its verified native page; background scenarios run afterward. */
+export async function runNativeForegroundOperation({operation,readState,restore,pause,evidence,maxRestores=2}){
+  let done=false;const outcome=Promise.resolve().then(operation).finally(()=>{done=true;});
+  const monitor=(async()=>{
+    while(!done){
+      const state=await readState();evidence.samples.push(state);
+      if(!done&&!state.ready){
+        if(state.owned!==true)throw Error('Startup no longer owns its original native page and window');
+        if(evidence.restores.length>=maxRestores)throw Error('Native foreground repeatedly changed during startup');
+        const receipt=await restore();evidence.restores.push(receipt);
+        if(receipt?.ready!==true)throw Error('The owned startup window could not regain native foreground');
+      }
+      if(!done)await pause();
+    }
+  })();
+  try{return await Promise.race([outcome,monitor.then(()=>outcome)]);}
+  finally{done=true;await monitor.catch(()=>{});}
 }

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {assertBombResource} from './bomb-resource-contract.mjs';
 
 const DEFAULT_TICKS=64;
 const PLAYER_POSITION_EPSILON=0.01;
@@ -33,17 +34,66 @@ function assertAction(state,mask,expected,label){
   assert.equal(Boolean(state.consumed.current&mask.value),expected,`${label}: raw consumed input mask differs`);
 }
 
+/** Recompute actual shots, one Bomb, paused world frames and released consumers. */
+export function assertTouchActionEvidence(e,{inputMasks=e?.inputMasks,escapePulseTicks=e?.escapePulseTicks,bombResource=e?.bombResource}={}){
+  assert.deepEqual(e.bombResource,bombResource);const bombCost=assertBombResource(bombResource);
+  assert.equal(e.schema,'eagler-touhou/touch-action-scenes/1');assert.deepEqual(e.inputMasks,inputMasks);validateMasks(inputMasks);
+  assert.equal(e.escapePulseTicks,escapePulseTicks);
+  const active=e.samples.filter(row=>row.action?.complete===true);assert.ok(active.length>5);
+  let previous=null;
+  for(const [index,row] of active.entries()){
+    ensureConsumer(row.action,'saved action');
+    if(previous&&row.action.sequence===previous.action.sequence){
+      assert.equal(row.runtime.pause.active,true,'A repeated player receipt is only valid during native pause');
+      assert.deepEqual(row.action,previous.action,'Paused player receipt changed without a new consumer');
+      assert.equal(row.runtime.frames[e.worldFrameKey],previous.runtime.frames[e.worldFrameKey],'Paused world frame changed');
+    }else{if(previous)assert.equal(row.action.sequence,previous.action.sequence+1);previous=row;}
+    for(const name of ['fire','focus','bomb','escape'])assert.equal(!!(row.action.consumed.current&inputMasks[name]),row.action.consumed[name]);
+  }
+  const matching=prefix=>active.filter(row=>row.label.startsWith(prefix+'-tick-'));
+  const last=prefix=>{const rows=matching(prefix);assert.ok(rows.length,`Missing ${prefix}`);return rows.at(-1);};
+  const on=last('focus-on'),off=last('focus-off'),fire=last('fire-on'),released=last('fire-off');
+  assert.equal(on.action.focused,true);assert.equal(on.action.consumed.focus,true);assert.equal(off.action.focused,false);assert.equal(off.action.consumed.focus,false);
+  assert.equal(fire.action.consumed.fire,true);assert.equal(released.action.consumed.fire,false);
+  assert.ok([...matching('fire-on'),...matching('fire-projectile')].some(row=>row.action.activePlayerShots>off.action.activePlayerShots),'Fire created no native shot');
+  assert.equal(released.action.bomb.active,false);assert.equal(released.action.bomb.triggered,false);
+  const bomb=last('ordinary-bomb'),inventory=released.action.inventory;
+  assert.ok(bomb.action.consumed.current&inputMasks.bomb);assert.equal(bomb.action.bomb.active,true);assert.equal(bomb.action.bomb.triggered,true);
+  for(const row of active.filter(row=>row.action.sequence>=bomb.action.sequence)){
+    assert.equal(row.action.inventory.bombsRemaining,inventory.bombsRemaining-bombCost);assert.equal(row.action.inventory.bombsUsed,inventory.bombsUsed+1);
+    assert.equal(row.action.inventory.bombsUsedStage,inventory.bombsUsedStage+1);
+  }
+  const moved=last('bomb-with-movement-pointer');assert.equal(moved.action.bomb.active,true);
+  assert.ok(Math.hypot(moved.runtime.position.x-released.runtime.position.x,moved.runtime.position.y-released.runtime.position.y)>PLAYER_POSITION_EPSILON,'Bomb cancelled movement');
+  const transition=label=>{const rows=e.pauseTransitions.filter(row=>row.label===label);assert.equal(rows.length,1);return rows[0];};
+  const paused=transition('escape-paused'),expired=transition('old-escape-pulse-expired'),resume=transition('escape-resume-requested'),resumed=transition('resumed');
+  assert.equal(resume.serial,paused.serial+1);assert.equal(resumed.serial,resume.serial);assert.equal(expired.samples.length,escapePulseTicks+1);
+  const key=e.worldFrameKey;assert.ok(typeof key==='string'&&key);assert.equal(e.samples[0].runtime.restartFrameKey,key);
+  const frame=paused.sample.runtime.frames[key];assert.ok(Number.isFinite(frame));
+  for(const row of [paused.sample,...expired.samples]){
+    assert.equal(row.runtime.pause.active,true);assert.equal(row.runtime.frames[key],frame,'Native world advanced during pause');
+    assert.ok(row.action.complete!==true||row.action.sequence<=paused.consumerSequenceBefore);
+  }
+  assert.equal(resumed.sample.runtime.pause.active,false);assert.ok(resumed.sample.action.sequence>paused.consumerSequenceBefore);
+  const cleanup=e.cleanup;assert.deepEqual(cleanup.errors,[]);assert.equal(cleanup.pointerReceipt?.acknowledged,true);assert.equal(cleanup.controlReceipt?.acknowledged,true);
+  assert.ok(cleanup.samples.length>=escapePulseTicks+1);const final=cleanup.samples.at(-1);ensureConsumer(final.action,'cleanup');
+  assert.equal(final.action.consumed.current&Object.values(inputMasks).reduce((a,b)=>a|b,0),0,'Action input stayed held after cleanup');
+  assert.ok(final.runtime.frames[key]>frame,'Native world did not resume');
+}
+
 /**
  * Exercise common STG action edges through the already-running Runtime.
  * IO owns only Launcher controls, real pointer delivery, bounded manual ticks,
  * and read-only observations; no expected action state comes from controls.
  */
-export async function runTouchActionSceneGroup(io,{inputMasks,timeoutTicks=DEFAULT_TICKS,scenarioSet='core',escapePulseTicks}={}){
+export async function runTouchActionSceneGroup(io,{inputMasks,timeoutTicks=DEFAULT_TICKS,scenarioSet='core',escapePulseTicks,worldFrameKey,bombResource}={}){
   const missing=validateIO(io);
   const evidence={schema:'eagler-touhou/touch-action-scenes/1',scenarioSet,timeoutTicks,escapePulseTicks:escapePulseTicks??null,
-    inputMasks:inputMasks?structuredClone(inputMasks):null,controls:[],samples:[],positionChecks:[],pauseTransitions:[],cleanup:null};
+    worldFrameKey:worldFrameKey??null,bombResource:bombResource?structuredClone(bombResource):null,inputMasks:inputMasks?structuredClone(inputMasks):null,controls:[],samples:[],positionChecks:[],pauseTransitions:[],cleanup:null};
   if(missing.length)return{checkStatus:'incomplete',reason:`Touch action IO is missing ${missing.join(', ')}`,evidence};
   validateMasks(inputMasks);
+  if(!bombResource)return{checkStatus:'incomplete',reason:'Declare the native ordinary Bomb resource cost and unit',evidence};
+  const bombCost=assertBombResource(bombResource);
   if(!Number.isInteger(timeoutTicks)||timeoutTicks<1||timeoutTicks>120)throw new RangeError('Touch action timeoutTicks must be between 1 and 120');
   if(!Number.isInteger(escapePulseTicks)||escapePulseTicks<1||escapePulseTicks>=120)
     return{checkStatus:'incomplete',reason:'The title must declare a bounded Escape pulse duration in controller ticks.',evidence};
@@ -59,7 +109,7 @@ export async function runTouchActionSceneGroup(io,{inputMasks,timeoutTicks=DEFAU
     const action=await io.readActions();
     const runtime=await io.observe();
     const entry={label,action,runtime:{pause:runtime?.pause??null,position:runtime?.position??null,phase:runtime?.phase??null,
-      worldProgress:runtime?.worldProgress??null}};
+      worldProgress:runtime?.worldProgress??null,frames:runtime?.frames??null,restartFrameKey:runtime?.capabilities?.restartFrame??null}};
     evidence.samples.push(entry);
     return entry;
   };
@@ -92,6 +142,7 @@ export async function runTouchActionSceneGroup(io,{inputMasks,timeoutTicks=DEFAU
     for(let index=0;!first.action?.complete&&index<8;index++)first=await tick(`initial-consumer-tick-${index+1}`);
     if(first.action?.available===false)throw new ActionSceneIncomplete(first.action.reason??'Native STG action observer is unavailable');
     ensureConsumer(first.action,'initial consumer');
+    if(first.action.inventory.bombsRemaining<bombCost)throw new ActionSceneIncomplete(`Prepare at least ${bombCost} native ${bombResource.unit} before the ordinary Bomb scene`);
     previousSequence=first.action.sequence;
     assert.equal(first.action.bomb.active,false,'Action scene requires no active Bomb before testing a new press');
     assert.equal(first.action.bomb.triggered,false,'Action scene requires no pending Bomb trigger before testing a new press');
@@ -121,7 +172,7 @@ export async function runTouchActionSceneGroup(io,{inputMasks,timeoutTicks=DEFAU
     assertAction(bomb.action,masks.bomb,true,'ordinary bomb');
     assert.equal(bomb.action.bomb.active,true,'Ordinary bomb did not become active');
     assert.equal(bomb.action.bomb.triggered,true,'Ordinary bomb trigger was not recorded');
-    assert.equal(bomb.action.inventory.bombsRemaining,bombsBefore.bombsRemaining-1,'Ordinary bomb did not spend one native inventory unit');
+    assert.equal(bomb.action.inventory.bombsRemaining,bombsBefore.bombsRemaining-bombCost,'Ordinary bomb did not spend its declared native resource cost');
     assert.equal(bomb.action.inventory.bombsUsed,bombsBefore.bombsUsed+1,'Ordinary bomb use count did not advance by one');
     assert.equal(bomb.action.inventory.bombsUsedStage,bombsBefore.bombsUsedStage+1,'Stage bomb use count did not advance by one');
     await io.directTouch('move',pointerId,.70,.75);pointerX=.70;
@@ -134,13 +185,16 @@ export async function runTouchActionSceneGroup(io,{inputMasks,timeoutTicks=DEFAU
     evidence.positionChecks.push({label:'movement-pointer-during-bomb',before:playerBeforeBomb,after:playerDuringBomb,
       bombActive:movingBomb.action.bomb.active,pointerId});
 
-    const sequenceBeforePause=previousSequence;
+    let sequenceBeforePause=previousSequence;
     await setControls('escape-pause-press',{escapeSerial:input.escapeSerial+1});
     let paused=null;
     for(let index=0;index<8;index++){
       const sample=await tick(`escape-pause-tick-${index+1}`);
       if(sample.action?.available===false)throw new ActionSceneIncomplete(sample.action.reason??'Native STG action observer is unavailable');
       if(sample.runtime?.pause?.active===true){paused=sample;break;}
+      ensureConsumer(sample.action,'Unpaused input processing before pause');
+      assert.equal(sample.action.sequence,previousSequence+1,'Player consumer skipped a Tick before native pause began');
+      previousSequence=sequenceBeforePause=sample.action.sequence;
     }
     assert.ok(paused,'The Escape action did not open the native pause menu');
     evidence.pauseTransitions.push({label:'escape-paused',serial:input.escapeSerial,sample:paused,
@@ -210,17 +264,22 @@ export async function runTouchActionSceneGroup(io,{inputMasks,timeoutTicks=DEFAU
   }finally{
     Object.assign(input,{fireEnabled:false,focusEnabled:false,joystickX:0,joystickY:0,touchSensitivity:100});
     const cleanupControls={...input};
-    let pointerReleased=!pointerDown,controlNeutral=false;
+    let pointerReleased=!pointerDown,controlNeutral=false,pointerReceipt=null,controlReceipt=null;
     const cleanupFailures=[];
     try{
-      if(pointerDown){await io.directTouch('up',pointerId,pointerX,pointerY);pointerReleased=true;}
+      if(pointerDown){pointerReceipt=await io.directTouch('up',pointerId,pointerX,pointerY);pointerReleased=true;}
     }catch(error){cleanupFailures.push(error);}
     try{
       const acknowledgement=await io.controls(cleanupControls);
+      controlReceipt=acknowledgement??null;
       controlNeutral=acknowledgement?.acknowledged!==false;
       if(!controlNeutral)cleanupFailures.push(new Error('Runtime did not acknowledge neutral touch action controls'));
     }catch(error){cleanupFailures.push(error);}
-    evidence.cleanup={pointerReleased,controlsNeutral:controlNeutral,controls:cleanupControls,
+    const cleanupSamples=[];
+    if(!failure&&result?.checkStatus==='passed'&&worldFrameKey)try{
+      for(let n=0;n<escapePulseTicks+2;n++){await io.step(1);cleanupSamples.push(await record(`cleanup-input-drain-${n+1}`));}
+    }catch(error){cleanupFailures.push(error);}
+    evidence.cleanup={pointerReleased,controlsNeutral:controlNeutral,controls:cleanupControls,pointerReceipt,controlReceipt,samples:cleanupSamples,
       errors:cleanupFailures.map(error=>error.message)};
     if(cleanupFailures.length)cleanupError=cleanupFailures.length===1?cleanupFailures[0]:new AggregateError(cleanupFailures,'Touch action cleanup failed');
     if(failure){

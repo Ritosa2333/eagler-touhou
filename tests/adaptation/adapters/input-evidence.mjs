@@ -6,8 +6,9 @@ import {assertMenuStartupEvidence} from './menu-startup.mjs';
 import {normalizeDialogueTouchManifest,normalizeDialogueTouchObservation} from './dialogue.mjs';
 
 const INPUT_CHECKS=Object.freeze({
-  'shared-original-menu-dialogue-input':{adaptationId:'INPUT-07',kind:'menu-dialogue-input'},
+  'shared-original-menu-dialogue-input':{adaptationId:'INPUT-07',supportingIds:['INPUT-01','INPUT-04'],kind:'menu-dialogue-input'},
   'shared-touch-menu-dialogue-gestures':{adaptationId:'TOUCH-12',kind:'touch-menu-dialogue'},
+  'shared-touch-dialogue-confirm':{adaptationId:'TOUCH-13',kind:'touch-fresh-confirm'},
   'shared-launcher-gamepad-mapping':{adaptationId:'INPUT-03',kind:'launcher-gamepad-mapping'},
   'shared-launcher-touch-layout':{adaptationId:'TOUCH-17',kind:'launcher-touch-layout'},
   'shared-launcher-touch-magnifier':{adaptationId:'TOUCH-19',kind:'launcher-touch-magnifier'},
@@ -36,8 +37,10 @@ function assertUniqueTarget(driver,entry,product,adaptationId){
   equal(target.variant,product.variant,'Runtime target belongs to another product variant');
   demand(Array.isArray(target.checks)&&target.checks.filter(item=>item?.id===entry.id).length===1&&
     target.checks.includes(entry),'Input claim is not the unique check in the selected target');
-  demand(Array.isArray(entry.adaptationIds)&&entry.adaptationIds.length===1&&entry.adaptationIds[0]===adaptationId,
-    `Input check must identify only ${adaptationId}`);
+  const allowed=new Set([adaptationId,...(INPUT_CHECKS[entry.id]?.supportingIds??[])]);
+  demand(Array.isArray(entry.adaptationIds)&&entry.adaptationIds.includes(adaptationId)&&
+    new Set(entry.adaptationIds).size===entry.adaptationIds.length&&entry.adaptationIds.every(id=>allowed.has(id)),
+    `Input check must identify ${adaptationId} with declared supporting IDs`);
 }
 function runtimeContract(product,capability){
   const adapter=resolveAdaptationAdapter(product.game,product.variant);
@@ -651,7 +654,7 @@ function assertMagnifierEvidence(entry,product){
 export function assessRuntimeInputEvidence({driver,entry,product}={}){
   const definition=INPUT_CHECKS[entry?.id];
   if(!definition)return{available:false,valid:false,reason:`No Runtime input assessor for ${entry?.id??'unknown check'}`,kind:null};
-  const result={available:true,valid:false,reason:null,kind:definition.kind};
+  const result={available:true,valid:false,reason:null,kind:definition.kind,checks:[definition.adaptationId]};
   try{
     demand(product&&typeof product.game==='string'&&['normal','multiplayer'].includes(product.variant),
       'Selected product identity is missing');
@@ -660,6 +663,12 @@ export function assessRuntimeInputEvidence({driver,entry,product}={}){
     equal(entry.status,'passed','Runtime input check status is not passed');
     if(entry.id==='shared-original-menu-dialogue-input')assertInputGroup(entry,product,false);
     else if(entry.id==='shared-touch-menu-dialogue-gestures')assertInputGroup(entry,product,true);
+    else if(entry.id==='shared-touch-dialogue-confirm'){
+      const adapter=runtimeContract(product,'dialogueTouchScene'),trials=entry.observation?.trials;
+      demand(Array.isArray(trials)&&trials.length===2,'Fresh confirm requires its native trial and final gameplay restoration');
+      assertShortConfirmTrial(trials[0],adapter,product);
+      assertRestore(trials[1],product,trials[0].epoch);
+    }
     else if(entry.id==='shared-launcher-gamepad-mapping')assertGamepadEvidence(entry,product);
     else if(entry.id==='shared-launcher-touch-layout')assertLayoutEvidence(entry,product);
     else assertMagnifierEvidence(entry,product);

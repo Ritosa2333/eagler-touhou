@@ -1,15 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
+import {createHash,X509Certificate} from 'node:crypto';
 import {EventEmitter} from 'node:events';
 import {createServer} from 'node:http';
+import {request as requestHttps} from 'node:https';
 import {mkdtemp,mkdir,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {basename,dirname,join,resolve,sep} from 'node:path';
-import {createOfflineStaticTlsProxy,captureOfflineSiteIdentity,watchOfflineSiteResponses,verifyOfflineSiteIdentity} from './offline-runtime-https.mjs';
+import {createOfflineStaticTlsProxy,captureOfflineSiteIdentity,watchOfflineSiteResponses,verifyOfflineSiteIdentity,classifyStaticDiscoveryEvents} from './offline-runtime-https.mjs';
 import {languageFailureResponse} from './language-network-contract.mjs';
 
 const tempPrefix='eagler-offline-https-test-';
+test('static discovery errors require exact verified response identity and unread-body cancellation',()=>{
+  const url='https://fixture.test/_eagler/resource-routes?path=%2Fgames%2Fth08%2Fth08.data',response={url,status:404,contentIdentity:'passed',semanticReceipt:{kind:'static-resource-route-discovery',bodyConsumption:'not-read'}};
+  const events=[{type:'http',url,status:404},{type:'console',location:{url},text:'Failed to load resource: the server responded with a status of 404 ()'},
+    {type:'requestfailed',url,error:'net::ERR_ABORTED'}];
+  assert.deepEqual(classifyStaticDiscoveryEvents(events,[response]),{expected:events,blocking:[]});
+  for(const mutation of [r=>r.url+='other',r=>r.contentIdentity='failed',r=>r.status=200,r=>r.semanticReceipt.kind='other']){
+    const changed=structuredClone(response);mutation(changed);assert.deepEqual(classifyStaticDiscoveryEvents(events,[changed]).blocking,events);
+  }
+  const read=structuredClone(response);read.semanticReceipt.bodyConsumption='complete';assert.deepEqual(classifyStaticDiscoveryEvents(events,[read]).blocking,[events[2]]);
+  assert.equal(classifyStaticDiscoveryEvents([{...events[1],location:{url:'https://other.test/'}}],[response]).blocking.length,1);
+});
 async function tempDirectory(){return mkdtemp(join(tmpdir(),tempPrefix));}
 async function removeTemp(path){
   const absolute=resolve(path),parent=resolve(tmpdir());
@@ -47,6 +59,30 @@ test('TLS control replaces one exact resource response while the static backend 
     assert.equal(failure.status,404);assert.equal(await failure.text(),control.body.toString());
     assert.equal(await (await proxy.fetch(new URL('/games/new/language/en.zip?different=1',proxy.base))).text(),'original');
     responses.clear();assert.equal(await (await proxy.fetch(new URL('/games/new/language/en.zip',proxy.base))).text(),'original');
+  }finally{if(proxy)await proxy.close();await new Promise(accept=>backend.close(accept));}
+});
+
+test('controlled download holds an unfinished real body and honors request cancellation',async()=>{
+  const backend=createServer((request,response)=>response.end('original'));
+  await new Promise(accept=>backend.listen(0,'127.0.0.1',accept));
+  const body=Buffer.alloc(32768,7),control={kind:'controlled-resource-response',status:200,body,bytes:body.length,
+    sha256:createHash('sha256').update(body).digest('hex'),contentType:'application/octet-stream',holdAfterBytes:4096,holdMs:30_000};
+  let proxy;
+  try{
+    proxy=await createOfflineStaticTlsProxy({backendBase:`http://127.0.0.1:${backend.address().port}/`,responseOverrides:new Map([['/slow.bin',control]])});
+    const controller=new AbortController(),started=Date.now(),chunks=[];
+    const pending=new Promise((accept,reject)=>{
+      const request=requestHttps(new URL('/slow.bin',proxy.base),{signal:controller.signal,rejectUnauthorized:false},response=>{
+        const certificate=new X509Certificate(response.socket.getPeerCertificate().raw);
+        assert.equal(createHash('sha256').update(certificate.publicKey.export({type:'spki',format:'der'})).digest('base64'),proxy.tlsIdentity.spkiSha256);
+        assert.equal(response.statusCode,200);assert.equal(response.headers['content-length'],String(body.length));
+        response.on('data',chunk=>{chunks.push(chunk);controller.abort();});response.once('error',reject);response.once('end',accept);
+      });request.once('error',reject);request.setTimeout(5000,()=>request.destroy(Error('Transfer prefix did not arrive')));request.end();
+    });
+    await assert.rejects(pending,/abort/i);assert.deepEqual(Buffer.concat(chunks),body.subarray(0,4096));assert.ok(Date.now()-started<5000);
+    control.holdMs=10;const response=await proxy.fetch('/slow.bin');assert.equal(response.status,200);
+    assert.equal(response.headers.get('content-length'),String(body.length));assert.deepEqual(Buffer.from(await response.arrayBuffer()),body);
+    control.holdAfterBytes=body.length;assert.equal((await proxy.fetch('/slow.bin')).status,502);
   }finally{if(proxy)await proxy.close();await new Promise(accept=>backend.close(accept));}
 });
 
