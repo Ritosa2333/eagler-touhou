@@ -171,6 +171,8 @@
 
 ## 运行验收记录
 
+WASI32 的多人规则兼容检查使用内存通道运行原生 NetplayRuntime、公共协议和输入核心，覆盖双人、三人录像准入。入口为 `portable/check-multiplayer-rules.mjs --suite multiplayer-rules-compatibility`。
+
 2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。
 
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。

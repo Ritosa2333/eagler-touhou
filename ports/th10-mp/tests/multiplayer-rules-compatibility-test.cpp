@@ -31,6 +31,7 @@ bool BrowserPeerTransport::SendRepairTo(std::uint8_t,const std::uint8_t*,std::si
 bool BrowserPeerTransport::SendControl(const std::uint8_t*,std::size_t){return false;}
 bool BrowserPeerTransport::SendSpectator(const std::uint8_t*,std::size_t){return false;}
 bool BrowserPeerTransport::HasSpectators()const{return false;}
+bool BrowserPeerTransport::TakeSpectatorSession(std::uint64_t*,std::uint32_t*){return false;}
 int BrowserPeerTransport::SpectatorState()const{return -1;}
 void BrowserPeerTransport::StopSpectators(bool){}
 bool BrowserPeerTransport::Poll(Bytes* out){

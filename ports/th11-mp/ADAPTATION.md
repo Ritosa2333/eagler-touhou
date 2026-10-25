@@ -73,14 +73,14 @@
 
 | 编号 | 检查项 | multiplayer | 记录 |
 | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已验证 | 高刷与 60Hz 双端确认状态、实际输入 Replay 对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md#mp-接收与逻辑时钟) |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 待验证 | 120Hz 模拟回调验证额外呈现，设备显示验收按本项执行，见[记录](docs/records/2026-10-24-display-high-refresh.md#mp-接收与逻辑时钟) |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已验证 | 2P／3P 五组系数重复 Draw 与完整世界对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md#mp-呈现所有权) |
-| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待验证 | ANM 字段、席位副本和完整原生几何对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
-| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待验证 | 生命周期 CPU 契约、恢复及连续换关对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
-| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 已验证 | 真实双端暂停与恢复、原生暂停屏障对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | DISPLAY-07 | [实际呈现后报告首帧](../../docs/adaptation/presentation.md#display-07) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 已验证 | 同局高刷端 182 次纯显示绘制，限制端 0，逻辑与 Replay 一致，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
+| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-01 | [正常 OGG 音乐](../../docs/adaptation/presentation.md#audio-01) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
