@@ -262,10 +262,10 @@ try {
       adonisMode:1,predictionLimit:0,spectator:watcher,spectatorId:watcher?identities[seat]:'',
       spectatorCount:Number(spectator),iceServers:[],loadouts,
     },policy);
-    await pages[seat].evaluate(async({options,frames,restart,watcher})=>{
-      host.observe(restart&&watcher?0:frames,restart&&!watcher?1:0);
+    await pages[seat].evaluate(async({options,frames,restart,watcher,keepSourceRunning})=>{
+      host.observe((restart&&watcher)||keepSourceRunning?0:frames,restart&&!watcher?1:0);
       await host.configure(options);await host.launch();
-    },{options,frames,restart,watcher});
+    },{options,frames,restart,watcher,keepSourceRunning:spectator&&!restart&&!watcher});
     if(seat===0)await captureUi(pages[seat],'startup-game-frame');
     if(!watcher){
       await pages[seat].evaluate(()=>host.key('KeyZ',true));
@@ -340,6 +340,7 @@ try {
     if(Date.now()>deadline)throw Error('Gameplay failed to reach target: '+JSON.stringify(checkpoints));
     await pause(50);
   }
+  await Promise.all(pages.map(page=>page.evaluate(()=>host.stop())));
   report.last=checkpoints;
   const histories=await Promise.all(pages.map(page=>page.evaluate(()=>[...host.snapshots])));
   const maps=histories.slice(0,restart?players:histories.length).map(entries=>new Map(entries));

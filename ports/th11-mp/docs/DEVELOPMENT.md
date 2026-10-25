@@ -8,6 +8,8 @@
 
 `portable/multiplayer/browser-acceptance.mjs` 使用生产包、显式共用字体与真实通道验收原生旁观、重开和多人 Replay。设置 `TH11_TEST_ARCHIVE`、`TH11_TEST_FONT`、`TH11_TEST_UNICODE_FONT` 后运行，结果记录 `pure-delay`；产品的有界回滚场景使用 `rollback-browser-acceptance.mjs`，两种时序分别记录。
 
+生产包驱动由大厅策略确定预测上限，再以纯延迟模式开局。大厅返回的操作错误直接进入测试诊断，开局参数与当前产品契约共同核对。晚入场旁观的来源端持续演算，观众到达目标帧后统一停止观测，以相同帧的原生状态验证已确认历史。
+
 当前适配记录见[TH11 多人适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。
 
 Launcher 手柄动作通过共用浏览器桥同步进入本地原生采样，再写入对应席位的联机输入。原生菜单的扫描码与游戏动作使用同一份映射快照；Launcher 接管时停用 SDL 的重复手柄读取。
