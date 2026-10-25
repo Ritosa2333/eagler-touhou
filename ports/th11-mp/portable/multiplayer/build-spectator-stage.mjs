@@ -6,6 +6,8 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {responseFileContents} from '../response-file.mjs';
 const root=resolve(import.meta.dirname,'../..');
+const initialStage=Number(process.argv.find(value=>value.startsWith('--stage='))?.slice(8)||1);
+if(!Number.isInteger(initialStage)||initialStage<1||initialStage>7)throw Error('Spectator test stage must be 1..7');
 const plan=JSON.parse(execFileSync(process.execPath,['portable/build.mjs','--multiplayer',...(process.argv.includes('--production')?[]:['--diagnostic']),'--print-plan'],{cwd:root,encoding:'utf8'}));
 const build=JSON.parse(readFileSync(resolve(plan.outputDirectory,'build.json'),'utf8'));
 const sha=b=>createHash('sha256').update(b).digest('hex');
@@ -15,6 +17,9 @@ const sdl=resolve(root,'web/cpp/sdl'),sdk=resolve(process.env.EMSDK||resolve(roo
 const emcc=['upstream','install'].map(p=>resolve(sdk,p,'emscripten/emcc.py')).find(existsSync);
 if(!emcc)throw Error('Missing Emscripten');
 let source=readFileSync(resolve(sdl,'Application.cpp'),'utf8').replace('#include "MultiplayerRollback.inc"',()=>readFileSync(resolve(sdl,'MultiplayerRollback.inc'),'utf8'));
+const initialStageOwner='opts.stage=stage_override?stage_override:setup.initial_stage();';
+if(!source.includes(initialStageOwner))throw Error('Missing native initial-stage owner');
+source=source.replace(initialStageOwner,`opts.stage=stage_override?stage_override:(netplay.Spectator()?setup.initial_stage():${initialStage});`);
 const trace='EM_ASM({Module.onSpectatorLabFrame?.($0,$1);},session.multiplayer_frame,session.multiplayer_hash());';
 for(const needle of ['if(!netplay.MarkSimulated(frame,decision)){error=netplay.Error();return false;}',
  'if(!netplay.MarkSimulated(frame,decision))return rollback_fail(netplay.Error());',
@@ -57,5 +62,5 @@ const flags=[...plan.flags,...plan.linkFlags,'--no-entry','-sDEFAULT_TO_CXX=1','
 const rsp=resolve(out,'link.rsp.utf-8');writeFileSync(rsp,responseFileContents(flags));
 const result=spawnSync('python',[emcc,'@'+rsp],{cwd:root,env:{...process.env,EM_CONFIG:resolve(sdk,'.emscripten')},windowsHide:true,encoding:'utf8'});
 if(result.status||result.error)throw result.error||Error(result.stdout+result.stderr);
-writeFileSync(resolve(out,'build.json'),JSON.stringify({...build,privateSpectatorFixture:true,privateSpectatorKeepAlive:true,privateSpectatorMirroredTransition:false,privateSpectatorSourceOnlyTransition:true,productionWasm:build.sha256,sha256:sha(readFileSync(resolve(out,'th11-sdl.wasm'))),loaderSha256:sha(readFileSync(resolve(out,'th11-sdl.mjs')))},null,2)+'\n');
+writeFileSync(resolve(out,'build.json'),JSON.stringify({...build,privateSpectatorFixture:true,privateSpectatorInitialStage:initialStage,privateSpectatorKeepAlive:true,privateSpectatorMirroredTransition:false,privateSpectatorSourceOnlyTransition:true,productionWasm:build.sha256,sha256:sha(readFileSync(resolve(out,'th11-sdl.wasm'))),loaderSha256:sha(readFileSync(resolve(out,'th11-sdl.mjs')))},null,2)+'\n');
 console.log('PASS private TH11 spectator fixture '+out);

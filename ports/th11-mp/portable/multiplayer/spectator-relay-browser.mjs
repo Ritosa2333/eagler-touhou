@@ -23,6 +23,7 @@ const sharedFonts=resolve(process.env.TH11_SHARED_FONT_ROOT||resolve(workspace,'
 const cp932Path=resolve(process.env.TH11_CP932_FONT||resolve(workspace,'dist/update-ef596d2-20261006/th11-previous-runtime/fonts/cp932.bin'));
 const build=JSON.parse(await readFile(resolve(buildRoot,'build.json'),'utf8'));
 const fixtures=build.privateSpectatorFixture===true;
+const initialStage=build.privateSpectatorInitialStage||1,difficulty=initialStage===7?4:0;
 const productionBuild=fixtures?JSON.parse(await readFile(resolve(buildRoot,'..','build.json'),'utf8')):build;
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const loadedWasm=await readFile(resolve(buildRoot,'th11-sdl.wasm'));
@@ -121,7 +122,7 @@ await new Promise(yes=>server.listen(0,'127.0.0.1',yes));
 const base='http://127.0.0.1:'+server.address().port,sockets=[],report={passed:false,build:{sha256:build.sha256,loaderSha256:build.loaderSha256,diagnostic:build.diagnostic,
   productionSha256:productionBuild.sha256,fixtureProductionWasm:build.productionWasm||null,endpointWasmMatchesBuild:true,endpointLoaderMatchesBuild:true,
   runtimeManifestWasm:runtimeManifest.execution.sha256,runtimeManifestLoader:runtimeManifest.execution.loaderSha256},endpoints:[],
-  data:{sha256:createHash('sha256').update(await readFile(archivePath)).digest('hex')},players:playerCount,relayPort,output:out,phases:[]};
+  data:{sha256:createHash('sha256').update(await readFile(archivePath)).digest('hex')},players:playerCount,initialStage,difficulty,relayPort,output:out,phases:[]};
  const wait=async(check,label,ms=15000)=>{const end=Date.now()+ms;while(Date.now()<end){const value=await check();if(value)return value;await new Promise(r=>setTimeout(r,25));}throw Error(label+' timeout');};
 async function open(query){const ws=new WebSocket('ws://127.0.0.1:'+relayPort+'/?'+query),r={ws,messages:[]};sockets.push(ws);
  ws.addEventListener('message',e=>{if(typeof e.data==='string')r.messages.push(JSON.parse(e.data));});await wait(()=>ws.readyState===1,'lobby connect');assert.equal(ws.readyState,1);return r;}
@@ -138,7 +139,7 @@ try{
  const lobbies=[];
  for(let seat=0;seat<playerCount;seat++){
   const client='spectator_lab_'+roomCode+'_'+seat,member='spectator_member_'+roomCode+'_'+seat;members.push({client,member});
-  const lobby=await open(new URLSearchParams({room,lobby:client,member,intent:seat?'join':'create',players:String(playerCount),difficulty:'0'}));lobbies.push(lobby);
+  const lobby=await open(new URLSearchParams({room,lobby:client,member,intent:seat?'join':'create',players:String(playerCount),difficulty:String(difficulty)}));lobbies.push(lobby);
   await send(lobby,{type:'take-seat',seat,loadout:seat},m=>m.room?.seats?.[seat]?.clientId===client);
  }
  const viewerId='spectator_wait_'+roomCode,viewerMember='spectator_viewer_'+roomCode;
@@ -148,7 +149,7 @@ try{
  await wait(()=>latest(lobbies[0])?.seats?.slice(0,playerCount).every(s=>s?.ready),'all ready');
  const started=await send(lobbies[0],{type:'start',adonisMode:1,inputDelay:2,inputDelayAuto:false,predictionReserve:2},m=>m.type==='start');
  options=Array.from({length:playerCount+1},(_,seat)=>({netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(started.serial),member:seat<playerCount?members[seat].member:viewerMember}),
-  netplayPlayer:seat<playerCount?seat:0,netplayPlayerCount:playerCount,netplayDifficulty:0,netplaySeed:417,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0},{character:0,shot:2}].slice(0,playerCount),
+  netplayPlayer:seat<playerCount?seat:0,netplayPlayerCount:playerCount,netplayDifficulty:difficulty,netplaySeed:417,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0},{character:0,shot:2}].slice(0,playerCount),
   netplayInputDelay:2,netplayInputDelayAuto:false,netplayAdonisMode:1,netplayPredictionLimit:0,netplayPredictionReserve:2,netplaySpectator:seat===viewerSeat,
   netplaySpectatorId:seat===viewerSeat?viewerId:'',netplaySpectatorCount:1,netplayChallengeMode:challengeMode,thpracEnabled:false,renderScale:1}));
  const contexts=[],pages=new Map(),epochs=new Map(),errors=[];

@@ -1,5 +1,7 @@
 # TH11 多人版开发指南
 
+旁观逐帧检查可从指定原生关头运行。`portable/multiplayer/build-spectator-stage.mjs --production --stage=6` 为当前正式游戏对象链接私有观测入口，`spectator-relay-browser.mjs` 对比来源端与独立观众的逐帧游戏状态。`--stage=7` 对应 Extra；驱动记录关卡与难度，并使用对应房间参数。
+
 `portable/multiplayer/browser-acceptance.mjs` 使用生产包、显式共用字体与真实通道验收原生旁观、重开和多人 Replay。设置 `TH11_TEST_ARCHIVE`、`TH11_TEST_FONT`、`TH11_TEST_UNICODE_FONT` 后运行，结果记录 `pure-delay`；产品的有界回滚场景使用 `rollback-browser-acceptance.mjs`，两种时序分别记录。
 
 当前适配记录见[TH11 多人适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。
