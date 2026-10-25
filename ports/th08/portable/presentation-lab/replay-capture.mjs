@@ -1,3 +1,9 @@
+import {readNativeTrace} from '../../../../common/testkit/presentation-lab/trace-state.mjs';
+
+export const TH08_REPLAY_TRACE_LAYOUT=Object.freeze({wordCount:68,
+  uint32:Object.freeze({frame:0,stage:1,gameFrames:2,controlFrames:3,flags:4,rng:5,rngCalls:6,playerState:9,keys:10}),
+  float32:Object.freeze({player:Object.freeze({at:7,length:2})}),bytes:Object.freeze({numbers:Object.freeze({at:44,length:228})})});
+
 const SCHEMA='th08/replay-capture-journal/1';
 const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)))
   .map(value=>value.toString(16).padStart(2,'0')).join('');
@@ -10,7 +16,7 @@ export function createReplayCaptureJournal(controller){
   let rows=[],ledger=[];
   const tick=()=>{
     const receipt=controller.driver.advanceOneTick();state.applicationTicks++;
-    const pointer=core.trace(runtime.app),u32=new Uint32Array(core.memory.buffer,pointer,68),f32=new Float32Array(core.memory.buffer,pointer,68);
+    const pointer=core.trace(runtime.app),u32=new Uint32Array(core.memory.buffer,pointer,68);
     const diagnostics=Array.from(new Int32Array(core.memory.buffer,core.diagnostics(runtime.app),16));
     const scene=core.status(runtime.app,0),counters=Array.from({length:7},(_,index)=>core.status(runtime.app,12+index));
     const replay={loaded:counters[0],frame:counters[1],inputCursor:counters[2],inputBytes:counters[3],
@@ -23,9 +29,7 @@ export function createReplayCaptureJournal(controller){
     if(!sample.reason){
       sample.captured=true;sample.rowIndex=state.capturedRows++;state.previous=key;
       if(!state.stages.includes(u32[1]))state.stages.push(u32[1]);
-      rows.push({applicationTick:state.applicationTicks,replay:{...replay},frame:u32[0],stage:u32[1],gameFrames:u32[2],controlFrames:u32[3],
-        flags:u32[4],rng:u32[5],rngCalls:u32[6],player:[f32[7],f32[8]],playerState:u32[9],keys:u32[10],
-        numbers:Array.from(new Uint8Array(core.memory.buffer,pointer+44,228))});
+      rows.push({applicationTick:state.applicationTicks,replay:{...replay},...readNativeTrace(core.memory.buffer,pointer,TH08_REPLAY_TRACE_LAYOUT)});
     }else state.filters[sample.reason]=(state.filters[sample.reason]??0)+1;
     ledger.push(sample);
     if(scene===2){state.finalScore=u32[13];if((u32[4]&8)!==0)state.started=true;}

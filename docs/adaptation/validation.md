@@ -111,6 +111,25 @@ th08 的 Quick／Daily 共用同一逐步采集器。v3 捕获为每个应用步
 
 原始状态进入摘要前，由共用 `assertReplayStateFields` 按本作声明核对字段类型。th08 普通版与 MP 对应 `BrowserExports.cpp` 的 `browser_trace`：计数与标志使用无符号 32 位整数，角色位置使用两个有限坐标，数值状态块固定 228 字节。缺失字段、非有限坐标、截短状态块和非法字节在 Quick 与流式长回放路径均拒收，冻结帧也保留同样的输入检查。
 
+`th08-replay-trace.test.mjs` 分别编译普通版与 MP 的实际 `browser_trace` 函数体和 `GameGlobals` 布局，以固定且不同的 Replay、世界和输入时钟检查采集读取器。原生对象图由夹具提供，导出函数与数值布局来自生产源码；测试职责为字段映射和字节读取。将世界时钟替换为输入时钟的编译反例必须失败。捕获使用共用 `readNativeTrace` 按小端读取声明槽位，读取后保留原始内存。
+
+| 字段 | 原生来源 | 单位与读取 |
+| --- | --- | --- |
+| `frame` | `playback.stream.frame` | Replay 消费步，u32 槽位 0 |
+| `stage` | `globals.stage` | 原生阶段编号，u32 槽位 1 |
+| `gameFrames` | `enemies.state.frames` | 世界逻辑帧，u32 槽位 2 |
+| `controlFrames` | `control.state.frames` | 输入逻辑帧，u32 槽位 3 |
+| `flags` | `globals.game_flags` | 状态位，u32 槽位 4 |
+| `rng`／`rngCalls` | `session.random` | 随机种子／调用数，u32 槽位 5／6 |
+| `player` | `player_state.motion.movement.position` | 游戏坐标，Float32 槽位 7／8 |
+| `playerState` | `player_state.life.state` | 原生生命状态，u32 槽位 9 |
+| `keys` | `playback.input.current` | 已消费逻辑键位，u32 槽位 10 |
+| `numbers` | `session.numbers` | `GameGlobals` 原始 228 字节，字节偏移 44 |
+
+世界摘要比较数值块的前 72 字节并排除两处 padding，再比较死亡、阶段死亡、残机、Bomb、Bomb 使用次数与火力的七个 Float32 字段。编译夹具用实际 `GameGlobals` 的成员偏移约束这七个字段；状态读取同时保存全部 228 字节，便于逐字节复核。
+
+同一份原生定值经 Quick 与流式长回放映射后，完整结束、明确未完成、提前封口、缺失末记录和终止原因变化各有固定判定。原版自然终点由独立来源记录提供。
+
 RNG 首差异可在诊断构建中按 Chain 优先级定位消费来源。`audit_rng_enable(1)` 开启只读计数，`audit_rng_counts()` 返回本应用步的129个32位计数：0–63为计算优先级，64–127为 Draw 优先级，128为 Chain 外调用。统计限定为当前 GameApplication 的共享 RNG，默认关闭，普通构建不导出该接口。先保留不可变参考的最早差异，再读取该窗口的 owner 增量，继续追查具体 ECL、实体或动画路径。
 
 敌人任务的细分记录由 `audit_rng_details()` 与 `audit_rng_detail_status(field)` 读取。status 字段0–5依次为版本1、容量2048、记录数、下次写入位置、覆盖条数和每条5个32位字。记录按环形顺序保存 category、敌人slot、arg0、arg1与调用增量；category 1–8依次为 Timeline、ECL、动画、接触与伤害、死亡、收尾、特效和道具。特效参数为kind／count，道具参数为kind／mode。增量包含嵌套调用，外层阶段与内部特效不能重复求和；覆盖条数非零时保留丢样状态。

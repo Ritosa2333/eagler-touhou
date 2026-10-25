@@ -8,7 +8,8 @@ const lab=import.meta.dirname,root=resolve(lab,'../..');
 const common=resolve(root,'../../common/testkit/presentation-lab');
 const commonEntries=['controller-core.mjs','contracts.mjs','report-core.mjs','server-core.mjs','analyzer.mjs','review-record.mjs','replay-pair.mjs','continuous-fields.mjs','pool-boundary.mjs'];
 const commonPrefix='common/testkit/presentation-lab/';
-const commonModules=(await dependencySnapshot(resolve(root,'../..'),commonEntries.map(name=>commonPrefix+name)))
+const commonModules=(await dependencySnapshot(resolve(root,'../..'),[...commonEntries.map(name=>commonPrefix+name),
+  'ports/th08/portable/presentation-lab/replay-capture.mjs']))
   .filter(file=>file.path.startsWith(commonPrefix)).map(file=>file.path.slice(commonPrefix.length));
 for(const name of commonModules)if(!existsSync(resolve(common,name)))throw Error('Shared common testkit is missing '+name);
 const audioBrowser=resolve(root,'../../tools/ports/presentation-audio-browser.mjs');
