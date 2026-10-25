@@ -40,7 +40,15 @@ public:
     void preserve_script_write(void*,u32)override;
     unsigned multiplayer_owner=0;
     std::unordered_map<const AnmVm*,unsigned> multiplayer_tags;
-    unsigned multiplayer_tag(const AnmVm& vm)const noexcept{auto i=multiplayer_tags.find(&vm);return i==multiplayer_tags.end()?0:i->second;}
+    unsigned multiplayer_tag(const AnmVm& vm)const noexcept{
+        auto i=multiplayer_tags.find(&vm);if(i!=multiplayer_tags.end())return i->second;
+        // Submitted copies retain their native owner identity. Another
+        // manager's same numeric id is not part of this roster.
+        auto live=active.find(vm.id);
+        if(!vm.id||live==active.end()||live->second->resource!=vm.resource||
+           live->second->timer.rate!=vm.timer.rate)return 0;
+        i=multiplayer_tags.find(live->second);return i==multiplayer_tags.end()?0:i->second;
+    }
 #endif
 private:
     friend struct AnmRollbackTestAccess;

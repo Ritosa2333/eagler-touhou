@@ -73,14 +73,14 @@
 
 | 编号 | 检查项 | multiplayer | 记录 |
 | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已验证 | 高刷与 60Hz 双端确认状态、实际输入 Replay 对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md#mp-接收与逻辑时钟) |
+| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 待验证 | 120Hz 模拟回调验证额外呈现，设备显示验收按本项执行，见[记录](docs/records/2026-10-24-display-high-refresh.md#mp-接收与逻辑时钟) |
+| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已验证 | 2P／3P 五组系数重复 Draw 与完整世界对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md#mp-呈现所有权) |
+| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待验证 | ANM 字段、席位副本和完整原生几何对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
+| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待验证 | 生命周期 CPU 契约、恢复及连续换关对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
+| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 已验证 | 真实双端暂停与恢复、原生暂停屏障对照通过，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
 | DISPLAY-07 | [实际呈现后报告首帧](../../docs/adaptation/presentation.md#display-07) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
+| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 已验证 | 同局高刷端 182 次纯显示绘制，限制端 0，逻辑与 Replay 一致，见[记录](docs/records/2026-10-24-display-high-refresh.md) |
 | AUDIO-01 | [正常 OGG 音乐](../../docs/adaptation/presentation.md#audio-01) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
@@ -171,7 +171,7 @@
 
 ### 2026-10-24 | 高刷源码接收与独立联机时钟
 
-接收普通版共享呈现、Lab 和准入回归。联机驱动保留权威前沿，独立 SimulationCadence 通过 10 组、26,288 项账本检查；该模式关闭插值缓存采集。MP 完整构建、三种宿主配置编译、六组呈现／时钟 CPU 契约及 31 项位移和打包隔离回归通过。来源、模式所有者与复现入口见[验收记录](docs/records/2026-10-24-display-high-refresh.md)。
+MP 在完整原生事务之间生成高刷画面，独立 SimulationCadence 保持网络前进规则。完整世界对照通过 43 组场景、1,335,299 项检查；真实 WebRTC 双端使用不同显示限制，确认状态与实际输入 Replay 一致。MP 完整构建、三种宿主配置编译、六组呈现／时钟 CPU 契约及 31 项位移和打包隔离回归通过。来源、模式所有者与复现入口见[验收记录](docs/records/2026-10-24-display-high-refresh.md)。
 
 
 ## 运行验收记录

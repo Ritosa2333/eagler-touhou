@@ -430,7 +430,7 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
 }
 
 bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
-    const bool presenting=high_refresh::interpolating();
+    const bool presenting=high_refresh::render_only;
     if(presenting)compositor.begin_presentation(high_refresh::alpha);
     struct RestoreCamera{SceneCompositor& compositor;bool active;~RestoreCamera(){if(active)compositor.end_presentation();}} restore{compositor,presenting};
     if(battle)battle->always_hitbox=always_hitbox;

@@ -283,11 +283,18 @@ void spectator_ui_cases(const std::vector<u8>& bytes){
     for(unsigned count:{2u,3u}){
         auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=count;options.spectator=true;
         check(peer->session.begin_multiplayer(peer->resources,options),"spectator presentation world");
-        std::array<MultiplayerInput,3> input{};for(unsigned i=0;i<125;++i)step(*peer,input);
+        std::array<MultiplayerInput,3> input{};
+        for(unsigned seat=0;seat<count;++seat)input[seat].held=8;
+        for(unsigned i=0;i<125;++i)step(*peer,input);
         auto& battle=*peer->session.battle;for(unsigned seat=0;seat<count;++seat)put(*battle.pilots[seat]->player,0,400);
         battle.mp_prepare_presentation(peer->renderer);
+        check(peer->renderer.multiplayer_hitbox_owners.size()==count,"spectator fixture has every native focused player marker");
         for(unsigned seat=0;seat<count;++seat)check(peer->renderer.multiplayer_opacity[seat+1]==255,"spectator overlapping players have equal opacity");
         check(peer->renderer.multiplayer_hidden_hitboxes.empty(),"spectator has no P1 hitbox preference");
+        battle.mp_options.spectator=false;battle.mp_prepare_presentation(peer->renderer);
+        check(peer->renderer.multiplayer_hidden_hitboxes.size()==count-1,"player view retains local native hitbox selection");
+        battle.mp_options.spectator=true;battle.mp_prepare_presentation(peer->renderer);
+        check(peer->renderer.multiplayer_hidden_hitboxes.empty(),"returning to spectator view restores every focused marker");
         input[count-1].pause=true;step(*peer,input);input={};for(unsigned i=0;i<25;++i)step(*peer,input);
         const auto identity=peer->session.multiplayer_hash();peer->renderer.flush();peer->graphics.triangles_drawn=0;
         check(peer->session.draw(peer->renderer),"spectator paused gameplay draw");peer->renderer.flush();const auto without_menu=peer->graphics.triangles_drawn;
