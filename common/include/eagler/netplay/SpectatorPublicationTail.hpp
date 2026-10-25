@@ -8,18 +8,19 @@ namespace Netplay {
 class SpectatorPublicationTail {
 public:
     static constexpr std::size_t MaxBytes = 16 * 1024 * 1024;
-    enum class Result { Idle, Waiting, Complete, Failed };
+    enum class Result { Idle, Waiting, Complete, Continued, Failed };
     template<class Inputs>
     bool Freeze(SpectatorStagePublisher& publisher, std::uint32_t confirmed,
                 std::uint32_t simulated, Inputs inputs, std::uint64_t now,
-                const std::vector<std::uint8_t>& prefix = {}) {
+                const std::vector<std::uint8_t>& prefix = {}, bool finish = true) {
         Clear();
         const auto retain = [&](const std::vector<std::uint8_t>& wire) {
             if (wire.size() > MaxBytes - bytes_) return false;
             packets_.push_back(wire); bytes_ += wire.size(); return true;
         };
         if ((!prefix.empty() && !retain(prefix)) || !publisher.Publish(confirmed, simulated, inputs, retain) ||
-            !publisher.Finish(publisher.Published(), retain)) {Clear(); return false;}
+            (finish && !publisher.Finish(publisher.Published(), retain))) {Clear(); return false;}
+        finishes_ = finish;
         deadline_ = now + 15'000; return true;
     }
     template<class Send, class Clock>
@@ -33,7 +34,7 @@ public:
             bytes_ -= packets_.front().size(); packets_.pop_front();
         }
         if (!packets_.empty()) return Result::Waiting;
-        Clear(); return Result::Complete;
+        const bool finish = finishes_; Clear(); return finish ? Result::Complete : Result::Continued;
     }
     void Clear() {packets_.clear(); bytes_ = 0; deadline_ = 0;}
     bool Pending() const {return deadline_ != 0;}
@@ -42,5 +43,6 @@ private:
     std::deque<std::vector<std::uint8_t>> packets_;
     std::size_t bytes_ = 0;
     std::uint64_t deadline_ = 0;
+    bool finishes_ = true;
 };
 }

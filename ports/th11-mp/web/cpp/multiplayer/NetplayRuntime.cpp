@@ -73,6 +73,7 @@ bool NetplayRuntime::Connect(const char* url){
     // initialized lazily from the first fully constructed stage world.
     spectator_stage_publisher_={};spectator_publisher_started_=false;publish_failed_=false;
     if(!transport_.Connect(url,std::uint8_t(setup_.local_player),std::uint8_t(setup_.player_count),true))return Fail("TH11 transport could not connect");
+    transport_.BeginSpectatorSession(setup_.session_id,setup_.seed);
     now_ms_=clock_us()/1000;network_=true;
     if(setup_.mode==0){
         if(!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(0)))return Fail("TH11 direct session bootstrap failed");
@@ -104,7 +105,7 @@ bool NetplayRuntime::InitialInputsReady()const{
 }
 bool NetplayRuntime::Pump(bool ready,bool capture_follows){
     if(!network_)return error_.empty();now_ms_=clock_us()/1000;
-    if(spectator_)return retired_||DrainSpectator();
+    if(spectator_)return DrainSpectator();
     DrainPublicationTail();
     if(retired_&&(transport_.Failed()||transport_.Disconnected()))return true;
     if(transport_.Disconnected())return Fail(transport_.LastError().empty()?"TH11 input connection ended":transport_.LastError().c_str());
@@ -220,6 +221,13 @@ bool NetplayRuntime::Feed(std::uint32_t frame,const Netplay::FrameInput* inputs,
 }
 bool NetplayRuntime::FeedPlayback(std::uint32_t f,const Netplay::FrameInput* inputs,unsigned count){return playback_&&Feed(f,inputs,count);}
 bool NetplayRuntime::DrainSpectator(){
+    std::uint64_t session;std::uint32_t seed;
+    if(transport_.TakeSpectatorSession(&session,&seed)){
+        auto setup=setup_;setup.session_id=session;setup.seed=seed;
+        if(!Configure(setup,0,true))return false;
+        spectator_frames_.clear();spectator_stage_playback_.Clear();
+        receive_frame_=0;timing_ready_=setup_.mode==0;spectator_deadline_=now_ms_+45'000;
+    }
     std::vector<std::uint8_t> bytes;
     for(unsigned n=0;n<128&&transport_.Poll(&bytes);++n){
         if(Netplay::IsSpectatorStageEvent(bytes.data(),bytes.size())){
@@ -282,7 +290,7 @@ bool NetplayRuntime::SpectatorCheckpointRequired(std::uint32_t frame,std::uint32
 bool NetplayRuntime::RecordSpectatorFrame(std::uint32_t frame,std::uint32_t stage,
         const std::vector<std::uint8_t>& initializer,
         const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){
-    if(!network_||spectator_||playback_||generation_||setup_.local_player)return true;
+    if(!network_||spectator_||playback_||setup_.local_player)return true;
     if(!spectator_publisher_started_){
         // Before the first stable checkpoint the title may still be creating
         // the stage's native graph. Those frames are deliberately outside the
@@ -304,7 +312,7 @@ bool NetplayRuntime::RecordSpectatorFrame(std::uint32_t frame,std::uint32_t stag
     spectator_recorded_frames_[frame%spectator_recorded_frames_.size()]={frame,stage};return true;
 }
 void NetplayRuntime::PublishConfirmedSpectatorFrames(){
-    if(!network_||ReadOnly()||retired_||generation_||setup_.local_player||!spectator_publisher_started_||publish_failed_||
+    if(!network_||ReadOnly()||retired_||setup_.local_player||!spectator_publisher_started_||publish_failed_||
        Correcting()||core_.HasRollbackRequest())return;
     const auto confirmed=core_.ConfirmedThroughAllRemotes(),last=core_.LastSimulatedFrame();
     if(confirmed==Netplay::INVALID_FRAME||last==Netplay::INVALID_FRAME)return;
@@ -326,15 +334,15 @@ void NetplayRuntime::PublishConfirmedSpectatorFrames(){
     }
     publish_frame_=spectator_stage_publisher_.Published();
 }
-void NetplayRuntime::FreezePublicationTail(){
-    if(ReadOnly()||generation_||setup_.local_player||publish_failed_||!spectator_publisher_started_)return;
+void NetplayRuntime::FreezePublicationTail(bool restarting){
+    if(ReadOnly()||setup_.local_player||publish_failed_||!spectator_publisher_started_)return;
     std::vector<std::uint8_t> timing;
     if(setup_.mode&&!timing_sent_){
         timing=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.automatic).Encode();
         if(timing.empty()){publish_failed_=true;transport_.StopSpectators();return;}
     }
     if(!publish_tail_.Freeze(spectator_stage_publisher_,core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
-        [&](std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){return ConfirmedInputs(frame,inputs);},now_ms_,timing)){
+        [&](std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){return ConfirmedInputs(frame,inputs);},now_ms_,timing,!restarting)){
         std::fprintf(stderr,"th11 spectator stopped: retirement-tail frame=%u\n",spectator_stage_publisher_.Published());
         publish_failed_=true;transport_.StopSpectators();return;
     }
@@ -348,7 +356,7 @@ void NetplayRuntime::DrainPublicationTail(){
     if(result==Result::Complete)transport_.StopSpectators(true);
     if(result==Result::Failed){publish_failed_=true;transport_.StopSpectators();}
 }
-bool NetplayRuntime::Finish(){
+bool NetplayRuntime::Finish(bool restarting){
     if(retired_)return true;const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return false;
     if(Correcting()||core_.HasRollbackRequest()||!InputsReconciledBeforeNext()||commit_limit_!=last)return false;
     if(ReadOnly()){retired_=true;return true;}
@@ -356,7 +364,7 @@ bool NetplayRuntime::Finish(){
         if(!channel_.CanRetire(core_,last))return false;
         if(!channel_.Retire(core_,last,now_ms_))return Fail("TH11 retirement failed");}
     PublishConfirmedSpectatorFrames();
-    FreezePublicationTail();
+    FreezePublicationTail(restarting);
     retired_=true;return true;
 }
 bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
@@ -368,6 +376,8 @@ bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
     // from the previous run before the new native world is initialized.
     spectator_stage_publisher_={};spectator_publisher_started_=false;spectator_stage_playback_.Clear();spectator_stage_view_.Clear();
     spectator_recorded_frames_={};spectator_frames_.clear();
+    publish_tail_.Clear();publish_failed_=false;
+    transport_.BeginSpectatorSession(setup_.session_id,setup_.seed);
     if(network_){
         if(!setup_.mode){if(!channel_.BeginSession(gate_.Config(),now_ms_,channel_policy(0)))return Fail("TH11 next direct session failed");timing_ready_=true;}
         else calibration_.Prepare(gate_.Config(),Mode(),setup.automatic,setup.requested_delay,setup.prediction_reserve,&previous);

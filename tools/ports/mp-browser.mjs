@@ -20,6 +20,9 @@ const games=arg('game')?.split(','),players=Number(arg('players','2')),route=arg
 const duration=Number(arg('frames','1200'));
 const waitEnd=process.argv.includes('--wait-end');
 const stopStream=process.argv.includes('--stop-stream');
+const recover=process.argv.includes('--recover');
+const restart=arg('restart','none');
+assert.ok(['none','quick','menu','both'].includes(restart));
 assert.ok([2,3].includes(players)&&['rtc','relay'].includes(route)&&['normal','challenge','both'].includes(mode));
 assert.ok(Number.isSafeInteger(duration)&&duration>=300,'--frames must be at least 300');
 const targets=config.targets.filter(t=>t.variant==='multiplayer'&&PRODUCT_GAMES[t.game]?.multiplayer?.gameplay==='cooperative'&&(!games||games.includes(t.game)));
@@ -27,7 +30,7 @@ assert.ok(targets.length,'No cooperative multiplayer Runtime selected');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 await mkdir(output,{recursive:true});
 const report={schema:'eagler-touhou/mp-browser/1',startedAt:new Date().toISOString(),players,route,frames:duration,
- waitEnd,stopStream,
+ waitEnd,stopStream,recover,restart,
  scope:'Actual native MP games and independent spectators through a real local relay and the production Runtime protocol',
  commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),harnessSha256:sha(await readFile(new URL(import.meta.url))),cases:[]};
 report.relayConfig={freshPerCase:true,rtcTimeoutMs:30000,stunUrls:[]};
@@ -43,8 +46,17 @@ const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(report,nul
 const WebSocket=createRequire(resolve(root,'services/relay/package.json'))('ws');
 let relayLog='',relay,relayPort;
 async function startRelay(){
-const child=spawn(process.execPath,[resolve(root,'services/relay/src/netplay-relay.mjs')],{cwd:root,windowsHide:true,
- env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'30000',EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
+const wrapper=resolve(output,'relay-behavior-process.mjs');
+await writeFile(wrapper,`import {createRequire} from 'node:module';
+import {pathToFileURL} from 'node:url';
+const {WebSocketServer}=createRequire(${JSON.stringify(resolve(root,'services/relay/package.json'))})('ws');
+const viewers=new Map(),emit=WebSocketServer.prototype.emit;let dropOpening=false;
+WebSocketServer.prototype.emit=function(type,...args){if(type==='connection'){const [socket,request]=args,id=new URL(request.url,'http://localhost').searchParams.get('spectator');if(id){viewers.set(id,socket);socket.on('close',()=>{if(viewers.get(id)===socket)viewers.delete(id);});if(dropOpening){dropOpening=false;socket.terminate();}}}return emit.call(this,type,...args);};
+process.on('message',message=>{if(message.operation==='drop-opening'){dropOpening=true;process.send({id:message.id,armed:true});return;}if(message.operation!=='drop-spectator')return;const socket=viewers.get(message.spectator);socket?.terminate();process.send({id:message.id,dropped:!!socket});});
+await import(pathToFileURL(${JSON.stringify(resolve(root,'services/relay/src/netplay-relay.mjs'))}).href);
+`);
+const child=spawn(process.execPath,[wrapper],{cwd:root,windowsHide:true,
+ env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:'0',EAGLER_NETPLAY_RTC_TIMEOUT_MS:'30000',EAGLER_NETPLAY_PUBLIC_NICKNAMES:'0',EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe','ipc']});
 child.stderr.on('data',b=>relayLog+=b);let startup='';
 const port=await new Promise((yes,no)=>{const timer=setTimeout(()=>no(Error('Relay startup timeout '+startup)),15000);
  child.once('error',no);child.stdout.on('data',b=>{relayLog+=b;startup+=b;const m=startup.match(/listening ws:\/\/127\.0\.0\.1:(\d+)/);if(m){clearTimeout(timer);yes(Number(m[1]));}});});
@@ -71,6 +83,11 @@ const server=createServer(async(req,res)=>{try{
  }catch(error){res.writeHead(404).end(String(error));}});
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const base=`http://127.0.0.1:${server.address().port}`;
+async function relayFault(operation,fields={}){
+ const id=randomUUID();return new Promise((yes,no)=>{const timer=setTimeout(()=>{relay.off('message',receive);no(Error('Relay fault control timeout'));},10000);
+  const receive=message=>{if(message.id!==id)return;clearTimeout(timer);relay.off('message',receive);yes(message);};
+  relay.on('message',receive);relay.send({operation,...fields,id});});
+}
 async function until(operation,label,timeout=120000){const deadline=Date.now()+timeout;while(true){const result=await operation();if(result)return result;if(Date.now()>deadline)throw Error('Timeout: '+label);await new Promise(r=>setTimeout(r,100));}}
 async function lobby(room,client,member,create=false){
  const socket=new WebSocket(`ws://127.0.0.1:${relayPort}/?`+new URLSearchParams({room,lobby:client,member,intent:create?'create':'join',players:String(players),visibility:'private',difficulty:'1'}));
@@ -99,10 +116,11 @@ try{
     failed:!!r?.__eaglerNetplayFailed||native?.[23]===1||peer?.failed===true,
     error:r?.__eaglerNetplayError||(native?.[23]===1||peer?.failed===true?String(peer?.error||'native multiplayer failure'):''),native,
     state:runtime?.status?.()??null,transport:peer?{route:peer.route,failed:peer.failed,error:peer.error,closed:peer.closed,peers:peer.peers?.size}:null,
+    spectatorSession:peer?.spectatorSession??null,receiveEpoch:peer?.receiveEpoch??0,reconnectAttempt:peer?.reconnectAttempt??0,
     body:r?.document.body.innerText??'',options:module?.eaglerOptions??null,terminal:events.filter(e=>e.event==='error'||e.event==='exit')};
   });
   const complete=state=>state.playback?.ended&&state.playback.position>=state.playback.received;
-  const healthy=state=>{assert.equal(state.failed,false);assert.equal(state.error,'');
+  const healthy=state=>{assert.equal(state.failed,false,state.error||state.transport?.error||'Native multiplayer failed');assert.equal(state.error,'');
    for(const event of state.terminal)assert.ok(complete(state)&&event.event==='exit'&&event.status==='success'&&(!event.code||event.code===0),JSON.stringify(event));};
   const progress=async(endpoint,predicate,label)=>until(async()=>{const state=await inspect(endpoint);healthy(state);return state.playback&&predicate(state)?state:null;},label);
   try{
@@ -127,7 +145,7 @@ try{
    const add=async(member,spectator=false,launchNow=true)=>{
     const context=await browser.newContext({viewport:{width:1000,height:760}});contexts.push(context);
     if(route==='relay')await context.addInitScript(()=>Object.defineProperty(window,'RTCPeerConnection',{configurable:true,value:undefined}));
-    const page=await context.newPage(),endpoint={page,spectator,seat:spectator?null:member.seat};endpoints.push(endpoint);
+    const page=await context.newPage(),endpoint={page,member,spectator,seat:spectator?null:member.seat};endpoints.push(endpoint);
     page.on('pageerror',error=>row.errors.push(String(error)));page.on('response',r=>{if(r.status()>=400)row.httpErrors.push({url:r.url(),status:r.status()});});
     await page.goto(`${base}/host/${t.id}`);await page.waitForFunction(()=>events.some(e=>e.event==='ready'),null,{timeout:120000});
     endpoint.frame=page.frames().find(f=>f.url().includes(`/runtime/${t.id}/`));assert.ok(endpoint.frame);
@@ -152,7 +170,9 @@ try{
     if(existing&&(await inspect(existing)).playback?.ended)return null;
     const socket=await lobby(room,member.client,member.member);sockets.push(socket);await send(socket,{type:'spectate'},m=>m.type==='spectator-start');
     await e.page.evaluate(()=>rpc('launch'));await progress(e,s=>s.playback.position>=s.playback.min+120&&!s.playback.seeking,'spectator history playback');return e;};
+   if(recover)assert.equal((await relayFault('drop-opening')).armed,true);
    const viewer=await step('join-during-play',join);row.initial=await inspect(viewer);
+   if(recover)assert.ok(row.initial.reconnectAttempt>=1,'recover an actual receiver loss before its first session descriptor');
    const control=async(action,frame)=>{const state=await inspect(viewer);assert.ok(state.playback);await viewer.page.evaluate(({run,action,frame})=>rpc('spectator-playback',{run,action,...(frame===undefined?{}:{frame})}),{run:state.playback.run,action,frame});};
    await step('pause-seek-resume',async()=>{
     await control('pause');const paused=await progress(viewer,s=>s.playback.paused,'pause');const before=await Promise.all(sources.map(inspect));
@@ -174,8 +194,35 @@ try{
    });
    await step('sustained-playback',async()=>{const start=(await inspect(viewer)).playback.position;
     row.sustained=await progress(viewer,s=>s.playback.position>=start+duration||complete(s),'sustained native playback');});
+   if(recover)await step('spectator-connection-recovery',async()=>{
+    const before=await inspect(viewer),sourcesBefore=await Promise.all(sources.map(inspect));
+    const {dropped}=await relayFault('drop-spectator',{spectator:viewer.member.client});
+    assert.equal(dropped,true,'terminate the actual receiver socket at the real Relay');
+    const after=await progress(viewer,s=>s.receiveEpoch>before.receiveEpoch&&s.playback.received>before.playback.received+120&&s.playback.position>=s.playback.min+120&&!s.playback.seeking,'recovered native playback');
+    assert.equal(after.spectatorSession.session,before.spectatorSession.session);
+    assert.ok(after.playback.revision>before.playback.revision,'same-run UI revision continues across receiver recovery');
+    const sourcesAfter=await Promise.all(sources.map(inspect));sourcesAfter.forEach(healthy);
+    assert.ok(sourcesAfter.every((s,i)=>s.frame>sourcesBefore[i].frame));
+    row.recovery={before,after,sourcesBefore,sourcesAfter};
+   });
+   if(restart!=='none')for(const method of restart==='both'?['quick','menu']:[restart])await step('restart-'+method,async()=>{
+    if(t.game==='th06'&&method==='menu'){(row.inapplicableActions??=[]).push({action:'restart-menu',reason:'The native pause menu has Resume and Quit; Restart uses R.'});return;}
+    const before=await inspect(viewer),sourceBefore=await inspect(sources[0]);
+    const key=async(code,down,endpoint=sources[0])=>endpoint.page.evaluate(({game,code,down})=>document.querySelector('iframe').contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:1,command:'keyboard',code,key:code==='Escape'?'Escape':code==='KeyR'?'r':code==='KeyZ'?'z':'ArrowUp',keyCode:({Escape:27,KeyR:82,KeyZ:90,ArrowUp:38})[code],location:0,inputSource:'physical',down},location.origin),{game:t.game,code,down});
+    const press=async code=>{await key(code,true);await sources[0].page.waitForTimeout(150);await key(code,false);await sources[0].page.waitForTimeout(200);};
+    // Shared native menus merge seat controls. Release every shoot key so
+    // the selecting seat can produce a real Z edge in that merged input.
+    for(const e of sources)await key('KeyZ',false,e);
+    await press('Escape');await sources[0].page.waitForTimeout(650);
+    if(method==='quick')await press('KeyR');
+    else{await press('ArrowUp');await press('KeyZ');await sources[0].page.waitForTimeout(700);await press('ArrowUp');await press('KeyZ');}
+    const sourceAfter=await until(async()=>{const state=await inspect(sources[0]);healthy(state);return state.spectatorSession?.generation>sourceBefore.spectatorSession?.generation&&state.frame>=180?state:null;},'new source native generation');
+    for(const e of sources)await key('KeyZ',true,e);
+    const after=await progress(viewer,s=>s.spectatorSession?.session===sourceAfter.spectatorSession.session&&s.playback.run.startsWith('s'+sourceAfter.spectatorSession.session+'_')&&s.receiveEpoch>before.receiveEpoch&&s.playback.position>=s.playback.min+120&&!s.playback.seeking,'viewer resumes after '+method+' restart');
+    (row.restarts??=[]).push({method,before,sourceBefore,sourceAfter,after});
+   });
    const late=await step('late-join-after-recovery',()=>join(viewer));
-   if(late){row.late=await inspect(late);assert.equal(row.late.playback.run,row.initial.playback.run);}
+   if(late){row.late=await inspect(late);assert.equal(row.late.playback.run,(await inspect(viewer)).playback.run);}
    if((waitEnd&&!challenge)||(await inspect(viewer)).playback.ended)await step('normal-end-buffer-drain',async()=>{
     if(!complete(await inspect(viewer))){
      await control('pause');const paused=await progress(viewer,s=>s.playback.paused,'pause before completion');
@@ -190,7 +237,7 @@ try{
     assert.equal((await inspect(viewer)).playback.ended,false,'forced stream failure requires a live source game');
     await step('stream-failure-isolation',async()=>{
      const before=await Promise.all(sources.map(inspect));
-     await sources[0].frame.evaluate(name=>(globalThis[name]??globalThis.__eaglerPeerTransport).signal.send(JSON.stringify({type:'spectator-stop'})),PRODUCT_GAMES[t.game].multiplayer.peerTransportGlobal);
+     await sources[0].frame.evaluate(name=>{const state=globalThis[name]??globalThis.__eaglerPeerTransport;state.signal.send(JSON.stringify({type:'spectator-stop',generation:state.spectatorSession?.generation}));},PRODUCT_GAMES[t.game].multiplayer.peerTransportGlobal);
      const stopped=[];
      for(const e of [viewer,late].filter(Boolean))stopped.push(await until(async()=>{
       const state=await inspect(e);if(!state.failed||!state.terminal.length)return null;
@@ -201,7 +248,7 @@ try{
     });
    }
    assert.deepEqual(row.errors,[]);assert.deepEqual(row.httpErrors,[]);row.passed=true;
-  }catch(error){row.passed=false;row.error=String(error.stack||error);row.failure=[];for(const e of endpoints)try{row.failure.push(await inspect(e));}catch{}
+  }catch(error){row.passed=false;row.error=String(error.stack||error);row.failure=[];for(const [i,e]of endpoints.entries())try{row.failure.push(await inspect(e));await e.page.screenshot({path:resolve(output,`${id}-failure-${i}.png`)});}catch{}
   }finally{for(const c of contexts)await c.close().catch(()=>{});await browser?.close();for(const s of sockets)s.close();
    await until(()=>sockets.every(s=>s.readyState===WebSocket.CLOSED),'lobby cleanup',10000);relay?.kill();await save();console.log(`${id} ${row.passed?'PASS':'FAIL'} ${row.stage} ${row.error?.split('\n')[0]??''}`);}
  }

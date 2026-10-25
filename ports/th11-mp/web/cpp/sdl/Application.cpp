@@ -300,7 +300,7 @@ struct Application:StageResourceEffects {
         // Terminal frames keep both input directions alive until every peer
         // acknowledged the fence. Retirement never depends on another tick.
         if(multiplayer_finish_pending){
-            if(!netplay.Finish()){if(*netplay.Error()){error=netplay.Error();return false;}return true;}
+            if(!netplay.Finish(multiplayer_restart_pending)){if(*netplay.Error()){error=netplay.Error();return false;}return true;}
             if(!netplay.ReadOnly()&&!multiplayer_saved){
                 if(!multiplayer_save(0,"PLAYER"))return false;multiplayer_saved=true;
             }

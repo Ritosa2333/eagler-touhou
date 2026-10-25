@@ -363,7 +363,8 @@ void RetireGameplaySession()
                 const auto decision = g_Core.PrepareFrame(frame);
                 if (!decision.canAdvance || decision.predictedMask) return false;
                 inputs = decision.inputs; return true;
-            }, SDL_GetTicks());
+            }, SDL_GetTicks(), {},
+            g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_RESTART);
         if (!ended) g_BrowserPeerTransport.StopSpectators(false);
         g_SpectatorPublisherReady = false;
     }
@@ -645,6 +646,12 @@ void DisableSpectatorPublisher(std::uint32_t frame, const char *reason)
 
 bool DrainSpectatorFrames()
 {
+    std::uint64_t session;std::uint32_t seed;
+    if(g_BrowserPeerTransport.TakeSpectatorSession(&session,&seed)){
+        g_SpectatorPlayback.Clear();g_HavePendingSpectatorBootstrap=false;
+        g_PendingSpectatorBootstrap={};g_SpectatorNativeStageReady=false;g_NextSpectatorReceiveFrame=0;
+        g_GameplayStartSeed=static_cast<std::uint16_t>(seed);
+    }
     std::vector<std::uint8_t> wire;
     while (TransportPoll(&wire))
     {
@@ -1680,6 +1687,10 @@ bool Initialize()
     g_SpectatorPublisherReady = g_SpectatorPublisherEligible &&
                                 g_SpectatorPublisher.Reset('6', g_PlayerCount,
                                                            CurrentSessionId(), GameplayAbi());
+    if(g_SpectatorPublisherReady){
+        g_SpectatorPublicationTail.Clear();
+        g_BrowserPeerTransport.BeginSpectatorSession(CurrentSessionId(),sessionConfig.seed);
+    }
     g_SpectatorBossSlotsThisFrame = 0;
     g_Active = true;
 #ifdef __EMSCRIPTEN__

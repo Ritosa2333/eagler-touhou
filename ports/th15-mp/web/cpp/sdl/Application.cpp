@@ -193,6 +193,11 @@ bool ApplicationState::begin_ending(){
 bool ApplicationState::apply_destination(){
  if(pending_destination<0)return true;
 #if TH15_MULTIPLAYER
+ if(multiplayer&&(pending_destination==10||pending_destination==11)){
+  // Keep the native retry intent until both players retire their input fence.
+  // BrowserRuntime rebuilds the new run after the shared generation changes.
+  exiting=true;completed_recording=false;return true;
+ }
  if(multiplayer&&pending_destination!=13&&pending_destination!=15&&pending_destination!=16){completed_recording=pending_destination==15||pending_destination==16;pending_destination=-1;exiting=true;return save_settings();}
 #endif
  const auto next=pending_destination;pending_destination=-1;

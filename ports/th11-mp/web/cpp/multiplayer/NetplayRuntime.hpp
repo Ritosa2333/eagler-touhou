@@ -37,7 +37,7 @@ public:
     bool FeedPlayback(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool FeedSpectator(std::uint32_t);
     bool StagePlaybackReady()const{return spectator_&&spectator_stage_playback_.Ready();}
-    bool SpectatorPublisherOwner()const{return network_&&!spectator_&&!playback_&&!generation_&&setup_.local_player==0;}
+    bool SpectatorPublisherOwner()const{return network_&&!spectator_&&!playback_&&setup_.local_player==0;}
     Netplay::SpectatorStagePlayback& StagePlayback(){return spectator_stage_playback_;}
     const Netplay::SpectatorStagePlayback& StagePlayback()const{return spectator_stage_playback_;}
     const char* SpectatorPlaybackState(){return spectator_stage_view_.State(spectator_stage_playback_);}
@@ -99,7 +99,7 @@ public:
     bool CommittedPrefixInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
     bool CanReplayConfirmed()const;
     std::uint32_t CommittedThrough()const{return commit_limit_;}
-    bool Finish();
+    bool Finish(bool restarting = false);
     bool BeginNextRun(std::uint32_t seed);
     double PacedElapsed(double);
     const SessionSetup& Setup()const{return setup_;}
@@ -133,7 +133,7 @@ private:
     void Publish();
     void PublishConfirmedSpectatorFrames();
     bool ReceiveSpectatorWire(const std::uint8_t*,std::size_t);
-    void FreezePublicationTail();
+    void FreezePublicationTail(bool restarting);
     void DrainPublicationTail();
     bool Fail(const char*);
     SessionSetup setup_;

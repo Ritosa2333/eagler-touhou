@@ -327,6 +327,23 @@ void retirement_tail_budget_and_expiry() {
     assert(sent == 34 && !tail.Pending());
 }
 
+void retry_tail_keeps_the_viewer_stream_open() {
+    SpectatorStagePublisher publisher;
+    assert(publisher.Reset('7', 2, Session + 400, Abi));
+    assert(publisher.Record(make_frame(0, 1, 2, {1})));
+    SpectatorPublicationTail tail;
+    assert(tail.Freeze(publisher, 0, 0, [](auto, auto&) {return false;}, 100, {}, false));
+    SpectatorStageHistory history;
+    const auto send = [&](const std::vector<std::uint8_t>& bytes) {
+        SpectatorStageEvent event;
+        if (DecodeSpectatorStageEvent(bytes.data(), bytes.size(), &event)) return history.Accept(event);
+        SpectatorFramePacket input;
+        return DecodeSpectatorFramePacket(bytes.data(), bytes.size(), &input) && history.Accept(input);
+    };
+    assert(tail.Drain(101, false, send, [] {return 0ull;}) == SpectatorPublicationTail::Result::Continued);
+    assert(history.Received() == 1 && !history.Ended() && !tail.Pending());
+}
+
 void nonzero_start_and_missing_history() {
     SpectatorStagePublisher publisher;
     assert(publisher.Reset('7', 2, Session + 30, Abi, 100));
@@ -369,6 +386,7 @@ int main() {
         for (const auto packet : {0u, 1u, 2u, 18u})
             retired_world_tail_survives_upload_wait(std::uint8_t(players), packet);
     retirement_tail_budget_and_expiry();
+    retry_tail_keeps_the_viewer_stream_open();
     nonzero_start_and_missing_history();
     overwritten_predecessor_is_explicit();
     std::cout << "PASS publisher derives and replays stage boundary from contiguous records (2P/3P, firstFrame=100)\n";

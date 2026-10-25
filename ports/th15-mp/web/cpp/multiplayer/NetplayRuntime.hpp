@@ -42,7 +42,7 @@ public:
     Netplay::SpectatorStagePlayback& StagePlayback(){return stage_playback_;}
     const char* SpectatorState(){return StagePlaybackReady()?stage_view_.State(stage_playback_):nullptr;}
     bool SpectatorControl(const char* run,const char* action,std::uint32_t frame){return StagePlaybackReady()&&stage_view_.Control(stage_playback_,run,action,frame);}
-    bool Finish();
+    bool Finish(bool restarting = false);
     bool BeginNextRun(std::uint32_t seed);
     double PacedElapsed(double);
     const SessionSetup& Setup()const{return setup_;}
@@ -72,7 +72,7 @@ private:
     bool Feed(std::uint32_t,const Netplay::FrameInput*,unsigned);
     bool DrainSpectator();
     void Publish();
-    void FreezePublicationTail();
+    void FreezePublicationTail(bool restarting);
     void DrainPublicationTail();
     bool Fail(const char*);
     SessionSetup setup_;
@@ -88,6 +88,7 @@ private:
     std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0,publish_deadline_=0;
     bool configured_=false,network_=false,playback_=false,spectator_=false,retired_=false;
     bool timing_ready_=false,timing_sent_=false,publish_failed_=false;
+    bool publish_tail_finishes_=true;
     std::uint32_t generation_=0,publish_frame_=0,receive_frame_=0;
     double phase_debt_ms_=0;
     std::string error_;

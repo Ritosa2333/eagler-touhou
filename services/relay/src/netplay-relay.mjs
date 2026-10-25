@@ -494,6 +494,33 @@ function stopHostSpectatorStream(roomId, runId, run, source) {
   stopSpectatorStream(run);
 }
 
+function beginCooperativeSpectatorSession(roomId, runId, room, run, message) {
+  if (!Object.hasOwn(COOPERATIVE_SPECTATOR_MARKERS, roomId.split('-')[0]) ||
+      typeof message.session !== 'string' || !/^[a-f0-9]{16}$/.test(message.session) || /^0+$/.test(message.session) ||
+      !Number.isInteger(message.seed) || message.seed < 0 || message.seed > 65535 ||
+      !Number.isSafeInteger(message.generation) || message.generation < 0) return false;
+  const previous = run.spectatorSession;
+  if (previous && message.generation === previous.generation)
+    return message.session === previous.session && message.seed === previous.seed;
+  if (message.generation !== (previous ? previous.generation + 1 : 0) || previous?.session === message.session) return false;
+  run.spectatorSession = {type: 'spectator-session', session: message.session, seed: message.seed, generation: message.generation};
+  run.spectatorStages = null; run.spectatorStageTiming = null;
+  run.spectatorHistory = []; run.spectatorHistoryBytes = 0;
+  run.spectatorComplete = run.spectatorStopped = run.spectatorHostStopped = run.spectatorHistoryUnavailable = false;
+  run.spectatorTimeline = true; run.spectatorAdmissionOpen = false;
+  if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
+  run.spectatorGraceTimer = null;
+  for (const socket of run.spectatorClients.values()) {
+    if (socket.spectatorReplayTimer) clearTimeout(socket.spectatorReplayTimer);
+    socket.spectatorReplayEpoch = (socket.spectatorReplayEpoch || 0) + 1;
+    socket.spectatorReplayTimer = null; socket.spectatorReplaying = false; socket.spectatorQueuedStages = [];
+    sendSignal(socket, run.spectatorSession);
+  }
+  broadcastLobby(room); roomDirectory.changed();
+  console.log(`SPECTATOR SESSION room=${roomId} run=${runId} generation=${message.generation}`);
+  return true;
+}
+
 function acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload) {
   const marker = COOPERATIVE_SPECTATOR_MARKERS[roomId.split('-')[0]];
   if (marker === undefined) return false;
@@ -510,6 +537,8 @@ function acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload) {
     const stream = run.spectatorStages || new SpectatorStageRelay(marker, run.playerCount);
     if (first && run.spectatorStageTiming) stream.accept(run.spectatorStageTiming);
     const kind = stream.accept(payload);
+    if (run.spectatorSession && stream.session.toString(16).padStart(16, '0') !== run.spectatorSession.session)
+      throw Error('spectator session metadata mismatch');
     if (kind === 'duplicate-timing') return true;
     run.spectatorStages = stream;
     run.spectatorTimeline = true;
@@ -722,7 +751,8 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
       return;
     }
     if (message.type === 'spectator-stop') {
-      if (player === 0 && run.signalClients.get(player) === socket) {
+      if (player === 0 && run.signalClients.get(player) === socket &&
+          (!run.spectatorSession || message.generation === run.spectatorSession.generation)) {
         stopHostSpectatorStream(roomId, runId, run, 'host-signal');
       }
       return;
@@ -1704,16 +1734,19 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
   }
   run.claimedSpectators.add(spectatorId);
   run.spectatorClients.set(spectatorId, socket);
+  if (run.spectatorSession) sendSignal(socket, run.spectatorSession);
   if (run.spectatorTimeline) {
     // Ordered bounded replay, then live delivery. Live packets remain in the
     // same retained tape until the replay cursor catches its append frontier.
     socket.spectatorReplaying = true;
+    const replayEpoch = socket.spectatorReplayEpoch || 0;
     let index = 0,
       blockedAt = 0,
       history = run.spectatorHistory;
     const replay = () => {
       if (
         socket.readyState !== WebSocket.OPEN ||
+        (socket.spectatorReplayEpoch || 0) !== replayEpoch ||
         run.spectatorStopped ||
         run.spectatorClients.get(spectatorId) !== socket
       )
@@ -1982,6 +2015,9 @@ server.on('connection', (socket, request) => {
       data[3] === 83 && data[4] === 86 && data[5] === 1 && data[6] === 1;
     if (!acceptRelayMessage(socket, data, stageInitializer ? acceptStageInitializer : acceptGameplay)) return;
     if (!isBinary) {
+      let message; try { message = JSON.parse(String(data)); } catch {}
+      if (player === 0 && run.clients.get(player) === socket && message?.type === 'spectator-session' &&
+          beginCooperativeSpectatorSession(roomId, runId, room, run, message)) return;
       socket.close(1003, 'binary frames only');
       return;
     }

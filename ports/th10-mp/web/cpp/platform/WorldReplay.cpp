@@ -148,7 +148,7 @@ void World::activate_replay(){
     // every transition input in the preceding stage's continuous history.
     auto& runtime=state.netplay_runtime;
     if(!runtime.Spectator()&&!runtime.Playback()&&runtime.NetworkEnabled()&&
-       runtime.Generation()==0&&previousActiveStage>0&&
+       previousActiveStage>0&&
        previousActiveStage!=state.replay->active_stage){
         multiplayer::SpectatorStageState saved;
         const u32 frame=replay_checkpoint_precommit_frame-state.multiplayer_replay.Base();

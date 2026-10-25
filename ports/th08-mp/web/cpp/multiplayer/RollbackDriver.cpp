@@ -208,7 +208,7 @@ bool RollbackDriver::RunFrame(bool render){
     }
     pending_spectator_frame=Netplay::INVALID_FRAME;pending_spectator_initializer.clear();
     pending_spectator_checkpoint=false;pending_spectator_boss_slots=0;
-    if(!net.Spectator()&&net.Generation()==0&&net.Setup().local_player==0&&
+    if(!net.Spectator()&&net.Setup().local_player==0&&
        !network.SpectatorPublishFailed()){
         const auto stage=u32(a.game.globals.stage)|(u32(session.multiplayer_route_state)<<8);
         const auto& previous=spectator_stage_tags[(frame-1u)%spectator_stage_tags.size()];

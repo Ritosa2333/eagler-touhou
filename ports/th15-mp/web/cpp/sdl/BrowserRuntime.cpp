@@ -30,6 +30,7 @@ EM_JS(int, th15_host_has_focus, (), {
 EM_JS(int, th15_browser_keyboard_owned, (), { return typeof Module.resetBrowserKeyboard === "function"; });
 EM_JS(void, th15_browser_keyboard_reset, (), { Module.resetBrowserKeyboard?.(); });
 #if TH15_MULTIPLAYER
+extern "C" int th15_mp_replay_save();
 EM_JS(int, th15_browser_read_only, (), {return Module.eaglerOptions?.netplaySpectator === true || Module.eaglerOptions?.replayViewer === true ? 1 : 0;});
 #endif
 namespace th15::sdl {
@@ -41,6 +42,26 @@ multiplayer::NetplayRuntime network;multiplayer::ReplayArchive mp_replay;
 GameInput mp_menu;bool mp_started=false,mp_recording=false,mp_playback=false,mp_local_results=false;
 std::string mp_replay_path;std::string mp_saved_name="PLAYER";unsigned mp_stage=1;
 unsigned mp_spectator_stage=0;std::string mp_spectator_error;
+void clear_inputs(bool preserve_keyboard);
+bool mp_finish_run(){
+ const bool restarting=!network.ReadOnly()&&(app->pending_destination==10||app->pending_destination==11);
+ if(!network.Finish(restarting)){
+  if(*network.Error()){last_error=network.Error();return false;}return true;
+ }
+ if(!restarting)return true;
+ if(!th15_mp_replay_save()){last_error="MP retry Replay save failed";return false;}
+ const auto seed=(network.Setup().seed+1u)&65535u;
+ if(!network.BeginNextRun(seed)){last_error=network.Error();return false;}
+ const auto& setup=network.Setup();
+ mp_replay.Clear();mp_replay_path.clear();mp_recording=mp_local_results=false;mp_menu={};
+ mp_stage=setup.initial_stage();mp_spectator_stage=0;mp_spectator_error.clear();
+ app->mp_options.seed=seed;app->mp_options.stage=setup.initial_stage();
+ app->progress={};app->progress.character=setup.selections[0];app->progress.difficulty=setup.difficulty;
+ app->selected_stage=setup.initial_stage();app->selection_player={};app->selection_player.mode_flags=0;
+ app->frames=0;app->selection_score={};app->environment.game_rng={u16(seed),0,0};app->visual={u16(seed),0,0};
+ app->pending_destination=-1;app->current_destination=13;app->exiting=false;
+ clear_inputs(false);if(!app->begin_run()){last_error=app->failure;return false;}return true;
+}
 bool mp_apply_confirmed(const Netplay::SpectatorFramePacket& packet,bool historical){
  if(app->loading_waiting()&&!app->complete_loading()){last_error=app->failure;return false;}
  std::array<MultiplayerInput,3> lanes;
@@ -75,7 +96,7 @@ bool mp_tick(u32 held,bool physical=true){
   return ok;
  }
  // Retirement can wait for the final confirmed-input fence without an error.
- if(app->exiting){if(!network.Finish()&&*network.Error()){last_error=network.Error();return false;}return true;}
+ if(app->exiting)return mp_finish_run();
  if(!network.CanStart())return true;
  if(network.NeedsCapture()&&!physical)return true;
  const auto frame=network.NextFrame();
@@ -110,7 +131,7 @@ bool mp_tick(u32 held,bool physical=true){
  if(!network.MarkSimulated(frame,decision)){last_error=network.Error();return false;}
  // Rankings and stored names belong to each browser, after the common ending fence.
  if(app->title){mp_local_results=true;mp_menu={};}
- if(app->exiting&&!network.Finish()&&*network.Error()){last_error=network.Error();return false;}return true;
+ if(app->exiting)return mp_finish_run();return true;
 }
 #endif
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};

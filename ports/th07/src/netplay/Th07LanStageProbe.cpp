@@ -419,7 +419,9 @@ void RetireGameplaySession()
                 const auto decision = g_Core.PrepareFrame(frame);
                 if (!decision.canAdvance || decision.predictedMask) return false;
                 inputs = decision.inputs; return true;
-            }, SDL_GetTicks());
+            }, SDL_GetTicks(), {},
+            g_Supervisor.curState != SUPERVISOR_STATE_RESTART_FROM_BEGINNING &&
+            g_Supervisor.curState != SUPERVISOR_STATE_RESTART_STAGE);
         if (!ended) g_BrowserPeerTransport.StopSpectators(false);
         g_SpectatorPublisherReady = false;
     }
@@ -774,6 +776,11 @@ void DisableSpectatorPublisher(std::uint32_t frame, const char *reason)
 
 bool DrainSpectatorFrames()
 {
+    std::uint64_t session;std::uint32_t seed;
+    if(g_BrowserPeerTransport.TakeSpectatorSession(&session,&seed)){
+        g_SpectatorPlayback.Clear();g_HavePendingSpectatorBootstrap=false;
+        g_PendingSpectatorBootstrap={};g_SpectatorNativeStageReady=false;g_NextSpectatorReceiveFrame=0;
+    }
     std::vector<std::uint8_t> wire;
     while (TransportPoll(&wire))
     {
@@ -1645,6 +1652,10 @@ bool Initialize()
     g_SpectatorLaneStopped = false;
     g_SpectatorPublisherReady = g_SpectatorPublisherEligible &&
         g_SpectatorPublisher.Reset('7', g_PlayerCount, CurrentSessionId(), GameplayAbi());
+    if(g_SpectatorPublisherReady){
+        g_SpectatorPublicationTail.Clear();
+        g_BrowserPeerTransport.BeginSpectatorSession(CurrentSessionId(),sessionConfig.seed);
+    }
 #ifdef TH_DEV_TOOLS
     if (UseReplayPlaybackCycle())
         ReplayExtension::DebugResetMultiplayerPlaybackAudit();

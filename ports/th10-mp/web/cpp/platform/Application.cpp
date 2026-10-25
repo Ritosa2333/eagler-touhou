@@ -215,7 +215,17 @@ bool Application::multiplayer_pump_network(bool capture_follows){
     // confirmed-input timeout from the now-stopped simulation.
     if(error)return false;
     if(state.netplay_runtime.PumpNetwork(multiplayer_active(),
-        capture_follows&&state.pending_screen==value.screen))return true;
+        capture_follows&&state.pending_screen==value.screen)){
+        // Admission can already name a later source generation while this
+        // receiver is building its first native scene. Install the validated
+        // route before loading/activation can inspect its Replay checkpoint.
+        if(state.netplay_runtime.Spectator()){
+            const auto started=state.multiplayer_session.started;
+            state.multiplayer_session=state.netplay_runtime.Setup();
+            state.multiplayer_session.started=started;
+        }
+        return true;
+    }
     const auto& runtime=state.netplay_runtime;
     const auto& channel=runtime.Channel();
     const auto frame=[](u32 value)->i32{
