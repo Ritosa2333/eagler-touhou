@@ -1,7 +1,10 @@
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorPublicationTail.hpp>
+#include <eagler/netplay/SpectatorStageHistory.hpp>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 using namespace Netplay;
@@ -196,9 +199,132 @@ void confirmed_input_unavailable_is_structural() {
         [](std::uint32_t, std::array<FrameInput, MAX_PLAYERS> &) { return false; },
         [](const std::vector<std::uint8_t> &) { return true; }, &failure));
     assert(failure == PublishFailure::InputUnavailable);
+    assert(!SpectatorStagePublisher::Retryable(failure));
     // The checkpoint send has succeeded, so only the missing confirmed input
     // remains. Production treats that missing input as a permanent lane error.
     assert(publisher.Serial() == 1 && publisher.Published() == 0);
+}
+
+void upload_wait_preserves_order_and_navigation(unsigned blockedPhase, std::uint8_t players) {
+    SpectatorStagePublisher publisher;
+    assert(publisher.Reset('7', players, Session + 80 + blockedPhase + players * 10, Abi));
+    bool blocked = true;
+    unsigned refused = 0;
+    std::vector<std::uint32_t> frames, checkpoints, bossFrames, serials;
+    const auto inputs = [](std::uint32_t, std::array<FrameInput, MAX_PLAYERS>&) { return false; };
+    const auto send = [&](const std::vector<std::uint8_t>& wire) {
+        if (IsSpectatorStageEvent(wire.data(), wire.size())) {
+            SpectatorStageEvent event;
+            assert(DecodeSpectatorStageEvent(wire.data(), wire.size(), &event));
+            const unsigned phase = event.kind == SpectatorEventKind::Checkpoint ? 0 : 2;
+            if (blocked && phase == blockedPhase) {++refused; return false;}
+            serials.push_back(event.serial);
+            if (event.kind == SpectatorEventKind::Checkpoint) checkpoints.push_back(event.frame);
+            if (event.kind == SpectatorEventKind::Node) bossFrames.push_back(event.frame);
+        } else {
+            if (blocked && blockedPhase == 1) {++refused; return false;}
+            SpectatorFramePacket packet;
+            assert(DecodeSpectatorFramePacket(wire.data(), wire.size(), &packet));
+            assert(packet.playerCount == players);
+            frames.push_back(packet.frame);
+        }
+        return true;
+    };
+    // Nine normal simulation ticks accumulate while one publication phase is
+    // blocked. A stage boundary enters the same backlog as ordinary input.
+    for (unsigned frame = 0; frame < 12; ++frame) {
+        auto record = make_frame(frame, frame < 6 ? 1 : 2, players,
+            frame == 0 || frame == 6 ? std::vector<std::uint8_t>{std::uint8_t(frame + 1)} : std::vector<std::uint8_t>{});
+        if (frame == 0) record.bossSlots = 3;
+        assert(publisher.Record(std::move(record)));
+        blocked = frame < 9;
+        PublishFailure failure{};
+        if (!publisher.Publish(frame, frame, inputs, send, &failure)) {
+            assert(blocked);
+            assert(SpectatorStagePublisher::Retryable(failure));
+        }
+    }
+    assert(refused == 9);
+    assert(publisher.Published() == 12);
+    assert(frames.size() == 12);
+    for (unsigned frame = 0; frame < frames.size(); ++frame) assert(frames[frame] == frame);
+    assert((checkpoints == std::vector<std::uint32_t>{0, 6}));
+    assert((bossFrames == std::vector<std::uint32_t>{1}));
+    assert((serials == std::vector<std::uint32_t>{1, 2, 3}));
+    assert(publisher.Finish(12, send));
+    assert((serials == std::vector<std::uint32_t>{1, 2, 3, 4}));
+}
+
+void retired_world_tail_survives_upload_wait(std::uint8_t players, unsigned blockedPacket) {
+    SpectatorStageHistory received;
+    SpectatorPublicationTail tail;
+    unsigned packet = 0;
+    bool blocked = true;
+    const auto send = [&](const std::vector<std::uint8_t>& wire) {
+        if (blocked && packet == blockedPacket) return false;
+        ++packet;
+        if (IsSpectatorStageEvent(wire.data(), wire.size())) {
+            SpectatorStageEvent event;
+            assert(DecodeSpectatorStageEvent(wire.data(), wire.size(), &event));
+            assert(received.Accept(event));
+        } else {
+            SpectatorFramePacket input;
+            assert(DecodeSpectatorFramePacket(wire.data(), wire.size(), &input));
+            assert(received.Accept(input));
+        }
+        return true;
+    };
+    {
+        SpectatorStagePublisher publisher;
+        assert(publisher.Reset('7', players, Session + 200 + players, Abi));
+        for (unsigned frame = 0; frame < 16; ++frame) {
+            auto record = make_frame(frame, 1, players, frame == 0 ? std::vector<std::uint8_t>{1} : std::vector<std::uint8_t>{});
+            if (frame == 0) record.bossSlots = 1;
+            assert(publisher.Record(std::move(record)));
+        }
+        // Capture the unsent suffix, even if a checkpoint, input or Boss node
+        // was already accepted before retirement. Include the end packet.
+        publisher.Publish(15, 15, [](auto, auto&) {return false;}, send);
+        assert(tail.Freeze(publisher, 15, 15, [](auto, auto&) {return false;}, 100));
+    } // Original world, publisher and input ring are now gone.
+    using Result = SpectatorPublicationTail::Result;
+    assert(tail.Drain(101, false, send, [] {return 0ull;}) == Result::Waiting);
+    assert(tail.Pending());
+    blocked = false;
+    assert(tail.Drain(250, false, send, [] {return 0ull;}) == Result::Complete);
+    assert(!tail.Pending());
+    assert(received.Ended() && received.Received() == 16);
+    assert(packet == 19); // initializer + 16 inputs + Boss navigation + End
+    assert(tail.Drain(251, false, send, [] {return 0ull;}) == Result::Idle);
+    assert(packet == 19);
+}
+
+void retirement_tail_budget_and_expiry() {
+    using Result = SpectatorPublicationTail::Result;
+    const auto make = [] {
+        auto publisher = std::make_unique<SpectatorStagePublisher>();
+        assert(publisher->Reset('7', 2, Session + 300, Abi));
+        for (unsigned frame = 0; frame < 64; ++frame)
+            assert(publisher->Record(make_frame(frame, 1, 2,
+                frame == 0 ? std::vector<std::uint8_t>{1} : std::vector<std::uint8_t>{})));
+        return publisher;
+    };
+    SpectatorPublicationTail tail;
+    auto publisher = make();
+    assert(tail.Freeze(*publisher, 63, 63, [](auto, auto&) {return false;}, 100));
+    unsigned sent = 0;
+    const auto send = [&](const auto&) {++sent; return true;};
+    assert(tail.Drain(101, false, send, [] {return 0ull;}) == Result::Waiting);
+    assert(sent == 32);
+    std::uint64_t clock = 0;
+    assert(tail.Drain(102, false, send, [&] {return clock++ * 1000;}) == Result::Waiting);
+    assert(sent == 34);
+    assert(tail.Drain(15'100, false, send, [] {return 0ull;}) == Result::Failed);
+    assert(sent == 34 && !tail.Pending());
+    publisher = make();
+    assert(tail.Freeze(*publisher, 63, 63, [](auto, auto&) {return false;}, 200));
+    assert(tail.Drain(201, true, send, [] {return 0ull;}) == Result::Failed);
+    assert(sent == 34 && !tail.Pending());
 }
 
 void nonzero_start_and_missing_history() {
@@ -236,6 +362,13 @@ int main() {
     checkpoint_send_failure_is_retryable();
     input_send_failure_retries_without_duplicate_checkpoint();
     confirmed_input_unavailable_is_structural();
+    for (const auto players : {2, 3})
+        for (unsigned phase = 0; phase < 3; ++phase)
+            upload_wait_preserves_order_and_navigation(phase, std::uint8_t(players));
+    for (const auto players : {2, 3})
+        for (const auto packet : {0u, 1u, 2u, 18u})
+            retired_world_tail_survives_upload_wait(std::uint8_t(players), packet);
+    retirement_tail_budget_and_expiry();
     nonzero_start_and_missing_history();
     overwritten_predecessor_is_explicit();
     std::cout << "PASS publisher derives and replays stage boundary from contiguous records (2P/3P, firstFrame=100)\n";

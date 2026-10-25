@@ -484,6 +484,16 @@ function sendSpectatorPayload(socket, payload, roomId, runId, spectatorId) {
   return true;
 }
 
+function stopHostSpectatorStream(roomId, runId, run, source) {
+  if (run.spectatorStopped || run.spectatorHostStopped) return;
+  run.spectatorHostStopped = true;
+  console.log(`SPECTATOR STOP room=${roomId} run=${runId} source=${source} ended=${run.spectatorComplete === true} viewers=${run.spectatorClients.size}`);
+  // A validated cooperative End already closes admission. Existing viewers
+  // still own the continuous replay prefix and may be paused far behind it.
+  if (run.spectatorStages?.ended) return;
+  stopSpectatorStream(run);
+}
+
 function acceptCooperativeSpectatorPayload(roomId, runId, room, run, payload) {
   const marker = COOPERATIVE_SPECTATOR_MARKERS[roomId.split('-')[0]];
   if (marker === undefined) return false;
@@ -712,7 +722,9 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
       return;
     }
     if (message.type === 'spectator-stop') {
-      if (player === 0 && run.signalClients.get(player) === socket) stopSpectatorStream(run);
+      if (player === 0 && run.signalClients.get(player) === socket) {
+        stopHostSpectatorStream(roomId, runId, run, 'host-signal');
+      }
       return;
     }
     if (message.type === 'signal') {
@@ -1980,7 +1992,7 @@ server.on('connection', (socket, request) => {
         run.clients.get(player) === socket &&
         incoming.equals(Buffer.from([0xe8, 0x53, 0x54, 0x4f, 0x50, 1]))
       ) {
-        stopSpectatorStream(run);
+        stopHostSpectatorStream(roomId, runId, run, 'host-upload');
         return;
       }
       if (run.spectatorStopped) return;

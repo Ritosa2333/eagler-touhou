@@ -20,6 +20,7 @@
 #include <eagler/netplay/WebSocketTransport.hpp>
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorPublicationTail.hpp>
 #include "ReplayStageStart.hpp"
 #include <eagler/netplay/SpectatorStageView.hpp>
 
@@ -214,6 +215,7 @@ Netplay::SpectatorStageEvent g_PendingSpectatorBootstrap{};
 bool g_HavePendingSpectatorBootstrap = false;
 bool g_SpectatorNativeStageReady = false;
 bool g_SpectatorPublisherReady = false;
+SpectatorPublicationTail g_SpectatorPublicationTail;
 bool g_SpectatorPublisherEligible = false;
 bool g_SpectatorLaneStopped = false;
 // Audit-only stage marker for all source seats. Publisher checkpoint decisions
@@ -411,13 +413,13 @@ void RetireGameplaySession()
     if (!g_SpectatorMode && g_LocalPlayer == 0 && g_SpectatorPublisherReady &&
         g_ProductionTransportStarted && g_BrowserPeerTransport.IsOpen())
     {
-        // End at the contiguous confirmed cursor. Viewers can then consume
-        // their buffered tail instead of waiting forever behind the live delay.
-        PublishConfirmedSpectatorFrames();
-        const bool ended = g_SpectatorPublisherReady && g_SpectatorPublisher.Finish(
-            g_SpectatorPublisher.Published(), [](const std::vector<std::uint8_t>& wire) {
-                return g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size());
-            });
+        const bool ended = g_SimFrame && g_SpectatorPublicationTail.Freeze(
+            g_SpectatorPublisher, g_Core.ConfirmedThroughAllRemotes(), g_SimFrame - 1,
+            [](std::uint32_t frame, std::array<FrameInput, MAX_PLAYERS>& inputs) {
+                const auto decision = g_Core.PrepareFrame(frame);
+                if (!decision.canAdvance || decision.predictedMask) return false;
+                inputs = decision.inputs; return true;
+            }, SDL_GetTicks());
         if (!ended) g_BrowserPeerTransport.StopSpectators(false);
         g_SpectatorPublisherReady = false;
     }
@@ -2810,6 +2812,7 @@ bool Requested()
 
 void ReturnToRoom()
 {
+    g_SpectatorPublicationTail.Clear();
     g_BrowserPeerTransport.Close();
     g_ProductionTransportStarted = false;
     RetireGameplaySession();
@@ -2824,6 +2827,7 @@ void ReturnToRoom()
 
 void BeginRoomRun()
 {
+    g_SpectatorPublicationTail.Clear();
     // Wire generations start together for each relay run. Keep the local
     // lifetime generation monotonic for audio and other confirmed side effects.
     g_RoomRunGenerationBase = g_SessionGeneration;
@@ -2921,6 +2925,13 @@ void RecordPresentationCost(double driverMs, double drawMs)
 
 int RunCalcChain()
 {
+    const auto tail = g_SpectatorPublicationTail.Drain(SDL_GetTicks(),
+        g_BrowserPeerTransport.SpectatorState() < 0,
+        [](const std::vector<std::uint8_t>& wire) {
+            return g_BrowserPeerTransport.SendSpectator(wire.data(), wire.size());
+        }, []() {return SDL_GetTicksNS() / 1000;});
+    if (tail == SpectatorPublicationTail::Result::Complete || tail == SpectatorPublicationTail::Result::Failed)
+        g_BrowserPeerTransport.StopSpectators(tail == SpectatorPublicationTail::Result::Complete);
     g_LastTickAdvanced = false;
     if (!RequestedInternal())
     {

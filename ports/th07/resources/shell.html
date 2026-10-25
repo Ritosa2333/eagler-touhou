@@ -98,7 +98,10 @@
       };
       globalThis.EaglerTouhouGameExited = result => {
         spectatorPlayback.stop();
-        const finish = () => emit("exit", { status: result === 1 ? "success" : "failure" });
+        const finish = () => emit("exit", {
+          status: result === 1 && !globalThis.__eaglerNetplayFailed ? "success" : "failure",
+          ...(globalThis.__eaglerNetplayFailed ? {error: String(globalThis.__eaglerNetplayError || "Multiplayer connection failed")} : {})
+        });
         // Flush IDBFS while the Runtime is still alive. The parent must not
         // wait for a post-mortem sync RPC after it receives exit, because the
         // main loop may already be gone and that RPC can sit until timeout.

@@ -14,6 +14,7 @@
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
 #include <eagler/netplay/InputGapPacing.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorPublicationTail.hpp>
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStageView.hpp>
 
@@ -219,6 +220,7 @@ private:
     std::string initial_wait_error_{};
     bool playback_=false;
     bool spectator_=false,spectator_retired_=false;
+    Netplay::SpectatorPublicationTail publication_tail_;
     bool spectator_timing_ready_=true,spectator_timing_sent_=false,spectator_publish_failed_=false;
     std::uint64_t spectator_deadline_=0;
     std::uint32_t spectator_publish_frame_=0,spectator_receive_frame_=0;

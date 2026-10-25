@@ -182,6 +182,7 @@ void NetplayRuntime::RecordSpectatorFrame(Netplay::SpectatorStagePublisher::Fram
     if(!stage_publisher_.Record(std::move(frame))){std::fprintf(stderr,"TH15 spectator journal rejected frame %u after %u\n",recorded_frame,stage_publisher_.Published());publish_failed_=true;transport_.StopSpectators();}
 }
 void NetplayRuntime::Publish(){
+    if(retired_)return;
     if(stage_publication_){
         if(!network_||ReadOnly()||setup_.local_player||publish_failed_)return;
         if(transport_.SpectatorState()<0){publish_failed_=true;transport_.StopSpectators();return;}
@@ -191,9 +192,14 @@ void NetplayRuntime::Publish(){
             if(!transport_.SendSpectator(timing.data(),timing.size()))return;timing_sent_=true;
         }
         const auto begin=clock_us();
-        stage_publisher_.Publish(core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
+        Netplay::SpectatorStagePublisher::PublishFailure failure{};
+        const bool published=stage_publisher_.Publish(core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
           [&](auto frame,auto& inputs){return core_.ConfirmedInputs(frame,&inputs);},
-          [&](const auto& wire){return clock_us()-begin<2000&&transport_.SendSpectator(wire.data(),wire.size());});
+          [&](const auto& wire){return clock_us()-begin<2000&&transport_.SendSpectator(wire.data(),wire.size());},&failure);
+        if(!published&&(!Netplay::SpectatorStagePublisher::Retryable(failure)||transport_.SpectatorState()<0)){
+            std::fprintf(stderr,"th15 spectator stopped: %s frame=%u\n",Netplay::SpectatorStagePublisher::FailureName(failure),stage_publisher_.Published());
+            publish_failed_=true;transport_.StopSpectators();
+        }
         return;
     }
     if(!network_||ReadOnly()||generation_||setup_.local_player||publish_failed_||!transport_.HasSpectators())return;

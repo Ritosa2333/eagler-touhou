@@ -8,6 +8,7 @@
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorPublicationTail.hpp>
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStageView.hpp>
 #include <deque>
@@ -144,7 +145,7 @@ private:
     Netplay::BrowserPeerTransport transport_;
     Netplay::AdonisConnection calibration_{transport_};
     Netplay::SessionChannel channel_{calibration_};
-    std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0,publish_deadline_=0;
+    std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0;
     bool configured_=false,network_=false,playback_=false,spectator_=false,retired_=false;
     bool timing_ready_=false,timing_sent_=false,publish_failed_=false,spectator_publisher_started_=false;
     bool world_ready_=false;
@@ -164,7 +165,7 @@ private:
     Netplay::SpectatorStagePublisher spectator_stage_publisher_{};
     Netplay::SpectatorStagePlayback spectator_stage_playback_{};
     Netplay::SpectatorStageView spectator_stage_view_{};
-    std::deque<std::vector<std::uint8_t>> publish_tail_;
+    Netplay::SpectatorPublicationTail publish_tail_;
     std::array<std::uint32_t,24> status_{};
 };
 }

@@ -4,6 +4,7 @@
 #include <eagler/netplay/InputRepairBudget.hpp>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #else
@@ -152,7 +153,7 @@ bool NetplayRuntime::DrainSpectatorFrames(){
 }
 
 void NetplayRuntime::PublishConfirmedSpectatorFrames(){
-    if(Correcting()||HasRollbackRequest()||spectator_||playback_||generation_!=0||setup_.localPlayer!=0||
+    if(Correcting()||HasRollbackRequest()||retired_||spectator_||playback_||generation_!=0||setup_.localPlayer!=0||
        spectator_publish_failed_)return;
     const auto confirmed=core_.ConfirmedThroughAllRemotes();
     const auto last=core_.LastSimulatedFrame();
@@ -167,13 +168,17 @@ void NetplayRuntime::PublishConfirmedSpectatorFrames(){
         if(!transport_.SendSpectator(wire.data(),wire.size()))return;spectator_timing_sent_=true;
     }
     const auto publishThrough=std::min(through,spectator_stage_publisher_.Published()+31);
+    Netplay::SpectatorStagePublisher::PublishFailure failure{};
     const bool published=spectator_stage_publisher_.Publish(publishThrough,last,
         [&](std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){
             return core_.ConfirmedInputs(frame,&inputs);
         },[&](const std::vector<u8>& bytes){
             return transport_.SendSpectator(bytes.data(),bytes.size());
-        });
-    if(!published){spectator_publish_failed_=true;transport_.StopSpectators();return;}
+        },&failure);
+    if(!published&&(!Netplay::SpectatorStagePublisher::Retryable(failure)||transport_.SpectatorState()<0)){
+        std::fprintf(stderr,"th10 spectator stopped: %s frame=%u\n",Netplay::SpectatorStagePublisher::FailureName(failure),spectator_stage_publisher_.Published());
+        spectator_publish_failed_=true;transport_.StopSpectators();return;
+    }
     spectator_publish_frame_=spectator_stage_publisher_.Published();
 }
 
@@ -212,6 +217,10 @@ bool NetplayRuntime::FlushNetworkInputs(){
 bool NetplayRuntime::PumpNetwork(bool expectsInput,bool captureFollows){
     if(!network_enabled_)return true;
     network_now_=network_clock();
+    const auto tail=publication_tail_.Drain(network_now_,transport_.SpectatorState()<0,
+        [&](const auto& wire){return transport_.SendSpectator(wire.data(),wire.size());},network_clock_us);
+    if(tail==Netplay::SpectatorPublicationTail::Result::Complete)transport_.StopSpectators(true);
+    if(tail==Netplay::SpectatorPublicationTail::Result::Failed){spectator_publish_failed_=true;transport_.StopSpectators();}
     if(spectator_)return DrainSpectatorFrames();
     if(!calibration_.Pump(network_clock_us(),expectsInput))return false;
     if(calibration_.NeedsApply()){
@@ -422,6 +431,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId
 }
 
 void NetplayRuntime::Clear() noexcept {
+    publication_tail_.Clear();
     FlushNetworkInputs();
     transport_.Close();channel_.Clear();calibration_.Clear();phase_debt_ms_=0;network_enabled_=false;network_now_=0;playback_=false;
     EndCorrection();input_gap_pacing_.Reset(0);network_input_gap_tail_.Reset(0);
@@ -445,6 +455,17 @@ bool NetplayRuntime::RetireRun() noexcept {
         spectator_frames_.clear();return true;
     }
     if(network_enabled_&&!channel_.Retire(core_,core_.LastSimulatedFrame(),network_now_))return false;
+    if(network_enabled_&&!generation_&&!setup_.localPlayer&&!spectator_publish_failed_){
+        std::vector<std::uint8_t> timing;
+        if(PreparingWorld()&&!spectator_timing_sent_)
+            timing=Netplay::MakeAdonisSpectatorTiming(calibration_.Startup(),gate_.Config(),setup_.input_delay_auto).Encode();
+        if((PreparingWorld()&&!spectator_timing_sent_&&timing.empty())||!publication_tail_.Freeze(
+            spectator_stage_publisher_,core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
+            [&](std::uint32_t frame,auto& inputs){return ConfirmedInputs(frame,&inputs);},network_now_,timing)){
+            std::fprintf(stderr,"th10 spectator stopped: retirement-tail frame=%u\n",spectator_stage_publisher_.Published());
+            spectator_publish_failed_=true;transport_.StopSpectators();
+        }
+    }
     gate_.Clear();core_.Clear();configured_=false;retired_=true;return true;
 }
 

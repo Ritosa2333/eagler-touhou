@@ -8,6 +8,7 @@
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
 #include <eagler/netplay/SpectatorStagePlayback.hpp>
 #include <eagler/netplay/SpectatorStagePublisher.hpp>
+#include <eagler/netplay/SpectatorPublicationTail.hpp>
 #include <eagler/netplay/SpectatorStageView.hpp>
 #include <vector>
 
@@ -65,9 +66,11 @@ private:
     Netplay::SessionConfig retired_config{};
     Netplay::SpectatorStagePlayback spectator_playback;
     Netplay::SpectatorStagePublisher spectator_publisher;
+    Netplay::SpectatorPublicationTail publication_tail;
     Netplay::SpectatorStageView spectator_view;
     bool spectator_finished=false,spectator_publish_failed=false,spectator_publisher_started=false;
     bool spectator_timing_sent=false;
+    bool publication_retired=false;
     std::uint64_t spectator_deadline=0;
     const char* spectator_error="";
     bool enabled=false,invalid_input=false;
