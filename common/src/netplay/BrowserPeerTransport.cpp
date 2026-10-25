@@ -628,6 +628,25 @@ EM_JS(int, eagler_spectator_connect,
             socket.onopen = () => {if (state.relay === socket && state.connectTimer !== null) {clearTimeout(state.connectTimer);state.connectTimer = null;}};
             socket.onmessage = event => {
                 if (state.closed || state.relay !== socket) return;
+                if(stageSpectatorHistory&&event.data instanceof ArrayBuffer){
+                    const wire=new Uint8Array(event.data);
+                    if(wire[0]===0xe9){
+                        if(wire.length<=20||wire.length>32788||wire[1]!==1||wire[2]>1||wire[3])return;
+                        const v=new DataView(wire.buffer),total=v.getUint32(12,true),offset=v.getUint32(16,true);
+                        const session=v.getUint32(8,true).toString(16).padStart(8,'0')+v.getUint32(4,true).toString(16).padStart(8,'0');
+                        if(session!==state.spectatorSession?.session||!total||total>8388608||offset>total||wire.length-20>total-offset)return;
+                        if(!state.replayReceiving){if(offset)return;state.replayReceiving={session,bytes:new Uint8Array(total),offset:0,extended:!!wire[2]};}
+                        const file=state.replayReceiving;
+                        if(file.session!==session||file.offset!==offset||file.bytes.length!==total||file.extended!==!!wire[2])return;
+                        file.bytes.set(wire.subarray(20),offset);file.offset+=wire.length-20;
+                        if(file.offset===total){
+                            const prefix=({th06:'th6',th07:'th7',th08:'th8',th10:'th10',th11:'th11',th15:'th15mp'})[tag]||tag;
+                            const suffix=((parseInt(session.slice(0,8),16)^parseInt(session.slice(8),16))>>>0).toString(36).slice(-4).padStart(4,'0');
+                            state.spectatorReplay={session,bytes:file.bytes,name:prefix+'_ud'+suffix+(file.extended?'.rpyx':'.rpy')};state.replayReceiving=null;
+                        }
+                        return;
+                    }
+                }
                 if (typeof event.data !== 'string') { state.receiveBinary(event.data); return; }
                 if (!stageSpectatorHistory) return;
                 let message; try { message = JSON.parse(event.data); } catch { return; }
@@ -640,6 +659,7 @@ EM_JS(int, eagler_spectator_connect,
                 state.receivedBytes = state.pendingReceivedBytes = state.pendingReceivedPackets = 0;
                 state.pendingSpectatorSession = message;
                 state.spectatorSession = message;
+                state.replayReceiving=null;state.spectatorReplay=null;
                 state.failed = false; state.error = '';
             };
             socket.onerror = () => {
@@ -788,7 +808,26 @@ EM_JS(void, eagler_peer_begin_spectator_session, (unsigned low, unsigned high, u
     const generation = state.spectatorSession ? state.spectatorSession.generation + 1 : 0;
     state.spectatorSession = state.pendingSpectatorSession = {type: 'spectator-session', session, seed, generation};
     state.spectatorStopped = false;
+    if(state.replayTimer)clearTimeout(state.replayTimer);state.replayTimer=null;state.sharedReplaySession=null;
     state.flushSpectatorSession();
+});
+
+EM_JS(void, eagler_peer_share_replay, (const unsigned char* data,int size,int extended), {
+    const state=globalThis.__eaglerPeerTransport,session=state?.spectatorSession?.session;
+    if(!state||state.closed||!state.retainSpectatorHistory||state.localPlayer!==0||!session||size<=0||size>8388608||state.sharedReplaySession===session)return;
+    const bytes=HEAPU8.slice(data,data+size),deadline=Date.now()+15000;let offset=0;
+    state.sharedReplaySession=session;
+    const flush=()=>{
+        state.replayTimer=null;
+        if(state.closed||state.spectatorSession?.session!==session||Date.now()>deadline||offset===bytes.length)return;
+        if(state.relay?.readyState===WebSocket.OPEN&&state.relay.bufferedAmount<=32768&&(!state.flushSpectatorSession||state.flushSpectatorSession())){
+            const part=bytes.subarray(offset,offset+32768),wire=new Uint8Array(20+part.length),v=new DataView(wire.buffer);
+            wire.set([0xe9,1,extended?1:0,0]);v.setUint32(4,parseInt(session.slice(8),16),true);v.setUint32(8,parseInt(session.slice(0,8),16),true);
+            v.setUint32(12,size,true);v.setUint32(16,offset,true);wire.set(part,20);
+            try{state.relay.send(wire);offset+=part.length;}catch{return;}
+        }
+        state.replayTimer=setTimeout(flush,16);
+    };state.replayTimer=setTimeout(flush,0);
 });
 
 EM_JS(int, eagler_peer_take_spectator_session, (unsigned *words), {
@@ -1068,6 +1107,14 @@ void BrowserPeerTransport::StopSpectators(bool graceful)
     eagler_peer_stop_spectators(graceful ? 1 : 0);
 #else
     (void)graceful;
+#endif
+}
+
+void BrowserPeerTransport::ShareSpectatorReplay(const std::uint8_t* bytes,std::size_t size,bool extended){
+#ifdef __EMSCRIPTEN__
+    if(bytes&&size<=8388608)eagler_peer_share_replay(bytes,int(size),extended?1:0);
+#else
+    (void)bytes;(void)size;(void)extended;
 #endif
 }
 

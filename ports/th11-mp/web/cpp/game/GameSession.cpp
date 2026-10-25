@@ -491,7 +491,7 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
             if(pass.layer==20||pass.layer==29)renderer.set_camera(compositor.full_camera,true);
             if(renderer.draw_layer(animations.layer_first(pass.layer))==-2)return fail("ANM draw failed");
 #ifdef TH11_MULTIPLAYER
-            if(multiplayer_active&&battle&&pause_menu&&pause_menu->multiplayer_pause&&pass.layer==29)
+            if(multiplayer_active&&!multiplayer_options.spectator&&battle&&pause_menu&&pause_menu->multiplayer_pause&&pass.layer==29)
                 if(renderer.draw_layer(battle->mp_presentation.layer_first(29))==-2)return fail("MP pause ANM draw failed");
 #endif
         }else if(u32(pass.kind)>=u32(SceneDrawKind::Begin)&&u32(pass.kind)<=u32(SceneDrawKind::End)){
@@ -499,7 +499,11 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
         }else if(title&&pass.kind==SceneDrawKind::AsciiOuter){
             if(!title_ascii->draw(renderer,0,compositor.full_camera,compositor.play_camera))return fail("title text draw failed");
         }else if(battle_attached&&battle){
-            if(pass.kind==SceneDrawKind::AsciiOuter&&pause_menu)pause_menu->queue_ascii(battle->ascii);
+            if(pass.kind==SceneDrawKind::AsciiOuter&&pause_menu
+#ifdef TH11_MULTIPLAYER
+                &&!multiplayer_options.spectator
+#endif
+            )pause_menu->queue_ascii(battle->ascii);
             if(!battle->draw(renderer,pass.kind))return fail("battle draw failed");
         }
         if(overlay&&pass.kind==SceneDrawKind::AsciiOuter&&!overlay->draw(renderer,0,compositor.full_camera,compositor.play_camera))return fail("frame statistics draw failed");

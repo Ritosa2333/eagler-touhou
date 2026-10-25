@@ -7,6 +7,7 @@ struct TitleMainEnvironment : TitleAnimationEnvironment {
     const u8* extra_unlocked;
     const u16* pressed;
     const u16* repeated;
+    virtual bool room_preview()const{return false;}
     virtual void sound(i32 sound)=0;
     virtual void interrupt_immediately(u32 animation,i32 label)=0;
 };

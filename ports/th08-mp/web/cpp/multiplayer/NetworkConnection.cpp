@@ -27,6 +27,7 @@ Netplay::SessionChannelConfig channel_policy(Netplay::AdonisMode mode,unsigned p
 std::uint64_t NetworkConnection::Now(){return std::uint64_t(emscripten_get_now());}
 const char* NetworkConnection::SpectatorState(){return spectator_view.State(spectator_playback,spectator_stage_label);}
 bool NetworkConnection::Connect(const char* relay){
+    local_results=false;
     if(enabled||net.ReadOnly()||!relay||!*relay||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
     spectator_publish_failed=false;spectator_timing_sent=false;spectator_deadline=0;spectator_error="";
     if(!transport.Connect(relay,u8(net.Setup().local_player),u8(net.Setup().player_count),true))return false;
@@ -37,6 +38,7 @@ bool NetworkConnection::Connect(const char* relay){
     enabled=true;invalid_input=false;capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());return true;
 }
 bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
+    local_results=false;
     if(enabled||net.ReadOnly()||!relay||!*relay||!id||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
     const auto length=std::strlen(id);if(length<8||length>64)return false;
     for(std::size_t i=0;i<length;++i){const auto c=id[i];
@@ -58,6 +60,13 @@ bool NetworkConnection::Pump(bool expects_input,bool capture_follows){
         [](){return std::uint64_t(emscripten_get_now()*1000);});
     if(tail==Netplay::SpectatorPublicationTail::Result::Complete)transport.StopSpectators(true);
     if(tail==Netplay::SpectatorPublicationTail::Result::Failed){spectator_publish_failed=true;transport.StopSpectators();}
+    if(local_results){
+        if(!transport.Failed()&&!transport.Disconnected()){
+            channel.Pump(net.gate_,net.core_,Now(),false);
+            if(channel.CanRetire(net.core_,net.LastFrame()))channel.Retire(net.core_,net.LastFrame(),Now());
+        }
+        return true;
+    }
     if(net.Spectator()){
         std::uint64_t session;std::uint32_t seed;
         if(transport.TakeSpectatorSession(&session,&seed)){
@@ -207,24 +216,29 @@ bool NetworkConnection::CanRetire()const{
     if(!net.CanRetire()||(enabled&&!channel.CanRetire(net.core_,net.LastFrame())))return false;
     return true;
 }
-bool NetworkConnection::Retire(){
-    if(!FlushDeferredInputs()||!CanRetire()||(enabled&&!channel.Retire(net.core_,net.LastFrame(),Now())))return false;
+bool NetworkConnection::Retire(bool ending){
+    if(!FlushDeferredInputs()||!net.CanRetire())return false;
+    if(enabled){
+        if(!channel.FlushRetirementFence(net.core_,net.LastFrame(),Now()))return false;
+        if(!ending&&(!CanRetire()||!channel.Retire(net.core_,net.LastFrame(),Now())))return false;
+    }
     if(enabled&&!net.Spectator()&&!net.Setup().local_player&&spectator_publisher_started&&!spectator_publish_failed){
         std::vector<u8> timing;
         if(net.PreparingWorld()&&!spectator_timing_sent)
             timing=Netplay::MakeAdonisSpectatorTiming(calibration.Startup(),net.Config(),net.Setup().input_delay_auto).Encode();
         if((net.PreparingWorld()&&!spectator_timing_sent&&timing.empty())||!publication_tail.Freeze(
             spectator_publisher,net.ConfirmedThrough(),net.LastFrame(),
-            [&](u32 frame,auto& inputs){return net.ConfirmedInputs(frame,inputs);},Now(),timing,false)){
+            [&](u32 frame,auto& inputs){return net.ConfirmedInputs(frame,inputs);},Now(),timing,ending)){
             std::fprintf(stderr,"th08 spectator stopped: retirement-tail frame=%u\n",spectator_publisher.Published());
             spectator_publish_failed=true;transport.StopSpectators();
         }
         publication_retired=true;
     }
     if(!net.Retire())return false;
-    retired_config=net.Config();return true;
+    local_results=ending;retired_config=net.Config();return true;
 }
 bool NetworkConnection::BeginGeneration(){capture_pump_pending=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());
+    local_results=false;
     // A retry is a new native run. Never carry its prior stage identity,
     // published sequence or viewer controls into the next generation.
     spectator_publisher={};spectator_publisher_started=false;spectator_playback.Clear();spectator_view.Clear();
@@ -250,6 +264,7 @@ double NetworkConnection::PacedElapsedSeconds(double elapsed){
     phase_debt_ms-=used;return elapsed-used/1000;
 }
 const char* NetworkConnection::Error()const{
+    if(local_results)return "";
     if(*spectator_error)return spectator_error;
     if(invalid_input)return "Unsupported or out-of-window TH08 input";
     if(transport.Failed())return transport.LastError().c_str();

@@ -249,6 +249,7 @@ bool RestoreSpectatorReplayStart(const SpectatorStageEvent& event) {
     SideEffects::SetSpeculative(true);
     GameManager::CutChain();
     ReplayManager::SaveReplay(nullptr,nullptr);
+    SpectatorReplayStart::prepared.setup.spectator=true;
     if(!MultiplayerGameplay::Configure(SpectatorReplayStart::prepared.setup)){
         SpectatorReplayStart::Finish();SideEffects::SetSpeculative(false);return false;
     }
@@ -354,6 +355,18 @@ bool UseEndingCycle()
 
 void RetireGameplaySession()
 {
+    if(g_Initialized&&g_SimFrame&&!g_SpectatorMode&&g_Supervisor.curState!=SUPERVISOR_STATE_GAMEMANAGER_RESTART)
+        {ReplayManager::ShareSpectatorReplay();g_SpectatorRunRetired=true;}
+    if(!g_SpectatorMode&&g_Initialized&&g_SimFrame&&ProductionLanMode()&&g_ProductionTransportStarted){
+        for(std::uint8_t peer=0;peer<g_PlayerCount;++peer)if(peer!=g_LocalPlayer){
+            auto packet=g_Core.BuildInputPacket(peer,g_SimFrame-1,g_Sequence++,g_LastReceivedSequence);
+            packet.senderFrame=g_SimFrame;std::vector<std::uint8_t> wire;
+            if(EncodeInputPacket(packet,&wire)){
+                g_BrowserPeerTransport.SendTo(peer,wire.data(),wire.size());
+                g_BrowserPeerTransport.SendRepairTo(peer,wire.data(),wire.size());
+            }
+        }
+    }
     if (!g_SpectatorMode && g_LocalPlayer == 0 && g_SpectatorPublisherReady &&
         g_ProductionTransportStarted && g_BrowserPeerTransport.IsOpen())
     {
@@ -3129,3 +3142,15 @@ extern "C" int th06_mp_spectator_control(const char *run, const char *action,
 {
     return Netplay::Th06LanStageProbe::SpectatorControl(run, action, frame);
 }
+
+#ifdef __EMSCRIPTEN__
+extern "C" EMSCRIPTEN_KEEPALIVE int th06_mp_spectator_result(const unsigned char* bytes,unsigned size){
+    using namespace Netplay::Th06LanStageProbe;
+    const auto& p=g_SpectatorPlayback;
+    if(!g_SpectatorMode||g_SpectatorRunRetired||!p.History().Ended()||p.Paused()||p.Seeking()||p.Position()<p.History().Received()||!ReplayManager::SetSpectatorReplay(bytes,size))return 0;
+    RetireGameplaySession();
+    auto setup=MultiplayerGameplay::GetState();setup.spectator=false;if(!MultiplayerGameplay::Configure(setup))return 0;
+    g_GameManager.isInReplay=false;g_Supervisor.curState=SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
+    return 1;
+}
+#endif

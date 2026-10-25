@@ -63,6 +63,8 @@ public:
     // Graceful completion queues the stop marker on the same reliable relay
     // stream as the final frames. Failure keeps the immediate signaling path.
     void StopSpectators(bool graceful = false);
+    // One completed, title-encoded Replay. Optional output never owns gameplay.
+    static void ShareSpectatorReplay(const std::uint8_t*,std::size_t,bool extended=false);
     bool Poll(std::vector<std::uint8_t> *packet) override;
     std::size_t BufferedAmount() const override;
     // Read-only RTC lane diagnostics; relay bytes remain in BufferedAmount.

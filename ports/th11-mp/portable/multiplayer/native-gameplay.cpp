@@ -279,6 +279,28 @@ void presentation_risk_cases(const std::vector<u8>& bytes){
     in[0].pause=true;step(*peer,in);check(peer->session.state.phase==GameSessionPhase::paused,"native pause fixture");auto* pause=w.mp_presentation.find(peer->session.pause_menu->menu_animation);check(pause&&pause->resource==&w.resources.core.front&&pause->script_index==89,"pause uses complete original parent menu owner");
     std::puts("PASS: native atlas HUD, original two-layer Always Hitbox, no Focus/RNG mutation");
 }
+void spectator_ui_cases(const std::vector<u8>& bytes){
+    for(unsigned count:{2u,3u}){
+        auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=count;options.spectator=true;
+        check(peer->session.begin_multiplayer(peer->resources,options),"spectator presentation world");
+        std::array<MultiplayerInput,3> input{};for(unsigned i=0;i<125;++i)step(*peer,input);
+        auto& battle=*peer->session.battle;for(unsigned seat=0;seat<count;++seat)put(*battle.pilots[seat]->player,0,400);
+        battle.mp_prepare_presentation(peer->renderer);
+        for(unsigned seat=0;seat<count;++seat)check(peer->renderer.multiplayer_opacity[seat+1]==255,"spectator overlapping players have equal opacity");
+        check(peer->renderer.multiplayer_hidden_hitboxes.empty(),"spectator has no P1 hitbox preference");
+        input[count-1].pause=true;step(*peer,input);input={};for(unsigned i=0;i<25;++i)step(*peer,input);
+        const auto identity=peer->session.multiplayer_hash();peer->renderer.flush();peer->graphics.triangles_drawn=0;
+        check(peer->session.draw(peer->renderer),"spectator paused gameplay draw");peer->renderer.flush();const auto without_menu=peer->graphics.triangles_drawn;
+        peer->session.multiplayer_options.spectator=false;peer->graphics.triangles_drawn=0;
+        check(peer->session.draw(peer->renderer),"same native pause menu draw");peer->renderer.flush();
+        check(peer->graphics.triangles_drawn>without_menu,"spectator hides the real pause overlay without skipping its simulation");
+        check(peer->session.multiplayer_hash()==identity,"spectator presentation leaves authoritative pause state unchanged");
+        peer->session.multiplayer_options.spectator=true;
+        check(peer->session.multiplayer_open_result(false,0),"spectator native terminal boundary");
+        check(peer->session.state.phase==GameSessionPhase::finished&&!peer->session.ending&&!peer->session.title,"spectator retains gameplay and waits outside ending/result interfaces");
+    }
+    std::puts("PASS: 2P/3P equal spectator opacity, native pause overlay isolation and terminal gameplay boundary");
+}
 void native_ui_cases(const std::vector<u8>& bytes){
     auto a=std::make_unique<Peer>(bytes),b=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};
     check(a->session.begin_multiplayer(a->resources,options),"native UI primary world");options.local_seat=1;check(b->session.begin_multiplayer(b->resources,options),"native UI different viewer world");
@@ -289,11 +311,11 @@ void native_ui_cases(const std::vector<u8>& bytes){
     check(menu&&menu->script_index==89&&background&&background->resource==&w.resources.core.text&&background->script_index==75,"native pause parent and captured-background resource owners");
     check(a->session.pause_menu->background_vm()==background,"GPU capture resolves the PauseMenu owning ANM manager");
     unsigned children=0;for(auto* n=menu->child.next;n;n=n->next){++children;check(n->value->script_index==74||n->value->script_index==75||(n->value->script_index>=77&&n->value->script_index<=80),"pause retains the original four choices");}check(children==6,"all four native pause choices are present");
-    in[1].pause=false;for(unsigned i=0;i<25;++i){in[1].held=i&1?1:0;step(*a,in);step(*b,in);check(a->session.multiplayer_hash()==b->session.multiplayer_hash(),"pause menu remains deterministic across local viewers");}
-    check(a->session.state.phase==GameSessionPhase::paused&&a->session.pause_menu->state==33,"held entry Shot and P2 edges cannot confirm P1 native menu");
+    in[1].pause=false;for(unsigned i=0;i<25;++i){step(*a,in);step(*b,in);check(a->session.multiplayer_hash()==b->session.multiplayer_hash(),"pause menu remains deterministic across local viewers");}
+    check(a->session.state.phase==GameSessionPhase::paused&&a->session.pause_menu->state==33,"held entry Shot cannot confirm the native menu");
     check(w.frame==frame&&w.mp_hash()==frozen&&w.animations.script_rng.calls==rng,"native overlay animations cannot advance combat or combat RNG");
     const auto eof=a->session.multiplayer_hash();check(a->session.draw(a->renderer)&&a->session.multiplayer_hash()==eof,"paused Replay EOF draw cannot advance native menu timers");
-    in={};step(*a,in);step(*b,in);in[0].held=1;step(*a,in);step(*b,in);check(a->session.pause_menu->state==34,"P1 fresh confirmation enters original pause dismissal animation");
+    in[1].held=1;step(*a,in);step(*b,in);check(a->session.pause_menu->state==34,"P2 confirms Resume while P1 keeps holding Shoot");
     in={};for(unsigned i=0;i<13&&a->session.state.phase==GameSessionPhase::paused;++i){step(*a,in);step(*b,in);check(a->session.multiplayer_hash()==b->session.multiplayer_hash(),"native pause dismissal has identical confirmed-frame boundary");}
     check(a->session.state.phase==GameSessionPhase::stage&&w.frame==frame&&a->session.animations.rate==1&&!a->session.pause_menu,"Resume restores normal time after native overlay dismissal without ticking combat early");
     step(*a,in);step(*b,in);check(w.frame==frame+1,"first post-menu confirmed frame advances world exactly once");
@@ -394,7 +416,7 @@ int main(int argc,char** argv){
     else if(mode("restart"))restart_risk_cases(bytes);
     else if(mode("challenge"))challenge_cases(bytes);
     else if(mode("score")){score_cases(bytes);result_risk_cases(bytes);}
-    else if(mode("ui")){native_ui_cases(bytes);presentation_risk_cases(bytes);restart_risk_cases(bytes);}
+    else if(mode("ui")){native_ui_cases(bytes);spectator_ui_cases(bytes);presentation_risk_cases(bytes);restart_risk_cases(bytes);}
     else if(mode("repair")){presentation_risk_cases(bytes);restart_risk_cases(bytes);}
     else{
         if(argc==2){battle_cases(bytes);cooperative_rule_cases(bytes);rules_cases(bytes);owner_cases(bytes);}

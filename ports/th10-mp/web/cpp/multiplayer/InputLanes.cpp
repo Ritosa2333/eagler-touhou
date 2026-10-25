@@ -28,15 +28,21 @@ void limit_vector(float& x, float& y, float speed) noexcept {
 
 void update_host_lane(State& state, u16 raw_repeat) noexcept {
     state.host = state.seats[0];
-    // GameInput::update_edges clears raw_repeat. The title's native update
-    // chain samples raw input before edge processing, so retain that captured
-    // host repeat in the menu view without changing the rollback seat lanes.
     state.host.raw_repeat = raw_repeat;
-    // Keep host current/previous/pressed/released native. Pause is a menu
-    // event and is intentionally merged only into the raw edge channel. This
-    // lets a fresh P2/P3 pause trigger while another seat still holds pause.
-    state.host.raw_pressed = static_cast<u16>(state.host.raw_pressed |
-                                              state.pause_rising);
+    // Merge already sampled edges, rather than deriving them from a union of
+    // held buttons. One seat holding Shoot cannot swallow another's confirm.
+    for (std::size_t seat = 1; seat < kSeatCount; ++seat) {
+        const auto& lane = state.seats[seat];
+        state.host.raw |= lane.raw;
+        state.host.raw_previous |= lane.raw_previous;
+        state.host.raw_pressed |= lane.raw_pressed;
+        state.host.raw_released |= lane.raw_released;
+        state.host.current |= lane.current;
+        state.host.previous |= lane.previous;
+        state.host.repeat |= lane.repeat;
+        state.host.pressed |= lane.pressed;
+        state.host.released |= lane.released;
+    }
 }
 
 } // namespace
@@ -63,9 +69,7 @@ bool Commit(State& state, const Netplay::FrameInput* inputs, u32 count) noexcept
         next.inputs[seat] = value;
 
         lane.update_raw(value.buttons);
-        if (seat == 0) {
-            host_raw_repeat = lane.raw_repeat;
-        }
+        host_raw_repeat |= lane.raw_repeat;
         lane.previous = lane.current;
         lane.current = static_cast<u16>(value.buttons & kNativeCurrentMask);
         lane.update_edges();

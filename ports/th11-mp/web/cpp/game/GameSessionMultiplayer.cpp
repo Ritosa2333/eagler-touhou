@@ -10,7 +10,7 @@ bool GameSession::multiplayer_rollback_boundary(){
 bool GameSession::begin_multiplayer(GameResources& data,const MultiplayerOptions& options,const std::array<ReplayStageState,3>* stream){
     if(!options.valid())return fail("Invalid TH11 multiplayer options");
     multiplayer_stream_pending=stream!=nullptr;if(stream)multiplayer_stream_entries=*stream;
-    multiplayer_active=true;multiplayer_options=options;multiplayer_frame=0;multiplayer_pause_held={};
+    multiplayer_active=true;multiplayer_options=options;multiplayer_frame=0;multiplayer_pause_held={};multiplayer_menu_input={};
     reset_state();title.reset();practice={};interactive=false;next_continues=0;
     // A negotiated restart or replay seek can rebuild from a paused session.
     // Native owners bind their clocks during begin(), so restore normal time
@@ -32,6 +32,9 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
     bool pause_edge=false;
     for(unsigned i=0;i<multiplayer_options.seat_count;++i){const auto& in=inputs[i];if(in.touch_mode<0||in.touch_mode>3||!std::isfinite(in.touch_x)||!std::isfinite(in.touch_y))return fail("Invalid MP movement input");pause_edge|=in.pause&&!multiplayer_pause_held[i];multiplayer_pause_held[i]=in.pause;}
     ++multiplayer_frame;
+    std::array<u32,3> menu_buttons{};
+    for(unsigned seat=0;seat<multiplayer_options.seat_count;++seat)menu_buttons[seat]=menu_keys(inputs[seat].held);
+    const auto shared_menu=multiplayer_menu_input.Update(menu_buttons,multiplayer_options.seat_count);
     if(state.phase==GameSessionPhase::finished)return true;
     if(state.phase==GameSessionPhase::ending){
         battle->events.clear();battle->dialogue_text_requests.clear();
@@ -67,7 +70,7 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
         pause_menu->selection=multiplayer_options.selections[0];pause_menu->difficulty=multiplayer_options.difficulty;
         pause_menu->stage=state.stage;pause_menu->result_score=economy.score_units;pause_menu->timestamp=recording_timestamp;
         if(!pause_menu->begin_multiplayer_pause()||!battle->mp_presentation.update(true))return fail("MP pause presentation initialization failed");
-        menu_input={};menu_input.update(menu_keys(inputs[0].held));
+        menu_input={};menu_input.update(shared_menu.held);
         paused_rate=animations.rate;animations.rate=0;state.phase=GameSessionPhase::paused;battle->mp_paused=true;return true;
     }
     // Restart/exit are protocol-generation operations. Never restart the world
@@ -75,7 +78,7 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
     if(state.phase==GameSessionPhase::paused){
         battle->events.clear();battle->dialogue_text_requests.clear();
         if(!pause_menu||!pause_menu->multiplayer_pause)return fail("MP pause owner missing");
-        menu_input.update(menu_keys(inputs[0].held));
+        menu_input.update(shared_menu.held);menu_input.pressed|=shared_menu.pressed;menu_input.long_repeat|=shared_menu.pressed;
         if(!pause_menu->update(menu_input.pressed|(pause_edge?256u:0u),menu_input.long_repeat)||!battle->mp_presentation.update(true))return fail("MP pause presentation update failed");
         if(pause_menu->action==PauseAction::Resume){pause_menu.reset();animations.rate=paused_rate;state.phase=GameSessionPhase::stage;battle->mp_paused=false;}
         else if(pause_menu->action==PauseAction::Title)state.phase=GameSessionPhase::finished;
@@ -94,6 +97,7 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
 MultiplayerSeatView GameSession::multiplayer_seat(unsigned seat)const noexcept{return battle?battle->mp_seat(seat):MultiplayerSeatView{};}
 bool GameSession::multiplayer_open_result(bool completed,u32 held){
     if(multiplayer_rollback_boundary())return false;
+    if(multiplayer_options.spectator){battle->mp_finished=true;state.phase=GameSessionPhase::finished;return true;}
     battle->mp_finished=true;battle->mp_paused=false;animations.rate=1;
     pause_menu=std::make_unique<PauseMenu>(animations,resources.core.text,resources.core.front,scores);
     pause_menu->selection=state.character*3+state.subtype;pause_menu->difficulty=state.difficulty;pause_menu->stage=state.stage;
@@ -107,6 +111,7 @@ bool GameSession::multiplayer_open_result(bool completed,u32 held){
 }
 bool GameSession::multiplayer_open_ending(u32 held){
     if(multiplayer_rollback_boundary())return false;
+    if(multiplayer_options.spectator){battle->mp_finished=true;state.phase=GameSessionPhase::finished;return true;}
     if(!source||!battle)return fail("MP ending requires completed combat owner");
     battle->mp_finished=true;battle->mp_paused=false;battle_attached=false;
     completed_run=true;completed_score=economy.score_units;completed_continues=0;

@@ -733,6 +733,13 @@ i32 World::update_player(Player* player){
 }
 
 u8 World::player_visual_alpha(const AnmVm& vm)const{
+    if(state.netplay_runtime.Spectator()&&!state.netplay_runtime.Retired()&&actors.results){
+        const auto* root=&vm.child_node;
+        for(u32 i=0;root->previous&&i<4096;++i)root=root->previous;
+        const u32 id=root->value?root->value->id:vm.id;
+        const auto& menu=*actors.results;
+        if(id&&(id==menu.menu_animation||id==menu.background_animation||id==menu.auxiliary_animation))return 0;
+    }
     // Viewer-only hitbox filtering also applies to the selected Replay view.
     if(vm.id&&local_player<player_count){const auto* root=&vm.child_node;
         for(u32 i=0;root->previous&&i<4096;++i)root=root->previous;

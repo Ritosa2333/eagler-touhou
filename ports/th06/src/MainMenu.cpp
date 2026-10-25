@@ -52,7 +52,12 @@ MainMenu::MainMenu()
 ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
 {
 #if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-    if(EM_ASM_INT({return Module.eaglerRoomPreview?1:0;}))menu->idleFrames=0;
+    if(EM_ASM_INT({return Module.eaglerRoomPreview?1:0;})){
+        menu->idleFrames=0;
+        g_CurFrameInput &= ~TH_BUTTON_Q;
+        if(menu->gameState==STATE_MAIN_MENU&&menu->cursor!=6)
+            g_CurFrameInput &= ~TH_BUTTON_SELECTMENU;
+    }
 #endif
     i32 i;
     AnmVm *vmList;
@@ -2248,7 +2253,7 @@ ZunResult MainMenu::LoadTitleAnm(MainMenu *menu)
 {
     i32 i;
 
-    g_Supervisor.LoadPbg3(3, TH_TL_DAT_FILE);
+    g_Supervisor.LoadPbg3(TL_PBG3_INDEX, TH_TL_DAT_FILE);
 #ifdef __EMSCRIPTEN__
     static bool s_WebTransitionAnmsPrewarmed = false;
     if (!s_WebTransitionAnmsPrewarmed)

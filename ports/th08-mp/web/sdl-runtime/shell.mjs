@@ -13,11 +13,16 @@ import {validateMultiplayerOptions,configureMultiplayer,updateNetworkDiagnostics
 // Native playback owns every cursor and restore. The shell only transports
 // authenticated Launcher commands and publishes native reports.
 function createSpectatorPlaybackBridge({active,memory,state,control,allocate,deallocate,emit,
+  replay=()=>globalThis.__eaglerPeerTransport?.spectatorReplay,
+  complete,
   schedule=globalThis.setInterval,cancel=globalThis.clearInterval}) {
-  let timer=null,last=null;
+  let timer=null,last=null,menuSession=null;
   const clear=()=>{if(last){last=null;emit('runtime-info',{spectatorPlayback:null});}};
+  const closeMenu=()=>{if(menuSession){menuSession=null;globalThis.__eaglerSpectatorMenu=false;emit('runtime-info',{spectatorMenu:false});}};
   function poll() {
-    if(!active()){clear();return null;}
+    if(!active()){closeMenu();clear();return null;}
+    const file=replay();
+    if(menuSession){clear();return null;}
     try {
       const pointer=state();
       if(!pointer){clear();return null;}
@@ -31,6 +36,15 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
       if(report?.version!==1||typeof report.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(report.run)||
          !Number.isInteger(report.revision)||report.revision<1||report.revision>0xfffffffe||
          !Array.isArray(report.nodes)||report.nodes.length>512)throw Error('Invalid native spectator report');
+      if(complete&&!menuSession&&report.ended&&!report.paused&&!report.seeking&&report.position>=report.received&&
+         report.run.startsWith('s'+file?.session+'_')&&file?.bytes instanceof Uint8Array){
+        const pointer=allocate(file.bytes.length);
+        if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator result allocation failed');
+        try{const heap=memory();if(pointer>heap.length-file.bytes.length)throw Error('Invalid spectator result allocation');heap.set(file.bytes,pointer);
+          if(complete(pointer,file.bytes.length)){menuSession=file.session;globalThis.__eaglerSpectatorMenu=true;emit('runtime-info',{spectatorMenu:true});}
+        }finally{deallocate(pointer);}
+        if(menuSession){clear();return null;}
+      }
       if(last?.run===report.run&&(report.revision<=last.revision||report.received<last.received))return last;
       last=report;emit('runtime-info',{spectatorPlayback:report});return report;
     } catch(error) {
@@ -65,7 +79,7 @@ function createSpectatorPlaybackBridge({active,memory,state,control,allocate,dea
   }
   return Object.freeze({poll,command,
     start(){if(timer===null)timer=schedule(poll,250);poll();},
-    stop(){if(timer!==null)cancel(timer);timer=null;clear();},
+    stop(){if(timer!==null)cancel(timer);timer=null;closeMenu();clear();},
   });
 }
 // END GENERATED SPECTATOR PLAYBACK
@@ -230,6 +244,7 @@ const spectatorPlayback=createSpectatorPlaybackBridge({
  active:()=>multiplayerRuntime&&launched&&options.netplaySpectator===true&&!closing,memory:()=>new Uint8Array(core.memory.buffer),
  state:()=>core?.multiplayer_spectator_playback_state?.(app)||0,control:(run,action,frame)=>core?.multiplayer_spectator_playback_control?.(app,run,action,frame)||0,
  allocate:size=>core.allocate(size),deallocate:pointer=>core.deallocate(pointer),emit,
+ complete:(pointer,size)=>{const ok=core.multiplayer_spectator_result(app,pointer,size);if(ok)applyTouchOptions(core,options);return ok;},
 });
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
 let initializedReady=false,launchSettled=false,replayReopening=false,touchLifetime=0,touchRetired=false,roomPreview=false;
@@ -302,7 +317,8 @@ function installResourceTrace(){
  }catch{}
 }
 let practice;
-const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>launched&&!document.hidden&&!options.netplaySpectator&&!closing,reset:clearKeyboard,},
+function runtimeInputActive(){return (launched||roomPreview&&options.netplayMode!=='lan')&&!document.hidden&&!closing;}
+const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>runtimeInputActive()&&(!options.netplaySpectator||globalThis.__eaglerSpectatorMenu===true),reset:clearKeyboard,},
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
 });
@@ -313,8 +329,8 @@ function ownsTouchDocument(){
  catch{return false;}
 }
 function touchReady(){
- return initializedReady&&!!core&&!!app&&launched&&launchSettled&&!closing&&!replayReopening&&
-  !touchRetired&&!document.hidden&&!!options.touchEnabled&&!options.netplaySpectator&&ownsTouchDocument();
+ return initializedReady&&!!core&&!!app&&(launched&&launchSettled||roomPreview&&options.netplayMode!=='lan')&&!closing&&!replayReopening&&
+  !touchRetired&&!document.hidden&&!!options.touchEnabled&&(!options.netplaySpectator||globalThis.__eaglerSpectatorMenu===true)&&ownsTouchDocument();
 }
 function cancelTouchInput(){
  const delivered=touchReady();cancelTouches();
@@ -379,7 +395,7 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function applyOptions(){applyTouchOptions(core,options.netplaySpectator?{...options,touchEnabled:false}:options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);if(app&&multiplayerRuntime)core.multiplayer_local_player_visibility?.(app,options.multiplayerLocalPlayerVisibility&&!options.netplaySpectator&&!options.replayViewer?1:0);practice?.configure({...options,thpracEnabled:options.thpracEnabled&&options.netplayMode!=='lan'});}
+function applyOptions(){applyTouchOptions(core,options.netplaySpectator&&!globalThis.__eaglerSpectatorMenu?{...options,touchEnabled:false}:options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);if(app&&multiplayerRuntime)core.multiplayer_local_player_visibility?.(app,options.multiplayerLocalPlayerVisibility&&(!options.netplaySpectator||globalThis.__eaglerSpectatorMenu===true)&&!options.replayViewer?1:0);practice?.configure({...options,thpracEnabled:options.thpracEnabled&&options.netplayMode!=='lan'});}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
 function save(){if(app)core.save(app);return sync(false);}
 // Backgrounding only persists the runtime filesystem. core.save() runs the
@@ -485,12 +501,12 @@ async function reopenReplay(path,stage){
  replayReopening=false;
 }
 async function command(message){
- if(multiplayerRuntime&&launched&&options.netplaySpectator&&
+ if(multiplayerRuntime&&launched&&options.netplaySpectator&&!globalThis.__eaglerSpectatorMenu&&
     ['keyboard','thprac-mouse'].includes(message.command))return {};
  switch(message.command){
  case 'configure':if(launched)throw Error('Cannot configure a running game');language=message.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(message.options);if(multiplayerRuntime)options.thpracEnabled=false;if(!['ogg','midi','none'].includes(message.music))throw Error('Invalid music mode');Module.touhouMusicMode=message.music;Module.eaglerOptions=options;music=message.music!=='none';await installResources(message.sharedResources);await installResources(message.runtimeResources);await installResources(message.resources);if(message.runtimePack)await installRuntimePack(message.runtimePack);applyOptions();return {};
  case 'resources':if(multiplayerRuntime&&launched&&!options.replayViewer)throw Error('Cannot replace resources during a multiplayer run');await installResources(message.resources);return {};
- case 'keyboard':if(launched&&!document.hidden&&!closing)keyboard.event(message,!!message.down,'hosted');return {};
+ case 'keyboard':if(runtimeInputActive())keyboard.event(message,!!message.down,'hosted');return {};
  case 'thprac-mouse':practice?.mouse(message);return {};
  case 'keyboard-clear':clearKeyboard();return {};
  case 'touch-cancel':cancelTouchInput();return {};
@@ -558,7 +574,7 @@ window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
- if(!core||!launched||closing||document.hidden)return;
+ if(!core||!runtimeInputActive())return;
  if(keyboard.mapNative(event,name==='keydown')){event.preventDefault();event.stopImmediatePropagation();return;}
  const handled=keyboard.event(event,name==='keydown');
  if(handled&&options.thpracEnabled&&/^(Backspace|Tab|F[1-7]|F12)$/.test(event.code))event.preventDefault();

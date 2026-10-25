@@ -231,7 +231,15 @@ bool NetplayRuntime::PumpNetwork(bool expectsInput,bool captureFollows){
         [&](const auto& wire){return transport_.SendSpectator(wire.data(),wire.size());},network_clock_us);
     if(tail==Netplay::SpectatorPublicationTail::Result::Complete)transport_.StopSpectators(true);
     if(tail==Netplay::SpectatorPublicationTail::Result::Failed){spectator_publish_failed_=true;transport_.StopSpectators();}
-    if(spectator_)return DrainSpectatorFrames();
+    if(spectator_&&!local_results_)return DrainSpectatorFrames();
+    if(local_results_){
+        if(!transport_.Failed()&&!transport_.Disconnected()){
+            channel_.Pump(gate_,core_,network_now_,false);
+            const auto last=core_.LastSimulatedFrame();
+            if(channel_.CanRetire(core_,last))channel_.Retire(core_,last,network_now_);
+        }
+        return true;
+    }
     if(!calibration_.Pump(network_clock_us(),expectsInput))return false;
     if(calibration_.NeedsApply()){
         const auto choice=calibration_.Startup().Selected();auto next=setup_;
@@ -292,6 +300,7 @@ bool NetplayRuntime::SetNetworkTailPresentationEnabled(bool enabled){
 }
 
 const char* NetplayRuntime::NetworkError()const{
+    if(local_results_)return "";
     // Calibration wraps the same wire; report its actual terminal RTC reason
     // before the generic calibration/channel failure can hide it.
     if(transport_.Failed())return transport_.LastError().c_str();
@@ -311,7 +320,7 @@ bool NetplayRuntime::CanRetireRun()const{
     return !network_enabled_||channel_.CanRetire(core_,last);
 }
 
-bool NetplayRuntime::PrepareTransitionFence(){
+bool NetplayRuntime::PrepareTransitionFence(bool local_results){
     if(!FlushNetworkInputs())return false;
     const auto last=core_.LastSimulatedFrame();
     if(!CanStart()||Correcting()||core_.HasRollbackRequest()||last==Netplay::INVALID_FRAME)return false;
@@ -325,6 +334,7 @@ bool NetplayRuntime::PrepareTransitionFence(){
     // peers keep pumping until SessionChannel's ordinary retirement fence is
     // actually satisfied.
     if(!channel_.FlushRetirementFence(core_,last,network_now_))return false;
+    if(local_results){const auto confirmed=core_.ConfirmedThroughAllRemotes();return confirmed!=Netplay::INVALID_FRAME&&confirmed>=last;}
     return channel_.CanRetire(core_,last);
 }
 
@@ -454,7 +464,19 @@ void NetplayRuntime::Clear() noexcept {
     gate_.Clear();
     core_.Clear();
     configured_ = false;
-    setup_={};base_session_id_=0;generation_=0;retired_=false;
+    setup_={};base_session_id_=0;generation_=0;retired_=local_results_=false;
+}
+
+bool NetplayRuntime::FinishGameplay(){
+    if(local_results_)return true;
+    if(ReadOnly()||!PrepareTransitionFence(true))return false;
+    if(network_enabled_&&!setup_.localPlayer&&!spectator_publish_failed_){
+        if(!publication_tail_.Freeze(spectator_stage_publisher_,core_.ConfirmedThroughAllRemotes(),core_.LastSimulatedFrame(),
+            [&](std::uint32_t frame,auto& inputs){return ConfirmedInputs(frame,&inputs);},network_now_,{},true)){
+            spectator_publish_failed_=true;transport_.StopSpectators();
+        }
+    }
+    retired_=local_results_=true;return true;
 }
 
 bool NetplayRuntime::RetireRun() noexcept {

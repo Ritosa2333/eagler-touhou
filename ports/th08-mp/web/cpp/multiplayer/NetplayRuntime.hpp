@@ -98,6 +98,7 @@ public:
     bool Correcting()const{return correction_end_!=Netplay::INVALID_FRAME;}
     bool CanRetire()const;
     bool Retire();
+    bool RetireSpectator(){if(!spectator_)return false;retired_=true;world_ready_=false;return true;}
     bool BeginNextRun(SessionSetup&,std::uint32_t seed);
 
     WireResult ApplyWire(const std::uint8_t*,std::size_t);

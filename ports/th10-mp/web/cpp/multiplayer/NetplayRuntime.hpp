@@ -68,12 +68,15 @@ public:
     void Clear() noexcept;
     // The title must have reconciled/confirmed the restart fence. A real
     // transport additionally finishes its peer ACK fence before retirement.
-    bool PrepareTransitionFence();
+    bool PrepareTransitionFence(bool local_results=false);
     bool RetireRun() noexcept;
+    bool FinishGameplay();
+    bool EnterSpectatorResults(){const auto& p=spectator_stage_playback_;if(!spectator_||!p.History().Ended()||p.Paused()||p.Seeking()||p.Position()<p.History().Received())return false;retired_=local_results_=true;return true;}
     bool CanRetireRun() const;
     bool BeginNextRun(SessionSetup& setup,std::uint32_t seed) noexcept;
     std::uint32_t Generation()const{return generation_;}
     bool Retired()const{return retired_;}
+    bool ReadOnly()const{return playback_||spectator_;}
     WireResult ApplyWire(const std::uint8_t* bytes,std::size_t size);
     bool BuildInputWire(std::uint8_t peer,std::uint32_t latest,std::uint32_t sequence,
                         std::uint32_t ack,std::vector<std::uint8_t>& out)const;
@@ -203,7 +206,7 @@ private:
     SessionSetup setup_{};
     std::uint64_t base_session_id_=0;
     std::uint32_t generation_=0;
-    bool retired_=false;
+    bool retired_=false,local_results_=false;
     bool configured_ = false;
     Netplay::BrowserPeerTransport transport_{};
     Netplay::AdonisConnection calibration_{transport_};

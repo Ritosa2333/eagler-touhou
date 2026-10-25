@@ -53,7 +53,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  const doc=target.document;
  const stylesheet=doc.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./multiplayer.css',import.meta.url).href;doc.head.append(stylesheet);
  let active=false,mode='idle',replayViewer=false,notice=null,failed=false;
- let lastDiagnostic=0,lastGeneration=-1,finished=false,nativeHashSample=null;
+ let lastDiagnostic=0,lastGeneration=-1,finished=false,exiting=false,nativeHashSample=null;
  const readWords=(pointer,count)=>Array.from(new Uint32Array(core.memory.buffer,pointer,count));
  const textAt=pointer=>{if(!pointer)return '';const heap=new Uint8Array(core.memory.buffer);let end=pointer;while(end<heap.length&&heap[end])++end;return new TextDecoder().decode(heap.subarray(pointer,end));};
  const nativeError=()=>textAt(core.th11_mp_error())||textAt(core.th11_error())||'TH11 多人操作失败';
@@ -66,7 +66,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  const showSeek=text=>{clearSeek();notice=doc.createElement('output');notice.className='th11-mp-replay-seek';notice.setAttribute('aria-live','polite');notice.textContent=text;doc.body.append(notice);};
  // Connection, calibration, failures and room returns are Launcher surfaces.
  // Reuse its standard events and shared transport diagnostics, as TH08/TH10 do.
- const endSession=(message,returnToMenu=false)=>{if(message)emit('notice',{message});void onExit({returnToMenu}).catch(fail);};
+ const endSession=(message,returnToMenu=false)=>{if(exiting)return;exiting=true;if(message)emit('notice',{message});void onExit({returnToMenu}).catch(fail);};
  function fail(reason){
   if(failed)return;
   const message=reason?.message||String(reason);failed=true;target.__eaglerNetplayFailed=true;
@@ -96,6 +96,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  }
  function applyOptions(){core.th11_mp_local_visibility(+(getOptions().multiplayerLocalPlayerVisibility===true));core.th11_mp_always_hitbox(+(getOptions().alwaysHitbox===true||getOptions().touchAlwaysHitbox===true));}
  async function launch(){
+  exiting=false;
   clearSeek();failed=false;finished=false;nativeHashSample=null;target.__eaglerNetplayFailed=false;target.__eaglerNetplayError='';
   target.__eaglerNetplayLanActive=false;target.__eaglerNetplaySpectator=false;
   const options=getOptions(),checked=validateMultiplayerOptions(options);
@@ -144,8 +145,10 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
    }else clearSeek();
   }else{
    if(state[12]!==lastGeneration){if(lastGeneration>=0&&mode==='player'){finished=false;calibration.start();}lastGeneration=state[12];}
-   if(state[13]&&!finished){
+   if(mode==='spectator'&&target.__eaglerSpectatorMenu){if(core.th11_phase()===4)endSession(undefined);}
+   else if(state[13]&&(!finished||mode==='player'&&core.th11_phase()===4)){
     finished=true;
+    calibration.stop();
     const capacity=state[3]>=MULTIPLAYER_REPLAY_MAX_FRAMES;
     if(mode==='player'){
      flush();
@@ -169,11 +172,11 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
   get active(){return active;},get readOnly(){return mode!=='player';},get mode(){return mode;},
   // The native viewer owns menu navigation and physical Esc. Recorded inputs
   // remain the only source of gameplay while a Replay is playing.
-  acceptInput(){return active&&!failed&&!finished&&(mode==='player'||replayViewer);},
+  acceptInput(){return active&&!failed&&(mode==='player'||target.__eaglerSpectatorMenu||replayViewer&&!finished);},
   keyboard(event,down){
    if(!active)return false;
    const code=event.code||event.key;
-   if(mode==='spectator'&&code==='Escape'){if(down&&!event.repeat)void onExit();return true;}
+   if(mode==='spectator'&&!target.__eaglerSpectatorMenu&&code==='Escape'){if(down&&!event.repeat)void onExit();return true;}
    return false;
   },
   afterAudioResume(){},

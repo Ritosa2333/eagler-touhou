@@ -21,6 +21,7 @@ const duration=Number(arg('frames','1200'));
 const waitEnd=process.argv.includes('--wait-end');
 const stopStream=process.argv.includes('--stop-stream');
 const recover=process.argv.includes('--recover');
+const lifecycle=process.argv.includes('--lifecycle');
 const restart=arg('restart','none');
 assert.ok(['none','quick','menu','both'].includes(restart));
 assert.ok([2,3].includes(players)&&['rtc','relay'].includes(route)&&['normal','challenge','both'].includes(mode));
@@ -30,7 +31,7 @@ assert.ok(targets.length,'No cooperative multiplayer Runtime selected');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 await mkdir(output,{recursive:true});
 const report={schema:'eagler-touhou/mp-browser/1',startedAt:new Date().toISOString(),players,route,frames:duration,
- waitEnd,stopStream,recover,restart,
+ waitEnd,stopStream,recover,restart,lifecycle,
  scope:'Actual native MP games and independent spectators through a real local relay and the production Runtime protocol',
  commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),harnessSha256:sha(await readFile(new URL(import.meta.url))),cases:[]};
 report.relayConfig={freshPerCase:true,rtcTimeoutMs:30000,stunUrls:[]};
@@ -71,7 +72,8 @@ const server=createServer(async(req,res)=>{try{
  addEventListener('message',e=>{if(e.source===document.querySelector('iframe')?.contentWindow&&e.origin===location.origin)events.push(e.data)});
  window.rpc=(command,fields={})=>new Promise((yes,no)=>{const request=crypto.randomUUID(),timer=setTimeout(()=>{removeEventListener('message',listen);no(Error('RPC '+command+' timeout'))},120000);
  function listen(e){if(e.source===document.querySelector('iframe').contentWindow&&e.data?.request===request){clearTimeout(timer);removeEventListener('message',listen);e.data.ok?yes(e.data):no(Error(e.data.error))}}addEventListener('message',listen);
- document.querySelector('iframe').contentWindow.postMessage({protocol:'eagler-touhou/1',game:${JSON.stringify(t.game)},epoch:1,request,command,...fields},location.origin)});
+ document.querySelector('iframe').contentWindow.postMessage({protocol:'eagler-touhou/1',game:${JSON.stringify(t.game)},epoch:1,request,command,...fields},location.origin);
+ if(command==='keyboard'||command==='keyboard-clear'){clearTimeout(timer);removeEventListener('message',listen);yes({ok:true});}});
  </script><iframe src="/runtime/${t.id}/${t.entry}?hosted=1&managedData=1&gameGeneration=mp-behavior&runtimeVariant=multiplayer&runtimeEpoch=1"></iframe>`);return;}
  let file;
  for(const target of targets){if(url.pathname===`/data/${target.id}`)file=target.data;
@@ -111,15 +113,27 @@ try{
    const peer=r?.__eaglerPeerTransport??r?.[Object.keys(r).find(k=>/^__th\d+PeerTransport$/.test(k))];
    let native=null;
    for(const name of ['th11_mp_status','_th15_mp_status'])if(typeof core?.[name]==='function')native=Array.from(new Uint32Array(core.memory?.buffer??module.HEAPU8.buffer,core[name](),24));
-   return {playback:[...events].reverse().find(e=>e.event==='runtime-info'&&e.spectatorPlayback)?.spectatorPlayback??null,
+   return {menu:r?.__eaglerSpectatorMenu===true,playback:[...events].reverse().find(e=>e.event==='runtime-info'&&Object.hasOwn(e,'spectatorPlayback'))?.spectatorPlayback??null,
     frame:r?.__eaglerNetplayLanFrame??native?.[3]??null,
     failed:!!r?.__eaglerNetplayFailed||native?.[23]===1||peer?.failed===true,
     error:r?.__eaglerNetplayError||(native?.[23]===1||peer?.failed===true?String(peer?.error||'native multiplayer failure'):''),native,
     state:runtime?.status?.()??null,transport:peer?{route:peer.route,failed:peer.failed,error:peer.error,closed:peer.closed,peers:peer.peers?.size}:null,
+    replayFile:peer?{uploaded:peer.sharedReplaySession,receiving:peer.replayReceiving?.offset,bytes:peer.spectatorReplay?.bytes?.length}:null,
     spectatorSession:peer?.spectatorSession??null,receiveEpoch:peer?.receiveEpoch??0,reconnectAttempt:peer?.reconnectAttempt??0,
     body:r?.document.body.innerText??'',options:module?.eaglerOptions??null,terminal:events.filter(e=>e.event==='error'||e.event==='exit')};
   });
-  const complete=state=>state.playback?.ended&&state.playback.position>=state.playback.received;
+   const complete=state=>state.menu||state.playback?.ended&&state.playback.position>=state.playback.received;
+   const validateReplay=async(endpoint,bytes)=>endpoint.frame.evaluate(bytes=>{
+    const runtime=globalThis[Object.keys(globalThis).find(k=>/^__th\d+Runtime$/.test(k))],module=runtime?.Module??globalThis.Module,core=runtime?.core??globalThis.core??module;
+    const file=bytes?{bytes:new Uint8Array(bytes)}:globalThis.__eaglerPeerTransport?.spectatorReplay;if(!file?.bytes)throw Error('Completed native Replay missing');
+    const alloc=core.allocate??core.graphics_allocate??core.malloc??core._malloc??core._eagler_replay_allocate;
+    const free=core.deallocate??core.graphics_free??core.free??core._free??core._eagler_replay_free;
+    const pointer=alloc(file.bytes.length);try{
+     const heap=module?.HEAPU8??globalThis.HEAPU8??core.HEAPU8??new Uint8Array(core.memory.buffer);heap.set(file.bytes,pointer);
+     const validate=core.multiplayer_replay_validate??core.th11_mp_replay_validate??core._th15_mp_replay_validate??core._eagler_replay_inspect;
+     return {valid:!!validate(pointer,file.bytes.length),bytes:file.bytes.length,name:file.name};
+    }finally{free(pointer);}
+   },bytes);
   const healthy=state=>{assert.equal(state.failed,false,state.error||state.transport?.error||'Native multiplayer failed');assert.equal(state.error,'');
    for(const event of state.terminal)assert.ok(complete(state)&&event.event==='exit'&&event.status==='success'&&(!event.code||event.code===0),JSON.stringify(event));};
   const progress=async(endpoint,predicate,label)=>until(async()=>{const state=await inspect(endpoint);healthy(state);return state.playback&&predicate(state)?state:null;},label);
@@ -147,10 +161,33 @@ try{
     if(route==='relay')await context.addInitScript(()=>Object.defineProperty(window,'RTCPeerConnection',{configurable:true,value:undefined}));
     const page=await context.newPage(),endpoint={page,member,spectator,seat:spectator?null:member.seat};endpoints.push(endpoint);
     page.on('pageerror',error=>row.errors.push(String(error)));page.on('response',r=>{if(r.status()>=400)row.httpErrors.push({url:r.url(),status:r.status()});});
+    page.on('console',message=>{(row.console??=[]).push({seat:endpoint.seat,spectator,type:message.type(),text:message.text()});if(row.console.length>128)row.console.shift();});
     await page.goto(`${base}/host/${t.id}`);await page.waitForFunction(()=>events.some(e=>e.event==='ready'),null,{timeout:120000});
     endpoint.frame=page.frames().find(f=>f.url().includes(`/runtime/${t.id}/`));assert.ok(endpoint.frame);
+    if(lifecycle&&!spectator){
+     await page.evaluate(sharedResources=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],thpracCatalog:[],
+      options:{runtimeVariant:'multiplayer',thpracEnabled:false,touchEnabled:false,renderScale:1},sharedResources}),shared);
+     await page.evaluate(()=>rpc('prepare-room'));await page.waitForTimeout(1000);
+     const press=async(code,keyCode,key=code)=>{await page.evaluate(fields=>rpc('keyboard',fields),{code,key,keyCode,location:0,inputSource:'physical',down:true});
+      await page.waitForTimeout(140);await page.evaluate(fields=>rpc('keyboard',fields),{code,key,keyCode,location:0,inputSource:'physical',down:false});await page.waitForTimeout(200);};
+     await press('KeyZ',90,'z');await page.waitForTimeout(500);
+     for(let i=0;i<(t.game==='th15'?3:2);i++)await press('ArrowUp',38);
+     await press('KeyZ',90,'z');await page.waitForTimeout(700);
+     const preview=await endpoint.frame.evaluate(()=>{
+      const runtime=globalThis[Object.keys(globalThis).find(k=>/^__th\d+Runtime$/.test(k))],module=runtime?.Module??globalThis.Module,core=runtime?.core??module;
+      return {ready:typeof core?._eagler_room_preview_ready==='function'?core._eagler_room_preview_ready():null,
+       screen:typeof core?.status==='function'?core.status(runtime.app,8):null,
+       title:typeof core?.th11_mp_replay_ui_status==='function'?Array.from(new Uint32Array(core.memory.buffer,core.th11_mp_replay_ui_status(),12)):null};
+     });
+     await page.screenshot({path:resolve(output,`${id}-native-options-${member.seat}.png`)});
+     if(['th06','th07'].includes(t.game))assert.equal(preview.ready,0,'native Options owns the room preview');
+     if(t.game==='th08')assert.equal(preview.screen,2,'native title enters Options before room launch');
+     if(t.game==='th11')assert.equal(preview.title[5],3,'native title enters Options before room launch');
+     (row.nativeOptions??=[]).push({seat:member.seat,...preview});
+     await press('Escape',27);await page.waitForTimeout(600);
+    }
     const nativeOptions={runtimeVariant:'multiplayer',thpracEnabled:false,touchEnabled:false,renderScale:1,...buildMultiplayerRuntimeOptions({...options,
-      player:endpoint.seat??0,spectator,spectatorId:spectator?member.client:'',url:`ws://127.0.0.1:${relayPort}/?`+new URLSearchParams({room,run:String(started.serial),member:member.member})},PRODUCT_GAMES[t.game].multiplayer)};
+      player:endpoint.seat??0,spectator,spectatorId:spectator?member.client:'',url:`ws://127.0.0.1:${relayPort}/?`+new URLSearchParams({room,run:String(started.serial),member:member.member})},PRODUCT_GAMES[t.game].multiplayer),limitPresentationTo60:players===3};
     await page.evaluate(({options,sharedResources})=>rpc('configure',{language:'ja',music:'none',resources:[],runtimeResources:[],thpracCatalog:[],options,sharedResources}),{options:nativeOptions,sharedResources:shared});
     if(launchNow)await page.evaluate(()=>rpc('launch'));return endpoint;
    };
@@ -167,11 +204,43 @@ try{
     const e=await add(member,true,false);
     // Preparation may outlive the source game. Check before requesting a new
     // admission, just as the launcher checks current room availability.
-    if(existing&&(await inspect(existing)).playback?.ended)return null;
-    const socket=await lobby(room,member.client,member.member);sockets.push(socket);await send(socket,{type:'spectate'},m=>m.type==='spectator-start');
-    await e.page.evaluate(()=>rpc('launch'));await progress(e,s=>s.playback.position>=s.playback.min+120&&!s.playback.seeking,'spectator history playback');return e;};
+    if(existing){const current=await inspect(existing);if(current.menu||current.playback?.ended)return null;}
+    const socket=await lobby(room,member.client,member.member);sockets.push(socket);
+    const offset=socket.messages.length;socket.send(JSON.stringify({type:'spectate'}));
+    const admission=await until(async()=>{
+     const messages=socket.messages.slice(offset),error=messages.find(m=>m.type==='error');if(error)throw Error(JSON.stringify(error));
+     const started=messages.find(m=>m.type==='spectator-start');if(started)return started;
+     if(existing){const current=await inspect(existing);if(current.menu||current.playback?.ended)return {ended:true};}
+     return null;
+    },'spectate',10000);
+    if(admission.ended)return null;
+    await e.page.evaluate(()=>rpc('launch'));
+    await until(async()=>{const s=await inspect(e);healthy(s);return s.menu||s.playback&&s.playback.position>=s.playback.min+120&&!s.playback.seeking;},'spectator history playback');return e;};
    if(recover)assert.equal((await relayFault('drop-opening')).armed,true);
    const viewer=await step('join-during-play',join);row.initial=await inspect(viewer);
+   if(lifecycle)await step('guest-pause-confirm-and-restart',async()=>{
+    const guest=sources.at(-1),key=async(code,down)=>guest.page.evaluate(({game,code,down})=>rpc('keyboard',
+     {code,key:({KeyZ:'z',KeyR:'r',Escape:'Escape'})[code]??code,keyCode:({KeyZ:90,KeyR:82,Escape:27})[code],location:0,inputSource:'physical',down}),{game:t.game,code,down});
+    const press=async code=>{await key(code,true);await guest.page.waitForTimeout(150);await key(code,false);await guest.page.waitForTimeout(200);};
+    const before=await inspect(sources[0]);await key('KeyZ',false);
+    await press('Escape');await guest.page.waitForTimeout(700);
+    await guest.page.screenshot({path:resolve(output,id+'-guest-pause.png')});
+    const pausedViewer=await inspect(viewer);
+    await viewer.page.evaluate(run=>rpc('spectator-playback',{run,action:'live'}),pausedViewer.playback.run);
+    await progress(viewer,s=>!s.playback.seeking,'viewer renders the recorded player pause');
+    await viewer.page.screenshot({path:resolve(output,id+'-viewer-player-pause.png')});
+    await press('KeyZ');await guest.page.waitForTimeout(700);
+    await press('KeyR');await guest.page.waitForTimeout(500);
+    const resumed=await inspect(sources[0]);healthy(resumed);
+    assert.equal(resumed.spectatorSession.generation,before.spectatorSession.generation,'guest confirms Resume while P1 keeps holding Shoot');
+    for(const e of sources)await e.page.evaluate(()=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,inputSource:'physical',down:false}));
+    await guest.page.waitForTimeout(500);
+    await press('Escape');await guest.page.waitForTimeout(300);await press('KeyR');
+    const restarted=await until(async()=>{const s=await inspect(sources[0]);healthy(s);return s.spectatorSession?.generation>before.spectatorSession.generation&&s.frame>=180?s:null;},'guest quick restart after guest Resume');
+    for(const e of sources)await e.page.evaluate(game=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,inputSource:'physical',down:true}),t.game);
+    const observed=await progress(viewer,s=>s.spectatorSession?.session===restarted.spectatorSession.session&&s.playback.position>=s.playback.min+120&&!s.playback.seeking,'viewer follows guest restart');
+    row.guestMenu={before,resumed,restarted,observed};
+   });
    if(recover)assert.ok(row.initial.reconnectAttempt>=1,'recover an actual receiver loss before its first session descriptor');
    const control=async(action,frame)=>{const state=await inspect(viewer);assert.ok(state.playback);await viewer.page.evaluate(({run,action,frame})=>rpc('spectator-playback',{run,action,...(frame===undefined?{}:{frame})}),{run:state.playback.run,action,frame});};
    await step('pause-seek-resume',async()=>{
@@ -222,22 +291,76 @@ try{
     (row.restarts??=[]).push({method,before,sourceBefore,sourceAfter,after});
    });
    const late=await step('late-join-after-recovery',()=>join(viewer));
-   if(late){row.late=await inspect(late);assert.equal(row.late.playback.run,(await inspect(viewer)).playback.run);}
+   if(late){row.late=await inspect(late);const current=await inspect(viewer);
+    if(row.late.playback&&current.playback)assert.equal(row.late.playback.run,current.playback.run);
+    else assert.ok(row.late.menu||current.menu,'completed spectators own their local result menu');}
    if((waitEnd&&!challenge)||(await inspect(viewer)).playback.ended)await step('normal-end-buffer-drain',async()=>{
     if(!complete(await inspect(viewer))){
      await control('pause');const paused=await progress(viewer,s=>s.playback.paused,'pause before completion');
      const ended=await progress(viewer,s=>s.playback.ended,'source normal End');
      assert.equal(ended.playback.position,paused.playback.position,'completed upload preserves paused playback');
-     row.completedWhilePaused=ended;await control('play');
+     row.completedWhilePaused=ended;
+     if(lifecycle){
+      await until(async()=>((await inspect(viewer)).replayFile?.bytes??0)>0,'complete native Replay transfer before local results',20000);
+      row.savedSpectatorReplay=await validateReplay(viewer);assert.equal(row.savedSpectatorReplay.valid,true,'title-native Replay validator accepts the received file');
+     }
+     await control('play');
     }
-    row.completed=await progress(viewer,complete,'consume complete replay tail');
+    row.completed=await until(async()=>{const s=await inspect(viewer);healthy(s);return complete(s)?s:null;},'consume complete replay tail');
+    await save();
+    if(lifecycle){
+     await until(async()=>{const state=await inspect(viewer);healthy(state);return state.menu;},'original local result menu after the complete Replay tail',20000);
+     row.stage='native-replay-validation';await save();
+     row.stage='native-replay-save-menu';await save();
+     const list=async()=>{const r=await viewer.page.evaluate(()=>rpc('list'));return (r.files??[]).map(f=>typeof f==='string'?f:f.path??f.name).filter(f=>/\.rpyx?$/.test(f));};
+     const beforeFiles=await list(),press=async(code,keyCode,key=code)=>{await viewer.page.evaluate(fields=>rpc('keyboard',fields),{code,key,keyCode,location:0,inputSource:'physical',down:true});
+      await viewer.page.waitForTimeout(100);await viewer.page.evaluate(fields=>rpc('keyboard',fields),{code,key,keyCode,location:0,inputSource:'physical',down:false});await viewer.page.waitForTimeout(250);};
+     await viewer.page.waitForTimeout(1400);
+     await viewer.page.screenshot({path:resolve(output,id+'-native-result.png')});
+     if(t.game==='th11')await press('ArrowDown',40);
+     let savedFile;
+     for(let attempt=0;attempt<48&&!savedFile;++attempt){
+      let navigation=false;
+      if(t.game==='th10'){
+       const menu=await viewer.frame.evaluate(()=>{const r=globalThis.__th10Runtime;return Array.from(new Int32Array(r.core.memory.buffer,r.core.sdl_game_status(),14)).slice(10);});
+       (row.nativeMenuTrace??=[]).push(menu);
+       if(menu[0]===8&&menu[1]!==1){await press(menu[1]===2?'ArrowUp':'ArrowDown',menu[1]===2?38:40);navigation=true;}
+      }
+      if(t.game==='th15'){
+       const menu=await viewer.frame.evaluate(()=>{const r=globalThis.__th15Runtime??globalThis.Module;const c=r.core??r.Module??r;return Array.from(new Int32Array(c.HEAPU8.buffer,c._th15_mp_result_status(),7));});
+       (row.nativeMenuTrace??=[]).push(menu);
+       if(menu[1]===6&&menu[2]!==2){await press('ArrowDown',40);navigation=true;}
+      }
+      if(!navigation)await press('KeyZ',90,'z');
+      savedFile=(await list()).find(path=>!beforeFiles.includes(path));
+     }
+     assert.ok(savedFile,'the original slot/name UI saves a Replay through real keyboard input');
+     const savedBytes=await viewer.page.evaluate(path=>rpc('read',{path}),savedFile);
+     await writeFile(resolve(output,id+'-native-menu'+extname(savedFile)),new Uint8Array(savedBytes.bytes));
+     row.nativeMenuSave={path:savedFile,bytes:savedBytes.bytes.length,validation:await validateReplay(viewer,savedBytes.bytes)};
+     assert.equal(row.nativeMenuSave.validation.valid,true,'the original save UI produces a native-valid Replay');
+     row.stage='local-results-peer-exit';await save();
+     const before=await Promise.all(sources.map(inspect));
+     await sources[0].frame.evaluate(()=>globalThis.__eaglerPeerTransport.close());
+     await sources[1].page.waitForTimeout(1000);const survivor=await inspect(sources[1]);healthy(survivor);
+     row.localResultsPeerExit={before,survivor};
+     if(t.game==='th11'){
+      const guest=sources[1],key=down=>guest.page.evaluate(down=>rpc('keyboard',{code:'KeyZ',key:'z',keyCode:90,location:0,inputSource:'physical',down}),down);
+      await key(false);await guest.page.waitForTimeout(250);await key(true);await guest.page.waitForTimeout(150);await key(false);
+      await until(()=>guest.frame.evaluate(()=>__th11Runtime.core.th11_phase()===0),'P2 returns to its local title after P1 leaves',15000);
+      row.localResultsPeerExit.returnedTitle=await inspect(guest);healthy(row.localResultsPeerExit.returnedTitle);
+     }
+    }
    });
    await step('screenshots',async()=>{for(const [i,e]of endpoints.entries())await e.page.screenshot({path:resolve(output,`${id}-${e.spectator?'viewer':'player'}-${i}.png`)});});
    if(stopStream){
     assert.equal((await inspect(viewer)).playback.ended,false,'forced stream failure requires a live source game');
     await step('stream-failure-isolation',async()=>{
      const before=await Promise.all(sources.map(inspect));
-     await sources[0].frame.evaluate(name=>{const state=globalThis[name]??globalThis.__eaglerPeerTransport;state.signal.send(JSON.stringify({type:'spectator-stop',generation:state.spectatorSession?.generation}));},PRODUCT_GAMES[t.game].multiplayer.peerTransportGlobal);
+     await sources[0].frame.evaluate(name=>{const state=globalThis[name]??globalThis.__eaglerPeerTransport;
+      if(state.route==='rtc')state.signal.send(JSON.stringify({type:'spectator-stop',generation:state.spectatorSession?.generation}));
+      else state.relay.send(new Uint8Array([0xe8,0x53,0x54,0x4f,0x50,1]));
+     },PRODUCT_GAMES[t.game].multiplayer.peerTransportGlobal);
      const stopped=[];
      for(const e of [viewer,late].filter(Boolean))stopped.push(await until(async()=>{
       const state=await inspect(e);if(!state.failed||!state.terminal.length)return null;

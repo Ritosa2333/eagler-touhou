@@ -43,6 +43,8 @@ template<class F> auto unchanged(F action){const auto before=input;auto result=a
 
 struct TitleEnvironment final:TitleMainEnvironment {
     u8 unlocked[6]{};std::vector<i32> sounds;
+    bool preview=false;
+    bool room_preview()const override{return preview;}
     TitleEnvironment(){registry=&::registry;rate=&::rate;game=&economy;extra_unlocked=unlocked;pressed=&input.raw_pressed;repeated=&input.raw_repeat;pressed_layout<TitleMainEnvironment>(*this,24);}
     u32 create(AnmFile&,i32)override{unexpected();}
     void sound(i32 id)override{sounds.push_back(id);}
@@ -128,6 +130,10 @@ void title_inputs(){
     input.update_raw(0x20);title_update(menu,env);assert(menu.menu.selected==6);
     input.update_raw(0);title_update(menu,env);assert(menu.menu.selected==6);
     input.update_raw(0x20);title_update(menu,env);assert(menu.menu.selected==7);
+    env.preview=true;
+    for(i32 selected:{0,3,7}){menu=main_menu();menu.menu.selected=selected;input={};input.update_raw(1);title_update(menu,env);assert(menu.phase==2&&menu.menu.selected==selected);}
+    menu=main_menu();menu.menu.selected=6;input={};input.update_raw(1);title_update(menu,env);assert(menu.phase==4);
+    menu.elapsed.current=20;title_update(menu,env);assert(menu.screen==4);
 }
 void music_inputs(){
     MusicEnvironment env;TitleMenu menu{};menu.phase=2;menu.music_filled_comments=8;menu.menu.item_count=1;std::strcpy(menu.music_files[0],"fixture.wav");

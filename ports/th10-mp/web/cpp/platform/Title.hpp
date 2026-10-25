@@ -25,6 +25,7 @@ template<class Base> struct MenuMain : Base {
     u32 create(AnmFile&,i32) override;
     void sound(i32) override;
     void interrupt_immediately(u32,i32) override;
+    bool room_preview()const override;
 };
 template<class Base> struct MenuSelection : MenuMain<Base> {
     explicit MenuSelection(Title&);
@@ -131,7 +132,7 @@ struct Title final : CallbackReceiver {
     GameState& state;AnimationEngine& engine;Common& common;Fonts& fonts;
     Input& input;Audio& audio;Scores& scores;ScreenEffects& effects;
     const MenuData& data;ReplayCalendar& calendar;
-    TitleMenu* value=nullptr;StartupScreen* startup=nullptr;
+    TitleMenu* value=nullptr;StartupScreen* startup=nullptr;bool room_preview=false;
     UpdateChain* update_chain;TitleLoadingTask loading_task;bool loading=false;i32 error=0;
     struct Preview {ReplayDocument document;Preview* next;Preview(FileSystem& files,u32 flags,Preview* next):document(files,flags),next(next){}};
     Preview* previews=nullptr;

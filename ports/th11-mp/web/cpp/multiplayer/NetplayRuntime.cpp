@@ -49,7 +49,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay,bool rea
     core.predictableButtons=0xf9;core.directionButtons=0xf0;core.maxDirectionPredictionFrames=3;
     core.directTouchIsAbsolute=true;
     if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH11 input core rejected setup");
-    setup_=setup;configured_=true;retired_=world_ready_=false;
+    setup_=setup;configured_=true;retired_=world_ready_=local_results_=false;
     next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
     capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     network_interval_scale_=1;network_pace_ms_=now_ms_;pacing_statistics_={{1,8,0,0,0,1,1,0}};return true;
@@ -62,7 +62,7 @@ void NetplayRuntime::Clear(){
     phase_debt_ms_=0;error_.clear();spectator_frames_.clear();publish_tail_.Clear();status_.fill(0);
     spectator_stage_playback_.Clear();spectator_stage_view_.Clear();spectator_stage_publisher_={};
     spectator_recorded_frames_={};
-    world_ready_=false;next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
+    world_ready_=local_results_=false;next_=next_capture_=0;correction_end_=commit_limit_=Netplay::INVALID_FRAME;
     network_interval_scale_=1;network_pace_ms_=0;
 }
 bool NetplayRuntime::Reset(const SessionSetup& setup){Clear();base_session_=setup.session_id;return Configure(setup,setup.input_delay);}
@@ -105,8 +105,18 @@ bool NetplayRuntime::InitialInputsReady()const{
 }
 bool NetplayRuntime::Pump(bool ready,bool capture_follows){
     if(!network_)return error_.empty();now_ms_=clock_us()/1000;
-    if(spectator_)return DrainSpectator();
+    if(spectator_&&!local_results_)return DrainSpectator();
     DrainPublicationTail();
+    if(local_results_){
+        // Final gameplay is already exact. Keep delivering its reliable tail
+        // without making local endings depend on a peer staying connected.
+        if(!transport_.Failed()&&!transport_.Disconnected()){
+            channel_.Pump(gate_,core_,now_ms_,false);
+            const auto last=core_.LastSimulatedFrame();
+            if(channel_.CanRetire(core_,last))channel_.Retire(core_,last,now_ms_);
+        }
+        return true;
+    }
     if(retired_&&(transport_.Failed()||transport_.Disconnected()))return true;
     if(transport_.Disconnected())return Fail(transport_.LastError().empty()?"TH11 input connection ended":transport_.LastError().c_str());
     if(calibration_.Waiting()&&channel_.Retiring()&&!channel_.Active()&&!channel_.PumpRetirement(now_ms_))return Fail(channel_.ErrorText());
@@ -356,16 +366,18 @@ void NetplayRuntime::DrainPublicationTail(){
     if(result==Result::Complete)transport_.StopSpectators(true);
     if(result==Result::Failed){publish_failed_=true;transport_.StopSpectators();}
 }
-bool NetplayRuntime::Finish(bool restarting){
+bool NetplayRuntime::Finish(bool restarting,bool local_results){
     if(retired_)return true;const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return false;
     if(Correcting()||core_.HasRollbackRequest()||!InputsReconciledBeforeNext()||commit_limit_!=last)return false;
     if(ReadOnly()){retired_=true;return true;}
     if(network_){if(!channel_.FlushRetirementFence(core_,last,now_ms_))return Fail("TH11 retirement input flush failed");
-        if(!channel_.CanRetire(core_,last))return false;
-        if(!channel_.Retire(core_,last,now_ms_))return Fail("TH11 retirement failed");}
+        if(!local_results){
+            if(!channel_.CanRetire(core_,last))return false;
+            if(!channel_.Retire(core_,last,now_ms_))return Fail("TH11 retirement failed");
+        }}
     PublishConfirmedSpectatorFrames();
     FreezePublicationTail(restarting);
-    retired_=true;return true;
+    local_results_=local_results;retired_=true;return true;
 }
 bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
     if(!retired_||ReadOnly()||seed>65535||generation_==0xffffffffu)return Fail("Invalid TH11 next generation");

@@ -12,12 +12,22 @@ GameDraw::~GameDraw(){for(auto& c:callbacks)scheduler.remove(c.frame);
  renderer.multiplayer_hidden_hud.clear();
  renderer.multiplayer_player_opacity.clear();
  renderer.multiplayer_hidden_hitboxes.clear();
+ renderer.multiplayer_hidden_pause.clear();
  renderer.multiplayer_hitbox_owners.clear();
 #endif
 }
 void GameDraw::prepare_frame()noexcept{background.rate=progress.rate;spell_context.character=progress.character;spell_context.subcharacter=progress.subcharacter;spell_context.mode_flags=scene.battle.session.mode_flags;const auto* p=scene.battle.enemy_world.practice;spell_context.disable_master_display=p&&p->enabled&&p->disable_master_display;
 #if TH15_MULTIPLAYER
  if(scene.battle.mp_enabled)scene.battle.mp_prepare_presentation(renderer);
+ renderer.multiplayer_hidden_pause.clear();
+ if(scene.battle.mp_enabled&&scene.battle.mp_options.spectator&&pause){
+  const auto hide=[&](auto&& self,AnmVm* vm)->void{
+   if(!vm)return;renderer.multiplayer_hidden_pause.push_back(vm);
+   for(auto* child:animations.registry.children(*vm))self(self,child);
+  };
+  hide(hide,animations.registry.find(pause->state.menu_animation));
+  hide(hide,animations.registry.find(pause->state.snapshot_animation));
+ }
  prepare_multiplayer_hud();
 #endif
 }
@@ -49,7 +59,11 @@ bool GameDraw::run(u32 index){
  context.multiplayer_resources=b.mp_enabled;
 #endif
  context.frame={&b.enemy_world,b.player?&b.player->motion.position:nullptr,b.spell.flags,scene.messages.active()};context.spell_available=true;context.spell_frames=b.spell_card.clock.completed_frames;context.spell_best_time=b.spell_card.clock.encoded;return scene.hud.draw(context,text)||fail(scene.hud.error);}
- case 7:return !pause||pause->visuals.draw(text,dates,replay_header,captured)||fail(pause->visuals.error);
+ case 7:
+#if TH15_MULTIPLAYER
+ if(b.mp_enabled&&b.mp_options.spectator)return true;
+#endif
+ return !pause||pause->visuals.draw(text,dates,replay_header,captured)||fail(pause->visuals.error);
  // Native focus root/child layers run at priorities 30/38. Keep the
  // supplemental marker in those same passes, above the same game objects.
  case 8:case 9:{Player* player=b.player.get();

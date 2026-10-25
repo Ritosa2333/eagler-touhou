@@ -114,8 +114,8 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
     }
     auto& snapshot=app->input.snapshot;std::memset(&snapshot,0,sizeof(snapshot));snapshot.focused=1;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    // A room owns an animated title, not an input-enabled standalone game.
-    if(app->room_preview){app->state.inactive_frames=0;return;}
+    if(app->room_preview)app->state.inactive_frames=0;
+    if(app->title)app->title->room_preview=app->room_preview;
 #endif
     const bool* physical=th10_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native]))key(snapshot,k.scan,k.vk);
@@ -252,7 +252,12 @@ EXPORT("sdl_touch_gestures") void sdl_touch_gestures(u32 two,u32 taps){gestures.
 EXPORT("sdl_touch_mode") void sdl_touch_mode(u32 mode){if(gestures.set_mode(static_cast<int>(mode))&&session&&session->app&&session->app->world)session->app->world->motion.target(0,0,0);}
 EXPORT("sdl_touch_controls") void sdl_touch_controls(u32 shoot,u32 slow,u32 bomb,u32 escape,float x,float y){gestures.controls(shoot,slow,bomb,escape,x,y);}
 EXPORT("sdl_resource_stats") const u32* sdl_resource_stats(){static u32 out[4]{};if(session&&session->files){auto& f=*session->files;out[0]=f.cache_bytes;out[1]=f.cache_hits;out[2]=f.cache_misses;out[3]=f.decoded.size();}return out;}
-EXPORT("sdl_game_status") const i32* sdl_game_status(){static i32 result[10]{};if(session&&session->app){auto& a=*session->app;result[0]=a.value.screen;result[1]=a.state.game.stage;result[2]=a.error;result[3]=a.state.game.lives;result[4]=a.state.game.power;result[5]=gestures.current_context();result[6]=gestures.active();result[7]=gestures.fire;result[8]=gestures.focus;result[9]=a.input.player_profiles[0].input.raw;}return result;}
+EXPORT("sdl_game_status") const i32* sdl_game_status(){
+    static i32 result[14]{};std::fill(result+10,result+14,-1);
+    if(session&&session->app){auto& a=*session->app;result[0]=a.value.screen;result[1]=a.state.game.stage;result[2]=a.error;result[3]=a.state.game.lives;result[4]=a.state.game.power;result[5]=gestures.current_context();result[6]=gestures.active();result[7]=gestures.fire;result[8]=gestures.focus;result[9]=a.input.player_profiles[0].input.raw;
+        if(a.world&&a.world->actors.results){const auto& menu=*a.world->actors.results;result[10]=menu.state;result[11]=menu.menu.selected;result[12]=menu.keyboard.selected;result[13]=menu.name_length;}
+    }return result;
+}
 }
 
 #include "LocalReplay.inc"

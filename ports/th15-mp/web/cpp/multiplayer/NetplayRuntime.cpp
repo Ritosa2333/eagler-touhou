@@ -41,14 +41,14 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,unsigned delay){
     // lockstep. This is input/ACK history only, never a prediction allowance.
     core.maxRollbackFrames=12;core.predictableButtons=0;core.maxDirectionPredictionFrames=0;core.directTouchIsAbsolute=true;
     if(!gate_.Reset(gate)||!core_.Reset(core))return Fail("TH15 lockstep core rejected setup");
-    setup_=setup;configured_=true;retired_=false;
+    setup_=setup;configured_=true;retired_=local_results_=false;
     next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;return true;
 }
 void NetplayRuntime::Clear(){
     stage_publisher_={};stage_playback_.Clear();stage_view_.Clear();stage_publication_=stage_received_=false;
     next_capture_=0;capture_clock_.Reset();capture_now_us_=0;capture_ui_=false;
     transport_.Close();channel_.Clear();calibration_.Clear();gate_.Clear();core_.Clear();
-    configured_=network_=playback_=spectator_=retired_=false;timing_ready_=timing_sent_=publish_failed_=false;
+    configured_=network_=playback_=spectator_=retired_=local_results_=false;timing_ready_=timing_sent_=publish_failed_=false;
     setup_={};base_session_=now_ms_=initial_wait_=spectator_deadline_=publish_deadline_=0;generation_=publish_frame_=receive_frame_=0;
     phase_debt_ms_=0;error_.clear();spectator_frames_.clear();publish_tail_.clear();status_.fill(0);
 }
@@ -83,8 +83,16 @@ bool NetplayRuntime::InitialInputsReady()const{
 }
 bool NetplayRuntime::Pump(bool ready){
     if(!network_)return error_.empty();now_ms_=clock_us()/1000;
-    if(spectator_)return DrainSpectator();
+    if(spectator_&&!local_results_)return DrainSpectator();
     DrainPublicationTail();
+    if(local_results_){
+        if(!transport_.Failed()&&!transport_.Disconnected()){
+            channel_.Pump(gate_,core_,now_ms_,false);
+            const auto last=core_.LastSimulatedFrame();
+            if(channel_.CanRetire(core_,last))channel_.Retire(core_,last,now_ms_);
+        }
+        return true;
+    }
     if(retired_&&(transport_.Failed()||transport_.Disconnected()))return true;
     if(transport_.Disconnected())return Fail(transport_.LastError().empty()?"TH15 input connection ended":transport_.LastError().c_str());
     if(calibration_.Waiting()&&channel_.Retiring()&&!channel_.Active()&&!channel_.PumpRetirement(now_ms_))return Fail(channel_.ErrorText());
@@ -269,7 +277,7 @@ void NetplayRuntime::DrainPublicationTail(){
     }
     if(publish_tail_.empty()){if(publish_tail_finishes_)transport_.StopSpectators(true);publish_deadline_=0;}
 }
-bool NetplayRuntime::Finish(bool restarting){
+bool NetplayRuntime::Finish(bool restarting,bool local_results){
     if(retired_)return true;
     if(spectator_&&stage_received_){
         if(!stage_playback_.History().Ended()||stage_playback_.Paused()||stage_playback_.Position()<stage_playback_.History().Received())return false;
@@ -277,9 +285,11 @@ bool NetplayRuntime::Finish(bool restarting){
     }const auto last=core_.LastSimulatedFrame();if(last==Netplay::INVALID_FRAME)return false;
     if(ReadOnly()){retired_=true;return true;}
     if(network_){if(!channel_.FlushRetirementFence(core_,last,now_ms_))return Fail("TH15 retirement input flush failed");
-        if(!channel_.CanRetire(core_,last))return false;
-        if(!channel_.Retire(core_,last,now_ms_))return Fail("TH15 retirement failed");}
-    Publish();FreezePublicationTail(restarting);retired_=true;return true;
+        if(!local_results){
+            if(!channel_.CanRetire(core_,last))return false;
+            if(!channel_.Retire(core_,last,now_ms_))return Fail("TH15 retirement failed");
+        }}
+    Publish();FreezePublicationTail(restarting);local_results_=local_results;retired_=true;return true;
 }
 bool NetplayRuntime::BeginNextRun(std::uint32_t seed){
     if(!retired_||ReadOnly()||seed>65535||generation_==0xffffffffu)return Fail("Invalid TH15 next generation");

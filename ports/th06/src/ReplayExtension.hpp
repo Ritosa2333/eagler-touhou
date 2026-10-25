@@ -88,6 +88,7 @@ void RecordMultiplayerFrame(i32 stage, i32 frame, const Netplay::FrameInput *inp
 std::string ResolveSavePath(const char *requestedPath);
 void RemoveAlternateSave(const char *savedPath);
 bool AppendRecording(const char *path);
+bool AppendPlayback(const char *path);
 
 void ClearPlayback();
 bool LoadPlayback(const u8 *bytes, std::size_t size);

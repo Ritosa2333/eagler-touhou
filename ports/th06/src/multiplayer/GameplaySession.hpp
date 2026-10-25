@@ -22,6 +22,7 @@ struct SessionState
     u8 localPlayer = 0;
     bool showStagePlayerNames = false;
     bool challengeMode = false;
+    bool spectator = false;
     bool showContributionStats = true;
     std::array<PlayerSlot, TH06_MULTI_MAX_PLAYERS> players{};
 };

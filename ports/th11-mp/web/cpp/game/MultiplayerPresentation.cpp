@@ -59,13 +59,13 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& renderer){
         if(!animations.find(it->first))it=renderer.multiplayer_hitbox_owners.erase(it);else ++it;
     for(unsigned seat=0;seat<mp_options.seat_count;++seat)
         if(auto* focus=animations.find(pilots[seat]->player->motion.focus_animation))renderer.multiplayer_hitbox_owners[focus->id]=seat;
-    for(const auto& entry:renderer.multiplayer_hitbox_owners)if(entry.second!=mp_options.local_seat)
+    for(const auto& entry:renderer.multiplayer_hitbox_owners)if(!mp_options.spectator&&entry.second!=mp_options.local_seat)
         if(auto* focus=animations.find(entry.first))renderer.multiplayer_hidden_hitboxes.push_back(focus);
-    for(unsigned i=0;i<mp_options.seat_count;++i){const auto& p=*pilots[i];if(i==mp_options.local_seat){renderer.multiplayer_opacity[i+1]=p.ghost?112:255;continue;}const auto a=local.player->motion.state.position,b=p.player->motion.state.position;const double x=double(a.x)-b.x,y=double(a.y)-b.y;renderer.multiplayer_opacity[i+1]=p.ghost?88:x*x+y*y<2304?72:160;}
+    for(unsigned i=0;i<mp_options.seat_count;++i){const auto& p=*pilots[i];if(mp_options.spectator||i==mp_options.local_seat){renderer.multiplayer_opacity[i+1]=p.ghost?112:255;continue;}const auto a=local.player->motion.state.position,b=p.player->motion.state.position;const double x=double(a.x)-b.x,y=double(a.y)-b.y;renderer.multiplayer_opacity[i+1]=p.ghost?88:x*x+y*y<2304?72:160;}
     // Rescue feedback follows the same deterministic recipient selection as
     // the transfer rule. It changes only the submitted ghost alpha.
     for(unsigned giver=0;giver<mp_options.seat_count;++giver){const auto& p=*pilots[giver];if(!p.life_hold)continue;const int receiver=mp_life_receiver(giver);if(receiver<0||!pilots[unsigned(receiver)]->ghost)continue;
-        const unsigned owner=unsigned(receiver)+1,base=unsigned(receiver)==mp_options.local_seat?112:88;
+        const unsigned owner=unsigned(receiver)+1,base=mp_options.spectator||unsigned(receiver)==mp_options.local_seat?112:88;
         renderer.multiplayer_opacity[owner]=u8(std::max<unsigned>(renderer.multiplayer_opacity[owner],base+(255-base)*eagler::cooperative::TapCount(p.life_hold)/5));
     }
 }
@@ -77,7 +77,7 @@ bool GameBattle::mp_draw_players(AnmRenderer& renderer){
         body.flags=(body.flags|2u)&~0x8000u;body.color=(body.color&0xffffff)|(u32(renderer.multiplayer_opacity[i+1])<<24);
         body.position={float(double(pos.x)+224),float(double(pos.y)+16),0};if(renderer.draw(body)==-2)return false;}else if(!p.player->draw(renderer))return false;}
     auto& local=*pilots[mp_options.local_seat];const auto p=local.player->motion.state.position;const float x=p.x+224,y=p.y+16;
-    if(!local.ghost&&mp_local_visibility){renderer.pipeline().sourceBlend=touhou::graphics::BlendFactor::SourceAlpha;const u32 c=0xc0ffffff;
+    if(!local.ghost&&!mp_options.spectator&&mp_local_visibility){renderer.pipeline().sourceBlend=touhou::graphics::BlendFactor::SourceAlpha;const u32 c=0xc0ffffff;
         renderer.solid_rectangle(x-7,y-7,x-3,y-6,c);renderer.solid_rectangle(x+3,y-7,x+7,y-6,c);renderer.solid_rectangle(x-7,y+6,x-3,y+7,c);renderer.solid_rectangle(x+3,y+6,x+7,y+7,c);
     }
     if(!local.ghost){

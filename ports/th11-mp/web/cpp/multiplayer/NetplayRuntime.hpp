@@ -99,7 +99,8 @@ public:
     bool CommittedPrefixInputs(std::uint32_t,std::array<Netplay::FrameInput,3>&)const;
     bool CanReplayConfirmed()const;
     std::uint32_t CommittedThrough()const{return commit_limit_;}
-    bool Finish(bool restarting = false);
+    bool Finish(bool restarting = false, bool local_results = false);
+    bool EnterSpectatorResults(){const auto& p=spectator_stage_playback_;if(!spectator_||!p.History().Ended()||p.Paused()||p.Seeking()||p.Position()<p.History().Received())return false;retired_=local_results_=true;return true;}
     bool BeginNextRun(std::uint32_t seed);
     double PacedElapsed(double);
     const SessionSetup& Setup()const{return setup_;}
@@ -148,7 +149,7 @@ private:
     std::uint64_t base_session_=0,now_ms_=0,initial_wait_=0,spectator_deadline_=0;
     bool configured_=false,network_=false,playback_=false,spectator_=false,retired_=false;
     bool timing_ready_=false,timing_sent_=false,publish_failed_=false,spectator_publisher_started_=false;
-    bool world_ready_=false;
+    bool world_ready_=false,local_results_=false;
     std::uint32_t generation_=0,publish_frame_=0,receive_frame_=0;
     std::uint32_t next_=0,next_capture_=0,correction_end_=Netplay::INVALID_FRAME,commit_limit_=Netplay::INVALID_FRAME;
     double phase_debt_ms_=0;

@@ -2415,7 +2415,9 @@ ZunResult ResultScreen::AddedCallback(ResultScreen *resultScreen)
 
     if (resultScreen->resultScreenState != RESULT_SCREEN_STATE_EXIT)
     {
-
+        // Replay-based spectators can reach results without loading Title.
+        if (g_Supervisor.LoadPbg3(TL_PBG3_INDEX, TH_TL_DAT_FILE) != ZUN_SUCCESS)
+            return ZUN_ERROR;
         if (g_AnmManager->LoadSurface(0, "data/result/result.jpg") != ZUN_SUCCESS)
         {
             return ZUN_ERROR;

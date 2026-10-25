@@ -27,6 +27,20 @@ before(async () => {
 afterEach(async () => {for (const fixture of fixtures.splice(0)) {await fixture.service.close({discardUnsaved: true}); fixture.service.dispose(); assert.equal(fixture.timers.pending.size, 0);}});
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 const flush = async () => {for (let i = 0; i < 30; i++) await Promise.resolve();};
+
+test('spectator gameplay rejects input and its authenticated native result menu owns local input',async()=>{
+  const f=fixture();await f.prepare(managedPlan('th11',{netplayMode:'lan',netplaySpectator:true}));
+  const launch=f.service.launch();f.ack('launch');await launch;
+  assert.equal(f.service.getInputContext().spectator,true);
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
+  f.event('runtime-info',{spectatorMenu:true});
+  assert.equal(f.service.getInputContext().spectator,false);
+  assert.equal(f.service.getSnapshot().spectator,true,'local menus retain their observer role');
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),true);
+  f.event('runtime-info',{spectatorMenu:false});
+  assert.equal(f.service.getInputContext().spectator,true);
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
+});
 function deterministicTimers() {
   let now = 0, serial = 0; const pending = new Map();
   const add = (callback, ms, interval = false) => {const id = ++serial; pending.set(id, {callback, at: now + ms, ms, interval}); return id;};
@@ -207,9 +221,12 @@ test('room preview is prelaunch, native-acknowledged, and binds the same engine 
   f.ack('prepare-room',{presented:true});assert.equal(await preview,true);
   assert.equal(f.service.getSnapshot().roomPreview,true);
   assert.equal(f.service.getSnapshot().launched,false);
-  assert.equal(f.service.getInputContext().launched,false);
+  assert.equal(f.service.getInputContext().launched,true);
+  assert.equal(f.service.postInput('keyboard',{code:'ArrowDown',down:true}),true);
   const binding=f.service.configurePreparedRoom(epoch,{netplayMode:'lan',netplayUrl:'wss://relay.invalid/?run=1'});
-  await flush();const wire=f.ack('configure');await binding;
+  await flush();assert.equal(f.service.getInputContext().launched,false);
+  assert.equal(f.service.postInput('keyboard',{code:'KeyZ',down:true}),false);
+  const wire=f.ack('configure');await binding;
   assert.deepEqual(wire.resources,[]);assert.deepEqual(wire.runtimeResources,[]);assert.equal(wire.runtimePack,undefined);
   const launch=f.service.launch();await flush();f.ack('launch');await launch;
   assert.equal(f.service.getSnapshot().roomPreview,false);

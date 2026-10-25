@@ -10,6 +10,7 @@ struct MenuContext {
     u16 keys=0,previous_keys=0;
     u8 pause_state=0,show_retry=0;
     bool lockable_backbuffer=false,spell_captured=false;
+    bool spectator=false;
     i32 shot_bombs=2,supervisor_state=2;
     u32 system_time=0;
     i32 timing_level=0;

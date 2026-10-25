@@ -171,6 +171,8 @@
 
 ## 运行验收记录
 
+2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。
+
 2026-10-19 multiplayer：房间预览转正式开局补发实际呈现确认，双实例首帧、输入桥和同步检查通过，见[房间开局修复记录](../../docs/adaptation/room-start-20261019.md)。
 
 按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。

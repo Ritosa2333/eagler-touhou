@@ -8,7 +8,7 @@ namespace th11 {
 struct MultiplayerOptions {
     unsigned seat_count=2,local_seat=0,stage=1,seed=1;
     int difficulty=1;
-    bool challenge=false;
+    bool challenge=false,spectator=false;
     std::array<int,3> selections{};
     bool valid()const noexcept {
         if(seat_count<2||seat_count>3||local_seat>=seat_count||stage<1||stage>7||difficulty<0||difficulty>4)return false;

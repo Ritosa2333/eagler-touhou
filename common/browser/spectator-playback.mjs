@@ -1,11 +1,16 @@
 // Native playback owns every cursor and restore. The shell only transports
 // authenticated Launcher commands and publishes native reports.
 export function createSpectatorPlaybackBridge({active,memory,state,control,allocate,deallocate,emit,
+  replay=()=>globalThis.__eaglerPeerTransport?.spectatorReplay,
+  complete,
   schedule=globalThis.setInterval,cancel=globalThis.clearInterval}) {
-  let timer=null,last=null;
+  let timer=null,last=null,menuSession=null;
   const clear=()=>{if(last){last=null;emit('runtime-info',{spectatorPlayback:null});}};
+  const closeMenu=()=>{if(menuSession){menuSession=null;globalThis.__eaglerSpectatorMenu=false;emit('runtime-info',{spectatorMenu:false});}};
   function poll() {
-    if(!active()){clear();return null;}
+    if(!active()){closeMenu();clear();return null;}
+    const file=replay();
+    if(menuSession){clear();return null;}
     try {
       const pointer=state();
       if(!pointer){clear();return null;}
@@ -19,6 +24,15 @@ export function createSpectatorPlaybackBridge({active,memory,state,control,alloc
       if(report?.version!==1||typeof report.run!=='string'||!/^[A-Za-z0-9_-]{1,64}$/.test(report.run)||
          !Number.isInteger(report.revision)||report.revision<1||report.revision>0xfffffffe||
          !Array.isArray(report.nodes)||report.nodes.length>512)throw Error('Invalid native spectator report');
+      if(complete&&!menuSession&&report.ended&&!report.paused&&!report.seeking&&report.position>=report.received&&
+         report.run.startsWith('s'+file?.session+'_')&&file?.bytes instanceof Uint8Array){
+        const pointer=allocate(file.bytes.length);
+        if(!Number.isInteger(pointer)||pointer<1)throw Error('Spectator result allocation failed');
+        try{const heap=memory();if(pointer>heap.length-file.bytes.length)throw Error('Invalid spectator result allocation');heap.set(file.bytes,pointer);
+          if(complete(pointer,file.bytes.length)){menuSession=file.session;globalThis.__eaglerSpectatorMenu=true;emit('runtime-info',{spectatorMenu:true});}
+        }finally{deallocate(pointer);}
+        if(menuSession){clear();return null;}
+      }
       if(last?.run===report.run&&(report.revision<=last.revision||report.received<last.received))return last;
       last=report;emit('runtime-info',{spectatorPlayback:report});return report;
     } catch(error) {
@@ -53,6 +67,6 @@ export function createSpectatorPlaybackBridge({active,memory,state,control,alloc
   }
   return Object.freeze({poll,command,
     start(){if(timer===null)timer=schedule(poll,250);poll();},
-    stop(){if(timer!==null)cancel(timer);timer=null;clear();},
+    stop(){if(timer!==null)cancel(timer);timer=null;closeMenu();clear();},
   });
 }

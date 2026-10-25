@@ -1,6 +1,7 @@
 #include <eagler/gameplay/CooperativeRules.hpp>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/CooperativeResources.hpp"
+#include <eagler/netplay/CooperativeMenuInput.hpp>
 #endif
 #include "GameplayScene.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -61,7 +62,7 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     effect_system.player_effect_visible=[](void* owner,const EffectState& effect,i32 seat)->bool{
         auto& scene=*static_cast<GameplayScene*>(owner);
         // Native focus kind 22 retains its fixed-pool owner during fade-out.
-        return effect.kind!=22||seat<0||seat==i32(scene.session.local_player);
+        return scene.session.netplay.ReadOnly()||effect.kind!=22||seat<0||seat==i32(scene.session.local_player);
     };
     effect_system.player_view_alpha=[](void* owner,i32 seat)->u8{
         auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
@@ -205,6 +206,9 @@ void GameplayScene::publish_dialogue(){
 }
 void GameplayScene::message(i32 entry){synchronize();failed|=!dialogue.read(entry);publish_dialogue();}
 void GameplayScene::synchronize(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    menus.context.spectator=session.netplay.Spectator()&&!session.netplay.Retired();
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     for(u32 seat=0;seat<session.player_count;++seat)if(roster.seats[seat].player&&roster.seats[seat].player->status().unlimited_movement_used)
         session.multiplayer_cheat_movement_used=true;
@@ -356,6 +360,9 @@ void GameplayScene::publish_input(const ReplayInputState& input){
         dialogue_context.input|=committed_buttons[seat]&(InputButton::Shoot|InputButton::Skip);
         dialogue_context.previous_input|=pilot(seat).status().bomb_input.previous_buttons&(InputButton::Shoot|InputButton::Skip);
     }
+    u16 pressed=0;
+    for(u32 seat=0;seat<session.player_count;++seat)pressed|=committed_buttons[seat]&~pilot(seat).status().bomb_input.previous_buttons;
+    dialogue_context.previous_input&=~pressed;
 #endif
 }
 JobResult GameplayScene::update_recording(){recording.input.flags=globals.game_flags;recording.input.slow_mode=session.config.slow_mode;recording.update();publish_input(recording.input);return JobResult::Continue;}
@@ -557,6 +564,8 @@ bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
     bullets.snapshot_presentation();
     player.timing={rate,force_unit};player_state.input.buttons=buttons;player_state.bomb_input.previous_buttons=previous_input;dialogue_context.previous_input=previous_input;dialogue_context.input=buttons;menus.context.keys=buttons;menus.context.previous_keys=previous_input;previous_input=buttons;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto menu_pressed=Netplay::CooperativePressedButtons(committed_buttons,previous_buttons,session.player_count);
+    menus.context.previous_keys&=~menu_pressed;
     for(u32 seat=0;seat<session.player_count;++seat){
         auto& simulation=pilot(seat);auto& state=simulation.status();simulation.timing=player.timing;
         state.input.buttons=committed_buttons[seat];state.bomb_input.previous_buttons=previous_buttons[seat];previous_buttons[seat]=committed_buttons[seat];

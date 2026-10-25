@@ -8,6 +8,9 @@
 #include "SceneCompositor.hpp"
 #include "ReplayRecorder.hpp"
 #include "GameInput.hpp"
+#ifdef TH11_MULTIPLAYER
+#include <eagler/netplay/CooperativeMenuInput.hpp>
+#endif
 #include "ScoreFile.hpp"
 #include "GameConfig.hpp"
 #include "TitleMenu.hpp"
@@ -90,6 +93,7 @@ public:
     MultiplayerOptions multiplayer_options{};
     u32 multiplayer_frame=0;
     std::array<bool,3> multiplayer_pause_held{};
+    Netplay::CooperativeMenuInput<u32> multiplayer_menu_input;
     bool begin_multiplayer(GameResources&,const MultiplayerOptions&,const std::array<ReplayStageState,3>* stream=nullptr);
     bool update_multiplayer(const std::array<MultiplayerInput,3>&,const std::function<void()>& replay_entry={});
     MultiplayerSeatView multiplayer_seat(unsigned)const noexcept;

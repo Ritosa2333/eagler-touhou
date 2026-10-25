@@ -104,7 +104,7 @@ bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
         if(extended.empty())extended.assign(b,b+size);extended.insert(extended.end(),tail.begin(),tail.end());b=extended.data();size=extended.size();
     }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(multiplayer_driver&&multiplayer_driver->Initialized())return multiplayer_driver->Write(name,b,size);
+    if(multiplayer_driver&&multiplayer_driver->Initialized()&&!app.session.netplay.Retired())return multiplayer_driver->Write(name,b,size);
 #endif
     if(!put(p,b,size))return false;return file_device().save(p,b,size);
 }
@@ -141,14 +141,12 @@ u64 BrowserRuntime::performance_counter(){return u64(milliseconds())*1000;}
 u32 BrowserRuntime::presentation_milliseconds(){return file_device().milliseconds();}
 u16 BrowserRuntime::poll_input(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(app.session.netplay.Configured()){
-        // Menu authority is P1; any player's Menu press may pause the shared
-        // game. All physical producers were sampled at the frame admission
-        // boundary, never during an update or a later correction.
+    if(app.session.netplay.Configured()&&!app.session.netplay.Retired()){
+        // Shared menus and dialogue accept every committed seat.
         if(!app.session.network_frame_open)return 0;
         u16 buttons=app.session.network_frame.inputs[0].buttons;
         for(u32 seat=1;seat<app.session.player_count;++seat)
-            buttons|=app.session.network_frame.inputs[seat].buttons&InputButton::Menu;
+            buttons|=app.session.network_frame.inputs[seat].buttons;
         return buttons;
     }
 #endif
@@ -304,9 +302,10 @@ bool BrowserRuntime::initialize(){
 }
 bool BrowserRuntime::step(bool render,double callback_start_ms){
     if(room_preview){
+        app.title.menus.room_preview=true;
         app.title.menus.state.startMenuIdleFrames=0;
         app.title.menus.state.idleFrames=0;
-    }
+    }else app.title.menus.room_preview=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(replay_viewer&&!replay_request.empty())return true;
     if(replay_viewer&&!app.session.netplay.Configured()&&!replay_menu_opened&&app.title.ready_for_session()){

@@ -1,0 +1,1075 @@
+{
+  "schema": "eagler-touhou/multiplayer-lifecycle/1",
+  "date": "2026-10-25",
+  "browser": "145.0.7632.6",
+  "scope": [
+    "th06",
+    "th07",
+    "th08",
+    "th10",
+    "th11",
+    "th15"
+  ],
+  "records": [
+    {
+      "game": "th06",
+      "players": 2,
+      "challenge": false,
+      "route": "rtc",
+      "startedAt": "2026-10-25T11:28:39.124Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "f44154c1eeb228aceff44ff9a174aa7008c8790bb37a635c1d24758ff7820f68",
+      "harnessSha256": "84eea9408caf37063cfc9225427c34ebb219568ddacb0f4ab1ed12b49623e458",
+      "runtime": {
+        "th06.html": {
+          "bytes": 53120,
+          "sha256": "34f26590d37673f52099ec6df666f5a410efdf4267621ae5266af1b8e579d77e"
+        },
+        "th06.js": {
+          "bytes": 305648,
+          "sha256": "f2bfdb6130146da70ad0f932e83868ed21633d42530ccd047ca13fe3f86a7ebf"
+        },
+        "th06.wasm": {
+          "bytes": 2471010,
+          "sha256": "9bd396b91681a2ccf545f9bdca952ce37b2bc31dc2c721a7af4a5ab0f6d75930"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "normal-end-buffer-drain",
+        "screenshots"
+      ],
+      "savedReplay": {
+        "path": "replay/th6_01.rpyx",
+        "bytes": 244156,
+        "validation": {
+          "valid": true,
+          "bytes": 244156
+        }
+      },
+      "guestRestart": true,
+      "reconnected": false,
+      "restarts": [],
+      "peerExitSafe": true,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": false,
+      "passed": true
+    },
+    {
+      "game": "th07",
+      "players": 2,
+      "challenge": false,
+      "route": "rtc",
+      "startedAt": "2026-10-25T11:40:00.427Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "05cb6ffbd4994360a5f763f12f088f3712884a9c4a9d9f3b7c061e7786ee053e",
+      "harnessSha256": "7ff0fd38d82d9d32c43c1c06e52b54ca8c78dbc818461c6e37d915265e66e979",
+      "runtime": {
+        "th07.html": {
+          "bytes": 61550,
+          "sha256": "c718668d75610cace7a0027d96fd3d53e34cb73835261a8b757b67ac6694d2f0"
+        },
+        "th07.js": {
+          "bytes": 309384,
+          "sha256": "55ef9d9e8659f179afcea310506672be39f175fb315016ffd379ad652744ec64"
+        },
+        "th07.wasm": {
+          "bytes": 2903965,
+          "sha256": "d0b868ccd52f8f1f089275fb9c9105b6fd0318a01ddc1bb8c64ef85d42671d3a"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "normal-end-buffer-drain",
+        "screenshots"
+      ],
+      "savedReplay": {
+        "path": "replay/th7_01.rpyx",
+        "bytes": 212433,
+        "validation": {
+          "valid": true,
+          "bytes": 212433
+        }
+      },
+      "guestRestart": true,
+      "reconnected": false,
+      "restarts": [],
+      "peerExitSafe": true,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": false,
+      "passed": true
+    },
+    {
+      "game": "th08",
+      "players": 2,
+      "challenge": false,
+      "route": "rtc",
+      "startedAt": "2026-10-25T11:14:02.391Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "19947ce53cb2118d3db14559583936f0eb242dd9776af6fd565ff305708a3de5",
+      "harnessSha256": "8fdc8405053824fdf74f7ed0189010c89c69cc9fedda529126b1a170349afc73",
+      "runtime": {
+        "th08.html": {
+          "bytes": 878,
+          "sha256": "c2a2d32f4fb808b081f112cde74e696d3a6d2d555e4a8d344e660b17b120bc17"
+        },
+        "manifest.json": {
+          "bytes": 1068,
+          "sha256": "fc89ee6a2a90ad241efa24fffecd65ceedddd558560b4b3dfa1a67291e57b716"
+        },
+        "startup-branding.mjs": {
+          "bytes": 6654,
+          "sha256": "aaceeec628a1e666905a0eeb2f0c0510f1b1e5462ee801c9453ade8b0fbccd8a"
+        },
+        "shell.mjs": {
+          "bytes": 51386,
+          "sha256": "badeaa98ff2b37612728d4b0112185b835056886b81a72f759bd44af3f2c33fa"
+        },
+        "eagler-host.mjs": {
+          "bytes": 9007,
+          "sha256": "e776c561e57450c32aee08055037436833d64bc35402a4290c7d2947145dd9a7"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11783,
+          "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+        },
+        "save-storage.mjs": {
+          "bytes": 4518,
+          "sha256": "146ae09e53fbf76e9d0d97eb6ccdce47150c15cedc2a55ee385d5616247c636b"
+        },
+        "practice.mjs": {
+          "bytes": 2097,
+          "sha256": "323d990d55d20f9163f1fe2bf758d7ff57848d624fe543c49a79c833a1672e2f"
+        },
+        "practice-config.mjs": {
+          "bytes": 1685,
+          "sha256": "1fc33f3c2474d7acfa158c9b6376e2d7ef4755ef1c85326d9fcf4204c1268fad"
+        },
+        "practice-sections.mjs": {
+          "bytes": 92975,
+          "sha256": "bc9c91bedaa234d63a62cd39fbf61ad36940121545fdbbe503f99e0a92a222e7"
+        },
+        "multiplayer-host.mjs": {
+          "bytes": 7337,
+          "sha256": "83b75fc29c5dd40e7e481987d9b809274df7b5115f53ea5cc539f290d3d0251f"
+        },
+        "motion-replay.mjs": {
+          "bytes": 2515,
+          "sha256": "170c4368cc3b2a09b5b57b8e1431648d00f456ce675ae05f7539a67da94456ad"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        },
+        "th08-sdl.mjs": {
+          "bytes": 277211,
+          "sha256": "102e8c715a70fd8a06b78627003fa96281f87dca01cebf2bd4df68f074d4500c"
+        },
+        "th08-sdl.wasm": {
+          "bytes": 3754380,
+          "sha256": "52e5941452b2e9020094592ab73f9a61647174a9eb78a81498091b7dda94ab12"
+        },
+        "resources.json": {
+          "bytes": 286,
+          "sha256": "45227daba580ed72535c4b049a5de2ee4478ea5aa7ad905dc0fb5a715e67cffc"
+        },
+        "fonts/blend.bin": {
+          "bytes": 131072,
+          "sha256": "c24db3025b9c40b898464f3fcbc0bd4c2da6d98f7cf9d869802f5269ab87ae94"
+        },
+        "fonts/cp932.bin": {
+          "bytes": 131072,
+          "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "normal-end-buffer-drain",
+        "screenshots"
+      ],
+      "savedReplay": {
+        "path": "replay/th8_01.rpyx",
+        "bytes": 86208,
+        "validation": {
+          "valid": true,
+          "bytes": 86208
+        }
+      },
+      "guestRestart": true,
+      "reconnected": false,
+      "restarts": [],
+      "peerExitSafe": true,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": false,
+      "passed": true
+    },
+    {
+      "game": "th10",
+      "players": 2,
+      "challenge": false,
+      "route": "rtc",
+      "startedAt": "2026-10-25T11:28:39.124Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "f44154c1eeb228aceff44ff9a174aa7008c8790bb37a635c1d24758ff7820f68",
+      "harnessSha256": "84eea9408caf37063cfc9225427c34ebb219568ddacb0f4ab1ed12b49623e458",
+      "runtime": {
+        "th10.html": {
+          "bytes": 811,
+          "sha256": "eee0a97d488e5e3b82e78d8370472caf1cf262c572e1b4440560a52a66fa3e88"
+        },
+        "manifest.json": {
+          "bytes": 1083,
+          "sha256": "0f7c9e9d108a78a7d851bb1c33513240096f0dce2e3ef92aebc8b7f2b510d4c9"
+        },
+        "startup-branding.mjs": {
+          "bytes": 38161,
+          "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+        },
+        "shell.mjs": {
+          "bytes": 44674,
+          "sha256": "fca36789c86ae4430396d5806ac89c07bcec93f153b03ca707a3cffe34299fdd"
+        },
+        "eagler-host.mjs": {
+          "bytes": 9135,
+          "sha256": "af6f65d76bb108611a04831487c05f1cd4b93d1715f3e5e02398cab438e1482c"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11783,
+          "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+        },
+        "save-storage.mjs": {
+          "bytes": 4548,
+          "sha256": "0b3c0f35b1c43ce91b019885cc2eb68c338695b41e7df579eccde2579177fde2"
+        },
+        "practice-loader.mjs": {
+          "bytes": 406,
+          "sha256": "7b044d7b5e0527bc467d1d646da7b4eba0cee0087a42611f8dbcbcc8aa5e1876"
+        },
+        "practice.mjs": {
+          "bytes": 2102,
+          "sha256": "5101aae9aadb45945a60a78657387a64299ff9cadc8827f7365dadbbcffa3382"
+        },
+        "practice-config.mjs": {
+          "bytes": 1350,
+          "sha256": "df0178ec8e72c30dde711a59c8b82ffd0e296f4a15e2a291471fe75dfffc52ea"
+        },
+        "practice-sections.mjs": {
+          "bytes": 51321,
+          "sha256": "c4283bbdcf7b72f80dc91d05e69b57f5dfb647994656e89f23876a5d57350231"
+        },
+        "save-sync.mjs": {
+          "bytes": 1178,
+          "sha256": "5c80722aab15d73770d27a322a565fa29228a08b3fa667766da454f56ca1e3c5"
+        },
+        "motion-replay.mjs": {
+          "bytes": 2515,
+          "sha256": "170c4368cc3b2a09b5b57b8e1431648d00f456ce675ae05f7539a67da94456ad"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        },
+        "replay-file-policy.mjs": {
+          "bytes": 1645,
+          "sha256": "b000f819904fd6a6ce9be828764d0d02240134d875251a248061cc0fc142c8e3"
+        },
+        "th10-sdl.mjs": {
+          "bytes": 298057,
+          "sha256": "2cdf7dc35d668550a9819cde5a0998df5ad33c39ffe3ccc399f5d4141bc9db78"
+        },
+        "th10-sdl.wasm": {
+          "bytes": 3316984,
+          "sha256": "5151fb853c33d9e760c4437e1851415d4c2a10eb70e795b3acfcce00cc5cd634"
+        },
+        "resources.json": {
+          "bytes": 294,
+          "sha256": "9116187fcf4ddaaa2142c335dfaac154fc6bafca20ef2ecae08b660cf79b0182"
+        },
+        "fonts/blend.bin": {
+          "bytes": 131072,
+          "sha256": "c24db3025b9c40b898464f3fcbc0bd4c2da6d98f7cf9d869802f5269ab87ae94"
+        },
+        "fonts/codepages.bin": {
+          "bytes": 262144,
+          "sha256": "37bac4b17c210cc62858f8d88b6b94a7adc217d23d3bec9d8e54ced0ccba45c5"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "normal-end-buffer-drain",
+        "screenshots"
+      ],
+      "savedReplay": {
+        "path": "replay/th10_01.rpyx",
+        "bytes": 88972,
+        "validation": {
+          "valid": true,
+          "bytes": 88972
+        }
+      },
+      "guestRestart": true,
+      "reconnected": false,
+      "restarts": [],
+      "peerExitSafe": true,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": false,
+      "passed": true
+    },
+    {
+      "game": "th11",
+      "players": 2,
+      "challenge": false,
+      "route": "rtc",
+      "startedAt": "2026-10-25T11:14:02.391Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "19947ce53cb2118d3db14559583936f0eb242dd9776af6fd565ff305708a3de5",
+      "harnessSha256": "8fdc8405053824fdf74f7ed0189010c89c69cc9fedda529126b1a170349afc73",
+      "runtime": {
+        "th11-sdl.mjs": {
+          "bytes": 271182,
+          "sha256": "8e25a6a098e2a6a8c3545deb9065e7ea8f03a55e1fbfeae1458ac07d12f4141d"
+        },
+        "th11-sdl.wasm": {
+          "bytes": 2975932,
+          "sha256": "c4dcf7f47947c131dcbb057bcd88728a527a4b72f132a0def01c4ecaff36f507"
+        },
+        "th11.html": {
+          "bytes": 552,
+          "sha256": "48ed7f9961304dae7148efdeebf0e581ce18c809e8cd373844c94a46037b28bc"
+        },
+        "startup-branding.mjs": {
+          "bytes": 38161,
+          "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+        },
+        "shell.mjs": {
+          "bytes": 41065,
+          "sha256": "f69d1dceb23c2478f09cf8d5e22ffc0a74a854fb2d1b989e2081f81313ac6cd8"
+        },
+        "managed.css": {
+          "bytes": 733,
+          "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+        },
+        "keyboard.mjs": {
+          "bytes": 1298,
+          "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11783,
+          "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+        },
+        "eagler-host.mjs": {
+          "bytes": 9245,
+          "sha256": "5840b73e8967ca604e740a1247331363c2ae32c90796ae32f205d9d7f183e7f4"
+        },
+        "multiplayer.mjs": {
+          "bytes": 14533,
+          "sha256": "eafbd2fa078ffd6e7b1ed679dba6083c1ac815a6411c1e3d9f8a3f6800c292fc"
+        },
+        "multiplayer.css": {
+          "bytes": 608,
+          "sha256": "079da9934a48d702f2fcc4e8071094ef8d66719b67b201d43b0701e77b9e273b"
+        },
+        "motion-replay.mjs": {
+          "bytes": 828,
+          "sha256": "96ea92fc9b5491c71a9c590deb5f202cc4121a46887bd2bc7d0ac7cde41db66f"
+        },
+        "direct-input-bridge.mjs": {
+          "bytes": 1318,
+          "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+        },
+        "multiplayer-replay.mjs": {
+          "bytes": 2776,
+          "sha256": "b40cb1f9cf3607af9c9f8a803a603b26eef4cdc0215ef73609d65a57023d6971"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        },
+        "fonts/cp932.bin": {
+          "bytes": 131072,
+          "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+        },
+        "resources.json": {
+          "bytes": 183,
+          "sha256": "a7614b785eaff6361bb085e692aefeb07ca87935d04f4df987028e3680d03c38"
+        },
+        "manifest.json": {
+          "bytes": 1114,
+          "sha256": "6fe885f2cb5472cf8dbe8eea68f8fb4c0467c1f4d43114b97d84aa5b1c9a3a09"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "normal-end-buffer-drain",
+        "screenshots"
+      ],
+      "savedReplay": {
+        "path": "replay/th11_01.rpy",
+        "bytes": 52040,
+        "validation": {
+          "valid": true,
+          "bytes": 52040
+        }
+      },
+      "guestRestart": true,
+      "reconnected": false,
+      "restarts": [],
+      "peerExitSafe": true,
+      "peerReturnedTitle": true,
+      "abnormalStopIsolated": false,
+      "passed": true
+    },
+    {
+      "game": "th15",
+      "players": 2,
+      "challenge": false,
+      "route": "rtc",
+      "startedAt": "2026-10-25T11:28:39.124Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "f44154c1eeb228aceff44ff9a174aa7008c8790bb37a635c1d24758ff7820f68",
+      "harnessSha256": "84eea9408caf37063cfc9225427c34ebb219568ddacb0f4ab1ed12b49623e458",
+      "runtime": {
+        "th15.html": {
+          "bytes": 506,
+          "sha256": "56b84e98f47077ab6be064327855671755ba24cb76ababfa94e6da108c74254b"
+        },
+        "manifest.json": {
+          "bytes": 1385,
+          "sha256": "41d7b5341d2d0167bbcf494ed1097f926e4e926fb3b61a300808c3a30e0b5acc"
+        },
+        "startup-branding.mjs": {
+          "bytes": 38126,
+          "sha256": "e81c5fafebec1eb2aca77c9b103b156caddec493d745a1c2e72322b3081b502c"
+        },
+        "shell.mjs": {
+          "bytes": 35390,
+          "sha256": "cefccc16aed442466e8a33bf2e600d266490bb6aed69a8a2b0cc982232889598"
+        },
+        "managed.css": {
+          "bytes": 733,
+          "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+        },
+        "keyboard.mjs": {
+          "bytes": 1298,
+          "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11600,
+          "sha256": "72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d"
+        },
+        "th15.mjs": {
+          "bytes": 267852,
+          "sha256": "d3a74d488ac2e5bd905598f9b4287d82e1d8f93fa292999b84f9dcfeda374535"
+        },
+        "th15.wasm": {
+          "bytes": 3431276,
+          "sha256": "c6a4f78cd6c7208cd99bf67eebed65f158929d7f0c008a2bae05b687f2e5a017"
+        },
+        "resources.json": {
+          "bytes": 183,
+          "sha256": "2943b9bf5ed453125b17a42ec4afb7ee8dba26c8527280f3209bd1850ed10467"
+        },
+        "fonts/cp932.bin": {
+          "bytes": 131072,
+          "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+        },
+        "multiplayer.mjs": {
+          "bytes": 6679,
+          "sha256": "365a740fd598e4f23433e63db3d0d9a7ae9fa1a782852303a457798761d6a8a4"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "late-join-after-recovery",
+        "normal-end-buffer-drain",
+        "screenshots"
+      ],
+      "savedReplay": {
+        "path": "replay/th15mp_01.rpy",
+        "bytes": 57444,
+        "validation": {
+          "valid": true,
+          "bytes": 57444
+        }
+      },
+      "guestRestart": true,
+      "reconnected": false,
+      "restarts": [],
+      "peerExitSafe": true,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": false,
+      "passed": true
+    },
+    {
+      "game": "th06",
+      "players": 3,
+      "challenge": true,
+      "route": "relay",
+      "startedAt": "2026-10-25T11:52:17.661Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "164b2b153b7ee5919333eae5db8a669f5e2b69334919f32e1f6a49f5cdedf062",
+      "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+      "runtime": {
+        "th06.html": {
+          "bytes": 53120,
+          "sha256": "34f26590d37673f52099ec6df666f5a410efdf4267621ae5266af1b8e579d77e"
+        },
+        "th06.js": {
+          "bytes": 305648,
+          "sha256": "f2bfdb6130146da70ad0f932e83868ed21633d42530ccd047ca13fe3f86a7ebf"
+        },
+        "th06.wasm": {
+          "bytes": 2471010,
+          "sha256": "9bd396b91681a2ccf545f9bdca952ce37b2bc31dc2c721a7af4a5ab0f6d75930"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "restart-menu",
+        "late-join-after-recovery",
+        "screenshots",
+        "stream-failure-isolation"
+      ],
+      "savedReplay": null,
+      "guestRestart": true,
+      "reconnected": true,
+      "restarts": [],
+      "peerExitSafe": false,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": true,
+      "passed": true
+    },
+    {
+      "game": "th07",
+      "players": 3,
+      "challenge": true,
+      "route": "relay",
+      "startedAt": "2026-10-25T11:52:17.661Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "164b2b153b7ee5919333eae5db8a669f5e2b69334919f32e1f6a49f5cdedf062",
+      "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+      "runtime": {
+        "th07.html": {
+          "bytes": 61550,
+          "sha256": "c718668d75610cace7a0027d96fd3d53e34cb73835261a8b757b67ac6694d2f0"
+        },
+        "th07.js": {
+          "bytes": 309384,
+          "sha256": "55ef9d9e8659f179afcea310506672be39f175fb315016ffd379ad652744ec64"
+        },
+        "th07.wasm": {
+          "bytes": 2903965,
+          "sha256": "d0b868ccd52f8f1f089275fb9c9105b6fd0318a01ddc1bb8c64ef85d42671d3a"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "restart-menu",
+        "late-join-after-recovery",
+        "screenshots",
+        "stream-failure-isolation"
+      ],
+      "savedReplay": null,
+      "guestRestart": true,
+      "reconnected": true,
+      "restarts": [
+        "menu"
+      ],
+      "peerExitSafe": false,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": true,
+      "passed": true
+    },
+    {
+      "game": "th08",
+      "players": 3,
+      "challenge": true,
+      "route": "relay",
+      "startedAt": "2026-10-25T11:52:17.661Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "164b2b153b7ee5919333eae5db8a669f5e2b69334919f32e1f6a49f5cdedf062",
+      "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+      "runtime": {
+        "th08.html": {
+          "bytes": 878,
+          "sha256": "c2a2d32f4fb808b081f112cde74e696d3a6d2d555e4a8d344e660b17b120bc17"
+        },
+        "manifest.json": {
+          "bytes": 1068,
+          "sha256": "fc89ee6a2a90ad241efa24fffecd65ceedddd558560b4b3dfa1a67291e57b716"
+        },
+        "startup-branding.mjs": {
+          "bytes": 6654,
+          "sha256": "aaceeec628a1e666905a0eeb2f0c0510f1b1e5462ee801c9453ade8b0fbccd8a"
+        },
+        "shell.mjs": {
+          "bytes": 51386,
+          "sha256": "badeaa98ff2b37612728d4b0112185b835056886b81a72f759bd44af3f2c33fa"
+        },
+        "eagler-host.mjs": {
+          "bytes": 9007,
+          "sha256": "e776c561e57450c32aee08055037436833d64bc35402a4290c7d2947145dd9a7"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11783,
+          "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+        },
+        "save-storage.mjs": {
+          "bytes": 4518,
+          "sha256": "146ae09e53fbf76e9d0d97eb6ccdce47150c15cedc2a55ee385d5616247c636b"
+        },
+        "practice.mjs": {
+          "bytes": 2097,
+          "sha256": "323d990d55d20f9163f1fe2bf758d7ff57848d624fe543c49a79c833a1672e2f"
+        },
+        "practice-config.mjs": {
+          "bytes": 1685,
+          "sha256": "1fc33f3c2474d7acfa158c9b6376e2d7ef4755ef1c85326d9fcf4204c1268fad"
+        },
+        "practice-sections.mjs": {
+          "bytes": 92975,
+          "sha256": "bc9c91bedaa234d63a62cd39fbf61ad36940121545fdbbe503f99e0a92a222e7"
+        },
+        "multiplayer-host.mjs": {
+          "bytes": 7337,
+          "sha256": "83b75fc29c5dd40e7e481987d9b809274df7b5115f53ea5cc539f290d3d0251f"
+        },
+        "motion-replay.mjs": {
+          "bytes": 2515,
+          "sha256": "170c4368cc3b2a09b5b57b8e1431648d00f456ce675ae05f7539a67da94456ad"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        },
+        "th08-sdl.mjs": {
+          "bytes": 277211,
+          "sha256": "102e8c715a70fd8a06b78627003fa96281f87dca01cebf2bd4df68f074d4500c"
+        },
+        "th08-sdl.wasm": {
+          "bytes": 3754380,
+          "sha256": "52e5941452b2e9020094592ab73f9a61647174a9eb78a81498091b7dda94ab12"
+        },
+        "resources.json": {
+          "bytes": 286,
+          "sha256": "45227daba580ed72535c4b049a5de2ee4478ea5aa7ad905dc0fb5a715e67cffc"
+        },
+        "fonts/blend.bin": {
+          "bytes": 131072,
+          "sha256": "c24db3025b9c40b898464f3fcbc0bd4c2da6d98f7cf9d869802f5269ab87ae94"
+        },
+        "fonts/cp932.bin": {
+          "bytes": 131072,
+          "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "restart-menu",
+        "late-join-after-recovery",
+        "screenshots",
+        "stream-failure-isolation"
+      ],
+      "savedReplay": null,
+      "guestRestart": true,
+      "reconnected": true,
+      "restarts": [
+        "menu"
+      ],
+      "peerExitSafe": false,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": true,
+      "passed": true
+    },
+    {
+      "game": "th10",
+      "players": 3,
+      "challenge": true,
+      "route": "relay",
+      "startedAt": "2026-10-25T11:52:17.661Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "164b2b153b7ee5919333eae5db8a669f5e2b69334919f32e1f6a49f5cdedf062",
+      "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+      "runtime": {
+        "th10.html": {
+          "bytes": 811,
+          "sha256": "eee0a97d488e5e3b82e78d8370472caf1cf262c572e1b4440560a52a66fa3e88"
+        },
+        "manifest.json": {
+          "bytes": 1083,
+          "sha256": "0f7c9e9d108a78a7d851bb1c33513240096f0dce2e3ef92aebc8b7f2b510d4c9"
+        },
+        "startup-branding.mjs": {
+          "bytes": 38161,
+          "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+        },
+        "shell.mjs": {
+          "bytes": 44674,
+          "sha256": "fca36789c86ae4430396d5806ac89c07bcec93f153b03ca707a3cffe34299fdd"
+        },
+        "eagler-host.mjs": {
+          "bytes": 9135,
+          "sha256": "af6f65d76bb108611a04831487c05f1cd4b93d1715f3e5e02398cab438e1482c"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11783,
+          "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+        },
+        "save-storage.mjs": {
+          "bytes": 4548,
+          "sha256": "0b3c0f35b1c43ce91b019885cc2eb68c338695b41e7df579eccde2579177fde2"
+        },
+        "practice-loader.mjs": {
+          "bytes": 406,
+          "sha256": "7b044d7b5e0527bc467d1d646da7b4eba0cee0087a42611f8dbcbcc8aa5e1876"
+        },
+        "practice.mjs": {
+          "bytes": 2102,
+          "sha256": "5101aae9aadb45945a60a78657387a64299ff9cadc8827f7365dadbbcffa3382"
+        },
+        "practice-config.mjs": {
+          "bytes": 1350,
+          "sha256": "df0178ec8e72c30dde711a59c8b82ffd0e296f4a15e2a291471fe75dfffc52ea"
+        },
+        "practice-sections.mjs": {
+          "bytes": 51321,
+          "sha256": "c4283bbdcf7b72f80dc91d05e69b57f5dfb647994656e89f23876a5d57350231"
+        },
+        "save-sync.mjs": {
+          "bytes": 1178,
+          "sha256": "5c80722aab15d73770d27a322a565fa29228a08b3fa667766da454f56ca1e3c5"
+        },
+        "motion-replay.mjs": {
+          "bytes": 2515,
+          "sha256": "170c4368cc3b2a09b5b57b8e1431648d00f456ce675ae05f7539a67da94456ad"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        },
+        "replay-file-policy.mjs": {
+          "bytes": 1645,
+          "sha256": "b000f819904fd6a6ce9be828764d0d02240134d875251a248061cc0fc142c8e3"
+        },
+        "th10-sdl.mjs": {
+          "bytes": 298057,
+          "sha256": "2cdf7dc35d668550a9819cde5a0998df5ad33c39ffe3ccc399f5d4141bc9db78"
+        },
+        "th10-sdl.wasm": {
+          "bytes": 3316984,
+          "sha256": "5151fb853c33d9e760c4437e1851415d4c2a10eb70e795b3acfcce00cc5cd634"
+        },
+        "resources.json": {
+          "bytes": 294,
+          "sha256": "9116187fcf4ddaaa2142c335dfaac154fc6bafca20ef2ecae08b660cf79b0182"
+        },
+        "fonts/blend.bin": {
+          "bytes": 131072,
+          "sha256": "c24db3025b9c40b898464f3fcbc0bd4c2da6d98f7cf9d869802f5269ab87ae94"
+        },
+        "fonts/codepages.bin": {
+          "bytes": 262144,
+          "sha256": "37bac4b17c210cc62858f8d88b6b94a7adc217d23d3bec9d8e54ced0ccba45c5"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "restart-menu",
+        "late-join-after-recovery",
+        "screenshots",
+        "stream-failure-isolation"
+      ],
+      "savedReplay": null,
+      "guestRestart": true,
+      "reconnected": true,
+      "restarts": [
+        "menu"
+      ],
+      "peerExitSafe": false,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": true,
+      "passed": true
+    },
+    {
+      "game": "th11",
+      "players": 3,
+      "challenge": true,
+      "route": "relay",
+      "startedAt": "2026-10-25T11:52:17.661Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "164b2b153b7ee5919333eae5db8a669f5e2b69334919f32e1f6a49f5cdedf062",
+      "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+      "runtime": {
+        "th11-sdl.mjs": {
+          "bytes": 271182,
+          "sha256": "8e25a6a098e2a6a8c3545deb9065e7ea8f03a55e1fbfeae1458ac07d12f4141d"
+        },
+        "th11-sdl.wasm": {
+          "bytes": 2975932,
+          "sha256": "c4dcf7f47947c131dcbb057bcd88728a527a4b72f132a0def01c4ecaff36f507"
+        },
+        "th11.html": {
+          "bytes": 552,
+          "sha256": "48ed7f9961304dae7148efdeebf0e581ce18c809e8cd373844c94a46037b28bc"
+        },
+        "startup-branding.mjs": {
+          "bytes": 38161,
+          "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+        },
+        "shell.mjs": {
+          "bytes": 41065,
+          "sha256": "f69d1dceb23c2478f09cf8d5e22ffc0a74a854fb2d1b989e2081f81313ac6cd8"
+        },
+        "managed.css": {
+          "bytes": 733,
+          "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+        },
+        "keyboard.mjs": {
+          "bytes": 1298,
+          "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11783,
+          "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+        },
+        "eagler-host.mjs": {
+          "bytes": 9245,
+          "sha256": "5840b73e8967ca604e740a1247331363c2ae32c90796ae32f205d9d7f183e7f4"
+        },
+        "multiplayer.mjs": {
+          "bytes": 14533,
+          "sha256": "eafbd2fa078ffd6e7b1ed679dba6083c1ac815a6411c1e3d9f8a3f6800c292fc"
+        },
+        "multiplayer.css": {
+          "bytes": 608,
+          "sha256": "079da9934a48d702f2fcc4e8071094ef8d66719b67b201d43b0701e77b9e273b"
+        },
+        "motion-replay.mjs": {
+          "bytes": 828,
+          "sha256": "96ea92fc9b5491c71a9c590deb5f202cc4121a46887bd2bc7d0ac7cde41db66f"
+        },
+        "direct-input-bridge.mjs": {
+          "bytes": 1318,
+          "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+        },
+        "multiplayer-replay.mjs": {
+          "bytes": 2776,
+          "sha256": "b40cb1f9cf3607af9c9f8a803a603b26eef4cdc0215ef73609d65a57023d6971"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        },
+        "fonts/cp932.bin": {
+          "bytes": 131072,
+          "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+        },
+        "resources.json": {
+          "bytes": 183,
+          "sha256": "a7614b785eaff6361bb085e692aefeb07ca87935d04f4df987028e3680d03c38"
+        },
+        "manifest.json": {
+          "bytes": 1114,
+          "sha256": "6fe885f2cb5472cf8dbe8eea68f8fb4c0467c1f4d43114b97d84aa5b1c9a3a09"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "restart-menu",
+        "late-join-after-recovery",
+        "screenshots",
+        "stream-failure-isolation"
+      ],
+      "savedReplay": null,
+      "guestRestart": true,
+      "reconnected": true,
+      "restarts": [
+        "menu"
+      ],
+      "peerExitSafe": false,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": true,
+      "passed": true
+    },
+    {
+      "game": "th15",
+      "players": 3,
+      "challenge": true,
+      "route": "relay",
+      "startedAt": "2026-10-25T12:11:26.736Z",
+      "commit": "d80ae760cba583c05161ea19873be2c0b9d1a79e",
+      "patchSha256": "c98b4d5b224d8bb0ebe0c7a7a7b14edcf1e88e3415519b773120ec20be9eb4ad",
+      "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+      "runtime": {
+        "th15.html": {
+          "bytes": 506,
+          "sha256": "56b84e98f47077ab6be064327855671755ba24cb76ababfa94e6da108c74254b"
+        },
+        "manifest.json": {
+          "bytes": 1385,
+          "sha256": "41d7b5341d2d0167bbcf494ed1097f926e4e926fb3b61a300808c3a30e0b5acc"
+        },
+        "startup-branding.mjs": {
+          "bytes": 38126,
+          "sha256": "e81c5fafebec1eb2aca77c9b103b156caddec493d745a1c2e72322b3081b502c"
+        },
+        "shell.mjs": {
+          "bytes": 35390,
+          "sha256": "cefccc16aed442466e8a33bf2e600d266490bb6aed69a8a2b0cc982232889598"
+        },
+        "managed.css": {
+          "bytes": 733,
+          "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+        },
+        "keyboard.mjs": {
+          "bytes": 1298,
+          "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+        },
+        "directory-keyboard.mjs": {
+          "bytes": 11600,
+          "sha256": "72e0b099698f8e0696a9b271a62262f141990e6b2ad7666e36be825ac848e56d"
+        },
+        "th15.mjs": {
+          "bytes": 267852,
+          "sha256": "d3a74d488ac2e5bd905598f9b4287d82e1d8f93fa292999b84f9dcfeda374535"
+        },
+        "th15.wasm": {
+          "bytes": 3431276,
+          "sha256": "c6a4f78cd6c7208cd99bf67eebed65f158929d7f0c008a2bae05b687f2e5a017"
+        },
+        "resources.json": {
+          "bytes": 183,
+          "sha256": "2943b9bf5ed453125b17a42ec4afb7ee8dba26c8527280f3209bd1850ed10467"
+        },
+        "fonts/cp932.bin": {
+          "bytes": 131072,
+          "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+        },
+        "multiplayer.mjs": {
+          "bytes": 6679,
+          "sha256": "365a740fd598e4f23433e63db3d0d9a7ae9fa1a782852303a457798761d6a8a4"
+        },
+        "adonis-calibration.mjs": {
+          "bytes": 4062,
+          "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+        }
+      },
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "restart-menu",
+        "late-join-after-recovery",
+        "screenshots",
+        "stream-failure-isolation"
+      ],
+      "savedReplay": null,
+      "guestRestart": true,
+      "reconnected": true,
+      "restarts": [
+        "menu"
+      ],
+      "peerExitSafe": false,
+      "peerReturnedTitle": false,
+      "abnormalStopIsolated": true,
+      "passed": true
+    }
+  ],
+  "checks": {
+    "relay": 82,
+    "frontend": 70,
+    "sharedBridge": 6,
+    "nativeTh11": 7089,
+    "nativeTh11Ticks": 11649
+  },
+  "sharedBridge": {
+    "source": "common/browser/spectator-playback.mjs",
+    "sha256": "3b537c70b32bb8b3e19eabd6dba346461a5615e59257049fefc44b208cb4497e",
+    "scope": "Original local menus retain input across transport closure and later source files until explicit departure"
+  }
+}

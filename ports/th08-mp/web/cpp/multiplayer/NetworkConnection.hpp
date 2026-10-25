@@ -43,7 +43,8 @@ public:
     bool FlushDeferredInputs();
     bool Captured(u32 frame);
     bool CanRetire()const;
-    bool Retire();
+    bool Retire(bool local_results=false);
+    bool EnterSpectatorResults(){const auto& p=spectator_playback;if(!net.Spectator()||!p.History().Ended()||p.Paused()||p.Seeking()||p.Position()<p.History().Received())return false;local_results=true;return net.RetireSpectator();}
     bool BeginGeneration();
     void Close();
     bool Enabled()const{return enabled;}
@@ -70,7 +71,7 @@ private:
     Netplay::SpectatorStageView spectator_view;
     bool spectator_finished=false,spectator_publish_failed=false,spectator_publisher_started=false;
     bool spectator_timing_sent=false;
-    bool publication_retired=false;
+    bool publication_retired=false,local_results=false;
     std::uint64_t spectator_deadline=0;
     const char* spectator_error="";
     bool enabled=false,invalid_input=false;

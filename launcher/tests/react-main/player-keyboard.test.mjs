@@ -130,10 +130,23 @@ for (const reason of ['blur','hidden','pagehide']) test(`keyboard: ${reason} rel
 
 test('keyboard: spectator and inactive player states do not forward host key input', () => {
   const f = fixture(); f.input.spectator = true; f.key('keydown'); f.key('keyup'); assert.equal(f.messages.length, 0);
-  f.input.spectator = false; f.snapshot.launched = false; f.key('keydown'); f.key('keyup'); assert.equal(f.messages.length, 0);
-  f.snapshot.launched = true; f.setOpen(false); f.key('keydown'); f.key('keyup'); assert.equal(f.messages.length, 0);
+  f.input.spectator = false; f.snapshot.launched = false; f.input.launched = false; f.key('keydown'); f.key('keyup'); assert.equal(f.messages.length, 0);
+  f.snapshot.launched = true; f.input.launched = true; f.setOpen(false); f.key('keydown'); f.key('keyup'); assert.equal(f.messages.length, 0);
   f.setOpen(true); f.setFrameWindow(null); f.key('keydown'); f.key('keyup'); assert.equal(f.messages.length, 0);
   f.setFrameWindow(f.native().target); f.key('keydown'); f.key('keyup'); assert.equal(keyboard(f).length, 2);
+});
+
+test('keyboard: prepared room accepts settings input before launch and releases it during handoff', () => {
+  const f = fixture(); f.snapshot.launched = false;
+  f.key('keydown', {code:'ArrowUp',key:'ArrowUp',keyCode:38});
+  f.key('keyup', {code:'ArrowUp',key:'ArrowUp',keyCode:38});
+  assert.deepEqual(keyboard(f).map(item=>item.payload.down), [true,false]);
+  f.key('keydown', {code:'KeyZ',key:'z',keyCode:90});
+  f.input.launched = false; f.notify();
+  const count = keyboard(f).length;
+  f.key('keyup', {code:'KeyZ',key:'z',keyCode:90}); f.key('keydown');
+  assert.equal(keyboard(f).length, count);
+  assert.equal(f.calls.release, 1); assert.equal(f.calls.cancel, 1);
 });
 
 test('keyboard: Alt+Enter is a current-native-window chord with repeat suppression and Alt-released keyup', () => {

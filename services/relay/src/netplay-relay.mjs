@@ -37,6 +37,7 @@ import {
 } from '../../../common/contracts/product-catalog.mjs';
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
 import { COOPERATIVE_SPECTATOR_MARKERS, SpectatorStageRelay } from './spectator-stages.mjs';
+import {SpectatorReplayTransfer} from './spectator-replay.mjs';
 import { th09PlayerStats, acceptTh09MatchStats } from './th09-room-stats.mjs';
 import {
   parseMeasuredNetplayTiming,
@@ -494,6 +495,17 @@ function stopHostSpectatorStream(roomId, runId, run, source) {
   stopSpectatorStream(run);
 }
 
+function sendSpectatorReplayFile(socket,run){
+  const replay=run.spectatorNativeReplay;if(!replay?.complete)return;
+  const packets=replay.chunks(),deadline=Date.now()+15000;
+  const flush=()=>{
+    if(socket.readyState!==WebSocket.OPEN||run.spectatorNativeReplay!==replay||Date.now()>deadline)return;
+    if(socket.bufferedAmount>65536){setTimeout(flush,10);return;}
+    const packet=packets.next();if(packet.done)return;
+    socket.send(packet.value,{binary:true});setTimeout(flush,0);
+  };flush();
+}
+
 function beginCooperativeSpectatorSession(roomId, runId, room, run, message) {
   if (!Object.hasOwn(COOPERATIVE_SPECTATOR_MARKERS, roomId.split('-')[0]) ||
       typeof message.session !== 'string' || !/^[a-f0-9]{16}$/.test(message.session) || /^0+$/.test(message.session) ||
@@ -504,6 +516,7 @@ function beginCooperativeSpectatorSession(roomId, runId, room, run, message) {
     return message.session === previous.session && message.seed === previous.seed;
   if (message.generation !== (previous ? previous.generation + 1 : 0) || previous?.session === message.session) return false;
   run.spectatorSession = {type: 'spectator-session', session: message.session, seed: message.seed, generation: message.generation};
+  run.spectatorNativeReplay = new SpectatorReplayTransfer(message.session);
   run.spectatorStages = null; run.spectatorStageTiming = null;
   run.spectatorHistory = []; run.spectatorHistoryBytes = 0;
   run.spectatorComplete = run.spectatorStopped = run.spectatorHostStopped = run.spectatorHistoryUnavailable = false;
@@ -1735,6 +1748,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
   run.claimedSpectators.add(spectatorId);
   run.spectatorClients.set(spectatorId, socket);
   if (run.spectatorSession) sendSignal(socket, run.spectatorSession);
+  sendSpectatorReplayFile(socket,run);
   if (run.spectatorTimeline) {
     // Ordered bounded replay, then live delivery. Live packets remain in the
     // same retained tape until the replay cursor catches its append frontier.
@@ -2008,7 +2022,17 @@ server.on('connection', (socket, request) => {
     messagesPerSecond: 10,
     bytesPerSecond: 256 * 1024,
   });
+  const acceptReplayFile=createRelayMessageGate({maxBytes:32788,messagesPerSecond:120,bytesPerSecond:4*1024*1024});
   socket.on('message', (data, isBinary) => {
+    if(isBinary&&data[0]===0xe9){
+      if(player!==0||run.clients.get(player)!==socket||!run.spectatorNativeReplay)return;
+      if(acceptReplayFile(data.byteLength))return;
+      const replay=run.spectatorNativeReplay;
+      if(replay.accept(data)&&replay.complete){
+        for(const viewer of run.spectatorClients.values())sendSpectatorReplayFile(viewer,run);
+      }
+      return;
+    }
     const marker = COOPERATIVE_SPECTATOR_MARKERS[roomId.split('-')[0]];
     const stageInitializer = isBinary && player === 0 && marker !== undefined &&
       data.length >= 9 && data[0] === 0xe8 && data[1] === 69 && data[2] === marker &&

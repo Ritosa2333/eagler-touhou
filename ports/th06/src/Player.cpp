@@ -134,6 +134,7 @@ ZunVec3 PresentRemotePlayer(Player *player, const ZunVec3 &target)
 
 void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
 {
+    if(MultiplayerGameplay::GetState().spectator)return;
     if (!player || !MultiplayerGameplay::IsMultiplayer() ||
         !EaglerOptions::EnhanceLocalPlayerVisibility() ||
         player->initParam != MultiplayerGameplay::GetLocalPlayerSlot() ||
@@ -155,6 +156,7 @@ void DrawLocalPlayerLocator(const Player *player, const ZunVec3 &drawPlayerPos)
 
 u8 GetPlayerOverlapAlpha(const Player *player)
 {
+    if (MultiplayerGameplay::GetState().spectator) return 255;
     if (!player || !MultiplayerGameplay::IsMultiplayer() ||
         player->initParam >= TH06_MULTI_MAX_PLAYERS ||
         player->initParam == MultiplayerGameplay::GetLocalPlayerSlot() ||
