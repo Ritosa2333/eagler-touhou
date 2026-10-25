@@ -79,3 +79,71 @@ jobs:
             ports/th15-mp/web/artifacts/presentation-identity/**/*.log
             artifacts/validation/source-builds/th15-multiplayer.json
             artifacts/th15-cloud-input/*.json
+  gameplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15-mp
+            services/relay
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Acquire and verify declared inputs in temporary storage
+        run: node ports/th15-mp/portable/multiplayer/cloud-gameplay-check.mjs --inputs-only
+      - uses: actions/checkout@v7
+        with:
+          ref: 79ef17733757c151868d73a9e62cc6ec3c0f5b17
+          path: .cloud-baseline
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15-mp
+      - name: Install frozen build and browser dependencies
+        run: |
+          npm --prefix launcher ci --ignore-scripts
+          npm --prefix tools/rollback ci --ignore-scripts
+          npm --prefix services/relay ci --ignore-scripts
+          npm --prefix .cloud-baseline/launcher ci --ignore-scripts
+          npm --prefix .cloud-baseline/tools/rollback ci --ignore-scripts
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+          python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print('EAGLER_CHROME_PATH='+p.chromium.executable_path); p.stop()" >> "$GITHUB_ENV"
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - name: Build both frozen production variants
+        run: |
+          echo "TH15_EMSDK=$EMSDK" >> "$GITHUB_ENV"
+          node .cloud-baseline/launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+          node launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+          TH15_EMSDK="$EMSDK" node ports/th15-mp/portable/multiplayer/visual-test.mjs --compile-only
+      - name: Seven correctness groups then twelve paired observations
+        run: node ports/th15-mp/portable/multiplayer/cloud-gameplay-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-gameplay-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            artifacts/th15-cloud-gameplay/summary.json
+            artifacts/th15-cloud-gameplay/*.log
+            artifacts/th15-cloud-gameplay/**/receipt.final.json
+            artifacts/th15-cloud-gameplay/correctness-*/*.json
+            artifacts/th15-cloud-gameplay/diagnostic-*/*.cpuprofile
+            artifacts/th15-resource-metadata/report.json
+            ports/th15-mp/web/artifacts/sdl-multiplayer/build.json
+            ports/th15-mp/web/artifacts/sdl-multiplayer/rollback/build.json
+            .cloud-baseline/ports/th15-mp/web/artifacts/sdl-multiplayer/build.json
