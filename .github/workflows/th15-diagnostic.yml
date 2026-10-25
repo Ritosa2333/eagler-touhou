@@ -1,0 +1,68 @@
+name: TH15 Diagnostic
+on:
+  push:
+    branches: [experiment/th15-rollback-20261023]
+    paths:
+      - '.github/workflows/th15-diagnostic.yml'
+      - 'tools/th15-cloud/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: th15-diagnostic-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15-mp
+            services/relay
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Check isolated command cleanup
+        run: node --test tools/th15-cloud/cloud-command-runner.test.mjs
+      - name: Acquire declared temporary inputs
+        run: node ports/th15-mp/portable/multiplayer/cloud-gameplay-check.mjs --inputs-only
+      - name: Install frozen dependencies
+        run: |
+          npm --prefix launcher ci --ignore-scripts
+          npm --prefix tools/rollback ci --ignore-scripts
+          npm --prefix services/relay ci --ignore-scripts
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+          python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print('EAGLER_CHROME_PATH='+p.chromium.executable_path); p.stop()" >> "$GITHUB_ENV"
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - name: Build frozen production candidate
+        run: |
+          echo "TH15_EMSDK=$EMSDK" >> "$GITHUB_ENV"
+          node launcher/scripts/build-runtime.mjs --game=th15 --variant=multiplayer --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+      - name: Verify identical symbol relink and sample actual workload
+        run: node tools/th15-cloud/profile.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-diagnostic-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            artifacts/th15-cloud-diagnostic/summary.json
+            artifacts/th15-cloud-diagnostic/build.json
+            artifacts/th15-cloud-diagnostic/th15.symbols
+            artifacts/th15-cloud-diagnostic/*.log
+            artifacts/th15-cloud-diagnostic/**/receipt.final.json
+            artifacts/th15-cloud-diagnostic/**/*.cpuprofile
+            artifacts/th15-cloud-gameplay/summary.json
+            artifacts/th15-resource-metadata/report.json
