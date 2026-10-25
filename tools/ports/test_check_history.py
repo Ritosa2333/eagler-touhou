@@ -1,6 +1,8 @@
 import importlib.util
 import json
+import os
 import pathlib
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -79,6 +81,26 @@ class SourceHistoryTests(unittest.TestCase):
         self.assertTrue(history.Repository(self.repo).ancestor(self.upstream, split))
         self.assertEqual(self.git(self.repo, "rev-parse", "HEAD:ports/th12"),
                          self.git(self.repo, "rev-parse", f"{split}^{{tree}}"))
+
+    @unittest.skipIf(os.name == "nt" or not shutil.which("bash"), "POSIX Bash execution")
+    def test_subtree_helper_uses_bash_independently_of_its_sh_shebang(self):
+        helpers = self.repo / "helpers"
+        helpers.mkdir()
+        (helpers / "git-subtree").write_text(
+            '#!/bin/sh\n[ -n "$BASH_VERSION" ] || exit 91\nprintf "%s\\n" "$*"\n',
+            encoding="utf-8",
+        )
+
+        class FixtureRepository(history.Repository):
+            def git(self, *arguments):
+                if arguments == ("--exec-path",):
+                    return str(helpers)
+                return super().git(*arguments)
+
+        self.assertEqual(
+            FixtureRepository(self.repo).git("subtree", "split", "--prefix=ports/th12"),
+            "split --prefix=ports/th12",
+        )
 
     def test_invalid_join_record_cannot_claim_another_source(self):
         self.record["subtree"]["initialSplit"] = self.base

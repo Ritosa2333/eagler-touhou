@@ -1071,5 +1071,233 @@
     "source": "common/browser/spectator-playback.mjs",
     "sha256": "3b537c70b32bb8b3e19eabd6dba346461a5615e59257049fefc44b208cb4497e",
     "scope": "Original local menus retain input across transport closure and later source files until explicit departure"
+  },
+  "mainIntegration": {
+    "mergeCommit": "db8dbb1b73d923bf0e7c40dc40656d9d5c276512",
+    "runtimeProfile": "production-multiplayer",
+    "checks": {
+      "nativeUi": 1601,
+      "nativeUiTicks": 3017,
+      "worldRollbackCases": 43,
+      "worldRollback": 1335299,
+      "worldRollbackTicks": 2182
+    },
+    "records": [
+      {
+        "game": "th11",
+        "players": 2,
+        "challenge": false,
+        "route": "rtc",
+        "commit": "db8dbb1b73d923bf0e7c40dc40656d9d5c276512",
+        "startedAt": "2026-10-25T12:50:31.594Z",
+        "finishedAt": "2026-10-25T12:52:07.108Z",
+        "patchSha256": "b14c8a7e9115513101f3bac7affd31c82194dff670785f523b74552fa1f0fa6e",
+        "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+        "runtime": {
+          "th11-sdl.mjs": {
+            "bytes": 271311,
+            "sha256": "973053dcd1814c37086c5b29c301abef1a120af648a75cae51ed3347b626e0a7"
+          },
+          "th11-sdl.wasm": {
+            "bytes": 2982642,
+            "sha256": "1125bc4ac06ca3d18e4eebf5bb115ece2b1d7f9162d71c6153abb02526fd0920"
+          },
+          "th11.html": {
+            "bytes": 552,
+            "sha256": "48ed7f9961304dae7148efdeebf0e581ce18c809e8cd373844c94a46037b28bc"
+          },
+          "startup-branding.mjs": {
+            "bytes": 38161,
+            "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+          },
+          "shell.mjs": {
+            "bytes": 41004,
+            "sha256": "b30971503d29be7b181e954e3c98504a9a0d6addd54615dbccd628f75b65c00b"
+          },
+          "managed.css": {
+            "bytes": 733,
+            "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+          },
+          "keyboard.mjs": {
+            "bytes": 1298,
+            "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+          },
+          "directory-keyboard.mjs": {
+            "bytes": 11783,
+            "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+          },
+          "eagler-host.mjs": {
+            "bytes": 9245,
+            "sha256": "5840b73e8967ca604e740a1247331363c2ae32c90796ae32f205d9d7f183e7f4"
+          },
+          "multiplayer.mjs": {
+            "bytes": 14533,
+            "sha256": "eafbd2fa078ffd6e7b1ed679dba6083c1ac815a6411c1e3d9f8a3f6800c292fc"
+          },
+          "multiplayer.css": {
+            "bytes": 608,
+            "sha256": "079da9934a48d702f2fcc4e8071094ef8d66719b67b201d43b0701e77b9e273b"
+          },
+          "motion-replay.mjs": {
+            "bytes": 828,
+            "sha256": "96ea92fc9b5491c71a9c590deb5f202cc4121a46887bd2bc7d0ac7cde41db66f"
+          },
+          "direct-input-bridge.mjs": {
+            "bytes": 1318,
+            "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+          },
+          "multiplayer-replay.mjs": {
+            "bytes": 2776,
+            "sha256": "b40cb1f9cf3607af9c9f8a803a603b26eef4cdc0215ef73609d65a57023d6971"
+          },
+          "adonis-calibration.mjs": {
+            "bytes": 4062,
+            "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+          },
+          "fonts/cp932.bin": {
+            "bytes": 131072,
+            "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+          },
+          "resources.json": {
+            "bytes": 183,
+            "sha256": "a7614b785eaff6361bb085e692aefeb07ca87935d04f4df987028e3680d03c38"
+          },
+          "manifest.json": {
+            "bytes": 1114,
+            "sha256": "8bb0a7957cfd0ce360ac6e911457e8c3c8ccd62779839d8aeb042fd37841e7df"
+          }
+        },
+        "steps": [
+          "runtime-identity",
+          "players-start",
+          "join-during-play",
+          "guest-pause-confirm-and-restart",
+          "pause-seek-resume",
+          "upload-backpressure-recovery",
+          "sustained-playback",
+          "late-join-after-recovery",
+          "normal-end-buffer-drain",
+          "screenshots"
+        ],
+        "savedReplay": {
+          "path": "replay/th11_01.rpy",
+          "bytes": 52040,
+          "validation": {
+            "valid": true,
+            "bytes": 52040
+          }
+        },
+        "peerExitSafe": true,
+        "peerReturnedTitle": true,
+        "reconnected": false,
+        "abnormalStopIsolated": false,
+        "passed": true
+      },
+      {
+        "game": "th11",
+        "players": 3,
+        "challenge": true,
+        "route": "relay",
+        "commit": "2f12ad45138aadf85a610630939b02d75a20a669",
+        "startedAt": "2026-10-25T12:53:34.439Z",
+        "finishedAt": "2026-10-25T12:54:33.458Z",
+        "patchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "harnessSha256": "28f805555495bc7588f0d4e33e4319ec772a311801d881b6b67fd7d0daad02ba",
+        "runtime": {
+          "th11-sdl.mjs": {
+            "bytes": 271311,
+            "sha256": "973053dcd1814c37086c5b29c301abef1a120af648a75cae51ed3347b626e0a7"
+          },
+          "th11-sdl.wasm": {
+            "bytes": 2982642,
+            "sha256": "1125bc4ac06ca3d18e4eebf5bb115ece2b1d7f9162d71c6153abb02526fd0920"
+          },
+          "th11.html": {
+            "bytes": 552,
+            "sha256": "48ed7f9961304dae7148efdeebf0e581ce18c809e8cd373844c94a46037b28bc"
+          },
+          "startup-branding.mjs": {
+            "bytes": 38161,
+            "sha256": "fe7376040e296235be120a156b540fc681ad66f47f0dadf97a49822303d23ee9"
+          },
+          "shell.mjs": {
+            "bytes": 41004,
+            "sha256": "b30971503d29be7b181e954e3c98504a9a0d6addd54615dbccd628f75b65c00b"
+          },
+          "managed.css": {
+            "bytes": 733,
+            "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+          },
+          "keyboard.mjs": {
+            "bytes": 1298,
+            "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+          },
+          "directory-keyboard.mjs": {
+            "bytes": 11783,
+            "sha256": "e586a6c00308f0359551f229b302a78501230f7dc2f040ecca7a4a3d01536935"
+          },
+          "eagler-host.mjs": {
+            "bytes": 9245,
+            "sha256": "5840b73e8967ca604e740a1247331363c2ae32c90796ae32f205d9d7f183e7f4"
+          },
+          "multiplayer.mjs": {
+            "bytes": 14533,
+            "sha256": "eafbd2fa078ffd6e7b1ed679dba6083c1ac815a6411c1e3d9f8a3f6800c292fc"
+          },
+          "multiplayer.css": {
+            "bytes": 608,
+            "sha256": "079da9934a48d702f2fcc4e8071094ef8d66719b67b201d43b0701e77b9e273b"
+          },
+          "motion-replay.mjs": {
+            "bytes": 828,
+            "sha256": "96ea92fc9b5491c71a9c590deb5f202cc4121a46887bd2bc7d0ac7cde41db66f"
+          },
+          "direct-input-bridge.mjs": {
+            "bytes": 1318,
+            "sha256": "28a01c9b3f4fb181e8278995c602ae3f2bc0351856102755513266c47abb6062"
+          },
+          "multiplayer-replay.mjs": {
+            "bytes": 2776,
+            "sha256": "b40cb1f9cf3607af9c9f8a803a603b26eef4cdc0215ef73609d65a57023d6971"
+          },
+          "adonis-calibration.mjs": {
+            "bytes": 4062,
+            "sha256": "8577d83d4f3ee083e1bb4ff0b0c7702e86a38aff3e5726ee57a3bc324cd006fa"
+          },
+          "fonts/cp932.bin": {
+            "bytes": 131072,
+            "sha256": "57f4b3b047547cf44daa2186cca164b326ce064b137895bf417966f1053d1dc6"
+          },
+          "resources.json": {
+            "bytes": 183,
+            "sha256": "a7614b785eaff6361bb085e692aefeb07ca87935d04f4df987028e3680d03c38"
+          },
+          "manifest.json": {
+            "bytes": 1114,
+            "sha256": "8bb0a7957cfd0ce360ac6e911457e8c3c8ccd62779839d8aeb042fd37841e7df"
+          }
+        },
+        "steps": [
+          "runtime-identity",
+          "players-start",
+          "join-during-play",
+          "guest-pause-confirm-and-restart",
+          "pause-seek-resume",
+          "upload-backpressure-recovery",
+          "sustained-playback",
+          "spectator-connection-recovery",
+          "restart-menu",
+          "late-join-after-recovery",
+          "screenshots",
+          "stream-failure-isolation"
+        ],
+        "savedReplay": null,
+        "peerExitSafe": false,
+        "peerReturnedTitle": false,
+        "reconnected": true,
+        "abnormalStopIsolated": true,
+        "passed": true
+      }
+    ]
   }
 }

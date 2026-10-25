@@ -19,6 +19,8 @@ th06、th07、th08、th10、th11、th15 在最后一个已确认游戏帧交接�
 
 三人挑战使用 Relay 和 60 Hz 呈现，覆盖 P3 操作共同菜单、暂停后 R、菜单重开、旁观连接在入场和持续播放期间中断后恢复、上传受阻后继续，以及主动结束旁观后玩家继续游戏。th06 原生暂停菜单的重新开始通过 R 操作。
 
+th11 的主线高刷组合使用正式多人 Runtime，双人 WebRTC 与三人 Relay 挑战通过原生保存、独立结算、P2 返回标题和断线恢复。原生界面检查通过 1601 项断言与 3017 次逻辑／绘制更新，覆盖所有玩家低速判定点的旁观显示与玩家视角切换；完整世界回滚通过 43 个场景、1335299 项检查和 2182 次原生更新。
+
 ## 检查与复现
 
 - Relay 的 82 项检查覆盖完整 Replay 分片、当前局身份、换局缓存替换、旁观恢复和玩家隔离。
@@ -28,4 +30,4 @@ th06、th07、th08、th10、th11、th15 在最后一个已确认游戏帧交接�
 
 驱动入口为 [mp-browser.mjs](../../tools/ports/mp-browser.mjs)。双人使用 `--players=2 --route=rtc --challenge=normal --frames=300 --lifecycle --wait-end`，三人使用 `--players=3 --route=relay --challenge=challenge --frames=300 --lifecycle --recover --restart=menu --stop-stream`，并提供本机 Runtime 清单和结果目录。
 
-环境为 Windows、Chromium 145.0.7632.6、独立浏览器上下文和同仓库 Relay。th11 使用当前源码的诊断构建，其余作品使用多人 Runtime。完整提交、补丁、驱动与 Runtime 文件哈希见[机器记录](multiplayer-lifecycle-20261025.json)。每个记录对应实际运行的文件身份。
+环境为 Windows、Chromium 145.0.7632.6、独立浏览器上下文和同仓库 Relay。th11 覆盖诊断构建与正式多人 Runtime，其余作品使用多人 Runtime。完整提交、补丁、驱动与 Runtime 文件哈希见[机器记录](multiplayer-lifecycle-20261025.json)。每个记录对应实际运行的文件身份。
