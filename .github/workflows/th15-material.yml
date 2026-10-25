@@ -1,0 +1,45 @@
+name: TH15 Material
+on:
+  push:
+    branches: [experiment/th15-rollback-20261023]
+    paths:
+      - '.github/workflows/th15-material.yml'
+      - 'tools/th15-cloud/material-*'
+      - 'ports/th15*/web/cpp/game/AnmMaterial.hpp'
+      - 'ports/th15*/web/cpp/game/AnmRenderer.cpp'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            tools/th15-cloud
+            ports/th15/web/cpp/game
+            ports/th15/portable/sdl
+            ports/th15-mp/web/cpp/game
+            ports/th15-mp/portable/sdl
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - name: Execute normal and multiplayer material predicates natively and in Wasm
+        run: node tools/th15-cloud/material-test.mjs --wasm
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-material-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            artifacts/th15-material/**/receipt.json
+            artifacts/th15-material/**/*.log

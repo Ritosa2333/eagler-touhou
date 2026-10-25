@@ -1,4 +1,5 @@
 #include "AnmRenderer.hpp"
+#include "AnmMaterial.hpp"
 #include "AnmOverlay.hpp"
 #include <algorithm>
 #include <cmath>
@@ -29,7 +30,9 @@ bool AnmRenderer::material(AnmVm& vm,bool textured){
         // an ANM script has executed sprite selection (chapter root 241 does this).
         // Keep its zero geometry/UVs; selecting a sprite here would change them.
         const u32 texture=graphics.texture(*source,source->sprites[u32(vm.visual.sprite)].texture);if(texture!=bound_texture){flush();bound_texture=texture;graphics.bind_texture(texture);}}
-    const auto& v=vm.visual;auto next=graphics.pipeline();const u32 mode=v.blend_mode();next.alphaTest=true;
+    const auto& v=vm.visual;
+    if(anm_material_matches(graphics.pipeline(),v.flags,v.render_flags))return true;
+    auto next=graphics.pipeline();const u32 mode=v.blend_mode();next.alphaTest=true;
     switch(mode){
     case 0:next.sourceBlend=BlendFactor::SourceAlpha;next.destinationBlend=BlendFactor::InverseSourceAlpha;next.blendEquation=BlendEquation::Add;break;
     case 1:next.sourceBlend=BlendFactor::SourceAlpha;next.destinationBlend=BlendFactor::One;next.blendEquation=BlendEquation::Add;break;
