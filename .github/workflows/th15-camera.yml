@@ -1,0 +1,55 @@
+name: TH15 Camera
+on:
+  push:
+    branches: [experiment/th15-rollback-20261023]
+    paths:
+      - '.github/workflows/th15-camera.yml'
+      - 'tools/th15-cloud/camera-*'
+      - 'ports/th15/web/cpp/game/AnmCamera.cpp'
+      - 'ports/th15-mp/web/cpp/game/AnmCamera.cpp'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  numeric-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [normal, multiplayer]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+          submodules: false
+          sparse-checkout: |
+            launcher
+            common
+            tools
+            ports/th15
+            ports/th15-mp
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm --prefix launcher ci --ignore-scripts
+      - run: npm --prefix tools/rollback ci --ignore-scripts
+      - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
+        with:
+          version: 6.0.9
+          actions-cache-folder: emsdk-cache
+      - name: Build the selected production variant
+        run: node launcher/scripts/build-runtime.mjs --game=th15 --variant=${{ matrix.variant }} --emsdk="$EMSDK" --emscripten-version=6.0.9 --jobs=4
+      - name: Execute independent bitwise camera comparison
+        run: node tools/th15-cloud/camera-test.mjs --variant=${{ matrix.variant }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: th15-camera-${{ matrix.variant }}-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            artifacts/th15-camera/**/receipt.json
+            artifacts/th15-camera/**/*.log
+            artifacts/th15-camera/**/*.wasm
+            artifacts/th15-camera/**/*.cjs
