@@ -64,6 +64,28 @@ test('multiplayer power uses the original large orange digits and smaller decima
   assert(!texts.some(p=>p.text.includes('* ')||p.text.includes(' / ')));
   assert.deepEqual(core.HEAPU8,before,'HUD capture does not mutate game state or RNG');
 });
+test('2P/3P power and life transfer hints use letter glyphs instead of the spell banner sprite',()=>{
+  for(const count of [2,3])for(const kind of ['powerTaps','lifeTaps']){
+    const core=fixture(),before=core.HEAPU8.slice(),r=Object.create(Renderer.prototype);
+    Object.assign(r,{lastFrame:-1,stageBackgrounds:new Map([[1,{geometry:()=>({camera:{fog:[0,0,0]},triangles:[]})}]]),stageJobs:new Map(),atlases:{text:{sprites:{}}},
+      animations:{beginFrame(){},endFrame(){},sampleAll(){return [];}}});
+    const players=Array.from({length:count},(_,seat)=>({seat,x:seat*20,y:300,power:200,maxPower:400,lives:2,bombs:1,pointValue:1000000,graze:0,
+      lifeTaps:0,powerTaps:0,[kind]:seat===0?2:seat+2}));
+    const hints=r.capturePresentation(core,{multiplayer:{players},localSeat:count-1,presentationContinuity:false}).poses.filter(p=>/^[PL] \d\/5$/.test(p.nativeText?.text??''));
+    assert.equal(hints.length,count-1,'no hint before the third tap');
+    for(const [index,pose]of hints.entries()){
+      const seat=index+1,text=pose.nativeText;
+      assert.equal(text.text,`${kind==='powerTaps'?'P':'L'} ${seat+2}/5`);
+      assert.equal(pose.drawPriority,45);assert.equal(pose.clip,2);
+      assert.deepEqual([text.x,text.y],[players[seat].x+224,players[seat].y]);
+      const glyphs=asciiGlyphs(text);
+      assert.deepEqual(glyphs.map(g=>g.id),[kind==='powerTaps'?146:142,seat+2+114,113,119]);
+      assert(!glyphs.some(g=>g.id>=258),'transfer labels must never address banner artwork');
+    }
+    assert.deepEqual(core.HEAPU8,before,'transfer hints are presentation only');
+  }
+});
+
 test('glyph rendering uses original Failed and timer sprites, ARGB alpha and native rounding',()=>{
   const calls=[],r=Object.create(Renderer.prototype);r.atlases={ascii:{sprites:Object.fromEntries([227,228,238,241,262].map(id=>[id,{entry:0,x:0,y:0,w:id===262?32:8,h:10}]))}};r.region=(...args)=>calls.push(args);
   const p={font:2,text:'$01:%',x:10.5,y:20.5,colorARGB:0xc080ffc0};r.nativeText(p);

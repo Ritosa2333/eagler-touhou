@@ -522,7 +522,8 @@ export class Renderer {
         text('/'+Math.floor(p.maxPower/100)+'.',574,y+50,4,1,powerStyle);
         text(String(p.maxPower%100).padStart(2,'0'),606,y+57,4,1,decimalStyle);
         const transfer=p.lifeTaps>=3?'L '+p.lifeTaps+'/5':p.powerTaps>=3?'P '+p.powerTaps+'/5':null;
-        if(transfer)poses.push({nativeText:{text:transfer,x:p.x+224,y:p.y,alignX:0,font:2},drawPriority:45,clip:2,order:poses.length});
+        // Font2 is numeric: 'P' selects ascii259, the spell-result banner.
+        if(transfer)poses.push({nativeText:{text:transfer,x:p.x+224,y:p.y,alignX:0,font:1},drawPriority:45,clip:2,order:poses.length});
       }
       const local=fps.multiplayer.players.find(p=>p.seat===fps.localSeat)??fps.multiplayer.players[0],base=104+fps.multiplayer.players.length*80;
       add('front',12,frame,0,base-174,0,1,null,{alpha:1,drawPriority:59,clipped:false});text(groupedNumber(Math.floor(local.pointValue/100/10)*10),620,base+2,3,2);
