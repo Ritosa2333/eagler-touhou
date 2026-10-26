@@ -1,6 +1,7 @@
 #pragma once
 #include "Types.hpp"
 namespace th15 {
+namespace multiplayer {class FrameState;}
 enum class FrameAction:i32 {
     Remove=0,Continue=1,Repeat=2,StopSuccess=3,Stop=4,Error=5,
     Restart=6,Cleanup=7,StopAlternate=8
@@ -15,12 +16,14 @@ struct FrameCallback {
     FrameCallback(const FrameCallback&)=delete;FrameCallback& operator=(const FrameCallback&)=delete;
 private:
     friend class FrameScheduler;
+    friend class multiplayer::FrameState;
     FrameCallback* previous=nullptr;FrameCallback* next=nullptr;
     FrameScheduler* scheduler=nullptr;i32 priority=0;FramePass pass=FramePass::Update;
 };
 // Stable, externally owned callbacks avoid allocations during a game frame.
 // Registration, removal and return actions preserve the original live traversal.
 class FrameScheduler {
+    friend class multiplayer::FrameState;
     FrameCallback* updates=nullptr;FrameCallback* draws=nullptr;
     FrameCallback* continuation=nullptr;
     i32 execute(FramePass);

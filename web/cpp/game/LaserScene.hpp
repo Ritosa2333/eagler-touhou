@@ -33,6 +33,7 @@ struct SegmentedLaserRequest {
 // Owns concrete lasers and connects their embedded animations to the shared
 // player predicate, cancellation rewards, effects and typed game services.
 class LaserScene {
+    friend class multiplayer::LaserFrameState;
     struct MovingLaser;
     struct StationaryLaser;
     struct CurveLaser;

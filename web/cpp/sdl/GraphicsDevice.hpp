@@ -9,7 +9,7 @@ class GraphicsDevice final:public ZunGraphics {
     struct Texture {TextureImage image;u32 revision=0,renderScale=1;};
     std::map<u32,Texture> textures;
     std::map<const AnmResource*,std::vector<u32>> resources;
-    u32 next_handle=3,startup_credit=0;
+    u32 next_handle=3,startup_credit=0,fps_background=0;
     static touhou::sdl::Surface resolve(void*,u32);
 public:
     // Profile 10 selects shared float-alpha/D16 precision and world-quad
@@ -17,10 +17,12 @@ public:
     touhou::sdl::Renderer backend{10,resolve,this};
     static constexpr u32 screen=1,depth=2;
     std::string error;u32 render_scale=1;
-    PresentationFrame presentation;
-    void presentation_offset(Vec2 value)override{presentation.offset=value;}
-    void presentation_range(const AnmVm& vm,u32 first,u32 count,u32 instance=0)override{presentation.range(vm,first,count,instance);}
-    void presentation_camera(bool enabled)override{presentation.camera=enabled;}
+    PresentationFrame presentation;bool logical_drawing=false;
+    bool frame_drawn=false;
+    bool fps_backdrop(bool capture);
+    void presentation_offset(Vec2 value)override{if(!logical_drawing)presentation.offset=value;}
+    void presentation_range(const AnmVm& vm,u32 first,u32 count,u32 instance=0)override{if(!logical_drawing)presentation.range(vm,first,count,instance);}
+    void presentation_camera(bool enabled)override{if(!logical_drawing)presentation.camera=enabled;}
     bool initialize();
     void draw_startup_branding(u32 tint);
     void release_startup_branding();
@@ -33,8 +35,8 @@ public:
     touhou::graphics::PipelineState& pipeline()override{return backend.pipeline();}
     void set_layout(touhou::graphics::VertexLayout layout)override{backend.state.layout=touhou::graphics::attributes(layout);}
     void set_matrix(touhou::graphics::MatrixKind kind,const Matrix4& matrix)override{backend.transform(kind,matrix.m);}
-    void triangles(u32 count,const void* data,u32 stride)override{presentation.draw(backend.state,touhou::graphics::Topology::Triangles,count,data,stride,true);backend.draw_batch(count,data,stride);}
-    void primitives(touhou::graphics::Topology kind,u32 count,const void* data,u32 stride)override{presentation.draw(backend.state,kind,count,data,stride,false);backend.draw(kind,count,data,stride);}
+    void triangles(u32 count,const void* data,u32 stride)override{if(logical_drawing)return;presentation.draw(backend.state,touhou::graphics::Topology::Triangles,count,data,stride,true);backend.draw_batch(count,data,stride);}
+    void primitives(touhou::graphics::Topology kind,u32 count,const void* data,u32 stride)override{if(logical_drawing)return;presentation.draw(backend.state,kind,count,data,stride,false);backend.draw(kind,count,data,stride);}
     bool select_target(const AnmResource*,u32)override;
     bool clear_target(u32,const GraphicsViewport*)override;
     bool clear_depth(const GraphicsViewport*)override;
@@ -44,7 +46,7 @@ public:
     bool clear_image(u32 target);
     void set_viewport(const GraphicsViewport& v)override{viewport(v);}
     void viewport(const GraphicsViewport& v){backend.viewport({v.x,v.y,v.width,v.height,v.near_depth,v.far_depth});}
-    void clear(u32 color,bool clear_depth=true){presentation.clear(backend.state,clear_depth?3:1,color,nullptr);backend.clear(clear_depth?3:1,color,1,0);}
-    void present(){backend.present(screen);}
+    void clear(u32 color,bool clear_depth=true){if(logical_drawing)return;presentation.clear(backend.state,clear_depth?3:1,color,nullptr);backend.clear(clear_depth?3:1,color,1,0);}
+    void present(){if(!logical_drawing)backend.present(screen);}
 };
 }

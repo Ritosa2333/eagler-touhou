@@ -3,6 +3,7 @@
 #include "PlayerBounds.hpp"
 #include "ScreenShake.hpp"
 namespace th15 {
+namespace multiplayer {class BattleFrameState;}
 struct BombEnemyState {i32 uses=0,chain=0;bool available=false;};
 struct BombHost {
     virtual ~BombHost()=default;
@@ -16,6 +17,7 @@ struct BombHost {
 struct BombContext {AnmManager& animations;PlayerMotion& motion;PlayerLife& life;PlayerBounds& bounds;ShtHeader& header;PlayerLifeSession& session;PlayerSpellStatus& spell;BombEnemyState& enemies;BombHost& world;i32 player_resource=0;bool hud_available=true,hud_collect=false;};
 class BombController {
     friend class BombCheckpoint;
+    friend class multiplayer::BattleFrameState;
 protected:
     BombContext& context;float frame_rate=1;
     virtual bool start()=0;virtual bool frame(bool& finished)=0;

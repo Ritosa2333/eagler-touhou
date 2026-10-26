@@ -2,11 +2,13 @@
 #include "AnmVm.hpp"
 #include <array>
 #include <algorithm>
+namespace th15::multiplayer {class BattleFrameState;}
 namespace th15::presentation {
 inline bool always_hitbox=false;
 // Run the stock focus scripts on private VMs. This host owns only their child
 // relationship, never the game's animation registry, effects or random source.
 class HitboxDisplay final:private AnmObjectHost {
+    friend class th15::multiplayer::BattleFrameState;
     std::array<AnmVm,2> markers;
     const AnmVm* child_template=nullptr;
     AnmEnvironment environment;Rng random;

@@ -8,11 +8,13 @@
 #include "GameInput.hpp"
 #include "RunStageObjects.hpp"
 namespace th15 {
+namespace multiplayer {class StageFrameState;}
 // Platform/session work stays explicit: fonts, sound, records, persistence and
 // scene destinations are outside the stage's game-object ownership.
 struct StageGameplayServices:BattleWorldServices,StageSceneServices,MessageSceneServices,DialogueSceneServices,CheckpointSceneServices {};
 struct StageGameplayFrame {BattleFrame battle;DialogueInput dialogue;StageSceneFrame background;};
 class StageGameplay {
+ friend class multiplayer::StageFrameState;
  struct Services;std::unique_ptr<Services> services;
  AnmManager& animations;AnmEnvironment& environment;SessionState& progress;StageAssets& assets;StageGameplayServices& platform;
  // The scheduler must outlive all externally owned callbacks, including battle.

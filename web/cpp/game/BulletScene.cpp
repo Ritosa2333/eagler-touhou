@@ -84,3 +84,5 @@ bool BulletScene::cancel_all(i32 reward){
 }
 bool BulletScene::cancel_slot(u32 index,i32 reward){error.clear();if(index>=slots.size()){error="Bullet cancellation slot outside pool";return false;}auto& slot=*slots[index];slot.visual.rate=manager.context.rate;return slot.cancel_bullet(reward)&&error.empty();}
 }
+
+#include "../multiplayer/BulletFrameStateImpl.hpp"

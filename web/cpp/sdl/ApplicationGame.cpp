@@ -1,10 +1,11 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "ApplicationState.hpp"
 #include "../game/PracticeSections.hpp"
 #include <cstdio>
 #include <ctime>
 #include <SDL3/SDL.h>
 namespace th15::sdl {
-bool ApplicationState::audio(i32 id,float pan,PlayerShots::SoundAction action,bool){if(action==PlayerShots::SoundAction::pan){if(id<0||id>=77)return fail("Sound pan voice outside range");audio_device.sound_pan(u32(id),truncate_int(float(float(pan*1000.f)/192.f)));return true;}if(action==PlayerShots::SoundAction::stop)return audio_device.effects.stop(id)||fail(audio_device.effects.error);return audio_device.effects.positioned(id,pan)||fail(audio_device.effects.error);}
+bool ApplicationState::audio(i32 id,float pan,PlayerShots::SoundAction action,bool queued){if(frame_effects){frame_effects->events.push_back([this,id,pan,action,queued](){return audio(id,pan,action,queued);});return true;}if(action==PlayerShots::SoundAction::pan){if(id<0||id>=77)return fail("Sound pan voice outside range");audio_device.sound_pan(u32(id),truncate_int(float(float(pan*1000.f)/192.f)));return true;}if(action==PlayerShots::SoundAction::stop)return audio_device.effects.stop(id)||fail(audio_device.effects.error);return audio_device.effects.positioned(id,pan)||fail(audio_device.effects.error);}
 bool ApplicationState::life_hud(i32 stock,i32 pieces){return scene()&&scene()->hud.life(stock,pieces)||fail(scene()?scene()->hud.error:"Life HUD has no scene");}
 bool ApplicationState::bomb_hud(i32 stock,i32 pieces){return scene()&&scene()->hud.bombs(stock,pieces)||fail(scene()?scene()->hud.error:"Bomb HUD has no scene");}
 bool ApplicationState::game_over(){return pause&&pause->open(PauseEntrance::GameOver)||fail(pause?pause->error:"Game-over menu has no owner");}
@@ -39,7 +40,7 @@ bool ApplicationState::suppress_practice_music(u32 caller,i32 id){
  // The source tests bit 1 here, NOT the Practice-entry flag 0x10.
  return practice_music.suppress(hotkey,(flags&1)!=0,caller,id);
 }
-bool ApplicationState::request_music(u32 caller,i32 code,i32 value,const std::string& text){return suppress_practice_music(caller,value)||audio_device.queue_music(code,value,text)||fail(audio_device.error);}
+bool ApplicationState::request_music(u32 caller,i32 code,i32 value,const std::string& text){if(frame_effects){frame_effects->events.push_back([this,caller,code,value,text](){return request_music(caller,code,value,text);});return true;}return suppress_practice_music(caller,value)||audio_device.queue_music(code,value,text)||fail(audio_device.error);}
 bool ApplicationState::start_gameplay_music(i32 slot){
  // 44d3e0 releases only with the native alternate-audio configuration bit.
  // Config starts at 4e79a4: 4e79cc is its +28 flag byte.
@@ -89,7 +90,7 @@ bool ApplicationState::pump_checkpoint(u32 budget){
 bool ApplicationState::finish_checkpoint(){while(checkpoint_encoder)if(!pump_checkpoint(UINT32_MAX))return false;return true;}
 bool ApplicationState::ending_fade(){return screen_fade(200,20,81,true,true);}
 bool ApplicationState::finish_replay(){if(progress.replay)return pause&&pause->open(PauseEntrance::RetryPause)||fail(pause?pause->error:"Replay completion menu unavailable");return prepare_live_replay(true);}
-bool ApplicationState::destination(SessionDestination value){pending_destination=i32(value);return true;}
+bool ApplicationState::destination(SessionDestination value){if(!multiplayer::FrameFence::allow())return false;pending_destination=i32(value);return true;}
 bool ApplicationState::load_scene(bool&){return fail("Scene loading bypassed the RunSession entrance controller");}
 bool ApplicationState::activate_scene(){return fail("Scene activation bypassed the RunSession entrance controller");}
 bool ApplicationState::release_background(){display->release_previous();return true;}
@@ -156,7 +157,7 @@ i32 ApplicationState::scene_destination()const{return current_destination;}
 bool ApplicationState::resume_looping_sounds(){audio_device.effects.resume();return true;}
 bool ApplicationState::resume_music(){if(!suppress_practice_music(PracticeMusic::resume_addr,0))audio_device.pause_music(false);return true;}
 bool ApplicationState::resume_saved_music(const std::string& wave,double position){return music(wave)&&music_command(2)&&seek_stage_music(position);}
-bool ApplicationState::destination(PauseDestination value){pending_destination=i32(value);return true;}
+bool ApplicationState::destination(PauseDestination value){if(!multiplayer::FrameFence::allow())return false;pending_destination=i32(value);return true;}
 bool ApplicationState::screen_fade(i32 duration,i32 update,i32 draw,bool covering,bool full_screen){auto fade=std::make_unique<ScreenFade>(scheduler,renderer,graphics,environment,duration,update,draw,0,covering,full_screen);fade->context=[this](){return ScreenFadeContext{exiting,scene()!=nullptr,progress.scene_flags,progress.rate};};fades.push_back(std::move(fade));return true;}
 bool ApplicationState::background_fade(i32 duration,i32 update,i32 draw){return screen_fade(duration,update,draw,false,false);}
 }

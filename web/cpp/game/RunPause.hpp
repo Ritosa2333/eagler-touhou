@@ -5,6 +5,7 @@
 #include "RunPlayTime.hpp"
 #include "PauseDraw.hpp"
 namespace th15 {
+namespace sdl {class AppFrameState;}
 struct RunPausePlatform:RunClock,PauseActionServices,PauseScoreServices {
  virtual bool replay_save_available()const{return true;}
  virtual bool sound(i32)=0;virtual bool suspend_music()=0;virtual bool finish_audio_requests()=0;
@@ -18,6 +19,7 @@ struct RunPausePlatform:RunClock,PauseActionServices,PauseScoreServices {
 // Run pause uses the actual stage scheduler, HUD, dialogue, options and chapter
 // snapshots. The browser/SDL application supplies audio, captures and storage.
 class RunPause {
+ friend class sdl::AppFrameState;
  struct Services;std::unique_ptr<Services> services;
  StageGameplay& scene;SessionState& progress;AnmManager& animations;RunPausePlatform& platform;i32 front;bool selection=false;
  std::function<bool()> previous_message_over,previous_player_over;

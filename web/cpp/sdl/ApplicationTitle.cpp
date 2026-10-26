@@ -1,3 +1,4 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "ApplicationState.hpp"
 #include <SDL3/SDL.h>
 #include <ctime>
@@ -16,8 +17,8 @@ i32 ApplicationState::practice_overlay_action(i32& stage){
  if(!practice.configured.valid(difficulty))return 0;
  stage=practice.configured.stage;return 1;
 }
-bool ApplicationState::sound(i32 id){return audio_device.effects.enqueue(id)||fail(audio_device.effects.error);}
-bool ApplicationState::text(AnmVm& vm,const DialogueText& value){return fonts.text(vm,value)||fail(fonts.error);}
+bool ApplicationState::sound(i32 id){if(frame_effects){frame_effects->events.push_back([this,id](){return sound(id);});return true;}return audio_device.effects.enqueue(id)||fail(audio_device.effects.error);}
+bool ApplicationState::text(AnmVm& vm,const DialogueText& value){if(!multiplayer::FrameFence::allow())return false;return fonts.text(vm,value)||fail(fonts.error);}
 bool ApplicationState::hud_text(const HudTextDraw& value){return captions.enqueue(value,0,value.style.shadow)||fail(captions.error);}
 bool ApplicationState::keyboard(TitleKeyboard& value){value=keyboard_state;return true;}
 bool ApplicationState::calendar(i64 stamp,ReplayCalendar& value){const time_t time=stamp;const auto* tm=std::localtime(&time);if(!tm)return fail("Replay timestamp outside calendar range");value={tm->tm_year+1900,tm->tm_mon+1,tm->tm_mday,tm->tm_hour,tm->tm_min};return true;}

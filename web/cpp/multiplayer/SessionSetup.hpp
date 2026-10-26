@@ -11,7 +11,7 @@ struct SessionSetup {
     static constexpr std::uint32_t Version=6, Words=23, GameplayVersion=21;
     std::uint64_t session_id=0;
     std::uint32_t player_count=2,local_player=0,difficulty=1,seed=1;
-    std::uint32_t requested_delay=0,input_delay=0,prediction_reserve=2;
+    std::uint32_t requested_delay=0,input_delay=0,prediction_reserve=2,mode=1;
     bool automatic=true,challenge=false;
     std::uint32_t chapter_threshold=0;
     std::array<std::uint32_t,3> selections{};
