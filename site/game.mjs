@@ -1,4 +1,4 @@
-import {createMultiplayerRuntime} from '../src/multiplayer.mjs';
+import {createMultiplayerRuntime,multiplayerHeldInput} from '../src/multiplayer.mjs';
 import {inspectMultiplayerReplay} from '../src/multiplayer-replay.mjs';
 import createCore from './runtime/core.mjs';
 import {Renderer} from '../src/renderer.mjs';
@@ -469,7 +469,7 @@ function tick(){
       const ui=sampled.ui|pad|touched.held,pressed=sampled.pressed|(pad&~previousPadUI)|touched.pressed;previousPadUI=pad;
       model.tick({held:ui,pressed});presentation.tick(model.state);return;
     }
-    const held=sampled.held|pad|touched.held|((sampled.ui&0x80000)?0x1000:0)|((sampled.ui&0x200000)?0x2000:0);
+    const held=multiplayerHeldInput(sampled,pad,touched.held);
     const rollbackBefore=multiplayer.rollbackCount;
     multiplayer.tick({held,pause:!!((sampled.ui|pad|touched.held)&256),motion:touched.motion}).forEach(effect);
     if(multiplayer.rollbackCount!==rollbackBefore)resetGamePresentation({retainSamples:true});

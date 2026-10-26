@@ -348,7 +348,7 @@ int main(){
   menuCheckpoint.restore();check(mp::canonicalHash()==menuHash&&mp::menuConfirm,"confirmation rollback state");
   input={};input[0].held=2;check(mp::update(input)&&!mp::menuConfirm,"Bomb cancels confirmation");
   input={};check(mp::update(input),"release cancel");input[0].pause=true;check(mp::update(input)&&!mp::paused,"Escape resumes shared world");
-  input={};input[0].held=mp::InputLanes::Restart;check(mp::update(input)&&mp::restartRequested&&mp::finished,"restart is a synchronized exact input");
+  input={};input[0].held=mp::InputLanes::Restart;check(mp::update(input)&&!mp::paused&&!mp::restartRequested&&!mp::finished,"R cannot restart multiplayer");
   begin();auto initial=mp::canonicalHash();mp::StageEntry entry;
   check(mp::decodeStageEntry(mp::encodeStageEntry(),entry),"stage entry schema");
   check(mp::restoreStageEntry(entry)&&mp::canonicalHash()==initial,"initial checkpoint reconstruction");
@@ -361,7 +361,7 @@ int main(){
   std::array<Netplay::FrameInput,3> frames{wire,{}, {}};std::array<mp::Input,3> decoded;
   check(mp::InputLanes::Decode(frames.data(),3,decoded)&&decoded[0].pause&&decoded[0].x==-23552&&decoded[0].y==55296,"touch input roundtrip");
   check(mp::InputLanes::Capture(mp::InputLanes::Confirm|mp::InputLanes::Restart,false,0,0,0,wire),"menu wire lanes");
-  frames[0]=wire;check(mp::InputLanes::Decode(frames.data(),3,decoded)&&decoded[0].held==(mp::InputLanes::Confirm|mp::InputLanes::Restart),"Enter/Retry wire roundtrip");
+  frames[0]=wire;check(mp::InputLanes::Decode(frames.data(),3,decoded)&&decoded[0].held==mp::InputLanes::Confirm&&!(wire.buttons&mp::InputLanes::Restart),"Enter roundtrip excludes Retry");
   mp::SessionSetup setup;setup.session_id=123;setup.automatic=false;setup.selections={0,3,5};setup.player_count=3;setup.build={1,2,3,4};
   mp::ReplayArchive replay;check(replay.Begin(setup,12345)&&replay.Append(0,1,frames.data(),3),"confirmed Replay append");
   std::vector<uint8_t> bytes;check(replay.Encode(bytes,"PLAYER",123,false),"Replay encode");mp::ReplayArchive loaded;

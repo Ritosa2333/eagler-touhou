@@ -46,7 +46,7 @@ struct Pilot {
 extern std::array<Pilot, MaxPlayers> pilots;
 extern Options options;
 extern bool active, paused, finished;
-extern bool restartRequested,returnRequested,saveRequested,menuConfirm;
+extern bool restartRequested,returnRequested,saveRequested,menuConfirm,menuInputReady;
 extern unsigned menuSelection,menuAction,menuPreviousHeld,menuAge,menuHoldAge,storyPreviousHeld;
 extern unsigned currentSeat, tickNumber, wipeFrames, lifeFragments, bombFragments;
 extern int teamRank;

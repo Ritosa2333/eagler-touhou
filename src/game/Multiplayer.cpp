@@ -13,7 +13,7 @@ namespace th12::multiplayer {
 std::array<Pilot, MaxPlayers> pilots{};
 Options options{};
 bool active = false, paused = false, finished = false;
-bool restartRequested=false,returnRequested=false,saveRequested=false,menuConfirm=false;
+bool restartRequested=false,returnRequested=false,saveRequested=false,menuConfirm=false,menuInputReady=false;
 unsigned menuSelection=0,menuAction=0,menuPreviousHeld=0,menuAge=0,menuHoldAge=0,storyPreviousHeld=0;
 unsigned currentSeat = 0, tickNumber = 0, wipeFrames = 0, lifeFragments = 0, bombFragments = 0;
 int teamRank = 0;
@@ -34,6 +34,7 @@ const std::string& snapshot() {
   out << "{\"version\":1,\"frame\":" << tickNumber << ",\"stage\":" << stageNumber
       << ",\"paused\":" << paused << ",\"menuSelection\":" << menuSelection << ",\"menuConfirm\":" << menuConfirm
       << ",\"menuAction\":" << menuAction << ",\"returnRequested\":" << returnRequested << ",\"saveRequested\":" << saveRequested
+      << ",\"menuInputReady\":" << menuInputReady
       << ",\"restart\":" << restartRequested << ",\"finished\":" << finished << ",\"score\":" << score * int64_t(10)
       << ",\"ufoColors\":[" << ufoManager.inventory.colors[0] << ',' << ufoManager.inventory.colors[1]
       << ',' << ufoManager.inventory.colors[2] << "],\"players\":[";
@@ -41,7 +42,7 @@ const std::string& snapshot() {
     const auto& p = pilots[s]; const auto& r = p.resources;
     if (s) out << ',';
     out << "{\"seat\":" << s << ",\"selection\":" << options.selections[s] << ",\"ghost\":" << p.ghost
-        << ",\"x\":" << p.px / 128.f << ",\"y\":" << p.py / 128.f << ",\"state\":" << p.playerState
+        << ",\"x\":" << p.px / 128.f << ",\"y\":" << p.py / 128.f << ",\"state\":" << p.playerState << ",\"held\":" << p.input.held
         << ",\"lives\":" << r.lives << ",\"bombs\":" << r.bombs << ",\"power\":" << r.power
         << ",\"maxPower\":" << r.maxPower << ",\"pointValue\":" << r.pointValueStored
         << ",\"lifeFragments\":" << r.lifeFragments << ",\"bombFragments\":" << r.bombFragments
@@ -62,7 +63,7 @@ uint32_t canonicalHash() {
   }
   // Menu age is presentation time; idle paused peers may be one input frame
   // apart while displaying the same authoritative world and menu selection.
-  word(menuPreviousHeld); word(menuHoldAge); word(storyPreviousHeld);
+  word(menuPreviousHeld); word(menuHoldAge); word(storyPreviousHeld);word(menuInputReady);
   word(temporaryEnemyOwner);
   for (const auto& item : itemManager.entities) if (item.active()) { word(item.id); word(item.recipient); word(item.collector); word(item.gift); }
   std::vector<uint32_t> ids;
@@ -146,13 +147,13 @@ void syncScore(int before) {
 }
 void initializePilots(bool nextStage) {
   for (unsigned s = 0; s < options.count; ++s) resetPilot(s, nextStage);
-  paused=menuConfirm=false;menuSelection=menuAction=menuPreviousHeld=menuAge=menuHoldAge=storyPreviousHeld=0;
+  paused=menuConfirm=menuInputReady=false;menuSelection=menuAction=menuPreviousHeld=menuAge=menuHoldAge=storyPreviousHeld=0;
   wipeFrames = 0; damageRemainders.clear(); bulletGrazeMasks.clear();
 }
 bool begin(const Options& setup) {
   if (!setup.valid() || stageNumber != int(setup.stage)) return false;
   options = setup; currentSeat = 0; active = true; paused = finished = false;
-  restartRequested=returnRequested=saveRequested=menuConfirm=false;
+  restartRequested=returnRequested=saveRequested=menuConfirm=menuInputReady=false;
   menuSelection=menuAction=menuPreviousHeld=menuAge=menuHoldAge=storyPreviousHeld=0;
   tickNumber = wipeFrames = lifeFragments = bombFragments = 0; teamRank = score = 0;
   for (unsigned s = 0; s < MaxPlayers; ++s) {
@@ -273,29 +274,37 @@ bool update(const std::array<Input,MaxPlayers>& inputs) {
   if(pauseEdge){
     if(paused&&menuConfirm){menuConfirm=false;menuSelection=menuAction;menuAge=0;}
     else {paused=!paused;menuSelection=menuAction=menuAge=0;menuConfirm=false;}
+    menuInputReady=false;menuHoldAge=0;
   }
   if(paused){
     sound_system::queue.reset();
     ++menuAge;
-    if(menuPressed&0x2000u){restartRequested=true;finished=true;return true;}
+    // A new pause menu/confirmation accepts controls only after every seat
+    // releases gameplay keys. R/Retry has no multiplayer shortcut.
+    if(menuPressed&2){
+      if(menuConfirm){menuConfirm=false;menuSelection=menuAction;menuAge=0;}else paused=false;
+      menuInputReady=false;return true;
+    }
+    if(!menuInputReady){
+      menuHoldAge=0;
+      if(!(menuHeld&0x10f3u)&&!pauseEdge)menuInputReady=true;
+      return true;
+    }
     const auto directions=menuHeld&0xf0u;
     menuHoldAge=directions&&directions==(previousMenuHeld&0xf0u)?menuHoldAge+1:0;
-    const auto move=menuPressed|(menuHoldAge>=20&&menuHoldAge%4==0?directions:0u);
+    const auto move=menuPressed|(!menuConfirm&&menuHoldAge>=20&&menuHoldAge%4==0?directions:0u);
     const unsigned count=menuConfirm?2:4;
     if(move&16)menuSelection=(menuSelection+count-1)%count;
     if(move&32)menuSelection=(menuSelection+1)%count;
-    if(menuPressed&2){
-      if(menuConfirm){menuConfirm=false;menuSelection=menuAction;menuAge=0;}else paused=false;
-    }else if(menuPressed&0x1001u){
+    if(menuPressed&0x1001u){
       if(menuConfirm){
-        if(menuSelection){menuConfirm=false;menuSelection=menuAction;menuAge=0;}
+        if(menuSelection){menuConfirm=false;menuSelection=menuAction;menuAge=0;menuInputReady=false;}
         else {restartRequested=menuAction==3;returnRequested=menuAction==1;saveRequested=menuAction==2;finished=true;}
       }else if(!menuSelection)paused=false;
-      else {menuAction=menuSelection;menuSelection=1;menuConfirm=true;menuAge=0;}
+      else {menuAction=menuSelection;menuSelection=1;menuConfirm=true;menuAge=0;menuHoldAge=0;menuInputReady=false;}
     }
     return true;
   }
-  if(menuPressed&0x2000u){paused=true;restartRequested=true;finished=true;return true;}
   Scope owner(0);
   // Dialogues use the same combined non-movement controls on every peer.
   uint32_t story=0;for(unsigned s=0;s<options.count;++s)story|=inputs[s].held&0x201u;

@@ -111,7 +111,7 @@ bool Session::stageLoaded(){
 }
 bool Session::replayBytes(std::vector<uint8_t>& out,const char* name){return replay_.Encode(out,name,uint32_t(score),(fullGameFlow.status==FullGameStatus::Result||fullGameFlow.status==FullGameStatus::Ending)&&!options.challenge);}
 bool Session::restart(){
-  if(!restartRequested||!network.Retired()||network.ReadOnly())return fail("TH12 restart is not confirmed");
+  if(!restartRequested||!finished||!paused||!menuConfirm||menuAction!=3||menuSelection!=0||!network.Retired()||network.ReadOnly())return fail("TH12 restart is not confirmed");
   if(!network.BeginNextRun((network.Setup().seed+1)&65535))return fail(network.Error());
   replay_.Clear();records_.clear();audio_.clear();committed_=0;started_=false;return start();
 }
