@@ -12,7 +12,7 @@ Relay 使用 WebSocket 提供房间目录、等待室、信令、游戏传输和
 | 旁观连接 | `room`、`run`、`spectator`、`players`、`member`；版本化 run 另带 `runtimeGeneration` |
 | 网络诊断 | `diagnostic=1` |
 
-已加入房间的玩家和旁观连接以 `member` 校验成员身份。联机程序已版本化的 run 还要求 `runtimeGeneration` 与 run 一致。`run` 首局默认为 `0`，`player` 从 `0` 开始。等待室的 `lobby` 与 `member` 是客户端会话 ID。
+已加入房间的玩家和旁观连接以 `member` 校验成员身份。玩家连接与信令连接只能进入已存在的房间；房间由等待室创建。联机程序已版本化的 run 还要求 `runtimeGeneration` 与 run 一致。`run` 首局默认为 `0`，`player` 从 `0` 开始。等待室的 `lobby` 与 `member` 是客户端会话 ID。
 
 ## 等待室消息
 
@@ -50,6 +50,7 @@ th09 按当前局保存完整 Replay 前缀，原生开局头到达时释放上�
 
 - `common/contracts/` 是静态产品和协议规则的唯一来源；Relay 不依赖 Launcher UI。
 - `Origin` 与客户端自报的昵称或 ID 不作为身份凭据。服务端按成员、角色、来源地址和消息类型检查连接。
+- 对局帧的席位标识由发送连接决定：`E?NP` 输入与会话包的 sender、`ADS` 的 peer、`ADP` 的 sender 在转发前一律改写为该连接的 `player`，其余字节原样转发。
 - TURN 凭据通过服务端短期签名生成，Relay 与 coturn 使用同一共享密钥。
 
 本服务源码见 [`../src/netplay-relay.mjs`](../src/netplay-relay.mjs)，部署见 [`../deploy/README.md`](../deploy/README.md)。
