@@ -104,7 +104,7 @@ def subtree_records(repo, head):
     records = []
     migration = repo.git("ls-tree", "--name-only", f"{head}:docs/migration").splitlines()
     for name in migration:
-        if not re.fullmatch(r"th[0-9]+-eagler-[0-9]+\.json", name):
+        if not re.fullmatch(r"th[0-9]+(?:mp|-mp)?-eagler-[0-9]+\.json", name):
             continue
         record = repo.document(head, f"docs/migration/{name}")
         if record.get("currentMode") == "git-subtree":

@@ -71,6 +71,30 @@ class SourceHistoryTests(unittest.TestCase):
         self.assertEqual(result["subtrees"]["ports/th12"], self.upstream)
         self.assertEqual(result["sourceAnchors"], 0)
 
+    def test_multiplayer_source_record_runs_standard_export_and_ancestry_checks(self):
+        self.write("launcher/config/workspace.json", {"repositories": {"th12": "ports/th12", "th15mp": "ports/th15-mp"}})
+        self.git(self.repo, "add", ".")
+        self.git(self.repo, "commit", "-qm", "register multiplayer directory")
+        self.git(self.repo, "subtree", "add", "--prefix=ports/th15-mp", str(self.source), "main", "-m", "join multiplayer source")
+        join = self.git(self.repo, "rev-parse", "HEAD")
+        record = json.loads(json.dumps(self.record))
+        record["destination"] = "ports/th15-mp"
+        record["subtree"]["initialJoin"] = record["subtree"]["latestJoin"] = join
+        self.write("docs/migration/th15mp-eagler-20261026.json", record)
+        (self.repo / "ports/th15-mp/README.md").write_text("multiplayer frame restoration\n", encoding="utf-8")
+        self.git(self.repo, "add", ".")
+        self.git(self.repo, "commit", "-qm", "adapt multiplayer")
+        result = history.verify(history.Repository(self.repo), base=self.base)
+        split = result["subtrees"]["ports/th15-mp"]
+        self.assertTrue(history.Repository(self.repo).ancestor(self.upstream, split))
+        self.assertEqual(self.git(self.repo, "rev-parse", "HEAD:ports/th15-mp"), self.git(self.repo, "rev-parse", split + "^{tree}"))
+        record["subtree"]["initialSplit"] = self.base
+        self.write("docs/migration/th15mp-eagler-20261026.json", record)
+        self.git(self.repo, "add", ".")
+        self.git(self.repo, "commit", "-qm", "corrupt multiplayer source record")
+        with self.assertRaisesRegex(RuntimeError, "is not a parent"):
+            history.verify(history.Repository(self.repo), base=self.base)
+
     def test_new_port_commit_exports_ahead_of_original(self):
         (self.repo / "ports/th12/README.md").write_text("adapted source\n", encoding="utf-8")
         self.git(self.repo, "add", "ports/th12/README.md")
