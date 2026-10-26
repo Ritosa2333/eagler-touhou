@@ -45,12 +45,26 @@ int main(int argc,char** argv){
             max_bullets=std::max(max_bullets,b.bullet_scene->manager.visible_count);max_nodes=std::max(max_nodes,world.animations.registry.count());
             if(frame%120==0){
                 max_memory=std::max(max_memory,private_bytes());require(saved.capture(b),saved.error);const auto before=digest(world);const auto identity=AnmVm::presentation_counter;
-                std::array<DigestTrace,12> traces;std::array<u64,12> expected{};for(unsigned n=0;n<12;++n){world.step(input(frame+n));digest_trace=&traces[n];expected[n]=digest(world);digest_trace=nullptr;}
+                std::array<u64,12> expected{};for(unsigned n=0;n<12;++n){world.step(input(frame+n));expected[n]=digest(world);}
                 restore.run([&]{require(saved.restore(b),saved.error);});
                 for(unsigned n=0;n<12;++n){auto wrong=input(frame+n+99);if(n==0)for(auto& lane:wrong)lane.held|=2;world.step(wrong);}
                 restore.run([&]{require(saved.restore(b),saved.error);});
                 require(digest(world)==before&&AnmVm::presentation_counter==identity,"Dense state or RNG differs immediately after restore");
-                for(unsigned n=0;n<12;++n){world.step(input(frame+n));DigestTrace actual;digest_trace=&actual;const auto hash=digest(world);digest_trace=nullptr;if(hash!=expected[n]){passed=false;first_difference=frame+n;for(size_t i=0;i<std::min(actual.size(),traces[n].size());++i)if(actual[i]!=traces[n][i]){difference_section=actual[i].first;std::fprintf(stderr,"FIRST DIFFERENCE stage=%u players=%u frame=%u section=%s expected=%llu actual=%llu\n",stage,count,frame+n,actual[i].first.c_str(),traces[n][i].second,actual[i].second);break;}}if(!passed)break;++replayed;}
+                for(unsigned n=0;n<12;++n){
+                    world.step(input(frame+n));const auto hash=digest(world);
+                    if(hash!=expected[n]){
+                        passed=false;first_difference=frame+n;DigestTrace actual,expected_trace;
+                        digest_trace=&actual;digest(world);digest_trace=nullptr;
+                        require(saved.restore(b),saved.error);for(unsigned j=0;j<=n;++j)world.step(input(frame+j));
+                        digest_trace=&expected_trace;digest(world);digest_trace=nullptr;
+                        for(size_t i=0;i<std::min(actual.size(),expected_trace.size());++i)if(actual[i]!=expected_trace[i]){
+                            difference_section=actual[i].first;
+                            std::fprintf(stderr,"FIRST DIFFERENCE stage=%u players=%u frame=%u section=%s expected=%llu actual=%llu\n",stage,count,frame+n,actual[i].first.c_str(),expected_trace[i].second,actual[i].second);break;
+                        }
+                        break;
+                    }
+                    ++replayed;
+                }
                 frame+=12;
             }
         }

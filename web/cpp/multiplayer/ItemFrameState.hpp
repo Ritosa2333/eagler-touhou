@@ -11,7 +11,8 @@ public:
     ItemFrameState& operator=(ItemFrameState&&)noexcept;
     void discard()noexcept;
     static void append_roots(ItemManager&,const AnmRegistry&,std::vector<AnmVm*>&);
-    bool capture(ItemManager&);
+    // Full battle snapshots let AnimationState own the VM values once.
+    bool capture(ItemManager&,bool own_visuals=true);
     bool restore(ItemManager&)const;
 };
 }

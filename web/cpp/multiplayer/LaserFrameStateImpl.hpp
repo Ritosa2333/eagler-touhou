@@ -17,13 +17,14 @@ struct LaserFrameState::Data {
     using Curved=decltype(laser_frame_detail::state(std::declval<LaserScene::CurveLaser&>()));
     using Segmented=std::tuple<SegmentedLaserRequest,MovingLaserMotion,Vec3,float,std::array<float,512>>;
     struct Visual {
-        AnmVm body,head,tip;
+        struct Vms {AnmVm body,head,tip;};
+        std::unique_ptr<Vms> vms;
         i32 resource=0,type=0,color=0;
         bool curve_source=false,retain=false,released=false;
         std::vector<AnmGeometryVertex> curve_vertices;
         std::string error;
-        void capture(const LaserVisual& v){body=v.body;head=v.head;tip=v.tip;resource=v.resource_id;type=v.type;color=v.color;curve_source=v.curve_source;curve_vertices=v.curve_vertices;retain=v.retain_children_on_retire;released=v.released_;error=v.error;}
-        void restore(LaserVisual& v)const{v.body=body;v.head=head;v.tip=tip;v.resource_id=resource;v.type=type;v.color=color;v.curve_source=curve_source;v.curve_vertices=curve_vertices;v.retain_children_on_retire=retain;v.released_=released;v.error=error;}
+        void capture(const LaserVisual& v,bool own_visuals){if(own_visuals){if(!vms)vms=std::make_unique<Vms>();vms->body=v.body;vms->head=v.head;vms->tip=v.tip;}else vms.reset();resource=v.resource_id;type=v.type;color=v.color;curve_source=v.curve_source;curve_vertices=v.curve_vertices;retain=v.retain_children_on_retire;released=v.released_;error=v.error;}
+        void restore(LaserVisual& v)const{if(vms){v.body=vms->body;v.head=vms->head;v.tip=vms->tip;}v.resource_id=resource;v.type=type;v.color=color;v.curve_source=curve_source;v.curve_vertices=curve_vertices;v.retain_children_on_retire=retain;v.released_=released;v.error=error;}
     };
     struct Entry {
         decltype(laser_frame_detail::values(laser_frame_detail::base(std::declval<LaserObject&>()))) base;
@@ -54,13 +55,13 @@ void LaserFrameState::append_roots(LaserScene& scene,const AnmRegistry&,std::vec
         if(visual){out.push_back(&visual->body);out.push_back(&visual->head);out.push_back(&visual->tip);}
     }
 }
-bool LaserFrameState::capture(LaserScene& scene){
+bool LaserFrameState::capture(LaserScene& scene,bool own_visuals){
     laser_frame_detail::CounterGuard guard;error.clear();if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;s.ready=false;
     s.owner=&scene;auto& manager=scene.manager;s.owners.assign(manager.objects.begin(),manager.objects.end());
     if(s.entries.size()<s.owners.size())s.entries.resize(s.owners.size());
     for(size_t i=0;i<s.owners.size();++i){auto& object=*s.owners[i];auto& entry=s.entries[i];entry.base=laser_frame_detail::values(laser_frame_detail::base(object));
         if(object.kind!=LaserKind::segmented&&!entry.visual)entry.visual=std::make_unique<Data::Visual>();
-        const auto capture=[&](auto& laser){entry.state=laser_frame_detail::state(laser);entry.visual->capture(laser.visual);};
+        const auto capture=[&](auto& laser){entry.state=laser_frame_detail::state(laser);entry.visual->capture(laser.visual,own_visuals);};
         switch(object.kind){
         case LaserKind::moving:capture(static_cast<LaserScene::MovingLaser&>(object));break;
         case LaserKind::stationary:capture(static_cast<LaserScene::StationaryLaser&>(object));break;
