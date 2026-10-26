@@ -19,6 +19,7 @@ struct LaserScene::MovingLaser final:LaserObject,LaserCancellationHost,LaserCont
         bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].moving(motion.position,motion.angle,motion.length,motion.width,u32(request.transform_parameter),graze_only,rate,scene.host.player_collision(),scene.host,*this);}
         scene.host.select_player(0);return ok;
     }
+    void release_visuals()noexcept override{visual.release();}
     bool retire()override{return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{const i32 n=cancellation.rectangle(motion,flags,request.type,request.color,outside_count,honor,p,size,angle,reward);request.maximum_length=motion.maximum_length;if(n<0)error=cancellation.error;return n;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{const i32 n=cancellation.circle(motion,flags,request.type,request.color,outside_count,honor,p,radius,reward);request.maximum_length=motion.maximum_length;if(n<0)error=cancellation.error;return n;}
@@ -55,6 +56,7 @@ struct LaserScene::StationaryLaser final:LaserObject,LaserCancellationHost,Laser
         bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].stationary(motion.position,motion.angle,motion.length,motion.width,state,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
         scene.host.select_player(0);return ok;
     }
+    void release_visuals()noexcept override{visual.release();}
     bool retire()override{return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{MovingLaserMotion partial;partial.position=motion.position;partial.angle=motion.angle;partial.length=motion.length;const i32 n=cancellation.rectangle(partial,flags,request.type,request.color,outside_count,honor,p,size,angle,reward,true);motion.length=partial.length;if(n<0)error=cancellation.error;return n;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{MovingLaserMotion partial;partial.position=motion.position;partial.angle=motion.angle;partial.length=motion.length;const i32 n=cancellation.circle(partial,flags,request.type,request.color,outside_count,honor,p,radius,reward,true);motion.length=partial.length;if(n<0)error=cancellation.error;return n;}
@@ -89,6 +91,7 @@ struct LaserScene::CurveLaser final:LaserObject,CurveCancellationHost,LaserConta
         bool ok=true;for(unsigned s=0;s<scene.host.player_count()&&ok;++s){if(!scene.host.player_active(s))continue;scene.host.select_player(s);ok=contacts[s].curved(motion,graze_only,rate,scene.host.player_collision(),scene.host,*this);}
         scene.host.select_player(0);return ok;
     }
+    void release_visuals()noexcept override{visual.release();}
     bool retire()override{visual.retain_children_on_retire=true;return true;}
     i32 cancel_rectangle(const Vec3& p,const Vec2& size,float angle,i32 reward,bool honor)override{if(cancellation.rectangle(motion,flags,request.color,outside_count,honor,p,size,angle,reward,scene.rate))return 0;error=cancellation.error;return -1;}
     i32 cancel_circle(const Vec3& p,float radius,i32 reward,bool honor)override{const i32 n=cancellation.circle(motion,flags,request.color,outside_count,honor,p,radius,reward);if(n<0)error=cancellation.error;return n;}
@@ -162,3 +165,5 @@ namespace th15 {
 u32 LaserScene::create_segmented(const SegmentedLaserRequest& request){error.clear();if(manager.count()>=LaserManager::capacity)return 0;auto object=std::make_unique<SegmentedLaser>(request);auto* laser=object.get();const u32 generation=manager.insert(std::move(object));laser->id=request.id;return generation;}
 MovingLaserMotion* LaserScene::segmented_motion(u32 id)noexcept{auto* object=manager.find(id);return object&&object->kind==LaserKind::segmented?&static_cast<SegmentedLaser*>(object)->motion:nullptr;}
 }
+
+#include "../multiplayer/LaserFrameStateImpl.hpp"

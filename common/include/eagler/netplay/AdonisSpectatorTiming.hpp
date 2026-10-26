@@ -7,10 +7,12 @@ struct AdonisSpectatorTiming {
     std::uint64_t sessionId=0;std::uint32_t gameplayAbi=0,rttP95Us=0,lost=0,samples=0;
     bool automatic=false;
     bool Valid()const{
-        return (game==8||game==10||game==11||game==15)&&(mode==1||mode==2)&&(game!=15||mode==1)&&sessionId&&gameplayAbi&&delay<=9&&prediction<=2&&
+        const bool rollback=game==15&&mode==0;
+        if(rollback)return sessionId&&gameplayAbi&&!delay&&!prediction&&!fullDelay&&!rttP95Us&&!lost&&!samples&&!automatic;
+        return (game==8||game==10||game==11||game==15)&&(mode==1||mode==2||rollback)&&(game!=15||mode<=2)&&sessionId&&gameplayAbi&&delay<=9&&prediction<=2&&
             rttP95Us>0&&rttP95Us<=1'000'000&&samples>=96&&samples<=120&&lost<=72&&
             fullDelay==std::max(1u,((rttP95Us/2)*60+999999)/1000000)&&
-            (mode!=1||!prediction)&&prediction<=fullDelay-(automatic?1u:0u)&&
+            (mode!=1||!prediction)&&(!rollback||(!delay&&!prediction&&!automatic))&&prediction<=fullDelay-(automatic?1u:0u)&&
             (!automatic||delay==fullDelay-prediction);
     }
     std::vector<std::uint8_t> Encode()const{
@@ -34,6 +36,7 @@ inline AdonisSpectatorTiming MakeAdonisSpectatorTiming(const AdonisStartup& star
     result.game=config.gameId;result.sessionId=config.sessionId;result.gameplayAbi=config.gameplayAbi;
     result.delay=choice.delay;result.prediction=choice.prediction;result.fullDelay=choice.fullDelay;result.automatic=automatic;
     result.mode=unsigned(startup.Mode());
+    if(config.gameId==15&&result.mode==0){result.automatic=false;return result;}
     result.samples=120;for(unsigned p=0;p<config.playerCount;++p){const auto& r=startup.ReportFor(p);
         result.rttP95Us=std::max(result.rttP95Us,r.p95Us);result.samples=std::min(result.samples,r.received);result.lost+=r.lost;}
     return result;

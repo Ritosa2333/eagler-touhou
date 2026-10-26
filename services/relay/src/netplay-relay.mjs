@@ -382,11 +382,11 @@ function getRoom(id, socket) {
         inputDelay: 0,
         timingChoice: 'auto',
         startedAt: 0,
-        adonisMode: multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
+        adonisMode: id.startsWith('th15mp-') ? 1 : multiplayerInputTimingPolicy(multiplayer).rollback ? 0 : 1,
         inputDelayAuto: false,
         predictionReserve: 2,
         timing: null,
-        predictionLimit: multiplayerInputTimingPolicy(multiplayer).predictionLimit,
+        predictionLimit: id.startsWith('th15mp-') ? 0 : multiplayerInputTimingPolicy(multiplayer).predictionLimit,
         settingsVersion: 1,
         phase: 'lobby',
         seats: [null, null, null],
@@ -1661,7 +1661,8 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       room.lobby.inputDelayAuto = rollback ? false : inputDelayAuto;
       room.lobby.predictionReserve = predictionReserve;
       room.lobby.timing = null;
-      if (configurablePredictionLimit != null) room.lobby.predictionLimit = predictionLimit;
+      if (room.th15) room.lobby.predictionLimit = rollback ? 12 : 0;
+      else if (configurablePredictionLimit != null) room.lobby.predictionLimit = predictionLimit;
       room.lobby.phase = 'starting';
       room.lobby.startedAt = Date.now();
       room.lobby.startSerial++;

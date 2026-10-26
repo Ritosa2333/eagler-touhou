@@ -6,8 +6,8 @@ namespace th15 {
 // engine. Graphics storage belongs to the portable renderer, not this manager.
 class AnmManager final:public AnmObjectHost {
     struct Bank {AnmResource data;std::vector<AnmVm> templates;};
-    std::unordered_map<i32,std::unique_ptr<Bank>> banks;
-    std::vector<std::unique_ptr<Bank>> retired_banks;
+    std::unordered_map<i32,std::shared_ptr<Bank>> banks;
+    std::vector<std::shared_ptr<Bank>> retired_banks;
     Rng& random;AnmEnvironment& environment;
     AnmVm* instantiate(AnmResource&,i32);
     bool initial_tick(AnmVm&);
@@ -27,6 +27,10 @@ public:
     void unload(i32 id);void collect_resources();
     u32 resource_count()const noexcept{return banks.size();}
     u32 retired_resource_count()const noexcept{return retired_banks.size();}
+    using ResourceLease=std::vector<std::shared_ptr<const void>>;
+    // Frame images contain script/sprite pointers into immutable banks. Keep
+    // their banks, templates and GPU resources alive for the correction window.
+    ResourceLease retain_resources()const{ResourceLease out;out.reserve(banks.size()+retired_banks.size());for(const auto& bank:banks)out.push_back(bank.second);for(const auto& bank:retired_banks)out.push_back(bank);return out;}
     std::function<void(const AnmResource&)> resource_release;
     AnmResource* resource(i32 id)const noexcept;
     i32 resource_id(const AnmResource* value)const noexcept;

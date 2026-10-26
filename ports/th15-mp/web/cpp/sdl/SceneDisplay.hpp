@@ -7,7 +7,9 @@
 namespace th15::sdl {
 // The application keeps this display across title, gameplay and ending owners.
 // Only the stage object drawing callbacks are replaced at a stage boundary.
+class AppFrameState;
 class SceneDisplay {
+ friend class AppFrameState;
  FrameScheduler& scheduler;AnmManager& animations;AnmEnvironment& environment;GraphicsDevice& graphics;AnmRenderer& renderer;ScreenViews& views;AsciiText& captions;i32 text_bank,ascii_bank;
  std::unique_ptr<AnmDrawSchedule> animation_drawing;std::unique_ptr<AsciiFrame> caption_drawing;std::unique_ptr<ScreenCompositor> compositor;std::unique_ptr<ScreenTargets> targets;
  SceneCaptureDevice capture_device;SceneCapture screenshots;bool fail(const std::string&);

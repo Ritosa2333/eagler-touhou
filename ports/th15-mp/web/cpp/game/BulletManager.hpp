@@ -3,9 +3,11 @@
 #include <vector>
 #include <functional>
 namespace th15 {
+namespace multiplayer {class BulletFrameState;}
 struct BulletManagerHost:BulletSoundHost {virtual ~BulletManagerHost()=default;virtual BulletFrameHost& bullet(u32 slot)=0;virtual void prepare(u32 slot,BulletFrameContext& context)=0;virtual const std::string* failure()const noexcept{return nullptr;}};
 class BulletManager final:public BulletEmissionHost {
     friend class BulletCheckpoint;
+    friend class multiplayer::BulletFrameState;
     struct Slot {BulletState state;u32 free_next=UINT32_MAX,active_next=UINT32_MAX,active_previous=UINT32_MAX;bool active=false;};
     std::vector<Slot> slots;u32 free_head=UINT32_MAX,active_head=UINT32_MAX;
     BulletManagerHost& host;

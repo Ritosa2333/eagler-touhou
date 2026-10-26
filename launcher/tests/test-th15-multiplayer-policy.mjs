@@ -25,7 +25,7 @@ assert.equal(policy.spectator,true);
 assert.equal(policy.titleRoomEntry,false);
 assert.equal(policy.gameplay,'cooperative');
 assert.equal(Object.hasOwn(policy,'challengeMode'),false,'challenge is a shared cooperative room rule, not a per-title capability');
-assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:false,manualRollbackDelay:false,manualDelayLimit:9,predictionLimit:0});
+assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:true,manualRollbackDelay:false,manualDelayLimit:9,predictionLimit:12});
 for(const id of ['th06mp','th07mp','th08mp','th10mp']) assert.equal(multiplayerConfigForProduct(id).gameplay,'cooperative');
 for(const id of ['th08mp','th09mp','th10mp']) assert.equal(multiplayerInputTimingPolicy(multiplayerConfigForProduct(id)).rollback,true);
 assert.equal(game.replay.prefix,'th15');
@@ -53,13 +53,12 @@ for(const challengeMode of [false,true]) for(const d of [0,1,9]){
   assert.equal(options.netplayChallengeMode,challengeMode);assert.equal(options.netplayInputDelay,d);
   assert.equal(options.netplayAdonisMode,1);assert.equal(options.netplayPredictionLimit,0);
 }
-for(const patch of [{adonisMode:0},{adonisMode:2},{adonisMode:undefined},{predictionLimit:1},
+for(const patch of [{adonisMode:0},{predictionLimit:1},
   {predictionReserve:0},{inputDelay:10,inputDelayAuto:false},{challengeMode:'true'},
   {difficulty:5},{loadouts:[{character:0,shot:0},{character:4,shot:0}]}])
   assert.throws(()=>buildMultiplayerRuntimeOptions({...base,...patch},policy),JSON.stringify(patch));
-assert.throws(()=>buildMultiplayerRuntimeOptions({...base,challengeMode:true,adonisMode:2},policy),/纯延迟/);
-assert.throws(()=>buildMultiplayerRuntimeOptions({...base,adonisMode:2,loadouts:[{character:0,shot:0},{character:1,shot:0}]},PRODUCT_GAMES.th10.multiplayer),
-  /纯延迟/,'URL product policy cannot be bypassed with unrelated permissive constraints');
+for(const adonisMode of [0,2]){const rollback=buildMultiplayerRuntimeOptions({...base,adonisMode,inputDelayAuto:false,predictionLimit:12},policy);assert.equal(rollback.netplayAdonisMode,0);assert.equal(rollback.netplayInputDelay,0);assert.equal(rollback.netplayPredictionLimit,12);}
+assert.throws(()=>buildMultiplayerRuntimeOptions({...base,predictionLimit:1,loadouts:[{character:0,shot:0},{character:1,shot:0}]},PRODUCT_GAMES.th10.multiplayer),/12/,'URL product policy remains authoritative');
 const watcher=buildMultiplayerRuntimeOptions({...base,challengeMode:true,player:null,spectator:true,spectatorId:'watcher_test_123'},policy);
 assert.equal(watcher.netplayPlayer,null);assert.equal(watcher.netplayPredictionLimit,0);assert.equal(watcher.netplayChallengeMode,true);
 
@@ -70,7 +69,7 @@ const room={playerCount:2,difficulty:4,inputDelay:3,inputDelayAuto:true,predicti
 const context={localClientId:'member_test_1234',...policy};
 assert.deepEqual(normalizeMultiplayerLobbySnapshot(room,context).timing,timing);
 for(const challengeMode of [false,true]) assert.equal(normalizeMultiplayerLobbySnapshot({...room,challengeMode},context).challengeMode,challengeMode);
-for(const patch of [{adonisMode:2},{adonisMode:0},{predictionLimit:1},
+for(const patch of [{adonisMode:2},{adonisMode:0},
   {timing:{...timing,adonisMode:2,predictionReserve:2,inputDelay:1}}])
   assert.equal(normalizeMultiplayerLobbySnapshot({...room,challengeMode:true,...patch},context),null);
 function timingPacket(value,marker=0x46) {
@@ -84,7 +83,7 @@ for(const count of [2,3]){
   assert.equal(isSpectatorFrameForRoom('th15mp-1234',packet,count),true);
   for(const other of ['th08mp-1234','th10mp-1234','th09mp-1234'])assert.equal(isSpectatorFrameForRoom(other,packet,count),false);
   for(const marker of [0x38,0x41])assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket(timing,marker),count),false);
-  assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket({...timing,adonisMode:2,predictionReserve:2,inputDelay:1}),count),false);
+  assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket({...timing,adonisMode:2,predictionReserve:2,inputDelay:1}),count),true);
   assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket({...timing,predictionReserve:1}),count),false);
   const frame=new Uint8Array(24+count*12);frame.set([0x45,0x46,0x4e,0x50,4,3,count,0]);
   assert.equal(isSpectatorFrameForRoom('th15mp-1234',frame,count),true);
@@ -92,6 +91,7 @@ for(const count of [2,3]){
   assert.equal(isSpectatorFrameForRoom('th15mp-1234',frame,count===2?3:2),false);
   frame[7]=1;assert.equal(isSpectatorFrameForRoom('th15mp-1234',frame,count),false);
 }
+{const wire=timingPacket({adonisMode:0,inputDelay:0,predictionReserve:0,fullDelay:0,rttP95Us:0,lost:0,automatic:false,samples:0});const view=new DataView(wire.buffer);view.setBigUint64(12,123n,true);view.setUint32(20,456,true);assert.equal(isSpectatorFrameForRoom('th15mp-rollback',wire,3),true);wire[6]=1;assert.equal(isSpectatorFrameForRoom('th15mp-rollback',wire,3),false);}
 assert.equal(isSpectatorFrameForRoom('th15mp-1234',timingPacket(timing),1),false);
 
 const port=await new Promise((resolve,reject)=>{
@@ -143,7 +143,7 @@ try{
     assert.equal(changed.room.seats.slice(0,count).every(seat=>seat?.ready===false),true,'changing challenge invalidates every player readiness');
     assert.equal(normalizeMultiplayerLobbySnapshot(changed.room,context).challengeMode,true);
     for(let index=0;index<count;index++) await send(peers[index],{type:'set-ready',ready:true},reply=>reply.room?.seats[index]?.ready===true);
-    for(const patch of [{adonisMode:0},{adonisMode:2},{adonisMode:undefined},{predictionLimit:1},{predictionReserve:0},{inputDelay:10,inputDelayAuto:false}]){
+    for(const patch of [{adonisMode:0},{predictionReserve:0},{inputDelay:10,inputDelayAuto:false}]){
       await send(peers[0],{type:'start',adonisMode:1,inputDelay:0,inputDelayAuto:true,predictionReserve:2,...patch},reply=>reply.type==='error'&&/timing/.test(reply.error));
     }
     const started=await send(peers[0],{type:'start',adonisMode:1,inputDelay:automatic?0:3,inputDelayAuto:automatic,predictionReserve:2},reply=>reply.type==='start');

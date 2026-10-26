@@ -1,3 +1,4 @@
+#include "../multiplayer/FrameFence.hpp"
 #include "RunSession.hpp"
 #include "PracticeSections.hpp"
 namespace th15 {
@@ -20,7 +21,7 @@ bool RunSession::finish_replay(){return platform.finish_replay();}
 bool RunSession::destination(SessionDestination d){return platform.destination(d);}
 bool RunSession::load_scene(bool& waiting){const SceneActivationFrame frame{run.previous_scene()!=nullptr,false,restart_audio};return activation->load(frame,waiting)||fail(activation->error);}
 bool RunSession::activate_scene(){const SceneActivationFrame frame{run.previous_scene()!=nullptr,false,restart_audio};return activation->activate(frame)||fail(activation->error);}
-bool RunSession::release_background(){if(!run.previous_scene())return true;if(!platform.release_background())return false;run.release_previous();return true;}
+bool RunSession::release_background(){if(!run.previous_scene())return true;if(!multiplayer::FrameFence::allow())return false;if(!platform.release_background())return false;run.release_previous();return true;}
 bool RunSession::load_checkpoint_file(bool& restored){return platform.load_checkpoint_file(restored);}
 bool RunSession::restart_overlay(i32 script){return platform.restart_overlay(script);}
 bool RunSession::restart_effect(i32 label){return platform.restart_effect(label);}

@@ -5,12 +5,14 @@
 #include "AsciiText.hpp"
 #include "RunPause.hpp"
 namespace th15 {
+namespace sdl {class AppFrameState;}
 #if TH15_MULTIPLAYER
 class MultiplayerHud;
 #endif
 // Scene owners draw in the same stable scheduler as registered ANM layers and
 // the shared compositor. Their individual gameplay/update ownership is retained.
 class GameDraw final:private PopupDrawServices {
+ friend class sdl::AppFrameState;
  struct Callback {FrameCallback frame;GameDraw* owner=nullptr;u32 index=0;};
 #if TH15_MULTIPLAYER
  std::array<Callback,10> callbacks;std::unique_ptr<MultiplayerHud> multiplayer_hud;

@@ -4,9 +4,11 @@
 #include <functional>
 #include <memory>
 namespace th15 {
+namespace sdl {class AppFrameState;}
 // The native motion effect owns a priority-20 update independently of its
 // requesting enemy or bomb. Offsets are consumed by drawing, never gameplay.
 class ScreenMotionFrame {
+ friend class sdl::AppFrameState;
  FrameScheduler& scheduler;FrameCallback callback;std::unique_ptr<ScreenShake> shake;std::unique_ptr<ScreenNudge> nudge;
  std::function<ScreenShakeContext()> context;std::function<void(Vec2,Vec2)> offsets;
  i32 update();void install();

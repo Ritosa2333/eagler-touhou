@@ -4,6 +4,7 @@
 #include "ReplayRecording.hpp"
 #include "ReplayPlayback.hpp"
 namespace th15 {
+namespace multiplayer {class StageFrameState;}
 struct SessionGameplayServices {
  virtual ~SessionGameplayServices()=default;
  virtual bool ending_fade()=0;virtual bool finish_replay()=0;virtual bool destination(SessionDestination)=0;
@@ -17,6 +18,7 @@ struct SessionGameplayInput {StageGameplayFrame scene;u32 physical_pressed=0;flo
 // that owns background, enemies, projectiles, dialogue, HUD and animations.
 // Scene factories, persisted files and platform presentation remain explicit.
 class SessionGameplay final:private SessionRuntimeServices {
+ friend class multiplayer::StageFrameState;
  StageGameplay& scene;SessionState& progress;SessionGameplayServices& services;
  ReplayRecording* recording;ReplayPlayback* playback;std::array<FrameCallback,3> callbacks;
  SessionGameplayInput frame;GameInput live;bool attached=false,input_enabled=true;i32* previous_chapter_owner=nullptr;

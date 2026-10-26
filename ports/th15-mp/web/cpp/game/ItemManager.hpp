@@ -6,11 +6,13 @@
 #include "PlayerBounds.hpp"
 #include "AnmRenderer.hpp"
 namespace th15 {
+namespace multiplayer {class ItemFrameState;}
 struct ItemFrameContext {PlayerMotion& player;const PlayerBounds& bounds;ItemScoreState& score;ItemCollection& collection;Rng& visual_random;i32 player_state=1,character=0,bomb_state=0,bomb_frame=0;bool hud_collect=false;u32 held=0;float attraction_speed=5,rate=1;bool directed_item=false;};
 class ItemManager {
     friend class ItemCheckpoint;
+    friend class multiplayer::ItemFrameState;
 public:
-    struct Slot {ItemState state;std::unique_ptr<AnmVm> body,arrow;bool arrow_ended=false;};
+    struct Slot {ItemState state;std::shared_ptr<AnmVm> body,arrow;bool arrow_ended=false;};
     static constexpr u32 ordinary_count=600,cancel_count=4096,pool_size=ordinary_count+cancel_count;
 private:
     AnmManager& animations;EffectManager& effects;i32 resource;std::array<Slot,pool_size> slots;std::array<std::vector<u32>,2> free_slots;

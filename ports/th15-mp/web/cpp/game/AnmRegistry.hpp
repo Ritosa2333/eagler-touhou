@@ -5,9 +5,11 @@
 #include <memory>
 #include <unordered_map>
 namespace th15 {
+namespace multiplayer { class AnimationState; }
 // A typed instance pool. Handles retain the original generation/slot scheme
 // so stale owners cannot accidentally address a reused animation.
 class AnmRegistry {
+    friend class multiplayer::AnimationState;
     struct Node {
         AnmVm vm;AnmVm* borrowed=nullptr;u32 slot=0x1fff,handle=0;bool active=false,registered=false,alternate=false;
         bool frozen_root=false;

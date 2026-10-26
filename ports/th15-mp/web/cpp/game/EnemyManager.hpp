@@ -2,6 +2,7 @@
 #include "EnemyRuntime.hpp"
 #include <list>
 namespace th15 {
+namespace multiplayer {class EnemyFrameState;}
 struct EnemyManagerHost:EnemyRuntimeHost,EnemyCommandHost {
     virtual BulletEmissionHost* bullets()=0;
     virtual bool destroy(EnemyState&)=0;
@@ -9,9 +10,13 @@ struct EnemyManagerHost:EnemyRuntimeHost,EnemyCommandHost {
 };
 class EnemyManager final:public EnemySpawnHost {
     friend class EnemyCheckpoint;
+    friend class multiplayer::EnemyFrameState;
     EclProgram& program;EnemyWorldState& world;Rng& random;Rng& visual_random;EnemyManagerHost& host;
-    std::list<std::unique_ptr<EnemyRuntime>> active;
-    bool erase(std::list<std::unique_ptr<EnemyRuntime>>::iterator);
+    // Frame snapshots retain allocation identity while keeping their own copy
+    // of mutable state. Logical cleanup still runs at the original erase point.
+    using ActiveEnemies=std::list<std::shared_ptr<EnemyRuntime>>;
+    ActiveEnemies active;
+    bool erase(ActiveEnemies::iterator);
 public:
     Timer timer;u32 next_identifier=1;float rate=1;Vec3 background_delta{};
     std::string error;

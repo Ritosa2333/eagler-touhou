@@ -1,3 +1,4 @@
+#include "../multiplayer/FrameFence.hpp"
 #include <eagler/gameplay/CooperativeRules.hpp>
 #if TH15_MULTIPLAYER
 #include "GameBattle.hpp"
@@ -26,7 +27,7 @@ bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
     player->motion.position={x,400,0};player->motion.position_fixed={i32(x*128),51200};player->motion.snap_options();
     return true;
 }
-bool MultiplayerPilot::rebuild_bomb(){
+bool MultiplayerPilot::rebuild_bomb(){if(!multiplayer::FrameFence::allow())return false;
     if(!seat){bomb=world.bomb.get();return true;}
     if(bomb){if(!bomb->stop())return world.fail(bomb->error);auto retire=[&](u32 h){return world.animations.retire(h)||world.fail(world.animations.error);};
       switch(character){case 0:if(!retire(static_cast<BombReimu&>(*bomb).aura))return false;break;

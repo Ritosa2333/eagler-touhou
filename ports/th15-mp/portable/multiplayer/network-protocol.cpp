@@ -104,11 +104,30 @@ std::vector<unsigned char> run(unsigned count,unsigned delay,bool challenge=fals
 }
 }
 extern "C" {
+#ifdef __EMSCRIPTEN__
 __attribute__((export_name("network_allocate"))) void* network_allocate(unsigned bytes){return std::malloc(bytes);}
 __attribute__((export_name("network_free"))) void network_free(void* pointer){std::free(pointer);}
 __attribute__((export_name("network_validate"))) int network_validate(const unsigned char* bytes,unsigned size){return ReplayArchive::Validate(bytes,size);}
+#endif
 }
-int main(int argc,char** argv){
+void rollback_protocol(){
+ for(unsigned count:{2u,3u})for(unsigned mode:{0u,2u}){
+  std::array<NetplayRuntime,3> peers;for(unsigned seat=0;seat<count;++seat){auto config=setup(count,seat,0);config.mode=mode;CHECK(peers[seat].Reset(config));}
+  link(peers,count);auto& runtime=peers[0];
+  Netplay::FrameInput exact;CHECK(InputLanes::Capture(1|8|0x40,false,2,-12,310,exact));
+  CHECK(runtime.Capture(0,{}));for(unsigned seat=1;seat<count;++seat)CHECK(runtime.SubmitRemote(seat,0,exact)==Netplay::RemoteInputResult::Accepted);
+  auto decision=runtime.Prepare(0);CHECK(decision.canAdvance&&!decision.predictedMask&&runtime.MarkSimulated(0,decision));
+  for(unsigned frame=1;frame<=12;++frame){CHECK(runtime.NeedsCapture()&&runtime.Capture(frame,{}));decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&decision.predictedMask);CHECK(!(decision.inputs[1].buttons&2));CHECK(runtime.MarkSimulated(frame,decision));}
+  CHECK(!runtime.Prepare(13).canAdvance);
+  Netplay::FrameInput corrected;CHECK(InputLanes::Capture(0x80,false,0,0,0,corrected));
+  for(unsigned seat=1;seat<count;++seat)for(unsigned frame=1;frame<=12;++frame){const auto result=runtime.SubmitRemote(seat,frame,corrected);CHECK(result==Netplay::RemoteInputResult::RollbackRequired||result==Netplay::RemoteInputResult::Accepted);}
+  CHECK(runtime.HasCorrection()&&runtime.CorrectionFrame()==1);CHECK(runtime.Rewind(1));CHECK(!runtime.HasCorrection()&&runtime.NextFrame()==1);
+  for(unsigned frame=1;frame<=12;++frame){decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&!decision.predictedMask&&runtime.MarkSimulated(frame,decision));}
+  CHECK(runtime.NeedsCapture()&&runtime.Capture(13,{}));decision=runtime.Prepare(13);CHECK(decision.canAdvance&&runtime.MarkSimulated(13,decision));CHECK(runtime.NextFrame()==14);
+ }
+ std::puts("PASS TH15 rollback/hybrid actual correction, 12-frame horizon and fresh advancement");
+}
+int main(int argc,char** argv){rollback_protocol();
  legacy_replay_admission();
  for(unsigned count:{2u,3u}){
   std::array<NetplayRuntime,3> players;
@@ -134,7 +153,7 @@ int main(int argc,char** argv){
  for(unsigned count:{2u,3u}){auto s=setup(count,0,0);auto words=EncodeSessionSetup(s);CHECK(words[22]==(count==2?1250000u:1500000u));SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));s.chapter_threshold=5000000;CHECK(GameplayAbi(s)!=GameplayAbi(decoded));NetplayRuntime a,b;CHECK(a.Reset(s));decoded.local_player=1;CHECK(b.Reset(decoded));CHECK(a.ApplySession(b.Hello())==Netplay::SessionPacketResult::ContractMismatch);
  for(unsigned value:{0u,250000u,500001u,5250000u}){words[22]=value;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));}}
  auto config=setup(3,2,2);auto words=EncodeSessionSetup(config);SessionSetup decoded;CHECK(DecodeSessionSetup(decoded,words.data(),words.size()));
- CHECK(GameplayAbi(config)==GameplayAbi(setup(3,0,2)));CHECK(!decoded.challenge);words[14]=2;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));words[14]=1;words[21]=1;CHECK(DecodeSessionSetup(decoded,words.data(),words.size())&&decoded.challenge);CHECK(EncodeSessionSetup(decoded)==words);CHECK(GameplayAbi(config)!=GameplayAbi(decoded));words[21]=2;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));
+ CHECK(GameplayAbi(config)==GameplayAbi(setup(3,0,2)));CHECK(!decoded.challenge);words[14]=3;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));words[14]=1;words[21]=1;CHECK(DecodeSessionSetup(decoded,words.data(),words.size())&&decoded.challenge);CHECK(EncodeSessionSetup(decoded)==words);CHECK(GameplayAbi(config)!=GameplayAbi(decoded));words[21]=2;CHECK(!DecodeSessionSetup(decoded,words.data(),words.size()));
  auto changed=config;changed.local_player=0;changed.build[0]^=1;NetplayRuntime left,right;CHECK(left.Reset(config));CHECK(right.Reset(changed));CHECK(left.ApplySession(right.Hello())==Netplay::SessionPacketResult::ContractMismatch);
  changed=config;changed.local_player=0;changed.challenge=true;CHECK(left.Reset(config));CHECK(right.Reset(changed));CHECK(left.ApplySession(right.Hello())==Netplay::SessionPacketResult::ContractMismatch);
  Netplay::FrameInput touch;CHECK(InputLanes::Capture(0x200001,true,2,-184,432,touch));std::array<Netplay::FrameInput,3> wire{touch,touch,touch};std::array<th15::MultiplayerInput,3> native;

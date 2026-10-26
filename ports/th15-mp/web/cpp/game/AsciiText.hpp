@@ -3,11 +3,13 @@
 #include "AnmManager.hpp"
 #include "AnmRenderer.hpp"
 namespace th15 {
+namespace sdl {class AppFrameState;}
 struct AsciiTextEntry {HudTextDraw text;i32 lifetime=0;bool shadow=false;};
 struct AsciiGlyphServices {virtual ~AsciiGlyphServices()=default;virtual bool ascii_glyph(AnmVm&)=0;};
 // One typed text queue and one reusable glyph; the shared sprite renderer owns
 // vertex generation and batching. No original device/font objects are used.
 class AsciiText final:public HudDrawServices {
+ friend class sdl::AppFrameState;
  AnmManager& animations;AnmEnvironment& environment;AnmVm glyph;std::vector<AsciiTextEntry> entries;
  bool draw_entry(const AsciiTextEntry&,AsciiGlyphServices&);
 public:

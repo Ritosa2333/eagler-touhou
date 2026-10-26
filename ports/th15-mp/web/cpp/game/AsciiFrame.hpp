@@ -2,8 +2,10 @@
 #include "AsciiText.hpp"
 #include "AnmDrawSchedule.hpp"
 namespace th15 {
+namespace sdl {class AppFrameState;}
 // Each caption space has its own original callback priority and camera lifetime.
 class AsciiFrame {
+ friend class sdl::AppFrameState;
  FrameScheduler& scheduler;AsciiText& text;AnmRenderer& renderer;AnmDrawServices& views;std::array<FrameCallback,4> callbacks;
  bool draw(i32);
 public:

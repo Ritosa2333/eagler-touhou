@@ -10,6 +10,15 @@
 #include <cmath>
 #endif
 namespace th15::sdl {
+bool GraphicsDevice::fps_backdrop(bool capture){
+    if(!fps_background){if(!capture)return false;fps_background=next_handle++;auto& t=textures[fps_background];t.renderScale=render_scale;t.image.width=80;t.image.height=16;t.image.pitch=80*4;t.image.format=touhou::graphics::PixelFormat::Bgra8;t.image.pixels.resize(80*16*4);}
+    // Preserve the authored pixels under the small numeric overlay on-GPU.
+    // Cached world redraws are unnecessary while waiting for network input.
+    const i32 rect[]{548,458,628,474},point[]{548,458},origin[]{0,0},saved[]{0,0,80,16};
+    if(capture){backend.copy(screen,rect,fps_background,origin);changed(fps_background);}
+    else {backend.copy(fps_background,saved,screen,point);changed(screen);}
+    return true;
+}
 #include "GraphicsLocalization.inc"
 touhou::sdl::Surface GraphicsDevice::resolve(void* owner,u32 id){
     auto& device=*static_cast<GraphicsDevice*>(owner);auto it=device.textures.find(id);if(it==device.textures.end())return {};
@@ -59,17 +68,17 @@ bool GraphicsDevice::select_target(const AnmResource* file,u32 index){
     const auto& image=textures.at(handle).image;
     backend.viewport({0,0,image.width,image.height,0,1});return true;
 }
-bool GraphicsDevice::clear_target(u32 color,const GraphicsViewport* rect){
+bool GraphicsDevice::clear_target(u32 color,const GraphicsViewport* rect){if(logical_drawing)return true;
     if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};presentation.clear(backend.state,3,color,box);backend.clear(3,color,1,0,box,1);}
     else {presentation.clear(backend.state,3,color,nullptr);backend.clear(3,color,1,0);}
     return true;
 }
-bool GraphicsDevice::clear_depth(const GraphicsViewport* rect){
+bool GraphicsDevice::clear_depth(const GraphicsViewport* rect){if(logical_drawing)return true;
     if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};presentation.clear(backend.state,2,0,box);backend.clear(2,0,1,0,box,1);}
     else {presentation.clear(backend.state,2,0,nullptr);backend.clear(2,0,1,0);}
     return true;
 }
-bool GraphicsDevice::copy_surface(u32 source,const i32* region,u32 target,const i32* point){
+bool GraphicsDevice::copy_surface(u32 source,const i32* region,u32 target,const i32* point){if(logical_drawing)return true;
     presentation.reset();
     if(!textures.count(source)||!textures.count(target)||source==target){error="Invalid GPU surface copy";return false;}
     // CPU font atlases already contain authored glyph pixels. Promote only
@@ -77,7 +86,7 @@ bool GraphicsDevice::copy_surface(u32 source,const i32* region,u32 target,const 
     auto& capture=textures.at(target);if(capture.renderScale!=render_scale){backend.release(target);capture.renderScale=render_scale;}
     backend.copy(source,region,target,point);changed(target);return true;
 }
-bool GraphicsDevice::resample_surface(u32 source,const i32* region,u32 target,const i32* destination){
+bool GraphicsDevice::resample_surface(u32 source,const i32* region,u32 target,const i32* destination){if(logical_drawing)return true;
     presentation.reset();
     if(!textures.count(source)||!textures.count(target)||source==target){error="Invalid GPU surface resize";return false;}
     auto& capture=textures.at(target);if(capture.renderScale!=render_scale){backend.release(target);capture.renderScale=render_scale;}
