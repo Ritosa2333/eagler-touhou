@@ -970,7 +970,14 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){TH09_PERF_SCOPE(gam
     if(room_preview){
         if(!probe->in_title||!probe->title)return 0;
         probe->title->state.idle_frames=0;
-        const u32 ok=probe->tick_inputs(0,0,0,false);if(ok&&render)probe->draw();return ok;
+        sample_keys(keys);
+        if(probe->title->state.screen==TitleScreen::main){
+            // The room owns starting and leaving a match. Native Options and
+            // its key-configuration screens retain ordinary local input.
+            const u16 blocked=u16(10|(probe->title->state.selection==6?0:0x1001));
+            for(auto& key:keys)key&=u16(~blocked);
+        }
+        const u32 ok=probe->tick_inputs(keys[0],keys[1],keys[2],false);if(ok&&render)probe->draw();return ok;
     }
     if(spectator_mode)return spectator_tick(render);
     if(rollback_active&&network.active)return rollback_tick(render);

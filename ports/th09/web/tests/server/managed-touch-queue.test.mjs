@@ -112,6 +112,7 @@ function openRuntime({epoch = 73, holdModule = false, holdData = false, holdConn
     _th09_error: () => 512, _th09_storage_revision: () => 0,
     _th09_prepare_loading: () => 1, _th09_save_snapshot: () => 1,
     _th09_game_open: () => {native('game-open', []);return 1;},
+    _th09_room_preview: enabled => {native('room-preview', [enabled]);return 1;},
     _th09_rollback_recovery_mode: enabled => {native('recovery-mode', [enabled]);return 1;},
     _th09_game_close: () => native('game-close', []),
   };
@@ -358,6 +359,32 @@ test('launch configures post-present rollback without a URL flag before starting
     if (options.netplayMode === 'lan')
       assert.ok(recovery[0].seq < runtime.trace.find(row => row.kind === 'connect-wait').seq);
   }
+});
+
+test('room preview accepts local keyboard and touch until network launch takes ownership', async t => {
+  const runtime=openRuntime();t.after(()=>runtime.close());await runtime.ready();
+  const delivered=start=>rows(runtime,start).filter(row=>row.op==='key'||touchOps.has(row.op));
+  const configure=runtime.send('configure',{music:'none',options:{touchEnabled:true}});
+  await runtime.idle();runtime.ok(configure);
+  let start=runtime.trace.length;
+  runtime.send('keyboard',{code:'KeyZ',down:true});runtime.send('direct-touch',down);
+  await runtime.idle();assert.deepEqual(delivered(start),[],'unprepared title rejects local input');
+  const prepared=runtime.send('prepare-room');await runtime.idle({runTasks:true});runtime.ok(prepared);
+  start=runtime.trace.length;
+  runtime.send('keyboard',{code:'KeyZ',down:true});runtime.send('direct-touch',down);
+  runtime.send('touch-controls',{controls:{joystickX:-1,joystickY:0,bombSerial:0,escapeSerial:0}});
+  await runtime.idle();
+  const preview=delivered(start);
+  assert(preview.some(row=>row.op==='key'&&row.args[1]===1));
+  assert(preview.some(row=>row.op==='touch'));
+  assert(preview.some(row=>row.op==='touch-stick'&&row.args[0]===-1));
+  assert.equal(runtime.state().launched,false,'local preview does not launch the match');
+  const configured=runtime.send('configure',{music:'none',options:{touchEnabled:true,netplayMode:'lan'}});
+  await runtime.idle();runtime.ok(configured);start=runtime.trace.length;
+  runtime.send('keyboard',{code:'KeyZ',down:true});runtime.send('direct-touch',down);
+  runtime.send('touch-controls',{controls:{joystickX:1,joystickY:0,bombSerial:0,escapeSerial:0}});
+  await runtime.idle();assert.deepEqual(delivered(start),[],'network handoff does not leak local menu input');
+  runtime.noFatal();
 });
 
 test('real message listener rejects foreign envelopes and invalid Runtime epoch', async t => {

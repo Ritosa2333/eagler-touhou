@@ -176,7 +176,14 @@ test('room return keeps the same engine, synchronizes first and rejects first fr
     f.event('first-frame',{launchSerial:launched.launchSerial});await launching;previousSerial=launched.launchSerial;
     const returning=f.service.returnToRoom();await flush();
     assert.equal(f.outbound.filter(m=>m.command==='return-room').length,attempt,'native menu waits for save sync');
-    f.ack('sync');await flush();f.ack('return-room',{presented:true});await returning;
+    f.ack('sync');await flush();f.ack('return-room',{presented:true});await flush();
+    assert.equal(f.service.getSnapshot().phase,'configuring');
+    assert.equal(f.service.getInputContext().launched,false,'menu input waits for Runtime option restoration');
+    const restored=f.ack('configure');
+    assert.equal(restored.options.netplayMode,undefined,'the actual Runtime receives local menu options');
+    assert.equal(restored.options.netplaySpectator,undefined);
+    assert.deepEqual(restored.resources,[]);assert.deepEqual(restored.runtimeResources,[]);assert.deepEqual(restored.sharedResources,[]);
+    await returning;
     const current=f.service.getSnapshot();assert.equal(current.phase,'prepared');assert.equal(current.roomPreview,true);
     assert.equal(current.launched,false);assert.equal(current.spectator,false);assert.equal(current.epoch,epoch);
     assert.equal(f.runtime.document,document);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
@@ -185,11 +192,16 @@ test('room return keeps the same engine, synchronizes first and rejects first fr
 });
 
 test('native menu return cancels an unfinished first-frame wait without retiring the loaded engine',async()=>{
-  const f=fixture(),plan=managedPlan();plan.runtimeVariant='multiplayer';await f.prepare(plan,{roomReturn:true});
+  const f=fixture(),plan=managedPlan('th11',{netplayMode:'lan',netplaySpectator:true,netplayPlayer:1,netplayUrl:'wss://relay.invalid/',alwaysHitbox:true});plan.runtimeVariant='multiplayer';await f.prepare(plan,{roomReturn:true});
   const document=f.runtime.document,epoch=f.service.getSnapshot().epoch;
   const launching=f.service.launch({awaitFirstFrame:true}),cancelled=assert.rejects(launching,/SUPERSEDED/);
   await flush();const message=f.ack('launch');await flush();
   f.event('room-menu',{launchSerial:message.launchSerial});await cancelled;
+  await flush();assert.equal(f.service.getSnapshot().phase,'configuring');
+  assert.equal(f.eventContexts.some(e=>e.message.event==='room-menu'),false,'room event waits for acknowledged local options');
+  const restored=f.ack('configure');await flush();
+  assert.equal(restored.options.netplayMode,undefined);assert.equal(restored.options.netplaySpectator,undefined);
+  assert.equal(restored.options.netplayPlayer,undefined);assert.equal(restored.options.alwaysHitbox,true);
   assert.equal(f.service.getSnapshot().phase,'prepared');assert.equal(f.service.getSnapshot().roomPreview,true);
   assert.equal(f.service.getSnapshot().epoch,epoch);assert.equal(f.runtime.document,document);
   const next=f.service.launch();await flush();f.ack('launch');await next;
