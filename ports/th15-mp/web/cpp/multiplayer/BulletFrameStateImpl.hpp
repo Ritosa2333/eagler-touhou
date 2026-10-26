@@ -29,7 +29,7 @@ struct BulletFrameState::Data {
     std::array<std::vector<u32>,6> draw_groups;
     std::array<u32,BulletManager::capacity> cancellation_animations{};
     Rng game_random,visual_random;
-    float minimum_distance_squared=0;bool world_paused=false,ready=false;
+    float minimum_distance_squared=0;bool world_paused=false,ready=false,own_visuals=true;
     std::string error,scene_error;
 };
 BulletFrameState::BulletFrameState()=default;
@@ -41,17 +41,17 @@ void BulletFrameState::append_roots(BulletScene& scene,const AnmRegistry& regist
         if(scene.manager.slots[i].active||(vm->geometry.overlay&&AnimationState::registered_tree(registry,*vm)))out.push_back(vm);
     }
 }
-bool BulletFrameState::capture(BulletScene& scene){
+bool BulletFrameState::capture(BulletScene& scene,bool own_visuals){
     frame_values::IdentityGuard guard;error.clear();
     if(scene.manager.slots.size()!=BulletManager::capacity||scene.slots.size()!=BulletManager::capacity){error="Bullet rollback pool changed capacity";return false;}
-    if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;s.ready=false;s.owner=&scene;auto& manager=scene.manager;
+    if(!saved_)saved_=std::make_unique<Data>();auto& s=*saved_;s.ready=false;s.owner=&scene;s.own_visuals=own_visuals;auto& manager=scene.manager;
     // Native initialize() preserves cold transform fields and flags. Save the
     // entire logical pool, including free slots, rather than normalizing it.
     s.logic=manager.slots;if(s.entries.size()<scene.slots.size())s.entries.resize(scene.slots.size());
     for(size_t i=0;i<scene.slots.size();++i){const auto& slot=*scene.slots[i];auto& entry=s.entries[i];const auto& visual=slot.visual;
         entry.cancelling=slot.cancelling;entry.graze_flash=slot.graze_flash;entry.graze_duration=slot.graze_duration;entry.graze_interval=slot.graze_interval;entry.graze_initialized=slot.graze_initialized;entry.graze_views=slot.graze_views;
         entry.active=manager.slots[i].active;
-        if(entry.active){if(!entry.visual)entry.visual=std::make_unique<Data::Visual>();entry.visual->body=visual.body;entry.visual->overlay=visual.overlay;}
+        if(entry.active&&own_visuals){if(!entry.visual)entry.visual=std::make_unique<Data::Visual>();entry.visual->body=visual.body;entry.visual->overlay=visual.overlay;}
         // Rebinding a cold visual replaces its VM but preserves these fields.
         // Any cold VM with live children is also captured by AnimationState.
         entry.body_binding.capture(visual.body);entry.overlay_binding.capture(visual.overlay);
@@ -69,7 +69,7 @@ bool BulletFrameState::restore(BulletScene& scene)const{
     std::copy(s.logic.begin(),s.logic.end(),manager.slots.begin());
     for(size_t i=0;i<scene.slots.size();++i){auto& slot=*scene.slots[i];const auto& entry=s.entries[i];auto& visual=slot.visual;
         slot.cancelling=entry.cancelling;slot.graze_flash=entry.graze_flash;slot.graze_duration=entry.graze_duration;slot.graze_interval=entry.graze_interval;slot.graze_initialized=entry.graze_initialized;slot.graze_views=entry.graze_views;
-        if(entry.active){visual.body=entry.visual->body;visual.overlay=entry.visual->overlay;}
+        if(entry.active&&s.own_visuals){visual.body=entry.visual->body;visual.overlay=entry.visual->overlay;}
         else{entry.body_binding.restore(visual.body);entry.overlay_binding.restore(visual.overlay);}
         visual.resource=entry.resource;visual.rate=entry.rate;visual.error=entry.error;
     }

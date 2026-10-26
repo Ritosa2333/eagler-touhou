@@ -10,7 +10,8 @@ public:
     BulletFrameState(BulletFrameState&&)noexcept;
     BulletFrameState& operator=(BulletFrameState&&)noexcept;
     static void append_roots(BulletScene&,const AnmRegistry&,std::vector<AnmVm*>&);
-    bool capture(BulletScene&);
+    // Full battle snapshots let AnimationState own the VM values once.
+    bool capture(BulletScene&,bool own_visuals=true);
     bool restore(BulletScene&)const;
 };
 }

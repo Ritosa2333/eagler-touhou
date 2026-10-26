@@ -92,9 +92,9 @@ bool BattleFrameState::capture(GameBattle& battle,const std::vector<AnmVm*>& ext
         }
     }
     if(!s.enemies.capture(*battle.enemies)){error=s.enemies.error;return false;}
-    if(!s.lasers.capture(*battle.laser_scene)){error=s.lasers.error;return false;}
-    if(!s.bullets.capture(*battle.bullet_scene)){error=s.bullets.error;return false;}
-    if(!s.items.capture(*battle.items)){error=s.items.error;return false;}
+    if(!s.lasers.capture(*battle.laser_scene,false)){error=s.lasers.error;return false;}
+    if(!s.bullets.capture(*battle.bullet_scene,false)){error=s.bullets.error;return false;}
+    if(!s.items.capture(*battle.items,false)){error=s.items.error;return false;}
     s.ready=true;return true;
 }
 bool BattleFrameState::restore(GameBattle& battle)const{

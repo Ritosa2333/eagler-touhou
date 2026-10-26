@@ -53,7 +53,14 @@ struct AnimationState::Data {
     std::vector<u32> free_slots,pending;
     std::array<std::vector<u32>,2> groups;
     std::array<std::vector<const AnmVm*>,42> layers;
-    std::unordered_map<const AnmVm*,const AnmVm*> originals;
+    std::vector<std::pair<const AnmVm*,const AnmVm*>> originals;
+    // Capture scratch survives ring reuse; stable registry nodes keep their
+    // index entries rather than reallocating hash nodes on every frame.
+    struct Index {u32 position=0;u64 epoch=0;};
+    std::vector<const AnmRegistry::Node*> selected;
+    std::unordered_map<const AnmRegistry::Node*,Index> indices;
+    std::vector<AnmVm*> unregistered;
+    u64 capture_epoch=0;
     u32 generation=0,active_count=0;
     u64 presentation_counter=0;
     std::string error;
@@ -73,17 +80,18 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
     struct IdentityGuard{u64 value=AnmVm::presentation_counter;~IdentityGuard(){AnmVm::presentation_counter=value;}} guard;
     if(!saved_)saved_=std::make_unique<Data>();
     auto& s=*saved_;s.captured=false;s.count=s.root_count=0;s.present.reset();s.originals.clear();
-    std::vector<const AnmRegistry::Node*> selected;
-    std::unordered_map<const AnmRegistry::Node*,u32> indices;
-    auto add=[&](const AnmRegistry::Node* n){if(n&&!indices.count(n)){indices.emplace(n,u32(selected.size()));selected.push_back(n);}};
+    auto& selected=s.selected;selected.clear();auto& indices=s.indices;
+    if(!++s.capture_epoch){indices.clear();++s.capture_epoch;}
+    auto add=[&](const AnmRegistry::Node* n){if(n){auto& index=indices[n];if(index.epoch!=s.capture_epoch){index={u32(selected.size()),s.capture_epoch};selected.push_back(n);}}};
     for(size_t i=0;i<registry.pool.size();++i)if(const auto* n=registry.pool[i].get()){s.present.set(i);bool nested_live=false;if(n->vm.geometry.overlay)each_vm(n->vm,[&](const AnmVm& v){if(&v!=&n->vm&&registry.node(const_cast<AnmVm&>(v)))nested_live=true;});if(n->active||nested_live)add(n);}
     for(const auto& entry:registry.overflow)add(entry.first);
     for(const auto& entry:registry.external)add(entry.second.get());
     for(const auto& layer:registry.layers)for(auto* vm:layer)add(registry.node(*vm));
     for(auto* n:registry.pending_deletion)add(n);
-    std::vector<AnmVm*> unregistered;
-    std::unordered_set<AnmVm*> unique_roots;
-    for(auto* vm:owned_roots)if(vm&&unique_roots.insert(vm).second){if(auto* n=registry.node(*vm))add(n);else unregistered.push_back(vm);}
+    auto& unregistered=s.unregistered;unregistered.assign(owned_roots.begin(),owned_roots.end());
+    std::sort(unregistered.begin(),unregistered.end(),std::less<AnmVm*>{});
+    unregistered.erase(std::unique(unregistered.begin(),unregistered.end()),unregistered.end());
+    unregistered.erase(std::remove_if(unregistered.begin(),unregistered.end(),[&](AnmVm* vm){if(!vm)return true;if(auto* n=registry.node(*vm)){add(n);return true;}return false;}),unregistered.end());
     for(size_t i=0;i<selected.size();++i){
         add(selected[i]->parent);
         for(auto* child:selected[i]->children)add(child);
@@ -102,19 +110,25 @@ bool AnimationState::capture(const AnmRegistry& registry,const std::vector<AnmVm
         image.original=n.borrowed?n.borrowed:&n.vm;image.nested=nested.count(image.original)!=0;
         image.vm=n.borrowed?*n.borrowed:n.vm;
         image.slot=n.slot;image.handle=n.handle;image.active=n.active;image.registered=n.registered;image.alternate=n.alternate;
-        image.parent=n.parent?indices.at(n.parent):none;
-        image.children.clear();for(auto* child:n.children)image.children.push_back(indices.at(child));
+        image.parent=n.parent?indices.at(n.parent).position:none;
+        image.children.clear();for(auto* child:n.children)image.children.push_back(indices.at(child).position);
     }
     s.root_count=unregistered.size();if(s.roots.size()<s.root_count)s.roots.resize(s.root_count);
     for(size_t i=0;i<s.root_count;++i){s.roots[i].original=unregistered[i];s.roots[i].vm=*unregistered[i];}
     for(size_t i=0;i<s.count;++i){if(s.nodes[i].nested)continue;const auto& n=*selected[i];
-        paired_vms(n.borrowed?*n.borrowed:n.vm,s.nodes[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace(&original,&copy);});
+        paired_vms(n.borrowed?*n.borrowed:n.vm,s.nodes[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace_back(&original,&copy);});
     }
-    for(size_t i=0;i<s.root_count;++i)paired_vms(*s.roots[i].original,s.roots[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace(&original,&copy);});
-    for(size_t i=0;i<s.count;++i)if(const auto& image=s.nodes[i];image.nested&&image.original&&!s.originals.count(image.original)){error="Rollback is missing an embedded VM's owning root";return false;}
-    for(size_t group=0;group<s.groups.size();++group){s.groups[group].clear();for(auto* n:registry.groups[group])s.groups[group].push_back(indices.at(n));}
+    for(size_t i=0;i<s.root_count;++i)paired_vms(*s.roots[i].original,s.roots[i].vm,[&](const AnmVm& original,AnmVm& copy){s.originals.emplace_back(&original,&copy);});
+    const auto by_original=[](const auto& a,const auto& b){return std::less<const AnmVm*>{}(a.first,b.first);};
+    std::sort(s.originals.begin(),s.originals.end(),by_original);
+    for(size_t i=0;i<s.count;++i)if(const auto& image=s.nodes[i];image.nested&&image.original){
+        const auto at=std::lower_bound(s.originals.begin(),s.originals.end(),std::make_pair(image.original,static_cast<const AnmVm*>(nullptr)),by_original);
+        if(at==s.originals.end()||at->first!=image.original){error="Rollback is missing an embedded VM's owning root";return false;}
+    }
+    for(auto at=indices.begin();at!=indices.end();)if(at->second.epoch!=s.capture_epoch)at=indices.erase(at);else ++at;
+    for(size_t group=0;group<s.groups.size();++group){s.groups[group].clear();for(auto* n:registry.groups[group])s.groups[group].push_back(indices.at(n).position);}
     for(size_t layer=0;layer<s.layers.size();++layer)s.layers[layer].assign(registry.layers[layer].begin(),registry.layers[layer].end());
-    s.pending.clear();for(auto* n:registry.pending_deletion)s.pending.push_back(indices.at(n));
+    s.pending.clear();for(auto* n:registry.pending_deletion)s.pending.push_back(indices.at(n).position);
     s.free_slots=registry.free_slots;s.generation=registry.generation;s.active_count=registry.active_count;s.presentation_counter=guard.value;s.error=registry.error;
     s.captured=true;return true;
 }
@@ -173,6 +187,6 @@ size_t AnimationState::retained_bytes()const noexcept{
     for(const auto& image:s.roots)bytes+=dynamic_bytes(image.vm);
     for(const auto& group:s.groups)bytes+=group.capacity()*sizeof(u32);
     for(const auto& layer:s.layers)bytes+=layer.capacity()*sizeof(AnmVm*);
-    return bytes+s.originals.size()*(sizeof(void*)*3);
+    return bytes+s.originals.capacity()*sizeof(decltype(s.originals)::value_type)+s.selected.capacity()*sizeof(void*)+s.unregistered.capacity()*sizeof(void*)+s.indices.size()*(sizeof(void*)*2+sizeof(Data::Index));
 }
 }

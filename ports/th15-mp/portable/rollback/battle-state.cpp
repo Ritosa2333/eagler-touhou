@@ -1,6 +1,22 @@
 #include "battle-digest.hpp"
+#include "multiplayer/ItemFrameState.hpp"
+// A free cancellation slot keeps its old body until the delayed falling
+// transition binds a new script. Standalone snapshots must preserve that VM.
+static void cancel_item_reuse(RetailAssets& assets){
+    World world(assets,2,0,{0,1,0});auto& manager=*world.battle->items;
+    const auto id=manager.spawn(9,{30,120,0},.3f,1);require(id&&manager.falling(id),manager.error);
+    auto* slot=manager.find(id);Digest before;before.vm(*slot->body);require(manager.release(id),manager.error);
+    th15::multiplayer::ItemFrameState saved;require(saved.capture(manager),saved.error);
+    require(manager.spawn(10,{80,60,0},.6f,2)==id,"reuse the same free cancellation slot");require(manager.falling(id),manager.error);
+    slot->body->variables.position={99,88,77};const float rate=.375f;slot->body->timer.tick(&rate);
+    require(saved.restore(manager),saved.error);Digest restored;restored.vm(*manager.find(id)->body);
+    require(restored.value==before.value,"cold cancellation VM was not fully restored");
+    require(manager.spawn(9,{30,120,0},.3f,1)==id,"restored cancellation free-list order");
+    require(manager.find(id)->state.state==5,"cancellation pickup starts in delayed state");
+    Digest delayed;delayed.vm(*manager.find(id)->body);require(delayed.value==before.value,"delayed pickup lost its retained VM");
+}
 int main(int argc,char** argv){
-    require(argc==2,"Pass TH15_TEST_ARCHIVE");RetailAssets assets(argv[1]);unsigned replayed=0;double capture_ms=0,restore_ms=0;unsigned captures=0;
+    require(argc==2,"Pass TH15_TEST_ARCHIVE");RetailAssets assets(argv[1]);cancel_item_reuse(assets);unsigned replayed=0;double capture_ms=0,restore_ms=0;unsigned captures=0;
     for(const auto selection:{std::array<int,3>{0,1,2},std::array<int,3>{3,3,0}}){
         World world(assets,3,2,selection);auto& b=*world.battle;EnemySpawnRequest main;main.routine="main";require(b.spawn(main),b.error);
         BattleFrameState saved;

@@ -13,7 +13,8 @@ public:
     LaserFrameState& operator=(LaserFrameState&&)noexcept;
     void discard()noexcept;
     static void append_roots(LaserScene&,const AnmRegistry&,std::vector<AnmVm*>&);
-    bool capture(LaserScene&);
+    // Full battle snapshots let AnimationState own the VM values once.
+    bool capture(LaserScene&,bool own_visuals=true);
     bool restore(LaserScene&)const;
     size_t size()const noexcept;
 };

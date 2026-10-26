@@ -48,6 +48,7 @@ public:
     u32 slot(const AnmVm&)const noexcept;
     u32 ordered_handle(bool alternate,u32 index)const noexcept;
     u32 ordered_count(bool alternate)const noexcept{return groups[alternate].size();}
+    void ordered_handles(bool alternate,std::vector<u32>& out)const{out.clear();out.reserve(groups[alternate].size());for(const auto* node:groups[alternate])out.push_back(node->handle);}
     u32& generation_counter()noexcept{return generation;}
 };
 }
