@@ -12,8 +12,8 @@
     "upstreamCommit": "5b5d583faddfd837b423cbeb705c3e0504f18c1f",
     "initialJoin": "268bf9b9688a1581b8c4ce3e01205dc7f8d27e21",
     "initialSplit": "1d5b0bf8a21d7b205a58b9dcd4571f57f8de3a25",
-    "latestJoin": "989252e13a483e62f751ee57e63b4c448323adf9",
-    "currentSplit": "b7179675456ead75485a0b850a34abd0981b04e8"
+    "latestJoin": "a4cb0e8414aacd35801e027d52ac7a51ff698958",
+    "currentSplit": "42be0fc330aec7a71a55678e98ca7eba211dadbd"
   },
   "builder": "ports/th02/scripts/build-eagler.mjs",
   "inputIdentityRecord": "ports/th02/content/source.json",
