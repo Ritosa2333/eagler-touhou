@@ -331,24 +331,24 @@ void VM::setField(Field f, float n) {
   color = (color & ~(255u << shift)) | ((uint32_t(nativeInt(n)) & 255) << shift);
 }
 
-void VM::interpolate(std::initializer_list<Field> fields, std::vector<float> to, int duration,
-                     int mode, std::vector<float> a, std::vector<float> b) {
-  std::vector<Field> keys(fields);
+void VM::interpolate(std::initializer_list<Field> fields, std::initializer_list<float> to, int duration,
+                     int mode, std::initializer_list<float> a, std::initializer_list<float> b) {
   auto it = std::find_if(interpolations_.begin(), interpolations_.end(),
-                         [&](auto& t) { return t.fields == keys; });
+                         [&](auto& t) { return t.count == fields.size() && std::equal(fields.begin(), fields.end(), t.fields.begin()); });
   if (it == interpolations_.end()) {
     interpolations_.push_back({});
     it = std::prev(interpolations_.end());
   }
   *it = {};
-  it->fields = keys;
-  it->to = std::move(to);
+  it->count = fields.size();it->aCount = a.size();it->bCount = b.size();
+  std::copy(fields.begin(), fields.end(), it->fields.begin());
+  std::copy(to.begin(), to.end(), it->to.begin());
   it->duration = float(duration);
   it->mode = mode;
-  it->a = std::move(a);
-  it->b = std::move(b);
-  for (auto f : keys)
-    it->from.push_back(field(f));
+  std::copy(a.begin(), a.end(), it->a.begin());
+  std::copy(b.begin(), b.end(), it->b.begin());
+  for (size_t i = 0; i < it->count; ++i)
+    it->from[i] = field(it->fields[i]);
   // Native455630 tests the stored duration itself (scale +1e0): zero
   // disables the interpolator without writing its target on later updates.
   it->active = duration != 0;
@@ -844,17 +844,17 @@ void VM::advance(Runtime& r) {
       if (t.duration > 0)
         t.time += dt;
       const float n = std::min(1.f, t.time / t.duration), e = curve(n, t.mode);
-      for (size_t i = 0; i < t.fields.size(); i++) {
+      for (size_t i = 0; i < t.count; i++) {
         const auto f = t.fields[i];
         double value;
         if (t.mode == 7) {
           t.from[i] += t.to[i];
           value = t.from[i];
         } else if (t.mode == 17) {
-          t.from[i] += t.b.size() > i ? t.b[i] : 0;
-          t.to[i] += t.b.size() > i ? t.b[i] : 0;
+          t.from[i] += t.bCount > i ? t.b[i] : 0;
+          t.to[i] += t.bCount > i ? t.b[i] : 0;
           value = t.from[i];
-        } else if (t.mode == 8 && !t.a.empty()) {
+        } else if (t.mode == 8 && t.aCount) {
           double x = n;
           value = (2 * x * x * x - 3 * x * x + 1) * t.from[i] +
                   (-2 * x * x * x + 3 * x * x) * t.to[i] + (x * x * x - 2 * x * x + x) * t.a[i] +
@@ -891,7 +891,8 @@ uint32_t VM::continuousFields() const {
   if(rotationVelocity_[0]||rotationVelocity_[1]||rotationVelocity_[2])mask|=2;
   if(scaleVelocity_[0]||scaleVelocity_[1])mask|=4;
   if(scrollVelocity_[0]||scrollVelocity_[1])mask|=8;
-  for(const auto& track:interpolations_)if(track.active)for(const auto field:track.fields){
+  for(const auto& track:interpolations_)if(track.active)for(size_t i=0;i<track.count;++i){
+    const auto field=track.fields[i];
     if(field<=Z)mask|=1;else if(field<=RZ)mask|=2;
     else if(field<=SY)mask|=4;else if(field<=VVEL)mask|=8;
     else if(field<=BLUE2)mask|=16;else if(field<=VSCALE)mask|=32;
@@ -922,12 +923,12 @@ Diagnostic VM::diagnostics() const {
     d.mode = t.mode;
     d.time = t.time;
     d.duration = t.duration;
-    d.from = t.from;
-    d.to = t.to;
-    d.a = t.a;
-    d.b = t.b;
-    for (auto f : t.fields)
-      d.fields.push_back(int(f));
+    d.from.assign(t.from.begin(),t.from.begin()+t.count);
+    d.to.assign(t.to.begin(),t.to.begin()+t.count);
+    d.a.assign(t.a.begin(),t.a.begin()+t.aCount);
+    d.b.assign(t.b.begin(),t.b.begin()+t.bCount);
+    for (size_t i=0;i<t.count;++i)
+      d.fields.push_back(int(t.fields[i]));
     result.interpolations.push_back(std::move(d));
   }
   return result;

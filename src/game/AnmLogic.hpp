@@ -37,8 +37,11 @@ class VM {
     bool active = false;
     int mode = 0;
     float time = 0, duration = 0;
-    std::vector<Field> fields;
-    std::vector<float> from, to, a, b;
+    // Native ANM interpolators address at most XYZ/RGB (three fields).
+    // Inline coefficients avoid nested allocations at birth and checkpoint copy.
+    std::array<Field, 3> fields{};
+    std::array<float, 3> from{}, to{}, a{}, b{};
+    size_t count = 0, aCount = 0, bCount = 0;
   };
   std::shared_ptr<Bank> bank_;
   Registry* registry_ = nullptr;
@@ -68,8 +71,8 @@ class VM {
   float destinationFloat(Command& c, size_t i);
   float field(Field f) const;
   void setField(Field f, float n);
-  void interpolate(std::initializer_list<Field> fields, std::vector<float> to, int duration,
-                   int mode, std::vector<float> a = {}, std::vector<float> b = {});
+  void interpolate(std::initializer_list<Field> fields, std::initializer_list<float> to, int duration,
+                   int mode, std::initializer_list<float> a = {}, std::initializer_list<float> b = {});
   void jump(uint32_t offset, int clock, Runtime& r);
   bool handleInterrupt();
   bool command(Command& c, Runtime& r);
