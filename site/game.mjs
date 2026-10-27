@@ -91,7 +91,7 @@ function touchState(){
   const h=playing?hud():null,message=playing?readJSON('message'):null;
   const kind=playing?(session.replay?'replay':message?.active&&(message.flags&1||message.wait>0)?'dialogue':'game'):'menu';
   const instance=playing||paused?`${session.stage}:${core._th12_player_instance()}`:'';
-  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,paused,ready:!!playing&&core._th12_player_state()===1,
+  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,gestureScope:playing?`${session.stage}:${runtimeOptions.netplayPlayer??0}`:null,paused,ready:!!playing&&core._th12_player_state()===1,
     x:h?Math.round(h[1]*128):0,y:h?Math.round(h[2]*128):0,
     fast:playing?core._th12_player_speed(0):0,slow:playing?core._th12_player_speed(1):0,keyFocused:ready&&keyDown(profile.settings.keyMap.focus)};
 }

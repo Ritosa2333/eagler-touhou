@@ -20,12 +20,18 @@ export class TouchInput {
       (['game','dialogue'].includes(this.lastKind)||this.paused)&&
       (['game','dialogue'].includes(state.kind)||state.paused)&&
       (!(this.paused||state.paused)||this.instance===state.instance);
-    const continuous=this.context&&this.lastKind!=='menu'&&state.kind!=='menu'&&this.lastKind!=='replay'&&state.kind!=='replay'&&this.instance===state.instance;
+    const continuous=this.context&&this.lastKind!=='menu'&&state.kind!=='menu'&&this.lastKind!=='replay'&&state.kind!=='replay'&&
+      (this.instance===state.instance||state.gestureScope!=null&&this.gestureScope===state.gestureScope);
     if(!continuous)this.cancel();else {this.pending=0;this.menu=null;this.tap=null;}
-    // Respawn replaces the player instance, invalidating old drag targets.
-    // The host's toggle remains selected until the next explicit snapshot.
+    // Keep physical contacts through the local pilot's respawn. Rebase the
+    // target and pointer origin, so the next move cannot reuse a pre-death aim.
+    if(continuous&&this.instance!==state.instance&&this.primary){
+      const drag=this.primary,point=this.points.get(drag.id);
+      drag.targetX=state.x;drag.targetY=state.y;drag.instance=state.instance;drag.blocked=!state.ready;
+      if(point){drag.previousX=point.x;drag.previousY=point.y;}
+    }
     if(toggledFocus)this.focus=true;
-    this.context=state.key;this.lastKind=state.kind;this.instance=state.instance;this.paused=!!state.paused;
+    this.context=state.key;this.lastKind=state.kind;this.instance=state.instance;this.gestureScope=state.gestureScope;this.paused=!!state.paused;
   }
   controls(snapshot,state){
     this.sync(state);this.fire=snapshot.fireEnabled;this.focus=snapshot.focusEnabled;

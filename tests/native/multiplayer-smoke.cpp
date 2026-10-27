@@ -9,6 +9,7 @@
 #include "multiplayer/InputLanes.hpp"
 #include "multiplayer/ReplayArchive.hpp"
 #include "multiplayer/Session.hpp"
+#include "wasm/Api.hpp"
 #include <cstdio>
 #include <cstdlib>
 using namespace th12;
@@ -159,6 +160,18 @@ void exclusiveBombs(unsigned count) {
   check(mp::pilots[0].playerBomb.active&&!mp::pilots[1].playerBomb.active&&mp::pilots[1].resources.bombs==2,"rollback restores the team Bomb exclusion");
 }
 int main(){
+  for(unsigned count:{2u,3u})for(unsigned local=0;local<count;++local){
+    begin(count);mp::options.local=local;phasePlayerCounters[0]=7;
+    check(th12_player_instance()==0,"local touch identity starts independently of shared phase counters");
+    auto& other=mp::pilots[(local+1)%count];other.playerState=4;other.playerStateTicks=int(mp::deathbombFrames());mp::tickPlayers();
+    check(other.misses==1,"other pilot completes native death window");
+    check(th12_player_instance()==0,"another pilot's death does not invalidate local touch");
+    phasePlayerCounters[0]=0;
+    check(th12_player_instance()==0,"ECL spell boundary reset does not invalidate local touch");
+    mp::WorldState checkpoint;auto& own=mp::pilots[local];own.playerState=4;own.playerStateTicks=int(mp::deathbombFrames());mp::tickPlayers();
+    check(th12_player_instance()==1,"local death advances only local touch identity");
+    checkpoint.restore();check(th12_player_instance()==0,"rollback restores local touch identity");
+  }
   exclusiveBombs(2);exclusiveBombs(3);
   {
     begin();

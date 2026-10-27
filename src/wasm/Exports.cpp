@@ -45,7 +45,12 @@ void th12_motion(int mode,int x,int y) {
 }
 const int32_t* th12_motion_result() { return th12::pilot().adaptedMotion.result.data(); }
 int th12_player_state() { th12::multiplayer::Scope seat(th12::multiplayer::active?th12::multiplayer::options.local:0); return th12::pilot().playerState; }
-int th12_player_instance() { return int(th12::phasePlayerCounters[0]); }
+int th12_player_instance() {
+  // ECL phase counters are shared and scripts reset them at card changes.
+  // Touch lifetime follows only the local pilot's misses in multiplayer.
+  if(th12::multiplayer::active)return int(th12::multiplayer::pilots[th12::multiplayer::options.local].misses);
+  return int(th12::phasePlayerCounters[0]);
+}
 float th12_player_speed(int focused) {
   th12::multiplayer::Scope seat(th12::multiplayer::active?th12::multiplayer::options.local:0);
   const auto& s=th12::loadouts[th12::pilot().character*2+th12::pilot().shot];
