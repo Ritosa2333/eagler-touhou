@@ -266,6 +266,26 @@ u32 mp_fixture_stage_clear_setup(BrowserRuntime* r){
     g.globals.game_flags&=~0x60u;
     return 1;
 }
+// Begin the actual supervisor's terminal transition after an exact input frame.
+// Resource teardown, retirement, Ending scripts and SDL presentation stay native.
+__attribute__((export_name("mp_fixture_ending_setup")))
+u32 mp_fixture_ending_setup(BrowserRuntime* r,u32 ending){
+    if(!r||ending>2||!r->app.in_game()||r->app.loading_game()||!r->app.session.netplay.CanRetire())return 0;
+    auto& a=r->app;auto& g=a.game;
+    g.globals.stage=ending==2?7:6;
+    g.globals.game_flags=(g.globals.game_flags&~(8u|16u))|(ending?16u:0u);
+    g.menus.context.supervisor_state=a.supervisor.state.target=i32(Scene::Ending);
+    return 1;
+}
+__attribute__((export_name("mp_fixture_ending_state")))
+const u32* mp_fixture_ending_state(BrowserRuntime* r){
+    static u32 out[12]{};std::fill(out,out+12,0);if(!r)return out;
+    const auto& a=r->app;const auto& n=a.session.netplay;
+    out[0]=u32(a.supervisor.state.active);out[1]=u32(a.supervisor.state.target);out[2]=n.Retired();
+    out[3]=n.LastFrame();out[4]=n.NextCaptureFrame();out[5]=u32(a.supervisor.state.calculations);
+    out[6]=r->milliseconds();out[7]=a.ending.file_size();out[8]=u32(a.ending.state.elapsed.current);
+    out[9]=u32(a.ending.state.lines);out[10]=a.supervisor.input.current;out[11]=u32(a.ending.state.wait.current);return out;
+}
 __attribute__((export_name("mp_fixture_spectator_diagnostics")))
 const u32* mp_fixture_spectator_diagnostics(BrowserRuntime* r){
     static u32 words[64]{};std::fill(words,words+64,0);auto* driver=r?r->network_driver():nullptr;if(!driver)return words;

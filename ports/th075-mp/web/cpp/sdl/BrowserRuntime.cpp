@@ -55,7 +55,7 @@ EMSCRIPTEN_KEEPALIVE int th075_tick(double timestamp){using namespace th075::sdl
   }
  }else
 #endif
- {const auto ticks=cadence.advance(elapsed);for(unsigned n=0;n<ticks&&ok;++n){const auto input=sample();if(app->room_preview)app->preview_title_tick();ok=app->tick(app->room_preview?th075::BattleSystemInput{}:input,unsigned(timestamp));}}
+ {const auto ticks=cadence.advance(elapsed);for(unsigned n=0;n<ticks&&ok;++n){auto input=sample();if(app->room_preview)app->preview_title_tick(input);ok=app->tick(input,unsigned(timestamp));}}
  app->graphics.renderer.commit();app->graphics.renderer.defer=false;app->audio.pump();return ok?1:0;}
 EMSCRIPTEN_KEEPALIVE void th075_key(unsigned scan,unsigned down){
 #if TH075_MULTIPLAYER

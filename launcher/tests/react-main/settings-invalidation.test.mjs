@@ -37,6 +37,29 @@ function fixture(productId = 'th06') {
   return {model, context, changes, reset: () => api.settingsChangeResetsRuntime(changes.at(-1))};
 }
 
+for (const productId of ['th11', 'th11mp']) test(`${productId} starts high refresh disabled when opening legacy settings and remembers a later opt-in`, () => {
+  for (const shared of [true, false]) {
+    const saved = new Map([
+      ['eagler-touhou-game-options-v1-th11', JSON.stringify({options: {frameLimit60Enabled: false, alwaysHitbox: true}})],
+      ['eagler-touhou-game-options-v1-th11mp', JSON.stringify({options: {frameLimit60Enabled: false, alwaysHitbox: true}})],
+      ['eagler-touhou-th11mp-share-singleplayer-settings-v1', String(shared)],
+    ]);
+    const storage = {getItem: key => saved.get(key) ?? null, setItem: (key, value) => saved.set(key, value)};
+    const context = fixture(productId).context;
+    const model = api.createGameSettingsModel({storage});
+    model.hydrate(context);
+    assert.equal(model.getSnapshot().options.frameLimit60Enabled, true);
+    assert.equal(model.getSnapshot().options.alwaysHitbox, true);
+    model.setOption('frameLimit60Enabled', false);
+    const reopened = api.createGameSettingsModel({storage});
+    reopened.hydrate(context);
+    assert.equal(reopened.getSnapshot().options.frameLimit60Enabled, false);
+    reopened.setOption('frameLimit60Enabled', true);
+    reopened.hydrate(context);
+    assert.equal(reopened.getSnapshot().options.frameLimit60Enabled, true);
+  }
+});
+
 test('room settings restore is atomic and keeps current drawer and metadata context', () => {
   const f = fixture('th06mp'), saved = f.model.getSnapshot();
   f.model.setLanguage('ja'); f.model.setMusic('none');

@@ -24,7 +24,7 @@ function ownsDocument(){
  catch{return false;}
 }
 function neutralTouch(enabled=!!options.touchEnabled&&!configApplying&&!stopPending&&!retired&&!options.netplaySpectator&&!netplay?.spectator){
- if(!initializedReady||!core||!launched)return;
+ if(!initializedReady||!core||!(launched||roomPreview))return;
  core._th09_touch_cancel();
  // controls already clears both stick axes; unchanged mapped serials retain
  // accepted pulses and cannot create a bomb/escape while neutralizing focus.
@@ -36,7 +36,7 @@ function revokeLifetime(terminal=false){
 }
 function acceptsTouch(){
  if(!ownsDocument()){if(!retired)revokeLifetime(true);return false;}
- return initializedReady&&!!core&&launched&&launchSettled&&!stopPending&&!stopping&&!retired&&!configApplying&&!document.hidden&&!networkOverlayPending&&!!options.touchEnabled&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;
+ return initializedReady&&!!core&&(launched&&launchSettled||roomPreview&&options.netplayMode!=='lan')&&!stopPending&&!stopping&&!retired&&!configApplying&&!document.hidden&&!networkOverlayPending&&!!options.touchEnabled&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;
 }
 function receiveLifetime(){return stopPending||stopping||retired||!ownsDocument()?-1:lifetime;}
 function assertLifetime(value,owner=core){
@@ -54,7 +54,7 @@ const status=()=>({title:values(core._th09_title_status,8),session:values(core._
 const err=()=>{const a=core.HEAPU8.subarray(core._th09_error());return new TextDecoder().decode(a.subarray(0,a.indexOf(0)));};
 const keyboard=createBrowserKeyboard({hostContext:{protocol,game,epoch,origin:location.origin,ready:()=>acceptsKeyboard(),reset:clearKeyboard,profile:()=>{const n=core?._th09_keyboard_profile?.()??2;return n===5?'th09-local':n===3?'th09-left':n===4?'th09-right':'standard';},},accept:code=>!!scanCodes[code],send:(code,down)=>core?._th09_key(scanCodes[code],+down)});
 function clearKeyboard(){keyboard.clear();core?._th09_keys_clear();}
-function acceptsKeyboard(){return launched&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;}
+function acceptsKeyboard(){return (launched||roomPreview&&options.netplayMode!=='lan')&&!stopping&&!stopPending&&!retired&&!document.hidden&&!networkOverlayPending&&!options.netplaySpectator&&!netplay?.spectator&&!options.replayViewer;}
 const fatal=e=>{revokeLifetime(true);const message=e?.message||String(e);$('#error').textContent=message;clearKeyboard();core?._th09_loop_pause(1);emit('error',{error:message});};
 const sync=(populate=false)=>{const current=chain.then(()=>new Promise((r,j)=>core.FS.syncfs(populate,e=>e?j(e):r())));chain=current.catch(()=>{});return current;};
 function path(value){
@@ -253,7 +253,7 @@ for(const [event,down] of [['keydown',1],['keyup',0]])window.addEventListener(ev
  if(keyboard.mapNative(e,down)){e.preventDefault();e.stopImmediatePropagation();return;}
  keyboard.event(e,down);
 },{capture:true});
-document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();neutralTouch();core._th09_loop_pause(+(document.hidden||networkOverlayPending||(options.netplayMode==='lan'&&(netplay?.recovering||netplay?.disconnected||(!netplay?.active&&!netplay?.finished)))));if(document.hidden)void save().catch(fatal);}});
+document.addEventListener('visibilitychange',()=>{if(launched||roomPreview){clearKeyboard();neutralTouch();core._th09_loop_pause(+(document.hidden||networkOverlayPending||(!roomPreview&&options.netplayMode==='lan'&&(netplay?.recovering||netplay?.disconnected||(!netplay?.active&&!netplay?.finished)))));if(document.hidden)void save().catch(fatal);}});
 window.addEventListener('blur',()=>{clearKeyboard();neutralTouch();});
 // Ordinary Android/iOS Launcher touch uses the parent owner. Retain this
 // document's pointer path for its existing direct-input carrier as well.

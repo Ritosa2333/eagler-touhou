@@ -507,7 +507,8 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
     callback_yielded=false;
     if(failed||open||session.network_frame_open||!runtime.prepared||runtime.capture_failed){FlushInputs();return false;}
     session.network_waiting=false;
-    if(net.Retired())return network.Pump(false)&&runtime.app.update()&&(!render||runtime.app.draw());
+    const auto local_frame=[&](){return runtime.app.update()&&(!render||(runtime.app.draw()&&runtime.finish_network_frame()));};
+    if(net.Retired())return network.Pump(false)&&local_frame();
     // Resource transitions remain confirmed. Once outside the combat graph,
     // do not let waiting for one UI frame stop the next physical input slot.
     net.SetCapturePhase(initialized&&!generation_transition_pending&&
@@ -572,7 +573,7 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
     // forward tick. Its indivisible cost can extend this callback beyond the
     // history slice budget; the SDL host still gates further catch-up ticks.
     if(!Commit()||!Admit())return false;
-    if(net.Retired())return runtime.app.update()&&(!render||runtime.app.draw());
+    if(net.Retired())return local_frame();
     if(session.network_waiting)return PresentCorrection();
     // The outer SDL callback owns the shared observer catch-up budget.
     const auto frame=net.NextFrame();

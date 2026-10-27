@@ -21,6 +21,7 @@ const error=()=>core.UTF8ToString(core._th075_error());
 const call=(name,types=[],args=[])=>core.ccall('th075_'+name,'number',types,args,{async:true});
 const sync=createSaveSync(()=>core);
 function clearKeyboard(){keyboard.clear();core?._th075_keys_clear();}
+function runtimeInputActive(){return (launched||roomPreview&&options.netplayMode!=='lan')&&!document.hidden&&!stopping;}
 function cancelTouch(){direct=null;stick={x:0,y:0};actionButtons=0;core?._th075_touch_cancel();}
 function inputKey(event,down,source){
   if(replayPrompt)return false;
@@ -126,17 +127,17 @@ function loop(){
 
 // Share one input owner across the same-origin fast path and postMessage fallback.
 function dispatchInput(m){if(net?.spectator&&['keyboard','keyboard-clear','touch-controls','touch-cancel','direct-touch'].includes(m.command))return true;switch(m.command){
-  case 'keyboard':if(launched&&!document.hidden&&!stopping)inputKey(m,!!m.down,'hosted');return true;
+  case 'keyboard':if(runtimeInputActive())inputKey(m,!!m.down,'hosted');return true;
   case 'keyboard-clear':clearKeyboard();return true;
-  case 'touch-controls':if(launched&&!document.hidden&&!stopping)touch(m);return true;
+  case 'touch-controls':if(runtimeInputActive())touch(m);return true;
   case 'touch-cancel':cancelTouch();return true;
-  case 'direct-touch':if(launched&&!document.hidden&&!stopping)directTouch(m);return true;
+  case 'direct-touch':if(runtimeInputActive())directTouch(m);return true;
   default:return false;
 }}
 if(validEpoch)Object.defineProperty(window,'__eaglerDirectInputBridge',{configurable:true,value:Object.freeze({
   schema:'eagler-touhou/direct-input/1',protocol,game,epoch,origin:location.origin,
   submit(m){
-    if(!core||!launched||stopping||!m||m.protocol!==protocol||m.game!==game||m.epoch!==epoch||m.request!=null)return false;
+    if(!core||!runtimeInputActive()||!m||m.protocol!==protocol||m.game!==game||m.epoch!==epoch||m.request!=null)return false;
     return dispatchInput(m);
   },
 })});
@@ -198,7 +199,7 @@ window.addEventListener('message',event=>{
   if(event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;
   commands=commands.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')emit(undefined,{request:m.request,ok:true,...result});}catch(e){if(typeof m.request==='string')emit(undefined,{request:m.request,ok:false,error:String(e),errno:e?.errno});else fatal(e);}}).catch(fatal);
 });
-for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{if(!launched||event.altKey||event.metaKey||document.hidden)return;if(inputKey(event,type==='keydown','native')){event.preventDefault();event.stopPropagation();}},{capture:true});
+for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{if(!runtimeInputActive()||event.altKey||event.metaKey)return;if(inputKey(event,type==='keydown','native')){event.preventDefault();event.stopPropagation();}},{capture:true});
 window.addEventListener('blur',()=>{clearKeyboard();cancelTouch();});
 document.addEventListener('visibilitychange',()=>{clearKeyboard();cancelTouch();if(launched){core._th075_loop_pause(+document.hidden);if(document.hidden)void save().catch(fatal);}});
 window.addEventListener('pagehide',()=>{++loopId;clearKeyboard();cancelTouch();core?._th075_loop_pause(1);if(core)void save().catch(()=>{});});

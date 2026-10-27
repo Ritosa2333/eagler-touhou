@@ -36,6 +36,7 @@
     "test:room-runtime-retention:browser": "node tests/browser/test-room-runtime-retention.mjs",
     "test:room-packet-loss:browser": "node tests/browser/test-room-packet-loss.mjs",
     "test:room-title-preload:browser": "node tests/browser/test-room-title-preload.mjs",
+    "test:room-options:browser": "node tests/browser/test-room-options.mjs",
     "test:room-native-preview:browser": "node tests/browser/test-room-native-preview.mjs",
     "test:th10-room-native-preview:browser": "node tests/browser/test-th10-room-native-preview.mjs",
     "test:confirmation-keyboard:browser": "node tests/browser/test-confirmation-keyboard.mjs",

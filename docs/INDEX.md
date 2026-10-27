@@ -100,6 +100,7 @@
 | 作品源码文档 | [ports/th05/REPLAY-STABILITY.md](../ports/th05/REPLAY-STABILITY.md) | TH05 Replay／旁观稳定性验证（更新：2026-10-22） |
 | 作品源码文档 | [ports/th05/patches/translation/README.md](../ports/th05/patches/translation/README.md) | TH05 Chinese Translation |
 | 作品源码文档 | [ports/th06/docs/DEVELOPMENT.md](../ports/th06/docs/DEVELOPMENT.md) | TH06 开发指南 |
+| 作品源码文档 | [ports/th06/docs/records/2026-10-26-spectator-browser.md](../ports/th06/docs/records/2026-10-26-spectator-browser.md) | th06 普通局旁观检查 |
 | 作品源码文档 | [ports/th07/docs/DEVELOPMENT.md](../ports/th07/docs/DEVELOPMENT.md) | TH07 开发指南 |
 | 作品源码文档 | [ports/th07/vendored/README.md](../ports/th07/vendored/README.md) | 第三方构建依赖 |
 | 作品源码文档 | [ports/th075-mp/docs/DEVELOPMENT.md](../ports/th075-mp/docs/DEVELOPMENT.md) | 萃梦想多人版开发 |
@@ -108,11 +109,13 @@
 | 作品源码文档 | [ports/th08/docs/DEVELOPMENT.md](../ports/th08/docs/DEVELOPMENT.md) | TH08 开发指南 |
 | 作品源码文档 | [ports/th09/docs/DEVELOPMENT.md](../ports/th09/docs/DEVELOPMENT.md) | th09 开发指南 |
 | 作品源码文档 | [ports/th09/docs/NETPLAY-STOPS.md](../ports/th09/docs/NETPLAY-STOPS.md) | th09 联机技能停顿 |
+| 作品源码文档 | [ports/th09/docs/records/2026-10-26-room-options.md](../ports/th09/docs/records/2026-10-26-room-options.md) | 房间原生选项操作 |
 | 作品源码文档 | [ports/th09/web/reference/MIT-TH08-codec.txt](../ports/th09/web/reference/MIT-TH08-codec.txt) | MIT License |
 | 作品源码文档 | [ports/th10-mp/docs/DEVELOPMENT.md](../ports/th10-mp/docs/DEVELOPMENT.md) | TH10 多人版开发指南 |
 | 作品源码文档 | [ports/th10/docs/DEVELOPMENT.md](../ports/th10/docs/DEVELOPMENT.md) | TH10 开发指南 |
 | 作品源码文档 | [ports/th11-mp/docs/DEVELOPMENT.md](../ports/th11-mp/docs/DEVELOPMENT.md) | TH11 多人版开发指南 |
 | 作品源码文档 | [ports/th11-mp/docs/records/2026-10-24-display-high-refresh.md](../ports/th11-mp/docs/records/2026-10-24-display-high-refresh.md) | th11 高刷新呈现 ｜ 2026-10-24 |
+| 作品源码文档 | [ports/th11-mp/docs/records/2026-10-25-spectator-stage6.md](../ports/th11-mp/docs/records/2026-10-25-spectator-stage6.md) | th11 六面旁观逐帧对照 |
 | 作品源码文档 | [ports/th11-mp/portable/presentation-lab/CAMPAIGN.md](../ports/th11-mp/portable/presentation-lab/CAMPAIGN.md) | th11 帧间位移巡检 |
 | 作品源码文档 | [ports/th11-mp/portable/presentation-lab/README.md](../ports/th11-mp/portable/presentation-lab/README.md) | th11 Presentation Lab |
 | 作品源码文档 | [ports/th11/docs/DEVELOPMENT.md](../ports/th11/docs/DEVELOPMENT.md) | TH11 开发指南 |

@@ -23,6 +23,7 @@ const sharedFonts=resolve(process.env.TH11_SHARED_FONT_ROOT||resolve(workspace,'
 const cp932Path=resolve(process.env.TH11_CP932_FONT||resolve(workspace,'dist/update-ef596d2-20261006/th11-previous-runtime/fonts/cp932.bin'));
 const build=JSON.parse(await readFile(resolve(buildRoot,'build.json'),'utf8'));
 const fixtures=build.privateSpectatorFixture===true;
+const initialStage=build.privateSpectatorInitialStage||1,difficulty=initialStage===7?4:0;
 const productionBuild=fixtures?JSON.parse(await readFile(resolve(buildRoot,'..','build.json'),'utf8')):build;
 const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
 const loadedWasm=await readFile(resolve(buildRoot,'th11-sdl.wasm'));
@@ -37,6 +38,10 @@ const lifecycleOnly=process.argv.includes('--lifecycle-only')||process.env.TH11_
 const backpressureOnly=process.argv.includes('--backpressure-only');
 const challengeMode=process.argv.includes('--challenge');
 const softwareRenderer=process.env.TH11_TEST_SOFTWARE_RENDERER==='1';
+const transitionFirst=process.argv.includes('--transition-first'),holdInput=process.argv.includes('--hold-input'),nextStage=initialStage+1;
+const admissionFrame=Number(process.env.TH11_TEST_ADMISSION_FRAME||300);
+const playbackOnly=process.argv.includes('--playback-only');
+assert.ok(!playbackOnly||uninterruptedFrames>0,'playback-only requires a positive TH11_TEST_UNINTERRUPTED_FRAMES');
 assert.ok(playerCount===2||playerCount===3);
 const seats=Array.from({length:playerCount},(_,i)=>i),viewerSeat=playerCount,lateSeat=playerCount+1;
 assert.equal(build.game,'th11');assert.equal(build.variant,'multiplayer');assert.equal(build.features?.multiplayer,true);
@@ -121,7 +126,7 @@ await new Promise(yes=>server.listen(0,'127.0.0.1',yes));
 const base='http://127.0.0.1:'+server.address().port,sockets=[],report={passed:false,build:{sha256:build.sha256,loaderSha256:build.loaderSha256,diagnostic:build.diagnostic,
   productionSha256:productionBuild.sha256,fixtureProductionWasm:build.productionWasm||null,endpointWasmMatchesBuild:true,endpointLoaderMatchesBuild:true,
   runtimeManifestWasm:runtimeManifest.execution.sha256,runtimeManifestLoader:runtimeManifest.execution.loaderSha256},endpoints:[],
-  data:{sha256:createHash('sha256').update(await readFile(archivePath)).digest('hex')},players:playerCount,relayPort,output:out,phases:[]};
+  data:{sha256:createHash('sha256').update(await readFile(archivePath)).digest('hex')},players:playerCount,initialStage,difficulty,relayPort,output:out,phases:[]};
  const wait=async(check,label,ms=15000)=>{const end=Date.now()+ms;while(Date.now()<end){const value=await check();if(value)return value;await new Promise(r=>setTimeout(r,25));}throw Error(label+' timeout');};
 async function open(query){const ws=new WebSocket('ws://127.0.0.1:'+relayPort+'/?'+query),r={ws,messages:[]};sockets.push(ws);
  ws.addEventListener('message',e=>{if(typeof e.data==='string')r.messages.push(JSON.parse(e.data));});await wait(()=>ws.readyState===1,'lobby connect');assert.equal(ws.readyState,1);return r;}
@@ -138,7 +143,7 @@ try{
  const lobbies=[];
  for(let seat=0;seat<playerCount;seat++){
   const client='spectator_lab_'+roomCode+'_'+seat,member='spectator_member_'+roomCode+'_'+seat;members.push({client,member});
-  const lobby=await open(new URLSearchParams({room,lobby:client,member,intent:seat?'join':'create',players:String(playerCount),difficulty:'0'}));lobbies.push(lobby);
+  const lobby=await open(new URLSearchParams({room,lobby:client,member,intent:seat?'join':'create',players:String(playerCount),difficulty:String(difficulty)}));lobbies.push(lobby);
   await send(lobby,{type:'take-seat',seat,loadout:seat},m=>m.room?.seats?.[seat]?.clientId===client);
  }
  const viewerId='spectator_wait_'+roomCode,viewerMember='spectator_viewer_'+roomCode;
@@ -148,7 +153,7 @@ try{
  await wait(()=>latest(lobbies[0])?.seats?.slice(0,playerCount).every(s=>s?.ready),'all ready');
  const started=await send(lobbies[0],{type:'start',adonisMode:1,inputDelay:2,inputDelayAuto:false,predictionReserve:2},m=>m.type==='start');
  options=Array.from({length:playerCount+1},(_,seat)=>({netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+relayPort+'/?'+new URLSearchParams({room,run:String(started.serial),member:seat<playerCount?members[seat].member:viewerMember}),
-  netplayPlayer:seat<playerCount?seat:0,netplayPlayerCount:playerCount,netplayDifficulty:0,netplaySeed:417,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0},{character:0,shot:2}].slice(0,playerCount),
+  netplayPlayer:seat<playerCount?seat:0,netplayPlayerCount:playerCount,netplayDifficulty:difficulty,netplaySeed:417,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0},{character:0,shot:2}].slice(0,playerCount),
   netplayInputDelay:2,netplayInputDelayAuto:false,netplayAdonisMode:1,netplayPredictionLimit:0,netplayPredictionReserve:2,netplaySpectator:seat===viewerSeat,
   netplaySpectatorId:seat===viewerSeat?viewerId:'',netplaySpectatorCount:1,netplayChallengeMode:challengeMode,thpracEnabled:false,renderScale:1}));
  const contexts=[],pages=new Map(),epochs=new Map(),errors=[];
@@ -190,6 +195,10 @@ try{
     try{const p=core?.th11_mp_game_status?.();if(!p)return;const a=Array.from(new Uint32Array(core.memory.buffer,p,56));if(a[0]===1){spectatorLabHashes.set(a[4],[a[2],a[1]]);while(spectatorLabHashes.size>60000)spectatorLabHashes.delete(spectatorLabHashes.keys().next().value);}}
     catch{}},2);},fixtures);
   await page.evaluate(s=>launchRuntime(s),seat);await wait(()=>endpoint.wasm&&endpoint.loader,'seat '+seat+' runtime binary identity');
+  if(holdInput&&seat<playerCount)await page.evaluate(async seat=>{
+    for(const [code,key,keyCode] of [['KeyZ','z',90],['ControlLeft','Control',17],...(seat===0?[['ShiftLeft','Shift',16]]:[])])
+      await rpc(seat,'keyboard',{code,key,keyCode,location:code.endsWith('Left')?1:0,down:true,inputSource:'physical'});
+  },seat);
   assert.equal(endpoint.wasm,endpoint.expectedWasm,'seat '+seat+' loaded expected WASM');assert.equal(endpoint.loader,endpoint.expectedLoader,'seat '+seat+' loaded expected loader');
   endpoint.runtimeManifestMatched=true;return f;
  };
@@ -205,7 +214,7 @@ try{
  for(let seat=0;seat<playerCount;seat++)await add(seat);
  for(let seat=0;seat<playerCount;seat++)await pages.get(seat).evaluate(({seat})=>rpc(seat,'keyboard',{code:'KeyZ',down:true}),{seat});
  await wait(async()=>{for(const seat of seats){const status=await health(frame(seat));if(status.failed||status.error||status.nativeError)throw Error('source startup failed '+JSON.stringify({seat,...status}));}
-  const values=await Promise.all(seats.map(s=>readGame(frame(s))));return values.every(v=>v[4]>=300&&v[3]===1);},'players reached live stage frames',120000);
+  const values=await Promise.all(seats.map(s=>readGame(frame(s))));return values.every(v=>v[4]>=admissionFrame&&v[3]===1);},'players reached live stage frames',180000);
  for(const seat of seats)await recordGraphics(seat);
  report.playersAtFirstViewerAdmission=await Promise.all(seats.map(s=>readGame(frame(s))));report.hostRollbackAtFirstViewerAdmission=await readRollback(frame(0));
  report.hostSpectatorAtFirstViewerAdmission=await readSpectatorDiagnostics(frame(0));
@@ -339,16 +348,23 @@ try{
   assert.ok(fixtures,'per-tick range proof requires private native hooks');
   const take=async f=>f.evaluate(({start,end})=>Array.from({length:end-start},(_,i)=>spectatorLabHashes.get(start+i+1)?.[1]??null),{start,end});
   const actual=await take(viewer);for(const sourceSeat of seats){const expected=await take(frame(sourceSeat));
-   for(let n=0;n<actual.length;n++){assert.notEqual(actual[n],null,label+' missing viewer frame '+(start+n+1));assert.notEqual(expected[n],null,label+' missing source frame '+(start+n+1));assert.equal(actual[n],expected[n],label+' source '+sourceSeat+' diverged at '+(start+n+1));}}
+   for(let n=0;n<actual.length;n++){
+    const target=start+n+1;assert.notEqual(actual[n],null,label+' missing viewer frame '+target);assert.notEqual(expected[n],null,label+' missing source frame '+target);
+    if(actual[n]!==expected[n]){const expectedWords=await frame(sourceSeat).evaluate(f=>spectatorLabWords.get(f),target),actualWords=await viewer.evaluate(f=>spectatorLabWords.get(f),target);report.firstReplayDifference={label,target,sourceSeat,expectedWords,actualWords};if(expectedWords&&actualWords)report.firstReplayDifference.differences=expectedWords.flatMap((v,i)=>v===actualWords[i]?[]:[{index:i,source:v,viewer:actualWords[i]}]);}
+    assert.equal(actual[n],expected[n],label+' source '+sourceSeat+' diverged at '+target);
+   }}
   (report.frameRangeComparisons??=[]).push({label,start:start+1,end,frames:end-start,sources:playerCount,matched:true});
  };
  if(uninterruptedFrames){
   assert.ok(fixtures,'uninterrupted per-tick comparison requires native trace hooks');
-  phase('uninterrupted-native-playback');let compared=0;const deadline=Date.now()+900000;
-  while(compared<uninterruptedFrames){
+  if(transitionFirst){const values=await Promise.all(seats.map(s=>readGame(frame(s)))),next=Math.max(...values.map(v=>v[4]))+180;for(const seat of seats)await frame(seat).evaluate(value=>globalThis.spectatorLabNext=value,next);report.nativeTransitionFixture={frame:next,from:initialStage,to:nextStage,controls:playbackControlCount,heldInput:holdInput};}
+  let rangeStart=0;
+  if(transitionFirst){await wait(async()=>{const state=await readPlayback(firstViewer),node=state?.nodes.find(n=>n.kind==='stage'&&n.stage===nextStage);if(!node)return false;rangeStart=node.frame;return true;},'native next-stage Replay entry',120000);}
+  phase('uninterrupted-native-playback');let compared=rangeStart;const endFrame=rangeStart+uninterruptedFrames,deadline=Date.now()+900000;
+  while(compared<endFrame){
    const state=await readPlayback(firstViewer);assert.ok(!state.paused&&!state.seeking);
-   const end=Math.min(uninterruptedFrames,state.position);
-   if(end>=compared+120||end===uninterruptedFrames){
+   const end=Math.min(endFrame,state.position);
+   if(end>=compared+120||end===endFrame){
     await verifyRange(firstViewer,compared,end,'uninterrupted natural playback');compared=end;
     console.log('TH11 uninterrupted native agreement '+compared);
     await writeFile(resolve(out,'progress.json'),JSON.stringify({compared,frames:uninterruptedFrames,controls:playbackControlCount}));
@@ -356,8 +372,8 @@ try{
    assert.ok(Date.now()<deadline,'uninterrupted native playback deadline');await new Promise(r=>setTimeout(r,500));
   }
   assert.equal(playbackControlCount,0,'normal playback must precede every timeline operation');
-  report.uninterrupted={frames:compared,controls:0,sourceCount:playerCount};
-  if(!stageOneOnly){await control(viewerSeat,'live');await waitPosition(viewerSeat,s=>s.following&&!s.seeking,'Live after uninterrupted proof');report.stageOneLiveSetup={following:true};}
+  report.uninterrupted={firstFrame:rangeStart+1,lastFrame:compared,frames:compared-rangeStart,controls:0,sourceCount:playerCount};
+  if(!stageOneOnly&&!playbackOnly){await control(viewerSeat,'live');await waitPosition(viewerSeat,s=>s.following&&!s.seeking,'Live after uninterrupted proof');report.stageOneLiveSetup={following:true};}
  }
  assert.ok(await sfxStarts(frame(0))>0,'active source never started an SFX');
  const runStageOneControls=async()=>{
@@ -370,9 +386,9 @@ try{
   await wait(async()=>await sfxStarts(firstViewer)>pausedSfx,'audible playback resumes after seek',30000);report.audioResumesAfterSeek=true;
   await control(viewerSeat,'live');await waitPosition(viewerSeat,s=>s.following&&!s.seeking&&s.position>=s.target,'first follow-live',30000);
  };
- if(stageOneOnly||!fixtures)await runStageOneControls();
+ if(!playbackOnly&&(stageOneOnly||!fixtures))await runStageOneControls();
  let secondViewer=firstViewer,node;
- if(!stageOneOnly){
+ if(!stageOneOnly&&!playbackOnly){
  phase('stage-two-publication');
  if(fixtures){const values=await Promise.all(seats.map(s=>readGame(frame(s)))),next=Math.max(...values.map(v=>v[4]))+180;controlsAtSourceTransition=playbackControlCount;for(const seat of seats)await frame(seat).evaluate(value=>globalThis.spectatorLabNext=value,next);report.nativeTransitionFixture={frame:next,method:'StageCompletion NextStage through GameSession update; no direct stage increment',driverSeats:seats,viewerTransitionInput:false,viewerControlCountAtTrigger:controlsAtSourceTransition};}
  const stageTwoTimeout=Number(process.env.TH11_STAGE_TWO_TIMEOUT_MS||900000);
@@ -409,10 +425,11 @@ try{
  await waitPosition(lateSeat,s=>s.following&&!s.seeking&&s.position>=s.target,'late viewer live follow',30000);
  }
  const followStart=(await readGame(frame(0)))[4];let maxLag=0,samples=0;
- await wait(async()=>{const state=await readPlayback(secondViewer);assert.ok(state.following&&!state.seeking);maxLag=Math.max(maxLag,state.edge-state.position);samples++;return (await readGame(frame(0)))[4]>=followStart+120;},'sustained live after 120 source frames',180000);
+ await wait(async()=>{const state=await readPlayback(secondViewer);assert.ok((playbackOnly||state.following)&&!state.paused&&!state.seeking);maxLag=Math.max(maxLag,state.edge-state.position);samples++;return (await readGame(frame(0)))[4]>=followStart+120;},'sustained playback after 120 source frames',180000);
  report.sustainedLive={sourceFrames:120,maxLag,samples};
+ report.playbackOnly=playbackOnly;
  assert.deepEqual(errors,[]);report.passed=true;report.stageTwoNode=node;report.firstViewer=await readPlayback(firstViewer);report.secondViewer=await readPlayback(secondViewer);
- report.independentBrowserContexts=contexts.length;report.privateSpectatorFixture=fixtures;report.privateSpectatorKeepAlive=!!build.privateSpectatorKeepAlive;report.privateSpectatorMirroredTransition=!!build.privateSpectatorMirroredTransition;report.privateSpectatorSourceOnlyTransition=!!build.privateSpectatorSourceOnlyTransition;report.stageOneOnly=stageOneOnly;report.fullStageBoundaryAcceptance=fixtures&&!stageOneOnly;await pages.get(stageOneOnly?viewerSeat:lateSeat).screenshot({path:resolve(out,'spectator-stage-two.png'),fullPage:true});
+ report.independentBrowserContexts=contexts.length;report.privateSpectatorFixture=fixtures;report.privateSpectatorKeepAlive=!!build.privateSpectatorKeepAlive;report.privateSpectatorMirroredTransition=!!build.privateSpectatorMirroredTransition;report.privateSpectatorSourceOnlyTransition=!!build.privateSpectatorSourceOnlyTransition;report.stageOneOnly=stageOneOnly;report.fullStageBoundaryAcceptance=fixtures&&!stageOneOnly&&!playbackOnly;await pages.get(secondViewer===firstViewer?viewerSeat:lateSeat).screenshot({path:resolve(out,'spectator-stage-two.png'),fullPage:true});
  await pages.get(0).screenshot({path:resolve(out,'source-current.png'),fullPage:true});report.sourceScreenshotFrame=(await readGame(frame(0)))[4];
  await writeFile(resolve(out,'report.json'),JSON.stringify(report,null,2)+'\n');
  console.log(JSON.stringify({passed:true,output:out,stageTwoNode:node,wasm:build.sha256}));

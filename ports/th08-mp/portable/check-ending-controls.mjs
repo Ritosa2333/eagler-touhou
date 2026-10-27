@@ -1,8 +1,9 @@
 import {execFileSync} from 'node:child_process';
-import {readFileSync,writeFileSync,mkdirSync,readdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve,basename} from 'node:path';
 import {createHash} from 'node:crypto';
 import {WASI} from 'node:wasi';
+import {sourceObjectPath} from '../../../tools/build/source-object.mjs';
 const root=resolve(import.meta.dirname,'..'),game=basename(root).replace(/(?:-eagler|mp)$/,'');
 const multiplayer=process.argv.includes('--multiplayer'),profile=multiplayer?'multiplayer':game==='th09'?'sdl-release':'sdl3';
 const buildRoot=resolve(root,'web/artifacts',profile),obj=resolve(buildRoot,'objects');
@@ -13,7 +14,9 @@ for(const [name,expected] of Object.entries(build.sourceFiles??build.sources)){
 const sdk=process.env.EMSDK,out=resolve(root,'web/artifacts/ending-controls',profile);mkdirSync(out,{recursive:true});
 if(!sdk)throw Error('Set EMSDK to the build toolchain');
 const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten')};
-const objects=readdirSync(obj).filter(n=>n.endsWith('.o')&&(n.includes('cpp_game_')||n==='softfloat.o')).map(n=>resolve(obj,n));
+const gameSources=build.sources.filter(name=>name.startsWith('cpp/game/'));
+if(!gameSources.some(name=>name.endsWith('/Ending.cpp')))throw Error('Build has no native Ending source');
+const objects=[...gameSources,'cpp/third_party/softfloat.c'].map(name=>sourceObjectPath(obj,root,resolve(root,'web',name)));
 const response=resolve(out,'objects.rsp');writeFileSync(response,objects.map(n=>JSON.stringify(n)).join('\n'));
 const library=resolve(out,'game-'+createHash('sha256').update(objects.join('\n')).digest('hex').slice(0,12)+'.a');
 execFileSync('python',[resolve(sdk,'upstream/emscripten/emar.py'),'rcs',library,'@'+response],{env,stdio:'inherit',windowsHide:true});

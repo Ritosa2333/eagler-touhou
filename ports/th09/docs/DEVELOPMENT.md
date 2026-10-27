@@ -43,6 +43,10 @@ npm --prefix launcher run dev:workspace
 
 ## 房间菜单返回
 
+房间开局前可使用本地键盘、手柄和触控进入原生 Options 与按键设置。预览持续运行原生标题和输入采样，开始对局由房间统一接管。`launcher/tests/browser/test-room-options.mjs` 检查真实菜单操作，输入配置通过 `ROOM_OPTIONS_INPUTS` 指定各作的 Runtime 与 DATA；结果包含标题、选项、调整后和返回时的画面及原生菜单状态。
+
+八作菜单检查与调整设置后的双端开局见[房间原生选项操作](records/2026-10-26-room-options.md)。`ROOM_PREVIEW_OPTIONS=1 node tests/browser/test-room-title-preload.mjs th09 0` 从 `launcher/` 运行，比较不同本地选项与标题等待时长下的同帧对局状态，并检查开局复用已加载实例。
+
 联机诊断同时展示 RTT、波动、输入停顿、当前缺少的远端输入帧与累计修复发送数。输入缺帧和修复活动帮助识别延迟平稳时的输入交付问题，回滚及重模拟计数展示本地恢复工作量。
 
 旁观按当前局保留 Replay 输入，进入下一局后释放已播放的旧局。20 分钟对局与暂停、回放共享同一完整前缀，原生队列可容纳 131072 帧输入。返回房间后，选角同步校验只包含当前菜单状态，蓄力释放队列在进入实际对局后参与校验。

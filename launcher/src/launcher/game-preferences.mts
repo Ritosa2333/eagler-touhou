@@ -317,8 +317,15 @@ export function loadStoredGamePreferences({
   if (!saved && fallbackPreferenceId) {
     saved = readStoredJson(storage, gamePreferenceStorageKey(fallbackPreferenceId));
   }
+  const previous = record(saved);
+  const initializeHighRefresh = (preferenceId === 'th11' || preferenceId === 'th11mp')
+    && previous !== null && previous.highRefreshPreferenceVersion !== 1;
+  if (initializeHighRefresh) {
+    saved = {...previous, highRefreshPreferenceVersion: 1,
+      options: {...record(previous.options), frameLimit60Enabled: true}};
+  }
   const normalized = normalizeStoredGamePreferences(saved, context);
-  if (normalized.storageRewriteRequired && storage) {
+  if ((normalized.storageRewriteRequired || initializeHighRefresh) && storage) {
     try {
       storage.setItem(gamePreferenceStorageKey(preferenceId), JSON.stringify(normalized.sanitizedRecord));
     } catch {}
@@ -355,7 +362,9 @@ export function persistStoredGamePreferences({
 }): void {
   if (!storage) return;
   try {
-    storage.setItem(gamePreferenceStorageKey(preferenceId), JSON.stringify(serializeGamePreferences(preferences)));
+    const saved = serializeGamePreferences(preferences);
+    if (preferenceId === 'th11' || preferenceId === 'th11mp') saved.highRefreshPreferenceVersion = 1;
+    storage.setItem(gamePreferenceStorageKey(preferenceId), JSON.stringify(saved));
   } catch {}
   try { storage.setItem(languagePreferenceStorageKey(preferenceId), language); } catch {}
 }

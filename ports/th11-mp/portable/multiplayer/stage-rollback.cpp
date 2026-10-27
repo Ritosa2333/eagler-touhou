@@ -133,6 +133,18 @@ void ordinary(){
     check(f.stage.stage_deformation(2),"real deformation replacement");
     check(f.manager.update(false),"logical strip erase consumed");
     check(f.stage.mesh&&f.stage.mesh->rows==17,"mode two native dimensions");
+    f.stage.state.draw_flags=1;f.stage.state.deformation_mode=2;
+    f.stage.state.deformation_radius=192;f.stage.state.deformation_target=112;
+    const auto gameplay=f.manager.script_rng,visual=f.manager.visual_rng;
+    f.tick();f.tick();
+#ifdef TH11_MULTIPLAYER
+    check(f.manager.script_rng.seed==gameplay.seed&&f.manager.script_rng.calls==gameplay.calls,
+          "background deformation preserves the battle RNG across extra background ticks");
+    check(f.manager.visual_rng.calls==visual.calls+4,"background deformation consumes the presentation RNG");
+#else
+    check(f.manager.script_rng.calls==gameplay.calls+4&&f.manager.visual_rng.calls==visual.calls,
+          "ordinary Stage keeps its native deformation RNG");
+#endif
 }
 }
 #ifdef TH11_MULTIPLAYER

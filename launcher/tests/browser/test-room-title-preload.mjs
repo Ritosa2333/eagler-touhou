@@ -5,10 +5,14 @@ import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {spawn} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../../lib/chromium-executable.mjs';
 const game=process.argv[2];assert(['th06','th07','th08','th11','th09','th075'].includes(game));
 const mode=Number(process.argv[3]||0),runtime=resolve(process.env.ROOM_PREVIEW_RUNTIME),data=await readFile(process.env.ROOM_PREVIEW_DATA);
+if(process.env.ROOM_PREVIEW_OPTIONS==='1')assert(['th09','th075'].includes(game),'Options-to-match regression selects th09 or th075');
+const wasm=await readFile(resolve(runtime,['th08','th11'].includes(game)?game+'-sdl.wasm':game+'.wasm'));
+const wasmSha256=createHash('sha256').update(wasm).digest('hex');
 const out=resolve('.cache/room-title-preload',game+'-'+mode);await mkdir(out,{recursive:true});
 const fonts=new Map(await Promise.all([['/msgothic.ttc',process.env.EAGLER_SHARED_GOTHIC],['/unifont.otf',process.env.EAGLER_SHARED_UNIFONT]].map(async([url,path])=>[url,await readFile(path)])));
 const html=`<!doctype html><style>iframe{width:640px;height:480px}</style><script>
@@ -39,13 +43,28 @@ try{
  const states=()=>Promise.all(frames().map(f=>f.evaluate(game=>{const r=window['__'+game+'Runtime'];if(game==='th06'||game==='th07')return {phase:Module._eagler_room_preview_ready(),frame:window.preloadPresents||0};if(game==='th09'){const s=r.status().title;return {phase:s[1],frame:s[0]};}if(game==='th075')return {phase:Module._th075_scene(),frame:Module._th075_frame()};return game==='th11'?{phase:r.core.th11_phase(),frame:r.core.th11_frame()}:{phase:r.status()[0],frame:new Uint32Array(r.core.memory.buffer)[(r.core.sdl_stats()>>>2)+5]};},game)));
  if(game==='th06'||game==='th07')for(const f of frames())await f.evaluate(()=>{window.preloadPresents=0;const original=EaglerTouhouFrameHealth;EaglerTouhouFrameHealth=(fps,...args)=>{window.preloadPresents+=fps;original(fps,...args);};});
  const before=await states();console.log('PREVIEW',before);console.log('RUNTIME ERRORS',await page.evaluate(()=>events.filter(e=>e.event==='error')));await page.screenshot({path:resolve(out,'title.png')});
+ const roomOptions=[];
+ if(process.env.ROOM_PREVIEW_OPTIONS==='1'){
+  const key=async(s,code)=>{for(const down of [true,false]){await page.evaluate(({s,game,code,down})=>document.querySelector('#p'+s).contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:s+1,command:'keyboard',code,key:code==='KeyZ'?'z':code,keyCode:({ArrowUp:38,Escape:27,KeyZ:90})[code],location:0,down},location.origin),{s,game,code,down});await new Promise(r=>setTimeout(r,120));}};
+  for(let s=0;s<2;s++){
+   await key(s,'KeyZ');await new Promise(r=>setTimeout(r,1000));
+   for(const code of ['ArrowUp','ArrowUp','KeyZ'])await key(s,code);
+   await new Promise(r=>setTimeout(r,1000));
+   const menu=await frames()[s].evaluate(game=>game==='th09'?__th09Runtime.status().title:[Module._th075_scene(),Module._th075_frame()],game);
+   assert.equal(menu[game==='th09'?2:0],9,'room preview opens native Options');roomOptions.push(menu);
+   if(s===0){await frames()[s].focus('canvas');await page.keyboard.down('ArrowLeft');await new Promise(r=>setTimeout(r,120));await page.keyboard.up('ArrowLeft');}
+   await page.screenshot({path:resolve(out,'options-'+s+'.png')});
+   await key(s,'Escape');await key(s,'Escape');await new Promise(r=>setTimeout(r,1000));
+  }
+ }
  await page.evaluate(game=>{for(let s=0;s<2;s++)for(const [code,key,keyCode]of [['KeyZ','z',90],['Enter','Enter',13],['ArrowDown','ArrowDown',40]])for(const down of [true,false])document.querySelector('#p'+s).contentWindow.postMessage({protocol:'eagler-touhou/1',game,epoch:s+1,command:'keyboard',code,key,keyCode,location:0,down},location.origin);},game);
- // TH11's attract threshold is 1800 native frames; TH08's is 1500.
- await new Promise(r=>setTimeout(r,game==='th075'?65000:33000));const after=await states();console.log('WAITED',after);assert(after.every((v,i)=>v.phase===before[i].phase&&v.frame>before[i].frame+300),'title must animate without entering demo');
+ // The default checks the 30/60-second attract boundary. The Options case
+ // checks local editing and its subsequent match with different title clocks.
+ await new Promise(r=>setTimeout(r,process.env.ROOM_PREVIEW_OPTIONS==='1'?8000:game==='th075'?65000:33000));const after=await states();console.log('WAITED',after);assert(after.every((v,i)=>v.phase===before[i].phase&&v.frame>before[i].frame+300),'title must animate without entering demo');
  for(const f of frames())await f.evaluate(game=>{
   window.preloadSamples={};const r=window['__'+game+'Runtime'];
   if(game==='th06'||game==='th07'){window.preloadModule=Module;return;}
-  if(game==='th075'){window.preloadModule=Module;const sample=()=>{const h=Module.HEAPU32,p=Module._th075_mp_status()>>>2,n=h[p+53];if(n>0)preloadSamples[n]=h[p+54];requestAnimationFrame(sample);};requestAnimationFrame(sample);return;}
+  if(game==='th075'){window.preloadModule=Module;const sample=()=>{const h=Module.HEAPU32,p=Module._th075_mp_status()>>>2,n=h[p+53];if(n>0&&n!==0xffffffff)preloadSamples[n]=h[p+54];requestAnimationFrame(sample);};requestAnimationFrame(sample);return;}
   if(game==='th09'){window.preloadModule=r.core;const original=r.core.onGameFrame;r.core.onGameFrame=(...args)=>{original?.(...args);const h=r.core.HEAPU32,p=r.core._th09_network_info()>>>2,n=h[p+3];if(n>0)preloadSamples[n]=r.core._th09_network_hash();};return;}
   window.preloadModule=r.Module;window.preloadApp=r.app;const key=game==='th11'?'onGameFrame':'runtimeFinish',original=r.Module[key];r.Module[key]=(...args)=>{original?.(...args);const h=new Uint32Array(r.core.memory.buffer);if(game==='th11'){const p=r.core.th11_mp_game_status()>>>2,frame=h[p+6];if(frame>0)preloadSamples[frame]=h[p+1];}else{const p=r.core.multiplayer_netplay_status(r.app)>>>2,frame=h[p+3];if(frame>0){const c=r.core.multiplayer_canonical_state(r.app)>>>2;preloadSamples[frame]=Array.from(h.subarray(c,c+13));}}};
  },game);
@@ -54,6 +73,8 @@ try{
  const start=await send(sockets[0],['th06','th07'].includes(game)?{type:'start'}:{type:'start',adonisMode:mode,inputDelay:0,inputDelayAuto:false,predictionReserve:2},m=>m.type==='start'),count=requests.length;
  await page.evaluate(async({game,port,room,serial,mode})=>Promise.all([0,1].map(async s=>{await rpc(s,'configure',{music:'none',resources:[],runtimeResources:[],sharedResources:[],options:{thpracEnabled:false,renderScale:1,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+port+'/?'+new URLSearchParams({room,run:String(serial),member:'private-'+s,player:String(s)}),netplayPlayer:s,netplayPlayerCount:2,netplayDifficulty:1,netplaySeed:1234,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}],netplayInputDelay:0,netplayInputDelayAuto:false,netplayAdonisMode:mode,netplayPredictionLimit:game==='th08'?8:mode?0:game==='th11'?12:8,netplayPredictionReserve:2}});await rpc(s,'launch');})),{game,port,room,serial:start.serial,mode});
  const flat=game==='th06'||game==='th07';
+ const shortSample=flat||game==='th075'&&process.env.ROOM_PREVIEW_OPTIONS!=='1';
+ const sampleTarget=shortSample?2:game==='th075'?4:100;
  if(flat){
   assert(startupFrames.every(n=>n>0),'the preview already consumed the native startup first-frame');
   await wait(()=>page.evaluate(before=>before.every((n,s)=>events.filter(e=>e.epoch===s+1&&e.event==='first-frame').length===n+1),startupFrames),'native post-launch first-frame',10000);
@@ -64,10 +85,10 @@ try{
    await wait(()=>f.evaluate(()=>Module.eaglerControls.keyboardBits===0),'live keyboard release',3000);
   }
  }
- try{await wait(async()=>{const samples=await Promise.all(frames().map(f=>f.evaluate(flat=>Object.keys(flat?window.__eaglerNetplayLanHashes||{}:preloadSamples).length,flat)));return samples.every(n=>n>=(flat||game==='th075'?2:100));},'match frames');}catch(e){console.log('MATCH',await Promise.all(frames().map(f=>f.evaluate(()=>({samples:preloadSamples,failed:window.__eaglerNetplayError,frame:window.__eaglerNetplayLanFrame,status:typeof Module._th075_mp_status==='function'?Array.from(Module.HEAPU32.subarray(Module._th075_mp_status()>>>2,(Module._th075_mp_status()>>>2)+64)):null,text:document.body.innerText})))));throw e;}
+ try{await wait(async()=>{const samples=await Promise.all(frames().map(f=>f.evaluate(flat=>Object.keys(flat?window.__eaglerNetplayLanHashes||{}:preloadSamples).length,flat)));return samples.every(n=>n>=sampleTarget);},'match frames');}catch(e){console.log('MATCH',await Promise.all(frames().map(f=>f.evaluate(()=>({samples:preloadSamples,failed:window.__eaglerNetplayError,frame:window.__eaglerNetplayLanFrame,status:typeof Module._th075_mp_status==='function'?Array.from(Module.HEAPU32.subarray(Module._th075_mp_status()>>>2,(Module._th075_mp_status()>>>2)+64)):null,text:document.body.innerText})))));throw e;}
  const samples=await Promise.all(frames().map(f=>f.evaluate(flat=>flat?window.__eaglerNetplayLanHashes:preloadSamples,flat)));let matches=0;
- for(const [n,v]of Object.entries(samples[0]))if(samples[1][n]!==undefined){assert.deepEqual(v,samples[1][n],'same-frame world '+n);matches++;}assert(matches>=(flat||game==='th075'?2:20));
+ for(const [n,v]of Object.entries(samples[0]))if(samples[1][n]!==undefined){assert.deepEqual(v,samples[1][n],'same-frame world '+n);matches++;}assert(matches>=(game==='th075'?sampleTarget:shortSample?2:20));
  assert(!requests.slice(count).some(u=>/\/(data|resources.json|[^/]+\.wasm)$/.test(u)),'Start must not cold-load again');
  for(const f of frames())assert(await f.evaluate(game=>{if(['th06','th07','th075'].includes(game))return Module===preloadModule;const r=window['__'+game+'Runtime'];return (game==='th09'?r.core:r.Module)===preloadModule;},game));
- assert.deepEqual(errors,[]);await writeFile(resolve(out,'result.json'),JSON.stringify({game,mode,before,after,matches,scope:'Production native Runtime, original local DATA, two local peers; not physical mobile/WAN acceptance'},null,2));console.log('PASS',game,mode,matches);
+ assert.deepEqual(errors,[]);await writeFile(resolve(out,'result.json'),JSON.stringify({game,mode,wasmSha256,before,after,roomOptions,matches,scope:'Production native Runtime, original local DATA, two local peers; not physical mobile/WAN acceptance'},null,2));console.log('PASS',game,mode,matches);
 }finally{for(const s of sockets)s.close();await browser?.close();server.close();relay.kill();}

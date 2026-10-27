@@ -185,7 +185,7 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     const auto state=touch_state();sync_touch_context(state);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const auto& net=runtime->app.session.netplay;
-    const bool sample=!net.Configured()||(net.CanCapture()&&!net.HasCapture(net.NextCaptureFrame()));
+    const bool sample=!net.Configured()||net.Retired()||(net.CanCapture()&&!net.HasCapture(net.NextCaptureFrame()));
     if(net.Playback()&&(keys[27]&128))runtime->exit_replay();
     if(sample){
 #endif
@@ -243,7 +243,7 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     // Observer Seek/Live batching belongs to StagePlayback. Buffered observer
     // input never enables the player's network catch-up clock.
     const bool catchup=runtime&&runtime->app.session.netplay.Configured()&&
-        !runtime->app.session.netplay.ReadOnly();
+        !runtime->app.session.netplay.ReadOnly()&&!runtime->app.session.netplay.Retired();
     constexpr double interval=touhou::sdl::FrameCadence::interval;
     const double network_scale=catchup&&runtime->network_driver()?runtime->network_driver()->Network().IntervalScale():1.;
     const bool live_rollback=catchup&&!runtime->app.session.netplay.ReadOnly()&&

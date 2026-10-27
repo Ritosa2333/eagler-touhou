@@ -1,6 +1,14 @@
 # TH11 多人版开发指南
 
+旁观逐帧检查可从指定原生关头运行。`portable/multiplayer/build-spectator-stage.mjs --production --stage=6` 为当前正式游戏对象链接私有观测入口，`spectator-relay-browser.mjs` 对比来源端与独立观众的逐帧游戏状态。`--stage=7` 对应 Extra；驱动记录关卡与难度，并使用对应房间参数。
+
+`--stage=5` 配合浏览器驱动的 `--transition-first --hold-input --playback-only`，覆盖三人原生切入第六关后持续射击、低速与对话快进的独立旁观。`TH11_TEST_UNINTERRUPTED_FRAMES` 设置逐帧比较长度，比较从第六关 Replay 入口后的首个输入开始，首次差异记录具体状态字段。`TH11_TEST_ADMISSION_FRAME` 指定首次旁观入场前来源端已运行的帧数。
+
+背景变形使用独立的呈现随机流。分关 Replay 恢复与连续切关各自运行原生背景时钟，敌机、弹幕和道具始终沿同一战斗随机流演算。
+
 `portable/multiplayer/browser-acceptance.mjs` 使用生产包、显式共用字体与真实通道验收原生旁观、重开和多人 Replay。设置 `TH11_TEST_ARCHIVE`、`TH11_TEST_FONT`、`TH11_TEST_UNICODE_FONT` 后运行，结果记录 `pure-delay`；产品的有界回滚场景使用 `rollback-browser-acceptance.mjs`，两种时序分别记录。
+
+生产包驱动由大厅策略确定预测上限，再以纯延迟模式开局。大厅返回的操作错误直接进入测试诊断，开局参数与当前产品契约共同核对。晚入场旁观的来源端持续演算，观众到达目标帧后统一停止观测，以相同帧的原生状态验证已确认历史。
 
 当前适配记录见[TH11 多人适配表](../ADAPTATION.md)。以下命令从仓库根目录运行，示例使用 PowerShell。
 

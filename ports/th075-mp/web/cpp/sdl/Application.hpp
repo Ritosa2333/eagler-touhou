@@ -47,7 +47,13 @@ public:
  u8 current_scene()const{return scene;}
  bool room_preview=false;
  bool preview_room(bool on){if(on&&(!initialized||!return_title()))return false;room_preview=on;return true;}
- void preview_title_tick(){title.startedAt=now;title.elapsed=0;}
+ void preview_title_tick(BattleSystemInput& input){
+  title.startedAt=now;title.elapsed=0;
+  if(scene==2){
+   input.keys[1]=0;
+   for(auto& player:input.players){player.buttons[1]=0;if(title.selected!=8)player.buttons[0]=0;}
+  }
+ }
  bool restart();bool probe_scene(u8);bool probe_battle(u8,u8,u8,u8);
  bool prepare_multiplayer(u32,u8,u8,u8,u8,u8);bool save_multiplayer_replay();bool show_replays();
  struct RollbackSound {i16 id;u8 side;bool character;bool operator==(const RollbackSound& other)const{return id==other.id&&side==other.side&&character==other.character;}};

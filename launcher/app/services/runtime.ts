@@ -298,6 +298,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
   let runtimeDocument: object | null = null;
   let preparedPlan: RuntimePlan | null = null;
   let roomMenuConfigure: RuntimePlan['configure'] | null = null;
+  let roomReturnPending: {epoch: number; promise: Promise<void>} | null = null;
   let roomLaunchSerial = 0;
   let codeUpdate: {epoch:number; check:NonNullable<Awaited<ReturnType<typeof prepareRuntimeLaunch>>['checkForUpdate']>} | null = null;
   const updateNotices = new Set<string>();
@@ -440,7 +441,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     operation++;
     finishProgramTransfers(); sessions.clear(); generations.clear(); releaseLease();
     rejectPending(new RuntimeSessionSupersededError());
-    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
+    runtimeDocument = null; preparedPlan = null; roomMenuConfigure = null; roomReturnPending = null; roomLaunchSerial = 0; launchRequested = false;codeUpdate = null;
     if (!hasTerminalSaveLoss) preflightEpoch = null;
     takeTelemetry(); // A display tick from an old epoch cannot repopulate reset state.
     if (!hasTerminalSaveLoss) terminalLossEpoch = null;
@@ -602,7 +603,13 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       }
     }
     else if (message.event === 'room-menu' && snapshot.roomReturnSupported && message.launchSerial === roomLaunchSerial) {
-      completeRoomReturn(token);
+      void completeRoomReturn(token).then(() => {
+        assertCurrent(token);
+        if (message.launchSerial !== roomLaunchSerial) return;
+        options.onEvent?.(message, eventContext);
+        for (const listener of eventListeners) listener(message);
+      }).catch(error => {if (sessions.isCurrent(token)) reset('error', errorText(error));});
+      return;
     }
     else if (message.event === 'exit') {
       // Runtime has already exited; no sync receiver remains, but failure must
@@ -1057,7 +1064,15 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       update({phase: 'prepared'});
     } catch (error) {assertCurrent(token); reset('error', errorText(error)); throw error;}
   }
-  function completeRoomReturn(token: RuntimeSessionToken) {
+  function completeRoomReturn(token: RuntimeSessionToken): Promise<void> {
+    if (roomReturnPending?.epoch === token.id) return roomReturnPending.promise;
+    const promise = restoreRoomMenu(token), pending = {epoch: token.id, promise};
+    roomReturnPending = pending;
+    void promise.then(() => {if (roomReturnPending === pending) roomReturnPending = null;},
+      () => {if (roomReturnPending === pending) roomReturnPending = null;});
+    return promise;
+  }
+  async function restoreRoomMenu(token: RuntimeSessionToken): Promise<void> {
     assertCurrent(token);
     const plan = preparedPlan;
     if (!plan || plan.runtimeVariant !== 'multiplayer') throw new RuntimeSessionSupersededError();
@@ -1065,7 +1080,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     for (const waiter of [...waiters]) if (waiter.kind === 'first-frame' && waiter.token.id === token.id) {
       waiters.delete(waiter);timers.clearTimeout(waiter.timer);waiter.reject(new RuntimeSessionSupersededError());
     }
-    const configure = roomMenuConfigure ?? plan.configure;
+    const configure = roomMenuConfigure ?? {...plan.configure, options: Object.fromEntries(
+      Object.entries(plan.configure.options ?? {}).filter(([name]) => !name.startsWith('netplay') && name !== 'multiplayerPreflight'))};
+    update({phase:'configuring',launched:false,spectator:false,roomPreview:true,firstFrame:false});
+    try {
+      await send('configure', {music: configure.music, language: configure.language, options: configure.options,
+        resources: [], runtimeResources: [], sharedResources: []}, options.timeouts?.configure ?? 120_000);
+    } catch (error) {if (sessions.isCurrent(token)) reset('error', errorText(error)); throw error;}
+    assertCurrent(token);
     preparedPlan = {...plan, configure};
     if (launcherControlContext) launcherControlContext = Object.freeze({...launcherControlContext,
       options: Object.freeze(structuredClone(configure.options ?? {}))});
@@ -1081,7 +1103,7 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     const response = await send('return-room', {}, options.timeouts?.configure ?? 120_000);
     assertCurrent(token);
     if (response.presented !== true) throw new Error('Native room menu did not present');
-    completeRoomReturn(token);
+    await completeRoomReturn(token);
   }
   async function launch({awaitFirstFrame = false}: {awaitFirstFrame?: boolean} = {}): Promise<RuntimeSnapshot> {
     if (frame.isConnected === false) { disposeDetachedFrame(); throw new RuntimeSessionSupersededError(); }

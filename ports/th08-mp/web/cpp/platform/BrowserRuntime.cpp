@@ -326,11 +326,11 @@ bool BrowserRuntime::step(bool render,double callback_start_ms){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool BrowserRuntime::finish_network_frame(){
     auto& session=app.session;auto& net=session.netplay;
-    if(multiplayer_driver&&net.Configured())return multiplayer_driver->FinishFrame();
-    if(!net.Configured()){
+    if(!net.Configured()||net.Retired()){
         if(session.multiplayer_session.configured)++multiplayer_logic_frame;
         return true;
     }
+    if(multiplayer_driver)return multiplayer_driver->FinishFrame();
     if(!session.network_frame_open)return false;
     if(!net.MarkSimulated(net.NextFrame(),session.network_frame))return false;
     session.network_frame_open=false;++multiplayer_logic_frame;return !capture_failed;

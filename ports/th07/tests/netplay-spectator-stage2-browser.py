@@ -92,12 +92,12 @@ def wait_relay(process: subprocess.Popen[str]) -> None:
 
 
 def admit_lobby(setup, relay_base: str, room: str, spectator_id: str,
-                player_count: int) -> dict:
+                player_count: int, difficulty: int = 1, challenge: bool = False) -> dict:
     return setup.evaluate(
-        """async ({ relayBase, room, spectatorId, playerCount }) => {
+        """async ({ relayBase, room, spectatorId, playerCount, difficulty, challenge }) => {
           function connect(id, member, intent) {
             return new Promise((resolve, reject) => {
-              const ws = new WebSocket(`${relayBase}/?room=${room}&lobby=${id}&member=${member}&intent=${intent}&players=${playerCount}`);
+              const ws = new WebSocket(`${relayBase}/?room=${room}&lobby=${id}&member=${member}&intent=${intent}&players=${playerCount}&difficulty=${difficulty}&challengeMode=${challenge ? 1 : 0}`);
               const queue = [];
               const waiters = [];
               ws.onmessage = event => {
@@ -166,7 +166,7 @@ def admit_lobby(setup, relay_base: str, room: str, spectator_id: str,
             playerCount: snapshot.room?.playerCount };
         }""",
         {"relayBase": relay_base, "room": room, "spectatorId": spectator_id,
-         "playerCount": player_count},
+         "playerCount": player_count, "difficulty": difficulty, "challenge": challenge},
     )
 
 
@@ -176,6 +176,17 @@ def snapshot(page, frame: int) -> dict:
           const artifact = await (globalThis.__spectatorRuntimeArtifact || Promise.resolve(null));
           const runtime = document.getElementById('runtime')?.contentWindow;
           const transport = runtime?.__th06PeerTransport || runtime?.__th07PeerTransport;
+          const native = runtime?.Module;
+          let nativePlayback = null;
+          const readPlayback = native?._th06_mp_spectator_state || native?._th07_mp_spectator_state;
+          if (readPlayback) {
+            const pointer = readPlayback();
+            if (pointer) {
+              const heap = native.HEAPU8 || runtime.HEAPU8 || runtime.eval('HEAPU8'); let end = pointer;
+              while (end < heap.length && heap[end]) ++end;
+              nativePlayback = JSON.parse(new TextDecoder().decode(heap.subarray(pointer, end)));
+            }
+          }
           return {
             servedRuntimeBuild: String(artifact?.runtimeBuild || ''),
             servedWasmUrl: String(artifact?.wasmUrl || ''),
@@ -187,6 +198,7 @@ def snapshot(page, frame: int) -> dict:
             hostFailure: String(globalThis.__spectatorSmokeFailure || ''),
             active: !!runtime?.__eaglerNetplayLanActive,
             spectator: !!runtime?.__eaglerNetplaySpectator,
+            playerCount: Number(native?.eaglerOptions?.netplayPlayerCount || transport?.playerCount || 2),
             frame: Number(runtime?.__eaglerNetplayLanFrame || 0),
             confirmed: Number(runtime?.__eaglerNetplayLanConfirmed ?? -1),
             highestStage: Number(runtime?.__eaglerNetplayLanHighestStage || 0),
@@ -229,7 +241,9 @@ def snapshot(page, frame: int) -> dict:
             error: String(transport?.error || runtime?.__eaglerNetplayError || ''),
             publish: runtime?.__eaglerNetplaySpectatorPublish || null,
             publishFailed: Number(runtime?.__eaglerNetplaySpectatorPublishFailed ?? -1),
-            playback: globalThis.__spectatorPlaybackReport || null,
+            playback: nativePlayback || globalThis.__spectatorPlaybackReport || null,
+            spectatorMenu: !!runtime?.__eaglerSpectatorMenu,
+            nativePlayers: runtime?.__spectatorLabPlayers || runtime?.__eaglerNetplayPlayerStates || null,
             teamWipe: !!runtime?.__eaglerNetplayTeamWipeObserved,
             teamWipeRetry: !!runtime?.__eaglerNetplayTeamWipeRetryObserved,
             teamWipeStartFrame: Number(runtime?.__eaglerNetplayTeamWipeStartFrame ?? -1),
@@ -248,7 +262,7 @@ def snapshot(page, frame: int) -> dict:
     canonical, meta = value.get("canonical"), value.get("canonicalMeta")
     if canonical and meta and value.get("replayResources"):
         value["worldHash"] = value["hash"]
-        count = value.get("spectatorTransport", {}).get("playerCount", 2)
+        count = value["playerCount"]
         evidence = [meta[0], value["replayResources"][:4 + count * 3]] + [canonical.get(k) for k in
             ("multiplayer", "stage", "player", "enemies", "bullets", "items", "counts")]
         value["hash"] = hashlib.sha256(json.dumps(evidence, sort_keys=True).encode()).hexdigest()
