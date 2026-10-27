@@ -26,6 +26,6 @@ test('ending input keeps advancing with the cooperative runtime still active',()
  const from=source.indexOf('function tick(){'),to=source.indexOf('\n  if(multiplayer?.active){',from);
  const tick=runInNewContext(source.slice(from,to)+'\n};tick',context);
  tick();tick();assert.equal(context.ending,timeline);assert.notEqual(model.state.scene,'name');tick();
- assert.equal(context.ending,null);assert.deepEqual(seen,[11]);assert.equal(model.state.scene,'name');assert.equal(networkTicks,0);
+ assert.equal(context.ending,null);assert.deepEqual(seen,[11]);assert.equal(model.state.scene,'name');assert.equal(model.state.nameContext,'title');model.completeName();assert.equal(model.state.scene,'replay-save');assert.equal(model.state.result.mode,'multiplayer');assert.equal(networkTicks,0);
 });
 

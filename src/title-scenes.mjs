@@ -156,6 +156,9 @@ export class TitleScenes {
     if(fromName)this.state.events.push({type:'selection',previous:0,selection:0,resetInterrupt:3,selectionInterrupt:7});
   }
   finishMultiplayer(result){
+    // Story clears finish the Ending at the title ranking and Replay screens.
+    // Game over and Extra keep their in-game terminal controls.
+    if(result.clear&&result.stage!==7){this.finish({...result,kind:'clear'});return;}
     this.emit('stopEffects');this.emit('menuMusic',{track:'th10_17',restart:true});
     const ranking=this.scoreRanking(result);
     this.enter('name',ranking.ranked?90:0,{result,name:String(this.profile.data?.lastName||'').slice(0,8),nameKind:'score',
