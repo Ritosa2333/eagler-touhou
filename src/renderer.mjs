@@ -83,18 +83,18 @@ export function messageTextPoses(message,logicalPoses,atlases,{logicalText=false
 export function readCoreAnimationPoses(core,stage=1){
   if(!core._th12_anm_draw||!core._th12_anm_draw_ptr)return [];
   const count=core._th12_anm_draw(),ptr=core._th12_anm_draw_ptr(),stride=core._th12_anm_draw_stride?.()??128;
-  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||ptr<0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
-  const view=new DataView(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
-  for(let i=0;i<count;i++){const offset=ptr+i*stride,F=n=>view.getFloat32(offset+n*4,true),I=n=>view.getInt32(offset+n*4,true),U=n=>view.getUint32(offset+n*4,true),flags=U(24),flags2=U(25),primary=rgba(U(14)),secondary=rgba(U(15)),color=flags&0x10000?secondary:primary;
-    const a={name:banks[I(16)]??null,sprite:I(17),layer:I(18),mode:I(19),anchorX:I(20),anchorY:I(21),blend:I(22),geometryCount:I(23),
-      x:0,y:0,z:F(2),rx:F(3),ry:F(4),rotation:F(5),sx:F(6),sy:F(7),u:F(8),v:F(9),uvScaleX:F(10),uvScaleY:F(11),geometryRadius:F(12),geometryWidth:F(13),
-      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
-    if(U(31)===1){a.nativeWidth=F(29);a.nativeHeight=F(30);}
-    const owner=U(27);a.visible=(flags&3)===3;
+  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
+  const f=new Float32Array(core.HEAPU8.buffer),v=new Int32Array(core.HEAPU8.buffer),u=new Uint32Array(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
+  for(let i=0;i<count;i++){const k=(ptr>>2)+i*32,flags=u[k+24],flags2=u[k+25],primary=rgba(u[k+14]),secondary=rgba(u[k+15]),color=flags&0x10000?secondary:primary;
+    const a={name:banks[v[k+16]]??null,sprite:v[k+17],layer:v[k+18],mode:v[k+19],anchorX:v[k+20],anchorY:v[k+21],blend:v[k+22],geometryCount:v[k+23],
+      x:0,y:0,z:f[k+2],rx:f[k+3],ry:f[k+4],rotation:f[k+5],sx:f[k+6],sy:f[k+7],u:f[k+8],v:f[k+9],uvScaleX:f[k+10],uvScaleY:f[k+11],geometryRadius:f[k+12],geometryWidth:f[k+13],
+      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:v[k+19]===1||v[k+19]===3};
+    if(u[k+31]===1){a.nativeWidth=f[k+29];a.nativeHeight=f[k+30];}
+    const owner=u[k+27];a.visible=(flags&3)===3;
     // Original45c93e/45c95b tests primary alpha even when flag10000 selects
     // secondary color. A secondary alpha cannot revive a faded mode0/1 quad.
     if((a.mode===0||a.mode===1)&&primary[3]===0)a.visible=false;
-    poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
+    poses.push({a,x:f[k+0],y:f[k+1],angle:0,scale:1,alpha:f[k+28],id:u[k+26],owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
   }return poses;
 }
 export function readCoreLaserSegments(core,stage=1){
@@ -479,10 +479,8 @@ export class Renderer {
     const h=[...readCoreHud(core,fps)],frame=h[0];if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0],backgroundVisible=background.authoritative||(core._th12_background_visible?.()??true);
-    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=(this.spellWallClock??=new SpellWallClock()).observe(readCoreSpell(core),fps.wallTime),bossHud=readCoreBossHud(core);
-    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
-    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
-    const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=(this.logicalOwners??=new Set()),message=readCoreMessage(core),spell=(this.spellWallClock??=new SpellWallClock()).observe(readCoreSpell(core),fps.wallTime),bossHud=readCoreBossHud(core);
+    logicalOwners.clear();for(const p of logicalPoses)logicalOwners.add(p.owner);for(const p of meshes)logicalOwners.add(p.owner);
     let bulletCount=0;
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases,{logicalText:!!core._th12_anm_draw}),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     for(const text of spellTextDescriptors(spell,logicalPoses,{disableMaster:fps.disableMaster}))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:text.drawFlag===0?69:45,clipped:false,order:poses.length});
@@ -494,6 +492,11 @@ export class Renderer {
     if(fps.stageClear){const text=stageClearText(h,logicalPoses,fps.practice);if(text)poses.push({nativeText:text,drawPriority:69,clip:0,order:poses.length});}
     const transition=stageTransitionPose(logicalBackground?.transition);if(transition)poses.push(transition);
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options,owner=Number.isInteger(sampling.entityId)?sampling.entityId:0;let child=0;for(const a of this.animations.sampleAll(name,id,age,variant,sampling)){if(fps.multiplayer&&name==='front'&&id===0&&a.script>=8&&a.script<=12)continue;poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,owner,presentationKey:owner?'sample:'+owner+':'+id+':'+child++:undefined,order:poses.length});}};
+    // Consume the draw queue after all metadata exports. No Wasm calls occur
+    // inside this loop; endpoint records own their scalars before the next export.
+    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
+    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
+    const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride),records=[];
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
       records.push({x,y,owner:entityId,bank:v[k+4],animation,kind,color,age,interrupt});
