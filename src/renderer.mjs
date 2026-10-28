@@ -468,6 +468,7 @@ export class Renderer {
   resetPresentation({retainSamples=false}={}){
     // Call on start/restart, stage load, replay seek, pause/resume, focus
     // loss or any host discontinuity; the host also discards its old pair.
+    if(this.drawBuckets)for(const bucket of this.drawBuckets)if(bucket)bucket.length=0;
     this.presentationEpoch++;this.lastFrame=-1;
     // These tracks are pure atlas/age samples. A rollback invalidates the
     // endpoint pair; rebuilding every long-lived HUD track from age zero
@@ -479,7 +480,7 @@ export class Renderer {
     const h=[...readCoreHud(core,fps)],frame=h[0];if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0],backgroundVisible=background.authoritative||(core._th12_background_visible?.()??true);
-    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=(this.logicalOwners??=new Set()),message=readCoreMessage(core),spell=(this.spellWallClock??=new SpellWallClock()).observe(readCoreSpell(core),fps.wallTime),bossHud=readCoreBossHud(core);
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core,logicalPoses),meshes=readCoreMeshes(core,stage),logicalOwners=(this.logicalOwners??=new Set()),message=readCoreMessage(core),spell=(this.spellWallClock??=new SpellWallClock()).observe(readCoreSpell(core),fps.wallTime),bossHud=readCoreBossHud(core);
     logicalOwners.clear();for(const p of logicalPoses)logicalOwners.add(p.owner);for(const p of meshes)logicalOwners.add(p.owner);
     let bulletCount=0;
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases,{logicalText:!!core._th12_anm_draw}),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
@@ -565,7 +566,7 @@ export class Renderer {
     // These pose wrappers were created for this capture. Annotate them before
     // publishing the immutable endpoint; older endpoints and appearances stay intact.
     if(fps.multiplayer)applyMultiplayerOpacity(poses,fps.multiplayer,fps.localSeat,readMultiplayerVisualOwners(core));
-    const ordered=orderPresentation(poses,schedule,{reusePoses:true});
+    const ordered=orderPresentation(poses,schedule,{reusePoses:true,buckets:this.drawBuckets??=[]});
     this.animations.endFrame();
     // Modern cores already publish authoritative owner/lineage data. Do not
     // build a second legacy owner graph that their interpolation never uses;

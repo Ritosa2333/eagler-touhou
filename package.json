@@ -10,7 +10,7 @@
     "build:audio": "node scripts/build-audio.mjs",
     "corpus": "node scripts/build-corpus.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:renderer": "node --test tests/renderer-batching.test.mjs tests/renderer-layering.test.mjs tests/stage-surface-pipeline.test.mjs tests/native-quad.test.mjs tests/camera-presentation.test.mjs tests/draw-scheduler.test.mjs tests/ascii-presentation.test.mjs tests/spell-presentation.test.mjs tests/ufo-presentation.test.mjs tests/presentation-binary.test.mjs tests/presentation-continuity.test.mjs tests/presentation-cadence.test.mjs",
+    "test:renderer": "node --test tests/renderer-batching.test.mjs tests/renderer-layering.test.mjs tests/stage-surface-pipeline.test.mjs tests/native-quad.test.mjs tests/camera-presentation.test.mjs tests/draw-scheduler.test.mjs tests/ascii-presentation.test.mjs tests/spell-presentation.test.mjs tests/ufo-presentation.test.mjs tests/presentation-binary.test.mjs tests/presentation-continuity.test.mjs tests/presentation-cadence.test.mjs tests/settled-animation.test.mjs",
     "benchmark:renderer": "node scripts/benchmark-renderer.mjs",
     "check:renderer-browser": "node scripts/check-renderer-browser.mjs",
     "test:portable": "node --test tests/comparator.test.mjs tests/preview-input.test.mjs tests/replay-speed.test.mjs tests/shell.test.mjs tests/ecl-behavior.test.mjs tests/replay-startup.test.mjs tests/music.test.mjs tests/spell-presentation.test.mjs tests/ufo-presentation.test.mjs tests/ascii-presentation.test.mjs tests/draw-scheduler.test.mjs tests/renderer-layering.test.mjs tests/native-render-schedule.test.mjs tests/camera-presentation.test.mjs tests/native-quad.test.mjs tests/camera-effects.test.mjs tests/camera-pulse.test.mjs tests/ecl-camera-pulse.test.mjs",
