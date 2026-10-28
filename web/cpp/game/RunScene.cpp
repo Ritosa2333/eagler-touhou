@@ -422,6 +422,10 @@ bool RunScene::update() {
         if (!presentation->sync(battle, selected_input.held)) return fail(presentation->error());
         hud.tick_stage_clear();
         HudFrameContext frame;
+        // 0x4265a0 的灵界槽左下淡化在过渡帧也必须运行；玩家位置仍是
+        // DAT_004c22c4+0x5b8/+0x5bc 的游戏坐标。
+        const Vec3 player_position{battle.player_x, battle.player_y, 0};
+        frame.player_position = &player_position;
         hud.update(frame, host);
         return hud.error.empty() || fail(hud.error);
     }
@@ -495,6 +499,9 @@ bool RunScene::update() {
     }
     if(!boss_view.boss)battle.sim.boss_markers[0]={}; // 4265a0 clears vacant slot ratios
     HudFrameContext frame;
+    // 0x4265a0:85-96 灵界槽左下淡化/恢复需要玩家游戏坐标。
+    const Vec3 player_position{battle.player_x, battle.player_y, 0};
+    frame.player_position = &player_position;
     frame.dialogue = boss_view.dialog_active;
     frame.boss = &boss_view; // a vacant boss slot must also retire its HUD
     hud.update(frame, host);
