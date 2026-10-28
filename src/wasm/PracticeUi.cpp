@@ -30,6 +30,7 @@ namespace Mobile=eagler::thprac::mobile;
 bool initialized=false,menu_open=false,advanced_open=false,tracker_open=false;
 bool practice_open=false,armed=false,menu_ready=false,in_game=false,game_visible=false,replaying=false,desktop_pointer=false;
 bool text_editing=false;
+bool practice_focus_pending=false;
 bool keys[256]{},pressed[256]{};int locale=0,difficulty=1,action=0,warp=0,section_index=0,previous_pad=0;
 float mouse_x=-FLT_MAX,mouse_y=-FLT_MAX;bool mouse_down=false,sample_down=false;
 int64_t pointer_owner=-1;bool speed_reset=true;Parameters params;
@@ -41,7 +42,37 @@ uint32_t draw_header[8]{},font_header[3]{};int32_t parameter_words[20]{};
 const char* tr(const char* zh,const char* en,const char* ja){return locale==0?zh:locale==2?ja:en;}
 const char* label(const char* const* value){return value[locale];}
 template<size_t N>const char* const* selection(const char* const (&items)[3][N]){return items[locale];}
-template<size_t N>bool combo(const char* name,int* value,const char* const (&items)[3][N]){return ImGui::Combo(name,value,selection(items),int(N));}
+// Like TH07's Gui controls, a focused row accepts left/right without first
+// activating the widget. Mouse drags, popups and text editing keep ownership.
+int practice_direction(const char* name){
+  if(!practice_open||!menu_ready||ImGui::IsAnyItemActive()||
+     (ImGui::GetItemsFlags()&ImGuiItemFlags_Disabled)||
+     ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel)||
+     GImGui->NavWindow!=ImGui::GetCurrentWindow()||
+     GImGui->NavId!=ImGui::GetCurrentWindow()->GetID(name))return 0;
+  const int direction=int(ImGui::GetNavInputAmount(ImGuiNavInput_DpadRight,ImGuiInputReadMode_Repeat)>0)-
+                      int(ImGui::GetNavInputAmount(ImGuiNavInput_DpadLeft,ImGuiInputReadMode_Repeat)>0);
+  if(direction)ImGui::NavMoveRequestCancel();
+  return direction;
+}
+bool practice_combo(const char* name,int* value,const char* const* items,int count){
+  const int direction=practice_direction(name);bool changed=false;
+  if(direction&&count>0){*value=(*value+direction+count)%count;changed=true;}
+  return ImGui::Combo(name,value,items,count)||changed;
+}
+template<size_t N>bool combo(const char* name,int* value,const char* const (&items)[3][N]){return practice_combo(name,value,selection(items),int(N));}
+template<typename T>bool practice_adjust(const char* name,T* value,T minimum,T maximum,T step){
+  const int direction=practice_direction(name);if(!direction)return false;
+  if(ImGui::GetIO().KeyShift)step*=10;
+  const T old=*value;*value=std::clamp<T>(*value+direction*step,minimum,maximum);return old!=*value;
+}
+bool practice_slider(const char* name,int* value,int minimum,int maximum,const char* format="%d"){
+  const bool changed=practice_adjust(name,value,minimum,maximum,1);
+  return ImGui::SliderInt(name,value,minimum,maximum,format)||changed;
+}
+void practice_drag(const char* name,int* value,int step,int maximum){
+  practice_adjust(name,value,0,maximum,step);ImGui::DragInt(name,value,float(step),0,maximum);
+}
 void help_marker(const char* const* description){ImGui::SameLine();ImGui::TextDisabled("(?)");if(ImGui::IsItemHovered())ImGui::SetTooltip("%s",label(description));}
 #define key_monitor th12::practice::toolSettings().key_monitor
 #include <eagler/thprac/PracticeKeyHud.inc>
@@ -154,29 +185,34 @@ void draw_practice(){
       const auto* section=normalize_section();
       if(warp==1){int chapter=params.section%100;char name[64];const int first=chapter_counts[params.stage][0];
         std::snprintf(name,sizeof name,params.stage==5?label(practice_TH_STAGE_PORTION_N):label(chapter<=first?practice_TH_STAGE_PORTION_1:practice_TH_STAGE_PORTION_2),chapter<=first||params.stage==5?chapter:chapter-first);
-        if(ImGui::SliderInt(label(practice_TH_CHAPTER),&chapter,1,first+chapter_counts[params.stage][1],name))params.section=10000+(params.stage+1)*100+chapter;
+        if(practice_slider(label(practice_TH_CHAPTER),&chapter,1,first+chapter_counts[params.stage][1],name))params.section=10000+(params.stage+1)*100+chapter;
       }else if(warp>=2){const auto choices=section_choices();std::vector<const char*> names;for(auto* value:choices)names.push_back(value->names[params.stage==6?4:difficulty][locale]);
-        if(!names.empty()&&ImGui::Combo(warps[warp],&section_index,names.data(),int(names.size()))){params.section=choices[section_index]->id;params.phase=0;section=normalize_section();}
+        if(!names.empty()&&practice_combo(warps[warp],&section_index,names.data(),int(names.size()))){params.section=choices[section_index]->id;params.phase=0;section=normalize_section();}
         if(section&&section->phases==2)combo(label(practice_TH_PHASE),&params.phase,practice_group_TH_SPELL_PHASE1);
         if(section&&section->phases==5)combo(label(practice_TH_PHASE),&params.phase,practice_group_TH_SPELL_PHASE3);
-        if(section&&section->dialogue)ImGui::Checkbox(label(practice_TH_DLG),&params.dlg);
+        if(section&&section->dialogue){if(practice_direction(label(practice_TH_DLG)))params.dlg=!params.dlg;ImGui::Checkbox(label(practice_TH_DLG),&params.dlg);}
       }
-      ImGui::SliderInt(label(practice_TH_LIFE),&params.life,0,9);ImGui::SliderInt(label(practice_TH_LIFE_FRAGMENT),&params.life_fragment,0,3);
-      ImGui::SliderInt(label(practice_TH_BOMB),&params.bomb,0,9);ImGui::SliderInt(label(practice_TH_BOMB_FRAGMENT),&params.bomb_fragment,0,2);
-      char power[24];std::snprintf(power,sizeof power,"%d.%02d",params.power/100,params.power%100);ImGui::SliderInt(label(practice_TH_POWER),&params.power,0,400,power);
+      practice_slider(label(practice_TH_LIFE),&params.life,0,9);practice_slider(label(practice_TH_LIFE_FRAGMENT),&params.life_fragment,0,3);
+      practice_slider(label(practice_TH_BOMB),&params.bomb,0,9);practice_slider(label(practice_TH_BOMB_FRAGMENT),&params.bomb_fragment,0,2);
+      char power[24];std::snprintf(power,sizeof power,"%d.%02d",params.power/100,params.power%100);practice_slider(label(practice_TH_POWER),&params.power,0,400,power);
       combo(label(practice_TH12_UFO_SIDE),&params.ufo_side,practice_group_TH_SIDE_SELECT);
       combo(label(practice_TH12_VENTRA_1),&params.ventra_1,practice_group_TH12_VENTRA_SELECT);
       if(params.ventra_1)combo(label(practice_TH12_VENTRA_2),&params.ventra_2,practice_group_TH12_VENTRA_SELECT);else params.ventra_2=params.ventra_3=0;
       if(params.ventra_2)combo(label(practice_TH12_VENTRA_3),&params.ventra_3,practice_group_TH12_VENTRA_SELECT);else params.ventra_3=0;
-      ImGui::DragInt(label(practice_TH_VALUE),&params.value,10,0,999990);ImGui::DragInt(label(practice_TH_GRAZE),&params.graze,1,0,999999);
-      const int64_t minimum=0,maximum=9999999990LL;ImGui::DragScalar(label(practice_TH_SCORE),ImGuiDataType_S64,&params.score,10,&minimum,&maximum,"%lld");
+      practice_drag(label(practice_TH_VALUE),&params.value,10,999990);practice_drag(label(practice_TH_GRAZE),&params.graze,1,999999);
+      const int64_t minimum=0,maximum=9999999990LL;practice_adjust(label(practice_TH_SCORE),&params.score,minimum,maximum,int64_t(10));ImGui::DragScalar(label(practice_TH_SCORE),ImGuiDataType_S64,&params.score,10,&minimum,&maximum,"%lld");
       params.life=std::clamp(params.life,0,9);params.life_fragment=std::clamp(params.life_fragment,0,3);params.bomb=std::clamp(params.bomb,0,9);params.bomb_fragment=std::clamp(params.bomb_fragment,0,2);params.power=std::clamp(params.power,0,400);
       params.value=std::clamp(params.value,0,999990)/10*10;params.graze=std::clamp(params.graze,0,999999);params.score=std::clamp(params.score,minimum,maximum)/10*10;
     }
     ImGui::EndDisabled(!menu_ready);ImGui::PopItemWidth();
     const bool busy=text_editing||ImGui::IsAnyItemActive()||ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel);
     text_editing=ImGui::IsAnyItemActive()||ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel);
-    if(!busy)ImGui::SetWindowFocus();
+    if(!busy){
+      ImGui::SetWindowFocus();
+      // Hidden mouse-mode highlighting does not mean the selected row is lost.
+      if(practice_focus_pending||!GImGui->NavIdIsAlive)ImGui::SetItemFocusAlt(label(practice_TH_STAGE),true);
+      practice_focus_pending=false;
+    }
     if(!armed&&!(keys[90]||keys[13]||keys[88]||keys[27]||pressed[90]||pressed[13]||pressed[88]||pressed[27]||(previous_pad&259)))armed=true;
     if(menu_ready&&armed&&!busy){if(pressed[90]||pressed[13])action=1;if(pressed[88]||pressed[27])action=2;}
   }ImGui::End();ImGui::PopStyleVar(2);
@@ -268,7 +304,7 @@ void th12_practice_ui_mobile(int mode,int visible){
 }
 void th12_practice_ui_context(int scene,int ready,int replay,int diff,int language){
   const bool entering=scene==1&&!practice_open;practice_open=scene==1;in_game=scene==2;game_visible=in_game||scene==3;menu_ready=ready!=0;replaying=replay!=0;difficulty=std::clamp(diff,0,4);locale=std::clamp(language,0,2);
-  if(entering){armed=false;action=0;cancel_pointer();}
+  if(entering){armed=false;action=0;practice_focus_pending=true;cancel_pointer();}
 }
 void th12_practice_ui_params(const int32_t* words,int count){
   if(!words||count!=20)return;params.mode=words[1];params.stage=words[2];params.section=words[3];params.phase=words[4];params.dlg=words[5]!=0;
@@ -322,8 +358,11 @@ void th12_practice_ui_tick(int pad){
   if(pressed[189]||pressed[109])io.AddInputCharacter('-');if(pressed[190]||pressed[110])io.AddInputCharacter('.');
   io.NavInputs[ImGuiNavInput_DpadUp]=keys[38]||pressed[38]||bool(pad&16);io.NavInputs[ImGuiNavInput_DpadDown]=keys[40]||pressed[40]||bool(pad&32);io.NavInputs[ImGuiNavInput_DpadLeft]=keys[37]||pressed[37]||bool(pad&64);io.NavInputs[ImGuiNavInput_DpadRight]=keys[39]||pressed[39]||bool(pad&128);
   io.NavInputs[ImGuiNavInput_Activate]=keys[90]||keys[13]||pressed[90]||pressed[13]||bool(pad&1);io.NavInputs[ImGuiNavInput_Cancel]=keys[88]||keys[27]||pressed[88]||pressed[27]||bool(pad&258);
-  if(practice_open){if((pad&1)&&!(previous_pad&1))pressed[90]=true;if((pad&258)&&!(previous_pad&258))pressed[88]=true;}
+  if(practice_open){io.NavInputs[ImGuiNavInput_Activate]=io.NavInputs[ImGuiNavInput_Cancel]=0;if((pad&1)&&!(previous_pad&1))pressed[90]=true;if((pad&258)&&!(previous_pad&258))pressed[88]=true;}
   previous_pad=pad;
+  if(practice_open&&(io.NavInputs[ImGuiNavInput_DpadUp]||io.NavInputs[ImGuiNavInput_DpadDown]||io.NavInputs[ImGuiNavInput_DpadLeft]||io.NavInputs[ImGuiNavInput_DpadRight])){
+    GImGui->NavDisableHighlight=false;GImGui->NavDisableMouseHover=true;
+  }
   ImGui::NewFrame();if(practice_open)draw_practice();draw_overlay();ImGui::Render();pack_draw();std::fill(std::begin(pressed),std::end(pressed),false);
 }
 const uint32_t* th12_practice_ui_draw(){return draw_header;}
