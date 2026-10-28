@@ -1339,8 +1339,22 @@ void StageBattle::update_item_side() {
     collector.progress = progress_;
     collector.player = player_;
     collector.score = score_;
+    const i32 old_lives = player_ ? player_->extra_lives : 0;
+    const i32 old_life_pieces = player_ ? player_->life_pieces : 0;
+    const i32 old_bombs = player_ ? player_->bombs : 0;
+    const i32 old_bomb_pieces = player_ ? player_->bomb_pieces : 0;
+    const i32 old_life_threshold = progress_ ? progress_->life_piece_threshold_index : 0;
     item_manager.update(collector);
     item_manager.update_spirits(collector);
+    if (player_) {
+        if ((player_->extra_lives != old_lives || player_->life_pieces != old_life_pieces ||
+             (progress_ && progress_->life_piece_threshold_index != old_life_threshold)) &&
+            !host_->life_hud(player_->extra_lives, player_->life_pieces))
+            error_ = "Item collection life HUD failed";
+        if ((player_->bombs != old_bombs || player_->bomb_pieces != old_bomb_pieces) &&
+            !host_->bomb_hud(player_->bombs, player_->bomb_pieces))
+            error_ = "Item collection bomb HUD failed";
+    }
     // 收集音（0x42e380 合并尾 0x460c50(...,0x25)=37）；其余事件留给表现层。
     for (const auto& event : item_manager.events()) {
         if (event.kind == ItemEvent::Kind::Collected && event.value > 0)
