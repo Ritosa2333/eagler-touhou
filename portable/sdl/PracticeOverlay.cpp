@@ -106,7 +106,9 @@ void PracticeOverlay::render(Renderer& gpu){
             gpu.flush();gpu.bind({unsigned(uintptr_t(command.TextureId)),1,1,false,false,true},false);
             gpu.scissor(int(command.ClipRect.x),int(command.ClipRect.y),int(command.ClipRect.z-command.ClipRect.x),int(command.ClipRect.w-command.ClipRect.y));
             for(unsigned i=0;i<command.ElemCount;++i){const auto& v=list.VtxBuffer[int(command.VtxOffset+list.IdxBuffer[int(command.IdxOffset+i)])];const auto c=v.col;
-                gpu.push({v.pos.x-data->DisplayPos.x,v.pos.y-data->DisplayPos.y,v.uv.x,v.uv.y,float(c&255)/255,float((c>>8)&255)/255,float((c>>16)&255)/255,float(c>>24)/255,1,0});}
+                gpu.push({v.pos.x-data->DisplayPos.x,v.pos.y-data->DisplayPos.y,v.uv.x,v.uv.y,
+                    float((c>>IM_COL32_R_SHIFT)&255)/255,float((c>>IM_COL32_G_SHIFT)&255)/255,
+                    float((c>>IM_COL32_B_SHIFT)&255)/255,float((c>>IM_COL32_A_SHIFT)&255)/255,1,0});}
             gpu.flush();
         }
     }

@@ -1,4 +1,5 @@
 #include "Scene.hpp"
+#include "BinaryReader.hpp"
 #include "RuntimeOptions.hpp"
 #include "game/GameState.hpp"
 #include "game/StageFlow.hpp"
@@ -246,7 +247,8 @@ void Scene::capture(const Options& o){
         if(!bytes.empty())for(const auto& p:logical_poses){
             if(p.a.bank!=BankText||p.a.sprite!=7||!p.a.visible||p.a.alpha<=0)continue;
             // 460800 right aligns by CP932 byte count before 44e660 doubles x.
-            Dialogue d;d.bytes=bytes;d.text=decode_cp932(bytes);d.offset=320-8*i32(bytes.size());d.color=0xffffff;d.width=320;d.height=17;d.source_width=666;d.source_height=36;
+            const auto original=decode_cp932(bytes,false);
+            Dialogue d;d.bytes=bytes;d.text=translate_text(original);d.localized_spell=d.text!=original;d.offset=320-8*i32(bytes.size());d.color=0xffffff;d.width=320;d.height=17;d.source_width=666;d.source_height=36;
             d.raster=true;d.source_x=float(2*d.offset);d.source_y=2;d.foreground=0xffffff;
             Pose q=p;q.kind=Pose::DialogueLine;q.item=u32(dialogues.size());dialogues.push_back(std::move(d));poses.push_back(q);
         }
@@ -448,18 +450,29 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     std::string key(reinterpret_cast<const char*>(&d.offset),sizeof(i32)*3);key+=d.bytes;key+='|';
     key.append(reinterpret_cast<const char*>(d.text.data()),d.text.size()*sizeof(char32_t));key+='|';
     for(const float v:{d.width,d.height,d.source_x,d.source_y})key.append(reinterpret_cast<const char*>(&v),4);
-    for(const u32 v:{d.color,d.source_width,d.source_height,d.foreground,u32(d.raster)})key.append(reinterpret_cast<const char*>(&v),4);
+    for(const u32 v:{d.color,d.source_width,d.source_height,d.foreground,u32(d.raster),u32(d.localized_spell)})key.append(reinterpret_cast<const char*>(&v),4);
     for(auto it=cache.begin();it!=cache.end();++it)if(it->key==key){cache.splice(cache.begin(),cache,it);return cache.front().texture;}
     // 44e56f..44e5c6: 32px MS Gothic (400) / MS Mincho (600); 15px bold for style 2.
     const bool serif=d.style==1;const u32 weight=d.raster?400:d.style==2?700:serif?600:400;const float size=d.raster?32:d.style==2?15:32;
     const u32 rgb=d.raster?d.foreground:((d.color&255)<<16|((d.color>>8)&255)<<8|((d.color>>16)&255));
     Canvas canvas;canvas.reset(d.source_width,d.source_height);
-    const auto draw=[&](const std::u32string& text,float x){
+    const auto draw=[&](const std::u32string& text,float x,float scale_x=1){
         const float y=d.raster?d.source_y:2;
-        for(const auto& off:d.outline)raster.fill(canvas,text,x+off[0],y+off[1]-2,serif,weight,size,0x000000);
-        raster.fill(canvas,text,x,y,serif,weight,size,rgb);
+        for(const auto& off:d.outline)raster.fill(canvas,text,x+off[0]*scale_x,y+off[1]-2,serif,weight,size,0x000000,0,scale_x);
+        raster.fill(canvas,text,x,y,serif,weight,size,rgb,0,scale_x);
     };
-    if(d.spacing){for(size_t i=0;i<d.bytes.size();i+=2)draw(decode_cp932(d.bytes.substr(i,2)),float(2*d.offset+i64(i)*d.spacing));}
+    if(d.localized_spell){
+        // Match the Web text layout: right align translated titles and squeeze
+        // only their horizontal extent when they exceed the 640px title line.
+        const float available=float(d.source_width)-26;
+        float scale_x=1,width=raster.measure(d.text,serif,weight,size);
+        for(i32 i=0;i<8&&width>available;++i){
+            scale_x*=std::min(.99f,available/width);
+            width=raster.measure(d.text,serif,weight,size,scale_x);
+        }
+        draw(d.text,std::max(0.f,available-width),scale_x);
+    }
+    else if(d.spacing){for(size_t i=0;i<d.bytes.size();i+=2)draw(decode_cp932(d.bytes.substr(i,2)),float(2*d.offset+i64(i)*d.spacing));}
     else draw(d.text,d.raster?d.source_x:float(2*d.offset+2));
     Texture t;t.name=gpu.create_texture(canvas.width,canvas.height,canvas.rgba.data(),true);t.w=float(canvas.width);t.h=float(canvas.height);t.repeat=false;
     cache.push_front({key,t});
