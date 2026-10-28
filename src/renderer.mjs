@@ -380,7 +380,17 @@ export class Renderer {
     const family=localizedFontFamily(),key=JSON.stringify([text,record,metrics,raster,family,family?this.localizationTabs??[]:null]);
     if(cache.has(key)){const result=cache.get(key);if(family)this.localizationTabs=[...result.tabs];return result;}
     const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${localizedFontFamily()??raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", "Eagler Unicode", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
-    const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{const y=raster?.sourceY??2;ctx.fillStyle='#000';for(const [dx,dy]of raster?.outlineOffsets??[[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,y+dy-2);ctx.fillStyle=foreground;ctx.fillText(text,x,y);};
+    const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{
+      const y=raster?.sourceY??2;
+      // Trace one contour at the glyph baseline. Four displaced copies of
+      // the thin shared font form separate strokes instead of an outline;
+      // the old y-2 adjustment also raised ending outlines above their fill.
+      if(raster?.outlineOffsets?.length!==0){
+        ctx.strokeStyle='#'+((raster?.outlineColor??record.outlineColor??0)>>>0).toString(16).padStart(6,'0');
+        ctx.lineWidth=raster?.outlineWidth??2;ctx.lineJoin='round';ctx.strokeText(text,x,y);
+      }
+      ctx.fillStyle=foreground;ctx.fillText(text,x,y);
+    };
     if(family){
       ctx.textAlign='left';
       const font=ctx.font,measure=(value,commands='')=>{ctx.font=(commands.includes('b')?'bold ':'')+(commands.includes('i')?'italic ':'')+font;return ctx.measureText(value).width;};
