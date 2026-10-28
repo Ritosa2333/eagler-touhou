@@ -64,9 +64,10 @@ function captureGamePresentation(){
 }
 function drawGamePresentation(interpolate=true){
   if(!currentPresentation)captureGamePresentation();if(!currentPresentation)return;
-  const alpha=interpolate&&interpolateGamePresentation()?Math.min(1,accumulator/logicalStep):1;
-  const fps=gameMeter.frame(performance.now(),previousPresentation,currentPresentation,alpha,['playing','demo'].includes(model.state.scene));
-  renderer.renderPresentation(previousPresentation,currentPresentation,alpha,{currentFps:fps});
+  const extrapolate=interpolate&&interpolateGamePresentation();
+  const alpha=extrapolate?Math.min(1,accumulator/logicalStep):1;
+  const fps=gameMeter.frame(performance.now(),previousPresentation,currentPresentation,extrapolate?1+alpha:1,['playing','demo'].includes(model.state.scene));
+  renderer.renderPresentation(previousPresentation,currentPresentation,alpha,{currentFps:fps,extrapolate});
 }
 function updatePracticeUI(){
   if(!practiceUI||!model)return;
