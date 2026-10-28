@@ -2,6 +2,8 @@
 
 [monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
 
+原生桌面入口使用 [SDL3 / GLES 3 运行层](portable/sdl/README.md)，链接与网页版相同的当前 C++ 游戏核心。构建目标为 `touhou12`。
+
 本作源码位于 `ports/th12`，在 monorepo 根目录运行 `npm run build:runtime -- --game=th12 --emsdk=工具链目录` 构建普通版。浏览器代码包输出至 `ports/th12/build-eagler/`；内容准备与站点组装见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
 `ports/th12` 的 [Git 子树](../../docs/migration/th12-subtree-20261024.md)继承原 th12 仓库历史；后续作品源码提交可按上游祖先关系独立导出。

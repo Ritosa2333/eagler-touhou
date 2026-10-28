@@ -1,5 +1,6 @@
 // Manual development host, deliberately excluded from Runtime Release.
 const $=id=>document.getElementById(id),protocol='eagler-touhou/1';
+if(new URL(location.href).searchParams.get('runtime')==='sdl')$('music').querySelector('option[value="full"]').disabled=true;
 let active=null,sequence=0;const pending=new Map();
 function state(text){$('state').textContent=text;}
 function fail(error){state('接入未完成：'+error.message);$('start').disabled=false;console.error(error);}
@@ -70,7 +71,8 @@ $('start').onclick=async()=>{
     const frame=document.createElement('iframe'),epoch=sequence+1,generation=provenance.gameData.sha256;
     sequence=epoch;active={frame,epoch,generation,provenance,fonts,language:$('language').value,music:$('music').value==='none'?'none':'ogg',options:{limitPresentationTo60:!$('high-refresh').checked,touchEnabled:$('touch').value!=='off',touchMovementMode:$('touch').value==='off'?'touch':$('touch').value,touchSensitivity:150,touchFocusMode:'two-finger',doubleTapBombEnabled:true,alwaysHitbox:$('hitbox').checked,thpracEnabled:$('thprac').checked,thpracLocale:$('language').value==='ja'?'ja-JP':'zh-CN',oggDecodeMode:$('music').value==='full'?'full':'stream'}};
     frame.allow='autoplay; fullscreen';frame.title='星莲船正式入口接入预览';
-    frame.src='/__eagler-runtime/th12.html?'+new URLSearchParams({managedData:'1',runtimeEpoch:String(epoch),gameGeneration:generation});$('game').replaceChildren(frame);
+    const runtime=new URL(location.href).searchParams.get('runtime')==='sdl'?'/__eagler-sdl-runtime/':'/__eagler-runtime/';
+    frame.src=runtime+'th12.html?'+new URLSearchParams({managedData:'1',runtimeEpoch:String(epoch),gameGeneration:generation});$('game').replaceChildren(frame);
   }catch(error){fail(error);}
 };
 $('files').onclick=()=>rpc('list').then(result=>{$('details').textContent=JSON.stringify(result.files,null,2);}).catch(fail);

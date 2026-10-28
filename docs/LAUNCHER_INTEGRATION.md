@@ -12,6 +12,10 @@ npm run ports:check -- --game=th12
 
 构建产物位于 `ports/th12/build-eagler/`。源码来源见 [导入记录](../../../docs/migration/th12-eagler-20261020.json)，逐文件来源见 [eagler-source.json](../eagler-source.json)。Launcher 按测试作品提供星莲船入口，使用 `resources` 协议安装共享字体、音乐与语言包。
 
+普通版标准构建入口现使用 SDL3 / GLES 共用应用，产物仍为 `build-eagler/`。Runtime 保留主站约定的 `th12.html`、`game.mjs`、`core.mjs`、`core.wasm`、`manifest.json` 和闭合集合清单 `runtime-files.json`；DATA、安装代次、输入与存档协议沿用当前契约。音频解码已进入共用 Wasm，产品目录以两种前端共有的核心文件作为必需集合，具体模块由各自清单记录。
+
+`package-launcher.mjs` 默认同时装入 `../th12-mp/build-eagler-multiplayer`，可用 `--multiplayer-runtime=PATH` 指定该模式的独立构建。普通版与多人版分别构建，不将普通版程序当作多人版。旧网页前端可通过 `scripts/build-legacy-eagler.mjs` 重建。SDL 功能验收范围见 [共用运行层](../portable/sdl/README.md)。
+
 THPrac 使用 [紫版原生 UI 接入](../src/practice/INTEGRATION.md)，与 TH10/11 共用 ImGui、FreeType、输入工具和移动端面板。`thpracLocale` 决定工具语言；共享 `unifont.otf` 在 UI 初始化前通过 `resources` 安装。
 
 以下独立仓库接入步骤用于同步原仓库或重建独立环境；monorepo 已包含接入改动，日常开发从上面的命令开始。

@@ -7,8 +7,10 @@
 #include "../practice/UiCatalog.hpp"
 #include "imgui.h"
 #include "imgui_internal.h"
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) || defined(TH12_SDL_HOST)
 #include "imgui_freetype.h"
+#endif
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
 #include <eagler/thprac/PracticeMobilePanels.hpp>
@@ -248,7 +250,7 @@ int th12_practice_ui_init(const unsigned char* font,int length,int language){
     ImFontGlyphRangesBuilder glyphs;glyphs.AddRanges(io.Fonts->GetGlyphRangesChineseFull());glyphs.AddText("↑←↓→ΔΣ");static ImVector<ImWchar> ranges;glyphs.BuildRanges(&ranges);
     io.FontDefault=io.Fonts->AddFontFromMemoryTTF(const_cast<unsigned char*>(font),length,16,&config,ranges.Data);
   }else io.Fonts->AddFontDefault();
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) || defined(TH12_SDL_HOST)
   if(!ImGuiFreeType::BuildFontAtlas(io.Fonts,0)){ImGui::DestroyContext();return 0;}
 #else
   io.Fonts->Build();

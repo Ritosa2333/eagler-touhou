@@ -4,6 +4,7 @@
 local/
 artifacts/
 build-eagler/
+build-sdl-eagler/
 reference/
 references/
 process/
@@ -16,6 +17,7 @@ site/runtime/build.json
 site/runtime/vorbis.mjs
 site/runtime/vorbis.wasm
 site/runtime/audio/
+site/runtime/sdl/
 tools/replay-verifier/golden/
 tools/replay-verifier/corpus.json
 tools/replay-verifier/subsystem-golden.json

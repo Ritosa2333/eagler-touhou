@@ -11,13 +11,14 @@ const args = new Map(process.argv.slice(2).map(argument => {
   if (!argument.startsWith('--') || split < 3) throw Error('Use --name=value arguments');
   return [argument.slice(2, split), argument.slice(split + 1)];
 }));
-const allowed = new Set(['workspace', 'content', 'language-packs', 'output', 'site-url', 'runtime', 'font', 'vanilla-font', 'build-launcher']);
+const allowed = new Set(['workspace', 'content', 'language-packs', 'output', 'site-url', 'runtime', 'multiplayer-runtime', 'font', 'vanilla-font', 'build-launcher']);
 for (const name of args.keys()) if (!allowed.has(name)) throw Error('Unknown option: --' + name);
 for (const name of ['workspace', 'content']) if (!args.get(name)) throw Error('Missing --' + name + '=PATH');
 const workspace = path.resolve(args.get('workspace'));
 const launcher = path.join(workspace, 'launcher');
 const content = path.resolve(args.get('content'));
 const runtime = path.resolve(args.get('runtime') || path.join(root, 'build-eagler'));
+const multiplayerRuntime = path.resolve(args.get('multiplayer-runtime') || path.join(root, '../th12-mp/build-eagler-multiplayer'));
 const output = path.resolve(args.get('output') || path.join(root, 'artifacts/launcher-site'));
 const siteUrl = new URL(args.get('site-url') || 'http://127.0.0.1:8130/');
 if (siteUrl.username || siteUrl.password || siteUrl.pathname !== '/' || siteUrl.search || siteUrl.hash ||
@@ -78,7 +79,7 @@ function run(command, arguments_) {
 if (buildLauncher === '1') run(process.execPath, [path.join(launcher, 'scripts/build-launcher.mjs'), '--force']);
 run(process.execPath, [path.join(launcher, 'scripts/package-server.mjs'), '--games=th12', '--profile=web-validation-th12',
   '--test-build=1', '--output=' + output, '--site-url=' + siteUrl.href,
-  '--th12-build=' + runtime, '--th12-assets=' + content, '--th12-ogg=' + content,
+  '--th12-build=' + runtime, '--th12-multiplayer-build=' + multiplayerRuntime, '--th12-assets=' + content, '--th12-ogg=' + content,
   '--music=ogg', '--feature-config=' + features, '--artwork-dir=' + path.join(content, 'artwork'),
   '--font=' + path.resolve(args.get('font') || path.join(content, 'shared/unifont.otf')),
   '--vanilla-font=' + path.resolve(args.get('vanilla-font') || path.join(content, 'shared/msgothic.ttc')),
