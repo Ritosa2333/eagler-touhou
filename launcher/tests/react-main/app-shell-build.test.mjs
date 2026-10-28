@@ -61,7 +61,7 @@ test('default actual build publishes an enabled same-origin offline worker', asy
   const worker = await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8');
   assert.notEqual(worker, APP_SHELL_RETIREMENT_WORKER);
   assert.match(worker, /App Shell integrity mismatch/);
-  for (const file of ['index.html', 'en.html', 'lobby.html']) {
+  for (const file of ['index.html', 'en.html', 'lobby.html', 'profile.html']) {
     const html = await readFile(resolve(directory, file), 'utf8');
     assert.match(html, /name="eagler-react-app-shell"/);
     assert.match(html, /same-origin/);
@@ -70,7 +70,7 @@ test('default actual build publishes an enabled same-origin offline worker', asy
 test('explicitly disabled actual build publishes the retirement worker', async () => {
   const {directory} = outputs.get('disabled');
   assert.equal(await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8'), APP_SHELL_RETIREMENT_WORKER);
-  for (const file of ['index.html', 'en.html', 'lobby.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
+  for (const file of ['index.html', 'en.html', 'lobby.html', 'profile.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
 });
 for (const name of ['root', 'nested']) test(`${name} output uses actual React chunks, exact mount, canonical worker and byte identities`, async () => {
   const {directory, mountPath} = outputs.get(name), appShell = configuration(mountPath);
@@ -89,11 +89,11 @@ for (const name of ['root', 'nested']) test(`${name} output uses actual React ch
     const bytes = await readFile(resolve(directory, entry.url === './' ? 'index.html' : entry.url));
     assert.equal(createHash('sha256').update(bytes).digest('hex'), entry.revision, entry.url);
   }
-  for (const path of ['index.html', 'en.html', 'lobby.html']) {
+  for (const path of ['index.html', 'en.html', 'lobby.html', 'profile.html']) {
     const html = await readFile(resolve(directory, path), 'utf8'), elements = nodes(html);
     assert.equal((await stat(resolve(directory, path))).isFile(), true, 'original flat document URL');
     assert.equal(elements.find(node => node.tagName === 'html').attrs.find(attr => attr.name === 'lang').value, path === 'en.html' ? 'en' : 'zh-CN');
-    assert.match(html, path === 'en.html' ? /<title[^>]*>Touhou Project Original STGs ~ EAGLER TOUHOU<\/title>/ : path === 'lobby.html' ? /<title>联机大厅 ~ EAGLER TOUHOU<\/title>/ : /<title[^>]*>东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
+    assert.match(html, path === 'en.html' ? /<title[^>]*>Touhou Project Original STGs ~ EAGLER TOUHOU<\/title>/ : path === 'lobby.html' ? /<title>联机大厅 ~ EAGLER TOUHOU<\/title>/ : path === 'profile.html' ? /<title>玩家主页 ~ EAGLER TOUHOU<\/title>/ : /<title[^>]*>东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
     assert.ok(html.includes(`"basename":${JSON.stringify(mountPath)}`));
     const metadata = elements.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === 'eagler-react-app-shell'));
     const doc = {querySelectorAll: () => metadata.map(node => ({getAttribute: name => node.attrs.find(attr => attr.name === name)?.value}))};

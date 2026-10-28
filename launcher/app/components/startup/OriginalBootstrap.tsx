@@ -1,3 +1,4 @@
+import faviconUrl from '../../../public/assets/favicon.png?url';
 import backgroundUrl from '../../../public/assets/launcher-background.webp?url';
 import touhouFontUrl from '../../../public/assets/fonts/touhou98.woff2?url';
 import yatraFontUrl from '../../../public/assets/fonts/yatra-one-latin.woff2?url';
@@ -36,14 +37,25 @@ export function OriginalBootstrapHead() {
   const {pathname} = useLocation();
   const locale = useDocumentUiLocale();
   const lobby = /\/(?:lobby|lobby\.html)\/?$/.test(pathname);
-  const title = lobby ? `${translate(locale, 'lobby.title')} ~ EAGLER TOUHOU` : translate(locale, 'site.documentTitle');
+  const profile = /\/profile\.html\/?$/.test(pathname);
+  const title = lobby ? `${translate(locale, 'lobby.title')} ~ EAGLER TOUHOU` : profile ? locale === 'en' ? 'Player Profile ~ EAGLER TOUHOU' : '玩家主页 ~ EAGLER TOUHOU' : translate(locale, 'site.documentTitle');
   const description = translate(locale, 'site.description');
   return <>
     <script dangerouslySetInnerHTML={{__html: dispatch}}/>
     <style dangerouslySetInnerHTML={{__html: original.library.css + '\n' + original.lobby.css + '\n' + sharedLobbyPreloadCss +
       '\nhtml[data-original-entry="lobby"] #eaglerPreload,html:not([data-original-entry="lobby"]) #lobbyPreload{display:none}'}}/>
     <style id="launcherNavigationTransition">{'@view-transition{navigation:auto}'}</style>
-    <title data-i18n={lobby ? undefined : 'site.documentTitle'}>{title}</title>
+    <style id="bookStartupTheme">{`
+      html[data-book-theme="light"]{background:#f7f6f2;color-scheme:light}
+      html[data-book-theme="light"] body:not(.mp-room-active){background-color:#f7f6f2}
+      html[data-book-theme="light"] :is(#eaglerPreload,#lobbyPreload){background:#f7f6f2;color:#2b302c}
+      html[data-book-theme="light"] :is(.eagler-preload-card,.lobby-preload-card){background:#fffefa;border-color:#dfdfd6;box-shadow:0 14px 38px #24291f14}
+      html[data-book-theme="light"] :is(.eagler-preload-spinner,.lobby-preload-spinner){border-color:#dfdfd6;border-top-color:#a5353d}
+      html[data-book-theme="light"] .lobby-preload-failure a{color:#a5353d}
+      html[data-book-theme="light"] #eaglerBootEmergency>div{background:#fffefa!important;color:#2b302c!important;border-color:#dfdfd6!important;box-shadow:0 14px 38px #24291f14!important}
+      html[data-book-theme="light"] #eaglerBootEmergency :is(strong,button,pre){color:#2b302c!important}
+    `}</style>
+    <title data-i18n={lobby || profile ? undefined : 'site.documentTitle'}>{title}</title>
     <meta name="theme-color" content={lobby ? '#111210' : '#10100f'}/>
     {lobby ? <meta name="robots" content="noindex"/> : <>
       <meta name="color-scheme" content="dark"/>
@@ -60,6 +72,7 @@ export function OriginalBootstrapHead() {
       <link rel="apple-touch-icon" sizes="180x180" href="assets/pwa/apple-touch-icon.png"/>
     </>}
     <link rel="icon" href={lobby ? 'favicon.ico' : 'assets/favicon.ico'} type={lobby ? undefined : 'image/x-icon'}/>
+    <link rel="icon" type="image/png" sizes="256x256" href={faviconUrl}/>
     <link rel="preload" href={backgroundUrl} as="image" fetchPriority="high"/>
     <link rel="preload" href={touhouFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>
     <link rel="preload" href={yatraFontUrl} as="font" type="font/woff2" crossOrigin="anonymous"/>

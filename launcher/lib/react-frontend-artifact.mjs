@@ -101,7 +101,7 @@ export async function readReactFrontendArtifact({directory, metadata = null, exp
     for (const path of [...entry.css ?? [], ...entry.assets ?? []]) generated.add(generatedPath(path));
   }
   if (!entrypoints.size) throw new Error("React artifact has no Vite browser entrypoints");
-  for (const path of ["index.html", "en.html", "lobby.html"]) {
+  for (const path of ["index.html", "en.html", "lobby.html", "profile.html"]) {
     const tags = documentTags(await readFile(resolveFile(path), "utf8"), parse);
     const declarations = tags.filter(node => node.tag === "meta" && node.attributes.name === REACT_APP_SHELL_META);
     if (declarations.length !== (appShell ? 1 : 0)) throw new Error(`React App Shell metadata mismatch: ${path}`);

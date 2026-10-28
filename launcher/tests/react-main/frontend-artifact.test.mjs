@@ -28,7 +28,7 @@ async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
     await put('legacy/chunks/shared.mjs', 'export const value = 1;\n');
     const declaration = appShell ? `<meta name="eagler-react-app-shell" content="${JSON.stringify(appShell).replaceAll('"', '&quot;')}">` : '';
     const html = `<!doctype html><html><head>${declaration}<link rel="modulepreload" href="${mountPath}assets/manifest-abcd.js"><script type="module" src="${mountPath}assets/entry-abcd.js"></script><link rel="stylesheet" href="${mountPath}assets/entry-abcd.css"></head><body></body></html>`;
-    for (const path of ['index.html', 'en.html', 'lobby.html']) await put(path, html);
+    for (const path of ['index.html', 'en.html', 'lobby.html', 'profile.html']) await put(path, html);
     await put('.vite/manifest.json', JSON.stringify(manifest));
     await put('.vite/react-app-shell-graph.json', JSON.stringify(graph));
     await run({work, directory, metadata, put, html});

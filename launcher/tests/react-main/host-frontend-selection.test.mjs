@@ -23,7 +23,7 @@ async function fixture(run, {mountPath = '/', appShell = null} = {}) {
     for (const path of [...STATIC_FRONTEND_PACKAGE_FILES, 'assets/entry-abcd.js']) await put(path, 'fixture');
     for (const path of STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith('legacy/'))) await put(path, 'export const value = 1;');
     const declaration = appShell ? `<meta name="eagler-react-app-shell" content="${JSON.stringify(appShell).replaceAll('"', '&quot;')}">` : '';
-    for (const path of ['index.html', 'en.html', 'lobby.html']) await put(path, `<html><head>${declaration}<script type="module" src="${mountPath}assets/entry-abcd.js"></script></head></html>`);
+    for (const path of ['index.html', 'en.html', 'lobby.html', 'profile.html']) await put(path, `<html><head>${declaration}<script type="module" src="${mountPath}assets/entry-abcd.js"></script></head></html>`);
     await put('.vite/manifest.json', JSON.stringify({entry: {file: 'assets/entry-abcd.js', isEntry: true}}));
     await put('.vite/react-app-shell-graph.json', JSON.stringify({schema: 'eagler-touhou/react-app-shell-graph/1', mountPath, appShell,
       shellFiles: [...STATIC_APP_SHELL_FILES.filter(path => !['lobby.css', 'touch-guide.css'].includes(path)), 'assets/entry-abcd.js'].sort()}));

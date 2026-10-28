@@ -47,7 +47,7 @@ before(async () => {
     export * from './app/components/launcher/products.ts';
     export * from './src/contracts/product-catalog.mts';
     export * from './src/launcher/room-invite.mts';
-  `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
+  `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', loader: {'.webp': 'dataurl'}, outfile: resolve(work, 'actual-bundle.mjs'), logLevel: 'silent',
     plugins: [{name: 'installed-deps-original-mts', setup(ctx) {
       ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
       ctx.onResolve({filter: /^\.\.?\/.*\.mjs$/}, args => {const path = resolve(dirname(args.importer), args.path).replace(/\.mjs$/, '.mts'); if (existsSync(path)) return {path};});
@@ -233,9 +233,11 @@ for (const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th
   const f=await fixture({selectedProduct:product,host:{games:[product.slice(0,-2)]}}).live([
     room({product,capacity:2,players:2,joinable:false,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
   const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});
-  assert.equal(n('.lobby-join').disabled,false);
+  const entry = '.lobby-join';
+  assert.equal(n(entry).disabled,false);
+
   if(product!=='th09mp')assert.equal(n('.lobby-join').textContent,t('en','multiplayer.joinSpectator'));
-  await click('.lobby-join');assert.equal(f.navigations.length,1);
+  await click(entry);assert.equal(f.navigations.length,1);
   const invite=owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j'));
   assert.equal(invite.g,product);assert.equal(invite.s,true);assert.equal(invite.a,'join');
   assert.equal(f.sessionWrites.some(write=>write[0]==='save'),false,'directory must not reserve a player seat');
@@ -262,12 +264,25 @@ for (const locale of ['zh-CN', 'en']) test(`Lobby real loading/live/empty/list c
   assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 0}));
   assert.equal(n('#connectionWarning').hidden, true); assert.equal(n('#membership').hidden, true);
   const doc = baselineDoc(locale);
-  for (const selector of ['.lobby-survey-notice', '.lobby-intro', '#listHead']) {
+  for (const selector of ['.lobby-survey-notice', '.lobby-intro']) {
     assert.deepEqual(normalize(n(selector)), normalize(n(selector, doc)), `Pinned DOM: ${selector}`);
   }
+  assert.deepEqual([...n('#listHead').children].map(cell => cell.textContent), [
+    t(locale, 'lobby.gameAndRoom'), t(locale, 'lobby.difficulty'), locale === 'en' ? 'Rules' : '玩法',
+    '', t(locale, 'lobby.capacity'), t(locale, 'lobby.state'), '',
+  ]);
   await click('#emptyAction'); await click('#createButton'); await click('#codeButton'); assert.deepEqual(opens, ['create', 'create', 'join']);
   assert.equal(n('#refreshRooms').getAttribute('aria-label'), t(locale, 'lobby.refresh'));
   await f.receive([room()], {total: 45}); assert.equal(n('#listHead').hidden, false); assert.equal(env.document.querySelector('#emptyState'), null);
+  const rowBeforeSwitch = n('#roomList .lobby-room-row');
+  assert.ok(n('.book-directory').classList.contains('book-rooms-cards'));
+  await click('.book-room-view-toggle button:last-child');
+  assert.equal(n('#listHead').hidden, false);
+  assert.ok(n('.book-directory').classList.contains('book-rooms-list'));
+  assert.equal(n('#roomList .lobby-room-row'), rowBeforeSwitch, 'display changes preserve room identity');
+  assert.equal(JSON.parse(env.window.localStorage.getItem('eagler.book.lobby-room-view')), 'list');
+  await click('.book-room-view-toggle button:first-child');
+  assert.equal(n('#listHead').hidden, false);
   assert.equal(n('#connectionNote').hidden, false); assert.equal(n('#connectionNote').textContent, t(locale, 'lobby.truncated', {count: 1}));
   assert.equal(n('#roomCount').getAttribute('aria-live'), 'polite'); assert.equal(n('#roomCount').textContent, t(locale, 'lobby.roomCount', {count: 1}));
   await click('#refreshRooms'); assert.equal(n('#roomList').getAttribute('aria-busy'), 'true'); assert.equal(n('#listHead').hidden, true);
@@ -453,17 +468,12 @@ for (const locale of ['zh-CN','en']) for (const product of ['th06mp','th09mp']) 
   for(const [phase,players,key] of [['lobby',1,'lobby.recruiting'],['lobby',2,'lobby.roomFull'],['playing',2,null],['lobby',1,'lobby.recruiting']]){
     await f.receive([room({product,capacity:2,players,phase,startedAt:Date.now()-65000,seats:players===1?seats:[seats[0],{initial:'B',online:true,ready:false}]})]);
     await m.update({snapshot:f.service.getSnapshot()});
-    if(product==='th09mp'){
-      const text=n('.th09-room-duration').textContent;
-      assert.equal(env.document.querySelector('.lobby-room-state'),null,'state has one display location');
-      if(key)assert.equal(text,t(locale,key));else assert.equal(text,t(locale,'th09.elapsed',{minutes:0}));
-    }else{
+
       const state=phase==='playing'?'playing':players===2?'full':'recruiting';
       assert.equal(n('.lobby-room-state').textContent,t(locale,'lobby.'+state));
       assert.equal(!!env.document.querySelector('.room-elapsed'),phase==='playing');
       if(phase==='playing')assert.match(n('.room-elapsed').textContent,/1:0\d/);
       assert.equal(env.document.querySelector('.th09-room-duration'),null);
-    }
   }
 });
 
@@ -476,16 +486,16 @@ for (const locale of ['zh-CN', 'en']) test(`Every published multiplayer product 
     await rowsMount.update({snapshot: f.service.getSnapshot()});
     const snapshot = f.service.getSnapshot();
     const policy = owners.multiplayerConfigForProduct(product);
-    assert.equal(n('.lobby-difficulty').hidden, !!policy.inGameSelection);
+    assert.equal(n('.lobby-difficulty').hidden, false);
     if (policy.inGameSelection) {
-      assert.equal(n('.lobby-difficulty').textContent, '');
+      assert.equal(n('.lobby-difficulty').textContent, locale === 'en' ? 'In game' : '局内选择');
       assert.equal(all('.difficulty-label').length, 0);
     } else {
       assert.equal(n('.lobby-difficulty').textContent, policy.difficulties[snapshot.visibleRooms[0].difficulty]);
     }
     if (product === 'th09mp') {
-      assert.equal(n('.th09-room-score').textContent,'VS');
-      assert.equal(n('.th09-room-duration').textContent,t(locale,'lobby.recruiting'));
+      assert.equal(n('.book-room-score').textContent,'VS');
+
       assert.equal(all('.lobby-seat').length,2);
     } else {
       assert.equal(n('.lobby-room-code').textContent, '#' + snapshot.visibleRooms[0].code);
@@ -568,11 +578,58 @@ test('Unmount discards only its submitted receipt before a later dialog can clos
   f.service.formDidClose(); assert.equal(f.navigations.length, 0);
 });
 
+test('All multiplayer requests the unfiltered directory; multi-selection shows only checked games', async () => {
+  const f = await fixture({selectedProduct: ''}).live([
+    room({product: 'th06mp', code: '1234'}), room({product: 'th07mp', code: '2345'}), room({product: 'th08mp', code: '3456'}),
+  ]);
+  assert.equal(f.service.getSnapshot().selectedProduct, '');
+  assert.equal(f.service.getSnapshot().visibleRooms.length, 3);
+  const {m} = await mountLobby(f, {productFilters: ['th06mp', 'th08mp']});
+  assert.deepEqual(all('.lobby-room-row').map(n => n.dataset.key), ['th06mp-1234', 'th08mp-3456']);
+  await m.update({productFilters: []});
+  assert.equal(all('.lobby-room-row').length, 3);
+  await React.act(async () => f.service.selectProduct('th07mp'));
+  await f.receive([room({product: 'th07mp', code: '2345'})]);
+  await React.act(async () => f.service.selectProduct(''));
+  assert.equal(f.service.getSnapshot().selectedProduct, '');
+  await React.act(async () => f.service.refreshRooms());
+  assert.equal(f.socket.sent.at(-1).product, '');
+});
+
 for (const product of ['th06mp','th09mp']) test(`Approved public names remain complete in directory cards (${product})`,async()=>{
   const names=['完整公开昵称甲乙丙丁戊己','完整公开昵称'];
   const f=await fixture({selectedProduct:product}).live([room({product,publicNames:true,capacity:2,seats:names.map(name=>({initial:name[0],name,online:true}))})]);
   const snapshot=f.service.getSnapshot();
   assert.deepEqual(snapshot.visibleRooms[0].seats.map(seat=>seat.name),names);
   await mount(owners.DirectoryRoomRows,{snapshot,service:f.service,assetUrl,initialRows:true});
-  assert.deepEqual(all(product==='th09mp'?'.th09-duel-name':'.lobby-seat-name').map(node=>node.textContent),names);
+  assert.deepEqual(all('.lobby-seat-name').map(node=>node.textContent),names);
+});
+
+test('Flower View keeps bilingual identity, score, time and one contextual entry', async () => {
+  const f = await fixture({selectedProduct:'th09mp',locale:'zh-CN'}).live([room({product:'th09mp',capacity:2,phase:'playing',players:2,joinable:false,seats:[{initial:'A',online:true,stats:{wins:3,losses:2,minutes:7}},{initial:'B',online:true,stats:{wins:5,losses:1,minutes:8}}]})]);
+  const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl},{locale:'zh-CN'});
+  assert.equal(n('.lobby-room-title h2').textContent,'東方花映塚');
+  assert.equal(n('.lobby-room-subtitle').textContent,'Phantasmagoria of Flower View');
+  assert.equal(n('.book-room-score').textContent,'3 : 5');
+  assert.equal(n('.room-elapsed').textContent,t('zh-CN','th09.elapsed',{minutes:8}));
+  assert.equal(n('.lobby-difficulty').textContent,'局内选择');
+  assert.equal(all('.lobby-room-row button').length,1);
+  assert.equal(n('.lobby-join').textContent,t('zh-CN','multiplayer.joinSpectator'));
+  await click('.lobby-join');
+  assert.equal(owners.decodeRoomInvite(new URL(f.navigations[0].url).searchParams.get('j')).s,true);
+  await m.unmount();
+});
+
+test('Directory rules column retains gameplay flags and the standard fallback', async () => {
+  const f=await fixture({locale:'zh-CN'}).live([room({disableCheatMovement:true,challengeMode:true})]);
+  const {m}=await mountLobby(f,{}, {locale:'zh-CN'});
+  await click('.book-room-view-toggle button:last-child');
+  assert.equal(all('#listHead>span').length,7);
+  assert.ok(n('#listHead').textContent.includes('玩法'));
+  assert.equal(n('.lobby-difficulty').dataset.difficulty,'normal');
+  assert.ok(n('.lobby-room-rules').textContent.includes(t('zh-CN','lobby.noCheat')));
+  assert.ok(n('.lobby-room-rules').textContent.includes(t('zh-CN','room.challengeMode')));
+  await f.receive([room()]);
+  assert.equal(n('.lobby-room-rules').textContent,'标准');
+  await click('.book-room-view-toggle button:first-child');
 });

@@ -134,6 +134,7 @@ const faqHtml = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0c">
+  <script>try{const theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark')document.documentElement.dataset.bookTheme=theme}catch{}</script>
   <title>常见问题 ~ EAGLER TOUHOU</title>
   <meta name="description" content="EAGLER TOUHOU 的浏览器兼容、操作说明、存档、作品支持和常见故障解答。">
   <link rel="icon" href="assets/favicon.ico" type="image/x-icon">

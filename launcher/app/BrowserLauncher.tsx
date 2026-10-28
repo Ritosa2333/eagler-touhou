@@ -29,6 +29,7 @@ import {Feedback} from './components/feedback/Feedback';
 import {useSurfaceNavigation} from './navigation/surface-navigation';
 import {launcherBaseUrl, routerDestination} from './navigation/addresses';
 import {useLocale} from './i18n';
+import {recordBookLaunch} from './components/launcher/book-preferences';
 import type {LobbySurfaceProps} from './components/launcher/LobbySurface';
 
 /** Created after hydration, so SPA prerender never touches storage/native APIs. */
@@ -46,6 +47,13 @@ function BrowserWorkspace({session}: {session: BrowserSession}) {
   const replayModel = session.getReplays();
   const replayFiles = useSyncExternalStore(replayModel?.subscribe ?? emptySubscribe, replayModel?.getSnapshot ?? noDiagnostics, replayModel?.getSnapshot ?? noDiagnostics);
   const replayWorkspace = !!replayFiles?.open;
+  const lastBookLaunch = useRef<unknown>(null);
+  useEffect(() => {
+    const runtime = state.runtime;
+    if (!runtime?.launched || runtime.spectator || replayWorkspace || lastBookLaunch.current === runtime.epoch) return;
+    lastBookLaunch.current = runtime.epoch;
+    if (runtime.game && runtime.runtimeVariant !== 'multiplayer') recordBookLaunch(runtime.game);
+  }, [state.runtime?.launched, state.runtime?.epoch, replayWorkspace]);
   const room = useSyncExternalStore(session.room.service.subscribe, session.room.service.getSnapshot, session.room.service.getSnapshot);
   const roomWorkspace = !!room.room && !replayWorkspace && (state.th09NetworkOverlayOpen || !state.roomPlayerExpanded && !session.nativeTouch.isFullscreen());
   const metadata = useSyncExternalStore(session.metadata.subscribe, session.metadata.getSnapshot, session.metadata.getSnapshot);
@@ -123,6 +131,8 @@ function Header({session, firstUse, notice, donationAvailable}: {
   const updatedAge = useSyncExternalStore(session.appShell.brandAge.subscribe, session.appShell.brandAge.getSnapshot, session.appShell.brandAge.getSnapshot);
   const [menuOpen, setMenuOpen] = useState(false), url = (path: string) => new URL(path, session.baseUrl).href;
   return <LauncherMasthead updatedAge={updatedAge} variant={navigation.context} assetUrl={url} launcherHref={url(locale === 'en' ? 'en.html' : './')}
+    replayActive={navigation.infoDialogOpen('replayDialog')}
+    onReplay={() => {const product = navigation.productId ?? session.settings.getSnapshot()?.context.productId ?? session.metadata.getSnapshot().products[0]; if (product) void session.openReplayViewer(product).catch(session.reportError);}}
     faqHref={url('faq.html')} aboutHref={url('about.html')} migrationPolicyKnown={metadata.siteManifest !== null} migrationHref={metadata.siteManifest && siteOriginMigrationAvailable(metadata.siteManifest, window.location.protocol) ? url('migrate.html') : undefined}
     menuOpen={menuOpen} onMenuOpenChange={setMenuOpen} lessMotion={prefs.lessMotion} onToggleMotion={session.preferences.toggleMotion}
     noticeEnabled={prefs.noticeEnabled} onToggleNotice={session.preferences.toggleNotice}
@@ -137,7 +147,13 @@ function ServerStatusNote({session}: {session: BrowserSession}) {
 function Footer({donationAvailable}: {donationAvailable: boolean}) {const navigation = useSurfaceNavigation(); return <SiteFooter donationAvailable={donationAvailable} onDonation={() => navigation.openInfoDialog('donationDialog')}/>;}
 function Directory({session, network, ...props}: LobbySurfaceProps & {session: BrowserSession; network: React.RefObject<NetworkDiagnosticsHandle | null>}) {
   const navigation = useSurfaceNavigation();
+  const location = useLocation();
   const directory = useSyncExternalStore(session.directory.subscribe, session.directory.getSnapshot, session.directory.getSnapshot);
+  const productFilters = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return [...new Set((params.get('game') || params.get('games') || '').split(','))]
+      .filter(id => isMultiplayerProductId(id) && (!directory.initialized || directory.products.includes(id)));
+  }, [location.search, directory.initialized, directory.products]);
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {if (active) session.directory.resumeView();});
@@ -150,8 +166,14 @@ function Directory({session, network, ...props}: LobbySurfaceProps & {session: B
     return () => {active = false; session.directory.pageHide(); window.removeEventListener('pagehide', pageHide); window.removeEventListener('pageshow', pageShow);
       window.removeEventListener('online', session.directory.online); window.removeEventListener('offline', session.directory.offline); document.removeEventListener('visibilitychange', visible); connection?.removeEventListener('change', session.directory.networkChanged);};
   }, [session]);
-  useEffect(() => {if (navigation.filterProductId && isMultiplayerProductId(navigation.filterProductId)) session.directory.selectProduct(navigation.filterProductId);}, [session, navigation.filterProductId]);
+  useEffect(() => {session.directory.selectProduct(productFilters.length === 1 ? productFilters[0] : '');}, [session, productFilters]);
   return <LobbyDirectoryView {...props} initialRows={document.documentElement.hasAttribute('data-lobby-boot')} service={session.directory} products={createLibraryProducts(directory.products, path => new URL(path, session.baseUrl).href, id => `?game=${id}`)}
+    productFilters={productFilters} onProductFiltersChange={ids => {
+      const next = new URL(window.location.href); next.searchParams.delete('game'); next.searchParams.delete('games');
+      if (ids.length === 1) next.searchParams.set('game', ids[0]);
+      else if (ids.length > 1) next.searchParams.set('games', ids.join(','));
+      navigation.navigateAddress(routerDestination(next.href, session.baseUrl));
+    }}
     assetUrl={path => new URL(path, session.baseUrl).href} onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
     onNetwork={() => {navigation.openInfoDialog('lobbyNetworkDialog'); void network.current?.run();}}
     onReplay={() => {void session.openReplayViewer(directory.selectedProduct || directory.products[0] || 'th06mp');}}

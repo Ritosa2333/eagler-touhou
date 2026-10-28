@@ -1,0 +1,54 @@
+/* Room surfaces follow the persisted Launcher theme, including body portals. */
+html[data-book-theme='light'] body.mp-room-active {
+  --room-bg:var(--book-bg)!important;--room-surface:var(--book-surface)!important;
+  --room-raised:var(--book-raised)!important;--room-tonal:var(--book-accent-soft)!important;
+  --room-text:var(--book-ink)!important;--room-muted:var(--book-muted)!important;
+  --room-line:var(--book-border)!important;--room-accent:var(--book-accent)!important;
+  color-scheme:light;
+}
+html[data-book-theme='light'] body.mp-room-active :is(#player.room-workspace,.room-action-menu,.mizuki-select-menu,.mp-settings-room-drawer,.informational-dialog,.input-settings-dialog,.decision-dialog,.game-data-import-window,.game-data-link-window,.transfer) {
+  --ink:var(--book-bg);--paper:var(--book-ink);--panel:var(--book-surface);
+  --muted:var(--book-muted);--line:var(--book-border);--red:var(--book-accent);--red-bright:var(--book-accent);
+}
+html[data-book-theme='light'] #player.room-workspace :is(.room-workspace-sidebar,.room-workspace-spectators) {background:var(--book-surface)}
+html[data-book-theme='light'] #player.room-workspace :is(.room-quick-chat-trigger,.room-spectator-preview-avatar,.room-spectator-preview-join,.mizuki-select-trigger,.mp-room-choice-group) {background:var(--book-raised);color:var(--book-ink)}
+html[data-book-theme='light'] #player.room-workspace .room-workspace-preparation {background:var(--book-bg);color:var(--book-ink)}
+html[data-book-theme='light'] #player.room-workspace .room-workspace-fullscreen {background:var(--book-surface);color:var(--book-ink)}
+html[data-book-theme='light'] #player.room-workspace :is(.room-setting-description,.mp-room-delay-hint) {color:var(--book-muted)!important}
+html[data-book-theme='light'] #mpRoomView.room-workspace-view .mp-room-panel {--room-raised:var(--book-raised);--room-tonal:var(--book-accent-soft)}
+html[data-book-theme='light'] #player.room-workspace .room-workspace-actions {background:color-mix(in srgb,var(--book-bg) 94%,transparent)}
+html[data-book-theme='light'] #mpRoomView.room-workspace-view .room-workspace-actions button {color:var(--book-on-accent)!important}
+html[data-book-theme='light'] #mpRoomView.room-workspace-view .room-workspace-actions button:disabled {background:var(--book-raised)!important;color:var(--book-muted)!important}
+html[data-book-theme='light'] #mpRoomView :is(.mp-spectator-join,.option-switch.on i) {color:var(--book-on-accent);background:var(--book-accent)}
+html[data-book-theme='light'] #mpRoomView.room-workspace-view .option-switch.on i {background:var(--book-on-accent)!important}
+html[data-book-theme='light'] #player.room-workspace .room-workspace-roster .mp-seat[data-card-state=empty] {background:var(--book-raised)!important}
+/* Saturated seat cards keep a light foreground for every preparation state. */
+html[data-book-theme='light'] #player.room-workspace .room-workspace-roster .mp-seat:not([data-card-state=empty]) {--paper:#fff6ed;--muted:#fff6edb3;--room-text:#fff6ed;--room-muted:#fff6edb3;--ink:#141413}
+html[data-book-theme='light'] #player.room-workspace .room-spectator-preview-avatar.mine {border-color:#41794a}
+html[data-book-theme='light'] #mpRoomView .room-challenge-on {color:#8a561e}
+html[data-book-theme='light'] #mpRoomView .mp-resource-row[data-resource-stage=package] .mp-room-resource-track>span,
+html[data-book-theme='light'] #mpRoomView .mp-seat-resource[data-status=ready] .mp-room-resource-track>span {background:#41794a!important}
+html[data-book-theme='light'] body.mp-room-active :is(.room-action-menu,.mizuki-select-menu,.mp-settings-room-drawer) {background:var(--book-surface);color:var(--book-ink);border-color:var(--book-border);box-shadow:var(--book-shadow)}
+html[data-book-theme='light'] body.mp-room-active .room-action-menu button[data-danger=true] {color:var(--book-accent)}
+html[data-book-theme='light'] body.mp-room-active .room-action-menu button:is(:hover,:focus-visible) {background:var(--book-accent-soft);outline-color:var(--book-accent)}
+html[data-book-theme='light'] body.mp-room-active .mizuki-select-item {color:var(--book-ink);background:transparent}
+html[data-book-theme='light'] body.mp-room-active .mizuki-select-item:is(:hover,[aria-selected=true]) {background:var(--book-accent-soft);color:var(--book-accent)}
+html[data-book-theme='light'] #mpRoomView .room-icon,
+html[data-book-theme='light'] #player.room-workspace .room-spectator-preview-trigger .room-icon {filter:brightness(0) opacity(.72)}
+html[data-book-theme='light'] .mp-settings-room-drawer .tools-head::after {background:linear-gradient(0deg,var(--book-surface),transparent)}
+html[data-book-theme='light'] .mp-settings-room-drawer :is(.tools-title,.tools-head h3,.option-row,.itemtop,.options-summary) {color:var(--book-ink)}
+html[data-book-theme='light'] .mp-settings-room-drawer :is(.options-group-head,.mobile-options-head,.item,.options-group) {border-color:var(--book-border);background:transparent}
+html[data-book-theme='light'] .mp-settings-room-drawer :is(.tiny,.option-note,.options-hint,.options-group small) {color:var(--book-muted)}
+html[data-book-theme='light'] .mp-settings-room-drawer .option-switch.on i {background:var(--book-on-accent)}
+html[data-book-theme='light'] body.mp-room-active :is(.informational-dialog,.input-settings-dialog,.decision-dialog,.game-data-import-window,.game-data-link-window) {background:var(--book-surface);color:var(--book-ink);border-color:var(--book-border)}
+html[data-book-theme='light'] body.mp-room-active :is(.informational-window,.decision-window,.input-config) {background:var(--book-surface);color:var(--book-ink)}
+html[data-book-theme='light'] body.mp-room-active :is(.decision-window,.informational-window,.input-settings-dialog) button {background:var(--book-raised);color:var(--book-ink);border-color:var(--book-border)}
+html[data-book-theme='light'] body.mp-room-active :is(.decision-confirm,.room-resource-reload-confirm) {background:var(--book-accent);color:var(--book-on-accent)}
+html[data-book-theme='light'] body.mp-room-active .transfer {background:var(--book-surface);color:var(--book-ink);border-color:var(--book-border)}
+html[data-book-theme='light'] body.mp-room-active .transfer :is(strong,#transferAmount) {color:var(--book-ink)}
+html[data-book-theme='light'] body.mp-room-active .transfer-line {color:var(--book-muted)}
+html[data-book-theme='light'] #mpRoomView .mp-room-head h2 {color:var(--book-ink);text-shadow:none}
+html[data-book-theme='light'] #mpRoomView .mp-room-choice-group button.selected {color:var(--book-on-accent)!important}
+html[data-book-theme='light'] #mpRoomView .mp-spectator-join {color:var(--book-on-accent)!important}
+html[data-book-theme='light'] .mp-settings-room-drawer .launch:not(.launch-secondary) {color:var(--book-on-accent)}
+html[data-book-theme='light'] .mp-settings-room-drawer .mp-settings-room-content {scrollbar-color:var(--book-border) transparent}

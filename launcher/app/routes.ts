@@ -5,6 +5,7 @@ export default [
   index('routes/surface.tsx', {id: 'library'}),
   route('index.html', 'routes/surface.tsx', {id: 'library-html'}),
   route('en.html', 'routes/surface.tsx', {id: 'library-en'}),
+  route('profile.html', 'routes/surface.tsx', {id: 'profile'}),
   route('lobby.html', 'routes/surface.tsx', {id: 'directory-html'}),
   route('lobby', 'routes/surface.tsx', {id: 'directory'}),
 ] satisfies RouteConfig;

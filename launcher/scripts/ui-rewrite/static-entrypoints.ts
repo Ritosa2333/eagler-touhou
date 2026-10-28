@@ -1,10 +1,10 @@
 import {readFile, readdir, rename, rmdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 
-/** RR prerenders /en.html as en.html/index.html. Preserve the original static
- * .html addresses without requiring server-side rendering or broad rewrites. */
+/** RR prerenders the flat launcher document addresses as directories. Preserve
+ * those original .html addresses without broad server rewrites. */
 export async function finalizeOriginalEntrypoints(clientDirectory: string, mountPath = '/') {
-  for (const filename of ['en.html', 'lobby.html']) {
+  for (const filename of ['en.html', 'lobby.html', 'profile.html']) {
     // Supported basename prerenders include the mount in their output path.
     // Flatten the file in the mount-local publication without changing HTML.
     const directory = resolve(clientDirectory, '.' + mountPath, filename), source = resolve(directory, 'index.html');

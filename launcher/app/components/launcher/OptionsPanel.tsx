@@ -9,6 +9,7 @@ import {useRoomSettingsRelocation} from './use-room-settings-relocation';
 
 export interface OptionsPanelProps {
   product: LibraryProduct;
+  coverArtwork?: string | null;
   open: boolean;
   onBack: () => void;
   children: ReactNode;
@@ -24,7 +25,7 @@ export interface OptionsPanelProps {
   assetUrl: (path: string) => string;
 }
 /** Main index.html354–365 shell; body is the shared SettingsBody, never a copy. */
-export function OptionsPanel({product, open, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics, assetUrl}: OptionsPanelProps) {
+export function OptionsPanel({product, coverArtwork, open, onBack, children, actions, lobbyHref, embeddedInLobby = false, roomDrawer = false, multiplayerOnline, multiplayerDiagnostics, assetUrl}: OptionsPanelProps) {
   const {t} = useLocale();
   const panel = useRef<HTMLElement>(null); useOptionsViewport(panel); useOptionsInteractions(panel, open, onBack);
   const panelTarget = useOptionsTarget('panel', panel);
@@ -34,7 +35,7 @@ export function OptionsPanel({product, open, onBack, children, actions, lobbyHre
   const productLobbyHref = lobbyHref ? lobbyHrefForProduct(lobbyHref, product.id) : undefined;
   return <aside ref={panelTarget} className={`tools${open ? ' is-open' : ''}${product.multiplayer ? ' mp-mode' : ''}`} role={open ? "dialog" : "complementary"} aria-labelledby="gameTitle" aria-modal={open} aria-hidden={!open}>
     <div className="tools-head">
-      <img className="options-cover" id="optionsCover" src={product.artwork ?? undefined} hidden={!product.artwork} alt="" decoding="async"/>
+      <img className="options-cover" id="optionsCover" src={coverArtwork ?? product.artwork ?? undefined} hidden={!(coverArtwork ?? product.artwork)} alt="" decoding="async"/>
       <button className="library-back" id="libraryBack" type="button" aria-label={t(roomDrawer || embeddedInLobby ? 'settings.drawerClose' : 'library.back')} onClick={onBack}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h18"/></svg></button>
       <div className="tools-title"><div className="game-id visually-hidden" id="gameId" data-game={product.gameId}>{product.gameId.toUpperCase()}{product.multiplayer ? ' MP' : ''}</div><h3 className="visually-hidden" id="gameTitle">{product.title}</h3><span className="options-number" id="optionsNumber" aria-hidden="true">{product.number}</span><div className="options-subtitle-line"><span className="options-subtitle" id="optionsSubtitle">{product.subtitle}</span><span className="mp-title-badge" id="mpTitleBadge" hidden={!product.multiplayer}>MULTIPLAYER</span></div></div>
     </div>

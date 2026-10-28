@@ -57,6 +57,7 @@ const directoryFormKey = 'launcherDirectoryForm';
 const roomPanelKey = 'launcherRoomPanel';
 const roomSettingsKey = 'launcherRoomSettings';
 const roomProductKey = 'launcherRoomProductSelection';
+const directoryFiltersKey = 'launcherRoomDirectoryFilters';
 const hiddenSelectionKey = 'launcherClosedPlayerSelection';
 const gameEntryKey = 'launcherGameEntry';
 const roomFullscreenKey = 'launcherRoomFullscreen';
@@ -153,8 +154,18 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     const source = currentLocation.current;
     const next = typeof to === 'string' ? new URL(to, new URL(href(source), 'https://launcher.invalid'))
       : {pathname: to.pathname ?? source.pathname, search: to.search ?? '', hash: to.hash ?? ''};
-    const record = nextPageHistory(readPageHistory(source.state), pageOf({pathname: next.pathname, search: next.search, hash: next.hash, state: options?.state}), options?.replace === true);
-    return routerNavigate(to, {...options, state: {...plainState(options?.state), [PAGE_HISTORY_KEY]: record}});
+    const nextPage = pageOf({pathname: next.pathname, search: next.search, hash: next.hash, state: options?.state});
+    const state = plainState(options?.state);
+    if (nextPage === 'room') {
+      if (readSurface(source).context === 'lobby') {
+        const params = new URLSearchParams(source.search);
+        state[directoryFiltersKey] = [...new Set((params.get('game') || params.get('games') || '').split(','))].filter(isMultiplayerProductId);
+      } else if (pageOf(source) === 'room' && directoryFiltersKey in plainState(source.state)) {
+        state[directoryFiltersKey] = plainState(source.state)[directoryFiltersKey];
+      }
+    }
+    const record = nextPageHistory(readPageHistory(source.state), nextPage, options?.replace === true);
+    return routerNavigate(to, {...options, state: {...state, [PAGE_HISTORY_KEY]: record}});
   }, [routerNavigate]);
   const seeded = useRef(false);
   const navigationType = useNavigationType();
@@ -680,7 +691,7 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
   }
   function setLocaleAddress(locale: UiLocale) {
     const base = new URL(href(location), 'https://launcher.invalid');
-    const destination = new URL(address.context === 'lobby' ? 'lobby.html' : locale === 'en' ? 'en.html' : './', base);
+    const destination = new URL(/\/profile\.html\/?$/.test(location.pathname) ? 'profile.html' : address.context === 'lobby' ? 'lobby.html' : locale === 'en' ? 'en.html' : './', base);
     const next = {pathname: destination.pathname, search: location.search, hash: location.hash};
     const state = plainState(location.state);
     // main keeps history.state through locale replacement. Our href checks are
@@ -787,7 +798,18 @@ export function SurfaceNavigationProvider({dirty, isEditing, onDiscard, decision
     // finish a departure whose membership has already been cleared.
     if (blocker.state === 'blocked') blocker.reset();
     roomPolicyNavigation.current = true;
-    try {void navigate(pageAddress(location, 'directory', input.product, locale), {replace: true, state: {}});}
+    try {
+      const destination = pageAddress(location, 'directory', input.product, locale);
+      const filters = plainState(location.state)[directoryFiltersKey];
+      if (Array.isArray(filters) && filters.every(isMultiplayerProductId)) {
+        const params = new URLSearchParams(destination.search);
+        params.delete('game'); params.delete('games');
+        if (filters.length === 1) params.set('game', filters[0]);
+        else if (filters.length > 1) params.set('games', filters.join(','));
+        destination.search = params.size ? `?${params}` : '';
+      }
+      void navigate(destination, {replace: true, state: {}});
+    }
     finally {roomPolicyNavigation.current = false;}
     return 'directory';
   }

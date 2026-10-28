@@ -60,7 +60,7 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
   if (appShell && validateReactAppShellDeployment(appShell).mountPath !== mountPath) throw new Error('React App Shell configuration does not match this mount');
   const shellFiles = [...new Set([...graph.shellFiles, ...additionalShellFiles])].sort();
   const hasModule = shellFiles.some(path => /^assets\/.+\.js$/.test(path));
-  if (!hasModule || ['index.html', 'en.html', 'lobby.html', 'about.html', 'faq.html', 'styles.css'].some(path => !shellFiles.includes(path))) throw new Error('Incomplete React App Shell graph');
+  if (!hasModule || ['index.html', 'en.html', 'lobby.html', 'profile.html', 'about.html', 'faq.html', 'styles.css'].some(path => !shellFiles.includes(path))) throw new Error('Incomplete React App Shell graph');
   for (const path of shellFiles) {
     if (!/^[A-Za-z0-9_.\/-]+$/.test(path) || path.split('/').some(part => !part || part.startsWith('.')) || path.startsWith('/') ||
       /^(?:runtime\/|legacy\/|docs\/|src\/|app\/|tests\/|tools\/|package\/|assets\/(?:launcher|contracts)\/)/.test(path) ||
@@ -68,7 +68,7 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
     const info = await stat(resolve(clientDirectory, path));
     if (!info.isFile() || info.size === 0) throw new Error(`React App Shell input is empty or missing: ${path}`);
   }
-  for (const file of ['index.html', 'en.html', 'lobby.html']) {
+  for (const file of ['index.html', 'en.html', 'lobby.html', 'profile.html']) {
     const nodes = elements(await readFile(resolve(clientDirectory, file), 'utf8'));
     const metadata = nodes.filter(node => node.tagName === 'meta' && node.attrs.some(attr => attr.name === 'name' && attr.value === REACT_APP_SHELL_META));
     if (metadata.length !== (appShell ? 1 : 0) || appShell && metadata[0].attrs.find(attr => attr.name === 'content')?.value !== JSON.stringify(appShell)) throw new Error(`React App Shell metadata mismatch: ${file}`);

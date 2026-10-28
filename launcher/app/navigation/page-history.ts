@@ -2,10 +2,10 @@ import {isProductId, isMultiplayerProductId, type ProductId} from '../../src/con
 import {launcherBaseUrl} from './addresses';
 import {resolveRoomInvite, normalizeRoomCode, launcherHomeHistoryOperation, PLAYER_HISTORY_KEY, MP_ROOM_HISTORY_KEY, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY} from '../../src/launcher/route-state.mts';
 
-export type Page = 'launcher' | 'directory' | 'single-options' | 'multi-options' | 'room';
+export type Page = 'launcher' | 'profile' | 'directory' | 'single-options' | 'multi-options' | 'room';
 export const PAGE_HISTORY_KEY = 'launcherPageHistory';
 export const PAGE_PARENTS: Readonly<Record<Page, Page | null>> = Object.freeze({
-  launcher: null, directory: 'launcher', 'single-options': 'launcher', 'multi-options': 'directory', room: 'directory',
+  launcher: null, profile: 'launcher', directory: 'launcher', 'single-options': 'launcher', 'multi-options': 'directory', room: 'directory',
 });
 export interface PageHistory {version: 1; position: number; page: Page; pagePosition: number; ancestors: Partial<Record<Page, number>>}
 export interface PageLocation {pathname: string; search: string; hash: string; state?: unknown}
@@ -22,6 +22,7 @@ export function readPageHistory(state: unknown): PageHistory | null {
   return entry as unknown as PageHistory;
 }
 export function pageOf(location: PageLocation): Page {
+  if (/\/profile\.html\/?$/.test(location.pathname)) return 'profile';
   const state = object(location.state), options = object(state.launcherSurfaceEntry);
   if (state.launcherClosedPlayerSelection) return 'launcher';
   if (/\/(?:lobby|lobby\.html)\/?$/.test(location.pathname)) return options.surface === 'options' ? 'multi-options' : 'directory';
@@ -32,6 +33,7 @@ export function pageOf(location: PageLocation): Page {
 export function pageAddress(location: PageLocation, page: Page, product?: ProductId | null, locale?: string): PageLocation {
   const home = new URL(launcherHomeHistoryOperation({currentUrl: new URL(location.pathname + location.search + location.hash, 'https://launcher.invalid'), currentState: {}}).url);
   home.pathname = new URL(locale === 'en' || (!locale && /\/en\.html\/?$/.test(location.pathname)) ? 'en.html' : './', launcherBaseUrl(home.href)).pathname;
+  if (page === 'profile') home.pathname = new URL('profile.html', home).pathname;
   if (page === 'directory') {
     home.pathname = new URL('lobby.html', home).pathname;
     if (product && isMultiplayerProductId(product)) home.searchParams.set('game', product);
@@ -52,7 +54,7 @@ export function parentDistance(current: PageHistory | null): number | null {
 }
 export function initialPageChain(location: PageLocation, product?: ProductId | null, locale?: string): Array<PageLocation & {state: Record<string, unknown>}> {
   const leaf = pageOf(location), pages: Page[] = leaf === 'launcher' ? [leaf]
-    : leaf === 'directory' || leaf === 'single-options' ? ['launcher', leaf] : ['launcher', 'directory', leaf];
+    : leaf === 'profile' || leaf === 'directory' || leaf === 'single-options' ? ['launcher', leaf] : ['launcher', 'directory', leaf];
   const parentState = {...object(location.state)};
   for (const key of [PAGE_HISTORY_KEY, PLAYER_HISTORY_KEY, MP_ROOM_HISTORY_KEY, MP_PANEL_HISTORY_KEY, MP_SETTINGS_HISTORY_KEY,
     'launcherSurfaceEntry', 'launcherTouchEntry', 'launcherInformationDialogs', 'launcherDirectoryForm', 'launcherRoomPanel',

@@ -136,7 +136,7 @@ body:has(#player.room-workspace) .settings-room-backdrop{z-index:229}
 #mpRoomView.room-workspace-view .mp-rollback-toggle i:after{transform:none}
 #mpRoomView.room-workspace-view .mp-rollback-toggle[aria-checked=true] i:after{left:24px;transform:none;background:var(--paper)}
 #mpRoomView.room-workspace-view .mp-room-delay{display:flex!important;align-items:center;justify-content:flex-start!important;gap:12px;margin-top:12px}
-#mpRoomView.room-workspace-view .mp-delay-stepper{display:inline-flex!important;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#242422}
+#mpRoomView.room-workspace-view .mp-delay-stepper{display:inline-flex!important;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--room-raised)}
 #mpRoomView.room-workspace-view .mp-delay-stepper button{border:0!important;min-height:38px!important;width:40px;padding:6px!important;background:transparent!important;color:var(--paper);font:600 15px var(--ui-font)}
 #mpRoomView.room-workspace-view .mp-room-delay{gap:8px;flex-wrap:nowrap}
 #mpRoomView.room-workspace-view .mp-room-delay>span{font-size:13px;white-space:nowrap}

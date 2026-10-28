@@ -10,6 +10,7 @@
 @keyframes launcher-page-in{from{opacity:0}}
 /* Shared shell rules also reach the standalone About and FAQ pages. */
 .sheet,.lobby-main,.about-page,html body.mp-room-active #mpRoomView.mp-room-view,body.mp-room-returning .sheet{animation:launcher-page-in var(--launcher-page-duration) ease-out both}
+html[data-launcher-client-navigation='true'] :is(.sheet,.lobby-main,.about-page,#mpRoomView){animation:none!important}
 :is(html:has([data-route-preload]:not(.is-done)),html[data-original-entry="library"]:has(#eaglerPreload:not(.is-done)),html[data-original-entry="lobby"]:has(#lobbyPreload:not(.is-done))) :is(.sheet,.lobby-main){animation:none}
 :is(#eaglerPreload,#lobbyPreload){transition:opacity var(--launcher-page-duration) ease-out}
 @supports selector(html:active-view-transition){html:active-view-transition :is(.sheet,.lobby-main,.about-page,#mpRoomView){animation:none!important}}

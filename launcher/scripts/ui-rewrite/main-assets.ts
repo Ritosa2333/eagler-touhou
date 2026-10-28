@@ -67,7 +67,7 @@ export function mainAssets(): Plugin {
       mkdirSync(output, {recursive: true});
       // Consume the same public-file contract as main. Route documents and
       // generated CSS belong to their respective builders, not raw copying.
-      const generated = new Set(['index.html', 'en.html', 'lobby.html', 'styles.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js']);
+      const generated = new Set(['index.html', 'en.html', 'lobby.html', 'profile.html', 'styles.css', 'features.css', 'touch-guide.css', 'runtime-program-sw.js']);
       for (const path of STATIC_FRONTEND_PACKAGE_FILES) {
         if (generated.has(path) || path.startsWith('legacy/')) continue;
         const source = resolvePublicOrRepositorySource(path);

@@ -7,6 +7,7 @@ import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {installMountedDom} from './mounted-dom-environment.mjs';
+import {authoredSourcesPlugin} from './authored-sources.mjs';
 const here=dirname(fileURLToPath(import.meta.url)),project=resolve(here,'../..'),require=createRequire(resolve(project,'package.json'));
 let env,React,createRoot,owners,buildDirectory,root;
 before(async()=>{
@@ -21,7 +22,7 @@ before(async()=>{
  export * from './app/components/room/MultiplayerOnlineFold.tsx';
  export * from './app/i18n.tsx';
  export {MemoryRouter,useLocation} from 'react-router';
- `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
+ `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'bundle.mjs'),logLevel:'silent',plugins:[authoredSourcesPlugin(project),{name:'dependencies',setup(ctx){ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});}}]});
  owners=await import(pathToFileURL(resolve(buildDirectory,'bundle.mjs')));
 });
 afterEach(async()=>{if(root)await React.act(async()=>root.unmount());root=null;env.document.body.replaceChildren();assert.deepEqual(env.errors.splice(0),[]);});
@@ -65,3 +66,17 @@ test('Lobby launcher back keeps original anchor and uses Router, standalone docs
 test('Lobby masthead close closes actual detached custom-select menu',async()=>{await mount(el(Masthead));await click('#mastheadMenuToggle');await click('.mizuki-select-trigger');assert.equal(n('.mizuki-select-menu').hidden,false);await click('#mastheadMenuToggle');assert.equal(n('.mizuki-select-menu').hidden,true);assert.equal(n('#mastheadMenuPanel').hasAttribute('inert'),true);});
 test('Lobby custom-select item click does not count as masthead outside click',async()=>{await mount(el(Masthead));await click('#mastheadMenuToggle');await click('.mizuki-select-trigger');await click('.mizuki-select-item');assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'true');});
 test('Lobby Escape closes menu and restores original toggle focus',async()=>{await mount(el(Masthead));await click('#mastheadMenuToggle');const event=new env.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true});await React.act(async()=>n('#mastheadMenuPanel').dispatchEvent(event));assert.equal(event.defaultPrevented,true);assert.equal(n('#mastheadMenuToggle').getAttribute('aria-expanded'),'false');assert.equal(env.document.activeElement,n('#mastheadMenuToggle'));});
+
+test('GitHub and donation are the final two menu entries', async () => {
+  await mount(el(Masthead));
+  const items = [...n('#mastheadMenuPanel').children].filter(item => item.classList.contains('masthead-menu-item'));
+  assert.equal(items.at(-2).textContent, 'GitHub');
+  assert.equal(items.at(-1).classList.contains('book-menu-donation'), true);
+});
+
+test('avatar navigates to the profile address and selects only the profile destination', async () => {
+  await mount(el(Masthead)); await click('.book-profile-trigger');
+  assert.equal(n('#address').textContent, '/profile.html');
+  assert.equal(n('.book-profile-trigger').getAttribute('aria-current'), 'page');
+  assert.equal(env.document.querySelectorAll('.book-main-nav [aria-current]').length, 0);
+});

@@ -13,8 +13,8 @@ import {
   type LobbyDirectoryService,
 } from '../../services/lobby-directory';
 import { useLocale } from '../../i18n';
-import { Th09RoomCard } from './Th09RoomCard';
 import { RoomElapsed } from '../room/RoomElapsed';
+import {bookGameArtwork} from '../launcher/book-artwork';
 
 export interface DirectoryRoomRowsProps {
   snapshot: DirectorySnapshot;
@@ -62,9 +62,11 @@ function RoomRow({
     initiallyHiddenMotion = useRef(initial).current;
   const [coverFailed, setCoverFailed] = useState(false);
   const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
-  const artwork = 'cardArtwork' in meta ? meta.cardArtwork : null;
+  const artwork = bookGameArtwork(gameIdForProduct(room.product)) ?? ('cardArtwork' in meta && meta.cardArtwork ? assetUrl(`assets/${meta.cardArtwork}`) : undefined);
   const title = locale === 'en' ? meta.subtitle : meta.title;
   const policy = multiplayerConfigForProduct(room.product)!;
+  const duel = room.product === 'th09mp';
+  const minutes = Math.max(...room.seats.map(seat => seat?.stats?.minutes ?? 0), 0);
   const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const spectating = directoryRoomSpectatorEntry(room);
@@ -74,20 +76,6 @@ function RoomRow({
     !!snapshot.mine ||
     snapshot.leaving ||
     !directoryRoomCanEnter(room);
-  if (room.product === 'th09mp')
-    return (
-      <Th09RoomCard
-        room={room}
-        difficulty={difficulty}
-        state={state}
-        spectating={spectating}
-        disabled={disabled}
-        initial={initiallyHiddenMotion}
-        assetUrl={assetUrl}
-        conflict={!!snapshot.mine}
-        onJoin={() => service.joinRoom(room.product, room.code)}
-      />
-    );
   return (
     <article
       className={`lobby-room-row${initiallyHiddenMotion ? ' lobby-room-initial' : ''}`}
@@ -97,7 +85,7 @@ function RoomRow({
       <div className="lobby-room-identity">
         <span className="lobby-cover" aria-hidden="true">
           <img
-            src={artwork ? assetUrl(`assets/${artwork}`) : undefined}
+            src={artwork}
             alt=""
             loading="lazy"
             decoding="async"
@@ -110,7 +98,7 @@ function RoomRow({
           <span className="lobby-room-code">#{room.code}</span>
           <h2>{title}</h2>
           <span className="lobby-room-subtitle">{meta.subtitle}</span>
-          <span className="lobby-mobile-difficulty" hidden={!difficulty}>{difficulty}</span>
+          <span className="lobby-mobile-difficulty" data-difficulty={difficulty.toLowerCase()} hidden={!difficulty}>{difficulty}</span>
           <span className="lobby-movement-rule" hidden={!room.disableCheatMovement}>
             {t('lobby.noCheat')}
           </span>
@@ -126,10 +114,16 @@ function RoomRow({
               <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
               <RoomElapsed phase={room.phase} startedAt={room.startedAt}/>
             </>}
+            {duel && room.phase !== 'lobby' && !room.startedAt && <span className="room-elapsed">{t('th09.elapsed', {minutes})}</span>}
           </div>
         </div>
       </div>
-      <span className="lobby-difficulty" hidden={!difficulty}>{difficulty}</span>
+      <span className="lobby-difficulty" data-difficulty={difficulty.toLowerCase()} hidden={!difficulty && !duel}>{difficulty || (locale === 'en' ? 'In game' : '局内选择')}</span>
+      <div className="lobby-room-rules" aria-label={locale === 'en' ? 'Rules' : '玩法'}>
+        {room.disableCheatMovement && <span>{t('lobby.noCheat')}</span>}
+        {room.challengeMode && <span>{t('room.challengeMode')}</span>}
+        {!room.disableCheatMovement && !room.challengeMode && <span className="lobby-rule-default">{locale === 'en' ? 'Standard' : '标准'}</span>}
+      </div>
       <div className="lobby-party" aria-label={count}>
         <span className="lobby-occupancy">{count}</span>
         <div
@@ -167,9 +161,13 @@ function RoomRow({
                 {seat?.name === undefined && controlCaption}
               </span>
             );
-            return seat?.name !== undefined ? <span key={index} className="lobby-public-player">
-              {avatar}{controlCaption}<strong className="lobby-seat-name" title={seat.name || `P${index+1}`}>{seat.name || `P${index+1}`}</strong>
-            </span> : <Fragment key={index}>{avatar}</Fragment>;
+            const name = seat?.name ?? (duel ? seat?.machineSign : undefined);
+            return <Fragment key={index}>
+              {duel && index === 1 && <strong className="book-room-score" aria-label={t('th09.score')}>{room.seats[0] && room.seats[1] ? `${room.seats[0].stats?.wins ?? 0} : ${room.seats[1].stats?.wins ?? 0}` : 'VS'}</strong>}
+              {name !== undefined ? <span className="lobby-public-player">
+                {avatar}{controlCaption}<strong className="lobby-seat-name" title={name}>{/^P[12]$/.test(name) ? '' : name}</strong>
+              </span> : avatar}
+            </Fragment>;
           })}
         </div>
       </div>

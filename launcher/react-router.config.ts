@@ -11,7 +11,7 @@ export default {
   ssr: false,
   basename: deployment.mountPath,
   buildDirectory: deployment.outputDirectory,
-  prerender: ['/en.html', '/lobby.html'],
+  prerender: ['/en.html', '/lobby.html', '/profile.html'],
   async buildEnd({reactRouterConfig}) {
     const clientDirectory = resolve(reactRouterConfig.buildDirectory, 'client');
     await finalizeOriginalEntrypoints(clientDirectory, deployment.mountPath);

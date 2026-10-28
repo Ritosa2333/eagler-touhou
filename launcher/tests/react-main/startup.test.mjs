@@ -65,7 +65,7 @@ test('direct lobby entry returns to library without calling an absent library bo
   assert.deepEqual(f.events, ['directory', 'warning', 'warning-current:true', 'first-use', 'site']);
   assert.equal(env.document.documentElement.getAttribute('data-original-entry'), 'lobby');
   leaveLibrary(); f.owner.attach(f.ports); await tick();
-  assert.equal(f.events.filter(event => event === 'directory').length, 2, 'each lobby entry checks the reused directory before revealing it');
+  assert.equal(f.events.filter(event => event === 'directory').length, 1, 'warm lobby entry reuses the visible directory without a boot gate');
 });
 
 function installPageCues() {
@@ -76,39 +76,34 @@ function installPageCues() {
     <template data-surface-preload="lobby">${original.lobby.preload}</template></div><main class="lobby-main"></main>`;
 }
 
-test('SPA lobby entry keeps the authored page cue until directory and visual readiness without restarting cold boot', async () => {
+test('SPA lobby entry stays interactive without creating a loading cue', async () => {
   installPageCues(); const directory = deferred(), f = fixture({directory});
   const leaveLibrary = f.owner.attach(f.ports); await tick(); leaveLibrary();
   f.owner.attach({...f.ports, context: 'lobby', url: 'https://launcher.invalid/lobby.html'});
-  const preload = env.document.getElementById('lobbyPreload');
-  assert.equal(preload.dataset.routePreload, 'lobby');
-  assert.equal(preload.classList.contains('is-done'), false);
-  assert.equal(env.document.querySelector('.lobby-main').inert, true);
-  assert.equal(env.document.documentElement.getAttribute('data-original-entry'), 'library');
-  await tick(); f.raf(); f.raf(); assert.equal(preload.classList.contains('is-done'), false);
-  directory.resolve(); await tick(); f.timeout(160); f.raf(); f.raf();
-  assert.equal(preload.classList.contains('is-done'), true);
+  await tick();
+  assert.equal(env.document.getElementById('lobbyPreload'), null);
   assert.equal(env.document.querySelector('.lobby-main').inert, false);
   assert.equal(env.document.documentElement.hasAttribute('data-lobby-boot'), false);
-  f.timeout(200); assert.equal(preload.isConnected, false);
+  assert.equal(f.events.includes('directory'), false, 'warm navigation does not await the cold-entry directory gate');
+  directory.resolve(); await tick(); f.raf(); f.raf();
+  assert.equal(env.document.getElementById('lobbyPreload'), null);
   assert.equal(f.events.filter(event => event === 'ready').length, 1);
-  assert.equal(env.document.querySelectorAll('template[data-surface-preload]').length, 2);
 });
 
-test('superseded SPA preparation cannot retire the next page cue', async () => {
-  installPageCues(); const directory = deferred(), f = fixture({directory});
+test('rapid SPA navigation never clones a loading cue or restarts cold boot', async () => {
+  installPageCues(); const f = fixture();
   const leaveLibrary = f.owner.attach(f.ports); await tick(); leaveLibrary();
+  env.document.getElementById('eaglerPreload').remove();
   const leaveLobby = f.owner.attach({...f.ports, context: 'lobby', url: 'https://launcher.invalid/lobby.html'}); await tick(); leaveLobby();
-  f.owner.attach(f.ports); await tick();
-  const preload = env.document.getElementById('eaglerPreload');
-  assert.equal(preload.dataset.routePreload, 'library');
-  directory.resolve(); await tick();
-  assert.equal(preload.classList.contains('is-done'), false);
-  assert.equal(preload.isConnected, true);
-  f.timeout(160); f.raf(); f.raf();
-  assert.equal(preload.classList.contains('is-done'), true);
-  f.timeout(240); assert.equal(preload.isConnected, false);
+  f.owner.attach(f.ports); await tick(); f.raf(); f.raf();
+  assert.equal(env.document.querySelector('#eaglerPreload, #lobbyPreload, [data-route-preload]'), null);
+  assert.equal(env.document.querySelector('.lobby-main').inert, false);
   assert.equal(f.events.filter(event => event === 'ready').length, 1);
+});
+
+test('standalone profile route skips automatic launcher notices', async () => {
+  const f = fixture({path: '/profile.html'}); f.owner.attach(f.ports); await tick();
+  assert.deepEqual(f.events, ['ready']);
 });
 test('first-use shown suppresses site notice; no duplicate initialization after completed binding', async () => {
   const f = fixture({shown: true}); const detach = f.owner.attach(f.ports); await tick(); detach(); f.owner.attach(f.ports); await tick();
@@ -140,6 +135,7 @@ test('retired first-use load cannot revive site notice', async () => {
 });
 test('lobby waits for original render boundary, uses exact fonts, double RAF and200ms retirement', async () => {
   const directory = deferred(), f = fixture({path: '/lobby.html', directory});
+  env.document.documentElement.dataset.originalEntry = 'lobby';
   env.document.documentElement.dataset.lobbyBoot = 'loading'; env.document.body.innerHTML = '<main class="lobby-main" inert><img src="https://launcher.invalid/cover.webp"></main><div id="lobbyPreload"></div>';
   const main = env.document.querySelector('main'); main.inert = true;
   f.owner.attach(f.ports); await tick(); assert.equal(f.decoded.length, 1); assert.equal(f.frames.size, 0);
@@ -149,11 +145,12 @@ test('lobby waits for original render boundary, uses exact fonts, double RAF and
   assert.equal(env.document.getElementById('lobbyPreload').getAttribute('aria-hidden'), 'true'); f.timeout(200); assert.equal(env.document.getElementById('lobbyPreload'), null);
 });
 test('lobby3s timeout releases visual gate even with a never-resolving decode', async () => {
-  const decode = deferred(), f = fixture({path: '/lobby.html', decode}); env.document.body.innerHTML = '<main class="lobby-main"></main><div id="lobbyPreload"></div>';
+  const decode = deferred(), f = fixture({path: '/lobby.html', decode}); env.document.documentElement.dataset.originalEntry = 'lobby'; env.document.body.innerHTML = '<main class="lobby-main"></main><div id="lobbyPreload"></div>';
   f.owner.attach(f.ports); await tick(); assert.equal(f.frames.size, 0); f.timeout(3000); await tick(); f.raf(); f.raf(); assert.equal(env.document.getElementById('lobbyPreload').classList.contains('is-done'), true);
 });
 test('lobby cancelled gate cannot reveal a replacement binding', async () => {
-  const directory = deferred(), f = fixture({path: '/lobby.html', directory}); env.document.documentElement.dataset.lobbyBoot = 'loading';
+  const directory = deferred(), f = fixture({path: '/lobby.html', directory});
+  env.document.documentElement.dataset.originalEntry = 'lobby'; env.document.documentElement.dataset.lobbyBoot = 'loading';
   const detach = f.owner.attach(f.ports); await tick(); detach(); directory.resolve(); await tick(); f.raf(); f.raf(); assert.equal(env.document.documentElement.dataset.lobbyBoot, 'loading');
 });
 

@@ -8,6 +8,7 @@ import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
+import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
@@ -33,7 +34,7 @@ before(async () => {
     export {LocaleProvider} from './app/i18n.tsx';
     export {createLibraryProducts} from './app/components/launcher/products.ts';
   `}, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', outfile: output,
-  packages: 'external', logLevel: 'silent'});
+  packages: 'external', logLevel: 'silent', plugins: [authoredSourcesPlugin(project)]});
   owners = await import(pathToFileURL(output).href);
 });
 
@@ -144,8 +145,8 @@ function assertOpen(product = 'th06') {
   assert.equal(node('.tools').getAttribute('aria-hidden'), 'false');
   assert.equal(node('.tools').classList.contains('is-open'), true);
   assert.ok(node('.game-library').hasAttribute('inert'));
-  assert.equal(node('.game.selected').dataset.game, product);
-  assert.equal(node('.game.selected').getAttribute('aria-current'), 'page');
+  assert.equal(node(':is(.game.selected,.book-game-link[aria-current="page"])').dataset.game, product);
+  assert.equal(node(':is(.game.selected,.book-game-link[aria-current="page"])').getAttribute('aria-current'), 'page');
 }
 function assertClosed() {
   assert.equal(hasBodyClass('library-tools-open'), false);
@@ -155,13 +156,13 @@ function assertClosed() {
   assert.equal(node('.tools').getAttribute('aria-hidden'), 'true');
   assert.equal(node('.tools').classList.contains('is-open'), false);
   assert.equal(node('.game-library').hasAttribute('inert'), false);
-  assert.equal(env.document.querySelector('.game.selected'), null);
-  assert.equal(node('.game-th06').getAttribute('aria-current'), 'false');
+  assert.equal(env.document.querySelector(':is(.game.selected,.book-game-link[aria-current="page"])'), null);
+  assert.equal(node(':is(.game-th06,.book-game-link[data-game="th06"])').getAttribute('aria-current'), 'false');
 }
 
 test('mobile close retains exact panel/selection for 240 ms, closes detached menus, then restores focus', async () => {
   const {clock} = await mount();
-  const panel = node('.tools'), selected = node('.game.selected'), focusCalls = watchFocus(selected);
+  const panel = node('.tools'), selected = node(':is(.game.selected,.book-game-link[aria-current="page"])'), focusCalls = watchFocus(selected);
   const trigger = node('.mizuki-select-trigger');
   await React.act(async () => {trigger.click();});
   const menu = node('.mizuki-select-menu');
@@ -190,7 +191,7 @@ test('mobile close retains exact panel/selection for 240 ms, closes detached men
 for (const media of [{}, {mobile: false}, {reduced: true}, {lessMotion: true}, {mobile: false, coarse: true}]) {
   test(`directory native carrier follows the shared close deadline and keeps selected card focus ${JSON.stringify(media)}`, async () => {
     const {clock} = await mount({entry: '/lobby.html?game=th06', ...media});
-    const panel = node('.tools'), dialog = node('#lobbyOptionsDialog'), card = node('.game.selected');
+    const panel = node('.tools'), dialog = node('#lobbyOptionsDialog'), card = node(':is(.game.selected,.book-game-link[aria-current="page"])');
     assertOpen(); assert.equal(dialog.open, true);
     await React.act(async () => node('#libraryBack').click());
     assert.equal(mounted.router.state.location.pathname, '/lobby.html');
@@ -219,7 +220,7 @@ test('directory reopen cancels a shared exit without closing the retained native
 
 test('desktop close retains the established slide/fade for 520 ms before releasing selection and focus', async () => {
   const {clock} = await mount({mobile: false});
-  const selected = node('.game.selected'), focusCalls = watchFocus(selected);
+  const selected = node(':is(.game.selected,.book-game-link[aria-current="page"])'), focusCalls = watchFocus(selected);
   await navigate('/'); assertOpen(); assert.equal(hasBodyClass('library-tools-closing'), true);
   await clock.advance(519); assertOpen(); assert.deepEqual(focusCalls, []);
   await clock.advance(1); assertClosed(); assert.equal(env.document.activeElement, selected);
@@ -229,7 +230,7 @@ for (const [label, media] of [
   ['site less motion', {lessMotion: true}],
 ]) test(`${label}: close settles immediately with no exit timer`, async () => {
   const {clock} = await mount(media);
-  const selected = node('.game.selected'), focusCalls = watchFocus(selected);
+  const selected = node(':is(.game.selected,.book-game-link[aria-current="page"])'), focusCalls = watchFocus(selected);
   await navigate('/');
   assertClosed();
   assert.equal([...clock.tasks.values()].some(task => task.delay === 240), false);
@@ -250,7 +251,7 @@ for (const [label, media] of [['coarse pointer', {coarse: true}], ['no hover', {
 
 test('reopen cancels an old completion and retains the newly selected product', async () => {
   const {clock} = await mount();
-  const firstCard = node('.game.selected'), firstFocus = watchFocus(firstCard);
+  const firstCard = node(':is(.game.selected,.book-game-link[aria-current="page"])'), firstFocus = watchFocus(firstCard);
   await navigate('/');
   const oldCompletion = [...clock.tasks.values()].find(task => task.delay === 240);
   assert.ok(oldCompletion);
@@ -264,7 +265,7 @@ test('reopen cancels an old completion and retains the newly selected product', 
   await clock.advance(500);
   assertOpen('th07');
   assert.deepEqual(firstFocus, [], 'obsolete callback cannot focus the old selected card');
-  const nextCard = node('.game.selected'), nextFocus = watchFocus(nextCard);
+  const nextCard = node(':is(.game.selected,.book-game-link[aria-current="page"])'), nextFocus = watchFocus(nextCard);
   await navigate('/'); await clock.advance(240);
   assertClosed();
   assert.equal(env.document.activeElement, nextCard);
@@ -285,7 +286,7 @@ test('repeated closed Router updates do not restart the original deadline', asyn
 
 test('context switch retires a library exit without stealing focus in the lobby', async () => {
   const {clock} = await mount();
-  const oldCard = node('.game.selected'), focusCalls = watchFocus(oldCard);
+  const oldCard = node(':is(.game.selected,.book-game-link[aria-current="page"])'), focusCalls = watchFocus(oldCard);
   await navigate('/');
   const oldCompletion = [...clock.tasks.values()].find(task => task.delay === 240);
   await navigate('/lobby.html');
@@ -314,7 +315,7 @@ test('lobby route commits before the shared visual close retires its native carr
 test('StrictMode and unmount leave no timer, stale focus callback or body state', async () => {
   const {clock} = await mount({strict: true});
   assertOpen();
-  const selected = node('.game.selected'), focusCalls = watchFocus(selected);
+  const selected = node(':is(.game.selected,.book-game-link[aria-current="page"])'), focusCalls = watchFocus(selected);
   await navigate('/');
   assertOpen();
   const completion = [...clock.tasks.values()].find(task => task.delay === 240);
@@ -333,7 +334,7 @@ test('initial closed state never creates a selection or restores focus', async (
   assert.equal(observed.at(-1).open, false);
   assert.equal(hasBodyClass('library-tools-open'), false);
   assert.equal(hasBodyClass('library-tools-closing'), false);
-  assert.equal(env.document.querySelector('.game.selected'), null);
+  assert.equal(env.document.querySelector(':is(.game.selected,.book-game-link[aria-current="page"])'), null);
   assert.equal([...clock.tasks.values()].some(task => task.delay === 240), false);
 });
 
@@ -341,7 +342,7 @@ test('initial closed state never creates a selection or restores focus', async (
 // selection or move focus back into the library behind the Player.
 test('launched Player conceals retained Options without a close animation or card focus', async () => {
   const {clock} = await mount();
-  const panel = node('.tools'), selected = node('.game.selected'), focusCalls = watchFocus(selected);
+  const panel = node('.tools'), selected = node(':is(.game.selected,.book-game-link[aria-current="page"])'), focusCalls = watchFocus(selected);
   await navigate('/?game=th06#playing');
   assertClosed();
   assert.equal(node('.tools'), panel);
@@ -386,7 +387,7 @@ test('inactive retained carrier cannot capture active card return focus or entra
   let measurements = 0;
   decoy.querySelector('.tools').getBoundingClientRect = () => {measurements++; return new env.window.DOMRect();};
   const {clock} = await mount();
-  const active = env.document.querySelector('.sheet .game.selected');
+  const active = env.document.querySelector('.sheet :is(.game.selected,.book-game-link[aria-current="page"])');
   await navigate('/'); await clock.advance(240);
   assert.equal(env.document.activeElement, active);
   assert.deepEqual(wrongFocus, []);

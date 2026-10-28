@@ -4,6 +4,8 @@
 
 ## 游戏封面
 
+书库卡片复用 `docs/assets/game-covers/` 中已登记的原作封面。界面使用的 WebP 位于 `app/components/launcher/book-covers/`，最长边为 640px，质量为 82；同目录 `sources.json` 记录来源、原图与生成文件的 SHA-256。Vite 将这些封面纳入前端资源图与离线缓存。封面素材不决定作品是否展示，卡片成员始终由主项目的发布目录决定。
+
 Host 从运营者本地游戏安装目录的标题图生成 `assets/th06-card.webp`、`th07-card.webp`、`th08-card.webp`、`th09-card.webp`、`th10-card.webp` 和 `th15-card.webp`。TH11、TH20 使用 Host 封面覆盖目录中的 `th11-card.webp`、`th20-card.webp`。运营者可覆盖任意作品的封面。原作封面保存在本地游戏目录，不进入公开仓库或 Runtime Release。
 
 Host 使用 Pillow 将提取的图片及 PNG/JPEG 覆盖图转为 WebP，质量为 55、method 为 6；WebP 覆盖图保持原格式。封面仅用于页面展示，不属于游戏资源。

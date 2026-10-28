@@ -1,0 +1,518 @@
+/* Shared Launcher palette; room light surfaces are scoped in room-light.css. */
+@property --book-bg {syntax:"<color>";inherits:true;initial-value:#171717}
+@property --book-surface {syntax:"<color>";inherits:true;initial-value:#242424}
+@property --book-raised {syntax:"<color>";inherits:true;initial-value:#303030}
+@property --book-ink {syntax:"<color>";inherits:true;initial-value:#edece4}
+@property --book-muted {syntax:"<color>";inherits:true;initial-value:#a1aaa0}
+@property --book-border {syntax:"<color>";inherits:true;initial-value:#ffffff1b}
+@property --book-accent {syntax:"<color>";inherits:true;initial-value:#d98b82}
+@property --book-accent-soft {syntax:"<color>";inherits:true;initial-value:#d98b821c}
+@property --book-on-accent {syntax:"<color>";inherits:true;initial-value:#201b1a}
+@property --book-overlay {syntax:"<color>";inherits:true;initial-value:#111111a8}
+
+:root, html[data-book-theme='dark'] {
+  --book-bg: #171717;
+  --book-surface: #242424;
+  --book-raised: #303030;
+  --book-ink: #edece4;
+  --book-muted: #a1aaa0;
+  --book-border: #ffffff1b;
+  --book-accent: #d98b82;
+  --book-accent-soft: #d98b821c;
+  --book-shadow: 0 14px 38px #0003;
+  --book-on-accent: #201b1a;
+  --book-overlay: #111111a8;
+}
+html {
+  transition:--book-bg .36s ease-in-out,--book-surface .36s ease-in-out,--book-raised .36s ease-in-out,
+    --book-ink .36s ease-in-out,--book-muted .36s ease-in-out,--book-border .36s ease-in-out,
+    --book-accent .36s ease-in-out,--book-accent-soft .36s ease-in-out,--book-on-accent .36s ease-in-out,
+    --book-overlay .36s ease-in-out;
+}
+html[data-book-theme='light'] {
+  --book-bg: #f7f6f2;
+  --book-surface: #fffefa;
+  --book-raised: #f1f0e9;
+  --book-ink: #2b302c;
+  --book-muted: #757d73;
+  --book-border: #dfdfd6;
+  --book-accent: #a5353d;
+  --book-accent-soft: #f4eae7;
+  --book-on-accent: #fffefa;
+  --book-overlay: #f7f6f2d9;
+  --book-shadow: 0 14px 38px #24291f14;
+}
+html:has(.book-masthead) {color-scheme:dark;scrollbar-gutter:stable}
+html[data-book-theme='light']:has(.book-masthead) {color-scheme:light}
+@media (prefers-reduced-motion:reduce) {
+  html {transition:none}
+}
+html:has(body.less-motion) {transition:none}
+
+body:not(.mp-room-active):has(.book-masthead) {
+  --ui-font: "ET Chill Round",sans-serif;
+  background:var(--book-bg);color:var(--book-ink);
+}
+/* The same source as the original Launcher is resolved by Vite for nested
+   deployments and belongs to the existing offline asset graph. */
+body:not(.mp-room-active):has(.book-masthead)::before {
+  content:"";display:block;opacity:1;filter:none;transform:none;position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(var(--book-overlay),var(--book-overlay)),url('../../../public/assets/launcher-background.webp') center/cover no-repeat;
+}
+body:not(.mp-room-active):has(.book-masthead) :is(.sheet,.book-directory) {position:relative;z-index:1;background:transparent}
+body:not(.mp-room-active) .book-masthead {background:color-mix(in srgb,var(--book-bg) 88%,transparent)}
+/* The live masthead stays outside the page containers and their entrance animation. */
+html:has(.book-masthead) .book-masthead {view-transition-name:launcher-masthead}
+::view-transition-group(launcher-masthead) {animation:none}
+::view-transition-old(launcher-masthead) {animation:none;opacity:1}
+::view-transition-new(launcher-masthead) {animation:none;opacity:1}
+.lobby-page .book-masthead .masthead-links {grid-column:3}
+html:has(.book-masthead) .book-directory:not(:has(>.book-masthead)) {padding-top:24px}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  .lobby-page .book-masthead .masthead-links {grid-column:2}
+  html:has(.book-masthead) .book-directory:not(:has(>.book-masthead)) {padding-top:18px}
+}
+.book-brand .brand-version {display:none}
+.book-masthead .book-brand {line-height:1.2}
+.book-masthead .book-theme-toggle {appearance:none;background:transparent;border:0;border-radius:0;box-shadow:none}
+.book-masthead .book-theme-toggle:hover {background:transparent;color:var(--book-ink)}
+.book-library {font-size:13px;line-height:1.5}
+.book-card,.book-recent-link {background:color-mix(in srgb,var(--book-surface) 96%,transparent)}
+.book-art {background:var(--book-raised)}
+.book-favorite {box-shadow:0 2px 8px #0002}
+@media(min-width:781px) and (hover:hover) and (pointer:fine) {
+  .book-sidebar nav button[data-book-category="windows"] {margin-top:12px}
+}
+.book-view-list .book-card {background:transparent}
+.book-view-list .book-identity {grid-template-columns:55px minmax(130px,1fr) minmax(100px,1.2fr);padding-right:42px}
+.book-view-list .book-identity small {grid-row:auto}
+.book-view-list .book-identity>span {grid-row:auto}
+.book-view-list .book-favorite {position:static;grid-column:2;grid-row:1;align-self:center;margin:0 13px 0 0}
+.book-view-list .book-card {display:grid;grid-template-columns:minmax(0,1fr) auto}
+.book-view-list .book-game-link {grid-column:1;grid-row:1}
+.book-view-list .book-row-action {display:none}
+.book-view-list .book-recent-games {display:flex;flex-direction:column;gap:0;border:1px solid var(--book-border);border-radius:8px}
+.book-view-list .book-recent-games article {flex:0 0 auto}
+.book-view-list .book-recent-link {min-height:48px;border:0;border-bottom:1px solid var(--book-border);border-radius:0;box-shadow:none}
+.book-view-list .book-recent-games article:last-child .book-recent-link {border-bottom:0}
+.book-view-list .book-recent-link .book-identity {display:grid;grid-template-columns:55px minmax(130px,1fr) minmax(100px,1.2fr);padding:12px 15px}
+.book-recent-empty {margin:0;align-self:center;padding:14px 0}
+.book-grid [data-book-product]:focus-visible {outline-offset:-3px}
+
+/* Alias the established settings vocabulary within the Launcher panels only.
+   Existing settings models, focus handling and close transitions stay intact. */
+body:not(.mp-room-active) :is(.main.library-layout>.tools,.lobby-options-host,.input-settings-dialog,.informational-dialog,.first-use-notice-dialog,.decision-dialog,.replay-dialog,.lobby-dialog,.game-data-import-window,.game-data-link-window,#player.replay-workspace,.replay-file-menu,.mizuki-select-menu) {
+  --paper:var(--book-ink);--ink:var(--book-bg);--panel:var(--book-surface);
+  --muted:var(--book-muted);--line:var(--book-border);
+  --red:var(--book-accent);--red-bright:var(--book-accent);
+  font-family:"ET Chill Round",sans-serif;
+}
+body:not(.mp-room-active) .main.library-layout>.tools {
+  border:1px solid var(--book-border);border-radius:12px;
+  background:var(--book-surface);color:var(--book-ink);box-shadow:0 22px 70px #0007;
+}
+body:not(.mp-room-active) .main.library-layout>.tools .tools-head {
+  flex-basis:145px;min-height:95px;border-bottom:1px solid var(--book-border);
+  background:var(--book-bg);
+}
+body:not(.mp-room-active) .main.library-layout>.tools .options-cover {opacity:.3}
+body:not(.mp-room-active) .main.library-layout>.tools .tools-head::after {
+  inset:0;z-index:-1;background:linear-gradient(0deg,var(--book-surface),transparent);
+}
+body:not(.mp-room-active) .main.library-layout>.tools .tools-title {
+  position:absolute;inset:auto 22px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:5px;
+}
+body:not(.mp-room-active) .main.library-layout>.tools .tools-head h3 {
+  position:static;width:auto;height:auto;min-height:0;max-width:100%;margin:0;padding:0;overflow:visible;
+  clip-path:none;clip:auto;white-space:normal;color:var(--book-ink);font:700 22px/1.3 var(--ui-font);
+}
+body:not(.mp-room-active) .main.library-layout>.tools .options-number {display:none}
+body:not(.mp-room-active) .main.library-layout>.tools .options-subtitle-line {position:static;margin:0;padding:0;min-height:0}
+body:not(.mp-room-active) .main.library-layout>.tools .options-subtitle {color:var(--book-muted);font:12px/1.3 var(--ui-font)}
+body:not(.mp-room-active) .main.library-layout>.tools .library-back {top:12px;left:16px;width:30px;height:30px;min-width:30px;min-height:30px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-surface);color:var(--book-ink)}
+body:not(.mp-room-active) .main.library-layout>.tools .options-scroll {padding:8px 20px 12px}
+body:not(.mp-room-active) .main.library-layout>.tools :is(.options-group-head,.options-settings .mobile-options-head) {
+  min-height:41px;color:var(--book-ink);font:700 14px/1.4 var(--ui-font);
+}
+body:not(.mp-room-active) .main.library-layout>.tools :is(.item,.options-group) {border-color:var(--book-border)}
+body:not(.mp-room-active) .main.library-layout>.tools .options-settings .item {background:transparent}
+body:not(.mp-room-active) .main.library-layout>.tools :is(.option-row,.itemtop,.options-summary) {color:var(--book-ink);font-size:13px}
+body:not(.mp-room-active) .main.library-layout>.tools :is(.itemtop small,.tiny,.option-note,.options-hint,.options-group small) {color:var(--book-muted)}
+body:not(.mp-room-active) .main.library-layout>.tools :is(.mini button,.option-action,.option-select,.mizuki-select-trigger,.thprac-options input) {
+  min-height:32px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-bg);color:var(--book-ink);box-shadow:none;font-size:12px;
+}
+body:not(.mp-room-active) .main.library-layout>.tools .options-settings .option-switch {
+  width:36px;height:21px;flex-basis:36px;min-height:21px;background:var(--book-raised);border-color:var(--book-border);
+}
+body:not(.mp-room-active) .main.library-layout>.tools .options-settings .option-switch i {left:2px!important;top:2px;width:15px;height:15px;background:var(--book-muted)}
+body:not(.mp-room-active) .main.library-layout>.tools .options-settings .option-switch.on {background:var(--book-accent);border-color:var(--book-accent)}
+body:not(.mp-room-active) .main.library-layout>.tools .options-settings .option-switch.on i {transform:translateX(15px);background:var(--book-on-accent)}
+body:not(.mp-room-active) .main.library-layout>.tools .launch-actions {
+  padding:13px 20px 18px;border-top:1px solid var(--book-border);background:var(--book-surface);gap:9px;
+}
+body:not(.mp-room-active) .main.library-layout>.tools .launch-actions>.launch {min-height:43px;border:1px solid transparent;border-radius:7px;background:var(--book-accent);color:var(--book-on-accent);font-size:14px;box-shadow:none}
+body:not(.mp-room-active) .main.library-layout>.tools .launch-actions>.launch-secondary {border-color:var(--book-border);background:var(--book-bg);color:var(--book-ink);font-size:12px}
+body:not(.mp-room-active) .main.library-layout>.tools .tools-callout {margin-block:7px;border:1px solid var(--book-border);border-radius:7px;background:var(--book-bg);color:var(--book-muted)}
+body:not(.mp-room-active) .main.library-layout>.tools .tools-callout-title {color:var(--book-accent);font-size:12px}
+
+/* One material and control language for startup/help, decisions, file tasks,
+   keyboard/gamepad binding, and the create/join lobby form. */
+body:not(.mp-room-active) :is(.informational-dialog,.first-use-notice-dialog,.decision-dialog,.replay-dialog,.input-settings-dialog,.lobby-dialog,.game-data-import-window,.game-data-link-window) {
+  border:1px solid var(--book-border);border-radius:12px;background:var(--book-surface);color:var(--book-ink);box-shadow:0 22px 70px #0007;
+}
+body:not(.mp-room-active) :is(.informational-dialog,.first-use-notice-dialog,.decision-dialog,.replay-dialog,.input-settings-dialog,.lobby-dialog)::backdrop {background:#090c0bc4}
+body:not(.mp-room-active) :is(.informational-window,.first-use-notice-window,.replay-window,.decision-window,.lobby-dialog form) {background:var(--book-surface);color:var(--book-ink)}
+body:not(.mp-room-active) :is(.informational-window,.first-use-notice-window,.replay-window,.input-settings-dialog,.game-data-import-window,.game-data-link-window)>header {
+  min-height:53px;padding:10px 18px;border-bottom:1px solid var(--book-border);background:var(--book-surface);color:var(--book-ink);
+}
+body:not(.mp-room-active) :is(.informational-window,.first-use-notice-window,.replay-window,.input-settings-dialog,.lobby-dialog) :is(h1,h2,header strong) {color:var(--book-ink);font:700 17px/1.4 var(--ui-font)}
+body:not(.mp-room-active) :is(.first-use-notice-item h2,.first-use-notice-item h3) {font-size:14px}
+body:not(.mp-room-active) :is(.first-use-notice-text,.first-use-notice-item,.informational-content,.apple-refresh-content,.mp-guide-content,.donation-content,.decision-body,.replay-drop-hint,.replay-list,.replay-row,.lobby-dialog p) {
+  border-color:var(--book-border);background:transparent;color:var(--book-muted);font-size:13px;line-height:1.75;
+}
+body:not(.mp-room-active) :is(.first-use-notice-window,.informational-window,.replay-window,.input-settings-dialog,.lobby-dialog,.decision-window,.game-data-import-window,.game-data-link-window) button {
+  border-radius:7px;border-color:var(--book-border);background:var(--book-raised);color:var(--book-ink);box-shadow:none;
+}
+body:not(.mp-room-active) :is(.first-use-notice-window,.informational-window,.replay-window,.input-settings-dialog,.game-data-import-window,.game-data-link-window) header button {width:30px;height:30px;padding:0;background:transparent;color:var(--book-muted)}
+body:not(.mp-room-active) :is(.first-use-notice-window,.informational-window,.replay-window,.input-settings-dialog,.lobby-dialog,.decision-window) :is(button:hover,button:focus-visible) {background:var(--book-accent-soft);color:var(--book-accent)}
+body:not(.mp-room-active) :is(.decision-confirm,.lobby-submit,.game-data-import-actions .transfer-import) {background:var(--book-accent);color:var(--book-on-accent)}
+body:not(.mp-room-active) :is(.decision-body strong,.decision-body header,.decision-body #decisionTitle) {color:var(--book-ink)}
+body:not(.mp-room-active) .decision-mark {color:var(--book-accent);background:var(--book-accent-soft)}
+body:not(.mp-room-active) :is(.decision-window footer,.replay-window footer) {border-color:var(--book-border);background:var(--book-bg)}
+body:not(.mp-room-active) :is(.first-use-notice-item a,.informational-window a,.game-data-link-row a) {color:var(--book-accent)}
+body:not(.mp-room-active) .first-use-notice-window {padding:0 18px 16px}
+body:not(.mp-room-active) .first-use-notice-window>header {padding-inline:0}
+body:not(.mp-room-active) :is(.input-settings-entry,.input-config-button,.input-keycap,.input-binding-button,.input-config input,.input-binding-table kbd,.lobby-dialog input,.lobby-dialog select) {
+  border:1px solid var(--book-border);border-radius:7px;background:var(--book-bg);color:var(--book-ink);box-shadow:none;
+}
+body:not(.mp-room-active) :is(.input-settings-entry:hover,.input-device-tabs button[aria-selected='true'],.input-config-button.primary) {background:var(--book-accent-soft);color:var(--book-accent)}
+body:not(.mp-room-active) :is(.input-config,.input-settings-dialog) {color:var(--book-ink)}
+body:not(.mp-room-active) :is(.input-binding-table td,.input-binding-table th,.input-config-hint,.input-config-section,.input-device-tabs) {border-color:var(--book-border);color:var(--book-muted)}
+body:not(.mp-room-active) .mizuki-select-menu {border-color:var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-ink);box-shadow:var(--book-shadow)}
+body:not(.mp-room-active) .mizuki-select-item {border-radius:5px;background:transparent;color:var(--book-ink)}
+body:not(.mp-room-active) .mizuki-select-item:is(:hover,[aria-selected='true']) {background:var(--book-accent-soft);color:var(--book-accent)}
+body:not(.mp-room-active) .mizuki-select-trigger {border-color:var(--book-border);border-radius:7px;background:var(--book-bg);color:var(--book-ink)}
+
+/* The Replay workspace is a Launcher surface; playback keeps its native frame. */
+body:not(.mp-room-active) #player.replay-workspace {background:transparent;color:var(--book-ink);font-family:"ET Chill Round",sans-serif}
+body:not(.mp-room-active) #player.replay-workspace::before {background:linear-gradient(var(--book-overlay),var(--book-overlay)),url('../../../public/assets/launcher-background.webp') center/cover no-repeat}
+body:not(.mp-room-active) #player.replay-workspace :is(.player-stage,.replay-file-browser) {border:1px solid var(--book-border);border-radius:10px;background:var(--book-surface)}
+body:not(.mp-room-active) #player.replay-workspace :is(.replay-workspace-header h1,.replay-file-browser h2,.replay-current h2) {color:var(--book-ink);font-size:19px}
+body:not(.mp-room-active) #player.replay-workspace :is(.replay-button,.mizuki-select-trigger) {border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-ink);font-size:13px}
+body:not(.mp-room-active) #player.replay-workspace .replay-file-browser>header {padding:16px}
+body:not(.mp-room-active) #player.replay-workspace .replay-workspace-file {min-height:49px;border-color:var(--book-border)}
+body:not(.mp-room-active) #player.replay-workspace .replay-workspace-file>button:first-child {padding:12px;font-size:13px}
+body:not(.mp-room-active) #player.replay-workspace .replay-workspace-file.selected {background:var(--book-accent-soft)}
+body:not(.mp-room-active) #player.replay-workspace :is(.replay-breadcrumb,.replay-current) {border-color:var(--book-border)}
+body:not(.mp-room-active) .replay-file-menu {border-color:var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-ink)}
+body:not(.mp-room-active) :is(#toast,.toast) {border:1px solid var(--book-border);border-radius:8px;background:var(--book-raised);color:var(--book-ink);box-shadow:var(--book-shadow)}
+
+.book-directory .lobby-list-surface {border:1px solid var(--book-border);border-radius:9px;background:var(--book-surface)}
+.book-directory :is(.lobby-list-head,.lobby-room-row:not(.th09-room-row)) {grid-template-columns:minmax(170px,2fr) 65px 115px 45px 74px 78px;gap:12px;padding:15px}
+.book-directory .lobby-room-row {min-height:83px;background:transparent;color:var(--book-ink)}
+.book-directory .lobby-room-row::before {inset:0 15px auto;background:var(--book-border)}
+.book-directory .lobby-cover {width:42px;height:51px;flex-basis:42px;border-radius:5px}
+.book-directory .lobby-room-identity {gap:11px}
+.book-directory .lobby-room-title h2 {color:var(--book-ink);font-size:13px}
+.book-directory .lobby-room-code {font-size:12px;color:var(--book-ink)}
+.book-directory :is(.lobby-room-subtitle,.lobby-movement-rule) {font-size:10px;color:var(--book-muted)}
+.book-directory .lobby-room-state {font-size:11px;color:var(--book-muted);gap:5px}
+.book-directory .lobby-room-state::before {width:6px;height:6px}
+.book-directory .lobby-seat:not(.th09-duel-avatar) {width:26px;height:28px;border-radius:5px;background:var(--book-raised);color:var(--book-ink)}
+.book-directory .lobby-list-head>span:first-child {padding:0}
+
+@media(max-width:1100px) {
+  html:has(.book-masthead) .masthead {grid-template-columns:auto minmax(0,1fr) auto;gap:8px}
+  .book-masthead .masthead-links>.masthead-link:not(.masthead-menu-toggle):not(.book-top-faq) {display:none}
+  .book-directory :is(.lobby-list-head,.lobby-room-row:not(.th09-room-row)) {grid-template-columns:minmax(150px,1fr) 60px 90px 38px 60px 65px;gap:8px}
+  .book-directory .lobby-room-identity {gap:7px}
+}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  html:has(.book-masthead) .book-main-nav :is(a,button) {min-height:55px;padding:0 9px;font-size:12px}
+  html:has(.book-masthead) .book-brand>span:not(.book-brand-symbol) {display:none}
+  .book-view-list .book-identity,.book-view-list .book-recent-link .book-identity {grid-template-columns:45px minmax(0,1fr);gap:4px 8px;padding:10px 12px}
+  .book-view-list .book-identity small {grid-row:1/span 2}
+  .book-view-list .book-identity>span {grid-column:2;grid-row:2}
+  body:not(.mp-room-active) .main.library-layout>.tools .tools-head {flex-basis:125px}
+  body:not(.mp-room-active) .main.library-layout>.tools .tools-head h3 {font-size:19px}
+  body:not(.mp-room-active) .main.library-layout>.tools .tools-title {inset-inline:18px}
+  body:not(.mp-room-active) .main.library-layout>.tools .options-scroll {padding-inline:16px}
+  body:not(.mp-room-active) .main.library-layout>.tools .launch-actions {padding:12px 16px max(14px,env(safe-area-inset-bottom))}
+  .book-directory .lobby-room-row:not(.th09-room-row) {grid-template-columns:minmax(0,1fr) auto;gap:8px;min-height:100px}
+  .book-directory .lobby-list-head {display:none}
+  .book-directory .lobby-room-identity {grid-column:1;grid-row:1}
+}
+@media(max-height:520px) {
+  body:not(.mp-room-active) .main.library-layout>.tools.options-compact .tools-head {flex-basis:80px;min-height:80px}
+  body:not(.mp-room-active) .main.library-layout>.tools.options-compact .tools-title {left:58px;bottom:12px}
+}
+
+/* The title was screen-reader-only in the former cover-driven header. */
+body:not(.mp-room-active) .main.library-layout>.tools .tools-head h3.visually-hidden {
+  position:static!important;width:auto!important;height:auto!important;margin:0!important;
+  padding:0!important;overflow:visible!important;clip:auto!important;white-space:normal!important;
+}
+body:not(.mp-room-active) .startup-error {
+  --paper:var(--book-ink);--muted:var(--book-muted);--line:var(--book-border);--red:var(--book-accent);
+  border:1px solid var(--book-border);border-radius:12px;background:var(--book-surface);color:var(--book-ink);
+  font-family:"ET Chill Round",sans-serif;box-shadow:var(--book-shadow);
+}
+body:not(.mp-room-active) .startup-error :is(header,footer) {border-color:var(--book-border);background:transparent}
+body:not(.mp-room-active) .startup-error button {border:1px solid var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-ink)}
+body:not(.mp-room-active) .startup-error :is(small,.startup-error-detail) {color:var(--book-muted)}
+body:not(.mp-room-active) .startup-error-detail {border-color:var(--book-border);background:var(--book-bg)}
+
+.book-masthead .masthead-menu-item[aria-checked='true'] .site-notice-toggle-state {background:var(--book-accent);border-color:var(--book-accent)}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  html:has(.book-masthead) {scrollbar-gutter:auto}
+  body:not(.mp-room-active):has(.book-masthead) {overflow-x:clip}
+  body:not(.mp-room-active) .main.library-layout>.tools {border-radius:12px 12px 0 0;max-width:100vw;box-sizing:border-box}
+  .book-main-nav {min-width:0}
+}
+
+/* Download/import progress uses the Launcher material. */
+body:not(.mp-room-active) :is(.transfer,.music-notice) {
+  --paper:var(--book-ink);--muted:var(--book-muted);--line:var(--book-border);--red:var(--book-accent);
+  border:1px solid var(--book-border);border-radius:12px;background:var(--book-surface);color:var(--book-ink);
+  font-family:"ET Chill Round",sans-serif;box-shadow:var(--book-shadow);
+}
+body:not(.mp-room-active) .transfer button {border-color:var(--book-border);border-radius:7px;background:var(--book-raised);color:var(--book-ink)}
+body:not(.mp-room-active) :is(.transfer-meta,.transfer-warning,.music-notice span) {color:var(--book-muted)}
+body:not(.mp-room-active) .transfer-bar {background:var(--book-raised)}
+body:not(.mp-room-active) .transfer-bar i {background:var(--book-accent)}
+body:not(.mp-room-active) :is(.transfer strong,.transfer-line #transferAmount) {color:var(--book-ink)}
+body:not(.mp-room-active) .transfer-line {color:var(--book-muted)}
+body:not(.mp-room-active) :is(.transfer-warning,.music-notice strong) {color:var(--book-accent)}
+body:not(.mp-room-active) .transfer-warning {background:var(--book-accent-soft)}
+body:not(.mp-room-active) .music-notice {text-shadow:none}
+body:not(.mp-room-active) .transfer-bar.indeterminate i {background:linear-gradient(90deg,var(--book-accent-soft),var(--book-accent),var(--book-accent-soft))}
+
+body:not(.mp-room-active) :is(.apple-refresh-faq,.apple-refresh-faq-item,.donation-image-wrap,.lobby-dialog-head) {border-color:var(--book-border);background:transparent;color:var(--book-muted)}
+body:not(.mp-room-active) :is(.apple-refresh-faq-item h2,.lobby-dialog-head h2) {color:var(--book-ink);font-size:15px}
+body:not(.mp-room-active) .apple-refresh-path {border-color:var(--book-border);border-radius:7px;background:var(--book-bg);color:var(--book-accent)}
+
+/* TH09 keeps its duel score/name layout inside the shared directory skin. */
+.book-directory .lobby-room-row.th09-room-row {border-color:var(--book-border);border-radius:9px;background:var(--book-surface)}
+.book-directory .th09-duel-avatar {border-color:var(--book-border);background:var(--book-raised);color:var(--book-ink)}
+.book-directory :is(.th09-duel-name,.th09-room-score) {color:var(--book-ink)}
+.book-directory :is(.th09-room-duration,.room-card-loadout) {color:var(--book-muted)}
+
+body:not(.mp-room-active) :is(.first-use-notice-item h2,.first-use-notice-item h3,.multiplayer-guide-content h2,.multiplayer-rule-subheading,.multiplayer-rule-disclosure-summary) {color:var(--book-ink);font-family:var(--ui-font)}
+body:not(.mp-room-active) .multiplayer-guide-content {color:var(--book-muted)}
+body:not(.mp-room-active) .multiplayer-rule-tabs-shell {background:var(--book-surface)}
+body:not(.mp-room-active) .multiplayer-rule-game-tabs {background:var(--book-bg)}
+body:not(.mp-room-active) .multiplayer-rule-game-tab {color:var(--book-muted)}
+body:not(.mp-room-active) .multiplayer-rule-game-tab.selected {background:var(--book-accent-soft);color:var(--book-accent)}
+body:not(.mp-room-active) :is(.multiplayer-guide-content code,.first-use-notice-window .edge-drawer-swipe-hint>span:first-child) {background:var(--book-bg);color:var(--book-ink)}
+body:not(.mp-room-active) .first-use-notice-window .edge-drawer-swipe-hint {color:var(--book-muted)}
+body:not(.mp-room-active) .first-use-notice-item a.markdown-link-labeled {color:var(--book-accent)!important}
+
+.book-directory .lobby-list-surface.th09-room-surface {border:0;border-radius:0;background:transparent}
+
+/* SVG geometry avoids the asymmetric bearings of font star glyphs. */
+.book-favorite {padding:0;line-height:1;box-sizing:border-box}
+.book-favorite svg {display:block;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.book-favorite[aria-pressed='true'] svg {fill:currentColor}
+
+/* Directory filters have their own geometry instead of the old cover rail. */
+.book-lobby-games {min-width:0}
+.book-lobby-filter-heading {display:flex;flex-direction:column;gap:5px;margin:0 0 12px;color:var(--book-ink);font-size:13px;font-weight:700}
+.book-lobby-filter-heading small {color:var(--book-muted);font-size:10px;font-weight:400}
+.book-lobby-strip {display:flex;flex-direction:column;gap:6px;min-width:0}
+.book-lobby-all {display:grid;grid-template-columns:25px minmax(0,1fr);align-items:center;gap:3px 7px;min-height:61px;padding:10px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface);color:var(--book-muted);text-align:left;font:12px/1.4 var(--ui-font);cursor:pointer}
+.book-lobby-all>span {grid-row:1/span 2;font-size:23px;text-align:center}
+.book-lobby-all small {font-size:10px;font-weight:400}
+.book-lobby-all[aria-pressed='true'] {background:var(--book-accent-soft);border-color:var(--book-accent);color:var(--book-accent)}
+.book-lobby-item {display:grid;grid-template-columns:16px minmax(0,1fr) 24px;align-items:center;gap:5px;min-width:0;padding:7px 6px;border:1px solid transparent;border-radius:8px;color:var(--book-ink)}
+.book-lobby-item[data-selected='true'] {background:var(--book-accent-soft);border-color:var(--book-border)}
+.book-lobby-item>input {appearance:none;position:relative;box-sizing:border-box;width:16px;height:16px;min-height:0;margin:0;border:1px solid var(--book-border);border-radius:5px;background:var(--book-raised);box-shadow:inset 0 1px 2px #00000008;cursor:pointer;transition:background-color .15s,border-color .15s}
+.book-lobby-item>input:hover {border-color:var(--book-accent)}
+.book-lobby-item>input:checked {border-color:var(--book-accent);background:var(--book-accent);box-shadow:none}
+.book-lobby-item>input:checked::after {content:"";position:absolute;inset:0;background:var(--book-on-accent);mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 8 2.5 2.5L12 5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px 14px no-repeat}
+.book-lobby-game {display:grid;grid-template-columns:28px 30px minmax(0,1fr);align-items:center;gap:5px;min-width:0;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:11px/1.4 var(--ui-font)}
+.book-lobby-cover {display:grid;place-items:center;width:28px;height:36px;overflow:hidden;border-radius:4px;background:var(--book-raised);font:9px/1 var(--ui-font)}
+.book-lobby-cover img {display:block;width:100%;height:100%;object-fit:cover}
+.book-lobby-number {color:var(--book-muted);font:10px/1.2 Georgia,serif}
+.book-lobby-game strong {overflow-wrap:anywhere;font-size:11px}
+.book-lobby-favorite {display:grid;place-items:center;width:24px;height:30px;padding:3px;border:0;border-radius:5px;background:transparent;color:var(--book-muted);cursor:pointer}
+.book-lobby-favorite svg {width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.book-lobby-favorite[aria-pressed='true'] {color:var(--book-accent)}
+.book-lobby-favorite[aria-pressed='true'] svg {fill:currentColor}
+.book-lobby-games button:hover {color:var(--book-accent)}
+.book-lobby-games :is(button,input):focus-visible {outline:2px solid var(--book-accent);outline-offset:2px}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  .book-lobby-filter-heading {flex-direction:row;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
+  .book-lobby-strip {flex-direction:row;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--book-border) transparent;padding:2px 2px 9px;scroll-padding-inline:2px}
+  .book-lobby-all {flex:0 0 160px;scroll-snap-align:start}
+  .book-lobby-item {flex:0 0 214px;scroll-snap-align:start;min-height:68px;padding:8px;background:var(--book-surface);border-color:var(--book-border)}
+  .book-lobby-item[data-selected='true'] {border-color:var(--book-accent)}
+  .book-lobby-game {grid-template-columns:34px minmax(0,1fr);gap:4px 7px}
+  .book-lobby-cover {grid-row:1/span 2;width:34px;height:44px}
+  .book-lobby-number {align-self:end;font-size:11px}
+  .book-lobby-game strong {align-self:start;font-size:12px}
+  .book-lobby-item>input {width:16px;height:16px}
+  .book-lobby-favorite {height:40px}
+}
+.server-status-note {top:auto;bottom:0;padding-bottom:max(3px,env(safe-area-inset-bottom))}
+
+/* The left-edge announcement shares the active Launcher theme. */
+html[data-book-theme='light'] body:not(.mp-room-active) .site-notice {
+  background:var(--book-surface);color:var(--book-ink);
+  border-color:var(--book-border);box-shadow:var(--book-shadow);
+}
+html[data-book-theme='light'] body:not(.mp-room-active) .site-notice-label {color:var(--book-accent)}
+html[data-book-theme='light'] body:not(.mp-room-active) .site-notice-label::before {background:var(--book-accent);box-shadow:none}
+html[data-book-theme='light'] body:not(.mp-room-active) :is(.site-notice-content,.site-notice-close,.site-notice-opt-out) {color:var(--book-muted)}
+html[data-book-theme='light'] body:not(.mp-room-active) .site-notice-brand {
+  background:var(--book-raised);color:var(--book-ink);border-color:var(--book-border);box-shadow:none;
+}
+html[data-book-theme='light'] body:not(.mp-room-active) :is(.site-notice-brand,.site-notice-close,.site-notice-opt-out):is(:hover,:focus-visible) {background:var(--book-accent-soft);color:var(--book-accent)}
+html[data-book-theme='light'] body:not(.mp-room-active) :is(.site-notice::before,.site-notice-life) {background:var(--book-border)}
+html[data-book-theme='light'] body:not(.mp-room-active) .site-notice-life i {background:var(--book-accent)}
+
+/* External monochrome SVG images cannot inherit their parent's currentColor. */
+html[data-book-theme='light'] body:not(.mp-room-active) :is(
+  .book-directory .lobby-back img,
+  .book-directory .lobby-empty>img,
+  .book-directory .th09-duel-empty-icon,
+  .book-directory .th09-room-spectators img,
+  .book-directory .lobby-room-watchers img,
+  .main.library-layout>.tools .options-lobby-link img,
+  .site-notice-brand-icon img[src$='notice-github.svg'],
+  #player.replay-workspace img[src$='.svg']
+) {filter:brightness(0) opacity(.7)}
+
+/* Keep three covers visible even on narrow phones. List view keeps its rows. */
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  .book-grid {grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .book-library:not(.book-view-list) .book-grid .book-identity {padding:9px 7px 10px;gap:4px}
+  .book-library:not(.book-view-list) .book-grid .book-identity strong {font-size:12px}
+  .book-library:not(.book-view-list) .book-grid .book-identity>span {font-size:10px}
+  .book-library:not(.book-view-list) .book-grid .book-favorite {top:5px;right:5px}
+}
+
+/* Mobile app header keeps the complete brand and collects navigation in More. */
+.book-mobile-nav {display:none}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  html:has(.book-masthead) .masthead {grid-template-columns:minmax(0,1fr) auto;gap:12px;min-height:68px;padding:0 max(24px,env(safe-area-inset-right)) 0 max(32px,env(safe-area-inset-left))}
+  html:has(.book-masthead) .book-brand {gap:8px;font-size:15px;letter-spacing:1px;min-width:0}
+  html:has(.book-masthead) .book-brand>span:not(.book-brand-symbol) {display:inline}
+  html:has(.book-masthead) .book-main-nav {display:none}
+  html:has(.book-masthead) .masthead-links {grid-column:2;gap:6px}
+  .book-masthead .book-theme-toggle,.book-masthead .masthead-menu-toggle {width:40px;min-height:44px;padding:8px}
+  .book-masthead .masthead-menu-panel {position:fixed;top:72px;left:12px;right:12px;width:auto;max-width:none;max-height:calc(100dvh - 88px - env(safe-area-inset-bottom));box-sizing:border-box;overflow-y:auto;padding:12px;border-radius:18px}
+  .book-mobile-nav {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding-bottom:12px;margin-bottom:8px;border-bottom:1px solid var(--book-border)}
+  .book-masthead .book-mobile-nav .masthead-menu-item {justify-content:center;min-width:0;min-height:48px;padding:8px 4px;border-radius:10px;background:var(--book-raised);font-size:13px}
+  .book-masthead .book-mobile-nav :is([aria-current='page'],[aria-pressed='true']) {background:var(--book-accent-soft);color:var(--book-accent)}
+  .book-masthead .masthead-menu-item {min-height:44px}
+  body:not(.mp-room-active) .site-notice {box-sizing:border-box;width:calc(100% - 28px);max-width:440px;max-height:min(55dvh,440px);overflow-y:auto;padding:14px 16px 18px;border-radius:18px;font-size:12px;line-height:1.65;letter-spacing:0}
+  .site-notice .site-notice-header {margin:0 0 10px;gap:8px;align-items:center}
+  .site-notice .site-notice-label {font-size:11px;letter-spacing:.08em}
+  .site-notice .site-notice-actions {flex-shrink:0;gap:4px}
+  .site-notice .site-notice-close {width:36px;height:36px;flex-basis:36px;font-size:21px}
+  .site-notice .site-notice-opt-out {min-height:36px;padding:6px 8px;font-size:11px}
+  .site-notice .site-notice-content {gap:9px;overflow-wrap:anywhere}
+  .site-notice .site-notice-line {gap:6px;line-height:1.7}
+  .site-notice .site-notice-brand {box-sizing:border-box;min-height:32px;padding:4px 9px;max-width:100%;white-space:normal}
+}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  body:not(.mp-room-active) .site-notice {left:14px;right:14px;width:calc(100vw - 28px);min-width:0;margin:0;max-width:440px}
+  .site-notice::before {display:none}
+}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+  html .sheet:has(.library-layout) .book-masthead {margin-inline:0;padding-inline:max(32px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-right));width:100%;box-sizing:border-box}
+}
+@media(max-width:360px) {
+  html:has(.book-masthead) .book-brand {font-size:13px;letter-spacing:.6px;gap:6px}
+  html:has(.book-masthead) .masthead-links {gap:2px}
+  .book-masthead .book-theme-toggle,.book-masthead .masthead-menu-toggle {width:36px}
+}
+
+/* Room display switches independently from game filters. */
+.book-directory .lobby-room-tools {flex-wrap:wrap;gap:12px}
+.book-room-view-toggle {display:flex;gap:3px;margin-left:auto;padding:3px;border:1px solid var(--book-border);border-radius:8px;background:var(--book-surface)}
+.book-room-view-toggle button {min-height:34px;padding:6px 11px;border:0;border-radius:5px;background:transparent;color:var(--book-muted);font:12px var(--ui-font);cursor:pointer}
+.book-room-view-toggle button[aria-pressed='true'] {background:var(--book-accent-soft);color:var(--book-accent)}
+.book-room-view-toggle button:focus-visible {outline:2px solid var(--book-accent);outline-offset:2px}
+/* All games share one room row; Flower View adds only its score. */
+.book-directory {--room-action-width:78px}
+.book-directory .lobby-cover {width:52px;height:64px;flex-basis:52px;border-radius:4px}
+.book-directory .lobby-cover-number {display:none}
+.book-directory .book-room-score {min-width:0;flex:none;align-self:center;margin:0 3px;color:var(--book-accent);font:700 22px/1.2 var(--ui-font);white-space:nowrap}
+.book-directory .lobby-room-row>.lobby-join {width:var(--room-action-width);min-height:34px;padding:7px 13px;border-radius:7px;font-size:12px;justify-self:end}
+/* A compact directory table with avatar-only player cells. */
+.book-directory.book-rooms-list .lobby-list-surface {overflow-x:auto}
+.book-directory.book-rooms-list :is(.lobby-list-head,.lobby-room-row) {display:grid;grid-template-columns:minmax(100px,1.5fr) 55px 65px minmax(75px,1fr) 100px 55px var(--room-action-width);gap:8px;min-width:610px;min-height:48px;padding:8px 15px;align-items:center}
+.book-rooms-list .lobby-room-identity,.book-rooms-list .lobby-room-title {display:contents}
+.book-directory.book-rooms-list .lobby-room-title h2 {grid-column:1;grid-row:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;align-self:center}
+.book-directory.book-rooms-list .lobby-room-code {grid-column:2;grid-row:1;white-space:nowrap;align-self:center}
+.book-directory.book-rooms-list :is(.lobby-cover,.lobby-room-subtitle,.lobby-mobile-difficulty,.lobby-movement-rule,.lobby-room-facts,.lobby-occupancy,.lobby-player-count,.lobby-seat-control,.lobby-seat-name) {display:none}
+.book-directory.book-rooms-list .lobby-difficulty {display:block;grid-column:3;grid-row:1;font-size:11px;align-self:center}
+.book-directory.book-rooms-list .lobby-party {grid-column:5;grid-row:1;align-self:center;min-width:0}
+.book-directory.book-rooms-list .lobby-seats {display:flex;align-items:center;gap:5px;padding:0;flex-wrap:nowrap}
+.book-directory.book-rooms-list .lobby-public-player {display:contents}
+.book-directory.book-rooms-list .lobby-seat {width:24px;height:24px;min-width:24px;flex:0 0 24px;border-radius:4px;font-size:11px}
+.book-directory.book-rooms-list .book-room-score {font-size:17px;margin:0 2px}
+.book-directory.book-rooms-list .lobby-room-state {grid-column:6;grid-row:1;white-space:nowrap;align-self:center;padding:0;font-size:11px}
+.book-directory.book-rooms-list .lobby-join {grid-column:7;grid-row:1;align-self:center}
+@media(max-width:1100px) {
+ .book-directory {--room-action-width:65px}
+}
+@media(max-width:780px),(hover:none),(pointer:coarse) {
+ .book-room-view-toggle {margin-left:0}
+ .book-directory.book-rooms-list .lobby-list-head {display:grid}
+}
+
+/* Restrained difficulty colors follow the directory typography. */
+.book-directory {--difficulty-easy:#a7cbb0;--difficulty-normal:#a9c5e0;--difficulty-hard:#dfc18c;--difficulty-lunatic:#dfaaaa;--difficulty-extra:#c9b5df}
+html[data-book-theme='light'] .book-directory {--difficulty-easy:#23733e;--difficulty-normal:#235ca8;--difficulty-hard:#97500b;--difficulty-lunatic:#b12f45;--difficulty-extra:#793baf}
+.book-directory :is(.lobby-difficulty,.lobby-mobile-difficulty) {--difficulty-tone:var(--book-muted);width:fit-content;max-width:100%;padding:0;border:0;border-radius:0;background:none;color:var(--difficulty-tone);font-size:12px;font-weight:600;line-height:1.4;white-space:nowrap;box-sizing:border-box}
+.book-directory [data-difficulty='easy'] {--difficulty-tone:var(--difficulty-easy)}
+.book-directory [data-difficulty='normal'] {--difficulty-tone:var(--difficulty-normal)}
+.book-directory [data-difficulty='hard'] {--difficulty-tone:var(--difficulty-hard)}
+.book-directory [data-difficulty='lunatic'] {--difficulty-tone:var(--difficulty-lunatic)}
+.book-directory [data-difficulty='extra'],.book-directory [data-difficulty='phantasm'] {--difficulty-tone:var(--difficulty-extra)}
+.book-directory .lobby-room-rules {display:flex;flex-direction:column;gap:3px;min-width:0;font-size:11px;line-height:1.5;color:var(--book-ink)}
+.book-directory.book-rooms-cards :is(.lobby-list-head,.lobby-room-row) {grid-template-columns:minmax(170px,2fr) 65px minmax(75px,1fr) 115px 45px 74px var(--room-action-width)}
+.book-directory.book-rooms-cards .lobby-movement-rule {display:none}
+.book-directory.book-rooms-list .lobby-room-rules {grid-column:4;grid-row:1;font-size:10px}
+.lobby-room-rules>span {padding:0;overflow-wrap:anywhere}
+.lobby-room-rules .lobby-rule-default {color:var(--book-muted);border-color:transparent;background:transparent}
+@media(min-width:821px) and (max-width:1100px) {
+ .book-directory.book-rooms-cards :is(.lobby-list-head,.lobby-room-row) {grid-template-columns:minmax(150px,1fr) 60px minmax(65px,.8fr) 90px 38px 60px var(--room-action-width)}
+}
+@media(max-width:820px),(hover:none),(pointer:coarse) {
+ .book-directory.book-rooms-cards .lobby-list-head {display:none}
+ .book-directory.book-rooms-cards .lobby-room-row {grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto;gap:10px 12px}
+ .book-directory.book-rooms-cards .lobby-room-identity {grid-column:1/-1;grid-row:1}
+ .book-directory.book-rooms-cards .lobby-party {grid-column:1;grid-row:2;margin:0;align-self:center}
+ .book-directory.book-rooms-cards .lobby-room-state {grid-column:2;grid-row:2;padding-left:0;justify-self:end}
+ .book-directory.book-rooms-cards .lobby-room-rules {grid-column:1;grid-row:3;align-self:center}
+ .lobby-page .book-directory.book-rooms-cards .lobby-room-row>.lobby-join {grid-column:2;grid-row:3;align-self:center}
+}
+/* Compact screens use stacked information inside each row, never a wide table. */
+@media(max-width:1000px),(hover:none),(pointer:coarse) {
+ .book-directory.book-rooms-list .lobby-list-surface {overflow:visible}
+ .book-directory.book-rooms-list .lobby-list-head {display:none}
+ .book-directory.book-rooms-list .lobby-room-row {grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto;min-width:0;width:100%;box-sizing:border-box;gap:8px 12px;padding:12px 14px;min-height:112px}
+ .book-directory.book-rooms-list .lobby-room-title h2 {grid-column:1;grid-row:1;font-size:13px;white-space:normal;overflow-wrap:anywhere}
+ .book-directory.book-rooms-list .lobby-room-code {grid-column:2;grid-row:1;justify-self:end}
+ .book-directory.book-rooms-list .lobby-difficulty {grid-column:1;grid-row:2;justify-self:start;align-self:start}
+ .book-directory.book-rooms-list .lobby-room-rules {grid-column:1;grid-row:3;align-self:start;padding-right:0}
+ .book-directory.book-rooms-list .lobby-party {grid-column:1;grid-row:4;align-self:center}
+ .book-directory.book-rooms-list .lobby-room-state {grid-column:2;grid-row:2;justify-self:end;align-self:center}
+ .book-directory.book-rooms-list .lobby-join {grid-column:2;grid-row:3/span 2;align-self:end;min-height:40px;min-width:78px;width:auto}
+ .book-directory.book-rooms-list .lobby-room-row::before {inset:0 14px auto}
+}
+@media(max-width:1000px),(hover:none),(pointer:coarse) {
+ .lobby-page .book-directory.book-rooms-list .lobby-room-row>.lobby-join {grid-column:2;grid-row:3/span 2;align-self:end}
+}
+
+.book-masthead .book-top-faq{white-space:nowrap;flex-shrink:0}
+@media(max-width:780px),(hover:none),(pointer:coarse){html:has(.book-masthead) .masthead{gap:6px;padding-inline:14px}html:has(.book-masthead) .book-brand{font-size:13px;gap:5px;letter-spacing:.5px}.book-masthead .book-top-faq{font-size:11px;padding-inline:4px}.book-masthead .book-top-faq .masthead-label{display:block;line-height:1.25;max-width:3em;white-space:normal}.book-masthead .book-theme-toggle,.book-masthead .masthead-menu-toggle{width:32px;padding:5px}html:has(.book-masthead) .masthead-links{gap:3px}}
+
+/* Give the plain FAQ link room beside the avatar selection ring. */
+.book-masthead .book-top-faq {margin-inline-start:8px;padding-inline:6px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--book-muted);text-decoration:none}
+.book-masthead .book-top-faq::before,.book-masthead .book-top-faq::after {display:none}
+.book-masthead .book-top-faq:hover {color:var(--book-accent)}
+.book-masthead .book-menu-donation[hidden] {display:none}

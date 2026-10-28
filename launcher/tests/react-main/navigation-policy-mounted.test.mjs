@@ -571,6 +571,34 @@ for (const fromDirectory of [false, true]) test(`source-derived room leave alway
 });
 
 
+for (const filter of ['', '?game=th07mp', '?games=th07mp%2Cth09mp']) {
+  for (const entry of ['directory', 'options']) test(`room exit restores directory filter ${filter || 'all'} via ${entry}`, async () => {
+    const controls = await mount({pathname:'/lobby.html', search:filter, hash:'', state:{}});
+    if (entry === 'options') await settle(() => controls.navigation.openOptions('th06mp'));
+    const token = owner.encodeRoomInvite({g:'th06mp', r:'4079', f:true});
+    await settle(() => controls.navigation.navigateAddress(`/?j=${token}`));
+    await settle(() => controls.navigation.restoreRoomRoute({product:'th06mp',code:'4079',fromDirectory:true}));
+    await settle(() => controls.navigation.openRoomSettings());
+    await settle(() => controls.navigation.leaveRoomRoute({product:'th06mp',fromDirectory:true}));
+    assert.equal(href(), `/lobby.html${filter}`);
+    assert.equal(controls.navigation.context, 'lobby');
+    assert.equal(controls.navigation.roomCode, null);
+    assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  });
+}
+
+test('room reload retains its directory filters through canonicalization and exit', async () => {
+  let controls = await mount({pathname:'/lobby.html',search:'?games=th07mp%2Cth09mp',hash:'',state:{}});
+  await settle(() => controls.navigation.navigateAddress(`/?j=${owner.encodeRoomInvite({g:'th06mp',r:'4079',f:true})}`));
+  const saved = {...mounted.router.state.location};
+  await React.act(async () => mounted.root.unmount());
+  mounted.router.dispose(); mounted = null; env.document.body.replaceChildren();
+  controls = await mount(saved);
+  await settle(() => controls.navigation.restoreRoomRoute({product:'th06mp',code:'4079',fromDirectory:true}));
+  await settle(() => controls.navigation.leaveRoomRoute({product:'th06mp',fromDirectory:true}));
+  assert.equal(href(), '/lobby.html?games=th07mp%2Cth09mp');
+});
+
 for (const exit of ['button', 'browser']) test(`original hidden home-editor action retains product and consumes one child by ${exit}`, async () => {
   const controls = await mount();
   await settle(() => controls.navigation.openOptions('th07'));

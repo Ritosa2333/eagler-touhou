@@ -9,6 +9,9 @@ import '../public/lobby.css';
 import '../public/touch-guide.css';
 import './components/launcher/lobby-options.css';
 import './components/launcher/shared-options.css';
+import './components/launcher/book-ui.css';
+import './components/launcher/book-surfaces.css';
+import './components/room/room-light.css';
 export function Layout({children}: {children: ReactNode}) {
   const {pathname} = useLocation();
   const locale = useDocumentUiLocale();
@@ -16,7 +19,7 @@ export function Layout({children}: {children: ReactNode}) {
   // Original boot owns removal. Keep this initial prop constant so later SPA
   // route renders cannot reintroduce the document's retired loading gate.
   const initialLobby = useRef(lobby).current;
-  return <html lang={locale} data-ui-locale={locale} data-original-entry={initialLobby ? 'lobby' : 'library'} data-lobby-boot={initialLobby ? 'loading' : undefined} suppressHydrationWarning><head><meta charSet="utf-8"/><OriginalBootstrapHead/><AppShellDeploymentMeta/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/><Meta/><Links/></head>
+  return <html lang={locale} data-ui-locale={locale} data-book-theme="dark" data-original-entry={initialLobby ? 'lobby' : 'library'} data-lobby-boot={initialLobby ? 'loading' : undefined} suppressHydrationWarning><head><meta charSet="utf-8"/><script dangerouslySetInnerHTML={{__html: `try{var theme=JSON.parse(localStorage.getItem('eagler.book.theme'));if(theme==='light'||theme==='dark')document.documentElement.setAttribute('data-book-theme',theme);}catch(e){}`}}/><OriginalBootstrapHead/><AppShellDeploymentMeta/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/><Meta/><Links/></head>
     <InitialDocumentBody lobby={lobby}><OriginalPreloads/>{children}<OriginalNoscript lobby={lobby}/><ScrollRestoration/><OriginalModuleRequestMark/><Scripts data-eagler-entry="true"/><OriginalBootstrapTail/></InitialDocumentBody></html>;
 }
 /** Framework's index.html SPA fallback renders this rather than App. */

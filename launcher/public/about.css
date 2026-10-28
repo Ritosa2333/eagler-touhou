@@ -1,4 +1,5 @@
 html{background:#0d0d0c}
+html[data-book-theme='light']{background:#f7f6f2;color-scheme:light}
 .about-body{min-height:100vh;margin:0;overflow:auto;background:#0d0d0c;color:#d8d5ce;font:13px/1.65 var(--ui-font)}
 .about-page{width:min(680px,calc(100% - 32px));margin:0 auto;padding:34px 0 42px}
 .about-page a{color:#eee;text-underline-offset:3px}.about-page a:visited{color:#bbb}
@@ -13,3 +14,13 @@ html{background:#0d0d0c}
 .about-page code{padding:1px 3px;background:#222;color:#fff;font:inherit}
 .faq-content>p:first-of-type{margin:5px 0 18px;color:#aaa}.faq-content h2{margin:22px 0 7px;font-size:14px}.faq-content p{margin:7px 0;color:#b8b4ad}.faq-content ul{margin:8px 0;padding-left:22px;color:#b8b4ad}.faq-content li+li{margin-top:6px}.faq-content strong{color:#eee}.faq-content code{white-space:nowrap}
 @media(max-width:520px){.about-page{width:min(100% - 24px,680px);padding-top:22px}}
+
+html[data-book-theme='light'] .about-body{background:#f7f6f2;color:#2b302c}
+html[data-book-theme='light'] .about-page a{color:#8e2730}
+html[data-book-theme='light'] .about-page a:visited{color:#6c4550}
+html[data-book-theme='light'] .about-back{color:#757d73}
+html[data-book-theme='light'] .about-page h1,html[data-book-theme='light'] .about-page h2,html[data-book-theme='light'] .about-page h3{color:#2b302c}
+html[data-book-theme='light'] .about-page code{background:#e8e6df;color:#2b302c}
+html[data-book-theme='light'] .faq-content>p:first-of-type{color:#757d73}
+html[data-book-theme='light'] .faq-content p,html[data-book-theme='light'] .faq-content ul{color:#555d54}
+html[data-book-theme='light'] .faq-content strong{color:#2b302c}

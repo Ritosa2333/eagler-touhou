@@ -477,7 +477,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
           productEnabledForBuild(product, options.testBuild === true || manifest.shared.testBuild === true) &&
           !!manifest.games[gameIdForProduct(product)],
       );
-      const selectedProduct = products.includes(snapshot.selectedProduct as MultiplayerProductId)
+      const selectedProduct = !snapshot.selectedProduct ? '' : products.includes(snapshot.selectedProduct as MultiplayerProductId)
         ? snapshot.selectedProduct
         : products[0] || '';
       relay = manifest.shared.netplayRelay || '';
@@ -507,16 +507,16 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function selectProduct(product: string) {
     if (
-      !isMultiplayerProductId(product) ||
+      (product !== '' && !isMultiplayerProductId(product)) ||
       snapshot.selectedProduct === product ||
-      ((snapshot.initialized || snapshot.products.length > 0) &&
-        !snapshot.products.includes(product))
+      (product !== '' && (snapshot.initialized || snapshot.products.length > 0) &&
+        !snapshot.products.includes(product as MultiplayerProductId))
     )
       return;
     // A room return can supply its filter before this view's first manifest.
     // Keep that request for initialize() to validate against the loaded catalog.
     loadedProduct = null;
-    publish({ selectedProduct: product });
+    publish({ selectedProduct: product as MultiplayerProductId | '' });
     clear(filterTimer);
     filterTimer = later(() => {
       filterTimer = null;

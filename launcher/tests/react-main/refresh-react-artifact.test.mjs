@@ -190,7 +190,7 @@ test('React refresh stages and verifies a coherent artifact before replacing any
       await cp(resolve(source, 'client'), resolve(destination, 'client'), {recursive: true});
       const graph = await json(resolve(destination, 'client/.vite/react-app-shell-graph.json'));
       graph.appShell = permission; await writeJson(resolve(destination, 'client/.vite/react-app-shell-graph.json'), graph);
-      for (const entry of ['index.html', 'en.html', 'lobby.html']) {
+      for (const entry of ['index.html', 'en.html', 'lobby.html', 'profile.html']) {
         const path = resolve(destination, 'client', entry);
         let html = (await readFile(path, 'utf8')).replace(/<meta[^>]+name="eagler-react-app-shell"[^>]*>/g, '');
         const encoded = JSON.stringify(permission).replaceAll('&', '&amp;').replaceAll('"', '&quot;');
