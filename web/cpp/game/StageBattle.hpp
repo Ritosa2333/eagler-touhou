@@ -129,6 +129,8 @@ struct StagePlayerState {
     Phase phase = Phase::Active;
     i32 phase_frame = 0, invulnerable = 0;
     Timer phase_clock, fire_clock, startup_clock;
+    Timer youmu_charge_clock;
+    Vec3 youmu_charge_origin{};
     std::vector<PlayerShot> shots;
     std::vector<PlayerShotGeometrySnapshot> shot_geometry;
     u32 shot_generation = 0;
@@ -200,6 +202,7 @@ public:
     std::array<PlayerOption, 8>& options = player_state_.options;
     i32& option_count = player_state_.option_count;
     i32 player_character() const noexcept { return character_; }
+    i32 youmu_charge() const noexcept { return player_state_.youmu_charge_clock.current; }
     i32 player_power() const noexcept { return player_ ? player_->power : 0; }
     i32 player_power_max() const noexcept { return player_ ? player_->max_power : 0; }
     i32 power_level() const noexcept {

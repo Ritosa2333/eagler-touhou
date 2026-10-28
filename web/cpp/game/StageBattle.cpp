@@ -300,6 +300,7 @@ void StageBattle::activate_stage_player() {
     player_phase_clock_.set(0);
     player_state_.startup_clock.set(0);
     fire_clock_.set(-1);
+    player_state_.youmu_charge_clock.set(0);
     option_power_ = -1;
     option_reset_pending_ = false;
     option_movement_tick_ = false;
@@ -387,10 +388,43 @@ void StageBattle::update_firing(bool held) {
                              [](const auto& enemy) { return !enemy->dead; }) &&
                          !(progress_ && (progress_->scene_flags & 0x4000u)) &&
                          !(sim.dialog_host && sim.dialog_host->dialog_active());
-    if (!enabled) { fire_clock_.set(-1); return; }
+    if (!enabled) {
+        fire_clock_.set(-1);
+        player_state_.youmu_charge_clock.set(0);
+        return;
+    }
     // 004460d0's non-active branch clears charge feedback, but preserves
     // the firing timer at +146c8..146d8. A deathbomb resumes that same burst.
     if (player_dead || player_phase != PlayerPhase::Active) return;
+    if (character_ == 3) {
+        // 004460d0: focused Youmu charges instead of running the ordinary
+        // 15-frame firing cycle. Release after60 starts a40-frame SHT burst
+        // from the saved player position, even if focus is released meanwhile.
+        auto& charge = player_state_.youmu_charge_clock;
+        const float rate = sim.time_rate();
+        if (charge.current < 0) {
+            const float saved_x = player_x, saved_y = player_y;
+            const bool saved_focus = focus;
+            player_x = player_state_.youmu_charge_origin.x;
+            player_y = player_state_.youmu_charge_origin.y;
+            focus = true;
+            fire_shots(charge.current + 40);
+            player_x = saved_x; player_y = saved_y; focus = saved_focus;
+            charge.tick(&rate);
+            if (charge.current >= 0) charge.set(0);
+            if (focus) return;
+        } else if (focus && held) {
+            charge.tick(&rate);
+            return;
+        } else {
+            if (charge.current > 0) {
+                const bool ready = charge.current >= 60;
+                charge.set(ready ? -40 : 0);
+                if (ready) player_state_.youmu_charge_origin = {player_x, player_y, 0};
+            }
+            if (focus) return;
+        }
+    }
     if (fire_clock_.current < 0) {
         if (!held) return;
         fire_clock_.set(0);
@@ -649,6 +683,13 @@ float StageBattle::query_enemy_damage(StageEnemy& state, float width, float heig
                                  ex, ey, width, height,
                                  shot.angle))
             continue;
+        if (shot.hit_behavior == 4) {
+            // 00447530: the slash remains active; each hit returns its
+            // decremented damage, bounded below by1. ANM completion retires it.
+            if (shot.damage > 1.0f) shot.damage -= 1.0f;
+            damage += shot.damage;
+            continue;
+        }
         damage += shot.damage;
         if (shot.hit_behavior == 3) {
             // 4474b0 disables damage but keeps mode4 for the dying ANM.

@@ -17,7 +17,7 @@ namespace th13 {
 class AnmRegistry {
     struct Node {
         AnmVm vm;AnmVm* borrowed=nullptr;u32 slot=0x1fff,handle=0;bool active=false,registered=false,alternate=false;
-        bool frozen_root=false;
+        bool frozen_root=false,pending_collection=false;
         Node* parent=nullptr;std::list<Node*> children;
         std::list<Node*>::iterator position;
     };

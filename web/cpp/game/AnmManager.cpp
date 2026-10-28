@@ -120,7 +120,7 @@ bool AnmManager::rebind(u32& handle,i32 script){
     auto* vm=instantiate(*old->resource,old->local_script_index(script));if(!vm)return false;vm->visual.render_flags|=0x200;vm->visual.translation={};vm->variables.rotation.z=0;
     if(!initial_tick(*vm))return false;vm->ordering=0;handle=registry.submit(*vm);return handle!=0;
 }
-bool AnmManager::retire(u32& handle){auto* vm=registry.find(handle);if(vm){vm->visual.render_flags=(vm->visual.render_flags&~64u)|32;if(!registry.retire_children(*vm))return false;}handle=0;return true;}
+bool AnmManager::retire(u32& handle){auto* vm=registry.find(handle);if(vm){vm->visual.render_flags|=32;if(!registry.retire_children(*vm))return false;}handle=0;return true;}
 bool AnmManager::pause(u32 handle,bool paused){auto* vm=registry.find(handle);return !vm||registry.pause_tree(*vm,paused);}
 bool AnmManager::interrupt(u32 handle,i32 label,bool immediate){auto* vm=registry.find(handle);if(!vm||registry.interrupt(*vm,label,random,rate,immediate))return true;error=registry.error;return false;}
 bool AnmManager::update(){if(registry.update(random,rate)){collect_resources();return true;}error=registry.error;return false;}
