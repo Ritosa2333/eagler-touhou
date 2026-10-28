@@ -60,3 +60,7 @@ node scripts/build.mjs
 Remove-Item Env:TH12_DIAGNOSTIC
 npm run test:portable
 ```
+
+## 共用源码身份
+
+完整构建按 `integration/common-dependency.json` 校验共用源码文件。普通版与多人版维护相同依赖身份，更新公共练习组件时一并刷新两侧摘要；CI 分别验证各自构建模式。

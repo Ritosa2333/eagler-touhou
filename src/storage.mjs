@@ -1,6 +1,6 @@
 const ROOT='/savesth12/';
-const DATABASE='/savesth12',STORE='FILE_DATA',VERSION=21,MAX_BYTES=64*1024*1024;
-const LEGACY_DATABASE='th12-eagler-preview-files';
+const DATABASE='/savesth12mp',STORE='FILE_DATA',VERSION=21,MAX_BYTES=64*1024*1024;
+const LEGACY_DATABASE='th12-multiplayer-preview-files';
 const MIGRATION=ROOT+'.eagler-preview-v1-migrated';
 const FILE_MODE=0o100666,DIRECTORY_MODE=0o40777;
 const fileName=/^(?:scoreth12\.dat|th12\.cfg|web-profile\.json|replay\/(?:[^/]+\/)?th12_[a-z0-9_-]+\.rpy)$/i;
@@ -50,20 +50,20 @@ function validateSchema(db,storeName,indexed){
   }
 }
 
-function openDatabase(legacy=false){
+function openDatabase(legacy=false,shared=false){
   return new Promise((resolve,reject)=>{
     let settled=false,missing=false,failure;
-    const request=indexedDB.open(legacy?LEGACY_DATABASE:DATABASE,legacy?1:VERSION);
+    const request=indexedDB.open(shared?'/savesth12':legacy?LEGACY_DATABASE:DATABASE,legacy?1:VERSION);
     request.onupgradeneeded=event=>{
       // Probing an absent preview database must never commit an empty old DB.
-      if(legacy){missing=event.oldVersion===0;if(!missing)failure=Error('旧版存档库结构不兼容');request.transaction.abort();return;}
+      if(legacy||shared){missing=event.oldVersion===0;if(!missing)failure=Error('旧版存档库结构不兼容');request.transaction.abort();return;}
       if(settled||event.oldVersion!==0){failure=Error('不允许升级未知的浏览器存档库');request.transaction.abort();return;}
       const store=request.result.createObjectStore(STORE);
       store.createIndex('timestamp','timestamp',{unique:false});
     };
     request.onerror=()=>{
       if(settled)return;settled=true;
-      if(legacy&&missing)resolve(null);else reject(failure??request.error??Error('无法打开浏览器存档库'));
+      if((legacy||shared)&&missing)resolve(null);else reject(failure??request.error??Error('无法打开浏览器存档库'));
     };
     request.onblocked=()=>{if(!settled){settled=true;reject(Error('浏览器存储被另一个游戏窗口占用，请关闭旧窗口后重新打开'));}};
     request.onsuccess=()=>{
@@ -89,7 +89,7 @@ function ensureDirectory(store,watch,path){
   });
 }
 function ensureParents(store,watch,path){
-  let directory=DATABASE;
+  let directory=ROOT.slice(0,-1);
   ensureDirectory(store,watch,directory);
   for(const part of path.slice(ROOT.length).split('/').slice(0,-1)){
     directory+='/'+part;
@@ -114,12 +114,26 @@ async function legacyFiles(){
   });}finally{legacy.close();}
 }
 
+async function sharedMultiplayerReplays(){
+  const db=await openDatabase(false,true);
+  if(!db)return [];
+  try{return await transaction(db,STORE,'readonly',(store,watch,done)=>{
+    const files=[];
+    watch(store.openCursor(),cursor=>{
+      if(!cursor){done(files);return;}
+      if(typeof cursor.key==='string'&&/^\/savesth12\/replay\/(?:[^/]+\/)?th12_mp_[a-z0-9_-]+\.rpy$/i.test(cursor.key))
+        files.push([cursor.key,fileBytes(cursor.value).slice()]);
+      cursor.continue();
+    });
+  });}finally{db.close();}
+}
+
 async function migrate(db){
   const marker=await transaction(db,STORE,'readonly',(store,watch,done)=>watch(store.get(MIGRATION),done));
   if(marker!==undefined&&!directoryValid(marker))throw Error('存档迁移标记无效');
-  const files=marker===undefined?await legacyFiles():[];
+  const files=marker===undefined?[...await legacyFiles(),...await sharedMultiplayerReplays()]:[];
   await transaction(db,STORE,'readwrite',(store,watch)=>{
-    ensureDirectory(store,watch,DATABASE);ensureDirectory(store,watch,ROOT+'replay');
+    ensureDirectory(store,watch,ROOT.slice(0,-1));ensureDirectory(store,watch,ROOT+'replay');
     // FILE_DATA readwrite transactions serialize across windows. Recheck the
     // marker here, after reading the old DB, so a losing opener cannot restore
     // a legacy Replay deleted after the winning migration committed.

@@ -1,7 +1,7 @@
 {
   "schema": "th12-common-source/1",
   "repository": "https://github.com/YomotsuHisami/eagler-touhou",
-  "revision": "608729a1637231d392e9fe97c09551f5b311dc54",
+  "revision": "f5847433324d7f3298ef736cf6928b10cc975c4e",
   "subdirectory": "common",
   "files": {
     "include/eagler/thprac/PracticeSpeed.hpp": "d2918548210a26aaae6211771bd4d28213453693e998c24b55c1e79851fb01fd",
@@ -21,8 +21,8 @@
     "include/eagler/thprac/PracticeInput.hpp": "bf8e4a1623d3a959ac8288036256c274a3a2455afaf466ff1555849789554366",
     "include/eagler/thprac/PracticeKeyHud.inc": "595647487150fdc129cbb3f58632956f10179f460ff79207bad9d4b7e09ee76c",
     "include/eagler/thprac/PracticeKeyMonitor.hpp": "851e448d033925f847dcdf19baaa6062dd2d7ef45bc462bc1b657c87a64eb927",
-    "include/eagler/thprac/PracticeMobilePanels.hpp": "cc3d9ac518a8e82a467ef90e2014f42a513346f7294548909cb10a6f1a496c2c",
-    "include/eagler/thprac/PracticePointer.hpp": "e6de87d76cdb3b2fd1e2efad6271a3da121125fab24d39960d2fa380db7b09e0",
+    "include/eagler/thprac/PracticeMobilePanels.hpp": "9aec2827705fc6631fc059dc80253e87ccaf765351b6b743512ca0e3411f945d",
+    "include/eagler/thprac/PracticePointer.hpp": "f575d9b8bf8aa45e681ce383aa4981cdd71e3e08b81527fe34568585503e0d1f",
     "include/eagler/thprac/PracticeReaction.inc": "ae0f2fb68b1e3ce1db8fdad199803aaf8ce13f58b37df3025671c5b8931d3280",
     "include/eagler/thprac/PracticeSpeed.inc": "7e56beee518a15fc8d71f57e3880befcf2d5803e280ea9a97136059769f86c09"
   }
