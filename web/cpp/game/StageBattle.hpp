@@ -230,6 +230,7 @@ public:
     void restore_replay_player(i32 x,i32 y,bool initial_focus);
     i32 speed_orth = 576, speed_diag = 407;      // 非聚焦（pl02a.sht ×128）
     i32 speed_orth_focus = 256, speed_diag_focus = 181;
+    struct TouchMotion { int mode = 0; float x = 0, y = 0; } touch;
     u32 input_state = 0;                         // 当帧回放输入（player 事件用）
 
     // 定标常量（.sht 弹型域以外的域：碰撞/无敌等，§7.2【待校准】）。

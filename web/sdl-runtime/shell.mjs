@@ -93,6 +93,10 @@ function sanitizePath(value) {
 function apply() {
   core.eaglerOptions = options;
   core._th13_music_enabled(+music);
+  core._th13_touch_options(+!!options.touchEnabled,
+    Math.max(0, ['touch', 'touch-unlimited', 'joystick', 'joystick-free'].indexOf(options.touchMovementMode)),
+    Math.max(100,Math.min(300,Number(options.touchSensitivity) || 100)) / 100,
+    +(options.touchFocusMode === 'two-finger'), +!!options.doubleTapBombEnabled);
 }
 
 async function resource(r) {
@@ -133,13 +137,27 @@ async function command(m) {
       clearKeyboard();
       return {};
     case 'touch-cancel':
-      core._th13_touch_cancel?.();
+      core._th13_touch_cancel();
       return {};
-    case 'direct-touch':
+    case 'direct-touch': {
+      if (m.type === 'cancel') { core._th13_touch_cancel(); return {}; }
+      if (!launched || document.hidden || stopping || !options.touchEnabled ||
+          !['down', 'move', 'up'].includes(m.type) || ![m.x, m.y, m.id].every(Number.isFinite)) return {};
+      const b = canvas.getBoundingClientRect();
+      if (b.width && b.height) core._th13_touch(({down: 0, move: 1, up: 2})[m.type], m.id,
+        (m.x * innerWidth - b.left) / b.width, (m.y * innerHeight - b.top) / b.height);
       return {};
+    }
     case 'touch-controls': {
       const t = m.controls || m;
       core.eaglerControls = t;
+      if (Number.isFinite(t.touchSensitivity) && t.touchSensitivity>=100&&t.touchSensitivity<=300 &&
+          t.touchSensitivity !== options.touchSensitivity) {
+        options.touchSensitivity = t.touchSensitivity;
+        apply();
+      }
+      core._th13_touch_controls(+!!options.touchEnabled, +!!t.fireEnabled, +!!t.focusEnabled,
+        t.bombSerial >>> 0, t.escapeSerial >>> 0, Number(t.joystickX) || 0, Number(t.joystickY) || 0);
       return {};
     }
     case 'launch':
@@ -236,12 +254,25 @@ window.addEventListener('message', e => {
 document.addEventListener('visibilitychange', () => {
   if (launched) {
     clearKeyboard();
+    core?._th13_touch_cancel();
     core?._th13_loop_pause(+document.hidden);
   }
 });
 window.addEventListener('blur', () => {
   clearKeyboard();
+  core?._th13_touch_cancel();
 });
+
+for (const [event, type] of [['pointerdown', 0], ['pointermove', 1], ['pointerup', 2], ['pointercancel', 2]]) {
+  canvas.addEventListener(event, e => {
+    if (!launched || !options.touchEnabled || e.pointerType === 'mouse') return;
+    e.preventDefault();
+    if (type === 0) canvas.setPointerCapture(e.pointerId);
+    const b = canvas.getBoundingClientRect();
+    if (b.width && b.height) core._th13_touch(type, e.pointerId,
+      (e.clientX - b.left) / b.width, (e.clientY - b.top) / b.height);
+  }, {passive: false});
+}
 
 for (const event of ['keydown', 'keyup']) window.addEventListener(event, e => {
   if (!launched || e.altKey || e.metaKey) return;
@@ -289,6 +320,13 @@ const initialized = (async () => {
       }
       const now = performance.now();
       if (now - last >= 1000) {
+        const audio = core.th13Audio;
+        if (audio) emit('audio-health', {
+          ready: audio.device && !audio.failed, renderedFrames: audio.mixedFrames,
+          queuedFrames: audio.queuedFrames, queuedMs: audio.queuedFrames * 1000 / audio.sampleRate,
+          errorCode: +audio.failed, backend: 'SDL3', track: audio.track,
+          cursor: audio.musicCursor, musicEnabled: music, suspended: audio.suspended,
+        });
         emit('frame-health', {
           fps: presents * 1000 / (now - last),
           simulationFps: ticks * 1000 / (now - last),

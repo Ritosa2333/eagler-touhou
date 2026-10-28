@@ -4,6 +4,11 @@
 
 namespace th13 {
 
+namespace {
+// fresh stage ctx 由 0x4264f0 的 _memset(...,0,0x2b4) 清零，bit0 从 0 开始。
+constexpr u32 kTranceGaugeDimmed = 1u;
+}  // namespace
+
 bool GameHud::check(bool ok) {
     if (!ok && error.empty())
         error = animations.error.empty() ? "HUD animation unavailable" : animations.error;
@@ -134,6 +139,8 @@ bool GameHud::initialize(const HudEntryContext& context) {
         // 172–175 are created by the script and survive along with the HUD.
         gauge_main = widget(171);
         if (!gauge_main) return false;
+        // fresh stage ctx（0x4264f0 memset）bit0 从 0 开始；仅此路径清 dim。
+        flags &= ~kTranceGaugeDimmed;
         trance_skull_label = 0;
         if (!update_trance()) return false;
     }

@@ -318,8 +318,21 @@ void StageBattle::move_player(u32 held) {
         speed = i32(float(speed) * 0.2f); // 0040a860 player+0xa2b4
     // 0x442960:223-236：定点累加 + 钳制（±0x5c00 / [0x1000,0xd800]）。
     const float rate = sim.time_rate(); //442d3b stores f32 velocity, then truncates.
-    pos_fx += truncate_int(float(float(speed * kDirX[dir]) * rate));
-    pos_fy += truncate_int(float(float(speed * kDirY[dir]) * rate));
+    if (touch.mode && !(held & 0xf0u) && std::isfinite(touch.x) && std::isfinite(touch.y)) {
+        double x = double(touch.x) * 128 - pos_fx;
+        double y = double(touch.y) * 128 - pos_fy;
+        if (touch.mode != 2) {
+            double limit = double(focus ? speed_orth_focus : speed_orth) * rate;
+            if (character_ == 1 && bomb_timer > 0) limit *= .2;
+            const double length = std::sqrt(x * x + y * y);
+            if (length > limit && length > 0) { x *= limit / length; y *= limit / length; }
+        }
+        pos_fx += truncate_int(float(x));
+        pos_fy += truncate_int(float(y));
+    } else {
+        pos_fx += truncate_int(float(float(speed * kDirX[dir]) * rate));
+        pos_fy += truncate_int(float(float(speed * kDirY[dir]) * rate));
+    }
     if (pos_fx < -0x5c00) pos_fx = -0x5c00;
     else if (pos_fx > 0x5c00) pos_fx = 0x5c00;
     if (pos_fy < 0x1000) pos_fy = 0x1000;

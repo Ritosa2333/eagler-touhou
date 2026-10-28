@@ -1,12 +1,13 @@
-// 浏览器宿主（th15 BrowserRuntime 裁剪：EM 导出 + RAF 循环 + FrameCadence；
-// 触控/thprac/practice lab 全部裁掉，docs/plans/ui-base.md §三）。
+// 浏览器宿主：EM 导出、RAF 帧钟及键盘/触控输入适配。
 // 输入：SDL3 emscripten 端口把键盘事件汇入 SDL 键位态，再经
 // GameKeyboard::keyboard_keys 生成 32 位游戏掩码（KeyboardMap.inc 同代布局）。
+#include <eagler/input/BrowserGamepad.hpp>
 #include "ApplicationState.hpp"
 #include "../game/GameInput.hpp"
 #include "../game/GameKeyboard.hpp"
 #include "../game/Probe.hpp"
 #include "../../../portable/sdl/FrameCadence.hpp"
+#include "../../../portable/input/TouchController.hpp"
 
 #include <SDL3/SDL.h>
 #include <GLES3/gl3.h>
@@ -42,6 +43,28 @@ struct Key {
 #include "../../../portable/input/KeyboardMap.inc"
 
 GameInput controls;
+touhou::input::TouchController gestures;
+
+touhou::input::TouchState touch_state() {
+    touhou::input::TouchState value;
+    if (!app || !app->run || (app->pause && app->pause->active())) return value;
+    if (app->replay_active) { value.context = 3; return value; }
+    const auto& battle = app->run->battle;
+    value.context = app->run->dialog_active() ? 2 : 1;
+    value.instance = app->progress.stage;
+    value.ready = battle.player_phase == StageBattle::PlayerPhase::Active && !battle.player_dead;
+    // Only the deathbomb window keeps a held drag alive while movement is
+    // blocked. Dying/Entering must discard the old drag instead of resurrecting
+    // it at the respawn position.
+    value.retain_motion = battle.player_phase == StageBattle::PlayerPhase::Deathbomb &&
+                          !battle.player_dead;
+    value.x = battle.player_x; value.y = battle.player_y;
+    value.fast = float(battle.speed_orth) / 128;
+    value.slow = float(battle.speed_orth_focus) / 128;
+    value.min_x = -184; value.max_x = 184; value.min_y = 32; value.max_y = 432;
+    return value;
+}
+
 SDL_Joystick* controller = nullptr;
 touhou::sdl::FrameCadence cadence;
 bool running = false, suspended = false, lost_focus = false;
@@ -107,6 +130,8 @@ u32 sample_controller(u32& raw_buttons) {
 }
 
 void clear_inputs() {
+    gestures.reset();
+    if (app && app->run) app->run->battle.touch = {};
     for (auto& key : keyboard_map) key.hosted = false;
     SDL_ResetKeyboard();
     controls = {};
@@ -142,9 +167,15 @@ bool sample_and_tick(float fps = 60.f) {
             if (key.scan == 28 || key.scan == 156) keys[13] = true;                    // Enter
         }
     }
+    const int mapped_pad = eagler::input::BrowserGamepadState();
+    eagler::input::ApplyGamepadVirtualKeys(keys, mapped_pad);
     u32 raw_buttons = 0;
-    const u32 pad_keys = sample_controller(raw_buttons);
+    const u32 pad_keys = mapped_pad < 0 ? sample_controller(raw_buttons) : 0;
     app->raw_pad_buttons = raw_buttons;
+    const auto touch = gestures.sample(touch_state(), SDL_GetTicks(), keys[16] || (pad_keys & 8),
+        keys[37] || keys[38] || keys[39] || keys[40] || (pad_keys & 0xf0));
+    for (u32 i = 0; i < 256; ++i) keys[i] = keys[i] || touch.keys[i];
+    if (app->run) app->run->battle.touch = {touch.motion, touch.x, touch.y};
     u32 held = keyboard_keys(keys) | pad_keys;
     // Physical input always belongs to menus, including Replay pause/end.
     // RunScene consumes recorded gameplay input only after its freeze gate;
@@ -289,6 +320,37 @@ EMSCRIPTEN_KEEPALIVE void th13_key(unsigned scan, unsigned down) {
 }
 
 EMSCRIPTEN_KEEPALIVE void th13_keys_clear() { th13::sdl::clear_inputs(); }
+
+EMSCRIPTEN_KEEPALIVE void th13_touch_options(unsigned enabled, unsigned mode, float sensitivity,
+                                             unsigned two_finger, unsigned double_tap) {
+    auto& touch = th13::sdl::gestures;
+    const int next_mode = mode <= 3 ? int(mode) : 0;
+    if (touch.enabled != (enabled != 0) || touch.mode != next_mode) touch.reset();
+    touch.enabled = enabled != 0; touch.mode = next_mode; touch.unlimited = next_mode == 1;
+    touch.sensitivity = std::isfinite(sensitivity) ? std::clamp(sensitivity, 1.f, 3.f) : 1.f;
+    touch.two_finger = two_finger != 0; touch.double_tap = double_tap != 0;
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_touch_controls(unsigned enabled, unsigned fire, unsigned focus,
+                                              unsigned bomb, unsigned escape, float x, float y) {
+    auto& touch = th13::sdl::gestures;
+    if (touch.enabled != (enabled != 0)) touch.reset();
+    touch.enabled = enabled != 0;
+    touch.controls(fire != 0, focus != 0, bomb, escape,
+        std::isfinite(x) ? x : 0, std::isfinite(y) ? y : 0);
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_touch(unsigned type, int id, float x, float y) {
+    using namespace th13::sdl;
+    if (type > 2 || !std::isfinite(x) || !std::isfinite(y)) return;
+    gestures.pointer(int(type), id, x, y, SDL_GetTicks(), touch_state(), (controls.held & 8) != 0);
+}
+
+EMSCRIPTEN_KEEPALIVE void th13_touch_cancel() {
+    using namespace th13::sdl;
+    gestures.reset();
+    if (app && app->run) app->run->battle.touch = {};
+}
 
 EMSCRIPTEN_KEEPALIVE void th13_loop_stop() {
     using namespace th13::sdl;

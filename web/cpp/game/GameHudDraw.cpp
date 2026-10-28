@@ -162,9 +162,11 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
     if (!text(620, 260, grouped_number(u32(progress.graze)))) return false;
     // Boss 计时文本（0x427910:253-274）：'.' 与百分秒锚定数字 VM 位置
     //（ascii script2/3 dump：208/220,39）+16/-7；'.' 字体 4、百分秒 0.6 缩放。
+    // 原版 0x42814f/0x428155 写 +0x19184/+0x19188=1（左/上对齐），
+    // 颜色整 dword 取数字 VM +0x528（含 alpha），不是 HUD 根 VM 的 alpha。
     if (boss_hud.timer_visible()) {
-        style.alignment = style.vertical_alignment = 0;
-        style.color = alpha(boss_hud.timer_digit_color(), root_vm->visual.color);
+        style.alignment = style.vertical_alignment = 1;
+        style.color = boss_hud.timer_digit_color();
         style.font = 4;
         style.scale = {1, 1};
         if (!text(boss_hud.timer_text_x(), boss_hud.timer_text_y(), ".")) return false;

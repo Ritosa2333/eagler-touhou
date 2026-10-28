@@ -25,7 +25,8 @@ status=0
 for source in "${sources[@]}"; do
   object="$object_dir/$(basename "${source%.cpp}").o"
   g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
-    -I"$port_dir/web/cpp" -DTH13_TEST_PORT_DIR=\""$port_dir"\" \
+    -I"$port_dir/web/cpp" -I"$port_dir/../../common/include" \
+    -DTH13_TEST_PORT_DIR=\""$port_dir"\" \
     -c "$source" -o "$object" || status=1
   objects+=("$object")
 done
@@ -34,7 +35,8 @@ done
 for suite in "$script_dir"/*_test.cpp; do
   name="$(basename "$suite" .cpp)"
   if ! g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
-      -I"$port_dir/web/cpp" -DTH13_TEST_PORT_DIR=\""$port_dir"\" \
+      -I"$port_dir/web/cpp" -I"$port_dir/../../common/include" \
+      -DTH13_TEST_PORT_DIR=\""$port_dir"\" \
       "${objects[@]}" "$suite" \
       -o "$out_dir/$name"; then
     echo "tests/ui/run.sh: 套件 $name 构建失败（其余套件继续）" >&2
