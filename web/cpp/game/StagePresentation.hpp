@@ -156,6 +156,8 @@ private:
     std::array<bool, 8> bomb_orb_exploding_{};
     u32 bomb_generation_=0,bomb_background_=0,bomb_beam_=0;
     std::array<u32,5> bomb_ray_handles_{};
+    u32 youmu_charge_handle_ = 0;
+    bool youmu_charge_ready_ = false;
     std::vector<u32> player_effect_handles_;
     i32 option_character_ = -1, option_count_ = -1;
     bool full_options_ = false;

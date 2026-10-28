@@ -158,7 +158,7 @@ int AnmVm::tick(GameRandom& rng,float rate){
                 interpolators.position.begin(frames,8,{from.x,from.y,from.z},{x,y,z});interpolators.position.control1={c1x,c1y,c1z};interpolators.position.control2={c2x,c2y,c2z};break;}
             case 421:{if(length<12)return fail("Truncated animation arguments");bits(visual.flags,read<u16>(p+8),21,0x600000);bits(visual.flags,read<u16>(p+10),23,0x1800000);break;}
             case 423:bits(visual.flags,u8(read<u32>(arg(0))),17,0x60000);break;
-            case 424:bits(visual.render_flags,u8(read<u32>(arg(0))),7,0x80);break;
+            case 424:bits(visual.render_flags,u8(read<u32>(arg(0))),6,0x40);break;
             case 425:visual.uv_velocity.x=floating(0);visual.render_flags|=0x1000000;break;
             case 426:visual.uv_velocity.y=floating(0);visual.render_flags|=0x1000000;break;
             case 427:case 428:{const float target=floating(2);const i32 frames=integer(0);auto& interpolation=opcode==427?interpolators.uv_x:interpolators.uv_y;interpolation.control1={};interpolation.control2={};interpolation.begin(frames,read<i32>(arg(1)),{opcode==427?visual.uv_velocity.x:visual.uv_velocity.y},{target});break;}

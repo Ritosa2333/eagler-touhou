@@ -12,10 +12,17 @@ AsciiFrame::AsciiFrame(FrameScheduler& s,AsciiText& t,AnmRenderer& r,AnmDrawServ
 }
 AsciiFrame::~AsciiFrame(){for(auto& c:callbacks)scheduler.remove(c);}
 bool AsciiFrame::draw(i32 space){
- if(space!=0&&!views.camera(DrawCamera::Hud,false)){error="Caption playfield camera failed";return false;}
- if(space==1){renderer.flush();text.scene_origin(true);}
+ // 00404b50 submits queue1 without adding a game origin or selecting the
+ // final HUD viewport. At priority51 the intermediate @R is still bound;
+ // 43c7e0 switches to the backbuffer at52 and43ca50/text.anm84 composes at53.
+ // Keep absolute RT coordinates (00403da0), including History x452. The
+ // final [128,512] -> [32,416] crop supplies the -96 translation once.
+ if(space==1){
+  renderer.flush();
+  if(!views.camera(DrawCamera::Fullscreen,false)){error="Caption render-target camera failed";return false;}
+  renderer.offset={};
+ }else if(space!=0&&!views.camera(DrawCamera::Hud,false)){error="Caption playfield camera failed";return false;}
  const bool rendered=text.draw(space,renderer);
- if(space==1)text.scene_origin(false);
  if(!rendered){error=text.error;return false;}
  if(!views.camera(DrawCamera::Fullscreen,false)){error="Caption full-screen camera failed";return false;}
  if(space==1)renderer.flush();

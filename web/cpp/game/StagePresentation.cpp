@@ -21,8 +21,21 @@ namespace {
 // 是 f61 敌机行走位差 96px 的根因，2026-10-23 实测修正），此处外部平移
 // 增量置 0，杜绝双重叠加。
 constexpr float kGameToScreenX = 0.0f, kGameToScreenY = 0.0f;
-// 弹体贴图基准角：贴图朝右时旋转 = 弹角（对屏检验后校准）。
-constexpr float kBulletSpriteForward = 0.0f;
+// 0040e4d0 writes the bullet heading after ANM update, immediately before
+// drawing. ins424 (VM+1c bit6) opts in; other scripts retain their own rotation.
+void sync_bullet_heading(AnmVm& vm, float angle) {
+    if (!(vm.visual.render_flags & 0x40u)) return;
+    vm.variables.rotation.z = wrap_angle(float(angle + 1.5707963705062866f));
+    vm.visual.flags |= 4u;
+}
+
+// 00445c40 / 004464d0: player shots use their heading without the enemy
+// bullet's quarter-turn, and only when the script opts in via ins424.
+void sync_shot_heading(AnmVm& vm, float angle) {
+    if (!(vm.visual.render_flags & 0x40u)) return;
+    vm.variables.rotation.z = angle;
+    vm.visual.flags |= 4u;
+}
 
 // 自机弹脚本是否带 id 中断标签（op5 [len12: time,mask,id32]）。0x446bf0
 // 无条件写 VM+0x4a0=1；仅当脚本确有 id1 标签（pl00.anm script 10..17 的
@@ -106,9 +119,9 @@ bool StagePresentation::tick_bullet(StageBullet& bullet, bool birth) {
         bullet.animation_blend = -1;
     }
     vm.visual.translation = {bullet.x, bullet.y, bullet.z};
-    vm.variables.rotation.z = bullet.angle + kBulletSpriteForward;
     const int result = vm.tick(random, animations.rate);
     if (result < 0) return fail("Bullet animation: " + vm.error);
+    sync_bullet_heading(vm, bullet.angle);
     bullet.animation_ready = vm.variables.integers[0] != 0; // bullet+4d4 = vm+4ac
     bullet.animation_geometry = vm.sprite != nullptr;
     if (vm.sprite) {
@@ -173,6 +186,8 @@ void StagePresentation::release() {
     for (u32 handle : player_effect_handles_)
         if (auto* vm = animations.registry.find(handle)) animations.release_tree(*vm);
     player_effect_handles_.clear();
+    youmu_charge_handle_ = 0;
+    youmu_charge_ready_ = false;
     for (u32& handle : spirit_handles_) {
         if (handle && !animations.retire(handle))
             fail("Spirit animation retire failed: " + animations.error);
@@ -331,6 +346,23 @@ bool StagePresentation::sync_player_effects(const StageBattle& battle) {
     const bool visible = battle.player_visible();
     const Vec3 position{battle.player_x, battle.player_y, 0};
     if(!sync_bomb_effects(battle))return false;
+    // 004460d0 / 00446790: pl03 script18 follows the player during charge;
+    // reaching60 sends label2, release destroys the feedback VM.
+    if (visible && battle.player_character() == 3 && battle.youmu_charge() > 0) {
+        if (!animations.registry.find(youmu_charge_handle_)) {
+            youmu_charge_handle_ = create_player_effect(banks.player, 18, -1, 0, position);
+            if (!youmu_charge_handle_) return false;
+            youmu_charge_ready_ = false;
+        }
+        animations.registry.find(youmu_charge_handle_)->visual.translation = position;
+        if (battle.youmu_charge() >= 60 && !youmu_charge_ready_) {
+            if (!animations.interrupt(youmu_charge_handle_, 2, false)) return fail(animations.error);
+            youmu_charge_ready_ = true;
+        }
+    } else {
+        if (!end_player_effect(youmu_charge_handle_, true)) return false;
+        youmu_charge_ready_ = false;
+    }
 
     // 00442a8f：DAT_004c2180 + 0x10 = effect.anm，不是自机 plXX.anm。
     // script22 自带 sprite23、12帧缩放、18帧旋转及子script21；松Shift
@@ -956,8 +988,8 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
         }
         slot.vm->visual.translation = {bullet.x + kGameToScreenX, bullet.y + kGameToScreenY,
                                        bullet.z};
-        slot.vm->variables.rotation.z = bullet.angle + kBulletSpriteForward;
         if (slot.vm->tick(random, animations.rate) < 0) return fail("Bullet animation: " + slot.vm->error);
+        sync_bullet_heading(*slot.vm, bullet.angle);
     }
     for (size_t i = 0; i < bullets_.size(); ++i)
         if (!matched[i]) bullets_[i].active = false;
@@ -990,7 +1022,8 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             }
             AnmVm& vm = *shots_[i];
             const i32 script = shot.script;
-            if (script >= 0 && vm.source_script != script) {
+            const bool binding_shot = script >= 0 && vm.source_script != script;
+            if (binding_shot) {
                 if (vm.resource) animations.release_tree(vm);
                 vm.environment = &animations.scene_environment();
                 vm.object_host = &animations;  // 弹型脚本可 spawn 附属弹子 VM
@@ -1008,9 +1041,22 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 vm.visual.set_layer(11);
             }
             vm.visual.translation = {shot.x + kGameToScreenX, shot.y + kGameToScreenY, 0.0f};
-            vm.variables.rotation.z = shot.angle;  // 脚本旋转模式 1：贴图随弹向
-            if (script >= 0 && vm.resource && vm.tick(random, animations.rate) < 0)
-                return fail("Player shot animation: " + vm.error);
+            sync_shot_heading(vm, shot.angle);
+            if (script >= 0 && vm.resource) {
+                const i32 result = vm.tick(random, animations.rate);
+                if (result < 0) return fail("Player shot animation: " + vm.error);
+                // 004464d0 retires the damage registration when its ANM
+                // disappears. Youmu's piercing slash scripts terminate at16.
+                if (result > 0 && shot.hit_behavior == 4) {
+                    battle.shots[i].alive = false;
+                    if (!animations.release_tree(vm)) return fail(animations.error);
+                    vm = AnmVm{};
+                    shot_generations_[i] = 0;
+                    continue;
+                }
+            }
+            // Newly bound scripts establish ins424 during this first tick.
+            if (binding_shot) sync_shot_heading(vm, shot.angle);
             if (script >= 0 && shot.type != 2) {
                 Vec3 corners[4];
                 if (!anm_quad_positions(vm, corners))
@@ -1077,7 +1123,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
                 corpse.vm->visual.translation = {corpse.x + kGameToScreenX,
                                                  corpse.y + kGameToScreenY,
                                                  corpse.sine_moving ? 0.0f : 0.1f};
-                corpse.vm->variables.rotation.z = corpse.angle;
+                sync_shot_heading(*corpse.vm, corpse.angle);
                 shot_faded_generations_.insert(corpse.generation);
                 shot_fades_.push_back(std::move(corpse));
                 shots_[i] = std::make_unique<AnmVm>();
@@ -1118,7 +1164,7 @@ bool StagePresentation::sync(StageBattle& battle, u32 held) {
             vm.visual.translation = {corpse.x + kGameToScreenX,
                                      corpse.y + kGameToScreenY,
                                      corpse.sine_moving ? 0.0f : 0.1f};
-            vm.variables.rotation.z = corpse.angle;
+            sync_shot_heading(vm, corpse.angle);
         }
         ++corpse.age;
         const i32 result = vm.tick(random, animations.rate);

@@ -159,7 +159,11 @@ bool SpellPresentation::draw(HudDrawServices& services, i32 captures, i32 attemp
     if (!vm) return true; // 00413080 missing +0x1c VM skips this numeric pass
     HudTextStyle style;
     style.font = 2;
-    style.alignment = 2;
+    // 00413080 uses font2/queue1;00427910 restores left/top alignment.
+    // These are intermediate-RT positions, not final-screen coordinates:
+    // queue1 draws at priority51, then text.anm84 at53 maps x128..512
+    // to x32..416. Keep that composition path rather than subtracting96 here.
+    style.alignment = 1;
     style.coordinate_space = 1;
     style.color = (vm->visual.color & 0xff000000u) | 0x00ffffffu;
     char text[32];
@@ -189,15 +193,13 @@ bool SpellPresentation::rasterize_name(DialogueTextureSink& sink,
     if (!error.empty()) return false;
     auto* vm = animations_.registry.find(displays_[1]);
     if (!production_ || !vm) return fail("Spell name display sprite unavailable");
-    // 004135c3 calls 0046e970 whose base is the sprite's own static field
-    // [rec+0x38]; the original f0008 ink columns (294..418, pitch 15.47 =
-    // 32px GDI advance squeezed by 320/662) pin the effective draw origin at
-    // x_arg = 96 = W/2 - (nominal-1)*len/4 — the 0046ea30 center semantics
-    // (0046ea30.c L26-27), not the W-(nominal-1)*len/2 reading that lands
-    // ~96px right of the original frame. [rec+0x38] static-base resolution
-    // stays an open item (template divisor unresolved).
+    // 004135c3 calls the right-aligned writer0046e970: sprite[+38]
+    // minus (nominal_height-1)*CP932_byte_length/2. 0046e230 scales the
+    // sprite bounds by actual/header texture size, and0046e770 divides
+    // their difference by the same ratio: +38 is the logical sprite width.
+    // The half-width/quarter-length formula belongs to0046ea30 (center).
     return rasterize_anm_text(*vm, sink, rasterize, 0xffffffu, snapshot_.name,
-                              AnmTextAlignment::Center, 17, &error);
+                              AnmTextAlignment::Right, 17, &error);
 }
 bool SpellPresentation::begin(i32 spell_id, const std::string& name, i32 duration_frames,
                               i32 stage_number, i32 difficulty, const float boss_position[3],
