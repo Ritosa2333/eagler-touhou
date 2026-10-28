@@ -11,12 +11,13 @@ const args = new Map(process.argv.slice(2).map(argument => {
   if (!argument.startsWith('--') || split < 3) throw Error('Use --name=value arguments');
   return [argument.slice(2, split), argument.slice(split + 1)];
 }));
-const allowed = new Set(['workspace', 'content', 'language-packs', 'output', 'site-url', 'runtime', 'multiplayer-runtime', 'font', 'vanilla-font', 'build-launcher']);
+const allowed = new Set(['workspace', 'content', 'language-packs', 'languages', 'artwork', 'output', 'site-url', 'runtime', 'multiplayer-runtime', 'font', 'vanilla-font', 'build-launcher']);
 for (const name of args.keys()) if (!allowed.has(name)) throw Error('Unknown option: --' + name);
 for (const name of ['workspace', 'content']) if (!args.get(name)) throw Error('Missing --' + name + '=PATH');
 const workspace = path.resolve(args.get('workspace'));
 const launcher = path.join(workspace, 'launcher');
 const content = path.resolve(args.get('content'));
+const artwork = path.resolve(args.get('artwork') || path.join(content, 'artwork'));
 const runtime = path.resolve(args.get('runtime') || path.join(root, 'build-eagler'));
 const multiplayerRuntime = path.resolve(args.get('multiplayer-runtime') || path.join(root, '../th12-mp/build-eagler-multiplayer'));
 const output = path.resolve(args.get('output') || path.join(root, 'artifacts/launcher-site'));
@@ -49,16 +50,24 @@ let languageCatalog;
 if (fs.existsSync(path.join(languageSource, 'catalog.json'))) {
   languageCatalog = JSON.parse(fs.readFileSync(path.join(languageSource, 'catalog.json'), 'utf8'));
 } else if (fs.existsSync(path.join(languageSource, 'language/catalog.json'))) {
-  languageCatalog = JSON.parse(fs.readFileSync(path.join(languageSource, 'language/catalog.json'), 'utf8'));
+  languageSource = path.join(languageSource, 'language');
+  languageCatalog = JSON.parse(fs.readFileSync(path.join(languageSource, 'catalog.json'), 'utf8'));
 }
 if (args.has('language-packs') && !languageCatalog) throw Error('Language pack directory has no catalog');
 if (languageCatalog && (languageCatalog.schema !== 'eagler-touhou/thcrap-static-catalog/1' || languageCatalog.game !== 'th12')) {
   throw Error('Unsupported Host language catalog');
 }
-const languages = ['ja', ...(languageCatalog?.languages ?? []).map(entry => entry.id)];
+// Match launcher/host/lib/site-builder.mjs DEFAULT_LANGUAGES. The package
+// identity comes from the requested deployment, not whichever local DAT exists.
+const languages = (args.get('languages') || 'ja,lang_zh-hans,lang_en').split(',').map(value => value.trim());
 if (languages.some(language => language !== 'ja' && !/^lang_[a-z0-9-]+$/i.test(language)) || new Set(languages).size !== languages.length) {
   throw Error('Unsupported or duplicated TH12 language selection');
 }
+if (!languages.includes('ja')) throw Error('TH12 language selection must include ja');
+const availableLanguages = new Set((languageCatalog?.languages ?? []).map(entry => entry.id));
+const missingLanguages = languages.filter(id => id !== 'ja' && !availableLanguages.has(id));
+if (missingLanguages.length) throw Error('Missing main-site language packs: ' + missingLanguages.join(', ') + '. Supply --language-packs=PATH with the corresponding catalog and archives.');
+if (!fs.existsSync(path.join(artwork, 'th12-card.webp'))) throw Error('Missing main-site artwork: ' + path.join(artwork, 'th12-card.webp'));
 const features = path.join(work, 'features.json');
 fs.writeFileSync(features, JSON.stringify({schema: 'eagler-touhou/server-features/1', resourceMode: 'hosted',
   games: {th12: {languages, thprac: true}}}, null, 2) + '\n');
@@ -80,7 +89,7 @@ if (buildLauncher === '1') run(process.execPath, [path.join(launcher, 'scripts/b
 run(process.execPath, [path.join(launcher, 'scripts/package-server.mjs'), '--games=th12', '--profile=web-validation-th12',
   '--test-build=1', '--output=' + output, '--site-url=' + siteUrl.href,
   '--th12-build=' + runtime, '--th12-multiplayer-build=' + multiplayerRuntime, '--th12-assets=' + content, '--th12-ogg=' + content,
-  '--music=ogg', '--feature-config=' + features, '--artwork-dir=' + path.join(content, 'artwork'),
+  '--music=ogg', '--feature-config=' + features, '--artwork-dir=' + artwork,
   '--font=' + path.resolve(args.get('font') || path.join(content, 'shared/unifont.otf')),
   '--vanilla-font=' + path.resolve(args.get('vanilla-font') || path.join(content, 'shared/msgothic.ttc')),
   ...(languageCatalog ? ['--th12-language-packs=' + languageSource] : []),

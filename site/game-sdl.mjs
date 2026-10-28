@@ -126,7 +126,8 @@ async function launch(){
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
     core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Error:message=>fail(Error(message)),th12Stopped:(code=0,reason='')=>{terminated=true;launched=false;if(code||!firstFrame){fail(Error(reason||lastFailure||startupLog.slice(-8).join('\n')||'游戏在首帧前退出'));return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
-    await loadSaves();const locale=options.thpracLocale==='ja-JP'?1:options.thpracLocale==='en-US'?2:0;
+    const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
+    await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!options.alwaysHitbox),Number(options.thpracEnabled!==false),locale,Number(music!=='none'));
     const exitCode=core.callMain(['--data-dir','/game','--save-dir','/savesth12']);
     if(terminated||exitCode)throw Error(lastFailure||startupLog.slice(-8).join('\n')||'游戏初始化失败');

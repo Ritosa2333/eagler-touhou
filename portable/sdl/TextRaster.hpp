@@ -9,7 +9,7 @@
 #include <string>
 
 namespace th12host {
-std::u32string decode_cp932(const std::string& bytes);
+std::u32string decode_cp932(const std::string& bytes,bool localize=true);
 struct Canvas {u32 width=0,height=0;std::vector<u8> rgba;void reset(u32 w,u32 h){width=w;height=h;rgba.assign(size_t(w)*h*4,0);}};
 class TextRaster {
 public:
@@ -18,8 +18,8 @@ public:
     std::string font_names()const;
     // Canvas fillText with textBaseline=top, textAlign=left|right|center.
     // pixel_height is the CSS font size; weight >= 600 is synthesised bold.
-    void fill(Canvas& canvas,const std::u32string& text,float x,float y,bool serif,u32 weight,float pixel_height,u32 rgb,i32 align=0);
-    float measure(const std::u32string& text,bool serif,u32 weight,float pixel_height);
+    void fill(Canvas& canvas,const std::u32string& text,float x,float y,bool serif,u32 weight,float pixel_height,u32 rgb,i32 align=0,float scale_x=1);
+    float measure(const std::u32string& text,bool serif,u32 weight,float pixel_height,float scale_x=1);
 private:
     struct Impl;std::unique_ptr<Impl> impl;
 };
