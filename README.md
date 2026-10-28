@@ -2,6 +2,8 @@
 
 [适配与验证](ADAPTATION.md) · [工作区](../../WORKSPACE.md)
 
+[SDL3 / GLES 3 平台库](portable/sdl/README.md)通过 `TH12_BUILD_SDL_HOST=ON` 构建，目标为 `th12_sdl_host`，链接本目录多人核心。原生库提供资源与绘制基础；当前房间、回滚与多人录像由 Web 多人宿主提供。
+
 `ports/th12-mp` 是星莲船的独立多人源码，支持双人、三人合作。普通版保留在 `ports/th12`；多人版沿普通版来源历史维护，并使用共用的联机、回滚、观战和输入录像组件。
 
 ## 合作规则

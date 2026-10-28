@@ -1,0 +1,19 @@
+{
+  "schema": "eagler-touhou/native-source/1",
+  "repository": "https://github.com/saekaze/th12-switch",
+  "commit": "ea1709f0a18b71a493ab48395f15d2f6612fe7d6",
+  "directory": "src",
+  "core": "current port's src/game and src/wasm; original Switch core not imported",
+  "openglRegistry": "6af574a14089ccfee87efe230ebcdd8742859813",
+  "eglRegistry": "e964211ff5f7c2bcada786954a16d5b813379395",
+  "licenses": {
+    "host": "CC0-1.0; MIT-derived files retain TH12 MIT",
+    "khronos": "licenses retained in headers",
+    "miniaudio": "third_party/miniaudio.LICENSE",
+    "stbImage": "third_party/stb_image.LICENSE"
+  },
+  "stbImage": "003501f6d7a8668ce8b6d875e34dd97ad0d5d5b5",
+  "sdl": "SDL3 3.4.2 / 683181b47cfabd293e3ea409f838915b8297a4fd",
+  "architecture": "SDL3 callback application shared by desktop and Web; current per-port C++ core",
+  "freetype": "2.14.1 / 526ec5c47b9ebccc4754c85ac0c0cdf7c85a5e9b"
+}

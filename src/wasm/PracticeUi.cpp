@@ -7,8 +7,10 @@
 #include "../practice/UiCatalog.hpp"
 #include "imgui.h"
 #include "imgui_internal.h"
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) || defined(TH12_SDL_HOST)
 #include "imgui_freetype.h"
+#endif
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
 #include <eagler/thprac/PracticeMobilePanels.hpp>
@@ -161,7 +163,7 @@ void draw_practice(){
       }
       ImGui::SliderInt(label(practice_TH_LIFE),&params.life,0,9);ImGui::SliderInt(label(practice_TH_LIFE_FRAGMENT),&params.life_fragment,0,3);
       ImGui::SliderInt(label(practice_TH_BOMB),&params.bomb,0,9);ImGui::SliderInt(label(practice_TH_BOMB_FRAGMENT),&params.bomb_fragment,0,2);
-      char pilot().resources.power[24];std::snprintf(pilot().resources.power,sizeof pilot().resources.power,"%d.%02d",params.power/100,params.power%100);ImGui::SliderInt(label(practice_TH_POWER),&params.power,0,400,pilot().resources.power);
+      char power[24];std::snprintf(power,sizeof power,"%d.%02d",params.power/100,params.power%100);ImGui::SliderInt(label(practice_TH_POWER),&params.power,0,400,power);
       combo(label(practice_TH12_UFO_SIDE),&params.ufo_side,practice_group_TH_SIDE_SELECT);
       combo(label(practice_TH12_VENTRA_1),&params.ventra_1,practice_group_TH12_VENTRA_SELECT);
       if(params.ventra_1)combo(label(practice_TH12_VENTRA_2),&params.ventra_2,practice_group_TH12_VENTRA_SELECT);else params.ventra_2=params.ventra_3=0;
@@ -248,7 +250,7 @@ int th12_practice_ui_init(const unsigned char* font,int length,int language){
     ImFontGlyphRangesBuilder glyphs;glyphs.AddRanges(io.Fonts->GetGlyphRangesChineseFull());glyphs.AddText("↑←↓→ΔΣ");static ImVector<ImWchar> ranges;glyphs.BuildRanges(&ranges);
     io.FontDefault=io.Fonts->AddFontFromMemoryTTF(const_cast<unsigned char*>(font),length,16,&config,ranges.Data);
   }else io.Fonts->AddFontDefault();
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) || defined(TH12_SDL_HOST)
   if(!ImGuiFreeType::BuildFontAtlas(io.Fonts,0)){ImGui::DestroyContext();return 0;}
 #else
   io.Fonts->Build();
