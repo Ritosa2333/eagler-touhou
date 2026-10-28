@@ -52,7 +52,7 @@ test('the actual Renderer state/region path defers shake until native quad const
   assert.deepEqual([p.x,p.y],row.position);
   r.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,p.screenShake);
   const corners=[0,1,2,5].map(i=>r.batch.slice(i*10,i*10+2));
-  assert.deepEqual(corners,expected(row),`renderer mode${row.mode} anchor${row.anchor} rotation${row.rotation}`);
+  assert.deepEqual(corners,expected(row).map(point=>point.map(value=>value+(row.mode===1?.5:0))),`renderer mode${row.mode} anchor${row.anchor} rotation${row.rotation}`);
   assert.deepEqual(pose,before);
  }
 });

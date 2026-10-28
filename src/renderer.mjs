@@ -245,7 +245,11 @@ export class Renderer {
       :quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel,scratch),du=options.u||0,dv=options.v||0;
     const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
     const u0=sx/texture.w+du,u1=endX/texture.w+du,v0=sy/texture.h+dv,v1=endY/texture.h+dv;
-    const ox=presentationOffset?.[0]??0,oy=presentationOffset?.[1]??0,r=tint[0]??tint.r,g=tint[1]??tint.g,b=tint[2]??tint.b;
+    // Native45af10 mode1 keeps D3D9 integer pixel centers. Convert at
+    // submission to WebGL half-integer centers; otherwise a 1px warning
+    // samples only the transparent edges of its vertically compressed sprite.
+    // Mode0 already removes native459e50's half-pixel subtraction above.
+    const rasterOffset=mode===1?.5:0,ox=(presentationOffset?.[0]??0)+rasterOffset,oy=(presentationOffset?.[1]??0)+rasterOffset,r=tint[0]??tint.r,g=tint[1]??tint.g,b=tint[2]??tint.b;
     if(this.batch instanceof VertexBatch)this.batch.quad(corners,u0,u1,v0,v1,texture.flipY,r,g,b,alpha,ox,oy);
     else for(const i of quadIndices){const u=i===1||i===2?u1:u0,v=i>=2?v1:v0;this.batch.push(corners[i][0]+ox,corners[i][1]+oy,u,texture.flipY?1-v:v,r,g,b,alpha,1,0);}
   }
