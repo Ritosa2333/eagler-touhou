@@ -1,0 +1,204 @@
+<!doctype html>
+<!-- th13 神灵庙网页运行时：装载挡板 → 初始化 → RAF 主循环。
+     资源经 fetch 进 MEMFS /assets（七个常驻 bank + front + Stage1 的
+     enemy/st01enm/bullet/pl0X 与 st01.ecl/default.ecl/st01bs.ecl，
+     由 prepare-assets.mjs 从 raw 解包目录拷贝到 ./assets）。
+     输入：SDL3 emscripten 端口收键盘（Z 射击/X 炸弹/Shift 低速/方向/Esc 暂停）。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>东方神灵庙 th13 — 运行时</title>
+<style>
+  /* 上游范式（th10/th15 同款）：4:3 全屏信箱式缩放，黑底居中，无页面级 UI 常驻。 */
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; color: #ddd; font: 14px system-ui, sans-serif; }
+  body { display: grid; place-items: center; }
+  canvas { display: block; width: min(100vw, 133.333333vh); height: min(100vh, 75vw); outline: none; touch-action: none; }
+  #loading { position: fixed; top: 40%; max-width: 90%; text-align: center; }
+  #error { position: fixed; top: 40%; max-width: 90%; text-align: center; color: #ffb7b7; }
+  #error:empty { display: none; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="0"></canvas>
+<p id="loading" role="status">正在准备东方神灵庙…</p>
+<p id="error" role="alert"></p>
+<!-- [R3-M] 标题 Replay 菜单本地导入入口：隐藏文件选择器（.rpy）+ 画布拖放。
+     无可见 UI 常驻；游戏内 Replay 列表末行「Import」为触发入口。 -->
+<input type="file" id="replay-file" accept=".rpy" multiple hidden>
+<script type="module">
+import {runtimeAssets} from './runtime-assets.mjs';
+const status = text => document.getElementById('loading').textContent = text;
+const fail = text => { document.getElementById('loading').textContent = ''; document.getElementById('error').textContent = text; };
+window.__th13_log = [];
+const note = (kind, text) => { window.__th13_log.push(kind + ' ' + text); };
+try {
+  const Module = await import('../artifacts/sdl3/th13-sdl.mjs');
+  const canvas = document.getElementById('canvas');
+  const mod = await Module.default({
+    canvas,
+    print: t => { console.log('[th13]', t); note('out', t); },
+    printErr: t => { console.warn('[th13]', t); note('err', t); },
+  });
+  window.mod = mod;  // 调试面：控制台可直查运行时状态
+  // ---- 资源进 MEMFS /assets（缺件即启动失败，不静默降级）----
+  // 与 sdl-runtime/prepare-assets.mjs 的 files 保持一致（单一事实源，改一处必改另一处）
+  const assets = runtimeAssets;
+  mod.FS.mkdirTree('/assets');
+  for (const name of assets) {
+    const response = await fetch('assets/' + name);
+    if (!response.ok) throw new Error('资源缺失：assets/' + name + '（先跑 prepare-assets.mjs）');
+    mod.FS.writeFile('/assets/' + name, new Uint8Array(await response.arrayBuffer()));
+    status('th13 资源装载中… ' + name);
+  }
+  // TH13 original voice table (004bad90/004bb320). Shared samples are loaded
+  // once; requests with different voice IDs retain their original gains.
+  const audioAssets = [
+    'thbgm.fmt',
+    'se_plst00.wav', 'se_enep00.wav', 'se_pldead00.wav', 'se_power0.wav', 'se_power1.wav',
+    'se_tan00.wav', 'se_tan01.wav', 'se_tan02.wav', 'se_ok00.wav', 'se_cancel00.wav',
+    'se_select00.wav', 'se_gun00.wav', 'se_cat00.wav', 'se_lazer00.wav', 'se_lazer01.wav',
+    'se_enep01.wav', 'se_damage00.wav', 'se_item00.wav', 'se_kira00.wav', 'se_kira01.wav',
+    'se_kira02.wav', 'se_timeout.wav', 'se_graze.wav', 'se_powerup.wav', 'se_pause.wav',
+    'se_cardget.wav', 'se_damage01.wav', 'se_timeout2.wav', 'se_invalid.wav', 'se_slash.wav',
+    'se_ch00.wav', 'se_ch01.wav', 'se_extend.wav', 'se_nep00.wav', 'se_bonus.wav',
+    'se_bonus2.wav', 'se_enep02.wav', 'se_lazer02.wav', 'se_nodamage.wav', 'se_boon00.wav',
+    'se_don00.wav', 'se_boon01.wav', 'se_ch02.wav', 'se_ch03.wav', 'se_extend2.wav',
+    'se_pin00.wav', 'se_pin01.wav', 'se_lgods1.wav', 'se_lgods2.wav', 'se_lgods3.wav',
+    'se_lgods4.wav', 'se_lgodsget.wav', 'se_msl.wav', 'se_msl2.wav', 'se_pldead01.wav',
+    'se_heal.wav', 'se_astralup.wav', 'se_fault.wav', 'se_noise.wav',
+  ];
+  for (const name of audioAssets) {
+    const response = await fetch('assets/' + name);
+    if (!response.ok) throw new Error('原版音频资源缺失：' + name);
+    mod.FS.writeFile('/assets/' + name, new Uint8Array(await response.arrayBuffer()));
+    status('th13 音效装载中… ' + name);
+  }
+  // The installed soundtrack is one OGG stream representing the original
+  // virtual PCM archive. Sequential 1 MiB shards avoid a second 30 MiB JS copy;
+  // C++ streams it through stb_vorbis and seeks by the original thbgm.fmt.
+  const musicStream = mod.FS.open('/assets/thbgm.ogg', 'w');
+  let musicBytes = 0;
+  try {
+    for (let n = 0; n < 30; ++n) {
+      const name = 'thbgm-' + String(n).padStart(2, '0') + '.part';
+      const response = await fetch('assets/' + name);
+      if (!response.ok) throw new Error('原版音乐资源缺失：' + name);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const expected = n < 29 ? 1048576 : 150104;
+      if (bytes.length !== expected) throw new Error('原版音乐分片长度错误：' + name);
+      mod.FS.write(musicStream, bytes, 0, bytes.length);
+      musicBytes += bytes.length;
+      status('th13 音乐装载中… ' + Math.round(musicBytes / 30558808 * 100) + '%');
+    }
+  } finally {
+    mod.FS.close(musicStream);
+  }
+
+  // 对话日文栅格字体（RuntimeFontRaster 依次尝试 /msgothic.ttc →
+  // /fonts/msgothic.ttc，common/include/eagler/text/RuntimeFontRaster.hpp:36-37）：
+  // 只接受原版同源 MS Gothic（th15 manifest fontSources 记录 sha256
+  // 4bde3e63…c4f95db）。资产缺席时跳过装载——FontDevice::initialize 显式
+  // 失败（对话日文渲染 BLOCKED，不以其他字体/ASCII 顶替），页面与其余
+  // 功能照常启动（r4/dialogue/integration.md §A2 语义）。
+  const font = await fetch('assets/msgothic.ttc');
+  if (font.ok)
+    mod.FS.writeFile('/msgothic.ttc', new Uint8Array(await font.arrayBuffer()));
+  else
+    console.warn('[th13] assets/msgothic.ttc 缺席：对话日文渲染保持 BLOCKED（原版资产红线，不替换字体）');
+
+  // MusicRoom 曲目目录（musiccmt.txt：th13.dat 原始 cp932 文本，@bgm/ 块）。
+  // 缺席时跳过——宿主 catalog 为空、菜单如实空目录（不伪造曲目）。
+  const cmt = await fetch('assets/musiccmt.txt');
+  if (cmt.ok)
+    mod.FS.writeFile('/assets/musiccmt.txt', new Uint8Array(await cmt.arrayBuffer()));
+
+  // 键盘事件经 SDL3 emscripten 端口进入 SDL 键位态；截获方向键/空格防滚动。
+  canvas.addEventListener('click', () => canvas.focus());
+  for (const type of ['keydown', 'keyup'])
+    canvas.addEventListener(type, e => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code))
+        e.preventDefault();
+    });
+
+  // 启动序：装载挡板（sig+ascii）→ 启动品牌动画 → 初始化七 bank + 标题 → RAF 循环。
+  const runtime_error = () => mod.UTF8ToString ? mod.UTF8ToString(mod._th13_error()) : String(mod._th13_error());
+  if (!mod._th13_prepare_loading()) throw new Error(runtime_error());
+  mod._th13_draw_startup(90);
+  if (!mod._th13_initialize()) throw new Error(runtime_error());
+  mod._th13_loop_start();
+  status('');  // 启动完成：装载文字退场，画面交给游戏（操作说明在游戏内，页面不常驻 UI）
+  mod.onGameFrame = (ok) => { if (!ok) fail('运行时错误：' + runtime_error()); };
+
+  // ---- [R3-M] Replay 菜单本地 .rpy 导入（文件选择 + 拖放；不碰音频段）----
+  // 文件字节经堆指针传给 wasm（th13_replay_import → import_replay_bytes）：
+  // 解码失败落 replay_import_error（菜单 Import 行显示），成功落 catalog 槽
+  // 并提示菜单选中。IndexedDB 持久化未做（本轮范围外，HANDOFF 登记）。
+  const importError = text => { note('replay-import', text); console.warn('[th13]', text); };
+  // 导入失败原因优先取菜单同源 replay_import_error（空 = 无失败），应用级
+  // last_error 仅兜底——解码失败不 fail() 应用（坏 .rpy 不中断会话）。
+  const replayImportError = () => {
+    const specific = mod._th13_replay_import_error
+      ? mod.UTF8ToString(mod._th13_replay_import_error()) : '';
+    return specific || runtime_error();
+  };
+  const importReplay = async file => {
+    try {
+      if (!file || !/\.rpy$/i.test(file.name)) { importError('非 .rpy 文件：' + (file?.name ?? '')); return; }
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const dataPtr = mod._malloc(bytes.length);
+      const namePtr = mod.allocateUTF8(file.name);
+      if (!dataPtr || !namePtr) { importError('内存分配失败：' + file.name); return; }
+      try {
+        mod.HEAPU8.set(bytes, dataPtr);
+        if (!mod._th13_replay_import(dataPtr, bytes.length, namePtr))
+          importError('导入失败：' + file.name + '：' + replayImportError());
+      } finally {
+        mod._free(dataPtr);
+        mod._free(namePtr);
+      }
+    } catch (e) {
+      importError('导入异常：' + ((e && (e.stack || e.message)) || String(e)));
+    }
+  };
+  const replayInput = document.getElementById('replay-file');
+  mod.onReplayImportRequest = () => replayInput.click();
+  replayInput.addEventListener('change', () => {
+    for (const file of replayInput.files) importReplay(file);
+    replayInput.value = '';
+  });
+  for (const type of ['dragover', 'drop'])
+    canvas.addEventListener(type, e => {
+      e.preventDefault();
+      if (type === 'drop') for (const file of e.dataTransfer?.files ?? []) importReplay(file);
+    });
+
+  // 帧泵看门狗：requestAnimationFrame 停摆的宿主（后台/嵌入式 webview）经
+  // setTimeout 以 60fps 节奏持续驱动 th13_frame_tick；rAF 心跳恢复即让位。
+  let lastFrame = -1, rafAlive = false, pumping = false;
+  const rafHeartbeat = () => { rafAlive = true; requestAnimationFrame(rafHeartbeat); };
+  requestAnimationFrame(rafHeartbeat);
+  setInterval(() => {
+    if (rafAlive) { rafAlive = false; pumping = false; lastFrame = mod._th13_frame(); return; }
+    const frame = mod._th13_frame();
+    if (frame !== lastFrame) { lastFrame = frame; return; }  // rAF 在跑
+    if (pumping) return;
+    pumping = true;
+    const pump = () => {
+      if (!pumping) return;
+      if (mod._th13_frame_tick(16.6667) === 0) { pumping = false; return; }
+      setTimeout(pump, 16);
+    };
+    pump();
+  }, 300);
+} catch (e) {
+  if (e === 'unwind') {
+    status('');
+  } else {
+    const detail = e && (e.stack || e.message) || String(e);
+    fail('启动失败：' + detail);
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>

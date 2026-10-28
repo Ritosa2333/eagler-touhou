@@ -36,6 +36,7 @@ const verification = Object.freeze({
   th075: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th11: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
   th12: {kind:'managed-web', test:'tests/managed-adapter.test.mjs'},
+  th13: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
@@ -60,7 +61,7 @@ for (const [game, lane] of Object.entries(verification).filter(([game]) => selec
     if (game === 'th09') {
       await runNativeCpp(await readFile(workspacePath(game,'web/tests/multiplayer/frame-schedule.cpp'),'utf8'),
         {includes:[workspacePath(game,'web/tests/multiplayer')]});
-    } else if (game === 'th075') {
+    } else if (game === 'th075' || game === 'th13') {
       await runNativeCpp(`#include "FrameCadence.hpp"
 #include <cassert>
 #include <initializer_list>

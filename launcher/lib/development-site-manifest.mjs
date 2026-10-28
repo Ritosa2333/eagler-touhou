@@ -44,7 +44,7 @@ async function musicDeclaration(declaration, mode, sourceRoot) {
 export async function createDevelopmentSiteManifestFromContent(content, { netplayRelay, sourceRoot = project, games: selectedGames, publishManifest = value => value } = {}) {
   const games = {};
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
-    if (selectedGames && !selectedGames.includes(game)) continue;
+    if (selectedGames ? !selectedGames.includes(game) : product.buildOptIn === true) continue;
     const declaration = content.games[game];
     if (!declaration) throw new Error(`${game}: missing development content declaration`);
     const data = await dataIdentity(game, declaration.data, sourceRoot);

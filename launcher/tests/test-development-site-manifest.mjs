@@ -7,6 +7,7 @@ import { createDevelopmentSiteManifestFromContent } from "../lib/development-sit
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { DEFAULT_BUILD_GAMES } from "../lib/product-selection.mjs";
 
 const root = await mkdtemp(join(resolve(import.meta.dirname, "../.."), "eagler-development-manifest-"));
 const project = fileURLToPath(new URL("..", import.meta.url));
@@ -36,7 +37,11 @@ assert.equal(manifest.schema, SITE_MANIFEST_SCHEMA);
 assert.equal(manifest.profile, "web-development");
 assert.equal(manifest.shared.testBuild, true);
 assert.equal(manifest.shared.resourceMode, "hosted");
-assert.deepEqual(Object.keys(manifest.games), Object.keys(PRODUCT_GAMES));
+assert.deepEqual(Object.keys(manifest.games), [...DEFAULT_BUILD_GAMES]);
+const th13Only = await createManifest({ games: ["th13"] });
+assert.deepEqual(Object.keys(th13Only.games), ["th13"]);
+assert.doesNotThrow(() => validateSiteManifest(th13Only));
+assert.equal(th13Only.games.th13.runtime, DEVELOPMENT_CONTENT.games.th13.runtime);
 assert.doesNotThrow(() => validateSiteManifest(manifest));
 assert.equal(manifest.shared.netplayRelay, undefined);
 const th09Only = await createManifest({ games: ["th09"] });

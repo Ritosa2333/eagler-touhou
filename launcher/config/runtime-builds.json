@@ -159,6 +159,14 @@
         "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
         "multiplayer": { "workspaceRepository": "th12mp", "features": { "thcrap": true, "thprac": false }, "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"] }, "cache": {} }
       }
+    },
+    "th13": {
+      "builder": "prebuilt",
+      "sourceBuild": { "kind": "node", "build": ["portable/build-eagler.mjs"], "commonInputs": ["include/eagler/text/RuntimeFontRaster.hpp", "include/eagler/input/DialogueGesture.hpp", "include/eagler/input/BrowserGamepad.hpp", "browser/browser-gamepad-input.hpp"] },
+      "workspaceRepository": "th13",
+      "variants": {
+        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+      }
     }
   }
 }

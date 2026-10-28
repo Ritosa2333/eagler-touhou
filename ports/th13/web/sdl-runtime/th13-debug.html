@@ -1,0 +1,171 @@
+<!doctype html>
+<!-- th13 回放调试宿主页：确定性取帧（与 th13.html 的交互运行时互斥使用）。
+     启动序同 th13.html（装载挡板 → 启动品牌 → 初始化），但不启动 rAF 主循环；
+     会话由 th13_debug_replay 直入对局（录像头决定难度/角色/关卡），此后每调用
+     一次 th13_debug_frame 恰推进一个游戏帧（固定 1/60 步长，不经帧钟）。
+     资源供给（除 th13.html 同款 18 件外）：
+       assets/<sht>   移速源 plXXa/b.sht（名字与 C++ 侧录像头推导规则一致）
+       replays/<rpy>  原版录像本体（FS 写入 /assets 后交 th13_debug_replay）
+     画面经 canvas.toDataURL 导出 PNG（同一 JS 任务内取像，WebGL 后备缓冲未合成
+     前内容完整）。驱动：tools/shot-frames.mjs（th13-shot 镜像 chromium+playwright）。
+     查询参数：?replay=th13_01.rpy&sht=pl00a.sht&stage=0 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>东方神灵庙 th13 — 回放取帧</title>
+<style>
+  html, body { margin: 0; background: #101018; color: #ddd; font: 14px system-ui, sans-serif; }
+  canvas { display: block; margin: 0 auto; image-rendering: pixelated; outline: none; }
+  #status { text-align: center; padding: 8px; }
+</style>
+</head>
+<body>
+<div id="status">加载 th13 回放取帧…</div>
+<canvas id="canvas" tabindex="0"></canvas>
+<script type="module">
+import {runtimeAssets} from './runtime-assets.mjs';
+const status = text => document.getElementById('status').textContent = text;
+window.__th13_log = [];
+const note = (kind, text) => { window.__th13_log.push(kind + ' ' + text); };
+const params = new URLSearchParams(location.search);
+const replayName = params.get('replay') ?? 'th13_01.rpy';
+const shtName = params.get('sht') ?? 'pl00a.sht';
+const stageIndex = Number(params.get('stage') ?? '0');
+const fetchBytes = async path => {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error('资源缺失：' + path);
+  return new Uint8Array(await response.arrayBuffer());
+};
+try {
+  // artifact 可指向捕获构建（../artifacts/sdl3-capture/th13-sdl.mjs，经
+  // ?artifact= 指定）：语义绘制清单导出（captureBegin/End + drawList）与
+  // 像素采样（pixels）需该构建的精灵层号钩子。
+  const artifact = params.get('artifact') ?? '../artifacts/sdl3/th13-sdl.mjs';
+  const Module = await import(artifact);
+  const canvas = document.getElementById('canvas');
+  // WebGL2 可用性探针用离屏 canvas：真 canvas 的首个 getContext 属于 SDL3 运行时
+  // （先占会冻结创建属性）。
+  if (!document.createElement('canvas').getContext('webgl2'))
+    throw new Error('WebGL2 不可用（无头驱动需 SwiftShader）');
+  const mod = await Module.default({
+    canvas,
+    print: t => { console.log('[th13]', t); note('out', t); },
+    printErr: t => { console.warn('[th13]', t); note('err', t); },
+  });
+  window.mod = mod;
+  const assets = runtimeAssets;
+  mod.FS.mkdirTree('/assets');
+  for (const name of [...assets, shtName]) {
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('assets/' + name));
+    status('th13 资源装载中… ' + name);
+  }
+  mod.FS.writeFile('/assets/' + replayName, await fetchBytes('replays/' + replayName));
+  // Use the same font VFS path as the interactive page for dialogue/cards.
+  mod.FS.writeFile('/msgothic.ttc', await fetchBytes('assets/msgothic.ttc'));
+  // 音频面（与生产 th13.html 同块镜像）：AudioDevice::initialize 强制装载
+  // 原版 SE 表 + thbgm.ogg 单流——debug 页先前 0 项音频装载，_th13_initialize
+  // 即败（Missing or invalid original TH13 sound）。仅测试接口补齐，不含
+  // 任何生产逻辑。
+  const audioAssets = [
+    'thbgm.fmt',
+    'se_plst00.wav', 'se_enep00.wav', 'se_pldead00.wav', 'se_power0.wav', 'se_power1.wav',
+    'se_tan00.wav', 'se_tan01.wav', 'se_tan02.wav', 'se_ok00.wav', 'se_cancel00.wav',
+    'se_select00.wav', 'se_gun00.wav', 'se_cat00.wav', 'se_lazer00.wav', 'se_lazer01.wav',
+    'se_enep01.wav', 'se_damage00.wav', 'se_item00.wav', 'se_kira00.wav', 'se_kira01.wav',
+    'se_kira02.wav', 'se_timeout.wav', 'se_graze.wav', 'se_powerup.wav', 'se_pause.wav',
+    'se_cardget.wav', 'se_damage01.wav', 'se_timeout2.wav', 'se_invalid.wav', 'se_slash.wav',
+    'se_ch00.wav', 'se_ch01.wav', 'se_extend.wav', 'se_nep00.wav', 'se_bonus.wav',
+    'se_bonus2.wav', 'se_enep02.wav', 'se_lazer02.wav', 'se_nodamage.wav', 'se_boon00.wav',
+    'se_don00.wav', 'se_boon01.wav', 'se_ch02.wav', 'se_ch03.wav', 'se_extend2.wav',
+    'se_pin00.wav', 'se_pin01.wav', 'se_lgods1.wav', 'se_lgods2.wav', 'se_lgods3.wav',
+    'se_lgods4.wav', 'se_lgodsget.wav', 'se_msl.wav', 'se_msl2.wav', 'se_pldead01.wav',
+    'se_heal.wav', 'se_astralup.wav', 'se_fault.wav', 'se_noise.wav',
+  ];
+  for (const name of audioAssets) {
+    mod.FS.writeFile('/assets/' + name, await fetchBytes('assets/' + name));
+    status('th13 音效装载中… ' + name);
+  }
+  const musicStream = mod.FS.open('/assets/thbgm.ogg', 'w');
+  let musicBytes = 0;
+  try {
+    for (let n = 0; n < 30; ++n) {
+      const name = 'thbgm-' + String(n).padStart(2, '0') + '.part';
+      const bytes = await fetchBytes('assets/' + name);
+      const expected = n < 29 ? 1048576 : 150104;
+      if (bytes.length !== expected) throw new Error('原版音乐分片长度错误：' + name);
+      mod.FS.write(musicStream, bytes, 0, bytes.length);
+      musicBytes += bytes.length;
+      status('th13 音乐装载中… ' + Math.round(musicBytes / 30558808 * 100) + '%');
+    }
+  } finally {
+    mod.FS.close(musicStream);
+  }
+
+  const runtime_error = () => mod.UTF8ToString(mod._th13_error());
+  if (!mod._th13_prepare_loading()) throw new Error(runtime_error());
+  mod._th13_draw_startup(90);
+  if (!mod._th13_initialize()) throw new Error(runtime_error());
+  // 回放会话直入：解码录像、按录像头配置对局；rAF 主循环不启动。
+  const name_ptr = mod.allocateUTF8(replayName);
+  const total = mod._th13_debug_replay(name_ptr, stageIndex);
+  if (!total) throw new Error('回放会话建立失败：' + runtime_error());
+  status('回放会话就绪：' + replayName + ' stage ' + stageIndex + ' 共 ' + total + ' 帧');
+
+  // 确定性取帧 API：pumpTo(游戏帧号 F) —— 恰推进到「已消费 F+1 帧输入」的画面
+  // （golden 游戏帧 F = 第 F+1 次泵后的画面，见 golden README 时间轴对齐），
+  // 同一 JS 任务内返回 PNG dataURL。重复调用按需续泵。
+  // 捕获构建附加：captureBegin/End（语义清单 MEMFS 导出）、pumpFrames（无
+  // PNG 的裸泵）、pixels（GL 帧缓冲 RGBA 采样，GL 坐标系：左下原点）。
+  window.__th13_debug = {
+    total,
+    consumed: () => mod._th13_debug_replay_frame(),
+    stageFrame: () => mod._th13_debug_stage_frame(),
+    report: () => mod.UTF8ToString(mod._th13_debug_layer_report()),
+    stageReport: () => mod.UTF8ToString(mod._th13_debug_stage_report()),
+    pumpTo(frame) {
+      const want = frame + 1;
+      while (mod._th13_debug_replay_frame() < want) {
+        const stageBefore = mod._th13_debug_stage_frame();
+        if (!mod._th13_debug_frame())
+          throw new Error('帧泵失败@' + mod._th13_debug_replay_frame() + '：' + runtime_error());
+        if (mod._th13_debug_stage_frame() === stageBefore)
+          throw new Error('场景冻结@' + stageBefore + '（输入流耗尽或场景停滞）');
+      }
+      if (mod._th13_debug_stage_frame() !== want)
+        throw new Error('帧号失同步：consumed=' + mod._th13_debug_replay_frame() +
+                        ' stage=' + mod._th13_debug_stage_frame() + ' want=' + want);
+      return canvas.toDataURL('image/png');
+    },
+    captureBegin(path = '/th13-capture.jsonl') {
+      if (!mod._th13_debug_capture_begin)
+        throw new Error('捕获 API 缺失（需 ?artifact=../artifacts/sdl3-capture/th13-sdl.mjs）');
+      const ptr = mod.allocateUTF8(path);
+      const ok = mod._th13_debug_capture_begin(ptr);
+      return {ok, path};
+    },
+    captureEnd() { return mod._th13_debug_capture_end(); },
+    captureDrawList(path = '/th13-capture.jsonl') {
+      const bytes = mod.FS.readFile(path);
+      return new TextDecoder().decode(bytes);
+    },
+    pumpFrames(count) {
+      for (let i = 0; i < count; i++)
+        if (!mod._th13_debug_frame())
+          throw new Error('帧泵失败@' + mod._th13_debug_replay_frame() + '：' + runtime_error());
+      return mod._th13_debug_replay_frame();
+    },
+    pixels(x, y, w, h) {
+      const ptr = mod._th13_debug_read_pixels(x, y, w, h);
+      if (!ptr) throw new Error('像素采样失败');
+      return new Uint8Array(mod.HEAPU8.buffer, ptr, w * h * 4).slice();
+    },
+  };
+} catch (e) {
+  const detail = e && (e.stack || e.message) || String(e);
+  status('启动失败：' + detail);
+  console.error(e);
+  window.__th13_debug_failed = detail;
+}
+</script>
+</body>
+</html>

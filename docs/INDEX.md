@@ -1,6 +1,6 @@
 # 文档总表
 
-共 335 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 360 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -45,6 +45,7 @@
 | 作品入口 | [ports/th11/README.md](../ports/th11/README.md) | 東方地霊殿 TH11 |
 | 作品入口 | [ports/th12-mp/README.md](../ports/th12-mp/README.md) | 东方星莲船多人合作版 |
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
+| 作品入口 | [ports/th13/README.md](../ports/th13/README.md) | 东方神灵庙 · th13 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
@@ -61,6 +62,7 @@
 | 作品适配表 | [ports/th11/ADAPTATION.md](../ports/th11/ADAPTATION.md) | th11 适配检查 |
 | 作品适配表 | [ports/th12-mp/ADAPTATION.md](../ports/th12-mp/ADAPTATION.md) | th12 MP 适配检查 |
 | 作品适配表 | [ports/th12/ADAPTATION.md](../ports/th12/ADAPTATION.md) | th12 适配检查 |
+| 作品适配表 | [ports/th13/ADAPTATION.md](../ports/th13/ADAPTATION.md) | th13 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
@@ -124,6 +126,25 @@
 | 作品源码文档 | [ports/th12/third_party/stb_vorbis/README.md](../ports/th12/third_party/stb_vorbis/README.md) | stb_vorbis README |
 | 作品源码文档 | [ports/th12/tools/frame-inspector/README.md](../ports/th12/tools/frame-inspector/README.md) | TH12 原版逐帧检查 |
 | 作品源码文档 | [ports/th12/tools/replay-verifier/README.md](../ports/th12/tools/replay-verifier/README.md) | TH12 Replay verification |
+| 作品源码文档 | [ports/th13/docs/ASSETS.md](../ports/th13/docs/ASSETS.md) | th13 资源格式清单 |
+| 作品源码文档 | [ports/th13/docs/DECOMP.md](../ports/th13/docs/DECOMP.md) | th13 反编译函数地图 |
+| 作品源码文档 | [ports/th13/docs/DEVELOPMENT.md](../ports/th13/docs/DEVELOPMENT.md) | th13 开发指南 |
+| 作品源码文档 | [ports/th13/docs/plans/anm-pipeline.md](../ports/th13/docs/plans/anm-pipeline.md) | TH13 ANM（v8）管线行为规格与移植方案 |
+| 作品源码文档 | [ports/th13/docs/plans/coverage-matrix.md](../ports/th13/docs/plans/coverage-matrix.md) | 场景覆盖矩阵（coverage matrix） |
+| 作品源码文档 | [ports/th13/docs/plans/draw-contract.md](../ports/th13/docs/plans/draw-contract.md) | 语义绘制清单契约（draw contract）v1 |
+| 作品源码文档 | [ports/th13/docs/plans/ecl-vm.md](../ports/th13/docs/plans/ecl-vm.md) | th13 ECL 虚拟机（ECL v13）行为规格 |
+| 作品源码文档 | [ports/th13/docs/plans/event-contract.md](../ports/th13/docs/plans/event-contract.md) | stage1 事件契约（oracle 对拍合同） |
+| 作品源码文档 | [ports/th13/docs/plans/hud-capture-plan.md](../ports/th13/docs/plans/hud-capture-plan.md) | 对局窗 HUD 捕获面扩展方案（S2 前置研究报告） |
+| 作品源码文档 | [ports/th13/docs/plans/oracle-entry.md](../ports/th13/docs/plans/oracle-entry.md) | TH13 原版可直调入口施工图（Unicorn oracle） |
+| 作品源码文档 | [ports/th13/docs/plans/render-chain.md](../ports/th13/docs/plans/render-chain.md) | TH13 渲染提交链逆向 —— 假设备语义捕获施工图 |
+| 作品源码文档 | [ports/th13/docs/plans/replay-twin-divergence.md](../ports/th13/docs/plans/replay-twin-divergence.md) | th1301 回放自机孪生模型分歧根因排查（S4 拦路虎分析报告） |
+| 作品源码文档 | [ports/th13/docs/plans/replay.md](../ports/th13/docs/plans/replay.md) | 录像（.rpy）格式与回放注入 |
+| 作品源码文档 | [ports/th13/docs/plans/results-flow.md](../ports/th13/docs/plans/results-flow.md) | th13 Stage 终了 → 结算 → 下一关 / 标题 / 结局 场景链（反编译研究报告） |
+| 作品源码文档 | [ports/th13/docs/plans/results-overlay-anatomy.md](../ports/th13/docs/plans/results-overlay-anatomy.md) | 结算幕（对局内覆盖层）静态解剖（S3 关键前置研究报告） |
+| 作品源码文档 | [ports/th13/docs/plans/stage1-acceptance.md](../ports/th13/docs/plans/stage1-acceptance.md) | Stage 1 全链路验收合同 |
+| 作品源码文档 | [ports/th13/docs/plans/title-anm-blueprint.md](../ports/th13/docs/plans/title-anm-blueprint.md) | th13 主菜单 ANM 蓝图（title.anm / titlev.anm 脚本号总表与重锚方案） |
+| 作品源码文档 | [ports/th13/docs/plans/ui-base.md](../ports/th13/docs/plans/ui-base.md) | TH13–15 同代引擎 UI 基座移植方案 |
+| 作品源码文档 | [ports/th13/tools/replay-verifier/README.md](../ports/th13/tools/replay-verifier/README.md) | replay-verifier |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
@@ -192,6 +213,7 @@
 | 迁移记录 | [docs/migration/README.md](migration/README.md) | Monorepo 迁移记录 |
 | 迁移记录 | [docs/migration/local-workspace-20261019.md](migration/local-workspace-20261019.md) | 本地工作区归并 ｜ 2026-10-19 |
 | 迁移记录 | [docs/migration/th12-subtree-20261024.md](migration/th12-subtree-20261024.md) | th12 子树继承 ｜ 上游同源历史 |
+| 迁移记录 | [docs/migration/th13-subtree-20261028.md](migration/th13-subtree-20261028.md) | th13 独立源码与子树维护 |
 | 历史记录 | [archive/README.md](../archive/README.md) | 历史记录 |
 | 历史记录 | [archive/hk-mirror-relay-20261028/deployment.md](../archive/hk-mirror-relay-20261028/deployment.md) | 香港镜像与统一 Relay 入口 ｜ 2026-10-28 |
 | 历史记录 | [archive/main-refresh-20261028/README.md](../archive/main-refresh-20261028/README.md) | 主线发布与镜像一致性 |
@@ -323,6 +345,9 @@
 | 许可证与声明 | [ports/th12/NOTICE.md](../ports/th12/NOTICE.md) | Copyright and license scope |
 | 许可证与声明 | [ports/th12/src/practice/THPRAC-LICENSE.txt](../ports/th12/src/practice/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th12/third_party/stb_vorbis/LICENSE](../ports/th12/third_party/stb_vorbis/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th13/LICENSE](../ports/th13/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th13/NOTICE.md](../ports/th13/NOTICE.md) | Source and asset notices |
+| 许可证与声明 | [ports/th13/portable/sdl/third_party/miniaudio.LICENSE](../ports/th13/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15-mp/LICENSE](../ports/th15-mp/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/browser/LICENSE.eagler-common](../ports/th15-mp/portable/browser/LICENSE.eagler-common) | LICENSE |
 | 许可证与声明 | [ports/th15-mp/portable/sdl/third_party/miniaudio.LICENSE](../ports/th15-mp/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |

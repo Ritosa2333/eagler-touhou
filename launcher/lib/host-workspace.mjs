@@ -7,7 +7,8 @@ import { hostConfigWarnings, readHostConfig } from "./host-config.mjs";
 import { verifyRuntimeRelease } from "./runtime-release.mjs";
 
 export const HOST_WORKSPACE_SCHEMA = "eagler-touhou/host-workspace/1";
-export const HOST_WORKSPACE_GAMES = Object.freeze(Object.keys(PRODUCT_GAMES));
+export const HOST_WORKSPACE_GAMES = Object.freeze(Object.keys(PRODUCT_GAMES).filter(game =>
+  PRODUCT_GAMES[game].buildOptIn !== true));
 
 function normalizeMusic(music) {
   const values = Array.isArray(music) ? music : String(music || "midi,ogg").split(",");

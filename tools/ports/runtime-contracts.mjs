@@ -14,6 +14,9 @@ export function runtimeSourceFiles(game, product) {
   if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
+  // TH13 owns its Host protocol and shared keyboard/gamepad bridge in these two
+  // modules; it does not ship the older eagler-host.mjs split.
+  if (game === 'th13') return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/directory-keyboard.mjs'];
   if (['th075', 'th15'].includes(game)) return ['web/sdl-runtime/shell.mjs'];
   return ['web/sdl-runtime/shell.mjs', 'web/sdl-runtime/eagler-host.mjs'];
 }
@@ -46,7 +49,9 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
         {cwd:resolve(root,directory),encoding:'utf8',windowsHide:true});
     }));
   }
-  records.push(result('runtime-protocol', ['RUNTIME-01', 'RUNTIME-02', 'RUNTIME-03'], files, () => {
+  const th13ManagedShellTest = 'tests/managed-shell.test.mjs';
+  const protocolFiles = game === 'th13' ? [...files, th13ManagedShellTest] : files;
+  records.push(result('runtime-protocol', ['RUNTIME-01', 'RUNTIME-02', 'RUNTIME-03'], protocolFiles, () => {
     assert.match(source, /runtimeEpoch/, 'Runtime must bind messages to its navigation epoch');
     assert.match(source, /\.epoch\s*!==\s*epoch|message\.epoch\s*!==\s*epoch/, 'Runtime must reject a retired epoch');
     for (const command of RUNTIME_PROTOCOL_COMMANDS) {
@@ -58,8 +63,15 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
       assert.ok(new RegExp(`emit\\(["']${event}["']`).test(source) ||
         (event === 'ready' && /event:\s*["']ready["']/.test(source)), `Missing event: ${event}`);
     }
+    if (game === 'th13') {
+      // Execute the real shell audio callback, not only the emit() token.
+      execFileSync(process.execPath,
+        ['--test', '--test-name-pattern=managed frame callback reports the actual SDL audio queue',
+          resolve(root, directory, th13ManagedShellTest)],
+        {cwd: resolve(root, directory), encoding: 'utf8', windowsHide: true});
+    }
   }));
-  records.push(result('touch-sensitivity', ['TOUCH-14'], files, () => {
+  records.push(result('touch-sensitivity', ['TOUCH-14'], protocolFiles, () => {
     if (product.runtimeFileLayout === 'directory') {
       assert.ok(source.includes(`Math.max(${TOUCH_SENSITIVITY_MIN},Math.min(${TOUCH_SENSITIVITY_MAX},`));
       assert.match(source, new RegExp(`(?:sensitivity|touchSensitivity)>=${TOUCH_SENSITIVITY_MIN}&&[\\w.]+<=${TOUCH_SENSITIVITY_MAX}`));
@@ -67,11 +79,48 @@ export function checkRuntimeSource({game, variant, product, directory, nativeFil
       assert.ok(source.includes(`touchSensitivity < ${TOUCH_SENSITIVITY_MIN}`));
       assert.ok(source.includes(`touchSensitivity > ${TOUCH_SENSITIVITY_MAX}`));
     }
+    if (game === 'th13') {
+      // Execute the real touch adapters and native endpoint arguments. This
+      // covers TOUCH-14 only; TOUCH-10 (unlimited movement cheat-rate) remains
+      // unverified and must not be inferred from this gate.
+      execFileSync(process.execPath,
+        ['--test', '--test-name-pattern=managed (touch settings|direct touch)',
+          resolve(root, directory, th13ManagedShellTest)],
+        {cwd: resolve(root, directory), encoding: 'utf8', windowsHide: true});
+    }
   }));
-  const padFiles = nativeBodies.filter(item => /BrowserGamepadState\(|ApplyGamepadVirtualKeys\(|SDL_GetGamepadButton|SDL_GetGamepadAxis/.test(item.text))
-    .map(item => relative(resolve(root,directory),item.path).replaceAll('\\','/'));
+  const th13NativePadFiles = game === 'th13'
+    ? nativeBodies.filter(item => /BrowserGamepadState\(|ApplyGamepadVirtualKeys\(/.test(item.text))
+      .map(item => relative(resolve(root,directory),item.path).replaceAll('\\','/'))
+    : [];
+  const padFiles = game === 'th13'
+    ? [...th13NativePadFiles, 'web/sdl-runtime/directory-keyboard.mjs', 'tests/gamepad-bridge.test.mjs']
+    : nativeBodies.filter(item => /BrowserGamepadState\(|ApplyGamepadVirtualKeys\(|SDL_GetGamepadButton|SDL_GetGamepadAxis/.test(item.text))
+      .map(item => relative(resolve(root,directory),item.path).replaceAll('\\','/'));
   records.push(result('native-gamepad', ['INPUT-04'], padFiles, () => {
-    if (['th11', 'th15', 'th20'].includes(game)) {
+    if (game === 'th13') {
+      // The published browser bridge is necessary but not sufficient: the
+      // compiled Runtime must consume the Launcher-owned gamepad state through
+      // the same native contract as TH11/TH15/TH20. A shell-only bridge with a
+      // native SDL joystick sampler would leave the browser mapping unread.
+      assert.match(native, /BrowserGamepadState\(/, 'Compiled native source must sample the Launcher gamepad owner');
+      assert.match(native, /ApplyGamepadVirtualKeys\(/, 'Compiled native source must deliver normalized gamepad actions');
+      // TH13 consumes the Launcher's canonical gamepad mapping through the
+      // shared browser bridge instead of reading SDL gamepad state natively.
+      // Keep the source-shape assertions and execute the real bridge so a
+      // renamed schema, stale epoch, or permissive sample() cannot pass.
+      assert.match(source, /__eaglerGamepadInputBridge\s*=\s*Object\.freeze\(\s*\{\s*schema:\s*'eagler-touhou\/gamepad-input\/1'/);
+      assert.match(source, /value\.schema\s*===\s*'eagler-touhou\/gamepad-input\/1'/);
+      assert.match(source, /value\.protocol\s*===\s*protocol/);
+      assert.match(source, /value\.game\s*===\s*game/);
+      assert.match(source, /value\.epoch\s*===\s*epoch/);
+      assert.match(source, /value\.origin\s*===\s*origin/);
+      assert.match(source, /typeof value\.sample\s*===\s*'function'/);
+      assert.match(source, /typeof value\.clear\s*===\s*'function'/);
+      assert.match(source, /typeof value\.enabled\s*===\s*'function'/);
+      execFileSync(process.execPath, ['--test', resolve(root, directory, 'tests/gamepad-bridge.test.mjs')],
+        {cwd: resolve(root, directory), encoding: 'utf8', windowsHide: true});
+    } else if (['th11', 'th15', 'th20'].includes(game)) {
       assert.match(native, /BrowserGamepadState\(/, 'Compiled native source must sample the Launcher gamepad owner');
       assert.match(native, /ApplyGamepadVirtualKeys\(/, 'Compiled native source must deliver normalized gamepad actions');
     } else {

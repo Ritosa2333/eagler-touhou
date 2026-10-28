@@ -34,7 +34,7 @@ assert.deepEqual(
   ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en", "lang_de", "lang_ru"],
 );
 
-assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th075", "th08", "th09", "th10", "th11", "th12", "th15", "th20", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th12mp", "th15mp"]);
+assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th075", "th08", "th09", "th10", "th11", "th12", "th13", "th15", "th20", "th06mp", "th07mp", "th075mp", "th08mp", "th09mp", "th10mp", "th11mp", "th12mp", "th15mp"]);
 assert.equal(DEFAULT_PRODUCT_ID, "th06");
 assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
 assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
@@ -270,14 +270,14 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 console.log("Product catalog policy: PASS");
 
 for (const id of PRODUCT_IDS) {
-  const visible = !["th075", "th075mp", "th20"].includes(id);
+  const visible = !["th075", "th075mp", "th13", "th20"].includes(id);
   assert.equal(productEnabledForBuild(id), visible);
   assert.equal(productEnabledForBuild(id, false), visible);
   assert.equal(productEnabledForBuild(id, true), true, "Test builds include every registered product");
 }
 assert.equal(productEnabledForBuild("th99", true), false);
 
-assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th06: true, th07: true, th075: false, th08: true, th09: false, th10: true, th11: true, th12: true, th15: true, th20: false}, "high-refresh UI must follow the catalog capability");
+assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th06: true, th07: true, th075: false, th08: true, th09: false, th10: true, th11: true, th12: true, th13: false, th15: true, th20: false}, "high-refresh UI must follow the catalog capability");
 assert.equal(PRODUCT_GAMES.th15.features.languages,true);
 assert.equal(PRODUCT_GAMES.th15.features.thprac,true);
 assert.ok(PRODUCT_GAMES.th15.requiredShared.includes('/unifont.otf'));

@@ -12,7 +12,7 @@ import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from '../../lib/f
 import {ensureContractsBuild} from '../../lib/contracts-build.mjs';
 import {writeSiteMetadata} from '../../lib/site-metadata.mjs';
 import {privateFrontendAssetSource} from '../../lib/private-frontend-assets.mjs';
-import {PRODUCT_GAMES} from '../../lib/contracts/product-catalog.mjs';
+import {DEFAULT_BUILD_GAMES} from '../../lib/product-selection.mjs';
 import {resolveHostFrontend, reusableHostedBase, buildHostedSite, buildImportArtifacts} from '../../host/lib/site-builder.mjs';
 
 async function fixture(run, {mountPath = '/', appShell = null} = {}) {
@@ -86,7 +86,7 @@ test('isolated App Shell requires explicit exact origin and mount before prepara
 test('cache reuse binds frontend kind, mount, artifact bytes, metadata, and deployment', async () => {
   await fixture(async ({root, put, environment}) => {
     const selected = await resolveHostFrontend({projectRoot: root, environment});
-    const games = Object.keys(PRODUCT_GAMES);
+    const games = [...DEFAULT_BUILD_GAMES];
     const site = resolve(root, 'site');
     const layout = {site, music: ['ogg'], runtimeRelease: resolve(root, 'runtime'), shared: resolve(root, 'shared'), config: resolve(root, 'host-config.json'), games: Object.fromEntries(games.map(game => [game, resolve(root, game)]))};
     await put('scripts/verify-server-build.mjs', 'process.exit(0);');
@@ -187,7 +187,7 @@ test('cache uses synthetic private override bytes without modifying artifact or 
     await symlink(resolve(project, 'node_modules'), resolve(root, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
     const isolated = await import(pathToFileURL(resolve(root, 'host/lib/site-builder.mjs')).href);
     const selected = await isolated.resolveHostFrontend({projectRoot: root, environment});
-    const games = Object.keys(PRODUCT_GAMES), site = resolve(root, 'site');
+    const games = [...DEFAULT_BUILD_GAMES], site = resolve(root, 'site');
     const layout = {site, music: ['ogg'], runtimeRelease: resolve(root, 'runtime'), shared: resolve(root, 'shared'), config: resolve(root, 'config.json'), games: Object.fromEntries(games.map(game => [game, resolve(root, game)]))};
     await put('scripts/verify-server-build.mjs', 'process.exit(0);');
     for (const path of selected.artifact.packageFiles) {

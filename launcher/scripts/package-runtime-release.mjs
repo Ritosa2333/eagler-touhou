@@ -21,10 +21,15 @@ const required = name => {
 const output = required("output");
 const temporaryRoot = resolve(dirname(output), ".tmp");
 const staging = resolve(temporaryRoot, `${basename(output)}.staging-${randomUUID()}`);
-const builds = Object.fromEntries(Object.entries(PRODUCT_GAMES).flatMap(([game, product]) => [
+const selectedGames = Object.keys(PRODUCT_GAMES).filter(game =>
+  PRODUCT_GAMES[game].buildOptIn !== true || args[`${game}-build`] != null);
+const builds = Object.fromEntries(selectedGames.flatMap(game => {
+  const product = PRODUCT_GAMES[game];
+  return [
   [game, required(`${game}-build`)],
   ...(product.multiplayerRuntime ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
-]));
+  ];
+}));
 
 async function identity(path) {
   const bytes = await readFile(path);
@@ -86,7 +91,7 @@ await rm(staging, { recursive: true, force: true });
 await mkdir(staging, { recursive: true });
 try {
 const games = {};
-for (const game of Object.keys(PRODUCT_GAMES)) {
+for (const game of selectedGames) {
   const product = PRODUCT_GAMES[game];
   const normalBuild = builds[game];
   const normalRoot = `runtime/${game}`;

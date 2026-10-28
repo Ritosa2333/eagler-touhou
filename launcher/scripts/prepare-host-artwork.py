@@ -12,8 +12,10 @@ from argparse import ArgumentParser
 from hashlib import sha256
 from io import BytesIO
 import json
+import math
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import tempfile
 
@@ -45,6 +47,7 @@ ARTWORK_BY_GAME = {
     # TH15's title is layered artwork in the retail title.anm, not a screenshot.
     "th15": ("th15-card.webp",),
     "th12": ("th12-card.webp",),
+    "th13": ("th13-card.webp",),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
 # original title artwork.  The UI darkens/crops them heavily and Lighthouse's
@@ -181,6 +184,151 @@ def _extract_th15_title(root: Path, thdat: str, thanm: str) -> bytes:
         return output.getvalue()
 
 
+def _th13_texture_rgba(width: int, height: int, pixel_format: int, pixels: bytes) -> bytes:
+    count = width * height
+    if pixel_format == 1:
+        if len(pixels) != count * 4:
+            raise ValueError("TH13 BGRA8888 payload size mismatch")
+        out = bytearray(count * 4)
+        for index in range(count):
+            b, g, r, a = pixels[index * 4:index * 4 + 4]
+            out[index * 4:index * 4 + 4] = bytes((r, g, b, a))
+        return bytes(out)
+    if pixel_format == 4:
+        if len(pixels) != count * 3:
+            raise ValueError("TH13 BGR888 payload size mismatch")
+        out = bytearray(count * 4)
+        for index in range(count):
+            b, g, r = pixels[index * 3:index * 3 + 3]
+            out[index * 4:index * 4 + 4] = bytes((r, g, b, 255))
+        return bytes(out)
+    if pixel_format in (2, 3, 5, 6):
+        if len(pixels) != count * 2:
+            raise ValueError("TH13 16-bit texture payload size mismatch")
+        out = bytearray(count * 4)
+        for index in range(count):
+            value = pixels[index * 2] | (pixels[index * 2 + 1] << 8)
+            if pixel_format == 5:
+                out[index * 4:index * 4 + 4] = bytes((
+                    ((value >> 8) & 15) * 17, ((value >> 4) & 15) * 17,
+                    (value & 15) * 17, ((value >> 12) & 15) * 17))
+            elif pixel_format == 2:
+                out[index * 4:index * 4 + 4] = bytes((
+                    (((value >> 10) & 31) * 255 + 15) // 31,
+                    (((value >> 5) & 31) * 255 + 15) // 31,
+                    ((value & 31) * 255 + 15) // 31,
+                    255 if value & 0x8000 else 0))
+            elif pixel_format == 6:
+                out[index * 4:index * 4 + 4] = bytes((
+                    (((value >> 5) & 7) * 255 + 3) // 7,
+                    (((value >> 2) & 7) * 255 + 3) // 7,
+                    (value & 3) * 85, (value >> 8) & 0xFF))
+            else:
+                out[index * 4:index * 4 + 4] = bytes((
+                    (((value >> 11) & 31) * 255 + 15) // 31,
+                    (((value >> 5) & 63) * 255 + 31) // 63,
+                    ((value & 31) * 255 + 15) // 31, 255))
+        return bytes(out)
+    if pixel_format == 7:
+        if len(pixels) != count:
+            raise ValueError("TH13 A8 payload size mismatch")
+        out = bytearray(count * 4)
+        for index, alpha in enumerate(pixels):
+            out[index * 4:index * 4 + 4] = bytes((255, 255, 255, alpha))
+        return bytes(out)
+    raise ValueError(f"unsupported TH13 texture format {pixel_format}")
+
+
+def _iter_th13_anm_textures(anm: bytes):
+    # ANM v8 entry layout used by TH13's AnmResource.cpp. TH13 title.anm has
+    # two distinct title/title00a.png entries (512x512 at source_x=0 and
+    # 128x512 at source_x=512), so a name-only thanm extraction is ambiguous.
+    base = 0
+    while base < len(anm):
+        if base + 64 > len(anm):
+            raise ValueError("truncated TH13 ANM header")
+        magic, sprites, scripts = struct.unpack_from("<IHH", anm, base)
+        if magic != 8:
+            raise ValueError(f"unsupported TH13 ANM version {magic}")
+        stride = struct.unpack_from("<I", anm, base + 36)[0]
+        chunk_size = stride or len(anm) - base
+        table_end = 64 + sprites * 4 + scripts * 8
+        if chunk_size < table_end or chunk_size > len(anm) - base:
+            raise ValueError("invalid TH13 ANM entry bounds")
+        def within(offset: int, size: int) -> bool:
+            return table_end <= offset <= chunk_size and 0 <= size <= chunk_size - offset
+        name_offset = struct.unpack_from("<I", anm, base + 16)[0]
+        if not within(name_offset, 1):
+            raise ValueError("invalid TH13 ANM texture name offset")
+        end = anm.find(b"\0", base + name_offset, base + chunk_size)
+        if end < 0:
+            raise ValueError("unterminated TH13 ANM texture name")
+        name = anm[base + name_offset:end].decode("ascii")
+        source_x = struct.unpack_from("<h", anm, base + 20)[0]
+        texture_offset = struct.unpack_from("<I", anm, base + 28)[0]
+        has_data = anm[base + 32]
+        if sprites:
+            sprite_offset = struct.unpack_from("<I", anm, base + 64)[0]
+            if not within(sprite_offset, 20):
+                raise ValueError("invalid TH13 ANM sprite bounds")
+            sprite_x, sprite_y, sprite_w, sprite_h = struct.unpack_from(
+                "<ffff", anm, base + sprite_offset + 4)
+            if not all(math.isfinite(value) for value in (sprite_x, sprite_y, sprite_w, sprite_h)):
+                raise ValueError("invalid TH13 ANM sprite coordinates")
+        else:
+            sprite_x = sprite_y = sprite_w = sprite_h = 0.0
+        if has_data:
+            if not within(texture_offset, 16):
+                raise ValueError("invalid TH13 THTX bounds")
+            absolute = base + texture_offset
+            if anm[absolute:absolute + 4] != b"THTX":
+                raise ValueError("invalid TH13 THTX header")
+            pixel_format, width, height, size = struct.unpack_from("<HHHI", anm, absolute + 6)
+            if not width or not height or not within(texture_offset + 16, size):
+                raise ValueError("invalid TH13 texture payload bounds")
+            pixels = anm[absolute + 16:absolute + 16 + size]
+            yield (name, source_x, (sprite_x, sprite_y, sprite_w, sprite_h),
+                   width, height, pixel_format, pixels)
+        if not stride:
+            break
+        base += stride
+
+
+def _compose_th13_title(anm: bytes) -> bytes:
+    layers = [(source_x, rect, width, height, pixel_format, pixels)
+              for name, source_x, rect, width, height, pixel_format, pixels
+              in _iter_th13_anm_textures(anm)
+              if name.replace("\\", "/").lower() == "title/title00a.png"]
+    if not layers:
+        raise FileNotFoundError("TH13 title/title00a.png not found in title.anm")
+    layers.sort(key=lambda layer: layer[0])
+    expected = [(0, (0.0, 0.0, 512.0, 480.0), 512, 512),
+                (512, (0.0, 0.0, 128.0, 480.0), 128, 512)]
+    if [(x, rect, width, height) for x, rect, width, height, _, _ in layers] != expected:
+        raise ValueError("Unexpected TH13 title texture layout")
+    canvas = Image.new("RGB", (640, 480))
+    for source_x, (sprite_x, sprite_y, sprite_w, sprite_h), width, height, pixel_format, pixels in layers:
+        rgba = _th13_texture_rgba(width, height, pixel_format, pixels)
+        with Image.frombytes("RGBA", (width, height), rgba) as image:
+            crop = image.crop((int(sprite_x), int(sprite_y),
+                               int(sprite_x + sprite_w), int(sprite_y + sprite_h))).convert("RGB")
+            canvas.paste(crop, (int(source_x + sprite_x), int(sprite_y)))
+    output = BytesIO()
+    canvas.save(output, format="PNG")
+    return output.getvalue()
+
+
+def _extract_th13_title(root: Path, thdat: str, thanm: str) -> bytes:
+    archive = (root / "th13.dat").resolve()
+    with tempfile.TemporaryDirectory(prefix="eagler-th13-artwork-") as directory:
+        result = subprocess.run([thdat, "-x", "13", str(archive), "title.anm"],
+                                cwd=directory, capture_output=True,
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        if result.returncode:
+            raise ValueError(result.stderr.decode("utf-8", errors="replace"))
+        return _compose_th13_title((Path(directory) / "title.anm").read_bytes())
+
+
 def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = "thdat", thanm: str = "thanm") -> bytes:
     if name == "favicon.ico":
         return (Path(__file__).resolve().parent.parent / "favicon.ico").read_bytes()
@@ -206,6 +354,8 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         raise FileNotFoundError("Supply the TH075 development card or an artwork override")
     if name == "th15-card.webp":
         return _extract_th15_title(root, thdat, thanm)
+    if name == "th13-card.webp":
+        return _extract_th13_title(root, thdat, thanm)
     if name in ("th11-card.webp", "th20-card.webp"):
         raise FileNotFoundError(f"{game}: supply {name} through --override-dir; no retail artwork reader is available")
     raise AssertionError(name)

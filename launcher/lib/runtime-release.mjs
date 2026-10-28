@@ -72,10 +72,13 @@ export function validateRuntimeReleaseManifest(manifest) {
     throw new Error("invalid Runtime Release manifest");
   }
   const registered = Object.keys(PRODUCT_GAMES);
-  if (!manifest.games || JSON.stringify(Object.keys(manifest.games)) !== JSON.stringify(registered)) {
-    throw new Error("Runtime Release must contain every registered game in canonical order");
+  const supplied = manifest.games && typeof manifest.games === 'object' && !Array.isArray(manifest.games)
+    ? Object.keys(manifest.games) : [];
+  const expected = registered.filter(game => PRODUCT_GAMES[game].buildOptIn !== true || supplied.includes(game));
+  if (JSON.stringify(supplied) !== JSON.stringify(expected)) {
+    throw new Error("Runtime Release must contain every default game and selected opt-in games in canonical order");
   }
-  for (const game of registered) {
+  for (const game of expected) {
     const product = PRODUCT_GAMES[game];
     const entry = manifest.games[game];
     if (!entry || entry.dataProvider !== product.dataProvider || !LAYOUT.test(entry.dataLayout || "")) {

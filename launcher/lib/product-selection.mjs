@@ -1,8 +1,11 @@
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 
+export const DEFAULT_BUILD_GAMES = Object.freeze(Object.keys(PRODUCT_GAMES).filter(game =>
+  PRODUCT_GAMES[game].buildOptIn !== true));
+
 export function normalizeProductSelection(value) {
   const registered = Object.keys(PRODUCT_GAMES);
-  if (value == null) return registered;
+  if (value == null) return [...DEFAULT_BUILD_GAMES];
   const requested = typeof value === "string" ? value.split(",").map(item => item.trim()).filter(Boolean) : value;
   if (!Array.isArray(requested) || requested.length === 0 || new Set(requested).size !== requested.length ||
       requested.some(game => typeof game !== "string" || !Object.hasOwn(PRODUCT_GAMES, game))) {

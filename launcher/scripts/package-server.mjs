@@ -95,6 +95,12 @@ const buildAuthority = classifyBuildProfile(buildProfile);
 if (!buildAuthority || buildProfile === "web-development") throw new Error("packaging requires an explicit web-validation-* or web-release-* --profile=NAME");
 const publicationBuild = buildAuthority === BUILD_AUTHORITY_PUBLICATION;
 const gameIds = normalizeProductSelection(args.games);
+if (!testBuild && gameIds.some(game => PRODUCT_GAMES[game].buildOptIn === true)) {
+  throw new Error('Opt-in adapters require an explicit --test-build=1 validation site');
+}
+if (publicationBuild && gameIds.some(game => PRODUCT_GAMES[game].buildOptIn === true)) {
+  throw new Error('Opt-in adapters are not enabled for production release profiles');
+}
 const languageGames = gameIds.filter(game => PRODUCT_GAMES[game].features.languages);
 const thpracGames = gameIds.filter(game => PRODUCT_GAMES[game].features.thprac);
 const serverFeatureGames = gameIds.filter(game =>

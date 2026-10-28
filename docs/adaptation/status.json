@@ -6,7 +6,7 @@
       "game": "th06",
       "variant": "multiplayer",
       "directory": "ports/th06",
-      "sourceDigest": "bbc27d28e9e29d219d112dd4e252821d6aa36d2063998db9132a67ecd41aa7ae",
+      "sourceDigest": "55fdbdf85aaa133cba9eaa2775256dcc049ae483dfe0c0eddb7cbbdfa29665b8",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -163,7 +163,7 @@
       "game": "th06",
       "variant": "normal",
       "directory": "ports/th06",
-      "sourceDigest": "fa5b468413b7936a7d21e5ca0b61ec0da2f9d65d66f23a59f0e0390105601712",
+      "sourceDigest": "771cbaf87e0cdb6403ebc5a6ce9eb5c72fdf0de048b97da32d5e08272c7c70ce",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -339,7 +339,7 @@
       "game": "th07",
       "variant": "multiplayer",
       "directory": "ports/th07",
-      "sourceDigest": "4442b21d73d8f400cbf752775cc3f1e83f00f43c49bc56d3af66e3c5ee30ea16",
+      "sourceDigest": "51766fa85d85e6556101ed2e9fd46d0b5838d8e1b89e3066b350d9ae903f1e43",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -496,7 +496,7 @@
       "game": "th07",
       "variant": "normal",
       "directory": "ports/th07",
-      "sourceDigest": "7106cac763da849ebd91a66651800c36aa17500d211bca48db82aa86a5544fe3",
+      "sourceDigest": "6edf9fa21322c7b88c4d70fec01e425b6dab96fecf5d27060f8ffc13c5e71b0f",
       "sourceSelection": "cmake-declaration-union",
       "dependencies": [
         {
@@ -672,7 +672,7 @@
       "game": "th075",
       "variant": "multiplayer",
       "directory": "ports/th075-mp",
-      "sourceDigest": "62f5b15df9081aa94f644e9ce7bda06f60f36d9b25c049d15aaaa81002348d45",
+      "sourceDigest": "30ff7d4612d5642bfdf6af82f4dff360f5370f4b59e672e748d45fd685bf7cc7",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 207,
@@ -796,7 +796,7 @@
       "game": "th075",
       "variant": "normal",
       "directory": "ports/th075",
-      "sourceDigest": "f7fc578dbbb7d0bcce1a777fe9b100fa0e266c19af900c33d400600320174359",
+      "sourceDigest": "1e117f8ff25b9866a31c2551a3e704c6eb2ca6ae1be7d1387877f4a8159a5add",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 200,
@@ -938,7 +938,7 @@
       "game": "th08",
       "variant": "multiplayer",
       "directory": "ports/th08-mp",
-      "sourceDigest": "ac88747bc80b2c87cf554f39369c1f4ebb03f9669e3bb1db8a30c31c373e483f",
+      "sourceDigest": "278531fda64f7c397d92cc9452f2a150571614ed53896bd1a7916c9676189f30",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 225,
@@ -1063,7 +1063,7 @@
       "game": "th08",
       "variant": "normal",
       "directory": "ports/th08",
-      "sourceDigest": "da7ff119060b7f3dbe02cf87f11a6aec5020a5b4ebdb416e73842f843bb664e0",
+      "sourceDigest": "7b29495f1c59fd9cc20acda10a4ebd23d905a13b50b244ec650cc1ba5c110b75",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 196,
@@ -1206,7 +1206,7 @@
       "game": "th09",
       "variant": "multiplayer",
       "directory": "ports/th09",
-      "sourceDigest": "96efc5a82b334b4008fc1a539f8cd2d5696867b6a901d58e77a5e46ed4535ffd",
+      "sourceDigest": "ae950d7898bf8602bd06435cbc8542c0d86b89ab162cb58715754208cfb3ee03",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1328,7 +1328,7 @@
       "game": "th09",
       "variant": "normal",
       "directory": "ports/th09",
-      "sourceDigest": "c78be8eab184545914069960ef02cd5092dc7c8f67528b48b14038b997936aab",
+      "sourceDigest": "14b1ba830844ed80ea7c9042d6d06b8c8c28774b1be0cf29a2dfdfccabebc7dc",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 116,
@@ -1469,7 +1469,7 @@
       "game": "th10",
       "variant": "multiplayer",
       "directory": "ports/th10-mp",
-      "sourceDigest": "0f37169e83e553bcfde58dbea60d3621d4c33e9ae5f60ad77588da6fb1821d86",
+      "sourceDigest": "af337332c131f8ad3094c132ae9f8721904254e23ae8a3acc23ca544730a5da5",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 277,
@@ -1593,7 +1593,7 @@
       "game": "th10",
       "variant": "normal",
       "directory": "ports/th10",
-      "sourceDigest": "895975df7cf1ed70b036070ee496d544a93c287943f683413487ccc75ee8a79f",
+      "sourceDigest": "013489419fe4280a2e5ef620c18f2b23b13e51ac8af11bc290dd66a2c85d60f2",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 249,
@@ -1736,7 +1736,7 @@
       "game": "th11",
       "variant": "multiplayer",
       "directory": "ports/th11-mp",
-      "sourceDigest": "0354ced1164f170caf565293cd65c8fc06a9af0740cf10435dacd45541a4534e",
+      "sourceDigest": "05b6526add1eb47fe1df50d72aa8cbae60db1a7eb6a1edc9ed804b973af501c7",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 139,
@@ -1860,7 +1860,7 @@
       "game": "th11",
       "variant": "normal",
       "directory": "ports/th11",
-      "sourceDigest": "3e3ca97eed40d2b9d1c54801710a9446821e9bca6d3cbe79dac4151c3997fb5a",
+      "sourceDigest": "cde04ae79b6842e5bc4d496859c60afef448f1b02cb23ee8ac1903a30e837fb5",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 115,
@@ -2003,7 +2003,7 @@
       "game": "th12",
       "variant": "multiplayer",
       "directory": "ports/th12-mp",
-      "sourceDigest": "ee89d8c0062b50b64528ceab9584536a2c47e6b16ba7a6637d15a9523f1e5a2a",
+      "sourceDigest": "7eaa6b86ab09788f53142a0b8c9815ab06dd255f0ad66dccfcf1efe8f8974891",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 78,
@@ -2133,7 +2133,7 @@
       "game": "th12",
       "variant": "normal",
       "directory": "ports/th12",
-      "sourceDigest": "a500bd47e47e6d864a702c2a3ecb6a015d22829c832ce21d30cbcb94996b7b8f",
+      "sourceDigest": "8d831cb4d48be0e95d1156da00e6bbf68b25795d9012bb1952ddad898d1eacc1",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 60,
@@ -2279,10 +2279,156 @@
       ]
     },
     {
+      "game": "th13",
+      "variant": "normal",
+      "directory": "ports/th13",
+      "sourceDigest": "e97663c56bf5f070c05ed6de911ee455b52d15e1d4cc56f60973e5c194c4c35f",
+      "sourceSelection": "build-entrypoint",
+      "dependencies": [],
+      "translationUnits": 105,
+      "features": {
+        "thcrap": false,
+        "thprac": false
+      },
+      "command": [
+        "node",
+        "portable/build-eagler.mjs",
+        "--print-inputs"
+      ],
+      "gates": [
+        {
+          "id": "source-inputs",
+          "status": "passed",
+          "level": "source-inputs",
+          "complete": true,
+          "checks": [
+            "BUILD-01"
+          ],
+          "files": [
+            "ports/th13"
+          ]
+        },
+        {
+          "id": "runtime-protocol",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "RUNTIME-01",
+            "RUNTIME-02",
+            "RUNTIME-03"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs",
+            "web/sdl-runtime/directory-keyboard.mjs",
+            "tests/managed-shell.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "touch-sensitivity",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "TOUCH-14"
+          ],
+          "files": [
+            "web/sdl-runtime/shell.mjs",
+            "web/sdl-runtime/directory-keyboard.mjs",
+            "tests/managed-shell.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "native-gamepad",
+          "status": "passed",
+          "level": "source-contract",
+          "checks": [
+            "INPUT-04"
+          ],
+          "files": [
+            "web/cpp/sdl/BrowserRuntime.cpp",
+            "web/sdl-runtime/directory-keyboard.mjs",
+            "tests/gamepad-bridge.test.mjs"
+          ],
+          "complete": true
+        },
+        {
+          "id": "package-store",
+          "level": "module",
+          "checks": [
+            "PACKAGE-01",
+            "PACKAGE-02",
+            "PACKAGE-03",
+            "PACKAGE-04",
+            "PACKAGE-06"
+          ],
+          "files": [
+            "launcher/tests/test-package-store-contract.mjs",
+            "launcher/tests/test-package-generation-conditions.mjs",
+            "launcher/tests/test-runtime-preparation.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "launcher-input-owners",
+          "level": "module",
+          "checks": [
+            "INPUT-02",
+            "INPUT-03",
+            "INPUT-05"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-keyboard.test.mjs",
+            "launcher/tests/react-main/keyboard-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-mapping.test.mjs",
+            "launcher/tests/react-main/gamepad-matrix.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "shared-touch-controls",
+          "level": "module",
+          "checks": [
+            "TOUCH-17",
+            "TOUCH-18",
+            "TOUCH-19"
+          ],
+          "files": [
+            "launcher/tests/react-main/player-touch.test.mjs",
+            "launcher/tests/react-main/touch-native.test.mjs",
+            "launcher/tests/react-main/touch-editor-selects.test.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        },
+        {
+          "id": "normal-presentation",
+          "level": "source-contract",
+          "variants": [
+            "normal"
+          ],
+          "checks": [
+            "DISPLAY-01",
+            "DISPLAY-02",
+            "DISPLAY-03"
+          ],
+          "files": [
+            "launcher/tests/test-native-frame-pacing.mjs",
+            "launcher/tests/test-mobile-frame-pacing.mjs",
+            "launcher/tests/test-presentation-contract-coverage.mjs"
+          ],
+          "complete": true,
+          "status": "passed"
+        }
+      ]
+    },
+    {
       "game": "th15",
       "variant": "multiplayer",
       "directory": "ports/th15-mp",
-      "sourceDigest": "f1aaf5445e0c60c97614e016c1715109746ca3d06ff8d8d0a37034d5b2d9621e",
+      "sourceDigest": "403ed8dca43682902d2bd6d1124c0778968faea96208322ced4eb050339e1f56",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 271,
@@ -2405,7 +2551,7 @@
       "game": "th15",
       "variant": "normal",
       "directory": "ports/th15",
-      "sourceDigest": "6b91e73db2fbd7f08f0ff4b2ca9a38a3f9ca400367dab2d1fd65ff35ef20f0c0",
+      "sourceDigest": "302df6a478ed45d114a55db0f67b8590e7b4643d4d26fff76004d89ecf9073e6",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 253,
@@ -2547,7 +2693,7 @@
       "game": "th20",
       "variant": "normal",
       "directory": "ports/th20",
-      "sourceDigest": "768d48fab98c8dc8d17544c2997d92902aee9dbba3edd004eacef0a0c7e0bc4c",
+      "sourceDigest": "3e539f6e659a950767cecb2a72e871e1594555d8e242f2e482dff488e9863193",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 478,

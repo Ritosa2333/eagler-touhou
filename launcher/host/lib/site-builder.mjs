@@ -16,7 +16,7 @@ import { ensurePythonEnvironment } from "./python-environment.mjs";
 import { ensureThtk } from "./thtk.mjs";
 import { run } from "./process.mjs";
 
-const GAMES = Object.freeze(Object.keys(PRODUCT_CONTENT));
+const GAMES = Object.freeze(Object.keys(PRODUCT_CONTENT).filter(game => PRODUCT_GAMES[game].buildOptIn !== true));
 const DEFAULT_LANGUAGES = Object.freeze(["ja", "lang_zh-hans", "lang_en"]);
 
 // Full artifact preflight runs after operator dependency setup, before content preparation.

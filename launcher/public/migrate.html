@@ -190,7 +190,7 @@
   "use strict";
   const PROTOCOL = "eagler-touhou/origin-migration/1";
   const AUTH_KEY = "eagler-touhou-origin-migration-authorized-v1";
-  const DATABASES = new Set(["/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth15", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]);
+  const DATABASES = new Set(["/savesth06", "/savesth07", "/savesth075", "/savesth08", "/savesth09", "/savesth10", "/savesth11", "/savesth12", "/savesth13", "/savesth15", "/savesth20", "/savesth06-multiplayer", "/savesth07-multiplayer", "/savesth075mp", "/savesth08-multiplayer", "/savesth09mp", "/savesth10-multiplayer", "/savesth11mp", "/savesth12mp", "/savesth15mp", "eagler-touhou-package-store-v1", "EM_PRELOAD_CACHE", "eagler-touhou-local-assets-v1"]);
   const DATABASE_LABELS = new Map([
     ["/savesth06", "TH06 存档 / Replay"],
     ["/savesth07", "TH07 存档 / Replay"],
@@ -201,6 +201,7 @@
     ["/savesth11", "TH11 存档 / Replay"],
     ["/savesth12", "th12 存档 / Replay"],
     ["/savesth12mp", "th12 多人存档 / Replay"],
+    ["/savesth13", "TH13 存档 / Replay"],
     ["/savesth15", "TH15 存档 / Replay"],
     ["/savesth20", "TH20 存档 / Replay"],
     ["/savesth06-multiplayer", "th06 多人存档 / Replay"],
@@ -253,7 +254,7 @@
   const txDone = tx => new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || new Error("IndexedDB transaction failed")); });
   const LEGACY_LOCAL_STORAGE_KEYS = new Set(["eagler.mpSpectatorRail.mobilePosition.v1"]);
   const ownedLocalStorageKey = key => !key.startsWith("eagler-touhou-origin-migration-") &&
-    (key.startsWith("eagler-") || LEGACY_LOCAL_STORAGE_KEYS.has(key));
+    (key.startsWith("eagler-") || key === "th13.save" || LEGACY_LOCAL_STORAGE_KEYS.has(key));
   const randomNonce = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
   const sameHost = (a, b) => new URL(a).hostname === new URL(b).hostname;
 

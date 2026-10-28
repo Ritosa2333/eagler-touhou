@@ -1,0 +1,53 @@
+**/artifacts/
+/build-eagler/
+**/node_modules/
+**/.cache/
+**/.npm-cache/
+**/.pip-cache/
+**/test-results/
+**/tools/node.exe
+**/tools/emsdk/
+**/tools/wasi-sdk*/
+[[]th08[]]*/
+[[]th10[]]*/
+/thcrap/
+web/assets/sdl-native/*.ttc
+web/assets/sdl-native/*.ttf
+*.exe
+*.dll
+*.wasm
+*.o
+*.obj
+*.a
+*.bin
+*.dat
+*.wav
+*.ogg
+*.flac
+*.rpy
+*.rpyx
+score*.dat
+*.cfg
+*.log
+.env
+.npmrc
+**/__pycache__/
+*.py[cod]
+
+# ECL 单测本地构建产物
+tests/ecl/build/
+
+# ANM 单测本地构建产物
+tests/anm/build/
+
+# UI 单测本地构建产物
+tests/ui/build/
+
+# 录像单测本地构建产物
+tests/replay/build/
+
+# 网页运行时资源（原版权材料，prepare-assets.mjs 从 raw 解包目录拷贝）
+web/sdl-runtime/assets/
+
+# Native test executables and intermediate objects
+tests/*/build/

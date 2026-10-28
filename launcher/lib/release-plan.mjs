@@ -19,9 +19,9 @@ const FORBIDDEN_FORMAL_BUILD_INPUTS = Object.freeze([
   "Ninja",
 ]);
 
-// Test visibility is a Launcher discovery rule. The bytes must still be in the
-// same publication so ?test=1 can launch a hidden test title on that site.
-export const FORMAL_RELEASE_GAMES = Object.freeze(Object.keys(PRODUCT_GAMES));
+// Existing hidden titles retain their publication contract; explicitly
+// opt-in adapters are assembled only by a selected validation build.
+export const FORMAL_RELEASE_GAMES = Object.freeze(normalizeProductSelection());
 
 const legacyGameDirectoryKey = game => `Th${PRODUCT_GAMES[game].number}Directory`;
 const legacyLanguagePackKey = game => `Th${PRODUCT_GAMES[game].number}LanguagePacks`;
