@@ -6,6 +6,7 @@
 #include <SDL3/SDL.h>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <memory>
 #include <vector>
 #ifdef TH12_MULTIPLAYER
@@ -221,6 +222,16 @@ void th12_host_pressed(unsigned pressed){if(active)active->pulses|=pressed&0x280
 int th12_host_pointer(int type,int id,float x,float y,int desktop){return active&&active->game?active->game->practice_pointer(type,id,x,y,desktop!=0):0;}
 void th12_host_wheel(float x,float y,float horizontal,float vertical){if(active&&active->game)active->game->practice_wheel(x,y,horizontal,vertical);}
 const char* th12_host_state(){return active&&active->game?active->game->host_state().c_str():"{\"scene\":\"closed\"}";}
+const double* th12_host_state_values(){
+    if(active&&active->game)return active->game->host_state_values();
+    static const auto closed=[](){
+        std::array<double,HostStateLength> v{};v[HostVersion]=1;v[HostLength]=HostStateLength;
+        v[HostScene]=double(reinterpret_cast<uintptr_t>("closed"));
+        v[HostKind]=double(reinterpret_cast<uintptr_t>("menu"));
+        v[HostTrack]=double(reinterpret_cast<uintptr_t>(""));return v;
+    }();
+    return closed.data();
+}
 void th12_host_stop(){if(active){active->game->flush_profile();active->stop=true;stop_source="host-stop";}}
 void th12_host_audio(int paused){if(active){if(paused)active->game->focus_lost();active->game->suspend_audio(paused!=0);active->clock.reset();}}
 void th12_host_flush(){if(active)active->game->flush_profile();}

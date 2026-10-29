@@ -7,6 +7,7 @@ import {createRequire} from 'node:module';
 import {resolve} from 'node:path';
 import {runInNewContext} from 'node:vm';
 import {authoredSourcesPlugin} from '../../../launcher/lib/authored-source-resolution.mjs';
+import {readSdlHostState} from '../src/sdl-host-state.mjs';
 import {sdlStopError} from '../src/sdl-lifecycle.mjs';
 import {multiplayerHeldInput} from '../src/multiplayer.mjs';
 
@@ -20,13 +21,13 @@ before(async()=>{
 });
 
 async function fixture(){
-  const events=[],fatals=[],audio=[],calls={ticks:0,saves:0,stops:0};let native,shouldFail=false;
+  const events=[],fatals=[],audio=[],calls={ticks:0,saves:0,stops:0,saveOptions:[]};let native,shouldFail=false;
   const options={netplayMode:'lan',netplayPlayer:0,netplayPlayerCount:2,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}]};
   const canvas={focus(){},addEventListener(){},requestFullscreen:async()=>{}};
   const notice={textContent:''},localization={language:'ja',activate(){return this;}};
   const store={list:async()=>[],sync:async()=>{}};
   const multiplayer={active:false,launch:async()=>{multiplayer.active=true;},
-    save:async()=>{calls.saves++;},stop(){calls.stops++;multiplayer.active=false;},state:()=>({stage:1}),
+    save:async options=>{calls.saves++;calls.saveOptions.push(options);},stop(){calls.stops++;multiplayer.active=false;},state:()=>({stage:1}),
     tick(){calls.ticks++;if(shouldFail)throw Error('RTC peer P2 control channel error');return [];}};
   const core={FS:{readdir:()=>['.','..']},UTF8ToString:()=>'{"scene":"playing","kind":"game","stage":1}',
     _th12_host_options(){},_th12_host_music_mode(){},_th12_host_mp_ready:()=>1,
@@ -40,14 +41,14 @@ async function fixture(){
     TouchInput:class{configure(){}cancel(){}sample(){return {held:0,pressed:0};}},
     createTH12SDL:async callbacks=>{native=callbacks;return core;},mountSdlContent:async()=>{},
     prepareLocalization:async()=>localization,fetch:async()=>({ok:true,json:async()=>({})}),
-    createMultiplayerRuntime:()=>multiplayer,multiplayerHeldInput,sdlStopError,testEmit:e=>events.push(e),
+    createMultiplayerRuntime:()=>multiplayer,multiplayerHeldInput,sdlStopError,readSdlHostState,testEmit:e=>events.push(e),
     __eaglerCrashReporterV1:{fatal:e=>fatals.push(e),bindCore(){}},
     requestAnimationFrame:callback=>callback()};
   context.window=context;
   const source=readFileSync(new URL('../site/game-sdl.mjs',import.meta.url),'utf8')
     .replace(/^import .*;\r?$/gm,'').replaceAll('import.meta.url',JSON.stringify('https://game.test/runtime/game.mjs'))
     .replace('bootstrap().catch(fail);','');
-  const entry=runInNewContext(source+'\nemit=testEmit;({configure,bootNative,launch,returnRoom,fail,frame,setStore(value){store=value;}})',context);
+  const entry=runInNewContext(source+'\nemit=testEmit;({configure,bootNative,launch,returnRoom,fail,frame,syncRuntime,setStore(value){store=value;}})',context);
   entry.setStore(store);
   await entry.configure({options,language:'ja',music:'none'});await entry.bootNative();
   const peers=new Map([[1,{inputOpen:false,controlOpen:false,pc:{connectionState:'connected'}}]]);
@@ -93,10 +94,21 @@ test('returning from a failed SDL run preserves saving and permits a fresh launc
   const f=await fixture();try{
     await f.entry.launch();f.breakChannel();f.core.th12MultiplayerTick(0,0,0,0,0);
     await f.entry.returnRoom();
-    assert.equal(f.calls.saves,1);assert.equal(f.calls.stops,1);
+    assert.equal(f.calls.saves,1);assert.equal(f.calls.saveOptions[0].force,true);assert.equal(f.calls.stops,1);
     assert.equal(f.context.__eaglerNetplayFailed,false);assert.equal(f.context.__eaglerNetplayError,'');
     assert.equal(f.audio.at(-1),0);
     f.restoreChannel();await f.entry.launch();f.core.th12MultiplayerTick(1,0,0,0,16);
     assert.equal(f.calls.ticks,2);
+  }finally{f.model.dispose();}
+});
+
+
+test('periodic filesystem sync does not trigger a duplicate replay encode; explicit sync keeps final saving',async()=>{
+  const f=await fixture();try{
+    await f.entry.launch();f.entry.frame();
+    await f.entry.syncRuntime(false);await f.entry.syncRuntime(false);
+    assert.equal(f.calls.saves,0);
+    await f.entry.syncRuntime();
+    assert.equal(f.calls.saves,1);assert.equal(f.calls.saveOptions[0].force,true);
   }finally{f.model.dispose();}
 });

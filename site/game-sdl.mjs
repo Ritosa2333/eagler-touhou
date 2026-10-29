@@ -9,6 +9,7 @@ import {prepareLocalization,isLocalizationResourcePath} from '../src/localizatio
 import {mountSdlContent} from '../src/sdl-content.mjs';
 import {sdlStopError} from '../src/sdl-lifecycle.mjs';
 import {sdlPointerPosition} from '../src/sdl-input.mjs';
+import {readSdlHostState} from '../src/sdl-host-state.mjs';
 import {createMultiplayerRuntime,multiplayerHeldInput} from '../src/multiplayer.mjs';
 
 const canvas=document.querySelector('#screen'),notice=document.querySelector('#notice');
@@ -61,7 +62,7 @@ function beforeFrame(){
 }
 function frame(){
   if(fatalError)return;
-  const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
+  const now=performance.now();const raw=readSdlHostState(core);state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
   if(launched&&!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame',launchSerial});healthAt=now;}
   if(!launched)return;
   frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;
@@ -71,17 +72,17 @@ function frame(){
     if(!core.FS.analyzePath('/game/music/'+track+'.ogg').exists)
       assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(fail);
   }
-  if(now-syncedAt>5000){syncedAt=now;syncRuntime().catch(fail);}
+  if(now-syncedAt>5000){syncedAt=now;syncRuntime(false).catch(fail);}
 }
 function paths(FS,directory){
   return FS.readdir(directory).filter(name=>name!=='.'&&name!=='..').flatMap(name=>{const path=directory+'/'+name;return FS.isDir(FS.stat(path).mode)?paths(FS,path):[path];});
 }
 function mountSave(path,bytes){if(!core)return;core.FS.mkdirTree(path.slice(0,path.lastIndexOf('/')));core.FS.writeFile(path,bytes);}
 async function loadSaves(){oldFiles=new Map();for(const path of await store.list()){const bytes=await store.read(path);if(bytes){oldFiles.set(path,copy(bytes));mountSave(path,bytes);}}}
-function syncRuntime(){
+function syncRuntime(saveReplay=true){
   syncQueue=syncQueue.catch(()=>{}).then(async()=>{
     if(!core||!firstFrame){await store?.sync();return;}
-    if(!terminated)core._th12_host_flush();if(multiplayer?.active)await multiplayer.save();const current=new Set();
+    if(!terminated)core._th12_host_flush();if(saveReplay&&multiplayer?.active)await multiplayer.save({force:true});const current=new Set();
     for(const path of paths(core.FS,'/savesth12')){
       try{allowedPath(path);}catch{continue;}
       current.add(path);const bytes=core.FS.readFile(path);
@@ -150,7 +151,7 @@ async function prepareRoom(){await initializeNative();await waitReady();return {
 async function returnRoom(){
   if(returning)return {presented:true};returning=true;
   try{
-    const saved=multiplayer?.save();multiplayer?.stop();launched=false;firstFrame=false;
+    const saved=multiplayer?.save({force:true});multiplayer?.stop();launched=false;firstFrame=false;
     await saved;
     clearKeyboard();cancelTouch();core?._th12_host_mp_room();await syncRuntime();
     resetFailure();core?._th12_host_audio(Number(document.hidden));
