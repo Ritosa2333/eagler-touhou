@@ -233,7 +233,8 @@ const Track::Frame& Track::sample(i32 age){
         // all of them settle, only its age changes. Always tick once first so
         // commands, interrupts and public state edits keep their normal order.
         if((stopped||ended_)&&children_.empty()&&frame_.children.empty()&&interpolations.empty()
-            &&velocity.rx==0&&velocity.ry==0&&velocity.rotation==0&&velocity.sx==0&&velocity.sy==0&&velocity.u==0&&velocity.v==0){
+            &&velocity.rx==0&&velocity.ry==0&&velocity.rotation==0&&velocity.sx==0&&velocity.sy==0&&velocity.u==0&&velocity.v==0
+            &&state.u>=0&&state.u<1&&state.v>=0&&state.v<1){
             ticks=u32(age)+1;break;
         }
     }
