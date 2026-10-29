@@ -134,6 +134,7 @@ async function launch(){
   try{
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
     core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
+    core.eaglerOptions=options;window.Module=core;
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()]})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
