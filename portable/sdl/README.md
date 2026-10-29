@@ -4,6 +4,12 @@
 
 SDL3 负责窗口、输入、音频设备与计时；GLES 3 负责绘制。浏览器编译使用 WebGL 2；桌面可以使用 GLES 3 或 OpenGL 3.3 核心上下文，macOS 请求 OpenGL 4.1。FreeType 负责文字，miniaudio 混合音效，并支持 OGG 流式或整曲解码；原版 `thbgm.dat` 使用 PCM 预读。
 
+## 逐帧状态接口
+
+浏览器通过 `th12_host_state_values()` 读取带版本和长度的 27 项 double 状态，保留逐帧坐标、触控作用域、菜单、录像和音乐信息，省去整份状态 JSON 的生成与解析。字符串指针在当前同步读取期间有效；读取器在每次调用后取得最新 Wasm 内存视图，支持内存增长。旧 `th12_host_state()` 继续提供 JSON 诊断与旧运行包兼容。
+
+`tests/sdl-host-state.test.mjs` 检查字段、内存增长和旧接口回退。桌面构建可启用 `TH12_BUILD_HOST_STATE_TEST=ON`，运行不加载素材、不创建窗口的 `th12_host_state_test`，核对实际 C++ 接口与 JSON 状态。
+
 ## 桌面构建
 
 需要 CMake 3.24+、C/C++20 编译器、Python 3，以及 SDL3、FreeType 开发文件。在 monorepo 根目录运行：
