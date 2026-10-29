@@ -50,4 +50,4 @@ Web 存档根为 `/savesth12`。C++ 文件通过既有浏览器存储白名单�
 
 主站直接使用登记的构建脚本与 Runtime 入口。`manifest.json` 声明 SDL 适配、语言、THPrac、音乐模式及扩展录像；`runtime-files.json` 提供包内文件大小和 SHA-256。人工验收状态在 [ADAPTATION.md](../ADAPTATION.md) 单列，代码实现状态与实际操作记录分别维护。
 
-普通版和 MP 的 `portable/sdl` 同源并分别链接各自核心。MP 构建目标为 `th12_sdl_host`，现有房间、回滚和多人录像宿主继续负责联机会话；对应指南见 [MP 开发入口](../../th12-mp/docs/DEVELOPMENT.md)。
+普通版和 MP 的 `portable/sdl` 同源并分别链接各自核心。MP 构建目标同为 `touhou12`；C++ Session 负责确认与回滚，SDL 应用负责多人画面、菜单、换面和结局结算；对应指南见 [MP 开发入口](../../th12-mp/docs/DEVELOPMENT.md)。

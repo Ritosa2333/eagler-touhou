@@ -4,8 +4,6 @@
 
 源码目录：`ports/th12`。构建模式：`normal`。
 
-[SDL3 / GLES 3 应用层](portable/sdl/README.md)提供 CMake 桌面目标 `touhou12`，并由主站的 `build:eagler` 直接生成 Web Runtime。表格沿用现有自动检查报告；本次 SDL 代码实现范围与构建身份在文末单列，实际运行由人工验收登记。构建与差异见 [开发指南](docs/DEVELOPMENT.md)。
-
 实现情况与实际验收分别记录。源码接口和模块检查通过后记为“已实现”；完成对应操作并附执行记录后记为“已验证”。
 
 状态：`待核对`、`进行中`、`待验证`、`已实现`、`已验证`、`检查失败`、`不适用`。
@@ -173,7 +171,7 @@
 
 ## 运行验收记录
 
-当前正式构建入口为 SDL3／GLES 普通版，代码包沿用 `th12.html`、目录 Runtime 协议和 `/savesth12`。Windows 程序、Web 程序及 MP 平台库的构建身份见 [迁移构建记录](../../archive/th12-sdl-completion-20261029/README.md)。编译与文件核对不代替游戏实测；本次包保留 `sdl-manual-acceptance-pending`，由人工确认画面、触控、声音、录像与存档后登记对应编号。
+当前正式构建入口为 SDL3／GLES 普通版，代码包沿用 `th12.html`、目录 Runtime 协议和 `/savesth12`。初版构建身份保留在 [#161 构建记录](../../archive/th12-sdl-completion-20261029/README.md)。当前正式清单登记完整 SDL 入口，浏览器实测与构建证据见 [完整迁移验证](../../archive/th12-complete-sdl-20261029/README.md)。
 
 既有 JavaScript 前端的运行记录已归入 [历史验收](../../archive/th12-web-acceptance-20261022/README.md)，覆盖当时的开局、菜单、关卡衔接、语言、触控和录像。该记录不作为新 SDL 程序的运行通过记录。
 
@@ -181,6 +179,10 @@
 
 ## SDL3 共用应用
 
-桌面与 Web 的资源、流程、绘制、练习、普通录像及 Web 扩展录像统一由 [SDL3 运行层](portable/sdl/README.md) 管理。普通版主站构建使用该应用层；多人版同步平台库并继续使用现有多人会话。音乐提供流式与整曲解码，触控与练习录像沿用版本化扩展。
+桌面与 Web 的资源、流程、绘制、练习、普通录像及 Web 扩展录像统一由 [SDL3 运行层](portable/sdl/README.md) 管理。普通版主站构建使用该应用层；多人版同样使用 SDL 应用，继续链接现有 C++ 确认与回滚会话。音乐提供流式与整曲解码，触控与练习录像沿用版本化扩展。
 
 SDL 入口已接上重开与常显判定点、触控位移录制及确认按下信号、练习元数据与伤害源恢复、录像定位音频处理、普通倍速录像插值和录制帧率显示。实现对应 [平台代码](portable/sdl/README.md)、[浏览器边界](site/game-sdl.mjs) 与 [开发指南](docs/DEVELOPMENT.md)。上表的状态由检查报告生成；本段源码范围与本次构建清单共同供人工验收使用。
+
+## 完整 SDL 入口迁移
+
+正式构建使用 SDL3／GLES 应用，普通版与多人版保留各自核心与来源祖先。构建、回放、回滚和子树导出证据见 [本轮验证](../../archive/th12-complete-sdl-20261029/README.md)。

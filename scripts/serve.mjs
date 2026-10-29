@@ -5,6 +5,7 @@ http.createServer((req,res)=>{
   try{
     if(!['GET','HEAD'].includes(req.method)){res.writeHead(405).end();return;}
     const url=new URL(req.url,'http://localhost'),decoded=decodeURIComponent(url.pathname);
+    if(decoded==='/runtime-crash-reporter.js'){res.setHeader('Content-Type','text/javascript');fs.createReadStream(path.resolve(root,'../../common/browser/runtime-crash-reporter.js')).pipe(res);return;}
     // Maintainer-only mounts. They remain outside the code-only Runtime bundle.
     const mount=[['/__eagler-runtime/',path.join(root,'build-eagler')],['/__eagler-sdl-runtime/',path.join(root,'build-sdl-eagler')],['/__eagler-content/',path.join(root,'artifacts/eagler-content')],['/src/',path.join(root,'src')]].find(([prefix])=>decoded.startsWith(prefix));
     const prefix=mount?.[1]??site,relative=mount?decoded.slice(mount[0].length):decoded==='/'?'index.html':decoded.slice(1),file=path.resolve(prefix,relative);

@@ -80,6 +80,9 @@ target_include_directories(th12_sdl_host PUBLIC "${TH12_SDL_DIR}" PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/generated" "${TH12_SDL_DIR}/third_party/khronos" "${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_vorbis")
 
 target_link_libraries(th12_sdl_host PUBLIC th12_runtime th12_sdl_dependencies)
+if(WIN32)
+  target_compile_definitions(th12_sdl_host PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
 if(NOT EMSCRIPTEN)
   target_link_libraries(th12_sdl_host PUBLIC Threads::Threads)
 endif()
@@ -92,9 +95,8 @@ else()
   target_compile_options(th12_sdl_host PRIVATE -ffp-contract=off -fsigned-char -fno-strict-aliasing)
 endif()
 
-# MP uses the same native presentation/resource library with its own core.
-# Its network session remains owned by the existing multiplayer host.
-if(NOT TH12_MULTIPLAYER)
+# Both products link this application against their own gameplay core.
+if(TH12_BUILD_SDL_HOST)
   add_executable(touhou12 "${TH12_SDL_DIR}/main.cpp")
   target_link_libraries(touhou12 PRIVATE th12_sdl_host)
   if(WIN32)
@@ -107,15 +109,27 @@ if(NOT TH12_MULTIPLAYER)
     target_sources(touhou12 PRIVATE "${TH12_SDL_DIR}/Memory.cpp")
   endif()
   if(EMSCRIPTEN)
+    if(TH12_MULTIPLAYER)
+      set(TH12_MP_EXPORTS "['_th12_host_mp_stage','_th12_host_mp_ready','_th12_host_mp_start','_th12_host_mp_finish','_th12_host_mp_room','_th12_host_mp_sound'")
+      file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/wasm/MultiplayerExports.cpp" TH12_MP_API)
+      string(REGEX MATCHALL "th12_mp_[a-z_]+\\(" TH12_MP_NAMES "${TH12_MP_API}")
+      foreach(NAME IN LISTS TH12_MP_NAMES)
+        string(REPLACE "(" "" NAME "${NAME}")
+        string(APPEND TH12_MP_EXPORTS ",'_${NAME}'")
+      endforeach()
+      string(APPEND TH12_MP_EXPORTS "]")
+      string(REGEX REPLACE "^\\[|\\]$" "" TH12_MP_EXPORTS "${TH12_MP_EXPORTS}")
+      string(APPEND TH12_MP_EXPORTS ",")
+    endif()
     target_compile_options(th12_runtime PUBLIC -fexceptions)
     set_target_properties(touhou12 PROPERTIES SUFFIX ".mjs")
     target_link_options(touhou12 PRIVATE
       "-sMODULARIZE=1" "-sEXPORT_ES6=1" "-sEXPORT_NAME=createTH12SDL"
       "-sENVIRONMENT=web" "-sALLOW_MEMORY_GROWTH=1" "-sINITIAL_MEMORY=134217728"
       "-sMAX_WEBGL_VERSION=2" "-sMIN_WEBGL_VERSION=2" "-sINVOKE_RUN=0"
-      "-sFORCE_FILESYSTEM=1" "-sEXPORTED_RUNTIME_METHODS=['callMain','FS','UTF8ToString','stringToUTF8']"
+      "-sUSE_ZLIB=1" "-sSTACK_SIZE=1048576" "-sFORCE_FILESYSTEM=1" "-sEXPORTED_RUNTIME_METHODS=['callMain','FS','UTF8ToString','stringToUTF8','HEAPU8']"
       "-sDISABLE_EXCEPTION_CATCHING=0"
-      "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free','_th12_host_key','_th12_host_controls','_th12_host_pressed','_th12_host_state','_th12_host_stop','_th12_host_audio','_th12_host_options','_th12_host_music_mode','_th12_host_playback','_th12_host_flush','_th12_host_pointer','_th12_host_wheel','_th12_host_refresh_music','_th12_host_clear','_th12_host_mobile']")
+      "-sEXPORTED_FUNCTIONS=[${TH12_MP_EXPORTS}'_main','_malloc','_free','_th12_host_key','_th12_host_controls','_th12_host_pressed','_th12_host_state','_th12_host_stop','_th12_host_audio','_th12_host_options','_th12_host_music_mode','_th12_host_playback','_th12_host_flush','_th12_host_pointer','_th12_host_wheel','_th12_host_refresh_music','_th12_host_clear','_th12_host_mobile','_th12_hud','_th12_hud_size','_th12_stage_flow','_th12_stage_flow_size']")
   endif()
   install(TARGETS touhou12 RUNTIME DESTINATION .)
 endif()

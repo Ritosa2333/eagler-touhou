@@ -4,6 +4,9 @@
 #include "game/GameState.hpp"
 #include "wasm/Api.hpp"
 #include <sstream>
+#ifdef TH12_MULTIPLAYER
+#include "game/Multiplayer.hpp"
+#endif
 namespace th12host {
 std::vector<MusicTrackInfo> prepared_music_comments(){
     std::vector<u8> bytes;std::vector<MusicTrackInfo> tracks;
@@ -15,12 +18,31 @@ std::vector<MusicTrackInfo> prepared_music_comments(){
 }
 const std::string& Game::host_state(){
     const auto* h=th12_hud();const bool playing=session&&menus&&menus->state.scene==MenuScene::Playing&&phase==Phase::Menu;
-    const char* kind=!playing?"menu":session->replay?"replay":th12::messageVM.active?"dialogue":"game";
+#ifdef TH12_MULTIPLAYER
+    const bool network_game=mp_playing&&!mp_result&&!ending&&playing;
+#else
+    constexpr bool network_game=false;
+#endif
+    const bool replaying=(session&&bool(session->replay))
+#ifdef TH12_MULTIPLAYER
+        ||mp_replay
+#endif
+        ;
+    const char* kind=!(playing||network_game)?"menu":replaying?"replay":th12::messageVM.active?"dialogue":"game";
+    float player_x=h[1],player_y=h[2];
+#ifdef TH12_MULTIPLAYER
+    if(mp_playing&&mp_local>=0&&mp_local<int(th12::multiplayer::options.count)){
+        const auto& p=th12::multiplayer::pilots[size_t(mp_local)];player_x=p.px/128.f;player_y=p.py/128.f;
+    }
+#endif
     std::ostringstream out;
-    out<<"{\"scene\":\""<<phase_name()<<"\",\"kind\":\""<<kind<<"\",\"ready\":"<<(playing&&th12_player_state()==1?"true":"false")
+    out<<"{\"scene\":\""<<phase_name()<<"\",\"kind\":\""<<kind<<"\",\"ready\":"<<((playing||network_game)&&th12_player_state()==1?"true":"false")
+       <<",\"fps\":"<<((playing||network_game)?game_fps:fps_value)
+       <<",\"menuReady\":"<<(menus&&menus->ready()?"true":"false")<<",\"menuAge\":"<<(menus?menus->state.age:0)<<",\"selection\":"<<(menus?menus->state.selection:0)
        <<",\"stage\":"<<(session?session->stage:0)<<",\"character\":"<<(session?session->run.character:0)<<",\"shot\":"<<(session?session->run.shot:0)
        <<",\"cursor\":"<<(session?session->cursor:0)<<",\"instance\":\""<<(session?session->stage:0)<<':'<<th12_player_instance()<<"\""
-       <<",\"x\":"<<int(std::lround(h[1]*128))<<",\"y\":"<<int(std::lround(h[2]*128))
+       <<",\"gestureScope\":\""<<(session?session->stage:0)<<"\""
+       <<",\"x\":"<<int(std::lround(player_x*128))<<",\"y\":"<<int(std::lround(player_y*128))
        <<",\"fast\":"<<th12_player_speed(0)<<",\"slow\":"<<th12_player_speed(1)<<",\"paused\":"<<((external_paused||(menus&&(menus->state.scene==MenuScene::Pause||menus->state.scene==MenuScene::PauseConfirm)))?"true":"false")
        <<",\"capturing\":"<<(practice_ui.captures()?"true":"false")<<",\"track\":\""<<audio.music_name()<<"\",\"seeking\":"<<(seek_target>=0?"true":"false")<<"}";
     host_snapshot=out.str();return host_snapshot;
@@ -39,6 +61,6 @@ bool Game::playback(int action,const char* path,int value){
     return false;
 }
 void Game::practice_key(int code,bool down){practice_ui.key(code,down);}
-bool Game::practice_pointer(int type,int id,float x,float y){return practice_ui.pointer(type,id,x,y);}
+int Game::practice_pointer(int type,int id,float x,float y,bool desktop){return practice_ui.pointer(type,id,x,y,desktop);}
 void Game::practice_wheel(float x,float y,float horizontal,float vertical){practice_ui.wheel(x,y,horizontal,vertical);}
 }

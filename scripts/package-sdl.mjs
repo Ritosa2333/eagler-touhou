@@ -6,7 +6,8 @@ const root=path.resolve(import.meta.dirname,'..');
 const out=path.resolve(process.argv.find(a=>a.startsWith('--output='))?.slice(9)??path.join(root,'build-sdl-eagler'));
 const build=JSON.parse(fs.readFileSync(path.join(root,'site/runtime/sdl/build.json'),'utf8'));
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-const sources=new Set(['site/game.css','site/runtime/sdl/touhou12.wasm']);
+for(const [name,expected]of Object.entries(build.sources)){if(sha(fs.readFileSync(path.resolve(root,name)))!==expected)throw Error('请先重新编译 SDL 核心：'+name);}
+const sources=new Set(['../../common/browser/runtime-crash-reporter.js','site/game.css','site/runtime/sdl/touhou12.wasm']);
 function collect(name){
   if(sources.has(name))return;sources.add(name);
   for(const match of fs.readFileSync(path.join(root,name),'utf8').matchAll(/(?:import|export)\s+(?:[^'";]*?\s+from\s*)?['"]([^'"]+)['"]/g)){
@@ -29,7 +30,7 @@ for(const source of sources){
   fs.writeFileSync(path.join(out,outputNames.get(source)),bytes);
 }
 fs.writeFileSync(path.join(out,'th12.html'),fs.readFileSync(path.join(root,'site/sdl.html'),'utf8').replace('./game-sdl.mjs','./game.mjs'));
-fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({game:'th12',protocol:'eagler-touhou/1',adapter:'cpp-sdl3-gles',version:'0.5.0-sdl',profile:'sdl-manual-acceptance-pending',completeAdapter:false,features:{thprac:build.features?.thprac!==false,languages:true,focusHitbox:false},music:['ogg-stream','ogg-full','none'],touchReplay:true,sourceSha256:build.sourceSha256},null,2)+'\n');
+fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({game:'th12',protocol:'eagler-touhou/1',adapter:'cpp-sdl3-gles',version:'0.5.0-sdl',profile:'normal',completeAdapter:true,features:{thprac:build.features?.thprac!==false,languages:true,focusHitbox:false},music:['ogg-stream','ogg-full','none'],touchReplay:true,sourceSha256:build.sourceSha256},null,2)+'\n');
 const files=Object.fromEntries([...allowed].filter(name=>name!=='runtime-files.json').sort().map(name=>{const bytes=fs.readFileSync(path.join(out,name));return [name,{bytes:bytes.length,sha256:sha(bytes)}];}));
 fs.writeFileSync(path.join(out,'runtime-files.json'),JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game:'th12',files},null,2)+'\n');
 console.log(JSON.stringify({runtime:out,files:Object.keys(files).length,applicationExecuted:false}));

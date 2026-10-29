@@ -40,8 +40,13 @@ public:
     struct Options {float current_fps=-1;i32 hud_age=-1;i32 score_low_digit=0;bool practice=false;bool stage_clear=false;double high_score=0;i32 recorded_fps=-1;};
     void set_geometry(i32 stage,StdGeometry g){geometry_stage=stage;geometry=std::move(g);}
     void reset_presentation();
+    void reset_motion(){previous_motion.clear();current_motion.clear();}
+#ifdef TH12_MULTIPLAYER
+    void multiplayer_view(int local,bool visible){local_seat=local;local_visibility=visible;}
+#endif
     void capture(const Options& options);
-    void render(float alpha=1);
+    bool continuous_motion()const{return !previous_motion.empty();}
+    void render(float alpha=1,float live_fps=-1);
     // Menu/loading layers (upstream renderMenu): appearances at their own
     // positions, menu text lines, font texts, then the FPS counter.
     void render_menu(const std::vector<Appearance>& poses,float x,float y,bool overlay,float shade=0,const float* shade_bounds=nullptr,Color clear={0,0,0,1},
@@ -59,14 +64,20 @@ private:
         enum Kind:u8 {State,NativeText,HudCounters,Rectangle,Mesh,DialogueLine,BeamTrail,Trail,Beam} kind=State;
         Appearance a;float x=0,y=0,angle=0,scale=1,alpha=1;
         bool has_priority=false;i32 priority=0;i32 clip=-1;i8 clipped=-1;bool has_order=false;i32 order=0;u32 index=0;
-        u32 id=0;bool logical=false,mesh_pass0=false;
+        u32 owner=0,id=0;bool logical=false,mesh_pass0=false;
         u64 continuity=0;
         u32 item=0; // text / dialogue / mesh index
         float bounds[4]{};u32 argb=0;u32 start=0,end=0;float width=0;
     };
     struct Triangle {i32 layer,entry,blend;bool point;Vertex v[3];float depth;};
+#ifdef TH12_MULTIPLAYER
+    std::vector<std::array<u32,2>> visual_owners;
+    int local_seat=0;bool local_visibility=false;
+    void capture_multiplayer_hud(int frame);
+    void apply_multiplayer_opacity();
+#endif
     Renderer& gpu;TextRaster& raster;Banks& banks;const ExeTables& exe;AnimationSampler sampler_;
-    StdGeometry geometry;i32 geometry_stage=0;i32 last_frame=-1;
+    StdGeometry geometry;i32 geometry_stage=0;i32 last_frame=-1,live_fps_text=-1;
     std::vector<Pose> poses;std::vector<u32> sorted;std::vector<TextDescriptor> texts;std::vector<Dialogue> dialogues;std::vector<Triangle> triangles;
     std::vector<Appearance> scratch;std::vector<Pose> logical_poses;std::vector<u32> owners;std::vector<std::pair<u32,u32>> schedule_ids;Pose shaken; // per-frame scratch
     struct Motion {float x,y,ax,ay,rotation;i32 bank,mode;};

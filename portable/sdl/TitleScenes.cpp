@@ -94,7 +94,7 @@ void TitleScenes::open_continue(const MenuContext& c){
     result_action(c,s.ranked);
 }
 void TitleScenes::finish(const MenuContext& result){
-    const i32 mode=result.run.mode;
+    const i32 mode=result.multiplayer?ModeStory:result.run.mode;
     if(mode==ModeDemo||mode==ModeReplay){return_title();return;}
     if(mode==ModePractice){
         // Native 433870, Practice results.
@@ -166,6 +166,7 @@ void TitleScenes::tick(u32 held,u32 pulses){
     }
     // The title controller is absent during gameplay: Z and X belong to the game.
     if(s.scene==MenuScene::Playing||s.scene==MenuScene::Ending||s.scene==MenuScene::Closed)return;
+#ifndef TH12_MULTIPLAYER
     if(s.scene==MenuScene::Title){
         idle_frames=(held&0xffff)?0:idle_frames+1;
         if(idle_frames>=1800){
@@ -173,6 +174,7 @@ void TitleScenes::tick(u32 held,u32 pulses){
             enter(MenuScene::Demo,0,[](MenuState& st){st.ready_at=0;});MenuAction a;a.type=MenuAction::Demo;a.run.replay_file=id;emit(a);return;
         }
     }
+#endif
     if(!ready())return;
     if(s.capture_joy>=0){if(pressed&Cancel)s.capture_joy=-1;return;}
     if(s.phase==MenuState::Phase::In){s.phase=MenuState::Phase::Active;MenuEvent e;e.type=MenuEvent::Ready;e.selection=s.selection;e.reset_interrupt=3;e.selection_interrupt=17+s.selection;s.events.push_back(e);}

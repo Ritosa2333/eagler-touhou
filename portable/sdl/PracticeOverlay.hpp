@@ -13,7 +13,7 @@ public:
     void key(int code,bool down);
     void clear(bool pointers);
     void mobile(bool enabled,bool visible);
-    bool pointer(int type,int id,float x,float y);
+    int pointer(int type,int id,float x,float y,bool desktop=true);
     void wheel(float x,float y,float horizontal,float vertical);
     int tick(int scene,bool ready,bool replay,int difficulty,unsigned held,std::array<int32_t,20>& parameters);
     bool captures()const;

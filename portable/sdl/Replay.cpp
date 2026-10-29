@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <cctype>
 #include <cstring>
+#ifdef TH12_MULTIPLAYER
+#include "multiplayer/ReplayArchive.hpp"
+#endif
 
 namespace th12host {
 namespace {
@@ -58,12 +61,28 @@ i32 Replay::recorded_fps(i32 number,u32 frame)const{
 }
 
 bool read_replay_info(const std::vector<u8>& file,ReplayInfo& out){
+#ifdef TH12_MULTIPLAYER
+    th12::multiplayer::ReplayArchive archive;
+    if(!archive.Load(file.data(),file.size()))return false;
+    const auto& setup=archive.Setup();out={};out.name=archive.Name();out.timestamp=archive.Timestamp();out.score_stored=int(archive.Score());
+    const auto seat=archive.Info().config.recordedPlayer;out.character=int(setup.selections[seat]/2);out.shot=int(setup.selections[seat]%2);out.difficulty=int(setup.difficulty);
+    out.final_stage=archive.Completed()?8:int(archive.Info().chapters[archive.Info().chapterCount-1].label);return true;
+#else
+
     std::vector<u8> raw;if(!unpack(file,raw,112))return false;
     out=header_info(raw.data());
     return out.character>=0&&out.character<=2&&out.shot>=0&&out.shot<=1&&out.difficulty>=0&&out.difficulty<=4;
+#endif
 }
-
 bool parse_replay(const std::vector<u8>& file,Replay& out,std::string& error){
+#ifdef TH12_MULTIPLAYER
+    th12::multiplayer::ReplayArchive archive;
+    if(!archive.Load(file.data(),file.size())||!read_replay_info(file,out.info)){error="Invalid multiplayer replay";return false;}
+    out.stages.clear();const auto& info=archive.Info();
+    for(unsigned i=0;i<info.chapterCount;++i){ReplayStage stage;stage.number=int(info.chapters[i].label);stage.frames=(i+1<info.chapterCount?info.chapters[i+1].firstFrame:info.frameCount)-info.chapters[i].firstFrame;out.stages.push_back(stage);}
+    return true;
+#else
+
     std::vector<u8> d;if(!unpack(file,d,0)){error="not a TH12 1.00b replay";return false;}
     size_t tail=36+get<u32>(&file[28]);
     while(tail+12<=file.size()&&get<u32>(&file[tail])==0x52455355){
@@ -92,6 +111,7 @@ bool parse_replay(const std::vector<u8>& file,Replay& out,std::string& error){
     if(!read_replay_extension(file,tail,stage_frames,r.extension,error))return false;
     if(!r.extension.damage.empty()&&(r.info.character!=0||r.info.shot!=0||r.info.practice)){error="Damage-source replay identity mismatch";return false;}
     r.data=std::move(d);out=std::move(r);return true;
+#endif
 }
 
 std::array<i32,21> default_replay_spell_times(){
@@ -157,13 +177,24 @@ std::vector<u8> ReplayRecorder::encode(const std::string& name,i64 timestamp,i32
 
 std::vector<ReplayEntry> list_replays(const std::string& folder){
     std::vector<ReplayEntry> out(25);std::vector<u8> bytes;
-    for(int i=0;i<25;++i){char name[16];std::snprintf(name,sizeof name,"th12_%02d.rpy",i+1);out[size_t(i)].file=name;
+    for(int i=0;i<25;++i){char name[16];std::snprintf(name,sizeof name,
+#ifdef TH12_MULTIPLAYER
+        "th12_mp_%02d.rpy",
+#else
+        "th12_%02d.rpy",
+#endif
+        i+1);out[size_t(i)].file=name;
         ReplayInfo info;if(host::read_file(folder+"/"+name,bytes,MaxBytes)&&read_replay_info(bytes,info))out[size_t(i)].info=info;}
     // 446560: the user files follow in directory order (up to 50).
     for(const auto& name:host::list_files(folder)){
         if(out.size()>=75)break;
         std::string lower=name;for(auto& c:lower)c=char(std::tolower(u8(c)));
+#ifdef TH12_MULTIPLAYER
+        if(lower.rfind("th12_mp_",0)!=0||lower.size()<13||lower.substr(lower.size()-4)!=".rpy")continue;
+        bool numbered=false;for(const auto& fixed:out)if(fixed.file==name){numbered=true;break;}if(numbered)continue;
+#else
         if(lower.size()!=15||lower.rfind("th12_ud",0)!=0||lower.substr(11)!=".rpy")continue;
+#endif
         ReplayInfo info;if(host::read_file(folder+"/"+name,bytes,MaxBytes)&&read_replay_info(bytes,info))out.push_back({name,info});
     }
     out.resize(75);return out;

@@ -2,7 +2,7 @@
 
 [开发指南](docs/DEVELOPMENT.md) · [monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
 
-原生桌面入口使用 [SDL3 / GLES 3 运行层](portable/sdl/README.md)，链接与网页版相同的当前 C++ 游戏核心。构建目标为 `touhou12`。
+正式 Web 与原生桌面入口共用 [SDL3 / GLES 3 运行层](portable/sdl/README.md)，链接与网页版相同的当前 C++ 游戏核心。构建目标为 `touhou12`。
 
 本作源码位于 `ports/th12`，在 monorepo 根目录运行 `npm run build:runtime -- --game=th12 --emsdk=工具链目录` 构建普通版。浏览器代码包输出至 `ports/th12/build-eagler/`；内容准备与站点组装见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
@@ -30,11 +30,11 @@ TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为�
 需要 Node.js 22+、Python 和 Emscripten 4.0.22。激活 Emscripten 环境后：
 
 ```sh
-npm run build
+npm run build:eagler
 npm start
 ```
 
-打开 `http://127.0.0.1:8112/`。方向键移动，Z 射击，Shift 低速，X Bomb，Esc 暂停。
+打开 `http://127.0.0.1:8112/adapter-preview.html?runtime=sdl`。方向键移动，Z 射击，Shift 低速，X Bomb，Esc 暂停。
 默认入口为完整游戏。方向键、Z／X操作菜单；Ctrl快进对话，回放时四倍速；F1打开移植版操作说明。
 单关调试、录像拖动定位和逐帧检查保留在 `/preview.html`，原版检查器保留独立入口。
 详细的本地资源准备见 [构建说明](docs/BUILD.md)。无原版资源也能编译源码，

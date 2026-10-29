@@ -19,7 +19,7 @@ let viewer=null;const requestedMusic=new Set();
 let lastFailure='';const startupLog=[];
 const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice();
 const equal=(a,b)=>a?.length===b.length&&a.every((v,i)=>v===b[i]);
-function fail(error){lastFailure=error?.message??String(error);notice.textContent=lastFailure;emit({event:'error',message:lastFailure});}
+function fail(error){globalThis.__eaglerCrashReporterV1?.fatal(error,{source:'sdl-runtime'});lastFailure=error?.message??String(error);notice.textContent=lastFailure;emit({event:'error',message:lastFailure});}
 function vk(code){
   if(/^Key[A-Z]$/.test(code))return code.charCodeAt(3);
   if(/^Digit[0-9]$/.test(code))return code.charCodeAt(5);
@@ -32,7 +32,8 @@ function key(code,down,source='host'){
   const held=[...keys.values()].includes(n);core?._th12_host_key(n,Number(held));
 }
 function clearKeyboard(){const codes=new Set(keys.values());keys.clear();input.clear();for(const code of codes)core?._th12_host_key(code,0);core?._th12_host_clear(0);}
-function cancelTouch(){touch.cancel();core?._th12_host_controls(0,0,0,0);core?._th12_host_clear(1);}
+const pendingPracticePointers=new Map();
+function cancelTouch(){pendingPracticePointers.clear();touch.cancel();core?._th12_host_controls(0,0,0,0);core?._th12_host_clear(1);}
 function stringAt(pointer){return core.UTF8ToString(pointer);}
 function withString(text,fn){const size=encoder.encode(text).length+1,pointer=core._malloc(size);try{core.stringToUTF8(text,pointer,size);return fn(pointer);}finally{core._free(pointer);}}
 function beforeFrame(){
@@ -46,7 +47,7 @@ function frame(){
   if(viewer&&!state.seeking&&state.scene==='replay-playing')viewer.target=null;
   if(!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame'});healthAt=now;}
   frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;
-  if(now-healthAt>=1000){emit({event:'frame-health',fps:frames*1000/(now-healthAt),maxGapMs:maxGap});emit({event:'audio-health',backend:'SDL3',musicMode:music});healthAt=now;frames=0;maxGap=0;}
+  if(now-healthAt>=1000){emit({event:'frame-health',fps:state.fps??frames*1000/(now-healthAt),maxGapMs:maxGap});emit({event:'audio-health',backend:'SDL3',musicMode:music});healthAt=now;frames=0;maxGap=0;}
   if(music!=='none'&&state.track&&!core.FS.analyzePath('/game/music/'+state.track+'.ogg').exists&&!requestedMusic.has(state.track)){
     const track=state.track;requestedMusic.add(track);
     assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(fail);
@@ -73,12 +74,17 @@ function syncRuntime(){
   });return syncQueue;
 }
 function practicePointer(message){
-  if(!core)return false;return !!core._th12_host_pointer(({down:0,move:1,up:2,cancel:3})[message.type]??3,message.id??0,message.x,message.y);
+  if(!core)return false;
+  const type=({down:0,move:1,up:2,cancel:3})[message.type]??3,id=message.id??0;
+  if(type===0)pendingPracticePointers.delete(id);
+  const route=core._th12_host_pointer(type,id,message.x,message.y,Number(message.pointerType==='mouse'));
+  if(route===2&&type===0)pendingPracticePointers.set(id,{...message});
+  if(route===3){const down=pendingPracticePointers.get(id);pendingPracticePointers.delete(id);if(down)touch.pointer(down,state);}
+  if(type>=2)pendingPracticePointers.delete(id);
+  return route===1||route===2;
 }
-function pointer(message){
-  if(state.capturing){practicePointer(message);return;}
-  touch.pointer(message,state);
-}
+function pointer(message){if(!practicePointer(message))touch.pointer(message,state);}
+
 async function configure(settings){
   const installed=new Map(),pack=settings.runtimePack;let total=0;
   if(pack){
@@ -124,6 +130,7 @@ async function launch(){
   try{
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
     core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Error:message=>fail(Error(message)),th12Stopped:(code=0,reason='')=>{terminated=true;launched=false;if(code||!firstFrame){fail(Error(reason||lastFailure||startupLog.slice(-8).join('\n')||'游戏在首帧前退出'));return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
+    globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()]})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
     await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
@@ -131,10 +138,11 @@ async function launch(){
     core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));
     const exitCode=core.callMain(['--data-dir','/game','--save-dir','/savesth12']);
     if(terminated||exitCode)throw Error(lastFailure||startupLog.slice(-8).join('\n')||'游戏初始化失败');
+    window.__th12Runtime={core,state:()=>JSON.parse(stringAt(core._th12_host_state()))};
     canvas.focus();
     for(const n of new Set(keys.values()))core._th12_host_key(n,1);
     if(options.replayPath)await playback({action:'open',path:options.replayPath.startsWith('/savesth12/')?options.replayPath:'/savesth12/'+options.replayPath});
-    emit({event:'runtime-info',renderer:'SDL3 / GLES 3',architecture:'shared C++20 application / WebAssembly',integration:'sdl-manual-acceptance-pending',completeAdapter:false});
+    emit({event:'runtime-info',renderer:'SDL3 / GLES 3',architecture:'shared C++20 application / WebAssembly',integration:'sdl3-gles',completeAdapter:true});
   }catch(error){launched=false;throw error;}
 }
 async function bootstrap(){
@@ -160,7 +168,7 @@ window.addEventListener('blur',()=>{clearKeyboard();cancelTouch();});
 document.addEventListener('visibilitychange',()=>{clearKeyboard();cancelTouch();core?._th12_host_audio(Number(document.hidden));if(document.hidden)syncRuntime().catch(fail);});
 window.addEventListener('pagehide',()=>{syncRuntime().catch(fail);});
 for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{
-  const rect=canvas.getBoundingClientRect(),message={type:({pointerdown:'down',pointermove:'move',pointerup:'up',pointercancel:'cancel'})[type],id:event.pointerId,x:(event.clientX-rect.left)*640/rect.width,y:(event.clientY-rect.top)*480/rect.height};
+  const rect=canvas.getBoundingClientRect(),message={type:({pointerdown:'down',pointermove:'move',pointerup:'up',pointercancel:'cancel'})[type],id:event.pointerId,pointerType:event.pointerType,x:(event.clientX-rect.left)*640/rect.width,y:(event.clientY-rect.top)*480/rect.height};
   if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);
   if(event.pointerType==='mouse')practicePointer(message);else pointer(message);
   event.preventDefault();
