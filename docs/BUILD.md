@@ -5,6 +5,8 @@
 安装 Node.js 22+、Python 及 Emscripten 4.0.22，并激活 Emscripten 环境。
 构建脚本读取 `EMSDK`／`EMSDK_PYTHON`；也支持工作区相邻 `tools/emsdk` 的安装。
 
+正式 Eagler 构建通过 `integration/common-dependency.json` 校验共享源码。当前固定输入包含 Information 信息窗的被动触控转交：可见信息窗内的轻点和拖动进入界面，窗外触控继续用于游戏。monorepo 更新共享头文件时同步登记文件摘要，再执行 `scripts/build-eagler.mjs` 生成匹配版本的核心与运行目录。
+
 `node --test tests/stage-flow.test.mjs`用同一工具链编译完整C++流程夹具，检查六面衔接、30帧淡出／淡入、资源继承、Practice和Continue。暂停菜单与场地合成检查使用`node --test tests/pause-transition-presentation.test.mjs`；设置`TH12_TEST_ATLASES`为本地准备的`atlases.json`路径后，可逐帧核对原版暂停选项脚本的高亮。
 
 ```sh
