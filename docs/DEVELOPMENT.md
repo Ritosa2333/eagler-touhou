@@ -51,3 +51,9 @@ Web 存档根为 `/savesth12`。C++ 文件通过既有浏览器存储白名单�
 主站直接使用登记的构建脚本与 Runtime 入口。`manifest.json` 声明 SDL 适配、语言、THPrac、音乐模式及扩展录像；`runtime-files.json` 提供包内文件大小和 SHA-256。人工验收状态在 [ADAPTATION.md](../ADAPTATION.md) 单列，代码实现状态与实际操作记录分别维护。
 
 普通版和 MP 的 `portable/sdl` 同源并分别链接各自核心。MP 构建目标同为 `touhou12`；C++ Session 负责确认与回滚，SDL 应用负责多人画面、菜单、换面和结局结算；对应指南见 [MP 开发入口](../../th12-mp/docs/DEVELOPMENT.md)。
+
+## 呈现热路径
+
+动画采样器在缓存项内登记显示帧代次，持续显示的轨道复用节点；未显示的轨道在帧末回收，年龄倒退时重新绑定。停止或结束的 VM 在速度、插值和子节点全部结束后直接推进采样年龄；每次采样先执行一帧，以接纳中断和状态修改。背景裁剪在一次捕获内复用多边形、裁剪输出和投影顶点缓冲，保留原先的裁剪、顶点提交与稳定排序顺序。
+
+`tests/sdl-animation.test.mjs` 检查稀疏年龄、倒退、中断、子节点、轨道回收和稳定轨道分配。`tests/native/sdl-animation-performance.cpp` 可用原版 ANM 检查逐帧输出与显示随机数，`tests/native/sdl-background-performance.cpp` 检查七关的背景顶点流。基准数据与运行时回归记录见[迁移版性能验证](../../../archive/th12-sdl-performance-20261029/README.md)。

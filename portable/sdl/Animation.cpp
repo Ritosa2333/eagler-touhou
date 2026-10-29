@@ -225,7 +225,20 @@ void Track::tick(){
     children_.erase(std::remove_if(children_.begin(),children_.end(),[](const auto& c){return c->ended_&&!c->state.visible;}),children_.end());
     frame_=std::move(f);has_frame=true;++ticks;if(!stopped&&!ended_)++clock;
 }
-const Track::Frame& Track::sample(i32 age){age=std::clamp(age,0,100000);while(ticks<=u32(age))tick();return frame_;}
+const Track::Frame& Track::sample(i32 age){
+    age=std::clamp(age,0,100000);
+    while(ticks<=u32(age)){
+        tick();
+        // A stopped VM still runs velocity, interpolation and children. Once
+        // all of them settle, only its age changes. Always tick once first so
+        // commands, interrupts and public state edits keep their normal order.
+        if((stopped||ended_)&&children_.empty()&&frame_.children.empty()&&interpolations.empty()
+            &&velocity.rx==0&&velocity.ry==0&&velocity.rotation==0&&velocity.sx==0&&velocity.sy==0&&velocity.u==0&&velocity.v==0){
+            ticks=u32(age)+1;break;
+        }
+    }
+    return frame_;
+}
 
 size_t AnimationSampler::KeyHash::operator()(const Key& k)const{
     size_t h=std::hash<i64>()(i64(k.bank)<<32^k.script);
@@ -234,19 +247,19 @@ size_t AnimationSampler::KeyHash::operator()(const Key& k)const{
     for(i32 i:k.interrupts)mix(u32(i));mix(k.position_offset);return h;
 }
 void AnimationSampler::end_frame(){
-    for(auto it=tracks.begin();it!=tracks.end();)if(!used.count(it->first))it=tracks.erase(it);else ++it;
-    used.clear();
+    for(auto it=tracks.begin();it!=tracks.end();)if(it->second.generation!=generation)it=tracks.erase(it);else ++it;
 }
 const Track::Frame* AnimationSampler::sample(i32 bank,i32 script,i32 age,std::optional<BulletVariant> variant,const SampleOptions& o){
     auto file=files?files(bank):nullptr;if(!file||!file->script(script))return nullptr;
     Key key{bank,script,variant.has_value(),variant.value_or(BulletVariant{}),o.entity,o.seed&65535,o.interrupt,o.interrupts,o.position_offset};
-    age=std::clamp(age,0,100000);used[key]=true;
+    age=std::clamp(age,0,100000);
     auto it=tracks.find(key);
-    if(it==tracks.end()||i64(age)<i64(it->second->tick_count())-1){
+    if(it==tracks.end()||i64(age)<i64(it->second.track->tick_count())-1){
         auto track=std::make_unique<Track>(*this,file,bank,script,variant,o);
-        if(it==tracks.end())it=tracks.emplace(key,std::move(track)).first;else it->second=std::move(track);
+        if(it==tracks.end())it=tracks.emplace(std::move(key),CachedTrack{std::move(track),generation}).first;else it->second.track=std::move(track);
     }
-    return &it->second->sample(age);
+    it->second.generation=generation;
+    return &it->second.track->sample(age);
 }
 void AnimationSampler::flatten(const Track::Frame& f,std::vector<Appearance>& out){
     out.push_back(f.a);for(const auto& c:f.children)flatten(c,out);
