@@ -77,7 +77,8 @@ public:
     std::vector<std::unique_ptr<Track>>& children(){return children_;}
     State state;
 private:
-    struct Interpolation {std::vector<u8> keys;std::vector<double> from,to;i32 duration=0,mode=0,time=0;bool hermite=false;std::array<double,3> a{},b{};};
+    // ANM interpolation opcodes address at most three fields (XYZ or RGB).
+    struct Interpolation {std::array<u8,3> keys{};u8 count=0;std::array<double,3> from{},to{};i32 duration=0,mode=0,time=0;bool hermite=false;std::array<double,3> a{},b{};};
     struct Saved {size_t pc;i32 clock;bool stopped;};
     AnimationSampler& owner;std::shared_ptr<const AnmFile> file;const AnmScript* script=nullptr;
     i32 bank,id_;u32 depth;std::optional<BulletVariant> variant;SampleOptions options;
@@ -90,7 +91,9 @@ private:
     std::optional<double> local(double key)const;void set_local(double key,double value);
     u32 random32(bool force_game=false);double random();
     double value(const AnmCommand& c,u32 i,bool real);
-    void interpolate(std::vector<u8> keys,std::vector<double> to,i32 duration,i32 mode,const double* ha=nullptr,const double* hb=nullptr);
+    void interpolate(std::initializer_list<u8> keys,std::initializer_list<double> to,i32 duration,i32 mode,const double* ha=nullptr,const double* hb=nullptr);
+    static void translate_frame(Frame& out,const Frame& in,const std::array<float,3>& offset,const State* parent);
+    void tick_children(u32 now);
     void child(u16 op,i32 script,const AnmCommand* offset=nullptr);
     bool command(const AnmCommand& c);
     float& field(u8 key);
