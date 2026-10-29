@@ -2,6 +2,7 @@
 // MenuAnimation) and src/easing.mjs. Native evidence cited upstream: 0x455630.
 #include "Animation.hpp"
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 
 namespace th12host {
@@ -13,7 +14,7 @@ float byte(double n){return float((i64(std::trunc(n))&255)/255.0);}
 i32 to_i32(double v){if(!std::isfinite(v))return 0;return i32(u32(i64(std::fmod(std::trunc(v),4294967296.0))));} // JS v|0
 // Interpolation field keys.
 enum Key:u8 {X,Y,Z,OX,OY,OZ,RX,RY,RZ,SX,SY,A,R,G,B,R2,G2,B2,A2,SU,SV};
-u32 key_id(const std::vector<u8>& keys){u32 id=0;for(u8 k:keys)id=id*32+k+1;return id;}
+u32 key_id(std::initializer_list<u8> keys){u32 id=0;for(u8 k:keys)id=id*32+k+1;return id;}
 }
 
 double easing(double t,i32 mode){
@@ -73,12 +74,15 @@ float& Track::field(u8 k){
         case R:return s.r;case G:return s.g;case B:return s.b;case R2:return s.r2;case G2:return s.g2;case B2:return s.b2;case A2:return s.alpha2;
         case SU:return velocity.u;default:return velocity.v;}
 }
-void Track::interpolate(std::vector<u8> keys,std::vector<double> to,i32 duration,i32 mode,const double* ha,const double* hb){
+void Track::interpolate(std::initializer_list<u8> keys,std::initializer_list<double> to,i32 duration,i32 mode,const double* ha,const double* hb){
+    assert(keys.size()<=3&&keys.size()==to.size());
+    const auto* fields=keys.begin();const auto* targets=to.begin();
     const u32 id=key_id(keys);
-    if(duration<=0){for(size_t i=0;i<keys.size();++i)field(keys[i])=f32(to[i]);
+    if(duration<=0){for(size_t i=0;i<keys.size();++i)field(fields[i])=f32(targets[i]);
         interpolations.erase(std::remove_if(interpolations.begin(),interpolations.end(),[&](const auto& p){return p.first==id;}),interpolations.end());return;}
-    Interpolation t;t.keys=keys;for(u8 k:keys)t.from.push_back(field(k)); // scroll keys start from the current scroll velocity
-    for(double v:to)t.to.push_back(f32(v));t.duration=duration;t.mode=mode;
+    Interpolation t;t.count=u8(keys.size());
+    for(size_t i=0;i<keys.size();++i){t.keys[i]=fields[i];t.from[i]=field(fields[i]);t.to[i]=f32(targets[i]);}
+    t.duration=duration;t.mode=mode;
     if(ha&&hb){t.hermite=true;for(int i=0;i<3;++i){t.a[i]=ha[i];t.b[i]=hb[i];}}
     // Map.set: an existing key keeps its place.
     for(auto& p:interpolations)if(p.first==id){p.second=std::move(t);return;}
@@ -134,9 +138,9 @@ bool Track::command(const AnmCommand& c){
     case 54:{const float a=f32(F(0)),b=f32(F(1));velocity.sx=a;velocity.sy=b;break;}
     case 55:{const double to=byte(I(0));interpolate({A},{to},i32(I(1)),0);break;}
     case 56:{const double x=F(2),y=F(3),z=F(4);const i32 d=i32(I(0)),m=i32(I(1));
-        interpolate(options.position_offset?std::vector<u8>{OX,OY,OZ}:std::vector<u8>{X,Y,Z},{x,y,z},d,m);break;}
+        interpolate(options.position_offset?std::initializer_list<u8>{OX,OY,OZ}:std::initializer_list<u8>{X,Y,Z},{x,y,z},d,m);break;}
     case 57:case 78:{const double r=byte(I(2)),g=byte(I(3)),b=byte(I(4));const i32 d=i32(I(0)),m=i32(I(1));
-        interpolate(c.op==78?std::vector<u8>{R2,G2,B2}:std::vector<u8>{R,G,B},{r,g,b},d,m);break;}
+        interpolate(c.op==78?std::initializer_list<u8>{R2,G2,B2}:std::initializer_list<u8>{R,G,B},{r,g,b},d,m);break;}
     case 58:case 79:{const double a=byte(I(2));const i32 d=i32(I(0)),m=i32(I(1));interpolate({u8(c.op==79?A2:A)},{a},d,m);break;}
     case 59:{const double x=F(2),y=F(3),z=F(4);const i32 d=i32(I(0)),m=i32(I(1));interpolate({RX,RY,RZ},{x,y,z},d,m);break;}
     case 60:{const double x=F(2),y=F(3);const i32 d=i32(I(0)),m=i32(I(1));interpolate({SX,SY},{x,y},d,m);break;}
@@ -163,7 +167,7 @@ bool Track::command(const AnmCommand& c){
     case 93:case 94:{const double to=F(2);const i32 d=i32(I(0)),m=i32(I(1));interpolate({u8(c.op==93?SU:SV)},{to},d,m);break;}
     case 96:case 97:child(c.op,i32(I(0)),&c);break;
     case 100:{const double x=F(4),y=F(5),z=F(6);const i32 d=i32(I(0));const double a[3]{F(1),F(2),F(3)},b[3]{F(7),F(8),F(9)};
-        interpolate(options.position_offset?std::vector<u8>{OX,OY,OZ}:std::vector<u8>{X,Y,Z},{x,y,z},d,8,a,b);break;}
+        interpolate(options.position_offset?std::initializer_list<u8>{OX,OY,OZ}:std::initializer_list<u8>{X,Y,Z},{x,y,z},d,8,a,b);break;}
     case 102:{const i32 n=i32(I(0));const u32 range=u32(i32(I(1)));const u32 r=random32(true);if(!range){ended_=true;break;}s.sprite=i32(u32(n)+r%range);s.visible=true;break;}
     case 103:s.mode=14;s.geometry_radius=f32(F(0));s.geometry_width=f32(F(1));break;
     case 104:case 105:s.mode=c.op==104?15:16;s.geometry_radius=f32(F(0));s.geometry_count=i32(I(1));break;
@@ -191,7 +195,7 @@ void Track::tick(){
         auto& t=interpolations[n].second;
         // TH12 interpolation helpers advance their own timer before sampling (0x458cff etc).
         const double p=std::min(1.,double(++t.time)/t.duration),e=easing(p,t.mode),e32=easing(double(f32(p)),t.mode);
-        for(size_t i=0;i<t.keys.size();++i){
+        for(size_t i=0;i<t.count;++i){
             const u8 k=t.keys[i];double value;
             if(t.hermite){const double p2=p*p,p3=p2*p;value=(2*p3-3*p2+1)*t.from[i]+(-2*p3+3*p2)*t.to[i]+(p3-2*p2+p)*t.a[i]+(p3-p2)*t.b[i];}
             else value=t.from[i]+(t.to[i]-t.from[i])*e;
@@ -208,22 +212,34 @@ void Track::tick(){
     a.r2=s.r2;a.g2=s.g2;a.b2=s.b2;a.alpha2=s.alpha2;a.blend=s.blend;a.layer=s.layer;a.visible=s.visible;a.mode=s.mode;
     a.anchor_x=s.anchor_x;a.anchor_y=s.anchor_y;a.u=s.u;a.v=s.v;a.point=s.point;a.uv_scale_x=s.uv_scale_x;a.uv_scale_y=s.uv_scale_y;
     a.geometry_count=s.geometry_count;a.geometry_radius=s.geometry_radius;a.geometry_width=s.geometry_width;a.rotate=s.mode==1||s.mode==3;
-    // Children: newest first in the list; the frame keeps creation order.
+    // Preserve newest-first VM ticks and display RNG consumption. Frame slots
+    // follow creation order and retain their nested vector storage across ticks.
+    if(children_.empty())frame_=std::move(f);
+    else{frame_.a=a;tick_children(now);}
+    has_frame=true;++ticks;if(!stopped&&!ended_)++clock;
+}
+void Track::tick_children(u32 now){
+    const auto& a=frame_.a;const auto& s=state;
+    size_t visible_frames=0;
     for(auto& c:children_){
-        if(c->born!=now)c->tick();if(!c->has_frame)continue;
+        if(c->born!=now)c->tick();if(c->has_frame)++visible_frames;
+    }
+    frame_.children.resize(visible_frames);size_t at=0;
+    for(auto it=children_.rbegin();it!=children_.rend();++it){
+        const auto& c=*it;if(!c->has_frame)continue;
         const std::array<float,3> offset=c->detached?c->base:std::array<float,3>{f32(double(a.x)+c->base[0]),f32(double(a.y)+c->base[1]),f32(double(a.z)+c->base[2])};
-        // TH12 quad/circle draw helpers multiply by the immediate parent's VM
-        // scale (0x45a593, 0x45ccb5), and rotated modes add its Z rotation.
-        std::function<Frame(const Frame&,const State*)> translate=[&](const Frame& in,const State* parent){
-            Frame out;out.a=in.a;out.a.x=float(double(in.a.x)+offset[0]);out.a.y=float(double(in.a.y)+offset[1]);out.a.z=float(double(in.a.z)+offset[2]);
-            out.a.sx=in.a.sx*(parent?parent->sx:1.f);out.a.sy=in.a.sy*(parent?parent->sy:1.f);
-            out.a.rotation=float(double(in.a.rotation)+((in.a.rotate||in.a.mode>=14)&&parent?parent->rotation:0.f));
-            for(const auto& g:in.children)out.children.push_back(translate(g,nullptr));return out;
-        };
-        f.children.insert(f.children.begin(),translate(c->frame_,c->detached?nullptr:&s));
+        translate_frame(frame_.children[at++],c->frame_,offset,c->detached?nullptr:&s);
     }
     children_.erase(std::remove_if(children_.begin(),children_.end(),[](const auto& c){return c->ended_&&!c->state.visible;}),children_.end());
-    frame_=std::move(f);has_frame=true;++ticks;if(!stopped&&!ended_)++clock;
+}
+void Track::translate_frame(Frame& out,const Frame& in,const std::array<float,3>& offset,const State* parent){
+    out.a=in.a;out.a.x=float(double(in.a.x)+offset[0]);out.a.y=float(double(in.a.y)+offset[1]);out.a.z=float(double(in.a.z)+offset[2]);
+    // Native 45a593/45ccb5 multiply the immediate parent's scale and add its
+    // rotation for rotated modes. Descendants already contain their VM parent.
+    out.a.sx=in.a.sx*(parent?parent->sx:1.f);out.a.sy=in.a.sy*(parent?parent->sy:1.f);
+    out.a.rotation=float(double(in.a.rotation)+((in.a.rotate||in.a.mode>=14)&&parent?parent->rotation:0.f));
+    out.children.resize(in.children.size());
+    for(size_t i=0;i<in.children.size();++i)translate_frame(out.children[i],in.children[i],offset,nullptr);
 }
 const Track::Frame& Track::sample(i32 age){
     age=std::clamp(age,0,100000);

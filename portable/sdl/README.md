@@ -71,6 +71,12 @@ node ports/th12-mp/scripts/build-eagler.mjs
 
 验证入口为 `scripts/check-sdl-browser.mjs`（普通版）和 `scripts/check-sdl-multiplayer-browser.mjs`（多人版）。`TH12_ASSETS` 指定自行提取的素材目录，`TH12_FONTS` 指定共享字体目录；多人用例通过本机 relay 和真实 RTC 通道核对暂停、观战、Replay 槽位和状态重建，`TH12_INPUT_LATENCY_MS` 设置测试输入延迟。
 
+## 动画与浏览器逐帧开销
+
+ANM 的位置、颜色、缩放和透明度插值以最多三个字段的定长数组保存，指令替换保持原有插入顺序与浮点舍入。嵌套动画复用显示树节点的子列表，逻辑仍按新建在前的次序推进，显示仍按创建顺序提交；立即父节点的缩放、旋转及附着／脱离偏移保持原样。
+
+浏览器按原生实例记住已存在与正在下载的音乐，避免同一曲目逐帧遍历虚拟文件系统。键盘采样直接遍历独立按键持有者，并与手柄方向合并，不为每帧创建键值数组。两侧通过动画输出哈希、分配计数、音乐异步加载和多输入持有检查核对行为，量化记录见[动画存储复用验证](../../../../archive/th12-sdl-animation-storage-20261029/README.md)。
+
 ## 平台发行与来源
 
 Switch 分支保留 libnx 数据路径、共享字体及 GLES 支持，构建需要 devkitPro 的 SDL3、FreeType、Mesa 和 libnx。NRO 图标与封装由发行构建提供；`TH12_SWITCH_SMALL_BLOCK_POOL=ON` 可接入 Switch 小块分配器。

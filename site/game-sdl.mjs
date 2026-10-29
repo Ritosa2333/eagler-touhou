@@ -17,7 +17,7 @@ const encoder=new TextEncoder();
 let core,store,localization,emit=()=>{},launched=false,terminated=false,firstFrame=false;
 let options={limitPresentationTo60:true},music='ogg',state={kind:'menu',key:'inactive',ready:false};
 let healthAt=0,frames=0,lastFrame=0,maxGap=0,syncedAt=0,syncQueue=Promise.resolve(),oldFiles=new Map();
-let viewer=null;const requestedMusic=new Set();
+let viewer=null;const preparedMusic=new Set(); // Existing files and in-flight requests, retained for this core.
 let lastFailure='',nativeStarted=false;const startupLog=[];
 const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice();
 const equal=(a,b)=>a?.length===b.length&&a.every((v,i)=>v===b[i]);
@@ -40,8 +40,9 @@ function cancelTouch(){pendingPracticePointers.clear();touch.cancel();core?._th1
 function stringAt(pointer){return core.UTF8ToString(pointer);}
 function withString(text,fn){const size=encoder.encode(text).length+1,pointer=core._malloc(size);try{core.stringToUTF8(text,pointer,size);return fn(pointer);}finally{core._free(pointer);}}
 function beforeFrame(){
-  const heldKeys=[...keys.values()],pad=input.pad()??0;
-  const sample=touch.sample(state,{arrows:heldKeys.some(n=>n>=37&&n<=40)||!!(pad&240),keyFocused:heldKeys.includes(16)});
+  const pad=input.pad()??0;let arrows=!!(pad&240),keyFocused=false;
+  for(const code of keys.values()){if(code>=37&&code<=40)arrows=true;if(code===16)keyFocused=true;}
+  const sample=touch.sample(state,{arrows,keyFocused});
   const m=sample.motion;core._th12_host_controls(sample.held|pad,m?.mode??0,m?.x??0,m?.y??0);
   core._th12_host_pressed(sample.pressed);
 }
@@ -51,9 +52,10 @@ function frame(){
   if(!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame'});healthAt=now;}
   frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;
   if(now-healthAt>=1000){emit({event:'frame-health',fps:state.fps??frames*1000/(now-healthAt),maxGapMs:maxGap});emit({event:'audio-health',backend:'SDL3',musicMode:music});healthAt=now;frames=0;maxGap=0;}
-  if(music!=='none'&&state.track&&!core.FS.analyzePath('/game/music/'+state.track+'.ogg').exists&&!requestedMusic.has(state.track)){
-    const track=state.track;requestedMusic.add(track);
-    assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(fail);
+  if(music!=='none'&&state.track&&!preparedMusic.has(state.track)){
+    const track=state.track;preparedMusic.add(track);
+    if(!core.FS.analyzePath('/game/music/'+track+'.ogg').exists)
+      assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(fail);
   }
   if(viewer&&now-viewer.reportedAt>=100){const part=viewer.parts.find(p=>p.stage===state.stage);emit({event:'runtime-info',playback:{kind:'replay',path:viewer.path,frame:(part?.start??0)+(state.cursor??0),total:viewer.total,stage:state.stage,startFrame:viewer.startFrame,startStage:viewer.startStage,difficulty:viewer.replay.difficulty,paused:state.paused,rate:viewer.rate,seeking:!!state.seeking,target:viewer.target,preparing:state.scene==='loading',ended:state.scene!=='replay-playing'&&state.scene!=='loading',description:viewer.description}});viewer.reportedAt=now;}
   if(now-syncedAt>5000){syncedAt=now;syncRuntime().catch(fail);}

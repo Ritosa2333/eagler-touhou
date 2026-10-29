@@ -26,7 +26,7 @@ void hash_frame(const Track::Frame& f){
 }
 double milliseconds(std::chrono::steady_clock::time_point start){return std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count();}
 std::shared_ptr<AnmFile> fixture(){
-    auto file=std::make_shared<AnmFile>();file->scripts.resize(6);
+    auto file=std::make_shared<AnmFile>();file->scripts.resize(12);
     const auto command=[](u16 op,std::vector<i32> ints={},std::vector<float> floats={}){AnmCommand c;c.op=op;c.ints=std::move(ints);c.floats=std::move(floats);return c;};
     file->scripts[0].commands={command(3,{1}),command(63),command(64,{2}),command(3,{8}),command(63)}; // stopped, settled, interruptible
     file->scripts[1].commands={command(3,{2}),command(54,{}, {0.125f,-0.25f}),command(63)}; // stopped, moving
@@ -34,6 +34,18 @@ std::shared_ptr<AnmFile> fixture(){
     file->scripts[3].commands={command(3,{4}),command(88,{1}),command(63)}; // stopped, moving child
     file->scripts[4].commands={command(3,{5}),command(2)}; // ended, visible
     file->scripts[5].commands={command(87,{1}),command(40,{0,100}),command(63)}; // count bindings via display RNG
+    // Attached/detached descendants retain creation order while their clocks
+    // advance newest-first. Interrupts repeatedly replace 1/2/3-field tweens.
+    file->scripts[6].commands={command(3,{6}),command(48,{}, {3,4,5}),command(50,{}, {1.5f,.75f}),command(49,{}, {.1f,.2f,.3f}),
+        command(88,{7}),command(95,{8}),command(88,{9}),command(63),command(64,{2}),
+        command(56,{3,0},{0,0,20,30,40}),command(57,{5,0,255,127,0}),command(58,{3,0,128}),
+        command(60,{2,0},{0,0,.5f,1.25f}),command(63)};
+    file->scripts[7].commands={command(3,{7}),command(54,{}, {.001f,-.002f}),command(88,{8}),command(63)};
+    file->scripts[8].commands={command(3,{8}),command(67,{1}),command(53,{}, {.001f,.002f,.003f}),command(63)};
+    file->scripts[9].commands={command(3,{9}),command(88,{1}),command(63)};
+    auto late=command(88,{8});late.time=3;auto stop=command(63);stop.time=4;auto death=command(1);death.time=2;
+    file->scripts[10].commands={command(3,{10}),command(88,{11}),late,stop};
+    file->scripts[11].commands={command(3,{11}),command(88,{8}),death};
     return file;
 }
 void verify(std::shared_ptr<const AnmFile> file,i32 bank,i32 script,const SampleOptions& o){
@@ -59,6 +71,7 @@ void operator delete[](void* p,std::size_t)noexcept{std::free(p);}
 int main(int argc,char** argv){
     auto file=fixture();
     for(i32 script=0;script<5;++script)verify(file,0,script,{});
+    for(i32 script=6;script<12;++script)verify(file,0,script,{});
     // Interrupts after a large age skip still run from the saved stopped clock.
     AnimationSampler owner;Track moving(owner,file,0,1,{},{});moving.sample(2000);require(moving.state.sx==251.125f,"stopped velocity was skipped");
     Track fading(owner,file,0,2,{},{});fading.sample(2000);require(fading.state.alpha==0,"stopped interpolation was skipped");
@@ -66,6 +79,12 @@ int main(int argc,char** argv){
     require(edited.interrupt(2),"late stopped interrupt missing");require(edited.sample(20010).a.sprite==8&&edited.tick_count()==20011,"late interrupt was skipped");
     Track wrapping(owner,file,0,0,{},{});wrapping.state.u=5;wrapping.state.v=-4;
     require(wrapping.sample(10000).a.u==0&&wrapping.frame()->a.v==0,"stopped UV normalization was skipped");
+    Track ordered(owner,file,0,6,{},{});const auto& tree=ordered.sample(0);
+    require(tree.children.size()==3&&tree.children[0].a.script==7&&tree.children[1].a.script==8&&tree.children[2].a.script==9,"child creation order changed");
+    require(tree.children[0].a.x==3&&tree.children[0].children[0].a.x==3,"attached child offsets changed");
+    require(tree.children[1].a.sx==1&&tree.children[1].a.rotation==.303f,"detached child transform changed");
+    Track retired(owner,file,0,10,{},{});retired.sample(0);const auto& replacement=retired.sample(3);
+    require(replacement.children.size()==1&&replacement.children[0].a.script==8&&replacement.children[0].children.empty(),"retired child storage leaked into a replacement");
     AnimationSampler cached;cached.files=[file](i32){return file;};SampleOptions option;option.entity=91;u32 bindings=0;cached.display_random32=[&]{return ++bindings;};
     cached.begin_frame();cached.sample(0,5,4,{},option);cached.sample(0,5,4,{},option);cached.end_frame();require(bindings==1,"duplicate sample rebound a live track");
     cached.begin_frame();cached.end_frame(); // no draw: evict
@@ -90,6 +109,12 @@ int main(int argc,char** argv){
     draw_chained(0);allocations=0;counting=true;start=std::chrono::steady_clock::now();
     for(int age=1;age<=600;++age)draw_chained(age);
     const double chained_ms=milliseconds(start);counting=false;const auto chained_allocations=allocations;
+    AnimationSampler tree_owner;std::vector<std::unique_ptr<Track>> trees;
+    for(int i=0;i<512;++i){trees.push_back(std::make_unique<Track>(tree_owner,file,0,6,std::nullopt,SampleOptions{}));trees.back()->sample(0);trees.back()->interrupt(2);trees.back()->sample(1);}
+    allocations=0;counting=true;start=std::chrono::steady_clock::now();
+    for(int age=2;age<=601;++age)for(auto& tree:trees){tree->interrupt(2);tree->sample(age);}
+    const double tree_ms=milliseconds(start);counting=false;const auto tree_allocations=allocations;
+    for(const auto& tree:trees)hash_frame(*tree->frame());
     // Long interrupt sequences keep their tail in both options and cache keys.
     SampleOptions long_a,long_b;long_a.interrupts={2,7,3,8,4,9};long_b.interrupts={2,7,3,8,4,10};
     require(!(long_a.interrupts==long_b.interrupts),"interrupt tails were truncated");
@@ -102,5 +127,5 @@ int main(int argc,char** argv){
     start=std::chrono::steady_clock::now();
     for(int i=0;i<60;++i){Track late(owner,file,0,0,{},{});late.sample(10000);require(late.tick_count()==10001,"settled age differs");hash_frame(*late.frame());}
     const double late_ms=milliseconds(start);
-    std::printf("{\"files\":%zu,\"scripts\":%zu,\"outputHash\":\"%016llx\",\"steadyFrames\":600,\"steadyTracks\":512,\"steadyMs\":%.3f,\"steadyAllocations\":%zu,\"lateBindings\":60,\"lateAge\":10000,\"lateMs\":%.3f,\"chainedMs\":%.3f,\"chainedAllocations\":%zu}\n",files,scripts,(unsigned long long)digest,steady_ms,steady_allocations,late_ms,chained_ms,chained_allocations);
+    std::printf("{\"files\":%zu,\"scripts\":%zu,\"outputHash\":\"%016llx\",\"steadyFrames\":600,\"steadyTracks\":512,\"steadyMs\":%.3f,\"steadyAllocations\":%zu,\"lateBindings\":60,\"lateAge\":10000,\"lateMs\":%.3f,\"chainedMs\":%.3f,\"chainedAllocations\":%zu,\"treeMs\":%.3f,\"treeAllocations\":%zu}\n",files,scripts,(unsigned long long)digest,steady_ms,steady_allocations,late_ms,chained_ms,chained_allocations,tree_ms,tree_allocations);
 }
