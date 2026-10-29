@@ -15,3 +15,7 @@ node ports/th12-mp/scripts/check-sdl-multiplayer-browser.mjs
 浏览器验证设置 `TH12_ASSETS` 和 `TH12_FONTS`，输出在本地 `artifacts/sdl-multiplayer-browser`。测试用真实 RTC 输入，并支持 `TH12_INPUT_LATENCY_MS` 与 `TH12_MULTIPLAYER_SCENARIOS`。旧 JS 宿主通过 `build-legacy-eagler.mjs` 单独构建，正式包的模块闭包不引用它或旧渲染器。
 
 依赖与数据准备见 [SDL3 指南](../portable/sdl/README.md)，同步来源按 [目录维护流程](../../../docs/adaptation/port-sync.md) 登记。
+
+## 呈现性能验证
+
+多人前端与普通前端共用动画缓存代次、静止轨道年龄快进、背景裁剪缓冲复用的实现。轨道回退按原始绑定重算；优化不修改 Session、确认帧、输入预测或世界快照。稀疏年龄、移动中的停止 VM、中断和显示随机数通过 `tests/sdl-animation.test.mjs` 与原版 ANM 基准验证；延迟 RTC、观战及录像重建通过 `scripts/check-sdl-multiplayer-browser.mjs` 验证。方法与数据见[迁移版性能验证](../../../archive/th12-sdl-performance-20261029/README.md)。

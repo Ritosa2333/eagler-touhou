@@ -77,9 +77,9 @@ class AnimationSampler {
 public:
     std::function<u32()> display_random32; // loading screen's own stream
     std::function<std::shared_ptr<const AnmFile>(i32 bank)> files;
-    void begin_frame(){used.clear();}
+    void begin_frame(){if(++generation==0){for(auto& entry:tracks)entry.second.generation=0;++generation;}}
     void end_frame();
-    void reset(){tracks.clear();used.clear();}
+    void reset(){tracks.clear();}
     const Track::Frame* sample(i32 bank,i32 script,i32 age,std::optional<BulletVariant> variant={},const SampleOptions& options={});
     // Root and descendants, flattened in upstream's walk order.
     void sample_all(i32 bank,i32 script,i32 age,std::vector<Appearance>& out,std::optional<BulletVariant> variant={},const SampleOptions& options={});
@@ -88,8 +88,9 @@ private:
     struct Key {i32 bank,script;bool has_variant;BulletVariant variant;u64 entity;u32 seed;i32 interrupt;std::vector<i32> interrupts;bool position_offset;
         bool operator==(const Key& o)const{return bank==o.bank&&script==o.script&&has_variant==o.has_variant&&(!has_variant||(variant.sprite==o.variant.sprite&&variant.spawn==o.variant.spawn&&variant.cancel==o.variant.cancel))&&entity==o.entity&&seed==o.seed&&interrupt==o.interrupt&&interrupts==o.interrupts&&position_offset==o.position_offset;}};
     struct KeyHash {size_t operator()(const Key& k)const;};
-    std::unordered_map<Key,std::unique_ptr<Track>,KeyHash> tracks;
-    std::unordered_map<Key,bool,KeyHash> used;
+    struct CachedTrack {std::unique_ptr<Track> track;u64 generation;};
+    std::unordered_map<Key,CachedTrack,KeyHash> tracks;
+    u64 generation=1;
 };
 
 // Upstream MenuAnimation: a long-lived binding ticked by its owner. Menus

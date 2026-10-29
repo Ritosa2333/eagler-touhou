@@ -136,6 +136,11 @@ void Scene::capture_background(){
     const double fog_start=c.fogStart,fog_end=c.fogEnd;
     const auto stage_file=banks.get(BankStage);if(!stage_file)return;
     struct P {double cx,cy,depth,u,v;};
+    // A quad clipped against two planes has at most six vertices. Reuse
+    // capture-local storage across all STD instances instead of allocating
+    // polygon, plane output and projected vertices for every tile.
+    std::vector<P> polygon,clipped;std::vector<Vertex> vs;
+    polygon.reserve(6);clipped.reserve(6);vs.reserve(6);
     for(const auto& instance:geometry.instances){
         const auto& object=geometry.objects[instance.object];
         // 40396e/403d45 gates both STD object-layer groups 0..7 and 8..11.
@@ -155,7 +160,7 @@ void Scene::capture_background(){
             const double px0=double(a.x)+a.engineX+a.offsetX,py0=double(a.y)+a.engineY+a.offsetY,pz0=double(a.z)+a.engineZ+a.offsetZ;
             const double cxp=double(q.position[0])+instance.position[0]+px0,cyp=double(q.position[1])+instance.position[1]+py0,czp=double(q.position[2])+instance.position[2]+pz0;
             const double rcx=std::cos(double(a.rx)),rsx=std::sin(double(a.rx)),rcy=std::cos(double(a.ry)),rsy=std::sin(double(a.ry)),rcz=std::cos(double(a.rotation)),rsz=std::sin(double(a.rotation));
-            std::vector<P> polygon;
+            polygon.clear();
             static constexpr double corners[4][4]{{-.5,-.5,0,0},{.5,-.5,1,0},{.5,.5,1,1},{-.5,.5,0,1}};
             for(const auto& k:corners){
                 double px=k[0]*w,py=k[1]*h,pz=0,t;
@@ -168,19 +173,19 @@ void Scene::capture_background(){
             // Clip the near plane before projection; never discard a whole tile
             // just because one corner is behind the camera.
             for(int plane=0;plane<2;++plane){
-                const double limit=plane?exe.far_plane:exe.near_plane;std::vector<P> out;
+                const double limit=plane?exe.far_plane:exe.near_plane;clipped.clear();
                 const auto keep=[&](double d){return plane?d<=0:d>=0;};
                 for(size_t i=0;i<polygon.size();++i){const P& p=polygon[i];const P& n=polygon[(i+1)%polygon.size()];const bool in=keep(p.depth-limit);
-                    if(in)out.push_back(p);
+                    if(in)clipped.push_back(p);
                     if(in!=keep(n.depth-limit)){const double t=(limit-p.depth)/(n.depth-p.depth);
-                        out.push_back({p.cx+(n.cx-p.cx)*t,p.cy+(n.cy-p.cy)*t,p.depth+(n.depth-p.depth)*t,p.u+(n.u-p.u)*t,p.v+(n.v-p.v)*t});}}
-                polygon.swap(out);
+                        clipped.push_back({p.cx+(n.cx-p.cx)*t,p.cy+(n.cy-p.cy)*t,p.depth+(n.depth-p.depth)*t,p.u+(n.u-p.u)*t,p.v+(n.v-p.v)*t});}}
+                polygon.swap(clipped);
             }
             if(polygon.size()<3)continue;
             const auto& entry=stage_file->entries[size_t(std::clamp<i32>(sp->entry,0,i32(stage_file->entries.size())-1))];
             const Texture tex=texture(BankStage,sp->entry);if(!tex.name)continue;
             const Color color=rgba_of(argb);const bool no_fog=a.flags&0x1000;
-            std::vector<Vertex> vs;bool left=true,right=true,above=true,below=true;
+            vs.clear();bool left=true,right=true,above=true,below=true;
             for(const auto& p:polygon){
                 Vertex v;v.x=float(center_x+p.cx/p.depth*focal);v.y=float(center_y-p.cy/p.depth*focal);
                 v.u=float((sp->x+(p.u-sp->x)*a.uvScaleX+double(a.u)*entry.width)/tex.w);v.v=float((sp->y+(p.v-sp->y)*a.uvScaleY+double(a.v)*entry.height)/tex.h);
