@@ -2,7 +2,7 @@
 
 [开发指南](docs/DEVELOPMENT.md) · [适配与验证](ADAPTATION.md) · [工作区](../../WORKSPACE.md)
 
-[SDL3 / GLES 3 平台库](portable/sdl/README.md)通过 `TH12_BUILD_SDL_HOST=ON` 构建，目标为 `th12_sdl_host`，链接本目录多人核心。原生库提供资源与绘制基础；当前房间、回滚与多人录像由 Web 多人宿主提供。
+[SDL3 / GLES 3 应用](portable/sdl/README.md)拥有正式多人入口的画面、菜单、声音、换面及结局／成绩流程，链接本目录多人核心。浏览器边界保留启动器 RPC、WebRTC、安装资源和存档；输入确认、回滚和已确认录像继续由 C++ Session 管理。
 
 `ports/th12-mp` 是星莲船的独立多人源码，支持双人、三人合作。普通版保留在 `ports/th12`；多人版沿普通版来源历史维护，并使用共用的联机、回滚、观战和输入录像组件。
 
@@ -39,6 +39,6 @@ node ports/th12-mp/scripts/build-eagler.mjs
 
 ## 维护
 
-初始分支 `feature/th12-multiplayer` 从当前 TH12 普通版独立派生。来源登记见 `docs/migration/th12mp-eagler-20261024.json`；同步基线见 `docs/adaptation/port-sync.json`。规则适配位于 `src/game/Multiplayer.*`，会话与回滚位于 `src/multiplayer/`，网页协议入口为 `site/game.mjs` 与 `src/multiplayer.mjs`。
+初始分支 `feature/th12-multiplayer` 从当前 TH12 普通版独立派生。来源登记见 `docs/migration/th12mp-eagler-20261024.json`；同步基线见 `docs/adaptation/port-sync.json`。规则适配位于 `src/game/Multiplayer.*`，会话与回滚位于 `src/multiplayer/`，正式网页协议入口为 `site/game-sdl.mjs` 与 `src/multiplayer.mjs`；`site/game.mjs` 通过 `build-legacy-eagler.mjs` 单独构建。
 
 原版游戏、角色、贴图、文字及音乐版权属于上海爱丽丝幻乐团。手写移植代码及原版内容的许可范围见 [NOTICE](NOTICE.md)。

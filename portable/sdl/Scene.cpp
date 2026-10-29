@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#ifdef TH12_MULTIPLAYER
+#include "game/Multiplayer.hpp"
+#endif
 
 namespace th12host {
 namespace {
@@ -108,7 +111,11 @@ void Scene::drop_text_cache(){for(auto* cache:{&dialogue_cache,&menu_cache}){for
 void Scene::add(i32 bank,i32 script,i32 age,float x,float y,float angle,float scale,std::optional<BulletVariant> variant,const SampleOptions& sampling,float alpha,i32 priority,i8 clipped){
     scratch.clear();sampler_.sample_all(bank,script,age,scratch,variant,sampling);
     u32 child=0;
-    for(const auto& a:scratch){Pose p;p.a=a;p.x=x;p.y=y;p.angle=angle;p.scale=scale;p.alpha=alpha;
+    for(const auto& a:scratch){
+#ifdef TH12_MULTIPLAYER
+        if(th12::multiplayer::active&&bank==BankFront&&script==0&&a.script>=8&&a.script<=12)continue;
+#endif
+        Pose p;p.owner=u32(sampling.entity);p.a=a;p.x=x;p.y=y;p.angle=angle;p.scale=scale;p.alpha=alpha;
         if(sampling.entity)p.continuity=(u64(1)<<62)|((sampling.entity&0xffffffff)<<30)|(u64(bank&31)<<25)|(u64(script&1023)<<15)|(child++&32767);
         if(priority>=0){p.has_priority=true;p.priority=priority;}p.clipped=clipped;p.has_order=true;p.order=i32(poses.size());poses.push_back(p);}
 }
@@ -192,14 +199,14 @@ void Scene::capture_background(){
 
 void Scene::capture(const Options& o){
     using namespace th12;
-    poses.clear();texts.clear();dialogues.clear();
+    poses.clear();texts.clear();dialogues.clear();live_fps_text=-1;
     const float* raw=th12_hud();std::copy_n(raw,hud.size(),hud.begin());
     const i32 stored=th12_score_stored();hud[3]=float(double(stored)*10);hud[40]=hud[3];
     if(o.score_low_digit){hud[3]+=float(o.score_low_digit);hud[40]+=float(o.score_low_digit);}
     // HI SCORE: the score file's best for this loadout, difficulty (or Practice stage), until beaten.
     if(o.high_score>double(hud[40]))hud[40]=float(o.high_score);
     const i32 frame=i32(hud[0]);if(frame<last_frame)reset_presentation();
-    previous_motion.swap(current_motion);current_motion.clear();if(frame!=last_frame+1)previous_motion.clear();
+    if(frame!=last_frame){previous_motion.swap(current_motion);current_motion.clear();if(frame!=last_frame+1)previous_motion.clear();}else current_motion.clear();
     last_frame=frame;sampler_.begin_frame();
     capture_background();
     // Logical VM poses (128-byte ABI) and their draw schedule.
@@ -219,7 +226,7 @@ void Scene::capture(const Options& o){
         a.visible=(r.flags&3)==3;
         // Original 45c93e/45c95b tests primary alpha even when flag10000 selects secondary.
         if((a.mode==0||a.mode==1)&&primary.a==0)a.visible=false;
-        p.x=r.x;p.y=r.y;p.alpha=r.alpha;p.id=r.id;p.logical=true;p.has_order=true;p.order=i;p.continuity=(u64(1)<<63)|r.id;
+        p.x=r.x;p.y=r.y;p.alpha=r.alpha;p.id=r.id;p.owner=r.owner;p.logical=true;p.has_order=true;p.order=i;p.continuity=(u64(1)<<63)|r.id;
         owners.push_back(r.owner);logical_poses.push_back(p);
     }
     const auto* mesh_records=meshDrawState.data();
@@ -239,7 +246,7 @@ void Scene::capture(const Options& o){
         Pose q=p;q.kind=Pose::DialogueLine;q.item=u32(dialogues.size());dialogues.push_back(std::move(d));poses.push_back(q);
     }
     for(i32 i=0;i<meshes;++i){Pose p;p.kind=Pose::Mesh;p.item=u32(i);const auto& m=mesh_records[i];p.a.bank=m.bank;p.a.sprite=m.sprite;p.a.layer=m.layer;p.a.blend=m.blend;
-        p.id=m.nodeId;p.mesh_pass0=m.pass==0;p.has_priority=true;p.priority=m.drawPriority;p.has_order=true;p.order=i;poses.push_back(p);}
+        p.id=m.nodeId;p.owner=m.owner;p.mesh_pass0=m.pass==0;p.has_priority=true;p.priority=m.drawPriority;p.has_order=true;p.order=i;poses.push_back(p);}
     // Spell card: title line on text sprite 7, bonus and history numbers.
     const auto& spell=spellState;
     if(!spell.title.empty()){
@@ -308,7 +315,7 @@ void Scene::capture(const Options& o){
     // Live FPS (41cc80): %2.1ffps at 588,470.
     if(o.current_fps>=0){
         const float fps=f32(o.current_fps);const std::string t=fixed1(double(fps)+.05)+"fps";
-        push_text(font_text(t,1,f32(588.0-std::max<double>(0,double(t.size())-7)*7),470,fps<=30?0xff5050ff:fps<40?0xffa0a0ff:0xffffffff,0),69,0,-1);
+        push_text(font_text(t,1,f32(588.0-std::max<double>(0,double(t.size())-7)*7),470,fps<=30?0xff5050ff:fps<40?0xffa0a0ff:0xffffffff,0),69,0,-1);live_fps_text=int(texts.size())-1;
     }
     if(o.stage_clear)if(const Pose* clear=[&]()->const Pose*{for(const auto& p:logical_poses)if(p.a.bank==BankFront&&p.a.sprite==70&&p.a.visible)return &p;return nullptr;}()){
         // 421350 binds front85; 41f040 borrows its alpha for the reward digits.
@@ -332,10 +339,10 @@ void Scene::capture(const Options& o){
         const auto& s=r[i];if(owned(s.entityId))continue;
         SampleOptions sampling;sampling.entity=s.entityId;sampling.seed=s.entityId?(s.entityId&65535):0x1234;sampling.interrupt=s.interrupt;
         const i32 priority=s.kind==1?31:s.kind==3?27:s.kind==4?24:-1;const i8 clipped=priority>=0?1:-1;
-        if(s.kind==12||s.kind==13){Pose p;p.kind=s.kind==12?Pose::BeamTrail:Pose::Trail;p.a.layer=s.kind;p.x=s.x;p.y=s.y;p.angle=s.rotation;p.scale=s.scale;
+        if(s.kind==12||s.kind==13){Pose p;p.owner=s.entityId;p.kind=s.kind==12?Pose::BeamTrail:Pose::Trail;p.a.layer=s.kind;p.x=s.x;p.y=s.y;p.angle=s.rotation;p.scale=s.scale;
             p.width=s.alpha;p.alpha=1;p.start=u32(s.color);p.end=u32(s.animation);p.has_order=true;p.order=i32(poses.size());poses.push_back(p);}
         else if(s.kind==4||s.kind==5||s.kind==2||s.kind==7)add(s.bank>=4&&s.bank<=6?s.bank:player,s.animation,s.age,s.x,s.y,s.rotation,s.scale,std::nullopt,sampling,s.alpha,priority,clipped);
-        else if(s.kind==6){if(const auto* f=sampler_.sample(s.bank>=4&&s.bank<=6?s.bank:player,s.animation,s.age,std::nullopt,sampling)){Pose p;p.kind=Pose::Beam;p.a=f->a;p.x=s.x;p.y=s.y;p.angle=s.rotation;p.scale=s.scale;
+        else if(s.kind==6){if(const auto* f=sampler_.sample(s.bank>=4&&s.bank<=6?s.bank:player,s.animation,s.age,std::nullopt,sampling)){Pose p;p.owner=s.entityId;p.kind=Pose::Beam;p.a=f->a;p.x=s.x;p.y=s.y;p.angle=s.rotation;p.scale=s.scale;
             p.alpha=s.alpha;p.has_order=true;p.order=i32(poses.size());poses.push_back(p);}}
         else if(s.kind==1){const i32 type=s.color/16;if(type>=0&&type<31){const auto& c=exe.bullets[size_t(type)].colors[size_t(s.color%16)];
             add(BankBullet,s.animation,s.age,s.x,s.y,s.rotation,s.scale,BulletVariant{c.sprite,c.spawn,c.cancel},sampling,s.alpha,priority,clipped);}}
@@ -343,7 +350,11 @@ void Scene::capture(const Options& o){
         else if(s.bank>=0&&s.bank<=3&&banks.get(s.bank))add(s.bank,s.animation,s.age,s.x,s.y,s.rotation,s.scale,std::nullopt,sampling,s.alpha,priority,clipped);
     }
     // HUD: the front 0 frame, boss bar, counters, life/bomb pieces, UFO stock and difficulty.
-    if(runtime_options.always_hitbox&&th12_player_state()==1&&!std::binary_search(owners.begin(),owners.end(),0xffff0020u)){
+    if(runtime_options.always_hitbox&&th12_player_state()==1
+#ifdef TH12_MULTIPLAYER
+       &&!th12::multiplayer::active
+#endif
+       &&!std::binary_search(owners.begin(),owners.end(),0xffff0020u)){
         SampleOptions marker;marker.entity=0xffff0020;marker.seed=0x1234;
         add(BankBullet,77,std::max(18,frame),hud[1]+224,hud[2]+16,0,1,std::nullopt,marker,1,34,1);
     }
@@ -355,14 +366,24 @@ void Scene::capture(const Options& o){
         rect(41,23,right,25,0xff000000);rect(40,22,f32(double(right)-1),24,0xffffffff);
         for(int i=0;i<4;++i)if(bossHud.markers[size_t(i)]!=0)rect(40,22,f32(330.0*std::min(bossHud.markers[size_t(i)],bossHud.fill)+40),24,bossHud.colors[size_t(i)]);
     }
+#ifdef TH12_MULTIPLAYER
+    if(th12::multiplayer::active)capture_multiplayer_hud(frame);else
+#endif
     {Pose p;p.kind=Pose::HudCounters;p.has_priority=true;p.priority=69;p.clipped=0;p.has_order=true;p.order=i32(poses.size());poses.push_back(p);}
-    for(i32 i=0;i<8;++i){
+    for(i32 i=0;i<8
+#ifdef TH12_MULTIPLAYER
+        &&!th12::multiplayer::active
+#endif
+        ;++i){
         SampleOptions life;life.interrupt=fragment_interrupt(i,i32(hud[5]),i32(hud[21]));add(BankFront,13+i,frame,0,0,0,1,std::nullopt,life,1,59,0);
         SampleOptions bomb;bomb.interrupt=fragment_interrupt(i,i32(hud[6]),i32(hud[22]));add(BankFront,21+i,frame,0,0,0,1,std::nullopt,bomb,1,59,0);
     }
     bool stock_vm=false;for(i32 i=0;i<count;++i)if(logical[i].bank==BankFront&&(logical[i].owner>>16)==0xfffe){stock_vm=true;break;}
     if(!stock_vm)for(i32 i=0;i<3;++i){const i32 color=i32(hud[23+size_t(i)]);SampleOptions s;s.interrupts={7+i,color?9+color:13,color?2:3};add(BankFront,80,frame,0,0,0,1,std::nullopt,s,1,44,1);}
     add(BankFront,69+i32(hud[19]),frame,0,0,0,1,std::nullopt,{},1,-1,0);
+#ifdef TH12_MULTIPLAYER
+    if(th12::multiplayer::active)apply_multiplayer_opacity();
+#endif
     order();sampler_.end_frame();
     if(!runtime_options.limit_presentation){
         current_motion.reserve(poses.size());
@@ -496,7 +517,7 @@ void Scene::draw_mesh(const Pose& p,const float* shake_){
     gpu.primitive(m.primitive==3?Renderer::LineStrip:Renderer::Triangles);
     const float ox=shake_?shake_[0]:0,oy=shake_?shake_[1]:0;const bool shift=m.primitive==4&&!untextured&&(ox||oy);
     const auto emit=[&](const custom_geometry::Vertex& v){const Color c=rgba_of(v.argb);
-        gpu.push({shift?f32(double(v.x)+ox):v.x,shift?f32(double(v.y)+oy):v.y,untextured?.5f:v.u,untextured?.5f:(t.flip_y?1-v.v:v.v),c.r,c.g,c.b,c.a,v.rhw?1/v.rhw:1,0});};
+        gpu.push({shift?f32(double(v.x)+ox):v.x,shift?f32(double(v.y)+oy):v.y,untextured?.5f:v.u,untextured?.5f:(t.flip_y?1-v.v:v.v),c.r,c.g,c.b,c.a*p.alpha,v.rhw?1/v.rhw:1,0});};
     const auto* v=&meshVertexState[m.vertexOffset];const u32 n=m.vertexCount;
     // Native 45d5d0 submits each trail separately.
     if(m.primitive==3){gpu.flush();for(u32 i=0;i<n;++i)emit(v[i]);gpu.flush();return;}
@@ -518,7 +539,8 @@ void Scene::stage_surface(i32 priority,i32 clip,bool& copied,bool& composited){
     }
 }
 
-void Scene::render(float alpha){
+void Scene::render(float alpha,float live_fps){
+    if(live_fps>=0&&live_fps_text>=0){auto& t=texts[size_t(live_fps_text)];t.text=fixed1(live_fps?double(live_fps)+.05:0)+"fps";t.x=f32(588.0-std::max<double>(0,double(t.text.size())-7)*7);t.color=live_fps<=30?0xff5050ff:live_fps<40?0xffa0a0ff:0xffffffff;}
     gpu.begin();gpu.clip(1);gpu.fog_color(fog.r,fog.g,fog.b);gpu.clear(fog);
     gpu.primitive(Renderer::Triangles);
     for(const auto& t:triangles){const Texture tex=texture(BankStage,t.entry);if(!tex.name)continue;gpu.material(t.blend);gpu.bind(tex,t.point);for(const auto& v:t.v)gpu.push(v);}
@@ -534,10 +556,10 @@ void Scene::render(float alpha){
                 // destination immediately. Presentation never writes core state.
                 const float dx=p.x+p.a.x-m.x-m.ax,dy=p.y+p.a.y-m.y-m.ay;
                 if(m.bank==p.a.bank&&m.mode==p.a.mode&&dx*dx+dy*dy<4096){
-                    const auto mix=[alpha](float a,float b){return a+(b-a)*alpha;};
+                    const auto mix=[alpha](float a,float b){return b+(b-a)*alpha;};
                     interpolated=p;interpolated.x=mix(m.x,p.x);interpolated.y=mix(m.y,p.y);
                     interpolated.a.x=mix(m.ax,p.a.x);interpolated.a.y=mix(m.ay,p.a.y);
-                    interpolated.a.rotation=m.rotation+std::remainder(p.a.rotation-m.rotation,6.283185307179586f)*alpha;
+                    interpolated.a.rotation=p.a.rotation+std::remainder(p.a.rotation-m.rotation,6.283185307179586f)*alpha;
                     presented=&interpolated;
                 }
             }

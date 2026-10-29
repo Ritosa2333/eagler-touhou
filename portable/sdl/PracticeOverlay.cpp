@@ -49,11 +49,11 @@ void PracticeOverlay::key(int code,bool down){
     (void)code;(void)down;
 #endif
 }
-bool PracticeOverlay::pointer(int type,int id,float x,float y){
+int PracticeOverlay::pointer(int type,int id,float x,float y,bool desktop){
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
-    return initialized&&th12_practice_ui_pointer(type,id,x,y,1)!=0;
+    return initialized?th12_practice_ui_pointer(type,id,x,y,int(desktop)):0;
 #else
-    (void)type;(void)id;(void)x;(void)y;return false;
+    (void)type;(void)id;(void)x;(void)y;(void)desktop;return 0;
 #endif
 }
 void PracticeOverlay::clear(bool pointers){

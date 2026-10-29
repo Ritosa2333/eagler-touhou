@@ -18,7 +18,7 @@ struct MenuChoice {std::u32string label;i32 id=0;bool disabled=false;};
 struct MenuEvent {enum Type {Ready,Selection,Confirm,Cancel,Resume,RetryShortcut,ConfirmNo,Fade,DataHeader} type=Selection;i32 previous=0,selection=0,reset_interrupt=3,selection_interrupt=7,frames=0;};
 // A run as the result pages see it (upstream resultData).
 struct MenuContext {
-    MenuRun run;bool can_continue=true,can_save_replay=false,clear=false,ranked=true;
+    MenuRun run;bool multiplayer=false,can_continue=true,can_save_replay=false,clear=false,ranked=true;
     i32 continues=0,stage=1,score_stored=0;i64 timestamp=0;float slowdown=0;
     i64 score()const{return i64(score_stored)*10+continues;}
 };

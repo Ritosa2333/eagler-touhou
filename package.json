@@ -19,6 +19,9 @@
     "verify:daily": "node tools/replay-verifier/check-gameplay.mjs daily",
     "package:eagler": "node scripts/package-eagler.mjs",
     "package:launcher": "node scripts/package-launcher.mjs",
-    "prepare:eagler-content": "node scripts/prepare-managed-content.mjs"
+    "prepare:eagler-content": "node scripts/prepare-managed-content.mjs",
+    "build:sdl": "node scripts/build-sdl.mjs",
+    "test:sdl": "node --test tests/sdl-clock.test.mjs",
+    "check:sdl-browser": "node scripts/check-sdl-multiplayer-browser.mjs"
   }
 }

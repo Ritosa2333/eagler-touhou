@@ -8,6 +8,9 @@
 #include <cmath>
 #include <memory>
 #include <vector>
+#ifdef TH12_MULTIPLAYER
+#include "multiplayer/Session.hpp"
+#endif
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -129,7 +132,12 @@ extern "C" SDL_AppResult SDL_AppInit(void** state,int argc,char** argv){
 }
 extern "C" SDL_AppResult SDL_AppIterate(void* state){
     auto& app=*static_cast<Application*>(state);if(app.stop)return SDL_APP_SUCCESS;
-    const double now=host::seconds(),period=app.game->logical_interval();const unsigned ticks=app.clock.advance(now,period);
+    const double now=host::seconds(),period=app.game->logical_interval();
+    double (*pace)(double)=nullptr;
+#ifdef TH12_MULTIPLAYER
+    if(th12::multiplayer::active)pace=[](double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed*1000)/1000;};
+#endif
+    const unsigned ticks=app.clock.advance(now,period,pace);
     if(!ticks&&!app.clock.present(now,runtime_options.limit_presentation)){
 #ifndef __EMSCRIPTEN__
         SDL_Delay(1);
@@ -156,6 +164,9 @@ extern "C" SDL_AppResult SDL_AppEvent(void* state,SDL_Event* event){
     auto& app=*static_cast<Application*>(state);
     switch(event->type){
     case SDL_EVENT_QUIT:return SDL_APP_SUCCESS;
+    case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+    case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
+    case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:app.clock.reset();break;
     case SDL_EVENT_GAMEPAD_ADDED:app.add(event->gdevice.which);break;
     case SDL_EVENT_GAMEPAD_REMOVED:app.remove(event->gdevice.which);break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
@@ -187,10 +198,18 @@ extern "C" void SDL_AppQuit(void* state,SDL_AppResult result){
 #endif
 }
 extern "C" {
+#ifdef TH12_MULTIPLAYER
+int th12_host_mp_stage(int stage,int character,int shot,int difficulty,int story_character,int story_shot){return active&&active->game&&active->game->multiplayer_stage(stage,character,shot,difficulty,story_character,story_shot);}
+int th12_host_mp_ready(){return active&&active->game&&active->game->multiplayer_ready();}
+void th12_host_mp_start(int replay,int local,int visible){if(active){active->game->multiplayer_start(replay!=0,local,visible!=0);active->clock.reset();}}
+void th12_host_mp_finish(int save){if(active)active->game->multiplayer_finish(save!=0);}
+void th12_host_mp_room(){if(active)active->game->multiplayer_room();}
+void th12_host_mp_sound(int id,int pan,int stop){if(active)active->game->multiplayer_sound(id,pan,stop!=0);}
+#endif
 void th12_host_key(int key,int down){if(!active)return;const u32 bit=input_bit(key);if(down)active->virtual_held|=bit;else active->virtual_held&=~bit;active->game->practice_key(key,down!=0);}
 void th12_host_controls(unsigned held,int mode,int x,int y){if(!active)return;active->controls=held&0x2802ff;active->motion=mode>=0&&mode<=4?mode:0;active->x=x;active->y=y;}
 void th12_host_pressed(unsigned pressed){if(active)active->pulses|=pressed&0x2802ff;}
-int th12_host_pointer(int type,int id,float x,float y){return active&&active->game&&active->game->practice_pointer(type,id,x,y);}
+int th12_host_pointer(int type,int id,float x,float y,int desktop){return active&&active->game?active->game->practice_pointer(type,id,x,y,desktop!=0):0;}
 void th12_host_wheel(float x,float y,float horizontal,float vertical){if(active&&active->game)active->game->practice_wheel(x,y,horizontal,vertical);}
 const char* th12_host_state(){return active&&active->game?active->game->host_state().c_str():"{\"scene\":\"closed\"}";}
 void th12_host_stop(){if(active){active->game->flush_profile();active->stop=true;}}

@@ -540,12 +540,12 @@ function eventKey(code,down,source='local'){
     if(down)audioReady().catch(error=>notice('音频：'+error.message));return;
   }
   if(down){sourceKeys.add(code);let pressed=0;const bits={up:16,down:32,left:64,right:128,shoot:1,bomb:2,focus:8,pause:256,skip:512};for(const [name,bit]of Object.entries(bits))if(profile.settings.keyMap[name]===code)pressed|=bit;if(code==='Escape')pressed|=256;if(code==='Enter')pressed|=0x80000;if(code==='KeyR')pressed|=0x200000;pendingKeys|=pressed;pendingPressed|=pressed;}
-  else {sourceKeys.delete(code);if(keyDown(code))return;}
+  else {sourceKeys.delete(code);if(assets.managed){keys.delete(code);hostKeys.delete(code);}if(keyDown(code))return;}
   if(model.state.captureJoy||code==='F1')model.key(code,down);
   if(down)audioReady().catch(error=>notice('音频：'+error.message));
 }
-window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;if(assets.managed&&managedInput.key(e,true,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code==='F1'||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Escape','Tab','Backspace','F12'].includes(code))e.preventDefault();if(code)eventKey(code,true);});
-window.addEventListener('keyup',e=>{if(assets.managed&&managedInput.key(e,false,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code)eventKey(code,false);});
+window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target?.tagName))return;if(assets.managed&&managedInput.key(e,true,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code==='F1'||['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Enter','Escape','Tab','Backspace','F12'].includes(code))e.preventDefault();if(code)eventKey(code,true,assets.managed?'host':'local');});
+window.addEventListener('keyup',e=>{if(assets.managed&&managedInput.key(e,false,'physical',eventKey)){e.preventDefault();return;}const code=keyboardCode(e);if(code)eventKey(code,false,assets.managed?'host':'local');});
 for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])window.addEventListener(type,event=>{
   if(!ready||busy||roomPreview||runtimeOptions.replayViewer)return;
   if(type==='pointerdown')try{canvas.setPointerCapture(event.pointerId);}catch{}

@@ -23,7 +23,7 @@ artifacts/native/th12/touhou12 --data-dir /path/to/th12 --save-dir /path/to/save
 
 `TH12_DATA_ROOT` 也可指定数据目录。桌面默认存档位于 SDL 用户目录 `EaglerTouhou/th12`；`--save-dir` 可指定独立目录。成绩、配置与普通键盘／手柄录像沿用原版格式。
 
-## Web 构建与人工入口
+## Web 构建与验证入口
 
 先设置 `EMSDK` 为 Emscripten 4.0.22 的目录，在作品目录运行：
 
@@ -42,7 +42,7 @@ npm start -- --port=8114
 
 主站登记的 `scripts/build-eagler.mjs` 现在编译并打包 SDL3 前端，标准输出仍为 `build-eagler/th12.html`、`manifest.json` 与 `runtime-files.json`，沿用目录 Runtime 协议、DATA 格式和 `/savesth12` 存档根。`--print-inputs` 提供源码身份；SDK、common、并行任务和练习开关接收主站构建环境。`package-launcher.mjs` 使用默认 Runtime 路径即可组装主站，不需要修改主站页面或消息协议。
 
-`build-sdl-eagler` 为同一构建的人工检查副本；功能验收完成前保留 `sdl-manual-acceptance-pending` 状态。旧网页前端通过 `scripts/build-legacy-eagler.mjs` 构建，源码 `site/index.html` 继续保留。
+`build-sdl-eagler` 为同一应用的检查副本。正式 Runtime 清单登记 `cpp-sdl3-gles`，打包时逐项核对已编译源码，防止源码与 Wasm 不一致。旧网页前端通过 `scripts/build-legacy-eagler.mjs` 构建，源码 `site/index.html` 继续保留。
 
 ## 输入、练习与显示
 
@@ -58,14 +58,18 @@ SDL 入口播放原版格式及 `TH12WEB1` 扩展录像，支持暂停、变速�
 
 ## 普通版与多人版
 
-`ports/th12` 与 `ports/th12-mp` 的 `portable/sdl` 保持同源，分别链接各自当前核心。普通版生成 `touhou12` 应用；多人版生成平台静态库：
+`ports/th12` 与 `ports/th12-mp` 分别链接自己的 C++ 游戏核心，两侧正式 Web 构建均使用 SDL3 回调应用。多人专属的 `Multiplayer.cpp`、`MultiplayerPresentation.cpp` 管理原生多人场景、三席 HUD、所有者透明度及结局后的成绩与录像流程。
 
 ```sh
-cmake -S ports/th12-mp -B artifacts/native/th12-mp -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DTH12_BUILD_SDL_HOST=ON -DTH12_ENABLE_THPRAC=ON -DTH12_FETCH_SDL_DEPS=ON
-cmake --build artifacts/native/th12-mp --config Release --target th12_sdl_host --parallel
+node ports/th12/scripts/build-eagler.mjs
+node ports/th12-mp/scripts/build-eagler.mjs
 ```
 
-多人房间、网络传输、回滚会话及多人录像由现有多人宿主管理。平台库不自行创建房间或网络连接；多人正式 Web 入口保持原会话实现。
+普通版输出 `build-eagler/`；多人版输出 `build-eagler-multiplayer/`。多人 `src/multiplayer/Session` 继续拥有输入确认、12 帧回滚、换面屏障与已确认录像。浏览器负责启动器 RPC、WebRTC 和观战控制；SDL 的逻辑回调请求这些边界，不另起 JavaScript 游戏循环。房间等待保持动态标题，开始游戏复用现有实例。
+
+两侧高刷从当前逻辑帧外推，按新增画面统计 FPS；停住的同一世界重复绘制不计为新画面。全屏切换重置显示时钟积压，保持联机帧与回滚历史。THPrac 的只读面板保留触控待定、点击及滑动交还路由。
+
+验证入口为 `scripts/check-sdl-browser.mjs`（普通版）和 `scripts/check-sdl-multiplayer-browser.mjs`（多人版）。`TH12_ASSETS` 指定自行提取的素材目录，`TH12_FONTS` 指定共享字体目录；多人用例通过本机 relay 和真实 RTC 通道核对暂停、观战、Replay 槽位和状态重建，`TH12_INPUT_LATENCY_MS` 设置测试输入延迟。
 
 ## 平台发行与来源
 

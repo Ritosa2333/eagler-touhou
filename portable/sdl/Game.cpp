@@ -12,6 +12,12 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#ifdef TH12_MULTIPLAYER
+#include "multiplayer/Session.hpp"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+#endif
 
 // Exported by core/wasm/Exports.cpp but not declared in Api.hpp.
 extern "C" const int32_t* th12_practice_input();
@@ -305,6 +311,9 @@ MenuContext Game::result_data(bool clear){
     c.can_save_replay=!session->replay&&session->recorder&&f.continueCount==0;
     const bool assisted=th12::practice::assisted()||(session->recorder&&session->recorder->unlimited());
     c.ranked=!session->replay&&f.continueCount==0&&!assisted;c.score_stored=th12_score_stored();c.timestamp=host::unix_time();c.slowdown=assisted?100:0;
+#ifdef TH12_MULTIPLAYER
+    if(mp_playing){c.multiplayer=true;c.can_continue=false;c.can_save_replay=!mp_replay;c.ranked=!mp_replay;c.score_stored=th12::score;c.continues=0;}
+#endif
     return c;
 }
 // upstream recordClear: the stage clear and the clear count, once a run.
@@ -324,7 +333,11 @@ void Game::complete_run(bool clear,bool save_only){
 // upstream beginEnding: e00..e11.msg, then staff.msg, with their ANM files.
 void Game::begin_ending(){
     auto& s=*session;const MenuContext result=result_data(true);pending_result=result;
+#ifdef TH12_MULTIPLAYER
+    ending_id=select_ending(mp_playing?mp_story_character:s.run.character,mp_playing?mp_story_shot:s.run.shot,result.continues>0);
+#else
     ending_id=select_ending(s.run.character,s.run.shot,result.continues>0);
+#endif
     // 410da2 / 4115dd: a first viewing cannot be skipped with Ctrl.
     const bool seen=profile.ending_seen(ending_id);
     record_clear(result);if(s.recorder)s.recorder->finish_stage(true);audio.stop_effects();save_profile();
@@ -365,6 +378,16 @@ void Game::record_run(const MenuContext& r,const std::string& name){
 }
 // replay/th12_NN.rpy, as the PC game names its 25 slots.
 void Game::save_replay(i32 slot,const std::string& name,const MenuContext& r){
+#ifdef TH12_MULTIPLAYER
+    if(mp_playing){
+        if(mp_replay||slot<1||slot>25)return;
+        std::vector<u8> bytes;if(!th12::multiplayer::session.replayBytes(bytes,name.c_str())){error="Multiplayer replay could not be encoded";return;}
+        char file[32];std::snprintf(file,sizeof file,"th12_mp_%02d.rpy",slot);
+        const auto folder=menus->replay_folder();host::make_directory(folder);
+        if(!host::write_file(folder+"/"+file,bytes)){error="Multiplayer replay could not be saved";return;}
+        profile.set_last_name(name);profile.save();return;
+    }
+#endif
     if(!session||!session->recorder||slot<1||slot>25)return;
     std::map<i32,std::vector<i32>> damage;
     for(int stage=2;stage<=6;++stage){const int count=th12_practice_damage_stage_words(stage);if(count){const auto* words=th12_practice_damage_stage(stage);damage[stage]={words,words+count};}}
@@ -440,17 +463,36 @@ void Game::handle_flow(){
 void Game::actions(){
     for(const auto& a:menus->drain()){
         switch(a.type){
-        case MenuAction::Start:begin(a.run);break;
+        case MenuAction::Start:
+#ifndef TH12_MULTIPLAYER
+            begin(a.run);
+#endif
+            break;
         case MenuAction::Retry:audio.stop_music();begin(a.run);break;
-        case MenuAction::PlayReplay:play_replay(a.run.replay_file,a.stage,false);break;
-        case MenuAction::Demo:play_replay(a.run.replay_file,1,true);break;
+        case MenuAction::PlayReplay:
+#if defined(TH12_MULTIPLAYER) && defined(__EMSCRIPTEN__)
+            mp_playing=mp_result=false;
+            EM_ASM({Module.th12MultiplayerReplay?.(UTF8ToString($0),$1);},a.run.replay_file.c_str(),a.stage);
+#else
+            play_replay(a.run.replay_file,a.stage,false);
+#endif
+            break;
+        case MenuAction::Demo:
+#ifndef TH12_MULTIPLAYER
+            play_replay(a.run.replay_file,1,true);
+#endif
+            break;
         case MenuAction::Continue:
             audio.stop_effects();
             if(session&&th12_continue_game()==1){
                 // A continued run is no longer recorded (it cannot be saved).
                 session->recorder.reset();clear_keys();session->music_serial=th12_music_serial();captured=false;play_music(stage_music[std::clamp(session->stage,1,7)]);}
             break;
-        case MenuAction::ReturnTitle:return_title();break;
+        case MenuAction::ReturnTitle:
+#ifdef TH12_MULTIPLAYER
+            if(mp_playing){multiplayer_room();break;}
+#endif
+            return_title();break;
         case MenuAction::Quit:if(session&&!session->replay)save_profile();else profile.save();error.clear();quit=true;break;
         case MenuAction::MenuMusic:
             if(a.music_room){profile.unlock_music(a.track);profile.save();}
@@ -514,8 +556,13 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
     if(!pending_replay.empty()&&menus&&phase==Phase::Menu){
         auto file=std::move(pending_replay);pending_replay.clear();menus->enter(MenuScene::Playing);play_replay(file,pending_replay_stage,false);
     }
+#ifdef TH12_MULTIPLAYER
+    if(mp_playing&&!mp_result&&!ending&&phase==Phase::Menu){
+        multiplayer_frame(pad,ticks,now);ticks=0;
+    }
+#endif
     const int context=menus&&phase==Phase::Menu?(menus->state.scene==MenuScene::Practice?1:menus->state.scene==MenuScene::Playing?2:menus->state.scene==MenuScene::Pause||menus->state.scene==MenuScene::PauseConfirm?3:0):0;
-    if(ticks){
+    if(ticks&&runtime_options.thprac){
         const int action=practice_ui.tick(context,menus&&menus->ready(),session&&bool(session->replay),menus?menus->run.difficulty:1,ui,practice_params);
         if(action==1&&context==1){custom_practice=true;MenuRun run=menus->run;run.mode=ModePractice;run.stage=practice_params[2]+1;if(run.stage==7)run.difficulty=4;menus->enter(MenuScene::Playing);begin(run);ticks=0;}
         else if(action==2&&context==1){menus->enter(MenuScene::Shot,menus->run.shot);ticks=0;}
@@ -565,11 +612,13 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
         // any action ends the frame's ticks.
         const bool acted=menus->has_actions();bool blocked=false;
         if(acted){blocked=menus->blocks_session();actions();if(phase==Phase::Loading||quit)break;}
+#ifndef TH12_MULTIPLAYER
         if(!blocked&&(menus->state.scene==MenuScene::Playing||menus->state.scene==MenuScene::Demo)&&session&&phase==Phase::Menu){
             {const double t0=host::seconds();game_tick(ui&0x2ff&~u32(InPause),now,n==0?pad.pressed&0x2ff&~u32(InPause):0);const double t=host::seconds()-t0;timing[0]+=t;frame_timing[0]+=t*1000;++game_ticks;}
             handle_flow();captured=false;if(menus->has_actions()){actions();break;}
             if(phase==Phase::Loading)break;
         }
+#endif
         if(acted)break;
     }
     if(phase==Phase::Startup){
@@ -587,9 +636,10 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
     watch_prefetch();
     // One capture per displayed frame; the sampler simulates any skipped ages.
     const bool in_game=session&&phase==Phase::Menu;
+    game_fps=picture_counter.frame(now,session?session->stage:0,double(th12::frame)+(scene->continuous_motion()&&presentation_alpha<1?presentation_alpha:0),in_game&&menus->state.scene==MenuScene::Playing);
     const bool hide_game=in_game&&menus->state.scene==MenuScene::Playing&&th12::practice::toolSettings().disable_master_display;
     if(in_game&&!captured&&!hide_game){const double t0=host::seconds();
-        scene->capture({fps_value,session->hud_age,session->replay?0:th12::fullGameFlow.continueCount,session->run.mode==ModePractice||(session->replay&&session->replay->info.practice),
+        scene->capture({game_fps,session->hud_age,session->replay?0:th12::fullGameFlow.continueCount,session->run.mode==ModePractice||(session->replay&&session->replay->info.practice),
             th12::fullGameFlow.status==th12::FullGameStatus::StageClear,session->high_score,session->replay?session->replay->recorded_fps(session->stage,session->cursor):-1});
         captured=true;const double t=host::seconds()-t0;timing[1]+=t;frame_timing[1]=t*1000;}
     if(session&&!session->replay&&phase!=Phase::Loading)th12_set_wall_time(now);
@@ -623,6 +673,10 @@ const char* Game::phase_name()const{
     return "?";
 }
 void Game::focus_lost(){
+#ifdef TH12_MULTIPLAYER
+    // A local focus event cannot create an unsynchronized pause menu.
+    if(mp_playing)return;
+#endif
     // Upstream visibilitychange: a running game opens its pause menu.
     if(phase==Phase::Menu&&menus&&menus->state.scene==MenuScene::Playing&&session){menus->open_pause(result_data(false));title->tick(menus->state,*menus);actions();}
 }
@@ -639,7 +693,7 @@ void Game::draw(){
             std::vector<Appearance> poses;ending->poses(poses);scene->render_menu(poses,0,0,false,0,nullptr,{0,0,0,1},nullptr,fps_value);
             if(const float shade=ending->shade();shade>0)scene->render_menu({},0,0,true,shade);
         }else if((state.scene==MenuScene::Playing||state.scene==MenuScene::Demo)&&session){
-            scene->render(presentation_alpha);
+            scene->render(presentation_alpha,game_fps);
             // 422af3: the demo's last second fades to black.
             if(state.scene==MenuScene::Demo&&state.age>=3540)scene->render_menu({},0,0,true,std::min(1.f,float(state.age-3540)/60.f));
         }else{

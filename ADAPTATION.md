@@ -4,8 +4,6 @@
 
 源码目录：`ports/th12-mp`。构建模式：`multiplayer`。
 
-[SDL3 / GLES 3 原生层](portable/sdl/README.md)提供链接当前多人核心的平台库 `th12_sdl_host`；本表中的房间、回滚和多人录像仍对应现有 Web 多人宿主。
-
 实现情况与实际验收分别记录。源码接口和模块检查通过后记为“已实现”；完成对应操作并附执行记录后记为“已验证”。
 
 状态：`待核对`、`进行中`、`待验证`、`已实现`、`已验证`、`检查失败`、`不适用`。
@@ -212,4 +210,8 @@ node ports/th12-mp/scripts/check-multiplayer-browser.mjs
 
 ## SDL3 共用应用
 
-[SDL3 平台库](portable/sdl/README.md)与普通版同步资源、流程、绘制、音频和普通扩展录像编解码，直接链接本目录多人核心。当前正式多人 Web 程序继续使用现有房间、回滚、观战及多人录像宿主。构建与模式边界见 [开发指南](docs/DEVELOPMENT.md)。
+[SDL3 应用](portable/sdl/README.md)拥有正式多人入口的资源、流程、绘制、音频和成绩／录像界面，直接链接本目录多人核心。房间 RPC、RTC 和观战控制保留浏览器边界；确认与回滚由 C++ Session 驱动。构建与模式边界见 [开发指南](docs/DEVELOPMENT.md)。
+
+## 完整 SDL 入口迁移
+
+正式构建使用 SDL3／GLES 应用，普通版与多人版保留各自核心与来源祖先。构建、回放、回滚和子树导出证据见 [本轮验证](../../archive/th12-complete-sdl-20261029/README.md)。
