@@ -5,6 +5,7 @@
 // here the same fields are read from the core directly.
 #pragma once
 #include "Animation.hpp"
+#include "PresentationOrder.hpp"
 #include "ExeTables.hpp"
 #include "Renderer.hpp"
 #include "TextRaster.hpp"
@@ -69,7 +70,7 @@ private:
         u32 item=0; // text / dialogue / mesh index
         float bounds[4]{};u32 argb=0;u32 start=0,end=0;float width=0;
     };
-    struct Triangle {i32 layer,entry,blend;bool point;Vertex v[3];float depth;};
+    struct Triangle {i32 layer,entry,blend;bool point;Vertex v[3];float depth;u32 order=0;};
 #ifdef TH12_MULTIPLAYER
     std::vector<std::array<u32,2>> visual_owners;
     int local_seat=0;bool local_visibility=false;
@@ -79,7 +80,10 @@ private:
     Renderer& gpu;TextRaster& raster;Banks& banks;const ExeTables& exe;AnimationSampler sampler_;
     StdGeometry geometry;i32 geometry_stage=0;i32 last_frame=-1,live_fps_text=-1;
     std::vector<Pose> poses;std::vector<u32> sorted;std::vector<TextDescriptor> texts;std::vector<Dialogue> dialogues;std::vector<Triangle> triangles;
-    std::vector<Appearance> scratch;std::vector<Pose> logical_poses;std::vector<u32> owners;std::vector<std::pair<u32,u32>> schedule_ids;Pose shaken; // per-frame scratch
+    std::vector<Appearance> scratch;std::vector<Pose> logical_poses;std::vector<u32> owners;FrameLookup schedule_ids;PriorityBuckets draw_buckets,menu_buckets;std::vector<u32> menu_order;Pose shaken; // per-frame scratch
+    struct ClipVertex {double cx,cy,depth,u,v;};
+    std::vector<ClipVertex> clip_polygon,clip_output;std::vector<Vertex> clip_projected;
+    std::vector<Vertex> fan_vertices;std::vector<u32> fan_indices;
     struct Motion {float x,y,ax,ay,rotation;i32 bank,mode;};
     std::vector<std::pair<u64,Motion>> previous_motion,current_motion;
     std::array<float,41> hud{};std::array<float,2> shake{};bool has_surface=false;Color fog{0,0,0,1};

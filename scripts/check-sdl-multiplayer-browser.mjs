@@ -118,6 +118,11 @@ try{
   assert(paused.every(p=>p.hash===paused[0].hash),'shared pause must have the same authoritative world');assert(paused.every(p=>p.sameCore),'Start reuses preloaded WASM');
   let exactMatches=0;if(mode===1)for(const [f,h]of Object.entries(paused[0].samples))if(paused.every(p=>p.samples[f]!==undefined)){assert(paused.every(p=>p.samples[f]===h),'exact world at '+f);exactMatches++;}if(mode===1)assert(exactMatches>=50);
   assert(!requests.slice(requestsAtStart).some(u=>/\/(data|core\.wasm)$/.test(u)),'Start must reuse game DATA and core');
+  const capturedAtPause=await Promise.all(frames().map(f=>f.evaluate(()=>JSON.parse(__th12Runtime.core.UTF8ToString(__th12Runtime.core._th12_host_state())).captureSerial)));
+  await new Promise(r=>setTimeout(r,1100));
+  const capturedLater=await Promise.all(frames().map(f=>f.evaluate(()=>JSON.parse(__th12Runtime.core.UTF8ToString(__th12Runtime.core._th12_host_state())).captureSerial)));
+  assert.deepEqual(capturedLater,capturedAtPause,'paused multiplayer redraws must reuse the captured world');
+  console.log('PAUSED_CAPTURE_REUSE_PASS',{capturedAtPause,capturedLater});
   await page.screenshot({path:resolve(out,`pause-${count}-${mode}-${delay}-${automatic}.png`)});
   let spectatorVerified=false;
   if(count===2&&!automatic){

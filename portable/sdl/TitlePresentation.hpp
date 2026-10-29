@@ -16,6 +16,7 @@ public:
     void render(const MenuState& state,const TitleScenes& scenes,float fps);
     bool popup(const MenuState& state)const;
 private:
+    std::vector<Appearance> render_poses,render_backdrop;std::vector<TextDescriptor> render_texts;
     Scene& scene;Banks& banks;Profile& profile;std::vector<std::u32string> warning;
     AnimationSampler sampler;u32 seed=0x1234;
     // Insertion order, like upstream's Map: it decides draw order within a layer.

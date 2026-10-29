@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <string_view>
 #ifdef TH12_MULTIPLAYER
 #include "game/Multiplayer.hpp"
 #endif
@@ -33,7 +34,7 @@ struct Glyph {i32 id;float x,y,sx,sy;u32 color;bool point;};
 void ascii_glyphs(const TextDescriptor& d,std::vector<Glyph>& out){
     static constexpr float metrics[6][2]{{9,14},{7,9},{7,10},{12,16},{12,16},{7,10}};
     out.clear();if(d.font<0||d.font>5)return;
-    std::string text=d.text.substr(0,d.text.find('\0'));
+    const std::string_view text(d.text.data(),std::min(d.text.size(),d.text.find('\0')));
     const float sx=d.scale_x,sy=d.scale_y,origin_x=d.x,origin_y=d.y,advance=metrics[d.font][0],height=metrics[d.font][1];
     const float ordinary=f32(double(advance)*sx);const bool large=d.font==3||d.font==4;
     float x=origin_x,y=origin_y,step=ordinary;
@@ -97,12 +98,12 @@ bool StdGeometry::parse(const std::vector<u8>& b,std::string& error){
 Scene::Scene(Renderer& r,TextRaster& t,Banks& b,const ExeTables& e):gpu(r),raster(t),banks(b),exe(e){
     sampler_.files=[this](i32 bank){return banks.get(bank);};
 }
-const AnmSprite* Scene::sprite(i32 bank,i32 id)const{const auto f=banks.get(bank);return f?f->sprite(id):nullptr;}
+const AnmSprite* Scene::sprite(i32 bank,i32 id)const{const auto* f=bank>=0&&bank<BankCount?banks.slots[size_t(bank)].get():nullptr;return f?f->sprite(id):nullptr;}
 Texture Scene::texture(i32 bank,i32 entry)const{
     // 431630: text@R entry 2 is the stage surface; entry 1 the paused field.
     if(bank==BankText&&entry==2)return gpu.stage_surface().available?const_cast<Renderer&>(gpu).stage_surface():Texture{};
     if(bank==BankText&&entry==1)return const_cast<Renderer&>(gpu).pause_surface();
-    const auto f=banks.get(bank);if(!f||entry<0||u32(entry)>=f->entries.size())return {};
+    const auto* f=bank>=0&&bank<BankCount?banks.slots[size_t(bank)].get():nullptr;if(!f||entry<0||u32(entry)>=f->entries.size())return {};
     return gpu.texture_for(f->entries[size_t(entry)]);
 }
 void Scene::reset_presentation(){sampler_.reset();last_frame=-1;previous_motion.clear();current_motion.clear();}
@@ -135,11 +136,11 @@ void Scene::capture_background(){
     const double focal=480/2/std::tan(double(c.fov)/2),center_x=13+422/2.,center_y=240;
     const double fog_start=c.fogStart,fog_end=c.fogEnd;
     const auto stage_file=banks.get(BankStage);if(!stage_file)return;
-    struct P {double cx,cy,depth,u,v;};
+    using P=ClipVertex;
     // A quad clipped against two planes has at most six vertices. Reuse
     // capture-local storage across all STD instances instead of allocating
     // polygon, plane output and projected vertices for every tile.
-    std::vector<P> polygon,clipped;std::vector<Vertex> vs;
+    auto& polygon=clip_polygon;auto& clipped=clip_output;auto& vs=clip_projected;
     polygon.reserve(6);clipped.reserve(6);vs.reserve(6);
     for(const auto& instance:geometry.instances){
         const auto& object=geometry.objects[instance.object];
@@ -195,11 +196,11 @@ void Scene::capture_background(){
                 left&=v.x<32;right&=v.x>416;above&=v.y<16;below&=v.y>464;vs.push_back(v);
             }
             if(left||right||above||below)continue;
-            for(size_t i=1;i+1<vs.size();++i){Triangle t{object.layer,sp->entry,a.blend,bool(a.flags2&2),{vs[0],vs[i],vs[i+1]},vs[0].depth+vs[i].depth+vs[i+1].depth};triangles.push_back(t);}
+            for(size_t i=1;i+1<vs.size();++i){Triangle t{object.layer,sp->entry,a.blend,bool(a.flags2&2),{vs[0],vs[i],vs[i+1]},vs[0].depth+vs[i].depth+vs[i+1].depth};t.order=u32(triangles.size());triangles.push_back(t);}
         }
     }
     // STD tiles share a plane; sorting also makes their few z offsets stable.
-    std::stable_sort(triangles.begin(),triangles.end(),[](const Triangle& a,const Triangle& b){return a.layer!=b.layer?a.layer<b.layer:a.depth>b.depth;});
+    std::sort(triangles.begin(),triangles.end(),[](const Triangle& a,const Triangle& b){return a.layer!=b.layer?a.layer<b.layer:a.depth!=b.depth?a.depth>b.depth:a.order<b.order;});
 }
 
 void Scene::capture(const Options& o){
@@ -402,10 +403,8 @@ void Scene::order(){
     using namespace th12;
     // orderPresentation: schedule metadata for logical VMs and pass-0 meshes.
     const i32 count=th12_anm_schedule_count();const auto* schedule=static_cast<const AnimationDrawSchedule*>(th12_anm_schedule_ptr());
-    // Schedule entries by id (the first entry for an id wins), without a hash map per frame.
-    schedule_ids.clear();for(i32 i=0;i<count;++i)schedule_ids.emplace_back(schedule[i].id,u32(i));std::sort(schedule_ids.begin(),schedule_ids.end());
-    const auto by_id=[&](u32 id)->const AnimationDrawSchedule*{const auto it=std::lower_bound(schedule_ids.begin(),schedule_ids.end(),std::pair<u32,u32>{id,0});
-        return it!=schedule_ids.end()&&it->first==id?&schedule[it->second]:nullptr;};
+    schedule_ids.build(schedule,size_t(count));
+    const auto by_id=[&](u32 id)->const AnimationDrawSchedule*{const auto index=schedule_ids.find(id);return index==FrameLookup::missing?nullptr:&schedule[index];};
     sorted.clear();sorted.reserve(poses.size());
     for(u32 index=0;index<poses.size();++index){
         Pose& p=poses[index];const AnimationDrawSchedule* m=nullptr;
@@ -416,7 +415,7 @@ void Scene::order(){
         p.priority=priority;p.order=m?i32(m->order):p.has_order?p.order:i32(index);p.index=index;p.clip=clip;sorted.push_back(index);
     }
     // Indices, not ~250-byte poses: dense patterns put thousands here.
-    std::sort(sorted.begin(),sorted.end(),[this](u32 x,u32 y){const Pose& a=poses[x];const Pose& b=poses[y];return a.priority!=b.priority?a.priority<b.priority:a.order!=b.order?a.order<b.order:a.index<b.index;});
+    draw_buckets.sort(sorted,[this](u32 i){return poses[i].priority;},[this](u32 i){return poses[i].order;});
 }
 
 void Scene::draw_state(const Appearance& a,float x,float y,float angle,float scale,float alpha,const float* shake_){
@@ -446,10 +445,10 @@ void Scene::draw_state(const Appearance& a,float x,float y,float angle,float sca
         }
         if(center.a<=0&&edge.a<=0)return;
         // Native 45d430: a fan, primary at the centre, secondary on count+1 rim points.
-        const float radius=a.geometry_radius*a.sx*scale;std::vector<Vertex> v;v.push_back({cx,cy,0,0,center.r,center.g,center.b,center.a,1,0});
+        const float radius=a.geometry_radius*a.sx*scale;auto& v=fan_vertices;v.clear();v.reserve(size_t(n)+2);v.push_back({cx,cy,0,0,center.r,center.g,center.b,center.a,1,0});
         for(i32 i=0;i<=n;++i){v.push_back({f32(double(cx)+f32(std::cos(double(an))*radius)),f32(double(cy)+f32(std::sin(double(an))*radius)),0,0,edge.r,edge.g,edge.b,edge.a,1,0});
             an=f32(double(an)+step);while(an>pi)an=f32(double(an)-tau);while(an<-pi)an=f32(double(an)+tau);}
-        std::vector<u32> idx;for(i32 i=1;i<=n;++i){idx.push_back(0);idx.push_back(u32(i));idx.push_back(u32(i+1));}
+        auto& idx=fan_indices;idx.clear();idx.reserve(size_t(n)*3);for(i32 i=1;i<=n;++i){idx.push_back(0);idx.push_back(u32(i));idx.push_back(u32(i+1));}
         gpu.solid_triangles(v.data(),idx.data(),u32(idx.size()),a.blend);return;
     }
     const AnmSprite* s=sprite(a.bank,a.sprite);if(!s||a.alpha<=0)return;
@@ -625,9 +624,9 @@ void Scene::render_menu(const std::vector<Appearance>& list,float x,float y,bool
         Vertex v[4]{{b[0],b[1],0,0,0,0,0,shade,1,0},{b[2],b[1],0,0,0,0,0,shade,1,0},{b[2],b[3],0,0,0,0,0,shade,1,0},{b[0],b[3],0,0,0,0,0,shade,1,0}};
         static constexpr u32 idx[6]{0,1,2,0,2,3};gpu.solid_triangles(v,idx,6,0);}
     // orderPresentation on their layer priorities, stable.
-    std::vector<u32> order_;for(u32 i=0;i<list.size();++i)if(layer_priority(list[i].layer)>=0)order_.push_back(i);
-    std::stable_sort(order_.begin(),order_.end(),[&](u32 a,u32 b){return layer_priority(list[a].layer)<layer_priority(list[b].layer);});
-    for(u32 i:order_){
+    menu_order.clear();for(u32 i=0;i<list.size();++i)if(layer_priority(list[i].layer)>=0)menu_order.push_back(i);
+    menu_buckets.sort(menu_order,[&](u32 i){return layer_priority(list[i].layer);},[](u32 i){return i;});
+    for(u32 i:menu_order){
         const auto& a=list[i];
         if(!a.text){draw_state(a,x,y,0,1,1,nullptr);continue;}
         if(!a.visible||a.alpha<=0)continue;

@@ -59,6 +59,8 @@ void Game::multiplayer_frame(const PadSample& pad,u32 ticks,double now){
     using namespace th12::multiplayer;
     const u32 ui=(map_buttons(pad)|pad.keyboard|pad.pressed)&~u32(InRetry);
     for(u32 n=0;n<ticks&&mp_playing&&!mp_result&&phase==Phase::Menu;++n){
+        const auto before_frame=th12::frame;const auto before_stage=th12::stageNumber;
+        const auto before_restores=th12::multiplayer::session.restores();
 #ifdef __EMSCRIPTEN__
         // Browser boundary handles replay controls and transport diagnostics;
         // its step calls the existing C++ Session (including corrections).
@@ -81,11 +83,16 @@ void Game::multiplayer_frame(const PadSample& pad,u32 ticks,double now){
             if(!was_paused){audio.pause_music(true);audio.pause_effects();}
         }else if(was_paused){menus->enter(MenuScene::Playing);audio.pause_music(false);audio.resume_effects();}
         if(title)title->tick(menus->state,*menus);
-        menus->drain();tick_loading();captured=false;
+        menus->drain();tick_loading();
+        // Waiting input and paused menu ticks do not change the world. A
+        // correction can finish at the same frame, so its restore serial also
+        // invalidates the cached scene (including interpolation history).
+        if(th12::frame!=before_frame||th12::stageNumber!=before_stage||
+           th12::multiplayer::session.restores()!=before_restores)captured=false;
     }
-    // No logical frame is advanced on high-refresh presentation callbacks.
-    // Refresh the wall-clock FPS field even when lockstep is waiting.
-    captured=false;
+    // Extra presentation callbacks reuse the captured world. Scene::render
+    // updates the live FPS text independently, including a stalled world's 0.
+
 }
 }
 #endif

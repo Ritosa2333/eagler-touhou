@@ -44,7 +44,7 @@ const std::string& Game::host_state(){
        <<",\"gestureScope\":\""<<(session?session->stage:0)<<"\""
        <<",\"x\":"<<int(std::lround(player_x*128))<<",\"y\":"<<int(std::lround(player_y*128))
        <<",\"fast\":"<<th12_player_speed(0)<<",\"slow\":"<<th12_player_speed(1)<<",\"paused\":"<<((external_paused||(menus&&(menus->state.scene==MenuScene::Pause||menus->state.scene==MenuScene::PauseConfirm)))?"true":"false")
-       <<",\"practiceVertices\":"<<practice_ui.vertices()<<",\"capturing\":"<<(practice_ui.captures()?"true":"false")<<",\"track\":\""<<audio.music_name()<<"\",\"seeking\":"<<(seek_target>=0?"true":"false")<<"}";
+       <<",\"captureSerial\":"<<capture_serial<<",\"drawCalls\":"<<gpu.draws<<",\"vertices\":"<<gpu.vertices<<",\"practiceVertices\":"<<practice_ui.vertices()<<",\"capturing\":"<<(practice_ui.captures()?"true":"false")<<",\"track\":\""<<audio.music_name()<<"\",\"seeking\":"<<(seek_target>=0?"true":"false")<<"}";
     host_snapshot=out.str();return host_snapshot;
 }
 bool Game::playback(int action,const char* path,int value){

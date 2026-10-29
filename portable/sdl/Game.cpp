@@ -647,7 +647,7 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
     if(in_game&&!captured&&!hide_game){const double t0=host::seconds();
         scene->capture({game_fps,session->hud_age,session->replay?0:th12::fullGameFlow.continueCount,session->run.mode==ModePractice||(session->replay&&session->replay->info.practice),
             th12::fullGameFlow.status==th12::FullGameStatus::StageClear,session->high_score,session->replay?session->replay->recorded_fps(session->stage,session->cursor):-1});
-        captured=true;const double t=host::seconds()-t0;timing[1]+=t;frame_timing[1]=t*1000;}
+        captured=true;++capture_serial;const double t=host::seconds()-t0;timing[1]+=t;frame_timing[1]=t*1000;}
     if(session&&!session->replay&&phase!=Phase::Loading)th12_set_wall_time(now);
     {const double t0=host::seconds();if(hide_game)gpu.begin({0,0,0,1});else draw();practice_ui.render(gpu);const double t=host::seconds()-t0;timing[2]+=t;frame_timing[2]=t*1000;}
     // Once a minute of play: average CPU time per frame and frame pacing for the log.
@@ -687,7 +687,7 @@ void Game::focus_lost(){
     if(phase==Phase::Menu&&menus&&menus->state.scene==MenuScene::Playing&&session){menus->open_pause(result_data(false));title->tick(menus->state,*menus);actions();}
 }
 void Game::draw_loading(){
-    std::vector<Appearance> poses;
+    auto& poses=loading_poses;poses.clear();
     if(held_frame){scene->render();const float field[4]{32,16,416,464};scene->render_menu({},0,0,true,1,field);}
     else{if(signature)signature->poses(poses);scene->render_menu(poses,0,0,false);}
 }
@@ -696,7 +696,7 @@ void Game::draw(){
     else{
         const auto& state=menus->state;
         if(ending){
-            std::vector<Appearance> poses;ending->poses(poses);scene->render_menu(poses,0,0,false,0,nullptr,{0,0,0,1},nullptr,fps_value);
+            auto& poses=loading_poses;poses.clear();ending->poses(poses);scene->render_menu(poses,0,0,false,0,nullptr,{0,0,0,1},nullptr,fps_value);
             if(const float shade=ending->shade();shade>0)scene->render_menu({},0,0,true,shade);
         }else if((state.scene==MenuScene::Playing||state.scene==MenuScene::Demo)&&session){
             scene->render(presentation_alpha,game_fps);
@@ -708,7 +708,7 @@ void Game::draw(){
         }
     }
     // The loading indicator sits over everything (renderOverlay).
-    std::vector<Appearance> poses;if(indicator)indicator->poses(poses);for(const auto& vm:retiring)vm->poses(poses);
+    auto& poses=loading_poses;poses.clear();if(indicator)indicator->poses(poses);for(const auto& vm:retiring)vm->poses(poses);
     if(!poses.empty())scene->render_menu(poses,480,392,true);
 }
 
