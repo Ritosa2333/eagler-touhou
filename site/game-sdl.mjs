@@ -18,10 +18,22 @@ let options={limitPresentationTo60:true},music='ogg',state={kind:'menu',key:'ina
 let healthAt=0,frames=0,lastFrame=0,maxGap=0,syncedAt=0,syncQueue=Promise.resolve(),oldFiles=new Map();
 let multiplayer=null,initializing=null,launchSerial=0,returning=false;
 const requestedMusic=new Set();
-let lastFailure='',nativeStarted=false;const startupLog=[];
+let lastFailure='',nativeStarted=false,fatalError=false;const startupLog=[];
 const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice();
 const equal=(a,b)=>a?.length===b.length&&a.every((v,i)=>v===b[i]);
-function fail(error){globalThis.__eaglerCrashReporterV1?.fatal(error,{source:'sdl-runtime'});lastFailure=error?.message??String(error);notice.textContent=lastFailure;emit({event:'error',message:lastFailure});}
+function fail(error){
+  if(fatalError)return;fatalError=true;lastFailure=error?.message??String(error);
+  globalThis.__eaglerNetplayFailed=true;globalThis.__eaglerNetplayError=lastFailure;
+  globalThis.__eaglerCrashReporterV1?.fatal(error,{source:'sdl-runtime'});
+  // Retain the confirmed session for saving/return-room, but never step a
+  // failed transport again. An aborted core may reject input/audio cleanup.
+  try{clearKeyboard();cancelTouch();core?._th12_host_audio(1);}catch{}
+  notice.textContent=lastFailure;emit({event:'error',message:lastFailure});
+}
+function resetFailure(){
+  fatalError=false;lastFailure='';notice.textContent='';
+  globalThis.__eaglerNetplayFailed=false;globalThis.__eaglerNetplayError='';
+}
 function vk(code){
   if(/^Key[A-Z]$/.test(code))return code.charCodeAt(3);
   if(/^Digit[0-9]$/.test(code))return code.charCodeAt(5);
@@ -40,12 +52,14 @@ function cancelTouch(){pendingPracticePointers.clear();touch.cancel();core?._th1
 function stringAt(pointer){return core.UTF8ToString(pointer);}
 
 function beforeFrame(){
+  if(fatalError)return;
   const heldKeys=[...keys.values()],pad=input.pad()??0;
   const sample=touch.sample(state,{arrows:heldKeys.some(n=>n>=37&&n<=40)||!!(pad&240),keyFocused:heldKeys.includes(16)});
   const m=sample.motion;core._th12_host_controls(sample.held|pad,m?.mode??0,m?.x??0,m?.y??0);
   core._th12_host_pressed(sample.pressed);
 }
 function frame(){
+  if(fatalError)return;
   const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
   if(launched&&!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame',launchSerial});healthAt=now;}
   if(!launched)return;
@@ -137,6 +151,7 @@ async function returnRoom(){
     const saved=multiplayer?.save();multiplayer?.stop();launched=false;firstFrame=false;
     await saved;
     clearKeyboard();cancelTouch();core?._th12_host_mp_room();await syncRuntime();
+    resetFailure();core?._th12_host_audio(Number(document.hidden));
     emit({event:'room-menu',launchSerial});return {presented:true};
   }finally{returning=false;}
 }
@@ -158,8 +173,12 @@ function initializeNative(){
 async function bootNative(){
   if(terminated)throw Error('请从启动器重新打开此会话');if(core)return;
   try{
+    resetFailure();
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
     core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
+    // The production Launcher reads Module.eaglerOptions and the native peer
+    // transport together before revealing the game and admitting player input.
+    core.eaglerOptions=options;window.Module=core;
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()],multiplayer:multiplayer?.active?multiplayer.state():null})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
@@ -178,6 +197,7 @@ async function bootNative(){
         core._th12_host_mp_finish(Number(!!world.saveRequested));
       },store:()=>store});
     core.th12MultiplayerTick=(ui,mode,x,y,now)=>{
+      if(fatalError||terminated)return;
       try{
         const held=multiplayerHeldInput({held:ui,ui});
         for(const sound of multiplayer.tick({held,pause:!!(ui&256),motion:{mode,x,y}}))core._th12_host_mp_sound(sound.id,sound.pan,Number(sound.stop));

@@ -56,8 +56,11 @@ std::optional<ReplayInput> Replay::input(i32 number,u32 frame)const{
     const u8* p=&data[s->input_offset+frame*6];return ReplayInput{get<u16>(p),get<u16>(p+2),get<u16>(p+4)};
 }
 i32 Replay::recorded_fps(i32 number,u32 frame)const{
-    const auto* s=stage(number);if(!s||!s->fps_count)return -1;
-    return data[s->fps_offset+std::min(frame/30,s->fps_count-1)];
+    const auto* s=stage(number);if(!s||frame>s->frames)return -1;
+    if(!frame||!s->fps_count)return 0;
+    // 43ba44 reads before 43ba7a advances the FPS pointer at cursors 0,30,...;
+    // the displayed cursor already includes the input consumed by that tick.
+    return data[s->fps_offset+std::min((frame+28)/30,s->fps_count-1)];
 }
 
 bool read_replay_info(const std::vector<u8>& file,ReplayInfo& out){
@@ -92,7 +95,7 @@ bool parse_replay(const std::vector<u8>& file,Replay& out,std::string& error){
     if(count<1||count>7||r.info.character<0||r.info.character>2||r.info.shot<0||r.info.shot>1||r.info.difficulty<0||r.info.difficulty>4){error="bad replay header";return false;}
     u32 at=112;
     for(u32 i=0;i<count;++i){
-        if(at>size-160){error="truncated stage header";return false;}
+        if(at>size||size-at<160){error="truncated stage header";return false;}
         const u8* h=&d[at];ReplayStage s;
         s.number=get<u16>(h);s.seed=get<u16>(h+2);s.frames=get<u32>(h+4);s.payload=get<u32>(h+8);
         if(s.number<1||s.number>7||r.stage(s.number)||s.frames<1||s.frames>10000000||s.payload>size-at-160||s.payload<s.frames*6){error="bad stage stream";return false;}
