@@ -80,7 +80,7 @@ test('managed presentation: actual browser loop keeps 60 Hz logic at 60, 120 and
   assert.ok(start>=0&&end>start);
   for(const hz of [60,120,144]){
     let ticks=0,draws=0;
-    const context={terminated:false,backgrounded:false,fatalError:false,last:0,lastPresentation:0,accumulator:0,presentationInterval:1000/60,presentationCadence:new PresentationCadence(),
+    const context={terminated:false,backgrounded:false,fatalError:false,viewportClockReset:false,last:0,lastPresentation:0,accumulator:0,presentationInterval:1000/60,presentationCadence:new PresentationCadence(),
       runtimeOptions:{limitPresentationTo60:false},presentationLimiter:new PresentationLimiter(),TICK:1000/60,meter:{frame(){}},loadingScreen:{advance(){},renderOverlay(){}},
       ready:true,busy:false,session:null,model:{actions:[],state:{scene:'playing'}},profile:{settings:{keyMap:{}}},
       keyDown:()=>false,previousPadUI:0,logicalStep:1000/60,captureThisTick:false,launched:false,multiplayer:null,
@@ -100,7 +100,7 @@ test('a saturated catch-up budget still publishes a fresh game picture on every 
   const start=source.indexOf('function frame(now){'),end=source.indexOf('\nfunction eventKey',start);
   for(const interval of [150,200,250]){
     let ticks=0,captured=0;const pictures=[];
-    const context={terminated:false,backgrounded:false,fatalError:false,last:0,accumulator:0,presentationInterval:0,presentationCadence:new PresentationCadence(),
+    const context={terminated:false,backgrounded:false,fatalError:false,viewportClockReset:false,last:0,accumulator:0,presentationInterval:0,presentationCadence:new PresentationCadence(),
       runtimeOptions:{limitPresentationTo60:false},presentationLimiter:new PresentationLimiter(),TICK:1000/60,meter:{frame(){}},loadingScreen:{advance(){},renderOverlay(){}},
       ready:true,busy:false,session:null,model:{actions:[],state:{scene:'playing'}},profile:{settings:{keyMap:{}}},
       keyDown:()=>false,previousPadUI:0,logicalStep:1000/60,captureThisTick:false,launched:false,multiplayer:null,
