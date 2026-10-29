@@ -85,8 +85,22 @@ int main(int argc,char** argv){
     draw(0);allocations=0;counting=true;auto start=std::chrono::steady_clock::now();
     for(int age=1;age<=600;++age)draw(age);
     const double steady_ms=milliseconds(start);counting=false;const size_t steady_allocations=allocations;
+    AnimationSampler chained;chained.files=[file](i32){return file;};
+    const auto draw_chained=[&](int age){chained.begin_frame();for(u32 i=1;i<=512;++i){SampleOptions o;o.entity=i;o.interrupts={2,7,3};chained.sample(0,0,age,{},o);}chained.end_frame();};
+    draw_chained(0);allocations=0;counting=true;start=std::chrono::steady_clock::now();
+    for(int age=1;age<=600;++age)draw_chained(age);
+    const double chained_ms=milliseconds(start);counting=false;const auto chained_allocations=allocations;
+    // Long interrupt sequences keep their tail in both options and cache keys.
+    SampleOptions long_a,long_b;long_a.interrupts={2,7,3,8,4,9};long_b.interrupts={2,7,3,8,4,10};
+    require(!(long_a.interrupts==long_b.interrupts),"interrupt tails were truncated");
+    auto copied=long_a.interrupts;require(copied==long_a.interrupts,"long interrupt copy differs");
+    copied=copied;require(copied==long_a.interrupts,"interrupt self assignment differs");
+    auto moved=std::move(copied);require(moved==long_a.interrupts,"long interrupt move differs");
+    moved={2,7,3};auto short_copy=moved;require(moved==short_copy&&moved.size()==3,"short interrupt copy differs");
+    moved={};require(moved.empty(),"interrupt empty assignment differs");
+    require(chained.sample(0,0,1,{},long_a)!=chained.sample(0,0,1,{},long_b),"distinct long interrupt keys were aliased");
     start=std::chrono::steady_clock::now();
     for(int i=0;i<60;++i){Track late(owner,file,0,0,{},{});late.sample(10000);require(late.tick_count()==10001,"settled age differs");hash_frame(*late.frame());}
     const double late_ms=milliseconds(start);
-    std::printf("{\"files\":%zu,\"scripts\":%zu,\"outputHash\":\"%016llx\",\"steadyFrames\":600,\"steadyTracks\":512,\"steadyMs\":%.3f,\"steadyAllocations\":%zu,\"lateBindings\":60,\"lateAge\":10000,\"lateMs\":%.3f}\n",files,scripts,(unsigned long long)digest,steady_ms,steady_allocations,late_ms);
+    std::printf("{\"files\":%zu,\"scripts\":%zu,\"outputHash\":\"%016llx\",\"steadyFrames\":600,\"steadyTracks\":512,\"steadyMs\":%.3f,\"steadyAllocations\":%zu,\"lateBindings\":60,\"lateAge\":10000,\"lateMs\":%.3f,\"chainedMs\":%.3f,\"chainedAllocations\":%zu}\n",files,scripts,(unsigned long long)digest,steady_ms,steady_allocations,late_ms,chained_ms,chained_allocations);
 }

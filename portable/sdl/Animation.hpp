@@ -7,6 +7,7 @@
 #include "Anm.hpp"
 #include <array>
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 
@@ -24,8 +25,33 @@ struct Appearance {
 // A text line a menu VM shows instead of its sprite (upstream menuText).
 struct MenuText {std::u32string text;u32 color=0xffffff;float width=512,height=17;};
 struct BulletVariant {i32 sprite=0,spawn=0,cancel=0;};
+// HUD bindings normally carry three interrupts. Keep these inline; longer
+// script-defined sequences retain their complete original order.
+class AnimationInterrupts {
+    std::array<i32,3> small{};u32 count=0;std::unique_ptr<i32[]> large;
+    void assign(const i32* first,size_t size){
+        if(size<=small.size()){for(size_t i=0;i<size;++i)small[i]=first[i];large.reset();}
+        else{if(!large||count!=size)large.reset(new i32[size]);for(size_t i=0;i<size;++i)large[i]=first[i];}
+        count=u32(size);
+    }
+public:
+    AnimationInterrupts()=default;
+    AnimationInterrupts(std::initializer_list<i32> values){assign(values.begin(),values.size());}
+    AnimationInterrupts(const std::vector<i32>& values){assign(values.data(),values.size());}
+    AnimationInterrupts(const AnimationInterrupts& other):small(other.small),count(other.count){if(count>small.size()){large.reset(new i32[count]);for(size_t i=0;i<count;++i)large[i]=other.large[i];}}
+    AnimationInterrupts& operator=(const AnimationInterrupts& other){if(this!=&other)assign(other.begin(),other.count);return *this;}
+    AnimationInterrupts(AnimationInterrupts&& other)noexcept{*this=std::move(other);}
+    AnimationInterrupts& operator=(AnimationInterrupts&& other)noexcept{if(this!=&other){small=other.small;count=other.count;large=std::move(other.large);other.count=0;}return *this;}
+    AnimationInterrupts& operator=(std::initializer_list<i32> values){assign(values.begin(),values.size());return *this;}
+    const i32* begin()const{return count<=small.size()?small.data():large.get();}
+    const i32* end()const{return begin()+count;}
+    bool empty()const{return !count;}
+    size_t size()const{return count;}
+    bool operator==(const AnimationInterrupts& other)const{if(count!=other.count)return false;for(size_t i=0;i<count;++i)if(begin()[i]!=other.begin()[i])return false;return true;}
+};
+
 struct SampleOptions {
-    u32 seed=0x1234;i32 interrupt=0;std::vector<i32> interrupts;bool position_offset=false;
+    u32 seed=0x1234;i32 interrupt=0;AnimationInterrupts interrupts;bool position_offset=false;
     u64 entity=0; // identity only (upstream: the options JSON in the track key)
 };
 
@@ -85,7 +111,7 @@ public:
     void sample_all(i32 bank,i32 script,i32 age,std::vector<Appearance>& out,std::optional<BulletVariant> variant={},const SampleOptions& options={});
     static void flatten(const Track::Frame& frame,std::vector<Appearance>& out);
 private:
-    struct Key {i32 bank,script;bool has_variant;BulletVariant variant;u64 entity;u32 seed;i32 interrupt;std::vector<i32> interrupts;bool position_offset;
+    struct Key {i32 bank,script;bool has_variant;BulletVariant variant;u64 entity;u32 seed;i32 interrupt;AnimationInterrupts interrupts;bool position_offset;
         bool operator==(const Key& o)const{return bank==o.bank&&script==o.script&&has_variant==o.has_variant&&(!has_variant||(variant.sprite==o.variant.sprite&&variant.spawn==o.variant.spawn&&variant.cancel==o.variant.cancel))&&entity==o.entity&&seed==o.seed&&interrupt==o.interrupt&&interrupts==o.interrupts&&position_offset==o.position_offset;}};
     struct KeyHash {size_t operator()(const Key& k)const;};
     struct CachedTrack {std::unique_ptr<Track> track;u64 generation;};

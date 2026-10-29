@@ -10,6 +10,7 @@ test('SDL sampler preserves sparse/rewind output, moving stopped VMs and allocat
     {includes:[resolve(import.meta.dirname,'../portable/sdl')]});
   const result=JSON.parse(output);
   assert.equal(result.steadyAllocations,0);
+  assert.equal(result.chainedAllocations,0);
   assert.equal(result.steadyFrames,600);
   assert.equal(result.steadyTracks,512);
   assert.match(result.outputHash,/^[0-9a-f]{16}$/);

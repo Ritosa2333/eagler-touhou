@@ -387,12 +387,12 @@ void TitlePresentation::texts(const MenuState& state,const TitleScenes& scenes,s
     }
 }
 void TitlePresentation::render(const MenuState& state,const TitleScenes& scenes,float fps){
-    std::vector<Appearance> poses;std::vector<TextDescriptor> text;
+    auto& poses=render_poses;auto& text=render_texts;poses.clear();text.clear();
     const bool pop=popup_page(state);
     if(pop){if(auto* p=get("popup"))p->poses(poses);}
     else if(state.scene!=MenuScene::Closed){for(const auto& [key,vm]:bindings)vm->poses(poses);for(const auto& r:retiring)r.vm->poses(poses);}
     texts(state,scenes,text);
-    if(pop){std::vector<Appearance> backdrop;if(auto* b=get("popup-backdrop"))b->poses(backdrop);scene.render_pause_backdrop(backdrop,capture_pause);capture_pause=false;}
+    if(pop){auto& backdrop=render_backdrop;backdrop.clear();if(auto* b=get("popup-backdrop"))b->poses(backdrop);scene.render_pause_backdrop(backdrop,capture_pause);capture_pause=false;}
     scene.render_menu(poses,0,0,pop,0,nullptr,{.035f,.035f,.055f,1},&text,fps);
     const bool fade=state.phase==MenuState::Phase::Out&&state.transition_action!="cancel"&&(state.scene==MenuScene::Practice||state.scene==MenuScene::ReplayStage||(state.scene==MenuScene::Shot&&scenes.run.mode!=ModePractice));
     const i32 fade_at=state.scene==MenuScene::ReplayStage?2:10;

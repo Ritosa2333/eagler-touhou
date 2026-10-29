@@ -91,6 +91,7 @@ private:
     i32 startup_frames=0;bool startup_ready=false;
     AnimationSampler loading_sampler; // LoadingPresentation's own sampler and display RNG
     std::unique_ptr<MenuAnimation> signature,indicator;std::vector<std::unique_ptr<MenuAnimation>> retiring;u32 loading_seed=0x1234;
+    std::vector<Appearance> loading_poses;
     bool held_frame=false; // stage loads draw the last game frame behind the indicator
 #ifdef TH12_MULTIPLAYER
     bool mp_playing=false,mp_result=false,mp_replay=false,mp_visible=false;
@@ -99,6 +100,7 @@ private:
     void multiplayer_frame(const PadSample&,u32,double);
 #endif
     bool quit=false;       // title Quit
+    u32 capture_serial=0;
     bool captured=false;   // the scene holds the current game frame
     float presentation_alpha=1;
     u32 slow_frames=0;     // replay slow motion: one tick every fourth frame
