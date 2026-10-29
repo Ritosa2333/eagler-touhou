@@ -27,7 +27,7 @@ TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为�
 
 ## 构建与运行
 
-需要 Node.js 22+、Python 和 Emscripten 4.0.22。激活 Emscripten 环境后：
+需要 Node.js 22+、Python 和[构建指南](../../docs/adaptation/build.md#工具链)登记的 Emscripten。激活环境后：
 
 ```sh
 npm run build:eagler
@@ -35,8 +35,8 @@ npm start
 ```
 
 打开 `http://127.0.0.1:8112/adapter-preview.html?runtime=sdl`。方向键移动，Z 射击，Shift 低速，X Bomb，Esc 暂停。
-默认入口为完整游戏。方向键、Z／X操作菜单；Ctrl快进对话，回放时四倍速；F1打开移植版操作说明。
-单关调试、录像拖动定位和逐帧检查保留在 `/preview.html`，原版检查器保留独立入口。
+SDL 入口使用原生菜单、音乐和录像流程，练习工具的按键及界面见[开发指南](docs/DEVELOPMENT.md)。
+旧网页工具的单关调试、录像拖动定位和逐帧检查位于 `/preview.html`，原版检查器保留独立入口。
 详细的本地资源准备见 [构建说明](docs/BUILD.md)。无原版资源也能编译源码，
 但运行游戏、执行原版探针和资产相关测试需要自己的 TH12 1.00b 输入。
 
@@ -67,7 +67,7 @@ ctest --test-dir artifacts/native --output-on-failure
 
 ## 还原边界
 
-`eagler` 是 Eagler Touhou Web 适配的集成分支；接入架构、包边界及能力目录见 [Web 适配](docs/WEB_ADAPTATION.md)。
+`eagler` 是 Eagler Touhou Web 适配的集成分支；接入架构与包边界见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 使用真实 Launcher 的本地构建、资源包与启动入口见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
 `main` 保留建立 `eagler` 前的已提交版本，后续 Web 适配改动在 `eagler` 集成。
