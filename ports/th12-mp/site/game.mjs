@@ -37,7 +37,7 @@ const assets=new RuntimeAssets(),keyDown=code=>keys.has(code)||hostKeys.has(code
 const managedInput=new ManagedInput(),touch=new TouchInput();
 let previousPresentation=null,currentPresentation=null;
 let multiplayer=null,multiplayerResult=false,roomPreview=false,roomOwned=false,launchSerial=0;
-let presentationInterval=TICK;
+let presentationInterval=TICK,viewportClockReset=false;
 const presentationCadence=new PresentationCadence();
 let replayWorkspace=null,viewerMusic={id:null,ticks:0};
 let practiceBridge=null,practiceUI=null,damageSources=null,practiceCaptured=false,logicalStep=TICK,captureThisTick=true,localization=null;
@@ -51,7 +51,7 @@ const hud=()=>[...new Float32Array(core.HEAPU8.buffer,core._th12_hud(),core._th1
 async function bytes(url){const r=await assets.fetch(url);if(!r.ok)throw Error('资源加载失败 '+url);return new Uint8Array(await r.arrayBuffer());}
 function notice(text=''){$('notice').textContent=text;}
 function fail(error){if(fatalError)return;fatalError=true;busy=true;audio.musicPaused=true;audio.pendingTrack=null;++audio.request;audio.music?.stop();audio.effects?.stop();clearKeys();notice('运行中断：'+error.message);console.error(error);emit({event:'error',message:error.message});}
-function clearKeys({touchToo=true,practiceToo=true,preserveFocus=false}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel({preserveFocus});if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);gameMeter.reset(last);resetGamePresentation();}
+function clearKeys({touchToo=true,practiceToo=true,preserveFocus=false}={}){keys.clear();hostKeys.clear();if(assets.managed)managedInput.clear();if(touchToo)touch.cancel({preserveFocus});if(practiceToo)practiceUI?.cancel();model?.clearKeys();previousUI=previousPadUI=pendingKeys=pendingPressed=0;if(session)session.previous=0;accumulator=0;last=performance.now();meter.reset(last);gameMeter.reset(last);resetGamePresentation({retainSamples:true});}
 function resetGamePresentation(options){previousPresentation=currentPresentation=null;renderer?.resetPresentation(options);}
 function interpolateGamePresentation(){if(multiplayer?.active&&(multiplayerResult||multiplayer.state().paused))return false;return !runtimeOptions.limitPresentationTo60&&presentationCadence.fastFrames===4&&needsPresentationInterpolation(presentationInterval,logicalStep);}
 function gamePresentationOptions(){return {presentationContinuity:interpolateGamePresentation(),currentFps:meter.value,wallTime:multiplayer?.active&&!runtimeOptions.replayViewer&&!runtimeOptions.netplaySpectator?performance.now():null,hudAge:session?.hudAge??0,scoreLowDigit:session?.continues??0,highScore:session?.highScore??0,alwaysHitbox:!!runtimeOptions.alwaysHitbox,multiplayer:multiplayer?.active?multiplayer.state():null,localSeat:runtimeOptions.netplaySpectator||runtimeOptions.replayViewer?-1:runtimeOptions.netplayPlayer??0,localPlayerVisibility:!!runtimeOptions.multiplayerLocalPlayerVisibility,disableMaster:!!(core._th12_practice_ui_behavior?.()&1),stageClear:readJSON('stage_flow').status==='stage-clear',practice:session?.mode==='practice'||session?.replay?.practice,recordedFps:session?.replay?.recordedFps(session.stage,session.cursor)??null};}
@@ -502,6 +502,10 @@ function tick(){
 function frame(now){
   if(terminated)return;
   if(backgrounded||fatalError){last=now;accumulator=0;requestAnimationFrame(frame);return;}
+  // Window/fullscreen transitions can suspend rAF without a blur event.
+  // Rebase the local pacing credit on the first callback after layout settles;
+  // the native frame counter and multiplayer input timeline stay untouched.
+  if(viewportClockReset){viewportClockReset=false;last=now;accumulator=0;presentationCadence.fastFrames=0;presentationLimiter.next=null;}
   if(!presentationLimiter.allows(now,!!runtimeOptions.limitPresentationTo60)){requestAnimationFrame(frame);return;}
   const elapsed=Math.max(0,Math.min(250,now-last));last=now;meter.frame(now);
   presentationInterval=elapsed;
@@ -559,6 +563,10 @@ for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])wind
 },{passive:false});
 canvas.addEventListener('lostpointercapture',event=>{const id='local:'+event.pointerId;if(touch.points.has(id))touch.release(id,true);practiceUI?.pointer({type:'cancel',id});});
 window.addEventListener('wheel',event=>{if(practiceUI?.wheel(event))event.preventDefault();},{passive:false});
+const viewportChanged=()=>{viewportClockReset=true;};
+window.addEventListener('resize',viewportChanged,{passive:true});
+document.addEventListener('fullscreenchange',viewportChanged);
+document.addEventListener('webkitfullscreenchange',viewportChanged);
 window.addEventListener('blur',()=>{clearKeys();if(assets.managed)syncRuntime().catch(fail);});
 document.addEventListener('visibilitychange',()=>{backgrounded=document.hidden;clearKeys();if(backgrounded){if(runtimeOptions.replayViewer)replayWorkspace?.background();else if(!multiplayer?.active&&!roomPreview&&ready&&model.state.scene==='playing'){model.openPause(resultData(false));pauseAudio();}suspendBrowserAudio();syncRuntime().catch(fail);}else restoreBrowserAudio().catch(fail);});
 window.addEventListener('pagehide',()=>{backgrounded=true;clearKeys();replayWorkspace?.background();suspendBrowserAudio();syncRuntime().catch(console.error);});

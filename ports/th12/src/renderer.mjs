@@ -197,17 +197,23 @@ export class Renderer {
     if(!Number.isInteger(stage)||stage<1||stage>7)throw Error('关卡编号无效');
     if(activate)this.requestedStage=stage;
     if(!this.stageJobs.has(stage)){const name='stage'+String(stage).padStart(2,'0'),enemy='stgenm'+String(stage).padStart(2,'0'),logo='st'+String(stage).padStart(2,'0')+'logo';
-      const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]));this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
+      const job=(async()=>{const response=await this.fetch('/assets/'+name+'-background.json');if(!response.ok)throw Error('关卡背景数据加载失败 '+stage);const background=new StageBackground(await response.json(),this.atlases);await this.loadAtlases([name,enemy,enemy+'m',logo].filter(n=>this.atlases[n]),{background:!activate});this.stageBackgrounds.set(stage,background);return background;})();this.stageJobs.set(stage,job);}
     const background=await this.stageJobs.get(stage);if(activate&&this.requestedStage===stage)this.background=background;return background;
   }
-  async loadAtlases(names){
+  async loadAtlases(names,{background=false}={}){
     const gl=this.gl;
     // Atlas metadata may include virtual duplicate names; each physical entry
     // gets its own generated image, so images never silently overwrite others.
     const entries=[];for(const name of names){const atlas=this.atlases[name];if(!atlas)throw Error('动画资源不存在 '+name);for(let index=0;index<atlas.entries.length;index++){const e=atlas.entries[index];if(e.image&&!this.textures.has(name+':'+index))entries.push({name,index,e});}}
-    for(let start=0;start<entries.length;start+=8)await Promise.all(entries.slice(start,start+8).map(async({name,index,e})=>{
+    // A running clear scene keeps rendering while the next stage warms.
+    // Submit one texture after a display frame instead of eight uploads in
+    // the same turn; foreground loading retains its parallel fast path.
+    const parallel=background?1:8;
+    for(let start=0;start<entries.length;start+=parallel)await Promise.all(entries.slice(start,start+parallel).map(async({name,index,e})=>{
       const response=await this.fetch('/assets/'+e.image);if(!response.ok)throw Error('贴图加载失败 '+e.image);
-      const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'}),texture=gl.createTexture();
+      const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'});
+      if(background)await new Promise(done=>requestAnimationFrame(()=>setTimeout(done,0)));
+      const texture=gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bitmap);
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);const wrap=gl.REPEAT; // Native4514c5/4514db defaults both texture axes to WRAP1.
       gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,wrap);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,wrap);
@@ -451,11 +457,12 @@ export class Renderer {
     for(const text of fpsTextDescriptors({currentFps:fps}))this.nativeText(text);
     this.flush();
   }
-  resetPresentation(){
+  resetPresentation({retainSamples=false}={}){
     // Call on start/restart, stage load, replay seek, pause/resume, focus
     // loss or any host discontinuity; the host also discards its old pair.
     if(this.drawBuckets)for(const bucket of this.drawBuckets)if(bucket)bucket.length=0;
-    this.presentationEpoch++;this.lastFrame=-1;this.animations=new AnimationSampler(this.atlases);
+    this.presentationEpoch++;this.lastFrame=-1;
+    if(!retainSamples)this.animations=new AnimationSampler(this.atlases);
   }
   capturePresentation(core,fps={}){
     const h=[...readCoreHud(core,fps)],frame=h[0];if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
