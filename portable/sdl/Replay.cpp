@@ -52,6 +52,10 @@ std::optional<ReplayInput> Replay::input(i32 number,u32 frame)const{
     const ReplayStage* s=stage(number);if(!s||frame>=s->frames)return std::nullopt;
     const u8* p=&data[s->input_offset+frame*6];return ReplayInput{get<u16>(p),get<u16>(p+2),get<u16>(p+4)};
 }
+i32 Replay::recorded_fps(i32 number,u32 frame)const{
+    const auto* s=stage(number);if(!s||!s->fps_count)return -1;
+    return data[s->fps_offset+std::min(frame/30,s->fps_count-1)];
+}
 
 bool read_replay_info(const std::vector<u8>& file,ReplayInfo& out){
     std::vector<u8> raw;if(!unpack(file,raw,112))return false;
@@ -65,7 +69,6 @@ bool parse_replay(const std::vector<u8>& file,Replay& out,std::string& error){
     while(tail+12<=file.size()&&get<u32>(&file[tail])==0x52455355){
         const auto length=get<u32>(&file[tail+4]);if(length<12||length>file.size()-tail){error="invalid replay comment block";return false;}tail+=length;
     }
-    if(tail+8<=file.size()&&!std::memcmp(&file[tail],"TH12WEB1",8)){error="Web motion/practice replay: use the Web replay extension owner";return false;}
     Replay r;r.info=header_info(d.data());const u32 count=get<u32>(&d[88]),size=u32(d.size());
     if(count<1||count>7||r.info.character<0||r.info.character>2||r.info.shot<0||r.info.shot>1||r.info.difficulty<0||r.info.difficulty>4){error="bad replay header";return false;}
     u32 at=112;
@@ -85,6 +88,9 @@ bool parse_replay(const std::vector<u8>& file,Replay& out,std::string& error){
         r.stages.push_back(s);at+=160+s.payload;
     }
     if(at!=size){error="unrecognised replay tail";return false;}
+    std::map<i32,u32> stage_frames;for(const auto& s:r.stages)stage_frames[s.number]=s.frames;
+    if(!read_replay_extension(file,tail,stage_frames,r.extension,error))return false;
+    if(!r.extension.damage.empty()&&(r.info.character!=0||r.info.shot!=0||r.info.practice)){error="Damage-source replay identity mismatch";return false;}
     r.data=std::move(d);out=std::move(r);return true;
 }
 
@@ -94,13 +100,18 @@ std::array<i32,21> default_replay_spell_times(){
 
 void ReplayRecorder::begin_stage(i32 number,i32 seed,const ReplayInitial& initial){
     if(active)finish_stage();
-    Stage s;s.number=number;s.seed=seed&0xffff;s.initial=initial;s.spell_times=default_replay_spell_times();active=std::move(s);
+    Stage s;s.number=number;s.seed=seed&0xffff;s.initial=initial;s.spell_times=default_replay_spell_times();active=std::move(s);extension.motion[number]={};
 }
 void ReplayRecorder::push(u32 held,u32 pressed,u32 released,float fps){
     if(!active||active->inputs.size()>=10000000)return;
     ReplayInput in{u16(held),u16(pressed),u16(released)};if(in.end())return;
     if(active->inputs.size()%30==0)active->fps.push_back(u8(std::clamp(i32(fps+.5f),0,255)));
     active->inputs.push_back(in);
+}
+void ReplayRecorder::motion(i32 x,i32 y,bool unlimited){
+    if(!active||active->inputs.empty())return;
+    if(x||y)extension.motion[active->number].push_back({u32(active->inputs.size()-1),x,y});
+    extension.unlimited|=unlimited;
 }
 void ReplayRecorder::finish_stage(bool end){
     if(!active)return;
@@ -141,7 +152,7 @@ std::vector<u8> ReplayRecorder::encode(const std::string& name,i64 timestamp,i32
     const auto info=user(summary,0),tail=user("",1);
     std::vector<u8> file(36,0);put<u32>(&file[0],Magic);put<u16>(&file[4],4);put<u32>(&file[12],36+u32(b.size()));put<u32>(&file[16],0x100);put<u32>(&file[28],u32(b.size()));put<u32>(&file[32],size);
     file.insert(file.end(),b.begin(),b.end());file.insert(file.end(),info.begin(),info.end());file.insert(file.end(),tail.begin(),tail.end());
-    return file;
+    append_replay_extension(file,extension);return file;
 }
 
 std::vector<ReplayEntry> list_replays(const std::string& folder){

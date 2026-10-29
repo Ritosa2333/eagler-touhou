@@ -39,6 +39,7 @@ function beforeFrame(){
   const heldKeys=[...keys.values()],pad=input.pad()??0;
   const sample=touch.sample(state,{arrows:heldKeys.some(n=>n>=37&&n<=40)||!!(pad&240),keyFocused:heldKeys.includes(16)});
   const m=sample.motion;core._th12_host_controls(sample.held|pad,m?.mode??0,m?.x??0,m?.y??0);
+  core._th12_host_pressed(sample.pressed);
 }
 function frame(){
   const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind+':'+raw.instance};
@@ -79,7 +80,6 @@ function pointer(message){
   touch.pointer(message,state);
 }
 async function configure(settings){
-  if(settings.options.oggDecodeMode==='full')throw Error('SDL 入口目前使用流式音乐，请选择流式音乐');
   const installed=new Map(),pack=settings.runtimePack;let total=0;
   if(pack){
     if(!Array.isArray(pack.files)||pack.files.length>256)throw Error('语言包安装列表无效');
@@ -99,7 +99,6 @@ async function playback(message){
     const length=part=>{const last=replay.input(part.number,part.frames-1);return part.frames-Number(last?.held===65535&&last.pressed===65535&&last.released===65535);};
     const description={name:replay.name,character:replay.character,shot:replay.shot,difficulty:replay.difficulty,timestamp:replay.timestamp,score:replay.scoreStored*10+replay.continues,slowdown:replay.slowdown,lastStage:replay.finalStage,mode:replay.practice?'practice':'story',stages:replay.stages.map((s,i)=>({id:s.number,label:s.number===7?'Extra':'Stage '+s.number,score:(replay.stages[i+1]?.initial.score??replay.scoreStored)*10,frames:length(s)}))};
     if(message.action==='inspect')return {description};
-    if(replay.extension)throw Error('SDL 入口暂未接入 Web 移动与练习扩展录像，请使用原网页入口播放');
     mountSave(message.path,bytes);const relative=message.path.slice('/savesth12/replay/'.length);
     const stage=message.stage??replay.stages[0].number;if(!replay.stages.some(s=>s.number===stage))throw Error('录像没有此关卡');
     let total=0;const parts=replay.stages.map(s=>{const p={stage:s.number,start:total,frames:length(s)};total+=p.frames;return p;});
@@ -129,6 +128,7 @@ async function launch(){
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
     await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!options.alwaysHitbox),Number(options.thpracEnabled!==false),locale,Number(music!=='none'));
+    core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));
     const exitCode=core.callMain(['--data-dir','/game','--save-dir','/savesth12']);
     if(terminated||exitCode)throw Error(lastFailure||startupLog.slice(-8).join('\n')||'游戏初始化失败');
     canvas.focus();
@@ -144,7 +144,7 @@ async function bootstrap(){
     const boundaryStore={list:()=>store.list(),read:path=>store.read(path),sync:()=>store.sync(),write:async(path,bytes)=>{await store.write(path,bytes);mountSave(path,bytes);oldFiles.set(path,copy(bytes));},remove:async path=>{await store.remove(path);if(core?.FS.analyzePath(path).exists)core.FS.unlink(path);oldFiles.delete(path);}};
     emit=installManagedShell({store:boundaryStore,running:()=>launched,replayViewer:()=>!!options.replayViewer,configure,resources:items=>assets.install(items,message=>emit(message)),launch,playback,
       key:(code,down,message)=>{if(!input.key(message,down,message.inputSource==='physical'?'physical':'virtual',key))key(keyboardCode(message),down);},
-      clearKeyboard,cancelTouch,touch:message=>{touch.controls(message,state);core?._th12_host_mobile(Number(!!message.thpracMobilePanelsEnabled),Number(!!message.thpracMobilePanelsVisible));},pointer,practicePointer,sync:syncRuntime},window,{announceReady:false});
+      clearKeyboard,cancelTouch,touch:message=>{touch.controls(message,state);core?._th12_host_mobile(Number(!!message.thpracMobilePanelsEnabled),Number(!!message.thpracMobilePanelsVisible));},pointer:message=>pointer({...message,x:message.x*640,y:message.y*480}),practicePointer:message=>practicePointer({...message,x:message.x*640,y:message.y*480}),sync:syncRuntime},window,{announceReady:false});
     await assets.prepare();emit.ready();
   }else{
     notice.textContent='按“开始”进入 SDL3 版本';

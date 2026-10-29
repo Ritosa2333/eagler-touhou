@@ -21,20 +21,20 @@ const std::string& Game::host_state(){
        <<",\"stage\":"<<(session?session->stage:0)<<",\"character\":"<<(session?session->run.character:0)<<",\"shot\":"<<(session?session->run.shot:0)
        <<",\"cursor\":"<<(session?session->cursor:0)<<",\"instance\":\""<<(session?session->stage:0)<<':'<<th12_player_instance()<<"\""
        <<",\"x\":"<<int(std::lround(h[1]*128))<<",\"y\":"<<int(std::lround(h[2]*128))
-       <<",\"fast\":"<<th12_player_speed(0)<<",\"slow\":"<<th12_player_speed(1)<<",\"paused\":"<<(external_paused?"true":"false")
+       <<",\"fast\":"<<th12_player_speed(0)<<",\"slow\":"<<th12_player_speed(1)<<",\"paused\":"<<((external_paused||(menus&&(menus->state.scene==MenuScene::Pause||menus->state.scene==MenuScene::PauseConfirm)))?"true":"false")
        <<",\"capturing\":"<<(practice_ui.captures()?"true":"false")<<",\"track\":\""<<audio.music_name()<<"\",\"seeking\":"<<(seek_target>=0?"true":"false")<<"}";
     host_snapshot=out.str();return host_snapshot;
 }
 bool Game::playback(int action,const char* path,int value){
     if(action==0||action==5){
         if(!path||!*path||std::string(path).find("..")!=std::string::npos)return false;
-        replay_file=path;pending_replay=replay_file;pending_replay_stage=std::clamp(value,1,7);external_paused=false;if(action==0){external_rate=1;seek_target=-1;}return true;
+        replay_file=path;pending_replay=replay_file;pending_replay_stage=std::clamp(value,1,7);if(action==0){external_paused=false;external_rate=1;seek_target=-1;}else{seek_resume=!external_paused;audio.pause_music(true);audio.stop_effects();}return true;
     }
     if(action==6&&!pending_replay.empty()&&value>=0){seek_target=value;return true;}
     if(!session||!session->replay)return false;
-    if(action==1){external_paused=true;return true;}
-    if(action==2){external_paused=false;return true;}
-    if(action==3&&value>=0){pending_replay=replay_file;pending_replay_stage=session->stage;seek_target=std::min(value,int(session->replay->stage(session->stage)->frames)-1);return true;}
+    if(action==1){external_paused=true;seek_resume=false;audio.pause_music(true);audio.pause_effects();return true;}
+    if(action==2){external_paused=false;seek_resume=true;if(seek_target<0){audio.pause_music(false);audio.resume_effects();}return true;}
+    if(action==3&&value>=0){pending_replay=replay_file;pending_replay_stage=session->stage;seek_resume=!external_paused;audio.pause_music(true);audio.stop_effects();seek_target=std::min(value,int(session->replay->stage(session->stage)->frames)-1);return true;}
     if(action==4&&value>=0&&value<=8000){external_rate=value?value/1000.:64;return true;}
     return false;
 }

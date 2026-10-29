@@ -1,6 +1,6 @@
 # 东方星莲船网页版与行为还原
 
-[monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
+[开发指南](docs/DEVELOPMENT.md) · [monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
 
 原生桌面入口使用 [SDL3 / GLES 3 运行层](portable/sdl/README.md)，链接与网页版相同的当前 C++ 游戏核心。构建目标为 `touhou12`。
 

@@ -27,7 +27,7 @@ enum Input:u32 {InShot=1,InBomb=2,InFocus=8,InUp=16,InDown=32,InLeft=64,InRight=
 // One controller sample: Switch buttons by pad-button number (the original's
 // joystick buttons, which Key Config assigns) plus directions.
 //   0 B  1 A  2 L/ZL  3 R/ZR  4 +  5 X  6 Y
-struct PadSample {u32 buttons=0,directions=0,keyboard=0;};
+struct PadSample {u32 buttons=0,directions=0,keyboard=0,pressed=0;};
 
 class Game {
 public:
@@ -64,6 +64,7 @@ private:
         MenuRun run;i32 stage=1,hud_age=0;u32 previous=0,music_serial=0;
         std::shared_ptr<const Replay> replay;u32 cursor=0;         // playback
         std::unique_ptr<ReplayRecorder> recorder;i32 spell_count=0; // recording
+        std::optional<std::array<i32,20>> practice_record;
         std::string result_key,card_title;bool clear_recorded=false,result_recorded=false;
         double high_score=0; // the HUD's HI SCORE before this run beats it
     };
@@ -88,7 +89,7 @@ private:
     int motion_mode=0,motion_x=0,motion_y=0;
     std::string host_snapshot,pending_replay;int pending_replay_stage=0;
     bool external_paused=false;double external_rate=1,rate_debt=0;
-    int seek_target=-1;std::string replay_file;
+    int seek_target=-1;bool seek_resume=false;std::string replay_file;
     // The ending and staff roll.
     std::unique_ptr<EndingTimeline> ending;AnimationSampler ending_sampler;i32 ending_id=-1;std::vector<std::string> ending_files;
     // The next stage, read and parsed on a loader thread while the stage-clear
@@ -123,7 +124,7 @@ private:
     void watch_prefetch();
     static bool read_stage(Archive& archive,i32 stage,StageFiles& out);
     void install_stage(StageFiles& next);
-    void game_tick(u32 held,double now);
+    void game_tick(u32 held,double now,u32 pulses=0);
     void handle_flow();
     MenuContext result_data(bool clear);
     void record_clear(const MenuContext& result);

@@ -115,7 +115,7 @@ if(NOT TH12_MULTIPLAYER)
       "-sMAX_WEBGL_VERSION=2" "-sMIN_WEBGL_VERSION=2" "-sINVOKE_RUN=0"
       "-sFORCE_FILESYSTEM=1" "-sEXPORTED_RUNTIME_METHODS=['callMain','FS','UTF8ToString','stringToUTF8']"
       "-sDISABLE_EXCEPTION_CATCHING=0"
-      "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free','_th12_host_key','_th12_host_controls','_th12_host_state','_th12_host_stop','_th12_host_audio','_th12_host_options','_th12_host_playback','_th12_host_flush','_th12_host_pointer','_th12_host_wheel','_th12_host_refresh_music','_th12_host_clear','_th12_host_mobile']")
+      "-sEXPORTED_FUNCTIONS=['_main','_malloc','_free','_th12_host_key','_th12_host_controls','_th12_host_pressed','_th12_host_state','_th12_host_stop','_th12_host_audio','_th12_host_options','_th12_host_music_mode','_th12_host_playback','_th12_host_flush','_th12_host_pointer','_th12_host_wheel','_th12_host_refresh_music','_th12_host_clear','_th12_host_mobile']")
   endif()
   install(TARGETS touhou12 RUNTIME DESTINATION .)
 endif()
