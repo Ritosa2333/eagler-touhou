@@ -21,7 +21,7 @@ npm run test:sdl
 
 `test:sdl` 执行 SDL 原生时钟、动画、Replay、音频和浏览器边界测试，以及托管协议检查。原生夹具需要 C++ 编译器，可通过 `CXX` 指定。音频夹具使用生成的 PCM 数据和设备替身，检查实际混音与暂停、停止、重新启用音乐。
 
-真实素材的浏览器入口为 `npm run check:sdl-browser`。设置 `TH12_ASSETS` 为本地提取素材目录，`TH12_FONTS` 为共用字体目录。`TH12_TEST_MUSIC=ogg` 加入真实 OGG 输出检查，验证暂停与定位期间的输出。普通版入口验证标题、开局、触控、练习界面、全屏及原生录像播放控制。
+真实素材的浏览器入口为 `npm run check:sdl-browser`。设置 `TH12_ASSETS` 为本地提取素材目录，`TH12_FONTS` 为共用字体目录。`TH12_TEST_MUSIC=ogg` 加入真实 OGG 输出检查，`TH12_TEST_OGG_DECODE_MODE=stream` 或 `full` 选择解码模式，验证暂停与定位期间的输出。普通版入口验证标题、开局、触控、练习界面、全屏及原生录像播放控制。
 
 共有生命周期和多人验收使用 [验证指南](../../../docs/adaptation/validation.md)中的 `ports:runtime`、`ports:mp`。结果记录实际构建身份、场景和观察范围。
 
