@@ -24,10 +24,15 @@ u32 input_bit(int key){
 }
 int virtual_key(SDL_Keycode key){
     if(key>=SDLK_A&&key<=SDLK_Z)return int(key-SDLK_A)+'A';
+    if(key>=SDLK_0&&key<=SDLK_9)return int(key-SDLK_0)+'0';
+    if(key>=SDLK_KP_1&&key<=SDLK_KP_9)return int(key-SDLK_KP_1)+97;
     if(key>=SDLK_F1&&key<=SDLK_F12)return int(key-SDLK_F1)+112;
     switch(key){case SDLK_LEFT:return 37;case SDLK_UP:return 38;case SDLK_RIGHT:return 39;case SDLK_DOWN:return 40;
-    case SDLK_RETURN:return 13;case SDLK_ESCAPE:return 27;case SDLK_TAB:return 9;case SDLK_BACKSPACE:return 8;
-    case SDLK_LSHIFT:case SDLK_RSHIFT:return 16;case SDLK_LCTRL:case SDLK_RCTRL:return 17;default:return 0;}
+    case SDLK_KP_0:return 96;case SDLK_KP_ENTER:case SDLK_RETURN:return 13;case SDLK_ESCAPE:return 27;case SDLK_TAB:return 9;case SDLK_BACKSPACE:return 8;
+    case SDLK_SPACE:return 32;case SDLK_DELETE:return 46;case SDLK_INSERT:return 45;
+    case SDLK_HOME:return 36;case SDLK_END:return 35;case SDLK_PAGEUP:return 33;case SDLK_PAGEDOWN:return 34;
+    case SDLK_MINUS:return 189;case SDLK_PERIOD:return 190;case SDLK_KP_MINUS:return 109;case SDLK_KP_PERIOD:return 110;
+    case SDLK_LALT:case SDLK_RALT:return 18;case SDLK_LSHIFT:case SDLK_RSHIFT:return 16;case SDLK_LCTRL:case SDLK_RCTRL:return 17;default:return 0;}
 }
 struct Application {
     SDL_Window* window=nullptr;SDL_GLContext context=nullptr;
@@ -140,26 +145,27 @@ extern "C" SDL_AppResult SDL_AppIterate(void* state){
     if(th12::multiplayer::active)pace=[](double elapsed){return th12::multiplayer::session.network.PacedElapsed(elapsed*1000)/1000;};
 #endif
     const unsigned ticks=app.clock.advance(now,period,pace);
-    if(!ticks&&!app.clock.present(now,runtime_options.limit_presentation)){
+    const bool draw_frame=app.clock.present(now,runtime_options.limit_presentation);
+    if(!ticks&&!draw_frame){
 #ifndef __EMSCRIPTEN__
         SDL_Delay(1);
 #endif
         return SDL_APP_CONTINUE;
     }
-    if(ticks)app.clock.present(now,false);
 #ifdef __EMSCRIPTEN__
     if(ticks)EM_ASM({Module.th12BeforeFrame?.();});
 #endif
     app.game->set_motion(app.motion,app.x,app.y);
-    if(!app.game->frame(app.sample(),ticks,now*1000,app.clock.alpha(period))){
+    if(!app.game->frame(app.sample(),ticks,now*1000,app.clock.alpha(period),draw_frame)){
         if(!app.game->error.empty())return failure(app.game->error);
         stop_source="menu-quit";return SDL_APP_SUCCESS;
     }
     int w=0,h=0;SDL_GetWindowSizeInPixels(app.window,&w,&h);
-    if(w>0&&h>0){const double start=host::seconds();app.game->present(w,h);SDL_GL_SwapWindow(app.window);app.game->presented((host::seconds()-start)*1000);}
+    if(draw_frame&&w>0&&h>0){const double start=host::seconds();app.game->present(w,h);SDL_GL_SwapWindow(app.window);app.game->presented((host::seconds()-start)*1000);
 #ifdef __EMSCRIPTEN__
-    EM_ASM({Module.th12Frame?.();});
+        EM_ASM({Module.th12Frame?.();});
 #endif
+    }
 #ifndef __EMSCRIPTEN__
     if(!app.vsync)SDL_Delay(1);
 #endif
@@ -227,7 +233,7 @@ void th12_host_flush(){if(active)active->game->flush_profile();}
 void th12_host_refresh_music(){if(active)active->game->refresh_music();}
 void th12_host_clear(int pointers){if(active){if(pointers){active->controls=active->pulses=0;active->motion=0;}else active->virtual_held=0;active->game->clear_inputs(pointers!=0);}}
 void th12_host_mobile(int enabled,int visible){if(active)active->game->mobile_panels(enabled!=0,visible!=0);}
-void th12_host_options(int limited,int hitbox,int thprac,int language,int music){runtime_options={limited!=0,hitbox!=0,thprac!=0,std::clamp(language,0,2),music!=0};}
+void th12_host_options(int limited,int hitbox,int thprac,int language,int music){runtime_options.limit_presentation=limited!=0;runtime_options.always_hitbox=hitbox!=0;runtime_options.thprac=thprac!=0;runtime_options.language=std::clamp(language,0,2);runtime_options.music=music!=0;if(active&&active->game)active->game->refresh_music();}
 void th12_host_music_mode(int full){runtime_options.full_music=full!=0;}
 int th12_host_playback(int action,const char* path,int value){return active&&active->game&&active->game->playback(action,path,value);}
 }

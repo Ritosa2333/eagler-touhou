@@ -10,7 +10,7 @@ Web 的 `site/game-sdl.mjs` 接主站协议、资源安装、映射后的输入�
 
 ## 构建与输出
 
-需要 Node.js 22+、Python 3、CMake 3.24+；Web 使用 Emscripten 4.0.22。SDL3 和 FreeType 的源码版本与散列固定在 `portable/sdl/Host.cmake`。
+需要 Node.js 22+、Python 3、CMake 3.24+；Web 使用根 CI 登记的 Emscripten 版本，见[构建指南](../../../docs/adaptation/build.md#工具链)。SDL3 和 FreeType 的源码版本与散列固定在 `portable/sdl/Host.cmake`。
 
 在 monorepo 根目录构建主站登记的普通版：
 

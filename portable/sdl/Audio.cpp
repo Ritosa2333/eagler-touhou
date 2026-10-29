@@ -95,7 +95,7 @@ void Audio::play_music(i32 index){
     auto& a=*impl;if(!a.ready)return;
     if(index<0||index>=i32(a.tracks.size())){stop_music();return;}
     a.track=index;a.music_paused=false;a.fading=false;
-    if(!runtime_options.music)return;
+    if(!runtime_options.music){a.music.reset();if(a.reader)a.reader->stop();if(a.device)SDL_ClearAudioStream(a.device);return;}
     if(!a.bgm){
         const auto& t=a.tracks[size_t(index)];std::string stem=t.name;const auto dot=stem.rfind('.');if(dot!=std::string::npos)stem.resize(dot);
         const auto filename=host::paths().data_file(("music/"+stem+".ogg").c_str());
@@ -131,7 +131,7 @@ void Audio::play_music(i32 index){
     a.music=std::move(next);ma_sound_start(&a.music->sound);
 }
 void Audio::stop_music(){auto& a=*impl;if(a.music)ma_sound_stop(&a.music->sound);a.music.reset();if(a.reader)a.reader->stop();a.track=-1;a.music_paused=false;a.fading=false;}
-void Audio::retry_music(){auto& a=*impl;if(!a.music&&a.track>=0&&runtime_options.music){const bool paused=a.music_paused;play_music(a.track);pause_music(paused);}}
+void Audio::retry_music(){auto& a=*impl;if(!runtime_options.music){a.music.reset();if(a.reader)a.reader->stop();if(a.device)SDL_ClearAudioStream(a.device);return;}if(!a.music&&a.track>=0){const bool paused=a.music_paused;play_music(a.track);pause_music(paused);}}
 std::string Audio::music_name()const{const auto& a=*impl;if(a.track<0||a.track>=i32(a.tracks.size()))return "";std::string n=a.tracks[size_t(a.track)].name;const auto dot=n.find('.');return dot==std::string::npos?n:n.substr(0,dot);}
 bool Audio::music_paused()const{return impl->music_paused;}
 void Audio::fade_music(double seconds){auto& a=*impl;if(!a.music)return;a.fading=true;a.fade_total=std::max(seconds,1e-6);a.fade_elapsed=0;}

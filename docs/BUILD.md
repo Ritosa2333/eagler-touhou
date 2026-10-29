@@ -1,68 +1,34 @@
-# 本地构建与原版输入
+# 构建与验证
 
-## 网页核心
+正式 Runtime 使用 SDL3 / GLES 共用 C++ 应用，源码和平台入口见 [开发指南](DEVELOPMENT.md)及 [SDL 指南](../portable/sdl/README.md)。
 
-安装 Node.js 22+、Python 及 Emscripten 4.0.22，并激活 Emscripten 环境。
-构建脚本读取 `EMSDK`／`EMSDK_PYTHON`；也支持工作区相邻 `tools/emsdk` 的安装。
+## 正式 Web 构建
 
-正式 Eagler 构建通过 `integration/common-dependency.json` 校验共享源码。当前固定输入包含 Information 信息窗的被动触控转交：可见信息窗内的轻点和拖动进入界面，窗外触控继续用于游戏。monorepo 更新共享头文件时同步登记文件摘要，再执行 `scripts/build-eagler.mjs` 生成匹配版本的核心与运行目录。
-
-`node --test tests/stage-flow.test.mjs`用同一工具链编译完整C++流程夹具，检查六面衔接、30帧淡出／淡入、资源继承、Practice和Continue。暂停菜单与场地合成检查使用`node --test tests/pause-transition-presentation.test.mjs`；设置`TH12_TEST_ATLASES`为本地准备的`atlases.json`路径后，可逐帧核对原版暂停选项脚本的高亮。
+需要 Node.js 22+、Python 3、CMake 3.24+、Ninja 和 Emscripten。根 CI 的 SDK 版本以 [构建指南](../../../docs/adaptation/build.md#工具链)为准。设置 `EMSDK` 后，在本作品目录运行：
 
 ```sh
-npm run build
-npm start
+npm run build:eagler
+npm run test:sdl
 ```
 
-构建只读取本仓库源码，不需要原版 EXE。生成的 `site/runtime/core.mjs`／`core.wasm`
-是本项目网页核心，不是原版程序；不作为原版资源上传。
+`EMSDK_PYTHON` 指定 SDK 使用的 Python，`CMAKE` 指定 CMake，`TH_BUILD_JOBS` 设置并行任务数。SDL3 和 FreeType 的固定版本与摘要登记在 [Host.cmake](../portable/sdl/Host.cmake)。已有依赖源码通过 `TH12_SDL3_SOURCE`、`TH12_FREETYPE_SOURCE` 复用。
 
-## 游戏资源与原版行为对照
+输出为 `build-eagler/th12.html`，包括 `game.mjs`、`core.mjs`、`core.wasm`、`manifest.json` 和 `runtime-files.json`。构建记录校验本作及 common 的编译输入，打包同时校验模块与 Wasm 的大小和 SHA-256。源码或产物身份变化后重新编译。
 
-原版文件仅在本地使用。现有资源准备工具采用以下工作区布局，克隆时可使用
-`git clone https://github.com/Tweet-META/th12.git th12-eagler`：
+普通版与 MP 各自构建和打包，目录归属及历史同步见 [维护流程](../../../docs/adaptation/port-sync.md)。桌面构建和启动参数见 [SDL 指南](../portable/sdl/README.md#桌面构建)。
 
-```text
-workspace/
-  th12-eagler/        本仓库
-    local/retail/     从自己的 DAT 提取的文件，不提交
-  th12/              自有 TH12 1.00b 安装，含 EXE／DAT，不提交
-  tools/             可选本地分析与构建工具，不提交
-```
+## 自动检查
 
-使用自己的 TH12 1.00b、thtk 12 与公开 Python 依赖准备资源：
+`test:sdl` 执行 SDL 原生时钟、动画、Replay、音频和浏览器边界测试，以及托管协议检查。原生夹具需要 C++ 编译器，可通过 `CXX` 指定。音频夹具使用生成的 PCM 数据和设备替身，检查实际混音与暂停、停止、重新启用音乐。
 
-```sh
-node scripts/prepare-retail.mjs --original="自己的安装目录" --thdat="thdat路径" --python="Python路径"
-```
+真实素材的浏览器入口为 `npm run check:sdl-browser`。设置 `TH12_ASSETS` 为本地提取素材目录，`TH12_FONTS` 为共用字体目录。`TH12_TEST_MUSIC=ogg` 加入真实 OGG 输出检查，验证暂停与定位期间的输出。普通版入口验证标题、开局、触控、练习界面、全屏及原生录像播放控制。
 
-完整路径与输出说明见 [CONTENT_PREPARATION.md](CONTENT_PREPARATION.md)。资源准备只读文件，
-不执行原版程序、游戏模拟或行为采样器。
-资源处理的 Python 依赖包括 Pillow、pefile 和 imageio-ffmpeg；独立的原版 x86 行为研究使用
-Unicorn 2.1.4；反编译工具的依赖见 `scripts/reverse/requirements.txt`。
-输出只进入被忽略的 `local/`、`artifacts/`、`site/assets/` 和 `site/replays/`。
+共有生命周期和多人验收使用 [验证指南](../../../docs/adaptation/validation.md)中的 `ports:runtime`、`ports:mp`。结果记录实际构建身份、场景和观察范围。
 
-资产相关测试、原版探针及全程比较使用本地输入，不能用其他作品资源替代。
-默认游戏入口为 `site/index.html`，完整流程及局部验证范围见 [FULL_GAME_FLOW.md](FULL_GAME_FLOW.md)。
-`site/preview.html` 保留独立关卡、拖动回放及检查入口。
-完整行为／展示 Oracle 尚未验收，子系统及合成短流程成功不代表整局还原成功。
+## 内容与旧前端工具
 
-诊断核心与正式发布核心现为独立产物。原版函数测试钩子和局部世界开关只编译到
-`TH12_DIAGNOSTIC=1` 的诊断核心；正式打包拒绝诊断构建。完整 Replay 的逐帧候选采样、
-不可变金标准、quick/daily 入口及尚缺的原版完整状态 provider，见
-[Replay verifier](../tools/replay-verifier/README.md)。该实现轮没有运行验证或采集原版数据。
+游戏数据、OGG 与字体由本地自有素材准备，步骤见 [内容准备](CONTENT_PREPARATION.md)。代码构建和 Runtime 包独立于这些资源。
 
-使用原版函数钩子的既有测试已改为引用独立诊断核心。维护者之后要运行这些
-测试时，先生成诊断产物，再调用原有入口；本轮没有执行下列测试命令：
+`scripts/build-legacy-eagler.mjs` 用于旧网页前端，`npm run build` 用于既有 Web/Node 行为工具。旧渲染器测试和 `test:portable` 对应各自的模块或诊断核心。正式 SDL Runtime 按本页入口构建和验收。
 
-```powershell
-$env:TH12_DIAGNOSTIC='1'
-$env:TH12_THPRAC='1'
-node scripts/build.mjs
-Remove-Item Env:TH12_DIAGNOSTIC
-npm run test:portable
-```
-
-## 共用源码身份
-
-完整构建按 `integration/common-dependency.json` 校验共用源码文件。普通版与多人版维护相同依赖身份，更新公共练习组件时一并刷新两侧摘要；CI 分别验证各自构建模式。
+原版 Replay 对照、诊断构建与固定基准的流程见 [录像验证器](../tools/replay-verifier/README.md)。

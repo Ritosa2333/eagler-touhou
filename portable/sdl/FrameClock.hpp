@@ -18,8 +18,10 @@ public:
     }
     float alpha(double period=interval)const{return float(std::clamp(debt/period,0.,1.));}
     bool present(double now,bool limited){
-        if(limited&&last_present>=0&&now-last_present<interval-1e-6)return false;
-        last_present=now;return true;
+        const double elapsed=now-last_present;
+        if(limited&&last_present>=0&&elapsed<interval-1e-6)return false;
+        last_present=limited&&last_present>=0&&elapsed<2*interval?last_present+interval:now;
+        return true;
     }
 };
 // New visible game time is counted once. Redrawing a stalled network world

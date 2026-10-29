@@ -25,7 +25,7 @@ artifacts/native/th12/touhou12 --data-dir /path/to/th12 --save-dir /path/to/save
 
 ## Web 构建与验证入口
 
-先设置 `EMSDK` 为 Emscripten 4.0.22 的目录，在作品目录运行：
+先按[构建指南](../../../../docs/adaptation/build.md#工具链)准备 SDK，并设置 `EMSDK`，在作品目录运行：
 
 ```sh
 npm run build:eagler

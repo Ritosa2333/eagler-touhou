@@ -17,11 +17,21 @@ const encoder=new TextEncoder();
 let core,store,localization,emit=()=>{},launched=false,terminated=false,firstFrame=false;
 let options={limitPresentationTo60:true},music='ogg',state={kind:'menu',key:'inactive',ready:false};
 let healthAt=0,frames=0,lastFrame=0,maxGap=0,syncedAt=0,syncQueue=Promise.resolve(),oldFiles=new Map();
-let viewer=null;const preparedMusic=new Set(); // Existing files and in-flight requests, retained for this core.
+let viewer=null;const failedMusic=new Set(),preparedMusic=new Set(); // Existing files and in-flight requests, retained for this core.
 let lastFailure='',nativeStarted=false;const startupLog=[];
 const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice();
 const equal=(a,b)=>a?.length===b.length&&a.every((v,i)=>v===b[i]);
-function fail(error){globalThis.__eaglerCrashReporterV1?.fatal(error,{source:'sdl-runtime'});lastFailure=error?.message??String(error);notice.textContent=lastFailure;emit({event:'error',message:lastFailure});}
+function fail(error){globalThis.__eaglerCrashReporterV1?.fatal(error,{source:'sdl-runtime'});lastFailure=error?.message??String(error);notice.textContent=lastFailure;emit({event:'error',error:lastFailure});}
+function musicFailed(track,error){
+  failedMusic.add(track);
+  const message='音乐加载失败：'+track+'：'+(error?.message??String(error));
+  notice.textContent=message;emit({event:'error',code:'audio-resource',error:message});
+}
+async function installResources(items){
+  await assets.install(items,message=>emit(message));
+  for(const track of failedMusic)preparedMusic.delete(track);
+  failedMusic.clear();
+}
 function vk(code){
   if(/^Key[A-Z]$/.test(code))return code.charCodeAt(3);
   if(/^Digit[0-9]$/.test(code))return code.charCodeAt(5);
@@ -55,7 +65,7 @@ function frame(){
   if(music!=='none'&&state.track&&!preparedMusic.has(state.track)){
     const track=state.track;preparedMusic.add(track);
     if(!core.FS.analyzePath('/game/music/'+track+'.ogg').exists)
-      assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(fail);
+      assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(error=>musicFailed(track,error));
   }
   if(viewer&&now-viewer.reportedAt>=100){const part=viewer.parts.find(p=>p.stage===state.stage);emit({event:'runtime-info',playback:{kind:'replay',path:viewer.path,frame:(part?.start??0)+(state.cursor??0),total:viewer.total,stage:state.stage,startFrame:viewer.startFrame,startStage:viewer.startStage,difficulty:viewer.replay.difficulty,paused:state.paused,rate:viewer.rate,seeking:!!state.seeking,target:viewer.target,preparing:state.scene==='loading',ended:state.scene!=='replay-playing'&&state.scene!=='loading',description:viewer.description}});viewer.reportedAt=now;}
   if(now-syncedAt>5000){syncedAt=now;syncRuntime().catch(fail);}
@@ -67,7 +77,7 @@ function mountSave(path,bytes){if(!core)return;core.FS.mkdirTree(path.slice(0,pa
 async function loadSaves(){oldFiles=new Map();for(const path of await store.list()){const bytes=await store.read(path);if(bytes){oldFiles.set(path,copy(bytes));mountSave(path,bytes);}}}
 function syncRuntime(){
   syncQueue=syncQueue.catch(()=>{}).then(async()=>{
-    if(!core||!firstFrame){await store?.sync();return;}
+    if(!core||!nativeStarted){await store?.sync();return;}
     if(!terminated)core._th12_host_flush();const current=new Set();
     for(const path of paths(core.FS,'/savesth12')){
       try{allowedPath(path);}catch{continue;}
@@ -135,7 +145,7 @@ async function launch(){
   if(terminated)throw Error('请从启动器重新打开此会话');if(launched)throw Error('游戏已启动');launched=true;
   try{
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
-    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
+    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.info(line);},onAbort:reason=>{terminated=true;fail(Error(String(reason)));},th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
     core.eaglerOptions=options;window.Module=core;
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()]})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
@@ -150,14 +160,14 @@ async function launch(){
     for(const n of new Set(keys.values()))core._th12_host_key(n,1);
     if(options.replayPath)await playback({action:'open',path:options.replayPath.startsWith('/savesth12/')?options.replayPath:'/savesth12/'+options.replayPath});
     emit({event:'runtime-info',renderer:'SDL3 / GLES 3',architecture:'shared C++20 application / WebAssembly',integration:'sdl3-gles',completeAdapter:true});
-  }catch(error){launched=false;throw error;}
+  }catch(error){launched=false;if(core)terminated=true;throw error;}
 }
 async function bootstrap(){
   store=await openStore();
   if(assets.managed){
     document.documentElement.dataset.managed='true';
     const boundaryStore={list:()=>store.list(),read:path=>store.read(path),sync:()=>store.sync(),write:async(path,bytes)=>{await store.write(path,bytes);mountSave(path,bytes);oldFiles.set(path,copy(bytes));},remove:async path=>{await store.remove(path);if(core?.FS.analyzePath(path).exists)core.FS.unlink(path);oldFiles.delete(path);}};
-    emit=installManagedShell({store:boundaryStore,running:()=>launched,replayViewer:()=>!!options.replayViewer,configure,resources:items=>assets.install(items,message=>emit(message)),launch,playback,
+    emit=installManagedShell({store:boundaryStore,running:()=>launched,replayViewer:()=>!!options.replayViewer,configure,resources:installResources,launch,playback,
       key:(code,down,message)=>{if(!input.key(message,down,message.inputSource==='physical'?'physical':'virtual',key))key(keyboardCode(message),down);},
       clearKeyboard,cancelTouch,touch:message=>{touch.controls(message,state);core?._th12_host_mobile(Number(!!message.thpracMobilePanelsEnabled),Number(!!message.thpracMobilePanelsVisible));},pointer:message=>pointer(hostedPointer(message,true)),practicePointer:message=>practicePointer(hostedPointer({...message,pointerType:message.pointerType??'mouse'},false)),sync:syncRuntime},window,{announceReady:false});
     await assets.prepare();emit.ready();

@@ -37,7 +37,7 @@ public:
     bool boot(); // files, devices, start-up screen
     // One display frame: up to `ticks` logical ticks with this input, then
     // draw. Returns false to quit.
-    bool frame(const PadSample& pad,u32 ticks,double now_ms,float alpha=1);
+    bool frame(const PadSample& pad,u32 ticks,double now_ms,float alpha=1,bool draw_frame=true);
     double logical_interval()const;
     void present(i32 width,i32 height){gpu.present(width,height);}
     void presented(double ms); // present + swap time of the frame just shown (the log)
@@ -94,7 +94,7 @@ private:
     std::vector<Appearance> loading_poses;
     bool held_frame=false; // stage loads draw the last game frame behind the indicator
 #ifdef TH12_MULTIPLAYER
-    bool mp_playing=false,mp_result=false,mp_replay=false,mp_visible=false;
+    bool mp_playing=false,mp_result=false,mp_replay=false,mp_visible=false,mp_audio_muted=false;
     int mp_local=0,mp_story_character=0,mp_story_shot=0;
     unsigned mp_restores=0;
     void multiplayer_frame(const PadSample&,u32,double);
@@ -126,7 +126,7 @@ private:
     // The log's frame pacing: present + swap, frames shown late (a missed
     // vsync) and how many followed a frame of over 14 ms of CPU work, catch-up
     // ticks, and the slowest frame's CPU time.
-    double present_ms=0,worst_present=0,worst[4]{},last_cpu=0;u32 late_frames=0,late_after_work=0,catch_up=0;bool timed_frame=false;
+    double present_ms=0,worst_present=0,worst[4]{},last_cpu=0,last_display=-1;u32 late_frames=0,late_after_work=0,catch_up=0;bool timed_frame=false;
     bool read(const std::string& name,std::vector<u8>& out);
     bool load_bank(i32 bank,const std::string& name,bool optional=false);
     void queue_stage(i32 stage);
