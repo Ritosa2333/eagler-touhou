@@ -64,6 +64,8 @@ int main(int argc,char** argv){
     Track fading(owner,file,0,2,{},{});fading.sample(2000);require(fading.state.alpha==0,"stopped interpolation was skipped");
     Track edited(owner,file,0,0,{},{});edited.sample(10000);edited.state.x=37;require(edited.sample(20000).a.x==37,"public state edit was skipped");
     require(edited.interrupt(2),"late stopped interrupt missing");require(edited.sample(20010).a.sprite==8&&edited.tick_count()==20011,"late interrupt was skipped");
+    Track wrapping(owner,file,0,0,{},{});wrapping.state.u=5;wrapping.state.v=-4;
+    require(wrapping.sample(10000).a.u==0&&wrapping.frame()->a.v==0,"stopped UV normalization was skipped");
     AnimationSampler cached;cached.files=[file](i32){return file;};SampleOptions option;option.entity=91;u32 bindings=0;cached.display_random32=[&]{return ++bindings;};
     cached.begin_frame();cached.sample(0,5,4,{},option);cached.sample(0,5,4,{},option);cached.end_frame();require(bindings==1,"duplicate sample rebound a live track");
     cached.begin_frame();cached.end_frame(); // no draw: evict
