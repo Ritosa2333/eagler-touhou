@@ -19,7 +19,7 @@ bool Game::multiplayer_stage(int stage,int character,int shot,int difficulty,int
     auto& s=*session;s.stage=stage;s.run.stage=stage;s.hud_age=0;s.previous=0;s.cursor=0;
     s.high_score=std::max(s.high_score,double(profile.rankings(character,shot,difficulty)[0].score()));
     menus->run=s.run;menus->enter(MenuScene::Playing);menus->drain();
-    phase=Phase::Loading;held_frame=mp_playing;show_indicator();audio.stop_effects();
+    phase=Phase::Loading;held_frame=mp_playing;show_indicator();audio.stop_effects();audio.pause_music(true);mp_audio_muted=true;
     if(prefetch&&prefetch->next.stage==stage&&prefetch->done&&prefetch->next.error.empty()){
         StageFiles next=std::move(prefetch->next);prefetch.reset();install_stage(next);
     }else{prefetch.reset();queue_stage(stage);}
@@ -30,6 +30,7 @@ bool Game::multiplayer_stage(int stage,int character,int shot,int difficulty,int
         if(!load_core_stage(stage))return;
         scene->reset_presentation();captured=false;held_frame=false;phase=Phase::Menu;retire_indicator();clear_keys();
         play_music(stage==1?"th12_00":stage==2?"th12_04":stage==3?"th12_07":stage==4?"th12_09":stage==5?"th12_13":stage==6?"th12_16":"th12_18");
+        audio.pause_music(true);
         session->music_serial=th12_music_serial();
     };
     return true;
@@ -42,6 +43,7 @@ void Game::multiplayer_start(bool playback,int local_seat,bool visible){
 }
 void Game::multiplayer_finish(bool save_only){
     if(!mp_playing||mp_result)return;
+    if(th12::multiplayer::session.network.Spectator())mp_replay=false;
     mp_result=true;audio.stop_effects();captured=false;
     const auto status=th12::fullGameFlow.status;
     if(status==th12::FullGameStatus::Ending&&!mp_replay){begin_ending();return;}
@@ -49,7 +51,9 @@ void Game::multiplayer_finish(bool save_only){
 }
 void Game::multiplayer_room(){
     if(!menus)return;
-    mp_playing=mp_result=mp_replay=false;return_title();menus->return_title();menus->drain();
+    jobs.clear();after_jobs=nullptr;phase=Phase::Menu;
+    pending_replay.clear();seek_target=-1;external_paused=false;external_rate=1;rate_debt=0;
+    mp_playing=mp_result=mp_replay=mp_audio_muted=false;return_title();menus->return_title();menus->drain();
     play_music("th12_01");
 #ifdef __EMSCRIPTEN__
     EM_ASM({Module.th12MultiplayerRoom?.();});
@@ -57,16 +61,17 @@ void Game::multiplayer_room(){
 }
 void Game::multiplayer_frame(const PadSample& pad,u32 ticks,double now){
     using namespace th12::multiplayer;
-    const u32 ui=(map_buttons(pad)|pad.keyboard|pad.pressed)&~u32(InRetry);
+    const u32 ui=(map_buttons(pad)|pad.keyboard|pad.pressed);
     for(u32 n=0;n<ticks&&mp_playing&&!mp_result&&phase==Phase::Menu;++n){
         const auto before_frame=th12::frame;const auto before_stage=th12::stageNumber;
         const auto before_restores=th12::multiplayer::session.restores();
+        int playback_audio=0;
 #ifdef __EMSCRIPTEN__
         // Browser boundary handles replay controls and transport diagnostics;
         // its step calls the existing C++ Session (including corrections).
-        EM_ASM({Module.th12MultiplayerTick?.($0,$1,$2,$3,$4);},ui,motion_mode,motion_x,motion_y,now);
+        playback_audio=EM_ASM_INT({return Module.th12MultiplayerTick?.($0,$1,$2,$3,$4)??2;},ui,motion_mode,motion_x,motion_y,now);
 #else
-        if(!th12::multiplayer::session.step((ui&0x2ff)|((ui&InEnter)?0x1000:0),ui&InPause,motion_mode,motion_x/(motion_mode==3?32767.f:128.f),motion_y/(motion_mode==3?32767.f:128.f),now)){error=th12::multiplayer::session.error();return;}
+        if(!th12::multiplayer::session.step((ui&0x2ff)|((ui&InEnter)?0x1000:0)|((ui&InRetry)?0x2000:0),ui&InPause,motion_mode,motion_x/(motion_mode==3?32767.f:128.f),motion_y/(motion_mode==3?32767.f:128.f),now)){error=th12::multiplayer::session.error();return;}
         for(const auto& event:th12::multiplayer::session.audio())audio.effect(event.id,event.pan,event.stop);
         th12::multiplayer::session.clearAudio();
 #endif
@@ -74,14 +79,25 @@ void Game::multiplayer_frame(const PadSample& pad,u32 ticks,double now){
         if(session){session->stage=th12::stageNumber;session->hud_age=int(th12::frame);session->cursor=th12::multiplayer::session.network.NextFrame();}
         if(th12::multiplayer::session.restores()!=mp_restores){mp_restores=th12::multiplayer::session.restores();scene->reset_motion();}
         const auto serial=th12_music_serial();if(session&&serial!=session->music_serial){session->music_serial=serial;audio.play_music(th12_music_track());}
+        const auto& network=th12::multiplayer::session.network;
+        if(network.Spectator()){
+            const auto& playback=network.StagePlayback();
+            if(!playback.Ready()||playback.Seeking())playback_audio=2;
+            else if(playback.Paused())playback_audio=1;
+        }else if(!network.CanStart()||network.NextFrame()==0)playback_audio=2;
+        const bool mute_audio=paused||playback_audio!=0;
+        if(playback_audio==2)audio.stop_effects();
+        else if(mute_audio&&!mp_audio_muted)audio.pause_effects();
+        audio.pause_music(mute_audio);
+        if(!mute_audio&&mp_audio_muted)audio.resume_effects();
+        mp_audio_muted=mute_audio;
         const bool was_paused=menus->state.scene==MenuScene::Pause||menus->state.scene==MenuScene::PauseConfirm;
-        if(paused){
+        if(paused&&!network.Spectator()){
             const auto kind=menuConfirm?MenuScene::PauseConfirm:MenuScene::Pause;
             auto& st=menus->state;if(st.scene!=kind)menus->enter(kind,int(menuSelection),[](MenuState& s){s.ready_at=0;s.phase=MenuState::Phase::Active;});
             if(st.selection!=int(menuSelection)){MenuEvent e;e.type=MenuEvent::Selection;e.previous=st.selection;e.selection=int(menuSelection);st.events.push_back(e);}
             ++st.age;st.selection=int(menuSelection);st.pause_selection=int(menuAction);st.pause_action=menuAction==0?"resume":menuAction==1?"title":menuAction==2?"save-exit":"retry";
-            if(!was_paused){audio.pause_music(true);audio.pause_effects();}
-        }else if(was_paused){menus->enter(MenuScene::Playing);audio.pause_music(false);audio.resume_effects();}
+        }else if(was_paused){menus->enter(MenuScene::Playing);}
         if(title)title->tick(menus->state,*menus);
         menus->drain();tick_loading();
         // Waiting input and paused menu ticks do not change the world. A

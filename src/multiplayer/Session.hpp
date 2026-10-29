@@ -43,6 +43,7 @@ public:
   void clearAudio(){audio_.clear();}
   bool replayBytes(std::vector<uint8_t>&,const char* name);
   bool loadReplay(const uint8_t*,size_t,const uint32_t* build);
+  bool completeSpectator(const uint8_t*,size_t);
   bool seekReplay(uint32_t frame);
   bool restart();
   uint32_t replayFrames()const{return playback_.FrameCount();}

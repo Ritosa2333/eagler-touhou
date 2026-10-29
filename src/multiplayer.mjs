@@ -3,8 +3,9 @@ import {createAdonisCalibration} from '../../../common/browser/adonis-calibratio
 import {createSpectatorPlaybackBridge} from '../../../common/browser/spectator-playback.mjs';
 export function multiplayerHeldInput(keyboard={},pad=0,touch=0){
  const ui=(keyboard.ui??0)|pad|touch;
- // R/Retry never enters a multiplayer input frame. Enter remains menu confirm.
- return ((keyboard.held??0)|pad|touch|((ui&0x80000)?0x1000:0))&0x12ff;
+ const held=(keyboard.held??0)|pad|touch;
+ // Native pause ownership decides whether a synchronized R edge can restart.
+ return (held|((ui&0x80000)?0x1000:0)|(((held|ui)&0x200000)?0x2000:0))&0x32ff;
 }
 export function replayStageLoadout(meta){
  const loadout=meta?.loadouts?.[meta.recordedPlayer];
@@ -69,6 +70,8 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  const buildWords=multiplayerBuildWords(manifest);
  let active=false,readOnly=false,lastReport=0,savedAt=0,exitPending=false,transitioning=false,rollbackCount=0,lastRestart=null;
  let replayPaused=false,replayRate=1,seekTarget=null,replayPath=null,halfFrame=false,replayMeta=null,savePending=Promise.resolve(),playbackReported=-Infinity;
+ let lifetime=0;
+ const current=token=>{if(token!==lifetime)throw Error('多人操作已取消');};
  const cstring=pointer=>{const heap=core.HEAPU8,end=heap.indexOf(0,pointer);return pointer?new TextDecoder().decode(heap.subarray(pointer,end<0?heap.length:end)):'';};
  const error=()=>Error(cstring(core._th12_mp_error())||'TH12 多人运行失败');
  const withBytes=(bytes,fn)=>{const p=core._malloc(bytes.length);if(!p)throw Error('TH12 多人内存不足');try{core.HEAPU8.set(bytes,p);return fn(p,bytes.length);}finally{core._free(p);}};
@@ -78,7 +81,8 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  const calibration=createAdonisCalibration({core:{get memory(){return {buffer:core.HEAPU8.buffer};},multiplayer_calibration_status:()=>core._th12_mp_calibration_status(),multiplayer_network_poll:()=>core._th12_mp_pump()},
   getApp:()=>active?1:0,getOptions,emit:(event,fields)=>emit({event,...fields}),game:'th12',build:manifest.execution.sha256,onError,pause:()=>{}});
  const spectator=createSpectatorPlaybackBridge({active:()=>active&&getOptions().netplaySpectator===true,memory:()=>core.HEAPU8,state:()=>core._th12_mp_spectator_state(),
-  control:(...args)=>core._th12_mp_spectator_control(...args),allocate:n=>core._malloc(n),deallocate:p=>core._free(p),emit:(event,fields)=>emit({event,...fields})});
+  control:(...args)=>core._th12_mp_spectator_control(...args),allocate:n=>core._malloc(n),deallocate:p=>core._free(p),emit:(event,fields)=>emit({event,...fields}),
+  complete:(p,n)=>{if(!core._th12_mp_spectator_complete(p,n))return false;core._th12_host_mp_finish(0);return true;}});
  function save(){
   if(!active||readOnly)return savePending;
   const count=withString('PLAYER',p=>core._th12_mp_replay_encode(p));if(!count)return savePending;
@@ -94,11 +98,12 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
   await store().write('/savesth12/replay/'+id,bytes);await store().sync();return {id,bytes,metadata:describe(inspect(bytes))};
  }
  async function launch(){
+  const token=++lifetime,options=getOptions();
   exitPending=false;lastRestart=null;savedAt=performance.now();replayPath=null;replayMeta=null;core.eaglerOptions=getOptions();
-  const {config,words:setup}=await multiplayerSetupWords(getOptions(),buildWords);
-  await loadStage(getOptions().netplayDifficulty===4?7:1,config.loadouts[config.seat],config.loadouts[0]);
+  const {config,words:setup}=await multiplayerSetupWords(options,buildWords);current(token);
+  await loadStage(options.netplayDifficulty===4?7:1,config.loadouts[config.seat],config.loadouts[0]);current(token);
   if(!withBytes(new Uint8Array(new Uint32Array(setup).buffer),p=>core._th12_mp_configure(p,setup.length)))throw error();
-  const connected=withString(getOptions().netplayUrl,url=>config.spectator?withString(getOptions().netplaySpectatorId,id=>core._th12_mp_spectator_connect(url,id)):core._th12_mp_connect(url));
+  const connected=withString(options.netplayUrl,url=>config.spectator?withString(options.netplaySpectatorId,id=>core._th12_mp_spectator_connect(url,id)):core._th12_mp_connect(url));
   if(!connected||!core._th12_mp_start())throw error();
   active=true;readOnly=config.spectator;
   globalThis.__eaglerNetplaySpectator=config.spectator;globalThis.__eaglerNetplayAdonisMode=config.timingMode;
@@ -106,12 +111,14 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  }
  async function transition(stage){
   if(transitioning)return;transitioning=true;
+  const token=lifetime;
   try{
    if(!core._th12_mp_stage_begin())throw error();
-   await loadStage(stage,...replayStageLoadout(replayMeta));
+   await loadStage(stage,...replayStageLoadout(replayMeta));current(token);
    if(!core._th12_mp_stage_loaded())throw error();
   }
-  finally{transitioning=false;}
+  catch(error){if(token===lifetime)throw error;}
+  finally{if(token===lifetime)transitioning=false;}
  }
  function sounds(){
   const count=core._th12_mp_sounds_count(),p=core._th12_mp_sounds(),view=new DataView(core.HEAPU8.buffer),out=[];
@@ -132,18 +139,19 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
    emit({event:'runtime-info',netplayInputDelayFrames:status[7],netplayPredictionFrames:status[8],multiplayer:{...state(),lastRestart}});}
   if(!readOnly&&now-savedAt>=15000){savedAt=now;void save().catch(onError);}
   if(status[13]&&!exitPending){
-   const world=state();exitPending=true;
+   const world=state(),token=lifetime;exitPending=true;
    void save().then(async()=>{
+    current(token);
     if(world.restart&&!readOnly){
      if(!world.finished||!world.paused||!world.menuConfirm||world.menuAction!==3||world.menuSelection!==0)throw Error('TH12 拒绝未确认的整局重开');
      lastRestart={fromGeneration:status[12],frame:status[3],stage:world.stage,menuAction:world.menuAction,
       confirmHeldSeats:world.players.filter(p=>(p.held??0)&0x1001).map(p=>p.seat)};
      emit({event:'runtime-info',multiplayer:{...world,lastRestart}});
-     await loadStage(getOptions().netplayDifficulty===4?7:1);
+     await loadStage(getOptions().netplayDifficulty===4?7:1);current(token);
      if(!core._th12_mp_restart())throw error();
      lastRestart.generation=words()[12];exitPending=false;replayPath=null;calibration.start();
     }else await onExit();
-   }).catch(onError);
+   }).catch(error=>{if(token===lifetime)onError(error);});
   }
  }
  function tick(input={}){
@@ -153,16 +161,16 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
   const held=input.held??0;
   if(replayMeta&&replayPaused&&seekTarget===null){playbackReport(now);return [];}
   if(replayPath&&readOnly&&replayRate===.5&&seekTarget===null){halfFrame=!halfFrame;if(halfFrame)return [];}
-  const budget=seekTarget===null?Math.max(1,replayRate):32;
+  const historical=seekTarget!==null,budget=historical?32:Math.max(1,replayRate);
   for(let n=0;n<budget;++n){
-   if(!core._th12_mp_step(held&0x12ff,+(!!input.pause),mode,(m?.x??0)/(mode===3?32767:128),(m?.y??0)/(mode===3?32767:128),now))throw error();
+   if(!core._th12_mp_step(held&0x32ff,+(!!input.pause),mode,(m?.x??0)/(mode===3?32767:128),(m?.y??0)/(mode===3?32767:128),now))throw error();
    if(replayMeta&&words()[3]>=replayMeta.frameCount){replayPaused=true;seekTarget=null;break;}
    const needed=core._th12_mp_stage_needed();if(needed){void transition(needed).catch(onError);break;}
    if(seekTarget!==null&&words()[3]>=seekTarget){seekTarget=null;break;}
   }
-  report(now);playbackReport(now);return sounds();
+  report(now);playbackReport(now);const events=sounds();return historical?[]:events;
  }
- function stop(){calibration.stop();spectator.stop();core._th12_mp_stop();active=false;rollbackCount=0;lastRestart=null;globalThis.__eaglerNetplayLanRollback=globalThis.__eaglerNetplayLanResimulated=0;replayMeta=null;seekTarget=null;exitPending=false;globalThis.__eaglerNetplayLanActive=false;globalThis.__eaglerNetplaySpectator=false;}
+ function stop(){lifetime++;calibration.stop();spectator.stop();core._th12_mp_stop();active=false;transitioning=false;rollbackCount=0;lastRestart=null;globalThis.__eaglerNetplayLanRollback=globalThis.__eaglerNetplayLanResimulated=0;replayMeta=null;seekTarget=null;exitPending=false;globalThis.__eaglerNetplayLanActive=false;globalThis.__eaglerNetplaySpectator=false;}
  function inspect(bytes){
   if(!withBytes(bytes,(p,n)=>core._th12_mp_replay_validate(p,n)))throw Error('不是有效的 TH12 多人录像');
   return inspectMultiplayerReplay(bytes,{validate:b=>!!withBytes(b,(p,n)=>core._th12_mp_replay_validate(p,n)),buildWords});
@@ -179,10 +187,10 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
    difficulty:replayMeta.difficulty,paused:replayPaused,rate:replayRate,seeking:seekTarget!==null,target:seekTarget,preparing:transitioning,ended:frame>=replayMeta.frameCount,description:describe(replayMeta)}});
  }
  async function openReplay(path,stage){
-  const bytes=await store().read(path);if(!bytes)throw Error('录像不存在');inspect(bytes);stop();
-  const meta=inspect(bytes);await loadStage(meta.difficulty===4?7:1,...replayStageLoadout(meta));
+  const before=lifetime,bytes=await store().read(path);current(before);if(!bytes)throw Error('录像不存在');
+  const meta=inspect(bytes),chapter=stage===undefined?meta.chapters[0]:meta.chapters.find(c=>c.stage===stage);if(!chapter)throw Error('录像没有此关卡');
+  stop();const token=lifetime;await loadStage(meta.difficulty===4?7:1,...replayStageLoadout(meta));current(token);
   if(!withBytes(new Uint8Array(new Uint32Array(buildWords).buffer),build=>withBytes(bytes,(p,n)=>core._th12_mp_replay_load(p,n,build))))throw error();
-  const chapter=stage===undefined?meta.chapters[0]:meta.chapters.find(c=>c.stage===stage);if(!chapter)throw Error('录像没有此关卡');
   active=readOnly=true;replayMeta=meta;replayPath=path;replayPaused=false;replayRate=1;seekTarget=chapter.frame||null;halfFrame=false;
   globalThis.__eaglerNetplaySpectator=false;playbackReport(performance.now(),true);return meta;
  }
@@ -205,5 +213,6 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  return {launch,tick,save,saveAs,stop,state,playback,spectatorCommand:spectator.command,inspect,openReplay,
   get active(){return active;},get transitioning(){return transitioning;},get readOnly(){return readOnly;},
   get rollbackCount(){return rollbackCount;},
+  get playbackAudio(){return replayMeta?(seekTarget!==null?2:replayPaused?1:0):0;},
   pace:elapsed=>active&&!readOnly?core._th12_mp_paced_elapsed(elapsed):elapsed};
 }

@@ -126,3 +126,9 @@ test('managed input advertises existing mapping identities while keyboard delive
   const preview={location:{href:'https://example.test/preview',origin:'https://example.test'}};
   new ManagedInput(preview);assert.equal(preview.__eaglerKeyboardInputBridge,undefined);
 });
+
+test('managed protocol: WebSocket fallback requires an explicit boolean opt-in',()=>{
+  assert.equal(runtimeOptions({netplayAllowWebsocketFallback:true}).netplayAllowWebsocketFallback,true);
+  assert.equal(runtimeOptions({}).netplayAllowWebsocketFallback,undefined);
+  assert.throws(()=>runtimeOptions({netplayAllowWebsocketFallback:'true'}));
+});

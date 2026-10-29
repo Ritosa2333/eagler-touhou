@@ -14,8 +14,8 @@
 namespace th12::multiplayer {
 namespace {
 auto stateReferences() {
-  return std::tie(pilots, active, paused, finished, restartRequested,returnRequested,saveRequested,menuConfirm,menuInputReady,
-    menuSelection,menuAction,menuPreviousHeld,menuAge,menuHoldAge,storyPreviousHeld,currentSeat, tickNumber, wipeFrames, lifeFragments,
+  return std::tie(pilots, active, paused, finished, restartRequested,returnRequested,saveRequested,menuConfirm,
+    menuSelection,menuAction,menuReadySeats,menuAge,menuHoldAge,menuInput,storyInput,currentSeat, tickNumber, wipeFrames, lifeFragments,
     bombFragments, teamRank, damageRemainders, bulletGrazeMasks, random, displayRandom,
     nextDetachedAnimation, bullets, itemManager, ufoManager, messageVM, spellState,
     spellAnimationKeys, messageAnimationKeys, messageAnimationOwners, messageEvents,

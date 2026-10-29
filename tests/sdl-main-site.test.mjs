@@ -9,6 +9,7 @@ import {runInNewContext} from 'node:vm';
 import {authoredSourcesPlugin} from '../../../launcher/lib/authored-source-resolution.mjs';
 import {sdlStopError} from '../src/sdl-lifecycle.mjs';
 import {multiplayerHeldInput} from '../src/multiplayer.mjs';
+import {allowedPath} from '../src/storage.mjs';
 
 const launcher=resolve(import.meta.dirname,'../../../launcher');
 const {build}=createRequire(resolve(launcher,'package.json'))('esbuild');
@@ -19,37 +20,37 @@ before(async()=>{
   ({createGameplayNetwork}=await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].contents).toString('base64')));
 });
 
-async function fixture(){
-  const events=[],fatals=[],audio=[],calls={ticks:0,saves:0,stops:0};let native,shouldFail=false;
+async function fixture({mountError}={}){
+  const events=[],fatals=[],audio=[],frames=[],files=new Map(),written=new Map(),calls={ticks:0,saves:0,stops:0,flushes:0,starts:0};let native,shouldFail=false,scene='playing',launchGate;
   const options={netplayMode:'lan',netplayPlayer:0,netplayPlayerCount:2,netplayDifficulty:1,netplayLoadouts:[{character:0,shot:0},{character:1,shot:0}]};
   const canvas={focus(){},addEventListener(){},requestFullscreen:async()=>{}};
   const notice={textContent:''},localization={language:'ja',activate(){return this;}};
-  const store={list:async()=>[],sync:async()=>{}};
-  const multiplayer={active:false,launch:async()=>{multiplayer.active=true;},
+  const store={list:async()=>[],sync:async()=>{},write:async(path,bytes)=>written.set(path,bytes.slice())};
+  const multiplayer={active:false,launch:async()=>{if(launchGate)await launchGate;multiplayer.active=true;},
     save:async()=>{calls.saves++;},stop(){calls.stops++;multiplayer.active=false;},state:()=>({stage:1}),
     tick(){calls.ticks++;if(shouldFail)throw Error('RTC peer P2 control channel error');return [];}};
-  const core={FS:{readdir:()=>['.','..']},UTF8ToString:()=>'{"scene":"playing","kind":"game","stage":1}',
-    _th12_host_options(){},_th12_host_music_mode(){},_th12_host_mp_ready:()=>1,
+  const core={FS:{readdir:()=>['.','..',...Array.from(files.keys(),path=>path.split('/').at(-1))],stat:()=>({mode:0}),isDir:()=>false,readFile:path=>files.get(path)},UTF8ToString:()=>JSON.stringify({scene,kind:'game',stage:1}),
+    _th12_host_options(){},_th12_host_music_mode(){},_th12_host_mp_ready:()=>1,_th12_mp_pump:()=>1,
     _th12_host_key(){},_th12_host_clear(){},_th12_host_controls(){},_th12_host_pressed(){},
-    _th12_host_audio:paused=>audio.push(paused),_th12_host_mp_sound(){},_th12_host_mp_start(){},
-    _th12_host_mp_room(){},_th12_host_flush(){},_th12_host_state:()=>1,
+    _th12_host_audio:paused=>audio.push(paused),_th12_host_mp_sound(){},_th12_host_mp_start(){calls.starts++;},
+    _th12_host_mp_room(){scene='title';},_th12_host_flush(){calls.flushes++;},_th12_host_state:()=>1,
     callMain(){native.th12Started();return 0;}};
   const context={URL,Map,Set,Uint8Array,Number,ArrayBuffer,console,performance:{now:()=>0},innerWidth:640,innerHeight:480,
     document:{hidden:false,querySelector:id=>id==='#notice'?notice:canvas,addEventListener(){}},addEventListener(){},
     RuntimeAssets:class{managed=true;fonts=new Map();},ManagedInput:class{clear(){}pad(){return 0;}},
     TouchInput:class{configure(){}cancel(){}sample(){return {held:0,pressed:0};}},
-    createTH12SDL:async callbacks=>{native=callbacks;return core;},mountSdlContent:async()=>{},
+    createTH12SDL:async callbacks=>{native=callbacks;return core;},mountSdlContent:async()=>{if(mountError)throw mountError;},
     prepareLocalization:async()=>localization,fetch:async()=>({ok:true,json:async()=>({})}),
-    createMultiplayerRuntime:()=>multiplayer,multiplayerHeldInput,sdlStopError,testEmit:e=>events.push(e),
+    createMultiplayerRuntime:()=>multiplayer,multiplayerHeldInput,sdlStopError,allowedPath,testEmit:e=>events.push(e),
     __eaglerCrashReporterV1:{fatal:e=>fatals.push(e),bindCore(){}},
-    requestAnimationFrame:callback=>callback()};
+    requestAnimationFrame:callback=>frames.push(callback)};
   context.window=context;
   const source=readFileSync(new URL('../site/game-sdl.mjs',import.meta.url),'utf8')
     .replace(/^import .*;\r?$/gm,'').replaceAll('import.meta.url',JSON.stringify('https://game.test/runtime/game.mjs'))
     .replace('bootstrap().catch(fail);','');
   const entry=runInNewContext(source+'\nemit=testEmit;({configure,bootNative,launch,returnRoom,fail,frame,setStore(value){store=value;}})',context);
   entry.setStore(store);
-  await entry.configure({options,language:'ja',music:'none'});await entry.bootNative();
+  await entry.configure({options,language:'ja',music:'none'});if(!mountError)await entry.bootNative();
   const peers=new Map([[1,{inputOpen:false,controlOpen:false,pc:{connectionState:'connected'}}]]);
   context.__th12PeerTransport=context.__eaglerPeerTransport={peers,failed:false,disconnected:false};
   context.__eaglerNetplayTransport='rtc';context.__eaglerNetplayPath='direct';
@@ -59,7 +60,9 @@ async function fixture(){
     context:()=>({product:'th12mp',runtimeVariant:'multiplayer',spectator:false,replayViewer:false,player:0,playerCount:2}),
     english:()=>true,translate:key=>key,now:()=>0,
     timers:{setTimeout(fn){const key=++id;timers.set(key,fn);return key;},clearTimeout:key=>timers.delete(key),setInterval:()=>++id,clearInterval(){}}});
-  return {entry,model,context,core,options,peers,events,fatals,audio,calls,native:()=>native,
+  return {entry,model,context,core,options,peers,events,fatals,audio,calls,files,written,native:()=>native,
+    draw(){native.th12Frame();frames.shift()?.();},
+    holdLaunch(){let release;launchGate=new Promise(resolve=>{release=resolve;});return release;},
     breakChannel(){shouldFail=true;},restoreChannel(){shouldFail=false;},
     poll(){for(const [key,fn]of [...timers]){timers.delete(key);fn();}}};
 }
@@ -92,11 +95,51 @@ test('a failed SDL MP session stops network ticks and reports its first error on
 test('returning from a failed SDL run preserves saving and permits a fresh launch',async()=>{
   const f=await fixture();try{
     await f.entry.launch();f.breakChannel();f.core.th12MultiplayerTick(0,0,0,0,0);
-    await f.entry.returnRoom();
+    const returning=f.entry.returnRoom();for(let n=0;n<12;n++)await Promise.resolve();f.draw();await returning;
     assert.equal(f.calls.saves,1);assert.equal(f.calls.stops,1);
     assert.equal(f.context.__eaglerNetplayFailed,false);assert.equal(f.context.__eaglerNetplayError,'');
     assert.equal(f.audio.at(-1),0);
     f.restoreChannel();await f.entry.launch();f.core.th12MultiplayerTick(1,0,0,0,16);
     assert.equal(f.calls.ticks,2);
+  }finally{f.model.dispose();}
+});
+
+test('return-room shares completion and acknowledges the presented title after flushing native saves',async()=>{
+  const f=await fixture();try{
+    await f.entry.launch();f.entry.frame();
+    f.files.set('/savesth12/scoreth12.dat',Uint8Array.of(1,2,3));
+    let completed=false;
+    const first=f.entry.returnRoom(),second=f.entry.returnRoom();
+    assert.equal(first,second);first.then(()=>{completed=true;});
+    for(let n=0;n<20;n++)await Promise.resolve();
+    assert.equal(completed,false);
+    assert.equal(f.events.some(event=>event.event==='room-menu'),false);
+    assert.equal(f.calls.flushes,1);
+    assert.deepEqual(Array.from(f.written.get('/savesth12/scoreth12.dat')),[1,2,3]);
+    f.draw();assert.equal((await first).presented,true);
+    assert.equal(f.events.filter(event=>event.event==='room-menu').length,1);
+  }finally{f.model.dispose();}
+});
+
+test('return-room cancels a pending launch without publishing its first frame or starting the native run',async()=>{
+  const f=await fixture();try{
+    const release=f.holdLaunch(),launch=f.entry.launch({launchSerial:7});
+    for(let n=0;n<12;n++)await Promise.resolve();
+    await assert.rejects(f.entry.launch({launchSerial:8}),/正在启动/);
+    const returning=f.entry.returnRoom();
+    for(let n=0;n<12;n++)await Promise.resolve();
+    release();await assert.rejects(launch,/已取消/);
+    f.draw();await returning;
+    assert.equal(f.calls.starts,0);
+    assert.equal(f.events.some(event=>event.event==='first-frame'),false);
+  }finally{f.model.dispose();}
+});
+
+test('a partially initialized native module cannot be reused as a ready multiplayer engine',async()=>{
+  const f=await fixture({mountError:Error('missing native table')});try{
+    await assert.rejects(f.entry.bootNative(),/missing native table/);
+    await assert.rejects(f.entry.bootNative(),/重新打开/);
+    await assert.rejects(f.entry.launch(),/重新打开/);
+    assert.equal(f.calls.starts,0);
   }finally{f.model.dispose();}
 });

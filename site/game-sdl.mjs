@@ -16,8 +16,9 @@ const assets=new RuntimeAssets(),input=new ManagedInput(),touch=new TouchInput()
 let core,store,localization,emit=()=>{},launched=false,terminated=false,firstFrame=false;
 let options={limitPresentationTo60:true},music='ogg',state={kind:'menu',key:'inactive',ready:false};
 let healthAt=0,frames=0,lastFrame=0,maxGap=0,syncedAt=0,syncQueue=Promise.resolve(),oldFiles=new Map();
-let multiplayer=null,initializing=null,launchSerial=0,returning=false;
-const preparedMusic=new Set(); // Existing files and in-flight requests, retained for this core.
+let multiplayer=null,initializing=null,launchSerial=0,returning=null,presentations=0;
+let launchAttempt=0,launching=false;
+const failedMusic=new Set(),preparedMusic=new Set(); // Existing files and in-flight requests, retained for this core.
 let lastFailure='',nativeStarted=false,fatalError=false;const startupLog=[];
 const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice();
 const equal=(a,b)=>a?.length===b.length&&a.every((v,i)=>v===b[i]);
@@ -28,11 +29,21 @@ function fail(error){
   // Retain the confirmed session for saving/return-room, but never step a
   // failed transport again. An aborted core may reject input/audio cleanup.
   try{clearKeyboard();cancelTouch();core?._th12_host_audio(1);}catch{}
-  notice.textContent=lastFailure;emit({event:'error',message:lastFailure});
+  notice.textContent=lastFailure;emit({event:'error',error:lastFailure});
 }
 function resetFailure(){
   fatalError=false;lastFailure='';notice.textContent='';
   globalThis.__eaglerNetplayFailed=false;globalThis.__eaglerNetplayError='';
+}
+function musicFailed(track,error){
+  failedMusic.add(track);
+  const message='音乐加载失败：'+track+'：'+(error?.message??String(error));
+  notice.textContent=message;emit({event:'error',code:'audio-resource',error:message});
+}
+async function installResources(items){
+  await assets.install(items,message=>emit(message));
+  for(const track of failedMusic)preparedMusic.delete(track);
+  failedMusic.clear();
 }
 function vk(code){
   if(/^Key[A-Z]$/.test(code))return code.charCodeAt(3);
@@ -43,7 +54,7 @@ function vk(code){
 }
 function key(code,down,source='host'){
   const n=vk(code);if(!n)return;
-  const id=source+':'+code;if(down)keys.set(id,n);else {keys.delete(id);if(assets.managed)for(const owner of keys.keys())if(owner.endsWith(':'+code))keys.delete(owner);}
+  const id=source+':'+code;if(down)keys.set(id,n);else keys.delete(id);
   const held=[...keys.values()].includes(n);core?._th12_host_key(n,Number(held));
 }
 function clearKeyboard(){const codes=new Set(keys.values());keys.clear();input.clear();for(const code of codes)core?._th12_host_key(code,0);core?._th12_host_clear(0);}
@@ -62,6 +73,8 @@ function beforeFrame(){
 function frame(){
   if(fatalError)return;
   const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
+  presentations++;
+  if(multiplayer?.active&&!core._th12_mp_pump())throw Error(stringAt(core._th12_mp_error())||'多人网络处理失败');
   if(launched&&!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame',launchSerial});healthAt=now;}
   if(!launched)return;
   frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;
@@ -69,7 +82,7 @@ function frame(){
   if(music!=='none'&&state.track&&!preparedMusic.has(state.track)){
     const track=state.track;preparedMusic.add(track);
     if(!core.FS.analyzePath('/game/music/'+track+'.ogg').exists)
-      assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(fail);
+      assets.fetch('/assets/music/'+track+'.ogg').then(async response=>{if(!response.ok)throw Error('音乐加载失败：'+track);core.FS.writeFile('/game/music/'+track+'.ogg',new Uint8Array(await response.arrayBuffer()));core._th12_host_refresh_music();}).catch(error=>musicFailed(track,error));
   }
   if(now-syncedAt>5000){syncedAt=now;syncRuntime().catch(fail);}
 }
@@ -80,7 +93,7 @@ function mountSave(path,bytes){if(!core)return;core.FS.mkdirTree(path.slice(0,pa
 async function loadSaves(){oldFiles=new Map();for(const path of await store.list()){const bytes=await store.read(path);if(bytes){oldFiles.set(path,copy(bytes));mountSave(path,bytes);}}}
 function syncRuntime(){
   syncQueue=syncQueue.catch(()=>{}).then(async()=>{
-    if(!core||!firstFrame){await store?.sync();return;}
+    if(!core||!nativeStarted){await store?.sync();return;}
     if(!terminated)core._th12_host_flush();if(multiplayer?.active)await multiplayer.save();const current=new Set();
     for(const path of paths(core.FS,'/savesth12')){
       try{allowedPath(path);}catch{continue;}
@@ -117,7 +130,7 @@ async function configure(settings){
   if(core&&localization&&localization.language!==settings.language)throw Error('切换语言需要重新打开多人入口');
   if(!core){localization?.deactivate();localization=(await prepareLocalization({language:settings.language,manifest:pack?.manifest,readFile:path=>installed.get(path),fontReady:Promise.resolve()})).activate();
   }
-  assets.localization=localization;options=settings.options;music=settings.music;touch.configure(options);if(core){core.eaglerOptions=options;core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!(options.alwaysHitbox||options.touchAlwaysHitbox)),0,0,Number(music!=='none'));}
+  assets.localization=localization;options=settings.options;music=settings.music;touch.configure(options);if(core){core.eaglerOptions=options;core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!(options.alwaysHitbox||options.touchAlwaysHitbox)),0,0,Number(music!=='none'));}
 }
 async function playback(message){
   await initializeNative();
@@ -128,12 +141,12 @@ async function playback(message){
   }
   return result;
 }
-function waitReady(){
+function waitReady(after=-1,scene){
   return new Promise((resolve,reject)=>{
     const start=performance.now();
     const poll=()=>{
       if(terminated||lastFailure)return reject(Error(lastFailure||'Runtime 已关闭'));
-      if(core._th12_host_mp_ready())return resolve();
+      if(core._th12_host_mp_ready()&&presentations>after&&(!scene||state.scene===scene))return resolve();
       if(performance.now()-start>60000)return reject(Error('SDL 资源准备超时'));
       requestAnimationFrame(poll);
     };poll();
@@ -147,26 +160,36 @@ async function stage(stage,loadout,storyLoadout,replayDifficulty){
   await waitReady();
 }
 async function prepareRoom(){await initializeNative();await waitReady();return {presented:true};}
-async function returnRoom(){
-  if(returning)return {presented:true};returning=true;
-  try{
+function returnRoom(){
+  if(returning)return returning;
+  launchAttempt++;
+  returning=(async()=>{
+    if(initializing)await initializing;
     const saved=multiplayer?.save();multiplayer?.stop();launched=false;firstFrame=false;
     await saved;
+    const before=presentations;
     clearKeyboard();cancelTouch();core?._th12_host_mp_room();await syncRuntime();
     resetFailure();core?._th12_host_audio(Number(document.hidden));
+    if(core)await waitReady(before,'title');
     emit({event:'room-menu',launchSerial});return {presented:true};
-  }finally{returning=false;}
+  })().finally(()=>{returning=null;});
+  return returning;
 }
 async function launch(message={}){
-  if(terminated)throw Error('请从启动器重新打开此会话');if(multiplayer?.active)throw Error('游戏已启动');
+  if(terminated)throw Error('请从启动器重新打开此会话');if(multiplayer?.active||launching||returning)throw Error('游戏正在启动或返回房间');
+  const attempt=++launchAttempt;launching=true;
+  try{
   launchSerial=Number(message.launchSerial)||0;await initializeNative();
+  if(attempt!==launchAttempt)throw Error('启动已取消');
   if(options.replayViewer){
     if(options.replayPath)await playback({action:'open',path:options.replayPath.startsWith('/savesth12/')?options.replayPath:'/savesth12/'+options.replayPath});
     return;
   }
-  await multiplayer.launch();core._th12_host_mp_start(Number(!!options.netplaySpectator),options.netplaySpectator?-1:options.netplayPlayer??0,Number(!!options.multiplayerLocalPlayerVisibility));
+  await multiplayer.launch();if(attempt!==launchAttempt)throw Error('启动已取消');
+  core._th12_host_mp_start(Number(!!options.netplaySpectator),options.netplaySpectator?-1:options.netplayPlayer??0,Number(!!options.multiplayerLocalPlayerVisibility));
   launched=true;firstFrame=false;canvas.focus();
   emit({event:'runtime-info',renderer:'SDL3 / GLES 3',architecture:'shared C++20 application / WebAssembly',multiplayer:true,language:localization.language});
+  }finally{launching=false;}
 }
 function initializeNative(){
   if(initializing)return initializing;
@@ -177,7 +200,7 @@ async function bootNative(){
   try{
     resetFailure();
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
-    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
+    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.info(line);},onAbort:reason=>{terminated=true;fail(Error(String(reason)));},th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
     // The production Launcher reads Module.eaglerOptions and the native peer
     // transport together before revealing the game and admitting player input.
     core.eaglerOptions=options;window.Module=core;
@@ -199,24 +222,25 @@ async function bootNative(){
         core._th12_host_mp_finish(Number(!!world.saveRequested));
       },store:()=>store});
     core.th12MultiplayerTick=(ui,mode,x,y,now)=>{
-      if(fatalError||terminated)return;
+      if(fatalError||terminated)return 2;
       try{
         const held=multiplayerHeldInput({held:ui,ui});
         for(const sound of multiplayer.tick({held,pause:!!(ui&256),motion:{mode,x,y}}))core._th12_host_mp_sound(sound.id,sound.pan,Number(sound.stop));
-      }catch(error){fail(error);}
+        return multiplayer.playbackAudio??0;
+      }catch(error){fail(error);return 2;}
     };
     core.th12MultiplayerReplay=(file,stage)=>{multiplayer.stop();void syncRuntime().then(()=>playback({action:'open',path:'/savesth12/replay/'+file,stage})).catch(fail);};
     core.th12MultiplayerRoom=()=>{if(!returning)void returnRoom().catch(fail);};
     // Read-only diagnostics used by the same netplay and rendering labs.
     window.__th12Runtime={core,multiplayer,status:()=>Array.from(new Uint32Array(core.HEAPU8.buffer,core._th12_mp_status(),24)),state:()=>multiplayer.state(),scene:()=>state.scene,menu:()=>({scene:state.scene,age:state.menuAge,ready:state.menuReady,selection:state.selection})};
-  }catch(error){launched=false;throw error;}
+  }catch(error){launched=false;if(core)terminated=true;throw error;}
 }
 async function bootstrap(){
   store=await openStore();
   if(assets.managed){
     document.documentElement.dataset.managed='true';
     const boundaryStore={list:()=>store.list(),read:path=>store.read(path),sync:()=>store.sync(),write:async(path,bytes)=>{await store.write(path,bytes);mountSave(path,bytes);oldFiles.set(path,copy(bytes));},remove:async path=>{await store.remove(path);if(core?.FS.analyzePath(path).exists)core.FS.unlink(path);oldFiles.delete(path);}};
-    emit=installManagedShell({store:boundaryStore,running:()=>launched,replayViewer:()=>!!options.replayViewer,configure,resources:items=>assets.install(items,message=>emit(message)),launch,playback,prepareRoom,returnRoom,spectatorPlayback:message=>multiplayer.spectatorCommand(message),validateReplay:async bytes=>{await initializeNative();return multiplayer.inspect(bytes);},
+    emit=installManagedShell({store:boundaryStore,running:()=>launched||launching,replayViewer:()=>!!options.replayViewer,configure,resources:installResources,launch,playback,prepareRoom,returnRoom,spectatorPlayback:message=>multiplayer.spectatorCommand(message),validateReplay:async bytes=>{await initializeNative();return multiplayer.inspect(bytes);},
       key:(code,down,message)=>{if(!input.key(message,down,message.inputSource==='physical'?'physical':'virtual',key))key(keyboardCode(message),down);},
       clearKeyboard,cancelTouch,touch:message=>{touch.controls(message,state);core?._th12_host_mobile(Number(!!message.thpracMobilePanelsEnabled),Number(!!message.thpracMobilePanelsVisible));},pointer:message=>pointer(hostedPointer(message,true)),practicePointer:message=>practicePointer(hostedPointer({...message,pointerType:message.pointerType??'mouse'},false)),sync:syncRuntime},window,{announceReady:false});
     await assets.prepare();emit.ready();
