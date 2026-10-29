@@ -302,6 +302,9 @@ void Scene::capture(const Options& o){
             TextDescriptor t=font_text(width_integer(whole,2)+":"+precision_integer(fraction,2),2,f32(double(f32(double(e->x)+224))-12),f32(double(f32(double(e->y)+16))+20),0xc080ffc0,1);t.z=e->z;ufo_text(t);break;
         }
     }
+    // 43bb20 shows the replay's recorded sample at (383,450).
+    if(o.recorded_fps>=0&&o.recorded_fps<=255)
+        push_text(font_text(width_integer(o.recorded_fps,3),0,383,450,o.recorded_fps<30?0xff5050ff:o.recorded_fps<50?0xffa0a0ff:0xffffffff,0),69,0,-1);
     // Live FPS (41cc80): %2.1ffps at 588,470.
     if(o.current_fps>=0){
         const float fps=f32(o.current_fps);const std::string t=fixed1(double(fps)+.05)+"fps";

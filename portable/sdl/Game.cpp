@@ -6,6 +6,7 @@
 #include "game/StageFlow.hpp"
 #include "game/Practice.hpp"
 #include "game/PracticeTools.hpp"
+#include "game/PracticeDamageSources.hpp"
 #include "wasm/Api.hpp"
 #include <algorithm>
 #include <chrono>
@@ -148,7 +149,9 @@ void Game::begin(MenuRun run,std::shared_ptr<const Replay> replay){
     after_jobs=[this,run,stage,difficulty,replay]{
         translation_context("st"+two(stage)+"_0"+std::to_string(run.character)+(run.shot?"b":"a")+".msg");
         th12_practice_reset(0);th12_practice_replay(replay?1:0);
-        th12_practice_damage_begin(replay?1:0,run.mode==ModePractice?1:0,run.character,run.shot);
+        if(replay&&((replay->extension.practice&&(*replay->extension.practice)[1])||!replay->extension.damage.empty())&&!runtime_options.thprac){error="Enable THPrac to play this extended replay";return;}
+        th12_practice_damage_begin(replay?1:0,(replay?replay->info.practice:run.mode==ModePractice)?1:0,run.character,run.shot);
+        if(replay)for(const auto& [stage,data]:replay->extension.damage)if(th12_practice_damage_load(data.data(),int(data.size()))!=1){error=th12::practice::damage::lastError();return;}
         if(!load_core_stage(stage))return;
         const auto words=profile.spell_history();
         if(th12_load_spell_history(words.data(),int(words.size()))!=1)host::log("spell history rejected");
@@ -161,7 +164,8 @@ void Game::begin(MenuRun run,std::shared_ptr<const Replay> replay){
             const bool prepared=!custom||th12_practice_configure(practice_params.data(),int(practice_params.size()))==1;
             const int started=prepared?(custom?th12_practice_start(run.character,run.shot,difficulty,int(seed)):th12_start_full_game(run.character,run.shot,difficulty,int(seed),run.mode==ModePractice?1:0)):0;
             if(started!=1){error="full game initialisation failed";return;}
-            if(!custom||practice_params[1]==0)n.recorder=std::make_unique<ReplayRecorder>(run.character,run.shot,difficulty,run.mode==ModePractice,profile.config_bytes());
+            n.recorder=std::make_unique<ReplayRecorder>(run.character,run.shot,difficulty,run.mode==ModePractice,profile.config_bytes());
+            if(custom)n.practice_record=practice_params;
             profile.record_play_start(run.character,run.shot);
         }
         // The HUD's HI SCORE starts from the score file's best (Practice: that stage's).
@@ -173,16 +177,23 @@ void Game::begin(MenuRun run,std::shared_ptr<const Replay> replay){
         scene->reset_presentation();clear_keys();
         // 4221bd / 422928: the demo keeps the title theme playing.
         if(run.mode!=ModeDemo){audio.play_music(th12_music_track());if(const auto id=audio.music_name();!replay&&!id.empty())profile.unlock_music(id);}
+        if(replay)audio.pause_music(external_paused||seek_target>=0);
         retire_indicator();phase=Phase::Menu;captured=false;
         host::log("start: mode %d character %d shot %d difficulty %d stage %d",run.mode,run.character,run.shot,difficulty,stage);
     };
 }
 // upstream startReplayStage: the stage header's 17 words and 21 spell times.
 bool Game::start_replay_stage(const Replay& replay,const ReplayStage& stage,bool flow,bool fade_in){
+    th12_practice_replay(1);
+    if(replay.extension.practice&&(*replay.extension.practice)[1]){
+        auto params=*replay.extension.practice;params[19]=1;
+        if(params[2]+1!=stage.number||th12_practice_configure(params.data(),int(params.size()))!=1||th12_practice_prepare_replay(replay.info.difficulty)!=1){error=th12::practice::lastError();return false;}
+    }
     std::array<i32,38> words{};const auto initial=stage.initial.words();
     std::copy(initial.begin(),initial.end(),words.begin());std::copy(stage.spell_times.begin(),stage.spell_times.end(),words.begin()+17);
     if(th12_start_replay(replay.info.character,replay.info.shot,replay.info.difficulty,stage.seed,words.data(),38)!=1)return false;
-    if(flow&&!replay.info.practice)th12_replay_stage_flow(0,fade_in?1:0);
+    if(flow)th12_replay_stage_flow(replay.info.practice?1:0,fade_in?1:0);
+    if(!th12::practice::damage::lastError().empty()&&!replay.extension.damage.empty()){error=th12::practice::damage::lastError();return false;}
     return true;
 }
 // The stage boundary the core recorded before the main routine's birth.
@@ -212,6 +223,7 @@ void Game::next_stage(){
     if(s.recorder)s.recorder->finish_stage();
     const i32 stage=stage_after();
     if(!stage){prefetch.reset();complete_run(true);return;}
+    if(s.replay&&th12_practice_damage_transition(s.stage,stage)!=1){error=th12::practice::damage::lastError();return;}
     if(prefetch&&prefetch->next.stage==stage){
         // Read during the clear: switch over now, like the original.
         const double t0=host::seconds();const bool waited=!prefetch->done;
@@ -291,7 +303,8 @@ MenuContext Game::result_data(bool clear){
     c.run=session->run;c.stage=session->stage;c.clear=clear;c.continues=session->replay?0:f.continueCount;
     c.can_continue=!session->replay&&th12::canContinueFullGame();
     c.can_save_replay=!session->replay&&session->recorder&&f.continueCount==0;
-    c.ranked=!session->replay&&f.continueCount==0;c.score_stored=th12_score_stored();c.timestamp=host::unix_time();c.slowdown=0;
+    const bool assisted=th12::practice::assisted()||(session->recorder&&session->recorder->unlimited());
+    c.ranked=!session->replay&&f.continueCount==0&&!assisted;c.score_stored=th12_score_stored();c.timestamp=host::unix_time();c.slowdown=assisted?100:0;
     return c;
 }
 // upstream recordClear: the stage clear and the clear count, once a run.
@@ -353,6 +366,11 @@ void Game::record_run(const MenuContext& r,const std::string& name){
 // replay/th12_NN.rpy, as the PC game names its 25 slots.
 void Game::save_replay(i32 slot,const std::string& name,const MenuContext& r){
     if(!session||!session->recorder||slot<1||slot>25)return;
+    std::map<i32,std::vector<i32>> damage;
+    for(int stage=2;stage<=6;++stage){const int count=th12_practice_damage_stage_words(stage);if(count){const auto* words=th12_practice_damage_stage(stage);damage[stage]={words,words+count};}}
+    auto params=session->practice_record;const bool assisted=th12::practice::assisted();
+    if(assisted&&!params){params=std::array<i32,20>{1,0,session->stage-1,0,0,0,0,0,9,0,9,0,400,10000,0,0,0,0,0,0};}
+    session->recorder->metadata(params,assisted,std::move(damage));
     const auto bytes=session->recorder->encode(name,r.timestamp,r.score_stored,r.continues,r.clear?8:r.stage,r.slowdown);
     if(bytes.empty())return;
     const std::string folder=menus->replay_folder();host::make_directory(folder);char file[16];std::snprintf(file,sizeof file,"th12_%02d.rpy",slot);
@@ -368,28 +386,33 @@ void Game::return_title(){
 void Game::play_music(const std::string& name){
     audio.play_music(name);if(session&&!session->replay&&!name.empty())profile.unlock_music(name);
 }
-void Game::game_tick(u32 held,double now){
-    auto& s=*session;u32 pressed=held&~s.previous;
+void Game::game_tick(u32 held,double now,u32 pulses){
+    auto& s=*session;u32 pressed=(held&~s.previous)|pulses;int mode=motion_mode,x=motion_x,y=motion_y;
     if(s.replay){
         // 43b9ce: the stage's stream ends at its record count or an all-ffff record.
         const auto recorded=s.replay->input(s.stage,s.cursor);
         if(!recorded||recorded->end()){next_stage();return;}
-        held=recorded->held;pressed=recorded->pressed;++s.cursor;
+        held=recorded->held;pressed=recorded->pressed;
+        const auto delta=s.replay->extension.delta(s.stage,s.cursor);mode=(delta[0]||delta[1])?4:0;x=delta[0];y=delta[1];++s.cursor;
     }
-    th12_motion(s.replay?0:motion_mode,motion_x,motion_y);th12_tick(int(held),int(pressed));++s.hud_age;
+    th12_motion(mode,x,y);th12_tick(int(held),int(pressed));++s.hud_age;
     if(!s.replay){
-        // The retail key stream cannot represent adapter movement or tool
-        // mutations. Keep those runs playable without writing a false replay.
-        if(th12_motion_result()[2]||th12::practice::assisted())s.recorder.reset();
+        // Auto-Bomb is represented by resolved keys. Direct state-mutation
+        // cheats have no replay event contract and must not produce false files.
+        const auto& tools=th12::practice::toolSettings();
+        if((th12::practice::tools()&(447u&~32u))||tools.force_boss_move_down||tools.chromatic_ufo)s.recorder.reset();
         const int32_t* resolved=th12_practice_input();held=u32(resolved[0]);pressed=u32(resolved[1]);
-        if(s.recorder)s.recorder->push(held,pressed,s.previous&~held,std::clamp(fps_value>0?fps_value:60.f,0.f,60.f));
+        if(s.recorder){
+            s.recorder->push(held,pressed,s.previous&~held,std::clamp(fps_value>0?fps_value:60.f,0.f,60.f));
+            const auto* motion=th12_motion_result();s.recorder->motion(motion[0],motion[1],motion[3]!=0);
+        }
         th12_set_wall_time(now);
     }
     s.previous=held;
     const i32 events=th12_sound_events();const auto* e=static_cast<const th12::sound_system::Event*>(th12_sound_events_ptr());
-    for(i32 i=0;i<events;++i)audio.effect(e[i].id,e[i].pan,e[i].stop!=0);
+    if(seek_target<0)for(i32 i=0;i<events;++i)audio.effect(e[i].id,e[i].pan,e[i].stop!=0);
     const u32 serial=th12_music_serial();
-    if(serial!=s.music_serial){s.music_serial=serial;if(s.run.mode!=ModeDemo){audio.play_music(th12_music_track());if(const auto id=audio.music_name();!s.replay&&!id.empty())profile.unlock_music(id);}}
+    if(serial!=s.music_serial){s.music_serial=serial;if(s.run.mode!=ModeDemo){audio.play_music(th12_music_track());if(s.replay)audio.pause_music(external_paused||seek_target>=0);if(const auto id=audio.music_name();!s.replay&&!id.empty())profile.unlock_music(id);}}
     if(s.replay)return;
     profile.record_play_frame(s.run.character,s.run.shot);
     // A declared card's title goes to the score file (Player Data shows it);
@@ -463,7 +486,8 @@ double Game::logical_interval()const{
     return runtime_options.thprac&&session&&!session->replay&&menus&&menus->state.scene==MenuScene::Playing&&!practice_ui.captures()?th12_practice_interval(0,0,0,0):1./60.;
 }
 bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
-    presentation_alpha=runtime_options.limit_presentation||!session||session->replay||phase!=Phase::Menu||menus->state.scene!=MenuScene::Playing?1:std::clamp(alpha,0.f,1.f);
+    const bool replay_control=session&&session->replay&&(external_paused||external_rate!=1||seek_target>=0||((map_buttons(pad)|pad.keyboard)&(InShot|InSkip|InFocus)));
+    presentation_alpha=runtime_options.limit_presentation||!session||replay_control||phase!=Phase::Menu||menus->state.scene!=MenuScene::Playing?1:std::clamp(alpha,0.f,1.f);
     // Upstream createFrameRateMeter: displayed frames over wall time, once a second.
     frame_timing[0]=frame_timing[1]=frame_timing[2]=0;
     const double interval=last_frame>=0?now-last_frame:0;u32 game_ticks=0;
@@ -504,7 +528,7 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
         if(seek_target>=0&&phase==Phase::Menu&&menus->state.scene==MenuScene::Playing){
             const double deadline=host::seconds()+.008;
             for(int n=0;n<1200&&session&&int(session->cursor)<seek_target&&phase==Phase::Menu&&host::seconds()<deadline;++n){game_tick(0,now);handle_flow();captured=false;}
-            if(session&&int(session->cursor)>=seek_target){seek_target=-1;external_paused=true;}
+            if(session&&int(session->cursor)>=seek_target){seek_target=-1;external_paused=!seek_resume;audio.stop_effects();audio.pause_music(external_paused);}
             ticks=0;
         }
     }
@@ -518,7 +542,7 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
     for(u32 n=0;n<ticks&&phase!=Phase::Loading&&!quit;++n){
         if(phase==Phase::Startup){tick_loading();continue;}
         tick_loading(); // the indicator outlives its load while it retires
-        const u32 pressed=n==0?ui&~previous_ui:0;if(n==0)previous_ui=ui;
+        const u32 pressed=n==0?(ui&~previous_ui)|pad.pressed:0;if(n==0)previous_ui=ui;
         auto& state=menus->state;
         if(ending){
             ending->tick(ui,pressed);
@@ -535,14 +559,14 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
             if(pressed&InRetry){menus->clear_keys(previous_ui&~u32(InRetry));menus->tick(InRetry);}
             title->tick(menus->state,*menus);actions();break;
         }
-        menus->tick(ui);title->tick(menus->state,*menus);
+        menus->tick(ui,n==0?pad.pressed:0);title->tick(menus->state,*menus);
         // Upstream: a queued start/continue/retry/resume/return replaces or
         // reinitialises the session, so the old one is not ticked this tick;
         // any action ends the frame's ticks.
         const bool acted=menus->has_actions();bool blocked=false;
         if(acted){blocked=menus->blocks_session();actions();if(phase==Phase::Loading||quit)break;}
         if(!blocked&&(menus->state.scene==MenuScene::Playing||menus->state.scene==MenuScene::Demo)&&session&&phase==Phase::Menu){
-            {const double t0=host::seconds();game_tick(ui&0x2ff&~u32(InPause),now);const double t=host::seconds()-t0;timing[0]+=t;frame_timing[0]+=t*1000;++game_ticks;}
+            {const double t0=host::seconds();game_tick(ui&0x2ff&~u32(InPause),now,n==0?pad.pressed&0x2ff&~u32(InPause):0);const double t=host::seconds()-t0;timing[0]+=t;frame_timing[0]+=t*1000;++game_ticks;}
             handle_flow();captured=false;if(menus->has_actions()){actions();break;}
             if(phase==Phase::Loading)break;
         }
@@ -566,7 +590,7 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
     const bool hide_game=in_game&&menus->state.scene==MenuScene::Playing&&th12::practice::toolSettings().disable_master_display;
     if(in_game&&!captured&&!hide_game){const double t0=host::seconds();
         scene->capture({fps_value,session->hud_age,session->replay?0:th12::fullGameFlow.continueCount,session->run.mode==ModePractice||(session->replay&&session->replay->info.practice),
-            th12::fullGameFlow.status==th12::FullGameStatus::StageClear,session->high_score});
+            th12::fullGameFlow.status==th12::FullGameStatus::StageClear,session->high_score,session->replay?session->replay->recorded_fps(session->stage,session->cursor):-1});
         captured=true;const double t=host::seconds()-t0;timing[1]+=t;frame_timing[1]=t*1000;}
     if(session&&!session->replay&&phase!=Phase::Loading)th12_set_wall_time(now);
     {const double t0=host::seconds();if(hide_game)gpu.begin({0,0,0,1});else draw();practice_ui.render(gpu);const double t=host::seconds()-t0;timing[2]+=t;frame_timing[2]=t*1000;}

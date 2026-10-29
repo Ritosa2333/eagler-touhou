@@ -4,6 +4,7 @@
 // with the PC game's replay/ folder.
 #pragma once
 #include "Platform.hpp"
+#include "ReplayExtension.hpp"
 #include <array>
 #include <optional>
 #include <string>
@@ -28,11 +29,12 @@ struct ReplayInfo {
     i32 character=0,shot=0,difficulty=0,final_stage=1,continues=0;bool practice=false;
 };
 struct Replay {
-    ReplayInfo info;std::vector<ReplayStage> stages;std::vector<u8> data;
+    ReplayInfo info;std::vector<ReplayStage> stages;std::vector<u8> data;ReplayExtension extension;
     const ReplayStage* stage(i32 number)const{for(const auto& s:stages)if(s.number==number)return &s;return nullptr;}
     const ReplayStage* after(i32 number)const{const ReplayStage* best=nullptr;for(const auto& s:stages)if(s.number>number&&(!best||s.number<best->number))best=&s;return best;}
     // nullopt past the stage's last record (an ended stream).
     std::optional<ReplayInput> input(i32 stage,u32 frame)const;
+    i32 recorded_fps(i32 stage,u32 frame)const;
 };
 bool parse_replay(const std::vector<u8>& file,Replay& out,std::string& error);
 // Only the 112-byte header (the list pages decode no further).
@@ -49,6 +51,9 @@ public:
         :character(character),shot(shot),difficulty(difficulty),practice(practice),config(config){}
     void begin_stage(i32 number,i32 seed,const ReplayInitial& initial);
     void push(u32 held,u32 pressed,u32 released,float fps);
+    void motion(i32 x,i32 y,bool unlimited);
+    bool unlimited()const{return extension.unlimited;}
+    void metadata(std::optional<std::array<i32,20>> practice,bool assisted,std::map<i32,std::vector<i32>> damage){extension.practice=practice;extension.assisted=assisted;extension.damage=std::move(damage);}
     void set_spell_time(i32 index,i32 encoded){if(active&&index>=0&&index<20)active->spell_times[size_t(index)]=encoded;}
     void finish_stage(bool end=false);
     bool recording()const{return bool(active);}
@@ -58,6 +63,7 @@ private:
     struct Stage {i32 number=1,seed=0;ReplayInitial initial;std::array<i32,21> spell_times{};std::vector<ReplayInput> inputs;std::vector<u8> fps;};
     i32 character,shot,difficulty;bool practice;ReplayConfig config;
     std::vector<Stage> stages;std::optional<Stage> active;
+    ReplayExtension extension;
 };
 
 // The replay folder: th12_01..25.rpy (fixed slots) and th12_ud????.rpy

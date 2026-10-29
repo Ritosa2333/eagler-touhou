@@ -29,7 +29,7 @@ int virtual_key(SDL_Keycode key){
 struct Application {
     SDL_Window* window=nullptr;SDL_GLContext context=nullptr;
     std::unique_ptr<Game> game;std::vector<SDL_Gamepad*> pads;FrameClock clock;
-    u32 virtual_held=0,controls=0;int motion=0,x=0,y=0;
+    u32 virtual_held=0,controls=0,pulses=0;int motion=0,x=0,y=0;
     bool focused=true,stop=false,vsync=false;
     ~Application(){
         game.reset();for(auto* pad:pads)SDL_CloseGamepad(pad);
@@ -42,7 +42,7 @@ struct Application {
     void remove(SDL_JoystickID id){for(auto it=pads.begin();it!=pads.end();){if(SDL_GetGamepadID(*it)==id){SDL_CloseGamepad(*it);it=pads.erase(it);}else ++it;}}
     PadSample sample(){
         PadSample out;if(!focused)return out;
-        auto& held=out.keyboard;held=virtual_held|controls;
+        auto& held=out.keyboard;held=virtual_held|controls;out.pressed=pulses;pulses=0;
 #ifndef __EMSCRIPTEN__
         const bool* k=SDL_GetKeyboardState(nullptr);
         if(k[SDL_SCANCODE_LEFT])held|=InLeft;if(k[SDL_SCANCODE_RIGHT])held|=InRight;
@@ -98,6 +98,7 @@ extern "C" SDL_AppResult SDL_AppInit(void** state,int argc,char** argv){
         if(arg=="--always-hitbox")runtime_options.always_hitbox=true;
         if(arg=="--no-thprac")runtime_options.thprac=false;
         if(arg=="--no-music")runtime_options.music=false;
+        if(arg=="--full-music")runtime_options.full_music=true;
     }
     if(!SDL_Init(SDL_INIT_VIDEO|SDL_INIT_EVENTS|SDL_INIT_GAMEPAD))return failure(SDL_GetError());
     host::locate_data(argc,argv);
@@ -188,6 +189,7 @@ extern "C" void SDL_AppQuit(void* state,SDL_AppResult result){
 extern "C" {
 void th12_host_key(int key,int down){if(!active)return;const u32 bit=input_bit(key);if(down)active->virtual_held|=bit;else active->virtual_held&=~bit;active->game->practice_key(key,down!=0);}
 void th12_host_controls(unsigned held,int mode,int x,int y){if(!active)return;active->controls=held&0x2802ff;active->motion=mode>=0&&mode<=4?mode:0;active->x=x;active->y=y;}
+void th12_host_pressed(unsigned pressed){if(active)active->pulses|=pressed&0x2802ff;}
 int th12_host_pointer(int type,int id,float x,float y){return active&&active->game&&active->game->practice_pointer(type,id,x,y);}
 void th12_host_wheel(float x,float y,float horizontal,float vertical){if(active&&active->game)active->game->practice_wheel(x,y,horizontal,vertical);}
 const char* th12_host_state(){return active&&active->game?active->game->host_state().c_str():"{\"scene\":\"closed\"}";}
@@ -195,8 +197,9 @@ void th12_host_stop(){if(active){active->game->flush_profile();active->stop=true
 void th12_host_audio(int paused){if(active){if(paused)active->game->focus_lost();active->game->suspend_audio(paused!=0);active->clock.reset();}}
 void th12_host_flush(){if(active)active->game->flush_profile();}
 void th12_host_refresh_music(){if(active)active->game->refresh_music();}
-void th12_host_clear(int pointers){if(active){if(pointers){active->controls=0;active->motion=0;}else active->virtual_held=0;active->game->clear_inputs(pointers!=0);}}
+void th12_host_clear(int pointers){if(active){if(pointers){active->controls=active->pulses=0;active->motion=0;}else active->virtual_held=0;active->game->clear_inputs(pointers!=0);}}
 void th12_host_mobile(int enabled,int visible){if(active)active->game->mobile_panels(enabled!=0,visible!=0);}
 void th12_host_options(int limited,int hitbox,int thprac,int language,int music){runtime_options={limited!=0,hitbox!=0,thprac!=0,std::clamp(language,0,2),music!=0};}
+void th12_host_music_mode(int full){runtime_options.full_music=full!=0;}
 int th12_host_playback(int action,const char* path,int value){return active&&active->game&&active->game->playback(action,path,value);}
 }

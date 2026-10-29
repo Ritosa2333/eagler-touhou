@@ -149,9 +149,9 @@ bool TitleScenes::capture_button(i32 button){
     if(state.scene!=MenuScene::KeyConfig||state.capture_joy<0||button<0||button>31)return false;
     state.joy_draft[size_t(state.capture_joy)]=button;state.capture_joy=-1;return true;
 }
-void TitleScenes::tick(u32 held){
+void TitleScenes::tick(u32 held,u32 pulses){
     auto& s=state;++s.age;
-    const u32 pressed=held&~previous_held;previous_held=held;u32 repeat=0;
+    const u32 pressed=(held&~previous_held)|pulses;previous_held=held;u32 repeat=0;
     for(u32 bit=0;bit<32;++bit){const u32 mask=1u<<bit;if(held&mask){const i32 age=++hold_ages[bit];if(age>=26&&(age-26)%8==0)repeat|=mask;}else hold_ages[bit]=0;}
     if(pending){
         ++s.transition_age;

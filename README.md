@@ -1,6 +1,6 @@
 # 东方星莲船多人合作版
 
-[适配与验证](ADAPTATION.md) · [工作区](../../WORKSPACE.md)
+[开发指南](docs/DEVELOPMENT.md) · [适配与验证](ADAPTATION.md) · [工作区](../../WORKSPACE.md)
 
 [SDL3 / GLES 3 平台库](portable/sdl/README.md)通过 `TH12_BUILD_SDL_HOST=ON` 构建，目标为 `th12_sdl_host`，链接本目录多人核心。原生库提供资源与绘制基础；当前房间、回滚与多人录像由 Web 多人宿主提供。
 

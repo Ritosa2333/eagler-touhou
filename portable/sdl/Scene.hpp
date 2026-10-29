@@ -37,7 +37,7 @@ struct TextDescriptor {std::string text;i32 font=0;float x=0,y=0,z=0,scale_x=1,s
 class Scene {
 public:
     Scene(Renderer& r,TextRaster& t,Banks& b,const ExeTables& e);
-    struct Options {float current_fps=-1;i32 hud_age=-1;i32 score_low_digit=0;bool practice=false;bool stage_clear=false;double high_score=0;};
+    struct Options {float current_fps=-1;i32 hud_age=-1;i32 score_low_digit=0;bool practice=false;bool stage_clear=false;double high_score=0;i32 recorded_fps=-1;};
     void set_geometry(i32 stage,StdGeometry g){geometry_stage=stage;geometry=std::move(g);}
     void reset_presentation();
     void capture(const Options& options);

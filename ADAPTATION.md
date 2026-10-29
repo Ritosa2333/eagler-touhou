@@ -212,4 +212,4 @@ node ports/th12-mp/scripts/check-multiplayer-browser.mjs
 
 ## SDL3 共用应用
 
-桌面与 Web 应用层的资源、流程、绘制和练习工具统一由 [SDL3 运行层](portable/sdl/README.md) 管理。普通版提供单独的 SDL Web 人工验收包，既有正式 Web 构建保留；多人版同步平台库并继续使用原多人会话。构建入口和录像、音乐、存档的归属见该指南。
+[SDL3 平台库](portable/sdl/README.md)与普通版同步资源、流程、绘制、音频和普通扩展录像编解码，直接链接本目录多人核心。当前正式多人 Web 程序继续使用现有房间、回滚、观战及多人录像宿主。构建与模式边界见 [开发指南](docs/DEVELOPMENT.md)。

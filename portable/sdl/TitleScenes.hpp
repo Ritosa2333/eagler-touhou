@@ -66,7 +66,7 @@ public:
         return false;}
     // One 60 Hz UI tick. Bits as the core's input word plus 0x80000 Enter and
     // 0x200000 the Retry shortcut.
-    void tick(u32 held);
+    void tick(u32 held,u32 pulses=0);
     bool capture_button(i32 button);
     // Upstream clearKeys; buttons still held count as held, not as new presses.
     void clear_keys(u32 held=0){previous_held=held;hold_ages.fill(0);}

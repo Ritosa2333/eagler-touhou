@@ -36,8 +36,8 @@ std::vector<MusicTrack> parse_music_layout(const std::vector<u8>& fmt){
 struct Audio::Impl {
     struct Voice {ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false,paused=false,playing=false;
         ~Voice(){if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
-    struct Music {host::PcmStream stream;ma_sound sound{};ma_decoder decoder{};bool decoded=false,initialized=false,attached=false;
-        ~Music(){if(attached)ma_sound_uninit(&sound);if(initialized)ma_data_source_uninit(&stream.base);if(decoded)ma_decoder_uninit(&decoder);}};
+    struct Music {host::PcmStream stream;ma_sound sound{};ma_decoder decoder{};ma_audio_buffer_ref buffer{};std::vector<float> pcm;bool decoded=false,initialized=false,buffer_ready=false,attached=false;
+        ~Music(){if(attached)ma_sound_uninit(&sound);if(initialized)ma_data_source_uninit(&stream.base);if(buffer_ready)ma_audio_buffer_ref_uninit(&buffer);if(decoded)ma_decoder_uninit(&decoder);}};
     ma_engine engine{};SDL_AudioStream* device=nullptr;bool engine_ready=false,ready=false,suspended=false,refill=true,music_paused=false;
     std::vector<std::vector<u8>> samples;std::array<std::unique_ptr<Voice>,64> voices;std::array<SoundRecord,64> records{};std::array<bool,64> known{};
     std::unique_ptr<Music> music;FILE* bgm=nullptr;std::vector<char> bgm_buffer;std::unique_ptr<host::BgmReader> reader;std::vector<MusicTrack> tracks;i32 track=-1;
@@ -101,8 +101,21 @@ void Audio::play_music(i32 index){
         const auto filename=host::paths().data_file(("music/"+stem+".ogg").c_str());
         a.music.reset();auto next=std::make_unique<Impl::Music>();auto config=ma_decoder_config_init(ma_format_f32,2,44100);
         if(ma_decoder_init_file(filename.c_str(),&config,&next->decoder)!=MA_SUCCESS){host::log("audio: %s unavailable",filename.c_str());return;}next->decoded=true;
-        ma_data_source_set_loop_point_in_pcm_frames(&next->decoder,t.loop_start/t.align,t.length/t.align);
-        if(ma_sound_init_from_data_source(&a.engine,&next->decoder,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&next->sound)!=MA_SUCCESS)return;
+        ma_data_source* source=&next->decoder;
+        if(runtime_options.full_music){
+            // Decode this track before attaching it to the mixer. Keep one PCM
+            // owner, released on track change; no unbounded all-track cache.
+            constexpr ma_uint64 MaxFrames=256ull*1024*1024/(sizeof(float)*2);
+            ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&length)!=MA_SUCCESS||!length||length>MaxFrames){error="OGG decoded length exceeds the 256 MiB track limit";host::log("audio: %s",error.c_str());return;}
+            next->pcm.resize(size_t(length*2));ma_uint64 done=0;
+            while(done<length){ma_uint64 read=0;const auto result=ma_decoder_read_pcm_frames(&next->decoder,next->pcm.data()+done*2,std::min<ma_uint64>(16384,length-done),&read);done+=read;if(result!=MA_SUCCESS||!read)break;}
+            if(!done){error="OGG full decode produced no PCM frames";host::log("audio: %s",error.c_str());return;}
+            next->pcm.resize(size_t(done*2));ma_decoder_uninit(&next->decoder);next->decoded=false;
+            if(ma_audio_buffer_ref_init(ma_format_f32,2,next->pcm.data(),done,&next->buffer)!=MA_SUCCESS)return;
+            next->buffer_ready=true;source=&next->buffer;
+        }
+        ma_data_source_set_loop_point_in_pcm_frames(source,t.loop_start/t.align,t.length/t.align);
+        if(ma_sound_init_from_data_source(&a.engine,source,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&next->sound)!=MA_SUCCESS)return;
         next->attached=true;ma_sound_set_looping(&next->sound,MA_TRUE);ma_sound_set_volume(&next->sound,native_music_gain(bgm_volume));
         a.music=std::move(next);ma_sound_start(&a.music->sound);return;
     }
@@ -134,7 +147,7 @@ void Audio::update(double seconds){
     if(t>=1||from<=0){stop_music();return;}
     ma_sound_set_volume(&a.music->sound,float(from*std::pow(std::pow(10.0,-2.5)/from,t)));
 }
-void Audio::pause_music(bool paused){auto& a=*impl;if(!a.music||a.music_paused==paused)return;a.music_paused=paused;if(paused)ma_sound_stop(&a.music->sound);else ma_sound_start(&a.music->sound);}
+void Audio::pause_music(bool paused){auto& a=*impl;if(a.music_paused==paused)return;a.music_paused=paused;if(paused&&a.device)SDL_ClearAudioStream(a.device);if(!a.music)return;if(paused)ma_sound_stop(&a.music->sound);else ma_sound_start(&a.music->sound);}
 bool Audio::mix(float* pcm,u32 frames){
     ma_uint64 read=0;if(!impl->ready||ma_engine_read_pcm_frames(&impl->engine,pcm,frames,&read)!=MA_SUCCESS||read!=frames)return false;
     for(u32 n=0;n<frames*2;++n)pcm[n]=std::clamp(pcm[n],-1.f,1.f);return true;
