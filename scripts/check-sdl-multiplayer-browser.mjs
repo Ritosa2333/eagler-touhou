@@ -44,6 +44,7 @@ try{
  for(const [count,mode,delay,automatic]of scenarios){
   const context=await browser.newContext({viewport:{width:count*640,height:1040}}),page=await context.newPage(),errors=[],requests=[];
   page.on('pageerror',e=>errors.push(e.message));
+  await page.route('**/game.css',route=>route.abort());
   await context.addInitScript(delay=>{if(!delay)return;const send=RTCDataChannel.prototype.send;RTCDataChannel.prototype.send=function(data){const copy=typeof data==='string'?data:data.slice(0),channel=this;setTimeout(()=>{if(channel.readyState==='open')send.call(channel,copy);},delay);};},inputLatency);page.on('request',r=>requests.push(r.url()));
   page.on('console',m=>{if(m.type()==='error')console.error('BROWSER',m.text());});
 
@@ -52,6 +53,7 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.evaluate(n=>{for(let s=0;s<n;s++)addRuntime(s);},count+(count===2?1:0));await page.waitForFunction(n=>ready.size===n,count+(count===2?1:0),{timeout:90000});
   await page.evaluate(async c=>{for(let s=0;s<c.count+(c.count===2?1:0);s++){await rpc(s,'configure',{music:'none',language:'ja',sharedResources:[{path:'/unifont.otf',url:'/shared/unifont.otf'},{path:'/msgothic.ttc',url:'/shared/msgothic.ttc'}],options:{thpracEnabled:false,netplayDifficulty:c.difficulty}});await rpc(s,'prepare-room');}},{count,difficulty});
   const frames=()=>page.frames().filter(f=>f.url().includes('runtimeEpoch=')).slice(0,count);
+  for(const f of page.frames().filter(f=>f.url().includes('runtimeEpoch='))){assert.equal(await f.locator('.toolbar').isVisible(),false);assert.equal(await f.locator('footer').isVisible(),false);assert.equal(await f.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(8, 9, 12)');}
   for(const f of frames())await f.evaluate(()=>{const r=window.__th12Runtime;window.preloadedCore=r.core;window.samples={};const tick=r.multiplayer.tick;r.multiplayer.tick=(...args)=>{const out=tick(...args),s=r.status();if(s[2]&&s[3]&&s[3]<5000)window.samples[s[3]]=r.core._th12_mp_hash();return out;};});
   assert((await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.scene())))).every(s=>s==='title'));
   if(reports.length===0){
@@ -64,13 +66,40 @@ try{
     }
     assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);
     console.log('ROOM_IDLE_TITLE_PASS',after);
+    // The room title permits navigation and Options but never exits the host.
+    for(const code of ['Escape','Escape','Enter','KeyZ','ArrowDown']){
+      console.log('ROOM_PRESS',code);
+      await page.evaluate(async code=>{await rpc(0,'keyboard',{code,down:true,inputSource:'physical'});},code);
+      await new Promise(r=>setTimeout(r,90));
+      await page.evaluate(async code=>{await rpc(0,'keyboard',{code,down:false,inputSource:'physical'});},code);
+      await new Promise(r=>setTimeout(r,500));
+    }
+    assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[],'room input must not terminate the native application');
+    assert.equal(await frames()[0].evaluate(()=>__th12Runtime.menu().scene),'title');
+    assert.equal(await frames()[0].evaluate(()=>__th12Runtime.menu().selection),2,'room navigation remains available (Extra is locked)');
+    for(let n=0;n<4;++n){
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowDown',down:true,inputSource:'physical'}));await new Promise(r=>setTimeout(r,90));
+      await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowDown',down:false,inputSource:'physical'}));await new Promise(r=>setTimeout(r,90));
+    }
+    assert.equal(await frames()[0].evaluate(()=>__th12Runtime.menu().selection),6);
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:true,inputSource:'physical'}));await new Promise(r=>setTimeout(r,90));
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:false,inputSource:'physical'}));
+    await wait(()=>frames()[0].evaluate(()=>__th12Runtime.menu().scene==='options'),'room Options');console.log('ROOM_OPTIONS_ENTERED');
+    await new Promise(r=>setTimeout(r,250));
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Escape',down:true,inputSource:'physical'}));await new Promise(r=>setTimeout(r,90));
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Escape',down:false,inputSource:'physical'}));
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:true,inputSource:'physical'}));await new Promise(r=>setTimeout(r,90));
+    await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:false,inputSource:'physical'}));
+    await wait(()=>frames()[0].evaluate(()=>__th12Runtime.menu().scene==='title'),'return from room Options');
+    console.log('ROOM_OPTIONS_NAVIGATION_PASS');
   }
   await page.screenshot({path:resolve(out,`title-${count}-${mode}-${delay}-${automatic}.png`)});
   for(let s=0;s<count;++s)await send(members[s],{type:'set-ready',ready:true},m=>m.room?.seats[s]?.ready);
   const start=await send(members[0],{type:'start',adonisMode:mode,inputDelay:delay,inputDelayAuto:automatic,predictionReserve:2},m=>m.type==='start');const requestsAtStart=requests.length;
-  await page.evaluate(async cfg=>{await Promise.all(Array.from({length:cfg.count},async(_,s)=>{await rpc(s,'configure',{music:'none',language:'ja',options:{thpracEnabled:false,multiplayerLocalPlayerVisibility:true,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+cfg.port+'/?'+new URLSearchParams({room:cfg.room,run:String(cfg.serial),member:cfg.room+'-private-'+s,player:String(s)}),netplayPlayer:s,netplayPlayerCount:cfg.count,netplayDifficulty:cfg.difficulty,netplaySeed:1234,netplayLoadouts:[{character:0,shot:1},{character:1,shot:1},{character:2,shot:1}].slice(0,cfg.count),netplayInputDelay:cfg.delay,netplayInputDelayAuto:cfg.automatic,netplayAdonisMode:cfg.mode,netplayPredictionLimit:cfg.mode===1?0:12,netplayPredictionReserve:2}});await rpc(s,'launch',{launchSerial:1});}));},{count,mode,delay,automatic,difficulty,port,room,serial:start.serial});
+  await page.evaluate(async cfg=>{await Promise.all(Array.from({length:cfg.count},async(_,s)=>{await rpc(s,'configure',{music:'none',language:'ja',options:{thpracEnabled:false,touchEnabled:true,touchMovementMode:'touch-unlimited',touchSensitivity:100,multiplayerLocalPlayerVisibility:true,netplayMode:'lan',netplayUrl:'ws://127.0.0.1:'+cfg.port+'/?'+new URLSearchParams({room:cfg.room,run:String(cfg.serial),member:cfg.room+'-private-'+s,player:String(s)}),netplayPlayer:s,netplayPlayerCount:cfg.count,netplayDifficulty:cfg.difficulty,netplaySeed:1234,netplayLoadouts:[{character:0,shot:1},{character:1,shot:1},{character:2,shot:1}].slice(0,cfg.count),netplayInputDelay:cfg.delay,netplayInputDelayAuto:cfg.automatic,netplayAdonisMode:cfg.mode,netplayPredictionLimit:cfg.mode===1?0:12,netplayPredictionReserve:2}});await rpc(s,'launch',{launchSerial:1});}));},{count,mode,delay,automatic,difficulty,port,room,serial:start.serial});
   console.log('LAUNCHED',{count,mode,delay,automatic});let diagnosticsAt=0;
   await wait(async()=>{const e=await page.evaluate(()=>events.filter(e=>e.event==='error'));assert.deepEqual(e,[]);const status=await Promise.all(frames().map(f=>f.evaluate(()=>({status:__th12Runtime.status(),scene:__th12Runtime.scene(),world:__th12Runtime.state().frame}))));if(Date.now()-diagnosticsAt>10000){diagnosticsAt=Date.now();console.log('FRONTIERS',JSON.stringify(status));}return status.every(n=>n.status[3]>=180);},'first native frames');
+  assert.equal(await page.evaluate(count=>events.filter(e=>e.event==='first-frame'&&e.epoch<=count&&e.launchSerial===1).length,count),count,'Launcher must accept first-frame for this room launch');
   for(const f of frames())await f.evaluate(async()=>{
     window.dispatchEvent(new KeyboardEvent('keydown',{code:'ShiftLeft',key:'Shift',shiftKey:true}));
     await new Promise(r=>setTimeout(r,150));
@@ -81,7 +110,7 @@ try{
   await wait(async()=>{const states=await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.state())));return states.every(s=>s.players.every(p=>!(p.held&8)));},'released keyboard Shift after mapping owner attachment');
   const paceStart=Date.now(),paceFrames=await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.status()[3])));
   for(let round=0;round<4;++round){await page.evaluate(async round=>{await rpc(round%2,'keyboard',{code:'ArrowRight',down:true,inputSource:'physical'});await rpc(1-round%2,'keyboard',{code:'KeyZ',down:true,inputSource:'physical'});},round);await new Promise(r=>setTimeout(r,250));await page.evaluate(async round=>{await rpc(round%2,'keyboard',{code:'ArrowRight',down:false,inputSource:'physical'});await rpc(1-round%2,'keyboard',{code:'KeyZ',down:false,inputSource:'physical'});},round);}
-  await page.evaluate(()=>rpc(0,'keyboard',{code:'Escape',down:true,inputSource:'physical'}));
+  await page.evaluate(()=>rpc(0,'touch-controls',{fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:1,joystickX:0,joystickY:0}));
   await wait(async()=>{const states=await Promise.all(frames().map(f=>f.evaluate(()=>({s:__th12Runtime.state(),n:__th12Runtime.status(),hash:__th12Runtime.core._th12_mp_hash()}))));assert.deepEqual(await page.evaluate(()=>events.filter(e=>e.event==='error')),[]);return states.every(p=>p.s.paused&&p.n[4]!==0xffffffff&&p.n[4]>=p.n[3]-1)&&states.every(p=>p.s.frame===states[0].s.frame);},'confirmed shared pause');
   await page.evaluate(()=>rpc(0,'keyboard',{code:'Escape',down:false,inputSource:'physical'}));await new Promise(r=>setTimeout(r,500));
   const paused=await Promise.all(frames().map(f=>f.evaluate(()=>({world:__th12Runtime.state(),status:__th12Runtime.status(),hash:__th12Runtime.core._th12_mp_hash(),sameCore:preloadedCore===__th12Runtime.core,samples:window.samples,rollback:globalThis.__eaglerNetplayLanRollback??0}))));

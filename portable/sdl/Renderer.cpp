@@ -72,7 +72,7 @@ bool Renderer::initialize(u32 scale,std::string& error){
     int profile=0;SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,&profile);desktop_gl=profile!=SDL_GL_CONTEXT_PROFILE_ES;
 #endif
     host::log("graphics: %s",reinterpret_cast<const char*>(glGetString(GL_VERSION)));
-    scale_=scale;
+    scale_=scale;surface_ready=false;
     const GLuint vs=compile(GL_VERTEX_SHADER,vertex_source,error);if(!vs)return false;
     const GLuint fs=compile(GL_FRAGMENT_SHADER,fragment_source,error);if(!fs)return false;
     program=glCreateProgram();glAttachShader(program,vs);glAttachShader(program,fs);glLinkProgram(program);glDeleteShader(vs);glDeleteShader(fs);
@@ -130,7 +130,7 @@ void Renderer::release(AnmFile& file){for(auto& e:file.entries)if(e.texture){GLu
 void Renderer::begin(Color c){
     glBindFramebuffer(GL_FRAMEBUFFER,target);glViewport(0,0,GLsizei(640*scale_),GLsizei(480*scale_));glDisable(GL_SCISSOR_TEST);
     glClearColor(c.r,c.g,c.b,c.a);glClear(GL_COLOR_BUFFER_BIT);glUseProgram(program);glBindVertexArray(vao);glBindBuffer(GL_ARRAY_BUFFER,vbo);
-    draws=vertices=0;current=0;batch.clear();primitive_=Triangles;blend_=-2;surface_ready=false;material(0);fog_color(0,0,0);
+    draws=vertices=0;current=0;batch.clear();primitive_=Triangles;blend_=-2;material(0);fog_color(0,0,0);
     // A fresh store for this frame's vertices (the GPU may still read the last one).
     if(!stream_capacity)stream_capacity=size_t(1)<<20;glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(stream_capacity),nullptr,GL_STREAM_DRAW);stream_used=0;
 }
@@ -192,7 +192,10 @@ void Renderer::solid_triangles(const Vertex* v,const u32* indices,u32 count,i32 
 void Renderer::copy_stage_surface(){
     flush();glBindTexture(GL_TEXTURE_2D,surface_.name);
     glCopyTexSubImage2D(GL_TEXTURE_2D,0,0,0,0,0,GLsizei(640*scale_),GLsizei(480*scale_));
-    surface_.available=glGetError()==GL_NO_ERROR;current=0;
+    // Storage and dimensions are stable: validate the first copy, then avoid
+    // a synchronous WebGL driver round trip on every presentation frame.
+    if(!surface_ready)surface_ready=glGetError()==GL_NO_ERROR;
+    surface_.available=surface_ready;current=0;
 }
 void Renderer::capture_pause_field(){
     flush();glDisable(GL_SCISSOR_TEST);const i32 s=i32(scale_);

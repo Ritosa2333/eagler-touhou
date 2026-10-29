@@ -216,7 +216,11 @@ void TitleScenes::cancel(){
     auto& s=state;if(s.scene==MenuScene::Playing||s.scene==MenuScene::Ending||s.scene==MenuScene::Demo)return;
     sound(9);
     switch(s.scene){
-    case MenuScene::Title:if(s.selection==7)confirm();else select(7);break;
+    case MenuScene::Title:
+#ifndef TH12_MULTIPLAYER
+        if(s.selection==7)confirm();else select(7);
+#endif
+        break;
     case MenuScene::Difficulty:animate(MenuEvent::Cancel);wait(6,[this]{open_title();});break;
     case MenuScene::Character:animate(MenuEvent::Cancel);wait(6,[this]{enter(MenuScene::Difficulty,run.mode==ModeExtra?0:run.difficulty);});break;
     case MenuScene::Shot:animate(MenuEvent::Cancel);wait(6,[this]{enter(MenuScene::Character,run.character);});break;
@@ -241,6 +245,10 @@ void TitleScenes::confirm(){
     auto& s=state;if(s.scene==MenuScene::Playing||s.scene==MenuScene::Ending||s.scene==MenuScene::Demo)return;
     const MenuChoice* item=s.selection>=0&&size_t(s.selection)<s.choices.size()?&s.choices[size_t(s.selection)]:nullptr;
     if(item&&item->disabled){sound(17);return;}
+#ifdef TH12_MULTIPLAYER
+    // Room previews allow navigation and Options, as in TH15's room title.
+    if(s.scene==MenuScene::Title&&s.selection!=6)return;
+#endif
     // 449b61..449c72 changes the Music Room track without the menu OK sound;
     // finishing a replay name plays 18 instead.
     if(s.scene!=MenuScene::MusicRoom&&!(s.scene==MenuScene::Name&&s.name_kind==NameKind::Replay&&item&&item->id==90))sound(7);

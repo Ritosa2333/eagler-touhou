@@ -17,6 +17,7 @@ public:
     void wheel(float x,float y,float horizontal,float vertical);
     int tick(int scene,bool ready,bool replay,int difficulty,unsigned held,std::array<int32_t,20>& parameters);
     bool captures()const;
+    int vertices()const;
     void render(Renderer&);
 };
 }

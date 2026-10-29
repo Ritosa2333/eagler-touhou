@@ -77,8 +77,9 @@ struct Application {
 };
 Application* active=nullptr;
 std::string failure_reason;
+const char* stop_source="initialization";
 SDL_AppResult failure(const std::string& why){
-    failure_reason=why;
+    failure_reason=why;stop_source="native-failure";
     host::log("%s",why.c_str());
 #ifdef __EMSCRIPTEN__
     EM_ASM({Module.th12Error?.(UTF8ToString($0));},why.c_str());
@@ -92,6 +93,7 @@ SDL_AppResult failure(const std::string& why){
 using namespace th12host;
 
 extern "C" SDL_AppResult SDL_AppInit(void** state,int argc,char** argv){
+    failure_reason.clear();stop_source="initialization";
     auto app=std::make_unique<Application>();active=app.get();*state=app.release();
 #ifdef __EMSCRIPTEN__
     SDL_SetHint(SDL_HINT_EMSCRIPTEN_CANVAS_SELECTOR,"#screen");
@@ -128,7 +130,7 @@ extern "C" SDL_AppResult SDL_AppInit(void** state,int argc,char** argv){
 #ifdef __EMSCRIPTEN__
     EM_ASM({Module.th12Started?.();});
 #endif
-    return SDL_APP_CONTINUE;
+    stop_source="running";return SDL_APP_CONTINUE;
 }
 extern "C" SDL_AppResult SDL_AppIterate(void* state){
     auto& app=*static_cast<Application*>(state);if(app.stop)return SDL_APP_SUCCESS;
@@ -149,7 +151,10 @@ extern "C" SDL_AppResult SDL_AppIterate(void* state){
     if(ticks)EM_ASM({Module.th12BeforeFrame?.();});
 #endif
     app.game->set_motion(app.motion,app.x,app.y);
-    if(!app.game->frame(app.sample(),ticks,now*1000,app.clock.alpha(period)))return app.game->error.empty()?SDL_APP_SUCCESS:failure(app.game->error);
+    if(!app.game->frame(app.sample(),ticks,now*1000,app.clock.alpha(period))){
+        if(!app.game->error.empty())return failure(app.game->error);
+        stop_source="menu-quit";return SDL_APP_SUCCESS;
+    }
     int w=0,h=0;SDL_GetWindowSizeInPixels(app.window,&w,&h);
     if(w>0&&h>0){const double start=host::seconds();app.game->present(w,h);SDL_GL_SwapWindow(app.window);app.game->presented((host::seconds()-start)*1000);}
 #ifdef __EMSCRIPTEN__
@@ -163,7 +168,7 @@ extern "C" SDL_AppResult SDL_AppIterate(void* state){
 extern "C" SDL_AppResult SDL_AppEvent(void* state,SDL_Event* event){
     auto& app=*static_cast<Application*>(state);
     switch(event->type){
-    case SDL_EVENT_QUIT:return SDL_APP_SUCCESS;
+    case SDL_EVENT_QUIT:stop_source="sdl-quit";return SDL_APP_SUCCESS;
     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
     case SDL_EVENT_WINDOW_ENTER_FULLSCREEN:
     case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN:app.clock.reset();break;
@@ -192,9 +197,13 @@ extern "C" SDL_AppResult SDL_AppEvent(void* state,SDL_Event* event){
     return SDL_APP_CONTINUE;
 }
 extern "C" void SDL_AppQuit(void* state,SDL_AppResult result){
+#ifdef __EMSCRIPTEN__
+    const auto* app=static_cast<Application*>(state);
+    const std::string final_state=app&&app->game?app->game->host_state():"{}";
+#endif
     delete static_cast<Application*>(state);active=nullptr;
 #ifdef __EMSCRIPTEN__
-    EM_ASM({Module.th12Stopped?.($0,UTF8ToString($1));},result==SDL_APP_SUCCESS?0:1,failure_reason.c_str());
+    EM_ASM({Module.th12Stopped?.($0,UTF8ToString($1),{source:UTF8ToString($2),state:JSON.parse(UTF8ToString($3))});},result==SDL_APP_SUCCESS?0:1,failure_reason.c_str(),stop_source,final_state.c_str());
 #endif
 }
 extern "C" {
@@ -207,12 +216,12 @@ void th12_host_mp_room(){if(active)active->game->multiplayer_room();}
 void th12_host_mp_sound(int id,int pan,int stop){if(active)active->game->multiplayer_sound(id,pan,stop!=0);}
 #endif
 void th12_host_key(int key,int down){if(!active)return;const u32 bit=input_bit(key);if(down)active->virtual_held|=bit;else active->virtual_held&=~bit;active->game->practice_key(key,down!=0);}
-void th12_host_controls(unsigned held,int mode,int x,int y){if(!active)return;active->controls=held&0x2802ff;active->motion=mode>=0&&mode<=4?mode:0;active->x=x;active->y=y;}
-void th12_host_pressed(unsigned pressed){if(active)active->pulses|=pressed&0x2802ff;}
+void th12_host_controls(unsigned held,int mode,int x,int y){if(!active)return;active->controls=held&0x2803ff;active->motion=mode>=0&&mode<=4?mode:0;active->x=x;active->y=y;}
+void th12_host_pressed(unsigned pressed){if(active)active->pulses|=pressed&0x2803ff;}
 int th12_host_pointer(int type,int id,float x,float y,int desktop){return active&&active->game?active->game->practice_pointer(type,id,x,y,desktop!=0):0;}
 void th12_host_wheel(float x,float y,float horizontal,float vertical){if(active&&active->game)active->game->practice_wheel(x,y,horizontal,vertical);}
 const char* th12_host_state(){return active&&active->game?active->game->host_state().c_str():"{\"scene\":\"closed\"}";}
-void th12_host_stop(){if(active){active->game->flush_profile();active->stop=true;}}
+void th12_host_stop(){if(active){active->game->flush_profile();active->stop=true;stop_source="host-stop";}}
 void th12_host_audio(int paused){if(active){if(paused)active->game->focus_lost();active->game->suspend_audio(paused!=0);active->clock.reset();}}
 void th12_host_flush(){if(active)active->game->flush_profile();}
 void th12_host_refresh_music(){if(active)active->game->refresh_music();}

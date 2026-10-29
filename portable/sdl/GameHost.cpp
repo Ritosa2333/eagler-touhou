@@ -28,7 +28,7 @@ const std::string& Game::host_state(){
         ||mp_replay
 #endif
         ;
-    const char* kind=!(playing||network_game)?"menu":replaying?"replay":th12::messageVM.active?"dialogue":"game";
+    const char* kind=!(playing||network_game)?"menu":replaying?"replay":th12::messageVM.active&&(th12::messageVM.flags&1||th12::messageVM.wait>0)?"dialogue":"game";
     float player_x=h[1],player_y=h[2];
 #ifdef TH12_MULTIPLAYER
     if(mp_playing&&mp_local>=0&&mp_local<int(th12::multiplayer::options.count)){
@@ -38,13 +38,13 @@ const std::string& Game::host_state(){
     std::ostringstream out;
     out<<"{\"scene\":\""<<phase_name()<<"\",\"kind\":\""<<kind<<"\",\"ready\":"<<((playing||network_game)&&th12_player_state()==1?"true":"false")
        <<",\"fps\":"<<((playing||network_game)?game_fps:fps_value)
-       <<",\"menuReady\":"<<(menus&&menus->ready()?"true":"false")<<",\"menuAge\":"<<(menus?menus->state.age:0)<<",\"selection\":"<<(menus?menus->state.selection:0)
+       <<",\"menuSerial\":"<<(menus?menus->state.serial:0)<<",\"menuReady\":"<<(menus&&menus->ready()?"true":"false")<<",\"menuAge\":"<<(menus?menus->state.age:0)<<",\"selection\":"<<(menus?menus->state.selection:0)
        <<",\"stage\":"<<(session?session->stage:0)<<",\"character\":"<<(session?session->run.character:0)<<",\"shot\":"<<(session?session->run.shot:0)
        <<",\"cursor\":"<<(session?session->cursor:0)<<",\"instance\":\""<<(session?session->stage:0)<<':'<<th12_player_instance()<<"\""
        <<",\"gestureScope\":\""<<(session?session->stage:0)<<"\""
        <<",\"x\":"<<int(std::lround(player_x*128))<<",\"y\":"<<int(std::lround(player_y*128))
        <<",\"fast\":"<<th12_player_speed(0)<<",\"slow\":"<<th12_player_speed(1)<<",\"paused\":"<<((external_paused||(menus&&(menus->state.scene==MenuScene::Pause||menus->state.scene==MenuScene::PauseConfirm)))?"true":"false")
-       <<",\"capturing\":"<<(practice_ui.captures()?"true":"false")<<",\"track\":\""<<audio.music_name()<<"\",\"seeking\":"<<(seek_target>=0?"true":"false")<<"}";
+       <<",\"practiceVertices\":"<<practice_ui.vertices()<<",\"capturing\":"<<(practice_ui.captures()?"true":"false")<<",\"track\":\""<<audio.music_name()<<"\",\"seeking\":"<<(seek_target>=0?"true":"false")<<"}";
     host_snapshot=out.str();return host_snapshot;
 }
 bool Game::playback(int action,const char* path,int value){

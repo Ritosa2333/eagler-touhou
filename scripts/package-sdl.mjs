@@ -29,7 +29,7 @@ for(const source of sources){
   if(source.endsWith('.mjs')){let text=bytes.toString('utf8');text=text.replace(/((?:import|export)\s+(?:[^'";]*?\s+from\s*)?)(['"])(\.[^'"]+)\2/g,(_,prefix,quote,value)=>prefix+quote+reference(source,value)+quote);text=text.replace(/new URL\((['"])(\.?\/?[^'"]+\.wasm)\1,\s*import\.meta\.url\)/g,(_,quote,value)=>'new URL('+quote+reference(source,value.startsWith('.')?value:'./'+value)+quote+', import.meta.url)');bytes=Buffer.from(text);}
   fs.writeFileSync(path.join(out,outputNames.get(source)),bytes);
 }
-fs.writeFileSync(path.join(out,'th12.html'),fs.readFileSync(path.join(root,'site/sdl.html'),'utf8').replace('./game-sdl.mjs','./game.mjs'));
+fs.writeFileSync(path.join(out,'th12.html'),fs.readFileSync(path.join(root,'site/sdl.html'),'utf8').replace('./game-sdl.mjs','./game.mjs').replace('<link rel="stylesheet" href="./game.css">','<style>'+fs.readFileSync(path.join(root,'site/game.css'),'utf8')+'</style>'));
 const executionFiles=Object.fromEntries([...outputNames.values()].sort().map(name=>[name,sha(fs.readFileSync(path.join(out,name)))]));
 const manifest={game:'th12',protocol:'eagler-touhou/1',adapter:'cpp-sdl3-gles',version:'0.5.0-sdl',product:'th12mp',variant:'multiplayer',profile:'multiplayer',completeAdapter:true,
   execution:{sha256:sha(Buffer.from(JSON.stringify(executionFiles)))},features:{multiplayer:true,thprac:false,languages:true,focusHitbox:false},music:['ogg-stream','ogg-full','none'],touchReplay:true,sourceSha256:build.sourceSha256};

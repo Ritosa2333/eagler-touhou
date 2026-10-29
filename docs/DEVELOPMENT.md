@@ -19,3 +19,9 @@ node ports/th12-mp/scripts/check-sdl-multiplayer-browser.mjs
 ## 呈现性能验证
 
 多人前端与普通前端共用动画缓存代次、静止轨道年龄快进、背景裁剪缓冲复用的实现。轨道回退按原始绑定重算；优化不修改 Session、确认帧、输入预测或世界快照。稀疏年龄、移动中的停止 VM、中断和显示随机数通过 `tests/sdl-animation.test.mjs` 与原版 ANM 基准验证；延迟 RTC、观战及录像重建通过 `scripts/check-sdl-multiplayer-browser.mjs` 验证。方法与数据见[迁移版性能验证](../../../archive/th12-sdl-performance-20261029/README.md)。
+
+## SDL 浏览器输入与输出
+
+Web 画布沿用 640×480 离屏目标，窗口呈现负责缩放；背景复制在首次校验后复用纹理。桌面保持 2 倍离屏目标。启动器的 direct-touch 坐标按 iframe 归一化，thprac-mouse 坐标使用 CSS 像素，均通过画布实际边界换算。
+
+SDL 输入保留触控 Esc 的 0x100 位。ImGui 鼠标与键盘、菜单手势、原生初始化和对局首帧分别遵守各自生命周期。正式代码包在入口内嵌布局样式，房间及观战使用同一页面布局。验证范围见[输入与呈现记录](../../../archive/th12-sdl-input-20261029/README.md)。
