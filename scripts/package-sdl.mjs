@@ -18,7 +18,7 @@ function collect(name){
 }
 collect('site/game-sdl.mjs');
 const outputNames=new Map(),owners=new Map();for(const source of sources){const name=({'game-sdl.mjs':'game.mjs','touhou12.mjs':'core.mjs','touhou12.wasm':'core.wasm'})[path.posix.basename(source)]??path.posix.basename(source);if(owners.has(name))throw Error('模块重名：'+source+' / '+owners.get(name));owners.set(name,source);outputNames.set(source,name);}
-const allowed=new Set([...outputNames.values(),'th12.html','manifest.json','runtime-files.json']);
+const allowed=new Set([...outputNames.values(),'th12.html','manifest.json','runtime-files.json','crash-code-identities.json']);
 if(fs.existsSync(out))for(const name of fs.readdirSync(out))if(!allowed.has(name)&&!['game-sdl.mjs','touhou12.mjs','touhou12.wasm'].includes(name))throw Error('请使用单独的 SDL Runtime 输出目录：'+name);
 // Retire the previous SDL development filenames from this generated directory.
 for(const name of ['game-sdl.mjs','touhou12.mjs','touhou12.wasm']){const file=path.join(out,name);if(fs.existsSync(file))fs.unlinkSync(file);}
@@ -31,6 +31,7 @@ for(const source of sources){
 }
 fs.writeFileSync(path.join(out,'th12.html'),fs.readFileSync(path.join(root,'site/sdl.html'),'utf8').replace('./game-sdl.mjs','./game.mjs'));
 fs.writeFileSync(path.join(out,'manifest.json'),JSON.stringify({game:'th12',protocol:'eagler-touhou/1',adapter:'cpp-sdl3-gles',version:'0.5.0-sdl',profile:'normal',completeAdapter:true,features:{thprac:build.features?.thprac!==false,languages:true,focusHitbox:false},music:['ogg-stream','ogg-full','none'],touchReplay:true,sourceSha256:build.sourceSha256},null,2)+'\n');
+fs.writeFileSync(path.join(out,'crash-code-identities.json'),JSON.stringify({schema:'eagler-touhou/crash-code-identities/1',game:'th12',files:['core.mjs','core.wasm'].map(name=>{const bytes=fs.readFileSync(path.join(out,name));return {path:name,bytes:bytes.length,sha256:sha(bytes)};})},null,2)+'\n');
 const files=Object.fromEntries([...allowed].filter(name=>name!=='runtime-files.json').sort().map(name=>{const bytes=fs.readFileSync(path.join(out,name));return [name,{bytes:bytes.length,sha256:sha(bytes)}];}));
 fs.writeFileSync(path.join(out,'runtime-files.json'),JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game:'th12',files},null,2)+'\n');
 console.log(JSON.stringify({runtime:out,files:Object.keys(files).length,applicationExecuted:false}));
