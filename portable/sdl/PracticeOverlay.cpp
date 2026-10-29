@@ -96,6 +96,13 @@ bool PracticeOverlay::captures()const{
     return false;
 #endif
 }
+int PracticeOverlay::vertices()const{
+#if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
+    const auto* data=initialized?ImGui::GetDrawData():nullptr;return data?data->TotalVtxCount:0;
+#else
+    return 0;
+#endif
+}
 void PracticeOverlay::render(Renderer& gpu){
 #if defined(TH12_ENABLE_THPRAC) && TH12_ENABLE_THPRAC
     if(!initialized)return;const ImDrawData* data=ImGui::GetDrawData();if(!data)return;
@@ -103,7 +110,7 @@ void PracticeOverlay::render(Renderer& gpu){
     for(int l=0;l<data->CmdListsCount;++l){const ImDrawList& list=*data->CmdLists[l];
         for(const ImDrawCmd& command:list.CmdBuffer){
             if(command.UserCallback){if(command.UserCallback!=ImDrawCallback_ResetRenderState)command.UserCallback(&list,&command);continue;}
-            gpu.flush();gpu.bind({unsigned(uintptr_t(command.TextureId)),1,1,false,false,true},false);
+            gpu.flush();gpu.clip(2);gpu.bind({unsigned(uintptr_t(command.TextureId)),1,1,false,false,true},false);
             gpu.scissor(int(command.ClipRect.x),int(command.ClipRect.y),int(command.ClipRect.z-command.ClipRect.x),int(command.ClipRect.w-command.ClipRect.y));
             for(unsigned i=0;i<command.ElemCount;++i){const auto& v=list.VtxBuffer[int(command.VtxOffset+list.IdxBuffer[int(command.IdxOffset+i)])];const auto c=v.col;
                 gpu.push({v.pos.x-data->DisplayPos.x,v.pos.y-data->DisplayPos.y,v.uv.x,v.uv.y,

@@ -67,7 +67,13 @@ bool Game::boot(){
         error="Original EXE tables are missing: supply th12.exe or the prepared platform tables";return false;
     }
     host::log("th12.exe: %s (%s)",exe.version.empty()?"unknown version, tables look valid":exe.version.c_str(),exe.sha256.c_str());
-    if(!gpu.initialize(2,error)){error="renderer: "+error;return false;}
+    // Match the Web adapter's original 640x480 target; desktop keeps 2x output.
+#ifdef __EMSCRIPTEN__
+    constexpr u32 render_scale=1;
+#else
+    constexpr u32 render_scale=2;
+#endif
+    if(!gpu.initialize(render_scale,error)){error="renderer: "+error;return false;}
     if(!text.initialize())host::log("text: no Japanese font found; dialogue text is blank");
     host::log("text fonts: %s",text.font_names().c_str());
     if(!audio.initialize(archive,exe))host::log("audio: %s",audio.error.c_str());

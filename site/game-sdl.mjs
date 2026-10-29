@@ -7,6 +7,8 @@ import {installManagedShell} from '../src/managed-shell.mjs';
 import {openStore,allowedPath} from '../src/storage.mjs';
 import {prepareLocalization,isLocalizationResourcePath} from '../src/localization/loader.mjs';
 import {mountSdlContent} from '../src/sdl-content.mjs';
+import {sdlStopError} from '../src/sdl-lifecycle.mjs';
+import {sdlPointerPosition} from '../src/sdl-input.mjs';
 import {parseReplay} from '../src/replay.mjs';
 
 const canvas=document.querySelector('#screen'),notice=document.querySelector('#notice');
@@ -16,15 +18,16 @@ let core,store,localization,emit=()=>{},launched=false,terminated=false,firstFra
 let options={limitPresentationTo60:true},music='ogg',state={kind:'menu',key:'inactive',ready:false};
 let healthAt=0,frames=0,lastFrame=0,maxGap=0,syncedAt=0,syncQueue=Promise.resolve(),oldFiles=new Map();
 let viewer=null;const requestedMusic=new Set();
-let lastFailure='';const startupLog=[];
+let lastFailure='',nativeStarted=false;const startupLog=[];
 const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice();
 const equal=(a,b)=>a?.length===b.length&&a.every((v,i)=>v===b[i]);
 function fail(error){globalThis.__eaglerCrashReporterV1?.fatal(error,{source:'sdl-runtime'});lastFailure=error?.message??String(error);notice.textContent=lastFailure;emit({event:'error',message:lastFailure});}
 function vk(code){
   if(/^Key[A-Z]$/.test(code))return code.charCodeAt(3);
   if(/^Digit[0-9]$/.test(code))return code.charCodeAt(5);
+  if(/^Numpad[0-9]$/.test(code))return 96+Number(code.slice(6));
   if(/^F(?:[1-9]|1[0-2])$/.test(code))return 111+Number(code.slice(1));
-  return ({ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,Enter:13,Escape:27,Tab:9,Backspace:8,Space:32,ShiftLeft:16,ShiftRight:16,ControlLeft:17,ControlRight:17})[code]??0;
+  return ({ArrowLeft:37,ArrowUp:38,ArrowRight:39,ArrowDown:40,Enter:13,Escape:27,Tab:9,Backspace:8,Space:32,Delete:46,Insert:45,Home:36,End:35,PageUp:33,PageDown:34,Minus:189,Period:190,NumpadSubtract:109,NumpadDecimal:110,ShiftLeft:16,ShiftRight:16,ControlLeft:17,ControlRight:17})[code]??0;
 }
 function key(code,down,source='host'){
   const n=vk(code);if(!n)return;
@@ -43,7 +46,7 @@ function beforeFrame(){
   core._th12_host_pressed(sample.pressed);
 }
 function frame(){
-  const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind+':'+raw.instance};
+  const now=performance.now();const raw=JSON.parse(stringAt(core._th12_host_state()));state={...raw,key:raw.kind==='menu'?'menu:'+raw.menuSerial:raw.kind+':'+raw.instance};
   if(viewer&&!state.seeking&&state.scene==='replay-playing')viewer.target=null;
   if(!firstFrame){firstFrame=true;notice.textContent='';emit({event:'first-frame'});healthAt=now;}
   frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;
@@ -84,6 +87,7 @@ function practicePointer(message){
   return route===1||route===2;
 }
 function pointer(message){if(!practicePointer(message))touch.pointer(message,state);}
+function hostedPointer(message,normalized){return sdlPointerPosition(message,canvas.getBoundingClientRect(),{width:innerWidth,height:innerHeight},normalized);}
 
 async function configure(settings){
   const installed=new Map(),pack=settings.runtimePack;let total=0;
@@ -129,7 +133,7 @@ async function launch(){
   if(terminated)throw Error('请从启动器重新打开此会话');if(launched)throw Error('游戏已启动');launched=true;
   try{
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
-    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Error:message=>fail(Error(message)),th12Stopped:(code=0,reason='')=>{terminated=true;launched=false;if(code||!firstFrame){fail(Error(reason||lastFailure||startupLog.slice(-8).join('\n')||'游戏在首帧前退出'));return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
+    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.error(line);},onAbort:reason=>fail(Error(String(reason))),th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()]})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
@@ -137,7 +141,7 @@ async function launch(){
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!options.alwaysHitbox),Number(options.thpracEnabled!==false),locale,Number(music!=='none'));
     core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));
     const exitCode=core.callMain(['--data-dir','/game','--save-dir','/savesth12']);
-    if(terminated||exitCode)throw Error(lastFailure||startupLog.slice(-8).join('\n')||'游戏初始化失败');
+    if(terminated||exitCode)throw sdlStopError(exitCode??1,lastFailure,{source:'call-main'},{started:false,logs:startupLog});
     window.__th12Runtime={core,state:()=>JSON.parse(stringAt(core._th12_host_state()))};
     canvas.focus();
     for(const n of new Set(keys.values()))core._th12_host_key(n,1);
@@ -152,7 +156,7 @@ async function bootstrap(){
     const boundaryStore={list:()=>store.list(),read:path=>store.read(path),sync:()=>store.sync(),write:async(path,bytes)=>{await store.write(path,bytes);mountSave(path,bytes);oldFiles.set(path,copy(bytes));},remove:async path=>{await store.remove(path);if(core?.FS.analyzePath(path).exists)core.FS.unlink(path);oldFiles.delete(path);}};
     emit=installManagedShell({store:boundaryStore,running:()=>launched,replayViewer:()=>!!options.replayViewer,configure,resources:items=>assets.install(items,message=>emit(message)),launch,playback,
       key:(code,down,message)=>{if(!input.key(message,down,message.inputSource==='physical'?'physical':'virtual',key))key(keyboardCode(message),down);},
-      clearKeyboard,cancelTouch,touch:message=>{touch.controls(message,state);core?._th12_host_mobile(Number(!!message.thpracMobilePanelsEnabled),Number(!!message.thpracMobilePanelsVisible));},pointer:message=>pointer({...message,x:message.x*640,y:message.y*480}),practicePointer:message=>practicePointer({...message,x:message.x*640,y:message.y*480}),sync:syncRuntime},window,{announceReady:false});
+      clearKeyboard,cancelTouch,touch:message=>{touch.controls(message,state);core?._th12_host_mobile(Number(!!message.thpracMobilePanelsEnabled),Number(!!message.thpracMobilePanelsVisible));},pointer:message=>pointer(hostedPointer(message,true)),practicePointer:message=>practicePointer(hostedPointer({...message,pointerType:message.pointerType??'mouse'},false)),sync:syncRuntime},window,{announceReady:false});
     await assets.prepare();emit.ready();
   }else{
     notice.textContent='按“开始”进入 SDL3 版本';
@@ -160,7 +164,7 @@ async function bootstrap(){
   }
 }
 for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{
-  if(event.altKey||event.metaKey)return;
+  if(type==='keydown'&&(event.altKey||event.metaKey))return;
   if(!input.key(event,type==='keydown','physical',key))key(keyboardCode(event),type==='keydown','physical');
   if(vk(keyboardCode(event)))event.preventDefault();
 });
