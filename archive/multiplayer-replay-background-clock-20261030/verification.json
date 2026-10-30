@@ -1,0 +1,77 @@
+{
+  "schema": "eagler-touhou/mp-replay-background-clock/1",
+  "baseline": "73c192244290e721c81d7294f6564f1cda004d64",
+  "codeCommit": "06b803bd03ac16b5735c89f2ca1274ad64eda409",
+  "singlePlayerTreesUnchanged": true,
+  "validation": {
+    "th10NativeStd": "PASS: 29-frame continuous entry vs restored entry over 120 ticks; rewind and stage guards",
+    "th10ReplayArchive": "PASS: archived input and generation continuity",
+    "th11NativeStage": "PASS: 5 entry offsets x 120 ticks, signed negative-one offset, clock codec",
+    "th11Rollback": {
+      "passed": true,
+      "groups": 7,
+      "checks": 5151
+    },
+    "beforeFix": {
+      "th10": "Original STD interpreter fails continuous/restored script clock equality",
+      "th11": "Original camera callback fails continuous/restored script clock equality"
+    },
+    "th11SavedReplay": "PASS: selected chapter waits for native stage activation; exact frame seek and EOF retained; 250000 native archived inputs and browser metadata",
+    "adaptation": {
+      "th10Multiplayer": "PASS 7/7",
+      "th11Multiplayer": "PASS 7/7"
+    }
+  },
+  "production": {
+    "th10": {
+      "profile": "multiplayer",
+      "bytes": 3762287,
+      "sha256": "f325c50f3b206825d488d532394adf8873909174223d24c567920a9b6fd17f51",
+      "loaderSha256": "42e4d9e8a2f6462a55a83d3f260db89551e43d302885cb5d934077ff46ed5801",
+      "directoryHistory": {
+        "th10": {
+          "head": "eec77fc78062cd874adf4c8cb4abd8687ac44c87",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th10mp": {
+          "head": "1b286611687e6a74ea7538bc9779b7ee41372cab",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      }
+    },
+    "th11": {
+      "profile": "multiplayer",
+      "bytes": 3001174,
+      "sha256": "be9915f78b828b824297cf2af32f26f7cd544ace751b82eaa4b68ecea1483bc8",
+      "loaderSha256": "ee9b507b4028206ab4bd35958b45e7aa95c4a5ff083a9a4cde247353a05c0194",
+      "directoryHistory": {
+        "th11": {
+          "head": "306e302a11d1a4c7137d0370171499a63458ead2",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        },
+        "th11mp": {
+          "head": "290e8166da0ee0f5e191c19fd88a32cd6043db38",
+          "initialAncestor": true,
+          "latestAncestor": true,
+          "treeMatches": true
+        }
+      }
+    }
+  },
+  "additionalCodeCommit": "b959caf87f8665f7e0de8f8a4fe6cf9df0eaf30f",
+  "repositoryHistoryCheck": {
+    "passed": false,
+    "scope": "Full repository, beyond changed TH10/TH11 directories",
+    "failure": "Git for Windows subtree process segmentation fault while exporting unchanged ports/th12; default and 64 MiB Bash stack attempts",
+    "changedDirectoryProjectionChecks": "PASS: source trees and initial/latest original ancestors retained",
+    "newSubtreeControlTrailers": 0,
+    "baselineReproducesFailure": true,
+    "baseline": "73c192244290e721c81d7294f6564f1cda004d64"
+  }
+}

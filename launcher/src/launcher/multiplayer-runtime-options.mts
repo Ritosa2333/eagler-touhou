@@ -43,6 +43,7 @@ export interface MultiplayerRuntimeOptionInput {
   chapterThreshold?: number;
   iceServers: unknown;
   preferTurn?: boolean;
+  allowWebsocketFallback?: boolean;
   loadouts: MultiplayerRuntimeLoadout[];
 }
 
@@ -70,6 +71,7 @@ export interface MultiplayerRuntimeOptions {
   netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
   netplayPreferTurn?: boolean;
+  netplayAllowWebsocketFallback?: boolean;
   netplayLoadouts: MultiplayerRuntimeLoadout[];
 }
 
@@ -88,6 +90,8 @@ export function buildMultiplayerRuntimeOptions(
   }
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
+    throw new Error('WebSocket 回退开关必须为布尔值');
   if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
     throw new Error('TURN 偏好必须为布尔值');
   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
@@ -247,6 +251,7 @@ export function buildMultiplayerRuntimeOptions(
     } : {}),
     netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
     ...(input.preferTurn === true ? { netplayPreferTurn: true } : {}),
+    ...(input.allowWebsocketFallback === true ? {netplayAllowWebsocketFallback: true} : {}),
     netplayLoadouts: loadouts,
   };
 }

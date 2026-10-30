@@ -1,8 +1,7 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
-/** Main-derived transport/model tests with synthetic sockets, clocks, storage,
- * preparation and Runtime ports. No live relay, game, networking or persistence
- * acceptance. Authorities: lobby.mts and app440–780/6796–6849/7552–7940. */
+/** Production room/directory services with synthetic clocks, storage and Runtime
+ * ports. Protocol integration cases also use a real local Relay. */
 import test, {before, after} from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
@@ -12,6 +11,8 @@ import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {build} from 'esbuild';
+import {PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
+const spectatorProducts = Object.entries(PRODUCT_GAMES).filter(([, product]) => product.multiplayer?.spectator).map(([game]) => game + 'mp');
 const project = fileURLToPath(new URL('../../', import.meta.url));
 let work, owner;
 before(async () => {
@@ -183,7 +184,7 @@ test('rollback products default to D0 for both room creation and restored invite
     const socket=f.sockets[0],id=f.identity.lobbyClientId(product);socket.open();
     socket.message({type:'state',room:roomState(id,{predictionLimit:product==='th11mp'?12:8,seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'guest12345',name:'B',loadout:1,ready:true}]})});
     f.service.setTimingChoice(7);f.service.start();const started=socket.sent.findLast(m=>m.type==='start');
-    assert.ok(started,product);if(['th08mp','th09mp','th10mp'].includes(product)){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,product==='th09mp'?7:0);assert.equal(started.inputDelayAuto,false);
+    assert.ok(started,product);if(['th08mp','th09mp','th10mp'].includes(product)){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,0);assert.equal(started.inputDelayAuto,false);
       f.service.setRollbackEnabled(false);f.service.start();const delay=socket.sent.findLast(m=>m.type==='start');assert.equal(delay.adonisMode,1);assert.equal(delay.inputDelay,7);
     }
     if(product==='th11mp'){assert.equal(started.adonisMode,0);assert.equal(started.inputDelay,0);assert.equal(started.predictionLimit,12);}
@@ -509,7 +510,7 @@ test('discarding draft room settings revalidates without releasing prepared reso
 });
 
 test('every playing or full directory room admits spectators even without mid-run playback', () => {
-  for (const product of ['th06mp', 'th07mp', 'th08mp', 'th09mp', 'th10mp', 'th11mp', 'th15mp']) {
+  for (const product of spectatorProducts) {
     assert.equal(owner.directoryRoomCanEnter({product, phase: 'playing', players: 2, capacity: 2, joinable: false, spectatable: false}), true);
     assert.equal(owner.directoryRoomCanEnter({product, phase: 'lobby', players: 2, capacity: 2, joinable: false}), true);
   }
@@ -788,13 +789,14 @@ test('TH09 spectator invite joins without seating and waits for authoritative sp
   f.service.dispose();
 });
 
-for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp'])
+for(const product of spectatorProducts)
 test(`${product} resumes an admitted spectator launch after explicit resource recovery`,async()=>{
  let installed=false;
- const f=roomFixture({prepareResources:async()=>{if(!installed)throw Error('DATA missing');}});
+ const f=roomFixture({testBuild:()=>true,prepareResources:async()=>{if(!installed)throw Error('DATA missing');}});
  f.service.enterRoom(product,'1234',false);await flush();const socket=f.sockets[0];socket.open();
+ const timing=multiplayerInputTimingPolicy(multiplayerConfigForProduct(product));
  const room=roomState('host',{phase:'running',spectatorTimeline:true,startSerial:4,
-  predictionLimit:product==='th11mp'?12:product==='th15mp'?0:8,adonisMode:product==='th15mp'?1:0,
+  predictionLimit:timing.predictionLimit,adonisMode:timing.rollback?0:1,
   seats:[{clientId:'host',name:'A',loadout:0,ready:true},{clientId:'peer',name:'B',loadout:1,ready:true}]});
  socket.message({type:'state',room});f.service.spectate();
  socket.message({type:'spectator-start',serial:4,room});await flush();
@@ -881,8 +883,8 @@ test('TH09 directory admits full and starting rooms before spectator history is 
   }
 });
 
-for(const product of ['th06mp','th07mp','th08mp','th10mp','th11mp','th15mp'])test(`Directory observer intent never auto-reserves a player seat: ${product}`,async()=>{
-  const f=roomFixture();
+for(const product of spectatorProducts.filter(product=>!multiplayerConfigForProduct(product).inGameSelection))test(`Directory observer intent never auto-reserves a player seat: ${product}`,async()=>{
+  const f=roomFixture({testBuild:()=>true});
   assert.equal(f.service.restoreInvite('https://launcher.invalid/?j='+owner.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true}),product),true);
   await flush();const socket=f.sockets.at(-1);socket.open();
   socket.message({type:'state',room:roomState('other_host',{seats:[{clientId:'other_host',name:'A',loadout:0,ready:true},{clientId:'other_guest',name:'B',loadout:1,ready:true}]})});

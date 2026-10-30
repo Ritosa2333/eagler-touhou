@@ -252,7 +252,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       cancelDownload: async () => {if (fileDownload?.ownsPresentation()) fileDownload.controller.abort(new DOMException('已取消下载', 'AbortError')); else if (updating) updateAbort?.abort(); else if (downloadingMusic) musicAbort?.abort(); else if (downloadingPackage || downloadingLanguage) launchAbort?.abort(new DOMException('已取消下载', 'AbortError')); else if (blockingDownload) await blockingDownload.cancel(); else launchAbort?.abort(new DOMException('已取消下载', 'AbortError'));},
       playerStatus: feedback.playerStatus, toast: feedback.toast, noteGameDataTransfer: message => gameData.noteTransfer(message)},
   });
-  const network = createNetworkActivityTracker({fetchImpl: window.fetch.bind(window), onChange: transfer.networkSnapshot});
+  const fetchResource = window.fetch.bind(window);
+  const network = createNetworkActivityTracker({fetchImpl: fetchResource, onChange: transfer.networkSnapshot});
   const metadata = createMetadataService({baseUrl, storage, getGameVersion: selectedVersion, indexedDBFactory: window.indexedDB,
     translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(locale === 'en' ? 'en' : 'zh-CN', key, params);},
     webAudioAvailable: audio, webMidiAvailable: 'requestMIDIAccess' in window.navigator, mobile: preferTouchSettings(), locale: () => snapshot.locale,
@@ -308,8 +309,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     scheduler: {requestFrame: callback => window.requestAnimationFrame(callback), cancelFrame: id => window.cancelAnimationFrame(id),
       setTimer: callback => window.setTimeout(callback, 0), clearTimer: id => window.clearTimeout(id)},
   });
-  const preparationNetwork = createPreparationNetwork({foreground: network, baseUrl, translate: t, fetchImpl: window.fetch.bind(window)});
-  const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: window.fetch.bind(window), network: preparationNetwork,
+  const preparationNetwork = createPreparationNetwork({foreground: network, baseUrl, translate: t, fetchImpl: fetchResource});
+  const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: fetchResource, network: preparationNetwork,
     testBuild: entryUrl.searchParams.has('test'),
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
   let sessionStorage: Storage | null = null; try {sessionStorage = window.sessionStorage;} catch {}

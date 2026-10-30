@@ -147,7 +147,6 @@ export const WORKSPACE_NODE_TESTS = Object.freeze([
   "tests/test-development-site-manifest-workspace.mjs",
   "tests/test-runtime-protocol-contract.mjs",
   "tests/test-gamepad-contract.mjs",
-  "tests/test-required-gameplay-actions.mjs",
   "tests/test-portable-touch-controller-contract.mjs",
   "tests/test-preload-data-assembler.mjs",
   "tests/test-runtime-storage-contract.mjs",

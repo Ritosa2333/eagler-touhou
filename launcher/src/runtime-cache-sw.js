@@ -313,11 +313,15 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
       const cache = await caches.open(snapshot.name);
       const cached = await cache.match(absolute(path));
       if (cached) {
-        try { return deliver(await checked(cached, file), parsed.file); } catch { /* Repair this exact immutable address. */ }
+        try {
+          const verified = await checked(cached, file);
+          if (file.path === snapshot.descriptor.entry) console.info('[EAGLER|Runtime]', {source:'cache', root:parsed.root, generation:parsed.generation});
+          return deliver(verified, file.path);
+        } catch { /* Repair this exact immutable address. */ }
       }
       const fetched = await runtimeFile(absolute(path), file);
       await cache.put(absolute(path), fetched.clone()).catch(() => {});
-      return deliver(fetched, parsed.file);
+      return deliver(fetched, file.path);
     }
     // Explicit immutable requests never follow latest or change generation. In
     // a storage-restricted browser they remain ordinary same-origin HTTP loads.
@@ -335,7 +339,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRout
     if (parsed.file === C.RUNTIME_GENERATION_FILE) return deliver(json({ schema: C.RUNTIME_GENERATION_SCHEMA,
       protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }), parsed.file);
     if (!file) return new Response("Unknown Runtime resource", { status: 404 });
-    return deliver(await runtimeFile(absolute(path), file), parsed.file);
+    return deliver(await runtimeFile(absolute(path), file), file.path);
   }
   async function selectForLaunch(path, options) {
     const snapshot = await prepare(path, options);

@@ -1,6 +1,6 @@
 import {synchronizedMainAuthority} from './source-text.mjs';
-/** Independent pinned-main component/service regression. SYNTHETIC DOM + MEMORY
- * ROUTER ONLY: not production-host wiring, browser top layer, CSS, relay or runtime QA. */
+/** Production directory components and services under a synthetic DOM and router.
+ * Fixed UI history supplies comparison markup. */
 import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
@@ -10,6 +10,10 @@ import {createRequire} from 'node:module';
 import {dirname, resolve} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {installMountedDom} from './mounted-dom-environment.mjs';
+import {PRODUCT_GAMES} from '../../../common/contracts/product-catalog.mjs';
+
+const spectatorProducts = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.multiplayer?.spectator).map(([game]) => game + 'mp');
 
 const here = dirname(fileURLToPath(import.meta.url)), project = resolve(here, '../..');
 const require = createRequire(resolve(project, 'package.json'));
@@ -229,7 +233,7 @@ test('Rows enforce live/recruiting/joinable/membership/leaving gates and use the
   assert.equal(f.closeCalls, 0); assert.deepEqual(f.sessionWrites, [['clear', 'th06mp']]);
 });
 
-for (const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp']) test(`Full waiting room enters the spectator role through the directory: ${product}`, async () => {
+for (const product of spectatorProducts) test(`Full waiting room enters the spectator role through the directory: ${product}`, async () => {
   const f=await fixture({selectedProduct:product,host:{games:[product.slice(0,-2)]}}).live([
     room({product,capacity:2,players:2,joinable:false,seats:[{initial:'A',online:true},{initial:'B',online:true}]})]);
   const m=await mount(owners.DirectoryRoomRows,{snapshot:f.service.getSnapshot(),service:f.service,assetUrl});

@@ -103,8 +103,8 @@ window.multiplayerSmoke={
   nativeStatus,
   stageClearSetup(){return !!core.mp_fixture_stage_clear_setup?.(app);},
   endingSetup(kind){return !!core.mp_fixture_ending_setup?.(app,kind);},
-  lastSpellSetup(spell,deadHost=0,challenge=false){return core.mp_fixture_last_spell_setup(app,spell,deadHost,+challenge);},
-  lastSpellState(){return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_last_spell_state(app),40));},
+  lastSpellSetup(spell,deadHost=0,challenge=false,story=false){return core.mp_fixture_last_spell_setup(app,spell,deadHost,+challenge,+story);},
+  lastSpellState(){return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_last_spell_state(app),48));},
   endingState(){return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_ending_state(app),12));},
   savedReplays(){return Module.FS.readdir('/savesth08-multiplayer/replay').filter(name=>name.endsWith('.rpyx')).map(name=>{
     const bytes=Module.FS.readFile('/savesth08-multiplayer/replay/'+name),p=core.allocate(bytes.length);

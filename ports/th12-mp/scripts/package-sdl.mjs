@@ -2,11 +2,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
+import {verifySdlBuild} from './sdl-build-inputs.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 const out=path.resolve(process.argv.find(a=>a.startsWith('--output='))?.slice(9)??path.join(root,'build-eagler-multiplayer'));
 const build=JSON.parse(fs.readFileSync(path.join(root,'site/runtime/sdl/build.json'),'utf8'));
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-for(const [name,expected]of Object.entries(build.sources)){if(sha(fs.readFileSync(path.resolve(root,name)))!==expected)throw Error('请先重新编译 SDL 核心：'+name);}
+verifySdlBuild(root,build);
 const sources=new Set(['../../common/browser/runtime-crash-reporter.js','site/game.css','site/runtime/sdl/touhou12.wasm']);
 function collect(name){
   if(sources.has(name))return;sources.add(name);

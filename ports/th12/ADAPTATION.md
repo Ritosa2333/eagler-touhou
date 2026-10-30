@@ -30,7 +30,7 @@
 | RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 不适用 | normal：本作未声明判定点显示 |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
@@ -57,7 +57,7 @@
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [Deathbomb 与移动保持](../../docs/adaptation/input.md#touch-09) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | normal：[held-touch-continuity](../../docs/adaptation/status.json) |
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
@@ -87,6 +87,7 @@
 | AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | normal：[immediate-sfx-routing](../../docs/adaptation/status.json) |
 | MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | normal：本作使用 OGG 音乐 |
 | MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | normal：本作使用 OGG 音乐 |
 | MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | normal：本作使用 OGG 音乐 |
@@ -183,6 +184,18 @@
 
 SDL 入口已接上重开与常显判定点、触控位移录制及确认按下信号、练习元数据与伤害源恢复、录像定位音频处理、普通倍速录像插值和录制帧率显示。实现对应 [平台代码](portable/sdl/README.md)、[浏览器边界](site/game-sdl.mjs) 与 [开发指南](docs/DEVELOPMENT.md)。上表的状态由检查报告生成；本段源码范围与本次构建清单共同供人工验收使用。
 
-## 完整 SDL 入口迁移
+## SDL 入口审核记录
 
-正式构建使用 SDL3／GLES 应用，普通版与多人版保留各自核心与来源祖先。构建、回放、回滚和子树导出证据见 [本轮验证](../../archive/th12-complete-sdl-20261029/README.md)。
+[2026-10-30 验证记录](../../archive/th12-sdl-review-20261030/README.md)登记本轮正式 Runtime 身份和检查范围。
+
+| 编号 | 本轮操作与结果 |
+| --- | --- |
+| RUNTIME-01、RUNTIME-02、RUNTIME-03 | 共用真实 Runtime 驱动检查协议、首帧及命令；异步取消和错误字段由浏览器边界夹具验证。 |
+| RUNTIME-04、RUNTIME-06 | 检查退出重进、暂停与重开；实际设备后台恢复和判定点视觉按专项验收。 |
+| INPUT、TOUCH、THPRAC | 正式 Wasm 下检查虚拟手柄、触控移动、练习界面与原生 Replay；两侧改键浏览器检查通过。 |
+| AUDIO、DISPLAY | 流式与整曲 OGG 均采集实际 PCM，Replay 暂停及定位输出为静音；60 Hz 呈现限制使用原生时钟回归。 |
+| STORE、REPLAY | 共用驱动检查用户文件及重新启动，作品浏览器检查原生录像保存与播放控制。 |
+
+RUNTIME-04、INPUT-06、TOUCH-16 与 AUDIO-05 的页面隐藏清理、损坏音乐提示和替换恢复见[SDL 输入与音乐错误验证](../../archive/th12-sdl-invariants-20261030/README.md)。
+
+TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。

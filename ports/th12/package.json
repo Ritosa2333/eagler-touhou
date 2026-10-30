@@ -23,7 +23,7 @@
     "package:eagler": "node scripts/package-eagler.mjs",
     "package:launcher": "node scripts/package-launcher.mjs",
     "prepare:eagler-content": "node scripts/prepare-managed-content.mjs",
-    "test:sdl": "node --test tests/sdl-clock.test.mjs",
+    "test:sdl": "node --test tests/sdl-*.test.mjs tests/managed-adapter.test.mjs",
     "check:sdl-browser": "node scripts/check-sdl-browser.mjs"
   }
 }

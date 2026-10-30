@@ -280,15 +280,16 @@ u32 mp_fixture_ending_setup(BrowserRuntime* r,u32 ending){
 // Load the original stage/Spell Practice scripts; all later ECL, hit,
 // cancellation and supervisor updates use the native game owners.
 __attribute__((export_name("mp_fixture_last_spell_setup")))
-u32 mp_fixture_last_spell_setup(BrowserRuntime* r,u32 spell,u32 dead_host,u32 challenge){
+u32 mp_fixture_last_spell_setup(BrowserRuntime* r,u32 spell,u32 dead_host,u32 challenge,u32 story){
     if(!r||!r->app.in_game()||!r->app.game.ready()||
-       (spell!=144&&spell!=172)||dead_host>2||challenge>1)return 0;
+       (spell!=144&&spell!=172)||dead_host>3||challenge>1||story>1)return 0;
     auto& game=r->app.game;auto& session=r->app.session;
     auto wanted=game.load_request();game.unload();
     wanted.stage=spell==144?6:7;wanted.spell=i32(spell);wanted.flags=0x4000;
     wanted.initial=true;wanted.keep_resources=false;wanted.release_resources=true;
     session.multiplayer_session.challenge_mode=challenge!=0;
     if(!game.start(wanted))return 100+game.load_failure_step;
+    if(story)game.globals.game_flags&=~0x4000u;
     for(u32 seat=0;seat<session.player_count;++seat){
         auto& p=game.pilot(seat).status();
         p.life.state=0;p.life.timer.set(0);p.life.clear_frames=0;
@@ -299,11 +300,15 @@ u32 mp_fixture_last_spell_setup(BrowserRuntime* r,u32 spell,u32 dead_host,u32 ch
         auto& p=game.pilot(0).status();p.life.state=2;p.life.predead_count=0;
         session.pilot_values[0].set_lives(0);
     }else if(dead_host==2)game.enter_spirit(0);
+    else if(dead_host==3){
+        auto& p=game.pilot(0).status();p.life.state=2;p.life.predead_count=20;p.life.auto_bomb=0;
+        game.globals.game_flags|=0x400u;
+    }
     return game.prepare_frame(0)?1:0;
 }
 __attribute__((export_name("mp_fixture_last_spell_state")))
 const i32* mp_fixture_last_spell_state(BrowserRuntime* r){
-    static i32 out[40]{};std::fill(out,out+40,0);if(!r||!r->app.in_game())return out;
+    static i32 out[48]{};std::fill(out,out+48,0);if(!r||!r->app.in_game())return out;
     const auto& g=r->app.game;out[0]=i32(g.globals.game_flags);out[1]=i32(g.globals.spell_flags);
     out[2]=i32(g.globals.spell_number);out[3]=g.enemies.state.active_count;
     if(auto* boss=g.globals.boss_slots[0]){out[4]=boss->life;out[5]=boss->lifetime.current;out[6]=i32(boss->flags);}
@@ -312,6 +317,8 @@ const i32* mp_fixture_last_spell_state(BrowserRuntime* r){
         s[0]=p.life.state;s[1]=p.life.predead_count;s[2]=p.life.auto_bomb;
         s[3]=p.bomb.active;s[4]=p.bomb.type;s[5]=p.bomb.timer.current;
         s[6]=p.life.timer.current;s[7]=g.cooperation.seats[seat].spirit;
+        out[40+seat*2]=Scalar::truncate(r->app.session.pilot_resources[seat].lives);
+        out[41+seat*2]=Scalar::truncate(r->app.session.pilot_resources[seat].bombs);
     }
     out[32]=g.control.state.play_frames;out[33]=g.load_failure_step;out[34]=g.faults();
     return out;

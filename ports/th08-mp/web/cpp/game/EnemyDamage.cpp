@@ -46,9 +46,17 @@ bool last_spell_waits_for_players(EnemyDamageActions& actions){
     }
     return true;
 }
+bool enemy_bomb_protected(const EclVm& enemy,EnemyDamageActions& actions){
+    if(!(enemy.flags&0x80000000u))return false;
+    for(u32 seat=0;seat<actions.participant_count();++seat){
+        EnemyDamageParticipant pilot;
+        if(actions.participant(seat,pilot)&&pilot.bomb)return true;
+    }
+    return false;
+}
 bool damage_enemy_multiplayer(EclVm& enemy,u8 time_spell,u8 spell_bomb_damage,GameValues& values,i32& bomb_hit,u32& owner,EnemyDamageActions& actions){
     enemy.last_damage=0;bomb_hit=0;owner=0;
-    if(!(enemy.flags&0x40))return false;
+    if(!(enemy.flags&0x40)||enemy_bomb_protected(enemy,actions))return false;
     i32 ordinary=0,bomb=0,max_source=-1;u32 viable=0;
     for(u32 seat=0;seat<actions.participant_count();++seat){
         EnemyDamageParticipant pilot;

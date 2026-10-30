@@ -44,7 +44,6 @@ export function notApplicable(check, game, variant) {
   if (check.profile === 'midi' && !product.musicCapabilities?.midi) return '本作使用 OGG 音乐';
   if (check.profile === 'thprac' && build.features.thprac === false) return '该构建未提供 thprac';
   if (check.profile === 'language' && !product.features.languages) return '本作使用内置原文';
-  if (check.id === 'RUNTIME-06' && product.features.focusHitbox === false) return '本作未声明判定点显示';
   return null;
 }
 

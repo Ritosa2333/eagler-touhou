@@ -91,6 +91,11 @@ for (const [name, sources, flags = []] of [
     ...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','BrowserPeerTransport']
       .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['replay-background-clock', [
+    ...['tests/replay-background-clock-test.cpp','web/cpp/game/StageScript.cpp',
+      'web/cpp/game/Timer.cpp','web/cpp/game/Interpolation.cpp','web/cpp/game/FogInterpolation.cpp',
+      'web/cpp/game/Arithmetic.cpp','web/cpp/game/GameMath.cpp'].map(path=>resolve(root,path)),softfloat,
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-ffp-contract=off','-fno-strict-aliasing']],
   ['multiplayer-replay-archive', [
     resolve(root,'tests/multiplayer-replay-archive-test.cpp'),
     resolve(root,'web/cpp/multiplayer/ReplayArchive.cpp'),

@@ -11,7 +11,7 @@ const require = createRequire(new URL('../../launcher/package.json', import.meta
 const {parse} = require('acorn');
 
 export function runtimeSourceFiles(game, product) {
-  if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game.mjs'];
+  if (game === 'th12') return ['src/managed-shell.mjs', 'src/managed-input.mjs', 'site/game-sdl.mjs'];
   if (product.runtimeFileLayout !== 'directory') return ['resources/shell.html'];
   if (game === 'th09') return ['web/sdl-runtime/managed.mjs'];
   if (['th075', 'th15'].includes(game)) return ['web/sdl-runtime/shell.mjs'];

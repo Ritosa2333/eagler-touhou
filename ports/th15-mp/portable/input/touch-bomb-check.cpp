@@ -22,10 +22,10 @@ extern "C" __attribute__((export_name("verify"))) int verify(){
   for(int n=0;n<10;n++)if(t.sample(blocked,n,false,false).keys[88])return 5;
   if(t.sample(live,11,false,false).keys[88])return 6;
  }
- // Cancellation releases the gesture; normal movement still works afterward.
+ // Temporary immobility holds the gesture until explicit cancellation.
  TouchController drag;drag.pointer(0,1,.5f,.5f,0,live,false);drag.pointer(1,1,.6f,.5f,10,live,false);
  if(!drag.sample(live,11,false,false).motion)return 7;
- if(drag.sample(hit,12,false,false).motion||drag.active())return 8;
+ if(drag.sample(hit,12,false,false).motion||!drag.active())return 8;
  drag.reset();if(drag.sample(live,13,false,false).keys[88])return 9;
  return 0;
 }

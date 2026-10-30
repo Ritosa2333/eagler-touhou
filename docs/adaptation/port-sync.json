@@ -5,12 +5,34 @@
       "normal": "ports/th075",
       "multiplayer": "ports/th075-mp",
       "base": "9b9417f7bd88f13e11eacd4ea69fae4dd4b27884",
-      "history": []
+      "history": [],
+      "watches": {
+        "audio-output": {
+          "paths": [
+            "web/cpp/sdl/AudioDevice.cpp",
+            "web/scripts/build-sdl.mjs"
+          ],
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "history": [
+            {
+              "kind": "manual",
+              "base": "50084901cd28ab2342d295874afcef8abb6cd82e",
+              "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+              "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+              "paths": [
+                "ports/th075-mp/web/cpp/sdl/AudioDevice.cpp",
+                "ports/th075-mp/web/scripts/build-sdl.mjs"
+              ],
+              "note": "音效预解码、WebSfx 输出、暂停销毁与头文件编译输入已对应迁入并完成两版编译。MP 网络与音频补缓冲块数保持各自策略。th075 使用目录同步记录，当前投影工具未提供该作导入锚点。"
+            }
+          ]
+        }
+      }
     },
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
       "history": [
         {
           "kind": "manual",
@@ -27,6 +49,30 @@
           "normalHistory": "f363ffa54301b9437d2dd1bfcbc2e1f23cfe207b",
           "multiplayerHistory": "c552a75020cc3839645e71eaa7f34f101030a79b",
           "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
+        },
+        {
+          "kind": "manual",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "source": "e0789f75d0a96ec69cad60ed11d2ab4256a00cf7",
+          "targetHead": "e0789f75d0a96ec69cad60ed11d2ab4256a00cf7",
+          "paths": [
+            "ports/th08-mp/web/cpp/game/EclNative.cpp",
+            "ports/th08-mp/web/cpp/sdl/GameHost.cpp",
+            "ports/th08-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th08-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "普通版复活公告接入已同步到多人；既有 THPrac 触控修复保留。全队雷保护、Last Spell 死亡窗口与共享暂停清理为多人专属，普通版规则保持。原生伤害、生命、普通与挑战规则及 52 组 ECL 生命周期检查通过。"
+        },
+        {
+          "kind": "manual",
+          "base": "e0789f75d0a96ec69cad60ed11d2ab4256a00cf7",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th08-mp/ADAPTATION.md",
+            "ports/th08-mp/portable/build.mjs"
+          ],
+          "note": "WebSfx 编译输入与分项记录已对应迁入。投影合并已写回，MP 源码树与审核快照一致，构建选项按各自模式处理。"
         }
       ],
       "origin": {
@@ -40,7 +86,7 @@
     "th10": {
       "normal": "ports/th10",
       "multiplayer": "ports/th10-mp",
-      "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
       "history": [
         {
           "kind": "manual",
@@ -64,6 +110,20 @@
           "normalHistory": "d71bd3fac1f652ecd763ee5c5720dbe3a0662245",
           "multiplayerHistory": "680850bc56daf6f5b8c2eefaa3ce8b065e21da06",
           "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
+        },
+        {
+          "kind": "manual",
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th10-mp/ADAPTATION.md",
+            "ports/th10-mp/portable/build.mjs",
+            "ports/th10-mp/web/cpp/sdl/GameHost.cpp",
+            "ports/th10-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th10-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "WebSfx 编译输入与分项记录已对应迁入，投影合并写回保持审核树。此前普通版的 THPrac 被动面板触控交接由 practice、passive-touch 两项原基线监控继续登记。"
         }
       ],
       "origin": {
@@ -108,13 +168,21 @@
               "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
             }
           ]
+        },
+        "passive-touch": {
+          "paths": [
+            "web/cpp/sdl/GameHost.cpp",
+            "web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "base": "d69656c0f3dadf4d1932c645bcaf98c2db6e6500",
+          "history": []
         }
       }
     },
     "th11": {
       "normal": "ports/th11",
       "multiplayer": "ports/th11-mp",
-      "base": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
       "history": [
         {
           "kind": "manual",
@@ -202,6 +270,26 @@
           "integration": "committed",
           "normalHistory": "71eaa8e7680a0e01822fbb91083f9d3955eec9b7",
           "multiplayerHistory": "d63961279fbbc18ceb75fe1b9d2466a83619aa9a"
+        },
+        {
+          "kind": "manual",
+          "base": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th11-mp/ADAPTATION.md",
+            "ports/th11-mp/portable/presentation-check.cpp",
+            "ports/th11-mp/portable/presentation-lab/campaign.mjs",
+            "ports/th11-mp/web/cpp/game/AnmManager.cpp",
+            "ports/th11-mp/web/cpp/game/AnmPresentation.cpp",
+            "ports/th11-mp/web/cpp/game/AnmPresentation.hpp",
+            "ports/th11-mp/web/cpp/game/GameSession.cpp",
+            "ports/th11-mp/web/cpp/game/HighRefresh.hpp",
+            "ports/th11-mp/web/cpp/sdl/Application.cpp",
+            "ports/th11-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th11-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "普通版已有 WebSfx 编译输入，本轮补齐 MP 并更新分项记录。投影合并已写回，源码树与审核快照一致。此前普通版高刷绘制与 THPrac 交接分别由 high-refresh、practice-pointer 原基线监控登记。"
         }
       ],
       "origin": {
@@ -210,12 +298,36 @@
         "mergeBases": [
           "79f22cb628446ac323f76ece84f4a42cb0150201"
         ]
+      },
+      "watches": {
+        "high-refresh": {
+          "paths": [
+            "portable/presentation-check.cpp",
+            "portable/presentation-lab/campaign.mjs",
+            "web/cpp/game/AnmManager.cpp",
+            "web/cpp/game/AnmPresentation.cpp",
+            "web/cpp/game/AnmPresentation.hpp",
+            "web/cpp/game/GameSession.cpp",
+            "web/cpp/game/HighRefresh.hpp",
+            "web/cpp/sdl/Application.cpp"
+          ],
+          "base": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+          "history": []
+        },
+        "practice-pointer": {
+          "paths": [
+            "web/cpp/sdl/ThpracUi.cpp",
+            "web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "base": "13c8bd9faad1f622bb2fcf9afd43ffbad91db6ec",
+          "history": []
+        }
       }
     },
     "th15": {
       "normal": "ports/th15",
       "multiplayer": "ports/th15-mp",
-      "base": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
+      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
       "history": [
         {
           "kind": "manual",
@@ -265,6 +377,23 @@
             "ports/th15-mp/web/tests/sdl/render-loading-lifecycle-browser.test.mjs"
           ],
           "note": "双侧换关夹具和文档同时更新。合并后 MP 文件树不变，保留普通版来源与 MP 接收父链。"
+        },
+        {
+          "kind": "manual",
+          "base": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/portable/input/TouchController.hpp",
+            "ports/th15-mp/portable/input/touch-bomb-check.cpp",
+            "ports/th15-mp/portable/input/touch-shield-check.cpp",
+            "ports/th15-mp/portable/input/touch-shield-check.mjs",
+            "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th15-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th15-mp/web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "note": "两版暂时禁移保留触点替代护盾专属例外，决死 Bomb 仍逐帧消费脉冲。投影合并已写回，MP 本地席位选择与审核快照一致。此前 THPrac 交接由 practice-ui、passive-touch 原基线监控继续登记。"
         }
       ],
       "origin": {
@@ -298,13 +427,21 @@
               "note": "完整合入普通版目录历史并验证，保留 MP 状态所有者。"
             }
           ]
+        },
+        "passive-touch": {
+          "paths": [
+            "web/cpp/sdl/BrowserRuntime.cpp",
+            "web/cpp/sdl/ThpracUi.hpp"
+          ],
+          "base": "8179eb1e870dd62333c6d8352146b10bf10bbca8",
+          "history": []
         }
       }
     },
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "97df3629c0247a1a56f637d1e1e7f6d99d90db0e",
+      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -656,6 +793,78 @@
             "ports/th12-mp/tests/sdl-hot-path.test.mjs"
           ],
           "note": "普通版与多人版同步定长插值、子动画显示树复用、音乐路径缓存和输入采样；保留多人故障门控与房间入口。15项适配检查、6项原生检查、19项边界检查通过，原作ANM哈希一致，双人和三人回滚及录像重建通过。目录历史合并保留两侧父链，完整MP树与验证代码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "48d941d5e2db5f87291bd485e02bd38a701147d7",
+          "source": "c0042b6605ed25270496798b955dbaf0b859e9e1",
+          "targetHead": "8621034654f7548afa85580e60bd8edafead5205",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/README.md",
+            "ports/th12-mp/docs/BUILD.md",
+            "ports/th12-mp/docs/DEVELOPMENT.md",
+            "ports/th12-mp/docs/FULL_GAME_FLOW.md",
+            "ports/th12-mp/docs/LAUNCHER_INTEGRATION.md",
+            "ports/th12-mp/docs/WEB_ADAPTATION.md",
+            "ports/th12-mp/package.json",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/FrameClock.hpp",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/scripts/build-eagler.mjs",
+            "ports/th12-mp/scripts/build-sdl.mjs",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/scripts/package-sdl.mjs",
+            "ports/th12-mp/scripts/sdl-build-inputs.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/src/managed-input.mjs",
+            "ports/th12-mp/src/managed-shell.mjs",
+            "ports/th12-mp/src/practice/DAMAGE-SOURCES.md",
+            "ports/th12-mp/src/practice/INTEGRATION.md",
+            "ports/th12-mp/tests/managed-adapter.test.mjs",
+            "ports/th12-mp/tests/native/sdl-audio.cpp",
+            "ports/th12-mp/tests/sdl-audio.test.mjs",
+            "ports/th12-mp/tests/sdl-build.test.mjs",
+            "ports/th12-mp/tests/sdl-clock.test.mjs",
+            "ports/th12-mp/tests/sdl-hot-path.test.mjs"
+          ],
+          "note": "同步 SDL 时钟、音频、输入归属、编译输入身份与正式入口测试，旧前端文档去重归档。多人使用独立产品路径、房间启动和按键调度、旁观及录像保存，保留对应指南与测试。普通版修改已同步到两侧，目录历史经真实合并写回，内容树与验证后的 MP 一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "c0042b6605ed25270496798b955dbaf0b859e9e1",
+          "source": "74b842f80c7a6cfad02eb871d23068cb6894943d",
+          "targetHead": "b58daac14bb91df873ee4649ca26d5e4a94c4d70",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/Audio.hpp",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/tests/native/sdl-audio.cpp",
+            "ports/th12-mp/tests/sdl-boundary.test.mjs"
+          ],
+          "note": "普通版与 MP 同步页面隐藏时的键盘和触点清理、音频挂起恢复、原生音乐失败事件及替换重试。共用原生和浏览器回归已在两侧验证；MP 沿多人入口验收，普通版浏览器脚本继续归属普通版。共有新规则登记为逐作待验收。"
+        },
+        {
+          "kind": "manual",
+          "base": "74b842f80c7a6cfad02eb871d23068cb6894943d",
+          "source": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "targetHead": "d1023c99c529dab2b5742b88436880c3dcf4220a",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Audio.cpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/scripts/check-sdl-browser.mjs",
+            "ports/th12-mp/site/game.mjs",
+            "ports/th12-mp/src/touch-input.mjs",
+            "ports/th12-mp/tests/sdl-audio.test.mjs",
+            "ports/th12-mp/tests/touch-respawn.test.mjs"
+          ],
+          "note": "两版音效独立输出、暂停与销毁已对应迁入。普通版采用 MP 已有的手势作用域连续性实现；MP 使用自己的真实房间浏览器驱动。投影合并写回后 MP 源码树与审核快照一致。"
         },
         {
           "kind": "manual",

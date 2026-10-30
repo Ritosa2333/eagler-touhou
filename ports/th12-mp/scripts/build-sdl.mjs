@@ -4,12 +4,14 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {emscripten} from './toolchain.mjs';
+import {sdlBuildInputs} from './sdl-build-inputs.mjs';
 const root=path.resolve(import.meta.dirname,'..'),web=process.argv.includes('--web');
 const option=(name,fallback)=>process.argv.find(value=>value.startsWith(name+'='))?.slice(name.length+1)??fallback;
 const build=path.resolve(option('--build-dir',path.join(root,'artifacts',web?'sdl-web':'sdl-desktop')));
 const cmake=process.env.CMAKE??(process.platform==='win32'&&fs.existsSync('C:/mingw64/bin/cmake.exe')?'C:/mingw64/bin/cmake.exe':'cmake');
 const practice=false;
 const env={...process.env};const args=['-S',root,'-B',build,'-G',option('--generator','Ninja'),'-DCMAKE_BUILD_TYPE=Release','-DBUILD_TESTING=OFF','-DTH12_BUILD_SDL_HOST=ON','-DTH12_ENABLE_THPRAC='+(practice?'ON':'OFF'),'-DTH12_FETCH_SDL_DEPS=ON'];
+const sources=sdlBuildInputs(root);
 if(process.env.EAGLER_COMMON_ROOT)args.push('-DEAGLER_COMMON_ROOT='+path.resolve(process.env.EAGLER_COMMON_ROOT));
 fs.mkdirSync(build,{recursive:true});
 if(web){
@@ -21,10 +23,8 @@ if(web){
 for(const [variable,value]of Object.entries({FETCHCONTENT_SOURCE_DIR_TH12_SDL3:process.env.TH12_SDL3_SOURCE,FETCHCONTENT_SOURCE_DIR_TH12_FREETYPE:process.env.TH12_FREETYPE_SOURCE,CMAKE_PREFIX_PATH:process.env.TH12_CMAKE_PREFIX}))if(value)args.push('-D'+variable+'='+path.resolve(value));
 function run(args){const result=spawnSync(cmake,args,{cwd:root,env,stdio:'inherit',windowsHide:true});if(result.error)throw result.error;if(result.status!==0)process.exit(result.status??1);}
 run(args);run(['--build',build,'--config','Release','--target','touhou12','--parallel',option('--jobs',process.env.TH_BUILD_JOBS??'6')]);
+if(JSON.stringify(sdlBuildInputs(root))!==JSON.stringify(sources))throw Error('SDL 源码在编译期间改变，请重新编译');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
-function walk(directory){return fs.readdirSync(directory,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(directory,entry.name)):[path.join(directory,entry.name)]);}
-const files=[...walk(path.join(root,'portable/sdl')),...walk(path.join(root,'src/multiplayer')),...walk(path.join(root,'../../common/src/netplay')),...walk(path.join(root,'../../common/include/eagler/netplay')),...walk(path.join(root,'../../common/browser')),...walk(path.join(root,'src/game')),...walk(path.join(root,'src/wasm')),...walk(path.join(root,'src/practice')),path.join(root,'CMakeLists.txt')].sort();
-const sources=Object.fromEntries(files.map(file=>[path.relative(root,file).split(path.sep).join('/'),sha(fs.readFileSync(file))]));
 const artifacts={};
 if(web){
   const output=path.join(root,'site/runtime/sdl');fs.mkdirSync(output,{recursive:true});

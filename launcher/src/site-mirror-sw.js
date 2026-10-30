@@ -20,6 +20,7 @@ function validateSiteNetwork(value) {
 function createSiteMirrorRouting({ scopeUrl, loadConfig, timeoutMs = 2500, retryAfterMs = 60000 }) {
   const failedUntil = new Map();
   let configuration;
+  let lastNode;
   const config = () => configuration ||= Promise.resolve().then(loadConfig).then(validateSiteNetwork)
     .catch(error => { configuration = null; throw error; });
   async function run(url, read, { cache = "no-store", stallMs = timeoutMs } = {}) {
@@ -38,6 +39,7 @@ function createSiteMirrorRouting({ scopeUrl, loadConfig, timeoutMs = 2500, retry
       const target = new URL(relative, base);
       const controller = new AbortController();
       let timer;
+      let status;
       const progress = () => {
         clearTimeout(timer);
         timer = setTimeout(() => controller.abort(new Error("Site mirror download stalled")), stallMs);
@@ -47,6 +49,7 @@ function createSiteMirrorRouting({ scopeUrl, loadConfig, timeoutMs = 2500, retry
         const response = await fetch(new Request(target, {cache, signal: controller.signal,
           credentials: target.origin === scopeUrl.origin ? "same-origin" : "omit",
           redirect: base === scopeUrl.href ? "follow" : "error"}));
+        status = response.status;
         if (response.status === 401 || response.status === 403) {
           throw Object.assign(new Error(`Site access denied: HTTP ${response.status}`), {siteAccessDenied: true});
         }
@@ -59,10 +62,17 @@ function createSiteMirrorRouting({ scopeUrl, loadConfig, timeoutMs = 2500, retry
         headers.delete("content-encoding"); headers.delete("content-length");
         const local = new Response(response.body, {status: response.status, statusText: response.statusText, headers});
         const result = await read(local, progress);
+        const node = new URL(response.url || target.href).origin;
+        if (lastNode !== node) {
+          console.info('[EAGLER|入口]', {entry:new URL(base).origin, node, path:original.pathname});
+          lastNode = node;
+        }
         failedUntil.delete(base);
         return result;
       } catch (error) {
         controller.abort();
+        console.warn('[EAGLER|入口回退]', {node:target.origin, path:original.pathname,
+          status, reason:error?.name || 'Error'});
         if (error?.siteAccessDenied) throw error;
         failedUntil.set(base, Date.now() + retryAfterMs);
         failure = error;

@@ -3,7 +3,7 @@
 namespace th12::multiplayer {
 bool InputLanes::Capture(uint32_t held, bool pause, int mode, float x, float y, Netplay::FrameInput& out) {
   if ((held & ~uint32_t(HeldMask)) || mode < 0 || mode > 3 || !std::isfinite(x) || !std::isfinite(y)) return false;
-  Netplay::FrameInput next(uint16_t(held & ~uint32_t(Restart)) | (pause ? Pause : 0));
+  Netplay::FrameInput next(uint16_t(held) | (pause ? Pause : 0));
   if (mode == 3) {
     if (std::abs(x) > 1 || std::abs(y) > 1) return false;
     next.analogMode = Netplay::AnalogMode::Joystick; next.x = x; next.y = y;
@@ -21,7 +21,7 @@ bool InputLanes::Decode(const Netplay::FrameInput* frames, unsigned count, std::
   for (unsigned seat = 0; seat < count; ++seat) {
     const auto& f = frames[seat]; auto& p = next[seat];
     if (!Netplay::IsValidFrameInput(f) || f.touchBomb || (f.buttons & ~(HeldMask | Pause))) return false;
-    p.held = f.buttons & (HeldMask & ~Restart); p.pause = (f.buttons & Pause) != 0;
+    p.held = f.buttons & HeldMask; p.pause = (f.buttons & Pause) != 0;
     if (f.analogMode == Netplay::AnalogMode::Joystick) {
       p.motion = 3; p.x = int(std::lround(f.x * 32767)); p.y = int(std::lround(f.y * 32767));
     } else if (f.analogMode == Netplay::AnalogMode::DirectTouch) {

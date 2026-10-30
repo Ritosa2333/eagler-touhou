@@ -282,52 +282,28 @@ target_include_directories(eagler_common_adonis_startup_test PRIVATE "${CMAKE_CU
 target_link_libraries(eagler_common_adonis_startup_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.adonis-startup COMMAND eagler_common_adonis_startup_test)
 if(EAGLER_COMMON_NODE_EXECUTABLE)
-    add_test(NAME eagler-common.local-replay
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/local-replay-bridge.test.mjs)
+    file(GLOB_RECURSE EAGLER_COMMON_NODE_TESTS CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.test.mjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*-test.mjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/*-test.cjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../browser/*.test.mjs"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../testkit/*.test.mjs")
+    foreach(node_test IN LISTS EAGLER_COMMON_NODE_TESTS)
+        if(node_test MATCHES "/fixtures/")
+            continue()
+        endif()
+        file(RELATIVE_PATH node_test_name "${CMAKE_CURRENT_SOURCE_DIR}/.." "${node_test}")
+        string(REGEX REPLACE "(\\.test|-test)\\.(mjs|cjs)$" "" node_test_name "${node_test_name}")
+        string(REPLACE "/" "." node_test_name "${node_test_name}")
+        add_test(NAME "eagler-common.node.${node_test_name}"
+            COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test "${node_test}")
+    endforeach()
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../ports/th09/web/tests/server/replay-player.test.mjs")
         add_test(NAME eagler-common.versus-replay
             COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/../../ports/th09/web/tests/server/replay-player.test.mjs)
     endif()
-    add_test(NAME eagler-common.web-sfx-output
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/web-sfx-output.test.mjs)
-    add_test(NAME eagler-common.browser-peer-receive-queue
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-receive-queue.test.mjs)
-    add_test(NAME eagler-common.browser-peer-spectator-tail
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-tail.test.mjs)
-    add_test(NAME eagler-common.browser-peer-recovery
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-recovery.test.mjs)
-    add_test(NAME eagler-common.browser-peer-channel-lifecycle
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-channel-lifecycle.test.mjs)
-    add_test(NAME eagler-common.browser-peer-turn-preference
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-turn-preference.test.mjs)
-    add_test(NAME eagler-common.adaptive-peer-route
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/adaptive-peer-route.test.mjs)
     add_test(NAME eagler-common.adaptive-peer-route-generated
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../tools/sync-adaptive-peer-route.mjs --check)
-    add_test(NAME eagler-common.save-sync
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/save-sync.test.mjs)
-    add_test(NAME eagler-common.adonis-calibration
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/adonis-calibration-test.mjs)
-    add_test(
-        NAME eagler-common.browser-peer-repair-backpressure
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-repair-backpressure-test.cjs
-    )
-    add_test(
-        NAME eagler-common.browser-keyboard-owners
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/browser-keyboard-owners.test.mjs
-    )
-    add_test(
-        NAME eagler-common.rtc-input-impairment
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/rtc-input-impairment-test.cjs
-    )
-    add_test(
-        NAME eagler-common.replay-verifier
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
-            ${CMAKE_CURRENT_SOURCE_DIR}/../testkit/replay-verifier/replay-verifier.test.mjs
-    )
 endif()
 
 add_executable(eagler_common_rollback_readonly_batch_test rollback-readonly-batch-test.cpp)
@@ -343,31 +319,9 @@ target_link_libraries(eagler_common_confirmed_input_clock_test PRIVATE eagler::n
 target_include_directories(eagler_common_confirmed_input_clock_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
 add_test(NAME eagler-common.confirmed-input-clock COMMAND eagler_common_confirmed_input_clock_test)
 
-if(EAGLER_COMMON_NODE_EXECUTABLE)
-    add_test(NAME eagler-common.spectator-playback-bridge
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/spectator-playback-bridge.test.mjs)
-    add_test(NAME eagler-common.browser-peer-stage-history
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-stage-history.test.mjs)
-    add_test(NAME eagler-common.browser-peer-spectator-session
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-session.test.mjs)
-    add_test(NAME eagler-common.browser-peer-spectator-replay
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-replay.test.mjs)
-    add_test(NAME eagler-common.direct-input-bridge
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/direct-input-bridge-test.mjs)
-    add_test(NAME eagler-common.keyboard-input-bridge
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/keyboard-input-bridge.test.mjs)
-    add_test(NAME eagler-common.thprac-keyboard-contract
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/thprac-keyboard-contract.test.mjs)
-endif()
-
 add_executable(eagler_common_cooperative_rules_test cooperative-rules-test.cpp)
 add_executable(eagler_common_cooperative_menu_input_test cooperative-menu-input-test.cpp)
 target_link_libraries(eagler_common_cooperative_menu_input_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.cooperative-menu-input COMMAND eagler_common_cooperative_menu_input_test)
 target_link_libraries(eagler_common_cooperative_rules_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.cooperative-rules COMMAND eagler_common_cooperative_rules_test)
-
-if(EAGLER_COMMON_NODE_EXECUTABLE)
-    add_test(NAME eagler-common.thprac-passive-adapters
-        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} --test ${CMAKE_CURRENT_SOURCE_DIR}/thprac-passive-adapters.test.mjs)
-endif()

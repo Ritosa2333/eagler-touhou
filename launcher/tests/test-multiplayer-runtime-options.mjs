@@ -146,3 +146,7 @@ console.log(JSON.stringify({
   productConstraints: ["playerCounts", "difficulties", "loadouts"],
   spectator: "explicit-role",
 }));
+
+assert.equal(buildMultiplayerRuntimeOptions({...base,allowWebsocketFallback:true},th06).netplayAllowWebsocketFallback,true);
+assert.equal(buildMultiplayerRuntimeOptions({...base,allowWebsocketFallback:false},th06).netplayAllowWebsocketFallback,undefined);
+assert.throws(()=>buildMultiplayerRuntimeOptions({...base,allowWebsocketFallback:'true'},th06),/WebSocket/);

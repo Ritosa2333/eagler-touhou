@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {createSocket} from 'node:dgram';
 import {randomBytes} from 'node:crypto';
-import {sanitizeInfrastructure} from './status-model.mjs';
+import {sanitizeInfrastructure,publicIdentity} from './status-model.mjs';
 import {uptimeGroup} from './uptime-store.mjs';
 
 export async function stunBinding(url, timeout = 3000) {
@@ -30,12 +30,14 @@ export function websocketOpen(url, timeout = 5000) {
 /** Probe URLs and credentials are deployment-owned and never exposed publicly. */
 export function createStatusMonitor({targets = [], infrastructureUrl, fetchImpl = fetch, clock = Date.now} = {}) {
   if (!Array.isArray(targets) || targets.length > 24) throw Error('Invalid status probe targets');
-  const ids = new Set();
+  const ids = new Set(), publicIds = new Set();
   for (const t of targets) {
     if (!/^[a-z0-9-]{1,40}$/.test(t.id) || ids.has(t.id) || typeof t.label !== 'string' || !t.label || t.label.length > 80 ||
       !['site','signaling','websocket','turn','spectator','resource'].includes(t.kind) || !['site','download','netplay','turn'].includes(uptimeGroup(t)) ||
       !['http:','https:','ws:','wss:','stun:'].includes(new URL(t.url).protocol)) throw Error('Invalid status probe target');
-    ids.add(t.id);
+    const identity=publicIdentity(t);
+    if(publicIds.has(identity.id))throw Error('Duplicate public status identity');
+    ids.add(t.id);publicIds.add(identity.id);
   }
   let services = [], infrastructure = null, checkedAt = null, pending = null;
   function refresh() {
@@ -57,6 +59,8 @@ export function createStatusMonitor({targets = [], infrastructureUrl, fetchImpl 
     })().finally(() => {pending = null;});
     return pending;
   }
-  return {refresh, idle:()=>pending, snapshot:()=>({checkedAt, services:services.map(s => ({...s, status:clock()-Date.parse(s.checkedAt)>90000 ? 'stale' : s.status})), infrastructure})};
+  return {refresh, idle:()=>pending, snapshot:({publicOnly=false}={})=>({checkedAt,
+    services:services.map((s,i) => ({...s, ...(publicOnly?publicIdentity(targets[i]):{}),
+      status:clock()-Date.parse(s.checkedAt)>90000 ? 'stale' : s.status})), infrastructure})};
 }
 export async function readMonitorConfig(path) {return path ? JSON.parse(await readFile(path, 'utf8')) : {};}

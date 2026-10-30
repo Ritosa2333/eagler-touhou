@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { isSpectatorFrameForRoom } from '../src/spectator-frame.mjs';
+import {PRODUCT_GAMES} from '../../../common/contracts/product-catalog.mjs';
 
 const th09 = Buffer.alloc(46);
 th09.set([0x54, 0x39, 0x53, 0x50, 1, 3, 2, 0]);
@@ -41,7 +42,7 @@ const th075=Buffer.alloc(48);th075.set([0x45,0x50,0x4e,0x50,4,3,2,0]);
 assert.equal(isSpectatorFrameForRoom('th075mp-1234',th075,2),true);
 assert.equal(isSpectatorFrameForRoom('th075mp-1234',th075,3),false);
 assert.equal(isSpectatorFrameForRoom('th075mp-1234',th075.subarray(0,47),2),false);
-for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp','unknown'])
+for(const product of [...Object.entries(PRODUCT_GAMES).filter(([game,p])=>game!=='th075'&&p.multiplayer).map(([game])=>game+'mp'),'unknown'])
  assert.equal(isSpectatorFrameForRoom(product+'-1234',th075,2),false);
 for(const [mode,delay,reserve] of [[1,2,0],[0,0,2],[0,0,8]]){
  const timing=Buffer.alloc(40);timing.set([0x45,0x50,0x54,0x4d,1,mode,delay,reserve]);

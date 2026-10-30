@@ -1,4 +1,6 @@
-# TH12 Web 适配现状与交付边界
+# th12 旧网页前端接入记录
+
+归档范围为 2026-10-20 的旧网页前端接入。正式 SDL3 / GLES 应用见[开发指南](../../ports/th12/docs/DEVELOPMENT.md)。普通版与 MP 原有文档内容相同，此处合并保存。
 
 还原分支 `experiments` 保留在 `492eddf16a3d9389cb529bedf06555b2cafcabe5`。
 用户此前对该还原基线的确认，不覆盖本轮新增的 Web 适配和设备表现。
@@ -24,7 +26,7 @@
 RNG 和解密探针不能替代它们。运行、设备、存储往返、正式 Runtime Release、
 Hosted／External／Import 和公开部署验收也未执行。因此本轮修正不能表述为
 “完全符合适配规范”或“quick/daily 已通过”。详见
-[验证器说明](../tools/replay-verifier/README.md)。
+[验证器说明](../../ports/th12/tools/replay-verifier/README.md)。
 
 ## 已接入的六项能力
 
@@ -46,7 +48,7 @@ Practice 参数面板外单指轻触开始练习，双指轻触返回机体选�
 
 THPrac 工具自身的 `ja-JP`/`en-US`/`zh-CN` 标签选项不等于游戏语言支持。
 语言编译保持日文非文字 MSG 控制命令和 ECL 游戏逻辑；不能据此声称与汉化 EXE 的
-全部显示时序完全相同。编译、字体与验证入口见 [LOCALIZATION.md](LOCALIZATION.md)。
+全部显示时序完全相同。编译、字体与验证入口见 [LOCALIZATION.md](../../ports/th12/docs/LOCALIZATION.md)。
 
 ## Host / Runtime 契约
 
@@ -69,7 +71,7 @@ Runtime 校验父窗口、同源身份和正整数导航 epoch，串行处理命
 | 录像工作区 | `replayViewer` 配置和 `playback` 的 inspect/open/pause/play/seek/rate；支持 0.5/1/2/4/8 倍和满速，选择起始关卡并继续录像路线。 |
 | 生命周期 | 普通 blur 只释放输入，不打开原版暂停菜单；隐藏页停止推进并保存；退出等待存储同步；WebGL 丢失停止游戏并报告错误。 |
 
-真实 React Launcher 的本地 Hosted 接入及构建方式见 [Launcher 接入](LAUNCHER_INTEGRATION.md)。
+真实 React Launcher 的本地 Hosted 接入及构建方式见 [Launcher 接入](../../ports/th12/docs/LAUNCHER_INTEGRATION.md)。
 它沿用实际 Package Store、Runtime Generation、文件管理与离线资源流程；
 `/adapter-preview.html` 保留为单独的协议观察入口。
 Hosted 实际运行、External、Import、缓存/离线交付和真实设备链仍需人工验收。
@@ -106,8 +108,8 @@ THPrac 开启时 Ctrl 和 Shift 使用紫版设置的回放快进与慢放帧率
 保持交互式工具面板关闭，支持带练习参数及伤害源快照的 Web 录像。
 播放不重新施加实时作弊，辅助录像可能不同步，不承诺原版程序能够理解 Web 扩展。
 旧原版录像缺少伤害源数据时，兼容状态标记 unavailable，不能制造或推断原始堆内存。
-详见 [THPrac 集成说明](../src/practice/INTEGRATION.md) 和
-[伤害源快照说明](../src/practice/DAMAGE-SOURCES.md)。
+详见 [THPrac 集成说明](../../ports/th12/src/practice/INTEGRATION.md) 和
+[伤害源快照说明](../../ports/th12/src/practice/DAMAGE-SOURCES.md)。
 
 ## 本地准备、构建与来源物化
 
@@ -136,7 +138,7 @@ node launcher/scripts/prepare-th06-language-pack.mjs --game th12 --language lang
 英文将语言改为 `lang_en`。输出为 `catalog.json` 与 `language/*.zip`，供 Host 组装。
 准备器从 thpatch 获取文字和贴图；本地安装目录中的旧汉化不参与输入。
 语言包及转换资源保存在 Git 忽略目录，默认语言为日文。
-完整准备细节见 [CONTENT_PREPARATION.md](CONTENT_PREPARATION.md) 与 [LOCALIZATION.md](LOCALIZATION.md)。
+完整准备细节见 [CONTENT_PREPARATION.md](../../ports/th12/docs/CONTENT_PREPARATION.md) 与 [LOCALIZATION.md](../../ports/th12/docs/LOCALIZATION.md)。
 
 固定 common 来源及文件摘要见 `integration/common-dependency.json`。
 工作区可显式指定它和本机 Emscripten，再生成代码包：
@@ -176,7 +178,7 @@ stream/full 音乐、THPrac 与触控模式；该检查页不进入 Runtime Rele
 Chromium 受管理资源验证覆盖标题、第一关、紫版高级选项及移动面板折叠；
 原生 ImGui 输入检查覆盖快捷键门控、数值编辑、弹出项取消和指针归属。test 使用日文资源。
 可重建入口为
-`scripts/package-launcher.mjs`，详见 [Launcher 接入](LAUNCHER_INTEGRATION.md)。
+`scripts/package-launcher.mjs`，详见 [Launcher 接入](../../ports/th12/docs/LAUNCHER_INTEGRATION.md)。
 
 ## 留给用户的人工确认项
 

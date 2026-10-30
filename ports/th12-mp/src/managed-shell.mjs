@@ -2,7 +2,7 @@ import {validateMultiplayerOptions} from './multiplayer.mjs';
 import {allowedPath} from './storage.mjs';
 import {validateNativeProfile} from './native-profile.mjs';
 
-const boolOptions=['limitPresentationTo60','touchEnabled','doubleTapBombEnabled','alwaysHitbox','thpracEnabled','focusHitboxEnabled','replayViewer'];
+const boolOptions=['limitPresentationTo60','touchEnabled','doubleTapBombEnabled','alwaysHitbox','thpracEnabled','focusHitboxEnabled','replayViewer','netplayAllowWebsocketFallback'];
 const netplayOptions=['netplayMode','netplayUrl','netplayPlayer','netplayPlayerCount','netplaySeed','netplayDifficulty','netplayInputDelay','netplayInputDelayAuto','netplayAdonisMode','netplayPredictionLimit','netplayPredictionReserve','netplayChallengeMode','netplaySpectator','netplaySpectatorId','netplaySpectatorCount','netplaySpectatorTimeline','netplayIceServers','netplayPreferTurn','netplayLoadouts','multiplayerLocalPlayerVisibility','touchAlwaysHitbox'];
 const acceptedOptions=new Set([...netplayOptions,...boolOptions,'touchMovementMode','touchSensitivity','touchFocusMode','oggDecodeMode','replayPath','debugHarness','thpracLocale']);
 export function runtimeOptions(value={}){
@@ -100,9 +100,9 @@ export function installManagedShell(api,environment=window,{announceReady=true}=
     const message=event.data;
     if(event.source!==environment.parent||event.origin!==environment.location.origin||message?.protocol!=='eagler-touhou/1'||message.game!=='th12'||message.epoch!==epoch||typeof message.command!=='string')return;
     if(['keyboard','keyboard-clear','touch-controls','touch-cancel','direct-touch'].includes(message.command)){
-      Promise.resolve().then(()=>command(message)).then(result=>{if(typeof message.request==='string')emit({request:message.request,ok:true,...result});}).catch(error=>emit({event:'error',message:error.message}));return;
+      Promise.resolve().then(()=>command(message)).then(result=>{if(typeof message.request==='string')emit({request:message.request,ok:true,...result});}).catch(error=>emit({event:'error',error:error.message}));return;
     }
-    queue=queue.then(async()=>{try{if(!announced)throw Error('运行资源尚未准备');const result=await command(message);if(typeof message.request==='string')emit({request:message.request,ok:true,...result});}catch(error){if(typeof message.request==='string')emit({request:message.request,ok:false,error:error.message});else emit({event:'error',message:error.message});}});
+    queue=queue.then(async()=>{try{if(!announced)throw Error('运行资源尚未准备');const result=await command(message);if(typeof message.request==='string')emit({request:message.request,ok:true,...result});}catch(error){if(typeof message.request==='string')emit({request:message.request,ok:false,error:error.message});else emit({event:'error',error:error.message});}});
   });
   emit.ready=()=>{if(announced)return;announced=true;emit({event:'ready',saveRoot:'/savesth12',roomPreview:true,roomReturn:true});};
   if(announceReady)emit.ready();return emit;

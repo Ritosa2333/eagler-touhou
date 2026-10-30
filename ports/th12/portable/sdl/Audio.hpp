@@ -35,6 +35,7 @@ public:
     void pump();void suspend(bool paused);
     bool mix(float* pcm,u32 frames); // host tests
 private:
+    void music_failure(const char* reason);
     struct Impl;std::unique_ptr<Impl> impl;
 };
 }

@@ -146,6 +146,20 @@ assert.deepEqual(httpRepair.cacheModes.filter(value=>value.url.endsWith('game.wa
 assert.ok(repairProgress.some(value=>value.path.endsWith('game.wasm')&&value.phase==='failed'),'invalid HTTP-cache bytes are rejected before a fresh attempt');
 const h=harness();let sw=h.worker();
 const A=await h.launch(sw,"a");assert.match(A.body,/a$/);
+const modulePath=new URL(runtimeGenerationBase(root,A.generation)+'shell.mjs',h.scopeUrl).href;
+for(const cache of h.stores.values()) {
+  const module=await cache.match(modulePath);
+  if(module)await cache.put(modulePath,new Response(await module.arrayBuffer(),{headers:{'Content-Type':'application/octet-stream'}}));
+}
+h.state.outage=true;
+const beforeMimeRepair=h.requests.length;
+const cachedModule=await h.resource(sw,A,'shell.mjs');
+assert.equal(cachedModule.headers.get('Content-Type'),'text/javascript','cached module MIME is repaired after verified bytes');
+assert.equal(await cachedModule.text(),'shell a');
+assert.equal((await h.resource(sw,A,'game.wasm')).headers.get('Content-Type'),'application/wasm');
+assert.equal((await h.resource(sw,A,'game.html')).headers.get('Content-Type'),'text/html');
+assert.equal(h.requests.length,beforeMimeRepair,'MIME repair works offline and does not redownload Runtime bytes');
+h.state.outage=false;
 const beforeLocal=h.requests.length;
 const noEmbeddedCatalog=h.worker({schema:RUNTIME_MANIFEST_SCHEMA,protocol:RUNTIME_PROTOCOL,groups:[]});
 assert.equal((await noEmbeddedCatalog.prepareLaunch(root+'game.html',{localOnly:true})).generation,A.generation);

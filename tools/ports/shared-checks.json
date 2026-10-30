@@ -2,6 +2,20 @@
   "schema": "eagler-touhou/shared-port-checks/1",
   "gates": [
     {
+      "id": "held-touch-continuity",
+      "level": "module",
+      "complete": false,
+      "checks": ["TOUCH-09"],
+      "files": ["tools/ports/touch-continuity.test.mjs"]
+    },
+    {
+      "id": "immediate-sfx-routing",
+      "level": "source-contract",
+      "complete": false,
+      "checks": ["AUDIO-07"],
+      "files": ["tools/ports/sfx-routing.test.mjs"]
+    },
+    {
       "id": "package-store",
       "level": "module",
       "checks": ["PACKAGE-01", "PACKAGE-02", "PACKAGE-03", "PACKAGE-04", "PACKAGE-06"],

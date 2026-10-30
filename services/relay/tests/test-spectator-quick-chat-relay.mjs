@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import net from 'node:net';
 import {fileURLToPath} from 'node:url';
+import {PRODUCT_GAMES, multiplayerInputTimingPolicy} from '../../../common/contracts/product-catalog.mjs';
+
+const spectatorGames = Object.entries(PRODUCT_GAMES).filter(([, product]) => product.multiplayer?.spectator);
 
 const listener = net.createServer();
 await new Promise(resolve => listener.listen(0, '127.0.0.1', resolve));
@@ -42,7 +45,8 @@ const send = (socket, message) => socket.ws.send(JSON.stringify(message));
 const latest = socket => [...socket.json].reverse().find(message => message.room && typeof message.room === 'object')?.room;
 try {
   await wait(() => log.includes('listening'), 'relay ready');
-  for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th15mp']){
+  for(const [game, definition] of spectatorGames){
+  const product=game+'mp',timing=multiplayerInputTimingPolicy(definition.multiplayer);
   const room=product+'-720001';
   const hostId=product+'_chat_host',viewerId=product+'_chat_viewer';
   const host = await open(`room=${room}&lobby=${hostId}&member=${product}_chat_member_host`);
@@ -59,7 +63,7 @@ try {
   send(host, {type: 'set-ready', ready: true});
   send(guest, {type: 'set-ready', ready: true});
   await wait(() => latest(host)?.seats?.slice(0, 2).every(seat => seat?.ready), 'both players ready');
-  send(host, {type: 'start',...(product==='th15mp'?{adonisMode:1}:{})});
+  send(host, {type: 'start',adonisMode:timing.rollback?0:1,predictionLimit:timing.predictionLimit});
   await wait(() => host.json.some(message => message.type === 'start' && message.serial === 1), 'room started');
 
   send(viewer, {type: 'quick-chat', serial: 1, phrase: 'thanks'});

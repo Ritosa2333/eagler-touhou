@@ -12,6 +12,25 @@ const root = await mkdtemp(join(tmpdir(), "eagler-runtime-release-"));
 const manifest = await writeSyntheticRuntimeRelease(root);
 await verifyRuntimeRelease(root);
 
+const wasmName = Object.keys(manifest.games.th08.runtime.files).find(name => name.endsWith('.wasm'));
+assert.ok(wasmName);
+const normalWasm = resolve(root, manifest.games.th08.runtime.root, wasmName);
+const multiplayerWasm = resolve(root, manifest.games.th08.multiplayerRuntime.root, wasmName);
+const normalBytes = await readFile(normalWasm), multiplayerBytes = await readFile(multiplayerWasm);
+try {
+  await rm(normalWasm);
+  await assert.rejects(() => verifyRuntimeRelease(root), error => error.code === 'ENOENT' && resolve(error.path) === normalWasm);
+} finally {await writeFile(normalWasm, normalBytes);}
+try {
+  await writeFile(normalWasm, multiplayerBytes);
+  await writeFile(multiplayerWasm, normalBytes);
+  await assert.rejects(() => verifyRuntimeRelease(root), /generation file mismatch/);
+} finally {
+  await writeFile(normalWasm, normalBytes);
+  await writeFile(multiplayerWasm, multiplayerBytes);
+}
+await verifyRuntimeRelease(root);
+
 const staleShellPath = resolve(root, manifest.games.th08.runtime.root, "shell.mjs");
 const staleShell = await readFile(staleShellPath, "utf8");
 await writeFile(staleShellPath, staleShell.replaceAll("runtimeEpoch", "legacyRuntimeToken"));

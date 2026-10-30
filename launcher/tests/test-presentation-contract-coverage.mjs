@@ -35,7 +35,7 @@ const verification = Object.freeze({
   th09: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
   th075: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th11: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
-  th12: {kind:'managed-web', test:'tests/managed-adapter.test.mjs'},
+  th12: {kind:'runtime', source:'portable/sdl/Application.cpp', scripts:['tests/sdl-clock.test.mjs']},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
@@ -47,12 +47,6 @@ const scheduledWorkspaceTests = new Set(WORKSPACE_NODE_TESTS);
 const selectedGames = selectedPortGames(Object.keys(verification));
 for (const [game, lane] of Object.entries(verification).filter(([game]) => selectedGames.includes(game))) {
   const product = PRODUCT_GAMES[game];
-  if (lane.kind === 'managed-web') {
-    const result=spawnSync(process.execPath,['--test','--test-name-pattern=managed presentation:',workspacePath(game,lane.test)],
-      {cwd:workspacePath(game),encoding:'utf8',windowsHide:true});
-    assert.equal(result.status,0,`${game}: presentation verification failed\n${result.stdout}\n${result.stderr}`);
-    continue;
-  }
   if (lane.kind === 'native-clock') {
     const host = await readFile(workspacePath(game, lane.source), 'utf8');
     assert.match(host, /cadence\.advance\(/, `${game}: browser loop must consume its cadence owner`);
@@ -105,6 +99,11 @@ int main(){for(unsigned hz:{60u,75u,90u,120u,144u,165u,240u}){
 
   assert.equal(product.runtimeFileLayout, "directory",
     `${game}: Runtime-owned presentation lane is expected for directory Runtimes`);
+  if(lane.source){
+    const host=await readFile(workspacePath(game,lane.source),'utf8');
+    assert.match(host,/clock\.advance\(/,`${game}: the application consumes its native clock`);
+    assert.match(host,/clock\.reset\(/,`${game}: lifecycle changes clear accumulated time`);
+  }
   for (const script of lane.scripts) {
     const path = workspacePath(game, ...script.split("/"));
     await access(path);
