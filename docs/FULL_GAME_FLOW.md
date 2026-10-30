@@ -1,4 +1,6 @@
-# TH12 完整游戏流程
+# th12 旧网页前端流程
+
+本页说明 `build-legacy-eagler.mjs` 对应的网页前端与对照工具。正式 SDL 应用见[开发指南](DEVELOPMENT.md)。
 
 ## 入口与职责
 

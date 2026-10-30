@@ -93,7 +93,13 @@ bool Session::step(uint32_t held,bool pause,int motion,float x,float y,double no
   }
   if(!commit())return false;
   if(replay_.AtCapacity()&&settled())finished=true;
-  if(finished&&settled()&&!network.Retired())network.Finish();
+  if(finished&&settled()&&!network.Retired()){
+    if(network.Finish(restartRequested)&&!restartRequested){
+      std::vector<uint8_t> bytes;
+      if(!replayBytes(bytes,"PLAYER"))return fail("TH12 final Replay encoding failed");
+      Netplay::BrowserPeerTransport::ShareSpectatorReplay(bytes.data(),bytes.size());
+    }
+  }
   return *error()==0;
 }
 unsigned Session::nextStage()const{return pendingStage_?pendingStage_:unsigned(fullGameFlow.nextStage);}
@@ -109,7 +115,19 @@ bool Session::stageLoaded(){
   if(!loading_||!startNextStage())return fail("TH12 next stage could not be initialized");
   loading_=false;pendingStage_=0;return true;
 }
-bool Session::replayBytes(std::vector<uint8_t>& out,const char* name){return replay_.Encode(out,name,uint32_t(score),(fullGameFlow.status==FullGameStatus::Result||fullGameFlow.status==FullGameStatus::Ending)&&!options.challenge);}
+bool Session::replayBytes(std::vector<uint8_t>& out,const char* name){
+  if(network.Spectator())return replay_.Loaded()&&replay_.Encode(out,name,replay_.Score(),replay_.Completed());
+  return replay_.Encode(out,name,uint32_t(score),(fullGameFlow.status==FullGameStatus::Result||fullGameFlow.status==FullGameStatus::Ending)&&!options.challenge);
+}
+bool Session::completeSpectator(const uint8_t* bytes,size_t count){
+  if(!network.Spectator()||network.Retired())return false;
+  ReplayArchive replay;if(!replay.Load(bytes,count))return false;
+  const auto& setup=network.Setup();const auto& playback=network.StagePlayback();
+  if(!playback.Ready()||replay.FrameCount()!=playback.History().Received()||
+     replay.Setup().session_id!=setup.session_id||replay.Setup().build!=setup.build||
+     GameplayAbi(replay.Setup())!=GameplayAbi(setup)||!network.Finish())return false;
+  replay_=std::move(replay);audio_.clear();return true;
+}
 bool Session::restart(){
   if(!restartRequested||!finished||!paused||!menuConfirm||menuAction!=3||menuSelection!=0||!network.Retired()||network.ReadOnly())return fail("TH12 restart is not confirmed");
   if(!network.BeginNextRun((network.Setup().seed+1)&65535))return fail(network.Error());
@@ -123,6 +141,9 @@ bool Session::spectatorStep(){
   if(segment&&segment->checkpoint.stage!=unsigned(stageNumber)){pendingStage_=segment->checkpoint.stage;return true;}
   return playback.Step([&](const Netplay::SpectatorStageEvent& event){
     StageEntry entry;
+    // A restarted source carries a new room seed. Native private player RNG
+    // streams are initialized from it when the Replay stage is reconstructed.
+    options.seed=network.Setup().seed;
     return event.schema==SpectatorStageSchema&&decodeStageEntry(event.state,entry)&&entry.stage==event.stage&&restoreStageEntry(entry);
   },[&](const Netplay::SpectatorFramePacket& packet,bool historical){
     std::array<Input,3> decoded;

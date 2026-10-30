@@ -318,12 +318,15 @@ MenuContext Game::result_data(bool clear){
     const bool assisted=th12::practice::assisted()||(session->recorder&&session->recorder->unlimited());
     c.ranked=!session->replay&&f.continueCount==0&&!assisted;c.score_stored=th12_score_stored();c.timestamp=host::unix_time();c.slowdown=assisted?100:0;
 #ifdef TH12_MULTIPLAYER
-    if(mp_playing){c.multiplayer=true;c.can_continue=false;c.can_save_replay=!mp_replay;c.ranked=!mp_replay;c.score_stored=th12::score;c.continues=0;}
+    if(mp_playing){c.multiplayer=true;c.can_continue=false;c.can_save_replay=!mp_replay;c.ranked=!mp_replay&&!th12::multiplayer::session.network.ReadOnly();c.score_stored=th12::score;c.continues=0;}
 #endif
     return c;
 }
 // upstream recordClear: the stage clear and the clear count, once a run.
 void Game::record_clear(const MenuContext& r){
+#ifdef TH12_MULTIPLAYER
+    if(mp_playing&&th12::multiplayer::session.network.ReadOnly())return;
+#endif
     if(!session||session->replay||r.run.mode==ModePractice||session->clear_recorded||!r.clear)return;session->clear_recorded=true;
     profile.record_stage_clear(r.run.character,r.run.shot,r.run.difficulty,session->stage,i64(r.score_stored)*10);
     profile.record_clear(r.run.character,r.run.shot,r.run.difficulty,r.continues,session->stage);
@@ -533,13 +536,13 @@ u32 Game::map_buttons(const PadSample& pad)const{
 double Game::logical_interval()const{
     return runtime_options.thprac&&session&&!session->replay&&menus&&menus->state.scene==MenuScene::Playing&&!practice_ui.captures()?th12_practice_interval(0,0,0,0):1./60.;
 }
-bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
+bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha,bool draw_frame){
     const bool replay_control=session&&session->replay&&(external_paused||external_rate!=1||seek_target>=0||((map_buttons(pad)|pad.keyboard)&(InShot|InSkip|InFocus)));
     presentation_alpha=runtime_options.limit_presentation||!session||replay_control||phase!=Phase::Menu||menus->state.scene!=MenuScene::Playing?1:std::clamp(alpha,0.f,1.f);
     // Upstream createFrameRateMeter: displayed frames over wall time, once a second.
     frame_timing[0]=frame_timing[1]=frame_timing[2]=0;
-    const double interval=last_frame>=0?now-last_frame:0;u32 game_ticks=0;
-    if(fps_since<0||now<fps_since){fps_since=now;fps_frames=0;}else{++fps_frames;if(now-fps_since>=1000){fps_value=float(fps_frames*1000/(now-fps_since));fps_since=now;fps_frames=0;}}
+    const double interval=last_display>=0?now-last_display:0;u32 game_ticks=0;
+    if(draw_frame){if(fps_since<0||now<fps_since){fps_since=now;fps_frames=0;}else{++fps_frames;if(now-fps_since>=1000){fps_value=float(fps_frames*1000/(now-fps_since));fps_since=now;fps_frames=0;}}}
     if(last_frame>=0)audio.update(std::clamp(now-last_frame,0.,250.)/1000);last_frame=now;
     audio.pump(); // keep the output queue filled (~0.1-0.14 s ahead)
     // Resource jobs run between frames so the loading screen keeps moving.
@@ -640,6 +643,9 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
     }
     if(quit)return false;
     watch_prefetch();
+    if(session&&!session->replay&&phase!=Phase::Loading)th12_set_wall_time(now);
+    if(!draw_frame)return true;
+    last_display=now;
     // One capture per displayed frame; the sampler simulates any skipped ages.
     const bool in_game=session&&phase==Phase::Menu;
     game_fps=picture_counter.frame(now,session?session->stage:0,double(th12::frame)+(scene->continuous_motion()&&presentation_alpha<1?presentation_alpha:0),in_game&&menus->state.scene==MenuScene::Playing);
@@ -648,7 +654,6 @@ bool Game::frame(const PadSample& pad,u32 ticks,double now,float alpha){
         scene->capture({game_fps,session->hud_age,session->replay?0:th12::fullGameFlow.continueCount,session->run.mode==ModePractice||(session->replay&&session->replay->info.practice),
             th12::fullGameFlow.status==th12::FullGameStatus::StageClear,session->high_score,session->replay?session->replay->recorded_fps(session->stage,session->cursor):-1});
         captured=true;++capture_serial;const double t=host::seconds()-t0;timing[1]+=t;frame_timing[1]=t*1000;}
-    if(session&&!session->replay&&phase!=Phase::Loading)th12_set_wall_time(now);
     {const double t0=host::seconds();if(hide_game)gpu.begin({0,0,0,1});else draw();practice_ui.render(gpu);const double t=host::seconds()-t0;timing[2]+=t;frame_timing[2]=t*1000;}
     // Once a minute of play: average CPU time per frame and frame pacing for the log.
     const bool continued=timed_frame;timed_frame=in_game&&menus->state.scene==MenuScene::Playing;

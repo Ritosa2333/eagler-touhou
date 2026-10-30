@@ -8,13 +8,23 @@
 
 ```sh
 node ports/th12-mp/scripts/build-eagler.mjs
-node --test ports/th12-mp/tests/sdl-clock.test.mjs
+npm --prefix ports/th12-mp run test:sdl
 node ports/th12-mp/scripts/check-sdl-multiplayer-browser.mjs
 ```
 
 浏览器验证设置 `TH12_ASSETS` 和 `TH12_FONTS`，输出在本地 `artifacts/sdl-multiplayer-browser`。测试用真实 RTC 输入，并支持 `TH12_INPUT_LATENCY_MS` 与 `TH12_MULTIPLAYER_SCENARIOS`。旧 JS 宿主通过 `build-legacy-eagler.mjs` 单独构建，正式包的模块闭包不引用它或旧渲染器。
 
 依赖与数据准备见 [SDL3 指南](../portable/sdl/README.md)，同步来源按 [目录维护流程](../../../docs/adaptation/port-sync.md) 登记。
+
+## 局次、旁观与结算
+
+多人输入规则版本为 7。菜单按席位维护按下边沿与释放状态，队友持续射击时其他席位可以确认。R 经暂停菜单建立新局，普通游戏中的 R 沿本局继续。录像记录生效后的原生输入，按录制程序的构建身份校验。
+
+每次重开更新旁观局次与 seed，从新的原生 Replay 关头重建。玩家历史按连续确认前沿发布，发送受阻时延后发送，结算时由共用尾包保存器排空本局输入和结束标记。旁观暂停位置与玩家结算分别推进。
+
+观众播完尾部并收到同局、同构建的完整录像后，进入本机原生选槽与署名流程。保存沿本作编码器写入多人录像，旁观过程及结算不计入玩家成绩。返回房间先清理会话输入与异步操作，再等待同一原生标题实际呈现。
+
+`test:sdl` 检查浏览器边界与适配模块。原生 CTest 的 `th12_native_smoke`、`th12_multiplayer_menu_safety` 检查席位菜单、回滚和输入编码。共有 `ports:mp` 的 `--lifecycle --restart=both --recover --wait-end` 检查真实连接、重开、旁观恢复、尾帧和原生录像保存。
 
 ## 呈现性能验证
 

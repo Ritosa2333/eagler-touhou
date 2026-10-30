@@ -8,7 +8,7 @@
 
 namespace th12::multiplayer {
 struct SessionSetup {
-    static constexpr std::uint32_t Version=6, LegacyVersion=5, Words=22, GameplayVersion=6, MaxRollbackFrames=12;
+    static constexpr std::uint32_t Version=6, LegacyVersion=5, Words=22, GameplayVersion=7, MaxRollbackFrames=12;
     // Legacy is still the default for existing pure-delay callers and Replays.
     std::uint32_t version=LegacyVersion,mode=1;
     std::uint64_t session_id=0;
