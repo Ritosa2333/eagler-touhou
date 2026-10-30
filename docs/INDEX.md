@@ -1,6 +1,6 @@
 # 文档总表
 
-共 366 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 369 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -208,6 +208,8 @@
 | 历史记录 | [archive/site-recovery-20261028/README.md](../archive/site-recovery-20261028/README.md) | 网页入口回退发布 |
 | 历史记录 | [archive/th06-th08-multiplayer-bugs-20261028/README.md](../archive/th06-th08-multiplayer-bugs-20261028/README.md) | TH06／TH08 多人索敌与 Last Spell 修复验证 |
 | 历史记录 | [archive/th08-extra-last-spell-20261029/README.md](../archive/th08-extra-last-spell-20261029/README.md) | TH08 Extra 雷保护与 Last Spell 生命周期 |
+| 历史记录 | [archive/th12-autosave-host-state-20261030/README.md](../archive/th12-autosave-host-state-20261030/README.md) | 星莲船录像保存与逐帧状态读取 |
+| 历史记录 | [archive/th12-combined-optimizations-20261030/README.md](../archive/th12-combined-optimizations-20261030/README.md) | TH12 综合性能优化 |
 | 历史记录 | [archive/th12-complete-sdl-20261029/README.md](../archive/th12-complete-sdl-20261029/README.md) | TH12 普通版与多人版完整 SDL 入口 |
 | 历史记录 | [archive/th12-green-ufo-warning-20261028/README.md](../archive/th12-green-ufo-warning-20261028/README.md) | Extra 绿 UFO 激光预告线 |
 | 历史记录 | [archive/th12-hud-sampling-20261029/README.md](../archive/th12-hud-sampling-20261029/README.md) | TH12 静态 HUD 采样优化 |
