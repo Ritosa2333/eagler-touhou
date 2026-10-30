@@ -877,6 +877,25 @@
             "ports/th12-mp/tests/native/sdl-background-performance.cpp"
           ],
           "note": "基于最新主线，普通版背景图元旋转复用已进入多人版，完整源码树与 Windows、Web 和双人三人回滚浏览器验收版本一致；多人保留自身输入、观战和录像验证入口。"
+        },
+        {
+          "kind": "manual",
+          "base": "48d941d5e2db5f87291bd485e02bd38a701147d7",
+          "source": "97df3629c0247a1a56f637d1e1e7f6d99d90db0e",
+          "targetHead": "6ebabcd9c021662383e24a65afa5db83322eb20b",
+          "paths": [
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/portable/sdl/GameHost.cpp",
+            "ports/th12-mp/portable/sdl/Host.cmake",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/src/sdl-host-state.mjs",
+            "ports/th12-mp/tests/native/sdl-host-state.cpp",
+            "ports/th12-mp/tests/sdl-host-state.test.mjs",
+            "ports/th12-mp/tests/sdl-hot-path.test.mjs"
+          ],
+          "note": "普通版与多人版同步27项数值host-state接口、JSON兼容入口及内存增长读取；多人另合并自动保存调度、按确认/提交进度去重和停止前强制保存。40项边界检查、两侧无窗口原生夹具、两侧Web构建与打包、19目标适配检查通过。目录历史保留双亲，写回完整MP树与已验证源码相同。"
         }
       ]
     }
