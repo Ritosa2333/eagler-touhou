@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-27",
+  "changes": [
+    {
+      "path": "portable/sdl/Renderer.cpp",
+      "baselineSha256": "b15c11caee6185c3cbe7997684639198f4a6b10a73cbcc833a2b7e9035d2e974",
+      "currentSha256": "d77af6e944258b914d604e590613bab7abd7a1eb6bfa1655cf6d1d9af21cadd0",
+      "reason": "TH17 opt-in dense additive grouping with preserved sole depth-writer order, strict nonadditive/depth-read barriers, and compact reusable vertex/instance arenas. Other games retain the disabled default. Reuse flat linked grouping and output arenas instead of per-draw nested-vector allocations; grouping, barriers and primitive order are preserved. TH17 explicitly uses indexed four-vertex sprite batches with exact original triangle order and reusable indices. Adjacent long strips retain topology using degenerate joins. Other games do not call the new quad API. TH17 opt-in depth-clear deferral retains shared attachment ordering and exact partial clears while removing overwritten or unused clears. Deferred clears reuse the current compatible framebuffer for the same depth attachment, avoiding extra color-target switches. The existing TH17 opt-in also avoids allocating a depth attachment for pure 2D passes and avoids framebuffer switches for deferred depth-only clears; genuine depth consumers retain shared attachments and clear order.",
+      "evidence": [
+        "th17_web/tests/sdl/application-upload-equivalence.test.mjs",
+        "th17_web/scripts/profile-user-replay.mjs",
+        "th17_web/scripts/verify-user-replay-performance.mjs",
+        "portable/render-equivalence.mjs",
+        "portable/instancing-equivalence.mjs",
+        "th17_web/scripts/compare-hotspot-builds.mjs",
+        "th17_web/scripts/verify-hotspot-performance.mjs",
+        "th17_web/artifacts/cpp/verification/sdl-indexed-quads-pixels.json",
+        "th17_web/scripts/check-deferred-depth.mjs",
+        "th17_web/artifacts/deferred-depth-semantics.json",
+        "th17_web/scripts/compare-particle-pixels.mjs",
+        "th17_web/artifacts/performance/particle-final-pixels/comparison.json"
+      ]
+    },
+    {
+      "path": "portable/sdl/Shaders.hpp",
+      "baselineSha256": "744c82640fdeb00ba8bc253f768d59b039652edb50be534cc7aab27c22a00754",
+      "currentSha256": "9443dc53e9bfd6ba940af4558be306e42af77d99eed2c7a25d4b02b15d7e7002",
+      "reason": "Ordered world-quad instancing carries texture transforms; omit unused screen/instance uniform uploads and vertex work.",
+      "evidence": [
+        "portable/instancing-equivalence.mjs",
+        "portable/render-equivalence.mjs",
+        "th17_web/scripts/profile-rendering.mjs",
+        "th17_web/scripts/profile-longplay.mjs"
+      ]
+    },
+    {
+      "path": "portable/sdl/Renderer.hpp",
+      "baselineSha256": "4c82260993bd076fdfaf4eea82e5a07c7ad636b572ea764d3f8b204ba44637a2",
+      "currentSha256": "bb3777c5de7fe161cc81d312a146c4f259853a541968602742c291aa7d0803d0",
+      "reason": "TH17 opt-in dense additive grouping with preserved sole depth-writer order, strict nonadditive/depth-read barriers, and compact reusable vertex/instance arenas. Other games retain the disabled default. Reuse flat linked grouping and output arenas instead of per-draw nested-vector allocations; grouping, barriers and primitive order are preserved. TH17 explicitly uses indexed four-vertex sprite batches with exact original triangle order and reusable indices. Adjacent long strips retain topology using degenerate joins. Other games do not call the new quad API. TH17 opt-in depth-clear deferral retains shared attachment ordering and exact partial clears while removing overwritten or unused clears. Deferred clears reuse the current compatible framebuffer for the same depth attachment, avoiding extra color-target switches.",
+      "evidence": [
+        "th17_web/tests/sdl/application-upload-equivalence.test.mjs",
+        "th17_web/scripts/profile-user-replay.mjs",
+        "th17_web/scripts/verify-user-replay-performance.mjs",
+        "portable/render-equivalence.mjs",
+        "portable/instancing-equivalence.mjs",
+        "th17_web/scripts/compare-hotspot-builds.mjs",
+        "th17_web/scripts/verify-hotspot-performance.mjs",
+        "th17_web/artifacts/cpp/verification/sdl-indexed-quads-pixels.json",
+        "th17_web/scripts/check-deferred-depth.mjs",
+        "th17_web/artifacts/deferred-depth-semantics.json"
+      ]
+    },
+    {
+      "path": "portable/sdl/FrameCadence.hpp",
+      "baselineSha256": "1b2a610ac172de2089b4cd6551e88b04d36fb4030da93526a4442cefa8cdbed8",
+      "currentSha256": "7640d612e4c85da3fca572b47e0bc7789cd7d8159e6b2263ff3233f80fab7823",
+      "reason": "TH17 uses nearest-tick signed phase accounting (half an interval) instead of a 1 ms epsilon. This fixes repeated 50-presentation/60-update plateaus under 1.1–6 ms RAF phase jitter. Other games keep zero tolerance.",
+      "evidence": [
+        "portable/check-frame-cadence.cpp",
+        "portable/check-frame-cadence.mjs",
+        "th17_web/scripts/verify-browser-cadence.mjs",
+        "th17_web/scripts/profile-browser-replay.mjs"
+      ]
+    },
+    {
+      "path": "portable/sdl/Fixture.cpp",
+      "baselineSha256": "d27bfa99298cb3b7dfaa33b2e34b2a235d6bed732a93a1c737ffdc11994e1cc6",
+      "evidence": [
+        "th17_web/scripts/check-deferred-depth.mjs",
+        "th17_web/artifacts/deferred-depth-semantics.json"
+      ],
+      "currentSha256": "7aa2c2f10f20e7630688e2e60ab90aef7e8d881dd84682d7b376e0e05448c406",
+      "reason": "Development-only exports to compare deferred depth clear semantics, shared attachments and target lifetime; no production runtime imports this fixture."
+    }
+  ],
+  "note": "Shared SDL3/WebGL2 renderer extension. Existing pipeline precision profiles and original baseline hashes are preserved; see independent pixel and gameplay comparison reports."
+}

@@ -21,6 +21,7 @@ jobs:
       with:
         python-version: '3.13'
     - run: python3 tools/ports/test_check_history.py
+    - run: python3 tools/ports/test_delivery_history.py
     - run: python3 tools/ports/check-history.py --base "$EAGLER_CI_BASE"
       env:
         EAGLER_CI_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}

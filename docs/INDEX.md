@@ -1,6 +1,6 @@
 # 文档总表
 
-共 371 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 399 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -47,6 +47,7 @@
 | 作品入口 | [ports/th12/README.md](../ports/th12/README.md) | 东方星莲船网页版与行为还原 |
 | 作品入口 | [ports/th15-mp/README.md](../ports/th15-mp/README.md) | 東方紺珠伝 TH15 多人版 |
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
+| 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
 | 作品适配表 | [ports/th06/ADAPTATION.md](../ports/th06/ADAPTATION.md) | th06 适配检查 |
 | 作品适配表 | [ports/th07/ADAPTATION.md](../ports/th07/ADAPTATION.md) | th07 适配检查 |
@@ -63,6 +64,7 @@
 | 作品适配表 | [ports/th12/ADAPTATION.md](../ports/th12/ADAPTATION.md) | th12 适配检查 |
 | 作品适配表 | [ports/th15-mp/ADAPTATION.md](../ports/th15-mp/ADAPTATION.md) | th15 MP 适配检查 |
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
+| 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
 | 作品源码文档 | [ports/th06/docs/DEVELOPMENT.md](../ports/th06/docs/DEVELOPMENT.md) | TH06 开发指南 |
 | 作品源码文档 | [ports/th06/docs/records/2026-10-26-spectator-browser.md](../ports/th06/docs/records/2026-10-26-spectator-browser.md) | 合作旁观状态验收 |
@@ -130,6 +132,7 @@
 | 作品源码文档 | [ports/th12/tools/replay-verifier/README.md](../ports/th12/tools/replay-verifier/README.md) | TH12 Replay verification |
 | 作品源码文档 | [ports/th15-mp/docs/DEVELOPMENT.md](../ports/th15-mp/docs/DEVELOPMENT.md) | TH15 多人版开发指南 |
 | 作品源码文档 | [ports/th15/docs/DEVELOPMENT.md](../ports/th15/docs/DEVELOPMENT.md) | TH15 开发指南 |
+| 作品源码文档 | [ports/th17/docs/DEVELOPMENT.md](../ports/th17/docs/DEVELOPMENT.md) | TH17 开发指南 |
 | 作品源码文档 | [ports/th20/docs/DEVELOPMENT.md](../ports/th20/docs/DEVELOPMENT.md) | TH20 开发指南 |
 | 公共库 | [common/README.md](../common/README.md) | common/ |
 | 公共库 | [common/browser/README.md](../common/browser/README.md) | 浏览器共享模块 |
@@ -256,6 +259,27 @@
 | 历史记录 | [archive/th15-rollback-20261026/th15-rollback-stress-fix-20261026.md](../archive/th15-rollback-20261026/th15-rollback-stress-fix-20261026.md) | TH15 密集回滚修复与复测 |
 | 历史记录 | [archive/th15-rollback-20261026/th15-upstream-rebuild-20261026.md](../archive/th15-rollback-20261026/th15-upstream-rebuild-20261026.md) | TH15 多人实验分支与上游同步 |
 | 历史记录 | [archive/th15-stage-transition-rollback-20261028/README.md](../archive/th15-stage-transition-rollback-20261028/README.md) | TH15 多人回滚换面输入节奏 |
+| 历史记录 | [archive/th17-development-20261030/CHANGELOG.txt](../archive/th17-development-20261030/CHANGELOG.txt) | [2026-10-27] 鬼形兽 WEB 1.0.14 |
+| 历史记录 | [archive/th17-development-20261030/README-交付说明.md](../archive/th17-development-20261030/README-交付说明.md) | 鬼形兽 WEB 1.0.14 完整开发交付 · 2026-10-27 |
+| 历史记录 | [archive/th17-development-20261030/README.md](../archive/th17-development-20261030/README.md) | TH17 1.0.14 开发交付记录 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-24-录像与六面修复.md](../archive/th17-development-20261030/docs/2026-10-24-录像与六面修复.md) | 2026-10-24 录像、练习选关和六面弹幕修复 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-24-高清文字修复.md](../archive/th17-development-20261030/docs/2026-10-24-高清文字修复.md) | WEB 1.0.2：高清文字修复 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-25-加载画面修复.md](../archive/th17-development-20261030/docs/2026-10-25-加载画面修复.md) | 鬼形兽 WEB 1.0.4：加载画面恢复 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-25-密集消弹与激光性能修复.md](../archive/th17-development-20261030/docs/2026-10-25-密集消弹与激光性能修复.md) | WEB 1.0.8：密集消弹与六面激光（2026-10-26） |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-25-录像手机性能复查.md](../archive/th17-development-20261030/docs/2026-10-25-录像手机性能复查.md) | 鬼形兽 WEB 1.0.6：用户录像三至六面掉帧复查 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-25-手机性能优化.md](../archive/th17-development-20261030/docs/2026-10-25-手机性能优化.md) | 鬼形兽 WEB 1.0.5：手机掉帧排查与优化 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-25-消弹峰值性能修复.md](../archive/th17-development-20261030/docs/2026-10-25-消弹峰值性能修复.md) | WEB 1.0.7：四面与六面消弹峰值 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-25-震屏修复.md](../archive/th17-development-20261030/docs/2026-10-25-震屏修复.md) | 鬼形兽 WEB 1.0.3：符卡及关卡震屏 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-26-四五六面整关复测.md](../archive/th17-development-20261030/docs/2026-10-26-四五六面整关复测.md) | 四、五、六面持续 50 帧复查 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-26-手机50帧未通过验收.md](../archive/th17-development-20261030/docs/2026-10-26-手机50帧未通过验收.md) | 手机持续 50 帧复查：未通过验收 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-26-持续50帧复查.md](../archive/th17-development-20261030/docs/2026-10-26-持续50帧复查.md) | WEB 1.0.10：持续 50 帧复查与消弹内存分配 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-26-浏览器帧调度修复.md](../archive/th17-development-20261030/docs/2026-10-26-浏览器帧调度修复.md) | WEB 1.0.9：浏览器时间戳边界导致的空帧 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-26-深度清空与手机50帧复查.md](../archive/th17-development-20261030/docs/2026-10-26-深度清空与手机50帧复查.md) | 四、五、六面：深度清空与持续 50 帧复查 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-27-六面消弹透明填充与动画池.md](../archive/th17-development-20261030/docs/2026-10-27-六面消弹透明填充与动画池.md) | 六面消弹透明填充与动画池复查 |
+| 历史记录 | [archive/th17-development-20261030/docs/2026-10-27-六面激光与动画队列复查.md](../archive/th17-development-20261030/docs/2026-10-27-六面激光与动画队列复查.md) | 六面激光符卡与动画队列复查 |
+| 历史记录 | [archive/th17-development-20261030/docs/当前开发状态.md](../archive/th17-development-20261030/docs/当前开发状态.md) | 鬼形兽 C++ 重建状态 |
+| 历史记录 | [archive/th17-development-20261030/docs/验收计划.md](../archive/th17-development-20261030/docs/验收计划.md) | 鬼形兽还原与发布验收 |
+| 历史记录 | [archive/th17-development-20261030/migration-validation.md](../archive/th17-development-20261030/migration-validation.md) | TH17 共用启动器接入验证 · 2026-10-30 |
 | 历史记录 | [archive/thprac-information-touch-20261027/README.md](../archive/thprac-information-touch-20261027/README.md) | THPrac 信息窗触控归属 |
 | 历史记录 | [archive/turn-fallback-20261028/README.md](../archive/turn-fallback-20261028/README.md) | TURN 选择同步 |
 | 历史记录 | [docs/history/INDEX.md](history/INDEX.md) | 旧文档去向 |
@@ -266,6 +290,7 @@
 | 历史记录 | [docs/history/th12-performance-20261024.md](history/th12-performance-20261024.md) | th12 性能测量 ｜ 2026-10-24 |
 | 历史记录 | [ports/th15-mp/web/CHANGELOG.txt](../ports/th15-mp/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
 | 历史记录 | [ports/th15/web/CHANGELOG.txt](../ports/th15/web/CHANGELOG.txt) | [2026-10-05] 绀珠传 WEB 1.0.3 |
+| 许可证与声明 | [archive/th17-development-20261030/THIRD-PARTY-NOTICES.txt](../archive/th17-development-20261030/THIRD-PARTY-NOTICES.txt) | Original game and assets: Team Shanghai Alice / ZUN. |
 | 许可证与声明 | [common/LICENSE](../common/LICENSE) | LICENSE |
 | 许可证与声明 | [common/contracts/LICENSE](../common/contracts/LICENSE) | LICENSE |
 | 许可证与声明 | [common/include/eagler/thprac/THPRAC-LICENSE.txt](../common/include/eagler/thprac/THPRAC-LICENSE.txt) | MIT License |
@@ -367,6 +392,9 @@
 | 许可证与声明 | [ports/th15/portable/browser/LICENSE.eagler-common](../ports/th15/portable/browser/LICENSE.eagler-common) | LICENSE |
 | 许可证与声明 | [ports/th15/portable/sdl/third_party/miniaudio.LICENSE](../ports/th15/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th15/web/cpp/game/THPRAC-LICENSE.txt](../ports/th15/web/cpp/game/THPRAC-LICENSE.txt) | MIT License |
+| 许可证与声明 | [ports/th17/LICENSE-launcher.txt](../ports/th17/LICENSE-launcher.txt) | GNU GENERAL PUBLIC LICENSE |
+| 许可证与声明 | [ports/th17/THIRD-PARTY-NOTICES.txt](../ports/th17/THIRD-PARTY-NOTICES.txt) | Original game and assets: Team Shanghai Alice / ZUN. |
+| 许可证与声明 | [ports/th17/portable/sdl/third_party/miniaudio.LICENSE](../ports/th17/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [ports/th20/portable/sdl/third_party/miniaudio.LICENSE](../ports/th20/portable/sdl/third_party/miniaudio.LICENSE) | miniaudio |
 | 许可证与声明 | [services/relay/LICENSE](../services/relay/LICENSE) | LICENSE |
 | 许可证与声明 | [services/telemetry/LICENSE](../services/telemetry/LICENSE) | LICENSE |

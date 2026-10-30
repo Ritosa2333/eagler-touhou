@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "checkedAt": "2026-10-27T01:41:06.247Z",
+  "webVersion": "1.0.14",
+  "manifestVersion": "e739d874c55154719609b0cd",
+  "wasmSha256": "ae61c83300005b642defc96ee7f3bac5d61f4586e593b4a8e384ab18c454a1a3",
+  "sourceHashes": true,
+  "sharedArchitecture": true,
+  "releaseFiles": 117,
+  "releaseBytes": 203102276,
+  "productionExports": true,
+  "originalInputs": true,
+  "scope": "Relocated delivery source/toolchain/release identity, every site file and HTTP/deployment startup. Gameplay and physical-phone performance are separate acceptance scopes.",
+  "httpStartup": true,
+  "httpRange": true,
+  "isolatedHeaders": true,
+  "privatePaths404": true,
+  "deploymentEntryStartup": true
+}

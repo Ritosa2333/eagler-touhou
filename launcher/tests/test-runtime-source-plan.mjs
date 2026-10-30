@@ -45,6 +45,7 @@ try {
       }
       await put(resolve(source, recipe.kind === "cmake" ? "CMakeLists.txt" : recipe.build[0]));
       for(const input of recipe.commonInputs??[])await put(resolve(layout.path("common"),input));
+      if(recipe.commonMarker)await put(resolve(layout.path("common"),recipe.commonMarker));
       const before = await readdir(source);
       const plan = await planRuntimeSourceBuild({ game, variant, emsdk: sdk }, context);
       assert.deepEqual(await readdir(source), before, "planning must not create build output");
@@ -63,7 +64,7 @@ try {
       plans.push(plan);
     }
   }
-  assert.equal(plans.length, 19);
+  assert.equal(plans.length, 20);
   const th12mp = plans.find(plan => plan.game === 'th12' && plan.variant === 'multiplayer');
   assert.equal(th12mp.source, layout.path('th12mp'));
   assert.equal(th12mp.features.thprac, false);
@@ -105,4 +106,4 @@ try {
   assert.equal(dirname(root), resolve(tmpdir()));
   await rm(root, { recursive: true, force: true });
 }
-console.log("Runtime source plans: PASS (19 variants, shared dependencies, explicit tools, invalid inputs)");
+console.log("Runtime source plans: PASS (20 variants, shared dependencies, explicit tools, invalid inputs)");

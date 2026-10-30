@@ -15,6 +15,7 @@
 | th11 | [开发](th11/README.md) | [开发](th11-mp/README.md) | [普通版](th11/ADAPTATION.md) · [MP](th11-mp/ADAPTATION.md) |
 | th12 | [开发](th12/README.md) | [开发](th12-mp/README.md) | [普通版](th12/ADAPTATION.md)／[多人版](th12-mp/ADAPTATION.md) |
 | th15 | [开发](th15/README.md) | [开发](th15-mp/README.md) | [普通版](th15/ADAPTATION.md) · [MP](th15-mp/ADAPTATION.md) |
+| th17 | [开发](th17/README.md) | — | [普通版](th17/ADAPTATION.md) |
 | th20 | [开发](th20/README.md) | — | [普通版实验适配](th20/ADAPTATION.md) |
 
 从仓库根目录增加需要的源码：

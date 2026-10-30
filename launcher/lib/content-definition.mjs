@@ -1,3 +1,4 @@
+import {TH17_MUSIC_FILES} from "./th17-content-layout.mjs";
 import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
 import { TH15_MUSIC_FILES } from "./th15-content-layout.mjs";
@@ -310,6 +311,18 @@ export const PRODUCT_CONTENT = Object.freeze({
         developmentEnv: "EAGLER_TH15_ARCHIVES",
         developmentFiles: Object.freeze(["th15.dat"]),
       }),
+    }),
+  }),
+  th17: Object.freeze({
+    original: Object.freeze({files: Object.freeze(["th17.dat"]), oggSourceFiles: Object.freeze(["thbgm.dat"]),
+      preparedAlternative: Object.freeze({directory: "assets-ogg", markerFiles: Object.freeze(["th17.data", "music/th17_01.ogg"])})}),
+    dataLayout: "sha256-2f0e4367726e33911fd7efb7c49ae0e258d20be39dcff7c4b7edd41ce8104275",
+    music: Object.freeze({ogg: Object.freeze({mount: PRODUCT_GAMES.th17.package.musicMounts.ogg, files: TH17_MUSIC_FILES})}),
+    hostPreparation: Object.freeze({
+      artwork: Object.freeze({kind: "thtk-anm-title", card: Object.freeze({archive: "th17.dat", anm: "title.anm",
+        textures: Object.freeze(["title/title_bk00.png", "title/title_ch00.png", "title/title_logo.png"])})}),
+      preparedContent: Object.freeze({directory: "assets-ogg", markerFiles: Object.freeze(["th17.data", "music/th17_01.ogg"]), script: "scripts/prepare-th17-content.mjs", baseline: "host/ogg-baselines/th17.json"}),
+      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
     }),
   }),
   th20: Object.freeze({

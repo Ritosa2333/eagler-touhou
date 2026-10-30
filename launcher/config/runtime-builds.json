@@ -159,6 +159,27 @@
         "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
         "multiplayer": { "workspaceRepository": "th12mp", "features": { "thcrap": true, "thprac": false }, "sourceBuild": { "kind": "node", "build": ["scripts/build-eagler.mjs"] }, "cache": {} }
       }
+    },
+    "th17": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th17",
+      "sourceBuild": {
+        "kind": "node",
+        "build": [
+          "web/scripts/build-sdl-application.mjs",
+          "--release"
+        ],
+        "commonMarker": "include/eagler/input/BrowserGamepad.hpp"
+      },
+      "variants": {
+        "normal": {
+          "features": {
+            "thcrap": false,
+            "thprac": false
+          },
+          "cache": {}
+        }
+      }
     }
   }
 }

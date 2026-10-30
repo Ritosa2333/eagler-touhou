@@ -1,0 +1,32 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';
+import {core,oracle,memory,string,root,report,enableNativeMath} from './helpers.mjs';import {resourceLoader,nativePool,nativeInstances,prepareBank,compareAnm,retireOriginalAnimations} from './anm-oracle.mjs';
+test('TH17 animal spirits match original spawn separation, cycling, contact, aging and removal',async()=>{
+ const c=await core(),m=await oracle(),a=c.anm_manager_create(),nm=nativePool(m),loader=resourceLoader(m),native=m.allocate(0x100),text=m.allocate(0x19270),player=m.allocate(0x19100),world=m.allocate(0x100),position=m.allocate(12),angle=m.allocate(4),wrapper=m.allocate(32);enableNativeMath(m);
+ for(const [at,p]of [[0x4b7684,native],[0x4b7678,text],[0x4b77d0,player],[0x4b76b0,world],[0x4a0430,0x4b5918]])m.u32(at,p);m.f32(0x4b5918,1);
+ const code=Buffer.from([0xf3,0x0f,0x10,0x15,0,0,0,0,0xe9,0,0,0,0]);code.writeUInt32LE(angle,4);code.writeInt32LE(0x410380-wrapper-code.length,9);m.write(wrapper,code);
+ let events=[],f,frames=0,checks=0,spawns=0,removed=0,contacts=0;const sp=()=>m.reg('ESP');m.replace(0x4654f0,'observe animal-spirit immediate sound',()=>{events.push(1,m.u32(sp()+4));return 0;},1);m.replace(0x45d8a0,'observe animal-spirit trophy',()=>{events.push(2,m.reg('ECX'));return 0;});m.replace(0x40f980,'observe animal-spirit inventory boundary',()=>{events.push(3,m.u32(sp()+4));return 0;},1);
+ const load=(name,id)=>{const b=readFileSync(resolve(root,'reference/assets',name)),p=c.allocate(b.length);memory(c,p,b.length).set(b);assert.equal(c.anm_manager_load(a,id,p,b.length),1,string(c,c.anm_manager_error(a)));c.deallocate(p);return prepareBank(m,loader,name,b,nm,id);};
+ const list=()=>{const out=[];for(let p=m.u32(native+0x18);p;p=m.u32(p+4)){out.push(p);assert.ok(out.length<=40,'native spirit list cycle');}return out;};
+ const same=(cp,np,n,label)=>{const actual=Buffer.from(memory(c,cp,n)),expected=Buffer.from(m.bytes(np,n));if(!actual.equals(expected)){let i=0;while(actual[i]===expected[i])i++;assert.fail(label+' byte '+i.toString(16)+' actual='+actual.subarray(Math.max(0,i-4),i+12).toString('hex')+' original='+expected.subarray(Math.max(0,i-4),i+12).toString('hex'));}};
+ try{
+  m.u32(text+0x19248,load('ascii.anm',2));assert.equal(c.anm_manager_fallback(a,2),1);const bank=load('beast.anm',12),heap=m.heap;
+  for(let scenario=0;scenario<8;scenario++){
+   f=c.spirits_create(a,12);m.heap=heap;m.view(native,0x100).fill(0);m.u32(native+12,bank);m.u32(0x4b5ac4,0);m.u32(0x4b5a60,0);m.i32(world+0xa8,scenario%2);m.f32(0x4b5918,1);let records=new Map();
+   for(let visual=0;visual<2;visual++){const rng=Buffer.alloc(8);rng.writeUInt16LE(1733+scenario*137+visual*737);m.write(visual?0x4b7660:0x4b7668,rng);memory(c,c.spirits_rng(f,visual),8).set(rng);}
+   const check=tag=>{const label=scenario+'/'+tag,objects=list();assert.equal(c.spirits_count(f),objects.length,label+' count');assert.equal(c.spirits_count(f),m.u32(native+16),label+' original count');for(let i=0;i<objects.length;i++){const id=records.get(objects[i]);assert.equal(c.spirits_order(f,i),id,label+' order '+i);same(c.spirits_state(f,id),objects[i]+16,96,label+' spirit '+id);}
+    for(let v=0;v<2;v++)same(c.spirits_rng(f,v),v?0x4b7660:0x4b7668,8,label+' RNG');assert.deepEqual(Array.from(new Uint32Array(c.memory.buffer,c.spirits_events(f),c.spirits_event_count(f))),events,label+' events');
+    for(let alt=0;alt<2;alt++){const objects=nativeInstances(m,nm,alt);assert.equal(c.anm_manager_count(a,alt),objects.length,label+' ANM count');for(const p of objects)compareAnm(c,m,c.anm_manager_find(a,m.u32(p+0x538)),p,label+' ANM '+p);}checks++;
+   };
+   events=[];for(let i=0;i<41;i++){const kind=1+i%17,p=[Math.fround((i%8-4)*40.125),Math.fround(128+Math.floor(i/8)*54.25),Math.fround(i%3*.125)],bearing=Math.fround((i%9-4)*.4);p.forEach((v,k)=>m.f32(position+k*4,v));m.f32(angle,bearing);const expected=m.call(wrapper,{ecx:native,args:[position,kind]}),id=c.spirits_spawn(f,kind,...p,bearing,scenario%2);assert.equal(expected>>>0,i===40?0xffffffff:0);assert.equal(!!id,i!==40,string(c,c.spirits_error(f)));if(id){records.set(list().at(-1),id);spawns++;}check('spawn '+i);}
+   for(let frame=0;frame<400;frame++){
+    const rate=[1,.5,.25,1.25][scenario%4],p=frame<160?[10000,10000,0]:frame<280?[Math.fround((frame%120-60)*2),Math.fround(224+Math.sin(frame*.03)*130),0]:[0,256,0];p.forEach((v,k)=>m.f32(player+0x610+k*4,v));m.f32(0x4b5918,rate);
+    if(frame===128||frame===288){for(const [i,np]of list().entries()){const cp=c.spirits_state(f,records.get(np));if(frame===128){const age=[7799,7800,8399,8400][i%4];m.i32(np+0x34,age);m.f32(np+0x38,age);new DataView(c.memory.buffer).setInt32(cp+36,age,true);new DataView(c.memory.buffer).setFloat32(cp+40,age,true);}else{const x=[-210,210,-180,180,0][i%5],y=[-18,466,128,384,256][i%5];m.f32(np+0x18,x);m.f32(np+0x1c,y);new DataView(c.memory.buffer).setFloat32(cp+8,x,true);new DataView(c.memory.buffer).setFloat32(cp+12,y,true);}}}
+    const before=list().length;events=[];assert.equal(m.call(0x40e750,{ecx:native}),1);assert.equal(c.spirits_update(f,...p,rate),1,string(c,c.spirits_error(f)));check('frame '+frame);removed+=before-list().length;contacts+=events.filter((x,i)=>i%2===0&&x===3).length;
+    for(let alt=0;alt<2;alt++){assert.equal(c.anm_manager_update(a,alt,rate),1,string(c,c.anm_manager_error(a)));m.call(alt?0x475940:0x475830,{ecx:nm});}frames++;
+   }
+   events=[];m.call(0x40e330,{ecx:native});assert.equal(c.spirits_clear(f),1,string(c,c.spirits_error(f)));check('stage departure');assert.equal(c.spirits_count(f),0);assert.equal(m.u32(0x4b5ac4)&0x200,0x200);
+   c.spirits_delete(f);f=0;retireOriginalAnimations(c,m,a,nm);
+  }
+  report('animal-spirit-actors',{passed:true,scenarios:8,frames,spawns,removed,contacts,checks,originalFunctions:['0x410380','0x410570','0x410af0','0x40e750'],scope:'Complete animal-spirit actor behavior through unchanged original manager/actor updates: 40-object cap, all 17 request kinds, nearby velocity separation, ordinary/rotating kinds, proximity slowdown, collection/homing, cycle timer interruptions/rebinding, wall reflection, late-life fade and removal. Actual beast animations and both RNG compared. Inventory/Roaring and trophy/audio observed at service boundaries; controller and full-world integration remain unfinished.'});
+ }finally{if(f)c.spirits_delete(f);c.anm_manager_delete(a);m.close();}
+});

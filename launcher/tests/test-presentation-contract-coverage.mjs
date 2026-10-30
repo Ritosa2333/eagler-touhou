@@ -37,6 +37,7 @@ const verification = Object.freeze({
   th11: {kind:'native-clock', source:'web/cpp/sdl/Application.cpp'},
   th12: {kind:'runtime', source:'portable/sdl/Application.cpp', scripts:['tests/sdl-clock.test.mjs']},
   th15: {kind:'native-clock', source:'web/cpp/sdl/BrowserRuntime.cpp'},
+  th17: {kind:'runtime', scripts:['portable/check-frame-cadence.mjs']},
   th20: {kind:'native-clock', source:'web/cpp/sdl/ApplicationHost.cpp'},
 });
 
