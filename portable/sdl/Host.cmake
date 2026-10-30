@@ -76,7 +76,7 @@ add_custom_command(OUTPUT "${TH12_CP932_TABLE}"
 file(GLOB TH12_SDL_SOURCES CONFIGURE_DEPENDS "${TH12_SDL_DIR}/*.cpp")
 list(REMOVE_ITEM TH12_SDL_SOURCES "${TH12_SDL_DIR}/main.cpp" "${TH12_SDL_DIR}/Memory.cpp")
 add_library(th12_sdl_host STATIC ${TH12_SDL_SOURCES} "${TH12_CP932_TABLE}")
-target_include_directories(th12_sdl_host PUBLIC "${TH12_SDL_DIR}" PRIVATE
+target_include_directories(th12_sdl_host PUBLIC "${TH12_SDL_DIR}" "${EAGLER_COMMON_ROOT}/include" PRIVATE
   "${CMAKE_CURRENT_BINARY_DIR}/generated" "${TH12_SDL_DIR}/third_party/khronos" "${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb_vorbis")
 
 target_link_libraries(th12_sdl_host PUBLIC th12_runtime th12_sdl_dependencies)

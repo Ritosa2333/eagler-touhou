@@ -6,7 +6,7 @@ import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {resolve,extname,sep} from 'node:path';
 import {launchBrowser} from '../../../tools/browser/launch.mjs';
-import {installPcmProbe,samplePcm} from '../../../tools/browser/audio-output-probe.mjs';
+import {installPcmProbe,samplePcm,installSfxStartProbe} from '../../../tools/browser/audio-output-probe.mjs';
 import {verifyRuntimeDelivery} from '../../../tools/browser/verified-runtime.mjs';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../src/managed-data.mjs';
 const root=resolve(import.meta.dirname,'..'),repo=resolve(root,'../..'),assets=resolve(process.env.TH12_ASSETS??resolve(root,'../th12/site/assets'));
@@ -51,7 +51,7 @@ try{
  for(const [count,mode,delay,automatic]of scenarios){
   const context=await browser.newContext({viewport:{width:count*640,height:1040}}),page=await context.newPage(),errors=[],requests=[];
   const delivery=await verifyRuntimeDelivery(page,{scriptUrl:'http://127.0.0.1:'+server.address().port+'/runtime/game.mjs',scriptBytes:program,wasmName:'core.wasm',wasmBytes:wasm});
-  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});await context.addInitScript(installPcmProbe);
+  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});await context.addInitScript(installPcmProbe);await context.addInitScript(installSfxStartProbe);
   if(music==='ogg'&&reports.length===0)await page.route('**/music/th12_01.ogg',route=>route.fulfill({status:200,contentType:'audio/ogg',body:Buffer.from('invalid OGG for decoder regression')}));
   await page.route('**/game.css',route=>route.abort());
   await context.addInitScript(delay=>{if(!delay)return;const send=RTCDataChannel.prototype.send;RTCDataChannel.prototype.send=function(data){const copy=typeof data==='string'?data:data.slice(0),channel=this;setTimeout(()=>{if(channel.readyState==='open')send.call(channel,copy);},delay);};},inputLatency);page.on('request',r=>requests.push(r.url()));
@@ -113,6 +113,8 @@ try{
     await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:true,inputSource:'physical'}));await new Promise(r=>setTimeout(r,90));
     await page.evaluate(()=>rpc(0,'keyboard',{code:'Enter',down:false,inputSource:'physical'}));
     await wait(()=>frames()[0].evaluate(()=>__th12Runtime.menu().scene==='title'),'return from room Options');
+    const effects=await frames()[0].evaluate(()=>__sfxStarts);assert(effects.some(s=>s.when===0&&s.peak>1e-4&&s.channels===2),'native room menu effects reach immediate Web Audio output');
+    audioChecks.push({count,mode,action:'native-immediate-effects',starts:effects});
     console.log('ROOM_OPTIONS_NAVIGATION_PASS');
   }
   await page.screenshot({path:resolve(out,`title-${count}-${mode}-${delay}-${automatic}.png`)});
