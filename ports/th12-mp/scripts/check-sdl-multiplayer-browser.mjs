@@ -132,8 +132,12 @@ try{
     delete window.__eaglerKeyboardMapping;
   });
   await wait(async()=>{const states=await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.state())));return states.every(s=>s.players.every(p=>!(p.held&8)));},'released keyboard Shift after mapping owner attachment');
+  const beforeMovement=await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.state().players[0].x)));
   await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowRight',down:true,inputSource:'physical'}));
-  await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.state().players[0].held)))).every(held=>held&128),'held movement before pagehide');
+  // Remote peers may be presenting different predicted frames. Observe movement
+  // on every seat and the sender's held owner before testing its pagehide release;
+  // authoritative world equality is checked at the shared pause below.
+  await wait(async()=>{const states=await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.state())));return (states[0].players[0].held&128)&&states.every((s,i)=>s.players[0].x>beforeMovement[i]);},'movement on all seats before pagehide');
   const beforeHide=await frames()[1].evaluate(()=>__th12Runtime.status()[3]);
   await frames()[0].evaluate(()=>{dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));});
   await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>({s:__th12Runtime.state(),frame:__th12Runtime.status()[3]}))))).every(({s,frame})=>!(s.players[0].held&128)&&!s.paused&&frame>beforeHide+10),'pagehide releases input while both peers continue');

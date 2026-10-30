@@ -3,12 +3,22 @@
 
 namespace th12::anm_logic {
 class Registry {
-  std::unordered_map<int, std::shared_ptr<Bank>> banks_;
+  using Banks = std::unordered_map<int, std::shared_ptr<Bank>>;
+  // Rollback checkpoints share the bank mapping. Loading/unloading resources
+  // detaches it, so an older checkpoint keeps its original bank bindings.
+  std::shared_ptr<Banks> banks_;
+  Banks& writableBanks() {
+    if (!banks_) banks_ = std::make_shared<Banks>();
+    else if (banks_.use_count() != 1) banks_ = std::make_shared<Banks>(*banks_);
+    return *banks_;
+  }
 
 public:
   std::shared_ptr<Bank> bank(int id) const;
   bool loadBank(int id, const uint8_t* bytes, size_t length, std::string& error);
-  void unloadBank(int id) { banks_.erase(id); }
+  void unloadBank(int id) {
+    if (banks_ && banks_->find(id) != banks_->end()) writableBanks().erase(id);
+  }
 };
 class VM {
   enum Field {

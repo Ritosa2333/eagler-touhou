@@ -97,8 +97,7 @@ test('returning from a failed SDL run preserves saving and permits a fresh launc
   const f=await fixture();try{
     await f.entry.launch();f.breakChannel();f.core.th12MultiplayerTick(0,0,0,0,0);
     const returning=f.entry.returnRoom();for(let n=0;n<12;n++)await Promise.resolve();f.draw();await returning;
-    assert.equal(f.calls.saves,1);assert.equal(f.calls.stops,1);
-    assert.equal(f.calls.saveOptions[0].force,true);
+    assert.equal(f.calls.saves,1);assert.equal(f.calls.saveOptions[0].force,true);assert.equal(f.calls.stops,1);
     assert.equal(f.context.__eaglerNetplayFailed,false);assert.equal(f.context.__eaglerNetplayError,'');
     assert.equal(f.audio.at(-1),0);
     f.restoreChannel();await f.entry.launch();f.core.th12MultiplayerTick(1,0,0,0,16);
