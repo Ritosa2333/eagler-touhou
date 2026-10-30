@@ -7,16 +7,25 @@ namespace th12::laser {
 Manager::Manager(const Manager& other) { *this = other; }
 Manager& Manager::operator=(const Manager& other) {
   if (this == &other) return *this;
-  objects_.clear(); serial_ = other.serial_;
+  serial_ = other.serial_;
+  auto at = objects_.begin();
   for (const auto& source : other.objects_) {
-    std::unique_ptr<Laser> next;
-    switch (source->state.kind) {
-      case Kind::Moving: next = std::make_unique<MovingLaser>(); break;
-      case Kind::Timed: next = std::make_unique<TimedLaser>(); break;
-      case Kind::Curve: next = std::make_unique<CurveLaser>(); break;
+    // Capture and restore revisit these ordered slots. Keep the object and
+    // curve-node capacity only when its virtual implementation still fits.
+    if (at == objects_.end() || (*at)->state.kind != source->state.kind) {
+      std::unique_ptr<Laser> next;
+      switch (source->state.kind) {
+        case Kind::Moving: next = std::make_unique<MovingLaser>(); break;
+        case Kind::Timed: next = std::make_unique<TimedLaser>(); break;
+        case Kind::Curve: next = std::make_unique<CurveLaser>(); break;
+      }
+      if (at == objects_.end()) at = objects_.insert(at, std::move(next));
+      else *at = std::move(next);
     }
-    next->state = source->state; objects_.push_back(std::move(next));
+    (*at)->state = source->state;
+    ++at;
   }
+  objects_.erase(at, objects_.end());
   return *this;
 }
 namespace {
