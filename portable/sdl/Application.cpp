@@ -63,10 +63,11 @@ struct Application {
         if(k[SDL_SCANCODE_RETURN]&&!k[SDL_SCANCODE_LALT]&&!k[SDL_SCANCODE_RALT])held|=InEnter;
         for(auto* pad:pads)if(SDL_GamepadConnected(pad)){
             const float px=SDL_GetGamepadAxis(pad,SDL_GAMEPAD_AXIS_LEFTX)/32768.f,py=SDL_GetGamepadAxis(pad,SDL_GAMEPAD_AXIS_LEFTY)/32768.f;
-            if(px<-.3f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_LEFT))out.directions|=InLeft;
-            if(px>.3f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))out.directions|=InRight;
-            if(py<-.3f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_UP))out.directions|=InUp;
-            if(py>.3f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_DOWN))out.directions|=InDown;
+            // Original square deadzone: each axis must exceed half its range.
+            if(px<-.5f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_LEFT))out.directions|=InLeft;
+            if(px>.5f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))out.directions|=InRight;
+            if(py<-.5f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_UP))out.directions|=InUp;
+            if(py>.5f||SDL_GetGamepadButton(pad,SDL_GAMEPAD_BUTTON_DPAD_DOWN))out.directions|=InDown;
             const SDL_GamepadButton map[]{SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
                 SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,SDL_GAMEPAD_BUTTON_START,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH};
             for(unsigned b=0;b<7;++b)if(SDL_GetGamepadButton(pad,map[b]))out.buttons|=1u<<b;
