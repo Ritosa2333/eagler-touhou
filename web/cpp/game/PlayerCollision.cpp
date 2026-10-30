@@ -12,6 +12,7 @@ bool barrier_cache_enabled=true;
 std::array<double,4> broadphase_counts{};
 bool audit_barrier_cache=false;
 u32 barrier_cache_mismatches=0;
+bool barrier_broadphase_enabled=true;
 #endif
 // Reject only widely separated, ordinary finite coordinates. The two-unit
 // guard is much larger than float endpoint rounding within this bounded
@@ -46,15 +47,54 @@ bool overlap(const Vec2& lower,const Vec2& upper,const Box& b){
     // them with four ordered >= tests: malformed/NaN data would differ.
     return !(lower.x>b.upper.x||upper.x<b.lower.x||lower.y>b.upper.y||upper.y<b.lower.y);
 }
+bool barrier_definitely_outside(const Vec2& p,const DamageRegion& r){
+    const float values[]{p.x,p.y,r.position.x,r.position.y,r.radius,r.dimensions.x,r.dimensions.y,r.angle};
+    for(float v:values)if(!std::isfinite(v)||std::fabs(v)>8192.f)return false;
+    float x,y;
+    if(r.radius!=0)x=y=std::fabs(r.radius);
+    else if(r.angle==0){x=std::fabs(r.dimensions.x)*.5f;y=std::fabs(r.dimensions.y)*.5f;}
+    else{
+        if(std::fabs(r.angle)>8.f)return false;
+        x=y=(std::fabs(r.dimensions.x)+std::fabs(r.dimensions.y))*.5f;
+    }
+    // A loose enclosing box, with the same two-unit rounding guard as the
+    // player broadphase. It never accepts a hit or changes region ordering.
+    return std::fabs(p.x-r.position.x)>x+2.f||std::fabs(p.y-r.position.y)>y+2.f;
+}
+bool barrier_hit(const Vec2& p,const DamageRegion& r){
+    if(r.radius!=0){
+        const auto x=number(Scalar::sub(p.x,r.position.x)),y=number(Scalar::sub(p.y,r.position.y));
+        return x*x+y*y<number(r.radius)*number(r.radius);
+    }
+    if(r.angle!=0){
+        const Vec2 q=rotate({Scalar::sub(p.x,r.position.x),Scalar::sub(p.y,r.position.y)},-r.angle);
+        const float x=Scalar::div(r.dimensions.x,2),y=Scalar::div(r.dimensions.y,2);
+        return -x<=q.x&&q.x<=x&&-y<=q.y&&q.y<=y;
+    }
+    return overlap(p,p,box(r.position,r.dimensions));
+}
 Vec2 xy(const Vec3& p){return {p.x,p.y};}
 }
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool fixture_collision_broadphase(bool enabled) noexcept {collision_broadphase_enabled=enabled;return collision_broadphase_enabled;}
+bool fixture_barrier_broadphase(bool enabled) noexcept {barrier_broadphase_enabled=enabled;return enabled;}
 bool fixture_barrier_cache(bool enabled) noexcept {barrier_cache_enabled=enabled;return enabled;}
 void fixture_barrier_cache_audit(bool enabled) noexcept {audit_barrier_cache=enabled;}
 u32 fixture_barrier_cache_mismatches() noexcept {return barrier_cache_mismatches;}
 const double* fixture_collision_broadphase_counts() noexcept {return broadphase_counts.data();}
 bool fixture_collision_broadphase_probe() noexcept {
+    constexpr float region_values[]{-8192.f,-448.f,-2.f,0.f,2.f,32.f,384.f,8192.f};
+    for(float radius:{0.f,-64.f,.1f,64.f,8192.f})for(float angle:{0.f,-7.f,-1.5f,.2f,1.5f,7.f,100.f})
+    for(float dimension:{-64.f,0.f,.1f,16.f,128.f,8192.f}){
+        DamageRegion r{};r.position={192,224};r.radius=radius;r.angle=angle;r.dimensions={dimension,dimension*.5f};
+        for(float x:region_values)for(float y:region_values){const Vec2 p{x,y};
+            if(barrier_definitely_outside(p,r)&&barrier_hit(p,r))return false;
+        }
+        for(float edge:{-1.f,1.f})for(float delta:{-2.01f,-.001f,0.f,.001f,2.01f}){
+            const Vec2 p{r.position.x+edge*(std::fabs(radius)+delta),r.position.y};
+            if(barrier_definitely_outside(p,r)&&barrier_hit(p,r))return false;
+        }
+    }
     // Include far, near, touching, and representative maximum-domain values.
     constexpr float coordinates[]{-8192.f,-448.f,-32.f,-2.f,0.f,2.f,32.f,384.f,8192.f};
     constexpr float sizes[]{0.f,.1f,2.f,16.f,64.f,1024.f,8192.f};
@@ -92,17 +132,13 @@ i32 PlayerCollision::barrier(const Vec2& p){
     }
 #endif
     const u32 count=barrier_batch?barrier_batch->count:192;
+    bool broadphase=collision_broadphase_enabled;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    broadphase=broadphase&&barrier_broadphase_enabled;
+#endif
     for(u32 i=0;i<count;++i){auto& r=regions.cancelling[barrier_batch?barrier_batch->slots[i]:i];
-        if(!r.active)continue;bool hit=false;
-        if(r.radius!=0){
-            const auto x=number(Scalar::sub(p.x,r.position.x)),y=number(Scalar::sub(p.y,r.position.y));
-            hit=x*x+y*y<number(r.radius)*number(r.radius);
-        }else if(r.angle!=0){
-            const Vec2 q=rotate({Scalar::sub(p.x,r.position.x),Scalar::sub(p.y,r.position.y)},-r.angle);
-            const float x=Scalar::div(r.dimensions.x,2),y=Scalar::div(r.dimensions.y,2);
-            hit=-x<=q.x&&q.x<=x&&-y<=q.y&&q.y<=y;
-        }else{const Box b=box(r.position,r.dimensions);hit=overlap(p,p,b);}
-        if(hit){cancel_item=r.cancel_item;r.damage_dealt=wrapping_add(r.damage_dealt,1);return 2;}
+        if(!r.active||(broadphase&&barrier_definitely_outside(p,r)))continue;
+        if(barrier_hit(p,r)){cancel_item=r.cancel_item;r.damage_dealt=wrapping_add(r.damage_dealt,1);return 2;}
     }return 0;
 }
 i32 PlayerCollision::bullet(const Vec3& p,const Vec3& size,bool cancellation){

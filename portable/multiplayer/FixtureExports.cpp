@@ -33,8 +33,77 @@ th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
 #error Fixture exports must stay out of production builds
 #endif
 namespace th08::multiplayer {extern "C" const u32* multiplayer_replay_gameplay_state(BrowserRuntime* runtime);}
+namespace th08 {bool fixture_barrier_broadphase(bool) noexcept;}
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_ecl_aiming")))
+u32 mp_fixture_ecl_aiming(BrowserRuntime* r){
+    if(!r||!r->app.in_game()||!r->app.game.ready()||r->app.session.player_count<2)return 0;
+    auto& game=r->app.game;const u32 count=r->app.session.player_count;
+    for(u32 seat=0;seat<count;++seat){
+        game.pilot(seat).status().motion.movement.position={seat==0?64.f:seat==1?320.f:192.f,400,0};
+        game.pilot(seat).status().life.state=0;
+    }
+    const auto probe=[&](Vec3 origin,u32 target){
+        EclVm vm;vm.environment=&game.globals;vm.position=origin;vm.select_player_target();
+        const auto expected=game.pilot(target).status().motion.movement.position;
+        const auto& actual=vm.aimed_player();
+        return actual.x==expected.x&&actual.y==expected.y&&actual.z==expected.z&&
+            vm.read_float(10045)==expected.x&&vm.read_float(10046)==expected.y&&vm.read_float(10047)==expected.z;
+    };
+    // Two independent VMs select different seats, without changing the host
+    // coordinates consumed by lifecycle code or overwriting a parent sample.
+    const auto host=game.globals.player;
+    if(!probe({64,380,0},0)||!probe({320,380,0},1))return 0;
+    if(game.globals.player.x!=host.x||game.globals.player.y!=host.y)return 0;
+    game.pilot(0).status().life.state=2;
+    const u32 next=count==3?2:1;
+    if(!probe({64,380,0},next))return 0;
+    game.enter_spirit(0);
+    if(game.roster.eligible(0)||!probe({64,380,0},next))return 0;
+    game.roster.seats[0].available=true;game.pilot(0).status().life.state=0;
+    game.pilot(0).status().motion.movement.position={64,400,0};
+    if(!probe({64,380,0},0))return 0;
+    // Coordinate selection is independent of stage and difficulty.
+    for(u32 stage=0;stage<9;++stage){game.globals.stage=stage;if(!probe({320,380,0},1))return 0;}
+    return 1;
+}
+__attribute__((export_name("mp_fixture_extra_profile")))
+const double* mp_fixture_extra_profile(BrowserRuntime* r,u32 bomb,u32 rounds){
+    static double out[36]{};std::fill(out,out+36,0);
+    if(!r||!r->app.in_game()||!r->app.game.ready()||bomb>1||!rounds||rounds>50)return out;
+    for(u32 seat=0;seat<r->app.session.player_count;++seat){
+        auto& p=r->app.game.pilot(seat).status();p.life.state=0;p.life.timer.set(0);
+        r->app.session.pilot_values[seat].set_bombs(3);r->app.game.pilot_services(seat).sync_values();
+    }
+    multiplayer::WorldJournal journal;if(!journal.Bind(*r))return out;
+    const auto original=journal.AuditHash();std::array<u32,multiplayer::WorldJournal::GroupCount> expected{};
+    for(u32 round=0;round<rounds;++round){
+        for(u32 frame=0;frame<6;++frame){
+            auto start=emscripten_get_now();if(!journal.BeginFrame(frame))return out;
+            out[2]+=emscripten_get_now()-start;
+            u16 inputs[3]{1,1,1};if(bomb&&!frame)for(auto& input:inputs)input|=2;
+            r->keyboard_state()[90]=128;r->keyboard_state()[88]=bomb&&!frame?128:0;
+            start=emscripten_get_now();
+            if(!r->app.game.commit_inputs(inputs,r->app.session.player_count)||!r->step(true)||!journal.EndFrame())return out;
+            out[3]+=emscripten_get_now()-start;
+            for(u32 seat=0;seat<r->app.session.player_count;++seat)out[11]=std::max(out[11],double(r->app.game.pilot(seat).status().bomb.active));
+            out[5]=std::max(out[5],double(journal.BytesForFrame(frame)));
+        }
+        const auto after=journal.AuditHash();if(!round)expected=after;else if(after!=expected)return out;
+        const auto start=emscripten_get_now();if(!journal.UndoTo(0))return out;
+        out[4]+=emscripten_get_now()-start;
+        if(journal.AuditHash()!=original)return out;
+    }
+    out[0]=1;out[1]=rounds*6;
+    for(u32 i=0;i<5;++i)out[6+i]=journal.DiagnosticCaptureMs()[i];
+    for(u32 i=0;i<original.size();++i){out[12+i]=original[i];out[24+i]=expected[i];}
+    return out;
+}
+__attribute__((export_name("mp_fixture_batch_checkpoint_copies")))
+void mp_fixture_batch_checkpoint_copies(u32 enabled){multiplayer::batch_checkpoint_copies=enabled!=0;}
+__attribute__((export_name("mp_fixture_barrier_broadphase")))
+void mp_fixture_barrier_broadphase(u32 enabled){fixture_barrier_broadphase(enabled!=0);}
 __attribute__((export_name("mp_fixture_skip_resim_visual")))
 u32 mp_fixture_skip_resim_visual(BrowserRuntime* r,u32 enabled){
     if(enabled>1)return 2;

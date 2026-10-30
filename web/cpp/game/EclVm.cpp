@@ -332,6 +332,9 @@ bool EclExecutor::step_context(EclVm& vm){
 
 bool EclExecutor::step(EclVm& vm){
     if(vm.finished||vm.invalid||!vm.main_context.instruction)return false;
+    // One stable target for primary/asynchronous instructions and movement.
+    // A nested spawn owns its own sample and cannot overwrite its parent.
+    vm.select_player_target();
     vm.active_context=nullptr;vm.active_slot=-1;
     if(!step_context(vm))return false;
     // Original order: primary context, slots 0..3, then movement. Temporarily

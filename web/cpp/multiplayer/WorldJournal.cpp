@@ -204,6 +204,7 @@ bool WorldJournal::BeginFrame(u32 frame,bool extend){
     double replay_elapsed=0;
 #endif
     if(!main.BeginFrame(frame,extend))return Fail("main frame order");
+    CheckpointCapture capture(main);if(!capture.Valid())return Fail("main capture window");
     if(extend)records.back().end=frame;
     else{
 #ifdef TH_MULTIPLAYER_FIXTURES
@@ -226,6 +227,7 @@ bool WorldJournal::BeginFrame(u32 frame,bool extend){
         }
     }
     if(!app->screen.capture_rollback(main,&app->game.screen))return Fail("screen callback ownership");
+    if(!capture.Finish())return Fail("main capture failed");
 #ifdef TH_MULTIPLAYER_FIXTURES
     diagnostic_capture_ms[0]+=emscripten_get_now()-started-replay_elapsed;
     auto owner_started=emscripten_get_now();
