@@ -441,7 +441,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "fa819c6993e47b7e3ad27610d8acf36ac0ce09fa",
+      "base": "c6f1b6639c7c5b479e13eac74373ea02544c627d",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -928,6 +928,21 @@
             "ports/th12-mp/tests/native/hostile-pool-storage.cpp"
           ],
           "note": "普通版和多人版同步弹幕索引节点复用及完整重建对照夹具；UFO 深复制仅属于多人回滚入口，保留多人世界、激光、UFO 和菜单专属测试。隔离三方合并保留两侧父链，写回完整 MP 树与已验证源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "fa819c6993e47b7e3ad27610d8acf36ac0ce09fa",
+          "source": "c6f1b6639c7c5b479e13eac74373ea02544c627d",
+          "targetHead": "fabfabb8fe756cf085296fdf547eacf1a1ac7d4f",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Application.cpp",
+            "ports/th12-mp/portable/sdl/README.md",
+            "ports/th12-mp/site/game.mjs",
+            "ports/th12-mp/src/preview-input.mjs",
+            "ports/th12-mp/tests/sdl-gamepad.test.mjs"
+          ],
+          "note": "普通版与多人版同步每轴50%的方形摇杆死区、SDL和旧网页入口及边界回归；保留启动器映射与自定义阈值。两侧Web构建、60项SDL回归和19项适配检查通过；隔离合并写回的完整多人树与修复提交一致。"
         }
       ]
     }
