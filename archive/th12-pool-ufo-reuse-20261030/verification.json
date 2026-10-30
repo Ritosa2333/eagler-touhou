@@ -50,5 +50,21 @@
       }
     }
   },
-  "liveNetworkSessionExecuted": false
+  "liveNetworkSessionExecuted": false,
+  "validatedCodeCommit": "fa819c6993e47b7e3ad27610d8acf36ac0ce09fa",
+  "upstreamBase": "edc007dbffb7fbcc7b4ac184840d5c9a68d79118",
+  "sourceTrees": {
+    "normal": "c1e40687e6f3b1a92691db1707b1174f27eb50f3",
+    "multiplayer": "2cbad2c84dba2388b4856d541a3b7950736b60a2"
+  },
+  "adaptation": {
+    "normal": {
+      "passed": 10,
+      "total": 10
+    },
+    "multiplayer": {
+      "passed": 9,
+      "total": 9
+    }
+  }
 }
