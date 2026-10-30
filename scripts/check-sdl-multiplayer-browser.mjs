@@ -52,6 +52,7 @@ try{
   const context=await browser.newContext({viewport:{width:count*640,height:1040}}),page=await context.newPage(),errors=[],requests=[];
   const delivery=await verifyRuntimeDelivery(page,{scriptUrl:'http://127.0.0.1:'+server.address().port+'/runtime/game.mjs',scriptBytes:program,wasmName:'core.wasm',wasmBytes:wasm});
   page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});await context.addInitScript(installPcmProbe);
+  if(music==='ogg'&&reports.length===0)await page.route('**/music/th12_01.ogg',route=>route.fulfill({status:200,contentType:'audio/ogg',body:Buffer.from('invalid OGG for decoder regression')}));
   await page.route('**/game.css',route=>route.abort());
   await context.addInitScript(delay=>{if(!delay)return;const send=RTCDataChannel.prototype.send;RTCDataChannel.prototype.send=function(data){const copy=typeof data==='string'?data:data.slice(0),channel=this;setTimeout(()=>{if(channel.readyState==='open')send.call(channel,copy);},delay);};},inputLatency);page.on('request',r=>requests.push(r.url()));
   page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -61,6 +62,19 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.evaluate(n=>{for(let s=0;s<n;s++)addRuntime(s);},count+(count===2?1:0));await page.waitForFunction(n=>ready.size===n,count+(count===2?1:0),{timeout:90000});
   await page.evaluate(async c=>{for(let s=0;s<c.count+(c.count===2?1:0);s++){await rpc(s,'configure',{music:c.music,language:'ja',sharedResources:[{path:'/unifont.otf',url:'/shared/unifont.otf'},{path:'/msgothic.ttc',url:'/shared/msgothic.ttc'},...c.musicResources],options:{thpracEnabled:false,netplayDifficulty:c.difficulty}});await rpc(s,'prepare-room');}},{count,difficulty,music,musicResources});
   const frames=()=>page.frames().filter(f=>f.url().includes('runtimeEpoch=')).slice(0,count);
+  if(music==='ogg'&&reports.length===0){
+  await page.waitForFunction(n=>events.filter(e=>e.event==='error').length>=n,count+(count===2?1:0),{timeout:90000});
+  await page.waitForTimeout(200);
+  const failures=await page.evaluate(()=>events.filter(e=>e.event==='error'));
+  assert.equal(failures.length,count+(count===2?1:0),'one recoverable error per Runtime');
+  assert(failures.every(e=>e.code==='audio-resource'&&e.error.includes('th12_01')));
+  const silent=await samplePcm(frames()[0]);assert(silent.frames>0&&silent.peak<1e-6);
+  await page.unroute('**/music/th12_01.ogg');
+  await page.evaluate(n=>Promise.all(Array.from({length:n},(_,s)=>rpc(s,'resources',{resources:[{path:'/music/th12_01.ogg',url:'/music/th12_01.ogg'}]}))),count+(count===2?1:0));
+  const recovered=await samplePcm(frames()[0]);assert(recovered.frames>0&&recovered.peak>1e-4,'corrected music resumes in the same Runtime');
+  audioChecks.push({action:'corrupt-resource-recovery',failures,silent,recovered});
+  await page.evaluate(()=>{window.events=events.filter(e=>e.event!=='error');});
+  }
   for(const f of page.frames().filter(f=>f.url().includes('runtimeEpoch='))){assert.equal(await f.locator('.toolbar').isVisible(),false);assert.equal(await f.locator('footer').isVisible(),false);assert.equal(await f.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),'rgb(8, 9, 12)');}
   for(const f of frames())await f.evaluate(()=>{const r=window.__th12Runtime;window.preloadedCore=r.core;window.samples={};const tick=r.multiplayer.tick;r.multiplayer.tick=(...args)=>{const out=tick(...args),s=r.status();if(s[2]&&s[3]&&s[3]<5000)window.samples[s[3]]=r.core._th12_mp_hash();return out;};});
   assert((await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.scene())))).every(s=>s==='title'));
@@ -116,6 +130,12 @@ try{
     delete window.__eaglerKeyboardMapping;
   });
   await wait(async()=>{const states=await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.state())));return states.every(s=>s.players.every(p=>!(p.held&8)));},'released keyboard Shift after mapping owner attachment');
+  await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowRight',down:true,inputSource:'physical'}));
+  await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.state().players[0].held)))).every(held=>held&128),'held movement before pagehide');
+  const beforeHide=await frames()[1].evaluate(()=>__th12Runtime.status()[3]);
+  await frames()[0].evaluate(()=>{dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true}));dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));});
+  await wait(async()=>(await Promise.all(frames().map(f=>f.evaluate(()=>({s:__th12Runtime.state(),frame:__th12Runtime.status()[3]}))))).every(({s,frame})=>!(s.players[0].held&128)&&!s.paused&&frame>beforeHide+10),'pagehide releases input while both peers continue');
+  console.log('MP_PAGEHIDE_INPUT_RELEASE_PASS');
   const paceStart=Date.now(),paceFrames=await Promise.all(frames().map(f=>f.evaluate(()=>__th12Runtime.status()[3])));
   for(let round=0;round<4;++round){await page.evaluate(async round=>{await rpc(round%2,'keyboard',{code:'ArrowRight',down:true,inputSource:'physical'});await rpc(1-round%2,'keyboard',{code:'KeyZ',down:true,inputSource:'physical'});},round);await new Promise(r=>setTimeout(r,250));await page.evaluate(async round=>{await rpc(round%2,'keyboard',{code:'ArrowRight',down:false,inputSource:'physical'});await rpc(1-round%2,'keyboard',{code:'KeyZ',down:false,inputSource:'physical'});},round);}
   await page.evaluate(()=>rpc(0,'touch-controls',{fireEnabled:false,focusEnabled:false,bombSerial:0,escapeSerial:1,joystickX:0,joystickY:0}));
