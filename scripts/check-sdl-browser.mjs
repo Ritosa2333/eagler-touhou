@@ -5,7 +5,7 @@ import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
 import {resolve,extname,sep} from 'node:path';
 import {launchBrowser} from '../../../tools/browser/launch.mjs';
-import {installPcmProbe,samplePcm} from '../../../tools/browser/audio-output-probe.mjs';
+import {installPcmProbe,samplePcm,installSfxStartProbe} from '../../../tools/browser/audio-output-probe.mjs';
 import {verifyRuntimeDelivery} from '../../../tools/browser/verified-runtime.mjs';
 import {DATA_SCHEMA,DATA_MAGIC,DATA_LAYOUT_SPEC} from '../src/managed-data.mjs';
 const root=resolve(import.meta.dirname,'..'),repo=resolve(root,'../..'),assets=resolve(process.env.TH12_ASSETS??resolve(root,'../th12/site/assets'));
@@ -41,6 +41,7 @@ try{
  const delivery=await verifyRuntimeDelivery(page,{scriptUrl:'http://127.0.0.1:'+server.address().port+'/runtime/game.mjs',scriptBytes:program,wasmName:'core.wasm',wasmBytes:wasm});
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});
  await page.addInitScript(installPcmProbe);
+ await page.addInitScript(installSfxStartProbe);
  if(music==='ogg')await page.route('**/music/th12_01.ogg',route=>route.fulfill({status:200,contentType:'audio/ogg',body:Buffer.from('invalid OGG for decoder regression')}));
  await page.route('**/game.css',route=>route.abort());
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -66,6 +67,9 @@ try{
  async function wait(predicate){const end=Date.now()+90000;while(Date.now()<end){const v=await state();if(predicate(v))return v;const events=await page.evaluate(()=>window.events.filter(e=>e.event==='error'));assert.deepEqual(events,[]);await page.waitForTimeout(50);}throw Error('scene timeout '+JSON.stringify(await state()));}
  async function press(code){await page.evaluate(code=>rpc(0,'keyboard',{code,down:true,inputSource:'physical'}),code);await page.waitForTimeout(90);await page.evaluate(code=>rpc(0,'keyboard',{code,down:false,inputSource:'physical'}),code);await page.waitForTimeout(80);}
  await wait(s=>s.scene==='title'&&s.menuReady);if(music==='ogg'){const pcm=await samplePcm(frame);audioChecks.push({action:'title',...pcm});assert(pcm.frames>0&&pcm.peak>1e-4,'title music produces actual PCM');}await page.screenshot({path:resolve(out,'title.png')});
+ await frame.evaluate(()=>{__sfxStarts=[];});await press('ArrowDown');await press('ArrowUp');
+ const effects=await frame.evaluate(()=>__sfxStarts);assert(effects.some(s=>s.when===0&&s.peak>1e-4&&s.channels===2),'native menu effects submit PCM to immediate Web Audio output');
+ audioChecks.push({action:'native-immediate-effects',starts:effects});
  for(const scene of ['difficulty','character','shot','playing']){await press('KeyZ');await wait(s=>s.scene===scene&&(s.menuReady||scene==='playing'));}
  await page.waitForTimeout(1800);const playing=await state();assert.equal(playing.stage,1);assert(playing.fps>0&&playing.fps<90);
  if(process.env.TH12_PROFILE){

@@ -9,6 +9,8 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <eagler/audio/WebSfx.hpp>
+namespace web_sfx = eagler::audio::web_sfx;
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -38,7 +40,7 @@ std::vector<MusicTrack> parse_music_layout(const std::vector<u8>& fmt){
 
 struct Audio::Impl {
     struct Voice {ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false,paused=false,playing=false;
-        ~Voice(){if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
+        ~Voice(){web_sfx::erase(&sound);if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
     struct Music {host::PcmStream stream;ma_sound sound{};ma_decoder decoder{};ma_audio_buffer_ref buffer{};std::vector<float> pcm;bool decoded=false,initialized=false,buffer_ready=false,attached=false;
         ~Music(){if(attached)ma_sound_uninit(&sound);if(initialized)ma_data_source_uninit(&stream.base);if(buffer_ready)ma_audio_buffer_ref_uninit(&buffer);if(decoded)ma_decoder_uninit(&decoder);}};
     ma_engine engine{};SDL_AudioStream* device=nullptr;bool engine_ready=false,ready=false,suspended=false,refill=true,music_paused=false;
@@ -68,6 +70,16 @@ bool Audio::initialize(Archive& archive,const ExeTables& tables){
         if(ma_decoder_init_memory(bytes.data(),bytes.size(),&dc,&v->decoder)!=MA_SUCCESS){host::log("audio: %s is not a PCM WAV",r.file.c_str());continue;}v->decoded=true;
         if(ma_sound_init_from_data_source(&a.engine,&v->decoder,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&v->sound)!=MA_SUCCESS)continue;v->attached=true;
         ma_sound_set_looping(&v->sound,r.loop?MA_TRUE:MA_FALSE);ma_sound_set_pan_mode(&v->sound,ma_pan_mode_balance);
+#ifdef __EMSCRIPTEN__
+        if(a.device){ma_uint64 frames=0,read=0;
+            if(ma_decoder_get_length_in_pcm_frames(&v->decoder,&frames)==MA_SUCCESS&&frames&&frames<=UINT32_MAX/8){
+                std::vector<float> pcm(size_t(frames)*2);
+                if(ma_decoder_read_pcm_frames(&v->decoder,pcm.data(),frames,&read)==MA_SUCCESS&&read==frames)
+                    web_sfx::upload(&v->sound,pcm.data(),unsigned(frames),2,44100);
+                ma_decoder_seek_to_pcm_frame(&v->decoder,0);
+            }
+        }
+#endif
         a.voices[size_t(r.id)]=std::move(v);
     }
     // Music: thbgm.fmt (inside th12.dat) + thbgm.dat (optional).
@@ -75,21 +87,24 @@ bool Audio::initialize(Archive& archive,const ExeTables& tables){
     a.bgm=host::open_file(host::paths().data_file("thbgm.dat"),"rb");
     if(a.bgm){a.bgm_buffer.resize(64*1024);std::setvbuf(a.bgm,a.bgm_buffer.data(),_IOFBF,a.bgm_buffer.size());a.reader=std::make_unique<host::BgmReader>(a.bgm);}
     else host::log("audio: using per-track OGG files");
-    if(a.device)SDL_ResumeAudioStreamDevice(a.device);a.ready=true;return true;
+    web_sfx::suspend(false);if(a.device)SDL_ResumeAudioStreamDevice(a.device);a.ready=true;return true;
 }
 void Audio::effect(i32 id,i32 pan,bool stop){
     auto& a=*impl;if(id<0||id>=64||!a.voices[size_t(id)])return;auto& v=*a.voices[size_t(id)];
-    ma_sound_stop(&v.sound);v.playing=false;v.paused=false;if(stop)return;
+    web_sfx::stop(&v.sound);ma_sound_stop(&v.sound);v.playing=false;v.paused=false;if(stop)return;
     // DirectSound attenuates only the channel away from the source.
     const i32 p=std::clamp(pan,-10000,10000);
-    ma_sound_set_pan(&v.sound,p>0?1.f-std::pow(10.f,-float(p)/2000.f):p<0?std::pow(10.f,float(p)/2000.f)-1.f:0.f);
-    ma_sound_set_volume(&v.sound,native_sound_gain(a.records[size_t(id)].volume,se_volume));
-    ma_sound_seek_to_pcm_frame(&v.sound,0);ma_sound_start(&v.sound);v.playing=true;
+    const float balance=p>0?1.f-std::pow(10.f,-float(p)/2000.f):p<0?std::pow(10.f,float(p)/2000.f)-1.f:0.f;
+    const float gain=native_sound_gain(a.records[size_t(id)].volume,se_volume);
+    web_sfx::pan(&v.sound,balance);ma_sound_set_pan(&v.sound,balance);
+    web_sfx::volume(&v.sound,gain);ma_sound_set_volume(&v.sound,gain);
+    web_sfx::seek(&v.sound,0,44100);ma_sound_seek_to_pcm_frame(&v.sound,0);
+    if(!web_sfx::play(&v.sound,a.records[size_t(id)].loop))ma_sound_start(&v.sound);v.playing=true;
 }
 // 423020 stops every active buffer and remembers which were playing.
-void Audio::pause_effects(){for(auto& v:impl->voices)if(v&&v->playing&&ma_sound_is_playing(&v->sound)){ma_sound_stop(&v->sound);v->paused=true;}}
-void Audio::resume_effects(){for(auto& v:impl->voices)if(v&&v->paused){v->paused=false;ma_sound_start(&v->sound);}}
-void Audio::stop_effects(){for(auto& v:impl->voices)if(v){ma_sound_stop(&v->sound);v->playing=v->paused=false;}}
+void Audio::pause_effects(){for(auto& v:impl->voices)if(v&&v->playing&&(web_sfx::contains(&v->sound)?web_sfx::playing(&v->sound):ma_sound_is_playing(&v->sound))){web_sfx::stop(&v->sound);ma_sound_stop(&v->sound);v->paused=true;}}
+void Audio::resume_effects(){for(size_t id=0;id<impl->voices.size();++id)if(auto& v=impl->voices[id];v&&v->paused){v->paused=false;if(!web_sfx::play(&v->sound,impl->records[id].loop))ma_sound_start(&v->sound);}}
+void Audio::stop_effects(){for(auto& v:impl->voices)if(v){web_sfx::stop(&v->sound);ma_sound_stop(&v->sound);v->playing=v->paused=false;}}
 i32 Audio::track_count()const{return i32(impl->tracks.size());}
 i32 Audio::track_index(const std::string& name)const{
     for(size_t i=0;i<impl->tracks.size();++i){const auto& n=impl->tracks[i].name;if(n==name||n==name+".wav")return i32(i);}return -1;
@@ -153,7 +168,7 @@ void Audio::fade_music(double seconds){auto& a=*impl;if(!a.music)return;a.fading
 void Audio::set_volumes(i32 bgm,i32 se){
     se_volume=std::clamp(se,0,100);bgm_volume=std::clamp(bgm,0,100);auto& a=*impl;
     if(a.music&&!a.fading)ma_sound_set_volume(&a.music->sound,native_music_gain(bgm_volume));
-    for(i32 id=0;id<64;++id)if(a.voices[size_t(id)])ma_sound_set_volume(&a.voices[size_t(id)]->sound,native_sound_gain(a.records[size_t(id)].volume,se_volume));
+    for(i32 id=0;id<64;++id)if(a.voices[size_t(id)]){const float gain=native_sound_gain(a.records[size_t(id)].volume,se_volume);web_sfx::volume(&a.voices[size_t(id)]->sound,gain);ma_sound_set_volume(&a.voices[size_t(id)]->sound,gain);}
 }
 void Audio::update(double seconds){
     auto& a=*impl;if(!a.fading||!a.music||a.music_paused)return;a.fade_elapsed+=seconds;
@@ -173,7 +188,7 @@ void Audio::pump(){
     for(i32 n=0;n<6&&queued<6144;++n){float pcm[2048]{};if(!mix(pcm,1024))return;if(!SDL_PutAudioStreamData(a.device,pcm,sizeof(pcm)))return;queued+=1024;}
     if(queued>=6144)a.refill=false;
 }
-void Audio::suspend(bool paused){auto& a=*impl;a.suspended=paused;if(a.device)(paused?SDL_PauseAudioStreamDevice(a.device):SDL_ResumeAudioStreamDevice(a.device));}
+void Audio::suspend(bool paused){auto& a=*impl;a.suspended=paused;web_sfx::suspend(paused);if(a.device)(paused?SDL_PauseAudioStreamDevice(a.device):SDL_ResumeAudioStreamDevice(a.device));}
 }
 
 #undef STB_VORBIS_HEADER_ONLY

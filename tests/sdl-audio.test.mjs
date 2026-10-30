@@ -28,7 +28,7 @@ test('production SDL mixer preserves output and no-BGM lifecycle in stream and f
     inline bool SDL_ResumeAudioStreamDevice(SDL_AudioStream*){return true;}
   `);
   const program=join(temporary,process.platform==='win32'?'audio.exe':'audio');
-  execFileSync(process.env.CXX||'g++',['-std=c++17','-O2','-DNOMINMAX','-I',join(temporary,'include'),'-I',source,
+  execFileSync(process.env.CXX||'g++',['-std=c++17','-O2','-DNOMINMAX','-I',join(temporary,'include'),'-I',source,'-I',resolve(import.meta.dirname,'../../../common/include'),
     '-I',resolve(import.meta.dirname,'../third_party/stb_vorbis'),resolve(import.meta.dirname,'native/sdl-audio.cpp'),
     ...['Audio.cpp','Archive.cpp','BgmStream.cpp'].map(name=>join(source,name)),'-o',program],
     {encoding:'utf8',windowsHide:true,timeout:120000});
