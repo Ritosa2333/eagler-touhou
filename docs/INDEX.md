@@ -215,6 +215,7 @@
 | 历史记录 | [archive/th12-maintenance-20261025/th12-history-rebuild-20261025.md](../archive/th12-maintenance-20261025/th12-history-rebuild-20261025.md) | TH12 未合入历史重建 |
 | 历史记录 | [archive/th12-maintenance-20261025/th12-switch-fixes-20261025.md](../archive/th12-maintenance-20261025/th12-switch-fixes-20261025.md) | TH12 Switch 修复适配 |
 | 历史记录 | [archive/th12-maintenance-20261026/th12mp-stage-ending-20261026.md](../archive/th12-maintenance-20261026/th12mp-stage-ending-20261026.md) | TH12 多人结局与换面 |
+| 历史记录 | [archive/th12-mp-rollback-storage-20261030/README.md](../archive/th12-mp-rollback-storage-20261030/README.md) | TH12 多人回滚存储复用 |
 | 历史记录 | [archive/th12-multiplayer-20261028/README.md](../archive/th12-multiplayer-20261028/README.md) | th12 多人接收 ｜ 2026-10-28 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-multiplayer-20261024.md](../archive/th12-multiplayer-20261028/th12-multiplayer-20261024.md) | TH12 多人合作 ｜ 共享飞碟与独立源码 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-multiplayer-bomb-interpolation-20261027.md](../archive/th12-multiplayer-20261028/th12-multiplayer-bomb-interpolation-20261027.md) | TH12 多人放雷与回滚插值开销 |
