@@ -4,8 +4,9 @@
 namespace th12::anm_logic {
 
 std::shared_ptr<Bank> Registry::bank(int id) const {
-  auto i = banks_.find(id);
-  return i == banks_.end() ? nullptr : i->second;
+  if (!banks_) return nullptr;
+  auto i = banks_->find(id);
+  return i == banks_->end() ? nullptr : i->second;
 }
 
 bool Registry::loadBank(int id, const uint8_t* bytes, size_t length, std::string& error) {
@@ -89,7 +90,7 @@ bool Registry::loadBank(int id, const uint8_t* bytes, size_t length, std::string
     if (++entries > 4096)
       return fail("ANM entry budget");
   } while (true);
-  banks_[id] = std::move(result);
+  writableBanks()[id] = std::move(result);
   error.clear();
   return true;
 }
