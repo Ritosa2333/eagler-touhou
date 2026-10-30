@@ -2339,7 +2339,7 @@
       "game": "th12",
       "variant": "multiplayer",
       "directory": "ports/th12-mp",
-      "sourceDigest": "5943390e41bab1cdb09729f6da9ee2437f2130c9c77d2c1c951fc523b6e76982",
+      "sourceDigest": "c16973fb479126b08d4d63fd21bd9fe6bed7e846852dbf66cd974a4606ce0e54",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 95,

@@ -14,9 +14,9 @@
     "upstreamCommit": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
     "initialJoin": "5caafc121b891a6d8a316dfcc46cdc96b0f62166",
     "initialSplit": "256103c07f3ba98742c9542fa8aab3c34e06ba62",
-    "latestJoin": "2a2598da7a477106e7dc729ab42a83da27d01906",
-    "currentSplit": "6a1d2beb99b9349bce054bbc7d80d6b00d84bf1a",
-    "aheadCommits": 49
+    "latestJoin": "07640d3074e9f2f8cea4cbb225635a1c6fc86621",
+    "currentSplit": "8909d103d5e1f2b3d7d47b90c275a9d95786e479",
+    "aheadCommits": 103
   },
   "sharedSource": "common/include/eagler/thprac/PracticeSpeed.hpp"
 }
