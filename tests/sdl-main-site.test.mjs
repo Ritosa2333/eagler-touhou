@@ -41,7 +41,7 @@ async function fixture({mountError}={}){
     RuntimeAssets:class{managed=true;fonts=new Map();},ManagedInput:class{clear(){}pad(){return 0;}},
     TouchInput:class{configure(){}cancel(){}sample(){return {held:0,pressed:0};}},
     createTH12SDL:async callbacks=>{native=callbacks;return core;},mountSdlContent:async()=>{if(mountError)throw mountError;},
-    prepareLocalization:async()=>localization,fetch:async()=>({ok:true,json:async()=>({})}),
+    prepareLocalization:async()=>localization,installStartupBranding:async()=>{},fetch:async()=>({ok:true,json:async()=>({})}),
     createMultiplayerRuntime:()=>multiplayer,multiplayerHeldInput,sdlStopError,readSdlHostState,allowedPath,testEmit:e=>events.push(e),
     __eaglerCrashReporterV1:{fatal:e=>fatals.push(e),bindCore(){}},
     requestAnimationFrame:callback=>frames.push(callback)};

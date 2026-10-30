@@ -9,6 +9,7 @@ import {prepareLocalization,isLocalizationResourcePath} from '../src/localizatio
 import {mountSdlContent} from '../src/sdl-content.mjs';
 import {sdlStopError} from '../src/sdl-lifecycle.mjs';
 import {sdlPointerPosition} from '../src/sdl-input.mjs';
+import {installStartupBranding} from './startup-branding.mjs';
 import {readSdlHostState} from '../src/sdl-host-state.mjs';
 import {createMultiplayerRuntime,multiplayerHeldInput} from '../src/multiplayer.mjs';
 
@@ -217,6 +218,7 @@ async function bootNative(){
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()],multiplayer:multiplayer?.active?multiplayer.state():null})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
     const practiceLocale=options.thpracLocale??(localization.language==='ja'?'ja-JP':localization.language.startsWith('lang_zh')?'zh-CN':'en-US');
+    await installStartupBranding(core,{game:'th12'});
     await loadSaves();const locale=practiceLocale==='ja-JP'?2:practiceLocale==='en-US'?1:0;
     core._th12_host_options(Number(options.limitPresentationTo60!==false),Number(!!(options.alwaysHitbox||options.touchAlwaysHitbox)),0,locale,Number(music!=='none'));
     core._th12_host_music_mode(Number(options.oggDecodeMode==='full'));
