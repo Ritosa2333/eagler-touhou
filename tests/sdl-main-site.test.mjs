@@ -49,7 +49,7 @@ async function fixture({mountError}={}){
   const source=readFileSync(new URL('../site/game-sdl.mjs',import.meta.url),'utf8')
     .replace(/^import .*;\r?$/gm,'').replaceAll('import.meta.url',JSON.stringify('https://game.test/runtime/game.mjs'))
     .replace('bootstrap().catch(fail);','');
-  const entry=runInNewContext(source+'\nemit=testEmit;({configure,bootNative,launch,returnRoom,fail,frame,setStore(value){store=value;}})',context);
+  const entry=runInNewContext(source+'\nemit=testEmit;({configure,bootNative,launch,returnRoom,fail,frame,syncRuntime,setStore(value){store=value;}})',context);
   entry.setStore(store);
   await entry.configure({options,language:'ja',music:'none'});if(!mountError)await entry.bootNative();
   const peers=new Map([[1,{inputOpen:false,controlOpen:false,pc:{connectionState:'connected'}}]]);
