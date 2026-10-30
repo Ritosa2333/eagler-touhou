@@ -30,7 +30,7 @@ const run=args=>{
 const files=dir=>readdirSync(resolve(root,dir),{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(dir+'/'+e.name):e.name.endsWith('.cpp')?[resolve(root,dir,e.name)]:[]);
 const source=[...files('cpp/game'),...files('cpp/sdl'),...(release?[]:[resolve(root,'tests/sdl/application-exports.cpp')]),resolve(workspace,'portable/sdl/Renderer.cpp')];
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...headerInputs(resolve(commonRoot,'include/eagler/input'),resolve(commonRoot,'browser'))].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...headerInputs(resolve(commonRoot,'include/eagler/input'),resolve(commonRoot,'include/eagler/audio'),resolve(commonRoot,'browser'))].sort();
 await printRuntimeInputs({workspace,root,sources:source,headers,flags:common});
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
