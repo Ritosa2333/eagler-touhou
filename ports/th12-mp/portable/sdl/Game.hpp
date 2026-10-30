@@ -103,6 +103,7 @@ private:
     AnimationSampler loading_sampler; // LoadingPresentation's own sampler and display RNG
     std::unique_ptr<MenuAnimation> signature,indicator;std::vector<std::unique_ptr<MenuAnimation>> retiring;u32 loading_seed=0x1234;
     std::vector<Appearance> loading_poses;
+    Texture startup_credit;
     bool held_frame=false; // stage loads draw the last game frame behind the indicator
 #ifdef TH12_MULTIPLAYER
     bool mp_playing=false,mp_result=false,mp_replay=false,mp_visible=false,mp_audio_muted=false;
