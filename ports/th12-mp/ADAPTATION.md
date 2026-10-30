@@ -170,6 +170,8 @@
 
 <!-- manual-verification -->
 
+手柄左摇杆的本作输入默认使用每轴 50% 的方形死区，普通版与多人版、SDL 原生入口与旧网页入口保持一致。边界、斜向、十字键和启动器映射所有权由 `tests/sdl-gamepad.test.mjs` 检查；主站输入继续采用启动器的手柄配置。
+
 # TH12 多人适配
 
 [开发入口](README.md) · [普通版](../th12/ADAPTATION.md)

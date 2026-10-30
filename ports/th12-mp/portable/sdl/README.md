@@ -55,7 +55,7 @@ npm start -- --port=8114
 ## 输入、练习与显示
 
 - 方向键移动；Z 射击／确认；X Bomb／取消；Shift 低速；Ctrl 跳过对话；Esc 暂停；Enter 确认；R 重试。
-- 桌面 Alt+Enter 全屏。SDL 标准手柄支持热插拔、方向键、左摇杆和游戏内 Key Config。
+- 桌面 Alt+Enter 全屏。SDL 标准手柄支持热插拔、方向键、左摇杆和游戏内 Key Config。左摇杆沿用原版的方形死区：X、Y 轴分别超过 50% 幅度才触发对应方向，双轴同时越界触发斜向；方向十字键直接生效。主站手柄输入沿用启动器的映射与自定义阈值。
 - `TH12_ENABLE_THPRAC=ON` 将现有 C++ ImGui 练习界面直接绘入同一窗口。Practice 可选分段；Backspace 打开工具菜单，Tab 切换信息，F12 打开高级选项。速度设置作用于逻辑时钟。
 - 默认逻辑为 60 Hz。桌面 `--high-refresh`、Web 的高刷新率选项允许额外显示帧；按稳定实体标识对连续位置插值，出生、消失、切关和瞬移保持各自边界，显示数据不回写游戏状态。
 - `--always-hitbox` 开启显示用判定点；`--no-thprac`、`--no-music` 分别关闭练习工具和音乐；`--full-music` 将当前 OGG 整曲解码为 PCM 后播放。整曲 PCM 在换曲时释放，单曲上限 256 MiB。
