@@ -33,9 +33,22 @@ th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
 #error Fixture exports must stay out of production builds
 #endif
 namespace th08::multiplayer {extern "C" const u32* multiplayer_replay_gameplay_state(BrowserRuntime* runtime);}
+namespace th08::multiplayer {void fixture_reuse_owning_snapshots(bool);}
 namespace th08 {bool fixture_barrier_broadphase(bool) noexcept;}
+namespace th08 {
+void fixture_projectile_miss(bool)noexcept;void fixture_interior_view(bool)noexcept;void fixture_native_clip(bool)noexcept;
+bool fixture_interior_view_probe();bool fixture_native_clip_probe();
+}
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_steady_mode")))
+void mp_fixture_steady_mode(u32 enabled){
+    fixture_projectile_miss(enabled!=0);fixture_interior_view(enabled!=0);fixture_native_clip(enabled!=0);
+    multiplayer::lazy_cancel_vm=enabled!=0;
+    multiplayer::fixture_reuse_owning_snapshots(enabled!=0);
+}
+__attribute__((export_name("mp_fixture_steady_numeric")))
+u32 mp_fixture_steady_numeric(){return fixture_interior_view_probe()&&fixture_native_clip_probe();}
 __attribute__((export_name("mp_fixture_ecl_aiming")))
 u32 mp_fixture_ecl_aiming(BrowserRuntime* r){
     if(!r||!r->app.in_game()||!r->app.game.ready()||r->app.session.player_count<2)return 0;

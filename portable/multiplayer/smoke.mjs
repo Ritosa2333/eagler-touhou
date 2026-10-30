@@ -134,6 +134,8 @@ window.multiplayerSmoke={
   batchCheckpointCopies(enabled){core.mp_fixture_batch_checkpoint_copies(+enabled);},
   barrierBroadphase(enabled){core.mp_fixture_barrier_broadphase(+enabled);},
   eclAimingProbe(){return !!core.mp_fixture_ecl_aiming(app);},
+  steadyMode(enabled){core.mp_fixture_steady_mode(+enabled);},
+  steadyNumeric(){return !!core.mp_fixture_steady_numeric();},
   audioRouting(){if(!core.mp_fixture_audio_routing||!app)throw Error('Initialized diagnostic fixture required');return !!core.mp_fixture_audio_routing(app);},
   audioClockIndependent(){if(!core.mp_fixture_audio_clock||!app)throw Error('Initialized diagnostic fixture required');return !!core.mp_fixture_audio_clock(app);},
   correctionProbe(){if(!core.mp_fixture_native_correction||!app)throw Error('Initialized diagnostic fixture required');

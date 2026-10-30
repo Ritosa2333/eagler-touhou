@@ -13,6 +13,7 @@ std::array<double,4> broadphase_counts{};
 bool audit_barrier_cache=false;
 u32 barrier_cache_mismatches=0;
 bool barrier_broadphase_enabled=true;
+bool projectile_miss_enabled=true;
 #endif
 // Reject only widely separated, ordinary finite coordinates. The two-unit
 // guard is much larger than float endpoint rounding within this bounded
@@ -78,6 +79,7 @@ Vec2 xy(const Vec3& p){return {p.x,p.y};}
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool fixture_collision_broadphase(bool enabled) noexcept {collision_broadphase_enabled=enabled;return collision_broadphase_enabled;}
 bool fixture_barrier_broadphase(bool enabled) noexcept {barrier_broadphase_enabled=enabled;return enabled;}
+void fixture_projectile_miss(bool enabled) noexcept {projectile_miss_enabled=enabled;}
 bool fixture_barrier_cache(bool enabled) noexcept {barrier_cache_enabled=enabled;return enabled;}
 void fixture_barrier_cache_audit(bool enabled) noexcept {audit_barrier_cache=enabled;}
 u32 fixture_barrier_cache_mismatches() noexcept {return barrier_cache_mismatches;}
@@ -120,6 +122,14 @@ PlayerCollision::BarrierBatch::BarrierBatch(PlayerCollision* value):owner(value)
     owner->barrier_batch=this;
 }
 PlayerCollision::BarrierBatch::~BarrierBatch(){if(owner)owner->barrier_batch=previous;}
+bool PlayerCollision::definitely_misses(const Vec3& p,const Vec3& size,bool grazing)const{
+    if(!collision_broadphase_enabled||!barrier_batch||barrier_batch->count)return false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(!projectile_miss_enabled)return false;
+#endif
+    const u32 box=grazing?2:0;
+    return definitely_outside(p,size,movement.bounds[box],movement.bounds[box+1],grazing?20.f:0.f);
+}
 i32 PlayerCollision::barrier(const Vec2& p){
 #ifdef TH_MULTIPLAYER_FIXTURES
     if(barrier_batch&&audit_barrier_cache){
