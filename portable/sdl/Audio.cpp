@@ -9,6 +9,9 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 namespace th12host {
 namespace {
@@ -91,46 +94,58 @@ i32 Audio::track_count()const{return i32(impl->tracks.size());}
 i32 Audio::track_index(const std::string& name)const{
     for(size_t i=0;i<impl->tracks.size();++i){const auto& n=impl->tracks[i].name;if(n==name||n==name+".wav")return i32(i);}return -1;
 }
+void Audio::music_failure(const char* reason){
+    error=reason;const auto track=music_name();host::log("audio: %s: %s",track.c_str(),reason);
+#ifdef __EMSCRIPTEN__
+    EM_ASM({Module.th12Error?.(UTF8ToString($0),"audio-resource",UTF8ToString($1));},reason,track.c_str());
+#endif
+}
 void Audio::play_music(i32 index){
     auto& a=*impl;if(!a.ready)return;
     if(index<0||index>=i32(a.tracks.size())){stop_music();return;}
-    a.track=index;a.music_paused=false;a.fading=false;
+    a.track=index;a.music_paused=false;a.fading=false;error.clear();
     if(!runtime_options.music){a.music.reset();if(a.reader)a.reader->stop();if(a.device)SDL_ClearAudioStream(a.device);return;}
     if(!a.bgm){
         const auto& t=a.tracks[size_t(index)];std::string stem=t.name;const auto dot=stem.rfind('.');if(dot!=std::string::npos)stem.resize(dot);
         const auto filename=host::paths().data_file(("music/"+stem+".ogg").c_str());
         a.music.reset();auto next=std::make_unique<Impl::Music>();auto config=ma_decoder_config_init(ma_format_f32,2,44100);
-        if(ma_decoder_init_file(filename.c_str(),&config,&next->decoder)!=MA_SUCCESS){host::log("audio: %s unavailable",filename.c_str());return;}next->decoded=true;
+        if(ma_decoder_init_file(filename.c_str(),&config,&next->decoder)!=MA_SUCCESS){
+            // The browser fetches an absent track asynchronously, then retries.
+            // Existing files have already arrived and must decode successfully.
+            if(host::exists(filename))music_failure("cannot decode music resource");
+            else host::log("audio: %s awaiting resource",filename.c_str());
+            return;
+        }next->decoded=true;
         ma_data_source* source=&next->decoder;
         if(runtime_options.full_music){
             // Decode this track before attaching it to the mixer. Keep one PCM
             // owner, released on track change; no unbounded all-track cache.
             constexpr ma_uint64 MaxFrames=256ull*1024*1024/(sizeof(float)*2);
-            ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&length)!=MA_SUCCESS||!length||length>MaxFrames){error="OGG decoded length exceeds the 256 MiB track limit";host::log("audio: %s",error.c_str());return;}
+            ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&length)!=MA_SUCCESS||!length||length>MaxFrames){music_failure("OGG decoded length is invalid or exceeds the 256 MiB track limit");return;}
             next->pcm.resize(size_t(length*2));ma_uint64 done=0;
             while(done<length){ma_uint64 read=0;const auto result=ma_decoder_read_pcm_frames(&next->decoder,next->pcm.data()+done*2,std::min<ma_uint64>(16384,length-done),&read);done+=read;if(result!=MA_SUCCESS||!read)break;}
-            if(!done){error="OGG full decode produced no PCM frames";host::log("audio: %s",error.c_str());return;}
+            if(done!=length){music_failure("OGG full decode did not produce the complete track");return;}
             next->pcm.resize(size_t(done*2));ma_decoder_uninit(&next->decoder);next->decoded=false;
-            if(ma_audio_buffer_ref_init(ma_format_f32,2,next->pcm.data(),done,&next->buffer)!=MA_SUCCESS)return;
+            if(ma_audio_buffer_ref_init(ma_format_f32,2,next->pcm.data(),done,&next->buffer)!=MA_SUCCESS){music_failure("cannot initialize decoded music buffer");return;}
             next->buffer_ready=true;source=&next->buffer;
         }
         ma_data_source_set_loop_point_in_pcm_frames(source,t.loop_start/t.align,t.length/t.align);
-        if(ma_sound_init_from_data_source(&a.engine,source,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&next->sound)!=MA_SUCCESS)return;
+        if(ma_sound_init_from_data_source(&a.engine,source,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&next->sound)!=MA_SUCCESS){music_failure("cannot attach music to mixer");return;}
         next->attached=true;ma_sound_set_looping(&next->sound,MA_TRUE);ma_sound_set_volume(&next->sound,native_music_gain(bgm_volume));
         a.music=std::move(next);ma_sound_start(&a.music->sound);return;
     }
     const auto& t=a.tracks[size_t(index)];a.music.reset();auto next=std::make_unique<Impl::Music>();auto& s=next->stream;
     s.reader=a.reader.get();s.offset=t.offset;s.frames=t.length/t.align;s.loop_start=t.loop_start/t.align;s.channels=t.channels;s.rate=t.rate;
     auto config=ma_data_source_config_init();config.vtable=&host::pcm_vtable;
-    if(ma_data_source_init(&config,&s.base)!=MA_SUCCESS){host::log("audio: cannot open %s",t.name.c_str());return;}next->initialized=true;
+    if(ma_data_source_init(&config,&s.base)!=MA_SUCCESS){music_failure("cannot open PCM music source");return;}next->initialized=true;
     a.reader->start(s.offset,s.frames,s.loop_start,s.channels,0);
-    if(host::pcm_seek(&s,0)!=MA_SUCCESS){host::log("audio: cannot seek thbgm.dat");return;}
+    if(host::pcm_seek(&s,0)!=MA_SUCCESS){music_failure("cannot seek thbgm.dat");return;}
     ma_data_source_set_loop_point_in_pcm_frames(&s,s.loop_start,s.frames);
-    if(ma_sound_init_from_data_source(&a.engine,&s,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&next->sound)!=MA_SUCCESS)return;next->attached=true;
+    if(ma_sound_init_from_data_source(&a.engine,&s,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&next->sound)!=MA_SUCCESS){music_failure("cannot attach PCM music to mixer");return;}next->attached=true;
     ma_sound_set_looping(&next->sound,MA_TRUE);ma_sound_set_volume(&next->sound,native_music_gain(bgm_volume));
     a.music=std::move(next);ma_sound_start(&a.music->sound);
 }
-void Audio::stop_music(){auto& a=*impl;if(a.music)ma_sound_stop(&a.music->sound);a.music.reset();if(a.reader)a.reader->stop();a.track=-1;a.music_paused=false;a.fading=false;}
+void Audio::stop_music(){error.clear();auto& a=*impl;if(a.music)ma_sound_stop(&a.music->sound);a.music.reset();if(a.reader)a.reader->stop();a.track=-1;a.music_paused=false;a.fading=false;}
 void Audio::retry_music(){auto& a=*impl;if(!runtime_options.music){a.music.reset();if(a.reader)a.reader->stop();if(a.device)SDL_ClearAudioStream(a.device);return;}if(!a.music&&a.track>=0){const bool paused=a.music_paused;play_music(a.track);pause_music(paused);}}
 std::string Audio::music_name()const{const auto& a=*impl;if(a.track<0||a.track>=i32(a.tracks.size()))return "";std::string n=a.tracks[size_t(a.track)].name;const auto dot=n.find('.');return dot==std::string::npos?n:n.substr(0,dot);}
 bool Audio::music_paused()const{return impl->music_paused;}

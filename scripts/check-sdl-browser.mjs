@@ -41,6 +41,7 @@ try{
  const delivery=await verifyRuntimeDelivery(page,{scriptUrl:'http://127.0.0.1:'+server.address().port+'/runtime/game.mjs',scriptBytes:program,wasmName:'core.wasm',wasmBytes:wasm});
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});
  await page.addInitScript(installPcmProbe);
+ if(music==='ogg')await page.route('**/music/th12_01.ogg',route=>route.fulfill({status:200,contentType:'audio/ogg',body:Buffer.from('invalid OGG for decoder regression')}));
  await page.route('**/game.css',route=>route.abort());
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
  await page.goto('http://127.0.0.1:'+server.address().port);await page.evaluate(()=>addRuntime(0));
@@ -48,6 +49,19 @@ try{
  await page.evaluate(async({music,musicResources,decodeMode})=>{await rpc(0,'configure',{music,language:'ja',sharedResources:[{path:'/unifont.otf',url:'/shared/unifont.otf'},{path:'/msgothic.ttc',url:'/shared/msgothic.ttc'},...musicResources],options:{oggDecodeMode:decodeMode,thpracEnabled:true,touchEnabled:true,touchMovementMode:'touch-unlimited',touchSensitivity:100}});await rpc(0,'launch');},{music,musicResources,decodeMode});
  const frame=page.frames().find(f=>f.url().includes('runtimeEpoch='));
  const state=()=>frame.evaluate(()=>__th12Runtime.state());
+ if(music==='ogg'){
+  await page.waitForFunction(n=>events.filter(e=>e.event==='error').length>=n,1,{timeout:90000});
+  await page.waitForTimeout(200);
+  const failures=await page.evaluate(()=>events.filter(e=>e.event==='error'));
+  assert.equal(failures.length,1,'one recoverable error per Runtime');
+  assert(failures.every(e=>e.code==='audio-resource'&&e.error.includes('th12_01')));
+  const silent=await samplePcm(frame);assert(silent.frames>0&&silent.peak<1e-6);
+  await page.unroute('**/music/th12_01.ogg');
+  await page.evaluate(n=>Promise.all(Array.from({length:n},(_,s)=>rpc(s,'resources',{resources:[{path:'/music/th12_01.ogg',url:'/music/th12_01.ogg'}]}))),1);
+  const recovered=await samplePcm(frame);assert(recovered.frames>0&&recovered.peak>1e-4,'corrected music resumes in the same Runtime');
+  audioChecks.push({action:'corrupt-resource-recovery',failures,silent,recovered});
+  await page.evaluate(()=>{window.events=events.filter(e=>e.event!=='error');});
+ }
  assert.equal(await frame.locator('.toolbar').isVisible(),false);assert.equal(await frame.locator('footer').isVisible(),false);
  async function wait(predicate){const end=Date.now()+90000;while(Date.now()<end){const v=await state();if(predicate(v))return v;const events=await page.evaluate(()=>window.events.filter(e=>e.event==='error'));assert.deepEqual(events,[]);await page.waitForTimeout(50);}throw Error('scene timeout '+JSON.stringify(await state()));}
  async function press(code){await page.evaluate(code=>rpc(0,'keyboard',{code,down:true,inputSource:'physical'}),code);await page.waitForTimeout(90);await page.evaluate(code=>rpc(0,'keyboard',{code,down:false,inputSource:'physical'}),code);await page.waitForTimeout(80);}
@@ -75,6 +89,16 @@ try{
  await wait(s=>s.scene==='paused'&&s.menuReady);await press('Enter');await wait(s=>s.scene==='playing');
  console.log('TOUCH_ESC_AND_PORTRAIT_DRAG_PASS',{beforeTouch,afterTouch,contact});
  await page.locator('#p0').evaluate(f=>{f.style.width='640px';f.style.height='480px';});await page.waitForTimeout(200);
+ // Keep both input owners held across pagehide, then resume the native pause.
+ await page.evaluate(()=>rpc(0,'keyboard',{code:'ArrowRight',down:true,inputSource:'physical'}));
+ await page.evaluate(()=>rpc(0,'direct-touch',{type:'down',id:302,x:.5,y:.7}));
+ await page.waitForTimeout(100);await frame.evaluate(()=>dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
+ await wait(s=>s.scene==='paused'&&s.menuReady);await frame.evaluate(()=>dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+ await press('Enter');await wait(s=>s.scene==='playing'&&s.ready);const released=await state();
+ await page.evaluate(()=>rpc(0,'direct-touch',{type:'move',id:302,x:.8,y:.7}));
+ await page.waitForTimeout(250);assert.equal((await state()).x,released.x,'pagehide releases held keyboard and touch');
+ await press('ArrowLeft');assert((await state()).x<released.x,'fresh movement works after pageshow');
+ console.log('PAGEHIDE_INPUT_RELEASE_PASS',{released,after:await state()});
  await press('F12');await wait(s=>s.capturing);await page.screenshot({path:resolve(out,'thprac.png')});
  const closedVertices=(await state()).practiceVertices;
  const click=await frame.evaluate(()=>{const r=document.querySelector('#screen').getBoundingClientRect();return {x:r.left+20*r.width/640,y:r.top+42*r.height/480};});

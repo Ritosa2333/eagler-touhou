@@ -23,14 +23,23 @@ const copy=value=>new Uint8Array(value.buffer,value.byteOffset,value.byteLength)
 const equal=(a,b)=>a?.length===b.length&&a.every((v,i)=>v===b[i]);
 function fail(error){globalThis.__eaglerCrashReporterV1?.fatal(error,{source:'sdl-runtime'});lastFailure=error?.message??String(error);notice.textContent=lastFailure;emit({event:'error',error:lastFailure});}
 function musicFailed(track,error){
+  if(failedMusic.has(track))return;
   failedMusic.add(track);
   const message='音乐加载失败：'+track+'：'+(error?.message??String(error));
   notice.textContent=message;emit({event:'error',code:'audio-resource',error:message});
 }
 async function installResources(items){
   await assets.install(items,message=>emit(message));
-  for(const track of failedMusic)preparedMusic.delete(track);
-  failedMusic.clear();
+  for(const {path} of items){
+    const track=/^\/music\/(.+)\.ogg$/.exec(path)?.[1];if(!failedMusic.has(track))continue;
+    const bytes=new Uint8Array(await assets.music.get(path).arrayBuffer());
+    if(core){core.FS.writeFile('/game/music/'+track+'.ogg',bytes);preparedMusic.add(track);}
+    failedMusic.delete(track);core?._th12_host_refresh_music();
+  }
+  if(!failedMusic.size&&notice.textContent.startsWith('音乐加载失败：'))notice.textContent='';
+}
+function nativeError(message,code,track){
+  if(code==='audio-resource')musicFailed(track,Error(message));else lastFailure=message;
 }
 function vk(code){
   if(/^Key[A-Z]$/.test(code))return code.charCodeAt(3);
@@ -145,7 +154,7 @@ async function launch(){
   if(terminated)throw Error('请从启动器重新打开此会话');if(launched)throw Error('游戏已启动');launched=true;
   try{
     localization??=(await prepareLocalization()).activate();assets.localization=localization;
-    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.info(line);},onAbort:reason=>{terminated=true;fail(Error(String(reason)));},th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:message=>{lastFailure=message;},th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
+    core=await createTH12SDL({canvas,noInitialRun:true,printErr:line=>{startupLog.push(String(line));if(startupLog.length>40)startupLog.shift();console.info(line);},onAbort:reason=>{terminated=true;fail(Error(String(reason)));},th12BeforeFrame:()=>{try{beforeFrame();}catch(error){fail(error);}},th12Frame:()=>{try{frame();}catch(error){fail(error);}},th12Started:()=>{nativeStarted=true;},th12Error:nativeError,th12Stopped:(code=0,reason='',details)=>{terminated=true;launched=false;const error=sdlStopError(code,reason,details,{started:nativeStarted,lastFailure,logs:startupLog});if(error){fail(error);return;}syncRuntime().then(()=>emit({event:'exit',code:0,status:'success'})).catch(fail);}});
     core.eaglerOptions=options;window.Module=core;
     globalThis.__eaglerCrashReporterV1?.bindCore(core,{context:()=>({session:state.stage?state:null,host:state,heldKeys:[...keys.keys()]})});
     await mountSdlContent(core,assets,{progress:()=>{notice.textContent='少女祈祷中...';}});
@@ -183,7 +192,8 @@ for(const type of ['keydown','keyup'])window.addEventListener(type,event=>{
 });
 window.addEventListener('blur',()=>{clearKeyboard();cancelTouch();});
 document.addEventListener('visibilitychange',()=>{clearKeyboard();cancelTouch();core?._th12_host_audio(Number(document.hidden));if(document.hidden)syncRuntime().catch(fail);});
-window.addEventListener('pagehide',()=>{syncRuntime().catch(fail);});
+window.addEventListener('pagehide',()=>{clearKeyboard();cancelTouch();core?._th12_host_audio(1);syncRuntime().catch(fail);});
+window.addEventListener('pageshow',()=>{if(!document.hidden)core?._th12_host_audio(0);});
 for(const type of ['pointerdown','pointermove','pointerup','pointercancel'])canvas.addEventListener(type,event=>{
   const rect=canvas.getBoundingClientRect(),message={type:({pointerdown:'down',pointermove:'move',pointerup:'up',pointercancel:'cancel'})[type],id:event.pointerId,pointerType:event.pointerType,x:(event.clientX-rect.left)*640/rect.width,y:(event.clientY-rect.top)*480/rect.height};
   if(type==='pointerdown')canvas.setPointerCapture(event.pointerId);

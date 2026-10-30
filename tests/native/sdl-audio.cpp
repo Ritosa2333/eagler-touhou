@@ -41,7 +41,13 @@ int main(int argc,char** argv){
     Archive archive;assert(archive.open(host::paths().data));ExeTables tables;for(auto& sound:tables.sounds)sound.id=-1;tables.sounds[0]={0,"effect.wav",0,false};
     Audio audio;assert(audio.initialize(archive,tables));audio.set_volumes(100,100);
     for(bool full:{false,true}){
-        runtime_options.full_music=full;runtime_options.music=true;audio.play_music(0);assert(peak(audio)>.1);
+        runtime_options.full_music=full;runtime_options.music=true;
+        file("music/track.ogg",{'b','a','d'});audio.play_music(0);
+        assert(!audio.error.empty());assert(peak(audio)<1e-6);
+        audio.effect(0,0,false);assert(peak(audio)>.1);audio.stop_effects();
+        audio.pause_music(true);file("music/track.ogg",wave());audio.retry_music();
+        assert(audio.error.empty());assert(audio.music_paused());assert(peak(audio)<1e-6);
+        audio.pause_music(false);assert(peak(audio)>.1);
         audio.pause_music(true);assert(peak(audio)<1e-6);audio.pause_music(false);assert(peak(audio)>.1);
         runtime_options.music=false;audio.retry_music();assert(peak(audio)<1e-6);
         audio.effect(0,0,false);assert(peak(audio)>.1);audio.stop_effects();assert(peak(audio)<1e-6);
