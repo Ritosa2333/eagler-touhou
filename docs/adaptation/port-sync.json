@@ -86,7 +86,7 @@
     "th10": {
       "normal": "ports/th10",
       "multiplayer": "ports/th10-mp",
-      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
       "history": [
         {
           "kind": "manual",
@@ -124,6 +124,18 @@
             "ports/th10-mp/web/cpp/sdl/ThpracUi.hpp"
           ],
           "note": "WebSfx 编译输入与分项记录已对应迁入，投影合并写回保持审核树。此前普通版的 THPrac 被动面板触控交接由 practice、passive-touch 两项原基线监控继续登记。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th10-mp/ADAPTATION.md",
+            "ports/th10-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th10-mp/web/sdl-runtime/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
         }
       ],
       "origin": {
@@ -182,7 +194,7 @@
     "th11": {
       "normal": "ports/th11",
       "multiplayer": "ports/th11-mp",
-      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
       "history": [
         {
           "kind": "manual",
@@ -290,6 +302,18 @@
             "ports/th11-mp/web/cpp/sdl/ThpracUi.hpp"
           ],
           "note": "普通版已有 WebSfx 编译输入，本轮补齐 MP 并更新分项记录。投影合并已写回，源码树与审核快照一致。此前普通版高刷绘制与 THPrac 交接分别由 high-refresh、practice-pointer 原基线监控登记。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th11-mp/ADAPTATION.md",
+            "ports/th11-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th11-mp/web/sdl-runtime/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
         }
       ],
       "origin": {
@@ -327,7 +351,7 @@
     "th15": {
       "normal": "ports/th15",
       "multiplayer": "ports/th15-mp",
-      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
       "history": [
         {
           "kind": "manual",
@@ -394,6 +418,18 @@
             "ports/th15-mp/web/cpp/sdl/ThpracUi.hpp"
           ],
           "note": "两版暂时禁移保留触点替代护盾专属例外，决死 Bomb 仍逐帧消费脉冲。投影合并已写回，MP 本地席位选择与审核快照一致。此前 THPrac 交接由 practice-ui、passive-touch 原基线监控继续登记。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/web/cpp/sdl/ThpracUi.cpp",
+            "ports/th15-mp/web/sdl-runtime/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
         }
       ],
       "origin": {
@@ -441,7 +477,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "c6f1b6639c7c5b479e13eac74373ea02544c627d",
+      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -943,6 +979,20 @@
             "ports/th12-mp/tests/sdl-gamepad.test.mjs"
           ],
           "note": "普通版与多人版同步每轴50%的方形摇杆死区、SDL和旧网页入口及边界回归；保留启动器映射与自定义阈值。两侧Web构建、60项SDL回归和19项适配检查通过；隔离合并写回的完整多人树与修复提交一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "c6f1b6639c7c5b479e13eac74373ea02544c627d",
+          "source": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "targetHead": "0dcd0b207179fdf38300388c2bb48acf818f5b0c",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/portable/sdl/Game.cpp",
+            "ports/th12-mp/portable/sdl/Game.hpp",
+            "ports/th12-mp/site/game-sdl.mjs",
+            "ports/th12-mp/site/startup-branding.mjs"
+          ],
+          "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
         }
       ]
     }
