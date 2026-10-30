@@ -1,0 +1,54 @@
+{
+  "baseline": "8a43de5ce590df0ee41f4a827f382f5025ab53da",
+  "sourceFiles": {
+    "ports/th12/src/game/HostilePool.cpp": "26c7e8113e9078c076f1d45482b2440620c873ca75711d5aaa90709beb0d3a17",
+    "ports/th12-mp/src/game/HostilePool.cpp": "26c7e8113e9078c076f1d45482b2440620c873ca75711d5aaa90709beb0d3a17",
+    "ports/th12-mp/src/game/UfoEffects.cpp": "9229fe7a7376f9ca7433069067e76002c7343b05c6f338040c65fbfdcbf340e5",
+    "ports/th12/tests/native/hostile-pool-storage.cpp": "dbd624fd934d3da7480a93dcfd450c0855d53505922c18d879fbb2455cff69a8",
+    "ports/th12-mp/tests/native/hostile-pool-storage.cpp": "dbd624fd934d3da7480a93dcfd450c0855d53505922c18d879fbb2455cff69a8",
+    "ports/th12-mp/tests/native/multiplayer-ufo-storage.cpp": "c135678b84ce8065af1b1f60a06deb5c8e07adc95b7fd0aabaa4273dedc59c4c"
+  },
+  "assetFreeNative": {
+    "normal": {
+      "passed": 2,
+      "total": 2
+    },
+    "multiplayer": {
+      "passed": 6,
+      "total": 6
+    }
+  },
+  "interfaceChecks": {
+    "passed": 25,
+    "total": 25
+  },
+  "webBuilds": {
+    "normal": {
+      "sourceSha256": "19af5f5a9485bc73b156518e4cd7e116b4a66863718bc0a98d10d856ac233c88",
+      "artifacts": {
+        "touhou12.mjs": {
+          "bytes": 230988,
+          "sha256": "3b7eaf6c35e152e9e25367b2223d9526bef622ff5739706428bd7aeecfc16ee9"
+        },
+        "touhou12.wasm": {
+          "bytes": 3258324,
+          "sha256": "3c7e7485ada12367c8c14dc347380de7ceb35a9d2ee558e9703333a964be984b"
+        }
+      }
+    },
+    "multiplayer": {
+      "sourceSha256": "2fcd85544dd02e708c9c7e3592bc452ee9f8660b807e5dbacc1a96bb6221fd6a",
+      "artifacts": {
+        "touhou12.mjs": {
+          "bytes": 288427,
+          "sha256": "14d81ec62b60a5ffad3dfd293ae96e15521e4843d1640f8ef1f52933fe34bfc1"
+        },
+        "touhou12.wasm": {
+          "bytes": 3244750,
+          "sha256": "2c344f2e6a3068cd5ebf031f2d6362399b40ea572d1a2d6e24ffa2cd548d4823"
+        }
+      }
+    }
+  },
+  "liveNetworkSessionExecuted": false
+}

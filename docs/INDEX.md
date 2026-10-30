@@ -1,6 +1,6 @@
 # 文档总表
 
-共 370 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 371 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -229,6 +229,7 @@
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-multiplayer-transfer-font-20261026.md](../archive/th12-multiplayer-20261028/th12-multiplayer-transfer-font-20261026.md) | TH12 多人资源传递提示 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12-visual-performance-20261025.md](../archive/th12-multiplayer-20261028/th12-visual-performance-20261025.md) | TH12 飞钵轮廓与展示性能 |
 | 历史记录 | [archive/th12-multiplayer-20261028/th12mp-localization-20261025.md](../archive/th12-multiplayer-20261028/th12mp-localization-20261025.md) | TH12 多人本地语言资源 |
+| 历史记录 | [archive/th12-pool-ufo-reuse-20261030/README.md](../archive/th12-pool-ufo-reuse-20261030/README.md) | TH12 弹幕索引与 UFO 特效快照复用 |
 | 历史记录 | [archive/th12-rtc-channel-repair-20261029/README.md](../archive/th12-rtc-channel-repair-20261029/README.md) | TH12 多人 RTC 通道生命周期与可靠发送 |
 | 历史记录 | [archive/th12-sdl-animation-storage-20261029/README.md](../archive/th12-sdl-animation-storage-20261029/README.md) | TH12 SDL 动画存储复用 |
 | 历史记录 | [archive/th12-sdl-background-cache-20261030/README.md](../archive/th12-sdl-background-cache-20261030/README.md) | TH12 SDL 背景图元复用 |
