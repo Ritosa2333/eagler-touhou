@@ -87,7 +87,7 @@
 | AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
-| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | 按本项步骤执行，结果写入验证记录 |
+| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | multiplayer：按本项步骤执行，结果写入验证记录 |
 | MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | multiplayer：本作使用 OGG 音乐 |
 | MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | multiplayer：本作使用 OGG 音乐 |
 | MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | multiplayer：本作使用 OGG 音乐 |
@@ -224,3 +224,5 @@ node ports/th12-mp/scripts/check-multiplayer-browser.mjs
 | MP-06、MP-07、MP-08 | 独立观众加入、回跳、暂停、恢复接收和上传受阻恢复通过；三人挑战的旁观流失败与玩家演算隔离。 |
 | MP-09、MP-11 | 普通局自然结束后保留观众暂停位置，播完尾帧再进入原生选槽署名流程，保存录像经原生解码器复验。 |
 | MP-12、AUDIO | RTC 与显式 Relay 回退场景通过；实际 OGG 的旁观播放有 PCM，暂停与定位静音。 |
+
+RUNTIME-04、INPUT-06、TOUCH-16 与 AUDIO-05 的页面隐藏清理、损坏音乐提示和替换恢复见[SDL 输入与音乐错误验证](../../archive/th12-sdl-invariants-20261030/README.md)。
