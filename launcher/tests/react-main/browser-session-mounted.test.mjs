@@ -2276,8 +2276,9 @@ test('room start binds the run to its native preload without a second navigation
   await React.act(async () => {socket.open(); socket.message({type: 'start', serial: 2, room});});
   await until(() => node('#decisionDialog').open, 'original music confirmation');
   await click('#decisionConfirm'); await until(() => session.getRuntime().getSnapshot().launched, 'preloaded engine launched');
-  assert.equal(node('#player').classList.contains('room-workspace'),true,'new room layout remains while waiting for the first frame/path');
-  assert.equal(node('#mpRoomView').classList.contains('room-workspace-view'),true,'no fallback to the legacy room during startup');
+  assert.equal(f.fullscreen,node('#player'),'desktop Start requests browser fullscreen for the game');
+  assert.equal(node('#player').classList.contains('room-workspace'),false,'the fullscreen game is presented while waiting for the first frame/path');
+  assert.equal(env.document.querySelector('#mpRoomView'),null,'startup has no second room renderer');
   assert.equal(session.getRuntime().getSnapshot().epoch, epoch);
   assert.equal(f.navigations.length, navigations); assert.equal(f.dataReads.length, reads);
   const configure = f.outbound.findLast(message => message.command === 'configure');
@@ -2476,7 +2477,7 @@ for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
  });
 }
 
-for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,false]) test(`actual BrowserLauncher: ${mobileDevice?'mobile':'desktop'} player fullscreen returns to the live room picture (${nativeFullscreen?'browser fullscreen':'page fullscreen'})`,async t=>{
+for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,false]) test(`actual BrowserLauncher: ${mobileDevice?'mobile':'desktop'} player fullscreen returns to the live room picture (${nativeFullscreen?'browser fullscreen':'blocked then retried'})`,async t=>{
  const request=env.window.HTMLElement.prototype.requestFullscreen;
  t.after(()=>{env.window.HTMLElement.prototype.requestFullscreen=request;});
  if(!nativeFullscreen)env.window.HTMLElement.prototype.requestFullscreen=async()=>{throw new env.window.DOMException('Fullscreen unavailable','NotSupportedError');};
@@ -2505,6 +2506,14 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
  f.native[api.multiplayerConfigForProduct('th06mp').peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
  await React.act(async()=>f.native.emit('first-frame'));
  await until(()=>session.getSnapshot().roomLaunchStage===null,'player first frame and gameplay path settled');
+ assert.equal(f.fullscreen,nativeFullscreen?node('#player'):null,'Start automatically requests real browser fullscreen on desktop and mobile');
+ assert.equal(node('#fullscreenToggle').dataset.fullscreen,String(nativeFullscreen),'the fullscreen button reports the native browser state');
+ if(!nativeFullscreen){
+  env.window.HTMLElement.prototype.requestFullscreen=request;
+  await click('#fullscreenToggle');
+  assert.equal(f.fullscreen,node('#player'),'one manual click retries a blocked automatic request');
+  assert.equal(node('#gameFrame'),frame);assert.equal(f.navigations.length,navigations);assert.equal(f.dataReads.length,reads);
+ }
  if(f.fullscreen)await React.act(async()=>env.document.exitFullscreen());
  else if(session.getSnapshot().roomPlayerExpanded)await React.act(async()=>session.togglePlayerFullscreen());
  assert.equal(node('#player').classList.contains('room-workspace'),true);
@@ -2514,14 +2523,20 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
  assert.equal(frame.tabIndex,-1);
  assert.equal(frame.contentDocument.dispatchEvent(new env.window.KeyboardEvent('keyup',{code:'KeyZ',bubbles:true,cancelable:true})),true,'embedded Runtime can still clear synthetic keyboard transitions');
  for(let cycle=0;cycle<2;cycle++){
+  if(!nativeFullscreen)env.window.HTMLElement.prototype.requestFullscreen=async()=>{throw new env.window.DOMException('Fullscreen unavailable','NotSupportedError');};
   await click('.room-workspace-fullscreen');
   assert.equal(f.fullscreen,nativeFullscreen?node('#player'):null);assert.equal(frame.hasAttribute('inert'),false);
   assert.equal(frame.contentDocument.dispatchEvent(new env.window.KeyboardEvent('keydown',{code:'KeyZ',bubbles:true,cancelable:true})),true,'fullscreen releases the embedded input gate');
-  assert.equal(node('#player').classList.contains('room-workspace'),false,'page fullscreen keeps the normal game controls available');
+  assert.equal(node('#player').classList.contains('room-workspace'),false,'the expanded game keeps its normal controls available');
   assert.equal(env.document.querySelector('#mpRoomView'),null);
-  assert.equal(node('#fullscreenToggle').dataset.fullscreen,'true');
+  assert.equal(node('#fullscreenToggle').dataset.fullscreen,String(nativeFullscreen));
   assert.ok(node('#touchHud'));assert.ok(node('#touchEscape'));assert.ok(node('#fullscreenToggle'));
   assert.equal(env.document.querySelector('#playbackExit'),null,'players get gameplay rather than spectator actions');
+  if(!nativeFullscreen){
+   env.window.HTMLElement.prototype.requestFullscreen=request;
+   await click('#fullscreenToggle');
+   assert.equal(f.fullscreen,node('#player'),'blocked manual entry can also retry without collapsing the game');
+  }
   await click('#fullscreenToggle');
   assert.equal(f.fullscreen,null);assert.equal(node('#player').classList.contains('room-workspace'),true);
   assert.equal(env.document.querySelector('#touchHud'),null);assert.equal(node('#gameFrame'),frame);
