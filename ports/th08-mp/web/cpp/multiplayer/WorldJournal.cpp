@@ -8,6 +8,8 @@
 namespace th08::multiplayer {
 #ifdef TH_MULTIPLAYER_FIXTURES
 namespace {bool fixture_bomb_lazy_enabled=true,fixture_shot_sparse_enabled=true,fixture_record_sparse_enabled=true,fixture_title_spells_lazy_enabled=true;}
+namespace {bool reuse_owning_snapshots=true;}
+void fixture_reuse_owning_snapshots(bool enabled){reuse_owning_snapshots=enabled;}
 bool fixture_bomb_lazy(bool enabled){fixture_bomb_lazy_enabled=enabled;return fixture_bomb_lazy_enabled;}
 bool fixture_shot_sparse(bool enabled){fixture_shot_sparse_enabled=enabled;return fixture_shot_sparse_enabled;}
 bool fixture_record_sparse(bool enabled){fixture_record_sparse_enabled=enabled;return fixture_record_sparse_enabled;}
@@ -128,6 +130,7 @@ bool WorldJournal::Bind(BrowserRuntime& value){
        value.app.game.playing_replay||value.app.invalid()||value.app.session.network_frame_open||
        value.app.supervisor.state.target!=i32(th08::Scene::Game))return false;
     runtime=&value;app=&value.app;stage=app->game.globals.stage;error="";failed=false;
+    recycled_records.reserve(History);
     auto& g=app->game;
     stdData=g.background_script.program.header();stdSize=g.background_script.program.bytes_size();
     quads=g.background_script.quads.data();quadCount=g.background_script.quads.size();
@@ -204,13 +207,23 @@ bool WorldJournal::BeginFrame(u32 frame,bool extend){
     double replay_elapsed=0;
 #endif
     if(!main.BeginFrame(frame,extend))return Fail("main frame order");
+    CheckpointCapture capture(main);if(!capture.Valid())return Fail("main capture window");
     if(extend)records.back().end=frame;
     else{
 #ifdef TH_MULTIPLAYER_FIXTURES
         const auto replay_started=emscripten_get_now();
 #endif
-        records.push_back({frame,frame,std::make_unique<ReplayRecording>(app->game.recording),
-            std::make_unique<eagler::thprac::PracticeKeyMonitor>(app->session.practice.key_monitor)});
+        Record record;
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(reuse_owning_snapshots)
+#endif
+        if(!recycled_records.empty()){record=std::move(recycled_records.back());recycled_records.pop_back();}
+        record.frame=record.end=frame;
+        if(!record.replay)record.replay=std::make_unique<ReplayRecording>(app->game.recording);
+        else *record.replay=app->game.recording;
+        if(!record.practice_monitor)record.practice_monitor=std::make_unique<eagler::thprac::PracticeKeyMonitor>(app->session.practice.key_monitor);
+        else *record.practice_monitor=app->session.practice.key_monitor;
+        records.push_back(std::move(record));
 #ifdef TH_MULTIPLAYER_FIXTURES
         replay_elapsed=emscripten_get_now()-replay_started;diagnostic_capture_ms[4]+=replay_elapsed;
 #endif
@@ -226,6 +239,7 @@ bool WorldJournal::BeginFrame(u32 frame,bool extend){
         }
     }
     if(!app->screen.capture_rollback(main,&app->game.screen))return Fail("screen callback ownership");
+    if(!capture.Finish())return Fail("main capture failed");
 #ifdef TH_MULTIPLAYER_FIXTURES
     diagnostic_capture_ms[0]+=emscripten_get_now()-started-replay_elapsed;
     auto owner_started=emscripten_get_now();
@@ -255,7 +269,13 @@ bool WorldJournal::UndoTo(u32 frame){
     if(!main.UndoTo(frame)||!enemies.UndoTo(frame)||!pools.UndoTo(frame)||!resources.UndoTo(frame))return Fail("incomplete owner restore");
     app->game.recording=*target->replay; // deep vector copy; no ownership word dump
     app->session.practice.key_monitor=*target->practice_monitor;
-    while(!records.empty()&&records.back().frame>=frame)records.pop_back();
+    while(!records.empty()&&records.back().frame>=frame){
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(reuse_owning_snapshots)
+#endif
+        recycled_records.push_back(std::move(records.back()));
+        records.pop_back();
+    }
     RebasePresentation();return true;
 }
 void WorldJournal::RebasePresentation(){
@@ -275,7 +295,13 @@ void WorldJournal::RebasePresentation(){
 void WorldJournal::DiscardBefore(u32 frame){
     if(main.IsFrameOpen())return;
     enemies.DiscardBefore(frame);pools.DiscardBefore(frame);resources.DiscardBefore(frame);main.DiscardBefore(frame);
-    while(!records.empty()&&records.front().end<frame)records.pop_front();
+    while(!records.empty()&&records.front().end<frame){
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(reuse_owning_snapshots)
+#endif
+        recycled_records.push_back(std::move(records.front()));
+        records.pop_front();
+    }
 }
 void WorldJournal::Clear(){
     if(app&&app->game.world_journal==this)app->game.world_journal=nullptr;
@@ -283,7 +309,7 @@ void WorldJournal::Clear(){
     if(app&&app->game.gui_flow.transition_touch_context==this){app->game.gui_flow.transition_touch_context=nullptr;app->game.gui_flow.transition_touch=nullptr;}
     if(app&&app->game.player_world.world_journal==this)app->game.player_world.world_journal=nullptr;
     if(app&&app->world_journal==this)app->world_journal=nullptr;
-    enemies.Clear();pools.Clear();resources.Clear();main.Clear();records.clear();blocks.clear();
+    enemies.Clear();pools.Clear();resources.Clear();main.Clear();records.clear();recycled_records.clear();blocks.clear();
     app=nullptr;runtime=nullptr;stage=-1;failed=false;
 }
 bool WorldJournal::TouchBomb(PlayerBombObjects& objects){

@@ -130,6 +130,12 @@ window.multiplayerSmoke={
   titleSpellsProbe(){const ptr=core.mp_fixture_title_spells_probe?.(app);return ptr?Array.from(new Uint32Array(core.memory.buffer,ptr,4)):null;},
   liveBulletProbe(){const p=core.mp_fixture_live_bullet_probe(app);return Array.from(new Uint32Array(core.memory.buffer,p,10));},
   snapshotProfile(policy=2){const p=core.mp_fixture_snapshot_profile(app,policy);return Array.from(new Float64Array(core.memory.buffer,p,10));},
+  extraProfile(bomb=0,rounds=20){const p=core.mp_fixture_extra_profile(app,bomb,rounds);return Array.from(new Float64Array(core.memory.buffer,p,36));},
+  batchCheckpointCopies(enabled){core.mp_fixture_batch_checkpoint_copies(+enabled);},
+  barrierBroadphase(enabled){core.mp_fixture_barrier_broadphase(+enabled);},
+  eclAimingProbe(){return !!core.mp_fixture_ecl_aiming(app);},
+  steadyMode(enabled){core.mp_fixture_steady_mode(+enabled);},
+  steadyNumeric(){return !!core.mp_fixture_steady_numeric();},
   audioRouting(){if(!core.mp_fixture_audio_routing||!app)throw Error('Initialized diagnostic fixture required');return !!core.mp_fixture_audio_routing(app);},
   audioClockIndependent(){if(!core.mp_fixture_audio_clock||!app)throw Error('Initialized diagnostic fixture required');return !!core.mp_fixture_audio_clock(app);},
   correctionProbe(){if(!core.mp_fixture_native_correction||!app)throw Error('Initialized diagnostic fixture required');

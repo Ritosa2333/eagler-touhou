@@ -5,6 +5,31 @@
 #endif
 namespace th08 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool BulletCreation::capture_cancel_vms(){
+    if(!live_bullets)return true;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(!multiplayer::lazy_cancel_vm)return true;
+#endif
+    bool okay=rollback_journal&&!rollback_journal->Failed()&&!live_bullets->Failed();
+    if(okay&&rollback_journal->IsFrameOpen()){
+        u32 first=0;while(first<1536&&state.bullets[first].state!=5)++first;
+        if(first<1536){
+            std::array<u32,1537> masks{};
+            for(u32 slot=first;slot<1536;++slot)if(state.bullets[slot].state==5)masks[slot]=1u<<4;
+            okay=live_bullets->CaptureMasks(masks);
+        }
+    }else if(okay)okay=rollback_journal->FrameCount()==0;
+    if(!okay)failure=Failure::Journal;
+    return okay;
+}
+bool BulletCreation::capture_cancel_vm(BulletState& bullet){
+    if(!live_bullets)return true;
+    bool okay=rollback_journal&&!rollback_journal->Failed()&&!live_bullets->Failed();
+    if(okay&&rollback_journal->IsFrameOpen())okay=live_bullets->Touch(&bullet-state.bullets,1u<<4);
+    else if(okay)okay=rollback_journal->FrameCount()==0;
+    if(!okay)failure=Failure::Journal;
+    return okay;
+}
 bool BulletCreation::capture_overwrite(BulletState& bullet){
     bool okay=true;
     if(live_bullets){

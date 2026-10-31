@@ -21,9 +21,12 @@ void BulletDrawing::snapshot(){
     for(size_t i=0;i<previous_bullets.size();++i){const auto& b=state.bullets[i];auto& p=previous_bullets[i];p.active=b.state!=0;if(p.active){const auto& vm=b.sprites.animation[b.state>=2&&b.state<=5?b.state-1:0];p.position=b.position;p.angle=b.angle;p.age=b.active_time.current;p.state=b.state;p.script=vm.scriptIndex;p.sprite=vm.activeSpriteIndex;p.visual.capture(vm);}}
     for(size_t i=0;i<previous_lasers.size();++i){const auto& l=state.lasers[i];auto& p=previous_lasers[i];p.active=l.in_use!=0;if(p.active){const auto& vm=l.animation[0];p.position=l.position;p.angle=l.angle;p.start_offset=l.start_offset;p.end_offset=l.end_offset;p.scale_x=vm.scale.x;p.scale_y=vm.scale.y;p.age=l.timer.current;p.state=l.state;p.script=vm.scriptIndex;p.color=l.color;for(u32 n=0;n<2;++n)p.visual[n].capture(l.animation[n]);}}
 }
-void BulletDrawing::bullet(BulletState& b,const Vec2& origin,u32 previous_opacity_factor,u32 current_opacity_factor){
+bool BulletDrawing::bullet(BulletState& b,const Vec2& origin,u32 previous_opacity_factor,u32 current_opacity_factor){
     TH08_AUDIT_SCOPE(Bullet,&b,b.active_time.current,u32(b.state));
     auto& source=b.sprites.animation[b.state>=2&&b.state<=5?b.state-1:0];
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!presentation::render_only&&b.state==5&&!actions.before_cancel_vm(b))return false;
+#endif
     if(!presentation::render_only){
         source.pos={Scalar::add(origin.x,b.position.x),Scalar::add(origin.y,b.position.y),.05f};
         source.color1.d3dColor=i32((u32(source.color1.d3dColor)&0xff000000)|0xffffff);
@@ -44,7 +47,7 @@ void BulletDrawing::bullet(BulletState& b,const Vec2& origin,u32 previous_opacit
         probe.Previous(previous.position.x,previous.position.y,previous.age,valid);
     }
 #endif
-    actions.draw(*vm);
+    actions.draw(*vm);return true;
 }
 void BulletDrawing::laser(LaserState& l,const Vec2& origin){
     TH08_AUDIT_SCOPE(Laser,&l,l.timer.current,u32(l.state));
@@ -73,6 +76,9 @@ void BulletDrawing::laser(LaserState& l,const Vec2& origin){
     }
 }
 bool BulletDrawing::draw(u32 flags,const Vec2& origin){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!presentation::render_only&&!actions.before_cancel_vms())return false;
+#endif
 #ifdef TH_MULTIPLAYER_FIXTURES
     const int probe_slot=multiplayer::motion_probe::SelectedBulletSlot();
     if(probe_slot>=0&&probe_slot<1537){
@@ -82,7 +88,7 @@ bool BulletDrawing::draw(u32 flags,const Vec2& origin){
 #endif
     const bool tint=flags&1024;const u32 current_opacity_factor=tint?255u:128u;if(tint)actions.tint(0xfff01010);actions.items();
     for(auto& l:state.lasers)if(l.in_use)laser(l,origin);
-    for(auto* layer:state.layers){u32 count=0;for(auto* b=layer;b;b=b->next_in_layer){if(++count>1536){if(tint)actions.clear_tint();return false;}bullet(*b,origin,previous_submitted_opacity_factor,current_opacity_factor);}}
+    for(auto* layer:state.layers){u32 count=0;for(auto* b=layer;b;b=b->next_in_layer){if(++count>1536||!bullet(*b,origin,previous_submitted_opacity_factor,current_opacity_factor)){if(tint)actions.clear_tint();return false;}}}
     actions.effects();if(tint)actions.clear_tint();if(!presentation::render_only)last_submitted_opacity_factor=current_opacity_factor;return true;
 }
 }

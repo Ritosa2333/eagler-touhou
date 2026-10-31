@@ -60,6 +60,7 @@ bool PoolsJournal::BeginFrame(u32 frame,bool extend){
 #endif
     // Birth/reuse/cold-write hooks preserve the first value for the interval.
     if(extend)return true;
+    CheckpointCapture capture(bytes);if(!capture.Valid())return Fail();
     if(!touch(bytes,*rng))return Fail();
     // Templates are constructed before native frame zero and then read-only.
     // Capture the small linked-layer/cursor/timer tail and only live bullets,
@@ -103,7 +104,7 @@ bool PoolsJournal::BeginFrame(u32 frame,bool extend){
         if(effect.active||effect.vertices||slot==effect_pool_layout::dummy_index)
             if(!e.capture_slot(effect))return Fail();
     }
-    return true;
+    return capture.Finish()||Fail();
 }
 bool PoolsJournal::EndFrame(){return !Failed()&&bytes.EndFrame()&&(!use_live||live.EndFrame());}
 bool PoolsJournal::UndoTo(u32 frame){

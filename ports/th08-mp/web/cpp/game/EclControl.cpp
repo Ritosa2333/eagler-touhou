@@ -29,7 +29,7 @@ bool configure_enemy_control(EclVm& vm,const EclInstruction& ins){
     }
     case 169:{
         if(!vm.random||!vm.environment){vm.invalid=true;return false;}
-        const bool left=(vm.environment->player.x<vm.position.x&&96<vm.position.x)||288<vm.position.x;
+        const bool left=(vm.aimed_player().x<vm.position.x&&96<vm.position.x)||288<vm.position.x;
         const Extended random=vm.random->range(1.5707963705062866f);
         const float angle=left?add_angle((random+number(2.356194496154785f)).to_float(),0):(random-number(.7853981852531433f)).to_float();
         auto* target=vm.float_target(ins,0);if(!target)return false;*target=angle;break;

@@ -1,6 +1,6 @@
 # 文档总表
 
-共 399 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 402 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -211,6 +211,8 @@
 | 历史记录 | [archive/site-recovery-20261028/README.md](../archive/site-recovery-20261028/README.md) | 网页入口回退发布 |
 | 历史记录 | [archive/th06-th08-multiplayer-bugs-20261028/README.md](../archive/th06-th08-multiplayer-bugs-20261028/README.md) | TH06／TH08 多人索敌与 Last Spell 修复验证 |
 | 历史记录 | [archive/th08-extra-last-spell-20261029/README.md](../archive/th08-extra-last-spell-20261029/README.md) | TH08 Extra 雷保护与 Last Spell 生命周期 |
+| 历史记录 | [archive/th08-mp-extra-performance-20261030/README.md](../archive/th08-mp-extra-performance-20261030/README.md) | TH08 多人消弹性能与 ECL 目标选择 |
+| 历史记录 | [archive/th08-mp-steady-performance-20261030/README.md](../archive/th08-mp-steady-performance-20261030/README.md) | TH08 多人常态弹幕性能 |
 | 历史记录 | [archive/th12-autosave-host-state-20261030/README.md](../archive/th12-autosave-host-state-20261030/README.md) | 星莲船录像保存与逐帧状态读取 |
 | 历史记录 | [archive/th12-combined-optimizations-20261030/README.md](../archive/th12-combined-optimizations-20261030/README.md) | TH12 综合性能优化 |
 | 历史记录 | [archive/th12-complete-sdl-20261029/README.md](../archive/th12-complete-sdl-20261029/README.md) | TH12 普通版与多人版完整 SDL 入口 |
@@ -258,6 +260,7 @@
 | 历史记录 | [archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md](../archive/th15-rollback-20261026/th15-rollback-experiment-20261026.md) | TH15 多人回滚实验 |
 | 历史记录 | [archive/th15-rollback-20261026/th15-rollback-stress-fix-20261026.md](../archive/th15-rollback-20261026/th15-rollback-stress-fix-20261026.md) | TH15 密集回滚修复与复测 |
 | 历史记录 | [archive/th15-rollback-20261026/th15-upstream-rebuild-20261026.md](../archive/th15-rollback-20261026/th15-upstream-rebuild-20261026.md) | TH15 多人实验分支与上游同步 |
+| 历史记录 | [archive/th15-rollback-latency-performance-20261031/README.md](../archive/th15-rollback-latency-performance-20261031/README.md) | TH15 多人回滚快照与本机呈现 |
 | 历史记录 | [archive/th15-stage-transition-rollback-20261028/README.md](../archive/th15-stage-transition-rollback-20261028/README.md) | TH15 多人回滚换面输入节奏 |
 | 历史记录 | [archive/th17-development-20261030/CHANGELOG.txt](../archive/th17-development-20261030/CHANGELOG.txt) | [2026-10-27] 鬼形兽 WEB 1.0.14 |
 | 历史记录 | [archive/th17-development-20261030/README-交付说明.md](../archive/th17-development-20261030/README-交付说明.md) | 鬼形兽 WEB 1.0.14 完整开发交付 · 2026-10-27 |

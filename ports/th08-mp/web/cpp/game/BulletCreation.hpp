@@ -18,6 +18,8 @@ public:
     Netplay::RollbackJournal* rollback_journal=nullptr;
     multiplayer::LiveBulletJournal* live_bullets=nullptr;
     bool capture_overwrite(BulletState&);
+    bool capture_cancel_vm(BulletState&);
+    bool capture_cancel_vms();
 #endif
     BulletCreation(BulletManagerState& state,Rng& random):state(state),random(random){}
     FrameTiming timing;BulletCreationActions* actions=nullptr;

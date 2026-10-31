@@ -103,6 +103,9 @@ bool BulletUpdate::normal(BulletState& b,BulletMotion& motion){
     return !animation.invalid;
 }
 bool BulletUpdate::update_bullets(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!creation.capture_cancel_vms())return false;
+#endif
     creation.timing=timing;animation.timing=timing;animation.invalid=false;
     BulletMotion motion;motion.timing=timing;motion.player=player;motion.actions=creation.actions;
     state.active_count=0;for(auto& layer:state.layers)layer=nullptr;
@@ -119,7 +122,12 @@ bool BulletUpdate::update_bullets(){
                 b.state=1;b.since_fired.set(0);if(!normal(b,motion))return false;
             }
         }else if(starting==1){if(!normal(b,motion))return false;}
-        else if(starting==5){move(b.position,b.velocity,2);if(animation.execute(b.sprites.animation[4]))retire(b);}
+        else if(starting==5){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            if(!creation.capture_cancel_vm(b))return false;
+#endif
+            move(b.position,b.velocity,2);if(animation.execute(b.sprites.animation[4]))retire(b);
+        }
         if(animation.invalid)return false;if(!b.state)continue;
         b.since_fired.tick(timing);b.active_time.tick(timing);
         if(b.sprites.layer>=6)return false;b.next_in_layer=state.layers[b.sprites.layer];state.layers[b.sprites.layer]=&b;
