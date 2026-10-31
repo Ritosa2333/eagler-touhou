@@ -536,8 +536,9 @@ export class Renderer {
         const y=104+p.seat*80;
         text((p.seat+1)+'P'+(p.ghost?' GHOST':''),428,y-14,1,1,{colorARGB:p.seat===fps.localSeat?0xffffff00:0xffffffff});
         for(const [script,dy]of [[8,y-102],[10,y+24-126],[9,y+48-150]])add('front',script,frame,0,dy,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,entityId:'label-'+p.seat+'-'+script});
+        if(fps.multiplayer.challenge)text(String(p.misses>>>0),520,y,3);
         for(let i=0;i<8;i++){
-          add('front',13+i,frame,0,y-102,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,Math.max(0,p.lives),p.lifeFragments),entityId:'life-'+p.seat+'-'+i});
+          if(!fps.multiplayer.challenge)add('front',13+i,frame,0,y-102,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,Math.max(0,p.lives),p.lifeFragments),entityId:'life-'+p.seat+'-'+i});
           add('front',21+i,frame,0,y+24-126,0,1,null,{alpha:p.ghost ? .55 : 1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,p.bombs,p.bombFragments),entityId:'bomb-'+p.seat+'-'+i});
         }
         const powerStyle={colorARGB:0xffff8030},decimalStyle={...powerStyle,scaleX:.6,scaleY:.6};
