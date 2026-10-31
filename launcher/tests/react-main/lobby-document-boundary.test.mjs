@@ -2,7 +2,7 @@ import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Original document ownership, not browser rendering: parse the actual adapted
  * stylesheet and match its selectors against mounted production components.
  * Authority: pinned edee9633 main iframe/body styles and transient host rules. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
@@ -151,7 +151,7 @@ test('marked root inheritance comes only from pinned main body and embedded root
   }
   assert.equal(declarations('html.lobby-options-embed')['color-scheme'], 'only light');
   const inherited = postcss.parse(read('app/components/launcher/lobby-options.css')).nodes.find(node => node.selector === ':where(.lobby-page [data-launcher-document])');
-  assert.deepEqual(inherited.nodes.map(({prop, value}) => [prop, value]), [['color-scheme', 'only light'], ['color', 'var(--paper)'], ['font', 'medium/normal var(--ui-font)']]);
+  assert.deepEqual(inherited.nodes.map(({prop, value}) => [prop, value.replace(/\s*\/\s*/g, '/')]), [['color-scheme', 'only light'], ['color', 'var(--paper)'], ['font', 'medium/normal var(--ui-font)']]);
   assert.equal(declarations('.mizuki-select-menu').color, '#e7e1d9');
   assert.equal(declarations('.replay-window').font, '13px/1.4 var(--ui-font)');
 });

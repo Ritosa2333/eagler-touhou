@@ -1,6 +1,4 @@
-/** L0 artifact/source ownership contract. Mutation: none. Proves packaged
- * frontend/App Shell files have one owner and original-game-derived host art
- * is not part of repository-owned frontend assets. Does NOT prove rendering. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { access, readdir } from "node:fs/promises";
 import { relative, resolve } from "node:path";
@@ -16,6 +14,18 @@ import {
 } from "../lib/frontend-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { PRIVATE_FRONTEND_ASSETS } from "../lib/private-frontend-assets.mjs";
+
+test("test-frontend-manifest", async () => {
+/** L0 artifact/source ownership contract. Mutation: none. Proves packaged
+ * frontend/App Shell files have one owner and original-game-derived host art
+ * is not part of repository-owned frontend assets. Does NOT prove rendering. */
+
+
+
+
+
+
+
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const publicRoot = resolve(project, "public");
@@ -96,3 +106,4 @@ for (const asset of PRIVATE_FRONTEND_ASSETS) {
 console.log(JSON.stringify({ frontendManifest: "PASS", packaged: FRONTEND_PACKAGE_FILES.length, appShell: APP_SHELL_FILES.length, games: gameIds }));
 
 assert.throws(()=>hostArtworkFiles(["unknown"]), /unknown artwork product/);
+});

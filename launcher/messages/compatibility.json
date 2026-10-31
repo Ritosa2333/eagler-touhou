@@ -1,0 +1,190 @@
+[
+  {
+    "source": "兼容性说明 - EAGLER TOUHOU",
+    "key": "compatibility.title"
+  },
+  {
+    "source": "您的浏览器没有通过最基础的浏览器兼容性测试。",
+    "key": "compatibility.heading"
+  },
+  {
+    "source": "重新检测兼容性",
+    "key": "compatibility.recheck"
+  },
+  {
+    "source": "我不管兼容性！我得亲自试试能不能玩！",
+    "key": "compatibility.tryAnyway"
+  },
+  {
+    "source": "检测结果",
+    "key": "compatibility.results"
+  },
+  {
+    "source": "正在检测浏览器和 WebGL 2.0…",
+    "key": "compatibility.checking"
+  },
+  {
+    "source": "电脑",
+    "key": "compatibility.computer"
+  },
+  {
+    "source": "Windows 7 及更早版本",
+    "key": "compatibility.oldWindows"
+  },
+  {
+    "source": "下载并安装",
+    "key": "compatibility.download"
+  },
+  {
+    "source": "备用下载",
+    "key": "compatibility.mirror"
+  },
+  {
+    "source": "使用 Chromium 108 或更新版本。",
+    "key": "compatibility.chromiumFloor"
+  },
+  {
+    "source": "运行",
+    "key": "compatibility.run"
+  },
+  {
+    "source": "WebGL 2.0 测试",
+    "key": "compatibility.webglTest"
+  },
+  {
+    "source": "。通过后即可进入。",
+    "key": "compatibility.afterPass"
+  },
+  {
+    "source": "IE / 旧版 Chrome",
+    "key": "compatibility.oldBrowser"
+  },
+  {
+    "source": "Windows 10/11：安装最新版",
+    "key": "compatibility.newWindows"
+  },
+  {
+    "source": "或",
+    "key": "compatibility.or"
+  },
+  {
+    "source": "旧版 Windows：安装左侧的 Supermium。",
+    "key": "compatibility.oldWindowsAdvice"
+  },
+  {
+    "source": "更新驱动",
+    "key": "compatibility.drivers"
+  },
+  {
+    "source": "安装最新显卡驱动并重启。",
+    "key": "compatibility.installDrivers"
+  },
+  {
+    "source": "打开",
+    "key": "compatibility.open"
+  },
+  {
+    "source": "，启用图形加速。",
+    "key": "compatibility.acceleration"
+  },
+  {
+    "source": "重启 Chrome，",
+    "key": "compatibility.restartChrome"
+  },
+  {
+    "source": "重新测试",
+    "key": "compatibility.retest"
+  },
+  {
+    "source": "尝试 OpenGL",
+    "key": "compatibility.tryOpenGL"
+  },
+  {
+    "source": "选择",
+    "key": "compatibility.select"
+  },
+  {
+    "source": "，重启并测试。",
+    "key": "compatibility.restartTest"
+  },
+  {
+    "source": "没有该选项：关闭 Chrome，在快捷方式末尾添加",
+    "key": "compatibility.noOption"
+  },
+  {
+    "source": "手机",
+    "key": "compatibility.mobile"
+  },
+  {
+    "source": "华为",
+    "key": "compatibility.huawei"
+  },
+  {
+    "source": "不要使用卓易通或 Via。试试你的系统浏览器。",
+    "key": "compatibility.huaweiAdvice"
+  },
+  {
+    "source": "其他 Android 手机",
+    "key": "compatibility.otherAndroid"
+  },
+  {
+    "source": "不要使用 Via。安装最新版",
+    "key": "compatibility.androidAdvice"
+  },
+  {
+    "source": "未通过",
+    "key": "compatibility.fail"
+  },
+  {
+    "source": "通过",
+    "key": "compatibility.pass"
+  },
+  {
+    "source": "请更换浏览器",
+    "key": "compatibility.switchBrowser"
+  },
+  {
+    "source": "未使用 IE",
+    "key": "compatibility.notIE"
+  },
+  {
+    "source": "当前 ",
+    "key": "compatibility.current"
+  },
+  {
+    "source": "，要求 108 或更高",
+    "key": "compatibility.requires"
+  },
+  {
+    "source": "未识别",
+    "key": "compatibility.unrecognized"
+  },
+  {
+    "source": "请确认浏览器版本",
+    "key": "compatibility.checkVersion"
+  },
+  {
+    "source": "旧系统需使用 Chromium 108 或更高",
+    "key": "compatibility.oldWindowsFloor"
+  },
+  {
+    "source": "旧系统已使用新版 Chromium",
+    "key": "compatibility.oldWindowsPass"
+  },
+  {
+    "source": "不适用",
+    "key": "compatibility.notApplicable"
+  },
+  {
+    "source": "未通过：",
+    "key": "compatibility.failedPrefix"
+  },
+  {
+    "source": "本次检测未发现失败项目。",
+    "key": "compatibility.allPassed"
+  },
+  {
+    "source": "未发现失败项目；浏览器版本未识别。",
+    "key": "compatibility.allPassedUnknown"
+  }
+]

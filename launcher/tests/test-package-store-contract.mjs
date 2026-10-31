@@ -1,7 +1,9 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { generationKey } from "../package/package-store.mjs";
 
+test("test-package-store-contract", async () => {
 assert.throws(() => generationKey("th99", "generation-1"), /game id/,
   "Package Store must share Product Catalog game identity");
 
@@ -25,3 +27,4 @@ assert.match(source, /value\?\.blob instanceof Blob \|\| value\?\.data instanceo
   "Package Store records must keep accepting both Blob and ArrayBuffer storage");
 
 console.log("Package Store crash-atomic commit and large-object storage: PASS");
+});

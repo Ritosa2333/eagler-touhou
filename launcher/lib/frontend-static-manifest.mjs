@@ -37,6 +37,8 @@ const entries = [
   // Deliberately standalone ES5/CSS2-friendly help page: unsupported browsers
   // must be able to read it without loading the modern Launcher or its fonts.
   ['compatibility.html', true],
+  ['compatibility.en.html', true],
+  ['compatibility.ja.html', true],
   ['vendor/fflate.min.js', true],
   ['vendor/webaudio-tinysynth.min.js', true],
   ['vendor/fflate.LICENSE', false],

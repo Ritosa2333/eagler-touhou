@@ -1,4 +1,14 @@
+import {test} from 'vitest';
 import {selectedPortGames} from './support/port-selection.mjs';
+import assert from "node:assert/strict";
+import { access, readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { workspacePath } from "../lib/workspace-layout.mjs";
+import { WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
+import { runNativeCpp } from "./support/native-cpp.mjs";
+
+test("test-presentation-contract-coverage", async () => {
 /**
  * Required presentation-cadence coverage gate.
  *
@@ -7,13 +17,13 @@ import {selectedPortGames} from './support/port-selection.mjs';
  * Product Catalog entry without presentation verification makes this test fail
  * immediately instead of silently leaving the new adapter untested.
  */
-import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
-import { workspacePath } from "../lib/workspace-layout.mjs";
-import { WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
-import { runNativeCpp } from "./support/native-cpp.mjs";
+
+
+
+
+
+
+
 
 const verification = Object.freeze({
   th06: Object.freeze({ kind: "shared-preload", tests: Object.freeze([
@@ -108,7 +118,8 @@ int main(){for(unsigned hz:{60u,75u,90u,120u,144u,165u,240u}){
   for (const script of lane.scripts) {
     const path = workspacePath(game, ...script.split("/"));
     await access(path);
-    const result = spawnSync(process.execPath, [path], {
+    const args = process.versions.bun && script.endsWith('.test.mjs') ? ['test', path] : [path];
+    const result = spawnSync(process.execPath, args, {
       cwd: workspacePath(game),
       encoding: "utf8",
       windowsHide: true,
@@ -124,3 +135,4 @@ console.log(JSON.stringify({
   games: selectedGames,
   lanes: Object.fromEntries(Object.entries(verification).map(([game, lane]) => [game, lane.kind])),
 }));
+});

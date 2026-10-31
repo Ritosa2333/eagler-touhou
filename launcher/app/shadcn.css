@@ -1,0 +1,125 @@
+/* Keep the authored launcher's reset and document geometry. Importing the full
+   Tailwind preflight would reset its headings, native dialogs and game canvas. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./";
+
+/* EAGLER TOUHOU remains the source of truth. shadcn's semantic palette is an
+   adapter over paper / ink / vermilion, not a replacement neutral preset.
+   --muted already means legacy text, so its surface has a distinct name. */
+:root {
+  --background: var(--ink);
+  --foreground: var(--paper);
+  --card: var(--panel);
+  --card-foreground: var(--paper);
+  --popover: var(--panel);
+  --popover-foreground: var(--paper);
+  --primary: var(--red);
+  --primary-foreground: var(--paper);
+  --secondary: #242420;
+  --secondary-foreground: var(--paper);
+  --muted-surface: #242420;
+  --muted-foreground: var(--muted);
+  --accent: var(--red-bright);
+  --accent-foreground: var(--ink);
+  --destructive: var(--red);
+  --destructive-foreground: var(--paper);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--red-bright);
+  --radius: 0.375rem;
+  --icon-size: 18px;
+  --icon-stroke-width: 1.75;
+  --motion-duration: var(--launcher-page-duration);
+  --motion-ease: var(--ease);
+  --motion-distance-menu: 8px;
+  --motion-distance-panel: 12px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted-surface);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--ui-font);
+  --font-heading: var(--art-font);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --ease-touhou: var(--ease);
+  --default-transition-timing-function: var(--ease);
+  --default-transition-duration: var(--launcher-page-duration);
+}
+
+/* Utilities cannot make hidden boot controls or dialogs visible. */
+:is(
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="textarea"],
+  [data-slot="badge"],
+  [data-slot="switch"],
+  [data-slot="progress"]
+)[hidden] {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="switch-thumb"],
+  [data-slot="progress-indicator"] {
+    transition: none;
+  }
+}
+.less-motion :is([data-slot="switch-thumb"], [data-slot="progress-indicator"]) {
+  transition: none;
+}
+
+/* Lucide is the shared action language; the original artwork and wordmark keep
+   their own SVGs. Override legacy filled-icon rules only for library icons. */
+svg.lucide {
+  flex-shrink: 0;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: var(--icon-stroke-width) !important;
+}
+/* Keep the native event target on the owning control when Menu switches to X.
+   The document's outside-click owner must not see a detached SVG path. */
+svg.lucide[aria-hidden="true"] {
+  pointer-events: none;
+}
+.site-header svg.site-caret {
+  filter: none;
+}
+:is(.library-layout, .mp-settings-room-drawer)
+  .launch-actions
+  > .launch:not(.launch-secondary)
+  .launch-icon
+  svg.lucide {
+  fill: none !important;
+  stroke: currentColor !important;
+}
+
+/* Exactly one animator owns an entering surface. Native CSS resumes after
+   completion/cancellation and still provides the existing closing behavior. */
+[data-motion-surface]:not([data-closing="true"]) {
+  animation: none !important;
+}
+[data-motion-enter] {
+  transition: none !important;
+}

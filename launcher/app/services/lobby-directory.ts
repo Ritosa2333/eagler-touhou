@@ -1,22 +1,22 @@
-import {normalizePublicNickname} from '../../src/contracts/public-nickname.mts';
 import {
-  PRODUCT_IDS,
   gameIdForProduct,
   isMultiplayerProductId,
-  multiplayerConfigForProduct,
-  productEnabledForBuild,
   type MultiplayerProductId,
+  multiplayerConfigForProduct,
+  PRODUCT_IDS,
+  productEnabledForBuild,
 } from '../../src/contracts/product-catalog.mts';
-import { validateSiteManifest, type SiteManifest } from '../../src/contracts/site-manifest.mts';
+import { normalizePublicNickname } from '../../src/contracts/public-nickname.mts';
+import { type SiteManifest, validateSiteManifest } from '../../src/contracts/site-manifest.mts';
+import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts';
 import {
-  multiplayerControlMode,
   generateMultiplayerRoomCode,
   type MultiplayerIdentityStore,
+  multiplayerControlMode,
 } from '../../src/launcher/multiplayer-identity.mts';
 import { buildMultiplayerDirectoryRelayUrl } from '../../src/launcher/multiplayer-relay-url.mts';
 import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer-room-session.mts';
 import { encodeRoomInvite, ROOM_INVITE_KEY } from '../../src/launcher/room-invite.mts';
-import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts';
 import { parseTh09PlayerStats, type Th09PlayerStats } from '../../src/launcher/th09-room-stats.mts';
 
 export type DirectoryConnection = 'loading' | 'live' | 'offline' | 'unsupported' | 'missing';
@@ -108,11 +108,8 @@ export interface LobbyDirectoryOptions {
   clearTimeout?: (timer: ReturnType<typeof setTimeout>) => void;
 }
 const record = (value: unknown): Record<string, unknown> | null =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-const bounded = (value: unknown, max: number) =>
-  Math.max(0, Math.min(max, Math.trunc(Number(value) || 0)));
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+const bounded = (value: unknown, max: number) => Math.max(0, Math.min(max, Math.trunc(Number(value) || 0)));
 export function directoryRoomState(room: DirectoryRoom): 'recruiting' | 'full' | 'playing' {
   return room.phase !== 'lobby' ? 'playing' : room.players >= room.capacity ? 'full' : 'recruiting';
 }
@@ -183,8 +180,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     if (next.connection === 'live') next.connectionInterrupted = false;
     else if (next.connection !== 'loading') next.connectionInterrupted = true;
     next.loading =
-      next.connection === 'loading' ||
-      (next.connection === 'live' && loadedProduct !== next.selectedProduct);
+      next.connection === 'loading' || (next.connection === 'live' && loadedProduct !== next.selectedProduct);
     next.visibleRooms = next.loading
       ? []
       : next.rooms.filter((room) => !next.selectedProduct || room.product === next.selectedProduct);
@@ -265,11 +261,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     const policy = multiplayerConfigForProduct(row.product)!;
     const capacity = Number(row.capacity) as 2 | 3;
     if (!policy.playerCounts.includes(capacity)) return null;
-    const input = Array.isArray(row.seats)
-      ? row.seats
-      : Array.isArray(row.initials)
-        ? row.initials
-        : [];
+    const input = Array.isArray(row.seats) ? row.seats : Array.isArray(row.initials) ? row.initials : [];
     const seats = Array.from({ length: capacity }, (_, index): DirectorySeat | null => {
       const value = input[index];
       if (value == null) return null;
@@ -282,8 +274,12 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         ][0] || '?';
       return Object.freeze({
         initial,
-        ...(Number.isInteger(seat?.loadout) && Number(seat?.loadout) >= 0 && Number(seat?.loadout) < policy.loadouts.length ? {loadout: Number(seat?.loadout)} : {}),
-        ...(row.publicNames === true ? {name:normalizePublicNickname(seat?.name)} : {}),
+        ...(Number.isInteger(seat?.loadout) &&
+        Number(seat?.loadout) >= 0 &&
+        Number(seat?.loadout) < policy.loadouts.length
+          ? { loadout: Number(seat?.loadout) }
+          : {}),
+        ...(row.publicNames === true ? { name: normalizePublicNickname(seat?.name) } : {}),
         ...(row.product === 'th09mp'
           ? {
               machineSign:
@@ -321,7 +317,9 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       phase: row.phase === 'lobby' ? 'lobby' : 'playing',
       joinable: row.joinable === true,
       spectatable: row.phase !== 'lobby' && row.spectatable === true,
-      ...(typeof row.startedAt === 'number' && Number.isSafeInteger(row.startedAt) && row.startedAt > 0 ? {startedAt: row.startedAt} : {}),
+      ...(typeof row.startedAt === 'number' && Number.isSafeInteger(row.startedAt) && row.startedAt > 0
+        ? { startedAt: row.startedAt }
+        : {}),
     });
   }
   function connect() {
@@ -354,8 +352,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       } catch {
         return;
       }
-      if (message?.type !== 'directory' || message.version !== 1 || !Array.isArray(message.rooms))
-        return;
+      if (message?.type !== 'directory' || message.version !== 1 || !Array.isArray(message.rooms)) return;
       const first = !received;
       received = true;
       retryCount = 0;
@@ -391,9 +388,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         .filter((room): room is DirectoryRoom => room !== null);
       // Older relays may retain empty rows while a previous Runtime socket
       // remains open. Keep rows and their total consistent across versions.
-      const rooms = candidates.filter(room => room.players > 0 || room.spectators > 0);
-      loadedProduct =
-        typeof message.product === 'string' ? message.product : first ? '' : requestedProduct;
+      const rooms = candidates.filter((room) => room.players > 0 || room.spectators > 0);
+      loadedProduct = typeof message.product === 'string' ? message.product : first ? '' : requestedProduct;
       if (loadedProduct === snapshot.selectedProduct) {
         clear(listTimer);
         listTimer = null;
@@ -509,8 +505,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     if (
       !isMultiplayerProductId(product) ||
       snapshot.selectedProduct === product ||
-      ((snapshot.initialized || snapshot.products.length > 0) &&
-        !snapshot.products.includes(product))
+      ((snapshot.initialized || snapshot.products.length > 0) && !snapshot.products.includes(product))
     )
       return;
     // A room return can supply its filter before this view's first manifest.
@@ -524,8 +519,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     }, 180);
   }
   function prepareForm(mode: DirectoryFormMode): boolean {
-    if (snapshot.connection !== 'live' || snapshot.leaving || !snapshot.products.length)
-      return false;
+    if (snapshot.connection !== 'live' || snapshot.leaving || !snapshot.products.length) return false;
     if (snapshot.mine) {
       notice('lobby.conflict');
       return false;
@@ -548,10 +542,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   }
   function updateForm(
     patch: Partial<
-      Pick<
-        DirectoryForm,
-        'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement'
-      >
+      Pick<DirectoryForm, 'product' | 'capacity' | 'difficulty' | 'code' | 'visibility' | 'disableCheatMovement'>
     >,
   ) {
     const next = { ...snapshot.form };
@@ -562,8 +553,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     )
       Object.assign(next, formDefaults(patch.product));
     const policy = next.product ? multiplayerConfigForProduct(next.product) : null;
-    if (patch.capacity !== undefined && policy?.playerCounts.includes(patch.capacity))
-      next.capacity = patch.capacity;
+    if (patch.capacity !== undefined && policy?.playerCounts.includes(patch.capacity)) next.capacity = patch.capacity;
     if (
       patch.difficulty !== undefined &&
       Number.isInteger(patch.difficulty) &&
@@ -579,8 +569,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
       next.visibility = patch.visibility;
       next.validationMessage = '';
     }
-    if (patch.disableCheatMovement !== undefined)
-      next.disableCheatMovement = patch.disableCheatMovement;
+    if (patch.disableCheatMovement !== undefined) next.disableCheatMovement = patch.disableCheatMovement;
     publish({ form: Object.freeze(next) });
   }
   function enterRoom(
@@ -666,15 +655,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     pendingEntry = {
       owner,
       run: () =>
-        enterRoom(
-          product,
-          code,
-          created,
-          form.capacity,
-          form.difficulty,
-          form.visibility,
-          form.disableCheatMovement,
-        ),
+        enterRoom(product, code, created, form.capacity, form.difficulty, form.visibility, form.disableCheatMovement),
     };
     return 'close';
   }
@@ -689,30 +670,14 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   function joinRoom(product: MultiplayerProductId, code: string) {
     const current = snapshot.rooms.find((room) => room.product === product && room.code === code);
     if (!current || !directoryRoomCanEnter(current)) return;
-    enterRoom(
-      product,
-      code,
-      false,
-      undefined,
-      1,
-      'public',
-      false,
-      directoryRoomSpectatorEntry(current),
-    );
+    enterRoom(product, code, false, undefined, 1, 'public', false, directoryRoomSpectatorEntry(current));
   }
   function releaseMembership() {
-    if (
-      !snapshot.supportsRecovery ||
-      !snapshot.mine?.recoveryToken ||
-      snapshot.recovering ||
-      socket?.readyState !== 1
-    )
+    if (!snapshot.supportsRecovery || !snapshot.mine?.recoveryToken || snapshot.recovering || socket?.readyState !== 1)
       return;
     const recovering = { ...snapshot.mine };
     publish({ recovering });
-    socket.send(
-      JSON.stringify({ type: 'release-membership', recoveryToken: recovering.recoveryToken }),
-    );
+    socket.send(JSON.stringify({ type: 'release-membership', recoveryToken: recovering.recoveryToken }));
     recoveryTimer = later(() => {
       recoveryTimer = null;
       publish({ recovering: null });

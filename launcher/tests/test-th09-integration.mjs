@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PRODUCT_GAMES } from '../lib/contracts/product-catalog.mjs';
@@ -7,6 +8,7 @@ import { assertRuntimeProtocolSources } from '../lib/runtime-protocol-shell.mjs'
 import { runtimeFileNames } from '../lib/runtime-release.mjs';
 import { workspacePath } from '../lib/workspace-layout.mjs';
 
+test("test-th09-integration", async () => {
 const product = PRODUCT_GAMES.th09;
 const html = await readFile(workspacePath('th09', 'web', 'sdl-runtime', 'managed.html'), 'utf8');
 const shell = await readFile(workspacePath('th09', 'web', 'sdl-runtime', 'managed.mjs'), 'utf8');
@@ -42,3 +44,4 @@ for (const name of ['th09.html', 'shell.mjs', 'th09.mjs', 'th09.wasm', 'fonts/cp
 }
 assert.deepEqual(runtimeFileNames('th09', Object.fromEntries(product.runtimeAssets.map(name => [name, {}]))), product.runtimeAssets);
 console.log('TH09 Launcher/Runtime source contract: PASS');
+});

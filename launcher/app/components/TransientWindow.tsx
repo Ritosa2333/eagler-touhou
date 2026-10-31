@@ -1,4 +1,6 @@
-import type {ReactNode} from 'react';
+import { type ReactNode, useRef } from 'react';
+import { useSurfaceMotion } from '../lib/surface-motion';
+import { Button } from './ui/button';
 
 export interface TransientWindowProps {
   id: string;
@@ -25,10 +27,48 @@ const presentationClass = {
  * The caller owns presentation events, focus, fullscreen placement and work;
  * this shell adds no native dialog, Escape/outside dismissal or history layer.
  */
-export function TransientWindow({id, titleId, title, closeId, closeLabel, open, busy,
-  variant = 'standard', onClose, children}: TransientWindowProps) {
-  return <section className={presentationClass[variant]} id={id} role="dialog" aria-modal="false" aria-labelledby={titleId} aria-busy={busy} hidden={!open}>
-    <header><div><strong id={titleId}>{title}</strong></div><button id={closeId} type="button" aria-label={closeLabel} disabled={busy} onClick={onClose}>×</button></header>
-    {children}
-  </section>;
+export function TransientWindow({
+  id,
+  titleId,
+  title,
+  closeId,
+  closeLabel,
+  open,
+  busy,
+  variant = 'standard',
+  onClose,
+  children,
+}: TransientWindowProps) {
+  const surface = useRef<HTMLElement>(null);
+  useSurfaceMotion(surface, open, 'panel');
+  return (
+    <section
+      ref={surface}
+      className={presentationClass[variant]}
+      id={id}
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={titleId}
+      aria-busy={busy}
+      hidden={!open}
+    >
+      <header>
+        <div>
+          <strong id={titleId}>{title}</strong>
+        </div>
+        <Button
+          variant="legacy"
+          size="legacy"
+          id={closeId}
+          type="button"
+          aria-label={closeLabel}
+          disabled={busy}
+          onClick={onClose}
+        >
+          ×
+        </Button>
+      </header>
+      {children}
+    </section>
+  );
 }

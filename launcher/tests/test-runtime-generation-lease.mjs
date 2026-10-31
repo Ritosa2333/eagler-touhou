@@ -1,7 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
-
 import { createManagedRuntimeGenerationLease } from "../.cache/build/browser/assets/launcher/runtime-generation-lease.mjs";
 
+test("test-runtime-generation-lease", async () => {
 const generationA = { id: "generation-a", game: "th08" };
 const generationB = { id: "generation-b", game: "th08" };
 const lease = createManagedRuntimeGenerationLease();
@@ -35,3 +36,4 @@ assert.throws(
 );
 
 console.log("Managed Runtime generation lease: PASS");
+});

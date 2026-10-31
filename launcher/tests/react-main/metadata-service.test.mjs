@@ -4,7 +4,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * Main authorities: app:1395–1490,1924–1936,1988–1998,4299–4317;
  * original test-remote-metadata and test-language-catalog assertions stay intact.
  */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after, vi} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -105,14 +105,14 @@ for (const fail of ['host', 'catalog', 'both']) test(`metadata: ${fail} failure 
 });
 
 test('metadata: 12-second deadline aborts both requests and reports original localized timeout key', async t => {
-  t.mock.timers.enable({apis: ['setTimeout']});
+  vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']}); t.onTestFinished(() => vi.useRealTimers());
   const calls = [];
   const service = fixture({fetch: (url, init) => new Promise((_resolve, reject) => {
     calls.push({url, init}); init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
   })}, {locale: () => 'en'});
-  const pending = service.initialize(); t.mock.timers.tick(11999); await flush();
+  const pending = service.initialize(); vi.advanceTimersByTime(11999); await flush();
   assert.equal(service.getSnapshot().phase, 'loading'); assert.ok(calls.every(call => !call.init.signal.aborted));
-  t.mock.timers.tick(1); await pending;
+  vi.advanceTimersByTime(1); await pending;
   assert.equal(service.getSnapshot().metadataErrors.length, 2); assert.ok(calls.every(call => call.init.signal.aborted));
   for (const error of service.getSnapshot().metadataErrors) assert.match(error.message, /^en:runtime.requestTimeoutDetail:.*"seconds":12/);
   service.dispose();

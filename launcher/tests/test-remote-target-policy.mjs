@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+test("test-remote-target-policy", async () => {
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const probes = [
   {
@@ -49,3 +51,4 @@ console.log(JSON.stringify({
   behavior: "missing-target-rejected-before-network",
   explicitEntrypoints: probes.length,
 }));
+});

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -35,6 +36,7 @@ import { RUNTIME_CONFIGURE_OPTION_BEHAVIOR } from "../lib/contracts/runtime-prot
 import { REPOSITORY_NODE_TESTS, WORKSPACE_NODE_TESTS } from "./test-plan.mjs";
 import { RELAY_NODE_TESTS } from "../../services/relay/scripts/test-plan.mjs";
 
+test("test-adapter-capabilities", async () => {
 assert.ok(REQUIRED_ADAPTER_CAPABILITIES.some(item => item.id === "touch-controls"));
 assert.ok(REQUIRED_ADAPTER_CAPABILITIES.some(item => item.id === "always-hitbox"));
 assert.ok(REQUIRED_ADAPTER_CAPABILITIES.some(item => item.id === "gamepad-input"));
@@ -275,3 +277,4 @@ console.log(JSON.stringify({
   formatAdapters: FORMAT_ADAPTERS.length,
   compatibility: COMPATIBILITY_ADAPTERS.length,
 }));
+});

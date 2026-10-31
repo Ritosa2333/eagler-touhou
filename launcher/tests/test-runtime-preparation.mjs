@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   InstalledGameDataError,
@@ -6,6 +7,7 @@ import {
   readManagedRuntimeResource,
 } from "../.cache/build/browser/assets/launcher/runtime-preparation.mjs";
 
+test("test-runtime-preparation", async () => {
 function bytes(...values) {
   return new Uint8Array(values).buffer;
 }
@@ -148,3 +150,4 @@ assert.throws(() => managedRuntimeUrl("", { id: "gen-1", game: "th06" }), /Manag
 assert.throws(() => managedRuntimeUrl("runtime.html", { id: "", game: "th06" }), /Package generation is unavailable/);
 
 console.log(JSON.stringify({ runtimePreparation: "PASS", dataSelection: ["declared", "game-data", "unique-target"], storage: ["arraybuffer", "legacy-blob"] }));
+});

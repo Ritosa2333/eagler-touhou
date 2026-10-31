@@ -2,7 +2,7 @@
  * No browser, CSS geometry, mobile, native Runtime, durable storage or game pass.
  * Original tests/test-route-state.mjs and test-touch-settings-browser.py remain intact.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

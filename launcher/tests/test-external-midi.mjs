@@ -1,8 +1,6 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-
-// Import the frontend manifest first: it owns ensureClientServicesBuild(), so this
-// test also runs standalone without a stale .cache build.
 import { resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
 import {
   ExternalMidiDevice,
@@ -21,6 +19,14 @@ import {
   serializeGamePreferences,
 } from "../.cache/build/browser/assets/launcher/game-preferences.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+
+test("test-external-midi", async () => {
+// Import the frontend manifest first: it owns ensureClientServicesBuild(), so this
+// test also runs standalone without a stale .cache build.
+
+
+
+
 
 // --- capability detection -------------------------------------------------
 
@@ -376,3 +382,4 @@ console.log(JSON.stringify({
   panicMessages: panic.length,
   transport: "touhou-midi -> selected external Web MIDI output",
 }));
+});

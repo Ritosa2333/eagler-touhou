@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   PACKAGE_DESCRIPTOR_SCHEMA,
@@ -8,6 +9,7 @@ import {
   validatePackageDescriptor,
 } from "../package/package-descriptor.mjs";
 
+test("test-package-descriptor", async () => {
 const descriptor = {
   schema: PACKAGE_DESCRIPTOR_SCHEMA,
   game: "th08",
@@ -96,3 +98,4 @@ assert.throws(() => validatePackageDescriptor(missingVariantBootstrap), /bootstr
   "one generation must install every runtime variant bootstrap while sharing common data");
 
 console.log("Package descriptor contract: PASS");
+});

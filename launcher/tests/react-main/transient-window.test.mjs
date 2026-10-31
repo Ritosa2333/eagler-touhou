@@ -1,6 +1,6 @@
 /** Shared nonmodal presentation in synthetic DOM only. No browser layout,
  * native focus/fullscreen or popup/file-picker acceptance is claimed. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

@@ -1,13 +1,18 @@
-/** L3/module behavior. No filesystem fixtures. Proves the local static-server
- * MIME/compression/cache policy, including host-generated asset extensions.
- * Does not prove an HTTP server was started or that a concrete host contains
- * those assets. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   staticContentCacheControl,
   staticContentCompressible,
   staticContentType,
 } from "../server/static-content-policy.mjs";
+
+test("test-static-content-policy", async () => {
+/** L3/module behavior. No filesystem fixtures. Proves the local static-server
+ * MIME/compression/cache policy, including host-generated asset extensions.
+ * Does not prove an HTTP server was started or that a concrete host contains
+ * those assets. */
+
+
 
 assert.equal(staticContentType("assets/favicon.ico"), "image/x-icon");
 assert.equal(staticContentType("assets/example.jpg"), "image/jpeg");
@@ -26,3 +31,4 @@ assert.equal(staticContentCacheControl("packs/lang_en.zip"), "public, max-age=0,
 assert.equal(staticContentCacheControl("runtime/th07.wasm"), "public, max-age=0, must-revalidate");
 
 console.log("Static content policy: PASS");
+});

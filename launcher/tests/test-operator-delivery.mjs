@@ -1,12 +1,13 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-
 import {
   assertHostedSiteMatchesOperatorProfile,
   validateOperatorProfile,
 } from "../tools/maintainer/operator-delivery.mjs";
 
+test("test-operator-delivery", async () => {
 const profile = validateOperatorProfile(JSON.parse(await readFile(
   resolve("tools/maintainer/operator-delivery/profile.json"), "utf8"
 )));
@@ -46,3 +47,4 @@ assert.throws(
 );
 
 console.log("Internal Operator delivery profile: PASS");
+});

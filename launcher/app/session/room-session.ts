@@ -1,18 +1,19 @@
-import { createRoomNetwork } from '../../src/launcher/room-network.mts';
-import { createMultiplayerQuickChatModel } from '../../src/launcher/multiplayer-quick-chat-model.mts';
-import { playQuickChatVoice } from '../../src/launcher/quick-chat-voice.mts';
-import { createMultiplayerPreferenceStore } from '../../src/launcher/multiplayer-preferences.mts';
 import type { MultiplayerIdentityStore } from '../../src/launcher/multiplayer-identity.mts';
+import { createMultiplayerPreferenceStore } from '../../src/launcher/multiplayer-preferences.mts';
+import { createMultiplayerQuickChatModel } from '../../src/launcher/multiplayer-quick-chat-model.mts';
 import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer-room-session.mts';
-import { createMultiplayerRoom, type MultiplayerRoomPorts } from '../services/multiplayer-room';
+import { playQuickChatVoice } from '../../src/launcher/quick-chat-voice.mts';
+import { createRoomNetwork } from '../../src/launcher/room-network.mts';
 import type { GameSettingsModel } from '../models/game-settings';
 import type { SitePreferencesModel } from '../models/site-preferences';
+import { createMultiplayerRoom, type MultiplayerRoomPorts } from '../services/multiplayer-room';
 import type { RuntimeService } from '../services/runtime';
 
-export interface RoomSessionOptions extends Omit<
-  MultiplayerRoomPorts,
-  'identity' | 'sessions' | 'preferences' | 'network' | 'quickChat' | 'online' | 'visible'
-> {
+export interface RoomSessionOptions
+  extends Omit<
+    MultiplayerRoomPorts,
+    'identity' | 'sessions' | 'preferences' | 'network' | 'quickChat' | 'online' | 'visible'
+  > {
   identity: MultiplayerIdentityStore;
   sessions: MultiplayerRoomSessionStore;
   storage: Storage | null;

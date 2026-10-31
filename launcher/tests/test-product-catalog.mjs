@@ -1,5 +1,4 @@
-/** L3/module. Preconditions: static product policy only. Mutations: none.
- * Proves: stable product registry invariants, product-id mapping and language ordering. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   HOST_RUNTIME_FEATURE_IDS,
@@ -19,6 +18,13 @@ import {
   productEnabledForBuild,
 } from "../lib/contracts/product-catalog.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
+
+test("test-product-catalog", async () => {
+/** L3/module. Preconditions: static product policy only. Mutations: none.
+ * Proves: stable product registry invariants, product-id mapping and language ordering. */
+
+
+
 
 assert.deepEqual(PRODUCT_FEATURE_IDS, ["thprac", "languages", "focusHitbox"]);
 assert.deepEqual(HOST_RUNTIME_FEATURE_IDS, ["thprac", "focusHitbox"]);
@@ -281,3 +287,4 @@ assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, prod
 assert.equal(PRODUCT_GAMES.th15.features.languages,true);
 assert.equal(PRODUCT_GAMES.th15.features.thprac,true);
 assert.ok(PRODUCT_GAMES.th15.requiredShared.includes('/unifont.otf'));
+});

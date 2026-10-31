@@ -1,0 +1,119 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "app/**",
+      "messages/**",
+      "tests/vitest/**",
+      "scripts/audit-ui-copy.mjs",
+      "scripts/check-i18n.mjs",
+      "scripts/compile-i18n.mjs",
+      "scripts/prepare-tests.mjs",
+      "scripts/check-javascript-syntax.mjs",
+      "host/lib/bun-environment.mjs",
+      "scripts/build-service-translations.mjs",
+      "vitest.config.ts",
+      "vitest.workspace.config.ts",
+      "vitest.ports.config.ts",
+      "biome.json",
+      "package.json",
+      "tsconfig.ui-rewrite.tools.json",
+      "!app/components/player/utility-icons.ts",
+      "!app/components/launcher/masthead-icons.ts",
+      "src/launcher/localized-content.mts",
+      "src/launcher/localized-error-text.mts",
+      "src/launcher/multiplayer-guide-content.mts",
+      "src/launcher/runtime-diagnostics-model.mts",
+      "src/launcher/netplay-calibration-copy.mts",
+      "src/launcher/netplay-calibration-connection.mts",
+      "src/launcher/netplay-calibration-report.mts",
+      "lib/localized-compatibility.mjs"
+    ],
+    "ignoreUnknown": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "useExhaustiveDependencies": "warn"
+      },
+      "complexity": {
+        "noImportantStyles": "off"
+      },
+      "style": {
+        "noDescendingSpecificity": "off"
+      },
+      "a11y": {
+        "useAriaPropsSupportedByRole": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useSemanticElements": "warn",
+        "noLabelWithoutControl": "warn",
+        "noAutofocus": "off",
+        "noRedundantRoles": "warn",
+        "noStaticElementInteractions": "warn",
+        "noNoninteractiveElementToInteractiveRole": "warn"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "warn",
+        "noControlCharactersInRegex": "off"
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "app/components/player/**",
+        "app/components/room/RoomWorkspace.tsx",
+        "app/components/launcher/LauncherMasthead.tsx",
+        "app/components/startup/OriginalBootstrap.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["app/services/runtime.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnsafeFinally": "warn"
+          }
+        }
+      }
+    }
+  ]
+}

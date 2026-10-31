@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import fs from "node:fs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-sprite-sampling-contract", async () => {
 const read = rel => { const [repository, ...segments] = rel.split("/"); return fs.readFileSync(workspacePath(repository.replace(/-eagler$/, ""), ...segments), "utf8").replaceAll("\r\n", "\n"); };
 
 const th06Bullet = read("th06-eagler/src/BulletManager.cpp");
@@ -45,3 +47,4 @@ console.log(JSON.stringify({
   extrusionGutter: 1,
   mutableTextureInvalidation: true,
 }));
+});

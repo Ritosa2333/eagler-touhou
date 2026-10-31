@@ -1,5 +1,5 @@
 /** Original main app303–334/1175; synthetic service-worker status port only. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

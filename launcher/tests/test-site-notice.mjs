@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   SITE_NOTICE_DISMISSED_KEY,
@@ -7,6 +8,7 @@ import {
   siteNoticeBrandAsset,
 } from "../.cache/build/browser/assets/launcher/site-notice-content.mjs";
 
+test("test-site-notice", async () => {
 const baseUrl = "https://test.example/eagler-touhou/";
 assert.ok(Number.isSafeInteger(SITE_NOTICE_DURATION_MS) && SITE_NOTICE_DURATION_MS > 0,
   "notice countdown must have a finite positive duration");
@@ -44,3 +46,4 @@ assert.deepEqual(parseSiteNoticeText("[车万云](https://cloud.touhou.best/)", 
 }]);
 
 console.log('Shared notice parser and link policy: PASS');
+});

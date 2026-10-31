@@ -1,6 +1,6 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Pinned-main published HTML before JS/hydration; no browser/rendering claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdtemp, readFile, rm} from 'node:fs/promises';
@@ -19,12 +19,12 @@ let originalLibrary, originalLobby, expectedCards;
 const el = (type, props, ...children) => React.createElement(type, props, ...children);
 const parse = html => new env.window.DOMParser().parseFromString(html, 'text/html');
 const normal = text => text.replace(/\s+/g, ' ').trim();
-function cardContract(document) {
+function cardContract(document, caption = 'MULTIPLAYER') {
   return [...document.querySelectorAll('.game')].map(card => ({
     id: card.dataset.product || card.dataset.game, className: card.className,
     href: card.getAttribute('href'), hidden: card.hidden,
     style: [...card.style].map(key => [key, card.style.getPropertyValue(key)]).sort(),
-    title: normal(card.querySelector('h2').textContent), subtitle: card.querySelector('small').textContent,
+    title: normal(card.querySelector('h2').textContent).replace(caption, 'MULTIPLAYER'), subtitle: card.querySelector('small').textContent,
     number: card.querySelector('.no-label').textContent,
     art: [...card.querySelectorAll('.card-art-image')].map(image => ['src', 'width', 'height', 'fetchpriority'].map(key => image.getAttribute(key))),
     current: card.getAttribute('aria-current'),
@@ -69,14 +69,19 @@ function initialMarkup(path) {return renderToStaticMarkup(el(MemoryRouter, {init
 for (const path of ['/', '/index.html', '/en.html', '/nested/', '/nested/en.html', '/?game=th20&test=1']) {
   test(`actual BrowserLauncher server render preserves original default static card gate: ${path}`, () => {
     const document = parse(initialMarkup(path)), locale = path.includes('en.html') ? 'en' : 'zh-CN';
-    assert.deepEqual(cardContract(document), cardContract(expectedCards));
+    assert.deepEqual(cardContract(document, api.translate(locale, 'library.multiplayerCaption')), cardContract(expectedCards));
     assert.deepEqual(minimapContract(document), minimapContract(expectedCards));
     for (const game of ['th08', 'th10', 'th15', 'th11']) assert.equal(document.querySelector(`.game[data-game=${game}]`).hidden, false);
     assert.equal(document.querySelector('.game[data-game=th20]').hidden, true);
     assert.equal(document.querySelector('#singleplayerHeading').textContent, api.translate(locale, 'library.singleplayer'));
     assert.equal(document.querySelector('#multiplayerHeading').textContent, api.translate(locale, 'library.multiplayer'));
     assert.equal(document.querySelector('#uiLanguageSelect').value, locale);
-    assert.deepEqual([...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent)), [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
+    if (locale === 'zh-CN') assert.deepEqual([...document.querySelectorAll('.site-footer p')].map(node => normal(node.textContent)), [...originalLibrary.querySelectorAll('.site-footer p')].slice(1).map(node => normal(node.textContent)));
+    else {
+      assert.ok(document.querySelector('.site-footer').textContent.includes(api.translate(locale, 'footer.license')));
+      assert.equal(document.querySelector('.site-footer a').textContent, api.translate(locale, 'footer.repository'));
+      assert.equal(document.querySelector('.site-footer-record').textContent, originalLibrary.querySelector('.site-footer-record').textContent);
+    }
     assert.equal(document.querySelector('.shelf-lobby-link').getAttribute('href'), 'lobby.html');
     assert.equal(document.querySelector('#originMigrationOpen').hidden, true);
     assert.equal(document.querySelector('iframe'), null);
@@ -156,14 +161,15 @@ test('actual root/nested builds publish shared initial cards and route-specific 
     execFileSync(process.execPath, ['node_modules/@react-router/dev/bin.cjs', 'build'], {cwd: project,
       env: {...process.env, EAGLER_REACT_BUILD_DIRECTORY: output, EAGLER_REACT_MOUNT_PATH: mountPath, EAGLER_REACT_APP_SHELL: 'disabled', EAGLER_REACT_APP_SHELL_ORIGIN: ''},
       stdio: 'pipe', timeout: 120000});
-    for (const entry of ['index.html', 'en.html', 'lobby.html']) {
+    for (const entry of ['index.html', 'en.html', 'ja.html', 'lobby.html']) {
       const document = parse(await readFile(resolve(output, 'client', entry), 'utf8')), lobby = entry === 'lobby.html';
-      assert.equal(document.documentElement.lang, entry === 'en.html' ? 'en' : 'zh-CN');
+      assert.equal(document.documentElement.lang, entry === 'ja.html' ? 'ja' : entry === 'en.html' ? 'en' : 'zh-CN');
       assert.equal(document.body.classList.contains('lobby-page'), lobby);
       assert.equal(document.documentElement.dataset.originalEntry, lobby ? 'lobby' : 'library');
       assert.equal(document.documentElement.getAttribute('data-lobby-boot'), lobby ? 'loading' : null);
       if (lobby) {assert.equal(document.querySelectorAll('.game').length, 0); assert.ok(document.querySelector('noscript').textContent.includes('联机大厅需要启用 JavaScript'));}
-      else assert.deepEqual(cardContract(document), cardContract(expectedCards));
+      else if (entry === 'ja.html') {assert.equal(document.querySelector('.game-title').textContent, '東方紅魔郷'); assert.equal(document.querySelector('#singleplayerHeading').textContent, api.translate('ja', 'library.singleplayer'));}
+      else assert.deepEqual(cardContract(document, api.translate(entry === 'en.html' ? 'en' : 'zh-CN', 'library.multiplayerCaption')), cardContract(expectedCards));
       assert.equal(document.querySelector('iframe'), null); assertUniqueIds(document);
     }
   }

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   createMultiplayerPreferenceStore,
@@ -6,6 +7,7 @@ import {
   normalizePreferredLoadout,
 } from "../.cache/build/browser/assets/launcher/multiplayer-preferences.mjs";
 
+test("test-multiplayer-preferences", async () => {
 class MemoryStorage {
   constructor(entries = []) { this.values = new Map(entries); }
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
@@ -73,3 +75,4 @@ console.log(JSON.stringify({
   ordinaryProduct: "share-default-no-loadout-reset",
   storageFailure: "non-fatal",
 }));
+});

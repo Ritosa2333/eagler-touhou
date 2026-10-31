@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   confirmRuntimeClose,
@@ -7,6 +8,7 @@ import {
   shouldDeferAppShellReload,
 } from "../.cache/build/browser/assets/launcher/launcher-lifecycle.mjs";
 
+test("test-launcher-lifecycle", async () => {
 const idle={launched:false,runtimeReady:false,runtimeSessionActive:false,touchLayoutEditing:false,blockingOperation:false,gameDataAttempt:false,launchInFlight:false,decisionOpen:false,replayOpen:false};
 assert.equal(shouldDeferAppShellReload(idle),false);
 for (const key of Object.keys(idle)) assert.equal(shouldDeferAppShellReload({...idle,[key]:true}),true,key);
@@ -30,3 +32,4 @@ assert.equal(runtimeSessionAcceptsGenerationRevision("r1", "r2"), false, "cross-
 assert.equal(runtimeSessionAcceptsGenerationRevision(null, "r1"), false);
 assert.equal(runtimeSessionAcceptsGenerationRevision("r1", null), false);
 console.log("Launcher lifecycle: PASS");
+});

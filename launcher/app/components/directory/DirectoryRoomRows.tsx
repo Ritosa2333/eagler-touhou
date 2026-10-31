@@ -1,20 +1,21 @@
 import { Fragment, useRef, useState } from 'react';
 import {
-  PRODUCT_GAMES,
   gameIdForProduct,
   multiplayerConfigForProduct,
+  PRODUCT_GAMES,
 } from '../../../src/contracts/product-catalog.mts';
+import { localizedGameTitle, useLocale } from '../../i18n';
 import {
-  directoryRoomState,
-  directoryRoomCanEnter,
-  directoryRoomSpectatorEntry,
   type DirectoryRoom,
   type DirectorySnapshot,
+  directoryRoomCanEnter,
+  directoryRoomSpectatorEntry,
+  directoryRoomState,
   type LobbyDirectoryService,
 } from '../../services/lobby-directory';
-import { useLocale } from '../../i18n';
-import { Th09RoomCard } from './Th09RoomCard';
 import { RoomElapsed } from '../room/RoomElapsed';
+import { Button } from '../ui/button';
+import { Th09RoomCard } from './Th09RoomCard';
 
 export interface DirectoryRoomRowsProps {
   snapshot: DirectorySnapshot;
@@ -24,12 +25,7 @@ export interface DirectoryRoomRowsProps {
   initialRows?: boolean;
 }
 /** Original public/lobby.html165–177 row template + lobby.mts260–347 renderer. */
-export function DirectoryRoomRows({
-  snapshot,
-  service,
-  assetUrl,
-  initialRows = false,
-}: DirectoryRoomRowsProps) {
+export function DirectoryRoomRows({ snapshot, service, assetUrl, initialRows = false }: DirectoryRoomRowsProps) {
   return (
     <>
       {snapshot.visibleRooms.map((room) => (
@@ -63,17 +59,18 @@ function RoomRow({
   const [coverFailed, setCoverFailed] = useState(false);
   const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
   const artwork = 'cardArtwork' in meta ? meta.cardArtwork : null;
-  const title = locale === 'en' ? meta.subtitle : meta.title;
+  const title = localizedGameTitle(
+    locale,
+    gameIdForProduct(room.product),
+    locale === 'en' ? meta.subtitle : meta.title,
+  );
   const policy = multiplayerConfigForProduct(room.product)!;
   const difficulty = policy.inGameSelection ? '' : policy.difficulties[room.difficulty];
   const state = directoryRoomState(room);
   const spectating = directoryRoomSpectatorEntry(room);
   const count = t('lobby.count', { players: room.players, capacity: room.capacity });
   const disabled =
-    snapshot.connection !== 'live' ||
-    !!snapshot.mine ||
-    snapshot.leaving ||
-    !directoryRoomCanEnter(room);
+    snapshot.connection !== 'live' || !!snapshot.mine || snapshot.leaving || !directoryRoomCanEnter(room);
   if (room.product === 'th09mp')
     return (
       <Th09RoomCard
@@ -110,7 +107,9 @@ function RoomRow({
           <span className="lobby-room-code">#{room.code}</span>
           <h2>{title}</h2>
           <span className="lobby-room-subtitle">{meta.subtitle}</span>
-          <span className="lobby-mobile-difficulty" hidden={!difficulty}>{difficulty}</span>
+          <span className="lobby-mobile-difficulty" hidden={!difficulty}>
+            {difficulty}
+          </span>
           <span className="lobby-movement-rule" hidden={!room.disableCheatMovement}>
             {t('lobby.noCheat')}
           </span>
@@ -118,25 +117,39 @@ function RoomRow({
             {t('room.challengeMode')}
           </span>
           <div className="lobby-room-facts">
-            <span className="lobby-room-watchers" aria-label={t('th09.spectatorCount', {count: room.spectators})}
-              title={t('th09.spectatorCount', {count: room.spectators})}>
-              <img src={assetUrl('assets/room-users.svg')} alt=""/>{t('th09.spectatorCount', {count: room.spectators})}
+            <span
+              className="lobby-room-watchers"
+              aria-label={t('th09.spectatorCount', { count: room.spectators })}
+              title={t('th09.spectatorCount', { count: room.spectators })}
+            >
+              <img src={assetUrl('assets/room-users.svg')} alt="" />
+              {t('th09.spectatorCount', { count: room.spectators })}
             </span>
-            {room.phase !== 'lobby' && !!room.startedAt && <>
-              <span className="lobby-room-fact-divider" aria-hidden="true">|</span>
-              <RoomElapsed phase={room.phase} startedAt={room.startedAt}/>
-            </>}
+            {room.phase !== 'lobby' && !!room.startedAt && (
+              <>
+                <span className="lobby-room-fact-divider" aria-hidden="true">
+                  |
+                </span>
+                <RoomElapsed phase={room.phase} startedAt={room.startedAt} />
+              </>
+            )}
           </div>
         </div>
       </div>
-      <span className="lobby-difficulty" hidden={!difficulty}>{difficulty}</span>
+      <span className="lobby-difficulty" hidden={!difficulty}>
+        {difficulty}
+      </span>
       <div className="lobby-party" aria-label={count}>
         <span className="lobby-occupancy">{count}</span>
-        <div
-          className={`lobby-seats${room.seats.some((seat) => !!seat?.controlMode) ? ' has-controls' : ''}`}
-        >
+        <div className={`lobby-seats${room.seats.some((seat) => !!seat?.controlMode) ? ' has-controls' : ''}`}>
           {room.seats.map((seat, index) => {
-            const control = seat?.controlMode ? t(seat.name !== undefined && seat.controlMode === 'normal' ? 'multiplayer.control.keysOrStick' : `multiplayer.control.${seat.controlMode}`) : '';
+            const control = seat?.controlMode
+              ? t(
+                  seat.name !== undefined && seat.controlMode === 'normal'
+                    ? 'multiplayer.control.keysOrStick'
+                    : `multiplayer.control.${seat.controlMode}`,
+                )
+              : '';
             const label =
               t(
                 !seat
@@ -155,6 +168,7 @@ function RoomRow({
             );
             const avatar = (
               <span
+                key={index}
                 className="lobby-seat"
                 data-empty={String(!seat)}
                 data-ready={String(!!seat?.ready)}
@@ -167,9 +181,17 @@ function RoomRow({
                 {seat?.name === undefined && controlCaption}
               </span>
             );
-            return seat?.name !== undefined ? <span key={index} className="lobby-public-player">
-              {avatar}{controlCaption}<strong className="lobby-seat-name" title={seat.name || `P${index+1}`}>{seat.name || `P${index+1}`}</strong>
-            </span> : <Fragment key={index}>{avatar}</Fragment>;
+            return seat?.name !== undefined ? (
+              <span key={index} className="lobby-public-player">
+                {avatar}
+                {controlCaption}
+                <strong className="lobby-seat-name" title={seat.name || `P${index + 1}`}>
+                  {seat.name || `P${index + 1}`}
+                </strong>
+              </span>
+            ) : (
+              <Fragment key={index}>{avatar}</Fragment>
+            );
           })}
         </div>
       </div>
@@ -179,7 +201,9 @@ function RoomRow({
       <span className="lobby-room-state" data-state={state}>
         {t(`lobby.${state}`)}
       </span>
-      <button
+      <Button
+        variant="legacy"
+        size="legacy"
         className="lobby-button lobby-join"
         type="button"
         disabled={disabled}
@@ -187,14 +211,8 @@ function RoomRow({
         title={snapshot.mine ? t('lobby.conflict') : ''}
         onClick={() => service.joinRoom(room.product, room.code)}
       >
-        {t(
-          spectating
-            ? 'multiplayer.joinSpectator'
-            : state === 'recruiting'
-              ? 'lobby.join'
-              : `lobby.${state}`,
-        )}
-      </button>
+        {t(spectating ? 'multiplayer.joinSpectator' : state === 'recruiting' ? 'lobby.join' : `lobby.${state}`)}
+      </Button>
     </article>
   );
 }

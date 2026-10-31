@@ -1,10 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
-
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { THCRAP_RUNTIME_COMPILER_GAMES } from "../server/thcrap-compiler.mjs";
 
+test("test-format-adapter-coverage", async () => {
 const root = resolve(import.meta.dirname, "..");
 
 const verifiedOggGames = Object.entries(PRODUCT_CONTENT)
@@ -33,3 +34,4 @@ console.log(JSON.stringify({
   verifiedOggGames,
   thcrapCompilerGames,
 }));
+});

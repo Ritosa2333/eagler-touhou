@@ -1,6 +1,6 @@
 /** Production React chat + real room owner, synthetic DOM/socket/clock only.
  * Original browser geometry/held-iframe-key assertions remain unrun. */
-import test, { before, after, afterEach } from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -588,7 +588,7 @@ test('actual RoomSession routes valid socket chat into React and UI sends throug
       phrase: 'thanks',
     })));
     assert.equal(query('.mp-quick-chat-log').children.length, 2);
-    assert.match(query('.mp-quick-chat-log').children[1].textContent, /观众\(Viewer\).*Thanks for the games/);
+    assert.match(query('.mp-quick-chat-log').children[1].textContent, /Spectator\(Viewer\).*Thanks for the games/);
     assert.equal(voices.length, 1, 'players see spectator messages without playing spectator voice');
     await act(() => query('[data-phrase="1"]').click());
     assert.deepEqual(socket.sent.at(-1), {
@@ -635,7 +635,7 @@ test('non-TH09 spectator quick chat mounts, sends through the shared model, and 
     type: 'quick-chat', room: 'th07mp-5678', serial: 7, seat: -1,
     spectator: true, clientId: 'viewer654321', phrase: 'thanks',
   }));
-  assert.match(query('.mp-quick-chat-log').textContent, /观众\(Remote viewer\).*谢谢指教/);
+  assert.match(query('.mp-quick-chat-log').textContent, /Spectator\(Remote viewer\).*谢谢指教/);
 });
 
 test('model disposal while React remains mounted cancels active fade and leaves no rows or timers', async () => {

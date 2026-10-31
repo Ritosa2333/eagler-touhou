@@ -1,7 +1,7 @@
 /** Synthetic DOM + real Router/provider policy tests only. Main i18n891–918,
  * dialog-navigation and app5338–5383 are the contract. This is not a rendered
  * Launcher/browser/game/visual acceptance suite; that entry has separate tests. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -90,7 +90,7 @@ for (const context of ['library', 'lobby']) test(`policy: locale replacement pre
   assert.equal(decisionOpen(), false, 'informational descendants never discard underlying draft');
   const infoParent = state().launcherInformationDialogs.parentKey;
   await settle(() => controls.navigation.setLocaleAddress('en'));
-  assert.equal(href(), `${context === 'lobby' ? '/lobby.html' : '/en.html'}?game=th06mp&keep=a%20b#original`);
+  assert.equal(href(), `${context === 'lobby' ? '/lobby.html' : '/en.html'}?game=th06mp&keep=a%20b${context === 'lobby' ? '&lang=en' : ''}#original`);
   assert.equal(mounted.router.state.historyAction, 'REPLACE');
   assert.equal(controls.navigation.surface, 'touch');
   assert.equal(controls.discardCount, 0); assert.equal(decisionOpen(), false);
@@ -119,7 +119,7 @@ test('policy: locale replaces directory form URL without adding a history layer 
   await settle(() => controls.navigation.openDirectoryForm('join'));
   const parent = state().launcherDirectoryForm.parentKey;
   await settle(() => controls.navigation.setLocaleAddress('en'));
-  assert.equal(href(), directory); assert.equal(controls.navigation.directoryFormMode, 'join');
+  assert.equal(href(), directory.replace('#original', '&lang=en#original')); assert.equal(controls.navigation.directoryFormMode, 'join');
   assert.equal(state().launcherDirectoryForm.parentKey, parent);
   assert.equal(state().unrelated, 7);
   await settle(() => controls.navigation.closeSurface());

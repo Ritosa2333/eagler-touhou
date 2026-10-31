@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   RELEASE_CATALOG_FILE,
@@ -6,6 +7,7 @@ import {
   validateReleaseCatalog,
 } from "../lib/contracts/release-catalog.mjs";
 
+test("test-release-catalog", async () => {
 const catalog = validateReleaseCatalog({
   schema: RELEASE_CATALOG_SCHEMA,
   games: {
@@ -25,3 +27,4 @@ assert.equal(releaseCatalogEntryUrl("https://touhou.vip/eagler-touhou/release-ca
 assert.throws(() => validateReleaseCatalog({ schema: RELEASE_CATALOG_SCHEMA, games: { th07: { revision: "x", descriptor: "https://other.invalid/x" } } }),
   /cross-origin/);
 console.log("Release Catalog contract: PASS");
+});

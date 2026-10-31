@@ -1,5 +1,5 @@
 /** Main head/bootstrap and app9770+ / lobby69–105 policy. Synthetic only. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm, readFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';

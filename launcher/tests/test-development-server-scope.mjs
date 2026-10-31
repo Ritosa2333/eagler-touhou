@@ -1,9 +1,15 @@
-/** L3/security policy. Pure path/host inputs only. Proves that local workspace
- * convenience cannot become an accidental LAN file server. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
-
 import { assertSafeDevelopmentServerScope } from "../lib/development-server-scope.mjs";
+
+test("test-development-server-scope", async () => {
+/** L3/security policy. Pure path/host inputs only. Proves that local workspace
+ * convenience cannot become an accidental LAN file server. */
+
+
+
+
 
 const project = resolve("D:/synthetic-workspace/eagler-touhou");
 const workspace = resolve(project, "..");
@@ -17,3 +23,4 @@ assert.throws(
 );
 
 console.log(JSON.stringify({ developmentServerScope: "PASS", nonLoopbackWorkspace: "rejected" }));
+});

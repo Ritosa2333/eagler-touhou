@@ -1,6 +1,4 @@
-// Evidence: L3/module. Preconditions: repository config only. Mutations: none.
-// Proves: Runtime build variants resolve deterministic CMake cache arguments
-// and agree with the product registry. Does NOT prove a compiler/toolchain build.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -9,6 +7,16 @@ import {
   loadRuntimeBuildConfig,
   resolveRuntimeBuild,
 } from "../lib/runtime-build-profiles.mjs";
+
+test("test-runtime-build-profiles", async () => {
+// Evidence: L3/module. Preconditions: repository config only. Mutations: none.
+// Proves: Runtime build variants resolve deterministic CMake cache arguments
+// and agree with the product registry. Does NOT prove a compiler/toolchain build.
+
+
+
+
+
 
 const config = await loadRuntimeBuildConfig();
 assert.deepEqual(Object.keys(config.games).sort(), Object.keys(PRODUCT_GAMES).sort());
@@ -103,3 +111,4 @@ console.log(JSON.stringify({
   prebuiltGames,
   variants: "validated",
 }));
+});

@@ -1,13 +1,22 @@
-// L3/module + entry safety. Preconditions: temporary local paths only.
-// Mutation: invoke the release owner with invalid input and an existing
-// destination. Proves formal-release planning and output ownership. It does
-// NOT build a host, validate Runtime semantics, or publish anything.
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { FORMAL_RELEASE_GAMES, formalReleaseSourceOwners, normalizeFormalReleaseInput } from "../lib/release-plan.mjs";
+
+test("test-release-entry", async () => {
+// L3/module + entry safety. Preconditions: temporary local paths only.
+// Mutation: invoke the release owner with invalid input and an existing
+// destination. Proves formal-release planning and output ownership. It does
+// NOT build a host, validate Runtime semantics, or publish anything.
+
+
+
+
+
+
 
 const workspace = resolve("workspace-fixture");
 const inputDirectory = resolve("release-input-fixture");
@@ -118,3 +127,4 @@ assert.equal(await readFile(marker, "utf8"), "existing owner");
   await rm(root, { recursive: true, force: true });
 }
 console.log("Release entry output ownership: PASS");
+});

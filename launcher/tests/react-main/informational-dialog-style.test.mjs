@@ -5,7 +5,7 @@ import {readUiHistoryText} from '../support/ui-history.mjs';
  * the common WAAPI policy; guide backdrop now follows the common dimmed shell.
  * Other declarations retain the pinned gate.
  * Native top-layer/backdrop painting remains untested. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
@@ -87,7 +87,7 @@ function resolved(source,node,mode,backdrop=false,variables={}){
       }
     }
   }
-  return Object.fromEntries([...winners].filter(([prop])=>!prop.startsWith('animation')&&!['transform-origin','will-change'].includes(prop)).map(([prop,{value}])=>[prop,value]).sort(([a],[b])=>a.localeCompare(b)));
+  return Object.fromEntries([...winners].filter(([prop])=>!prop.startsWith('animation')&&!['transform-origin','will-change'].includes(prop)).map(([prop,{value}])=>[prop,value.replace(/,\s*/g, ',').replace(/(^|[^\w])0\.(\d+)/g, '$1.$2').replace(/\s*\/\s*/g, '/')]).sort(([a],[b])=>a.localeCompare(b)));
 }
 const modes=[
   ['desktop',{width:1200,hover:'hover',pointer:'fine',reduce:false}],

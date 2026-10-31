@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createNetworkActivityTracker, consumeNetworkBody } from "../.cache/build/browser/assets/launcher/network-activity.mjs";
 
+test("test-network-activity", async () => {
 const events = [];
 let tick = 0;
 let latestNativeResponse = null;
@@ -358,3 +360,4 @@ for (const method of ["fetch", "xhrFetch"]) {
 assert.equal(abortedFallbackFetchCalls, 0);
 
 console.log("Network activity contract: PASS");
+});

@@ -1,6 +1,6 @@
 import {readUiHistoryText} from './ui-history.mjs';
 /** Server setup/HTTP only. No original browser/native scenario is executed. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {spawn, execFileSync} from 'node:child_process';
 import {mkdtemp, mkdir, readFile, writeFile, rm} from 'node:fs/promises';

@@ -1,8 +1,9 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
-
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { normalizeMultiplayerLobbySnapshot } from "../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs";
 
+test("test-multiplayer-lobby-snapshot", async () => {
 const localClientId = "local_client_01";
 
 const th06 = PRODUCT_GAMES.th06.multiplayer;
@@ -110,3 +111,4 @@ console.log(JSON.stringify({
   identity: "shared-owner",
   inactiveSeat: "ignored",
 }));
+});

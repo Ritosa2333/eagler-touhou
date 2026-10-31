@@ -1,16 +1,16 @@
-import { useSyncExternalStore, type ReactNode } from 'react';
+import { type ReactNode, useSyncExternalStore } from 'react';
 import { useLocale } from '../../i18n';
 import type { createRuntimeDiagnostics } from '../../models/runtime-diagnostics';
 
 const netplayRows = [
-  ['session', 'runtimeNetplaySessionDiag', '联机 --'],
-  ['inputDelay', 'runtimeNetplayInputDelayDiag', '输入延迟 --f'],
-  ['route', 'runtimeNetplayRouteDiag', '网络 --'],
-  ['frame', 'runtimeNetplayFrameDiag', '同步 --'],
-  ['rollback', 'runtimeNetplayRollbackDiag', '回滚 --'],
-  ['quality', 'runtimeNetplayQualityDiag', '质量 --'],
-  ['recovery', 'runtimeNetplayRecoveryDiag', '输入 --'],
-  ['ice', 'runtimeNetplayIceDiag', 'ICE --'],
+  ['session', 'runtimeNetplaySessionDiag', '--'],
+  ['inputDelay', 'runtimeNetplayInputDelayDiag', '--'],
+  ['route', 'runtimeNetplayRouteDiag', '--'],
+  ['frame', 'runtimeNetplayFrameDiag', '--'],
+  ['rollback', 'runtimeNetplayRollbackDiag', '--'],
+  ['quality', 'runtimeNetplayQualityDiag', '--'],
+  ['recovery', 'runtimeNetplayRecoveryDiag', '--'],
+  ['ice', 'runtimeNetplayIceDiag', '--'],
 ] as const;
 export type NetplayDiagnosticLines = Partial<Record<(typeof netplayRows)[number][1], string>>;
 /** Original index1066–1078. Model owns actual Runtime health; optional MP lines

@@ -3,7 +3,7 @@ import {readUiHistoryText} from './ui-history.mjs';
  * Package is executed. These original harnesses already inherit the production
  * frontend artifact; replacing their dynamic server with a static fixture
  * would remove part of their original setup contract. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {writeFile, mkdir, mkdtemp, rm} from 'node:fs/promises';

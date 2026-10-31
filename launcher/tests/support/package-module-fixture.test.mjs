@@ -1,6 +1,6 @@
 /** Canonical module/staging/HTTP setup only. No browser or IndexedDB scenario
  * is executed; the original browser's synthetic package bytes stay original. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {execFileSync, spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
@@ -67,7 +67,7 @@ test('cold isolated source stages current canonical contracts and their module c
   const store = await import(pathToFileURL(resolve(fixture.root, 'package/package-store.mjs')).href);
   const installer = await import(pathToFileURL(resolve(fixture.root, 'package/package-installer.mjs')).href);
   assert.equal(store.PACKAGE_STORE_DB, 'eagler-touhou-package-store-v1'); assert.equal(typeof installer.installPackageFromAcquisition, 'function');
-  t.diagnostic(JSON.stringify({contractsInputHash: fixture.contracts.inputHash, moduleHashes: Object.fromEntries(fixture.files.filter(file => fixture.modules.includes(file.path)).map(file => [file.path, file.sha256]))}));
+  console.info(JSON.stringify({contractsInputHash: fixture.contracts.inputHash, moduleHashes: Object.fromEntries(fixture.files.filter(file => fixture.modules.includes(file.path)).map(file => [file.path, file.sha256]))}));
 });
 
 test('FAQ and its actual local styles/fonts are copied unchanged; absent optional artwork remains absent instead of fabricated', async () => {

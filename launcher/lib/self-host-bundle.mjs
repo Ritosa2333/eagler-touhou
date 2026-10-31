@@ -32,10 +32,11 @@ const hostPreparationBuildSources = Object.values(PRODUCT_CONTENT)
     .flatMap(preparation => preparation?.buildSources ?? []));
 
 // The self-host bundle is a distributable product, not a trimmed source checkout.
-// Every repository-owned file that can reach `npm run host` / `npm run import`
+// Every repository-owned file that can reach `bun run host` / `bun run import`
 // is declared here. Maintainer tests, browser runners, publication tooling and
 // relay operations stay outside this boundary.
 const hostRuntimeRoots = [
+  ".bun-version",
   "src/app-shell-sw.js",
   "src/site-mirror-sw.js",
   "src/runtime-cache-sw.js",
@@ -48,6 +49,7 @@ const hostRuntimeRoots = [
   "host/build.mjs",
   "host/build-import.mjs",
   "host/lib/node-environment.mjs",
+  "host/lib/bun-environment.mjs",
   "host/lib/process.mjs",
   "host/lib/python-environment.mjs",
   "host/lib/site-builder.mjs",
@@ -126,6 +128,7 @@ const mappedFiles = [
   ["config/eagler-touhou.config.example.json", "eagler-touhou.config.json"],
   ["host/bundle/package.json", "package.json"],
   ["host/bundle/package-lock.json", "package-lock.json"],
+  ["host/bundle/bun.lock", "bun.lock"],
   ["docs/SELF_HOSTING.md", "SELF-HOSTING.md"],
   ["docs/SELF_HOSTING_REFERENCE.md", "SELF-HOSTING-REFERENCE.md"],
   ["docs/EXTERNAL_RESOURCE_MODE.md", "EXTERNAL_RESOURCE_MODE.md"],

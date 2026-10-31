@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   encodeAsciiLocalizationTable, encodeLocalizationTable, encodeSpellCommentsTable,
@@ -8,6 +9,7 @@ import {
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "../server/thcrap-ascii-contract.mjs";
 import { validateStringContract } from "../server/thcrap-string-contract.mjs";
 
+test("test-thcrap-compiler", async () => {
 assert.deepEqual(legacyAsciiPrintfSignature("%s %9d0 %% %3.2f %c"), ["string", "int", "double", "char"]);
 assert.throws(() => legacyAsciiPrintfSignature("%*d"), /unsupported printf '\*' width/);
 assert.throws(() => legacyAsciiPrintfSignature("%lld"), /length modifier/);
@@ -517,3 +519,4 @@ assert.throws(() => encodeSpellCommentsTable({ "1": { comment_1: "not-an-array" 
   /expected an array of lines/);
 
 console.log(JSON.stringify({ dialogue: "patched", extraLines: "inserted", ending: "patched", localization: "encoded", ascii: "EAS1", strings: "EST1", spellcomments: "ETL1", th08: "msg08" }));
+});

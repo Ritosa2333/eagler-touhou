@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import { readFile } from "node:fs/promises";
 import { webcrypto } from "node:crypto";
 import vm from "node:vm";
@@ -6,6 +7,7 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { RUNTIME_CONFIGURE_LEGACY_MUSIC_MODES } from "../lib/contracts/runtime-protocol.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-shell-protocol", async () => {
 const cases = [
   { game: "th06", shell: process.env.EAGLER_TEST_TH06_SHELL || workspacePath("th06", "resources", "shell.html"), packs: {
     wav: [{ url: "http://test.local/music.wav", path: "/bgm/th06_01.wav" }],
@@ -523,3 +525,4 @@ for (const test of cases) {
 }
 
 console.log(JSON.stringify({ shells: cases.length, configure: ["midi", "ogg-stream", "ogg-full", "none"], legacyConfigureMusic: RUNTIME_CONFIGURE_LEGACY_MUSIC_MODES, letterbox: "full-touch", touchReleaseSafety: "canvas+lostcapture+visibility", protocol: "eagler-touhou/1" }));
+});

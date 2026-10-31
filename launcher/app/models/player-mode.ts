@@ -2,7 +2,11 @@
  * separate lifecycle/presentation facts, not additional playback modes. */
 export type PlayerMode = 'singleplayer' | 'multiplayer' | 'spectator' | 'replay';
 
-export function classifyPlayerMode({replay = false, spectator = false, multiplayer = false}: {
+export function classifyPlayerMode({
+  replay = false,
+  spectator = false,
+  multiplayer = false,
+}: {
   replay?: boolean;
   spectator?: boolean;
   multiplayer?: boolean;

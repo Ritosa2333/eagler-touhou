@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import {selectedPortGames} from './support/port-selection.mjs';
 import { readFileSync } from "node:fs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-native-frame-pacing", async () => {
 const preloadGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.dataProvider === "emscripten-preload")
   .map(([game]) => game)
@@ -64,3 +66,4 @@ for (const result of cases) {
 }
 
 console.log(JSON.stringify({ games: preloadGames, simulationHz: 60, nativePresentation: "display-refresh", strictVsync: true, cases }));
+});

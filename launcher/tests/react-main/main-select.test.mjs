@@ -1,7 +1,7 @@
 import {readUiHistoryText} from '../support/ui-history.mjs';
 /** Executed pinned controller is the oracle. Synthetic DOM only: native browser
  * layout/top-layer focus and keyboard activation remain separate acceptance. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

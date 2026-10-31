@@ -1,11 +1,11 @@
 import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import { isMultiplayerProductId } from '../../src/contracts/product-catalog.mts';
-import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
+import { DEFAULT_GAME_OPTIONS } from '../../src/launcher/game-preferences.mts';
+import { SpectatorMatchScore } from '../components/player/SpectatorMatchScore';
+import { SpectatorPlayback } from '../components/player/SpectatorPlayback';
 import { RoomView } from '../components/room';
-import type { BrowserSession } from './browser-session';
 import { useSurfaceNavigation } from '../navigation/surface-navigation';
-import {SpectatorPlayback} from '../components/player/SpectatorPlayback';
-import {SpectatorMatchScore} from '../components/player/SpectatorMatchScore';
+import type { BrowserSession } from './browser-session';
 
 /** Room chrome and fullscreen share one permanent Player and room owner. */
 export function RoomComposition({
@@ -34,18 +34,24 @@ export function RoomComposition({
     session.settings.getSnapshot,
     session.settings.getSnapshot,
   );
-  const [workspace, setWorkspace] = useState<{host:HTMLElement;stage:HTMLElement} | null>(null);
+  const [workspace, setWorkspace] = useState<{ host: HTMLElement; stage: HTMLElement } | null>(null);
   const workspaceVisible = roomWorkspace && navigation.surface !== 'touch';
-  const playback = state.runtime?.launched && state.runtime.spectator
-    ? state.runtime.game !== 'th09' ? <SpectatorPlayback session={session}/>
-      : room.room?.spectatorTimeline ? <SpectatorMatchScore
-        wins={[room.room.seats?.[0]?.stats?.wins ?? 0,room.room.seats?.[1]?.stats?.wins ?? 0]}
-        minutes={Math.max(...(room.room.seats ?? []).map(seat=>seat?.stats?.minutes ?? 0),0)}
-        names={[room.room.seats?.[0]?.name ?? '',room.room.seats?.[1]?.name ?? '']}/> : null
-    : null;
-  useLayoutEffect(()=>{
-    const host = document.getElementById('player'), stage = host?.querySelector<HTMLElement>('.player-stage');
-    if (host && stage) setWorkspace({host,stage});
+  const playback =
+    state.runtime?.launched && state.runtime.spectator ? (
+      state.runtime.game !== 'th09' ? (
+        <SpectatorPlayback session={session} />
+      ) : room.room?.spectatorTimeline ? (
+        <SpectatorMatchScore
+          wins={[room.room.seats?.[0]?.stats?.wins ?? 0, room.room.seats?.[1]?.stats?.wins ?? 0]}
+          minutes={Math.max(...(room.room.seats ?? []).map((seat) => seat?.stats?.minutes ?? 0), 0)}
+          names={[room.room.seats?.[0]?.name ?? '', room.room.seats?.[1]?.name ?? '']}
+        />
+      ) : null
+    ) : null;
+  useLayoutEffect(() => {
+    const host = document.getElementById('player'),
+      stage = host?.querySelector<HTMLElement>('.player-stage');
+    if (host && stage) setWorkspace({ host, stage });
   }, []);
   return (
     <RoomView
@@ -72,15 +78,13 @@ export function RoomComposition({
       workspaceHost={workspace?.host}
       workspaceStage={workspace?.stage}
       playbackControls={playback}
-      onFullscreen={()=>{void session.togglePlayerFullscreen();}}
+      onFullscreen={() => {
+        void session.togglePlayerFullscreen();
+      }}
       reloadPending={state.roomReloadPending}
       onReloadResources={session.reloadRoomResources}
       onRestoreSettings={session.restoreRoomSettings}
-      panel={
-        navigation.roomPanel
-          ? { kind: navigation.roomPanel, peerId: navigation.roomNetworkPeer }
-          : null
-      }
+      panel={navigation.roomPanel ? { kind: navigation.roomPanel, peerId: navigation.roomNetworkPeer } : null}
       onOpenPanel={navigation.openRoomPanel}
       onClosePanel={navigation.closeRoomPanel}
     />

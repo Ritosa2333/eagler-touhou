@@ -3,7 +3,7 @@
  * No browser keyboard, native iframe, Android device or game-input proof.
  * Main app:3033–3060,5094–5110,5138–5169 and test-hosted-key-release.mjs.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

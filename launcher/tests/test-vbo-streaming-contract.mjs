@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import fs from 'node:fs';
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-vbo-streaming-contract", async () => {
 const read = rel => { const [repository, ...segments] = rel.split("/"); return fs.readFileSync(workspacePath(repository.replace(/-eagler$/, ""), ...segments), "utf8").replaceAll("\r\n", "\n"); };
 
 for (const game of ['th06', 'th07']) {
@@ -45,3 +47,4 @@ for (const game of ['th06', 'th07']) {
 }
 
 console.log('TH06/TH07 safe VBO streaming contract: PASS');
+});

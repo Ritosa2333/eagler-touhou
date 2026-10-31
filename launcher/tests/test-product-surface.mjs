@@ -1,7 +1,4 @@
-/** L0 generated-HTML registration contract. Mutation: none. Proves every
- * declared product has exactly one Launcher card with the correct
- * ordinary/Multiplayer identity and catalog-owned artwork. Rendering remains a
- * browser concern. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { parse } from "parse5";
@@ -12,6 +9,17 @@ import {
   gameIdForProduct,
   isMultiplayerProductId,
 } from "../lib/contracts/product-catalog.mjs";
+
+test("test-product-surface", async () => {
+/** L0 generated-HTML registration contract. Mutation: none. Proves every
+ * declared product has exactly one Launcher card with the correct
+ * ordinary/Multiplayer identity and catalog-owned artwork. Rendering remains a
+ * browser concern. */
+
+
+
+
+
 
 const html = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
 const css = await readFile(resolveFrontendPackageSource("styles.css"), "utf8");
@@ -95,3 +103,4 @@ assert.match(launcherSource, /href=\{product\.sourceRepository\}/,
   "visible adaptation notices must resolve their repository from Product Catalog support metadata");
 
 console.log(JSON.stringify({ productSurface: "PASS", products: PRODUCT_IDS }));
+});

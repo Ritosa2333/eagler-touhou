@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { WebSocket, WebSocketServer } from "ws";
 import {
@@ -6,6 +7,7 @@ import {
   turnServerLatencyFromLoopback,
 } from "../.cache/build/browser/assets/launcher/network-diagnostics.mjs";
 
+test("test-network-diagnostics", async () => {
 assert.equal(turnServerLatencyFromLoopback(86), 43,
   "same-browser relay-to-relay RTT contains two client-to-TURN round trips");
 
@@ -63,3 +65,4 @@ try {
 }
 
 console.log(JSON.stringify({ networkDiagnostics: "PASS", legacyRelayFallback: true }));
+});

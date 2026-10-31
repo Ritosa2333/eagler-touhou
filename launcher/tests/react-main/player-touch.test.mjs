@@ -1,6 +1,6 @@
 /** Main8980–9480 touch behavior. Synthetic DOM/geometry/native-message ports;
  * not device pointer, mobile Safari, visual, playable game or latency acceptance. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {existsSync} from 'node:fs';

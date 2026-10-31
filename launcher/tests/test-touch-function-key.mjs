@@ -1,5 +1,8 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {createFunctionKeyOwner,functionKeySpec,functionKeyGames} from '../.cache/build/browser/assets/launcher/touch-function-key.mjs';
+
+test("test-touch-function-key", async () => {
 const events=[];let pending=null;
 const fire=()=>{const fn=pending;pending=null;fn();};
 const key=createFunctionKeyOwner(down=>events.push(down),'tap',fn=>(pending=fn),()=>{pending=null;});
@@ -53,3 +56,4 @@ for(let frame=1;frame<=15;frame++) {
 assert.equal(pressedEdges,2,'60 Hz sampling observes both rapid taps as separate presses');
 assert.equal(timers.size,0,'completed taps leave no timer');
 console.log('C tap, multi-pointer isolation, capture release and cancellation passed');
+});

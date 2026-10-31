@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {parseMeasuredNetplayTiming,resolveAdonisPredictionReserve} from '../lib/contracts/netplay-timing.mjs';
 import {buildMultiplayerRuntimeOptions} from '../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs';
 import {normalizeMultiplayerLobbySnapshot} from '../.cache/build/browser/assets/launcher/multiplayer-lobby-snapshot.mjs';
 import {isSpectatorFrameForRoom} from '../../services/relay/src/spectator-frame.mjs';
 
+test("test-netplay-measured-timing", async () => {
 const timing={phase:'ready',automatic:true,adonisMode:2,inputDelay:1,fullDelay:3,
   predictionReserve:2,rttP95Us:90000,samples:117,lost:5,route:'rtc'};
 assert.deepEqual(parseMeasuredNetplayTiming(timing),timing);
@@ -72,3 +74,4 @@ for(const [game,code] of [['th08mp',56],['th10mp',65]])for(const count of [2,3])
   assert.equal(isSpectatorFrameForRoom((game==='th08mp'?'th10mp':'th08mp')+'-1234',bytes,count),false);
   bytes[6]=7;assert.equal(isSpectatorFrameForRoom(game+'-1234',bytes,count),false);
 }
+});

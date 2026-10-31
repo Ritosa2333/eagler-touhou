@@ -1,4 +1,11 @@
 /* Shared notices remain above room/replay workspaces and their settings. */
-[data-launcher-transient-host]{position:fixed;inset:0;z-index:300;pointer-events:none}
+[data-launcher-transient-host] {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+}
 /* Keep each surface's own pointer policy, including hidden/fading toasts. */
-:where([data-launcher-transient-host])>*{pointer-events:auto}
+:where([data-launcher-transient-host]) > * {
+  pointer-events: auto;
+}

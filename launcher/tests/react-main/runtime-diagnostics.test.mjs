@@ -1,5 +1,5 @@
 /** Main app2244–2312/2720–2749; fake authenticated event/scheduling ports only. */
-import test, {before, after} from 'node:test';import assert from 'node:assert/strict';import {build} from 'esbuild';import {mkdtemp,rm} from 'node:fs/promises';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
+import {test, beforeAll as before, afterAll as after} from 'vitest';import assert from 'node:assert/strict';import {build} from 'esbuild';import {mkdtemp,rm} from 'node:fs/promises';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
 let dir,createRuntimeDiagnostics;
 before(async()=>{dir=await mkdtemp(resolve('.cache/diagnostics-main-'));const outfile=resolve(dir,'model.mjs');await build({entryPoints:['app/models/runtime-diagnostics.ts'],outfile,bundle:true,format:'esm',platform:'node',logLevel:'silent'});({createRuntimeDiagnostics}=await import(pathToFileURL(outfile).href));});after(async()=>{if(dir)await rm(dir,{recursive:true,force:true});});
 function fixture({saved=null,testBuild=false}={}) {

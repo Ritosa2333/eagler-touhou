@@ -2,7 +2,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Mounted actual recovery model + original-window React view in jsdom.
  * Authority: main public/index838–864, app3328–3367,9643–9740.
  * No CSS pixels, fullscreen, browser popup/file picker or native engine claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

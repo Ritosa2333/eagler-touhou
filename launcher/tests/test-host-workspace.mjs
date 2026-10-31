@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,6 +7,7 @@ import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { HOST_WORKSPACE_GAMES, inspectHostWorkspace, hostWorkspacePaths } from "../lib/host-workspace.mjs";
 import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-fixture.mjs";
 
+test("test-host-workspace", async () => {
 const root = await mkdtemp(join(tmpdir(), "eagler-host-workspace-"));
 try {
 const layout = hostWorkspacePaths(root);
@@ -73,3 +75,4 @@ console.log(JSON.stringify({ hostWorkspace: "PASS", games: Object.keys(full.game
 } finally {
   await rm(root, { recursive: true, force: true });
 }
+});

@@ -1,7 +1,7 @@
 /** Main5048–5085 Player fullscreen recognition vs editor-owned cleanup.
  * All native objects below are synthetic ports; no browser fullscreen request,
  * orientation permission or native/fullscreen acceptance result is claimed. */
-import test, {before, after} from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

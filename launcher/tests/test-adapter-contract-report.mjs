@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { ADAPTER_CONTRACT_REPORT_SCHEMA, createAdapterContractReport } from "../lib/adapter-contract-report.mjs";
 
+test("test-adapter-contract-report", async () => {
 for (const game of Object.keys(PRODUCT_GAMES)) {
   const report = createAdapterContractReport(game);
   assert.equal(report.schema, ADAPTER_CONTRACT_REPORT_SCHEMA);
@@ -136,3 +138,4 @@ assert.deepEqual(th07.product.cardPresentation, PRODUCT_GAMES.th07.cardPresentat
 
 assert.throws(() => createAdapterContractReport("th99"), /unknown game/);
 console.log(JSON.stringify({ adapterContractReport: "PASS", games: Object.keys(PRODUCT_GAMES) }));
+});

@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   createMultiplayerRoomSessionStore,
   multiplayerRoomSessionStorageKey,
 } from "../.cache/build/browser/assets/launcher/multiplayer-room-session.mjs";
 
+test("test-multiplayer-room-session", async () => {
 class MemoryStorage {
   values = new Map();
   getItem(key) { return this.values.has(key) ? this.values.get(key) : null; }
@@ -86,3 +88,4 @@ console.log(JSON.stringify({
   restore: "room-and-product-bound",
   storageFailure: "non-fatal",
 }));
+});

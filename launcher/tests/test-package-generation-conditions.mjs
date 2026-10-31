@@ -1,4 +1,4 @@
-import test, {beforeEach} from 'node:test';
+import {test, beforeEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {IDBFactory, IDBKeyRange} from 'fake-indexeddb';
 import {installPackageFromAcquisition} from '../package/package-installer.mjs';

@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { ensureClientServicesBuild } from "../lib/client-services-build.mjs";
 import { SITE_MANIFEST_SCHEMA } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 
+test("test-remote-metadata", async () => {
 await ensureClientServicesBuild();
 const { loadRemoteMetadata } = await import("../.cache/build/browser/assets/launcher/remote-metadata.mjs");
 
@@ -46,3 +48,4 @@ assert.equal(catalogOnly.siteManifest.ok, false);
 assert.equal(catalogOnly.releaseCatalog.ok, true);
 
 console.log(JSON.stringify({ remoteMetadata: "PASS", independentFailures: true }));
+});

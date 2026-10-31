@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { strToU8, zipSync } from "fflate";
 import { parsePackageZip } from "../package/package-zip.mjs";
 import { parseStoredZip, readStoredZipEntry } from "../package/stored-zip.mjs";
 
+test("test-package-zip", async () => {
 const descriptor = {
   schema: "eagler-touhou/package/1",
   game: "th08",
@@ -56,3 +58,4 @@ const compressedEntry = (await parseStoredZip(deflated)).get("games/th08/runtime
 assert.equal(compressedEntry.method, 8);
 await assert.rejects(readStoredZipEntry(deflated, { ...compressedEntry, crc32: compressedEntry.crc32 ^ 1 }), /CRC32/);
 await assert.rejects(readStoredZipEntry(deflated, { ...compressedEntry, uncompressedSize: 1 }), /size mismatch/);
+});

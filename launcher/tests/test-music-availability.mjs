@@ -1,11 +1,12 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
-
 import {
   resolveEffectiveMusicMode,
   resolveMusicAvailability,
   resolveMusicMode,
 } from "../.cache/build/browser/assets/launcher/music-availability.mjs";
 
+test("test-music-availability", async () => {
 const cases = [
   [{ requested: "none", localOgg: true }, "none"],
   [{ requested: "ogg-full", audio: false, localOgg: true }, "none"],
@@ -155,3 +156,4 @@ console.log(JSON.stringify({
   preference: "fallback-does-not-overwrite",
   remoteGeneration: "revision-bound",
 }));
+});

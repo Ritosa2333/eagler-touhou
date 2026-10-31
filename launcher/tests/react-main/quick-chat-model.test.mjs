@@ -1,7 +1,7 @@
 /** Deterministic state/timer tests and a pinned-original differential oracle.
  * Synthetic DOM only: no browser, layout, audio playback or deployment claim.
  */
-import test, { before, after } from 'node:test';
+import {test, beforeAll as before, afterAll as after} from 'vitest';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm } from 'node:fs/promises';
@@ -128,7 +128,7 @@ function fixture(t, initial = context()) {
       effects.push(['voice', id]);
     },
   });
-  t.after(() => model.dispose());
+  t.onTestFinished(() => model.dispose());
   if (initial) model.update(initial);
   return {
     model,

@@ -1,12 +1,21 @@
-/** L2 artifact contract. Builds a synthetic all-products Runtime Release and
- * proves exact-file-set, hash, path and original-resource leak rejection.
- * Does not prove any Runtime executes in a browser. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { validateRuntimeReleaseManifest, verifyRuntimeRelease } from "../lib/runtime-release.mjs";
 import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-fixture.mjs";
+
+test("test-runtime-release", async () => {
+/** L2 artifact contract. Builds a synthetic all-products Runtime Release and
+ * proves exact-file-set, hash, path and original-resource leak rejection.
+ * Does not prove any Runtime executes in a browser. */
+
+
+
+
+
+
 
 const root = await mkdtemp(join(tmpdir(), "eagler-runtime-release-"));
 const manifest = await writeSyntheticRuntimeRelease(root);
@@ -55,3 +64,4 @@ await writeFile(resolve(root, "runtime-release.json"), `${JSON.stringify(badLayo
 await assert.rejects(() => verifyRuntimeRelease(root), /DATA layout does not match Runtime JS/);
 
 console.log("Runtime Release closed-set contract: PASS");
+});

@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createEdgeDrawerGesture } from "../.cache/build/browser/assets/launcher/edge-drawer-gesture.mjs";
 
+test("test-edge-drawer-gesture", async () => {
 class FakeClassList {
   values = new Set();
   contains(name) { return this.values.has(name); }
@@ -66,3 +68,4 @@ function exercise(side) {
 exercise("left");
 exercise("right");
 console.log(JSON.stringify({ edgeDrawers: "PASS", sides: ["left", "right"], gestures: ["reveal", "retract"] }));
+});

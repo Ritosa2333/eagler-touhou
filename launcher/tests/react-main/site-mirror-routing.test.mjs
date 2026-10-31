@@ -1,4 +1,7 @@
-import test from 'node:test';
+// Use Undici's reference entry directly: Bun aliases the bare undici import
+// to its server Request, whose credentials getter does not model the browser.
+import {Request as WhatwgRequest} from 'undici/index.js';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile, mkdtemp, writeFile} from 'node:fs/promises';
@@ -12,7 +15,7 @@ const scopeUrl = new URL('https://primary.test/nested/');
 const config = {schema:'eagler-touhou/site-network/1', mirrors:['https://second.test/site/', 'https://third.test:8443/']};
 function harness(fetchImpl, options = {}) {
   const requests = [], logs = [];
-  const context = vm.createContext({URL, Request, Response, Headers, AbortController, setTimeout, clearTimeout,
+  const context = vm.createContext({URL, Request: WhatwgRequest, Response, Headers, AbortController, setTimeout, clearTimeout,
     console:{info:(...args)=>logs.push(args),warn:(...args)=>logs.push(args)},
     fetch: request => {requests.push(request); return fetchImpl(request);}});
   vm.runInContext(source, context);
@@ -83,7 +86,7 @@ test('nested shells discover resources at the mirror origin root', async () => {
 
 test('build pins deployment configuration, metadata and descriptors to the shell release', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'site-mirror-build-'));
-  t.after(async () => {const {rm} = await import('node:fs/promises'); await rm(directory, {recursive:true,force:true});});
+  t.onTestFinished(async () => {const {rm} = await import('node:fs/promises'); await rm(directory, {recursive:true,force:true});});
   for (const [path, value] of Object.entries({
     'index.html':'<h1>launcher</h1>', 'site-network.json':JSON.stringify(config),
     'site-manifest.json':'{}', 'host-manifest.json':'{}',

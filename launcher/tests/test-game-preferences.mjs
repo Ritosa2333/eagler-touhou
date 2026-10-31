@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   DEFAULT_GAME_OPTIONS,
@@ -14,6 +15,7 @@ import {
   serializeGamePreferences,
 } from "../.cache/build/browser/assets/launcher/game-preferences.mjs";
 
+test("test-game-preferences", async () => {
 assert.equal(gamePreferenceStorageKey("th06"), "eagler-touhou-game-options-v1-th06");
 assert.equal(languagePreferenceStorageKey("th07mp"), "eagler-touhou-language-v1-th07mp");
 assert.equal(sharedTouchPreferenceStorageKey, "eagler-touhou-touch-options-v1");
@@ -238,3 +240,4 @@ assert.equal(explicitChinese.musicPreference, "ogg-full", "saved music must surv
 const chineseInherited = loadStoredGamePreferences({ storage, preferenceId: "th07mp", fallbackPreferenceId: "th07", context: chineseContext });
 assert.equal(chineseInherited.musicPreference, "ogg-full");
 assert.equal(chineseInherited.options.thpracEnabled, false, "existing multiplayer preferences still win");
+});

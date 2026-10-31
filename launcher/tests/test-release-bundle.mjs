@@ -1,6 +1,4 @@
-/** L2 artifact contract. Preconditions: isolated generated candidate tree.
- * Mutation: creates a temporary bundle. Proves required release owners and report schema.
- * Does NOT prove Runtime contents, browser behavior or publication. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
@@ -11,6 +9,21 @@ import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-f
 import { writeReleaseManifest } from "../lib/release-manifest.mjs";
 import { verifyReleaseBundle } from "../lib/release-bundle-verifier.mjs";
 import { FORMAL_RELEASE_GAMES } from "../lib/release-plan.mjs";
+
+test("test-release-bundle", async () => {
+/** L2 artifact contract. Preconditions: isolated generated candidate tree.
+ * Mutation: creates a temporary bundle. Proves required release owners and report schema.
+ * Does NOT prove Runtime contents, browser behavior or publication. */
+
+
+
+
+
+
+
+
+
+
 
 const root = await mkdtemp(join(tmpdir(), "eagler-release-bundle-"));
 try {
@@ -67,3 +80,4 @@ assert.equal(result.completion.RELEASED, "no");
   await rm(root, { recursive: true, force: true });
 }
 console.log("Release bundle L2: PASS");
+});

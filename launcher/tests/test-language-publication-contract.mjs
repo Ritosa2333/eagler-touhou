@@ -1,6 +1,8 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { assertLanguagePublicationConsistency } from "../lib/language-publication-contract.mjs";
 
+test("test-language-publication-contract", async () => {
 const pack = {
   url: "games/th06/language/lang_en.zip",
   bytes: 42,
@@ -94,3 +96,4 @@ th09Broken.files["language:lang_en"].source = "games/th08/language/lang_en.zip";
 assert.throws(() => assertLanguagePublicationConsistency("th09", th09Host, th09Broken), /language identity mismatch/);
 
 console.log(JSON.stringify({ languagePublication: "PASS", surfaces: ["languages", "languageOptions", "descriptor"], th08: "directory-layout", th09: "directory-layout" }));
+});

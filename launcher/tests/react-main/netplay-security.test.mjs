@@ -1,4 +1,4 @@
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {createRequire} from 'node:module';
@@ -26,7 +26,7 @@ before(async () => {
     export * from './app/i18n.tsx';
   `}, bundle: true, format: 'esm', platform: 'node', jsx: 'automatic', outfile,
   logLevel: 'silent', plugins: [{name: 'shared-react', setup(ctx) {
-    ctx.onResolve({filter: /^[^./]/}, args => ({path: pathToFileURL(require.resolve(args.path)).href, external: true}));
+    ctx.onResolve({filter: /^[^./]/}, args => ({path: import.meta.resolve(args.path), external: true}));
   }}]});
   views = await import(pathToFileURL(outfile).href);
 });

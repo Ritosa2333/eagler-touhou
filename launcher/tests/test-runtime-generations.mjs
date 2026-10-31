@@ -1,5 +1,4 @@
-/** Reproducible publication/format tests. Synthetic programs/data only; this is
- * not gameplay or real browser acceptance. Exercises the actual generators. */
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { cp, lstat, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
@@ -17,6 +16,25 @@ import { createPublicationHostSeed } from "../lib/publication-host-seed.mjs";
 import { writeSyntheticRuntimeRelease } from "./support/runtime-release-fixture.mjs";
 import { verifyRuntimeRelease, LEGACY_RUNTIME_RELEASE_SCHEMA } from "../lib/runtime-release.mjs";
 import { deployStaticSite } from "../lib/static-deployment.mjs";
+
+test("test-runtime-generations", async () => {
+/** Reproducible publication/format tests. Synthetic programs/data only; this is
+ * not gameplay or real browser acceptance. Exercises the actual generators. */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const temp = await mkdtemp(join(tmpdir(), "eagler-generations-"));
@@ -123,3 +141,4 @@ try {
   console.log("Immutable Runtime protocol, generator, legacy read, declared-variant Host, refresh and atomic deployment: PASS");
   }
 } finally { await rm(temp,{recursive:true,force:true}); }
+});

@@ -1,10 +1,16 @@
+import {test} from 'vitest';
+import assert from "node:assert/strict";
+import { createPublicationHostSeed } from "../lib/publication-host-seed.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+
+test("test-publication-host-seed", async () => {
 /** L0 release/dev isolation contract.
  * Preconditions: static product declarations only. Mutation: none.
  * Proves: publication Host seeds contain no workstation paths or generated identity.
  * Does NOT prove: package construction, Runtime build, or deployment. */
-import assert from "node:assert/strict";
-import { createPublicationHostSeed } from "../lib/publication-host-seed.mjs";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+
+
+
 
 const seed = createPublicationHostSeed("web-release-test");
 assert.equal(seed.profile, "web-release-test");
@@ -21,3 +27,4 @@ for (const entry of Object.values(seed.games)) {
 }
 assert.throws(() => createPublicationHostSeed("web-development"), /non-development profile/);
 console.log("Publication Host seed isolation: PASS");
+});

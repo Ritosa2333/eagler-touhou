@@ -1,9 +1,11 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 
+test("test-site-metadata", async () => {
 assert.equal(normalizeSiteUrl("https://touhou.vip/"), "https://touhou.vip/");
 assert.throws(() => normalizeSiteUrl("https://touhou.vip/path"), /directory URL/);
 assert.throws(() => normalizeSiteUrl("javascript:alert(1)"), /http/);
@@ -35,3 +37,4 @@ try {
 } finally {
   await rm(root, { recursive: true, force: true });
 }
+});

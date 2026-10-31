@@ -1,8 +1,46 @@
 /* Hosted timelines share their presentation in the room and fullscreen. */
-.spectator-playback-host,.th09-playback-host{display:flex;justify-content:flex-end;width:min(360px,calc(100vw - 16px));max-width:100%;pointer-events:none}
-#player :is(.spectator-playback-host,.th09-playback-host) :is(.spectator-timeline,#spectatorTimeline){position:relative;inset:auto;transform:none;box-sizing:border-box;display:flex;flex-direction:column-reverse;gap:8px;width:100%;max-width:100%;margin:0;z-index:auto;pointer-events:auto}
-#player :is(.spectator-playback-host,.th09-playback-host) :is(.spectator-timeline,#spectatorTimeline)[data-collapsed=true]{width:max-content;gap:0;background:transparent;border-color:transparent;box-shadow:none}
-#player :is(.spectator-playback-host,.th09-playback-host) .spectator-bar{width:100%}
-#player :is(.spectator-playback-host,.th09-playback-host) :is(.spectator-details,#spectatorDetails){width:100%;padding-bottom:6px}
-#player :is(.spectator-playback-host,.th09-playback-host) .spectator-detail-bar{align-items:flex-start;gap:8px}
-#player :is(.spectator-playback-host,.th09-playback-host) .spectator-actions{gap:4px}
+.spectator-playback-host,
+.th09-playback-host {
+  display: flex;
+  justify-content: flex-end;
+  width: min(360px, calc(100vw - 16px));
+  max-width: 100%;
+  pointer-events: none;
+}
+#player :is(.spectator-playback-host, .th09-playback-host) :is(.spectator-timeline, #spectatorTimeline) {
+  position: relative;
+  inset: auto;
+  transform: none;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  z-index: auto;
+  pointer-events: auto;
+}
+#player
+  :is(.spectator-playback-host, .th09-playback-host)
+  :is(.spectator-timeline, #spectatorTimeline)[data-collapsed="true"] {
+  width: max-content;
+  gap: 0;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+#player :is(.spectator-playback-host, .th09-playback-host) .spectator-bar {
+  width: 100%;
+}
+#player :is(.spectator-playback-host, .th09-playback-host) :is(.spectator-details, #spectatorDetails) {
+  width: 100%;
+  padding-bottom: 6px;
+}
+#player :is(.spectator-playback-host, .th09-playback-host) .spectator-detail-bar {
+  align-items: flex-start;
+  gap: 8px;
+}
+#player :is(.spectator-playback-host, .th09-playback-host) .spectator-actions {
+  gap: 4px;
+}

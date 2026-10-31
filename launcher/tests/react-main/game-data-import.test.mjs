@@ -3,7 +3,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * Main authorities: app1588–1605,3318–3488,9538–9605,9643–9740 and unchanged
  * test-launcher-lifecycle continuation assertions. No browser file picker,
  * download, native engine or durable Package Store behavior is established. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

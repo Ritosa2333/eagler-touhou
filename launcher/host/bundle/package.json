@@ -4,16 +4,16 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "bun": ">=1.4.4"
   },
   "scripts": {
-    "host": "node host/build.mjs",
-    "host:build": "node host/build.mjs --build-only",
-    "host:doctor": "node scripts/inspect-host.mjs",
-    "package:external-site": "node scripts/package-external-site.mjs",
-    "import": "node host/build-import.mjs",
-    "verify:deployed": "node scripts/verify-deployed-site.mjs",
-    "verify:server": "node scripts/verify-server-build.mjs"
+    "host": "bun host/build.mjs",
+    "host:build": "bun host/build.mjs --build-only",
+    "host:doctor": "bun scripts/inspect-host.mjs",
+    "package:external-site": "bun scripts/package-external-site.mjs",
+    "import": "bun host/build-import.mjs",
+    "verify:deployed": "bun scripts/verify-deployed-site.mjs",
+    "verify:server": "bun scripts/verify-server-build.mjs"
   },
   "dependencies": {
     "acorn": "8.18.0",
@@ -28,5 +28,6 @@
     "minimatch@10": {
       "brace-expansion": "5.0.12"
     }
-  }
+  },
+  "packageManager": "bun@1.4.4"
 }

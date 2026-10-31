@@ -9,7 +9,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
  * test-language-fallback-browser and test-legacy-package-app-runtime-browser.
  * Those original files/assertions remain unchanged. No candidate tests reused.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';

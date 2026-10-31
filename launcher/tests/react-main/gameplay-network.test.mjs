@@ -1,6 +1,6 @@
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Actual main native-global/path contracts through fake ports, not live RTC. */
-import test,{before,after} from 'node:test';import assert from 'node:assert/strict';import {build} from 'esbuild';import {mkdtemp,rm} from 'node:fs/promises';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
+import {test, beforeAll as before, afterAll as after} from 'vitest';import assert from 'node:assert/strict';import {build} from 'esbuild';import {mkdtemp,rm} from 'node:fs/promises';import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';
 let dir,createGameplayNetwork;
 before(async()=>{dir=await mkdtemp(resolve('.cache/gameplay-network-'));const outfile=resolve(dir,'model.mjs');await build({entryPoints:['app/models/gameplay-network.ts'],outfile,bundle:true,format:'esm',platform:'node',logLevel:'silent',plugins: [authoredSourcesPlugin(resolve())]});({createGameplayNetwork}=await import(pathToFileURL(outfile).href));});after(async()=>{if(dir)await rm(dir,{recursive:true,force:true});});
 function fixture(){

@@ -72,17 +72,18 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.4'
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
         cache-dependency-path: launcher/requirements-ci.txt
-    - run: npm ci --ignore-scripts
+    - run: bun ci --ignore-scripts
     - run: python -m pip install --requirement requirements-ci.txt
     - run: npm --prefix ../services/relay ci --ignore-scripts
-    - run: npm run check
+    - run: bun --bun run check
     defaults:
       run:
         working-directory: launcher
@@ -98,10 +99,11 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
-    - run: npm ci --ignore-scripts
-    - run: npm run typecheck
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.4'
+    - run: bun ci --ignore-scripts
+    - run: bun --bun run typecheck
     defaults:
       run:
         working-directory: launcher
@@ -127,23 +129,28 @@ jobs:
 
           ports/th12-mp/src
 
-          services/relay'
+          services/relay
+
+          services/telemetry'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.4'
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
         cache-dependency-path: launcher/requirements-ci.txt
-    - run: npm ci --ignore-scripts
+    - run: bun ci --ignore-scripts
     - run: python -m pip install --requirement requirements-ci.txt
     - run: npm --prefix ../services/relay ci --ignore-scripts
-    - run: npm run build:launcher
-    - run: npm run test:ui-rewrite
-    - run: npm run test:support
+    - run: bun --bun run build:launcher
+    - run: bun --bun run lint
+    - run: bun --bun run i18n:check
+    - run: bun scripts/ui-rewrite/check-runtime.mjs
+    - run: bun --bun run test
     defaults:
       run:
         working-directory: launcher
@@ -157,31 +164,36 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.4'
     - uses: actions/setup-python@v7
       with:
         python-version: '3.13'
         cache: pip
         cache-dependency-path: launcher/tests/requirements-browser.txt
-    - run: npm --prefix launcher ci --ignore-scripts
+    - run: bun install --cwd launcher --frozen-lockfile --ignore-scripts
     - run: python -m pip install --requirement launcher/tests/requirements-browser.txt
     - run: python -m playwright install --with-deps chromium
     - run: node --test tools/browser/verified-runtime.test.mjs
-    - run: npm --prefix launcher run test:keyboard-mapping:browser
-    - run: npm --prefix launcher run test:audio-output:browser
+    - run: bun run --bun --cwd launcher test:keyboard-mapping:browser
+    - run: bun run --cwd launcher test:audio-output:browser
   host-bootstrap-windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v7
       with:
-        sparse-checkout: 'launcher/host/lib
+        sparse-checkout: 'launcher
 
-          launcher/tests'
+          common/contracts'
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-    - run: node launcher/tests/test-node-environment.mjs
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.4'
+    - run: bun install --cwd launcher --frozen-lockfile --ignore-scripts
+    - run: bun run --bun --cwd launcher vitest run tests/test-node-environment.mjs tests/vitest/bun-environment.test.ts tests/vitest/runtime.test.ts
   source-publication:
     runs-on: ubuntu-latest
     steps:
@@ -223,8 +235,9 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.4'
     - uses: msys2/setup-msys2@v2
       if: runner.os == 'Windows'
       id: msys
@@ -234,9 +247,9 @@ jobs:
     - if: runner.os == 'Windows'
       shell: pwsh
       run: Add-Content -LiteralPath $env:GITHUB_PATH -Value '${{ steps.msys.outputs.msys2-location }}/ucrt64/bin'
-    - run: npm --prefix launcher ci --ignore-scripts
+    - run: bun install --cwd launcher --frozen-lockfile --ignore-scripts
     - run: node --test tools/ports/*.test.mjs tools/testing/*.test.mjs
-    - run: node launcher/tests/test-gamepad-contract.mjs
+    - run: bun run --bun --cwd launcher vitest run --config vitest.workspace.config.ts tests/test-gamepad-contract.mjs
     - run: npm run ports:check -- --all --check-status
     - uses: actions/upload-artifact@v4
       if: always()
@@ -265,9 +278,10 @@ jobs:
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: launcher/package-lock.json
-    - run: npm --prefix launcher ci --ignore-scripts
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.4'
+    - run: bun install --cwd launcher --frozen-lockfile --ignore-scripts
     - uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984
       with:
         version: 6.0.9

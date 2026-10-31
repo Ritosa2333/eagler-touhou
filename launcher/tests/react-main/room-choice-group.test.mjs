@@ -1,5 +1,5 @@
 /** Synthetic third-consumer contract, not browser keyboard/layout evidence. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
@@ -31,7 +31,7 @@ test('reusable choice groups retain caller values, capability/phase gates, focus
     assert.equal(groups.length, 2); assert.equal(groups[0].previousElementSibling.className, 'mp-room-setting-title');
     assert.equal(groups[0].dataset.mpRoomChoice, 'third'); assert.equal(groups[1].hasAttribute('data-mp-room-choice'), false);
     assert.equal(groups[1].previousElementSibling.querySelector('strong').id, 'fourthTitle');
-    assert.equal(a.className, 'selected'); assert.equal(a.getAttribute('aria-pressed'), 'true');
+    assert.equal(a.classList.contains('selected'), true); assert.equal(a.getAttribute('aria-pressed'), 'true');
     assert.equal(a.hasAttribute('role'), false); assert.equal(a.type, 'button');
     a.click(); b.click(); container.querySelector('[data-fourth-choice]').click();
     assert.deepEqual(calls, [['third', 'a'], ['third', 'b'], ['fourth', 2]], 'selection itself does not invent a disable policy');
@@ -40,7 +40,7 @@ test('reusable choice groups retain caller values, capability/phase gates, focus
     assert.equal(unsupported.hidden, true); assert.equal(unsupported.disabled, true); assert.equal(groups[0].children.length, 3);
     b.focus(); await render(true, 'b');
     assert.equal(container.querySelector('[data-third-choice="a"]'), a); assert.equal(container.querySelector('[data-third-choice="b"]'), b);
-    assert.equal(env.document.activeElement, b); assert.equal(b.getAttribute('aria-pressed'), 'true'); assert.equal(a.hasAttribute('class'), false);
+    assert.equal(env.document.activeElement, b); assert.equal(b.getAttribute('aria-pressed'), 'true'); assert.equal(a.classList.contains('selected'), false);
     a.click(); assert.equal(calls.length, 3, 'caller-provided disabled state gates invocation');
     assert.deepEqual(env.errors, []);
   } finally {if (root) await React.act(async () => root.unmount()); env.close(); await rm(work, {recursive: true, force: true});}

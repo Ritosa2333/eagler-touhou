@@ -1,8 +1,9 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { createHash, webcrypto } from "node:crypto";
-
 import { sha256Hex } from "../.cache/build/browser/assets/launcher/sha256.mjs";
 
+test("test-sha256", async () => {
 const encoder = new TextEncoder();
 const vectors = [
   [new Uint8Array(), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
@@ -18,3 +19,4 @@ for (const [bytes, known] of vectors) {
 }
 
 console.log(JSON.stringify({ sha256: "PASS", paths: ["webcrypto", "fallback"], vectors: vectors.length }));
+});

@@ -1,4 +1,12 @@
+import {test} from 'vitest';
 import {selectedPortGames} from './support/port-selection.mjs';
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import vm from "node:vm";
+import { PRODUCT_GAMES, HOST_PROTOCOL } from "../lib/contracts/product-catalog.mjs";
+import { workspacePath } from "../lib/workspace-layout.mjs";
+
+test("test-runtime-storage-contract", async () => {
 /**
  * L3/module: execute the actual inline preload shell scripts with mocked DOM/FS.
  * Preconditions: source shells; no game assets or browser required.
@@ -7,11 +15,11 @@ import {selectedPortGames} from './support/port-selection.mjs';
  * Proves: shell callback/protocol ordering, path validation, exact bytes.
  * Does NOT prove: real IDBFS/browser persistence, WASM or gameplay.
  */
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import vm from "node:vm";
-import { PRODUCT_GAMES, HOST_PROTOCOL } from "../lib/contracts/product-catalog.mjs";
-import { workspacePath } from "../lib/workspace-layout.mjs";
+
+
+
+
+
 
 const shells = {
   th06: workspacePath("th06", "resources", "shell.html"),
@@ -112,3 +120,4 @@ for (const [game, shell] of Object.entries(shells).filter(([game]) => selectedPo
   assert.equal(h.files.size,0,`${game}: invalid writes must not mutate storage`);
   console.log(`${game}: Runtime Storage L3/module PASS`);
 }
+});

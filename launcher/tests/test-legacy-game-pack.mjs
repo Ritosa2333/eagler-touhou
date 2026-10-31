@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import { strToU8, zipSync } from "fflate";
 import {
@@ -14,6 +15,7 @@ import {
 } from "../compat/legacy-import-storage.mjs";
 import { adaptLegacyGamePackToPackage, adaptLegacyStoredImportToPackage } from "../compat/legacy-package-adapter.mjs";
 
+test("test-legacy-game-pack", async () => {
 const data = strToU8("legacy-data");
 const dataHash = "11".repeat(32);
 const layout = `sha256-${"22".repeat(32)}`;
@@ -246,3 +248,4 @@ console.log(JSON.stringify({
   newImports: "package-store",
   storedMigration: "one-way",
 }));
+});

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0d0d0c">
+  <title>Compatibility guide - EAGLER TOUHOU</title>
+  <!-- Standalone HTML. No external CSS, fonts, modules or WebGL. -->
+  <style>
+    body{max-width:960px;margin:24px auto;padding:0 15px;color:#ebe7df;background:#0d0d0c;font:15px/1.5 Arial,"Microsoft YaHei",sans-serif}
+    a{color:#8ab4ff}a:visited{color:#c39bff}
+    h1{font-size:23px;margin:0 0 9px}h2{font-size:19px;margin:0 0 10px}h3{font-size:16px;margin:0 0 6px}
+    p{margin:6px 0}ol{margin:5px 0 9px;padding-left:23px}li{margin-bottom:5px}
+    .actions{margin:0 0 19px}.actions button{font:inherit;cursor:pointer;margin:0 12px 6px 0;color:#111;background:#e0e0e0;border:0;border-radius:6px;padding:6px 12px}
+    .section{border-top:1px solid #333;padding-top:14px;margin-top:18px}
+    .columns{display:table;width:100%;table-layout:fixed}
+    .half{display:table-cell;width:50%;vertical-align:top;padding-right:20px}
+    .half.right{border-left:1px solid #333;padding:0 0 0 20px}
+    code{font-family:Consolas,"Courier New",monospace;overflow-wrap:break-word;word-wrap:break-word}
+    .checks{margin:7px 0 13px;padding-left:21px}.checks li{margin:3px 0}
+    .pass{color:#5fd48a;font-weight:bold}.fail{color:#ff6b6b;font-weight:bold}
+    #result{margin:5px 0}#result[hidden]{display:none}
+  </style>
+</head>
+<body>
+  <nav aria-label="Interface language"><a href="compatibility.html" lang="zh-CN">简体中文</a> · <a href="compatibility.en.html" lang="en">English</a> · <a href="compatibility.ja.html" lang="ja">日本語</a></nav>
+  <h1>Your browser did not pass the basic compatibility check.</h1>
+  <div class="actions"><button id="recheck" type="button" onclick="location.reload()">Check compatibility again</button><button id="try-anyway" type="button" onclick="location.href='./?compat=continue'">Try playing anyway</button></div>
+  <h2>Check results</h2>
+  <ul id="checks" class="checks"><li>Checking the browser and WebGL 2.0…</li></ul>
+  <p id="result" hidden></p>
+
+  <div id="computer" class="section">
+    <h2>Computers</h2>
+    <div class="columns">
+      <div class="half">
+        <h3>Windows 7 and earlier</h3>
+        <ol>
+          <li>Download and install <a href="https://www.supermium.net/" target="_blank" rel="noopener noreferrer">Supermium</a>（<a href="https://github.com/win32ss/supermium/releases" target="_blank" rel="noopener noreferrer">Alternative download</a>）。</li>
+          <li>Use Chromium 108 or newer.</li>
+          <li>Run the <a href="https://get.webgl.org/webgl2/" target="_blank" rel="noopener noreferrer">WebGL 2.0 test</a>. You can enter after it passes.</li>
+        </ol>
+      </div>
+      <div class="half right">
+        <h3>IE / older Chrome</h3>
+        <p>Windows 10/11: install the latest <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Chrome</a> or <a href="https://www.microsoft.com/edge/download" target="_blank" rel="noopener noreferrer">Edge</a>。</p>
+        <p>Older Windows: install Supermium, shown on the left.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="graphics" class="section">
+    <h2>WebGL 2.0</h2>
+    <div class="columns">
+      <div class="half">
+        <h3>Update graphics drivers</h3>
+        <ol>
+          <li>Install the latest graphics driver and restart.</li>
+          <li>Open <code>chrome://settings/system</code> and enable graphics acceleration.</li>
+          <li>Restart Chrome and<a href="https://get.webgl.org/webgl2/" target="_blank" rel="noopener noreferrer">test again</a>。</li>
+        </ol>
+      </div>
+      <div class="half right">
+        <h3>Try OpenGL</h3>
+        <ol>
+          <li>Open <code>chrome://flags/#use-angle</code>。</li>
+          <li>Select <strong>OpenGL</strong>, restart and test.</li>
+        </ol>
+        <p>If the option is missing, close Chrome and append this to its shortcut: <code>--use-angle=gl</code>。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="phone" class="section">
+    <h2>Phones</h2>
+    <div class="columns">
+      <div class="half">
+        <h3>Huawei</h3>
+        <p>Avoid Zhuoyitong and Via. Try the system browser.</p>
+      </div>
+      <div class="half right">
+        <h3>Other Android phones</h3>
+        <p>Avoid Via. Install the latest <a href="https://www.microsoft.com/edge/download" target="_blank" rel="noopener noreferrer">Edge</a> or <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Chrome</a>。</p>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    var ua = navigator.userAgent || "";
+    var chrome = /(?:Chrome|Chromium)\/(\d+)/i.exec(ua);
+    var major = chrome ? Number(chrome[1]) : 0;
+    var ie = /MSIE |Trident\//i.test(ua);
+    var oldWindows = /Windows NT (?:[1-5]\.\d|6\.[01])(?:[;)]|$)/i.test(ua);
+    var windows = /Windows NT /i.test(ua);
+    var failed = [];
+    var checks = [];
+
+    function add(name, status, detail) {
+      checks.push({name:name,status:status,detail:detail});
+      if (status === "Failed") failed.push(name);
+    }
+    if (ie) add("IE", "Failed", "Use another browser");
+    else add("IE", "Passed", "Not using IE");
+
+    if (major && major < 108) add("Chromium", "Failed", "Current " + major + "; 108 or newer required");
+    else if (major) add("Chromium", "Passed", "Current " + major);
+    else add("Chromium", "Unrecognized", "Check your browser version");
+
+    if (oldWindows && major < 108) add("Windows", "Failed", "Older Windows requires Chromium 108 or newer");
+    else if (oldWindows) add("Windows", "Passed", "Older Windows is using a recent Chromium");
+    else if (windows) add("Windows", "Passed");
+    else add("Windows", "Not applicable");
+
+    try {
+      var canvas = document.createElement("canvas");
+      var gl = canvas.getContext && canvas.getContext("webgl2");
+      if (!gl || (gl.isContextLost && gl.isContextLost())) add("WebGL 2.0", "Failed");
+      else {
+        add("WebGL 2.0", "Passed");
+        var extension = gl.getExtension && gl.getExtension("WEBGL_lose_context");
+        if (extension) extension.loseContext();
+      }
+    } catch (error) { add("WebGL 2.0", "Failed"); }
+
+    var list = document.getElementById("checks");
+    while (list.firstChild) list.removeChild(list.firstChild);
+    for (var i = 0; i < checks.length; i++) {
+      var li = document.createElement("li");
+      li.appendChild(document.createTextNode(checks[i].name + "："));
+      var status = document.createElement("span");
+      if (checks[i].status === "Passed") status.className = "pass";
+      if (checks[i].status === "Failed") status.className = "fail";
+      status.appendChild(document.createTextNode(checks[i].status));
+      li.appendChild(status);
+      if (checks[i].detail) li.appendChild(document.createTextNode("（" + checks[i].detail + "）"));
+      list.appendChild(li);
+    }
+    var result = document.getElementById("result");
+    var summary = failed.length ? "Failed: " + failed.join("、")
+      : major ? "No failed checks were found." : "No failed checks were found; browser version was not recognized.";
+    if ("textContent" in result) result.textContent = summary;
+    else result.innerText = summary;
+    result.removeAttribute("hidden");
+  }());
+  </script>
+</body>
+</html>

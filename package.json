@@ -3,15 +3,16 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.18"
+    "node": ">=22.18",
+    "bun": ">=1.4.4"
   },
   "scripts": {
-    "dev": "npm --prefix launcher run dev",
-    "start": "npm --prefix launcher start",
-    "build": "npm --prefix launcher run build",
-    "typecheck": "npm --prefix launcher run typecheck",
-    "test": "npm --prefix launcher test",
-    "build:runtime": "node launcher/scripts/build-runtime.mjs",
+    "dev": "bun run --bun --cwd launcher dev",
+    "start": "bun run --bun --cwd launcher start",
+    "build": "bun run --bun --cwd launcher build",
+    "typecheck": "bun run --bun --cwd launcher typecheck",
+    "test": "bun run --bun --cwd launcher test",
+    "build:runtime": "bun launcher/scripts/build-runtime.mjs",
     "workspace": "node tools/workspace.mjs",
     "docs:check": "node tools/docs/check.mjs",
     "docs:index": "node tools/docs/check.mjs --write-index",
@@ -24,6 +25,12 @@
     "ports:rooms": "node tools/ports/room-browser.mjs",
     "ports:mp": "node tools/ports/mp-browser.mjs",
     "ports:history": "python tools/ports/project-history.py --repo .",
-    "ports:audit": "python tools/ports/audit-history.py --repo ."
-  }
+    "ports:audit": "python tools/ports/audit-history.py --repo .",
+    "test:unit": "bun run --bun --cwd launcher test:unit",
+    "lint": "bun run --bun --cwd launcher lint",
+    "lint:fix": "bun run --bun --cwd launcher lint:fix",
+    "format": "bun run --bun --cwd launcher format",
+    "format:check": "bun run --bun --cwd launcher format:check"
+  },
+  "packageManager": "bun@1.4.4"
 }

@@ -1,7 +1,8 @@
+import {legacyControlAttributes} from './legacy-control-attributes.mjs';
 import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Pinned-main network dialog parity: synthetic DOM/MemoryRouter and fake IO.
  * No browser, server, live WebSocket/ICE/TURN, native top-layer or pixel claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {existsSync, readFileSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -222,7 +223,7 @@ async function mount(initial = {}, {locale = 'en', strict = false} = {}) {
   mounts.add(m); await render(); return m;
 }
 function normalized(node) {
-  const attrs = [...node.attributes].filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
+  const attrs = legacyControlAttributes(node).filter(attr => !attr.name.startsWith('data-i18n') && attr.name !== 'open')
     .map(attr => [attr.name, attr.value]).sort(([a], [b]) => a.localeCompare(b));
   const children = []; let text = '';
   const flush = () => {const value = text.replace(/\s+/g, ' ').trim(); if (value) children.push(value); text = '';};
@@ -233,6 +234,7 @@ function originalDialog(locale) {
   const doc = new env.window.DOMParser().parseFromString(originalHTML, 'text/html'), dialog = n('#lobbyNetworkDialog', doc);
   for (const element of dialog.querySelectorAll('[data-i18n]')) element.textContent = t(locale, element.dataset.i18n);
   for (const element of dialog.querySelectorAll('[data-i18n-aria-label]')) element.setAttribute('aria-label', t(locale, element.dataset.i18nAriaLabel));
+  for (const output of dialog.querySelectorAll('[data-network-result] output')) output.textContent = t(locale, 'networkCheck.checking');
   return dialog;
 }
 function rows() {return Object.fromEntries([...n('#mpNetworkResults').querySelectorAll('[data-network-result]')]
@@ -256,6 +258,7 @@ for (const locale of ['zh-CN', 'en']) test(`original inline MP diagnostics reuse
   const original = new env.window.DOMParser().parseFromString(pinned('public/index.html'), 'text/html');
   const expected = n('#mpNetworkDiagnostics', original);
   for (const node of expected.querySelectorAll('[data-i18n]')) node.textContent = t(locale, node.dataset.i18n);
+  for (const output of expected.querySelectorAll('[data-network-result] output')) output.textContent = t(locale, 'networkCheck.checking');
   assert.deepEqual(normalized(n('#mpNetworkDiagnostics')), normalized(expected));
   assert.equal(env.document.querySelectorAll('#mpNetworkResults').length, 1); assert.equal(f.sockets.length, 0);
   await step(() => n('#mpGuideOpen').click()); assert.equal(guides, 1); assert.equal(f.sockets.length, 0);

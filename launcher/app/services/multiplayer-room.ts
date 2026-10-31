@@ -1,44 +1,42 @@
-import {normalizePublicNickname, parsePublicNicknameState, type PublicNicknameState} from '../../src/contracts/public-nickname.mts';
-import {
-  validTh15ChapterThreshold,
-  defaultTh15ChapterThreshold,
-} from "../../src/launcher/th15-chapter-reward.mts";
+import { parseMeasuredNetplayTiming, resolveAdonisPredictionReserve } from '../../src/contracts/netplay-timing.mts';
 import {
   gameIdForProduct,
   isMultiplayerProductId,
+  type MultiplayerProductId,
   multiplayerConfigForProduct,
   multiplayerInputTimingPolicy,
-  type MultiplayerProductId,
 } from '../../src/contracts/product-catalog.mts';
-import {multiplayerDisplayInitial, type MultiplayerIdentityStore} from '../../src/launcher/multiplayer-identity.mts';
 import {
-  normalizeMultiplayerLobbySnapshot,
+  normalizePublicNickname,
+  type PublicNicknameState,
+  parsePublicNicknameState,
+} from '../../src/contracts/public-nickname.mts';
+import type { MultiplayerRoomState } from '../../src/launcher/app-types.mts';
+import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts';
+import { type MultiplayerIdentityStore, multiplayerDisplayInitial } from '../../src/launcher/multiplayer-identity.mts';
+import { recommendMultiplayerInputTiming } from '../../src/launcher/multiplayer-input-timing.mts';
+import {
   type MultiplayerResourceProgress,
+  normalizeMultiplayerLobbySnapshot,
 } from '../../src/launcher/multiplayer-lobby-snapshot.mts';
 import {
-  normalizePreferredLoadout,
   type MultiplayerPreferenceStore,
+  normalizePreferredLoadout,
 } from '../../src/launcher/multiplayer-preferences.mts';
-import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer-room-session.mts';
 import {
-  buildMultiplayerLobbyRelayUrl,
   buildMultiplayerGameplayRelayUrl,
+  buildMultiplayerLobbyRelayUrl,
 } from '../../src/launcher/multiplayer-relay-url.mts';
+import type { MultiplayerRoomSessionStore } from '../../src/launcher/multiplayer-room-session.mts';
 import {
   buildMultiplayerRuntimeOptions,
   type MultiplayerRuntimeOptions,
 } from '../../src/launcher/multiplayer-runtime-options.mts';
-import { recommendMultiplayerInputTiming } from '../../src/launcher/multiplayer-input-timing.mts';
-import {
-  parseMeasuredNetplayTiming,
-  resolveAdonisPredictionReserve,
-} from '../../src/contracts/netplay-timing.mts';
-import { resolveRoomInvite, normalizeRoomCode } from '../../src/launcher/route-state.mts';
-import type { MultiplayerRoomState } from '../../src/launcher/app-types.mts';
-import type { UiMessageKey, UiMessageParams } from '../../src/launcher/i18n.mts';
+import { normalizeRoomCode, resolveRoomInvite } from '../../src/launcher/route-state.mts';
+import { defaultTh15ChapterThreshold, validTh15ChapterThreshold } from '../../src/launcher/th15-chapter-reward.mts';
 import type { DecisionStore } from '../models/decisions';
-import type { DirectorySocket } from './lobby-directory';
 import { errorText } from './error-text';
+import type { DirectorySocket } from './lobby-directory';
 
 export type RoomSocket = DirectorySocket & {
   addEventListener(type: 'open', listener: () => void): void;
@@ -109,7 +107,7 @@ export interface MultiplayerRoomPorts {
   prepareResources(
     context: RoomOperationContext,
     report: (progress: RoomPreparationProgress) => void,
-  ): Promise<{runtimeGeneration: string} | void>;
+  ): Promise<{ runtimeGeneration: string } | void>;
   preparationFailed(error: unknown, context: RoomOperationContext): void;
   beginManualImport(context: RoomOperationContext): void;
   /** Main app6830 clears manual install-only recovery before an accepted retry. */
@@ -120,11 +118,7 @@ export interface MultiplayerRoomPorts {
   launch(context: RoomLaunchContext): Promise<void>;
   /** Real multiplayer Runtime, omitNetplay, first frame, then return to room without save RPC. */
   checkGame(context: RoomOperationContext): Promise<void>;
-  operationFailed(
-    error: unknown,
-    kind: 'launch' | 'check',
-    context: RoomOperationContext,
-  ): void | Promise<void>;
+  operationFailed(error: unknown, kind: 'launch' | 'check', context: RoomOperationContext): void | Promise<void>;
   isLaunched(): boolean;
   canReuseRuntime?(): boolean;
   routes: {
@@ -148,9 +142,7 @@ export interface MultiplayerRoomPorts {
   clearTimeout?: (timer: ReturnType<typeof setTimeout>) => void;
 }
 const record = (value: unknown): Record<string, unknown> | null =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 
 /** Extracted business ownership from main app.mts440–780,974–1091,6796–6849,
  * 7552–7940. Native/Router ports retain their original owners; no DOM/history. */
@@ -190,8 +182,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       resumeSpectator();
     }, 1000);
   }
-  let preparation: { epoch: number; controller: AbortController; task: Promise<void> } | null =
-    null;
+  let preparation: { epoch: number; controller: AbortController; task: Promise<void> } | null = null;
   let movementDecision: Promise<boolean> | null = null;
   let preparedRuntimeGeneration: string | undefined;
   let runtimeVersionsSupported = false;
@@ -199,7 +190,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let reportedSocket: RoomSocket | null = null,
     reportedResourceKey = '',
     lastActivity = 0;
-  let state = {
+  const state = {
     fromDirectory: false,
     connected: false,
     directorySupported: false,
@@ -251,8 +242,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       state.connected &&
       state.ready &&
       state.preparation?.status === 'ready' &&
-      (!preparedRuntimeGeneration || (runtimeVersionsSupported &&
-        room?.seats?.slice(0, room.playerCount).every(seat => seat?.runtimeGeneration === preparedRuntimeGeneration))) &&
+      (!preparedRuntimeGeneration ||
+        (runtimeVersionsSupported &&
+          room?.seats
+            ?.slice(0, room.playerCount)
+            .every((seat) => seat?.runtimeGeneration === preparedRuntimeGeneration))) &&
       room?.phase === 'lobby' &&
       Array.isArray(room.seats) &&
       room.seats.slice(0, room.playerCount).every((seat) => seat && !seat.offline && seat.ready);
@@ -277,7 +271,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     // Full spelling is submitted only after the server advertises moderation.
     const payload =
       typeof message.name === 'string'
-        ? { ...message, name: state.nickname ? normalizePublicNickname(message.name) : multiplayerDisplayInitial(message.name, '') }
+        ? {
+            ...message,
+            name: state.nickname ? normalizePublicNickname(message.name) : multiplayerDisplayInitial(message.name, ''),
+          }
         : message;
     socket.send(JSON.stringify(payload));
     return true;
@@ -302,9 +299,16 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     };
   }
   function reportProgress(progress: RoomPreparationProgress) {
-    progress = {...progress,
-      basePercent: progress.status === 'ready' || progress.stage === 'runtime' ? 100 : progress.total ? Math.min(100, (progress.loaded ?? 0) / progress.total * 100) : progress.percent,
-      runtimePercent: progress.status === 'ready' ? 100 : progress.stage === 'runtime' ? progress.percent : 0};
+    progress = {
+      ...progress,
+      basePercent:
+        progress.status === 'ready' || progress.stage === 'runtime'
+          ? 100
+          : progress.total
+            ? Math.min(100, ((progress.loaded ?? 0) / progress.total) * 100)
+            : progress.percent,
+      runtimePercent: progress.status === 'ready' ? 100 : progress.stage === 'runtime' ? progress.percent : 0,
+    };
     state.preparation = { ...progress };
     if (state.seat != null && state.connected) {
       const percent =
@@ -313,13 +317,16 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           : progress.status === 'preparing' && progress.stage === 'package' && progress.total
             ? Math.min(100, Math.floor(((progress.loaded || 0) / progress.total) * 20) * 5)
             : null;
-      const bucket = (value: number | null | undefined) => value == null ? null : Math.floor(value / 5) * 5;
-      const wire = { status: progress.status, stage: progress.stage, percent, basePercent: bucket(progress.basePercent), runtimePercent: bucket(progress.runtimePercent) };
+      const bucket = (value: number | null | undefined) => (value == null ? null : Math.floor(value / 5) * 5);
+      const wire = {
+        status: progress.status,
+        stage: progress.stage,
+        percent,
+        basePercent: bucket(progress.basePercent),
+        runtimePercent: bucket(progress.runtimePercent),
+      };
       const key = JSON.stringify(wire);
-      if (
-        (socket !== reportedSocket || key !== reportedResourceKey) &&
-        send({ type: 'resource-progress', ...wire })
-      ) {
+      if ((socket !== reportedSocket || key !== reportedResourceKey) && send({ type: 'resource-progress', ...wire })) {
         reportedSocket = socket;
         reportedResourceKey = key;
       }
@@ -350,7 +357,8 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       )
       .then((result) => {
         if (owned.isCurrent()) {
-          if (result && !/^[a-f0-9]{64}$/.test(result.runtimeGeneration)) throw new Error(ports.translate('multiplayer.runtimeCheckFailed'));
+          if (result && !/^[a-f0-9]{64}$/.test(result.runtimeGeneration))
+            throw new Error(ports.translate('multiplayer.runtimeCheckFailed'));
           preparedRuntimeGeneration = result?.runtimeGeneration;
           reportProgress({ status: 'ready', stage: 'runtime', percent: 100, error: '' });
         }
@@ -385,14 +393,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     }
   }
   function scheduleReconnect(code: string) {
-    if (
-      reconnectTimer !== null ||
-      !room ||
-      room.code !== code ||
-      stopped ||
-      disposed ||
-      ports.online?.() === false
-    )
+    if (reconnectTimer !== null || !room || room.code !== code || stopped || disposed || ports.online?.() === false)
       return;
     const attempt = reconnectAttempt++;
     reconnectTimer = later(
@@ -400,8 +401,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         reconnectTimer = null;
         if (room?.code === code && !state.connected) connect(true);
       },
-      Math.min(5000, 650 * 2 ** Math.min(attempt, 3)) +
-        Math.floor((ports.random?.() ?? Math.random()) * 250),
+      Math.min(5000, 650 * 2 ** Math.min(attempt, 3)) + Math.floor((ports.random?.() ?? Math.random()) * 250),
     );
   }
   function sendSettings() {
@@ -412,12 +412,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       difficulty: room.difficulty,
       visibility: room.visibility || 'public',
       disableCheatMovement: !!room.disableCheatMovement,
-      ...(product === 'th09mp' ? {disableLocalChargePriority:!!room.disableLocalChargePriority} : {}),
-      ...(product === "th15mp"
+      ...(product === 'th09mp' ? { disableLocalChargePriority: !!room.disableLocalChargePriority } : {}),
+      ...(product === 'th15mp'
         ? {
-            chapterThreshold:
-              room.chapterThreshold ??
-              defaultTh15ChapterThreshold(room.playerCount),
+            chapterThreshold: room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount),
           }
         : {}),
       challengeMode: !!room.challengeMode,
@@ -444,7 +442,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       synced: true,
       connection: 'connected',
       challengeMode: normalized.challengeMode ?? false,
-      ...(product === 'th09mp' ? {disableLocalChargePriority:normalized.disableLocalChargePriority ?? false} : {}),
+      ...(product === 'th09mp' ? { disableLocalChargePriority: normalized.disableLocalChargePriority ?? false } : {}),
       prankMode: false,
       inputDelayAuto: normalized.inputDelayAuto ?? false,
       predictionReserve: normalized.predictionReserve ?? 2,
@@ -481,7 +479,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const ownedRoom = room,
       ownedEpoch = epoch;
     clientId = ports.identity.lobbyClientId(product);
-    let relay;
+    let relay: ReturnType<typeof buildMultiplayerLobbyRelayUrl>;
     try {
       relay = buildMultiplayerLobbyRelayUrl(ports.relayUrl(product), {
         product,
@@ -538,10 +536,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         });
         if (
           state.seat === 0 &&
-          !(
-            ownedRoom.disableCheatMovement &&
-            ports.settings().touchMovementMode === 'touch-unlimited'
-          )
+          !(ownedRoom.disableCheatMovement && ports.settings().touchMovementMode === 'touch-unlimited')
         )
           sendSettings();
       } else if (state.spectatorRequested) send({ type: 'spectate', name: state.displayName });
@@ -579,14 +574,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       }
       if (message.type === 'state') {
         if (record(message.roomDirectory)?.version === 1) state.directorySupported = true;
-        if (record(message.roomDirectory)?.controlModes === true)
-          state.controlModesSupported = true;
+        if (record(message.roomDirectory)?.controlModes === true) state.controlModesSupported = true;
         if (record(message.roomDirectory)?.runtimeVersions === true) runtimeVersionsSupported = true;
         intent = 'join';
         ports.routes.settleInvite();
         const probe = record(message.roomProbe);
-        if (probe)
-          void ports.network.receive({ type: 'room-probe-config', iceServers: probe.iceServers });
+        if (probe) void ports.network.receive({ type: 'room-probe-config', iceServers: probe.iceServers });
         state.startSerial = Math.max(state.startSerial, Number(record(message.room)?.startSerial) || 0);
         applySnapshot(message.room);
         // Reconnecting players may have missed the one-shot start message.
@@ -618,8 +611,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         applySnapshot(message.room);
         if (room?.spectatorTimeline && state.spectatorRequested) retrySpectatorAdmission();
       } else if (message.type === 'error' && message.error) {
-        if (room?.spectatorTimeline && state.spectatorRequested &&
-            message.error === '本局已经开始；已保留旁观席，将在下一局生效') {
+        if (
+          room?.spectatorTimeline &&
+          state.spectatorRequested &&
+          message.error === '本局已经开始；已保留旁观席，将在下一局生效'
+        ) {
           // Older relay admission can race the player's stream startup. TH09
           // supports late join, so retain the seat and retry this same run.
           retrySpectatorAdmission();
@@ -628,8 +624,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           if (room) room.disableCheatMovement = true;
           publish();
           void ensureMovementAllowed().then((ok) => {
-            if (ok && current(ownedEpoch) && state.seat == null && Number.isInteger(seat))
-              void takeSeat(seat);
+            if (ok && current(ownedEpoch) && state.seat == null && Number.isInteger(seat)) void takeSeat(seat);
           });
         } else ports.notify(String(message.error));
       }
@@ -740,13 +735,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
           : config.playerCounts[0]),
       difficulty:
         saved?.room.difficulty ??
-        (created
-          ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? 0)))
-          : 1),
+        (created ? Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(invite.d ?? 0))) : 1),
       created: created || !!saved?.room.created,
       visibility: saved?.room.visibility ?? (invite.v === 'private' ? 'private' : 'public'),
       disableCheatMovement: saved?.room.disableCheatMovement ?? invite.c === true,
-      ...(product === 'th09mp' ? {disableLocalChargePriority:saved?.room.disableLocalChargePriority ?? false} : {}),
+      ...(product === 'th09mp' ? { disableLocalChargePriority: saved?.room.disableLocalChargePriority ?? false } : {}),
       chapterThreshold: saved?.room.chapterThreshold,
       challengeMode: saved?.room.challengeMode ?? false,
       prankMode: false,
@@ -833,10 +826,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const owned = context();
     roleChanging = true;
     try {
-      launchController?.abort();launchController = null;state.launchBusy = false;
-      if (ports.beforeRoleChange && !await ports.beforeRoleChange(owned)) return;
+      launchController?.abort();
+      launchController = null;
+      state.launchBusy = false;
+      if (ports.beforeRoleChange && !(await ports.beforeRoleChange(owned))) return;
       if (owned.isCurrent()) commit();
-    } finally {roleChanging = false;}
+    } finally {
+      roleChanging = false;
+    }
   }
   async function takeSeat(index: number) {
     if (
@@ -850,12 +847,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     const ownedEpoch = epoch;
-    if (
-      !(await ensureMovementAllowed()) ||
-      !current(ownedEpoch) ||
-      room.phase !== 'lobby' ||
-      room.seats?.[index]
-    )
+    if (!(await ensureMovementAllowed()) || !current(ownedEpoch) || room.phase !== 'lobby' || room.seats?.[index])
       return;
     return changeRole(() => {
       if (!room || room.phase !== 'lobby' || room.seats?.[index]) return;
@@ -870,10 +862,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
   }
   async function standUp() {
-    if (!room?.synced || !state.connected || state.seat == null)
-      return;
+    if (!room?.synced || !state.connected || state.seat == null) return;
     return changeRole(() => {
-      if (!send({type:'stand-up'})) return;
+      if (!send({ type: 'stand-up' })) return;
       state.seat = null;
       state.ready = false;
       state.spectatorRequested = false;
@@ -881,15 +872,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
   }
   async function spectate() {
-    if (
-      !room?.synced ||
-      !state.connected ||
-      (state.seat != null && room.phase !== 'lobby') ||
-      state.spectatorRequested
-    )
+    if (!room?.synced || !state.connected || (state.seat != null && room.phase !== 'lobby') || state.spectatorRequested)
       return;
     return changeRole(() => {
-      if (!send({type:'spectate',name:state.displayName})) return;
+      if (!send({ type: 'spectate', name: state.displayName })) return;
       state.seat = null;
       state.ready = false;
       state.spectatorRequested = true;
@@ -899,14 +885,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   async function leaveSpectator() {
     cancelSpectatorRetry();
     resourceRetrySpectatorSerial = 0;
-    if (
-      !room?.synced ||
-      !state.connected ||
-      !state.spectatorRequested
-    )
-      return;
+    if (!room?.synced || !state.connected || !state.spectatorRequested) return;
     return changeRole(() => {
-      if (!send({type:'leave-spectator'})) return;
+      if (!send({ type: 'leave-spectator' })) return;
       state.spectatorRequested = false;
       publish();
     });
@@ -914,10 +895,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   function setDisplayName(value: string) {
     if (state.nickname) {
       const name = normalizePublicNickname(value);
-      if (!name || !state.connected || ['reviewing','queued'].includes(state.nickname.status)) return state.nickname.pendingName || state.displayName;
+      if (!name || !state.connected || ['reviewing', 'queued'].includes(state.nickname.status))
+        return state.nickname.pendingName || state.displayName;
       if (name === state.nickname.name) return name;
-      if (send({type:'set-name',name})) {
-        state.nickname = Object.freeze({...state.nickname,status:'reviewing'});
+      if (send({ type: 'set-name', name })) {
+        state.nickname = Object.freeze({ ...state.nickname, status: 'reviewing' });
         publish();
         return name;
       }
@@ -941,8 +923,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     if (state.seat != null && room?.phase !== 'lobby') return;
     const count = policy()?.loadouts.length || 0;
     if (!count || !product) throw new Error(ports.translate('multiplayer.loadoutEmpty'));
-    state.preferredLoadout =
-      (normalizePreferredLoadout(state.preferredLoadout, count) + delta + count) % count;
+    state.preferredLoadout = (normalizePreferredLoadout(state.preferredLoadout, count) + delta + count) % count;
     ports.preferences.persistPreferredLoadout(product, state.preferredLoadout);
     if (state.seat != null && send({ type: 'set-loadout', loadout: state.preferredLoadout })) {
       pendingLoadout = { socket, seat: state.seat, index: state.preferredLoadout };
@@ -963,9 +944,15 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         return;
       }
     }
-    if (!current(ownedEpoch) || state.seat == null || room.phase !== 'lobby' || pendingLoadout)
-      return;
-    if (send({ type: 'set-ready', ready, ...input(), ...(ready && preparedRuntimeGeneration ? {runtimeGeneration: preparedRuntimeGeneration} : {}) })) {
+    if (!current(ownedEpoch) || state.seat == null || room.phase !== 'lobby' || pendingLoadout) return;
+    if (
+      send({
+        type: 'set-ready',
+        ready,
+        ...input(),
+        ...(ready && preparedRuntimeGeneration ? { runtimeGeneration: preparedRuntimeGeneration } : {}),
+      })
+    ) {
       state.ready = ready;
       publish();
     }
@@ -974,8 +961,13 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     patch: Partial<
       Pick<
         MultiplayerRoomState,
-        | 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode' | 'disableLocalChargePriority'
-        | "chapterThreshold"
+        | 'playerCount'
+        | 'difficulty'
+        | 'visibility'
+        | 'disableCheatMovement'
+        | 'challengeMode'
+        | 'disableLocalChargePriority'
+        | 'chapterThreshold'
       >
     >,
   ) {
@@ -990,35 +982,26 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
         patch.challengeMode !== undefined)
     )
       return;
-    if(patch.disableLocalChargePriority !== undefined && product !== 'th09mp')return;
+    if (patch.disableLocalChargePriority !== undefined && product !== 'th09mp') return;
     if (
       patch.chapterThreshold !== undefined &&
-      (product !== "th15mp" ||
-        room.phase !== "lobby" ||
-        !validTh15ChapterThreshold(patch.chapterThreshold))
+      (product !== 'th15mp' || room.phase !== 'lobby' || !validTh15ChapterThreshold(patch.chapterThreshold))
     )
       return;
     const config = policy()!;
     const chapterThreshold =
-      product === "th15mp"
+      product === 'th15mp'
         ? (patch.chapterThreshold ??
-          (patch.playerCount !== undefined &&
-          patch.playerCount !== room.playerCount
+          (patch.playerCount !== undefined && patch.playerCount !== room.playerCount
             ? defaultTh15ChapterThreshold(patch.playerCount)
-            : (room.chapterThreshold ??
-              defaultTh15ChapterThreshold(room.playerCount))))
+            : (room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount))))
         : undefined;
     const playerCount =
-      patch.playerCount && config.playerCounts.includes(patch.playerCount)
-        ? patch.playerCount
-        : room.playerCount;
+      patch.playerCount && config.playerCounts.includes(patch.playerCount) ? patch.playerCount : room.playerCount;
     const difficulty =
       patch.difficulty === undefined
         ? room.difficulty
-        : Math.max(
-            0,
-            Math.min(config.difficulties.length - 1, Math.trunc(Number(patch.difficulty) || 0)),
-          );
+        : Math.max(0, Math.min(config.difficulties.length - 1, Math.trunc(Number(patch.difficulty) || 0)));
     // Count/difficulty inputs update their displayed selection immediately in main.
     if (patch.playerCount !== undefined) {
       room.playerCount = playerCount;
@@ -1032,7 +1015,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(chapterThreshold !== undefined ? { chapterThreshold } : {}),
       visibility: patch.visibility ?? room.visibility ?? 'public',
       disableCheatMovement: patch.disableCheatMovement ?? !!room.disableCheatMovement,
-      ...(product === 'th09mp' ? {disableLocalChargePriority:patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority} : {}),
+      ...(product === 'th09mp'
+        ? { disableLocalChargePriority: patch.disableLocalChargePriority ?? !!room.disableLocalChargePriority }
+        : {}),
       challengeMode: patch.challengeMode ?? !!room.challengeMode,
       prankMode: false,
     });
@@ -1044,9 +1029,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       return {
         inputDelay: 0,
         targetRollbackFrames:
-          multiplayerInputTimingPolicy(config).rollback && state.rollbackEnabled
-            ? config.inputTiming.rollbackLimit
-            : 0,
+          multiplayerInputTimingPolicy(config).rollback && state.rollbackEnabled ? config.inputTiming.rollbackLimit : 0,
         networkFrames: 0,
         mobileSeats: 0,
       };
@@ -1055,16 +1038,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const phones = seats.reduce(
       (count, seat, index) =>
         count +
-        (seat &&
-        (seat.mobileDevice ||
-          (index === state.seat && (settings.mobileDevice || settings.touchEnabled)))
+        (seat && (seat.mobileDevice || (index === state.seat && (settings.mobileDevice || settings.touchEnabled)))
           ? 1
           : 0),
       0,
     );
-    const peers = seats.flatMap((seat) =>
-      seat && seat.clientId !== clientId && !seat.offline ? [seat.clientId] : [],
-    );
+    const peers = seats.flatMap((seat) => (seat && seat.clientId !== clientId && !seat.offline ? [seat.clientId] : []));
     return recommendMultiplayerInputTiming(
       phones,
       ports.network.minimumRtt(peers),
@@ -1093,7 +1072,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish();
   }
   function sendTimingSettings() {
-    send({type: 'timing-settings', rollbackEnabled: state.rollbackEnabled, timingChoice: state.timingChoice});
+    send({ type: 'timing-settings', rollbackEnabled: state.rollbackEnabled, timingChoice: state.timingChoice });
   }
   function start() {
     if (!snapshot.canStart) return;
@@ -1111,9 +1090,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const inputDelay =
       rollback || automatic
         ? 0
-        : Number.isInteger(selected) &&
-            selected >= 0 &&
-            selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
+        : Number.isInteger(selected) && selected >= 0 && selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
           ? selected
           : timingRecommendation().inputDelay;
     send({
@@ -1126,8 +1103,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     });
   }
   function runtimeOptions(): MultiplayerRuntimeOptions {
-    if (!room || !product || pendingLoadout)
-      throw new Error(ports.translate('multiplayer.roomStateInvalid'));
+    if (!room || !product || pendingLoadout) throw new Error(ports.translate('multiplayer.roomStateInvalid'));
     if (preparedRuntimeGeneration && (!runtimeVersionsSupported || !room.runtimeGeneration))
       throw new Error(ports.translate('multiplayer.runtimeCheckFailed'));
     if (preparedRuntimeGeneration && preparedRuntimeGeneration !== room.runtimeGeneration)
@@ -1153,9 +1129,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     const defaults = primary.length ? primary : [0];
     const loadouts = Array.from({ length: 3 }, (_, index) => {
       const choice = room!.seats?.[index]?.loadout ?? defaults[index % defaults.length] ?? 0;
-      const loadout =
-        config.loadouts[normalizePreferredLoadout(choice, config.loadouts.length)] ??
-        config.loadouts[0];
+      const loadout = config.loadouts[normalizePreferredLoadout(choice, config.loadouts.length)] ?? config.loadouts[0];
       if (!loadout) throw new Error(ports.translate('multiplayer.loadoutEmpty'));
       return { character: loadout.character, shot: loadout.shot };
     });
@@ -1174,28 +1148,28 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
               adonisMode: Number(room.adonisMode) || 0,
             }
           : {}),
-        ...(!multiplayerInputTimingPolicy(config).rollback ||
-        config.inputTiming?.sendPredictionLimit != null
+        ...(!multiplayerInputTimingPolicy(config).rollback || config.inputTiming?.sendPredictionLimit != null
           ? {
-              predictionLimit:
-                room.predictionLimit ?? multiplayerInputTimingPolicy(config).predictionLimit,
+              predictionLimit: room.predictionLimit ?? multiplayerInputTimingPolicy(config).predictionLimit,
             }
           : {}),
         spectator,
         spectatorId: spectator ? clientId : '',
         spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
         spectatorTimeline: room.spectatorTimeline === true,
-        ...(product === 'th09mp' ? {
-          disableLocalChargePriority:room.disableLocalChargePriority === true,
-          replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
-          replayNames: [0, 1].map(side => room!.seats?.[side]?.name || `P${side + 1}`),
-        } : {}),
-        ...(product === 'th15mp' ? {
-          chapterThreshold: room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount),
-        } : {}),
-        ...(config.gameplay === 'cooperative'
-          ? { challengeMode: room.challengeMode === true }
+        ...(product === 'th09mp'
+          ? {
+              disableLocalChargePriority: room.disableLocalChargePriority === true,
+              replayAutoSave: ports.settings().replayAutoSave ?? ports.preferences.replayAutoSave(product),
+              replayNames: [0, 1].map((side) => room!.seats?.[side]?.name || `P${side + 1}`),
+            }
           : {}),
+        ...(product === 'th15mp'
+          ? {
+              chapterThreshold: room.chapterThreshold ?? defaultTh15ChapterThreshold(room.playerCount),
+            }
+          : {}),
+        ...(config.gameplay === 'cooperative' ? { challengeMode: room.challengeMode === true } : {}),
         iceServers: ports.settings().iceServers,
         preferTurn: state.preferTurn,
         loadouts,
@@ -1214,9 +1188,10 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     )
       return;
     if (startSerial !== undefined) appliedStartSerial = startSerial;
-    const controller = new AbortController(), roomSignal = ownerController.signal;
+    const controller = new AbortController(),
+      roomSignal = ownerController.signal;
     const cancel = () => controller.abort();
-    roomSignal.addEventListener('abort',cancel,{once:true});
+    roomSignal.addEventListener('abort', cancel, { once: true });
     launchController = controller;
     const owned = context(controller.signal);
     state.launchBusy = true;
@@ -1227,8 +1202,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       if (state.preparation?.status !== 'ready') {
         // Remember only a real launch that was stopped by missing resources.
         // Room state alone does not authorize starting a spectator Runtime.
-        if (state.spectatorRequested && state.seat == null)
-          resourceRetrySpectatorSerial = state.startSerial;
+        if (state.spectatorRequested && state.seat == null) resourceRetrySpectatorSerial = state.startSerial;
         return;
       }
       resourceRetrySpectatorSerial = 0;
@@ -1238,12 +1212,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       await ports.launch({ ...owned, runtimeOptions: options, snapshot });
       if (owned.isCurrent() && state.spectatorRequested)
         launchedSpectatorSerial =
-          Number(new URL(options.netplayUrl, 'http://localhost').searchParams.get('run')) ||
-          state.startSerial;
+          Number(new URL(options.netplayUrl, 'http://localhost').searchParams.get('run')) || state.startSerial;
     } catch (error) {
       if (owned.isCurrent()) await ports.operationFailed(error, 'launch', owned);
     } finally {
-      roomSignal.removeEventListener('abort',cancel);
+      roomSignal.removeEventListener('abort', cancel);
       if (launchController === controller) {
         launchController = null;
         state.launchBusy = false;
@@ -1268,21 +1241,14 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish();
     try {
       await prepareResources();
-      if (
-        !owned.isCurrent() ||
-        state.preparation?.status !== 'ready'
-      )
-        return;
+      if (!owned.isCurrent() || state.preparation?.status !== 'ready') return;
       await ports.checkGame(owned);
       if (owned.isCurrent()) ports.notify(ports.translate('multiplayer.checkGamePassed'));
     } catch (error) {
       if (owned.isCurrent()) {
         await ports.operationFailed(error, 'check', owned);
         if (owned.isCurrent())
-          ports.notify(
-            ports.translate('multiplayer.checkGameFailed', { reason: errorText(error) }),
-            4000,
-          );
+          ports.notify(ports.translate('multiplayer.checkGameFailed', { reason: errorText(error) }), 4000);
       }
     } finally {
       if (owned.isCurrent()) {
@@ -1311,13 +1277,24 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function retryPreparation() {
     if (!room || !['cancelled', 'failed'].includes(state.preparation?.status || '')) return;
-    const owned = context(), spectatorSerial = resourceRetrySpectatorSerial;
+    const owned = context(),
+      spectatorSerial = resourceRetrySpectatorSerial;
     ports.beforePreparationRetry?.();
     preparation = null;
     void prepareResources().then(() => {
-      if (!owned.isCurrent() || !spectatorSerial || resourceRetrySpectatorSerial !== spectatorSerial ||
-          state.startSerial !== spectatorSerial || !state.spectatorRequested || state.seat != null ||
-          room?.phase === 'lobby' || state.preparation?.status !== 'ready' || state.launchBusy || ports.isLaunched()) return;
+      if (
+        !owned.isCurrent() ||
+        !spectatorSerial ||
+        resourceRetrySpectatorSerial !== spectatorSerial ||
+        state.startSerial !== spectatorSerial ||
+        !state.spectatorRequested ||
+        state.seat != null ||
+        room?.phase === 'lobby' ||
+        state.preparation?.status !== 'ready' ||
+        state.launchBusy ||
+        ports.isLaunched()
+      )
+        return;
       resourceRetrySpectatorSerial = 0;
       void launch();
     });
@@ -1328,20 +1305,21 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     preparation = null;
     ports.releasePreparedResources?.();
     state.ready = false;
-    send({type: 'resources-changed'});
-    if (state.seat != null) send({type: 'set-ready', ready: false, ...input()});
+    send({ type: 'resources-changed' });
+    if (state.seat != null) send({ type: 'set-ready', ready: false, ...input() });
     void prepareResources();
   }
   /** Replay/file ownership may temporarily use the sole iframe without leaving
    * membership. This pause is not a download failure or a manual-import intent. */
   function suspendPreparation(retainPrepared = false) {
     if (!room || ports.isLaunched()) return false;
-    preparation?.controller.abort(); preparation = null;
+    preparation?.controller.abort();
+    preparation = null;
     if (!retainPrepared) ports.releasePreparedResources?.();
     state.ready = false;
-    send({type: 'resources-changed'});
-    if (state.seat != null) send({type: 'set-ready', ready: false, ...input()});
-    reportProgress({status: 'cancelled', stage: 'runtime', percent: null, error: ''});
+    send({ type: 'resources-changed' });
+    if (state.seat != null) send({ type: 'set-ready', ready: false, ...input() });
+    reportProgress({ status: 'cancelled', stage: 'runtime', percent: null, error: '' });
     return true;
   }
   function cancelImport() {
@@ -1360,16 +1338,23 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function movePlayerToSpectator(index: number, targetClientId: string) {
     const target = room?.seats?.[index];
-    if (!Number.isInteger(index) || index <= 0 || !target || target.offline ||
-        target.clientId !== targetClientId || !ownerLocal() || !state.connected ||
-        room?.phase !== 'lobby') return;
+    if (
+      !Number.isInteger(index) ||
+      index <= 0 ||
+      !target ||
+      target.offline ||
+      target.clientId !== targetClientId ||
+      !ownerLocal() ||
+      !state.connected ||
+      room?.phase !== 'lobby'
+    )
+      return;
     send({ type: 'move-player-to-spectator', seat: index, clientId: targetClientId });
   }
   async function removePlayer(index: number) {
     const target = room?.seats?.[index],
       ownedEpoch = epoch;
-    if (!target || index <= 0 || !ownerLocal() || !state.connected || room?.phase !== 'lobby')
-      return;
+    if (!target || index <= 0 || !ownerLocal() || !state.connected || room?.phase !== 'lobby') return;
     if (
       !(await ports.decisions.askConfirmation({
         message: ports.translate('room.removePlayerConfirm', { seat: index + 1 }),
@@ -1424,11 +1409,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       timing.automatic !== (room.inputDelayAuto ?? false) ||
       timing.predictionReserve !==
         (timing.adonisMode === 2
-          ? resolveAdonisPredictionReserve(
-              timing.fullDelay,
-              room.predictionReserve ?? 2,
-              timing.automatic,
-            )
+          ? resolveAdonisPredictionReserve(timing.fullDelay, room.predictionReserve ?? 2, timing.automatic)
           : 0) ||
       (!timing.automatic && timing.inputDelay !== room.inputDelay)
     )
@@ -1451,16 +1432,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       return;
     room.inputDelay = timing.inputDelay;
     room.timing = timing;
-    if (ownerLocal() && !state.spectatorRequested)
-      send({ type: 'timing-result', serial: state.startSerial, timing });
+    if (ownerLocal() && !state.spectatorRequested) send({ type: 'timing-result', serial: state.startSerial, timing });
     publish();
   }
   function movementChanged() {
-    if (
-      (state.controlModesSupported || room?.disableCheatMovement) &&
-      room?.phase === 'lobby' &&
-      state.seat != null
-    ) {
+    if ((state.controlModesSupported || room?.disableCheatMovement) && room?.phase === 'lobby' && state.seat != null) {
       send({ type: 'movement', ...input() });
       void ensureMovementAllowed();
     }
@@ -1484,18 +1460,11 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       state.startSerial <= spectatorResumeSerial
     )
       return;
-    if (send({ type: 'spectate', name: state.displayName }))
-      spectatorResumeSerial = state.startSerial;
+    if (send({ type: 'spectate', name: state.displayName })) spectatorResumeSerial = state.startSerial;
   }
   function noteActivity(trusted: boolean) {
     const now = ports.now?.() ?? Date.now();
-    if (
-      !trusted ||
-      !state.directorySupported ||
-      ports.visible?.() === false ||
-      !room ||
-      now - lastActivity < 15000
-    )
+    if (!trusted || !state.directorySupported || ports.visible?.() === false || !room || now - lastActivity < 15000)
       return;
     lastActivity = now;
     send({ type: 'activity' });
@@ -1528,8 +1497,16 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     toggleReady,
     setRoomSettings,
     setPreferTurn(enabled: boolean) {
-      if (!room?.synced || !state.connected || room.phase !== 'lobby' || state.seat == null ||
-          state.spectatorRequested || state.launchBusy || state.checkBusy) return;
+      if (
+        !room?.synced ||
+        !state.connected ||
+        room.phase !== 'lobby' ||
+        state.seat == null ||
+        state.spectatorRequested ||
+        state.launchBusy ||
+        state.checkBusy
+      )
+        return;
       state.preferTurn = enabled === true;
       ports.preferences.persistPreferTurn(state.preferTurn);
       publish();

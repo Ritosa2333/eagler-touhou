@@ -1,6 +1,6 @@
-import type {TouchEditorNativePorts} from '../components/settings/types';
-import type {TouchLayoutOrientation} from '../models/touch-layout';
-import type {Translate} from '../i18n';
+import type { TouchEditorNativePorts } from '../components/settings/types';
+import type { Translate } from '../i18n';
+import type { TouchLayoutOrientation } from '../models/touch-layout';
 
 type FullscreenDocument = Pick<Document, 'documentElement' | 'fullscreenElement' | 'exitFullscreen'> & {
   addEventListener?: Document['addEventListener'];
@@ -8,9 +8,9 @@ type FullscreenDocument = Pick<Document, 'documentElement' | 'fullscreenElement'
   webkitFullscreenElement?: Element | null;
   webkitExitFullscreen?: () => void | Promise<void>;
 };
-type FullscreenElement = HTMLElement & {webkitRequestFullscreen?: () => void};
+type FullscreenElement = HTMLElement & { webkitRequestFullscreen?: () => void };
 export interface TouchNativeScreen {
-  orientation?: {type?: string; lock?(orientation: string): Promise<void>; unlock?(): void};
+  orientation?: { type?: string; lock?(orientation: string): Promise<void>; unlock?(): void };
 }
 export interface TouchNativeController extends TouchEditorNativePorts {
   isFullscreen(): boolean;
@@ -21,22 +21,36 @@ export interface TouchNativeController extends TouchEditorNativePorts {
 }
 /** The document host supplies native objects after hydration. This adapter
  * owns only fullscreen it acquired for its editor, never history or keyboard. */
-export function createTouchNativePorts({document: documentLike, screen: screenLike, mobile, translate}: {
+export function createTouchNativePorts({
+  document: documentLike,
+  screen: screenLike,
+  mobile,
+  translate,
+}: {
   document: FullscreenDocument;
   screen: TouchNativeScreen;
   mobile: boolean;
   translate: Translate;
 }): TouchNativeController {
-  let target: FullscreenElement | null = null, owned: FullscreenElement | null = null;
-  let unsupported = false, checked = false, pendingOrientation = false, disposed = false;
+  let target: FullscreenElement | null = null,
+    owned: FullscreenElement | null = null;
+  let unsupported = false,
+    checked = false,
+    pendingOrientation = false,
+    disposed = false;
   let entering: Promise<boolean> | null = null;
   const current = () => documentLike.fullscreenElement || documentLike.webkitFullscreenElement || null;
   const isFullscreen = () => (!!target && current() === target) || current() === documentLike.documentElement;
-  const canSwitchOrientation = () => !disposed && mobile && typeof screenLike.orientation?.lock === 'function' && !unsupported;
+  const canSwitchOrientation = () =>
+    !disposed && mobile && typeof screenLike.orientation?.lock === 'function' && !unsupported;
   async function exitBrowserFullscreen() {
     let resolveExit!: () => void;
-    const exited = new Promise<void>(resolve => {resolveExit = resolve;});
-    const changed = () => {if (!current()) resolveExit();};
+    const exited = new Promise<void>((resolve) => {
+      resolveExit = resolve;
+    });
+    const changed = () => {
+      if (!current()) resolveExit();
+    };
     documentLike.addEventListener?.('fullscreenchange', changed);
     documentLike.addEventListener?.('webkitfullscreenchange', changed);
     // Embedded browser hosts can update fullscreenElement without delivering
@@ -44,8 +58,10 @@ export function createTouchNativePorts({document: documentLike, screen: screenLi
     // of completion arrives, and retire the observer with the request.
     const observation = globalThis.setInterval(changed, 100);
     try {
-      const request = typeof documentLike.exitFullscreen === 'function' ? documentLike.exitFullscreen()
-        : documentLike.webkitExitFullscreen?.();
+      const request =
+        typeof documentLike.exitFullscreen === 'function'
+          ? documentLike.exitFullscreen()
+          : documentLike.webkitExitFullscreen?.();
       // Retiring an iframe can finish the browser's fullscreen transition while
       // its exit request remains pending. The actual document state also proves
       // completion; it must not strand the already-closed game behind its cover.
@@ -58,7 +74,8 @@ export function createTouchNativePorts({document: documentLike, screen: screenLi
     }
   }
   async function exitFullscreen() {
-    const previous = owned; owned = null;
+    const previous = owned;
+    owned = null;
     if (previous && current() === previous) await exitBrowserFullscreen();
   }
   async function exitPlayerFullscreen() {
@@ -75,39 +92,64 @@ export function createTouchNativePorts({document: documentLike, screen: screenLi
     const requestTarget = target;
     entering = (async () => {
       if (current()) await exitBrowserFullscreen();
-      if (typeof requestTarget.requestFullscreen === 'function') await requestTarget.requestFullscreen({navigationUI: 'hide'});
+      if (typeof requestTarget.requestFullscreen === 'function')
+        await requestTarget.requestFullscreen({ navigationUI: 'hide' });
       else if (typeof requestTarget.webkitRequestFullscreen === 'function') requestTarget.webkitRequestFullscreen();
       else throw new Error(translate('fullscreen.unsupported'));
       if (current() === requestTarget) owned = requestTarget;
-      if (disposed) {await exitFullscreen(); return false;}
+      if (disposed) {
+        await exitFullscreen();
+        return false;
+      }
       return owned === requestTarget;
     })();
-    try {return await entering;} finally {entering = null;}
+    try {
+      return await entering;
+    } finally {
+      entering = null;
+    }
   }
   async function probeOrientation() {
     if (!canSwitchOrientation() || checked || pendingOrientation || !isFullscreen()) return;
     pendingOrientation = true;
     try {
       await screenLike.orientation!.lock!(screenLike.orientation!.type || 'landscape');
-      screenLike.orientation!.unlock?.(); checked = true;
+      screenLike.orientation!.unlock?.();
+      checked = true;
     } catch (error) {
-      if (error && typeof error === 'object' && 'name' in error && error.name === 'NotSupportedError') unsupported = true;
-    } finally {pendingOrientation = false;}
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'NotSupportedError')
+        unsupported = true;
+    } finally {
+      pendingOrientation = false;
+    }
   }
   return Object.freeze({
-    enterFullscreen, exitFullscreen, exitPlayerFullscreen, isFullscreen, canSwitchOrientation, probeOrientation,
+    enterFullscreen,
+    exitFullscreen,
+    exitPlayerFullscreen,
+    isFullscreen,
+    canSwitchOrientation,
+    probeOrientation,
     async switchOrientation(orientation: TouchLayoutOrientation) {
       if (!canSwitchOrientation() || pendingOrientation) throw new Error(translate('touch.orientationUnsupported'));
       pendingOrientation = true;
       try {
         if (!target) throw new Error(translate('touch.previewUnavailable'));
         if (!isFullscreen()) await enterFullscreen(target);
-        await screenLike.orientation!.lock!(orientation); checked = true;
+        await screenLike.orientation!.lock!(orientation);
+        checked = true;
       } catch (error) {
-        if (error && typeof error === 'object' && 'name' in error && error.name === 'NotSupportedError') unsupported = true;
+        if (error && typeof error === 'object' && 'name' in error && error.name === 'NotSupportedError')
+          unsupported = true;
         throw error;
-      } finally {pendingOrientation = false;}
+      } finally {
+        pendingOrientation = false;
+      }
     },
-    async dispose() {disposed = true; await exitFullscreen(); target = null;},
+    async dispose() {
+      disposed = true;
+      await exitFullscreen();
+      target = null;
+    },
   });
 }

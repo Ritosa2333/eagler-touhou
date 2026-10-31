@@ -2,7 +2,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Mounted actual TransferPanel + model, synthetic jsdom/time/command ports.
  * Main public/index822–837 and app3489–3547 own the expected markup/behavior.
  * This does not validate authored CSS pixels or native transfer/permissions. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';

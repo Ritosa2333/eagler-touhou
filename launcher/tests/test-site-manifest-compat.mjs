@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -7,6 +8,8 @@ import {HOST_PROTOCOL} from '../lib/contracts/product-catalog.mjs';
 import {loadCompiledContract} from '../lib/contracts/load-compiled-contract.mjs';
 import {readCompatibleSiteManifest,legacyHostManifestResponse,normalizeSiteManifestArguments,
   writeLegacySiteManifestAlias,verifyLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
+
+test("test-site-manifest-compat", async () => {
 const {loadCompatibleSiteManifest}=await loadCompiledContract('compat/host-manifest');
 const hash='a'.repeat(64);
 const current=validateSiteManifest({schema:SITE_MANIFEST_SCHEMA,protocol:HOST_PROTOCOL,profile:'web-validation-site-compat',
@@ -32,3 +35,4 @@ try {
  await assert.rejects(verifyLegacySiteManifestAlias(root,current),/differs from/);
 } finally {await rm(root,{recursive:true,force:true});}
 console.log('Site Manifest canonical authority, bounded legacy reads and alias integrity: PASS');
+});

@@ -1,3 +1,4 @@
+import {test} from 'vitest';
 import assert from "node:assert/strict";
 import {
   SITE_MANIFEST_FILE,
@@ -6,6 +7,7 @@ import {
   validateSiteManifest,
 } from "../lib/contracts/site-manifest.mjs";
 
+test("test-host-manifest", async () => {
 const game = {
   runtime: "runtime/th06/th06.html?hosted=1&v=1",
   multiplayerRuntime: "runtime/th06/multiplayer/th06.html?hosted=1&v=2",
@@ -165,3 +167,4 @@ console.log(JSON.stringify({ hostManifest: "PASS", subsetProducts: true }));
 
 for (const testBuild of [false, true]) assert.equal(validateSiteManifest({...hosted, shared:{...hosted.shared,testBuild}}).shared.testBuild,testBuild);
 for (const testBuild of ["true", "false", 0, 1, null]) assert.throws(()=>validateSiteManifest({...hosted,shared:{...hosted.shared,testBuild}}),/testBuild/);
+});

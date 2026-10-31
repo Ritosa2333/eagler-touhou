@@ -1,12 +1,8 @@
-import type {
-  ProbeLane,
-  ProbeMetric,
-  createRoomNetwork,
-} from '../../../src/launcher/room-network.mts';
-import type { MultiplayerRoomService } from '../../services/multiplayer-room';
+import type { ReactNode } from 'react';
 import type { TouchMovementMode } from '../../../src/launcher/game-preferences.mts';
 import type { MultiplayerQuickChatModel } from '../../../src/launcher/multiplayer-quick-chat-model.mts';
-import type {ReactNode} from 'react';
+import type { createRoomNetwork, ProbeLane, ProbeMetric } from '../../../src/launcher/room-network.mts';
+import type { MultiplayerRoomService } from '../../services/multiplayer-room';
 export type RoomPanelKind = 'personal' | 'network' | 'spectators' | 'game';
 export interface RoomNetworkPresentation {
   subscribe(listener: () => void): () => void;

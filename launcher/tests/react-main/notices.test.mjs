@@ -1,6 +1,7 @@
+import {legacyControlAttributes} from './legacy-control-attributes.mjs';
 import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Independent mounted synthetic-DOM regression. No browser/native top-layer/CSS claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readFileSync, existsSync} from 'node:fs';
 import {mkdtemp, rm} from 'node:fs/promises';
@@ -66,7 +67,7 @@ before(async () => {
       resolveDir:resolve(project,'src/launcher'),loader:'ts'
     }));
   }},{name:'existing-deps-and-original-mts',setup(ctx){
-    ctx.onResolve({filter:/^[^./]/},args=>({path:pathToFileURL(require.resolve(args.path)).href,external:true}));
+    ctx.onResolve({filter:/^[^./]/},args=>({path:import.meta.resolve(args.path),external:true}));
     ctx.onResolve({filter:/^\.\.?\/.*\.mjs$/},args=>{const path=resolve(dirname(args.importer),args.path).replace(/\.mjs$/,'.mts');if(existsSync(path))return {path};});
   }}]};
   await build(buildOptions);
@@ -113,8 +114,8 @@ function activeMotion(dialog){const motion=motions.findLast(item=>item.node===di
 async function finishMotion(dialog){const motion=activeMotion(dialog);await React.act(async()=>motion.finish());}
 async function click(selector){await React.act(async()=>n(selector).click());}
 async function cancel(selector){const e=new env.window.Event('cancel',{cancelable:true});await React.act(async()=>n(selector).dispatchEvent(e));assert.equal(e.defaultPrevented,true);}
-function normalize(element){if(element.nodeType===3)return element.textContent.replace(/\s+/g,' ').trim()||null;if(element.nodeType!==1)return null;const attrs=[...element.attributes].filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [element.localName,attrs,[...element.childNodes].map(normalize).filter(Boolean)];}
-function baselineDialog(id,locale='zh-CN'){const doc=new env.window.DOMParser().parseFromString(baselineHTML,'text/html'),el=n('#'+id,doc);for(const e of el.querySelectorAll('[data-i18n]'))e.textContent=owners.translate(locale,e.dataset.i18n);for(const e of el.querySelectorAll('[data-i18n-aria-label]'))e.setAttribute('aria-label',owners.translate(locale,e.getAttribute('data-i18n-aria-label')));return el;}
+function normalize(element){if(element.nodeType===3)return element.textContent.replace(/\s+/g,' ').trim()||null;if(element.nodeType!==1)return null;const attrs=legacyControlAttributes(element).filter(a=>!a.name.startsWith('data-i18n')&&a.name!=='open').map(a=>[a.name,a.value]).sort(([a],[b])=>a.localeCompare(b));return [element.localName,attrs,[...element.childNodes].map(normalize).filter(Boolean)];}
+function baselineDialog(id,locale='zh-CN'){const doc=new env.window.DOMParser().parseFromString(baselineHTML,'text/html'),el=n('#'+id,doc);for(const e of el.querySelectorAll('[data-i18n]'))e.textContent=owners.translate(locale,e.dataset.i18n);for(const e of el.querySelectorAll('[data-i18n-aria-label]'))e.setAttribute('aria-label',owners.translate(locale,e.getAttribute('data-i18n-aria-label')));if(id==='firstUseNoticeDialog'){const p=el.querySelector('#firstUseNoticeText p');if(p)p.textContent=owners.translate(locale,'firstUseNotice.loading');}if(id==='donationDialog'){el.querySelector('#donationTitle').textContent=owners.translate(locale,'footer.donate');el.querySelector('#donationClose').setAttribute('aria-label',owners.translate(locale,'donation.close'));el.querySelector('.donation-scan-hint').textContent=owners.translate(locale,'donation.scan');el.querySelector('#donationImage').alt=owners.translate(locale,'donation.image');}return el;}
 const html='<h2>通用规则</h2><h3>网络</h3><p class="markdown-blockquote unsafe" onclick="bad()">Safe <a href="javascript:alert(1)">bad link</a><a href="/safe" target="_blank">safe link</a></p><script>window.bad=1</script><svg onload="bad()"><text>badsvg</text></svg><img src="data:bad"><img src="/safe.png" onerror="bad()"><h2>TH06 红魔乡</h2><h3>本作特有规则</h3><h4>Six</h4><p>TH06 rules</p><h2>TH07 妖妖梦</h2><h3>本作特有规则</h3><p>TH07 rules</p><h2>TH08 永夜抄</h2><h3>规则</h3><h4>Sub</h4><p>TH08 rules</p>';
 const firstDefaults=()=>({onOpenRequest(){},edgeGestures:false,storage:storage(),fetchImpl:async()=>response('<p>Notice</p>')});
 for(const locale of ['zh-CN','en'])for(const [name,id,extra] of [['FirstUseNotice','firstUseNoticeDialog',()=>firstDefaults()],['MultiplayerGuideDialog','mpGuideDialog',()=>({gameId:'th07'})],['AppleRefreshDialog','appleRefreshDialog',()=>({})],['DonationDialog','donationDialog',()=>({assetUrl:x=>x,onArtworkUnavailable(){}})]])test(`${name}: original DOM and copy in ${locale}`,async()=>{
@@ -220,7 +221,8 @@ for (const locale of ['zh-CN', 'en']) test(`First use ${locale}: failed explicit
     assert.equal((await original.showManual()).kind, 'available');
     await React.act(async () => {assert.equal((await ref.current.showManual()).kind, 'available');});
     assert.deepEqual(counts, {main: 2, react: 2}, 'A later explicit reopen retries exactly once');
-    assert.equal(n('#firstUseNoticeText').innerHTML, n('#firstUseNoticeText', originalDom.window.document).innerHTML);
+    const expectedContent=env.document.createElement('div'); owners.renderContentFragment(expectedContent, owners.translate(locale,'content.firstUse'), env.document);
+    assert.equal(n('#firstUseNoticeText').innerHTML, locale==='zh-CN' ? n('#firstUseNoticeText', originalDom.window.document).innerHTML : expectedContent.innerHTML);
     assert.equal(ref.current.isOpen(), original.isOpen());
   } finally {originalDom.window.close();}
 });

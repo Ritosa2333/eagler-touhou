@@ -1,8 +1,10 @@
+import {test} from 'vitest';
 import {selectedPortGames} from './support/port-selection.mjs';
 import { readFileSync } from "node:fs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
+test("test-mobile-frame-pacing", async () => {
 const preloadGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.dataProvider === "emscripten-preload")
   .map(([game]) => game)
@@ -147,3 +149,4 @@ console.log(JSON.stringify({
     replay: { ...delayedReplay, renderAlphas: undefined },
   },
 }));
+});

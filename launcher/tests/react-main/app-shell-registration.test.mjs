@@ -1,5 +1,5 @@
 /** Source-only checks. No Service Worker, browser, or network is started. */
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {createAppShellClient, matchesAppShellRegistration} from '../../src/launcher/app-shell-client.mts';
 const identity = {scopeUrl: 'https://isolated.invalid/review/', workerUrl: 'https://isolated.invalid/review/app-shell-sw.js'};

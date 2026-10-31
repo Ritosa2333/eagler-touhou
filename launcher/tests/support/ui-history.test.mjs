@@ -1,4 +1,4 @@
-import test from 'node:test';
+import {test} from 'vitest';
 import assert from 'node:assert/strict';
 import {readUiHistoryText, verifyUiHistoryFixtures, UI_HISTORY_FIXTURES} from './ui-history.mjs';
 

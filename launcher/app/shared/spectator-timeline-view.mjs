@@ -13,8 +13,16 @@
  */
 
 const DEFAULT_LABELS = Object.freeze({
-  controls:'观战播放控制', expand:'展开观战控制', collapse:'收起观战控制',
-  summary:'比分与对决时长', progress:'观战进度', nodes:'回合起点', pause:'暂停', play:'继续', live:'回到直播', error:'播放操作失败',
+  controls: '观战播放控制',
+  expand: '展开观战控制',
+  collapse: '收起观战控制',
+  summary: '比分与对决时长',
+  progress: '观战进度',
+  nodes: '回合起点',
+  pause: '暂停',
+  play: '继续',
+  live: '回到直播',
+  error: '播放操作失败',
 });
 const STYLE_ATTRIBUTE = 'data-spectator-timeline-view-style';
 const STYLE_TEXT = `
@@ -85,7 +93,7 @@ function retainStyles(ownerDocument) {
     style.setAttribute(STYLE_ATTRIBUTE, '');
     style.textContent = STYLE_TEXT;
     (ownerDocument.head || ownerDocument.documentElement).append(style);
-    entry = {style, count: 0};
+    entry = { style, count: 0 };
     styleReferences.set(ownerDocument, entry);
   }
   ++entry.count;
@@ -135,7 +143,7 @@ export function createSpectatorTimelineView(options = {}) {
   const prefix = options.idPrefix ?? 'spectator';
   if (typeof prefix !== 'string' || !/^[A-Za-z][A-Za-z0-9_-]{0,47}$/.test(prefix))
     throw new TypeError('idPrefix must be a short HTML identifier prefix');
-  const id = suffix => `${prefix}${suffix}`;
+  const id = (suffix) => `${prefix}${suffix}`;
   const el = (tag, className, suffix, parent) => {
     const node = ownerDocument.createElement(tag);
     if (className) node.className = className;
@@ -144,8 +152,8 @@ export function createSpectatorTimelineView(options = {}) {
     return node;
   };
 
-  let labels = {...DEFAULT_LABELS, ...(options.labels || {})};
-  let icons = {...(options.icons || {})};
+  let labels = { ...DEFAULT_LABELS, ...(options.labels || {}) };
+  let icons = { ...(options.icons || {}) };
   let model = null;
   let currentKey;
   let requestSerial = 0;
@@ -157,7 +165,7 @@ export function createSpectatorTimelineView(options = {}) {
   let suppressChange = false;
   let destroyed = false;
   let latestMarks = new Map();
-  let markElements = new Map();
+  const markElements = new Map();
 
   const releaseStyles = retainStyles(ownerDocument);
   const panel = el('section', 'spectator-timeline', 'Timeline');
@@ -180,26 +188,38 @@ export function createSpectatorTimelineView(options = {}) {
   details.hidden = true;
   const marks = el('div', 'spectator-mark-track', 'RoundMarks', details);
   const range = el('input', '', 'Seek', details);
-  range.type = 'range'; range.min = '0'; range.max = '0'; range.step = '1'; range.value = '0';
+  range.type = 'range';
+  range.min = '0';
+  range.max = '0';
+  range.step = '1';
+  range.value = '0';
   const times = el('div', 'spectator-timeline-times', null, details);
   const cursorTime = el('span', '', 'CurrentTime', times);
   const edgeTime = el('span', '', 'EdgeTime', times);
   const detailBar = el('div', 'spectator-detail-bar', null, details);
   const metadata = el('div', 'spectator-playback-meta', null, detailBar);
-  const status = el('span', 'spectator-status-slot', 'PlaybackStatus', metadata); status.setAttribute('role', 'status');
+  const status = el('span', 'spectator-status-slot', 'PlaybackStatus', metadata);
+  status.setAttribute('role', 'status');
   const lag = el('span', '', 'Lag', metadata);
   const actions = el('div', 'spectator-actions', null, detailBar);
-  const pause = el('button', 'spectator-pause-button', 'Pause', actions); pause.type = 'button';
+  const pause = el('button', 'spectator-pause-button', 'Pause', actions);
+  pause.type = 'button';
   const pauseIcon = el('img', 'spectator-control-icon spectator-pause-icon', null, pause);
-  pauseIcon.dataset.icon = 'pause'; pauseIcon.alt = '';
+  pauseIcon.dataset.icon = 'pause';
+  pauseIcon.alt = '';
   const playIcon = el('img', 'spectator-control-icon spectator-play-icon', null, pause);
-  playIcon.dataset.icon = 'play'; playIcon.alt = '';
+  playIcon.dataset.icon = 'play';
+  playIcon.alt = '';
   const pauseLabel = el('span', '', 'PauseLabel', pause);
-  const live = el('button', '', 'Live', actions); live.type = 'button';
+  const live = el('button', '', 'Live', actions);
+  live.type = 'button';
   const liveIcon = el('img', 'spectator-control-icon', null, live);
-  liveIcon.dataset.icon = 'live'; liveIcon.alt = '';
+  liveIcon.dataset.icon = 'live';
+  liveIcon.alt = '';
   const liveLabel = el('span', '', 'LiveLabel', live);
-  const error = el('p', 'spectator-error', 'Error', details); error.setAttribute('role', 'alert'); error.hidden = true;
+  const error = el('p', 'spectator-error', 'Error', details);
+  error.setAttribute('role', 'alert');
+  error.hidden = true;
   (options.mount || ownerDocument.body).append(panel);
 
   function renderLabels() {
@@ -221,32 +241,42 @@ export function createSpectatorTimelineView(options = {}) {
     error.hidden = !errorText;
     // A hosted TH09 view lets the parent own its icon URLs after adoption.
     // An adapter that did not supply icons must leave those external URLs alone.
-    if (Object.prototype.hasOwnProperty.call(icons, 'toggle')) setIcon(toggleIcon, icons.toggle);
-    if (Object.prototype.hasOwnProperty.call(icons, 'pause')) setIcon(pauseIcon, icons.pause);
-    if (Object.prototype.hasOwnProperty.call(icons, 'play')) setIcon(playIcon, icons.play);
-    if (Object.prototype.hasOwnProperty.call(icons, 'live')) setIcon(liveIcon, icons.live);
+    if (Object.hasOwn(icons, 'toggle')) setIcon(toggleIcon, icons.toggle);
+    if (Object.hasOwn(icons, 'pause')) setIcon(pauseIcon, icons.pause);
+    if (Object.hasOwn(icons, 'play')) setIcon(playIcon, icons.play);
+    if (Object.hasOwn(icons, 'live')) setIcon(liveIcon, icons.live);
   }
 
-  function timeOrigin() { return finiteFrame(model?.timeOrigin, 0); }
+  function timeOrigin() {
+    return finiteFrame(model?.timeOrigin, 0);
+  }
   function rangeBounds(value = model) {
-    if (!value) return {min: 0, max: 0, edge: 0};
+    if (!value) return { min: 0, max: 0, edge: 0 };
     const min = finiteFrame(value.min);
     const edge = Math.max(min, finiteFrame(value.edge, min));
     const max = Math.max(min, edge, finiteFrame(value.position, min));
-    return {min, max, edge};
+    return { min, max, edge };
   }
   function renderError() {
     error.textContent = errorText ? (labels.error ? `${labels.error}: ${errorText}` : errorText) : '';
     error.hidden = !errorText;
   }
-  function cancelActiveDragTail() { suppressChange = true; }
+  function cancelActiveDragTail() {
+    suppressChange = true;
+  }
   function renderMarks(displayModel, bounds) {
-    if (!displayModel) {marks.replaceChildren(); markElements.clear(); return;}
-    const visible = displayModel.marks.filter(mark => Number.isSafeInteger(mark.frame) && mark.frame >= bounds.min && mark.frame <= bounds.max);
-    const next = visible.find(mark => mark.frame > displayModel.position && mark.frame <= bounds.edge);
+    if (!displayModel) {
+      marks.replaceChildren();
+      markElements.clear();
+      return;
+    }
+    const visible = displayModel.marks.filter(
+      (mark) => Number.isSafeInteger(mark.frame) && mark.frame >= bounds.min && mark.frame <= bounds.max,
+    );
+    const next = visible.find((mark) => mark.frame > displayModel.position && mark.frame <= bounds.edge);
     const nearbyIds = new Set();
     const previousByStyle = new Map();
-    const markerStyleKind = value => value === 'stage' ? 'match' : value === 'boss' ? 'round' : value;
+    const markerStyleKind = (value) => (value === 'stage' ? 'match' : value === 'boss' ? 'round' : value);
     const pixelsPerFrame = bounds.max > bounds.min ? (marks.clientWidth || 300) / (bounds.max - bounds.min) : 0;
     for (const mark of visible) {
       const markId = String(mark.id);
@@ -258,25 +288,33 @@ export function createSpectatorTimelineView(options = {}) {
       }
       previousByStyle.set(styleKind, mark);
     }
-    const desired = new Set(visible.map(mark => String(mark.id)));
-    for (const [markId, element] of markElements) if (!desired.has(markId)) {element.remove(); markElements.delete(markId);}
+    const desired = new Set(visible.map((mark) => String(mark.id)));
+    for (const [markId, element] of markElements)
+      if (!desired.has(markId)) {
+        element.remove();
+        markElements.delete(markId);
+      }
     for (let index = 0; index < visible.length; ++index) {
-      const mark = visible[index], markId = String(mark.id);
+      const mark = visible[index],
+        markId = String(mark.id);
       let button = markElements.get(markId);
       if (!button) {
         button = ownerDocument.createElement('button');
-        button.type = 'button'; button.className = 'spectator-round-mark';
+        button.type = 'button';
+        button.className = 'spectator-round-mark';
         button.addEventListener('click', () => {
-          const latest = latestMarks.get(markId), current = model;
+          const latest = latestMarks.get(markId),
+            current = model;
           if (!latest || !current || button.disabled) return;
           const range = rangeBounds(current);
           invoke('seek', Math.max(range.min, Math.min(range.edge, latest.frame)), current.key);
         });
-        markElements.set(markId, button); marks.append(button);
+        markElements.set(markId, button);
+        marks.append(button);
       }
       const styleKind = mark.kind === 'stage' ? 'match' : mark.kind === 'boss' ? 'round' : mark.kind;
       const frame = Math.max(bounds.min, Math.min(bounds.max, mark.frame));
-      const fraction = bounds.max > bounds.min ? 100 * (frame - bounds.min) / (bounds.max - bounds.min) : 0;
+      const fraction = bounds.max > bounds.min ? (100 * (frame - bounds.min)) / (bounds.max - bounds.min) : 0;
       const isNext = mark.id === next?.id;
       const shortLabel = mark.label ?? (mark.kind === 'round' ? String(index + 1) : '');
       button.dataset.kind = styleKind;
@@ -296,18 +334,21 @@ export function createSpectatorTimelineView(options = {}) {
       else button.removeAttribute('aria-current');
     }
     marks.hidden = visible.length === 0;
-    latestMarks = new Map(displayModel.marks.map(mark => [String(mark.id), mark]));
+    latestMarks = new Map(displayModel.marks.map((mark) => [String(mark.id), mark]));
   }
 
   function render() {
     if (!model || destroyed) return;
     const currentBounds = rangeBounds();
     const bounds = editing && dragBounds ? dragBounds : currentBounds;
-    const positionValue = editing ? finiteFrame(Number(range.value), bounds.min) : finiteFrame(model.position, bounds.min);
+    const positionValue = editing
+      ? finiteFrame(Number(range.value), bounds.min)
+      : finiteFrame(model.position, bounds.min);
     const displayPosition = Math.max(bounds.min, Math.min(bounds.max, positionValue));
     const displayTimeOrigin = editing ? dragTimeOrigin : timeOrigin();
     const elapsed = clock(displayPosition - displayTimeOrigin);
-    const durationValue = typeof model.durationText === 'string' ? model.durationText : clock(bounds.edge - displayTimeOrigin);
+    const durationValue =
+      typeof model.durationText === 'string' ? model.durationText : clock(bounds.edge - displayTimeOrigin);
     if (typeof model.summaryText === 'string') summary.textContent = model.summaryText;
     if (typeof model.durationText === 'string' || !duration.textContent) duration.textContent = durationValue;
     setLabel(status, model.statusText || '');
@@ -318,13 +359,20 @@ export function createSpectatorTimelineView(options = {}) {
     pause.dataset.paused = String(model.paused === true);
     live.disabled = typeof model.liveDisabled === 'boolean' ? model.liveDisabled : bounds.edge <= displayPosition;
     if (!editing) {
-      range.min = String(bounds.min); range.max = String(bounds.max); range.value = String(displayPosition);
+      range.min = String(bounds.min);
+      range.max = String(bounds.max);
+      range.value = String(displayPosition);
       range.disabled = bounds.max <= bounds.min;
     }
-    const fraction = bounds.max > bounds.min ? Math.max(0, Math.min(100, 100 * (displayPosition - bounds.min) / (bounds.max - bounds.min))) : 0;
+    const fraction =
+      bounds.max > bounds.min
+        ? Math.max(0, Math.min(100, (100 * (displayPosition - bounds.min)) / (bounds.max - bounds.min)))
+        : 0;
     range.style.setProperty('--played', `${fraction}%`);
-    const displayModel = editing ? {...model, position: displayPosition, min: bounds.min, edge: bounds.edge} : model;
-    renderMarks(displayModel, bounds); renderLabels(); renderError();
+    const displayModel = editing ? { ...model, position: displayPosition, min: bounds.min, edge: bounds.edge } : model;
+    renderMarks(displayModel, bounds);
+    renderLabels();
+    renderError();
   }
 
   function invoke(action, frame, key = model?.key) {
@@ -333,9 +381,12 @@ export function createSpectatorTimelineView(options = {}) {
     errorText = '';
     renderError();
     let result;
-    try { result = options.onAction(action, frame, key); }
-    catch (reason) { result = Promise.reject(reason); }
-    Promise.resolve(result).catch(reason => {
+    try {
+      result = options.onAction(action, frame, key);
+    } catch (reason) {
+      result = Promise.reject(reason);
+    }
+    Promise.resolve(result).catch((reason) => {
       if (destroyed || request !== requestSerial || key !== currentKey) return;
       const message = reason instanceof Error ? reason.message : String(reason);
       errorText = message || labels.error || 'Playback action failed';
@@ -345,9 +396,10 @@ export function createSpectatorTimelineView(options = {}) {
 
   function updateLabels(nextLabels = {}, nextIcons = {}) {
     if (destroyed) return;
-    labels = {...labels, ...nextLabels};
-    icons = {...icons, ...nextIcons};
-    renderLabels(); renderError();
+    labels = { ...labels, ...nextLabels };
+    icons = { ...icons, ...nextIcons };
+    renderLabels();
+    renderError();
   }
 
   function setExpanded(expanded) {
@@ -357,61 +409,111 @@ export function createSpectatorTimelineView(options = {}) {
     renderLabels();
   }
   let touchActivationAt = -Infinity;
-  const isCompatibilityClick = event => event.detail > 0 && event.pointerType !== 'mouse' && Date.now() - touchActivationAt < 700;
-  toggle.addEventListener('click', event => { if (!isCompatibilityClick(event)) setExpanded(panel.dataset.collapsed === 'true'); });
-  bar.addEventListener('pointerup', event => {
+  const isCompatibilityClick = (event) =>
+    event.detail > 0 && event.pointerType !== 'mouse' && Date.now() - touchActivationAt < 700;
+  toggle.addEventListener('click', (event) => {
+    if (!isCompatibilityClick(event)) setExpanded(panel.dataset.collapsed === 'true');
+  });
+  bar.addEventListener('pointerup', (event) => {
     if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
     if (panel.dataset.collapsed !== 'true' && !toggle.contains(event.target)) return;
-    event.preventDefault(); touchActivationAt = Date.now(); setExpanded(panel.dataset.collapsed === 'true');
+    event.preventDefault();
+    touchActivationAt = Date.now();
+    setExpanded(panel.dataset.collapsed === 'true');
   });
-  bar.addEventListener('click', event => {
+  bar.addEventListener('click', (event) => {
     if (toggle.contains(event.target) || panel.dataset.collapsed !== 'true' || isCompatibilityClick(event)) return;
     setExpanded(true);
   });
 
-  range.addEventListener('pointerdown', event => {
+  range.addEventListener('pointerdown', (event) => {
     if (!model) return;
-    editing = true; dragKey = model.key;
-    dragBounds = {min: Number(range.min), max: Number(range.max), edge: rangeBounds().edge};
+    editing = true;
+    dragKey = model.key;
+    dragBounds = { min: Number(range.min), max: Number(range.max), edge: rangeBounds().edge };
     dragTimeOrigin = timeOrigin();
     suppressChange = false;
     range.setPointerCapture?.(event.pointerId);
   });
   range.addEventListener('input', () => {
-    if (suppressChange) { render(); return; }
+    if (suppressChange) {
+      render();
+      return;
+    }
     const bounds = dragBounds || rangeBounds();
     range.value = String(Math.max(bounds.min, Math.min(bounds.max, finiteFrame(Number(range.value), bounds.min))));
     const value = clock(Number(range.value) - dragTimeOrigin);
-    cursorTime.textContent = value; range.setAttribute('aria-valuetext', value);
+    cursorTime.textContent = value;
+    range.setAttribute('aria-valuetext', value);
   });
   range.addEventListener('change', () => {
-    if (suppressChange) {render(); return;}
-    if (!model || dragKey !== undefined && dragKey !== model.key) {editing = false; dragKey = undefined; dragBounds = null; render(); return;}
+    if (suppressChange) {
+      render();
+      return;
+    }
+    if (!model || (dragKey !== undefined && dragKey !== model.key)) {
+      editing = false;
+      dragKey = undefined;
+      dragBounds = null;
+      render();
+      return;
+    }
     const bounds = rangeBounds();
     const target = Math.max(bounds.min, Math.min(bounds.edge, finiteFrame(Number(range.value), bounds.min)));
-    editing = false; dragKey = undefined; dragBounds = null;
+    editing = false;
+    dragKey = undefined;
+    dragBounds = null;
     invoke('seek', target, model.key);
     render();
   });
-  range.addEventListener('pointerup', () => {setTimeout(() => {if (editing) {editing = false; dragKey = undefined; dragBounds = null; render();}}, 0);});
-  range.addEventListener('pointercancel', () => {
-    editing = false; dragKey = undefined; dragBounds = null; cancelActiveDragTail(); render();
+  range.addEventListener('pointerup', () => {
+    setTimeout(() => {
+      if (editing) {
+        editing = false;
+        dragKey = undefined;
+        dragBounds = null;
+        render();
+      }
+    }, 0);
   });
-  range.addEventListener('keydown', () => { suppressChange = false; });
-  range.addEventListener('blur', () => {editing = false; dragKey = undefined; dragBounds = null; render();});
-  pause.addEventListener('click', () => {if (model) invoke(model.paused ? 'play' : 'pause', undefined, model.key);});
-  live.addEventListener('click', () => {if (model && !live.disabled) invoke('live', undefined, model.key);});
+  range.addEventListener('pointercancel', () => {
+    editing = false;
+    dragKey = undefined;
+    dragBounds = null;
+    cancelActiveDragTail();
+    render();
+  });
+  range.addEventListener('keydown', () => {
+    suppressChange = false;
+  });
+  range.addEventListener('blur', () => {
+    editing = false;
+    dragKey = undefined;
+    dragBounds = null;
+    render();
+  });
+  pause.addEventListener('click', () => {
+    if (model) invoke(model.paused ? 'play' : 'pause', undefined, model.key);
+  });
+  live.addEventListener('click', () => {
+    if (model && !live.disabled) invoke('live', undefined, model.key);
+  });
 
   const view = {
     panel,
-    slots: {summary, duration},
+    slots: { summary, duration },
     update(nextModel) {
       if (destroyed) return;
-      if (!nextModel || typeof nextModel.key !== 'string') throw new TypeError('A spectator timeline model needs a string key');
+      if (!nextModel || typeof nextModel.key !== 'string')
+        throw new TypeError('A spectator timeline model needs a string key');
       if (currentKey !== nextModel.key) {
         const hadActiveDrag = editing;
-        currentKey = nextModel.key; ++requestSerial; errorText = '';
-        editing = false; dragKey = undefined; dragBounds = null;
+        currentKey = nextModel.key;
+        ++requestSerial;
+        errorText = '';
+        editing = false;
+        dragKey = undefined;
+        dragBounds = null;
         if (hadActiveDrag) cancelActiveDragTail();
         else suppressChange = false;
       }
@@ -421,8 +523,13 @@ export function createSpectatorTimelineView(options = {}) {
     updateLabels,
     destroy() {
       if (destroyed) return;
-      destroyed = true; ++requestSerial; model = null; latestMarks.clear(); markElements.clear();
-      panel.remove(); releaseStyles();
+      destroyed = true;
+      ++requestSerial;
+      model = null;
+      latestMarks.clear();
+      markElements.clear();
+      panel.remove();
+      releaseStyles();
     },
   };
   setExpanded(options.expanded === true);

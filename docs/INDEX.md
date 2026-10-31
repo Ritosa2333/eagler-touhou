@@ -1,6 +1,6 @@
 # 文档总表
 
-共 393 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 396 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -165,6 +165,9 @@
 | Launcher | [launcher/docs/TOUCH_FUNCTION_KEY.md](../launcher/docs/TOUCH_FUNCTION_KEY.md) | 移动端 C 功能键 |
 | Launcher | [launcher/docs/TOUHOU_PROGRESS.md](../launcher/docs/TOUHOU_PROGRESS.md) | 东方作品进度 |
 | Launcher | [launcher/docs/assets/game-covers/README.md](../launcher/docs/assets/game-covers/README.md) | 游戏封面 |
+| Launcher | [launcher/docs/frontend-tooling.md](../launcher/docs/frontend-tooling.md) | 前端检查与测试 |
+| Launcher | [launcher/docs/paraglide-i18n.md](../launcher/docs/paraglide-i18n.md) | Paraglide 与三语界面 |
+| Launcher | [launcher/docs/shadcn-ui.md](../launcher/docs/shadcn-ui.md) | 东方主题组件 |
 | Launcher | [launcher/examples/deployment/README.md](../launcher/examples/deployment/README.md) | HTTP 配置示例 |
 | Launcher | [launcher/integrations/LOCALIZATION.md](../launcher/integrations/LOCALIZATION.md) | 语言包与字体 |
 | Launcher | [launcher/integrations/RUNTIME_CONTRACT.md](../launcher/integrations/RUNTIME_CONTRACT.md) | Runtime 语言包与 thprac 接口 |

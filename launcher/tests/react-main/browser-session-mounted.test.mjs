@@ -2,7 +2,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 /** Production BrowserLauncher and BrowserSession with synthetic DOM, routing,
  * Runtime messages, network and storage edges.
  */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {readUiHistoryText} from '../support/ui-history.mjs';
 import {execFileSync} from 'node:child_process';
@@ -62,6 +62,7 @@ before(async () => {
     export {setPackageReadGate} from 'gated-package-read';
     export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES, multiplayerConfigForProduct} from './src/contracts/product-catalog.mts';
+    export {translate} from './app/i18n.tsx';
     export {encodeRoomInvite} from './src/launcher/room-invite.mts';
     export {validateReleaseCatalog} from './src/contracts/release-catalog.mts';
     export {readCurrentPackageGeneration} from './package/package-store.mjs';
@@ -343,7 +344,7 @@ const touchStartupDevices = [
 ];
 for (const device of touchStartupDevices) test(`touch startup: device classification ${device.name}`, async t => {
   const agent = Object.getOwnPropertyDescriptor(env.window.navigator, 'userAgent'), media = env.window.matchMedia;
-  t.after(() => {
+  t.onTestFinished(() => {
     if (agent) Object.defineProperty(env.window.navigator, 'userAgent', agent); else delete env.window.navigator.userAgent;
     env.window.matchMedia = media;
   });
@@ -580,7 +581,7 @@ test('actual BrowserLauncher: fullscreen locks Escape before delayed native prep
   Object.defineProperty(env.window.navigator, 'keyboard', {configurable:true, value:{
     async lock(codes) {calls.push({type:'lock',codes:[...codes]});}, unlock() {calls.push({type:'unlock'});}
   }});
-  t.after(() => {if(prior) Object.defineProperty(env.window.navigator,'keyboard',prior); else delete env.window.navigator.keyboard;});
+  t.onTestFinished(() => {if(prior) Object.defineProperty(env.window.navigator,'keyboard',prior); else delete env.window.navigator.keyboard;});
   const f = await mountBrowser({autoReady:false}); await start();
   await until(() => f.navigations.some(url => url !== 'about:blank'), 'native preparation is waiting');
   assert.equal(api.getTestSession().getRuntime().getSnapshot().launched,false);
@@ -1403,7 +1404,7 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
     await until(() => f.navigations.length === 1, 'TH09 automatically starts its player without selecting a file');
     assert.equal(api.getTestSession().getRuntime().getSnapshot().ready, false, 'the file list is usable before game readiness');
     const document = f.native.document;
-    await click('[aria-label="管理 th9_01.rpy"]');await click('.replay-file-menu [role="menuitem"]');
+    assert.equal(node('.replay-file-menu-trigger').getAttribute('aria-label'), api.translate(api.getTestSession().getSnapshot().locale, 'replay.ui.manage', {name:'th9_01.rpy'})); await click('.replay-file-menu-trigger');await click('.replay-file-menu [role="menuitem"]');
     assert.equal(f.downloads[0].name, 'th9_01.rpy', 'direct download succeeds while the native ready message is withheld');
     let imported;
     await React.act(async () => {imported = api.getTestSession().importFile('replay', new NativeFile([new Uint8Array([8,9])], 'th9_02.rpy'), product);});
@@ -1445,13 +1446,13 @@ for (const game of ['th06', 'th07', 'th08', 'th09', 'th10']) test(`actual Browse
       assert.equal(node('.replay-current p span:last-child').textContent,`${labels[left]} vs ${labels[right]}`,'both native character IDs resolve through the shared catalog');
     }
     assert.equal(env.document.querySelectorAll('.replay-round-marker').length,3);
-    await click('.replay-round-marker[aria-label="第 2 回合，0:02"]');
+    const roundMarker=env.document.querySelectorAll('.replay-round-marker')[1]; assert.equal(roundMarker.getAttribute('aria-label'), api.translate(api.getTestSession().getSnapshot().locale, 'replay.ui.round', {round:2,time:'0:02'})); await React.act(async()=>roundMarker.click());
     assert.equal(f.outbound.findLast(message=>message.command==='playback').action,'seek');
     assert.equal(f.outbound.findLast(message=>message.command==='playback').value,160);
     await React.act(async()=>{f.native.emit('runtime-info',{playback:{...playback,left:0,right:1,roundStarts:undefined}});});
     assert.equal(env.document.querySelectorAll('.replay-round-marker').length,0,'original files without optional markers retain a working seekbar');
-    assert.equal(node('[aria-label="录像进度"]').disabled,false);
-    await click('.replay-transport [aria-label="切换全屏"]');
+    assert.equal(node('.replay-seek-track input').getAttribute('aria-label'), api.translate(api.getTestSession().getSnapshot().locale,'replay.ui.progress')); assert.equal(node('.replay-seek-track input').disabled,false);
+    assert.equal(node('.replay-transport .replay-fullscreen').getAttribute('aria-label'), api.translate(api.getTestSession().getSnapshot().locale,'replay.ui.fullscreen')); await click('.replay-transport .replay-fullscreen');
     assert.equal(f.fullscreen, node('#gameViewport'), 'Replay fullscreen owns only the stable game viewport');
     assert.equal(f.fullscreen.contains(frame), true);
     assert.equal(f.fullscreen.contains(node('.replay-file-browser')), false);
@@ -1780,7 +1781,7 @@ async function pinnedDirectTimeoutUnlocks(message, current = true) {
   return events;
 }
 
-for (const locale of ['zh-CN', 'en']) test(`actual BrowserLauncher: completed direct preload retains pinned ${locale} timeout recovery and startup error order`, async () => {
+for (const locale of ['zh-CN', 'en', 'ja']) test(`actual BrowserLauncher: completed direct preload retains ${locale} timeout recovery and startup error order`, async () => {
   const timers = capturePreparationTimers();
   try {
     const f = await mountBrowser({autoReady: false}), session = api.getTestSession();
@@ -1794,8 +1795,8 @@ for (const locale of ['zh-CN', 'en']) test(`actual BrowserLauncher: completed di
     const events = [], stopImport = session.gameData.subscribe(() => {if (session.gameData.getSnapshot().importOpen) events.push('import');});
     const stopError = session.startupError.subscribe(() => {if (session.startupError.getSnapshot().open) events.push('startup');});
     await React.act(async () => {timers.fire(timers.live(120_000)[0]);}); await tick(); stopImport(); stopError();
-    const message = locale === 'zh-CN' ? '游戏加载超时' : 'Game load timed out';
-    const expected = await pinnedDirectTimeoutUnlocks(message);
+    const message = api.translate(locale, 'runtime.gameLoadTimeout');
+    const expected = await pinnedDirectTimeoutUnlocks('游戏加载超时');
     assert.equal(session.getRuntime().getSnapshot().phase, 'error'); assert.equal(session.getRuntime().getSnapshot().epoch, null);
     assert.equal(session.gameData.getSnapshot().attempt.id, attempt.id);
     assert.equal(session.gameData.getSnapshot().attempt.unlocked, expected.length > 0);
@@ -1804,7 +1805,7 @@ for (const locale of ['zh-CN', 'en']) test(`actual BrowserLauncher: completed di
     assert.equal(node('#playerStatus').textContent, message);
     if (expected.length) {
       assert.ok(events.indexOf('import') >= 0 && events.indexOf('import') < events.indexOf('startup'));
-      assert.equal(node('#gameDataImportReason').textContent, '游戏运行组件加载已超时。\n你可以继续等待；如果当前下载太慢，也可以点击「打开链接」取得游戏包后导入。手动导入的本地版本不会被服务器自动替换，只有你主动选择更新时才会更新。');
+      assert.equal(node('#gameDataImportReason').textContent, api.translate(locale, 'package.fallbackWaitOrImport', {reason:api.translate(locale, 'runtime.loadTimedOutImport')}));
       await click('#startupErrorClose'); f.autoReady = true;
       await React.act(async () => {await session.gameData.importFile(importPackageFile());});
       assert.equal(session.getRuntime().getSnapshot().launched, false); assert.equal(session.getRuntime().getSnapshot().epoch, null);
@@ -1945,7 +1946,7 @@ for (const strictMode of [false, true]) for (const dismissal of ['cancel', 'Back
       // so it cannot reach the next test's Router on this shared window.
       let onPop;
       const traversal = new Promise(resolve => {onPop = resolve; env.window.addEventListener('popstate', onPop, {once: true});});
-      t.after(async () => {
+      t.onTestFinished(async () => {
         let deadline;
         try {await Promise.race([traversal, new Promise((_, reject) => {deadline = setTimeout(() => reject(new Error('Submitted history traversal did not finish after unmount')), 10000);})]);}
         finally {clearTimeout(deadline); env.window.removeEventListener('popstate', onPop);}
@@ -2311,7 +2312,7 @@ test('actual BrowserLauncher: spectator toolbar exits playback into the existing
 
 for (const mobileDevice of [false,true]) for (const game of ['th06','th09','th12']) for (const spectator of [true,false])
 test(`room Leave retires the ${mobileDevice?'mobile':'desktop'} ${game} ${spectator?'spectator':'player'} without exposing fullscreen`,async t=>{
- const agent=env.window.navigator.userAgent;t.after(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:agent}));
+ const agent=env.window.navigator.userAgent;t.onTestFinished(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:agent}));
  Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice?'Mozilla/5.0 Android Mobile':'Mozilla/5.0 Desktop'});
  const product=game+'mp',host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';host.shared.testBuild=true;
  const invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:spectator});
@@ -2339,7 +2340,7 @@ test(`room Leave retires the ${mobileDevice?'mobile':'desktop'} ${game} ${specta
  else if(session.getSnapshot().roomPlayerExpanded)await React.act(async()=>session.togglePlayerFullscreen());
  assert.equal(node('#player').classList.contains('room-workspace'),true);
  const entered=f.order.filter(value=>value==='fullscreen-enter').length,visibleWithoutRoom=[];
- const stop=session.room.service.subscribe(()=>{if(!session.room.service.getSnapshot().room&&session.getSnapshot().playerOpen)visibleWithoutRoom.push(true);});t.after(stop);
+ const stop=session.room.service.subscribe(()=>{if(!session.room.service.getSnapshot().room&&session.getSnapshot().playerOpen)visibleWithoutRoom.push(true);});t.onTestFinished(stop);
  const held=spectator&&!mobileDevice&&game==='th06';
  if(held){
   const epoch=session.getRuntime().getSnapshot().epoch;
@@ -2369,12 +2370,12 @@ test(`room Leave retires the ${mobileDevice?'mobile':'desktop'} ${game} ${specta
 
 for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
  test(`actual BrowserLauncher: ${mobileDevice ? 'mobile' : 'desktop'} ${game} spectator return retains its Runtime and settles each launch cover`, async t => {
-  const originalAgent=env.window.navigator.userAgent; t.after(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:originalAgent}));
+  const originalAgent=env.window.navigator.userAgent; t.onTestFinished(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:originalAgent}));
   Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice ? 'Mozilla/5.0 Android Mobile' : 'Mozilla/5.0 Desktop'});
   const orientation=Object.getOwnPropertyDescriptor(env.window.screen,'orientation'),locks=[];
   if(mobileDevice){
    Object.defineProperty(env.window.screen,'orientation',{configurable:true,value:{type:'portrait-primary',async lock(value){locks.push(value);},unlock(){},addEventListener(){},removeEventListener(){}}});
-   t.after(()=>{if(orientation)Object.defineProperty(env.window.screen,'orientation',orientation);else delete env.window.screen.orientation;});
+   t.onTestFinished(()=>{if(orientation)Object.defineProperty(env.window.screen,'orientation',orientation);else delete env.window.screen.orientation;});
   }
   const product=game+'mp',invite=api.encodeRoomInvite({g:product,r:'1234',f:true,a:'join',s:true});
   const host=developmentAcquisitionHost([game]);host.shared.netplayRelay='wss://relay.invalid/socket';host.shared.testBuild=PRODUCT_GAMES[game].testOnly===true;
@@ -2478,9 +2479,9 @@ for (const mobileDevice of [false,true]) for (const game of spectatorGames) {
 
 for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,false]) test(`actual BrowserLauncher: ${mobileDevice?'mobile':'desktop'} player fullscreen returns to the live room picture (${nativeFullscreen?'browser fullscreen':'page fullscreen'})`,async t=>{
  const request=env.window.HTMLElement.prototype.requestFullscreen;
- t.after(()=>{env.window.HTMLElement.prototype.requestFullscreen=request;});
+ t.onTestFinished(()=>{env.window.HTMLElement.prototype.requestFullscreen=request;});
  if(!nativeFullscreen)env.window.HTMLElement.prototype.requestFullscreen=async()=>{throw new env.window.DOMException('Fullscreen unavailable','NotSupportedError');};
- const agent=env.window.navigator.userAgent;t.after(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:agent}));
+ const agent=env.window.navigator.userAgent;t.onTestFinished(()=>Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:agent}));
  Object.defineProperty(env.window.navigator,'userAgent',{configurable:true,value:mobileDevice?'Mozilla/5.0 Android Mobile':'Mozilla/5.0 Desktop'});
  const host=developmentAcquisitionHost(['th06']);host.shared.netplayRelay='wss://relay.invalid/socket';
  const f=await mountBrowser({initial:'/?game=th06mp&mpRoom=1234',host,socketBoundary:true,seedPackages:['th06'],seedStorage(storage){

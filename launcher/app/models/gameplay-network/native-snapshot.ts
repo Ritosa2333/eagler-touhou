@@ -1,11 +1,17 @@
-import {multiplayerConfigForProduct, isMultiplayerProductId, type ProductId} from '../../../src/contracts/product-catalog.mts';
+import {
+  isMultiplayerProductId,
+  multiplayerConfigForProduct,
+  type ProductId,
+} from '../../../src/contracts/product-catalog.mts';
+
 // Read-only extraction of main app2313–2391/2437–2509.
 type UnknownRecord = Record<string, unknown>;
-const record = (value: unknown): UnknownRecord | null => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as UnknownRecord : null;
+const record = (value: unknown): UnknownRecord | null =>
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as UnknownRecord) : null;
 export interface RuntimeNetplayContext {
   product: ProductId;
   runtimeVariant: 'normal' | 'multiplayer';
-  netplay: {spectator: boolean};
+  netplay: { spectator: boolean };
 }
 interface RuntimePeer {
   pc?: RTCPeerConnection | null;
@@ -74,33 +80,42 @@ export interface RuntimePeerQuality {
 
 function runtimeGlobal(runtime: object | null, name: string): unknown {
   if (!runtime) return undefined;
-  try { return (runtime as unknown as UnknownRecord)[name]; }
-  catch { return undefined; }
+  try {
+    return (runtime as unknown as UnknownRecord)[name];
+  } catch {
+    return undefined;
+  }
 }
 
 function runtimePeerTransport(value: unknown): RuntimePeerTransport | null {
   const source = record(value);
   const peers = record(source?.peers);
   const iterable = peers as object as { [Symbol.iterator]?: unknown };
-  if (!source || !peers || typeof peers.get !== "function" || typeof iterable[Symbol.iterator] !== "function") return null;
+  if (!source || !peers || typeof peers.get !== 'function' || typeof iterable[Symbol.iterator] !== 'function')
+    return null;
   return source as unknown as RuntimePeerTransport;
 }
 
 function runtimeNetplayEntries(value: unknown, limit: number): RuntimeNetplayEntry[] {
   return Array.isArray(value)
-    ? value.flatMap(entry => {
-        const item = record(entry);
-        return item ? [item as RuntimeNetplayEntry] : [];
-      }).slice(0, limit)
+    ? value
+        .flatMap((entry) => {
+          const item = record(entry);
+          return item ? [item as RuntimeNetplayEntry] : [];
+        })
+        .slice(0, limit)
     : [];
 }
 
-export function readRuntimeNetplay(runtime: object | null, state: RuntimeNetplayContext): RuntimeNetplaySnapshot | null {
+export function readRuntimeNetplay(
+  runtime: object | null,
+  state: RuntimeNetplayContext,
+): RuntimeNetplaySnapshot | null {
   // Product selection alone is not proof that the running game is the LAN
   // Runtime. Never show multiplayer diagnostics over an ordinary game, but
   // keep probing a dedicated multiplayer product even if runtimeVariant was
   // accidentally downgraded - that mismatch is itself diagnostic evidence.
-  const multiplayerSurface = state.runtimeVariant === "multiplayer" || isMultiplayerProductId(state.product);
+  const multiplayerSurface = state.runtimeVariant === 'multiplayer' || isMultiplayerProductId(state.product);
   const multiplayer = multiplayerConfigForProduct(state.product);
   if (!multiplayer || !multiplayerSurface) return null;
   const value = (name: string) => runtimeGlobal(runtime, name);
@@ -108,38 +123,47 @@ export function readRuntimeNetplay(runtime: object | null, state: RuntimeNetplay
     const parsed = Number(value(name));
     return Number.isFinite(parsed) ? parsed : null;
   };
-  const rawRtcPaths = value("__eaglerNetplayRtcPaths");
+  const rawRtcPaths = value('__eaglerNetplayRtcPaths');
   const rtcPaths = runtimeNetplayEntries(rawRtcPaths, 2);
-  const rawLanPeers = value("__eaglerNetplayLanPeers");
+  const rawLanPeers = value('__eaglerNetplayLanPeers');
   const lanPeers = runtimeNetplayEntries(rawLanPeers, 3);
   const peerState = runtimePeerTransport(value(multiplayer.peerTransportGlobal));
-  let mode = "";
-  try { mode = String((runtime as {Module?: {eaglerOptions?: {netplayMode?: unknown}}} | null)?.Module?.eaglerOptions?.netplayMode || ""); } catch {}
-  if (mode !== "lan") return null;
+  let mode = '';
+  try {
+    mode = String(
+      (runtime as { Module?: { eaglerOptions?: { netplayMode?: unknown } } } | null)?.Module?.eaglerOptions
+        ?.netplayMode || '',
+    );
+  } catch {}
+  if (mode !== 'lan') return null;
   const peerSize = Number(peerState?.peers?.size);
   return {
     mode,
-    active: value("__eaglerNetplayLanActive") === true,
-    spectator: value("__eaglerNetplaySpectator") === true || state.netplay.spectator === true,
-    inputDelay: number("__eaglerNetplayInputDelayFrames"),
-    transport: String(value("__eaglerNetplayTransport") || "connecting"),
-    path: String(value("__eaglerNetplayPath") || "connecting"),
-    frame: number("__eaglerNetplayLanFrame"),
-    confirmed: number("__eaglerNetplayLanConfirmed"),
-    rollback: number("__eaglerNetplayLanRollback"),
-    resimulated: number("__eaglerNetplayLanResimulated"),
-    advantage: number("__eaglerNetplayLanFrameAdvantage"),
-    pacing: number("__eaglerNetplayLanPacingScale"),
-    inputRepairs: number("__eaglerNetplayInputRepairs"),
-    missingInputs: number("__eaglerNetplayMissingInputs"),
+    active: value('__eaglerNetplayLanActive') === true,
+    spectator: value('__eaglerNetplaySpectator') === true || state.netplay.spectator === true,
+    inputDelay: number('__eaglerNetplayInputDelayFrames'),
+    transport: String(value('__eaglerNetplayTransport') || 'connecting'),
+    path: String(value('__eaglerNetplayPath') || 'connecting'),
+    frame: number('__eaglerNetplayLanFrame'),
+    confirmed: number('__eaglerNetplayLanConfirmed'),
+    rollback: number('__eaglerNetplayLanRollback'),
+    resimulated: number('__eaglerNetplayLanResimulated'),
+    advantage: number('__eaglerNetplayLanFrameAdvantage'),
+    pacing: number('__eaglerNetplayLanPacingScale'),
+    inputRepairs: number('__eaglerNetplayInputRepairs'),
+    missingInputs: number('__eaglerNetplayMissingInputs'),
     rtcPaths,
     lanPeers,
     peerCount: Number.isFinite(peerSize) && peerSize >= 0 ? peerSize : null,
     rtcReady: peerState?.rtcReadySent === true,
-    failed: peerState?.failed === true || value("__eaglerNetplayFailed") === true,
-    nativeFailed: value("__eaglerNetplayFailed") === true,
-    error: value("__eaglerNetplayFailed") === true ? String(value("__eaglerNetplayError") || "")
-      : typeof peerState?.error === "string" ? peerState.error : "",
+    failed: peerState?.failed === true || value('__eaglerNetplayFailed') === true,
+    nativeFailed: value('__eaglerNetplayFailed') === true,
+    error:
+      value('__eaglerNetplayFailed') === true
+        ? String(value('__eaglerNetplayError') || '')
+        : typeof peerState?.error === 'string'
+          ? peerState.error
+          : '',
     peerState,
   };
 }

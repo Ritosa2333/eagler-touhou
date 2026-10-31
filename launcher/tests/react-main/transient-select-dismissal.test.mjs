@@ -1,7 +1,7 @@
 /** Main app.mts3065–3076,3200–3215,3358–3364,3396–3406,9653–9659.
  * Actual React views/models and custom-select owner in synthetic DOM only;
  * no browser/native top-layer/layout, file-picker or network claim. */
-import test, {before, after, afterEach} from 'node:test';
+import {test, beforeAll as before, afterAll as after, afterEach} from 'vitest';
 import assert from 'node:assert/strict';
 import {mkdir, mkdtemp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
