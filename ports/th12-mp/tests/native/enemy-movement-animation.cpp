@@ -1,3 +1,6 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include "../../src/game/EclInterpreter.hpp"
 #include "../../src/game/GameState.hpp"
 #include <cassert>
