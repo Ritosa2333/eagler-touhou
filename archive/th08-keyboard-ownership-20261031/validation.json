@@ -13,7 +13,7 @@
   },
   "checks": {
     "keyboardSuite": {
-      "passed": 38,
+      "passed": 41,
       "failed": 0
     },
     "sourceContracts": {
@@ -89,6 +89,30 @@
             {
               "otherShift": 128,
               "allShiftReleased": 0
+            },
+            {
+              "handoffs": [
+                {
+                  "change": "attach",
+                  "down": 128,
+                  "released": 128
+                },
+                {
+                  "change": "detach",
+                  "down": 128,
+                  "released": 128
+                },
+                {
+                  "change": "stale",
+                  "down": 128,
+                  "released": 128
+                },
+                {
+                  "change": "replace-remapping",
+                  "down": 128,
+                  "released": 128
+                }
+              ]
             }
           ],
           "ordinaryPressReleaseCycles": 90,
@@ -176,6 +200,30 @@
             {
               "otherShift": 128,
               "allShiftReleased": 0
+            },
+            {
+              "handoffs": [
+                {
+                  "change": "attach",
+                  "down": 128,
+                  "released": 0
+                },
+                {
+                  "change": "detach",
+                  "down": 128,
+                  "released": 0
+                },
+                {
+                  "change": "stale",
+                  "down": 128,
+                  "released": 0
+                },
+                {
+                  "change": "replace-remapping",
+                  "down": 128,
+                  "released": 0
+                }
+              ]
             }
           ],
           "ordinaryPressReleaseCycles": 90,
@@ -263,6 +311,30 @@
             {
               "otherShift": 128,
               "allShiftReleased": 0
+            },
+            {
+              "handoffs": [
+                {
+                  "change": "attach",
+                  "down": 128,
+                  "released": 128
+                },
+                {
+                  "change": "detach",
+                  "down": 128,
+                  "released": 128
+                },
+                {
+                  "change": "stale",
+                  "down": 128,
+                  "released": 128
+                },
+                {
+                  "change": "replace-remapping",
+                  "down": 128,
+                  "released": 128
+                }
+              ]
             }
           ],
           "ordinaryPressReleaseCycles": 90,
@@ -350,6 +422,30 @@
             {
               "otherShift": 128,
               "allShiftReleased": 0
+            },
+            {
+              "handoffs": [
+                {
+                  "change": "attach",
+                  "down": 128,
+                  "released": 0
+                },
+                {
+                  "change": "detach",
+                  "down": 128,
+                  "released": 0
+                },
+                {
+                  "change": "stale",
+                  "down": 128,
+                  "released": 0
+                },
+                {
+                  "change": "replace-remapping",
+                  "down": 128,
+                  "released": 0
+                }
+              ]
             }
           ],
           "ordinaryPressReleaseCycles": 90,
@@ -382,5 +478,16 @@
     "DOM text editing target"
   ],
   "gameplayAbiChanged": false,
-  "wasmChanged": false
+  "wasmChanged": false,
+  "mappingHandoff": {
+    "cause": "The consumer and producer retained separate owners when the Launcher mapper was attached, detached, invalidated or replaced between DOWN and UP.",
+    "fix": "Retire the previously bound mapping and local native/hosted owners synchronously before interpreting the next event or canonical state query.",
+    "cases": [
+      "raw DOWN to mapped UP",
+      "mapped DOWN to raw UP",
+      "mapping epoch becomes stale",
+      "mapping replacement changes an alias"
+    ],
+    "stableMapping": "120 unrelated key cycles retain held shooting and virtual focus; no repeated retirement"
+  }
 }
