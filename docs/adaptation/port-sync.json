@@ -500,7 +500,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+      "base": "5123bb2235990418919564368d042ae6b873257e",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -1016,6 +1016,51 @@
             "ports/th12-mp/site/startup-branding.mjs"
           ],
           "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "source": "ad6851d8a1da7a5e5956f9a6cc7d460559fc5f6e",
+          "targetHead": "ee41b203b1978eb7355075c6e533c669270090ef",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/CMakeLists.txt",
+            "ports/th12-mp/src/game/EclInterpreter.cpp",
+            "ports/th12-mp/src/game/EnemyManager.cpp",
+            "ports/th12-mp/src/game/GameState.hpp",
+            "ports/th12-mp/src/game/GameTypes.hpp",
+            "ports/th12-mp/src/game/Movement.cpp",
+            "ports/th12-mp/tests/fixtures/enemy-movement-animation-original.json",
+            "ports/th12-mp/tests/native/enemy-movement-animation.cpp"
+          ],
+          "note": "普通版与多人版同步原版262/276移动动画启停、横向位移和五态过渡；269/274保留独立移动动画基址。实际原版414048至4141b9的27组指令对照、八素材库原生回归及双方Web构建通过。多人快照保留新增Enemy动画字段；隔离合并写回的完整多人树与已审阅代码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "ad6851d8a1da7a5e5956f9a6cc7d460559fc5f6e",
+          "source": "5123bb2235990418919564368d042ae6b873257e",
+          "targetHead": "18aef055af5d773713b1e00f1e028e44de0688f1",
+          "paths": [
+            "ports/th12-mp/package.json",
+            "ports/th12-mp/portable/sdl/BinaryReader.hpp",
+            "ports/th12-mp/portable/sdl/Localization.cpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TextRaster.cpp",
+            "ports/th12-mp/site/game.mjs",
+            "ports/th12-mp/src/practice/imgui-renderer.mjs",
+            "ports/th12-mp/src/practice/overlay.mjs",
+            "ports/th12-mp/src/presentation-interpolation.mjs",
+            "ports/th12-mp/src/renderer.mjs",
+            "ports/th12-mp/src/sdl-content.mjs",
+            "ports/th12-mp/tests/managed-adapter.test.mjs",
+            "ports/th12-mp/tests/native/sdl-text-performance.cpp",
+            "ports/th12-mp/tests/presentation-continuity.test.mjs",
+            "ports/th12-mp/tests/replay-transition-regressions.test.mjs",
+            "ports/th12-mp/tests/sdl-localization.test.mjs",
+            "ports/th12-mp/tests/transition-performance.test.mjs"
+          ],
+          "note": "PR 168 汇总普通版与多人版对话本地化、字形缓存、高刷外推、视口及换面呈现优化；多人版保留现有回滚存储并补齐挑战规则与 Miss。"
         }
       ]
     }

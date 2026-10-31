@@ -60,7 +60,7 @@ export class PracticeOverlay {
     const params=validateParams({mode:w[1],stage:w[2],section:w[3],phase:w[4],dlg:!!w[5],score,life:w[8],life_fragment:w[9],bomb:w[10],bomb_fragment:w[11],power:w[12],value:w[13],graze:w[14],ufo_side:w[15],ventra_1:w[16],ventra_2:w[17],ventra_3:w[18]},w[2]===6?4:this.menu.difficulty);
     this.menu.params=params;this.onMenuAction?.({type:'start',params,difficulty:params.stage===6?4:this.menu.difficulty});
   }
-  render(){if(!this.initialized||!this.enabled)return;this.layout();this.renderer.render();}
+  render(){if(!this.initialized||!this.enabled)return;const visible=this.renderer.render();this.root.hidden=!visible;if(visible)this.layout();}
   pointer(event,forwardGamePointer=()=>{}){
     if(!this.enabled||!this.initialized)return false;
     const id=event.id??'mouse',type={down:0,move:1,up:2,cancel:3}[event.type];if(type===undefined)return false;

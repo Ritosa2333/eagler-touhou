@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {TitleScenes} from '../src/title-scenes.mjs';
 import {PracticeOverlay} from '../src/practice/overlay.mjs';
+import {PresentationCadence,PresentationLimiter,needsPresentationCapture} from '../src/presentation-cadence.mjs';
 import {messageTextPoses} from '../src/renderer.mjs';
 
 test('replay pause third row restarts the selected recording and original selected stage',()=>{
@@ -35,7 +36,7 @@ test('retired logical MSG rectangles never resurrect through legacy text fallbac
 function playbackFrame(codes,{tools=true,replay=true}={}){
   const source=fs.readFileSync(new URL('../site/game.mjs',import.meta.url),'utf8'),start=source.indexOf('function frame(now){'),end=source.indexOf('\nfunction eventKey(',start);
   let ticks=0;const keys=new Set(codes),TICK=1000/60;
-  const context={TICK,terminated:false,backgrounded:false,fatalError:false,runtimeOptions:{thpracEnabled:tools,replayViewer:false},lastPresentation:0,last:0,meter:{frame(){},value:60},loadingScreen:{advance(){},renderOverlay(){},waiting:false},ready:true,busy:false,session:{replay:replay?{}:null},model:{state:{scene:'playing'},actions:[]},profile:{settings:{keyMap:{shoot:'KeyZ',focus:'ShiftLeft',skip:'ControlLeft'}}},previousPadUI:0,keyDown:key=>keys.has(key),practiceBridge:{interval:({fast,slow})=>fast?1/180:slow?1/15:1/60},logicalStep:TICK,accumulator:0,tick(){ticks++;},present(){},launched:false,requestAnimationFrame(){},fail(error){throw error;}};
+  const context={TICK,presentationLimiter:new PresentationLimiter(),presentationCadence:new PresentationCadence(),needsPresentationCapture,interpolateGamePresentation:()=>false,terminated:false,backgrounded:false,fatalError:false,viewportClockReset:false,runtimeOptions:{thpracEnabled:tools,replayViewer:false},lastPresentation:0,last:0,meter:{frame(){},value:60},loadingScreen:{advance(){},renderOverlay(){},waiting:false},ready:true,busy:false,session:{replay:replay?{}:null},model:{state:{scene:'playing'},actions:[]},profile:{settings:{keyMap:{shoot:'KeyZ',focus:'ShiftLeft',skip:'ControlLeft'}}},previousPadUI:0,keyDown:key=>keys.has(key),practiceBridge:{interval:({fast,slow})=>fast?1/180:slow?1/15:1/60},logicalStep:TICK,accumulator:0,tick(){ticks++;},present(){},launched:false,requestAnimationFrame(){},fail(error){throw error;}};
   vm.runInNewContext(source.slice(start,end)+'\nframe(1000/60+.000001);',context);return {ticks,step:context.logicalStep};
 }
 for(const tools of [false,true])test(`live replay controls advance every recorded tick (THPrac ${tools})`,()=>{

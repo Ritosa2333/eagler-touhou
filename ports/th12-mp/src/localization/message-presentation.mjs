@@ -64,8 +64,9 @@ export function messagePresentation(data,patch){
     }
     entries.push(states);
   }
-  return message=>{
+  const present=message=>{
     const records=entries[message?.entry]?.get(message.pc);
     return records?{...message,textRecords:records,localizedPresentation:true}:message;
   };
+  present.entries=entries;return present;
 }
