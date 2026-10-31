@@ -53,6 +53,21 @@ void BulletSystem::clear(i32 mode){PlayerCollision::BarrierBatch barriers(&playe
 i32 BulletSystem::collision(i32 kind,BulletState& bullet){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(!roster)return 0;
+    if(kind==1||kind==2){
+        u32 checked=0;bool miss=true;
+        for(u32 seat=0;seat<roster->count;++seat){
+            if(!roster->eligible(seat)||(kind==1&&(bullet.grazed&(1u<<seat))))continue;
+            auto& pilot=*roster->seats[seat].player;
+            if(!pilot.collision().definitely_misses(bullet.position,bullet.sprites.hitbox,kind==1)){miss=false;break;}
+            checked|=1u<<seat;
+        }
+        if(miss){
+            // Every skipped native call would only reset its cancel-item lane.
+            // No barrier is active and all hit/graze boxes are out of reach.
+            for(u32 seat=0;seat<roster->count;++seat)if(checked&(1u<<seat))roster->seats[seat].player->status().cancel_item=6;
+            return 0;
+        }
+    }
     u32 order[3];const u32 count=roster->ordered(bullet.position,order);
     i32 grazed=0;
     for(u32 i=0;i<count;++i){

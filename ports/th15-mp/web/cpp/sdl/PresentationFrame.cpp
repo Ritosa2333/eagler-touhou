@@ -23,6 +23,8 @@ void PresentationFrame::range(const AnmVm& vm,u32 first,u32 count,u32 instance){
  if(!recording)return;
  const auto& v=vm.visual;const auto& curves=vm.interpolators;instance^=vm.presentation_part<<16;
  Sample s;s.first=first;s.count=count;s.script=vm.source_script;s.sprite=v.sprite;s.age=vm.age.current;s.flags=v.flags;s.resource=uintptr_t(vm.sprite_resource?vm.sprite_resource:vm.resource);
+ s.immediate=immediate_owner==uintptr_t(&vm);
+ u32 owner_depth=0;for(auto* owner=vm.creation_parent;immediate_owner&&owner&&owner_depth++<64;owner=owner->creation_parent){s.immediate|=immediate_owner==uintptr_t(owner);if(owner==&vm)break;}
  u64 generation=vm.presentation_generation;s.offset=offset;
  bool motion=vm.presentation_motion||(v.flags&0x8000);s.world=motion;
  u32 depth=0;for(auto* parent=vm.rotation_parent;parent&&depth++<64;parent=parent->rotation_parent){generation=(generation^parent->presentation_generation^uintptr_t(parent))*1099511628211ull;motion|=parent->presentation_motion||parent->interpolators.position.duration>0;s.world|=parent->presentation_motion;if(parent->interpolators.rotation.duration>0||!same(parent->visual.angular_velocity,{}))s.fields|=2;if(parent->interpolators.scale.duration>0||parent->interpolators.secondary_scale.duration>0||!same(parent->visual.scale_velocity,{}))s.fields|=4;if(parent->interpolators.color.duration>0)s.fields|=8;if(parent->interpolators.alpha.duration>0)s.fields|=16;if(parent==&vm)break;}
@@ -57,7 +59,7 @@ bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool
   // without mixing camera, geometry, UV or color. Gameplay still interpolates.
   if(c.camera&&!background_interpolation){if(c.direct)renderer.draw_batch(c.count,c.bytes.data(),c.stride);else renderer.draw(c.topology,c.count,c.bytes.data(),c.stride);continue;}
   const void* data=c.bytes.data();bool copied=false;
-  for(const auto& s:c.samples){if(std::get<0>(s.key)==observed&&s.first*c.stride+4<=c.bytes.size())std::memcpy(&last_x,c.bytes.data()+s.first*c.stride,4);auto found=std::lower_bound(endpoints.begin(),endpoints.end(),s.key,[](const auto& a,const Key& key){return a.first<key;});if(found==endpoints.end()||found->first!=s.key)continue;const auto& old=previous[found->second.first];const auto& before=old.samples[found->second.second];const float weight=frozen&&(s.world||c.camera)?1:alpha;
+  for(const auto& s:c.samples){if(std::get<0>(s.key)==observed&&s.first*c.stride+4<=c.bytes.size())std::memcpy(&last_x,c.bytes.data()+s.first*c.stride,4);auto found=std::lower_bound(endpoints.begin(),endpoints.end(),s.key,[](const auto& a,const Key& key){return a.first<key;});if(found==endpoints.end()||found->first!=s.key)continue;const auto& old=previous[found->second.first];const auto& before=old.samples[found->second.second];const float weight=s.immediate||(frozen&&(s.world||c.camera))?1:alpha;
    if(weight==1||s.script!=before.script||s.resource!=before.resource||s.age<before.age||(s.flags&0x3fe00003u)!=(before.flags&0x3fe00003u)||s.count!=before.count||c.stride!=old.stride||c.state.target!=old.state.target||c.state.texture!=old.state.texture||c.state.layout!=old.state.layout)continue;
    if(!same(s.size,before.size))continue;
    // Extra STD loops reset camera and world coordinates together. Retain the

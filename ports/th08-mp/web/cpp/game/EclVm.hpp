@@ -67,6 +67,8 @@ struct EclGlobals:SpellState {
     GameGlobals* values=nullptr;i32 pending_time=0,uncollected_time_items=0;const EclLiveValues* live_values=nullptr;
     TimelineActions* timeline_actions=nullptr;EclVm* boss_slots[8]{};
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void* aim_context=nullptr;
+    Vec3 (*aim_target)(void*,const Vec3&)=nullptr;
     // A per-executed-frame observer only. Reset by the MP frame driver before
     // Update; it is never consumed by game rules or serialized as native memory.
     u8 spectator_boss_slots=0;
@@ -154,6 +156,11 @@ struct EclVm {
     u8 draw_layer=0,hit_flash=0;
     EnemyTrail trail;
     EclVm* next_in_layer=nullptr;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    Vec3 selected_player;
+#endif
+    const Vec3& aimed_player()const noexcept;
+    void select_player_target()noexcept;
     i32* integer_target(const EclInstruction&,u32 index)noexcept;
     float* float_target(const EclInstruction&,u32 index)noexcept;
     i32* integer_field(i32 id)noexcept;

@@ -314,6 +314,8 @@ bool sample_and_tick(){
  // Touch pulses and held/pressed edges are sampled exactly once per frame.
  // While a captured frame waits, only pump the confirmed-input runtime.
  if(mp_started&&!mp_local_results&&!network.NeedsCapture())return mp_tick(0,false);
+ if(app){auto* scene=app->scene();app->graphics.presentation.immediate_owner=mp_started&&network.RollbackEnabled()&&!network.ReadOnly()&&scene&&scene->battle.mp_enabled?
+    uintptr_t(&scene->battle.pilots[network.Setup().local_player]->player->visuals.root):0;}
 #endif
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
   ThpracUi::process_event(event,float(render_scale));

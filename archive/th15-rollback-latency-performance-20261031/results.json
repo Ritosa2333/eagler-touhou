@@ -1,0 +1,746 @@
+{
+  "baseline": "b062ed699e51b7a3644b78be5c49255216f500e7",
+  "scope": "TH15 multiplayer rollback snapshot copy path; native Release /O2 /fp:strict; same game core and instrumentation for both paths",
+  "native": {
+    "ordinary": [
+      {
+        "stage": 1,
+        "players": 2,
+        "frames": 960,
+        "maxBullets": 7,
+        "maxAnimationNodes": 388,
+        "before": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.7487,
+            "p95": 0.9358,
+            "max": 2.193
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.775,
+            "p95": 1.2528,
+            "max": 1.2528
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.0413,
+            "p95": 0.0765,
+            "max": 0.3132
+          },
+          "peakPrivateBytes": 253878272,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.3064,
+            "p95": 0.4152,
+            "max": 2.1586
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.5668,
+            "p95": 0.9232,
+            "max": 0.9232
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.0384,
+            "p95": 0.0675,
+            "max": 0.2643
+          },
+          "peakPrivateBytes": 252973056,
+          "passed": true
+        },
+        "exactReplaySteps": 96
+      },
+      {
+        "stage": 1,
+        "players": 3,
+        "frames": 960,
+        "maxBullets": 7,
+        "maxAnimationNodes": 427,
+        "before": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.7942,
+            "p95": 1.0948,
+            "max": 2.0617
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.8485,
+            "p95": 1.5122,
+            "max": 1.5122
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.0588,
+            "p95": 0.1238,
+            "max": 0.2685
+          },
+          "peakPrivateBytes": 257880064,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.3455,
+            "p95": 0.4695,
+            "max": 2.3211
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.6484,
+            "p95": 0.9661,
+            "max": 0.9661
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.0513,
+            "p95": 0.0861,
+            "max": 0.3678
+          },
+          "peakPrivateBytes": 256532480,
+          "passed": true
+        },
+        "exactReplaySteps": 96
+      },
+      {
+        "stage": 7,
+        "players": 2,
+        "frames": 960,
+        "maxBullets": 52,
+        "maxAnimationNodes": 556,
+        "before": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.8762,
+            "p95": 1.1635,
+            "max": 1.8065
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.9158,
+            "p95": 1.61,
+            "max": 1.61
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.0514,
+            "p95": 0.1,
+            "max": 0.256
+          },
+          "peakPrivateBytes": 275042304,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.3714,
+            "p95": 0.5575,
+            "max": 1.9089
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.6327,
+            "p95": 0.8254,
+            "max": 0.8254
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.0373,
+            "p95": 0.0642,
+            "max": 0.2612
+          },
+          "peakPrivateBytes": 274935808,
+          "passed": true
+        },
+        "exactReplaySteps": 96
+      },
+      {
+        "stage": 7,
+        "players": 3,
+        "frames": 960,
+        "maxBullets": 49,
+        "maxAnimationNodes": 552,
+        "before": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.8324,
+            "p95": 1.1875,
+            "max": 2.0335
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.9071,
+            "p95": 1.4057,
+            "max": 1.4057
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.054,
+            "p95": 0.1123,
+            "max": 0.6168
+          },
+          "peakPrivateBytes": 276623360,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 876,
+            "mean": 0.3771,
+            "p95": 0.5216,
+            "max": 2.7546
+          },
+          "restoreMs": {
+            "count": 16,
+            "mean": 0.6509,
+            "p95": 1.3235,
+            "max": 1.3235
+          },
+          "stepMs": {
+            "count": 876,
+            "mean": 0.0475,
+            "p95": 0.0757,
+            "max": 0.3175
+          },
+          "peakPrivateBytes": 277229568,
+          "passed": true
+        },
+        "exactReplaySteps": 96
+      }
+    ],
+    "dense": [
+      {
+        "stage": 1,
+        "players": 2,
+        "frames": 480,
+        "maxBullets": 1932,
+        "maxAnimationNodes": 12066,
+        "before": {
+          "captureMs": {
+            "count": 444,
+            "mean": 2.945,
+            "p95": 6.8018,
+            "max": 15.852
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 3.2136,
+            "p95": 7.7806,
+            "max": 7.7806
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.752,
+            "p95": 3.0302,
+            "max": 4.3518
+          },
+          "peakPrivateBytes": 734085120,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 444,
+            "mean": 2.5824,
+            "p95": 6.9963,
+            "max": 15.9305
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 3.286,
+            "p95": 8.1585,
+            "max": 8.1585
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.7247,
+            "p95": 3.0021,
+            "max": 4.4797
+          },
+          "peakPrivateBytes": 734486528,
+          "passed": true
+        },
+        "exactReplaySteps": 48
+      },
+      {
+        "stage": 1,
+        "players": 3,
+        "frames": 480,
+        "maxBullets": 1932,
+        "maxAnimationNodes": 12118,
+        "before": {
+          "captureMs": {
+            "count": 444,
+            "mean": 3.1113,
+            "p95": 7.4598,
+            "max": 23.9814
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 3.3763,
+            "p95": 8.1043,
+            "max": 8.1043
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.8627,
+            "p95": 3.5202,
+            "max": 5.59
+          },
+          "peakPrivateBytes": 736894976,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 444,
+            "mean": 2.6445,
+            "p95": 6.7259,
+            "max": 15.5335
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 3.1439,
+            "p95": 7.4061,
+            "max": 7.4061
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.8234,
+            "p95": 3.5244,
+            "max": 7.2043
+          },
+          "peakPrivateBytes": 735973376,
+          "passed": true
+        },
+        "exactReplaySteps": 48
+      },
+      {
+        "stage": 7,
+        "players": 2,
+        "frames": 480,
+        "maxBullets": 2000,
+        "maxAnimationNodes": 12132,
+        "before": {
+          "captureMs": {
+            "count": 444,
+            "mean": 3.1935,
+            "p95": 7.5475,
+            "max": 20.8754
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 2.7732,
+            "p95": 4.1482,
+            "max": 4.1482
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.723,
+            "p95": 3.0409,
+            "max": 4.6902
+          },
+          "peakPrivateBytes": 752492544,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 444,
+            "mean": 2.8709,
+            "p95": 6.8774,
+            "max": 34.9663
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 2.3723,
+            "p95": 3.7921,
+            "max": 3.7921
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.685,
+            "p95": 2.8512,
+            "max": 5.7695
+          },
+          "peakPrivateBytes": 751845376,
+          "passed": true
+        },
+        "exactReplaySteps": 48
+      },
+      {
+        "stage": 7,
+        "players": 3,
+        "frames": 480,
+        "maxBullets": 2000,
+        "maxAnimationNodes": 12034,
+        "before": {
+          "captureMs": {
+            "count": 444,
+            "mean": 3.1437,
+            "p95": 6.7683,
+            "max": 22.9718
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 2.7843,
+            "p95": 4.1572,
+            "max": 4.1572
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.7825,
+            "p95": 3.2441,
+            "max": 5.1446
+          },
+          "peakPrivateBytes": 761942016,
+          "passed": true
+        },
+        "after": {
+          "captureMs": {
+            "count": 444,
+            "mean": 2.7885,
+            "p95": 6.856,
+            "max": 18.731
+          },
+          "restoreMs": {
+            "count": 8,
+            "mean": 2.7011,
+            "p95": 3.9887,
+            "max": 3.9887
+          },
+          "stepMs": {
+            "count": 444,
+            "mean": 0.7634,
+            "p95": 3.3857,
+            "max": 6.3618
+          },
+          "peakPrivateBytes": 755568640,
+          "passed": true
+        },
+        "exactReplaySteps": 48
+      }
+    ]
+  },
+  "browser": [
+    {
+      "name": "2p-normal-no-bomb",
+      "players": 2,
+      "mode": 0,
+      "difficulty": 1,
+      "cpu": 1,
+      "seconds": 15,
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 1140,
+        "inputSha256": "e8686bff1f53d67d1581028136c25e8e4f65bee276827f15fecef7beae83b6df",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "scope": "Real RTC, original Japanese data, music disabled, D3D11; all clients share one browser renderer; CPU multiplier applies to that renderer",
+      "seats": [
+        {
+          "seat": 0,
+          "progressFps": 59.986684420772306,
+          "nativeCallbackMs": {
+            "count": 3603,
+            "mean": 0.5534276992016424,
+            "p50": 0.20000000298023224,
+            "p95": 1.8999999910593033,
+            "p99": 2.7999999970197678,
+            "max": 4.700000002980232
+          },
+          "callbackGapMs": {
+            "count": 3603,
+            "mean": 4.168720510687194,
+            "p50": 4.199999988079071,
+            "p95": 5.899999991059303,
+            "p99": 6.799999997019768,
+            "max": 16.599999994039536
+          },
+          "visibleFps": {
+            "count": 15,
+            "mean": 239.87533333333334,
+            "p50": 240,
+            "p95": 240.04,
+            "p99": 240.04,
+            "max": 240.04
+          },
+          "heapBytes": {
+            "count": 15,
+            "mean": 481165312,
+            "p50": 481165312,
+            "p95": 481165312,
+            "p99": 481165312,
+            "max": 481165312
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 45,
+            "replayedFrames": 90,
+            "lastDepth": 2,
+            "peakDepth": 2,
+            "pending": 0
+          },
+          "error": ""
+        },
+        {
+          "seat": 1,
+          "progressFps": 59.986684420772306,
+          "nativeCallbackMs": {
+            "count": 3603,
+            "mean": 0.29669719685076873,
+            "p50": 0.20000000298023224,
+            "p95": 0.9000000059604645,
+            "p99": 1.2000000029802322,
+            "max": 1.7999999970197678
+          },
+          "callbackGapMs": {
+            "count": 3603,
+            "mean": 4.168220927007755,
+            "p50": 4.199999988079071,
+            "p95": 6.5999999940395355,
+            "p99": 7.700000002980232,
+            "max": 17.400000005960464
+          },
+          "visibleFps": {
+            "count": 15,
+            "mean": 239.87533333333334,
+            "p50": 240,
+            "p95": 240.02,
+            "p99": 240.02,
+            "max": 240.02
+          },
+          "heapBytes": {
+            "count": 15,
+            "mean": 400949248,
+            "p50": 400949248,
+            "p95": 400949248,
+            "p99": 400949248,
+            "max": 400949248
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 0,
+            "replayedFrames": 0,
+            "lastDepth": 0,
+            "peakDepth": 0,
+            "pending": 0
+          },
+          "error": ""
+        }
+      ],
+      "localPresentation": {
+        "local": [
+          261.5,
+          257,
+          0,
+          26556,
+          1
+        ],
+        "remote": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "samples": [
+          {
+            "alpha": 0,
+            "x": 257
+          },
+          {
+            "alpha": 0.25,
+            "x": 257
+          },
+          {
+            "alpha": 0.5,
+            "x": 257
+          },
+          {
+            "alpha": 0.75,
+            "x": 257
+          },
+          {
+            "alpha": 1,
+            "x": 257
+          }
+        ],
+        "worldUnchanged": true
+      }
+    },
+    {
+      "name": "3p-extra-no-bomb-cpu4",
+      "players": 3,
+      "mode": 0,
+      "difficulty": 4,
+      "cpu": 4,
+      "seconds": 20,
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 1224,
+        "inputSha256": "e20630019c52e688d2adbccafb3e143b4b03ae1e0e071699d49038e5a9abb6d7",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      },
+      "scope": "Real RTC, original Japanese data, music disabled, D3D11; all clients share one browser renderer; CPU multiplier applies to that renderer",
+      "seats": [
+        {
+          "seat": 0,
+          "progressFps": 48.84216789805127,
+          "nativeCallbackMs": {
+            "count": 330,
+            "mean": 18.876363636101736,
+            "p50": 18.900000005960464,
+            "p95": 21.900000005960464,
+            "p99": 25.099999994039536,
+            "max": 28.69999998807907
+          },
+          "callbackGapMs": {
+            "count": 330,
+            "mean": 61.193333333324304,
+            "p50": 62,
+            "p95": 68.5,
+            "p99": 72.40000000596046,
+            "max": 117.40000000596046
+          },
+          "visibleFps": {
+            "count": 20,
+            "mean": 18.387999999999998,
+            "p50": 16.13,
+            "p95": 64.46,
+            "p99": 64.46,
+            "max": 64.46
+          },
+          "heapBytes": {
+            "count": 20,
+            "mean": 577437696,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 60,
+            "replayedFrames": 217,
+            "lastDepth": 3,
+            "peakDepth": 6,
+            "pending": 0
+          },
+          "error": ""
+        },
+        {
+          "seat": 1,
+          "progressFps": 48.79258194079436,
+          "nativeCallbackMs": {
+            "count": 330,
+            "mean": 18.72878787951036,
+            "p50": 19,
+            "p95": 21.5,
+            "p99": 22.799999997019768,
+            "max": 28.100000008940697
+          },
+          "callbackGapMs": {
+            "count": 330,
+            "mean": 61.25090909090006,
+            "p50": 62.099999994039536,
+            "p95": 68.5,
+            "p99": 74.6000000089407,
+            "max": 119.79999999701977
+          },
+          "visibleFps": {
+            "count": 20,
+            "mean": 24.7095,
+            "p50": 16.13,
+            "p95": 188.17,
+            "p99": 188.17,
+            "max": 188.17
+          },
+          "heapBytes": {
+            "count": 20,
+            "mean": 577437696,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 60,
+            "replayedFrames": 233,
+            "lastDepth": 3,
+            "peakDepth": 7,
+            "pending": 0
+          },
+          "error": ""
+        },
+        {
+          "seat": 2,
+          "progressFps": 48.891753855308174,
+          "nativeCallbackMs": {
+            "count": 330,
+            "mean": 18.512424242451335,
+            "p50": 18.799999997019768,
+            "p95": 21.299999997019768,
+            "p99": 22.100000008940697,
+            "max": 31.5
+          },
+          "callbackGapMs": {
+            "count": 330,
+            "mean": 61.306666666675696,
+            "p50": 61.8999999910593,
+            "p95": 69.20000000298023,
+            "p99": 76.79999999701977,
+            "max": 121.29999999701977
+          },
+          "visibleFps": {
+            "count": 20,
+            "mean": 18.8025,
+            "p50": 16.13,
+            "p95": 72.74,
+            "p99": 72.74,
+            "max": 72.74
+          },
+          "heapBytes": {
+            "count": 20,
+            "mean": 577437696,
+            "p50": 577437696,
+            "p95": 577437696,
+            "p99": 577437696,
+            "max": 577437696
+          },
+          "rollback": {
+            "enabled": true,
+            "corrections": 60,
+            "replayedFrames": 213,
+            "lastDepth": 3,
+            "peakDepth": 5,
+            "pending": 0
+          },
+          "error": ""
+        }
+      ]
+    }
+  ],
+  "release": "f86f7dc09f1714cb4fc995600f73dc4fe9840a46652dc98c9ee78379f193541f",
+  "productionBrowser": [
+    {
+      "name": "release-2p-normal",
+      "passed": true,
+      "agreement": {
+        "confirmedFrames": 830,
+        "inputSha256": "94e6e4c189638c4116929379d1fcd056d49e04cf2359776cdac4615f02cb1a0f",
+        "kind": "all-seat confirmed input bytes; native world consistency is checked separately"
+      }
+    }
+  ],
+  "checks": {
+    "nativeSuite": 15,
+    "coldSlotDivergentFuture": true,
+    "retainedMutablePayload": true,
+    "sameTickMovementAllSeats": true,
+    "sameFrameNetworkCaptureAndResimulation": true,
+    "productionPackage": true
+  }
+}

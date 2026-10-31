@@ -10,7 +10,7 @@ class PresentationFrame {
 public:
  using Key=std::tuple<uintptr_t,u64,u32,u32>;
  struct Sample {
-  Key key{};u32 first=0,count=0,fields=0,flags=0;bool world=false;
+  Key key{};u32 first=0,count=0,fields=0,flags=0;bool world=false,immediate=false;
   i32 script=0,sprite=0,age=0;uintptr_t resource=0;
   Vec3 position{},rotation{};Vec2 scale{},size{},offset{};
  };
@@ -22,6 +22,9 @@ public:
  bool enabled=false,recording=false,ready=false,camera=false;
  Vec2 offset{};
  uintptr_t observed=0;bool negative_control=false;
+ // The local rollback pilot displays the newly simulated pose, including its
+ // parented effects. Retrospective presentation must not add a visual tick.
+ uintptr_t immediate_owner=0;
  std::array<float,5> reference(uintptr_t);
 #if TH15_DEVELOPMENT_HARNESS
  std::array<float,6> background_diagnostics()const;

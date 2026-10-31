@@ -116,14 +116,14 @@ void rollback_protocol(){
   std::array<NetplayRuntime,3> peers;for(unsigned seat=0;seat<count;++seat){auto config=setup(count,seat,0);config.mode=mode;CHECK(peers[seat].Reset(config));}
   link(peers,count);auto& runtime=peers[0];
   Netplay::FrameInput exact;CHECK(InputLanes::Capture(1|8|0x40,false,2,-12,310,exact));
-  CHECK(runtime.Capture(0,{}));for(unsigned seat=1;seat<count;++seat)CHECK(runtime.SubmitRemote(seat,0,exact)==Netplay::RemoteInputResult::Accepted);
-  auto decision=runtime.Prepare(0);CHECK(decision.canAdvance&&!decision.predictedMask&&runtime.MarkSimulated(0,decision));
-  for(unsigned frame=1;frame<=12;++frame){CHECK(runtime.NeedsCapture()&&runtime.Capture(frame,{}));decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&decision.predictedMask);CHECK(!(decision.inputs[1].buttons&2));CHECK(runtime.MarkSimulated(frame,decision));}
+  CHECK(runtime.Capture(0,input(0,0)));for(unsigned seat=1;seat<count;++seat)CHECK(runtime.SubmitRemote(seat,0,exact)==Netplay::RemoteInputResult::Accepted);
+  auto decision=runtime.Prepare(0);CHECK(decision.canAdvance&&!decision.predictedMask&&decision.inputs[0]==input(0,0)&&runtime.MarkSimulated(0,decision));
+  for(unsigned frame=1;frame<=12;++frame){CHECK(runtime.NeedsCapture()&&runtime.Capture(frame,input(frame,0)));decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&decision.predictedMask&&decision.inputs[0]==input(frame,0));CHECK(!(decision.inputs[1].buttons&2));CHECK(runtime.MarkSimulated(frame,decision));}
   CHECK(!runtime.Prepare(13).canAdvance);
   Netplay::FrameInput corrected;CHECK(InputLanes::Capture(0x80,false,0,0,0,corrected));
   for(unsigned seat=1;seat<count;++seat)for(unsigned frame=1;frame<=12;++frame){const auto result=runtime.SubmitRemote(seat,frame,corrected);CHECK(result==Netplay::RemoteInputResult::RollbackRequired||result==Netplay::RemoteInputResult::Accepted);}
   CHECK(runtime.HasCorrection()&&runtime.CorrectionFrame()==1);CHECK(runtime.Rewind(1));CHECK(!runtime.HasCorrection()&&runtime.NextFrame()==1);
-  for(unsigned frame=1;frame<=12;++frame){decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&!decision.predictedMask&&runtime.MarkSimulated(frame,decision));}
+  for(unsigned frame=1;frame<=12;++frame){decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&!decision.predictedMask&&decision.inputs[0]==input(frame,0)&&runtime.MarkSimulated(frame,decision));}
   CHECK(runtime.NeedsCapture()&&runtime.Capture(13,{}));decision=runtime.Prepare(13);CHECK(decision.canAdvance&&runtime.MarkSimulated(13,decision));CHECK(runtime.NextFrame()==14);
  }
  std::puts("PASS TH15 rollback/hybrid actual correction, 12-frame horizon and fresh advancement");

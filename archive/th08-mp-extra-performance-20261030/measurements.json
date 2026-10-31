@@ -1,0 +1,286 @@
+{
+  "schema": "eagler-touhou/th08-mp-extra-performance/1",
+  "passed": true,
+  "scope": "Original Extra Update/Draw with dense projectiles; same-world baseline versus batched checkpoints and conservative barrier rejection, exact undo and replay hashes",
+  "fixtureWasm": "437774e23df47a4c4bbb79392dd1996883799d53700129692dedcea7f1011a54",
+  "productionWasm": "2c92d9c857962fb3abe9d12272b4f735fe298446faf7a1d0a86ff8f6decdb6ce",
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "extraWindows": 12,
+  "restoreCases": 8,
+  "finalFixtureRestoreCases": 1,
+  "cases": [
+    {
+      "loadouts": [
+        0,
+        1
+      ],
+      "focus": false,
+      "label": "dense-extra",
+      "baseline": {
+        "captureMsPerTick": 0.40555555564868784,
+        "updateDrawMsPerTick": 0.9208333332660712,
+        "restoreMsPerSixTicks": 0.49166666669771075,
+        "maxCheckpointBytes": 2866482,
+        "bombActive": 0
+      },
+      "optimized": {
+        "captureMsPerTick": 0.3555555554986414,
+        "updateDrawMsPerTick": 0.9125000000284571,
+        "restoreMsPerSixTicks": 0.470833333209157,
+        "maxCheckpointBytes": 2866482,
+        "bombActive": 0
+      }
+    },
+    {
+      "loadouts": [
+        0,
+        1
+      ],
+      "focus": false,
+      "label": "active-bomb",
+      "baseline": {
+        "captureMsPerTick": 0.1833333334264656,
+        "updateDrawMsPerTick": 0.9124999998991067,
+        "restoreMsPerSixTicks": 0.5041666665735344,
+        "maxCheckpointBytes": 2626906,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.17500000009830627,
+        "updateDrawMsPerTick": 0.8868055555115765,
+        "restoreMsPerSixTicks": 0.5124999999534339,
+        "maxCheckpointBytes": 2626906,
+        "bombActive": 1
+      }
+    },
+    {
+      "loadouts": [
+        0,
+        1
+      ],
+      "focus": false,
+      "label": "bomb-tail",
+      "baseline": {
+        "captureMsPerTick": 0.12708333327383217,
+        "updateDrawMsPerTick": 0.5666666667028848,
+        "restoreMsPerSixTicks": 0.3208333334575097,
+        "maxCheckpointBytes": 2122642,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.12569444449359757,
+        "updateDrawMsPerTick": 0.5812499999301508,
+        "restoreMsPerSixTicks": 0.3499999999379118,
+        "maxCheckpointBytes": 2122642,
+        "bombActive": 1
+      }
+    },
+    {
+      "loadouts": [
+        0,
+        1
+      ],
+      "focus": true,
+      "label": "dense-extra",
+      "baseline": {
+        "captureMsPerTick": 0.3916666666304486,
+        "updateDrawMsPerTick": 0.9631944444522055,
+        "restoreMsPerSixTicks": 0.4874999998137355,
+        "maxCheckpointBytes": 2866482,
+        "bombActive": 0
+      },
+      "optimized": {
+        "captureMsPerTick": 0.3527777778217569,
+        "updateDrawMsPerTick": 0.9076388888707798,
+        "restoreMsPerSixTicks": 0.45833333348855376,
+        "maxCheckpointBytes": 2866482,
+        "bombActive": 0
+      }
+    },
+    {
+      "loadouts": [
+        0,
+        1
+      ],
+      "focus": true,
+      "label": "active-bomb",
+      "baseline": {
+        "captureMsPerTick": 0.1833333332841802,
+        "updateDrawMsPerTick": 0.8611111111887213,
+        "restoreMsPerSixTicks": 0.4958333334264656,
+        "maxCheckpointBytes": 2626906,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.1777777776458404,
+        "updateDrawMsPerTick": 0.8805555556771449,
+        "restoreMsPerSixTicks": 0.47083333336437744,
+        "maxCheckpointBytes": 2626906,
+        "bombActive": 1
+      }
+    },
+    {
+      "loadouts": [
+        0,
+        1
+      ],
+      "focus": true,
+      "label": "bomb-tail",
+      "baseline": {
+        "captureMsPerTick": 0.11805555554262052,
+        "updateDrawMsPerTick": 0.5986111111059371,
+        "restoreMsPerSixTicks": 0.3499999999379118,
+        "maxCheckpointBytes": 2122642,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.12430555559694767,
+        "updateDrawMsPerTick": 0.5812499999430858,
+        "restoreMsPerSixTicks": 0.3708333332712452,
+        "maxCheckpointBytes": 2122642,
+        "bombActive": 1
+      }
+    },
+    {
+      "loadouts": [
+        2,
+        3,
+        10
+      ],
+      "focus": false,
+      "label": "dense-extra",
+      "baseline": {
+        "captureMsPerTick": 0.40624999998706496,
+        "updateDrawMsPerTick": 0.9729166666640796,
+        "restoreMsPerSixTicks": 0.5833333332557231,
+        "maxCheckpointBytes": 2946141,
+        "bombActive": 0
+      },
+      "optimized": {
+        "captureMsPerTick": 0.3736111111292202,
+        "updateDrawMsPerTick": 0.979861111056784,
+        "restoreMsPerSixTicks": 0.5333333333643774,
+        "maxCheckpointBytes": 2946141,
+        "bombActive": 0
+      }
+    },
+    {
+      "loadouts": [
+        2,
+        3,
+        10
+      ],
+      "focus": false,
+      "label": "active-bomb",
+      "baseline": {
+        "captureMsPerTick": 0.4284722222946584,
+        "updateDrawMsPerTick": 2.653472222167895,
+        "restoreMsPerSixTicks": 0.899999999984478,
+        "maxCheckpointBytes": 5203897,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.3673611111395682,
+        "updateDrawMsPerTick": 1.4604166666589056,
+        "restoreMsPerSixTicks": 0.7833333337524285,
+        "maxCheckpointBytes": 5203897,
+        "bombActive": 1
+      }
+    },
+    {
+      "loadouts": [
+        2,
+        3,
+        10
+      ],
+      "focus": false,
+      "label": "bomb-tail",
+      "baseline": {
+        "captureMsPerTick": 0.3347222222946584,
+        "updateDrawMsPerTick": 5.461111111049023,
+        "restoreMsPerSixTicks": 0.7916666668994973,
+        "maxCheckpointBytes": 4504121,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.32083333322467905,
+        "updateDrawMsPerTick": 1.829166666772734,
+        "restoreMsPerSixTicks": 0.8166666665735344,
+        "maxCheckpointBytes": 4504121,
+        "bombActive": 1
+      }
+    },
+    {
+      "loadouts": [
+        2,
+        3,
+        10
+      ],
+      "focus": true,
+      "label": "dense-extra",
+      "baseline": {
+        "captureMsPerTick": 0.3868055555374465,
+        "updateDrawMsPerTick": 0.9840277777337987,
+        "restoreMsPerSixTicks": 0.5208333334109435,
+        "maxCheckpointBytes": 2946141,
+        "bombActive": 0
+      },
+      "optimized": {
+        "captureMsPerTick": 0.36597222224291825,
+        "updateDrawMsPerTick": 0.9499999999534339,
+        "restoreMsPerSixTicks": 0.49166666669771075,
+        "maxCheckpointBytes": 2946141,
+        "bombActive": 0
+      }
+    },
+    {
+      "loadouts": [
+        2,
+        3,
+        10
+      ],
+      "focus": true,
+      "label": "active-bomb",
+      "baseline": {
+        "captureMsPerTick": 0.3854166666925367,
+        "updateDrawMsPerTick": 2.5368055554701843,
+        "restoreMsPerSixTicks": 0.7833333332867672,
+        "maxCheckpointBytes": 5203897,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.3659722221782431,
+        "updateDrawMsPerTick": 1.50277777781917,
+        "restoreMsPerSixTicks": 0.7791666664804021,
+        "maxCheckpointBytes": 5203897,
+        "bombActive": 1
+      }
+    },
+    {
+      "loadouts": [
+        2,
+        3,
+        10
+      ],
+      "focus": true,
+      "label": "bomb-tail",
+      "baseline": {
+        "captureMsPerTick": 0.31180555558401263,
+        "updateDrawMsPerTick": 5.411111111093002,
+        "restoreMsPerSixTicks": 0.7666666666045785,
+        "maxCheckpointBytes": 4504121,
+        "bombActive": 1
+      },
+      "optimized": {
+        "captureMsPerTick": 0.2833333333255723,
+        "updateDrawMsPerTick": 1.7506944444806625,
+        "restoreMsPerSixTicks": 0.7208333333643774,
+        "maxCheckpointBytes": 4504121,
+        "bombActive": 1
+      }
+    }
+  ],
+  "lateInputCorrectionCases": 5,
+  "lateInputCorrectionPassed": true,
+  "lateInputFixtureWasm": "53c2cfcea840517653f300b621fa2ef3a94d5dc1a62b8e5bcbb758cf48329b10"
+}
