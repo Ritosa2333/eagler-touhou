@@ -1,0 +1,240 @@
+{
+  "passed": true,
+  "baseline": "538feddcbc896993ececf5ef1aaa420afa04b7d5",
+  "implementation": "69bb8b49f054c571b5cd958b36f0cf1255f9eda4",
+  "builds": {
+    "th12": {
+      "wasm": {
+        "bytes": 3266369,
+        "sha256": "19cf8a7c9b89fcee982e90a7f8f5844245b53c3d8983adbc9e4bc650cfe6fbc6"
+      },
+      "sourceSha256": "fed0c7aae03218d0b9841c14f198af4f7582d6228156f316fb5b2816d8bc402a"
+    },
+    "th12-mp": {
+      "wasm": {
+        "bytes": 3286585,
+        "sha256": "7c3900f5a7cfec36dca682ac3307340fb17c33664def9156a907cbbc80ade900"
+      },
+      "sourceSha256": "e17b2390989c7c2006b032b443fec9b17c3722d0f2a9e2a8421a0e513b374b6c"
+    }
+  },
+  "textPerformance": {
+    "passed": true,
+    "baseline": "538feddcbc896993ececf5ef1aaa420afa04b7d5",
+    "rows": [
+      {
+        "name": "baseline",
+        "iterations": 8192,
+        "hotGlyphs": 94,
+        "hotReloads": 188,
+        "peakHotReloads": 94,
+        "glyphLoads": 8473,
+        "elapsedMs": 27.769,
+        "pixelHash": "68e12230b2366483"
+      },
+      {
+        "name": "optimized",
+        "iterations": 8192,
+        "hotGlyphs": 94,
+        "hotReloads": 0,
+        "peakHotReloads": 0,
+        "glyphLoads": 8285,
+        "elapsedMs": 27.547,
+        "pixelHash": "68e12230b2366483"
+      },
+      {
+        "name": "optimized",
+        "iterations": 8192,
+        "hotGlyphs": 94,
+        "hotReloads": 0,
+        "peakHotReloads": 0,
+        "glyphLoads": 8285,
+        "elapsedMs": 27.653,
+        "pixelHash": "68e12230b2366483"
+      },
+      {
+        "name": "baseline",
+        "iterations": 8192,
+        "hotGlyphs": 94,
+        "hotReloads": 188,
+        "peakHotReloads": 94,
+        "glyphLoads": 8473,
+        "elapsedMs": 28.611,
+        "pixelHash": "68e12230b2366483"
+      }
+    ]
+  },
+  "fullLanguagePack": {
+    "passed": true,
+    "cases": [
+      {
+        "game": "th12",
+        "messages": 42,
+        "changedMessages": 42,
+        "binaryBytes": 343745,
+        "originalMultiplayerMessages": null
+      },
+      {
+        "game": "th12-mp",
+        "messages": 42,
+        "changedMessages": 0,
+        "binaryBytes": 607827,
+        "originalMultiplayerMessages": true
+      }
+    ]
+  },
+  "nativeLanguageLookup": {
+    "normal": {
+      "dialogueFiles": 42,
+      "strings": 2264,
+      "viewFiles": 0
+    },
+    "multiplayer": {
+      "dialogueFiles": 42,
+      "strings": 2264,
+      "viewFiles": 42,
+      "entries": 108,
+      "positions": 8140
+    }
+  },
+  "executableChecks": {
+    "sdl": 82,
+    "normalAdaptation": "10/10",
+    "multiplayerAdaptation": "9/9"
+  },
+  "normalBrowser": {
+    "passed": true,
+    "runtime": {
+      "entry": "4a3b53ee6cf931ccfd2fd8314f9226a08b2bfd03eabea9716fee46ebee68cd54",
+      "program": "c41f0275202593e40dc08c2056d92679d34c2db7fcebd2551278c806cbd0057a",
+      "module": "fb553a5d7177fba613a769dc886d96f27b0faf7612c3f9bf993703b4e61e9879",
+      "wasm": "19cf8a7c9b89fcee982e90a7f8f5844245b53c3d8983adbc9e4bc650cfe6fbc6"
+    }
+  },
+  "mixedLanguages": {
+    "languages": [
+      "lang_zh-hans",
+      "ja"
+    ],
+    "latencyMs": 25,
+    "reports": [
+      {
+        "count": 2,
+        "mode": 1,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          0,
+          0
+        ],
+        "slowPresentation": false,
+        "frames": 350,
+        "exactMatches": 264,
+        "hash": 284517775,
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "round": 0,
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title",
+            "age": 182,
+            "ready": false,
+            "selection": 0
+          },
+          {
+            "round": 1,
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title",
+            "age": 184,
+            "ready": false,
+            "selection": 0
+          },
+          {
+            "round": 2,
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title",
+            "age": 182,
+            "ready": false,
+            "selection": 0
+          }
+        ]
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          18,
+          16
+        ],
+        "slowPresentation": false,
+        "frames": 379,
+        "exactMatches": 0,
+        "hash": -1305132866,
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "round": 0,
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title",
+            "age": 184,
+            "ready": false,
+            "selection": 0
+          },
+          {
+            "round": 1,
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title",
+            "age": 182,
+            "ready": false,
+            "selection": 0
+          },
+          {
+            "round": 2,
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title",
+            "age": 193,
+            "ready": true,
+            "selection": 0
+          }
+        ]
+      },
+      {
+        "count": 3,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          20,
+          26,
+          40
+        ],
+        "slowPresentation": false,
+        "frames": 476,
+        "exactMatches": 0,
+        "hash": -2111034171,
+        "spectatorVerified": false,
+        "roomReturns": []
+      }
+    ]
+  },
+  "history": {
+    "passed": true,
+    "normalSplit": "eb84206ff6d12186a257bf466b90a0559841762a",
+    "multiplayerSplit": "f12b11b9e38a4b6d5d2872bbbc97bfac60d225cb",
+    "treesMatch": true,
+    "upstreamAncestors": true,
+    "normalAncestorOfMultiplayer": true,
+    "normalConnection": "37c6532c9085f315b41e6d3fc05d0a7cc7b390f4"
+  }
+}

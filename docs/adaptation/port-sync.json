@@ -477,7 +477,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+      "base": "69bb8b49f054c571b5cd958b36f0cf1255f9eda4",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -993,6 +993,23 @@
             "ports/th12-mp/site/startup-branding.mjs"
           ],
           "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "source": "69bb8b49f054c571b5cd958b36f0cf1255f9eda4",
+          "targetHead": "bc11722f7328e7e5de95e608e4a46f666e873dd2",
+          "paths": [
+            "ports/th12-mp/portable/sdl/BinaryReader.hpp",
+            "ports/th12-mp/portable/sdl/Localization.cpp",
+            "ports/th12-mp/portable/sdl/Scene.cpp",
+            "ports/th12-mp/portable/sdl/Scene.hpp",
+            "ports/th12-mp/portable/sdl/TextRaster.cpp",
+            "ports/th12-mp/src/sdl-content.mjs",
+            "ports/th12-mp/tests/native/sdl-text-performance.cpp",
+            "ports/th12-mp/tests/sdl-localization.test.mjs"
+          ],
+          "note": "同步 SDL 对话资源与有界字形缓存；多人保留原始 MSG 并按入口和程序计数器读取本机翻译视图"
         }
       ]
     }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Platform.hpp"
+#include "../../src/message.hpp"
 #include <cstring>
 #include <stdexcept>
 namespace th12host {
@@ -18,6 +19,10 @@ public:
 };
 std::u32string decode_utf8(const std::string& text);
 std::u32string translate_text(const std::u32string& text);
+struct DialogueTranslation {std::u32string text;std::vector<u32> byte_widths;};
+const DialogueTranslation* translated_dialogue(const std::string& bytes);
+using DialogueRecords=std::array<message_system::TextRecord,4>;
+const DialogueRecords* translated_message(i32 entry,u32 pc);
 void load_translations();
 void translation_context(const std::string& resource);
 }
