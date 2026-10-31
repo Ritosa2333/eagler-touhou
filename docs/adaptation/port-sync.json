@@ -32,7 +32,7 @@
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "fd90fbd845ecd627fab3c051c455df9cc936489f",
+      "base": "19198cb07df52f328361d6286ccbb34b41c425e5",
       "history": [
         {
           "kind": "manual",
@@ -96,6 +96,30 @@
             "ports/th08-mp/web/sdl-runtime/directory-keyboard.mjs"
           ],
           "note": "已将映射接入、撤下、失效和替换时的旧按键释放同步到多人版；同一映射保留长按。41 项测试、正常/多人生产输入链及源码检查通过。源码祖先在本地验证分支核对，交付分支保留当前主线上的独立修改。"
+        },
+        {
+          "kind": "manual",
+          "base": "fd90fbd845ecd627fab3c051c455df9cc936489f",
+          "source": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "targetHead": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "paths": [
+            "ports/th08-mp/ADAPTATION.md",
+            "ports/th08-mp/portable/presentation-lab/adapter.mjs",
+            "ports/th08-mp/portable/presentation-lab/analyzer.mjs",
+            "ports/th08-mp/portable/presentation-lab/app.mjs",
+            "ports/th08-mp/portable/presentation-lab/index.html",
+            "ports/th08-mp/web/cpp/game/BackgroundView.cpp",
+            "ports/th08-mp/web/cpp/game/BulletDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/EffectSystem.cpp",
+            "ports/th08-mp/web/cpp/game/EnemyDrawing.cpp",
+            "ports/th08-mp/web/cpp/game/PlayerBombPatterns.cpp",
+            "ports/th08-mp/web/cpp/game/PlayerShotDraw.cpp",
+            "ports/th08-mp/web/cpp/game/Presentation.hpp",
+            "ports/th08-mp/web/cpp/game/PresentationVisual.hpp",
+            "ports/th08-mp/web/cpp/game/SpellDrawing.cpp",
+            "ports/th08-mp/web/cpp/sdl/GameHost.cpp"
+          ],
+          "note": "接入当前帧有界外推；普通版与多人版同步，保留当前输入、回滚及既有玩法修复。"
         }
       ],
       "origin": {
@@ -109,7 +133,7 @@
     "th10": {
       "normal": "ports/th10",
       "multiplayer": "ports/th10-mp",
-      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+      "base": "19198cb07df52f328361d6286ccbb34b41c425e5",
       "history": [
         {
           "kind": "manual",
@@ -159,6 +183,20 @@
             "ports/th10-mp/web/sdl-runtime/startup-branding.mjs"
           ],
           "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "source": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "targetHead": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "paths": [
+            "ports/th10-mp/ADAPTATION.md",
+            "ports/th10-mp/portable/check-high-refresh-contract.mjs",
+            "ports/th10-mp/portable/presentation-lab/adapter.mjs",
+            "ports/th10-mp/web/cpp/game/HighRefresh.hpp",
+            "ports/th10-mp/web/cpp/sdl/ApplicationHost.cpp"
+          ],
+          "note": "接入当前帧有界外推；普通版与多人版同步，保留当前输入、回滚及既有玩法修复。"
         }
       ],
       "origin": {
@@ -217,7 +255,7 @@
     "th11": {
       "normal": "ports/th11",
       "multiplayer": "ports/th11-mp",
-      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+      "base": "19198cb07df52f328361d6286ccbb34b41c425e5",
       "history": [
         {
           "kind": "manual",
@@ -337,6 +375,22 @@
             "ports/th11-mp/web/sdl-runtime/startup-branding.mjs"
           ],
           "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "source": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "targetHead": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "paths": [
+            "ports/th11-mp/ADAPTATION.md",
+            "ports/th11-mp/portable/check-high-refresh-contract.mjs",
+            "ports/th11-mp/portable/presentation-check.cpp",
+            "ports/th11-mp/portable/presentation-lab/adapter.mjs",
+            "ports/th11-mp/web/cpp/game/AnmPresentation.cpp",
+            "ports/th11-mp/web/cpp/game/HighRefresh.hpp",
+            "ports/th11-mp/web/cpp/sdl/Application.cpp"
+          ],
+          "note": "接入当前帧有界外推；普通版与多人版同步，保留当前输入、回滚及既有玩法修复。"
         }
       ],
       "origin": {
@@ -374,7 +428,7 @@
     "th15": {
       "normal": "ports/th15",
       "multiplayer": "ports/th15-mp",
-      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+      "base": "19198cb07df52f328361d6286ccbb34b41c425e5",
       "history": [
         {
           "kind": "manual",
@@ -453,6 +507,21 @@
             "ports/th15-mp/web/sdl-runtime/startup-branding.mjs"
           ],
           "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "source": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "targetHead": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "paths": [
+            "ports/th15-mp/ADAPTATION.md",
+            "ports/th15-mp/portable/presentation-lab/adapter.mjs",
+            "ports/th15-mp/portable/presentation-lab/runtime.mjs",
+            "ports/th15-mp/portable/presentation-lab/serve.mjs",
+            "ports/th15-mp/web/cpp/sdl/BrowserRuntime.cpp",
+            "ports/th15-mp/web/cpp/sdl/PresentationFrame.cpp"
+          ],
+          "note": "接入当前帧有界外推；普通版与多人版同步，保留当前输入、回滚及既有玩法修复。"
         }
       ],
       "origin": {
@@ -500,7 +569,7 @@
     "th12": {
       "normal": "ports/th12",
       "multiplayer": "ports/th12-mp",
-      "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+      "base": "19198cb07df52f328361d6286ccbb34b41c425e5",
       "origin": {
         "normalCommit": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
         "multiplayerCommit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
@@ -1016,6 +1085,20 @@
             "ports/th12-mp/site/startup-branding.mjs"
           ],
           "note": "同步练习页面左右直接调整与公共启动署名；保留多人产品THPrac关闭和各作独立验收说明。真实ImGui导航与正式Web构建通过，隔离投影合并的完整多人内容树与已审阅源码一致。"
+        },
+        {
+          "kind": "manual",
+          "base": "501b15429cee8c89bfc98bd8fb754cac8eb81716",
+          "source": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "targetHead": "19198cb07df52f328361d6286ccbb34b41c425e5",
+          "paths": [
+            "ports/th12-mp/ADAPTATION.md",
+            "ports/th12-mp/site/game.mjs",
+            "ports/th12-mp/src/presentation-interpolation.mjs",
+            "ports/th12-mp/src/renderer.mjs",
+            "ports/th12-mp/tests/presentation-continuity.test.mjs"
+          ],
+          "note": "接入当前帧有界外推；普通版与多人版同步，保留当前输入、回滚及既有玩法修复。"
         }
       ]
     }
