@@ -1,6 +1,6 @@
 # 文档总表
 
-共 403 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 404 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -212,6 +212,7 @@
 | 历史记录 | [archive/th06-miss-feedback-20261031/README.md](../archive/th06-miss-feedback-20261031/README.md) | TH06 多人 Miss 与符卡呈现 |
 | 历史记录 | [archive/th06-th08-multiplayer-bugs-20261028/README.md](../archive/th06-th08-multiplayer-bugs-20261028/README.md) | TH06／TH08 多人索敌与 Last Spell 修复验证 |
 | 历史记录 | [archive/th08-extra-last-spell-20261029/README.md](../archive/th08-extra-last-spell-20261029/README.md) | TH08 Extra 雷保护与 Last Spell 生命周期 |
+| 历史记录 | [archive/th08-keyboard-ownership-20261031/README.md](../archive/th08-keyboard-ownership-20261031/README.md) | TH08 键盘输入所有权 |
 | 历史记录 | [archive/th08-mp-extra-performance-20261030/README.md](../archive/th08-mp-extra-performance-20261030/README.md) | TH08 多人消弹性能与 ECL 目标选择 |
 | 历史记录 | [archive/th08-mp-steady-performance-20261030/README.md](../archive/th08-mp-steady-performance-20261030/README.md) | TH08 多人常态弹幕性能 |
 | 历史记录 | [archive/th12-autosave-host-state-20261030/README.md](../archive/th12-autosave-host-state-20261030/README.md) | 星莲船录像保存与逐帧状态读取 |

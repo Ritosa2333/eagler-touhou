@@ -1,0 +1,386 @@
+{
+  "schema": "th08-keyboard-ownership/1",
+  "base": "9c7988a704ef344beff3950689fd361df935b401",
+  "scope": [
+    "TH08 normal",
+    "TH08 multiplayer"
+  ],
+  "cause": "Rejected physical DOWN fell through from the Launcher mapper to a raw native owner; later UP was consumed by the mapper and did not release the raw owner.",
+  "fix": {
+    "native": "Skip the raw fallback whenever the bound Launcher mapper owns input.",
+    "hosted": "Use the mapper acceptance result without a second raw attempt.",
+    "timing": "Synchronous event dispatch; no polling timer or held-key expiration."
+  },
+  "checks": {
+    "keyboardSuite": {
+      "passed": 38,
+      "failed": 0
+    },
+    "sourceContracts": {
+      "normal": "10/10",
+      "multiplayer": "9/9"
+    },
+    "browser": {
+      "passed": true,
+      "actualShellAndNative": true,
+      "scope": "Production shell listeners, Launcher mapper, SDL poll and native key table; game calculations retired after native initialization",
+      "reports": [
+        {
+          "variant": "normal",
+          "mode": "baseline",
+          "checks": [
+            {
+              "code": "ArrowUp",
+              "reason": "composition",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "shortcut",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "editing",
+              "rejected": 128,
+              "released": 128,
+              "typingPrevented": true
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "composition",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "shortcut",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "editing",
+              "rejected": 128,
+              "released": 128,
+              "typingPrevented": true
+            },
+            {
+              "code": "KeyZ",
+              "reason": "composition",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "KeyZ",
+              "reason": "shortcut",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "KeyZ",
+              "reason": "editing",
+              "rejected": 128,
+              "released": 128,
+              "typingPrevented": true
+            },
+            {
+              "otherShift": 128,
+              "allShiftReleased": 0
+            }
+          ],
+          "ordinaryPressReleaseCycles": 90,
+          "trustedBrowserKeys": [
+            {
+              "code": "ArrowUp",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "KeyZ",
+              "down": 128,
+              "up": 0
+            }
+          ],
+          "wasmSha256": "b3d7559c0dacbd695fde95e52afb3cb04bb774c88217070a855787c664fa41c3",
+          "errors": []
+        },
+        {
+          "variant": "normal",
+          "mode": "patched",
+          "checks": [
+            {
+              "code": "ArrowUp",
+              "reason": "composition",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "shortcut",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "editing",
+              "rejected": 0,
+              "released": 0,
+              "typingPrevented": true
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "composition",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "shortcut",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "editing",
+              "rejected": 0,
+              "released": 0,
+              "typingPrevented": true
+            },
+            {
+              "code": "KeyZ",
+              "reason": "composition",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "KeyZ",
+              "reason": "shortcut",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "KeyZ",
+              "reason": "editing",
+              "rejected": 0,
+              "released": 0,
+              "typingPrevented": true
+            },
+            {
+              "otherShift": 128,
+              "allShiftReleased": 0
+            }
+          ],
+          "ordinaryPressReleaseCycles": 90,
+          "trustedBrowserKeys": [
+            {
+              "code": "ArrowUp",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "KeyZ",
+              "down": 128,
+              "up": 0
+            }
+          ],
+          "wasmSha256": "b3d7559c0dacbd695fde95e52afb3cb04bb774c88217070a855787c664fa41c3",
+          "errors": []
+        },
+        {
+          "variant": "multiplayer",
+          "mode": "baseline",
+          "checks": [
+            {
+              "code": "ArrowUp",
+              "reason": "composition",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "shortcut",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "editing",
+              "rejected": 128,
+              "released": 128,
+              "typingPrevented": true
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "composition",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "shortcut",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "editing",
+              "rejected": 128,
+              "released": 128,
+              "typingPrevented": true
+            },
+            {
+              "code": "KeyZ",
+              "reason": "composition",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "KeyZ",
+              "reason": "shortcut",
+              "rejected": 128,
+              "released": 128
+            },
+            {
+              "code": "KeyZ",
+              "reason": "editing",
+              "rejected": 128,
+              "released": 128,
+              "typingPrevented": true
+            },
+            {
+              "otherShift": 128,
+              "allShiftReleased": 0
+            }
+          ],
+          "ordinaryPressReleaseCycles": 90,
+          "trustedBrowserKeys": [
+            {
+              "code": "ArrowUp",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "KeyZ",
+              "down": 128,
+              "up": 0
+            }
+          ],
+          "wasmSha256": "e43f00850283ee289a3361d57a44008a436728cb74ddc057e382f8afb88af70e",
+          "errors": []
+        },
+        {
+          "variant": "multiplayer",
+          "mode": "patched",
+          "checks": [
+            {
+              "code": "ArrowUp",
+              "reason": "composition",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "shortcut",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ArrowUp",
+              "reason": "editing",
+              "rejected": 0,
+              "released": 0,
+              "typingPrevented": true
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "composition",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "shortcut",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "reason": "editing",
+              "rejected": 0,
+              "released": 0,
+              "typingPrevented": true
+            },
+            {
+              "code": "KeyZ",
+              "reason": "composition",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "KeyZ",
+              "reason": "shortcut",
+              "rejected": 0,
+              "released": 0
+            },
+            {
+              "code": "KeyZ",
+              "reason": "editing",
+              "rejected": 0,
+              "released": 0,
+              "typingPrevented": true
+            },
+            {
+              "otherShift": 128,
+              "allShiftReleased": 0
+            }
+          ],
+          "ordinaryPressReleaseCycles": 90,
+          "trustedBrowserKeys": [
+            {
+              "code": "ArrowUp",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "ShiftLeft",
+              "down": 128,
+              "up": 0
+            },
+            {
+              "code": "KeyZ",
+              "down": 128,
+              "up": 0
+            }
+          ],
+          "wasmSha256": "e43f00850283ee289a3361d57a44008a436728cb74ddc057e382f8afb88af70e",
+          "errors": []
+        }
+      ]
+    }
+  },
+  "reproductionCases": [
+    "IME composition flag",
+    "Alt-modified shortcut rejected by the Launcher",
+    "DOM text editing target"
+  ],
+  "gameplayAbiChanged": false,
+  "wasmChanged": false
+}
