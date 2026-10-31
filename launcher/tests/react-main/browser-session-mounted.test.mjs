@@ -2678,7 +2678,7 @@ for(const failure of ['first frame','gameplay path'])test(`actual BrowserLaunche
   await until(()=>node('#decisionDialog').open||session.getRuntime().getSnapshot().launched,'room music choice');
   if(node('#decisionDialog').open)await click('#decisionConfirm');
   await until(()=>session.getRuntime().getSnapshot().launched,'native acknowledged launch');
-  await click('.room-workspace-fullscreen');
+  assert.equal(f.fullscreen,node('#player'),'room Start already entered browser fullscreen before the failed wait');
   if(failure==='first frame')await React.act(async()=>timers.fire(timers.live(122_000)[0]));
   else await React.act(async()=>{f.native.Module={eaglerOptions:{netplayMode:'lan'}};f.native.__eaglerPeerTransport={peers:new Map()};f.native.__eaglerNetplayFailed=true;f.native.__eaglerNetplayError='fixture gameplay path failed';f.native.emit('first-frame');});
   await until(()=>session.startupError.getSnapshot().open,'room reports the failed wait');
