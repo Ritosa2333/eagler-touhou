@@ -256,14 +256,31 @@ void Scene::capture(const Options& o){
     const auto find_logical=[&](i32 bank,i32 sprite_id)->const Pose*{for(const auto& p:logical_poses)if(p.a.bank==bank&&p.a.sprite==sprite_id)return &p;return nullptr;};
     // Logical poses, without the text VMs replaced by dialogue lines.
     for(const auto& p:logical_poses){if(p.a.bank==BankText&&((p.a.sprite>=0&&p.a.sprite<4)||p.a.sprite==7))continue;poses.push_back(p);}
-    // Dialogue lines: the text VMs 0..3 carry the MSG text records.
-    for(const auto& p:logical_poses){
-        if(p.a.bank!=BankText||p.a.sprite<0||p.a.sprite>=4||!p.a.visible)continue;
-        const auto& record=messageVM.textRecords[size_t(p.a.sprite)];if(record.bytes.empty())continue;
+    // Native MSG remains authoritative. Multiplayer language views select
+    // local text surfaces by its retail entry/PC, without modifying any VM.
+    const auto* local_message=translated_message(messageVM.entry,messageVM.pc);
+    const auto append_dialogue=[&](Pose p,const message_system::TextRecord& record){
+        if(record.bytes.empty())return;
         const AnmSprite* sp=sprite(BankText,p.a.sprite);
-        Dialogue d;d.bytes=record.bytes;d.text=decode_cp932(record.bytes);d.offset=record.offset;d.spacing=record.spacing;d.style=record.style;d.color=record.color;
+        Dialogue d;d.bytes=record.bytes;
+        if(const auto* text=translated_dialogue(record.bytes)){d.text=text->text;d.byte_widths=text->byte_widths;}
+        else d.text=decode_cp932(record.bytes);
+        d.offset=record.offset;d.spacing=record.spacing;d.style=record.style;d.color=record.color;
         d.width=sp?sp->w:354;d.height=sp?sp->h:17;d.source_width=std::min<u32>(1024,u32(2*d.width+22));d.source_height=36;
-        Pose q=p;q.kind=Pose::DialogueLine;q.item=u32(dialogues.size());dialogues.push_back(std::move(d));poses.push_back(q);
+        p.kind=Pose::DialogueLine;p.item=u32(dialogues.size());dialogues.push_back(std::move(d));poses.push_back(p);
+    };
+    if(local_message){
+        for(i32 slot=0;slot<4;++slot){
+            const i32 line=slot%2;const Pose* source=nullptr;
+            for(const auto& p:logical_poses)if(p.a.bank==BankText&&p.a.sprite>=0&&p.a.sprite<2&&p.a.visible&&p.a.alpha>0){
+                if(!source)source=&p;if(p.a.sprite==line){source=&p;break;}}
+            if(!source)continue;
+            Pose p=*source;p.y+=22*(line-source->a.sprite)-(slot>=2?6:0);p.a.sprite=slot;
+            append_dialogue(p,(*local_message)[slot]);
+        }
+    }else for(const auto& p:logical_poses){
+        if(p.a.bank!=BankText||p.a.sprite<0||p.a.sprite>=4||!p.a.visible)continue;
+        append_dialogue(p,messageVM.textRecords[size_t(p.a.sprite)]);
     }
     for(i32 i=0;i<meshes;++i){Pose p;p.kind=Pose::Mesh;p.item=u32(i);const auto& m=mesh_records[i];p.a.bank=m.bank;p.a.sprite=m.sprite;p.a.layer=m.layer;p.a.blend=m.blend;
         p.id=m.nodeId;p.owner=m.owner;p.mesh_pass0=m.pass==0;p.has_priority=true;p.priority=m.drawPriority;p.has_order=true;p.order=i;poses.push_back(p);}
@@ -491,6 +508,7 @@ Texture Scene::dialogue_texture(const Dialogue& d){
     auto& cache=d.menu?menu_cache:dialogue_cache;
     std::string key(reinterpret_cast<const char*>(&d.offset),sizeof(i32)*3);key+=d.bytes;key+='|';
     key.append(reinterpret_cast<const char*>(d.text.data()),d.text.size()*sizeof(char32_t));key+='|';
+    if(!d.byte_widths.empty())key.append(reinterpret_cast<const char*>(d.byte_widths.data()),d.byte_widths.size()*sizeof(u32));key+='|';
     for(const float v:{d.width,d.height,d.source_x,d.source_y})key.append(reinterpret_cast<const char*>(&v),4);
     for(const u32 v:{d.color,d.source_width,d.source_height,d.foreground,u32(d.raster),u32(d.localized_spell)})key.append(reinterpret_cast<const char*>(&v),4);
     for(auto it=cache.begin();it!=cache.end();++it)if(it->key==key){cache.splice(cache.begin(),cache,it);return cache.front().texture;}
@@ -513,6 +531,9 @@ Texture Scene::dialogue_texture(const Dialogue& d){
             width=raster.measure(d.text,serif,weight,size,scale_x);
         }
         draw(d.text,std::max(0.f,available-width),scale_x);
+    }
+    else if(d.spacing&&!d.byte_widths.empty()){
+        i64 column=0;for(size_t i=0;i<d.text.size();++i){draw(std::u32string(1,d.text[i]),float(2*d.offset+column*d.spacing));column+=d.byte_widths[i];}
     }
     else if(d.spacing){for(size_t i=0;i<d.bytes.size();i+=2)draw(decode_cp932(d.bytes.substr(i,2)),float(2*d.offset+i64(i)*d.spacing));}
     else draw(d.text,d.raster?d.source_x:float(2*d.offset+2));
