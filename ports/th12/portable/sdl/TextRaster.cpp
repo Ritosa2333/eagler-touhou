@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
+#include <array>
 #include <SDL3/SDL.h>
 #ifdef __SWITCH__
 #include <switch.h>
@@ -18,6 +19,7 @@ namespace {
 bool lead(u8 b){return (b>=0x81&&b<=0x9f)||(b>=0xe0&&b<=0xfc);}
 }
 std::u32string decode_cp932(const std::string& bytes,bool localize){
+    if(localize)if(const auto* text=translated_dialogue(bytes))return text->text;
     std::u32string out;
     for(size_t i=0;i<bytes.size();++i){
         const u8 b=u8(bytes[i]);if(!b)break;
@@ -39,14 +41,26 @@ struct TextRaster::Impl {
     }
     FT_Face pick(bool serif){if(serif&&mincho.face)return mincho.face;if(gothic.face)return gothic.face;return shared.face;}
     FT_Face fallback(){return shared.face?shared.face:gothic.face;}
-    struct Glyph {i32 left=0,top=0,advance=0;u32 width=0,height=0;std::vector<u8> coverage;};
+    struct Glyph {i32 left=0,top=0,advance=0;u32 width=0,height=0;std::vector<u8> coverage;bool recent=false;};
     std::unordered_map<u64,Glyph> cache;
+    std::array<u64,4096> glyph_slots{};size_t glyph_clock=0;
     const Glyph& glyph(FT_Face face,char32_t c,u32 size,bool bold,float scale_x){
         const u32 scale=u32(std::clamp<long>(std::lround(scale_x*4096),1,4096));
         const u64 key=u64(c)|u64(size)<<32|u64(bold)<<48|u64(face==mincho.face)<<49|u64(face==shared.face)<<50|u64(scale)<<51;
-        if(auto it=cache.find(key);it!=cache.end())return it->second;
-        if(cache.size()>4096)cache.clear();
-        Glyph g;FT_UInt index=FT_Get_Char_Index(face,c);FT_Face used=face;
+        if(auto it=cache.find(key);it!=cache.end()){it->second.recent=true;return it->second;}
+        // Retain hot glyphs when the bounded cache fills. Recycle one cold
+        // map node and its bitmap capacity instead of dropping every face.
+        // Clock eviction needs one reference bit on hits, without list churn.
+        decltype(cache)::node_type recycled;Glyph g;
+        if(cache.size()>=4096){
+            auto cold=cache.find(glyph_slots[glyph_clock]);
+            while(cold->second.recent){cold->second.recent=false;glyph_clock=(glyph_clock+1)%glyph_slots.size();cold=cache.find(glyph_slots[glyph_clock]);}
+            recycled=cache.extract(cold);g=std::move(recycled.mapped());
+            glyph_slots[glyph_clock]=key;glyph_clock=(glyph_clock+1)%glyph_slots.size();
+            g.left=g.top=g.advance=0;g.width=g.height=0;g.coverage.clear();
+            g.recent=false;
+        }else glyph_slots[cache.size()]=key;
+        FT_UInt index=FT_Get_Char_Index(face,c);FT_Face used=face;
         if(!index&&fallback()&&fallback()!=face){used=fallback();index=FT_Get_Char_Index(used,c);}
         FT_Set_Pixel_Sizes(used,0,size);
         FT_Matrix transform{FT_Fixed(scale*16),0,0,65536};
@@ -61,6 +75,7 @@ struct TextRaster::Impl {
             }
             g.advance=i32(std::lround(slot->advance.x/64.0));
         }else g.advance=i32(std::lround(size*.5*scale/4096));
+        if(recycled){recycled.key()=key;recycled.mapped()=std::move(g);return cache.insert(std::move(recycled)).position->second;}
         return cache.emplace(key,std::move(g)).first->second;
     }
     // textBaseline=top: the top of the em square (Blink: em-height ascent).
