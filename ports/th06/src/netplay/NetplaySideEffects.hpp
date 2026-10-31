@@ -22,6 +22,28 @@ bool ConsumeCorrectedBgmPlay(char *path, std::size_t capacity);
 void BeginSimulationFrame(std::uint32_t generation, std::uint32_t frame, bool speculative);
 void EndSimulationFrame();
 
+// Miss feedback belongs to a completed death and a confirmed input frame.
+// Particle tags travel with rollback-owned Effects; this output journal does
+// not rewind, so an already-presented Miss cannot sound twice.
+struct MissFrameTag
+{
+    std::uint32_t generation = 0;
+    std::uint32_t frame = 0;
+    std::uint32_t deferred = 0;
+};
+class MissScope
+{
+public:
+    MissScope();
+    ~MissScope();
+    MissScope(const MissScope &) = delete;
+    MissScope &operator=(const MissScope &) = delete;
+};
+MissFrameTag CurrentMissFrameTag();
+bool RecordCommittedMiss(std::uint32_t player);
+std::uint32_t ConsumeConfirmedMisses(std::uint32_t generation, std::uint32_t confirmedFrame);
+bool MissFrameVisible(const MissFrameTag &tag);
+
 // Only the initial Bomb calc is special-cased. Normal resimulation SFX remain
 // suppressed; sounds attempted while this scope is active are remembered and
 // any sound IDs that were not already heard on the forward pass are replayed

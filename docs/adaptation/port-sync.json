@@ -32,7 +32,7 @@
     "th08": {
       "normal": "ports/th08",
       "multiplayer": "ports/th08-mp",
-      "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+      "base": "fd90fbd845ecd627fab3c051c455df9cc936489f",
       "history": [
         {
           "kind": "manual",
@@ -73,6 +73,29 @@
             "ports/th08-mp/portable/build.mjs"
           ],
           "note": "WebSfx 编译输入与分项记录已对应迁入。投影合并已写回，MP 源码树与审核快照一致，构建选项按各自模式处理。"
+        },
+        {
+          "kind": "manual",
+          "base": "9481ff5e802c2b16c2ca29f44054260e9061e888",
+          "source": "4c6e16d301ba57271c30f0ed55563dbd5f6e5b17",
+          "targetHead": "c89e3d15721a4d19f2a22dd442abda3f225f6180",
+          "paths": [
+            "ports/th08-mp/portable/check-keyboard-browser.mjs",
+            "ports/th08-mp/web/sdl-runtime/directory-keyboard.mjs",
+            "ports/th08-mp/web/sdl-runtime/shell.mjs"
+          ],
+          "note": "单人和多人接入相同键盘所有权修复；两侧生产 shell 与 C++ 键表浏览器回归通过，公共夹具保留在两侧。源历史合并与完整目录核验保留于本地验证分支，交付提交从最新主线继续。"
+        },
+        {
+          "kind": "manual",
+          "base": "4c6e16d301ba57271c30f0ed55563dbd5f6e5b17",
+          "source": "fd90fbd845ecd627fab3c051c455df9cc936489f",
+          "targetHead": "6787a76717a3e91ae9a9ba7c6553ca2097d94f70",
+          "paths": [
+            "ports/th08-mp/portable/check-keyboard-browser.mjs",
+            "ports/th08-mp/web/sdl-runtime/directory-keyboard.mjs"
+          ],
+          "note": "已将映射接入、撤下、失效和替换时的旧按键释放同步到多人版；同一映射保留长按。41 项测试、正常/多人生产输入链及源码检查通过。源码祖先在本地验证分支核对，交付分支保留当前主线上的独立修改。"
         }
       ],
       "origin": {
