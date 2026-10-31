@@ -2,6 +2,8 @@
 #include "ApplicationState.hpp"
 #if TH_ENABLE_THPRAC
 #include <eagler/thprac/PracticeSdlKeyboard.hpp>
+#include <eagler/thprac/PracticeNavigation.hpp>
+namespace PracticeNav = eagler::thprac::navigation;
 #include "../game/PracticeSections.hpp"
 #include "../game/PracticeSectionCatalog.hpp"
 #include "../game/PracticeUiLabels.hpp"
@@ -25,7 +27,7 @@ namespace MobileThprac = eagler::thprac::mobile;
 #include "../../../portable/sdl/third_party/stb_image.h"
 namespace th15::sdl::ThpracUi {
 namespace {
-bool initialized=false,down[256]{},edge[256]{},armed=false,was_open=false,desktop=false;
+bool initialized=false,down[256]{},edge[256]{},armed=false,was_open=false,desktop=false,text_editing=false;
 float px=-FLT_MAX,py=-FLT_MAX;bool pointer_down=false;int locale=0,index=0;
 struct PointerEdge {bool down;float x,y;};
 std::deque<PointerEdge> pointer_edges;
@@ -81,7 +83,7 @@ void input_options(ApplicationState& app){
  if(ImGui::IsKeyDown(16)){if(ImGui::IsKeyPressed('F'))input.enable_fast_retry=!input.enable_fast_retry;if(ImGui::IsKeyPressed('D'))input.disable_xkey=!input.disable_xkey;if(ImGui::IsKeyPressed('S'))input.disable_zkey=!input.disable_zkey;if(ImGui::IsKeyPressed('A'))input.disable_shiftkey=!input.disable_shiftkey;}
 }
 bool dialogue(int section){switch(section){case TH15_ST1_BOSS1:case TH15_ST2_BOSS1:case TH15_ST3_BOSS1:case TH15_ST4_BOSS1:case TH15_ST5_BOSS1:case TH15_ST6_BOSS1:case TH15_ST7_END_NS1:case TH15_ST7_MID1:return true;default:return false;}}
-template<size_t N> bool combo(const char* name,int& value,const char* const (&items)[N][3]){const char* names[N];for(size_t i=0;i<N;i++)names[i]=label(items[i]);return ImGui::Combo(name,&value,names,int(N));}
+template<size_t N> bool combo(const char* name,int& value,const char* const (&items)[N][3]){const char* names[N];for(size_t i=0;i<N;i++)names[i]=label(items[i]);return PracticeNav::Combo(name,&value,names,int(N));}
 std::vector<const PracticeSectionLabel*> sections(ApplicationState& app){
  auto& s=app.practice;auto& p=s.configured;std::vector<const PracticeSectionLabel*> result;
  const int difficulty=p.stage==6?4:app.progress.difficulty;
@@ -89,6 +91,7 @@ std::vector<const PracticeSectionLabel*> sections(ApplicationState& app){
 }
 void practice_menu(ApplicationState& app){
  auto& s=app.practice;auto& p=s.configured;
+ const bool entering=!was_open;
  if(!was_open){was_open=true;armed=false;}
  const int difficulty=p.stage==6?4:app.progress.difficulty;
  const ImVec2 size=locale==0?ImVec2(320,388.8f):locale==1?ImVec2(384,360):ImVec2(358.4f,388.8f);
@@ -103,31 +106,33 @@ void practice_menu(ApplicationState& app){
    if(p.stage==5&&s.warp==2){s.warp=0;p.section=p.phase=0;}
    // Purple removes the stage-six Mid Boss entry rather than allowing an
    // impossible section to reach the decoded ECL patcher.
-   if(ImGui::BeginCombo(label(practice_TH_WARP),label(practice_TH_WARP_SELECT[s.warp]))){for(int i=0;i<6;i++){if(p.stage==5&&i==2)continue;if(ImGui::Selectable(label(practice_TH_WARP_SELECT[i]),s.warp==i)){s.warp=i;p.section=p.phase=0;}}ImGui::EndCombo();}
+   const char* warps[6];for(int i=0;i<6;++i)warps[i]=label(practice_TH_WARP_SELECT[i]);
+   if(p.stage==5){const char* choices[]{warps[0],warps[1],warps[3],warps[4],warps[5]};int selected=s.warp<2?s.warp:s.warp-1;if(PracticeNav::Combo(label(practice_TH_WARP),&selected,choices,5)){s.warp=selected<2?selected:selected+1;p.section=p.phase=0;}}
+   else if(PracticeNav::Combo(label(practice_TH_WARP),&s.warp,warps,6))p.section=p.phase=0;
    if(!s.warp)p.section=p.phase=0;
    else if(s.warp==1){
     constexpr int setup[7][2]{{2,4},{3,3},{3,3},{3,3},{4,6},{4,0},{5,4}};const auto& counts=setup[p.stage];int chapter=std::clamp(p.section>=10000?p.section%100:1,1,counts[0]+counts[1]);char name[64];std::snprintf(name,sizeof name,label(counts[1]==0?practice_TH_STAGE_PORTION_N:chapter<=counts[0]?practice_TH_STAGE_PORTION_1:practice_TH_STAGE_PORTION_2),chapter<=counts[0]?chapter:chapter-counts[0]);
-    if(ImGui::SliderInt(label(practice_TH_CHAPTER),&chapter,1,counts[0]+counts[1],name))p.phase=0;p.section=10000+(p.stage+1)*100+chapter;
+    if(PracticeNav::SliderInt(label(practice_TH_CHAPTER),&chapter,1,counts[0]+counts[1],name))p.phase=0;p.section=10000+(p.stage+1)*100+chapter;
    }else{
     auto entries=sections(app);auto found=std::find_if(entries.begin(),entries.end(),[&](auto* l){return l->id==p.section;});index=found==entries.end()?0:int(found-entries.begin());
-    if(!entries.empty()){p.section=entries[index]->id;std::vector<const char*> names;for(auto* l:entries)names.push_back(l->names[difficulty][locale]);if(ImGui::Combo(label(practice_TH_WARP_SELECT[s.warp]),&index,names.data(),int(names.size()))){p.section=entries[index]->id;p.phase=0;}}
+    if(!entries.empty()){p.section=entries[index]->id;std::vector<const char*> names;for(auto* l:entries)names.push_back(l->names[difficulty][locale]);if(PracticeNav::Combo(label(practice_TH_WARP_SELECT[s.warp]),&index,names.data(),int(names.size()))){p.section=entries[index]->id;p.phase=0;}}
     else p.section=p.phase=0;
-    if(dialogue(p.section))ImGui::Checkbox(label(practice_TH_DLG),&p.dlg);
+    if(dialogue(p.section))PracticeNav::Checkbox(label(practice_TH_DLG),&p.dlg);
    }
-   const auto* phases=practice_phase_labels(p.section,difficulty);if(phases){const int count=practice_phase_count(p.section,difficulty);p.phase=std::clamp(p.phase,0,count-1);std::vector<const char*> names;for(int i=0;i<count;i++)names.push_back(label(phases[i]));ImGui::Combo(label(practice_TH_PHASE),&p.phase,names.data(),count);}else p.phase=0;
-   if(p.section==TH15_ST3_BOSS1&&p.phase>=2)ImGui::SliderFloat(label(practice_TH_BT_PHASE),&p.doremy_normal_1_phase,-3.14159265f,3.14159265f);
-   if(p.section==TH15_ST6_BOSS6&&p.phase==1&&difficulty>=2)ImGui::SliderFloat(label(practice_TH_ENHANCEMENT_VALUE),&p.enhanced_para,0,1);
-   ImGui::SliderInt(label(practice_TH_LIFE),&p.life,0,8);p.life_fragment=std::min(p.life_fragment,p.stage==6?5:3);ImGui::SliderInt(label(practice_TH_LIFE_FRAGMENT),&p.life_fragment,0,p.stage==6?5:3);
-   ImGui::SliderInt(label(practice_TH_BOMB),&p.bomb,0,8);ImGui::SliderInt(label(practice_TH_BOMB_FRAGMENT),&p.bomb_fragment,0,4);
-   char power[24];std::snprintf(power,sizeof power,"%.2f",p.power/100.);ImGui::SliderInt(label(practice_TH_POWER),&p.power,0,400,power);
-   ImGui::DragInt(label(practice_TH_VALUE),&p.value,10,0,999990);p.value=p.value/10*10;ImGui::DragInt(label(practice_TH_GRAZE),&p.graze,1,0,999999);
-   const i64 lo=0,hi=9999999990LL;ImGui::DragScalar(label(practice_TH_SCORE),ImGuiDataType_S64,&p.score,10,&lo,&hi,"%lld");p.score=p.score/10*10;
-   if(app.progress.character==3)ImGui::SliderInt(label(practice_TH15_REISEN_SHIELD),&p.reisen_shield,0,3);
+   const auto* phases=practice_phase_labels(p.section,difficulty);if(phases){const int count=practice_phase_count(p.section,difficulty);p.phase=std::clamp(p.phase,0,count-1);std::vector<const char*> names;for(int i=0;i<count;i++)names.push_back(label(phases[i]));PracticeNav::Combo(label(practice_TH_PHASE),&p.phase,names.data(),count);}else p.phase=0;
+   if(p.section==TH15_ST3_BOSS1&&p.phase>=2)PracticeNav::SliderFloat(label(practice_TH_BT_PHASE),&p.doremy_normal_1_phase,-3.14159265f,3.14159265f);
+   if(p.section==TH15_ST6_BOSS6&&p.phase==1&&difficulty>=2)PracticeNav::SliderFloat(label(practice_TH_ENHANCEMENT_VALUE),&p.enhanced_para,0,1);
+   PracticeNav::SliderInt(label(practice_TH_LIFE),&p.life,0,8);p.life_fragment=std::min(p.life_fragment,p.stage==6?5:3);PracticeNav::SliderInt(label(practice_TH_LIFE_FRAGMENT),&p.life_fragment,0,p.stage==6?5:3);
+   PracticeNav::SliderInt(label(practice_TH_BOMB),&p.bomb,0,8);PracticeNav::SliderInt(label(practice_TH_BOMB_FRAGMENT),&p.bomb_fragment,0,4);
+   char power[24];std::snprintf(power,sizeof power,"%.2f",p.power/100.);PracticeNav::SliderInt(label(practice_TH_POWER),&p.power,0,400,power);
+   PracticeNav::DragInt(label(practice_TH_VALUE),&p.value,10,0,999990);p.value=p.value/10*10;PracticeNav::DragInt(label(practice_TH_GRAZE),&p.graze,1,0,999999);
+   const i64 lo=0,hi=9999999990LL;PracticeNav::DragScalar(label(practice_TH_SCORE),ImGuiDataType_S64,&p.score,10,&lo,&hi,"%lld");p.score=p.score/10*10;
+   if(app.progress.character==3)PracticeNav::SliderInt(label(practice_TH15_REISEN_SHIELD),&p.reisen_shield,0,3);
   }
-  ImGui::PopItemWidth();
+  ImGui::PopItemWidth();PracticeNav::focus(label(practice_TH_STAGE),entering);
  }ImGui::End();ImGui::PopStyleVar(2);
  if(!armed&&!down[90]&&!down[13]&&!down[88]&&!down[27])armed=true;
- const bool busy=ImGui::IsAnyItemActive()||ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId|ImGuiPopupFlags_AnyPopupLevel);
+ const bool busy=text_editing||PracticeNav::busy();text_editing=PracticeNav::busy();
  if(armed&&!busy&&!MobileThprac::captures_advanced(s.advanced_visible)&&(edge[90]||edge[13])&&p.valid(p.stage==6?4:app.progress.difficulty)){if(!p.mode){p.section=p.phase=0;p.dlg=false;p.reisen_shield=0;}if(!dialogue(p.section))p.dlg=false;if(app.progress.character!=3)p.reisen_shield=0;s.accepted=true;}
  if(armed&&!busy&&!MobileThprac::captures_advanced(s.advanced_visible)&&(edge[88]||edge[27]))s.cancelled=true;
 }
@@ -166,7 +171,7 @@ bool initialize(ApplicationState& app){
  io.FontDefault=io.Fonts->AddFontFromFileTTF("/unifont.otf",16,&config,ranges.Data);if(!io.FontDefault||!ImGuiFreeType::BuildFontAtlas(io.Fonts,0)){ImGui::DestroyContext();return false;}
  initialized=app.practice.enabled=true;return true;
 }
-void reset_input(){std::fill(std::begin(down),std::end(down),false);std::fill(std::begin(edge),std::end(edge),false);armed=was_open=false;cancel_pointer();draw_generation=~0u;if(initialized){auto& io=ImGui::GetIO();std::fill(std::begin(io.KeysDown),std::end(io.KeysDown),false);std::fill(std::begin(io.MouseDown),std::end(io.MouseDown),false);std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);io.KeyCtrl=io.KeyShift=io.KeyAlt=io.KeySuper=false;io.MousePos={px,py};io.MouseWheel=io.MouseWheelH=0;io.InputQueueCharacters.clear();}}
+void reset_input(){std::fill(std::begin(down),std::end(down),false);std::fill(std::begin(edge),std::end(edge),false);armed=was_open=text_editing=false;cancel_pointer();draw_generation=~0u;if(initialized){auto& io=ImGui::GetIO();std::fill(std::begin(io.KeysDown),std::end(io.KeysDown),false);std::fill(std::begin(io.MouseDown),std::end(io.MouseDown),false);std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);io.KeyCtrl=io.KeyShift=io.KeyAlt=io.KeySuper=false;io.MousePos={px,py};io.MouseWheel=io.MouseWheelH=0;io.InputQueueCharacters.clear();}}
 void shutdown(){reset_input();release_blind_image();g_blind_view_opt={};if(auto* renderer=touhou::sdl::current())renderer->flip_present_y=false;if(initialized)ImGui::DestroyContext();initialized=false;generation=0;draw_generation=~0u;desktop=false;key_monitor={};reaction_test.Reset();publish_menu(false);}
 void mouse(int type,float x,float y){if(auto* renderer=touhou::sdl::current();renderer&&renderer->flip_present_y)y=480-y;px=x;py=y;if(type==1||type==2){const bool pressed=type==1;if(pressed!=pointer_down){if(pointer_edges.size()>=64){cancel_pointer();return;}pointer_edges.push_back({pressed,x,y});pointer_down=pressed;}}}
 void cancel_pointer(){pointer_edges.clear();pointer_down=pointer_sample_down=false;px=py=-FLT_MAX;}
@@ -185,7 +190,7 @@ void update_input(ApplicationState& app,const bool* keys){if(!initialized)return
 }
 void render(ApplicationState& app){if(!initialized)return;if(draw_generation==generation){app.graphics.backend.render_imgui(ImGui::GetDrawData(),1);return;}draw_generation=generation;auto& io=ImGui::GetIO();io.DeltaTime=1.f/60;io.MousePos={px,py};if(!pointer_edges.empty()){const auto event=pointer_edges.front();pointer_edges.pop_front();pointer_sample_down=event.down;io.MousePos={event.x,event.y};}io.MouseDown[0]=pointer_sample_down;io.KeyCtrl=down[17];io.KeyShift=down[16];io.KeyAlt=down[18];io.ConfigDragClickToInputText=desktop;for(int i=0;i<256;i++)io.KeysDown[i]=down[i];
  eagler::thprac::sdl_keyboard_frame(io);
- io.NavInputs[ImGuiNavInput_DpadUp]=down[38];io.NavInputs[ImGuiNavInput_DpadDown]=down[40];io.NavInputs[ImGuiNavInput_DpadLeft]=down[37];io.NavInputs[ImGuiNavInput_DpadRight]=down[39];io.NavInputs[ImGuiNavInput_Activate]=down[90]||down[13];io.NavInputs[ImGuiNavInput_Cancel]=down[88]||down[27];if(MobileThprac::captures_advanced(app.practice.advanced_visible))std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);ImGui::NewFrame();
+ io.NavInputs[ImGuiNavInput_DpadUp]=down[38];io.NavInputs[ImGuiNavInput_DpadDown]=down[40];io.NavInputs[ImGuiNavInput_DpadLeft]=down[37];io.NavInputs[ImGuiNavInput_DpadRight]=down[39];io.NavInputs[ImGuiNavInput_Activate]=down[90]||down[13];io.NavInputs[ImGuiNavInput_Cancel]=down[88]||down[27];if(MobileThprac::captures_advanced(app.practice.advanced_visible))std::fill(std::begin(io.NavInputs),std::end(io.NavInputs),0.f);PracticeNav::prepare(app.practice.menu&&!MobileThprac::captures_advanced(app.practice.advanced_visible));ImGui::NewFrame();
  if(app.practice.menu)practice_menu(app);else was_open=false;
  if(MobileThprac::show(MobileThprac::Advanced,app.practice.advanced_visible)){ImGui::SetNextWindowPos({0,0},ImGuiCond_Always);ImGui::SetNextWindowSize({640,480},ImGuiCond_Always);ImGui::SetNextWindowBgAlpha(.8f);if(MobileThprac::begin(MobileThprac::Advanced, "Advanced###th15-purple-advanced", ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoTitleBar, locale)){
   ImGui::TextUnformatted(label(practice_TH_ADV_OPT));ImGui::Separator();

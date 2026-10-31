@@ -1,0 +1,261 @@
+{
+  "baseline": "8a43de5ce590df0ee41f4a827f382f5025ab53da",
+  "compiler": "MinGW GCC 16.2.0, CMake Release -O3 -DNDEBUG",
+  "scope": "Asset-free CPU component fixtures, seven alternating before/after runs on the same Windows host. Both binaries use the identical fixture and runtime library, with baseline component objects substituted at link time.",
+  "components": {
+    "hostileIndex": {
+      "rounds": [
+        {
+          "before": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 1000000,
+            "elapsedMs": 66.688,
+            "outputHash": "7c60c9e99f02e66e"
+          },
+          "after": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 0,
+            "elapsedMs": 13.07,
+            "outputHash": "7c60c9e99f02e66e"
+          }
+        },
+        {
+          "after": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 0,
+            "elapsedMs": 12.445,
+            "outputHash": "7c60c9e99f02e66e"
+          },
+          "before": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 1000000,
+            "elapsedMs": 71.182,
+            "outputHash": "7c60c9e99f02e66e"
+          }
+        },
+        {
+          "before": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 1000000,
+            "elapsedMs": 58.072,
+            "outputHash": "7c60c9e99f02e66e"
+          },
+          "after": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 0,
+            "elapsedMs": 31.96,
+            "outputHash": "7c60c9e99f02e66e"
+          }
+        },
+        {
+          "after": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 0,
+            "elapsedMs": 12.592,
+            "outputHash": "7c60c9e99f02e66e"
+          },
+          "before": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 1000000,
+            "elapsedMs": 60.758,
+            "outputHash": "7c60c9e99f02e66e"
+          }
+        },
+        {
+          "before": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 1000000,
+            "elapsedMs": 69.822,
+            "outputHash": "7c60c9e99f02e66e"
+          },
+          "after": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 0,
+            "elapsedMs": 12.556,
+            "outputHash": "7c60c9e99f02e66e"
+          }
+        },
+        {
+          "after": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 0,
+            "elapsedMs": 12.636,
+            "outputHash": "7c60c9e99f02e66e"
+          },
+          "before": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 1000000,
+            "elapsedMs": 61.589,
+            "outputHash": "7c60c9e99f02e66e"
+          }
+        },
+        {
+          "before": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 1000000,
+            "elapsedMs": 59.217,
+            "outputHash": "7c60c9e99f02e66e"
+          },
+          "after": {
+            "refreshes": 1000,
+            "bullets": 1000,
+            "allocations": 0,
+            "elapsedMs": 10.944,
+            "outputHash": "7c60c9e99f02e66e"
+          }
+        }
+      ],
+      "medians": {
+        "before": {
+          "elapsedMs": 61.589,
+          "allocations": 1000000
+        },
+        "after": {
+          "elapsedMs": 12.592,
+          "allocations": 0
+        }
+      },
+      "cpuReductionPercent": 79.55
+    },
+    "ufoEffects": {
+      "rounds": [
+        {
+          "before": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 384000,
+            "elapsedMs": 67.661,
+            "outputHash": "786c9a2270d7459b"
+          },
+          "after": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 0,
+            "elapsedMs": 3.94,
+            "outputHash": "786c9a2270d7459b"
+          }
+        },
+        {
+          "after": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 0,
+            "elapsedMs": 6.114,
+            "outputHash": "786c9a2270d7459b"
+          },
+          "before": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 384000,
+            "elapsedMs": 21.074,
+            "outputHash": "786c9a2270d7459b"
+          }
+        },
+        {
+          "before": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 384000,
+            "elapsedMs": 26.063,
+            "outputHash": "786c9a2270d7459b"
+          },
+          "after": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 0,
+            "elapsedMs": 8.209,
+            "outputHash": "786c9a2270d7459b"
+          }
+        },
+        {
+          "after": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 0,
+            "elapsedMs": 3.599,
+            "outputHash": "786c9a2270d7459b"
+          },
+          "before": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 384000,
+            "elapsedMs": 68.235,
+            "outputHash": "786c9a2270d7459b"
+          }
+        },
+        {
+          "before": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 384000,
+            "elapsedMs": 34.487,
+            "outputHash": "786c9a2270d7459b"
+          },
+          "after": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 0,
+            "elapsedMs": 3.4,
+            "outputHash": "786c9a2270d7459b"
+          }
+        },
+        {
+          "after": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 0,
+            "elapsedMs": 3.726,
+            "outputHash": "786c9a2270d7459b"
+          },
+          "before": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 384000,
+            "elapsedMs": 52.103,
+            "outputHash": "786c9a2270d7459b"
+          }
+        },
+        {
+          "before": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 384000,
+            "elapsedMs": 20.949,
+            "outputHash": "786c9a2270d7459b"
+          },
+          "after": {
+            "copies": 1000,
+            "effects": 192,
+            "allocations": 0,
+            "elapsedMs": 4.436,
+            "outputHash": "786c9a2270d7459b"
+          }
+        }
+      ],
+      "medians": {
+        "before": {
+          "elapsedMs": 34.487,
+          "allocations": 384000
+        },
+        "after": {
+          "elapsedMs": 3.94,
+          "allocations": 0
+        }
+      },
+      "cpuReductionPercent": 88.58
+    }
+  }
+}

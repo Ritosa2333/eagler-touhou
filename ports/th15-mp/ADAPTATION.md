@@ -170,6 +170,8 @@
 
 <!-- manual-verification -->
 
+继承的普通版练习页面复用公共 `PracticeNavigation.hpp`：上下选行、左右直接调整，Shift 加大数值步长；鼠标拖动、文本编辑与弹出列表保留控件输入所有权，确认键由练习开始流程处理。真实 ImGui 导航回归登记在 `common/tests/thprac-navigation-test.cpp`。正式多人构建维持 THPrac 关闭，练习入口由普通版提供。
+
 ## 运行验收记录
 
 2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。

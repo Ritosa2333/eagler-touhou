@@ -98,6 +98,11 @@ bool StdGeometry::parse(const std::vector<u8>& b,std::string& error){
 Scene::Scene(Renderer& r,TextRaster& t,Banks& b,const ExeTables& e):gpu(r),raster(t),banks(b),exe(e){
     sampler_.files=[this](i32 bank){return banks.get(bank);};
 }
+void Scene::set_geometry(i32 stage,StdGeometry g){
+    geometry_stage=stage;geometry=std::move(g);
+    size_t count=0;for(const auto& object:geometry.objects)for(const auto& q:object.quads)count=std::max(count,size_t(q.slot)+1);
+    background_quads.resize(count);
+}
 const AnmSprite* Scene::sprite(i32 bank,i32 id)const{const auto* f=bank>=0&&bank<BankCount?banks.slots[size_t(bank)].get():nullptr;return f?f->sprite(id):nullptr;}
 Texture Scene::texture(i32 bank,i32 entry)const{
     // 431630: text@R entry 2 is the stage surface; entry 1 the paused field.
@@ -142,6 +147,7 @@ void Scene::capture_background(){
     // polygon, plane output and projected vertices for every tile.
     auto& polygon=clip_polygon;auto& clipped=clip_output;auto& vs=clip_projected;
     polygon.reserve(6);clipped.reserve(6);vs.reserve(6);
+    for(auto& q:background_quads)q.ready=false;
     for(const auto& instance:geometry.instances){
         const auto& object=geometry.objects[instance.object];
         // 40396e/403d45 gates both STD object-layer groups 0..7 and 8..11.
@@ -154,21 +160,29 @@ void Scene::capture_background(){
             const bool visible=(a.flags&3)==3&&(a.primary>>24)!=0;const float alpha=float(argb>>24)/255.f;
             const AnmSprite* sp=stage_file->sprite(a.sprite);
             if(!sp||!visible||alpha<=0)continue;
-            // TH12's STD draw routine overwrites the ANM scale for every nonzero
-            // primitive dimension (0x4047f8..0x404839).
-            const double w=q.size[0]?double(q.size[0]):double(a.spriteWidth!=-1?a.spriteWidth:sp->w)*a.sx;
-            const double h=q.size[1]?double(q.size[1]):double(a.spriteHeight!=-1?a.spriteHeight:sp->h)*a.sy;
+            static constexpr double corners[4][4]{{-.5,-.5,0,0},{.5,-.5,1,0},{.5,.5,1,1},{-.5,.5,0,1}};
+            auto& rotated=background_quads[size_t(q.slot)];
+            if(!rotated.ready){
+                // TH12's STD draw routine overwrites the ANM scale for every
+                // nonzero primitive dimension (0x4047f8..0x404839).
+                const double w=q.size[0]?double(q.size[0]):double(a.spriteWidth!=-1?a.spriteWidth:sp->w)*a.sx;
+                const double h=q.size[1]?double(q.size[1]):double(a.spriteHeight!=-1?a.spriteHeight:sp->h)*a.sy;
+                const double rcx=std::cos(double(a.rx)),rsx=std::sin(double(a.rx)),rcy=std::cos(double(a.ry)),rsy=std::sin(double(a.ry)),rcz=std::cos(double(a.rotation)),rsz=std::sin(double(a.rotation));
+                for(size_t i=0;i<4;++i){
+                    double px=corners[i][0]*w,py=corners[i][1]*h,pz=0,t;
+                    t=py*rcx-pz*rsx;pz=py*rsx+pz*rcx;py=t;
+                    t=px*rcy+pz*rsy;pz=-px*rsy+pz*rcy;px=t;
+                    t=px*rcz-py*rsz;py=px*rsz+py*rcz;px=t;
+                    rotated.corners[i]={px,py,pz};
+                }
+                rotated.ready=true;
+            }
             const double px0=double(a.x)+a.engineX+a.offsetX,py0=double(a.y)+a.engineY+a.offsetY,pz0=double(a.z)+a.engineZ+a.offsetZ;
             const double cxp=double(q.position[0])+instance.position[0]+px0,cyp=double(q.position[1])+instance.position[1]+py0,czp=double(q.position[2])+instance.position[2]+pz0;
-            const double rcx=std::cos(double(a.rx)),rsx=std::sin(double(a.rx)),rcy=std::cos(double(a.ry)),rsy=std::sin(double(a.ry)),rcz=std::cos(double(a.rotation)),rsz=std::sin(double(a.rotation));
             polygon.clear();
-            static constexpr double corners[4][4]{{-.5,-.5,0,0},{.5,-.5,1,0},{.5,.5,1,1},{-.5,.5,0,1}};
-            for(const auto& k:corners){
-                double px=k[0]*w,py=k[1]*h,pz=0,t;
-                t=py*rcx-pz*rsx;pz=py*rsx+pz*rcx;py=t;
-                t=px*rcy+pz*rsy;pz=-px*rsy+pz*rcy;px=t;
-                t=px*rcz-py*rsz;py=px*rsz+py*rcz;px=t;
-                const std::array<double,3> d{cxp+px-position[0],cyp+py-position[1],czp+pz-position[2]};
+            for(size_t i=0;i<4;++i){
+                const auto& p=rotated.corners[i];const auto& k=corners[i];
+                const std::array<double,3> d{cxp+p[0]-position[0],cyp+p[1]-position[1],czp+p[2]-position[2]};
                 polygon.push_back({dot(d,x),dot(d,y),dot(d,z),sp->x+k[2]*sp->w,sp->y+k[3]*sp->h});
             }
             // Clip the near plane before projection; never discard a whole tile
