@@ -49,3 +49,15 @@ test('TH07 retains logical reaction keys after physical keyboard sampling',()=>{
   const frame=source.slice(source.indexOf('void BeginFrame('),source.indexOf('bool IsFrameOpen('));
   assert.ok(frame.indexOf('sdl_keyboard_frame(io)')<frame.indexOf('ApplyGameInput()'));
 });
+
+test('TH10, TH11 and TH15 wire direct row adjustment into both practice renderers',()=>{
+  for(const title of ['th10','th10-mp','th11','th11-mp','th15','th15-mp']){
+    const source=read(`ports/${title}/web/cpp/sdl/ThpracUi.cpp`);
+    assert.ok(source.includes('#include <eagler/thprac/PracticeNavigation.hpp>'),title);
+    const feed=source.indexOf('PracticeNav::prepare(');
+    assert.ok(feed>=0&&source.indexOf('ImGui::NewFrame();',feed)>feed,title);
+    assert.ok(source.includes('PracticeNav::focus('),title);
+    assert.ok(source.includes('PracticeNav::Combo(')&&source.includes('PracticeNav::SliderInt('),title);
+    assert.ok(source.includes('text_editing||PracticeNav::busy()'),`${title}: popup confirmation stays inside its widget`);
+  }
+});

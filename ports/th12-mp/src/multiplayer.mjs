@@ -64,12 +64,45 @@ export function rollbackDiagnostics(core,status){
  return {restores:raw?.[1]??0,resimulated:raw?.[2]??0,committed:raw?.[3]??0,
   correcting:!!raw?.[4],request:raw?.[5]??0xffffffff,frontier:status[3],missingInputs:missing};
 }
+// Ordinary requests are coalesced while storage is busy. A final save captures
+// synchronously so stopping/restarting the native recorder cannot erase it.
+export function createReplaySaveQueue({key,capture,write}){
+ let pending=null,requested=false,savedKey=null;
+ const finalSaves=new Map();
+ function snapshot(force){
+  const revision=key();if(revision===null||!force&&revision===savedKey)return null;
+  const value=capture();return value?{...value,revision}:null;
+ }
+ async function drain(){
+  while(finalSaves.size||requested){
+   let value;
+   if(finalSaves.size){const [path,job]=finalSaves.entries().next().value;finalSaves.delete(path);value=job;}
+   else{requested=false;value=snapshot(false);}
+   if(!value)continue;
+   await write(value);savedKey=value.revision;
+  }
+ }
+ function schedule(){
+  if(!pending)pending=Promise.resolve().then(drain).finally(()=>{
+   pending=null;if(requested||finalSaves.size)return schedule();
+  });
+  return pending;
+ }
+ return {
+  save({force=false}={}){
+   if(force){const value=snapshot(true);if(value)finalSaves.set(value.path,value);}
+   else requested=true;
+   return schedule();
+  },
+  get pending(){return pending??Promise.resolve();},
+ };
+}
 // The shared native runtime owns input scheduling, prediction and confirmation.
 // This adapter translates only TH12 browser input, assets and presentation.
 export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStage,onError,onExit,store}) {
  const buildWords=multiplayerBuildWords(manifest);
  let active=false,readOnly=false,lastReport=0,savedAt=0,exitPending=false,transitioning=false,rollbackCount=0,lastRestart=null;
- let replayPaused=false,replayRate=1,seekTarget=null,replayPath=null,halfFrame=false,replayMeta=null,savePending=Promise.resolve(),playbackReported=-Infinity;
+ let replayPaused=false,replayRate=1,seekTarget=null,replayPath=null,halfFrame=false,replayMeta=null,saveSession=0,playbackReported=-Infinity;
  let lifetime=0;
  const current=token=>{if(token!==lifetime)throw Error('多人操作已取消');};
  const cstring=pointer=>{const heap=core.HEAPU8,end=heap.indexOf(0,pointer);return pointer?new TextDecoder().decode(heap.subarray(pointer,end<0?heap.length:end)):'';};
@@ -83,23 +116,33 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
  const spectator=createSpectatorPlaybackBridge({active:()=>active&&getOptions().netplaySpectator===true,memory:()=>core.HEAPU8,state:()=>core._th12_mp_spectator_state(),
   control:(...args)=>core._th12_mp_spectator_control(...args),allocate:n=>core._malloc(n),deallocate:p=>core._free(p),emit:(event,fields)=>emit({event,...fields}),
   complete:(p,n)=>{if(!core._th12_mp_spectator_complete(p,n))return false;core._th12_host_mp_finish(0);return true;}});
- function save(){
-  if(!active||readOnly)return savePending;
-  const count=withString('PLAYER',p=>core._th12_mp_replay_encode(p));if(!count)return savePending;
-  const bytes=core.HEAPU8.slice(core._th12_mp_replay_data(),core._th12_mp_replay_data()+count);
-  replayPath??='/savesth12/replay/th12_mp_'+Date.now()+'.rpy';const path=replayPath;
-  savePending=savePending.catch(()=>{}).then(async()=>{await store().write(path,bytes);await store().sync();});return savePending;
- }
+ const saveQueue=createReplaySaveQueue({
+  key:()=>{
+   if(!active||readOnly)return null;
+   const s=words();if(s[4]===0xffffffff)return null;
+   // Confirmation may advance before correction finishes committing inputs to
+   // the recorder. A later commit must refresh the archive even if input stalls.
+   const p=core._th12_mp_rollback_status(),committed=new Uint32Array(core.HEAPU8.buffer,p,8)[3];
+   return saveSession+':'+s[12]+':'+s[4]+':'+committed;
+  },
+  capture:()=>{
+   const count=withString('PLAYER',p=>core._th12_mp_replay_encode(p));if(!count)return null;
+   const pointer=core._th12_mp_replay_data(),bytes=core.HEAPU8.slice(pointer,pointer+count);
+   replayPath??='/savesth12/replay/th12_mp_'+Date.now()+'.rpy';return {path:replayPath,bytes};
+  },
+  write:async({path,bytes})=>{await store().write(path,bytes);await store().sync();},
+ });
+ function save(options){return active&&!readOnly?saveQueue.save(options):saveQueue.pending;}
  async function saveAs(slot,name){
   if(!active||readOnly||!Number.isInteger(slot)||slot<1||slot>25)throw Error('多人录像保存槽位无效');
   const count=withString(String(name).slice(0,8),p=>core._th12_mp_replay_encode(p));if(!count)throw Error('多人录像尚无已确认输入');
   const bytes=core.HEAPU8.slice(core._th12_mp_replay_data(),core._th12_mp_replay_data()+count);
-  const id='th12_mp_'+String(slot).padStart(2,'0')+'.rpy';await savePending;
+  const id='th12_mp_'+String(slot).padStart(2,'0')+'.rpy';await saveQueue.pending;
   await store().write('/savesth12/replay/'+id,bytes);await store().sync();return {id,bytes,metadata:describe(inspect(bytes))};
  }
  async function launch(){
   const token=++lifetime,options=getOptions();
-  exitPending=false;lastRestart=null;savedAt=performance.now();replayPath=null;replayMeta=null;core.eaglerOptions=getOptions();
+  exitPending=false;lastRestart=null;savedAt=performance.now();replayPath=null;replayMeta=null;++saveSession;core.eaglerOptions=getOptions();
   const {config,words:setup}=await multiplayerSetupWords(options,buildWords);current(token);
   await loadStage(options.netplayDifficulty===4?7:1,config.loadouts[config.seat],config.loadouts[0]);current(token);
   if(!withBytes(new Uint8Array(new Uint32Array(setup).buffer),p=>core._th12_mp_configure(p,setup.length)))throw error();
@@ -140,7 +183,7 @@ export function createMultiplayerRuntime({core,manifest,getOptions,emit,loadStag
   if(!readOnly&&now-savedAt>=15000){savedAt=now;void save().catch(onError);}
   if(status[13]&&!exitPending){
    const world=state(),token=lifetime;exitPending=true;
-   void save().then(async()=>{
+   void save({force:true}).then(async()=>{
     current(token);
     if(world.restart&&!readOnly){
      if(!world.finished||!world.paused||!world.menuConfirm||world.menuAction!==3||world.menuSelection!==0)throw Error('TH12 拒绝未确认的整局重开');

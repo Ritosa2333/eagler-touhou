@@ -1,0 +1,187 @@
+{
+  "baseline": "50084901cd28ab2342d295874afcef8abb6cd82e",
+  "summary": {
+    "before": {
+      "captureMs": 19.321,
+      "allocations": 0
+    },
+    "after": {
+      "captureMs": 15.173,
+      "allocations": 0
+    }
+  },
+  "runs": [
+    {
+      "iteration": 0,
+      "mode": "before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 18.94,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 0,
+      "mode": "after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 15.222,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 1,
+      "mode": "after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 18.922,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 1,
+      "mode": "before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 18.501,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 2,
+      "mode": "before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 18.741,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 2,
+      "mode": "after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 15.173,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 3,
+      "mode": "after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 14.625,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 3,
+      "mode": "before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 19.693,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 4,
+      "mode": "before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 19.321,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 4,
+      "mode": "after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 15.059,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 5,
+      "mode": "after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 14.374,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 5,
+      "mode": "before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 19.478,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 6,
+      "mode": "before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 19.719,
+        "allocations": 0
+      }
+    },
+    {
+      "iteration": 6,
+      "mode": "after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "260ce8c066cecfaa",
+        "captures": 1680,
+        "captureMs": 15.516,
+        "allocations": 0
+      }
+    }
+  ],
+  "schema": "th12-sdl-background-cache/1",
+  "toolchain": "MSVC 19.51 / Windows x64 /MD /O2 /fp:strict /std:c++20",
+  "measurement": "CPU background capture; seven alternating paired runs; 1680 captures across seven stages",
+  "outputHash": "260ce8c066cecfaa"
+}

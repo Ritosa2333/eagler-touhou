@@ -45,8 +45,8 @@ export class PreviewInput {
     for(const code of this.localKeys)held|=KEY_BITS[code];for(const code of this.hostKeys)held|=KEY_BITS[code];
     for(const value of this.touches.values())held|=value;
     if(pad?.connected){
-      if(pad.axes[0]<-.3||pad.buttons[14]?.pressed)held|=64;if(pad.axes[0]>.3||pad.buttons[15]?.pressed)held|=128;
-      if(pad.axes[1]<-.3||pad.buttons[12]?.pressed)held|=16;if(pad.axes[1]>.3||pad.buttons[13]?.pressed)held|=32;
+      if(pad.axes[0]<-.5||pad.buttons[14]?.pressed)held|=64;if(pad.axes[0]>.5||pad.buttons[15]?.pressed)held|=128;
+      if(pad.axes[1]<-.5||pad.buttons[12]?.pressed)held|=16;if(pad.axes[1]>.5||pad.buttons[13]?.pressed)held|=32;
       if(!pad.buttons[1]?.pressed)this.blockedPadBomb=false;
       if(pad.buttons[0]?.pressed)held|=1;if(pad.buttons[1]?.pressed&&!this.blockedPadBomb)held|=2;if(pad.buttons[2]?.pressed)held|=8;
     }

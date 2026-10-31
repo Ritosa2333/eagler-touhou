@@ -1,0 +1,137 @@
+{
+  "schema": "th12-mp-rollback-storage-verification/1",
+  "sourceCommit": "2259756f1be9f4dff59188621ab09dc93c913e12",
+  "scope": "TH12 multiplayer logical rollback storage",
+  "native": {
+    "ctest": {
+      "passed": 3,
+      "total": 3
+    },
+    "retailAssets": {
+      "passed": true,
+      "stages": [
+        1,
+        7
+      ],
+      "loadouts": 6,
+      "players": [
+        2,
+        3
+      ],
+      "stageTransitions": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "checks": [
+        "world state and RNG after restore/resimulation",
+        "shared checkpoint lifetime and pool clearing",
+        "changing enemy/context counts and order",
+        "script stack/call storage identity",
+        "ANM bank copy/load/unload isolation",
+        "zero warm restore allocations"
+      ]
+    }
+  },
+  "adaptation": {
+    "passed": 9,
+    "total": 9
+  },
+  "web": {
+    "productionBuild": true,
+    "diagnosticFixtures": false,
+    "runtime": {
+      "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+      "program": "e945bcb55994c75871fa3c73d399d34457bf8421c79019f463bc101512aad063",
+      "module": "de79ff99a74e8a7f50ed83533e43c4656d37c5fc81236753451078284319973f",
+      "wasm": "73bf8c705acb1a67bf7c9069b7664748a0c99a39e2c755884197fd1891fd4892"
+    },
+    "inputLatencyMs": 25,
+    "reports": [
+      {
+        "count": 2,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          19,
+          24
+        ],
+        "slowPresentation": false,
+        "frames": 444,
+        "exactMatches": 0,
+        "hash": -811984535,
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "round": 0,
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title",
+            "age": 192,
+            "ready": true,
+            "selection": 0
+          },
+          {
+            "round": 1,
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title",
+            "age": 192,
+            "ready": true,
+            "selection": 0
+          },
+          {
+            "round": 2,
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title",
+            "age": 192,
+            "ready": true,
+            "selection": 0
+          }
+        ]
+      },
+      {
+        "count": 3,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          19,
+          26,
+          38
+        ],
+        "slowPresentation": false,
+        "frames": 477,
+        "exactMatches": 0,
+        "hash": -553613887,
+        "spectatorVerified": false,
+        "roomReturns": []
+      }
+    ],
+    "checks": [
+      "real RTC rollback",
+      "confirmed pause hashes",
+      "confirmed replay reconstruction",
+      "2P spectator seeks",
+      "room return/core reuse",
+      "pagehide input release"
+    ],
+    "harness": "check-sdl-multiplayer-browser.mjs from the validated presentation branch; the pagehide precondition observes movement and the local sender, as in f07bf527b. Authoritative pause and replay hash assertions are unchanged."
+  },
+  "history": {
+    "projectionRefreshedInIsolatedClone": true,
+    "normalProjection": "5c97937393c0b9815dd8eca548eedc2eae832c8b",
+    "multiplayerProjection": "70da568dac9a4bee28aab75e3443a7562c7c3cbe",
+    "standardMultiplayerSplit": "fe23ca52c713f0186d18d2150d7cff8db5d5015c",
+    "multiplayerTree": "388646ce19451a71be64103803d4f6406040800b",
+    "upstreamAncestor": true,
+    "recordedSplitAncestor": true,
+    "sourceTreeMatches": true
+  }
+}

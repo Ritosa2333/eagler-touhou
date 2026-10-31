@@ -170,6 +170,8 @@
 
 <!-- manual-verification -->
 
+练习页面复用公共 `PracticeNavigation.hpp`：上下选行、左右直接调整，Shift 加大数值步长；鼠标拖动、文本编辑与弹出列表保留控件输入所有权，确认键由练习开始流程处理。真实 ImGui 导航回归登记在 `common/tests/thprac-navigation-test.cpp`。
+
 ### 2026-10-24 | 高刷新呈现与交付准入
 
 普通版与 Lab 完整构建、三种宿主配置编译、ANM／节奏／相机 CPU 契约和 24 项位移及打包回归通过。真实 Demo 0 完成 300 tick 与 10 个采样窗口。生产包核对实际 WASM 导出并在写入前拒绝诊断构建。源码身份、运行范围与复现入口见[高刷新验收记录](docs/records/2026-10-24-display-high-refresh.md)。

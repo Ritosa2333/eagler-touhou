@@ -66,6 +66,26 @@ int main(int argc,char** argv){
         // the same vertex-order/hash comparison as the moving retail cameras.
         const auto saved=th12::stageState.camera;
         for(float offset:{-1800.f,-30.f,0.f,30.f,1800.f}){th12::stageState.camera=saved;th12::stageState.camera.offset[2]+=offset;scene.capture_background();hash_background(scene);}
+        th12::stageState.camera=saved;
+        // Captures may repeat the same world frame after rollback or a custom
+        // VM update. Reusing geometry must not retain last capture's corners.
+        for(int pass=0;pass<3;++pass){
+            for(const auto& object:scene.geometry.objects)for(const auto& q:object.quads){
+                auto* node=th12::animationScene.find(th12::stagePrimitiveKey(q.slot));if(!node)continue;
+                auto& a=node->vm.control();
+                a.rx=.17f*float(pass+1);a.ry=-.23f*float(pass+1);a.rotation=.31f*float(pass+1);
+                a.sx=.75f+.1f*pass;a.sy=1.25f+.2f*pass;
+                a.spriteWidth=23.f+pass;a.spriteHeight=41.f+pass;
+                a.primary=pass==1?0:0xbfa0c080u;
+            }
+            scene.capture_background();hash_background(scene);
+        }
+        // A bank can be replaced without advancing the frame or the geometry.
+        auto original=banks.slots[BankStage];auto replacement=std::make_shared<AnmFile>(*original);
+        for(auto& sp:replacement->sprites){sp.w+=3;sp.h+=7;}
+        banks.slots[BankStage]=replacement;scene.capture_background();hash_background(scene);
+        banks.slots[BankStage]=original;scene.capture_background();hash_background(scene);
+        th12::animationScene.reset();scene.capture_background();require(scene.triangles.empty(),"removed VMs retained background geometry");hash_background(scene);
     }
     require(total_triangles>0,"retail backgrounds produced no triangles");
     std::printf("{\"stages\":7,\"traceTriangles\":%zu,\"outputHash\":\"%016llx\",\"captures\":%d,\"captureMs\":%.3f,\"allocations\":%zu}\n",total_triangles,(unsigned long long)digest,captures,total_ms,total_allocations);
