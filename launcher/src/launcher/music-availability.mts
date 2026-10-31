@@ -68,20 +68,21 @@ export function resolveMusicAvailability({
 
   if (installed) {
     const ids = installed.oggFileIds;
-    // Launcher startup deliberately gates OGG on the first two tracks only;
+    // Multi-track startup gates OGG on the first two tracks; a continuous
+    // single-file component is ready when that complete file is installed.
     // the rest of the component is installed progressively after gameplay can
     // already begin.  Availability must use the same startup barrier instead
     // of requiring the whole optional component, otherwise closing a Runtime
     // while later tracks are still downloading makes the settings UI silently
     // fall back to MIDI/none even though the next OGG launch is already viable.
     const startupIds = ids.slice(0, 2);
-    localOgg = startupIds.length === 2 && startupIds.every(fileId => !!installed.files[fileId]?.objectId);
+    localOgg = startupIds.length > 0 && startupIds.every(fileId => !!installed.files[fileId]?.objectId);
     // Once the installed generation already declares OGG files, matching the
     // Release Catalog revision is enough to prove that the same remote OGG
     // objects remain available for progressive completion. The Site Manifest
     // must not have to duplicate that capability or it can disappear from the
     // UI when the Runtime closes and only the Package snapshot remains.
-    remoteOgg = !importServer && ids.length >= 2 && remoteRevision === installed.revision;
+    remoteOgg = !importServer && ids.length > 0 && remoteRevision === installed.revision;
   } else if (!importServer) {
     remoteOgg = remoteOggAdvertised;
   }

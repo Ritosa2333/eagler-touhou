@@ -41,6 +41,15 @@ for (const preferOgg of [false, true]) {
 }
 
 const files = {};
+for (const importServer of [false, true]) {
+  const single = {revision: 'th13-r1', oggFileIds: ['continuous'], files: {continuous: {objectId: 'stream-object'}}};
+  const input = {audio:true,midiAvailable:false,importServer,remoteOggAdvertised:false,remoteRevision:'th13-r1',installed:single};
+  assert.equal(resolveMusicAvailability(input).localOgg, true, 'one complete continuous stream is locally playable');
+  single.files = {};
+  assert.equal(resolveMusicAvailability(input).localOgg, false, 'missing stream stays unavailable locally');
+  assert.equal(resolveMusicAvailability(input).remoteOgg, !importServer, 'only a matching hosted generation can download the stream');
+  assert.equal(resolveMusicAvailability({...input,remoteRevision:'other'}).ogg, false);
+}
 const installed = { revision: "r1", oggFileIds: ["track1", "track2"], files };
 const effective = overrides => resolveEffectiveMusicMode({
   requested: "ogg-full",

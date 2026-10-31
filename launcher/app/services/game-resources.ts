@@ -124,7 +124,7 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   checkPreparationAbort(signal);
   const declared = componentFileIds(generation.descriptor, 'ogg');
   const initial = completeSet ? declared : declared.slice(0, 2);
-  if (initial.length < 2) return {generation, music: fallback};
+  if (initial.length < (completeSet ? 1 : 2)) return {generation, music: fallback};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
   const metadata = acquisition.getMetadata(), gameVersion = descriptorGameVersion(generation.descriptor);
   let publication;

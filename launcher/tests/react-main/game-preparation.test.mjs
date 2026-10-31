@@ -453,6 +453,27 @@ test('complete-set OGG startup waits for every declared file and preserves DATA'
   for (const id of requests[0]) assert.ok(result.generation.files[id]?.objectId);
 });
 
+test('complete OGG startup accepts a single continuous stream and downloads it before launch', async () => {
+  const current = generation(), requests = [];
+  current.descriptor.components.ogg.files = ['track-1'];
+  const acquisition = {
+    getMetadata: () => ({siteManifest: host()}),
+    getPublication: async () => ({catalog: catalog(), catalogUrl: new URL('release-catalog.json', baseUrl).href}),
+    getPackageFetch: () => fetch,
+    installPublished: async (_game, options) => {requests.push(options.addFileIds); return {generation: added(current, options.addFileIds)};},
+    refreshInstalled: async () => {},
+  };
+  const result = await api.ensureOggStartup({generation: current, music: 'ogg-stream', completeSet: true, acquisition, translate: t});
+  assert.deepEqual(requests, [['track-1']]);
+  assert.equal(result.music, 'ogg-stream');
+  assert.ok(result.generation.files['track-1'].objectId);
+  const cached = await api.ensureOggStartup({generation: result.generation, music: 'ogg-stream', completeSet: true, acquisition, translate: t});
+  assert.equal(cached.music, 'ogg-stream');
+  assert.equal(requests.length, 1);
+  const normal = await api.ensureOggStartup({generation: current, music: 'ogg-stream', acquisition, translate: t});
+  assert.equal(normal.music, 'midi', 'ordinary per-track mode retains its two-track requirement');
+});
+
 test('room native preload mounts the complete OGG set before reporting prepared', async () => {
   const initial=generation(),gate=deferred(),installs=[],order=[];
   const state=settingsFixture({productId:'th06mp',music:'ogg-stream'});
