@@ -1,0 +1,20 @@
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL sampler preserves sparse/rewind output, moving stopped VMs and allocation-free steady tracks (2473.8059ms)
+Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64
+��Ȩ����(C) Microsoft Corporation����������Ȩ����
+
+cl: ������ warning D9035 :��o��ѡ���ѷ���������ڽ����İ汾���Ƴ�
+cl: ������ warning D9002 :����δ֪ѡ�-std=c++17��
+✔ SDL sampler preserves sparse/rewind output, moving stopped VMs and allocation-free steady tracks (2301.7576ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4928.8148

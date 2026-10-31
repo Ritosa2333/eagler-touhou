@@ -391,9 +391,15 @@ export function createAdaptivePeerRoute(options) {
             const dc = control ? active.controlDc : active.inputDc;
             if (control && supported) {
                 if (sequence >= 0xffffffff) { options.failed('RTC route control sequence exhausted'); return false; }
-                const packet = envelope(payload, ++sequence);
-                pendingControl.set(sequence, packet); pendingBytes += packet.byteLength;
-                try { dc.send(packet); } catch { recover(); }
+                const id = ++sequence, packet = envelope(payload, id);
+                pendingControl.set(id, packet); pendingBytes += packet.byteLength;
+                try { dc.send(packet); } catch {
+                    // Accepted reliable data owns this sequence even when the
+                    // browser temporarily refuses the send. Retry it before
+                    // admitting another control; a standby may not exist yet.
+                    replayQueue.push(id);
+                    recover();
+                }
                 return true;
             }
             try { dc.send(payload); return true; } catch { return false; }

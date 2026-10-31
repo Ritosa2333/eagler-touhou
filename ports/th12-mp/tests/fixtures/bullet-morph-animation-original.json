@@ -1,0 +1,2095 @@
+{
+  "schema": "th12-original-bullet-morph-animation/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Actual ECL emitter,40aa60 appearance800/1000000 including402520 reset before454ee0,40a020/4099e0 and real bullet ANM/RNG. Far/passive Player collision return boundary, no Player/Enemy/registered Primary scheduler ticks. Offscreen case sets the declared physical position to(20,-71) before input10 on both sides.",
+  "records": [
+    {
+      "name": "ordinary-morph",
+      "teleportAt10": false,
+      "syntheticEclHex": "53435054010000000000000000000000010000000000000000000000000000000000000034000000436c65617250726f6265000045434c48000000000000000000000000000000002c01180000003f02000000000000a0410000b44200000000f401140000003f01000000000000000000000000f6011c0000003f030000000000000000050000000400000000000000f9011c0000003f030000000000000000000000000000000000000000fb01180000003f0200000000000000000100000000000000fc011c0000003f030000000000000000ffffffffffffffff00000000fd01300000003f0800000000000000000000000000000000001000000a00000000000000f02374c9f02374c900000000fd01300000003f0800000000000000000100000000000000000800000700000008000000f02374c9f02374c900000000fd01300000003f0800000000000000000200000000000000001000001400000000000000f02374c9f02374c900000000fd01300000003f080000000000000000030000000000000000000001070000000a000000f02374c9f02374c900000000fd01300000003f0800000000000000000400000000000000001000001e00000000000000f02374c9f02374c900000000f501140000003f010000000000000000000000005300140000003f0100000000a0860100",
+      "frames": [
+        {
+          "inputTick": -1,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 0,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 1,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 1,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 2,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 2,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 3,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 3,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 4,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 4,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 5,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 5,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 6,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 6,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 7,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 7,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 8,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 8,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 9,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 9,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 10,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 10,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 11,
+          "animationTime": 2,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 11,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 12,
+          "animationTime": 3,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 12,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 13,
+          "animationTime": 4,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 13,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 14,
+          "animationTime": 5,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 14,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 15,
+          "animationTime": 6,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 15,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 16,
+          "animationTime": 7,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 16,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 17,
+          "animationTime": 8,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 17,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 18,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 18,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 19,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 19,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 20,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 20,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 21,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 21,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 22,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 22,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 23,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 23,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 24,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 24,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 25,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 25,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 26,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 26,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 27,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 27,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 28,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 28,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 29,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 29,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 30,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 30,
+          "phase": 1,
+          "typeColor": [
+            7,
+            10
+          ],
+          "age": 31,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 122,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 31,
+          "phase": 1,
+          "typeColor": [
+            7,
+            10
+          ],
+          "age": 32,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 122,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 32,
+          "phase": 1,
+          "typeColor": [
+            7,
+            10
+          ],
+          "age": 33,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 122,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 33,
+          "phase": 1,
+          "typeColor": [
+            7,
+            10
+          ],
+          "age": 34,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 122,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 34,
+          "phase": 1,
+          "typeColor": [
+            7,
+            10
+          ],
+          "age": 35,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 122,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 35,
+          "phase": 1,
+          "typeColor": [
+            7,
+            10
+          ],
+          "age": 36,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 122,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "offscreen-new-spawn",
+      "teleportAt10": true,
+      "syntheticEclHex": "53435054010000000000000000000000010000000000000000000000000000000000000034000000436c65617250726f6265000045434c48000000000000000000000000000000002c01180000003f02000000000000a0410000b44200000000f401140000003f01000000000000000000000000f6011c0000003f030000000000000000050000000400000000000000f9011c0000003f030000000000000000000000000000000000000000fb01180000003f0200000000000000000100000000000000fc011c0000003f030000000000000000ffffffffffffffff00000000fd01300000003f0800000000000000000000000000000000001000000a00000000000000f02374c9f02374c900000000fd01300000003f0800000000000000000100000000000000000800000700000008000000f02374c9f02374c900000000fd01300000003f0800000000000000000200000000000000001000001400000000000000f02374c9f02374c900000000fd01300000003f080000000000000000030000000000000000000001070000000a000000f02374c9f02374c900000000fd01300000003f0800000000000000000400000000000000001000001e00000000000000f02374c9f02374c900000000f501140000003f010000000000000000000000005300140000003f0100000000a0860100",
+      "frames": [
+        {
+          "inputTick": -1,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 0,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 1,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 1,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 2,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 2,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 3,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 3,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 4,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 4,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 5,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 5,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 6,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 6,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 7,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 7,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 8,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 8,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 9,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 9,
+          "phase": 1,
+          "typeColor": [
+            5,
+            4
+          ],
+          "age": 10,
+          "animationTime": 48,
+          "script": 40,
+          "sprite": 84,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            16.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 10,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 11,
+          "animationTime": 2,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 11,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 12,
+          "animationTime": 3,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 12,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 13,
+          "animationTime": 4,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 13,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 14,
+          "animationTime": 5,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 14,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 15,
+          "animationTime": 6,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 15,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 16,
+          "animationTime": 7,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 16,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 17,
+          "animationTime": 8,
+          "script": 42,
+          "sprite": 263,
+          "integers": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            30.0,
+            30.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 17,
+          "phase": 1,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 18,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 18,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 19,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 20,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 21,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 22,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 23,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 24,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 25,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 26,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 27,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 28,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 29,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 30,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 31,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 32,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 33,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 34,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        },
+        {
+          "inputTick": 35,
+          "phase": 0,
+          "typeColor": [
+            7,
+            8
+          ],
+          "age": 0,
+          "animationTime": 48,
+          "script": 42,
+          "sprite": 120,
+          "integers": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "dimensions": [
+            16.0,
+            14.0
+          ],
+          "rng": [
+            4660,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

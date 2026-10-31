@@ -25,7 +25,7 @@ export function validateMultiplayerOptions(options={}){
 }
 export async function multiplayerSetupWords(options,buildWords,cryptoProvider=globalThis.crypto){
  const c=validateMultiplayerOptions(options);if(c.replay||!Array.isArray(buildWords)||buildWords.length!==4||!buildWords.some(Boolean))throw Error('构建身份或连接配置无效');
- const digest=new DataView(await cryptoProvider.subtle.digest('SHA-256',new TextEncoder().encode('th15mp:'+c.url.origin+c.url.pathname+':'+c.room+':'+c.run)));
+ const digest=new DataView(await cryptoProvider.subtle.digest('SHA-256',new TextEncoder().encode('th15mp:'+c.room+':'+c.run)));
  const words=[6,c.count,c.seat,options.netplayDifficulty,options.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,c.delay];
  for(let i=0;i<3;i++){const p=c.loadouts[i]||{character:0,shot:0};words.push(p.character,p.shot);}
  words.push(c.mode,+c.automatic,c.reserve,...buildWords,+!!options.netplayChallengeMode,c.chapterThreshold);return {config:c,words};

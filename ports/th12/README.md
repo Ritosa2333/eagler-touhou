@@ -1,6 +1,8 @@
 # 东方星莲船网页版与行为还原
 
-[monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
+[开发指南](docs/DEVELOPMENT.md) · [monorepo 适配检查](ADAPTATION.md) · [统一工作区](../../WORKSPACE.md)
+
+正式 Web 与原生桌面入口共用 [SDL3 / GLES 3 运行层](portable/sdl/README.md)，链接与网页版相同的当前 C++ 游戏核心。构建目标为 `touhou12`。
 
 本作源码位于 `ports/th12`，在 monorepo 根目录运行 `npm run build:runtime -- --game=th12 --emsdk=工具链目录` 构建普通版。浏览器代码包输出至 `ports/th12/build-eagler/`；内容准备与站点组装见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
@@ -25,16 +27,16 @@ TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为�
 
 ## 构建与运行
 
-需要 Node.js 22+、Python 和 Emscripten 4.0.22。激活 Emscripten 环境后：
+需要 Node.js 22+、Python 和[构建指南](../../docs/adaptation/build.md#工具链)登记的 Emscripten。激活环境后：
 
 ```sh
-npm run build
+npm run build:eagler
 npm start
 ```
 
-打开 `http://127.0.0.1:8112/`。方向键移动，Z 射击，Shift 低速，X Bomb，Esc 暂停。
-默认入口为完整游戏。方向键、Z／X操作菜单；Ctrl快进对话，回放时四倍速；F1打开移植版操作说明。
-单关调试、录像拖动定位和逐帧检查保留在 `/preview.html`，原版检查器保留独立入口。
+打开 `http://127.0.0.1:8112/adapter-preview.html?runtime=sdl`。方向键移动，Z 射击，Shift 低速，X Bomb，Esc 暂停。
+SDL 入口使用原生菜单、音乐和录像流程，练习工具的按键及界面见[开发指南](docs/DEVELOPMENT.md)。
+旧网页工具的单关调试、录像拖动定位和逐帧检查位于 `/preview.html`，原版检查器保留独立入口。
 详细的本地资源准备见 [构建说明](docs/BUILD.md)。无原版资源也能编译源码，
 但运行游戏、执行原版探针和资产相关测试需要自己的 TH12 1.00b 输入。
 
@@ -65,7 +67,7 @@ ctest --test-dir artifacts/native --output-on-failure
 
 ## 还原边界
 
-`eagler` 是 Eagler Touhou Web 适配的集成分支；接入架构、包边界及能力目录见 [Web 适配](docs/WEB_ADAPTATION.md)。
+`eagler` 是 Eagler Touhou Web 适配的集成分支；接入架构与包边界见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 使用真实 Launcher 的本地构建、资源包与启动入口见 [Launcher 接入](docs/LAUNCHER_INTEGRATION.md)。
 
 `main` 保留建立 `eagler` 前的已提交版本，后续 Web 适配改动在 `eagler` 集成。

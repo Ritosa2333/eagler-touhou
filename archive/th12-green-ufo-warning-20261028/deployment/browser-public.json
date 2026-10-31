@@ -1,0 +1,42 @@
+[
+  {
+    "origin": "https://touhouonline.com/",
+    "status": 200,
+    "valid": true,
+    "groups": [
+      {
+        "root": "runtime/th12/",
+        "generation": "cc7ccce73a10fef65ff860dbaa002a498812e7dc9119dc191010cacb684fe908",
+        "rendererSha256": "930a6594f8b778ac9f71d66d327ad7a073fb06488b63c628c981b821efd258bf",
+        "lit": 280
+      },
+      {
+        "root": "runtime/th12/multiplayer/",
+        "generation": "204d0c9d67ed3a09b27c8e2d1d68ab995b99e58456032ed7701a5a15e86a9145",
+        "rendererSha256": "f5afaf46fa8f6699fcb065cb60c4860a247ef8afa362fb35a6637f648ac8dc7c",
+        "lit": 280
+      }
+    ],
+    "errors": []
+  },
+  {
+    "origin": "https://touhou.vip/",
+    "status": 200,
+    "valid": true,
+    "groups": [
+      {
+        "root": "runtime/th12/",
+        "generation": "cc7ccce73a10fef65ff860dbaa002a498812e7dc9119dc191010cacb684fe908",
+        "rendererSha256": "930a6594f8b778ac9f71d66d327ad7a073fb06488b63c628c981b821efd258bf",
+        "lit": 280
+      },
+      {
+        "root": "runtime/th12/multiplayer/",
+        "generation": "204d0c9d67ed3a09b27c8e2d1d68ab995b99e58456032ed7701a5a15e86a9145",
+        "rendererSha256": "f5afaf46fa8f6699fcb065cb60c4860a247ef8afa362fb35a6637f648ac8dc7c",
+        "lit": 280
+      }
+    ],
+    "errors": []
+  }
+]

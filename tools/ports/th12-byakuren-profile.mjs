@@ -8,6 +8,7 @@ import {summarizeFramePacing} from './frame-pacing.mjs';
 const root=resolve(import.meta.dirname,'../../ports/th12'),output=resolve(root,'../../artifacts/th12-byakuren');
 await mkdir(output,{recursive:true});
 const label=process.env.TH12_PROFILE_LABEL??'current';
+const compare=process.env.TH12_PROFILE_COMPARE==='1';
 const baseline=process.env.TH12_PROFILE_BASELINE==='1',locked=process.env.TH12_PROFILE_LOCKED==='1',profileEnabled=process.env.TH12_PROFILE_CPU==='1';
 const cpuRate=Number(process.env.TH12_PROFILE_CPU_RATE??1);
 const stage=Number(process.env.TH12_PROFILE_STAGE??6),section=Number(process.env.TH12_PROFILE_SECTION??45),difficulty=stage===7?4:Number(process.env.TH12_PROFILE_DIFFICULTY??0);
@@ -25,16 +26,19 @@ await readFile(resolve(runtimeRoot,'core.wasm'));
 const build=JSON.parse(await readFile(resolve(runtimeRoot,'build.json'),'utf8'));
 if(![6,7].includes(stage)||!Number.isInteger(section)||!Number.isInteger(loadout)||loadout<0||loadout>5||!Number.isInteger(frames)||frames<300||frames>3600)throw Error('Invalid scenario');
 if(!Number.isInteger(cpuRate)||cpuRate<1||cpuRate>8)throw Error('Invalid CPU rate');
-const baselineSources=new Map(baseline?['renderer.mjs','presentation-interpolation.mjs','draw-scheduler.mjs'].map(name=>['/src/'+name,execFileSync('git',['show','HEAD:ports/th12/src/'+name],{cwd:resolve(root,'../..')})]):[]);
+const baselineCommit=execFileSync('git',['rev-parse','--verify','--end-of-options',(process.env.TH12_PROFILE_BASELINE_REF??'HEAD')+'^{commit}'],{cwd:resolve(root,'../..'),encoding:'utf8'}).trim();
+const baselineFiles=['renderer.mjs','presentation-interpolation.mjs','draw-scheduler.mjs','animation.mjs'];
+const baselineSources=new Map(baseline?baselineFiles.map(name=>['/src/'+name,execFileSync('git',['show',baselineCommit+':ports/th12/src/'+name],{cwd:resolve(root,'../..')})]):[]);
 if(!/^[a-z0-9-]+$/.test(label))throw Error('Invalid profile label');
 const html=`<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#080808}canvas{width:640px;height:480px}</style><canvas width="640" height="480"></canvas><script type="module">
-import create from '/site/runtime/core.mjs';import {Renderer} from '/src/renderer.mjs';
+import create from '/site/runtime/core.mjs';import {Renderer} from '/src/renderer.mjs';${compare?"import {Renderer as BaselineRenderer} from '/baseline/renderer.mjs';window.BaselineRenderer=BaselineRenderer;":''}
 import {StageLoader} from '/src/stage-loader.mjs';import {PracticeBridge} from '/src/practice/bridge.mjs';import {readCorePresentationMotion} from '/src/presentation-interpolation.mjs';import {needsPresentationInterpolation,PresentationCadence} from '/src/presentation-cadence.mjs';window.needsInterpolation=needsPresentationInterpolation;window.PresentationCadence=PresentationCadence;
 import {SoundPlayer} from '/src/sound-player.mjs';import {readCoreSoundEvents} from '/src/sound-events.mjs';
 import {PresentationLimiter,needsPresentationCapture} from '/src/presentation-cadence.mjs';window.PresentationLimiter=PresentationLimiter;window.needsPresentationCapture=needsPresentationCapture;
 window.c=await create();${jsonOnly?'delete c._th12_presentation_motion_binary;':''}const atlases=await (await fetch('/assets/atlases.json')).json();
 window.r=new Renderer(document.querySelector('canvas'),atlases);
 await r.prepare();await r.prepareStage(${stage});
+${compare?`const baselineCanvas=document.createElement('canvas');baselineCanvas.width=640;baselineCanvas.height=480;window.baselineRenderer=new BaselineRenderer(baselineCanvas,atlases);await baselineRenderer.prepare();await baselineRenderer.prepareStage(${stage});`:''}
 const loader=new StageLoader(c,atlases,async name=>new Uint8Array(await (await fetch('/assets/'+name)).arrayBuffer()));await loader.load(${stage});
 window.bridge=new PracticeBridge(c);bridge.setEnabled(true);bridge.configure({stage:${stage-1},section:${section},power:400},{difficulty:${difficulty}});
 bridge.start({character:${loadout>>1},shot:${loadout%2},difficulty:${difficulty},seed:0x1234});bridge.setTools(1|256|4);
@@ -62,6 +66,7 @@ const server=createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');
     if(url.pathname==='/'){res.setHeader('Content-Type','text/html;charset=utf-8');res.end(html);return;}
+    if(url.pathname.startsWith('/baseline/')){const name=url.pathname.slice('/baseline/'.length);if(name.includes('..'))throw Error('Invalid path');res.setHeader('Content-Type','text/javascript');res.end(baselineFiles.includes(name)?execFileSync('git',['show',baselineCommit+':ports/th12/src/'+name],{cwd:resolve(root,'../..')}):await readFile(resolve(root,'src',name)));return;}
     if(baselineSources.has(url.pathname)){res.setHeader('Content-Type','text/javascript');res.end(baselineSources.get(url.pathname));return;}
     const asset=url.pathname.startsWith('/assets/'),runtime=url.pathname.startsWith('/site/runtime/'),base=asset?assetsRoot:runtime?runtimeRoot:root;
     const relative=asset?url.pathname.slice('/assets/'.length):runtime?url.pathname.slice('/site/runtime/'.length):'.'+url.pathname;
@@ -78,6 +83,37 @@ try{
   const refreshIntervalMs=await page.evaluate(()=>new Promise(done=>{const times=[];const frame=t=>{times.push(t);if(times.length<121)requestAnimationFrame(frame);else{const gaps=times.slice(1).map((t,i)=>t-times[i]).sort((a,b)=>a-b);done(gaps[gaps.length>>1]);}};requestAnimationFrame(frame);}));
   const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setCPUThrottlingRate',{rate:cpuRate});
   if(profileEnabled){await cdp.send('Profiler.enable');await cdp.send('Profiler.start');}
+  if(compare){
+    const report=await page.evaluate(async({frames,bomb})=>{
+      const samples={baseline:{capture:[],render:[]},optimized:{capture:[],render:[]}},checks=[];
+      for(let frame=0;frame<frames;frame++){
+        const useBomb=bomb&&frame===300;c._th12_tick(bomb?1|(useBomb?2:0):0,useBomb?2:0);
+        const endpoints={};
+        for(const name of frame%2?['optimized','baseline']:['baseline','optimized']){
+          const renderer=name==='baseline'?baselineRenderer:r,start=performance.now();
+          const endpoint=renderer.capturePresentation(c,{alwaysHitbox:true,presentationContinuity:false});
+          const captured=performance.now();renderer.renderPresentation(null,endpoint,1);const drawn=performance.now();
+          if(frame>=120){samples[name].capture.push(captured-start);samples[name].render.push(drawn-captured);}endpoints[name]=endpoint;
+        }
+        if(frame%150===149||frame===frames-1){
+          if(JSON.stringify(endpoints.baseline)!==JSON.stringify(endpoints.optimized)){
+            const differences=[];const compare=(a,b,path)=>{if(differences.length>=8||JSON.stringify(a)===JSON.stringify(b))return;if(a&&b&&typeof a==='object'&&typeof b==='object'){for(const key of new Set([...Object.keys(a),...Object.keys(b)]))compare(a[key],b[key],path+'.'+key);}else differences.push({path,baseline:a,optimized:b});};
+            compare(endpoints.baseline,endpoints.optimized,'endpoint');if(differences.length)throw Error('Endpoint mismatch at '+frame+': '+JSON.stringify(differences));
+          }
+          const pixels=renderer=>{const gl=renderer.gl,bytes=new Uint8Array(640*480*4);gl.readPixels(0,0,640,480,gl.RGBA,gl.UNSIGNED_BYTE,bytes);return bytes;};
+          const a=pixels(baselineRenderer),b=pixels(r);let differences=0;for(let i=0;i<a.length;i++)differences+=a[i]!==b[i];
+          if(differences)throw Error('Pixel mismatch at '+frame+': '+differences);
+          checks.push({frame:frame+1,poses:endpoints.optimized.poses.length,records:endpoints.optimized.records.length,differences});
+        }
+        await new Promise(done=>requestAnimationFrame(done));
+      }
+      const stats=Object.fromEntries(Object.entries(samples).map(([name,stages])=>[name,Object.fromEntries(Object.entries(stages).map(([stage,values])=>{values.sort((a,b)=>a-b);return[stage,{mean:values.reduce((a,b)=>a+b,0)/values.length,p50:values[values.length>>1],p95:values[Math.floor(values.length*.95)],max:values.at(-1)}];}))]));
+      return{stats,checks,final:json('state')};
+    },{frames,bomb});
+    report.configuration={frames,bomb,stage,section,cpuRate,browser:browser.version(),paired:true,baselineCommit};report.errors=errors;
+    await writeFile(resolve(output,label+'.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({label,configuration:report.configuration,stats:report.stats,checks:report.checks,errors}));
+    if(errors.length)throw Error('Browser errors');
+  }else{
   const report=await page.evaluate(async({locked,bomb,frames,verify,cadence,paced})=>{
     const rows=[],stats={},windows={normal:[],bomb:[]};let maxBullets=0,previous=null;
     const presentationSamples=[];
@@ -125,7 +161,7 @@ try{
     const gl=r.gl,debug=gl.getExtension('WEBGL_debug_renderer_info');
     return {stats,rows,maxBullets,presentationSamples,audioState:window.audioContext?.state??'disabled',glError:gl.getError(),renderer:debug?gl.getParameter(debug.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),final:json('state'),practice:bridge.snapshot()};
   },{locked,bomb,frames,verify,cadence,paced});
-  report.configuration={cpuRate,stage,section,difficulty,loadout,bomb,frames,locked,cadence,paced,baseline,audioEnabled,browser:browser.version()};
+  report.configuration={cpuRate,stage,section,difficulty,loadout,bomb,frames,locked,cadence,paced,baseline,audioEnabled,browser:browser.version(),baselineCommit};
   report.build={compiler:build.compiler,optimization:build.optimization,sourceSha256:build.sourceSha256,artifacts:build.artifacts};
   if(paced)report.pacing=summarizeFramePacing(report.presentationSamples,{refreshIntervalMs});
   report.errors=errors;await writeFile(resolve(output,label+'.json'),JSON.stringify(report,null,2)+'\n');
@@ -139,4 +175,5 @@ try{
   if(errors.length||report.glError)throw Error('Browser or WebGL errors during the run');
   if(audioEnabled&&report.audioState!=='running')throw Error('Audio did not run');
   if(require60&&!report.pacing.meets60Hz)throw Error('60 Hz acceptance failed; inspect '+label+'.json');
+  }
 }finally{await browser.close();await new Promise(done=>server.close(done));}

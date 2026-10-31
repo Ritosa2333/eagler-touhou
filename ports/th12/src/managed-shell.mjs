@@ -92,7 +92,7 @@ export function installManagedShell(api,environment=window,{announceReady=true}=
   environment.addEventListener('message',event=>{
     const message=event.data;
     if(event.source!==environment.parent||event.origin!==environment.location.origin||message?.protocol!=='eagler-touhou/1'||message.game!=='th12'||message.epoch!==epoch||typeof message.command!=='string')return;
-    queue=queue.then(async()=>{try{if(!announced)throw Error('运行资源尚未准备');const result=await command(message);if(typeof message.request==='string')emit({request:message.request,ok:true,...result});}catch(error){if(typeof message.request==='string')emit({request:message.request,ok:false,error:error.message});else emit({event:'error',message:error.message});}});
+    queue=queue.then(async()=>{try{if(!announced)throw Error('运行资源尚未准备');const result=await command(message);if(typeof message.request==='string')emit({request:message.request,ok:true,...result});}catch(error){if(typeof message.request==='string')emit({request:message.request,ok:false,error:error.message});else emit({event:'error',error:error.message});}});
   });
   emit.ready=()=>{if(announced)return;announced=true;emit({event:'ready',saveRoot:'/savesth12'});};
   if(announceReady)emit.ready();return emit;

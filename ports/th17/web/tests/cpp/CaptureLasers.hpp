@@ -1,0 +1,11 @@
+#pragma once
+#include "../../cpp/game/LaserCommands.hpp"
+struct CaptureBulletLasers:LaserEmissionHost {
+    u32 count=0,kind=0;std::vector<u8> bytes;
+    void put(u32 at,const void* source,u32 size){std::memcpy(bytes.data()+at,source,size);}
+    void transforms(u32 offset,const std::array<BulletTransform,18>& entries){for(u32 i=0;i<18;i++){const auto& t=entries[i];const u32 at=offset+i*44;put(at,t.floats.data(),16);put(at+16,t.integers.data(),16);put(at+32,&t.type,4);put(at+36,&t.active,4);}}
+    bool emit(const MovingLaserRequest& r){count++;kind=0;bytes.assign(0x358,0);put(0,&r.position,12);put(12,&r.angle,4);put(16,&r.maximum_length,4);put(20,&r.initial_length,4);put(24,&r.end_distance,4);put(28,&r.width,4);put(32,&r.speed,4);put(36,&r.type,4);put(40,&r.color,4);put(44,&r.start_offset,4);put(48,&r.transform_index,4);put(52,&r.transform_parameter,4);transforms(56,r.transforms);put(848,&r.sound,4);put(852,&r.reflection_sound,4);return true;}
+    bool emit(const StationaryLaserRequest& r){count++;kind=1;bytes.assign(0x378,0);put(0,&r.position,12);put(12,&r.drift,12);put(24,&r.angle,4);put(28,&r.angular_velocity,4);put(32,&r.maximum_length,4);put(36,&r.initial_length,4);put(40,&r.width,4);put(44,&r.speed,4);put(48,&r.delay,4);put(52,&r.warmup,4);put(56,&r.active,4);put(60,&r.fade,4);put(64,&r.sound,4);put(68,&r.transform_sound,4);put(72,&r.id,4);put(76,&r.start_offset,4);put(80,&r.transform_index,4);put(84,&r.type,4);put(88,&r.color,4);put(92,&r.flags,4);transforms(96,r.transforms);return true;}
+    bool emit(const CurveLaserRequest& r){count++;kind=2;bytes.assign(0x358,0);put(0,&r.position,12);put(12,&r.angle,4);put(16,&r.width,4);put(20,&r.speed,4);put(24,&r.type,4);put(28,&r.color,4);put(32,&r.count,4);put(36,&r.start_offset,4);put(40,&r.flags,4);transforms(44,r.transforms);put(836,&r.sound,4);put(840,&r.transform_sound,4);put(844,&r.transform_index,4);put(852,&r.initial_time,4);return true;}
+    bool emit(const SegmentedLaserRequest& r){count++;kind=3;bytes.assign(0x354,0);put(0,&r.position,12);put(24,&r.angle,4);put(32,&r.length,4);put(36,&r.width,4);put(40,&r.id,4);put(44,&r.color,4);put(48,&r.start_offset,4);put(52,&r.flags,4);transforms(60,r.transforms);return true;}
+};

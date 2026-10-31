@@ -1,3 +1,4 @@
+import {createRelayEntryRouting} from '../../src/launcher/relay-entry-routing.mts';
 import {loadGameVersion} from "../../package/game-version.mjs";
 import {DEFAULT_GAME_OPTIONS} from '../../src/launcher/game-preferences.mts';
 import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
@@ -251,7 +252,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       cancelDownload: async () => {if (fileDownload?.ownsPresentation()) fileDownload.controller.abort(new DOMException('已取消下载', 'AbortError')); else if (updating) updateAbort?.abort(); else if (downloadingMusic) musicAbort?.abort(); else if (downloadingPackage || downloadingLanguage) launchAbort?.abort(new DOMException('已取消下载', 'AbortError')); else if (blockingDownload) await blockingDownload.cancel(); else launchAbort?.abort(new DOMException('已取消下载', 'AbortError'));},
       playerStatus: feedback.playerStatus, toast: feedback.toast, noteGameDataTransfer: message => gameData.noteTransfer(message)},
   });
-  const network = createNetworkActivityTracker({fetchImpl: window.fetch.bind(window), onChange: transfer.networkSnapshot});
+  const fetchResource = window.fetch.bind(window);
+  const network = createNetworkActivityTracker({fetchImpl: fetchResource, onChange: transfer.networkSnapshot});
   const metadata = createMetadataService({baseUrl, storage, getGameVersion: selectedVersion, indexedDBFactory: window.indexedDB,
     translate: (locale, key, params) => {if (!isUiMessageKey(key)) throw new Error(`Unknown main translation key: ${key}`); return translate(locale === 'en' ? 'en' : 'zh-CN', key, params);},
     webAudioAvailable: audio, webMidiAvailable: 'requestMIDIAccess' in window.navigator, mobile: preferTouchSettings(), locale: () => snapshot.locale,
@@ -307,17 +309,21 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     scheduler: {requestFrame: callback => window.requestAnimationFrame(callback), cancelFrame: id => window.cancelAnimationFrame(id),
       setTimer: callback => window.setTimeout(callback, 0), clearTimer: id => window.clearTimeout(id)},
   });
-  const preparationNetwork = createPreparationNetwork({foreground: network, baseUrl, translate: t, fetchImpl: window.fetch.bind(window)});
-  const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: window.fetch.bind(window), network: preparationNetwork,
+  const preparationNetwork = createPreparationNetwork({foreground: network, baseUrl, translate: t, fetchImpl: fetchResource});
+  const acquisition = createPackageAcquisition({metadata, baseUrl, getGameVersion: selectedVersion, translate: t, fetchImpl: fetchResource, network: preparationNetwork,
     testBuild: entryUrl.searchParams.has('test'),
     requestPersistence: async () => {try {await window.navigator.storage?.persist?.();} catch {}}});
   let sessionStorage: Storage | null = null; try {sessionStorage = window.sessionStorage;} catch {}
   const identity = createMultiplayerIdentityStore({persistentStorage: storage, sessionStorage});
   const sessions = createMultiplayerRoomSessionStore({storage: sessionStorage});
+  const relayRouting = createRelayEntryRouting({
+    shared: () => directoryEntry ? directory.getSnapshot().siteManifest?.shared : metadata.getSnapshot().siteManifest?.shared,
+    createSocket: url => new WebSocket(url),
+  });
   const directory = createLobbyDirectory({
     testBuild: entryUrl.searchParams.has('test'),
     loadSiteManifest: signal => loadCompatibleSiteManifest(async file => {const response = await window.fetch(new URL(file, baseUrl), {cache: 'no-store', signal}); if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status}); return response.json();}),
-    createSocket: url => new WebSocket(url), memberId: multiplayerMemberId,
+    createSocket: url => relayRouting.createSocket(url), memberId: multiplayerMemberId,
     identity, sessions, sessionStorage, translate: t,
     launcherUrl: () => new URL(snapshot.locale === 'en' ? 'en.html' : './', baseUrl).href,
     navigateToRoom: url => requiredNavigation().navigateToRoom(url),
@@ -325,7 +331,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     onSelectedProductNormalized: product => requiredNavigation().selectLobbyProduct(product),
   });
   const networkDiagnostics = createNetworkDiagnosticsModel({ translate: stringTranslate,
-    getRelayUrl: () => {const host = /\/lobby(?:\.html)?\/?$/.test(window.location.pathname) ? directory.getSnapshot().siteManifest : metadata.getSnapshot().siteManifest; const relay = host?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';},
+    createRelaySocket: url => relayRouting.createSocket(url),
+    getRelayUrl: () => {const host = /\/lobby(?:\.html)?\/?$/.test(window.location.pathname) ? directory.getSnapshot().siteManifest : metadata.getSnapshot().siteManifest; const relay = host?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relayRouting.resolve(relay)) : '';},
     getFallbackIceServers: () => [{urls: ['stun:stun.cloudflare.com:3478']}]});
   const nativeTouch = createTouchNativePorts({document, screen: window.screen, mobile, translate: t});
   const playerGestureTypes = ['contextmenu', 'selectstart', 'dragstart', 'gesturestart', 'gesturechange', 'gestureend'];
@@ -531,7 +538,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   const titleNetwork = createTitleNetwork({context: () => ({game: runtime?.getSnapshot().game ?? activeSettings?.gameId ?? 'th06',
     product: roomSession?.service.getSnapshot().product ?? activeSettings?.context.productId ?? DEFAULT_PRODUCT_ID,
-    launched: runtime?.getSnapshot().launched === true, relayUrl: metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''}),
+    launched: runtime?.getSnapshot().launched === true, relayUrl: relayRouting.resolve(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '')}),
     translate: stringTranslate, toast: feedback.toast, randomValues: value => {const bytes = new Uint32Array(value.length); window.crypto.getRandomValues(bytes); value.set(bytes); return value;},
     sendNetworkCancel: () => requiredRuntime().cancelTitleNetwork(),
     enterRoom(product, code, created) {if (isMultiplayerProductId(product)) roomSession!.service.enterRoom(product, code, created);},
@@ -831,7 +838,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     requiredNavigation().closeRoomPanel(); requiredNavigation().closeRoomSettings();
     publish({roomLaunchStage: cover ? 'runtime' : null});
     publish({spectatorViewer: context.snapshot.spectatorRequested});
-    await showRoomPlayer(context, mobile && !context.snapshot.spectatorRequested, context.snapshot.seat != null);
+    await showRoomPlayer(context, !context.snapshot.spectatorRequested, context.snapshot.seat != null);
     const owner = requiredRuntime(), preloaded = roomPreload;
     const current = owner.getSnapshot();
     if (current.phase === 'prepared' && current.epoch !== null &&
@@ -1017,7 +1024,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const roomPreparation = createRoomPreparation({acquisition, metadataReady: metadata.initialize, baseUrl, translate: t,
     activeWorker: () => appShellOwner.activeWorker(), network});
   roomSession = createRoomSession({document, window, storage, identity, sessions, memberId: multiplayerMemberId,
-    createSocket: url => new WebSocket(url), relayUrl: () => metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '',
+    createSocket: url => relayRouting.createSocket(url), relayUrl: () => relayRouting.resolve(metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''),
     settingsModel: settings, sitePreferences: preferences, runtime: () => runtime, replayViewer: () => snapshot.replayViewer,
     titleOverlayOpen: () => snapshot.th09NetworkOverlayOpen,
     settings: () => ({touchEnabled: settings.getSnapshot()?.options.touchEnabled === true, touchMovementMode: settings.getSnapshot()?.options.touchMovementMode ?? DEFAULT_GAME_OPTIONS.touchMovementMode, ...(settings.getSnapshot()?.context.productId === 'th09mp' ? {replayAutoSave: settings.getSnapshot()?.replayAutoSave} : {}), mobileDevice: mobile, iceServers: [{urls: ['stun:stun.cloudflare.com:3478']}]}),
@@ -1148,9 +1155,12 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     const expected = resolveRoomInvite(url); if (!expected?.r) return Promise.resolve();
     const existing = room.service.getSnapshot();
     // Retained membership is independent of later Host business fallback.
-    if (existing.room?.code === expected.r) return Promise.resolve();
+    if (existing.room?.code === expected.r && existing.product === expected.g) return Promise.resolve();
     const businessProduct = settings.getSnapshot()!.context.productId;
-    const selected = isMultiplayerProductId(businessProduct) ? businessProduct : DEFAULT_MULTIPLAYER_PRODUCT_ID;
+    // Host metadata can arrive after the invite. Keep its game identity even
+    // when a test-only product is not yet available in the initial catalog.
+    const selected = isMultiplayerProductId(expected.g) ? expected.g
+      : isMultiplayerProductId(businessProduct) ? businessProduct : DEFAULT_MULTIPLAYER_PRODUCT_ID;
     if (!disposed) {
       settings.hydrate(settingsContext(selected, snapshot.locale));
       room.service.restoreInvite(url, selected);
@@ -1229,7 +1239,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       finally {playerOrientationPending = false; publish({});}
     },
     async togglePlayerFullscreen() {
-      if (nativeTouch.isFullscreen() || snapshot.roomPlayerExpanded) {
+      if (nativeTouch.isFullscreen()) {
         await exitRoomPlayerFullscreen();
         navigation?.closeRoomFullscreen?.();
         return;

@@ -1,0 +1,64 @@
+BROWSER TH12 SDL3: data /game; saves /savesth12
+BROWSER th12.exe: prepared TH12 1.00b ()
+BROWSER graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))
+BROWSER text fonts: /game/unifont.otf
+BROWSER audio: using per-track OGG files
+BROWSER start: mode 0 character 0 shot 0 difficulty 1 stage 1
+TOUCH_ESC_AND_PORTRAIT_DRAG_PASS {
+  beforeTouch: {
+    scene: 'playing',
+    kind: 'game',
+    ready: true,
+    fps: 60,
+    menuSerial: 5,
+    menuReady: true,
+    menuAge: 911,
+    selection: 0,
+    stage: 1,
+    character: 0,
+    shot: 0,
+    cursor: 0,
+    instance: '1:1',
+    gestureScope: '1',
+    x: 0,
+    y: 51200,
+    fast: 4.5,
+    slow: 2,
+    paused: false,
+    practiceVertices: 0,
+    capturing: false,
+    track: 'th12_00',
+    seeking: false
+  },
+  afterTouch: {
+    scene: 'playing',
+    kind: 'game',
+    ready: true,
+    fps: 60,
+    menuSerial: 5,
+    menuReady: true,
+    menuAge: 921,
+    selection: 0,
+    stage: 1,
+    character: 0,
+    shot: 0,
+    cursor: 0,
+    instance: '1:1',
+    gestureScope: '1',
+    x: 0,
+    y: 38911,
+    fast: 4.5,
+    slow: 2,
+    paused: false,
+    practiceVertices: 0,
+    capturing: false,
+    track: 'th12_00',
+    seeking: false
+  },
+  contact: { x: 0.5, y: 0.6125, moveY: 0.5375, dy: 12288 }
+}
+THPRAC_HOSTED_MOUSE_PASS { closedVertices: 228, openVertices: 544 }
+BROWSER replay th12_01.rpy: saved (7464 bytes)
+BROWSER start: mode 3 character 0 shot 0 difficulty 1 stage 1
+BROWSER start: mode 3 character 0 shot 0 difficulty 1 stage 1
+PASS {"playing":{"scene":"playing","kind":"game","ready":true,"fps":60,"menuSerial":5,"menuReady":true,"menuAge":111,"selection":0,"stage":1,"character":0,"shot":0,"cursor":0,"instance":"1:0","gestureScope":"1","x":0,"y":51200,"fast":4.5,"slow":2,"paused":false,"practiceVertices":0,"capturing":false,"track":"th12_00","seeking":false},"fullscreen":[{"scene":"playing","kind":"game","ready":true,"fps":18,"menuSerial":7,"menuReady":true,"menuAge":52,"selection":0,"stage":1,"character":0,"shot":0,"cursor":0,"instance":"1:1","gestureScope":"1","x":0,"y":38911,"fast":4.5,"slow":2,"paused":false,"practiceVertices":0,"capturing":false,"track":"th12_00","seeking":false},{"scene":"playing","kind":"game","ready":true,"fps":55,"menuSerial":7,"menuReady":true,"menuAge":79,"selection":0,"stage":1,"character":0,"shot":0,"cursor":0,"instance":"1:1","gestureScope":"1","x":0,"y":38911,"fast":4.5,"slow":2,"paused":false,"practiceVertices":0,"capturing":false,"track":"th12_00","seeking":false}],"pausedReplay":{"scene":"replay-playing","kind":"replay","ready":true,"fps":0,"menuSerial":13,"menuReady":false,"menuAge":3,"selection":0,"stage":1,"character":0,"shot":0,"cursor":3,"instance":"1:0","gestureScope":"1","x":0,"y":51200,"fast":4.5,"slow":2,"paused":true,"practiceVertices":0,"capturing":false,"track":"th12_00","seeking":false},"replay":{"name":"","character":0,"shot":0,"difficulty":1,"timestamp":1793271932,"score":6300,"slowdown":100,"lastStage":1,"mode":"story","stages":[{"id":1,"label":"Stage 1","score":6300,"frames":1000}]},"errors":[]}

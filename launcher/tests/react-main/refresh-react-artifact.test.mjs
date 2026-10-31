@@ -79,7 +79,7 @@ test('React refresh stages and verifies a coherent artifact before replacing any
       const maintenance = resolve(temporary, 'maintenance-source'), target = resolve(temporary, 'stale-contract-target');
       for (const path of ['lib', 'compat', 'package', 'product-catalog.mjs', 'config/workspace.json', 'host/lib/process.mjs',
         'scripts/refresh-deployment-app-shell.mjs', 'scripts/verify-server-build.mjs', 'src/contracts', 'src/app-shell-sw.js',
-        'src/runtime-cache-sw.js', 'compat/runtime-generation-reader.js',
+        'src/runtime-cache-sw.js', 'src/site-mirror-sw.js', 'compat/runtime-generation-reader.js',
         'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
         await mkdir(resolve(maintenance, path, '..'), {recursive: true});
         await cp(resolve(project, path), resolve(maintenance, path), {recursive: true});

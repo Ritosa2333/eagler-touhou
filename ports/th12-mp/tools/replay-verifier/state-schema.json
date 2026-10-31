@@ -1,0 +1,14 @@
+{
+  "schema": "th12-gameplay-trace/2",
+  "sampling": "after-every-complete-authoritative-tick-before-external-stage-load",
+  "input": "recorded-held-pressed-released-and-resolved-motion; no-sentinel-tick",
+  "categories": ["input", "player", "rng", "ecl", "enemies", "bullets", "items", "economy", "stage"],
+  "directSnapshotFields": ["player", "rng", "ecl", "enemies", "bullets", "items", "economy"],
+  "remainingSnapshotFields": "stage.other; preserve every other snapshot key without filtering",
+  "stageState": "stage.state",
+  "stageFlow": "stage.flow",
+  "snapshotInput": "input.runtime",
+  "route": "all recorded stages in file order, atomic header restore at each boundary",
+  "precision": "exact JSON finite-number/state comparison; no tolerances, frame offsets or field omission",
+  "presentation": "not sampled as authoritative work; no renderer, display tick, audio callback or wall clock injection"
+}

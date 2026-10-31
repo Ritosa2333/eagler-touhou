@@ -69,18 +69,18 @@ export function messageTextPoses(message,logicalPoses,atlases,{logicalText=false
 export function readCoreAnimationPoses(core,stage=1){
   if(!core._th12_anm_draw||!core._th12_anm_draw_ptr)return [];
   const count=core._th12_anm_draw(),ptr=core._th12_anm_draw_ptr(),stride=core._th12_anm_draw_stride?.()??128;
-  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||ptr<0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
-  const view=new DataView(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
-  for(let i=0;i<count;i++){const offset=ptr+i*stride,F=n=>view.getFloat32(offset+n*4,true),I=n=>view.getInt32(offset+n*4,true),U=n=>view.getUint32(offset+n*4,true),flags=U(24),flags2=U(25),primary=rgba(U(14)),secondary=rgba(U(15)),color=flags&0x10000?secondary:primary;
-    const a={name:banks[I(16)]??null,sprite:I(17),layer:I(18),mode:I(19),anchorX:I(20),anchorY:I(21),blend:I(22),geometryCount:I(23),
-      x:0,y:0,z:F(2),rx:F(3),ry:F(4),rotation:F(5),sx:F(6),sy:F(7),u:F(8),v:F(9),uvScaleX:F(10),uvScaleY:F(11),geometryRadius:F(12),geometryWidth:F(13),
-      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
-    if(U(31)===1){a.nativeWidth=F(29);a.nativeHeight=F(30);}
-    const owner=U(27);a.visible=(flags&3)===3;
+  if(!Number.isInteger(count)||count<0||count>65536||stride!==128||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('逻辑动画姿态记录无效');
+  const f=new Float32Array(core.HEAPU8.buffer),v=new Int32Array(core.HEAPU8.buffer),u=new Uint32Array(core.HEAPU8.buffer),banks=animationBankNames(stage),rgba=argb=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255],poses=[];
+  for(let i=0;i<count;i++){const k=(ptr>>2)+i*32,flags=u[k+24],flags2=u[k+25],primary=rgba(u[k+14]),secondary=rgba(u[k+15]),color=flags&0x10000?secondary:primary;
+    const a={name:banks[v[k+16]]??null,sprite:v[k+17],layer:v[k+18],mode:v[k+19],anchorX:v[k+20],anchorY:v[k+21],blend:v[k+22],geometryCount:v[k+23],
+      x:0,y:0,z:f[k+2],rx:f[k+3],ry:f[k+4],rotation:f[k+5],sx:f[k+6],sy:f[k+7],u:f[k+8],v:f[k+9],uvScaleX:f[k+10],uvScaleY:f[k+11],geometryRadius:f[k+12],geometryWidth:f[k+13],
+      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:v[k+19]===1||v[k+19]===3};
+    if(u[k+31]===1){a.nativeWidth=f[k+29];a.nativeHeight=f[k+30];}
+    const owner=u[k+27];a.visible=(flags&3)===3;
     // Original45c93e/45c95b tests primary alpha even when flag10000 selects
     // secondary color. A secondary alpha cannot revive a faded mode0/1 quad.
     if((a.mode===0||a.mode===1)&&primary[3]===0)a.visible=false;
-    poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
+    poses.push({a,x:f[k+0],y:f[k+1],angle:0,scale:1,alpha:f[k+28],id:u[k+26],owner,logical:true,order:i,drawPriority:undefined,index:undefined,clip:undefined,clipped:undefined});
   }return poses;
 }
 export function readCoreLaserSegments(core,stage=1){
@@ -231,7 +231,11 @@ export class Renderer {
       :quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel,scratch),du=options.u||0,dv=options.v||0;
     const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
     const u0=sx/texture.w+du,u1=endX/texture.w+du,v0=sy/texture.h+dv,v1=endY/texture.h+dv;
-    const ox=presentationOffset?.[0]??0,oy=presentationOffset?.[1]??0,r=tint[0]??tint.r,g=tint[1]??tint.g,b=tint[2]??tint.b;
+    // Native45af10 mode1 keeps D3D9 integer pixel centers. Convert at
+    // submission to WebGL half-integer centers; otherwise a 1px warning
+    // samples only the transparent edges of its vertically compressed sprite.
+    // Mode0 already removes native459e50's half-pixel subtraction above.
+    const rasterOffset=mode===1?.5:0,ox=(presentationOffset?.[0]??0)+rasterOffset,oy=(presentationOffset?.[1]??0)+rasterOffset,r=tint[0]??tint.r,g=tint[1]??tint.g,b=tint[2]??tint.b;
     if(this.batch instanceof VertexBatch)this.batch.quad(corners,u0,u1,v0,v1,texture.flipY,r,g,b,alpha,ox,oy);
     else for(const i of quadIndices){const u=i===1||i===2?u1:u0,v=i>=2?v1:v0;this.batch.push(corners[i][0]+ox,corners[i][1]+oy,u,texture.flipY?1-v:v,r,g,b,alpha,1,0);}
   }
@@ -362,7 +366,17 @@ export class Renderer {
     const family=localizedFontFamily(),key=JSON.stringify([text,record,metrics,raster,family,family?this.localizationTabs??[]:null]);
     if(cache.has(key)){const result=cache.get(key);if(family)this.localizationTabs=[...result.tabs];return result;}
     const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${raster?.fontWeight??(style===2?700:serif?600:400)} ${raster?.fontPixelHeight??(style===2?15:32)}px "${localizedFontFamily()??raster?.fontFamily??(serif?'ＭＳ 明朝':'ＭＳ ゴシック')}", "Eagler Unicode", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';ctx.textAlign=raster?.align??'left';
-    const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{const y=raster?.sourceY??2;ctx.fillStyle='#000';for(const [dx,dy]of raster?.outlineOffsets??[[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,y+dy-2);ctx.fillStyle=foreground;ctx.fillText(text,x,y);};
+    const foreground=raster?.foregroundColor!==undefined?'#'+(raster.foregroundColor>>>0).toString(16).padStart(6,'0'):'#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{
+      const y=raster?.sourceY??2;
+      // Trace one contour at the glyph baseline. Four displaced copies of
+      // the thin shared font form separate strokes instead of an outline;
+      // the old y-2 adjustment also raised ending outlines above their fill.
+      if(raster?.outlineOffsets?.length!==0){
+        ctx.strokeStyle='#'+((raster?.outlineColor??record.outlineColor??0)>>>0).toString(16).padStart(6,'0');
+        ctx.lineWidth=raster?.outlineWidth??2;ctx.lineJoin='round';ctx.strokeText(text,x,y);
+      }
+      ctx.fillStyle=foreground;ctx.fillText(text,x,y);
+    };
     if(family){
       ctx.textAlign='left';
       const font=ctx.font,measure=(value,commands='')=>{ctx.font=(commands.includes('b')?'bold ':'')+(commands.includes('i')?'italic ':'')+font;return ctx.measureText(value).width;};
@@ -440,16 +454,15 @@ export class Renderer {
   resetPresentation(){
     // Call on start/restart, stage load, replay seek, pause/resume, focus
     // loss or any host discontinuity; the host also discards its old pair.
+    if(this.drawBuckets)for(const bucket of this.drawBuckets)if(bucket)bucket.length=0;
     this.presentationEpoch++;this.lastFrame=-1;this.animations=new AnimationSampler(this.atlases);
   }
   capturePresentation(core,fps={}){
     const h=[...readCoreHud(core,fps)],frame=h[0];if(frame<this.lastFrame){this.resetPresentation();}this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0],backgroundVisible=background.authoritative||(core._th12_background_visible?.()??true);
-    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
-    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
-    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
-    const bytes=core.HEAPU8.slice(ptr,ptr+count*stride*4),f=new Float32Array(bytes.buffer,bytes.byteOffset,count*stride),v=new Int32Array(bytes.buffer,bytes.byteOffset,count*stride),records=[];
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core,logicalPoses),meshes=readCoreMeshes(core,stage),logicalOwners=(this.logicalOwners??=new Set()),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
+    logicalOwners.clear();for(const p of logicalPoses)logicalOwners.add(p.owner);for(const p of meshes)logicalOwners.add(p.owner);
     let bulletCount=0;
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases,{logicalText:!!core._th12_anm_draw}),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     for(const text of spellTextDescriptors(spell,logicalPoses,{disableMaster:fps.disableMaster}))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:text.drawFlag===0?69:45,clipped:false,order:poses.length});
@@ -461,6 +474,11 @@ export class Renderer {
     if(fps.stageClear){const text=stageClearText(h,logicalPoses,fps.practice);if(text)poses.push({nativeText:text,drawPriority:69,clip:0,order:poses.length});}
     const transition=stageTransitionPose(logicalBackground?.transition);if(transition)poses.push(transition);
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options,owner=Number.isInteger(sampling.entityId)?sampling.entityId:0;let child=0;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,owner,presentationKey:owner?'sample:'+owner+':'+id+':'+child++:undefined,order:poses.length});};
+    // Consume the draw queue after all metadata exports. No Wasm calls occur
+    // inside this loop; endpoint records own their scalars before the next export.
+    const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
+    if(!Number.isInteger(count)||count<0||count>1000000||!Number.isInteger(ptr)||ptr<0||ptr%4!==0||ptr+count*stride*4>core.HEAPU8.byteLength)throw Error('绘制记录范围无效');
+    const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride),records=[];
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
       records.push({x,y,owner:entityId,bank:v[k+4],animation,kind,color,age,interrupt});
@@ -496,7 +514,7 @@ export class Renderer {
     }
     // These pose wrappers were created for this capture. Annotate them before
     // publishing the immutable endpoint; older endpoints and appearances stay intact.
-    const ordered=orderPresentation(poses,schedule,{reusePoses:true});
+    const ordered=orderPresentation(poses,schedule,{reusePoses:true,buckets:this.drawBuckets??=[]});
     this.animations.endFrame();
     // Modern cores already publish authoritative owner/lineage data. Do not
     // build a second legacy owner graph that their interpolation never uses;

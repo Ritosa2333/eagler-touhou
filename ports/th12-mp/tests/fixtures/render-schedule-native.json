@@ -1,0 +1,2857 @@
+{
+  "schema": "th12-native-draw-scheduling-v1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "scope": "Constructed native CPU draw-wrapper inputs, not full-frame pixels",
+  "boundaries": [
+    "430a70/430910 matrix and device transforms omitted",
+    "45a3c0 batch flush omitted",
+    "D3D SetViewport/RenderState recorded",
+    "45c900/4018f0 geometry submissions recorded without execution",
+    "46c9ea constructed allocations;462420 registration recorded"
+  ],
+  "nativeLayerRegistrations": [
+    {
+      "callback": "00460c50",
+      "priority": 4
+    },
+    {
+      "callback": "00460c60",
+      "priority": 6
+    },
+    {
+      "callback": "00460c70",
+      "priority": 8
+    },
+    {
+      "callback": "00460c80",
+      "priority": 9
+    },
+    {
+      "callback": "00460c90",
+      "priority": 11
+    },
+    {
+      "callback": "00460d10",
+      "priority": 13
+    },
+    {
+      "callback": "00460d20",
+      "priority": 16
+    },
+    {
+      "callback": "00460d30",
+      "priority": 17
+    },
+    {
+      "callback": "00460d40",
+      "priority": 18
+    },
+    {
+      "callback": "00460d50",
+      "priority": 19
+    },
+    {
+      "callback": "00460d60",
+      "priority": 20
+    },
+    {
+      "callback": "00460d70",
+      "priority": 23
+    },
+    {
+      "callback": "00460d80",
+      "priority": 25
+    },
+    {
+      "callback": "00460d90",
+      "priority": 26
+    },
+    {
+      "callback": "00460da0",
+      "priority": 28
+    },
+    {
+      "callback": "00460db0",
+      "priority": 30
+    },
+    {
+      "callback": "00460dc0",
+      "priority": 34
+    },
+    {
+      "callback": "00460dd0",
+      "priority": 36
+    },
+    {
+      "callback": "00460de0",
+      "priority": 38
+    },
+    {
+      "callback": "00460df0",
+      "priority": 41
+    },
+    {
+      "callback": "00460e40",
+      "priority": 42
+    },
+    {
+      "callback": "00460e20",
+      "priority": 52
+    },
+    {
+      "callback": "00460e10",
+      "priority": 63
+    },
+    {
+      "callback": "00460e00",
+      "priority": 64
+    },
+    {
+      "callback": "00460e30",
+      "priority": 51
+    },
+    {
+      "callback": "00460e70",
+      "priority": 50
+    },
+    {
+      "callback": "00460f00",
+      "priority": 66
+    },
+    {
+      "callback": "00460f50",
+      "priority": 65
+    }
+  ],
+  "cameraProfiles": [
+    {
+      "rendererFlags": 0,
+      "viewports": [
+        [
+          0,
+          0,
+          640,
+          480
+        ],
+        [
+          0,
+          0,
+          640,
+          480
+        ],
+        [
+          0,
+          0,
+          512,
+          512
+        ]
+      ]
+    },
+    {
+      "rendererFlags": 16384,
+      "viewports": [
+        [
+          32,
+          16,
+          384,
+          448
+        ],
+        [
+          0,
+          0,
+          640,
+          480
+        ],
+        [
+          13,
+          0,
+          422,
+          480
+        ]
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "layer": 0,
+      "entry": "00460c50",
+      "priority": 4,
+      "inputChain": [
+        36700160,
+        36701440,
+        36702720,
+        36704000
+      ],
+      "events": [
+        {
+          "context": "layer0",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36700160
+        },
+        {
+          "context": "layer0",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36700160,
+          "layer": 0
+        },
+        {
+          "context": "layer0",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36702720,
+          "layer": 0
+        },
+        {
+          "context": "layer0",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36704000,
+          "layer": 0
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 1,
+      "entry": "00460c60",
+      "priority": 6,
+      "inputChain": [
+        36708352,
+        36709632,
+        36710912,
+        36712192
+      ],
+      "events": [
+        {
+          "context": "layer1",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36708352
+        },
+        {
+          "context": "layer1",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36708352,
+          "layer": 1
+        },
+        {
+          "context": "layer1",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36710912,
+          "layer": 1
+        },
+        {
+          "context": "layer1",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36712192,
+          "layer": 1
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 2,
+      "entry": "00460c70",
+      "priority": 8,
+      "inputChain": [
+        36716544,
+        36717824,
+        36719104,
+        36720384
+      ],
+      "events": [
+        {
+          "context": "layer2",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36716544
+        },
+        {
+          "context": "layer2",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36716544,
+          "layer": 2
+        },
+        {
+          "context": "layer2",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36719104,
+          "layer": 2
+        },
+        {
+          "context": "layer2",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36720384,
+          "layer": 2
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 3,
+      "entry": "00460c80",
+      "priority": 9,
+      "inputChain": [
+        36724736,
+        36726016,
+        36727296,
+        36728576
+      ],
+      "events": [
+        {
+          "context": "layer3",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36724736
+        },
+        {
+          "context": "layer3",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36724736,
+          "layer": 3
+        },
+        {
+          "context": "layer3",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36727296,
+          "layer": 3
+        },
+        {
+          "context": "layer3",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36728576,
+          "layer": 3
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 4,
+      "entry": "00460c90",
+      "priority": 11,
+      "inputChain": [
+        36732928,
+        36734208,
+        36735488,
+        36736768
+      ],
+      "events": [
+        {
+          "context": "layer4",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "applied": [
+            13,
+            0,
+            422,
+            480
+          ]
+        },
+        {
+          "context": "layer4",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36732928
+        },
+        {
+          "context": "layer4",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36732928,
+          "layer": 4
+        },
+        {
+          "context": "layer4",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36735488,
+          "layer": 4
+        },
+        {
+          "context": "layer4",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36736768,
+          "layer": 4
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 5,
+      "entry": "00460d10",
+      "priority": 13,
+      "inputChain": [
+        36741120,
+        36742400,
+        36743680,
+        36744960
+      ],
+      "events": [
+        {
+          "context": "layer5",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36741120
+        },
+        {
+          "context": "layer5",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36741120,
+          "layer": 5
+        },
+        {
+          "context": "layer5",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36743680,
+          "layer": 5
+        },
+        {
+          "context": "layer5",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36744960,
+          "layer": 5
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 6,
+      "entry": "00460d20",
+      "priority": 16,
+      "inputChain": [
+        36749312,
+        36750592,
+        36751872,
+        36753152
+      ],
+      "events": [
+        {
+          "context": "layer6",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36749312
+        },
+        {
+          "context": "layer6",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36749312,
+          "layer": 6
+        },
+        {
+          "context": "layer6",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36751872,
+          "layer": 6
+        },
+        {
+          "context": "layer6",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36753152,
+          "layer": 6
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 7,
+      "entry": "00460d30",
+      "priority": 17,
+      "inputChain": [
+        36757504,
+        36758784,
+        36760064,
+        36761344
+      ],
+      "events": [
+        {
+          "context": "layer7",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36757504
+        },
+        {
+          "context": "layer7",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36757504,
+          "layer": 7
+        },
+        {
+          "context": "layer7",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36760064,
+          "layer": 7
+        },
+        {
+          "context": "layer7",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36761344,
+          "layer": 7
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 8,
+      "entry": "00460d40",
+      "priority": 18,
+      "inputChain": [
+        36765696,
+        36766976,
+        36768256,
+        36769536
+      ],
+      "events": [
+        {
+          "context": "layer8",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36765696
+        },
+        {
+          "context": "layer8",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36765696,
+          "layer": 8
+        },
+        {
+          "context": "layer8",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36768256,
+          "layer": 8
+        },
+        {
+          "context": "layer8",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36769536,
+          "layer": 8
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 9,
+      "entry": "00460d50",
+      "priority": 19,
+      "inputChain": [
+        36773888,
+        36775168,
+        36776448,
+        36777728
+      ],
+      "events": [
+        {
+          "context": "layer9",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36773888
+        },
+        {
+          "context": "layer9",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36773888,
+          "layer": 9
+        },
+        {
+          "context": "layer9",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36776448,
+          "layer": 9
+        },
+        {
+          "context": "layer9",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36777728,
+          "layer": 9
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 10,
+      "entry": "00460d60",
+      "priority": 20,
+      "inputChain": [
+        36782080,
+        36783360,
+        36784640,
+        36785920
+      ],
+      "events": [
+        {
+          "context": "layer10",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36782080
+        },
+        {
+          "context": "layer10",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36782080,
+          "layer": 10
+        },
+        {
+          "context": "layer10",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36784640,
+          "layer": 10
+        },
+        {
+          "context": "layer10",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36785920,
+          "layer": 10
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 11,
+      "entry": "00460d70",
+      "priority": 23,
+      "inputChain": [
+        36790272,
+        36791552,
+        36792832,
+        36794112
+      ],
+      "events": [
+        {
+          "context": "layer11",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36790272
+        },
+        {
+          "context": "layer11",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36790272,
+          "layer": 11
+        },
+        {
+          "context": "layer11",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36792832,
+          "layer": 11
+        },
+        {
+          "context": "layer11",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36794112,
+          "layer": 11
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 12,
+      "entry": "00460d80",
+      "priority": 25,
+      "inputChain": [
+        36798464,
+        36799744,
+        36801024,
+        36802304
+      ],
+      "events": [
+        {
+          "context": "layer12",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36798464
+        },
+        {
+          "context": "layer12",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36798464,
+          "layer": 12
+        },
+        {
+          "context": "layer12",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36801024,
+          "layer": 12
+        },
+        {
+          "context": "layer12",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36802304,
+          "layer": 12
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 13,
+      "entry": "00460d90",
+      "priority": 26,
+      "inputChain": [
+        36806656,
+        36807936,
+        36809216,
+        36810496
+      ],
+      "events": [
+        {
+          "context": "layer13",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36806656
+        },
+        {
+          "context": "layer13",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36806656,
+          "layer": 13
+        },
+        {
+          "context": "layer13",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36809216,
+          "layer": 13
+        },
+        {
+          "context": "layer13",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36810496,
+          "layer": 13
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 14,
+      "entry": "00460da0",
+      "priority": 28,
+      "inputChain": [
+        36814848,
+        36816128,
+        36817408,
+        36818688
+      ],
+      "events": [
+        {
+          "context": "layer14",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36814848
+        },
+        {
+          "context": "layer14",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36814848,
+          "layer": 14
+        },
+        {
+          "context": "layer14",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36817408,
+          "layer": 14
+        },
+        {
+          "context": "layer14",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36818688,
+          "layer": 14
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 15,
+      "entry": "00460db0",
+      "priority": 30,
+      "inputChain": [
+        36823040,
+        36824320,
+        36825600,
+        36826880
+      ],
+      "events": [
+        {
+          "context": "layer15",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36823040
+        },
+        {
+          "context": "layer15",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36823040,
+          "layer": 15
+        },
+        {
+          "context": "layer15",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36825600,
+          "layer": 15
+        },
+        {
+          "context": "layer15",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36826880,
+          "layer": 15
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 16,
+      "entry": "00460dc0",
+      "priority": 34,
+      "inputChain": [
+        36831232,
+        36832512,
+        36833792,
+        36835072
+      ],
+      "events": [
+        {
+          "context": "layer16",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36831232
+        },
+        {
+          "context": "layer16",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36831232,
+          "layer": 16
+        },
+        {
+          "context": "layer16",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36833792,
+          "layer": 16
+        },
+        {
+          "context": "layer16",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36835072,
+          "layer": 16
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 17,
+      "entry": "00460dd0",
+      "priority": 36,
+      "inputChain": [
+        36839424,
+        36840704,
+        36841984,
+        36843264
+      ],
+      "events": [
+        {
+          "context": "layer17",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36839424
+        },
+        {
+          "context": "layer17",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36839424,
+          "layer": 17
+        },
+        {
+          "context": "layer17",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36841984,
+          "layer": 17
+        },
+        {
+          "context": "layer17",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36843264,
+          "layer": 17
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 18,
+      "entry": "00460de0",
+      "priority": 38,
+      "inputChain": [
+        36847616,
+        36848896,
+        36850176,
+        36851456
+      ],
+      "events": [
+        {
+          "context": "layer18",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36847616
+        },
+        {
+          "context": "layer18",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36847616,
+          "layer": 18
+        },
+        {
+          "context": "layer18",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36850176,
+          "layer": 18
+        },
+        {
+          "context": "layer18",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36851456,
+          "layer": 18
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 19,
+      "entry": "00460df0",
+      "priority": 41,
+      "inputChain": [
+        36855808,
+        36857088,
+        36858368,
+        36859648
+      ],
+      "events": [
+        {
+          "context": "layer19",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36855808
+        },
+        {
+          "context": "layer19",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36855808,
+          "layer": 19
+        },
+        {
+          "context": "layer19",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36858368,
+          "layer": 19
+        },
+        {
+          "context": "layer19",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36859648,
+          "layer": 19
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 20,
+      "entry": "00460e40",
+      "priority": 42,
+      "inputChain": [
+        36864000,
+        36865280,
+        36866560,
+        36867840
+      ],
+      "events": [
+        {
+          "context": "layer20",
+          "kind": "custom-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36864000
+        },
+        {
+          "context": "layer20",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36864000,
+          "layer": 20
+        },
+        {
+          "context": "layer20",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36866560,
+          "layer": 20
+        },
+        {
+          "context": "layer20",
+          "kind": "anm-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "vm": 36867840,
+          "layer": 20
+        }
+      ],
+      "cameraAfter": 2
+    },
+    {
+      "layer": 21,
+      "entry": "00460e70",
+      "priority": 50,
+      "inputChain": [
+        36872192,
+        36873472,
+        36874752,
+        36876032
+      ],
+      "events": [
+        {
+          "context": "layer21",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "layer21",
+          "kind": "render-state",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "state": 14,
+          "value": 0
+        },
+        {
+          "context": "layer21",
+          "kind": "render-state",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "state": 23,
+          "value": 8
+        },
+        {
+          "context": "layer21",
+          "kind": "custom-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36872192
+        },
+        {
+          "context": "layer21",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36872192,
+          "layer": 21
+        },
+        {
+          "context": "layer21",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36874752,
+          "layer": 21
+        },
+        {
+          "context": "layer21",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36876032,
+          "layer": 21
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "layer": 22,
+      "entry": "00460e30",
+      "priority": 51,
+      "inputChain": [
+        36880384,
+        36881664,
+        36882944,
+        36884224
+      ],
+      "events": [
+        {
+          "context": "layer22",
+          "kind": "custom-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36880384
+        },
+        {
+          "context": "layer22",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36880384,
+          "layer": 22
+        },
+        {
+          "context": "layer22",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36882944,
+          "layer": 22
+        },
+        {
+          "context": "layer22",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36884224,
+          "layer": 22
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "layer": 23,
+      "entry": "00460e20",
+      "priority": 52,
+      "inputChain": [
+        36888576,
+        36889856,
+        36891136,
+        36892416
+      ],
+      "events": [
+        {
+          "context": "layer23",
+          "kind": "custom-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36888576
+        },
+        {
+          "context": "layer23",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36888576,
+          "layer": 23
+        },
+        {
+          "context": "layer23",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36891136,
+          "layer": 23
+        },
+        {
+          "context": "layer23",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36892416,
+          "layer": 23
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "layer": 24,
+      "entry": "00460e10",
+      "priority": 63,
+      "inputChain": [
+        36896768,
+        36898048,
+        36899328,
+        36900608
+      ],
+      "events": [
+        {
+          "context": "layer24",
+          "kind": "custom-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36896768
+        },
+        {
+          "context": "layer24",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36896768,
+          "layer": 24
+        },
+        {
+          "context": "layer24",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36899328,
+          "layer": 24
+        },
+        {
+          "context": "layer24",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36900608,
+          "layer": 24
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "layer": 25,
+      "entry": "00460e00",
+      "priority": 64,
+      "inputChain": [
+        36904960,
+        36906240,
+        36907520,
+        36908800
+      ],
+      "events": [
+        {
+          "context": "layer25",
+          "kind": "custom-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36904960
+        },
+        {
+          "context": "layer25",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36904960,
+          "layer": 25
+        },
+        {
+          "context": "layer25",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36907520,
+          "layer": 25
+        },
+        {
+          "context": "layer25",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36908800,
+          "layer": 25
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "layer": 31,
+      "entry": "00460f50",
+      "priority": 65,
+      "inputChain": [
+        36954112,
+        36955392,
+        36956672,
+        36957952
+      ],
+      "events": [
+        {
+          "context": "layer31",
+          "kind": "set-viewport",
+          "camera": 1,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "applied": [
+            32,
+            16,
+            384,
+            448
+          ]
+        },
+        {
+          "context": "layer31",
+          "kind": "custom-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "vm": 36954112
+        },
+        {
+          "context": "layer31",
+          "kind": "anm-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "vm": 36954112,
+          "layer": 31
+        },
+        {
+          "context": "layer31",
+          "kind": "anm-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "vm": 36956672,
+          "layer": 31
+        },
+        {
+          "context": "layer31",
+          "kind": "anm-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "vm": 36957952,
+          "layer": 31
+        },
+        {
+          "context": "layer31",
+          "kind": "set-viewport",
+          "camera": 0,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "layer": 30,
+      "entry": "00460f00",
+      "priority": 66,
+      "inputChain": [
+        36945920,
+        36947200,
+        36948480,
+        36949760
+      ],
+      "events": [
+        {
+          "context": "layer30",
+          "kind": "set-viewport",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "layer30",
+          "kind": "custom-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36945920
+        },
+        {
+          "context": "layer30",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36945920,
+          "layer": 30
+        },
+        {
+          "context": "layer30",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36948480,
+          "layer": 30
+        },
+        {
+          "context": "layer30",
+          "kind": "anm-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "vm": 36949760,
+          "layer": 30
+        }
+      ],
+      "cameraAfter": 1
+    }
+  ],
+  "fontQueues": [
+    {
+      "queue": 0,
+      "priority": 69,
+      "inputs": [
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue0-cameras[0]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue0-cameras[0]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 0,
+          "queue": 0,
+          "cameraFlag": 0
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "queue": 0,
+      "priority": 69,
+      "inputs": [
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue0-cameras[1]",
+          "kind": "font-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "index": 0,
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue0-cameras[1]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "queue": 0,
+      "priority": 69,
+      "inputs": [
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue0-cameras[1, 0, 1]",
+          "kind": "font-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "index": 0,
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue0-cameras[1, 0, 1]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue0-cameras[1, 0, 1]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 2,
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "context": "font-queue0-cameras[1, 0, 1]",
+          "kind": "set-viewport",
+          "camera": 1,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "applied": [
+            32,
+            16,
+            384,
+            448
+          ]
+        },
+        {
+          "context": "font-queue0-cameras[1, 0, 1]",
+          "kind": "font-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "index": 4,
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue0-cameras[1, 0, 1]",
+          "kind": "set-viewport",
+          "camera": 0,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "queue": 0,
+      "priority": 69,
+      "inputs": [
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue0-cameras[0, 1, 0]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue0-cameras[0, 1, 0]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 0,
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "context": "font-queue0-cameras[0, 1, 0]",
+          "kind": "set-viewport",
+          "camera": 1,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "applied": [
+            32,
+            16,
+            384,
+            448
+          ]
+        },
+        {
+          "context": "font-queue0-cameras[0, 1, 0]",
+          "kind": "font-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "index": 2,
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue0-cameras[0, 1, 0]",
+          "kind": "set-viewport",
+          "camera": 0,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue0-cameras[0, 1, 0]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 4,
+          "queue": 0,
+          "cameraFlag": 0
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "queue": 1,
+      "priority": 45,
+      "inputs": [
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue1-cameras[0]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue1-cameras[0]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 0,
+          "queue": 1,
+          "cameraFlag": 0
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "queue": 1,
+      "priority": 45,
+      "inputs": [
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue1-cameras[1]",
+          "kind": "font-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "index": 0,
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue1-cameras[1]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "queue": 1,
+      "priority": 45,
+      "inputs": [
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue1-cameras[1, 0, 1]",
+          "kind": "font-draw",
+          "camera": 2,
+          "viewport": [
+            13,
+            0,
+            422,
+            480
+          ],
+          "index": 0,
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue1-cameras[1, 0, 1]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue1-cameras[1, 0, 1]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 2,
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "context": "font-queue1-cameras[1, 0, 1]",
+          "kind": "set-viewport",
+          "camera": 1,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "applied": [
+            32,
+            16,
+            384,
+            448
+          ]
+        },
+        {
+          "context": "font-queue1-cameras[1, 0, 1]",
+          "kind": "font-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "index": 4,
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue1-cameras[1, 0, 1]",
+          "kind": "set-viewport",
+          "camera": 0,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        }
+      ],
+      "cameraAfter": 1
+    },
+    {
+      "queue": 1,
+      "priority": 45,
+      "inputs": [
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "queue": 0,
+          "cameraFlag": 1
+        }
+      ],
+      "events": [
+        {
+          "context": "font-queue1-cameras[0, 1, 0]",
+          "kind": "set-viewport",
+          "camera": 2,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue1-cameras[0, 1, 0]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 0,
+          "queue": 1,
+          "cameraFlag": 0
+        },
+        {
+          "context": "font-queue1-cameras[0, 1, 0]",
+          "kind": "set-viewport",
+          "camera": 1,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "applied": [
+            32,
+            16,
+            384,
+            448
+          ]
+        },
+        {
+          "context": "font-queue1-cameras[0, 1, 0]",
+          "kind": "font-draw",
+          "camera": 0,
+          "viewport": [
+            32,
+            16,
+            384,
+            448
+          ],
+          "index": 2,
+          "queue": 1,
+          "cameraFlag": 1
+        },
+        {
+          "context": "font-queue1-cameras[0, 1, 0]",
+          "kind": "set-viewport",
+          "camera": 0,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "applied": [
+            0,
+            0,
+            640,
+            480
+          ]
+        },
+        {
+          "context": "font-queue1-cameras[0, 1, 0]",
+          "kind": "font-draw",
+          "camera": 1,
+          "viewport": [
+            0,
+            0,
+            640,
+            480
+          ],
+          "index": 4,
+          "queue": 1,
+          "cameraFlag": 0
+        }
+      ],
+      "cameraAfter": 1
+    }
+  ],
+  "playerBody": {
+    "entry": "00437600",
+    "priority": 24,
+    "events": [
+      {
+        "context": "player-body-layer99",
+        "kind": "anm-draw",
+        "camera": 2,
+        "viewport": [
+          13,
+          0,
+          422,
+          480
+        ],
+        "vm": 35651604,
+        "layer": 99
+      }
+    ]
+  },
+  "bulletGroups": [
+    5,
+    5,
+    5,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    3,
+    4,
+    4,
+    4,
+    4,
+    3,
+    3,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    3,
+    0,
+    0,
+    5,
+    2,
+    2
+  ]
+}

@@ -1,0 +1,446 @@
+{
+  "schema": "th12-original-anm-logic-samples/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Actual 454d10->402520->455630 with constructed sprite-free script; typed reads 4551b0/4553f0",
+  "wholeGameDeterminism": false,
+  "wholePresentationOracle": false,
+  "gpuExecuted": false,
+  "binding": [
+    {
+      "initialDomain": 0,
+      "explicitOpcode87": null,
+      "boundFlags2": 0,
+      "rotationZ": -2.388261556625366,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "initialDomain": 1,
+      "explicitOpcode87": null,
+      "boundFlags2": 0,
+      "rotationZ": -2.388261556625366,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "initialDomain": 0,
+      "explicitOpcode87": 1,
+      "boundFlags2": 1,
+      "rotationZ": 1.65786874294281,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        51904,
+        2
+      ]
+    },
+    {
+      "initialDomain": 1,
+      "explicitOpcode87": 1,
+      "boundFlags2": 1,
+      "rotationZ": 1.65786874294281,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        51904,
+        2
+      ]
+    },
+    {
+      "initialDomain": 1,
+      "explicitOpcode87": 0,
+      "boundFlags2": 0,
+      "rotationZ": -2.388261556625366,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "id": 10000,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10001,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10002,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10003,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10004,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10005,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10006,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10007,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10008,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10009,
+      "floatValue": 0.0,
+      "intValue": 0,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10010,
+      "floatValue": -2.388261556625366,
+      "intValue": 10010,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10011,
+      "floatValue": 0.11989638954401016,
+      "intValue": 10011,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10012,
+      "floatValue": -0.7602072358131409,
+      "intValue": 10012,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10013,
+      "floatValue": 0.0,
+      "intValue": 10013,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10014,
+      "floatValue": 0.0,
+      "intValue": 10014,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10015,
+      "floatValue": 0.0,
+      "intValue": 10015,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10016,
+      "floatValue": 11.0,
+      "intValue": 10016,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10017,
+      "floatValue": 22.0,
+      "intValue": 10017,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10018,
+      "floatValue": 33.0,
+      "intValue": 10018,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10019,
+      "floatValue": 44.0,
+      "intValue": 10019,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10020,
+      "floatValue": 55.0,
+      "intValue": 10020,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10021,
+      "floatValue": 66.0,
+      "intValue": 10021,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10022,
+      "floatValue": 514951072.0,
+      "intValue": 593737321,
+      "gameSeedCounter": [
+        55718,
+        4
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10023,
+      "floatValue": 0.0,
+      "intValue": 10023,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10024,
+      "floatValue": 0.0,
+      "intValue": 10024,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "id": 10025,
+      "floatValue": 0.0,
+      "intValue": 10025,
+      "gameSeedCounter": [
+        4660,
+        0
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    }
+  ],
+  "randomSprites": [
+    {
+      "displayDomain": 0,
+      "sprite": 1,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    },
+    {
+      "displayDomain": 1,
+      "sprite": 1,
+      "gameSeedCounter": [
+        7814,
+        2
+      ],
+      "displaySeedCounter": [
+        48879,
+        0
+      ]
+    }
+  ]
+}

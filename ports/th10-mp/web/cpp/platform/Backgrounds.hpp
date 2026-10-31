@@ -14,6 +14,9 @@ struct BackgroundScript final : StageEnvironment {
     i32 update_animation(AnmVm&) override;
     void initialize_animation(AnmFile&,AnmVm&,i32) override;
     void normalize(Vec3&,const Vec3&) override;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void camera_position_interpolated(Stage&) override;
+#endif
 };
 struct BackgroundDraw final : StageRenderEnvironment {
     Backgrounds& owner;GraphicsRenderer renderer;GraphicsCamera graphics_camera;
@@ -33,6 +36,8 @@ struct Backgrounds final : StageResourceEnvironment,CallbackReceiver {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // Exact derived projections survive a restore; they are not journaled.
     BackgroundProjectionCache projection_cache;
+    // Immutable provenance for a fresh chapter bootstrap; not a per-tick latch.
+    bool replay_stage4_entry=false;
     // Physical ownership only, NOT a rewindable game-state container. A
     // restore makes current/previous live again and cancels that retirement.
     // Journaling this queue would resurrect already-freed pointers in newer

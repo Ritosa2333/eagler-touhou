@@ -95,3 +95,16 @@ test('a saturated catch-up budget still publishes a fresh game picture on every 
     for(let n=0;n<pictures.length;n++)assert.equal(pictures[n],(n+1)*8,`${interval} ms frame ${n} must render the latest completed tick`);
   }
 });
+
+test('managed input advertises existing mapping identities while keyboard delivery stays queued',()=>{
+  const environment={location:{href:'https://example.test/th12?runtimeEpoch=7',origin:'https://example.test'}};
+  const input=new ManagedInput(environment),keyboard=environment.__eaglerKeyboardInputBridge,pad=environment.__eaglerGamepadInputBridge;
+  assert.equal(keyboard.schema,'eagler-touhou/keyboard-input/1');assert.equal(keyboard.epoch,7);
+  assert.equal(keyboard.origin,environment.location.origin);assert.equal(keyboard.submit({command:'keyboard'}),false);
+  assert.equal(Object.isFrozen(keyboard),true);assert.equal(pad.owned(),false);assert.equal(pad.sample(0),-1);
+  environment.__eaglerGamepadMapping={schema:pad.schema,protocol:pad.protocol,game:pad.game,epoch:7,origin:pad.origin,enabled:()=>true,sample:()=>128};
+  assert.equal(pad.owned(),true);assert.equal(pad.sample(0),128);assert.equal(input.pad(),128);
+  environment.__eaglerGamepadMapping.epoch=8;assert.equal(pad.owned(),false);assert.equal(pad.sample(0),-1);
+  const preview={location:{href:'https://example.test/preview',origin:'https://example.test'}};
+  new ManagedInput(preview);assert.equal(preview.__eaglerKeyboardInputBridge,undefined);
+});

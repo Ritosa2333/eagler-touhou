@@ -1,0 +1,165 @@
+{
+  "schema": "eagler-th15-stage-transition-rollback/1",
+  "base": "0dde257ec",
+  "platform": "Windows PowerShell, MSVC, Emscripten 6.0.9-git, Chromium/SwiftShader",
+  "productionWasm": "89031a49e1101c42e3bbf9cc634fdd48f9ca55a3927e3c97b61cd21bc93aee6c",
+  "browser": {
+    "rows": [
+      {
+        "count": 2,
+        "mode": "baseline",
+        "before": [
+          1,
+          0,
+          1,
+          1,
+          245,
+          0,
+          0
+        ],
+        "last": [
+          1,
+          0,
+          1,
+          2,
+          80,
+          0,
+          0
+        ],
+        "unsafe": 180,
+        "pipelined": 0,
+        "retained": 149,
+        "retainedPipelined": 0
+      },
+      {
+        "count": 3,
+        "mode": "baseline",
+        "before": [
+          1,
+          0,
+          1,
+          1,
+          245,
+          0,
+          0
+        ],
+        "last": [
+          1,
+          0,
+          1,
+          2,
+          80,
+          0,
+          0
+        ],
+        "unsafe": 180,
+        "pipelined": 0,
+        "retained": 149,
+        "retainedPipelined": 0
+      },
+      {
+        "count": 2,
+        "mode": "fixed",
+        "before": [
+          1,
+          0,
+          1,
+          1,
+          245,
+          0,
+          0
+        ],
+        "last": [
+          1,
+          0,
+          1,
+          2,
+          80,
+          0,
+          0
+        ],
+        "unsafe": 180,
+        "pipelined": 180,
+        "retained": 149,
+        "retainedPipelined": 149
+      },
+      {
+        "count": 3,
+        "mode": "fixed",
+        "before": [
+          1,
+          0,
+          1,
+          1,
+          245,
+          0,
+          0
+        ],
+        "last": [
+          1,
+          0,
+          1,
+          2,
+          80,
+          0,
+          0
+        ],
+        "unsafe": 180,
+        "pipelined": 180,
+        "retained": 149,
+        "retainedPipelined": 149
+      }
+    ],
+    "errors": [],
+    "passed": true,
+    "scope": "Original TH15 DATA, controlled native stage clear, real ApplicationState and sample_and_tick capture-phase probe. Network session gate held closed; application steps advance through native fixture."
+  },
+  "fixtures": {
+    "baseline": "8ee3fc4fcd2b60af6f988bcf52071eb1e0557c444b4c5e74d9720e5be69fce57",
+    "fixed": "39837910aec4b2b9e34762e6e5d873048e53903c5111136bfe49f6132041b006"
+  },
+  "protocol": {
+    "native": true,
+    "wasm32": true,
+    "players": [
+      2,
+      3
+    ],
+    "modes": [
+      0,
+      2
+    ],
+    "oneWayFrames": [
+      2,
+      4,
+      6
+    ],
+    "measuredWallTicks": 180,
+    "oldConfirmedTicks": [
+      60,
+      36,
+      26
+    ],
+    "fixedConfirmedTicks": [
+      180,
+      180,
+      180
+    ],
+    "maxCaptureLead": 8,
+    "tailDrainedOnCombat": true,
+    "inputLanesExact": true
+  },
+  "otherChecks": {
+    "predictionBoundary": true,
+    "wasmReplayAndStartup": true,
+    "portAdaptation": "7/7",
+    "productionDiagnosticExportsAbsent": true
+  },
+  "evidenceHashes": {
+    "cadence-results.log": "3ce95f719b4f18ef12916d2da9ff55747080e904f589a4ac1bb2d13fa8efcec2",
+    "native-tests.log": "8dacc3dc8e6971161035cb35b8719c236e5ee7d625496e6ebf8275481eb22e86",
+    "wasm-network.log": "997b4f5d5894c2b4ac8fda498d2c2c879449c805d5a1e1789c745f4b6c933cec",
+    "native-stage-browser.json": "d5b5957c0e6bdbb733248c9a3855ce99067ea593e171f8fbcab33e638b1a71ea",
+    "stage2.png": "14e5f87a0d69cf899b360a3ccb1bb15fa71f63d0444ad01d75cf8646164a5b19"
+  }
+}

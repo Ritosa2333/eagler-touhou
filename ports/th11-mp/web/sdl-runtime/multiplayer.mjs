@@ -41,7 +41,7 @@ export async function multiplayerSetupWords(options,buildWords,cryptoProvider=gl
  const config=validateMultiplayerOptions(options);
  if(config.replay)throw Error('录像不建立玩家连接');
  if(!Array.isArray(buildWords)||buildWords.length!==4||!buildWords.some(Boolean))throw Error('TH11 Runtime 构建身份缺失');
- const identity=new TextEncoder().encode('th11mp:'+config.url.origin+config.url.pathname+':'+config.room+':'+config.run);
+ const identity=new TextEncoder().encode('th11mp:'+config.room+':'+config.run);
  const digest=new DataView(await cryptoProvider.subtle.digest('SHA-256',identity));
  const words=[6,config.count,config.seat,options.netplayDifficulty,options.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,config.delay];
  for(let i=0;i<3;i++){const value=config.loadouts[i]||{character:0,shot:0};words.push(value.character,value.shot);}

@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {resolve} from 'node:path';
+import {core,oracle,memory,string,root,report,enableNativeMath} from './helpers.mjs';
+import {resourceLoader,nativePool,nativeInstances,prepareBank,compareAnm,retireOriginalAnimations} from './anm-oracle.mjs';
+import {nativeGraphics} from './rendering-oracle.mjs';
+const fields=[[1,0x18db0,4],[2,0x624,20],[3,0x18e78,20],[4,0x638,20],[5,0x64c,20],[6,0x18dd4,20],[7,0x18de8,20],[8,0x18e8c,4],[9,0x610,12],[10,0x61c,8],[11,0x1902c,8],[12,0x18eb8,8],[13,0x18ea0,12],[14,0x18eac,12],[15,0x18e90,16],[17,0x18dd0,4],[18,0xf114,256*0x9c],[19,0x1110,256*0xe0],[20,0xf110,4],[21,0x18dfc,4],[22,0x18e00,52],[26,0x19020,12],[27,0x19034,4],[28,0x18ec0,4],[29,0x18ec4,4],[30,0x18fe4,24],[31,0x190a4,24],[32,0x190bc,24],[33,0x190d4,24],[34,0x19048,48],[35,0x19078,4],[36,0x18ec8,4],[37,0x18ecc,12],[38,0x18dbc,20],[40,0x18db4,4],[41,0x18db8,4],[42,0x18ffc,12],[43,0x19008,12],[44,0x19014,12],[45,0x18ed8,4],[46,0x19080,20],[47,0x190ec,4],[50,0x19098,12],[51,0x19094,4],[52,0x19040,4],[53,0x19044,1],[54,0x18edc,264]];
+const optionFields=[[0,0x660,4],[1,0x6b4,8],[2,0x6bc,8],[3,0x6c4,8],[4,0x6cc,8],[5,0x734,4],[6,0x730,4],[7,0x72c,4]];
+export async function verifyPlayerFrames({stageReset=false}={}){
+ const c=await core(),m=await oracle({memoryEnd:0x10000000,heapStart:0x08000000,heapLimit:0x0f000000}),manager=c.anm_manager_create(),nativeManager=nativePool(m),loader=resourceLoader(m),renderer=c.anm_renderer_create();
+ const owner=m.allocate(0x19100),effects=m.allocate(0x2020),spell=m.allocate(0x90),bomb=m.allocate(0x40),enemies=m.allocate(0x200),text=m.allocate(0x19270),hud=m.allocate(0x200),replay=m.allocate(0x20),game=m.allocate(0x200),scratch=m.allocate(8),banks=[];
+ enableNativeMath(m);const gfx=nativeGraphics(m,nativeManager);m.f32(0x524718,2);new DataView(c.memory.buffer).setFloat32(c.anm_environment_scale(c.anm_manager_environment(manager)),2,true);
+ for(const[a,p]of [[0x4b77d0,owner],[0x4b7698,effects],[0x4b7690,spell],[0x4b7688,bomb],[0x4b76a0,enemies],[0x4b7678,text],[0x4b76ac,hud],[0x4b77d8,replay],[0x4b76b0,game],[0x4a0430,0x4b5918]])m.u32(a,p);
+ let character=0,source,events=[],sounds=[],lifeEvents=[],frames=0,checks=0,draws=0,vertices=0;
+ const push=(...v)=>{events.push(...v.map(x=>x>>>0));return 0;},pos=p=>Array.from({length:3},(_,i)=>m.u32(p+i*4));
+ const equal=(a,b,label)=>{if(!a.equals(b)){let i=0;while(i<a.length&&a[i]===b[i])i++;assert.fail(label+' byte '+i.toString(16)+' actual='+a.subarray(Math.max(0,i-4),i+12).toString('hex')+' original='+b.subarray(Math.max(0,i-4),i+12).toString('hex'));}};
+ m.replace(0x474750,'already loaded player ANM',()=>banks[character],2);m.replace(0x401570,'callback allocation boundary',()=>m.allocate(40),1);m.replace(0x401140,'update registration boundary',()=>0,2);m.replace(0x4011f0,'draw registration boundary',()=>0,2);
+ m.replace(0x465450,'hit sound request',()=>{lifeEvents.push(1,m.i32(m.reg('ESP')+4),0);return 0;},2);
+ for(const[a,kind]of [[0x42fc60,2],[0x42fd50,3]])m.replace(a,'HUD request',()=>{lifeEvents.push(kind,m.i32(m.reg('ESP')+4),m.i32(m.reg('ESP')+8));return 0;},2);
+ m.replace(0x411d40,'bomb availability boundary',()=>{push(1);return 0;});m.replace(0x411c30,'begin bomb boundary',()=>push(2));m.replace(0x4447e0,'game over boundary',()=>push(9));m.replace(0x40f6d0,'end roaring boundary',()=>push(12,m.u32(m.reg('ESP')+4)),1);m.replace(0x435b30,'all laser cancellation boundary',()=>push(6,m.u32(m.reg('ESP')+4),0),2);
+ m.replace(0x434740,'item boundary',()=>{const sp=m.reg('ESP');return push(7,m.u32(sp+4),...pos(m.u32(sp+8)),m.u32(sp+16),m.u32(sp+20));},8);
+ const observeFloat=(address,argc,fn)=>{const entry=m.registerImport({dll:'fixture',name:'float boundary '+address.toString(16),argc,handler:fn}),cave=m.allocate(32),code=Buffer.from([0xf3,0x0f,0x11,0x15,0,0,0,0,0xf3,0x0f,0x11,0x1d,0,0,0,0,0xe9,0,0,0,0]);code.writeUInt32LE(scratch,4);code.writeUInt32LE(scratch+4,12);code.writeInt32LE(entry-cave-code.length,17);m.write(cave,code);const jump=Buffer.from([0xe9,0,0,0,0]);jump.writeInt32LE(cave-address-5,1);m.write(address,jump);};
+ observeFloat(0x435ab0,3,()=>{const sp=m.reg('ESP');return push(4,...pos(m.u32(sp+4)),m.u32(scratch),m.u32(sp+8),m.u32(sp+12));});
+ for(const[a,all]of [[0x419df0,0],[0x419cf0,1]])observeFloat(a,2,()=>{const sp=m.reg('ESP');return push(5,...pos(m.u32(sp+4)),m.u32(scratch),m.u32(sp+8),all);});
+ for(const[a,action]of [[0x4654f0,0],[0x4655a0,2]])observeFloat(a,1,()=>{sounds.push(m.u32(m.reg('ESP')+4),action,m.u32(scratch));return 0;});
+ const audio=m.allocate(4),vtable=m.allocate(0x44);m.u32(audio,vtable);m.u32(0x526454,audio);m.u32(vtable+0x40,m.registerImport({dll:'fixture',name:'laser pan',argc:2,handler:()=>{sounds.push(20,2,m.u32(m.reg('ESP')+8));return 0;}}));
+ const load=(name,id)=>{const b=readFileSync(resolve(root,'reference/assets',name)),p=c.allocate(b.length);memory(c,p,b.length).set(b);assert.equal(c.anm_manager_load(manager,id,p,b.length),1,string(c,c.anm_manager_error(manager)));c.deallocate(p);return prepareBank(m,loader,name,b,nativeManager,id);};
+ const sessionOffsets=[0x4b5a40,0x4b5a44,0x4b5a18,enemies+0x3c,enemies+0x44,bomb+0x30,0x4b5a30,0x4b5a38,0x4b5a4c,0x4b5a50,0x4b5a54,0x4b59f8,replay+12];
+ try{
+  m.u32(text+0x19248,load('ascii.anm',2));assert.equal(c.anm_manager_fallback(manager,2),1);m.u32(effects+12,load('effect.anm',8));for(let i=0;i<3;i++)banks.push(load('pl0'+i+'.anm',9+i));
+  m.replace(0x4020d0,'read original player SHT',()=>{const p=m.allocate(source.length);m.write(p,source);return p;},1);
+  for(character=0;character<3;character++)for(let animal=0;animal<3;animal++){
+   source=readFileSync(resolve(root,'reference/assets/pl0'+character+String.fromCharCode(97+animal)+'.sht'));const sht=c.sht_create(),bytes=c.allocate(source.length);memory(c,bytes,source.length).set(source);assert.equal(c.sht_open(sht,bytes,source.length),1);c.deallocate(bytes);
+   for(let scenario=0;scenario<2;scenario++){
+    const rate=[1,.5][scenario],fixture=c.player_create(sht,manager,character);m.view(owner,0x19100).fill(0);m.view(effects+0x18,0x1004).fill(0);m.view(spell,0x90).fill(0);m.view(enemies,0x200).fill(0);m.u32(0x4b59f4,character);m.u32(0x52a324,0);m.f32(0x4b5918,rate);m.view(0x522574,12).fill(0);m.u32(0x4b5ac4,0);m.i32(0x4b5abc,0);
+    let dv=new DataView(c.memory.buffer);dv.setInt32(c.player_field(fixture,0)+11*4,animal,true);for(let i=0;i<13;i++)m.i32(sessionOffsets[i],dv.getInt32(c.player_field(fixture,0)+i*4,true));for(let i=0;i<12;i++){m.i32(0x52480c+i*4,-1);m.i32(0x52483c+i*4,-1);}m.write(0x4b5aa4,Buffer.alloc(20));events=[];sounds=[];lifeEvents=[];
+    assert.equal(c.anm_manager_update(manager,0,rate),1);assert.equal(c.player_initialize(fixture),1,string(c,c.player_error(fixture)));assert.equal(m.call(0x4463f0,{ecx:owner})|0,0);const nativeSht=m.u32(owner+0x1903c),label0=character+'/'+animal+'/'+scenario;
+    equal(Buffer.from(memory(c,c.player_field(fixture,16),0xe0)),Buffer.from(m.bytes(nativeSht,0xe0)),label0+' initial SHT');for(const[f,n,b]of fields)equal(Buffer.from(memory(c,c.player_field(fixture,f),b)),Buffer.from(m.bytes(owner+n,b)),label0+' initial field '+f);compareAnm(c,m,c.player_root(fixture),owner+16,label0+' initial root');
+    for(let frame=0;frame<480;frame++){
+     const held=(frame%121<100?1:0)|[0x10,0x90,0x80,0xa0,0x20,0x60,0x40,0x50][Math.floor(frame/20)%8]|(frame%80<30?8:0),pressed=frame%59===30?2:0,allowed=frame%59>4,hudBomb=frame%127>=100&&frame%127<107,flags=(allowed?1:0)|2|4|(hudBomb?8:0),gameFlags=frame%89<4?0x4000:0,delta=[Math.fround((frame%7-3)*.03125),Math.fround((frame%11-5)*.015625),0],roar=frame>=340?2:0,kind=frame>=420?3:1,label=label0+'/'+frame;
+     m.u32(0x4b3448,held);m.u32(0x4b3454,pressed);m.u32(enemies+0x18c,allowed?1:0);m.u32(hud+0x1c0,hudBomb?1:0);m.u32(game+0x8c,gameFlags);for(let i=0;i<3;i++)m.f32(0x522574+i*4,delta[i]);
+     dv=new DataView(c.memory.buffer);dv.setUint32(c.player_field(fixture,0)+52,roar,true);m.u32(0x4b5ac4,roar);m.i32(0x4b5abc,kind);
+     if(frame%120===0){const power=[100,400,200,300][Math.floor(frame/120)%4];dv.setInt32(c.player_field(fixture,0)+6*4,power,true);m.i32(0x4b5a30,power);assert.equal(c.player_options_update(fixture),1);m.call(0x449630,{ecx:owner+0x610});}
+     if(frame===130||frame===260){c.player_hit(fixture);m.call(0x449420,{ecx:owner});}
+     if(stageReset&&(frame===150||frame===330)){assert.equal(c.player_finish_stage_options(fixture),1);m.call(0x42ffa0);}
+     if(stageReset&&(frame===180||frame===360)){
+      for(const[f,n,b]of [[0,0x1907c,4],[1,0x190f0,8]]){const data=Buffer.alloc(b);for(let k=0;k<b;k+=4)data.writeInt32LE(123456+k,k);memory(c,c.player_stage_field(fixture,f),b).set(data);m.write(owner+n,data);}
+      assert.equal(c.player_reset_for_stage(fixture),1,string(c,c.player_error(fixture)));m.call(0x446af0);
+      for(const[f,n,b]of fields)equal(Buffer.from(memory(c,c.player_field(fixture,f),b)),Buffer.from(m.bytes(owner+n,b)),label+' reset field '+f);
+      for(const[f,n,b]of [[0,0x1907c,4],[1,0x190f0,8]])equal(Buffer.from(memory(c,c.player_stage_field(fixture,f),b)),Buffer.from(m.bytes(owner+n,b)),label+' reset auxiliary '+f);
+     }
+     assert.equal(c.player_update(fixture,held,pressed,flags,gameFlags,m.f32(0x4b5918),...delta,kind),1,string(c,c.player_error(fixture)));try{m.call(0x447970,{ecx:owner});}catch(e){e.message+=' at '+label;throw e;}
+     for(let alt=0;alt<2;alt++){m.call(alt?0x475940:0x475830,{ecx:nativeManager});assert.equal(c.anm_manager_update(manager,alt,m.f32(0x4b5918)),1,string(c,c.anm_manager_error(manager)));}
+     for(const[f,n,b]of fields)equal(Buffer.from(memory(c,c.player_field(fixture,f),b)),Buffer.from(m.bytes(owner+n,b)),label+' field '+f);dv=new DataView(c.memory.buffer);for(let i=0;i<13;i++)assert.equal(dv.getInt32(c.player_field(fixture,0)+i*4,true),m.i32(sessionOffsets[i]),label+' session '+i);
+     for(let i=0;i<12;i++){for(const[f,n,b]of optionFields)equal(Buffer.from(memory(c,c.player_option_field(fixture,i,f),b)),Buffer.from(m.bytes(owner+n+i*0xe4,b)),label+' option '+i+'/'+f);for(let k=0;k<2;k++)assert.equal(dv.getUint32(c.player_field(fixture,39)+(i*2+k)*4,true),m.u32(owner+0x710+i*0xe4+k*4),label+' option handles');}
+     compareAnm(c,m,c.player_root(fixture),owner+16,label+' root');for(const[f,n,b]of [[23,0x4b7668,8],[24,0x4b7660,8],[48,effects+0x1c,4096],[49,effects+0x18,4]])equal(Buffer.from(memory(c,c.player_field(fixture,f),b)),Buffer.from(m.bytes(n,b)),label+' world '+f);
+     assert.deepEqual(Array.from(new Uint32Array(c.memory.buffer,c.player_services(fixture),c.player_service_count(fixture))),events,label+' world requests');assert.deepEqual(Array.from(new Uint32Array(c.memory.buffer,c.player_sounds(fixture),c.player_sound_count(fixture))),sounds,label+' sound requests');assert.deepEqual(Array.from(new Int32Array(c.memory.buffer,c.player_life_events_data(fixture),c.player_life_event_count(fixture))),lifeEvents,label+' life requests');equal(Buffer.from(memory(c,c.player_audio_ids(fixture),48)),Buffer.from(m.bytes(0x52480c,48)),label+' audio queue');equal(Buffer.from(memory(c,c.player_audio_values(fixture),48)),Buffer.from(m.bytes(0x52483c,48)),label+' audio counters');
+     for(let alt=0;alt<2;alt++){const list=nativeInstances(m,nativeManager,alt);assert.equal(c.anm_manager_count(manager,alt),list.length,label+' queue');for(let i=0;i<list.length;i++){const h=m.u32(list[i]+0x538);assert.equal(c.anm_manager_order(manager,alt,i),h,label+' order');compareAnm(c,m,c.anm_manager_find(manager,h),list[i],label+' ANM '+h);checks++;}}
+     if(frame%16===0){gfx.reset();c.anm_renderer_reset(renderer);assert.equal(m.call(0x448cf0,{ecx:owner}),1);m.call(0x46d0a0,{ecx:nativeManager});assert.equal(c.player_draw(fixture,renderer),1,string(c,c.player_error(fixture)));c.anm_renderer_flush(renderer);const expected=Buffer.concat(gfx.draws().map(d=>d.bytes)),actual=Buffer.concat(Array.from({length:c.anm_renderer_calls(renderer)},(_,i)=>Buffer.from(memory(c,c.anm_renderer_history(renderer,i),c.anm_renderer_history_size(renderer,i)))));equal(actual,expected,label+' player draw');compareAnm(c,m,c.player_root(fixture),owner+16,label+' drawn root');draws++;vertices+=expected.length/28;}
+     frames++;checks+=170;
+    }
+    retireOriginalAnimations(c,m,manager,nativeManager);c.player_delete(fixture);
+   }c.sht_delete(sht);
+  }
+  report(stageReset?'player-stage-reset':'player-full-frame',{passed:true,characters:3,animals:3,frames,checks,draws,vertices,originalFunctions:['0x4463f0','0x447970','0x446ff0','0x44ad70','0x448cf0',...(stageReset?['0x446af0','0x42ffa0']:[])],scope:'Nine actual SHT variants and ANM sets: actual initialization plus unchanged native whole-player frame, damage/shot pools, movement/options/history, normal/roaring and Youmu charge, death/respawn/invulnerability, bounds, audio queue and ordered world requests, animation/random state and CPU draw submissions. Bomb/animal/item/cancellation/HUD services are observed boundaries; full world and replay sessions remain separate.'});
+ }finally{c.anm_renderer_delete(renderer);c.anm_manager_delete(manager);m.close();}
+}

@@ -225,7 +225,7 @@
     },
     {
       "id": "TOUCH-09",
-      "label": "Deathbomb 与移动保持",
+      "label": "暂时禁移与触点连续性",
       "section": "input",
       "contract": "REQUIRED_TOUCH_BEHAVIORS/deathbomb-preservation"
     },
@@ -506,6 +506,12 @@
       "label": "高刷新与音频事件分开",
       "section": "presentation",
       "contract": "REQUIRED_MUSIC_BEHAVIORS/presentation-audio-independence"
+    },
+    {
+      "id": "AUDIO-07",
+      "label": "音效即时输出",
+      "section": "presentation",
+      "contract": "REQUIRED_MUSIC_BEHAVIORS/immediate-sound-effects"
     },
     {
       "id": "PACKAGE-01",

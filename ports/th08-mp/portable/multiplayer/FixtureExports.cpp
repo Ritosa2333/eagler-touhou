@@ -33,8 +33,90 @@ th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
 #error Fixture exports must stay out of production builds
 #endif
 namespace th08::multiplayer {extern "C" const u32* multiplayer_replay_gameplay_state(BrowserRuntime* runtime);}
+namespace th08::multiplayer {void fixture_reuse_owning_snapshots(bool);}
+namespace th08 {bool fixture_barrier_broadphase(bool) noexcept;}
+namespace th08 {
+void fixture_projectile_miss(bool)noexcept;void fixture_interior_view(bool)noexcept;void fixture_native_clip(bool)noexcept;
+bool fixture_interior_view_probe();bool fixture_native_clip_probe();
+}
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_steady_mode")))
+void mp_fixture_steady_mode(u32 enabled){
+    fixture_projectile_miss(enabled!=0);fixture_interior_view(enabled!=0);fixture_native_clip(enabled!=0);
+    multiplayer::lazy_cancel_vm=enabled!=0;
+    multiplayer::fixture_reuse_owning_snapshots(enabled!=0);
+}
+__attribute__((export_name("mp_fixture_steady_numeric")))
+u32 mp_fixture_steady_numeric(){return fixture_interior_view_probe()&&fixture_native_clip_probe();}
+__attribute__((export_name("mp_fixture_ecl_aiming")))
+u32 mp_fixture_ecl_aiming(BrowserRuntime* r){
+    if(!r||!r->app.in_game()||!r->app.game.ready()||r->app.session.player_count<2)return 0;
+    auto& game=r->app.game;const u32 count=r->app.session.player_count;
+    for(u32 seat=0;seat<count;++seat){
+        game.pilot(seat).status().motion.movement.position={seat==0?64.f:seat==1?320.f:192.f,400,0};
+        game.pilot(seat).status().life.state=0;
+    }
+    const auto probe=[&](Vec3 origin,u32 target){
+        EclVm vm;vm.environment=&game.globals;vm.position=origin;vm.select_player_target();
+        const auto expected=game.pilot(target).status().motion.movement.position;
+        const auto& actual=vm.aimed_player();
+        return actual.x==expected.x&&actual.y==expected.y&&actual.z==expected.z&&
+            vm.read_float(10045)==expected.x&&vm.read_float(10046)==expected.y&&vm.read_float(10047)==expected.z;
+    };
+    // Two independent VMs select different seats, without changing the host
+    // coordinates consumed by lifecycle code or overwriting a parent sample.
+    const auto host=game.globals.player;
+    if(!probe({64,380,0},0)||!probe({320,380,0},1))return 0;
+    if(game.globals.player.x!=host.x||game.globals.player.y!=host.y)return 0;
+    game.pilot(0).status().life.state=2;
+    const u32 next=count==3?2:1;
+    if(!probe({64,380,0},next))return 0;
+    game.enter_spirit(0);
+    if(game.roster.eligible(0)||!probe({64,380,0},next))return 0;
+    game.roster.seats[0].available=true;game.pilot(0).status().life.state=0;
+    game.pilot(0).status().motion.movement.position={64,400,0};
+    if(!probe({64,380,0},0))return 0;
+    // Coordinate selection is independent of stage and difficulty.
+    for(u32 stage=0;stage<9;++stage){game.globals.stage=stage;if(!probe({320,380,0},1))return 0;}
+    return 1;
+}
+__attribute__((export_name("mp_fixture_extra_profile")))
+const double* mp_fixture_extra_profile(BrowserRuntime* r,u32 bomb,u32 rounds){
+    static double out[36]{};std::fill(out,out+36,0);
+    if(!r||!r->app.in_game()||!r->app.game.ready()||bomb>1||!rounds||rounds>50)return out;
+    for(u32 seat=0;seat<r->app.session.player_count;++seat){
+        auto& p=r->app.game.pilot(seat).status();p.life.state=0;p.life.timer.set(0);
+        r->app.session.pilot_values[seat].set_bombs(3);r->app.game.pilot_services(seat).sync_values();
+    }
+    multiplayer::WorldJournal journal;if(!journal.Bind(*r))return out;
+    const auto original=journal.AuditHash();std::array<u32,multiplayer::WorldJournal::GroupCount> expected{};
+    for(u32 round=0;round<rounds;++round){
+        for(u32 frame=0;frame<6;++frame){
+            auto start=emscripten_get_now();if(!journal.BeginFrame(frame))return out;
+            out[2]+=emscripten_get_now()-start;
+            u16 inputs[3]{1,1,1};if(bomb&&!frame)for(auto& input:inputs)input|=2;
+            r->keyboard_state()[90]=128;r->keyboard_state()[88]=bomb&&!frame?128:0;
+            start=emscripten_get_now();
+            if(!r->app.game.commit_inputs(inputs,r->app.session.player_count)||!r->step(true)||!journal.EndFrame())return out;
+            out[3]+=emscripten_get_now()-start;
+            for(u32 seat=0;seat<r->app.session.player_count;++seat)out[11]=std::max(out[11],double(r->app.game.pilot(seat).status().bomb.active));
+            out[5]=std::max(out[5],double(journal.BytesForFrame(frame)));
+        }
+        const auto after=journal.AuditHash();if(!round)expected=after;else if(after!=expected)return out;
+        const auto start=emscripten_get_now();if(!journal.UndoTo(0))return out;
+        out[4]+=emscripten_get_now()-start;
+        if(journal.AuditHash()!=original)return out;
+    }
+    out[0]=1;out[1]=rounds*6;
+    for(u32 i=0;i<5;++i)out[6+i]=journal.DiagnosticCaptureMs()[i];
+    for(u32 i=0;i<original.size();++i){out[12+i]=original[i];out[24+i]=expected[i];}
+    return out;
+}
+__attribute__((export_name("mp_fixture_batch_checkpoint_copies")))
+void mp_fixture_batch_checkpoint_copies(u32 enabled){multiplayer::batch_checkpoint_copies=enabled!=0;}
+__attribute__((export_name("mp_fixture_barrier_broadphase")))
+void mp_fixture_barrier_broadphase(u32 enabled){fixture_barrier_broadphase(enabled!=0);}
 __attribute__((export_name("mp_fixture_skip_resim_visual")))
 u32 mp_fixture_skip_resim_visual(BrowserRuntime* r,u32 enabled){
     if(enabled>1)return 2;
@@ -280,15 +362,16 @@ u32 mp_fixture_ending_setup(BrowserRuntime* r,u32 ending){
 // Load the original stage/Spell Practice scripts; all later ECL, hit,
 // cancellation and supervisor updates use the native game owners.
 __attribute__((export_name("mp_fixture_last_spell_setup")))
-u32 mp_fixture_last_spell_setup(BrowserRuntime* r,u32 spell,u32 dead_host,u32 challenge){
+u32 mp_fixture_last_spell_setup(BrowserRuntime* r,u32 spell,u32 dead_host,u32 challenge,u32 story){
     if(!r||!r->app.in_game()||!r->app.game.ready()||
-       (spell!=144&&spell!=172)||dead_host>2||challenge>1)return 0;
+       (spell!=144&&spell!=172)||dead_host>3||challenge>1||story>1)return 0;
     auto& game=r->app.game;auto& session=r->app.session;
     auto wanted=game.load_request();game.unload();
     wanted.stage=spell==144?6:7;wanted.spell=i32(spell);wanted.flags=0x4000;
     wanted.initial=true;wanted.keep_resources=false;wanted.release_resources=true;
     session.multiplayer_session.challenge_mode=challenge!=0;
     if(!game.start(wanted))return 100+game.load_failure_step;
+    if(story)game.globals.game_flags&=~0x4000u;
     for(u32 seat=0;seat<session.player_count;++seat){
         auto& p=game.pilot(seat).status();
         p.life.state=0;p.life.timer.set(0);p.life.clear_frames=0;
@@ -299,11 +382,15 @@ u32 mp_fixture_last_spell_setup(BrowserRuntime* r,u32 spell,u32 dead_host,u32 ch
         auto& p=game.pilot(0).status();p.life.state=2;p.life.predead_count=0;
         session.pilot_values[0].set_lives(0);
     }else if(dead_host==2)game.enter_spirit(0);
+    else if(dead_host==3){
+        auto& p=game.pilot(0).status();p.life.state=2;p.life.predead_count=20;p.life.auto_bomb=0;
+        game.globals.game_flags|=0x400u;
+    }
     return game.prepare_frame(0)?1:0;
 }
 __attribute__((export_name("mp_fixture_last_spell_state")))
 const i32* mp_fixture_last_spell_state(BrowserRuntime* r){
-    static i32 out[40]{};std::fill(out,out+40,0);if(!r||!r->app.in_game())return out;
+    static i32 out[48]{};std::fill(out,out+48,0);if(!r||!r->app.in_game())return out;
     const auto& g=r->app.game;out[0]=i32(g.globals.game_flags);out[1]=i32(g.globals.spell_flags);
     out[2]=i32(g.globals.spell_number);out[3]=g.enemies.state.active_count;
     if(auto* boss=g.globals.boss_slots[0]){out[4]=boss->life;out[5]=boss->lifetime.current;out[6]=i32(boss->flags);}
@@ -312,6 +399,8 @@ const i32* mp_fixture_last_spell_state(BrowserRuntime* r){
         s[0]=p.life.state;s[1]=p.life.predead_count;s[2]=p.life.auto_bomb;
         s[3]=p.bomb.active;s[4]=p.bomb.type;s[5]=p.bomb.timer.current;
         s[6]=p.life.timer.current;s[7]=g.cooperation.seats[seat].spirit;
+        out[40+seat*2]=Scalar::truncate(r->app.session.pilot_resources[seat].lives);
+        out[41+seat*2]=Scalar::truncate(r->app.session.pilot_resources[seat].bombs);
     }
     out[32]=g.control.state.play_frames;out[33]=g.load_failure_step;out[34]=g.faults();
     return out;

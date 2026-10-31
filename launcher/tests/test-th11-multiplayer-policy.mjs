@@ -20,7 +20,7 @@ assert.deepEqual(policy.loadouts.map(x=>[x.character,x.shot]),[[0,0],[0,1],[0,2]
 assert.equal(policy.spectator,true);assert.equal(policy.titleRoomEntry,false);assert.equal(policy.gameplay,'cooperative');
 assert.equal(Object.hasOwn(policy,'challengeMode'),false,'challenge is a shared cooperative room rule');
 assert.deepEqual(policy.inputTiming,{rollbackLimit:12,sendPredictionLimit:12,measuredStartup:true,manualDelayLimit:9});
-assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:true,manualRollbackDelay:false,manualDelayLimit:9,predictionLimit:12});
+assert.deepEqual(multiplayerInputTimingPolicy(policy),{measuredStartup:true,rollback:true,manualDelayLimit:9,predictionLimit:12});
 for(const id of ['th06mp','th07mp','th08mp','th10mp']) assert.equal(multiplayerConfigForProduct(id).gameplay,'cooperative');
 for(const id of ['th08mp','th09mp','th10mp']) assert.equal(multiplayerInputTimingPolicy(multiplayerConfigForProduct(id)).predictionLimit,8,'other title send policy unchanged');
 assert.equal(game.replay.prefix,'th11');

@@ -1,0 +1,2057 @@
+{
+  "schema": "th12-native-replay-export/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "originalReplayLoaded": false,
+  "syntheticExportLoaded": true,
+  "wholeGameOracle": false,
+  "originalFilesModified": false,
+  "gpuExecuted": false,
+  "provider": "Actual43c350 loader/signature/version/stage pointer registration; actual463af0/4639d0 crypto; actual44c710 LZ; actual423250 config defaults; actual43b080 spell markers.",
+  "hostBoundaries": [
+    "File open/read/close and filename sprintf receive synthetic exports in memory.",
+    "CRT malloc/memcpy/memset/free and stack-cookie check are host callbacks."
+  ],
+  "limitations": [
+    "No original replay or user recording is read; samples use 100 or fewer playable frames per stage.",
+    "No full gameplay scheduler, UI playback, audio, GPU, or native43bc10 save-to-disk execution.",
+    "Pure literal LZ is legal but is not expected to reproduce retail compression bytes."
+  ],
+  "defaultConfigHex": "010012000300020007000800ffffffffffffffff01005802580200010100000264500002000000000000008000000080000000000000000000010000",
+  "defaultSpellTimes": [
+    0,
+    -559030611,
+    -1118061222,
+    -1677091833,
+    2058844852,
+    1499814241,
+    940783630,
+    381753019,
+    -177277592,
+    -736308203,
+    -1295338814,
+    -1854369425,
+    1881567260,
+    1322536649,
+    763506038,
+    204475427,
+    -354555184,
+    -913585795,
+    -1472616406,
+    -2031647017,
+    0
+  ],
+  "cryptoSamples": [
+    {
+      "length": 0,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "encryptedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "length": 1,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "ab897fbdedfa502b2d839b6a56100887dccdc507555c282e59589e06300a62e2",
+      "encryptedSha256": "ab897fbdedfa502b2d839b6a56100887dccdc507555c282e59589e06300a62e2"
+    },
+    {
+      "length": 15,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "2bb8a575a90c1a0d5b26c0e52d134f1b8834638c5fafdb2db6297ec41183dc7e",
+      "encryptedSha256": "2bb8a575a90c1a0d5b26c0e52d134f1b8834638c5fafdb2db6297ec41183dc7e"
+    },
+    {
+      "length": 16,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "3ba97212696509337e83b2e2be94593303a3ee893f5307c6808cf6b0a6f8e43d",
+      "encryptedSha256": "45d633dda77c82be49e021bd3238c0132fc278a1a81014a177a351e3dfaace42"
+    },
+    {
+      "length": 17,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "f8da6643f2618455bf2c5ef84bb9f41546dc80d93646fe2f7d85d2c1c1401a83",
+      "encryptedSha256": "a1cff6d836677f5425f528a50c550b79ca2ed33d9dc93df2ec43ac92ae8d79dd"
+    },
+    {
+      "length": 31,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "30726c77ff641e29a2633c4689164298376cf322d8da842d5e2fab43bee5aeae",
+      "encryptedSha256": "eef609f733ef6ad36d1ddb8b0f2584a6b9b16f089437ac3e10ede8dd1da66e23"
+    },
+    {
+      "length": 32,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "c28f0ff0408b4f778c5c9dc1ebc973b9686862167ecbccac22962e436b325db9",
+      "encryptedSha256": "17a505a4756e5c1403d4f65a92b3bfe8177a1832199ed2e5447709d36c42c823"
+    },
+    {
+      "length": 63,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "ba3bb62c4369fe74e7b94392d0f04ed284a7b5d7295bfa48fabdb25c01d85ab7",
+      "encryptedSha256": "16accb0aaa9376f4a43506c2fa86b51fe18b7bfe0f40ef3f5bb272a45f34cc32"
+    },
+    {
+      "length": 64,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "cb6862268ca7c02e7b6af558f0e3d236ce9ec7ff41cc746b2848c04c582da94e",
+      "encryptedSha256": "1d736f71253635cced0a09a4fea63be1b0a2e497c93b620f2c9e51e22e499509"
+    },
+    {
+      "length": 65,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "b68af55df9ce8ee60870e45d10e36b2e8363c9896f6e62478dcb6f593a4d7133",
+      "encryptedSha256": "04088f2070f7eda0dc9e7439f0f467886a216989cca4c700f9f267d2a866fdf7"
+    },
+    {
+      "length": 79,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "b329945791aa53725cb62bcce6dd92ae6ae85ab41b1ca8c6106edf3283aed5f0",
+      "encryptedSha256": "fbe1bcab8a43b35d26bf1919d13191f872551b4b2dd9bd1129805ab76125f3cf"
+    },
+    {
+      "length": 80,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "8a5bf501de8576e68929432ebf0dfa98f103b2708f57496ba44ea14e3857a049",
+      "encryptedSha256": "7268648566203ee0ce5954a19db1913d6b37be85aae97ae16203f15f14aa624b"
+    },
+    {
+      "length": 81,
+      "block": 64,
+      "key": 125,
+      "step": 58,
+      "sourceSha256": "2a2357304bc4b9a60779ce85b9fa2dd9e0763f23d94f301cadbf7b77e1116506",
+      "encryptedSha256": "aba6ae8d07a8f9fd717ec693a250149cdd826d2f60eaea5d511c7182773bdb18"
+    },
+    {
+      "length": 0,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "encryptedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "length": 1,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "ab897fbdedfa502b2d839b6a56100887dccdc507555c282e59589e06300a62e2",
+      "encryptedSha256": "ab897fbdedfa502b2d839b6a56100887dccdc507555c282e59589e06300a62e2"
+    },
+    {
+      "length": 15,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "2bb8a575a90c1a0d5b26c0e52d134f1b8834638c5fafdb2db6297ec41183dc7e",
+      "encryptedSha256": "2bb8a575a90c1a0d5b26c0e52d134f1b8834638c5fafdb2db6297ec41183dc7e"
+    },
+    {
+      "length": 16,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "3ba97212696509337e83b2e2be94593303a3ee893f5307c6808cf6b0a6f8e43d",
+      "encryptedSha256": "3ba97212696509337e83b2e2be94593303a3ee893f5307c6808cf6b0a6f8e43d"
+    },
+    {
+      "length": 17,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "f8da6643f2618455bf2c5ef84bb9f41546dc80d93646fe2f7d85d2c1c1401a83",
+      "encryptedSha256": "f8da6643f2618455bf2c5ef84bb9f41546dc80d93646fe2f7d85d2c1c1401a83"
+    },
+    {
+      "length": 31,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "30726c77ff641e29a2633c4689164298376cf322d8da842d5e2fab43bee5aeae",
+      "encryptedSha256": "30726c77ff641e29a2633c4689164298376cf322d8da842d5e2fab43bee5aeae"
+    },
+    {
+      "length": 32,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "c28f0ff0408b4f778c5c9dc1ebc973b9686862167ecbccac22962e436b325db9",
+      "encryptedSha256": "c28f0ff0408b4f778c5c9dc1ebc973b9686862167ecbccac22962e436b325db9"
+    },
+    {
+      "length": 63,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "ba3bb62c4369fe74e7b94392d0f04ed284a7b5d7295bfa48fabdb25c01d85ab7",
+      "encryptedSha256": "ba3bb62c4369fe74e7b94392d0f04ed284a7b5d7295bfa48fabdb25c01d85ab7"
+    },
+    {
+      "length": 64,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "cb6862268ca7c02e7b6af558f0e3d236ce9ec7ff41cc746b2848c04c582da94e",
+      "encryptedSha256": "cb6862268ca7c02e7b6af558f0e3d236ce9ec7ff41cc746b2848c04c582da94e"
+    },
+    {
+      "length": 65,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "b68af55df9ce8ee60870e45d10e36b2e8363c9896f6e62478dcb6f593a4d7133",
+      "encryptedSha256": "b68af55df9ce8ee60870e45d10e36b2e8363c9896f6e62478dcb6f593a4d7133"
+    },
+    {
+      "length": 511,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "99261d2450f15607283ad79ecd67dc46df8689776f776a9702474cb51668dbbc",
+      "encryptedSha256": "99261d2450f15607283ad79ecd67dc46df8689776f776a9702474cb51668dbbc"
+    },
+    {
+      "length": 512,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "8d35978b98877da24dc6904f1a27aaf031f9103991d3ed868ae7dc938a6a00fd",
+      "encryptedSha256": "c1194faccf7a07edebff8d67b72cd8bcbe972bf6a1890b00bdf86f6204fa14d1"
+    },
+    {
+      "length": 513,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "adaa601b9ca46c35260969c4d5d8012bdab39522d5b044c788b3945d4493f7f3",
+      "encryptedSha256": "418e0f98918eee6b9b9b37aae0bf66871f0d3d4a7379ae24023550a4f96ccca7"
+    },
+    {
+      "length": 2047,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "8a6de2128751210b84bff0137cce09031d6ebc49e0797d3057740f7740007308",
+      "encryptedSha256": "b01e80fb7c58d5f01626ce44ae2e5e5dfb8a98f488fce4f40070ac547ab682db"
+    },
+    {
+      "length": 2048,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "a65a9fce2995cbd9ed6a401d68b48fd22e3d1d4edbee6b98482b396fc62aa032",
+      "encryptedSha256": "c91055867b24b5fba7bedd6b3502824b6baeea020ceeca203a3978fb154a7148"
+    },
+    {
+      "length": 2049,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "fd918d1acaaee6ac053f40d6f8ebb7b8c9248af37b17f4ade274794f4ff092ea",
+      "encryptedSha256": "2e2de190eeefbf7fc3cd3db973cdd47d97fc41073935102632e0c6701297be44"
+    },
+    {
+      "length": 2559,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "288c8536cc0f6d7c3be1919dce8ce5f126a233eab1a327149950c55ab794bdea",
+      "encryptedSha256": "12c162415bce8968e515799479aaad943265c76be87eacd44d59dc73e66dfa2c"
+    },
+    {
+      "length": 2560,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "7240f1508dfaf54e964ed6ad3b15560727da43e93e5fcbee30ab7fd1b21a34fa",
+      "encryptedSha256": "d92c4c44c4b8928563557d08e0bf7f4b6b10069f3449b97b262d659a684b4c10"
+    },
+    {
+      "length": 2561,
+      "block": 2048,
+      "key": 94,
+      "step": 225,
+      "sourceSha256": "e705b5eeed64052911eebdec2240f4b933ea4885156b6d6ea936fd3a3767af37",
+      "encryptedSha256": "ccf8d717de41300625c284297aa5354a8cf1d862281540c54ae4d80e549a4d91"
+    }
+  ],
+  "samples": [
+    {
+      "name": "single100-ended",
+      "options": {
+        "name": "TESTUSER",
+        "character": 2,
+        "shot": 1,
+        "difficulty": 3,
+        "timestamp": 1770000000,
+        "scoreStored": 7654321,
+        "slowdown": 1.25,
+        "continues": 0,
+        "stages": [
+          {
+            "number": 1,
+            "seed": 13399,
+            "initial": {
+              "score": 1234568,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              0
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 129
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 129
+              },
+              {
+                "held": 193,
+                "pressed": 193,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 193
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 129
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 129
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60,
+              59,
+              58,
+              57
+            ],
+            "end": true
+          }
+        ]
+      },
+      "fileSize": 1218,
+      "fileSha256": "08e02a2a0b45e968e50d6c61bb2fbdd3489a2539899479372c41660bb1b8aa8f",
+      "fileHeaderHex": "74313272040000000000000006040000000100000000000000000000e203000072030000",
+      "compressedSha256": "31ad005258a57e8dd012ce275e6b4418f1014ac6bc51ffbe53ea6071ec1d5c18",
+      "native": {
+        "returnCode": 0,
+        "rawSha256": "8ee05a6a84ba8e8dd48e2f8eb880262e83b84277029f7a8e5a1bf0606d91356f",
+        "bytesRead": 1030,
+        "stages": [
+          {
+            "number": 1,
+            "headerOffset": 112,
+            "frames": 101,
+            "payload": 610,
+            "inputOffset": 272,
+            "fpsOffset": 878,
+            "inputSha256": "dcaef379ebfbd4d9f537c4bbbed85555fcd04d190858d6069b7e68e7a2992f4b",
+            "fps": [
+              60,
+              59,
+              58,
+              57
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              65535,
+              65535,
+              65535
+            ],
+            "stageHeaderHex": "01005734650000006202000088d612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78600000000"
+          }
+        ],
+        "entered": [
+          "0043c350",
+          "0044c710",
+          "004639d0"
+        ]
+      },
+      "badSignatureReturn": 4294967295,
+      "badVersionReturn": 4294967295
+    },
+    {
+      "name": "seven-stages",
+      "options": {
+        "name": "TESTUSER",
+        "character": 2,
+        "shot": 1,
+        "difficulty": 3,
+        "timestamp": 1770000000,
+        "scoreStored": 7654321,
+        "slowdown": 1.25,
+        "continues": 0,
+        "stages": [
+          {
+            "number": 1,
+            "seed": 13399,
+            "initial": {
+              "score": 1234568,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              0
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 129
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60,
+              59
+            ],
+            "end": false
+          },
+          {
+            "number": 2,
+            "seed": 13400,
+            "initial": {
+              "score": 1234569,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              0
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60
+            ],
+            "end": false
+          },
+          {
+            "number": 3,
+            "seed": 13401,
+            "initial": {
+              "score": 1234570,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              0
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60
+            ],
+            "end": false
+          },
+          {
+            "number": 4,
+            "seed": 13402,
+            "initial": {
+              "score": 1234571,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              0
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60
+            ],
+            "end": false
+          },
+          {
+            "number": 5,
+            "seed": 13403,
+            "initial": {
+              "score": 1234572,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              0
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60
+            ],
+            "end": false
+          },
+          {
+            "number": 6,
+            "seed": 13404,
+            "initial": {
+              "score": 1234573,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              0
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60
+            ],
+            "end": false
+          },
+          {
+            "number": 7,
+            "seed": 13405,
+            "initial": {
+              "score": 1234574,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              1
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60
+            ],
+            "end": true
+          }
+        ],
+        "cleared": true
+      },
+      "fileSize": 1999,
+      "fileSha256": "850f87f5e01bf852a2dfdbebfda07fbadf6e243025dbda1dbe3af5cb8601ce5d",
+      "fileHeaderHex": "74313272040000000000000013070000000100000000000000000000ef06000028060000",
+      "compressedSha256": "c768a1848ae430176853d623a04f709aa46901319d3883842a25a89901b0b7db",
+      "native": {
+        "returnCode": 0,
+        "rawSha256": "2c9842263d84b92e64c15d0f0268d2f27506fb72183d5748efeb8fe2b044ebae",
+        "bytesRead": 1811,
+        "stages": [
+          {
+            "number": 1,
+            "headerOffset": 112,
+            "frames": 31,
+            "payload": 188,
+            "inputOffset": 272,
+            "fpsOffset": 458,
+            "inputSha256": "0e2f0f395cb3801ad5ec60e3077c957a2f918642293c3e0372617899dfc3bd63",
+            "fps": [
+              60,
+              59
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              193,
+              64,
+              0
+            ],
+            "stageHeaderHex": "010057341f000000bc00000088d612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78600000000"
+          },
+          {
+            "number": 2,
+            "headerOffset": 460,
+            "frames": 4,
+            "payload": 25,
+            "inputOffset": 620,
+            "fpsOffset": 644,
+            "inputSha256": "e008f284799558969d5a17f20667464ec54432acf275faf9b0c9927cd2d56e0b",
+            "fps": [
+              60
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              129,
+              0,
+              0
+            ],
+            "stageHeaderHex": "02005834040000001900000089d612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78600000000"
+          },
+          {
+            "number": 3,
+            "headerOffset": 645,
+            "frames": 4,
+            "payload": 25,
+            "inputOffset": 805,
+            "fpsOffset": 829,
+            "inputSha256": "e008f284799558969d5a17f20667464ec54432acf275faf9b0c9927cd2d56e0b",
+            "fps": [
+              60
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              129,
+              0,
+              0
+            ],
+            "stageHeaderHex": "0300593404000000190000008ad612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78600000000"
+          },
+          {
+            "number": 4,
+            "headerOffset": 830,
+            "frames": 4,
+            "payload": 25,
+            "inputOffset": 990,
+            "fpsOffset": 1014,
+            "inputSha256": "e008f284799558969d5a17f20667464ec54432acf275faf9b0c9927cd2d56e0b",
+            "fps": [
+              60
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              129,
+              0,
+              0
+            ],
+            "stageHeaderHex": "04005a3404000000190000008bd612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78600000000"
+          },
+          {
+            "number": 5,
+            "headerOffset": 1015,
+            "frames": 4,
+            "payload": 25,
+            "inputOffset": 1175,
+            "fpsOffset": 1199,
+            "inputSha256": "e008f284799558969d5a17f20667464ec54432acf275faf9b0c9927cd2d56e0b",
+            "fps": [
+              60
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              129,
+              0,
+              0
+            ],
+            "stageHeaderHex": "05005b3404000000190000008cd612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78600000000"
+          },
+          {
+            "number": 6,
+            "headerOffset": 1200,
+            "frames": 4,
+            "payload": 25,
+            "inputOffset": 1360,
+            "fpsOffset": 1384,
+            "inputSha256": "e008f284799558969d5a17f20667464ec54432acf275faf9b0c9927cd2d56e0b",
+            "fps": [
+              60
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              129,
+              0,
+              0
+            ],
+            "stageHeaderHex": "06005c3404000000190000008dd612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78600000000"
+          },
+          {
+            "number": 7,
+            "headerOffset": 1385,
+            "frames": 5,
+            "payload": 31,
+            "inputOffset": 1545,
+            "fpsOffset": 1575,
+            "inputSha256": "ba09e0b62f4bef52f7d610ca4d8017955483de1049ea0ecbf60723bb6ad9469c",
+            "fps": [
+              60
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              65535,
+              65535,
+              65535
+            ],
+            "stageHeaderHex": "07005d34050000001f0000008ed612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78601000000"
+          }
+        ],
+        "entered": [
+          "0043c350",
+          "0044c710",
+          "004639d0"
+        ]
+      },
+      "badSignatureReturn": 4294967295,
+      "badVersionReturn": 4294967295
+    },
+    {
+      "name": "extra31-practice",
+      "options": {
+        "name": "TESTUSER",
+        "character": 2,
+        "shot": 1,
+        "difficulty": 3,
+        "timestamp": 1770000000,
+        "scoreStored": 7654321,
+        "slowdown": 1.25,
+        "continues": 0,
+        "stages": [
+          {
+            "number": 7,
+            "seed": 13405,
+            "initial": {
+              "score": 1234574,
+              "power": 143,
+              "pointValue": 12345000,
+              "lives": 6,
+              "lifeFragments": 4,
+              "bombs": 2,
+              "bombFragments": 2,
+              "ufoColors": [
+                1,
+                2,
+                0
+              ],
+              "rank": 42,
+              "x": 768,
+              "y": 49920,
+              "nativeGlobals": [
+                314,
+                3,
+                1,
+                9876
+              ]
+            },
+            "spellTimes": [
+              0,
+              -559030611,
+              -1118061222,
+              -1677091833,
+              2058844852,
+              1499814241,
+              940783630,
+              381753019,
+              -177277592,
+              -736308203,
+              -1295338814,
+              -1854369425,
+              1881567260,
+              1322536649,
+              763506038,
+              204475427,
+              -354555184,
+              -913585795,
+              -1472616406,
+              -2031647017,
+              1
+            ],
+            "inputs": [
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 0,
+                "pressed": 0,
+                "released": 129
+              },
+              {
+                "held": 129,
+                "pressed": 129,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 64
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 129,
+                "pressed": 0,
+                "released": 0
+              },
+              {
+                "held": 193,
+                "pressed": 64,
+                "released": 0
+              }
+            ],
+            "fps": [
+              60,
+              59
+            ],
+            "end": true
+          }
+        ],
+        "practice": true,
+        "cleared": true,
+        "includeUserBlocks": false
+      },
+      "fileSize": 562,
+      "fileSha256": "f4f168adf0e02d33da854d86f05b3f1f60b2fc353fad00be86a2de41f900344e",
+      "fileHeaderHex": "743132720400000000000000320200000001000000000000000000000e020000d2010000",
+      "compressedSha256": "13cb60882ccdf3e4c9212bd13b60a9d1ca1583fc19e31c30fb6dd80237e49ee0",
+      "native": {
+        "returnCode": 0,
+        "rawSha256": "0150af83baf08761333ba0b974da64a345a45c9788804f622de116def9c2ba51",
+        "bytesRead": 562,
+        "stages": [
+          {
+            "number": 7,
+            "headerOffset": 112,
+            "frames": 32,
+            "payload": 194,
+            "inputOffset": 272,
+            "fpsOffset": 464,
+            "inputSha256": "f85c15eb646c0da1fb3959074afd479bcf46843fa513b798178d631a94e0a50f",
+            "fps": [
+              60,
+              59
+            ],
+            "firstInput": [
+              0,
+              0,
+              0
+            ],
+            "lastInput": [
+              65535,
+              65535,
+              65535
+            ],
+            "stageHeaderHex": "07005d3420000000c20000008ed612008f000000a85ebc0006000400020002000100000002000000000000002a0000000003000000c300003a0100000300000001000000942600000000000000000000addeadde5abd5bbd079c099cb47ab77a615965590e381338bb16c11668f56ef515d41cd4c2b2cab26f9178911c702670c94ed44e762d822d230c300cd0eaddea7dc98bc92aa839a8d786e78601000000"
+          }
+        ],
+        "entered": [
+          "0043c350",
+          "0044c710",
+          "004639d0"
+        ]
+      },
+      "badSignatureReturn": 4294967295,
+      "badVersionReturn": 4294967295
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 /* The launcher and standalone pages share this navigation and existing hover. */
-.site-header.masthead{display:block;position:relative;padding:0;letter-spacing:0;text-transform:none;z-index:40;border-radius:0 0 12px 12px;background:rgba(22,23,22,.96);color:var(--paper,#ebe7df)}
+.site-header.masthead{display:block;position:relative;padding:0;letter-spacing:0;text-transform:none;border-radius:0 0 12px 12px;background:rgba(22,23,22,.96);color:var(--paper,#ebe7df)}
 .site-header-row{display:flex;align-items:center;gap:20px;min-height:48px;padding:4px var(--sheet-edge,clamp(16px,3.5vw,56px))}
 .site-header .brand{flex:none;font-size:14px;letter-spacing:0;text-decoration:none;color:var(--paper,#ebe7df);padding-bottom:0;align-items:center}
 .site-header .brand:has(.brand-version){padding-bottom:8.5px}

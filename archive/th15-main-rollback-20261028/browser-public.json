@@ -1,0 +1,58 @@
+[
+  {
+    "origin": "https://touhouonline.com/",
+    "status": 200,
+    "generation": "9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e",
+    "runtime": "runtime/th15/multiplayer/9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e/th15.html?hosted=1",
+    "files": [
+      "adonis-calibration.mjs",
+      "crash-code-identities.json",
+      "directory-keyboard.mjs",
+      "fonts/cp932.bin",
+      "keyboard.mjs",
+      "managed.css",
+      "manifest.json",
+      "multiplayer.mjs",
+      "resources.json",
+      "runtime-crash-reporter.js",
+      "shell.mjs",
+      "startup-branding.mjs",
+      "th15.html",
+      "th15.mjs",
+      "th15.wasm"
+    ],
+    "wasmCompiled": true,
+    "title": "东方Project 原作 STG ~ EAGLER TOUHOU",
+    "bodyCharacters": 1227,
+    "errors": [],
+    "valid": true
+  },
+  {
+    "origin": "https://touhou.vip/",
+    "status": 200,
+    "generation": "9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e",
+    "runtime": "runtime/th15/multiplayer/9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e/th15.html?hosted=1",
+    "files": [
+      "adonis-calibration.mjs",
+      "crash-code-identities.json",
+      "directory-keyboard.mjs",
+      "fonts/cp932.bin",
+      "keyboard.mjs",
+      "managed.css",
+      "manifest.json",
+      "multiplayer.mjs",
+      "resources.json",
+      "runtime-crash-reporter.js",
+      "shell.mjs",
+      "startup-branding.mjs",
+      "th15.html",
+      "th15.mjs",
+      "th15.wasm"
+    ],
+    "wasmCompiled": true,
+    "title": "东方Project 原作 STG ~ EAGLER TOUHOU",
+    "bodyCharacters": 1227,
+    "errors": [],
+    "valid": true
+  }
+]

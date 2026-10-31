@@ -1,0 +1,222 @@
+{
+  "baseline": "5dedae93683af160e8c8abba935c9eebec23cfbc",
+  "method": "same compiler and fixture; five sequential pairs, alternating order; CPU animation component only",
+  "beforeRetail": {
+    "files": 33,
+    "scripts": 1393,
+    "outputHash": "77d66f194d49c273",
+    "steadyFrames": 600,
+    "steadyTracks": 512,
+    "steadyMs": 23.036,
+    "steadyAllocations": 0,
+    "lateBindings": 60,
+    "lateAge": 10000,
+    "lateMs": 0.015,
+    "chainedMs": 26.159,
+    "chainedAllocations": 0,
+    "treeMs": 887.889,
+    "treeAllocations": 11366400
+  },
+  "afterRetail": {
+    "files": 33,
+    "scripts": 1393,
+    "outputHash": "77d66f194d49c273",
+    "steadyFrames": 600,
+    "steadyTracks": 512,
+    "steadyMs": 20.066,
+    "steadyAllocations": 0,
+    "lateBindings": 60,
+    "lateAge": 10000,
+    "lateMs": 0.015,
+    "chainedMs": 24.625,
+    "chainedAllocations": 0,
+    "treeMs": 145.066,
+    "treeAllocations": 0
+  },
+  "pairs": [
+    {
+      "before": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 19.799,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.017,
+        "chainedMs": 24.127,
+        "chainedAllocations": 0,
+        "treeMs": 923.333,
+        "treeAllocations": 11366400
+      },
+      "after": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 21.205,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.022,
+        "chainedMs": 24.769,
+        "chainedAllocations": 0,
+        "treeMs": 145.821,
+        "treeAllocations": 0
+      }
+    },
+    {
+      "after": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 23.781,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 29.82,
+        "chainedAllocations": 0,
+        "treeMs": 146.172,
+        "treeAllocations": 0
+      },
+      "before": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 20.179,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.017,
+        "chainedMs": 26.119,
+        "chainedAllocations": 0,
+        "treeMs": 932.639,
+        "treeAllocations": 11366400
+      }
+    },
+    {
+      "before": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 19.942,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 24.406,
+        "chainedAllocations": 0,
+        "treeMs": 895.688,
+        "treeAllocations": 11366400
+      },
+      "after": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 19.257,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.016,
+        "chainedMs": 24.715,
+        "chainedAllocations": 0,
+        "treeMs": 152.915,
+        "treeAllocations": 0
+      }
+    },
+    {
+      "after": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 21.945,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.021,
+        "chainedMs": 27.716,
+        "chainedAllocations": 0,
+        "treeMs": 153.115,
+        "treeAllocations": 0
+      },
+      "before": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 26.213,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.016,
+        "chainedMs": 28.779,
+        "chainedAllocations": 0,
+        "treeMs": 888.779,
+        "treeAllocations": 11366400
+      }
+    },
+    {
+      "before": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 23.137,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.016,
+        "chainedMs": 26.253,
+        "chainedAllocations": 0,
+        "treeMs": 877.312,
+        "treeAllocations": 11366400
+      },
+      "after": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "b971e415154cd668",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 26.377,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 25.447,
+        "chainedAllocations": 0,
+        "treeMs": 147.976,
+        "treeAllocations": 0
+      }
+    }
+  ],
+  "medians": {
+    "steadyMs": {
+      "before": 20.179,
+      "after": 21.945
+    },
+    "chainedMs": {
+      "before": 26.119,
+      "after": 25.447
+    },
+    "treeMs": {
+      "before": 895.688,
+      "after": 147.976
+    }
+  }
+}

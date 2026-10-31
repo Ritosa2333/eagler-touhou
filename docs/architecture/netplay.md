@@ -28,7 +28,19 @@ TURN 检测两端并行收集中继候选，通过 Trickle ICE 及时交换地�
 
 VPS TURN 同时提供原有 UDP、TCP 候选和 `turns:relay.touhouonline.com:8443?transport=tcp` 加密备用入口。TLS 入口把连接转交既有 TURN，复用短期身份、配额和中继分配；代理线路可通过实际 relay 候选对完成大厅检测。证书更新后自动 reload TLS 入口，原 TURN 与 Relay 持续运行。中国地区的这条备用路径使用 VPS，CF TURN 的预算与停用监控独立执行。
 
+TURN 节点由既有质量与容量监控统一选择。选择结果通过受限 SSH 只读导出，独立于网页发布同步到 TLS 入口和实际承载房间的 Relay；两段同步各每 15 秒检查一次。TLS 上游先完成 reload，再发布对应节点的短期凭据配置，Relay 在新连接读取配置时生效。已有连接继续使用已经建立的中继分配。
+
+同步校验节点白名单、配置时效和 TLS 上游对应关系，原子更新私有配置，并记录所选节点、评估时间与最近成功时间。失效或不一致的发布保留当前配置并使同步任务报错。整站镜像不再写入 TURN 配置。部署与隔离切换检查见 [TURN 选择同步记录](../../archive/turn-fallback-20261028/README.md)，其验证范围为选择发布链、双端浏览器实际中继和服务进程连续性，适用于全部多人作品。
+
 旧站的站点清单与 Host 清单统一使用 `relay.touhouonline.com`，旧 WebSocket 地址也转发至同一 Relay，兼容已有缓存的客户端。旧代理覆盖客户端 IP 请求头，新入口只信任该旧代理的精确地址，再向内部 Relay 覆盖转发真实地址。两个入口共用房间与按客户端 IP 划分的配额，离开房间后释放对应配额。
+
+同一 Relay 的多个入口共用对局身份。th08、th10、th11、th12、th15 按作品、房间和开局局次计算原生会话 ID，玩家与旁观者即使选择不同域名、端口或代理路径，也能进入同一局。连接继续使用各自选定的入口，种子、席位、玩法和运行包版本分别执行原有准入校验。
+
+### 信令与对局的连接生命周期
+
+已经建立的 WebRTC 输入与控制通道独立传输，直连与 TURN 均采用这一边界。信令 WebSocket 关闭时，`BrowserPeerTransport` 保留现有 RTC 通道并重连信令；用于旁观上传的 WebSocket 关闭也不结束已经选定的 RTC 对局。
+
+房间服务保存大厅、席位、开局与旁观状态。进程替换需要重新建立这些连接，正在建连的会话按新状态重试；旁观历史由所属进程管理。发布房间服务时，分别核对已连接对局、开局、返回房间和旁观，TURN 进程沿自己的生命周期运行。
 
 ## 房间手动丢包测试
 
@@ -46,7 +58,7 @@ VPS TURN 同时提供原有 UDP、TCP 候选和 `turns:relay.touhouonline.com:84
 
 同一个人面板提供「优先使用 TURN」开关。选择按本机保存，所有多人作品共用，默认关闭；下一次开局建立连接时生效。每名玩家独立选择，任一方启用即可让与其相连的游戏链路经过 TURN。
 
-Launcher 将本机偏好通过 `netplayPreferTurn` 传给 Runtime。公共 `BrowserPeerTransport` 在启用时使用 `iceTransportPolicy: 'relay'`，让游戏输入与可靠控制通道共同走 TURN；连接恢复继续沿用这项策略。TURN 无法连接时使用既有 WebSocket 服务器中转兜底。关闭后由浏览器在直连与 TURN 候选中选择路径。
+Launcher 将本机偏好通过 `netplayPreferTurn` 传给 Runtime。公共 `BrowserPeerTransport` 在启用时使用 `iceTransportPolicy: 'relay'`，让游戏输入与可靠控制通道共同走 TURN；连接恢复继续沿用这项策略。游戏 WebSocket 回退由产品和服务端的显式开关共同控制，默认使用 RTC。关闭本机 TURN 偏好后，由浏览器在直连与 TURN 候选中选择路径。
 
 丢包测试持续分别测量直连和 TURN，方便按实际结果选择游戏链路。该设置属于本机传输偏好，房间规则与 Replay 玩法身份沿用各自配置。
 
@@ -169,6 +181,30 @@ TH08 的历史 Update 基准中，Bullet job 占约 88–91%，活动区域索�
 TH09 复用公共 `AdonisStartup` 和 `SessionChannel`，由标题 `RollbackSession::BeginMeasured()` 与 `PumpStartup()` 管理提交后切入。普通网络等待记录一个待重试的到期帧；下一显示机会只重试该帧，墙钟欠账不随等待增长。恢复复用已到期的帧，新本地输入保持原采样节奏。
 
 TH09 的恢复与输出调度：恢复放在 Present 后分批执行；`RecoverySchedule` ticket 和 loop epoch 让暂停/停止取消旧回调；输入在 `Capture()` 一次采样并由重模拟复用；确认音频、Replay 和观战帧由独立发布前沿保留。报告中的旧浏览器/网络条件记录保存在 [固定基线回滚 Playbook](https://github.com/YomotsuHisami/eagler-touhou/blob/991e7cdf9060252e022eba25431254c6a0ce73e9/launcher/docs/playbooks/rollback.md#th09-input-scheduling-and-post-present-recovery-2026-10-16)。
+
+## Relay 入口自动切换
+
+站点通过 `shared.netplayRelay` 指定首选入口，通过
+`shared.netplayRelayFallbacks` 提供最多三个有序备用入口。所有入口反代到同一个
+Relay 进程，共享房间、玩家席位和运行会话。网页在连接失败或建立连接超时后
+依次尝试备用入口，并在当前页面生命周期内复用成功入口。
+
+大厅目录、房间连接与连接检测共用选路状态。游戏启动时读取已选择的入口，
+房间号、运行编号和玩家身份通过原查询参数传递。连接超时预算为每个入口
+2 秒，用于限制无响应入口的等待时间；它不是线路质量评分。
+
+已建立连接的关闭事件交给原有房间重连流程处理，不重放已发送消息。
+应用层拒绝沿用原关闭原因。入口代理统一执行地域访问策略，并覆盖真实客户端
+地址。备用入口负责绕过客户端到首选入口的网络故障，房间服务仍由同一个
+Relay 进程承载。
+
+网站镜像复用同一发布代。镜像节点按文件摘要验证上游发布，完成后原子切换
+站点目录；Runtime、Service Worker 与资源清单随同发布。公开首页采用单一
+DNS 入口，镜像同步与客户端选路分别配置，房间始终由一个 Relay 承载。
+首页首次连接的备用路径由 DNS 或边缘入口承接；页面内的 WS 备用入口在页面
+加载后生效。迁移时，新入口先转发既有房间，
+待正在进行的对局结束后再切换房间进程，并保留原入口的转发能力。
+各层代理只信任精确上游地址，继续覆盖客户端地址和执行地域准入。
 
 ## 故障定位
 

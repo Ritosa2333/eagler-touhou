@@ -1,0 +1,63 @@
+{
+  "schema": "th12-sdl-source-history/1",
+  "sourceHead": "de7385d78436a7a428b5ce545ee585cca361fbbe",
+  "git": "git version 2.47.3",
+  "checker": "tools/ports/check-history.py --repo . --head refs/heads/th12-sdl-final --base refs/remotes/upstream/main",
+  "sourceAnchors": 13,
+  "subtrees": {
+    "ports/th12": {
+      "command": [
+        "git",
+        "subtree",
+        "split",
+        "--prefix=ports/th12",
+        "--quiet",
+        "refs/heads/th12-sdl-final"
+      ],
+      "split": "b6ee6d54961c6683451eaf9d12162d73b125f5aa",
+      "upstream": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+      "recordedSplit": "4ecb649cf8184405acda80279dfb32e0dfe71f0a",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTree": "410b2779e8a44ead94e9cdfc298f991f233aa856",
+      "exportedTree": "410b2779e8a44ead94e9cdfc298f991f233aa856",
+      "treeMatches": true
+    },
+    "ports/th12-mp": {
+      "command": [
+        "git",
+        "subtree",
+        "split",
+        "--prefix=ports/th12-mp",
+        "--quiet",
+        "refs/heads/th12-sdl-final"
+      ],
+      "split": "129ee863d55b8c64150b44d5485ccdf91e045943",
+      "upstream": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+      "recordedSplit": "5dc35be24a34df543e7093d3464521f79f6bdb73",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTree": "6706d89dbc2533b6c47f1fb208817181ef169180",
+      "exportedTree": "6706d89dbc2533b6c47f1fb208817181ef169180",
+      "treeMatches": true
+    },
+    "ports/th15-mp": {
+      "command": [
+        "git",
+        "subtree",
+        "split",
+        "--prefix=ports/th15-mp",
+        "--quiet",
+        "refs/heads/th12-sdl-final"
+      ],
+      "split": "91fd1d173832868e3064d7b4fa03d4794a50d180",
+      "upstream": "a5cc4652d59d55f2559622da28e21cbbf52b75d3",
+      "recordedSplit": "e02e0266c453054d53d055d29d141eb83d736fdf",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTree": "9b206736b1fde3a39b31e3e6602b4b957bcd704e",
+      "exportedTree": "9b206736b1fde3a39b31e3e6602b4b957bcd704e",
+      "treeMatches": true
+    }
+  }
+}

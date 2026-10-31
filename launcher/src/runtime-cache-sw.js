@@ -2,7 +2,7 @@
 
 // One registered classic SW. Immutable public URLs do the version binding;
 // private snapshots provide atomic offline preparation and whole-set fallback.
-function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
+function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, siteRouting = null }) {
   const C = EaglerRuntimeGenerations;
   const known = C.validateRuntimeManifest(catalog);
   const prefix = `eagler-touhou-runtime-v2-${encodeURIComponent(scopeUrl.pathname)}-`;
@@ -55,6 +55,18 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     return response;
   }
   async function network(url, read, {cache = 'no-store', file, onProgress} = {}) {
+    if (siteRouting) {
+      let loaded = 0, success = false;
+      const report = phase => onProgress?.({type: C.RUNTIME_PROGRESS, protocol: C.RUNTIME_CACHE_PROTOCOL,
+        path: new URL(url).pathname.slice(scopeUrl.pathname.length), phase, loaded, total: file?.bytes || 0});
+      try {
+        const result = await siteRouting.run(url, async (response, progress) => {
+          loaded = 0; report('requesting');
+          return read(response, (bytes = 0) => {progress(); loaded += bytes; if (bytes) report('receiving');});
+        }, {cache});
+        success = true; return result;
+      } finally { report(success ? 'complete' : 'failed'); }
+    }
     const controller = new AbortController();
     let timeout, loaded = 0, success = false;
     const report = phase => onProgress?.({type: C.RUNTIME_PROGRESS, protocol: C.RUNTIME_CACHE_PROTOCOL,
@@ -276,8 +288,19 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       } catch { /* Unknown caches are not ours to prune. */ }
     }
   }
-  function deliver(response) {
+  function runtimeContentType(path) {
+    const extension = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
+    const types = {js:'text/javascript',mjs:'text/javascript',wasm:'application/wasm',
+      html:'text/html',json:'application/json',css:'text/css',woff:'font/woff',woff2:'font/woff2'};
+    return Object.hasOwn(types, extension) ? types[extension] : undefined;
+  }
+  function deliver(response, path) {
     const headers = new Headers(response.headers);
+    // These responses have already passed descriptor/hash verification. MIME
+    // headers are not part of that byte identity and can survive an origin fix
+    // in older snapshots; derive executable types from the declared file path.
+    const type = runtimeContentType(path);
+    if (type) headers.set("Content-Type", type);
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
     headers.delete("Content-Encoding"); headers.delete("Content-Length");
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
@@ -290,11 +313,15 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       const cache = await caches.open(snapshot.name);
       const cached = await cache.match(absolute(path));
       if (cached) {
-        try { return deliver(await checked(cached, file)); } catch { /* Repair this exact immutable address. */ }
+        try {
+          const verified = await checked(cached, file);
+          if (file.path === snapshot.descriptor.entry) console.info('[EAGLER|Runtime]', {source:'cache', root:parsed.root, generation:parsed.generation});
+          return deliver(verified, file.path);
+        } catch { /* Repair this exact immutable address. */ }
       }
       const fetched = await runtimeFile(absolute(path), file);
       await cache.put(absolute(path), fetched.clone()).catch(() => {});
-      return deliver(fetched);
+      return deliver(fetched, file.path);
     }
     // Explicit immutable requests never follow latest or change generation. In
     // a storage-restricted browser they remain ordinary same-origin HTTP loads.
@@ -310,9 +337,9 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     descriptor = await verifyGeneration(descriptor);
     const file = descriptor.files.find(file => file.path === parsed.file);
     if (parsed.file === C.RUNTIME_GENERATION_FILE) return deliver(json({ schema: C.RUNTIME_GENERATION_SCHEMA,
-      protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }));
+      protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }), parsed.file);
     if (!file) return new Response("Unknown Runtime resource", { status: 404 });
-    return deliver(await runtimeFile(absolute(path), file));
+    return deliver(await runtimeFile(absolute(path), file), file.path);
   }
   async function selectForLaunch(path, options) {
     const snapshot = await prepare(path, options);
@@ -350,8 +377,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
   async function importLaunch(root, descriptor, files) {
     const supplied = new Map(files.map(file => {
       const path = file.path;
-      const type = /\.m?js$/.test(path) ? 'text/javascript' : /\.wasm$/.test(path) ? 'application/wasm'
-        : /\.html$/.test(path) ? 'text/html' : /\.json$/.test(path) ? 'application/json' : 'application/octet-stream';
+      const type = runtimeContentType(path) || 'application/octet-stream';
       return [path, new Response(file.buffer, {headers:{'Content-Type':type}})];
     }));
     const snapshot = await stage(root, descriptor, {localOnly:true, supplied, observedAt:Date.now()});

@@ -323,7 +323,7 @@ async function configureNetplay(){
     !Number.isInteger(options.netplayDifficulty)||options.netplayDifficulty<0||options.netplayDifficulty>4||
     !Number.isInteger(inputDelay)||inputDelay<0||inputDelay>(mode?9:8)||
     !Array.isArray(loadouts)||loadouts.length!==count)throw Error('Invalid TH10 multiplayer options');
- const identity=new TextEncoder().encode(`th10mp:${url.origin}${url.pathname}:${room}:${run}`);
+ const identity=new TextEncoder().encode(`th10mp:${room}:${run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
  const low=digest.getUint32(0,true),high=digest.getUint32(4,true)||1;
  const challenge=options.netplayChallengeMode===true;

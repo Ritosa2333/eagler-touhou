@@ -1,0 +1,432 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "a8ec4eca87f3561f0f5a0129079295dd5d6f644641658853b4e038b0c84b4929",
+  "wholeGameOracle": false,
+  "scope": "Actual Enemy birth/update/ECL/interrupt and RNG. Controlled query return0/10/80 through existing439ed0 fixture boundary, pending flag35 and age100. No Player/Bomb/ANM scheduler passes; no replay/GPU. Host resource/heap/audio boundaries retained.",
+  "rows": [
+    {
+      "damage": 0,
+      "pending": false,
+      "frames": [
+        {
+          "tick": -1,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 0,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 1,
+          "life": 100,
+          "age": 2,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "life": 100,
+          "age": 3,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "life": 0,
+          "age": 1,
+          "marker": 0,
+          "timedOut": true,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "life": 100,
+          "age": 2,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 5,
+          "life": 100,
+          "age": 3,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 6,
+          "life": 100,
+          "age": 4,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 7,
+          "life": 100,
+          "age": 5,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        }
+      ],
+      "mainBase64": "U0NQVAEAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAARAAAAKwAAABMAQAAbWFpbgBQcm9iZQBBZnRlcgAAAABFQ0xIAAAAAAAAAAAAAAAAAAAAAJIBFAAAAD8BAAAAAKAAAAAAAAAAAAEwAAAAPwYAAAAACAAAAFByb2JlAAAAAAAAAAAAAENkAAAAAAAAAAAAAAAAAAAAUwAUAAAAPwEAAAAAoIYBAEVDTEgAAAAAAAAAAAAAAAAAAAAAAgEUAAAAPwEAAAAAAgAAAAAAAAAGARgAAAA/AgAAAAAAAAAAAAAAAAAAAACSARQAAAA/AQAAAACCAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAngEoAAAAPwQAAAAAAAAAAAAAAAADAAAACAAAAEFmdGVyAAAAAAAAAFMAFAAAAD8BAAAAAKCGAQBFQ0xIAAAAAAAAAAAAAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAKgAUAAEAPwEAAAAA8Nj//wAAAAArABQAAQA/AQAAAAD/2P//AAAAAFMAFAAAAD8BAAAAAKCGAQA="
+    },
+    {
+      "damage": 10,
+      "pending": false,
+      "frames": [
+        {
+          "tick": -1,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 0,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 1,
+          "life": 100,
+          "age": 2,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "life": 90,
+          "age": 3,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "life": 100,
+          "age": 1,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 4,
+          "life": 90,
+          "age": 2,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 5,
+          "life": 80,
+          "age": 3,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 6,
+          "life": 70,
+          "age": 4,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 7,
+          "life": 60,
+          "age": 5,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        }
+      ],
+      "mainBase64": "U0NQVAEAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAARAAAAKwAAABMAQAAbWFpbgBQcm9iZQBBZnRlcgAAAABFQ0xIAAAAAAAAAAAAAAAAAAAAAJIBFAAAAD8BAAAAAKAAAAAAAAAAAAEwAAAAPwYAAAAACAAAAFByb2JlAAAAAAAAAAAAAENkAAAAAAAAAAAAAAAAAAAAUwAUAAAAPwEAAAAAoIYBAEVDTEgAAAAAAAAAAAAAAAAAAAAAAgEUAAAAPwEAAAAAAgAAAAAAAAAGARgAAAA/AgAAAAAAAAAAAAAAAAAAAACSARQAAAA/AQAAAACCAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAngEoAAAAPwQAAAAAAAAAAAAAAAADAAAACAAAAEFmdGVyAAAAAAAAAFMAFAAAAD8BAAAAAKCGAQBFQ0xIAAAAAAAAAAAAAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAKgAUAAEAPwEAAAAA8Nj//wAAAAArABQAAQA/AQAAAAD/2P//AAAAAFMAFAAAAD8BAAAAAKCGAQA="
+    },
+    {
+      "damage": 10,
+      "pending": true,
+      "frames": [
+        {
+          "tick": -1,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 0,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 1,
+          "life": 100,
+          "age": 2,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "life": 100,
+          "age": 3,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "life": 100,
+          "age": 1,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 4,
+          "life": 90,
+          "age": 2,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 5,
+          "life": 80,
+          "age": 3,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 6,
+          "life": 70,
+          "age": 4,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 7,
+          "life": 60,
+          "age": 5,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        }
+      ],
+      "mainBase64": "U0NQVAEAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAARAAAAKwAAABMAQAAbWFpbgBQcm9iZQBBZnRlcgAAAABFQ0xIAAAAAAAAAAAAAAAAAAAAAJIBFAAAAD8BAAAAAKAAAAAAAAAAAAEwAAAAPwYAAAAACAAAAFByb2JlAAAAAAAAAAAAAENkAAAAAAAAAAAAAAAAAAAAUwAUAAAAPwEAAAAAoIYBAEVDTEgAAAAAAAAAAAAAAAAAAAAAAgEUAAAAPwEAAAAAAgAAAAAAAAAGARgAAAA/AgAAAAAAAAAAAAAAAAAAAACSARQAAAA/AQAAAACCAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAngEoAAAAPwQAAAAAAAAAAAAAAAADAAAACAAAAEFmdGVyAAAAAAAAAFMAFAAAAD8BAAAAAKCGAQBFQ0xIAAAAAAAAAAAAAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAKgAUAAEAPwEAAAAA8Nj//wAAAAArABQAAQA/AQAAAAD/2P//AAAAAFMAFAAAAD8BAAAAAKCGAQA="
+    },
+    {
+      "damage": 80,
+      "pending": true,
+      "frames": [
+        {
+          "tick": -1,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 0,
+          "life": 100,
+          "age": 1,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 1,
+          "life": 100,
+          "age": 2,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "life": 98,
+          "age": 3,
+          "marker": 0,
+          "timedOut": false,
+          "rng": [
+            1234,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "life": 100,
+          "age": 1,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 4,
+          "life": 20,
+          "age": 2,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 5,
+          "life": -60,
+          "age": 3,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 6,
+          "life": -140,
+          "age": 4,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        },
+        {
+          "tick": 7,
+          "life": -220,
+          "age": 5,
+          "marker": 764394169,
+          "timedOut": true,
+          "rng": [
+            60134,
+            2
+          ]
+        }
+      ],
+      "mainBase64": "U0NQVAEAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAARAAAAKwAAABMAQAAbWFpbgBQcm9iZQBBZnRlcgAAAABFQ0xIAAAAAAAAAAAAAAAAAAAAAJIBFAAAAD8BAAAAAKAAAAAAAAAAAAEwAAAAPwYAAAAACAAAAFByb2JlAAAAAAAAAAAAAENkAAAAAAAAAAAAAAAAAAAAUwAUAAAAPwEAAAAAoIYBAEVDTEgAAAAAAAAAAAAAAAAAAAAAAgEUAAAAPwEAAAAAAgAAAAAAAAAGARgAAAA/AgAAAAAAAAAAAAAAAAAAAACSARQAAAA/AQAAAACCAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAngEoAAAAPwQAAAAAAAAAAAAAAAADAAAACAAAAEFmdGVyAAAAAAAAAFMAFAAAAD8BAAAAAKCGAQBFQ0xIAAAAAAAAAAAAAAAAAAAAAJsBFAAAAD8BAAAAAGQAAAAAAAAAKgAUAAEAPwEAAAAA8Nj//wAAAAArABQAAQA/AQAAAAD/2P//AAAAAFMAFAAAAD8BAAAAAKCGAQA="
+    }
+  ]
+}

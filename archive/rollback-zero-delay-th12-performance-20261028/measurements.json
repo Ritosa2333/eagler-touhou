@@ -1,0 +1,506 @@
+{
+  "schema": "eagler-touhou/th12-performance/1",
+  "baselineCommit": "654717ac6d7b0f9e28239e230d5c965025493434",
+  "productionRuntimeHashes": {
+    "normal": {
+      "core.mjs": "222ee1b50a0f3c035218cc0a23fa660a6ca7d6826a428668c6e72417089fb5e1",
+      "core.wasm": "657298724c0a2b9d49209e79021206c8a3ff5ece3d59b07eecdd236247505d66",
+      "manifest.json": "e2f7b74eb075b70424a3cfda41e7b2056b0d75a71f0e7ac0e9f878b7454f8273"
+    },
+    "multiplayer": {
+      "core.mjs": "827429c5345f122a0b6a2ba68a00ec2a79ab483626e94146d8f723fdd67f7b92",
+      "core.wasm": "4f4c957f8d83cea00f919e58484a58bbb6581b5570bd2c704ddc8a05bfb7f78c",
+      "manifest.json": "0aab7f684ebc92eabb104b56f99417c7f076ce6edcacba04e36d4415c86446d1"
+    }
+  },
+  "paired": {
+    "paired-boss-cpu1": {
+      "configuration": {
+        "frames": 600,
+        "bomb": false,
+        "stage": 6,
+        "section": 45,
+        "cpuRate": 1,
+        "browser": "153.0.8010.12",
+        "paired": true
+      },
+      "stats": {
+        "baseline": {
+          "capture": {
+            "mean": 0.923750001564622,
+            "p50": 0.800000011920929,
+            "p95": 1.699999988079071,
+            "max": 7.399999976158142
+          },
+          "render": {
+            "mean": 0.5095833332588275,
+            "p50": 0.5,
+            "p95": 0.8999999761581421,
+            "max": 1.300000011920929
+          }
+        },
+        "optimized": {
+          "capture": {
+            "mean": 0.8387499989320835,
+            "p50": 0.7999999523162842,
+            "p95": 1.4000000357627869,
+            "max": 2.199999988079071
+          },
+          "render": {
+            "mean": 0.5118750000993411,
+            "p50": 0.5,
+            "p95": 0.9000000357627869,
+            "max": 1.5999999642372131
+          }
+        }
+      },
+      "checks": [
+        {
+          "frame": 150,
+          "poses": 110,
+          "records": 5,
+          "differences": 0
+        },
+        {
+          "frame": 300,
+          "poses": 758,
+          "records": 683,
+          "differences": 0
+        },
+        {
+          "frame": 450,
+          "poses": 864,
+          "records": 780,
+          "differences": 0
+        },
+        {
+          "frame": 600,
+          "poses": 756,
+          "records": 681,
+          "differences": 0
+        }
+      ],
+      "errors": []
+    },
+    "paired-boss-cpu4": {
+      "configuration": {
+        "frames": 600,
+        "bomb": false,
+        "stage": 6,
+        "section": 45,
+        "cpuRate": 4,
+        "browser": "153.0.8010.12",
+        "paired": true
+      },
+      "stats": {
+        "baseline": {
+          "capture": {
+            "mean": 16.647916669522722,
+            "p50": 14.199999988079071,
+            "p95": 33.30000001192093,
+            "max": 73.69999998807907
+          },
+          "render": {
+            "mean": 10.001249999304612,
+            "p50": 8.699999988079071,
+            "p95": 20.30000001192093,
+            "max": 61.19999998807907
+          }
+        },
+        "optimized": {
+          "capture": {
+            "mean": 15.804374999552966,
+            "p50": 14.399999976158142,
+            "p95": 29.600000023841858,
+            "max": 47.89999997615814
+          },
+          "render": {
+            "mean": 10.338125001018247,
+            "p50": 8.900000035762787,
+            "p95": 20.600000023841858,
+            "max": 35.80000001192093
+          }
+        }
+      },
+      "checks": [
+        {
+          "frame": 150,
+          "poses": 110,
+          "records": 5,
+          "differences": 0
+        },
+        {
+          "frame": 300,
+          "poses": 758,
+          "records": 683,
+          "differences": 0
+        },
+        {
+          "frame": 450,
+          "poses": 864,
+          "records": 780,
+          "differences": 0
+        },
+        {
+          "frame": 600,
+          "poses": 756,
+          "records": 681,
+          "differences": 0
+        }
+      ],
+      "errors": []
+    },
+    "paired-bomb-cpu4": {
+      "configuration": {
+        "frames": 600,
+        "bomb": true,
+        "stage": 6,
+        "section": 45,
+        "cpuRate": 4,
+        "browser": "153.0.8010.12",
+        "paired": true
+      },
+      "stats": {
+        "baseline": {
+          "capture": {
+            "mean": 21.94749999990066,
+            "p50": 19.30000001192093,
+            "p95": 43.700000047683716,
+            "max": 124.5
+          },
+          "render": {
+            "mean": 16.329374999925495,
+            "p50": 13.699999988079071,
+            "p95": 33.90000003576279,
+            "max": 205.5
+          }
+        },
+        "optimized": {
+          "capture": {
+            "mean": 21.188958332066736,
+            "p50": 19.19999998807907,
+            "p95": 41.10000002384186,
+            "max": 117.30000001192093
+          },
+          "render": {
+            "mean": 16.246666666989526,
+            "p50": 13.5,
+            "p95": 35.69999998807907,
+            "max": 122.09999996423721
+          }
+        }
+      },
+      "checks": [
+        {
+          "frame": 150,
+          "poses": 192,
+          "records": 41,
+          "differences": 0
+        },
+        {
+          "frame": 300,
+          "poses": 850,
+          "records": 729,
+          "differences": 0
+        },
+        {
+          "frame": 450,
+          "poses": 1022,
+          "records": 846,
+          "differences": 0
+        },
+        {
+          "frame": 600,
+          "poses": 462,
+          "records": 340,
+          "differences": 0
+        }
+      ],
+      "errors": []
+    },
+    "paired-final-baseline-ref": {
+      "configuration": {
+        "frames": 300,
+        "bomb": false,
+        "stage": 6,
+        "section": 45,
+        "cpuRate": 1,
+        "browser": "153.0.8010.12",
+        "paired": true,
+        "baselineCommit": "654717ac6d7b0f9e28239e230d5c965025493434"
+      },
+      "stats": {
+        "baseline": {
+          "capture": {
+            "mean": 0.9861111140913433,
+            "p50": 0.9000000357627869,
+            "p95": 1.7000000476837158,
+            "max": 2.599999964237213
+          },
+          "render": {
+            "mean": 0.5833333323399226,
+            "p50": 0.5,
+            "p95": 1.100000023841858,
+            "max": 1.5
+          }
+        },
+        "optimized": {
+          "capture": {
+            "mean": 0.9200000004635916,
+            "p50": 0.800000011920929,
+            "p95": 1.699999988079071,
+            "max": 3
+          },
+          "render": {
+            "mean": 0.5833333316776488,
+            "p50": 0.5,
+            "p95": 1,
+            "max": 2.199999988079071
+          }
+        }
+      },
+      "checks": [
+        {
+          "frame": 150,
+          "poses": 110,
+          "records": 5,
+          "differences": 0
+        },
+        {
+          "frame": 300,
+          "poses": 758,
+          "records": 683,
+          "differences": 0
+        }
+      ],
+      "errors": []
+    }
+  },
+  "separateRuns": {
+    "baseline-boss": {
+      "configuration": {
+        "cpuRate": 1,
+        "stage": 6,
+        "section": 45,
+        "difficulty": 0,
+        "loadout": 5,
+        "bomb": false,
+        "frames": 600,
+        "locked": true,
+        "cadence": 120,
+        "paced": true,
+        "baseline": false,
+        "audioEnabled": false,
+        "browser": "153.0.8010.12"
+      },
+      "stats": {
+        "tick": {
+          "mean": 1.2774999984850486,
+          "p50": 1.399999976158142,
+          "p95": 2.100000023841858,
+          "max": 3.199999988079071
+        },
+        "sound": {
+          "mean": 0.001875000074505806,
+          "p50": 0,
+          "p95": 0,
+          "max": 0.19999998807907104
+        },
+        "capture": {
+          "mean": 1.9625322992795506,
+          "p50": 1.9000000357627869,
+          "p95": 2.899999976158142,
+          "max": 7.800000011920929
+        },
+        "render": {
+          "mean": 1.1150313160364713,
+          "p50": 1.199999988079071,
+          "p95": 1.600000023841858,
+          "max": 2.900000035762787
+        },
+        "normal": {
+          "mean": 4.062785862513243,
+          "p50": 4.5,
+          "p95": 6.199999988079071,
+          "max": 11.299999952316284
+        }
+      },
+      "pacing": {
+        "elapsedMs": 8000.1,
+        "refreshIntervalMs": 16.699999999999818,
+        "intervalBudgetMs": 17.49999999999982,
+        "presents": 480,
+        "logicTicks": 479,
+        "presentationFps": 59.99925000937488,
+        "logicHz": 59.87425157185535,
+        "intervalP95Ms": 16.900000000001455,
+        "maxIntervalMs": 17.600000000000364,
+        "processingP95Ms": 6.300000011920929,
+        "processingMaxMs": 11.299999952316284,
+        "overBudgetFrames": 0,
+        "missed60HzSlots": 0,
+        "meets60Hz": true
+      },
+      "errors": [],
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "baseline-boss-cpu4": {
+      "configuration": {
+        "cpuRate": 4,
+        "stage": 6,
+        "section": 45,
+        "difficulty": 0,
+        "loadout": 5,
+        "bomb": false,
+        "frames": 600,
+        "locked": true,
+        "cadence": 120,
+        "paced": true,
+        "baseline": false,
+        "audioEnabled": false,
+        "browser": "153.0.8010.12"
+      },
+      "stats": {
+        "tick": {
+          "mean": 4.284583336363236,
+          "p50": 3.600000023841858,
+          "p95": 10.599999964237213,
+          "max": 22.599999964237213
+        },
+        "sound": {
+          "mean": 0.00979166639347871,
+          "p50": 0,
+          "p95": 0.09999996423721313,
+          "max": 0.5999999642372131
+        },
+        "capture": {
+          "mean": 6.040495866422154,
+          "p50": 4.699999988079071,
+          "p95": 13,
+          "max": 69.89999997615814
+        },
+        "render": {
+          "mean": 3.8307692305399823,
+          "p50": 3,
+          "p95": 8.800000011920929,
+          "max": 20
+        },
+        "normal": {
+          "mean": 14.955128206045199,
+          "p50": 12,
+          "p95": 36,
+          "max": 83.30000001192093
+        }
+      },
+      "pacing": {
+        "elapsedMs": 7996.1,
+        "refreshIntervalMs": 17.90000000000009,
+        "intervalBudgetMs": 18.70000000000009,
+        "presents": 389,
+        "logicTicks": 479,
+        "presentationFps": 48.64871624917147,
+        "logicHz": 59.90420329910831,
+        "intervalP95Ms": 36.19999999999982,
+        "maxIntervalMs": 91.80000000000018,
+        "processingP95Ms": 36,
+        "processingMaxMs": 83.30000001192093,
+        "overBudgetFrames": 89,
+        "missed60HzSlots": 58,
+        "meets60Hz": false
+      },
+      "errors": [],
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "optimized-boss-cpu4": {
+      "configuration": {
+        "cpuRate": 4,
+        "stage": 6,
+        "section": 45,
+        "difficulty": 0,
+        "loadout": 5,
+        "bomb": false,
+        "frames": 600,
+        "locked": true,
+        "cadence": 120,
+        "paced": true,
+        "baseline": false,
+        "audioEnabled": false,
+        "browser": "153.0.8010.12"
+      },
+      "stats": {
+        "tick": {
+          "mean": 5.695416665201386,
+          "p50": 5.399999976158142,
+          "p95": 12,
+          "max": 26.100000023841858
+        },
+        "sound": {
+          "mean": 0.007708333432674408,
+          "p50": 0,
+          "p95": 0,
+          "max": 0.800000011920929
+        },
+        "capture": {
+          "mean": 9.320158103473572,
+          "p50": 8.199999988079071,
+          "p95": 17.399999976158142,
+          "max": 45.10000002384186
+        },
+        "render": {
+          "mean": 5.533464569510437,
+          "p50": 5.100000023841858,
+          "p95": 10.700000047683716,
+          "max": 18.600000023841858
+        },
+        "normal": {
+          "mean": 23.971280276569114,
+          "p50": 21,
+          "p95": 51.90000003576279,
+          "max": 107.30000001192093
+        }
+      },
+      "pacing": {
+        "elapsedMs": 7974.4,
+        "refreshIntervalMs": 17.90000000000009,
+        "intervalBudgetMs": 18.70000000000009,
+        "presents": 288,
+        "logicTicks": 479,
+        "presentationFps": 36.115569823434996,
+        "logicHz": 60.06721508828251,
+        "intervalP95Ms": 55.19999999999982,
+        "maxIntervalMs": 109.60000000000036,
+        "processingP95Ms": 51.90000003576279,
+        "processingMaxMs": 107.30000001192093,
+        "overBudgetFrames": 193,
+        "missed60HzSlots": 155,
+        "meets60Hz": false
+      },
+      "errors": [],
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 Laptop GPU (0x00002C19) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    }
+  },
+  "native": {
+    "configuration": {
+      "stage": 6,
+      "section": 45,
+      "difficulty": 0,
+      "players": [
+        2,
+        3
+      ],
+      "loadouts": "all Sanae B",
+      "inputs": "shoot + focus",
+      "frames": 1200,
+      "warmupFrames": 120,
+      "retainedCheckpoints": 13,
+      "restoreEveryFrames": 120,
+      "compiler": "native MSVC Release /fp:strict",
+      "transport": false
+    },
+    "checks": [
+      "restored world canonical hash equals the captured world",
+      "snapshot and no-snapshot runs finish with the same canonical hash"
+    ],
+    "harnessSha256": "3cf7aba3337d166e3cf87add9a1e98094c7f8e3a2ad3d63e5e21691939046d41"
+  }
+}

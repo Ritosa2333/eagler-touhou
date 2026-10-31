@@ -20,6 +20,7 @@ struct EnemyDamageActions {
 bool damage_enemy(EclVm&,const EnemyDamageContext&,PlayerFrameState&,GameValues&,i32& bomb_hit,EnemyDamageActions&);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool last_spell_waits_for_players(EnemyDamageActions&);
+bool enemy_bomb_protected(const EclVm&,EnemyDamageActions&);
 bool damage_enemy_multiplayer(EclVm&,u8 time_spell,u8 spell_bomb_damage,GameValues&,i32& bomb_hit,u32& owner,EnemyDamageActions&);
 #endif
 }

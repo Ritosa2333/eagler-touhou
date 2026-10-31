@@ -37,6 +37,7 @@ const hostPreparationBuildSources = Object.values(PRODUCT_CONTENT)
 // relay operations stay outside this boundary.
 const hostRuntimeRoots = [
   "src/app-shell-sw.js",
+  "src/site-mirror-sw.js",
   "src/runtime-cache-sw.js",
   "src/runtime-program-sw.js",
   "legacy/runtime-generation-reader.js",

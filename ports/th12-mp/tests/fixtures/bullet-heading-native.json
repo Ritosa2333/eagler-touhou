@@ -1,0 +1,153 @@
+{
+  "schema": "th12-native-bullet-heading/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "gpuExecuted": false,
+  "wholeGameOracle": false,
+  "source": "Original40a150/464640;45c900 submission intercepted",
+  "rows": [
+    {
+      "angle": -3.1415927410125732,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": -3.1415927410125732,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": -1.5707963705062866,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": -2.700000047683716,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": -2.700000047683716,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": -1.1292036771774292,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": -1.5707963705062866,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": -1.5707963705062866,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": 0.0,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": -0.25,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": -0.25,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": 1.3207963705062866,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 0.0,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 0.0,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": 1.5707963705062866,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 0.25,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 0.25,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": 1.8207963705062866,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 1.5707963705062866,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 1.5707963705062866,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": 3.1415927410125732,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 2.700000047683716,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 2.700000047683716,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": -2.0123891830444336,
+      "flags": 536870919,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 3.1415927410125732,
+      "rotate": false,
+      "initialRotation": 0.375,
+      "rotation": 0.375,
+      "flags": 3,
+      "rngUnchanged": true
+    },
+    {
+      "angle": 3.1415927410125732,
+      "rotate": true,
+      "initialRotation": 0.375,
+      "rotation": -1.5707964897155762,
+      "flags": 536870919,
+      "rngUnchanged": true
+    }
+  ]
+}

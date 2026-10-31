@@ -1,0 +1,765 @@
+{
+  "source": "8d1f2d4a64409c0ae34ed625687dcaa1e1c5844c",
+  "targets": [
+    {
+      "game": "th06",
+      "variant": "multiplayer",
+      "directory": "ports/th06",
+      "touch": "生产增量消费函数 | 消费增量保留触点、释放后无输入",
+      "touchSource": "ports/th06/src/Touch.cpp",
+      "audioSource": "ports/th06/src/SoundPlayer.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th06",
+      "variant": "normal",
+      "directory": "ports/th06",
+      "touch": "生产增量消费函数 | 消费增量保留触点、释放后无输入",
+      "touchSource": "ports/th06/src/Touch.cpp",
+      "audioSource": "ports/th06/src/SoundPlayer.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th07",
+      "variant": "multiplayer",
+      "directory": "ports/th07",
+      "touch": "生产增量消费函数 | 消费增量保留触点、释放后无输入",
+      "touchSource": "ports/th07/src/Touch.cpp",
+      "audioSource": "ports/th07/src/SoundPlayer.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th07",
+      "variant": "normal",
+      "directory": "ports/th07",
+      "touch": "生产增量消费函数 | 消费增量保留触点、释放后无输入",
+      "touchSource": "ports/th07/src/Touch.cpp",
+      "audioSource": "ports/th07/src/SoundPlayer.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th075",
+      "variant": "multiplayer",
+      "directory": "ports/th075-mp",
+      "touch": "生产 FighterControls | 格斗动作切换保留方向、释放后中立",
+      "touchSource": "ports/th075-mp/web/cpp/game/FighterControls.cpp",
+      "audioSource": "ports/th075-mp/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th075",
+      "variant": "normal",
+      "directory": "ports/th075",
+      "touch": "生产 FighterControls | 格斗动作切换保留方向、释放后中立",
+      "touchSource": "ports/th075/web/cpp/game/FighterControls.cpp",
+      "audioSource": "ports/th075/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th08",
+      "variant": "multiplayer",
+      "directory": "ports/th08-mp",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th08-mp/portable/input/TouchController.hpp",
+      "audioSource": "ports/th08-mp/web/cpp/sdl/AudioHost.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th08",
+      "variant": "normal",
+      "directory": "ports/th08",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th08/portable/input/TouchController.hpp",
+      "audioSource": "ports/th08/web/cpp/sdl/AudioHost.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th09",
+      "variant": "multiplayer",
+      "directory": "ports/th09",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th09/portable/input/TouchController.hpp",
+      "audioSource": "ports/th09/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th09",
+      "variant": "normal",
+      "directory": "ports/th09",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th09/portable/input/TouchController.hpp",
+      "audioSource": "ports/th09/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th10",
+      "variant": "multiplayer",
+      "directory": "ports/th10-mp",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th10-mp/portable/input/TouchController.hpp",
+      "audioSource": "ports/th10-mp/web/cpp/sdl/AudioHost.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th10",
+      "variant": "normal",
+      "directory": "ports/th10",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th10/portable/input/TouchController.hpp",
+      "audioSource": "ports/th10/web/cpp/sdl/AudioHost.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th11",
+      "variant": "multiplayer",
+      "directory": "ports/th11-mp",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th11-mp/portable/input/TouchController.hpp",
+      "audioSource": "ports/th11-mp/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th11",
+      "variant": "normal",
+      "directory": "ports/th11",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th11/portable/input/TouchController.hpp",
+      "audioSource": "ports/th11/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th12",
+      "variant": "multiplayer",
+      "directory": "ports/th12-mp",
+      "touch": "生产 TouchInput | 状态作用域、禁移与换实例恢复、显式取消",
+      "touchSource": "ports/th12-mp/src/touch-input.mjs",
+      "audioSource": "ports/th12-mp/portable/sdl/Audio.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th12",
+      "variant": "normal",
+      "directory": "ports/th12",
+      "touch": "生产 TouchInput | 状态作用域、禁移与换实例恢复、显式取消",
+      "touchSource": "ports/th12/src/touch-input.mjs",
+      "audioSource": "ports/th12/portable/sdl/Audio.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th15",
+      "variant": "multiplayer",
+      "directory": "ports/th15-mp",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th15-mp/portable/input/TouchController.hpp",
+      "audioSource": "ports/th15-mp/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th15",
+      "variant": "normal",
+      "directory": "ports/th15",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th15/portable/input/TouchController.hpp",
+      "audioSource": "ports/th15/web/cpp/sdl/AudioDevice.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    },
+    {
+      "game": "th20",
+      "variant": "normal",
+      "directory": "ports/th20",
+      "touch": "生产 TouchController | 禁移与换实例恢复、摇杆、显式取消",
+      "touchSource": "ports/th20/portable/input/TouchController.hpp",
+      "audioSource": "ports/th20/web/cpp/sdl/AudioHost.cpp",
+      "sfxRouting": "passed",
+      "componentContinuity": "passed",
+      "completeGameAcceptance": false
+    }
+  ],
+  "builds": [
+    {
+      "directory": "ports/th12",
+      "bytes": 3246944,
+      "sha256": "0114d77c56639bf181b01b08942b9fdab000b04c7796143e68bfb4494cfabcda"
+    },
+    {
+      "directory": "ports/th12-mp",
+      "bytes": 3223932,
+      "sha256": "1aad08129c41c863808038f20cb51f13afdddc96ae022490b4154d3742f8a7de"
+    },
+    {
+      "directory": "ports/th075",
+      "bytes": 3674341,
+      "sha256": "349892dd4c0ed14becc1c49793ad0c2d1eaa92408fbf29da6f83ce18fa2f3311"
+    },
+    {
+      "directory": "ports/th075-mp",
+      "bytes": 3836578,
+      "sha256": "8637f6944be159631870bc1452edb2ba48a8b405ded81eba5ec3803f766a56f4"
+    },
+    {
+      "directory": "ports/th09",
+      "variants": [
+        "normal",
+        "multiplayer"
+      ],
+      "bytes": 2863517,
+      "sha256": "a0561574a50ea81afaa60d8f1ef769ab7fe906c3b39ce4a6b5029dc1058ecd62",
+      "sharedProgram": true
+    }
+  ],
+  "browser": {
+    "normal": [
+      {
+        "music": "ogg",
+        "decodeMode": "stream",
+        "audioChecks": [
+          {
+            "action": "corrupt-resource-recovery",
+            "failures": [
+              {
+                "protocol": "eagler-touhou/1",
+                "game": "th12",
+                "epoch": 1,
+                "event": "error",
+                "code": "audio-resource",
+                "error": "音乐加载失败：th12_01：cannot decode music resource"
+              }
+            ],
+            "silent": {
+              "frames": 14336,
+              "peak": 0
+            },
+            "recovered": {
+              "frames": 16384,
+              "peak": 0.8242513537406921
+            }
+          },
+          {
+            "action": "title",
+            "frames": 14336,
+            "peak": 0.7433847188949585
+          },
+          {
+            "action": "native-immediate-effects",
+            "starts": [
+              {
+                "when": 0,
+                "peak": 0.8790941834449768,
+                "channels": 2
+              },
+              {
+                "when": 0,
+                "peak": 0.8790941834449768,
+                "channels": 2
+              }
+            ]
+          },
+          {
+            "action": "replay-pause",
+            "frames": 14336,
+            "peak": 0
+          },
+          {
+            "action": "replay-seek",
+            "frames": 14336,
+            "peak": 0
+          }
+        ],
+        "runtime": {
+          "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+          "program": "14fb1f7ccb4d3bd23dce6e28e00b502803fcb3cbbb8572f88c1a96f004f92e7e",
+          "module": "a1b244b6c7da39f716e325334d7cbc3289cb5394a567f32ad0f1a0aae1437c9d",
+          "wasm": "0114d77c56639bf181b01b08942b9fdab000b04c7796143e68bfb4494cfabcda"
+        },
+        "dataSha256": "bedf5456e7aa7a1db673dfca410aa97f35fbefefcd08997b3d64fa62e736fcc4",
+        "errors": []
+      },
+      {
+        "music": "ogg",
+        "decodeMode": "full",
+        "audioChecks": [
+          {
+            "action": "corrupt-resource-recovery",
+            "failures": [
+              {
+                "protocol": "eagler-touhou/1",
+                "game": "th12",
+                "epoch": 1,
+                "event": "error",
+                "code": "audio-resource",
+                "error": "音乐加载失败：th12_01：cannot decode music resource"
+              }
+            ],
+            "silent": {
+              "frames": 14336,
+              "peak": 0
+            },
+            "recovered": {
+              "frames": 14336,
+              "peak": 0.8292534351348877
+            }
+          },
+          {
+            "action": "title",
+            "frames": 14336,
+            "peak": 0.7431213855743408
+          },
+          {
+            "action": "native-immediate-effects",
+            "starts": [
+              {
+                "when": 0,
+                "peak": 0.8790941834449768,
+                "channels": 2
+              },
+              {
+                "when": 0,
+                "peak": 0.8790941834449768,
+                "channels": 2
+              }
+            ]
+          },
+          {
+            "action": "replay-pause",
+            "frames": 14336,
+            "peak": 0
+          },
+          {
+            "action": "replay-seek",
+            "frames": 16384,
+            "peak": 0
+          }
+        ],
+        "runtime": {
+          "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+          "program": "14fb1f7ccb4d3bd23dce6e28e00b502803fcb3cbbb8572f88c1a96f004f92e7e",
+          "module": "a1b244b6c7da39f716e325334d7cbc3289cb5394a567f32ad0f1a0aae1437c9d",
+          "wasm": "0114d77c56639bf181b01b08942b9fdab000b04c7796143e68bfb4494cfabcda"
+        },
+        "dataSha256": "bedf5456e7aa7a1db673dfca410aa97f35fbefefcd08997b3d64fa62e736fcc4",
+        "errors": []
+      }
+    ],
+    "multiplayer": {
+      "inputLatency": 25,
+      "music": "ogg",
+      "audioChecks": [
+        {
+          "action": "corrupt-resource-recovery",
+          "failures": [
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th12",
+              "epoch": 1,
+              "event": "error",
+              "code": "audio-resource",
+              "error": "音乐加载失败：th12_01：cannot decode music resource"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th12",
+              "epoch": 2,
+              "event": "error",
+              "code": "audio-resource",
+              "error": "音乐加载失败：th12_01：cannot decode music resource"
+            },
+            {
+              "protocol": "eagler-touhou/1",
+              "game": "th12",
+              "epoch": 3,
+              "event": "error",
+              "code": "audio-resource",
+              "error": "音乐加载失败：th12_01：cannot decode music resource"
+            }
+          ],
+          "silent": {
+            "frames": 16384,
+            "peak": 0
+          },
+          "recovered": {
+            "frames": 16384,
+            "peak": 0.8167431950569153
+          }
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "native-immediate-effects",
+          "starts": [
+            {
+              "when": 0,
+              "peak": 0.9498538374900818,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.9498538374900818,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.8790941834449768,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.8790941834449768,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.8790941834449768,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.8790941834449768,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.8790941834449768,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.7740707397460938,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.9498538374900818,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.8790941834449768,
+              "channels": 2
+            },
+            {
+              "when": 0,
+              "peak": 0.7740707397460938,
+              "channels": 2
+            }
+          ]
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-seek",
+          "frames": 20480,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-play",
+          "frames": 18432,
+          "peak": 0.9274224638938904
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-pause",
+          "frames": 18432,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-seek",
+          "frames": 18432,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-play",
+          "frames": 20480,
+          "peak": 0.9058505892753601
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-pause",
+          "frames": 20480,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-seek",
+          "frames": 20480,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-play",
+          "frames": 20480,
+          "peak": 0.7780227661132812
+        },
+        {
+          "count": 2,
+          "mode": 1,
+          "action": "spectator-pause",
+          "frames": 20480,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-seek",
+          "frames": 18432,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-play",
+          "frames": 20480,
+          "peak": 0.7783238887786865
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-pause",
+          "frames": 18432,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-seek",
+          "frames": 16384,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-play",
+          "frames": 16384,
+          "peak": 0.971419632434845
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-pause",
+          "frames": 16384,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-seek",
+          "frames": 16384,
+          "peak": 0
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-play",
+          "frames": 16384,
+          "peak": 0.7780997157096863
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "action": "spectator-pause",
+          "frames": 16384,
+          "peak": 0
+        }
+      ],
+      "runtime": {
+        "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+        "program": "e945bcb55994c75871fa3c73d399d34457bf8421c79019f463bc101512aad063",
+        "module": "5c847b8b663a2ba9ee81cba377db5d8789a675c5fbb451b4c0be69db7b5f7bc6",
+        "wasm": "1aad08129c41c863808038f20cb51f13afdddc96ae022490b4154d3742f8a7de"
+      },
+      "dataSha256": "bedf5456e7aa7a1db673dfca410aa97f35fbefefcd08997b3d64fa62e736fcc4",
+      "reports": [
+        {
+          "count": 2,
+          "mode": 1,
+          "delay": 0,
+          "automatic": false,
+          "difficulty": 1,
+          "restores": [
+            0,
+            0
+          ],
+          "slowPresentation": false,
+          "frames": 387,
+          "exactMatches": 171,
+          "hash": -1798673111,
+          "spectatorVerified": true,
+          "roomReturns": [
+            {
+              "round": 0,
+              "launchSerial": 2,
+              "sameCore": true,
+              "scene": "title",
+              "age": 192,
+              "ready": true,
+              "selection": 0
+            },
+            {
+              "round": 1,
+              "launchSerial": 3,
+              "sameCore": true,
+              "scene": "title",
+              "age": 192,
+              "ready": true,
+              "selection": 0
+            },
+            {
+              "round": 2,
+              "launchSerial": 4,
+              "sameCore": true,
+              "scene": "title",
+              "age": 192,
+              "ready": true,
+              "selection": 0
+            }
+          ]
+        },
+        {
+          "count": 2,
+          "mode": 0,
+          "delay": 0,
+          "automatic": false,
+          "difficulty": 1,
+          "restores": [
+            20,
+            145
+          ],
+          "slowPresentation": false,
+          "frames": 1006,
+          "exactMatches": 0,
+          "hash": 764977574,
+          "spectatorVerified": true,
+          "roomReturns": [
+            {
+              "round": 0,
+              "launchSerial": 2,
+              "sameCore": true,
+              "scene": "title",
+              "age": 192,
+              "ready": true,
+              "selection": 0
+            },
+            {
+              "round": 1,
+              "launchSerial": 3,
+              "sameCore": true,
+              "scene": "title",
+              "age": 192,
+              "ready": true,
+              "selection": 0
+            },
+            {
+              "round": 2,
+              "launchSerial": 4,
+              "sameCore": true,
+              "scene": "title",
+              "age": 192,
+              "ready": true,
+              "selection": 0
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "checks": {
+    "sharedTouch": {
+      "passed": 16,
+      "variants": 19
+    },
+    "sfxRouting": {
+      "passed": 19
+    },
+    "portTools": {
+      "passed": 67
+    },
+    "webSfxPcm": {
+      "passed": 3
+    },
+    "th12Touch": {
+      "passed": 26
+    },
+    "th12Sdl": {
+      "normal": 27,
+      "multiplayer": 43
+    },
+    "th15WasiFixtures": {
+      "passed": 6
+    }
+  },
+  "environment": {
+    "os": "Windows",
+    "nativeCompiler": "clang 24 | Visual Studio libraries",
+    "webCompiler": "Emscripten 6.0.6-git",
+    "browser": "Chromium"
+  },
+  "physicalDevices": "未执行全作实体触屏与扬声器验收",
+  "targetedCompilation": [
+    {
+      "game": "th15",
+      "variant": "normal",
+      "source": "web/cpp/sdl/BrowserRuntime.cpp",
+      "status": "passed"
+    },
+    {
+      "game": "th15",
+      "variant": "multiplayer",
+      "source": "web/cpp/sdl/BrowserRuntime.cpp",
+      "status": "passed"
+    }
+  ],
+  "fullBuildAttempts": [
+    {
+      "game": "th15",
+      "variant": "normal",
+      "status": "process-terminated",
+      "exitCode": "0xC000012D",
+      "attempts": 2
+    }
+  ]
+}

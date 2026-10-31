@@ -55,7 +55,16 @@ export class ThtkRunner {
     try {
       return await callback(directory);
     } finally {
-      await rm(directory, { recursive: true, force: true });
+      // Windows can briefly retain the tool's working-directory handle after
+      // process close. Retry cleanup without changing extraction results.
+      try {
+        await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+      } catch (error) {
+        // A retained scratch directory must not replace either a successful
+        // extraction result or the original conversion error.
+        if (process.platform !== "win32" || error.code !== "EBUSY") throw error;
+        process.stderr.write(`thtk: locked temporary directory retained: ${directory}\n`);
+      }
     }
   }
 

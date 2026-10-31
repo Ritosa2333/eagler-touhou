@@ -1,0 +1,50 @@
+{
+  "origin": "https://test.touhou.vip",
+  "publication": {
+    "runtime": "runtime/th12/multiplayer/b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496/",
+    "generation": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+    "verifiedFiles": 64,
+    "profile": "multiplayer",
+    "languages": [
+      "lang_zh-hans",
+      "lang_en"
+    ],
+    "visible": true,
+    "testBuild": true,
+    "relay": "wss://test.touhou.vip/eagler-netplay/"
+  },
+  "rtc": {
+    "players": 3,
+    "pairs": [
+      {
+        "a": 0,
+        "b": 1,
+        "echoes": 10,
+        "local": "relay",
+        "remote": "relay",
+        "address": "39.106.121.158",
+        "relayProtocol": "tcp"
+      },
+      {
+        "a": 0,
+        "b": 2,
+        "echoes": 10,
+        "local": "relay",
+        "remote": "relay",
+        "address": "39.106.121.158",
+        "relayProtocol": "tcp"
+      },
+      {
+        "a": 1,
+        "b": 2,
+        "echoes": 10,
+        "local": "relay",
+        "remote": "relay",
+        "address": "39.106.121.158",
+        "relayProtocol": "tcp"
+      }
+    ],
+    "route": "rtc"
+  },
+  "errors": []
+}

@@ -1,6 +1,6 @@
 # 源码与构建
 
-[适配流程](README.md) · [文档目录](../README.md)
+[适配流程](README.md) | [文档目录](../README.md)
 
 先选作品和模式，再准备工具链。各作的额外依赖和输出目录见其 `docs/DEVELOPMENT.md`。
 
@@ -45,6 +45,12 @@ SDK 版本核对读取带引号或纯文本的版本文件，统一比较版本�
 
 在本作 `ADAPTATION.md` 的“运行验收记录”按对应编号填写操作和结果。通过时链接[验证记录](record-template.md)，并写明本次构建模式。
 
+验收 BUILD-03／04 时，分别定位当前模式的构建命令、实际输出和打包清单。确认入口、加载器与 WASM 的字节数和哈希，再启动该产物。发布包校验的反例包括文件被修改、缺失或额外混入原版资源；`npm --prefix launcher run check` 执行这些合成包检查，正式构建结果附本次工具链和命令。
+
 ## 源码入口
 
 [工作区目录](../../launcher/config/workspace.json) · [构建配方](../../launcher/config/runtime-builds.json) · [构建计划](../../launcher/lib/runtime-source-plan.mjs)
+
+## 新增构建模式
+
+构建计划按注册的作品和模式生成，th12 普通版与多人版分别指向自己的源码目录，开发站清单核对各自运行包的实际路径。公共库的跨作品平台回归同时检出各自 SDL 适配入口，在同一公共头文件版本上核对输入行为。

@@ -1,0 +1,126 @@
+#pragma once
+#include "BossHud.hpp"
+#include "GameTypes.hpp"
+#include "PlayerSystem.hpp"
+#include "Presentation.hpp"
+#include "Snapshot.hpp"
+#include "SoundQueue.hpp"
+#include "Multiplayer.hpp"
+
+namespace th12 {
+
+extern Program program;
+extern std::array<Loadout, 6> loadouts;
+
+
+extern Random random, displayRandom;
+extern anm_logic::Scene animationScene;
+extern u32 nextDetachedAnimation;
+extern std::deque<std::unique_ptr<Enemy>> enemies;
+extern std::deque<Projectile> bullets;
+extern item_system::Manager itemManager;
+extern ufo_system::Manager ufoManager;
+
+extern std::array<message_system::File, 6> messageFiles;
+extern message_system::VM messageVM;
+extern spell_system::State spellState;
+
+
+extern std::array<uint64_t, 7> spellAnimationKeys;
+extern std::array<uint64_t, 8> messageAnimationKeys;
+extern std::vector<uint64_t> messageAnimationOwners;
+struct MessageEvent {
+  int op = 0, frame = 0;
+  std::vector<u8> payload;
+};
+extern std::vector<MessageEvent> messageEvents;
+extern std::array<u32, 1024> unsupported;
+extern std::unordered_map<u32, u32> animationUnsupported;
+extern std::unordered_map<uint64_t, u32> referenceFaults;
+extern std::unordered_map<uint64_t, u32> runtimeFaults;
+void recordRuntimeFault(uint32_t system, uint32_t code);
+extern std::unordered_map<int, Value> globals;
+// EnemyManager+10/+14/+18, exposed as ECL−9949/−9948/−9947.
+extern std::array<u32, 3> phasePlayerCounters;
+extern int frame, difficulty, stageNumber;
+extern int backgroundFrame;
+extern float gameSpeed; // Original global4b2ed0, set by ECL447.
+extern bool backgroundVisible;
+extern stage_logic::Program stageProgram;
+extern stage_logic::State stageState;
+extern eb::World& bulletWorld;
+extern int score;
+extern int eventBits, dialogue, spell, ended;
+extern int oracleFixtureFlags;
+
+
+
+extern std::array<int, 4> replayStageGlobals;
+
+extern u32 nextEnemyId, nextProjectileId, nextItemId, temporaryEnemyOwner;
+extern u32 lastSpawnedEnemyId;
+extern std::function<void(Projectile&)> friendlyBirthHook, friendlyHitHook;
+extern std::function<void(Projectile&, int, bool)> friendlyInterruptHook;
+extern std::function<void(const pw::BombVisual&)> playerBombBindHook;
+extern std::function<void(const pw::ReimuBOrb&)> reimuBOrbBindHook;
+extern std::function<void(int, u32, float, float)> playerBombCustomBindHook;
+
+uint64_t enemyAnimationKey(u32 id, int slot);
+void configureAnimations();
+void bindEnemyAnimation(Enemy&, int slot, int script);
+void detachedAnimation(int bank, int script, const Enemy&, bool head);
+void enemyDeathVisual(const Enemy&, bool audible = true);
+void requestEnemyClear();
+uint64_t bindScreenAnimation(int bank, int script, int layer = 23);
+void startMessageAnimations();
+void endMessageAnimations();
+void messageCommand(const message_system::Command&);
+void startSpellAnimations();
+void endSpellAnimations(const spell_system::Result&);
+void showFullPowerNotice();
+void showExtendNotice();
+bool enemyOutside(Enemy&);
+uint64_t stagePrimitiveKey(int slot);
+uint64_t stageEmbeddedKey(int slot);
+void initializeStageAnimations();
+void tickStage();
+float aim(float x, float y);
+float normalize(float angle);
+float mirrorAngle(float angle);
+void combinePosition(Enemy&);
+float movementCoordinate(double value);
+void circularPosition(Enemy&, bool relative);
+Enemy* primaryBoss();
+float easing(float value, int mode);
+void runContext(Enemy&, Context&);
+void resetPhase(Enemy&, const std::string&);
+void dropItems(Enemy&);
+void drop(Enemy&);
+void synchronizeEnemyHitPresentation(Enemy&);
+void emit(Enemy&, Shooter&, bool audible = true);
+void emitHostileEmission(const eb::Emission&, bool audible = true);
+Enemy* spawn(const std::string&, float x, float y, int life, int points, int drop,
+             bool mirror = false, const Enemy* parent = nullptr, u32 bornFlags = 0, float z = 0);
+// Native camera0.position at4ceaec/4ceaf0, distinct from Stage camera4ced1c.
+// Reset/default is0. Indirect camera0 projection changes are not recovered yet.
+inline std::array<float, 2> backgroundEnemyOrigin{};
+ufo_system::EnemyHooks ufoHooks();
+void applyUfoPlan(const ufo_system::RewardPlan&);
+void tickUfo();
+void tickItems(bool focus);
+void tickEnemies();
+void tickBullets();
+void tickPlayer(int held, int pressed);
+void tickBomb();
+void tick(int held, int pressed);
+void tickGameplay(int held, int pressed);
+void tickMessage(int held, int pressed);
+void tickSpell();
+void configurePlayerAnimations();
+void initializePlayerAnimation();
+void tickPlayerAnimation();
+void playerMissCollision();
+void syncBombAnimations();
+void fire();
+
+} // namespace th12

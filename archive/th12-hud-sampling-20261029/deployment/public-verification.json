@@ -1,0 +1,70 @@
+[
+  {
+    "origin": "https://touhouonline.com/",
+    "valid": true,
+    "releaseId": "sha256-85c603621901d9b99a2596e340ccce72f12df9333aebde7d671ce1c362f6faba",
+    "groups": [
+      {
+        "root": "runtime/th12/",
+        "generation": "5f64412b52a03c42cddf9144a8c8fbed5e74b921a54ef848d3edc6e0b70e7cee",
+        "files": 57
+      },
+      {
+        "root": "runtime/th12/multiplayer/",
+        "generation": "17916a73deea24dd6348b128cd42ee8620a09c0565ca56a3c2058ef459eb18c4",
+        "files": 64
+      }
+    ]
+  },
+  {
+    "origin": "https://jp-site.touhouonline.com/",
+    "valid": true,
+    "releaseId": "sha256-85c603621901d9b99a2596e340ccce72f12df9333aebde7d671ce1c362f6faba",
+    "groups": [
+      {
+        "root": "runtime/th12/",
+        "generation": "5f64412b52a03c42cddf9144a8c8fbed5e74b921a54ef848d3edc6e0b70e7cee",
+        "files": 57
+      },
+      {
+        "root": "runtime/th12/multiplayer/",
+        "generation": "17916a73deea24dd6348b128cd42ee8620a09c0565ca56a3c2058ef459eb18c4",
+        "files": 64
+      }
+    ]
+  },
+  {
+    "origin": "https://cn-site.touhouonline.com:8443/",
+    "valid": true,
+    "releaseId": "sha256-85c603621901d9b99a2596e340ccce72f12df9333aebde7d671ce1c362f6faba",
+    "groups": [
+      {
+        "root": "runtime/th12/",
+        "generation": "5f64412b52a03c42cddf9144a8c8fbed5e74b921a54ef848d3edc6e0b70e7cee",
+        "files": 57
+      },
+      {
+        "root": "runtime/th12/multiplayer/",
+        "generation": "17916a73deea24dd6348b128cd42ee8620a09c0565ca56a3c2058ef459eb18c4",
+        "files": 64
+      }
+    ]
+  },
+  {
+    "origin": "https://touhou.vip/",
+    "valid": true,
+    "releaseId": "sha256-e6ef86b273202f2fd9ab371c28810cedfb81612475546fea9be7fcafb72fcdc3",
+    "groups": [
+      {
+        "root": "runtime/th12/",
+        "generation": "5f64412b52a03c42cddf9144a8c8fbed5e74b921a54ef848d3edc6e0b70e7cee",
+        "files": 57
+      },
+      {
+        "root": "runtime/th12/multiplayer/",
+        "generation": "17916a73deea24dd6348b128cd42ee8620a09c0565ca56a3c2058ef459eb18c4",
+        "files": 64
+      }
+    ]
+  }
+]

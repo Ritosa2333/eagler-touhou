@@ -1,0 +1,685 @@
+{
+  "schema": "th12-native-stage-surface-pipeline/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Actual431630 selects real text.anm texture2/3 surfaces and binds81/82/81. Original stage05 STD12 and Primary27 execute through2564.42f0b0/42f200/42f3b0/42f290/42f410/42f320/42f470 dispatch real Target/Clear/ANM layer selections. Prepared COM GetSurfaceLevel/GetBackBuffer outputs, recorded Device methods,430a70 view-library boundary and45c900 draw-selection boundary; no GPU pixels or whole-game acceptance.",
+  "aliases": {
+    "surface2": "0x20a0400",
+    "surface3": "0x20a0500",
+    "backbuffer": "0x20a0600",
+    "mainScripts": [
+      81,
+      82,
+      81
+    ],
+    "mainSprites": [
+      75,
+      76,
+      75
+    ]
+  },
+  "records": [
+    {
+      "phase": "surface-bootstrap",
+      "kind": "get-surface",
+      "textureEntry": 2,
+      "level": 0,
+      "destination": "0x4cea94",
+      "surface": "0x20a0400"
+    },
+    {
+      "phase": "surface-bootstrap",
+      "kind": "get-surface",
+      "textureEntry": 3,
+      "level": 0,
+      "destination": "0x4cea98",
+      "surface": "0x20a0500"
+    },
+    {
+      "phase": "surface-bootstrap",
+      "kind": "get-backbuffer",
+      "destination": "0x4cea9c",
+      "surface": "0x20a0600"
+    },
+    {
+      "phase": "draw-priority-0",
+      "kind": "clear",
+      "flags": 3,
+      "color": 4294967295,
+      "rectangles": []
+    },
+    {
+      "phase": "draw-priority-0",
+      "kind": "set-target",
+      "slot": 0,
+      "surface": "0x20a0400"
+    },
+    {
+      "phase": "draw-priority-0",
+      "kind": "clear",
+      "flags": 3,
+      "color": 4278190080,
+      "rectangles": [
+        [
+          13,
+          0,
+          435,
+          480
+        ]
+      ]
+    },
+    {
+      "phase": "draw-priority-12",
+      "kind": "set-target",
+      "slot": 0,
+      "surface": "0x20a0500"
+    },
+    {
+      "phase": "draw-priority-12",
+      "kind": "clear",
+      "flags": 3,
+      "color": 4278190080,
+      "rectangles": [
+        [
+          13,
+          0,
+          435,
+          480
+        ]
+      ]
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x20a1000",
+      "id": 0,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 2629735,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x30000bc",
+      "id": 1,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3000570",
+      "id": 2,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3000a24",
+      "id": 3,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3000ed8",
+      "id": 4,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x300138c",
+      "id": 5,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3001840",
+      "id": 6,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3001cf4",
+      "id": 7,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x30021a8",
+      "id": 8,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x300265c",
+      "id": 9,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3002b10",
+      "id": 10,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3002fc4",
+      "id": 11,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3003478",
+      "id": 12,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x300392c",
+      "id": 13,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3003de0",
+      "id": 14,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3004294",
+      "id": 15,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-14",
+      "kind": "draw-vm",
+      "pointer": "0x3004748",
+      "id": 16,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 103292935,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-37",
+      "kind": "set-target",
+      "slot": 0,
+      "surface": "0x20a0400"
+    },
+    {
+      "phase": "draw-priority-37",
+      "kind": "clear",
+      "flags": 3,
+      "color": 4278190080,
+      "rectangles": [
+        [
+          13,
+          0,
+          435,
+          480
+        ]
+      ]
+    },
+    {
+      "phase": "draw-priority-39",
+      "kind": "draw-vm",
+      "pointer": "0x20a2000",
+      "id": 0,
+      "script": 82,
+      "sprite": 76,
+      "layer": 29,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 2629735,
+      "primary": 4294967295
+    },
+    {
+      "phase": "draw-priority-67",
+      "kind": "set-target",
+      "slot": 0,
+      "surface": "0x20a0600"
+    },
+    {
+      "phase": "draw-priority-67",
+      "kind": "clear",
+      "flags": 3,
+      "color": 4278190080,
+      "rectangles": []
+    },
+    {
+      "phase": "draw-priority-68",
+      "kind": "draw-vm",
+      "pointer": "0x20a3000",
+      "id": 0,
+      "script": 81,
+      "sprite": 75,
+      "layer": 28,
+      "position": [
+        32.0,
+        16.0,
+        0.0
+      ],
+      "engine": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        384.0,
+        448.0
+      ],
+      "flags": 2629735,
+      "primary": 4294967295
+    }
+  ],
+  "rngBeforeDraw": {
+    "seed": 4660,
+    "calls": 0
+  },
+  "rngAfterDraw": {
+    "seed": 4660,
+    "calls": 0
+  }
+}

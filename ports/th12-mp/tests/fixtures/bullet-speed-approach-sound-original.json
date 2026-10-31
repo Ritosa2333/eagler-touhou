@@ -1,0 +1,187 @@
+{
+  "schema": "th12-original-speed-approach-sound/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Actual40aa60\u219240b468\u219240abc9\u219240abd1/40abdd\u2192453d90. Prepared Bullet slot and transformSound; actual sound entry/EDX/caller recorded, audio output boundary then returns without playing device sound. No dispatch/angle/delta/timer instruction is intercepted. No difficulty is read by this branch.",
+  "cases": [
+    {
+      "name": "first-record-0-skips",
+      "prefixRecords": 0,
+      "transformSound": 27,
+      "duration": 2,
+      "records": [
+        {
+          "kind": 536870912,
+          "c": 2,
+          "d": 0,
+          "a": 0.06,
+          "b": -999999,
+          "concurrent": false
+        }
+      ],
+      "active": 536870912,
+      "cursor": 1,
+      "soundCalls": []
+    },
+    {
+      "name": "later-record-1-plays",
+      "prefixRecords": 1,
+      "transformSound": 27,
+      "duration": 2,
+      "records": [
+        {
+          "kind": 2147483648,
+          "c": 0,
+          "d": 0,
+          "a": 0,
+          "b": -999999,
+          "concurrent": false
+        },
+        {
+          "kind": 536870912,
+          "c": 2,
+          "d": 0,
+          "a": 0.06,
+          "b": -999999,
+          "concurrent": false
+        }
+      ],
+      "active": 536870912,
+      "cursor": 2,
+      "soundCalls": [
+        {
+          "entry": "0x453d90",
+          "caller": "0x40abf0",
+          "soundId": 27
+        }
+      ]
+    },
+    {
+      "name": "negative-sound-skips",
+      "prefixRecords": 1,
+      "transformSound": -1,
+      "duration": 2,
+      "records": [
+        {
+          "kind": 2147483648,
+          "c": 0,
+          "d": 0,
+          "a": 0,
+          "b": -999999,
+          "concurrent": false
+        },
+        {
+          "kind": 536870912,
+          "c": 2,
+          "d": 0,
+          "a": 0.06,
+          "b": -999999,
+          "concurrent": false
+        }
+      ],
+      "active": 536870912,
+      "cursor": 2,
+      "soundCalls": []
+    },
+    {
+      "name": "sound-zero-plays",
+      "prefixRecords": 1,
+      "transformSound": 0,
+      "duration": 2,
+      "records": [
+        {
+          "kind": 2147483648,
+          "c": 0,
+          "d": 0,
+          "a": 0,
+          "b": -999999,
+          "concurrent": false
+        },
+        {
+          "kind": 536870912,
+          "c": 2,
+          "d": 0,
+          "a": 0.06,
+          "b": -999999,
+          "concurrent": false
+        }
+      ],
+      "active": 536870912,
+      "cursor": 2,
+      "soundCalls": [
+        {
+          "entry": "0x453d90",
+          "caller": "0x40abf0",
+          "soundId": 0
+        }
+      ]
+    },
+    {
+      "name": "duration-zero-still-plays",
+      "prefixRecords": 1,
+      "transformSound": 27,
+      "duration": 0,
+      "records": [
+        {
+          "kind": 2147483648,
+          "c": 0,
+          "d": 0,
+          "a": 0,
+          "b": -999999,
+          "concurrent": false
+        },
+        {
+          "kind": 536870912,
+          "c": 0,
+          "d": 0,
+          "a": 0.06,
+          "b": -999999,
+          "concurrent": false
+        }
+      ],
+      "active": 536870912,
+      "cursor": 2,
+      "soundCalls": [
+        {
+          "entry": "0x453d90",
+          "caller": "0x40abf0",
+          "soundId": 27
+        }
+      ]
+    },
+    {
+      "name": "duration-negative-still-plays",
+      "prefixRecords": 1,
+      "transformSound": 27,
+      "duration": -1,
+      "records": [
+        {
+          "kind": 2147483648,
+          "c": 0,
+          "d": 0,
+          "a": 0,
+          "b": -999999,
+          "concurrent": false
+        },
+        {
+          "kind": 536870912,
+          "c": -1,
+          "d": 0,
+          "a": 0.06,
+          "b": -999999,
+          "concurrent": false
+        }
+      ],
+      "active": 536870912,
+      "cursor": 2,
+      "soundCalls": [
+        {
+          "entry": "0x453d90",
+          "caller": "0x40abf0",
+          "soundId": 27
+        }
+      ]
+    }
+  ]
+}

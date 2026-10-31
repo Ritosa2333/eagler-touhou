@@ -1,0 +1,2788 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "4f1cd45a6d686c6b198ff98b2148c85d7593fa97813525a99953216fb20bdb45",
+  "wholeGameOracle": false,
+  "scope": "Controlled original ECL259/277/275,461970 and original stgenm06 script69/64..67, actual Enemy18 and Primary27. Passive damage/player/audio/resource/allocator host boundaries. No replay or GPU.",
+  "seed": 1234,
+  "character": 2,
+  "shot": 1,
+  "difficulty": 1,
+  "initial": {
+    "score": 0,
+    "power": 400,
+    "pointValue": 2000000,
+    "lives": 2,
+    "lifeFragments": 0,
+    "bombs": 2,
+    "bombFragments": 0,
+    "ufoColors": [
+      0,
+      0,
+      0
+    ],
+    "rank": 0,
+    "x": 0,
+    "y": 51200,
+    "nativeGlobals": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "mainBase64": "U0NQVAEAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAG1haW4AAAAARUNMSAAAAAAAAAAAAAAAAAAAAAACARQAAAA/AQAAAAACAAAAAAAAAAMBGAAAAD8CAAAAAAAAAABFAAAAAAAAABUBGAAAAD8CAAAAAAAAAADbD8k/AAAAAJIBFAAAAD8BAAAAAB0DAAAAAAAAUwAUAAAAPwEAAAAACAAAAAAAAAATARgAAAA/AgAAAAAAAAAAAQAAAAAAAABTABQAAAA/AQAAAAAMAAAAAAAAABMBGAAAAD8CAAAAAAAAAAACAAAAAAAAAFMAFAAAAD8BAAAAAKCGAQA=",
+  "rows": [
+    {
+      "tick": -1,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 0,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 1,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 2,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 3,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 4,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 5,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 6,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 7,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.03200000151991844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.009999999776482582,
+            0.0
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 8,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.06426666676998138
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.043000005185604095,
+            0.06000000238418579
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 9,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.09653334319591522
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.07600000500679016,
+            0.12000000476837158
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 10,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.12880000472068787
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.10899999737739563,
+            0.17999999225139618
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 11,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.1610666811466217
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.1420000195503235,
+            0.24000000953674316
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 12,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.19333334267139435
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.17500001192092896,
+            0.30000001192092896
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 13,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.225600004196167
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.20800000429153442,
+            0.35999998450279236
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 14,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.25786665081977844
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.2410000115633011,
+            0.41999998688697815
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 15,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.29013335704803467
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.27400001883506775,
+            0.48000001907348633
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 16,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.3224000036716461
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.3070000112056732,
+            0.5400000214576721
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 17,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.35466668009757996
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.3400000035762787,
+            0.6000000238418579
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 113,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 18,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.3869333565235138
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.37299999594688416,
+            0.6600000262260437
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 19,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.41920000314712524
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.4059999883174896,
+            0.7199999690055847
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.5,
+            1.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 20,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 1,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.9666666388511658
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.4052266776561737
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.42579999566078186,
+            0.6959999799728394
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.4833333492279053,
+            1.4500000476837158
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 21,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 2,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.9333333373069763
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.3912533223628998
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.4455999732017517,
+            0.671999990940094
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.4666666984558105,
+            1.399999976158142
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 22,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 3,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.8999999761581421
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.37727999687194824
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.46539998054504395,
+            0.6480000019073486
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.4500000476837158,
+            1.350000023841858
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 23,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.8666666746139526
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.3633066713809967
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.4851999878883362,
+            0.6239999532699585
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.4333332777023315,
+            1.2999999523162842
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 24,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 5,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.8333333134651184
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.34933334589004517
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.5049999952316284,
+            0.5999999642372131
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.4166666269302368,
+            1.25
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 25,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 6,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.800000011920929
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.33535999059677124
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.5248000025749207,
+            0.5759999752044678
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.399999976158142,
+            1.2000000476837158
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 26,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 7,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.7666666507720947
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.3213866651058197
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.5446000099182129,
+            0.5519999861717224
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.3833333253860474,
+            1.149999976158142
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 27,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 8,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.7333333492279053
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.30741333961486816
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.5643999576568604,
+            0.527999997138977
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.3666666746139526,
+            1.0999999046325684
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 28,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 9,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.699999988079071
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.29343998432159424
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.5842000246047974,
+            0.5039999485015869
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.350000023841858,
+            1.0499999523162842
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 29,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 10,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.6666666269302368
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.2794666588306427
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.6039999723434448,
+            0.47999995946884155
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.3333333730697632,
+            1.0
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 30,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 11,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.6333333253860474
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.26549333333969116
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.6237999796867371,
+            0.4559999704360962
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.316666603088379,
+            0.949999988079071
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 31,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 12,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.6000000238418579
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.25151997804641724
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.6435999870300293,
+            0.43199998140335083
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.2999999523162842,
+            0.8999999761581421
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 32,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 13,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.5666666626930237
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.2375466674566269
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.6633999943733215,
+            0.40799999237060547
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.2833333015441895,
+            0.8500000238418579
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 33,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 14,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.5333333015441895
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.22357332706451416
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.6832000017166138,
+            0.3839999735355377
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.2666666507720947,
+            0.800000011920929
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 34,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 15,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.5
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.20960000157356262
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.7029999494552612,
+            0.35999998450279236
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.25,
+            0.75
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 35,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 16,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.46666663885116577
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.1956266611814499
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.7228000164031982,
+            0.3359999656677246
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.2333333492279053,
+            0.6999999284744263
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 36,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 17,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.4333333373069763
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.18165333569049835
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.7425999641418457,
+            0.31199997663497925
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.2166666984558105,
+            0.6499999761581421
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 37,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 18,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.3999999761581421
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.16767999529838562
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.7624000310897827,
+            0.2879999577999115
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.2000000476837158,
+            0.5999999642372131
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 38,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 19,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.36666667461395264
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.15370666980743408
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.7821999788284302,
+            0.2639999985694885
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.183333396911621,
+            0.550000011920929
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 39,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 20,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.3333333134651184
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.13973331451416016
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.8019999861717224,
+            0.23999997973442078
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.1666666269302368,
+            0.5
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 40,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 21,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.30000001192092896
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.125760018825531
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.8217999935150146,
+            0.2160000205039978
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.149999976158142,
+            0.4500000476837158
+          ],
+          "primary": 4294901760
+        }
+      ]
+    },
+    {
+      "tick": 41,
+      "rng": [
+        1234,
+        0
+      ],
+      "nodes": [
+        {
+          "script": 69,
+          "clock": 22,
+          "pending": 0,
+          "sprite": 0,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215
+        },
+        {
+          "script": 64,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.0,
+            0.2666666507720947
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 65,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            1.0,
+            0.11178666353225708
+          ],
+          "primary": 4294967295
+        },
+        {
+          "script": 66,
+          "clock": 0,
+          "pending": 0,
+          "sprite": 115,
+          "scale": [
+            0.8415999412536621,
+            0.19199997186660767
+          ],
+          "primary": 4294901760
+        },
+        {
+          "script": 67,
+          "clock": 4,
+          "pending": 0,
+          "sprite": 114,
+          "scale": [
+            1.1333333253860474,
+            0.3999999761581421
+          ],
+          "primary": 4294901760
+        }
+      ]
+    }
+  ]
+}

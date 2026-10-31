@@ -27,7 +27,11 @@ for(const adonisMode of [1,2])for(const predictionReserve of [1,2]){
   if(adonisMode===1){assert.equal(o.netplayInputDelayAuto,true);assert.equal(o.netplayPredictionReserve,predictionReserve);}
   else {assert.equal(o.netplayInputDelayAuto,undefined);assert.equal(o.netplayPredictionReserve,undefined);}
 }
-for(const inputDelay of [0,1,9])assert.equal(buildMultiplayerRuntimeOptions({...base,inputDelay,inputDelayAuto:false},constraints).netplayInputDelay,inputDelay);
+for(const adonisMode of [1,2])for(const inputDelay of [0,1,9]){
+  const options=buildMultiplayerRuntimeOptions({...base,adonisMode,inputDelay,inputDelayAuto:false},constraints);
+  assert.equal(options.netplayInputDelay,adonisMode===1?inputDelay:0,
+    'Manual delay applies to delay mode; rollback always starts with zero input delay');
+}
 for(const mutation of [{inputDelayAuto:'true'},{predictionReserve:0},{predictionReserve:3},{adonisMode:0},
   {url:base.url.replace('th09mp','th07mp')}])assert.throws(()=>buildMultiplayerRuntimeOptions({...base,...mutation},constraints));
 for(const game of ['th08mp','th10mp']){

@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-27",
+  "target": {
+    "game": "th17",
+    "version": "1.00b",
+    "language": "Japanese",
+    "executable": "../[th17] 东方鬼形兽（汉化版+日文版）/th17.exe",
+    "sha256": "85cb011e2e43b316c8fa42a3c402565ecdf2f4379f3bab66d86bcb7beef8255f",
+    "imageBase": 4194304,
+    "completeGame": true
+  },
+  "coreSha256": "ec846c746343b491fa10c77f7f95908a547febfa693439094729466acd5ca480",
+  "passed": true,
+  "checks": 81880,
+  "totalFrames": 20461,
+  "demos": [
+    {
+      "name": "demo1.rpy",
+      "stage": 3,
+      "frames": 6360,
+      "character": 0,
+      "animal": 0,
+      "difficulty": 1
+    },
+    {
+      "name": "demo2.rpy",
+      "stage": 4,
+      "frames": 8409,
+      "character": 1,
+      "animal": 1,
+      "difficulty": 1
+    },
+    {
+      "name": "demo3.rpy",
+      "stage": 2,
+      "frames": 5692,
+      "character": 2,
+      "animal": 2,
+      "difficulty": 1
+    }
+  ],
+  "scope": "Original decompression and input playback; game simulation comparison remains separate."
+}

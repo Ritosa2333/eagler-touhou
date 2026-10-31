@@ -4,6 +4,16 @@
 #include <cmath>
 namespace th11 {
 void Stage::stage_camera_position_interpolated(){
+#ifdef TH11_MULTIPLAYER
+    // THPrac 404663 corrects both clocks after STD opcode 3. MP chapter
+    // restore uses the recorded clock, including transition/loading cadence.
+    if(state.stage_number==6&&!state.script_timer.current&&multiplayer_replay_background_frame!=INT32_MIN){
+        const i32 offset=multiplayer_replay_background_frame;
+        state.script_timer.current=state.position_interpolation.timer.current=offset;
+        state.script_timer.fractional=state.position_interpolation.timer.fractional=float(offset);
+        return;
+    }
+#endif
 #ifdef TH_ENABLE_THPRAC
     // THPrac 404663, immediately after STD opcode 3. The portable battle
     // increments frame at the end of its tick; native priority-10 control

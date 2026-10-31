@@ -1,0 +1,163 @@
+{
+  "schema": "th12-native-bullet-birth-velocity/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "replay": "th12_14.rpy",
+  "replaySha256": "c92747c90ceacc9907440dd03b00afd88ef206bc76abfe1e64b7bc1de24ab516",
+  "provider": "Actual stage1 selected-manager world and 40d640 fsincos executed. Helper arguments and final40aa16/40aa0a birth fields captured without replacing arithmetic.",
+  "partial": true,
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "retailInputs": [
+    {
+      "file": "default.ecl",
+      "sha256": "2220e4dfe5d1f68a8a969b26aeac4ab8f1265533641bff5282ba2a7fe9528600"
+    },
+    {
+      "file": "stage01.ecl",
+      "sha256": "5d0b8c46296ffd84f89379a4d7ee0e510068d8ed0d8672d841327ff38657895d"
+    },
+    {
+      "file": "enemy.anm",
+      "sha256": "65770259699b133283db0e19ddf2fdcb4267b8aaa3b2a40a213983b7240d67b2"
+    },
+    {
+      "file": "stgenm01.anm",
+      "sha256": "ed4095afed0c2057ae6997ef774f5d298683bf1084274338f80f096560733c4e"
+    },
+    {
+      "file": "bullet.anm",
+      "sha256": "e3204da64932a75f5042b49c2666f7989d400ec8b27ff096381f825da69f92a0"
+    },
+    {
+      "file": "pl02.anm",
+      "sha256": "1b5fbea72243dc3a4bbf92e4503b89753fc081a59bc62ffe14006e34261da1c5"
+    },
+    {
+      "file": "ascii.anm",
+      "sha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c"
+    },
+    {
+      "file": "front.anm",
+      "sha256": "605131ea645c3f55b7e12e05fcc98d4f9e89beb1d8b1976d72a5a9b487255670"
+    },
+    {
+      "file": "st01logo.anm",
+      "sha256": "88308d540e74ff4de244982181c8c4b100fa833ca01a8acd515da521a3d46bba"
+    },
+    {
+      "file": "st01_02b.msg",
+      "sha256": "fd1f516b72e5c93f0607c165a32038eff7bcc03d30b4a37057d1e05c10f5df99"
+    },
+    {
+      "file": "pl02b.sht",
+      "sha256": "02e4caed526ca56ce15b5bd172818fec5ea0a2f03337f925018281a599718790"
+    }
+  ],
+  "records": [
+    {
+      "inputTick": 383,
+      "physicalSlot": 27,
+      "rawAngle": 3.2345993518829346,
+      "helperSpeed": 3.5,
+      "storedAngle": -3.048586130142212,
+      "velocity": [
+        -3.484873056411743,
+        -0.3250543475151062
+      ],
+      "typeColor": [
+        7,
+        6
+      ]
+    },
+    {
+      "inputTick": 390,
+      "physicalSlot": 56,
+      "rawAngle": 3.2091970443725586,
+      "helperSpeed": 3.5,
+      "storedAngle": -3.073988437652588,
+      "velocity": [
+        -3.492004871368408,
+        -0.2364351749420166
+      ],
+      "typeColor": [
+        7,
+        6
+      ]
+    },
+    {
+      "inputTick": 391,
+      "physicalSlot": 60,
+      "rawAngle": 3.470996141433716,
+      "helperSpeed": 3.5,
+      "storedAngle": -2.8121893405914307,
+      "velocity": [
+        -3.311824083328247,
+        -1.1321752071380615
+      ],
+      "typeColor": [
+        7,
+        6
+      ]
+    },
+    {
+      "inputTick": 392,
+      "physicalSlot": 64,
+      "rawAngle": 3.732795238494873,
+      "helperSpeed": 3.5,
+      "storedAngle": -2.5503902435302734,
+      "velocity": [
+        -2.9059486389160156,
+        -1.9507596492767334
+      ],
+      "typeColor": [
+        7,
+        6
+      ]
+    },
+    {
+      "inputTick": 393,
+      "physicalSlot": 65,
+      "rawAngle": -3.14766526222229,
+      "helperSpeed": 3.5,
+      "storedAngle": 3.1355202198028564,
+      "velocity": [
+        -3.4999353885650635,
+        0.021253999322652817
+      ],
+      "typeColor": [
+        7,
+        6
+      ]
+    },
+    {
+      "inputTick": 393,
+      "physicalSlot": 68,
+      "rawAngle": 3.994594097137451,
+      "helperSpeed": 3.5,
+      "storedAngle": -2.2885913848876953,
+      "velocity": [
+        -2.3020384311676025,
+        -2.6364026069641113
+      ],
+      "typeColor": [
+        7,
+        6
+      ]
+    },
+    {
+      "inputTick": 400,
+      "physicalSlot": 94,
+      "rawAngle": 4.705084323883057,
+      "helperSpeed": 3.5,
+      "storedAngle": -1.5781011581420898,
+      "velocity": [
+        -0.025566071271896362,
+        -3.499906539916992
+      ],
+      "typeColor": [
+        7,
+        6
+      ]
+    }
+  ]
+}

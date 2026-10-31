@@ -9,8 +9,8 @@
 #include <vector>
 #include <new>
 
-namespace {bool count_allocations=false;size_t allocation_count=0;}
-void* operator new(size_t bytes){if(count_allocations)++allocation_count;if(auto* value=std::malloc(bytes?bytes:1))return value;throw std::bad_alloc();}
+namespace {bool count_allocations=false;size_t allocation_count=0,largest_allocation=0;}
+void* operator new(size_t bytes){if(count_allocations){++allocation_count;largest_allocation=std::max(largest_allocation,bytes);}if(auto* value=std::malloc(bytes?bytes:1))return value;throw std::bad_alloc();}
 void operator delete(void* value)noexcept{std::free(value);}
 void* operator new[](size_t bytes){return ::operator new(bytes);}
 void operator delete[](void* value)noexcept{std::free(value);}
@@ -141,6 +141,33 @@ void capture_index_and_root_reuse(){
         for(unsigned i=0;i<count;++i)require(roots[i].visual.translation.x==float(i+round*100),"root values survive dedup and table reuse");
     }
 }
+void bounded_snapshot_growth(){
+    // Cross a power-of-two boundary with live owning roots, as cancellation
+    // pickups do during a bomb. Growing by one VM must not allocate/copy a
+    // second complete image of thousands of roots before freeing the old one.
+    AnmRegistry registry;std::vector<AnmVm> roots(2049);std::vector<AnmVm*> input;
+    for(unsigned i=0;i<2048;++i){roots[i].visual.translation.x=float(i);input.push_back(&roots[i]);}
+    AnimationState saved;require(saved.capture(registry,input),"warm root snapshot storage");
+    roots.back().visual.translation.x=2048;input.push_back(&roots.back());
+    largest_allocation=0;count_allocations=true;const bool captured=saved.capture(registry,input);count_allocations=false;
+    require(captured,"grow root snapshot storage");
+    std::printf("2048 -> 2049 roots: largest allocation %zu; retained payload %zu\n",largest_allocation,saved.retained_bytes());
+    require(largest_allocation<sizeof(AnmVm)*128,"one new root requested a second full root image array");
+    require(saved.retained_bytes()<roots.size()*(sizeof(AnmVm)+256)+512*1024,"root snapshot retains geometric spare VM payloads");
+    for(auto& vm:roots)vm.visual.translation.x=-1;
+    require(saved.restore(registry),"restore after bounded root growth");
+    for(unsigned i=0;i<roots.size();++i)require(roots[i].visual.translation.x==float(i),"bounded root growth lost VM state");
+
+    AnmRegistry graph;AnimationState nodes;std::vector<u32> handles;
+    for(unsigned i=0;i<2048;++i){auto* vm=graph.allocate();vm->visual.translation.x=float(i);handles.push_back(graph.submit(*vm,2));}
+    require(nodes.capture(graph),"warm registered snapshot storage");auto* added=graph.allocate();added->visual.translation.x=2048;handles.push_back(graph.submit(*added,2));
+    largest_allocation=0;count_allocations=true;const bool grown=nodes.capture(graph);count_allocations=false;
+    require(grown,"grow registered snapshot storage");
+    require(largest_allocation<sizeof(AnmVm)*128,"one new node requested a second full node image array");
+    for(auto handle:handles)graph.find(handle)->visual.translation.x=-1;
+    require(nodes.restore(graph),"restore after bounded node growth");
+    for(unsigned i=0;i<handles.size();++i)require(graph.find(handles[i])->visual.translation.x==float(i),"bounded node growth lost VM state");
+}
 
 }
-int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();std::puts("TH15 animation rollback ownership checks passed");}
+int main(){exact_graph();frozen_root();overflow_and_wrap();unregistered_overlay_owner();repeated_restore_allocations();capture_index_and_root_reuse();bounded_snapshot_growth();std::puts("TH15 animation rollback ownership checks passed");}

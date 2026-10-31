@@ -1,0 +1,3327 @@
+{
+  "schema": "th12-original-player-bomb-position/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Original six-loadout startup, full436ba0. Controlled header, fixed position111/128,423, state timer, live enemy count and active MSG pointer. Actual438370 for deathbomb. No Bomb17, ANM27 or GPU pass; resource/heap/audio host boundaries of selected-manager provider.",
+  "rows": [
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 0,
+        "stateAge": 59,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 0,
+        "stateAge": 60,
+        "playerPosition": [
+          0.8671875,
+          401.3359375
+        ],
+        "fixedPosition": [
+          111,
+          51371
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          400.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 0,
+        "stateAge": 61,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          394.171875
+        ],
+        "fixedPosition": [
+          111,
+          50454
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          398.671875
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 0,
+        "stateAge": 59,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 0,
+        "stateAge": 60,
+        "playerPosition": [
+          0.8671875,
+          401.3359375
+        ],
+        "fixedPosition": [
+          111,
+          51371
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          400.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 0,
+        "stateAge": 61,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          394.171875
+        ],
+        "fixedPosition": [
+          111,
+          50454
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          398.671875
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 0,
+        "stateAge": 59,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 0,
+        "stateAge": 60,
+        "playerPosition": [
+          0.8671875,
+          401.3359375
+        ],
+        "fixedPosition": [
+          111,
+          51371
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.0
+        ],
+        "fixedPosition": [
+          111,
+          50560
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          400.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 0,
+        "stateAge": 61,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          393.671875
+        ],
+        "fixedPosition": [
+          111,
+          50390
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          398.671875
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.0
+        ],
+        "fixedPosition": [
+          111,
+          50560
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.0
+        ],
+        "fixedPosition": [
+          111,
+          50560
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 0,
+        "stateAge": 59,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 0,
+        "stateAge": 60,
+        "playerPosition": [
+          0.8671875,
+          401.3359375
+        ],
+        "fixedPosition": [
+          111,
+          51371
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.0
+        ],
+        "fixedPosition": [
+          111,
+          50560
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          400.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 0,
+        "stateAge": 61,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          393.671875
+        ],
+        "fixedPosition": [
+          111,
+          50390
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          398.671875
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.0
+        ],
+        "fixedPosition": [
+          111,
+          50560
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.0
+        ],
+        "fixedPosition": [
+          111,
+          50560
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 0,
+        "stateAge": 59,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 0,
+        "stateAge": 60,
+        "playerPosition": [
+          0.8671875,
+          401.3359375
+        ],
+        "fixedPosition": [
+          111,
+          51371
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          400.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 0,
+        "stateAge": 61,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          394.171875
+        ],
+        "fixedPosition": [
+          111,
+          50454
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          398.671875
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 0,
+        "stateAge": 59,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 0,
+        "stateAge": 60,
+        "playerPosition": [
+          0.8671875,
+          401.3359375
+        ],
+        "fixedPosition": [
+          111,
+          51371
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            401.3359375
+          ],
+          "fixedPosition": [
+            111,
+            51371
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          400.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 0,
+        "stateAge": 61,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          394.171875
+        ],
+        "fixedPosition": [
+          111,
+          50454
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          398.671875
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            398.671875
+          ],
+          "fixedPosition": [
+            111,
+            51030
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": true,
+        "liveEnemies": 1
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 0,
+        "stateAge": 60,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144,
+        "messageActive": false,
+        "liveEnemies": 0
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 1,
+        "playerPosition": [
+          0.8671875,
+          395.5
+        ],
+        "fixedPosition": [
+          111,
+          50624
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x40d230",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x428750",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            400.0
+          ],
+          "fixedPosition": [
+            111,
+            51200
+          ]
+        }
+      ]
+    }
+  ]
+}

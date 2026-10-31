@@ -1,0 +1,515 @@
+{
+  "schema": "th12-sdl-render-performance/1",
+  "baseline": "58c8f6c6e52a4e0c21d4833732c71c20accfd6c8",
+  "method": "Same Windows host; MSVC 19.51; /MD /O2 /fp:strict /std:c++20; five alternating before/after runs; median CPU component times; exact output digests compared",
+  "scope": "Scene::order: 12000 objects x 1000 frames; background: seven retail stages x 240 captures; sampler: 512 tracks x 600 frames; component CPU timing is not a whole-game FPS multiplier",
+  "summary": {
+    "order": {
+      "before": {
+        "orderMs": 1538.888,
+        "allocations": 0
+      },
+      "after": {
+        "orderMs": 520.103,
+        "allocations": 0
+      },
+      "outputHash": "a35410dcbd6b1ea4"
+    },
+    "background": {
+      "before": {
+        "captureMs": 22.303,
+        "allocations": 5280
+      },
+      "after": {
+        "captureMs": 18.172,
+        "allocations": 0
+      },
+      "outputHash": "fffe625f4b211fa4"
+    },
+    "animation": {
+      "before": {
+        "steadyMs": 21.654,
+        "chainedMs": 58.738,
+        "chainedAllocations": 614400
+      },
+      "after": {
+        "steadyMs": 21.592,
+        "chainedMs": 25.949,
+        "chainedAllocations": 0
+      },
+      "outputHash": "c88ae600d48bb94c"
+    }
+  },
+  "retailAnimation": {
+    "before": {
+      "files": 33,
+      "scripts": 1393,
+      "outputHash": "1bcb50759f709017",
+      "steadyFrames": 600,
+      "steadyTracks": 512,
+      "steadyMs": 22.726,
+      "steadyAllocations": 0,
+      "lateBindings": 60,
+      "lateAge": 10000,
+      "lateMs": 0.021,
+      "chainedMs": 60.956,
+      "chainedAllocations": 614400
+    },
+    "after": {
+      "files": 33,
+      "scripts": 1393,
+      "outputHash": "1bcb50759f709017",
+      "steadyFrames": 600,
+      "steadyTracks": 512,
+      "steadyMs": 24.401,
+      "steadyAllocations": 0,
+      "lateBindings": 60,
+      "lateAge": 10000,
+      "lateMs": 0.017,
+      "chainedMs": 24.893,
+      "chainedAllocations": 0
+    }
+  },
+  "runs": [
+    {
+      "round": 0,
+      "mode": "before",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 1546.699,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 0,
+      "mode": "before",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 26.335,
+        "allocations": 5280
+      }
+    },
+    {
+      "round": 0,
+      "mode": "before",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 21.654,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.014,
+        "chainedMs": 62.005,
+        "chainedAllocations": 614400
+      }
+    },
+    {
+      "round": 0,
+      "mode": "after",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 520.103,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 0,
+      "mode": "after",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 18.172,
+        "allocations": 0
+      }
+    },
+    {
+      "round": 0,
+      "mode": "after",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 24.901,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.016,
+        "chainedMs": 28.477,
+        "chainedAllocations": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": "after",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 529.237,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 1,
+      "mode": "after",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 17.746,
+        "allocations": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": "after",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 22.732,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 25.115,
+        "chainedAllocations": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": "before",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 1541.146,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 1,
+      "mode": "before",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 22.144,
+        "allocations": 5280
+      }
+    },
+    {
+      "round": 1,
+      "mode": "before",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 27.424,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.014,
+        "chainedMs": 54.31,
+        "chainedAllocations": 614400
+      }
+    },
+    {
+      "round": 2,
+      "mode": "before",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 1538.888,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 2,
+      "mode": "before",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 22.303,
+        "allocations": 5280
+      }
+    },
+    {
+      "round": 2,
+      "mode": "before",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 20.779,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 58.738,
+        "chainedAllocations": 614400
+      }
+    },
+    {
+      "round": 2,
+      "mode": "after",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 509.435,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 2,
+      "mode": "after",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 18.236,
+        "allocations": 0
+      }
+    },
+    {
+      "round": 2,
+      "mode": "after",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 21.592,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 28.098,
+        "chainedAllocations": 0
+      }
+    },
+    {
+      "round": 3,
+      "mode": "after",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 518.102,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 3,
+      "mode": "after",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 17.681,
+        "allocations": 0
+      }
+    },
+    {
+      "round": 3,
+      "mode": "after",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 21.446,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.017,
+        "chainedMs": 25.029,
+        "chainedAllocations": 0
+      }
+    },
+    {
+      "round": 3,
+      "mode": "before",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 1529.257,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 3,
+      "mode": "before",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 19.751,
+        "allocations": 5280
+      }
+    },
+    {
+      "round": 3,
+      "mode": "before",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 20.618,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 59.201,
+        "chainedAllocations": 614400
+      }
+    },
+    {
+      "round": 4,
+      "mode": "before",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 1535.872,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 4,
+      "mode": "before",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 22.825,
+        "allocations": 5280
+      }
+    },
+    {
+      "round": 4,
+      "mode": "before",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 23.91,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.017,
+        "chainedMs": 55.641,
+        "chainedAllocations": 614400
+      }
+    },
+    {
+      "round": 4,
+      "mode": "after",
+      "name": "order",
+      "result": {
+        "poses": 12000,
+        "frames": 1000,
+        "orderMs": 524.037,
+        "allocations": 0,
+        "outputHash": "a35410dcbd6b1ea4"
+      }
+    },
+    {
+      "round": 4,
+      "mode": "after",
+      "name": "background",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 20.438,
+        "allocations": 0
+      }
+    },
+    {
+      "round": 4,
+      "mode": "after",
+      "name": "animation",
+      "result": {
+        "files": 0,
+        "scripts": 0,
+        "outputHash": "c88ae600d48bb94c",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 20.861,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015,
+        "chainedMs": 25.949,
+        "chainedAllocations": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "schema": "th12-original-std-view-inputs/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Original430a70 prefix constructs actual LookAt eye/target/up; execution stops at D3DX call46c6da.",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "matrixHelperExecuted": false,
+  "fixtures": [
+    "mapped Camera with synthetic float inputs; no ANMManager so no GPU flush"
+  ],
+  "records": [
+    {
+      "name": "none",
+      "position": [
+        0.0,
+        0.0,
+        -400.0
+      ],
+      "direction": [
+        20.0,
+        300.0,
+        200.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "eye": [
+        0.0,
+        0.0,
+        -400.0
+      ],
+      "target": [
+        20.0,
+        300.0,
+        -200.0
+      ],
+      "viewUp": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "name": "shake",
+      "position": [
+        0.0,
+        3000.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.05000000074505806,
+        1.0,
+        0.0
+      ],
+      "offset": [
+        5.0,
+        0.0,
+        -5.0
+      ],
+      "eye": [
+        5.0,
+        3000.0,
+        -705.0
+      ],
+      "target": [
+        0.0,
+        3300.0,
+        -370.0
+      ],
+      "viewUp": [
+        0.05000000074505806,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "name": "translation",
+      "position": [
+        10.0,
+        20.0,
+        30.0
+      ],
+      "direction": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "offset": [
+        -5.0,
+        2.0,
+        10.0
+      ],
+      "eye": [
+        5.0,
+        22.0,
+        40.0
+      ],
+      "target": [
+        11.0,
+        22.0,
+        33.0
+      ],
+      "viewUp": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "name": "fractional",
+      "position": [
+        0.10000000149011612,
+        4000.300048828125,
+        -700.0999755859375
+      ],
+      "direction": [
+        20.100000381469727,
+        300.20001220703125,
+        330.29998779296875
+      ],
+      "up": [
+        0.05000000074505806,
+        1.0,
+        0.019999999552965164
+      ],
+      "offset": [
+        3.5,
+        -0.20000000298023224,
+        0.10000000149011612
+      ],
+      "eye": [
+        3.5999999046325684,
+        4000.10009765625,
+        -700.0
+      ],
+      "target": [
+        20.200000762939453,
+        4300.5,
+        -369.79998779296875
+      ],
+      "viewUp": [
+        0.05000000074505806,
+        1.0,
+        0.019999999552965164
+      ]
+    }
+  ]
+}

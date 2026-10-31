@@ -1,0 +1,1055 @@
+{
+  "schema": "th12-original-anm-external-scale/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Complete454d10/454b80/455630, without instruction hooks. Six synthetic duration boundaries and actual bullet.anm script42 IRQ2; GPU-free ANMFile tables only. ExternalScale stores precede native update like Laser20.",
+  "records": [
+    {
+      "name": "duration-2",
+      "duration": -2,
+      "script": 0,
+      "interrupt": 0,
+      "resourceSha256": "25f794921431571c8a39c1caff3956f90ddfe56c97926631d277dc0d900b5142",
+      "syntheticBankHex": "070000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000048000000320010000000000000000040000040403c00180000000000feffffff000000000000803f0000803f3f00080000000000ffff080000000000",
+      "frames": [
+        {
+          "tick": 0,
+          "externalScale": null,
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "externalScale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "externalScale": [
+            0.25,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "externalScale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "externalScale": [
+            0.375,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "externalScale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "externalScale": [
+            0.5,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duration-1",
+      "duration": -1,
+      "script": 0,
+      "interrupt": 0,
+      "resourceSha256": "ea8ab0c0b17e9f8c041e2672aec72be31edbd2a7dc3ee364e21e49edf69bb8bb",
+      "syntheticBankHex": "070000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000048000000320010000000000000000040000040403c00180000000000ffffffff000000000000803f0000803f3f00080000000000ffff080000000000",
+      "frames": [
+        {
+          "tick": 0,
+          "externalScale": null,
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "externalScale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "externalScale": [
+            0.25,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "externalScale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "externalScale": [
+            0.375,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "externalScale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "externalScale": [
+            0.5,
+            34.28571319580078
+          ],
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duration0",
+      "duration": 0,
+      "script": 0,
+      "interrupt": 0,
+      "resourceSha256": "7f2f73051ddc62bf98a3acf30f816cf5fa5b8926e42ebb343c448163318e652f",
+      "syntheticBankHex": "070000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000048000000320010000000000000000040000040403c0018000000000000000000000000000000803f0000803f3f00080000000000ffff080000000000",
+      "frames": [
+        {
+          "tick": 0,
+          "externalScale": null,
+          "scale": [
+            2.0,
+            3.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "externalScale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "scale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "externalScale": [
+            0.25,
+            34.28571319580078
+          ],
+          "scale": [
+            0.25,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "externalScale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "scale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "externalScale": [
+            0.375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "externalScale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "externalScale": [
+            0.5,
+            34.28571319580078
+          ],
+          "scale": [
+            0.5,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duration1",
+      "duration": 1,
+      "script": 0,
+      "interrupt": 0,
+      "resourceSha256": "eb499806a4d9758b2d21830237201ad10c862130e5ceb06cf5179af50984a011",
+      "syntheticBankHex": "070000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000048000000320010000000000000000040000040403c0018000000000001000000000000000000803f0000803f3f00080000000000ffff080000000000",
+      "frames": [
+        {
+          "tick": 0,
+          "externalScale": null,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "externalScale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "scale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "externalScale": [
+            0.25,
+            34.28571319580078
+          ],
+          "scale": [
+            0.25,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "externalScale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "scale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "externalScale": [
+            0.375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "externalScale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "externalScale": [
+            0.5,
+            34.28571319580078
+          ],
+          "scale": [
+            0.5,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duration2",
+      "duration": 2,
+      "script": 0,
+      "interrupt": 0,
+      "resourceSha256": "4ae67834a63d0914020c5822626bf002d37e15e3a351a3789ca4273b6f1f0dd2",
+      "syntheticBankHex": "070000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000048000000320010000000000000000040000040403c0018000000000002000000000000000000803f0000803f3f00080000000000ffff080000000000",
+      "frames": [
+        {
+          "tick": 0,
+          "externalScale": null,
+          "scale": [
+            1.5,
+            2.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "externalScale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "externalScale": [
+            0.25,
+            34.28571319580078
+          ],
+          "scale": [
+            0.25,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "externalScale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "scale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "externalScale": [
+            0.375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "externalScale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "externalScale": [
+            0.5,
+            34.28571319580078
+          ],
+          "scale": [
+            0.5,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duration4",
+      "duration": 4,
+      "script": 0,
+      "interrupt": 0,
+      "resourceSha256": "283bfb802d299e3ad8f0c01c98528137917671ff6944c9f59e0c1397ad9c752f",
+      "syntheticBankHex": "070000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000048000000320010000000000000000040000040403c0018000000000004000000000000000000803f0000803f3f00080000000000ffff080000000000",
+      "frames": [
+        {
+          "tick": 0,
+          "externalScale": null,
+          "scale": [
+            1.75,
+            2.5
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "externalScale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "scale": [
+            1.5,
+            2.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "externalScale": [
+            0.25,
+            34.28571319580078
+          ],
+          "scale": [
+            1.25,
+            1.5
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "externalScale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "externalScale": [
+            0.375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "externalScale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "externalScale": [
+            0.5,
+            34.28571319580078
+          ],
+          "scale": [
+            0.5,
+            34.28571319580078
+          ],
+          "flags": 8206,
+          "clock": 0,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "retail-bullet42-irq2",
+      "duration": null,
+      "script": 42,
+      "interrupt": 2,
+      "resourceSha256": "e3204da64932a75f5042b49c2666f7989d400ec8b27ff096381f825da69f92a0",
+      "syntheticBankHex": null,
+      "frames": [
+        {
+          "tick": 0,
+          "externalScale": null,
+          "scale": [
+            2.4140625,
+            2.4140625
+          ],
+          "flags": 545259535,
+          "clock": 1,
+          "primary": 536870911,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 1,
+          "externalScale": null,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "flags": 545267727,
+          "clock": 48,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 2,
+          "externalScale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "scale": [
+            0.1875,
+            34.28571319580078
+          ],
+          "flags": 545267727,
+          "clock": 48,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 3,
+          "externalScale": [
+            0.25,
+            34.28571319580078
+          ],
+          "scale": [
+            0.25,
+            34.28571319580078
+          ],
+          "flags": 545267727,
+          "clock": 48,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 4,
+          "externalScale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "scale": [
+            0.3125,
+            34.28571319580078
+          ],
+          "flags": 545267727,
+          "clock": 48,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 5,
+          "externalScale": [
+            0.375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.375,
+            34.28571319580078
+          ],
+          "flags": 545267727,
+          "clock": 48,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 6,
+          "externalScale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "scale": [
+            0.4375,
+            34.28571319580078
+          ],
+          "flags": 545267727,
+          "clock": 48,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        },
+        {
+          "tick": 7,
+          "externalScale": [
+            0.5,
+            34.28571319580078
+          ],
+          "scale": [
+            0.5,
+            34.28571319580078
+          ],
+          "flags": 545267727,
+          "clock": 48,
+          "primary": 4294967295,
+          "layer": 0,
+          "ended": false,
+          "rng": [
+            42,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

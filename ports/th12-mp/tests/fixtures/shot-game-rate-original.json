@@ -1,0 +1,2854 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "941f8f141a7b402ddb79853e12e3a639903748bc90c6a9db15e05985ed6b941e",
+  "wholeGameOracle": false,
+  "scope": "Actual439a40/4067e0/464a20/464a80. Controlled normal Player state and held input.4399d0 emission recorded as output boundary, no bullets/RNG substituted for a score oracle. Not replay/GPU.",
+  "rows": [
+    {
+      "rate": 1,
+      "release": false,
+      "frames": [
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        }
+      ]
+    },
+    {
+      "rate": 1,
+      "release": true,
+      "frames": [
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": false,
+          "clock": 6,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": false,
+          "clock": 7,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": false,
+          "clock": 8,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": false,
+          "clock": 9,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": false,
+          "clock": 10,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": false,
+          "clock": 11,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": false,
+          "clock": 12,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": false,
+          "clock": 13,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": false,
+          "clock": 14,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        }
+      ]
+    },
+    {
+      "rate": 0.5,
+      "release": false,
+      "frames": [
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        }
+      ]
+    },
+    {
+      "rate": 0.5,
+      "release": true,
+      "frames": [
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": false,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": false,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": false,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": false,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        }
+      ]
+    },
+    {
+      "rate": 0.25,
+      "release": false,
+      "frames": [
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": true,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": true,
+          "clock": 12,
+          "emissions": []
+        }
+      ]
+    },
+    {
+      "rate": 0.25,
+      "release": true,
+      "frames": [
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": [
+            0
+          ]
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 0,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": [
+            1
+          ]
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 1,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": [
+            2
+          ]
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 2,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": [
+            3
+          ]
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 3,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": [
+            4
+          ]
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 4,
+          "emissions": []
+        },
+        {
+          "held": true,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 5,
+          "emissions": [
+            5
+          ]
+        },
+        {
+          "held": false,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 5,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 6,
+          "emissions": [
+            6
+          ]
+        },
+        {
+          "held": false,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 6,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 7,
+          "emissions": [
+            7
+          ]
+        },
+        {
+          "held": false,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 7,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 8,
+          "emissions": [
+            8
+          ]
+        },
+        {
+          "held": false,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 8,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 9,
+          "emissions": [
+            9
+          ]
+        },
+        {
+          "held": false,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 9,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 10,
+          "emissions": [
+            10
+          ]
+        },
+        {
+          "held": false,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 10,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 11,
+          "emissions": [
+            11
+          ]
+        },
+        {
+          "held": false,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 11,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 12,
+          "emissions": [
+            12
+          ]
+        },
+        {
+          "held": false,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 12,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 13,
+          "emissions": [
+            13
+          ]
+        },
+        {
+          "held": false,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 13,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": 14,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": [
+            14
+          ]
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        },
+        {
+          "held": false,
+          "clock": -1,
+          "emissions": []
+        }
+      ]
+    }
+  ]
+}

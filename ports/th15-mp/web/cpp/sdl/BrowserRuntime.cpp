@@ -285,19 +285,14 @@ touhou::input::TouchState touch_state(){
  ){value.context=3;return value;}
  auto& stage=*app->scene();
  auto* pilot=stage.battle.player.get();
- int character=app->progress.character;auto* bomb=stage.battle.bomb.get();auto* session=&stage.battle.session;
 #if TH15_MULTIPLAYER
  if(stage.battle.mp_enabled){
   const auto& local=*stage.battle.pilots[network.Setup().local_player];
-  pilot=local.player;character=local.character;bomb=local.bomb;session=&local.session;
+  pilot=local.player;
  }
 #endif
  auto& player=*pilot;auto& motion=player.motion;
  value.context=stage.messages.active()?2:1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
- // Shields cancel this pilot's transient hit state, not a death/respawn.
- // Read the local seat, not seat zero's character/session/bomb.
- if(character==3&&player.life.state==4&&session->bomb_state==1&&bomb&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000)))
-  value.retain_motion=static_cast<BombReisen*>(bomb)->charges>0;
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
  value.min_x=-184;value.max_x=184;value.min_y=32;value.max_y=432;return value;
 }
@@ -312,14 +307,17 @@ u32 sample_controller(u32& buttons){
 }
 bool sample_and_tick(){
 #if TH15_MULTIPLAYER
- // Only confirmed menus may queue physical samples while remote input waits.
- // Enabling this for combat accumulates a permanent extra capture lead after
- // a network stall, on top of the user's explicit D-frame input delay.
+ // Every confirmed-only phase needs a bounded physical-input pipeline. Stage
+ // handoffs are not snapshot-ready either: without this, each transition tick
+ // waits for the preceding tick's remote input before sending the next sample.
+ // Snapshot-ready combat drains the queued tail before sampling fresh inputs.
  network.SetCapturePhase(app&&mp_started&&!mp_local_results&&!app->exiting&&
-   (app->title||app->ending||mp_boundary.waiting()||(app->scene()&&app->scene()->messages.active())||(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)),SDL_GetTicksNS()/1000);
+   (mp_boundary.waiting()||!AppFrameState::ready(*app)),SDL_GetTicksNS()/1000);
  // Touch pulses and held/pressed edges are sampled exactly once per frame.
  // While a captured frame waits, only pump the confirmed-input runtime.
  if(mp_started&&!mp_local_results&&!network.NeedsCapture())return mp_tick(0,false);
+ if(app){auto* scene=app->scene();app->graphics.presentation.immediate_owner=mp_started&&network.RollbackEnabled()&&!network.ReadOnly()&&scene&&scene->battle.mp_enabled?
+    uintptr_t(&scene->battle.pilots[network.Setup().local_player]->player->visuals.root):0;}
 #endif
  if(!app)return false;SDL_Event event;while(SDL_PollEvent(&event)){
   ThpracUi::process_event(event,float(render_scale));

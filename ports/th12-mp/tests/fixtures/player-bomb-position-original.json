@@ -1,0 +1,1437 @@
+{
+  "schema": "th12-original-player-bomb-position/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Original six-loadout startup, full436ba0. Synthetic header, live enemy count1, position111/128,423 and controlled state timer. Actual438370 for deathbomb. No Bomb17, ANM27 or GPU pass; resource/heap/audio host boundaries of selected-manager provider.",
+  "rows": [
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 1,
+        "stateAge": 120,
+        "held": 82,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          -2.3125,
+          419.8203125
+        ],
+        "fixedPosition": [
+          -296,
+          53737
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 1,
+        "stateAge": 120,
+        "held": 26,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          421.0
+        ],
+        "fixedPosition": [
+          111,
+          53888
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 0,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 0,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 1,
+        "stateAge": 120,
+        "held": 82,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          -2.3125,
+          419.8203125
+        ],
+        "fixedPosition": [
+          -296,
+          53737
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 1,
+        "stateAge": 120,
+        "held": 26,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          421.0
+        ],
+        "fixedPosition": [
+          111,
+          53888
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 1,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 0,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 1,
+        "stateAge": 120,
+        "held": 82,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          -2.6640625,
+          419.46875
+        ],
+        "fixedPosition": [
+          -341,
+          53692
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 1,
+        "stateAge": 120,
+        "held": 26,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          421.0
+        ],
+        "fixedPosition": [
+          111,
+          53888
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 2,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 0,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 1,
+        "stateAge": 120,
+        "held": 82,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          -2.6640625,
+          419.46875
+        ],
+        "fixedPosition": [
+          -341,
+          53692
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 1,
+        "stateAge": 120,
+        "held": 26,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          421.0
+        ],
+        "fixedPosition": [
+          111,
+          53888
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 3,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 0,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.0
+        ],
+        "fixedPosition": [
+          111,
+          53504
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 1,
+        "stateAge": 120,
+        "held": 82,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          -2.3125,
+          419.8203125
+        ],
+        "fixedPosition": [
+          -296,
+          53737
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 1,
+        "stateAge": 120,
+        "held": 26,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          421.0
+        ],
+        "fixedPosition": [
+          111,
+          53888
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 4,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 0,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 1,
+        "stateAge": 120,
+        "held": 82,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          -2.3125,
+          419.8203125
+        ],
+        "fixedPosition": [
+          -296,
+          53737
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 1,
+        "stateAge": 120,
+        "held": 26,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          421.0
+        ],
+        "fixedPosition": [
+          111,
+          53888
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        },
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 4,
+        "stateAge": 7,
+        "held": 18,
+        "stock": 2,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 61,
+        "playerPosition": [
+          0.8671875,
+          423.0
+        ],
+        "fixedPosition": [
+          111,
+          54144
+        ],
+        "bombActive": 1,
+        "bombPosition": [
+          0.8671875,
+          423.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x406bf0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    },
+    {
+      "initial": {
+        "loadout": 5,
+        "state": 1,
+        "stateAge": 120,
+        "held": 18,
+        "stock": 0,
+        "fixedX": 111,
+        "fixedY": 54144
+      },
+      "after": {
+        "state": 1,
+        "stateAge": 121,
+        "playerPosition": [
+          0.8671875,
+          418.5
+        ],
+        "fixedPosition": [
+          111,
+          53568
+        ],
+        "bombActive": 0,
+        "bombPosition": [
+          0.0,
+          0.0
+        ]
+      },
+      "trace": [
+        {
+          "entry": "0x4364f0",
+          "position": [
+            0.8671875,
+            423.0
+          ],
+          "fixedPosition": [
+            111,
+            54144
+          ]
+        }
+      ]
+    }
+  ]
+}

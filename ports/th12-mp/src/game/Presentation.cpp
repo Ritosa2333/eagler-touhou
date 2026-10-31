@@ -1,0 +1,174 @@
+// TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
+#include "../bullet_visuals.hpp"
+#include "BulletPool.hpp"
+#include "GameState.hpp"
+#include "StageBackgroundEffect.hpp"
+#include "UfoEffects.hpp"
+
+namespace th12 {
+std::vector<Sprite> drawState;
+std::array<float, 41> hud;
+std::vector<AnimationPose> animationDrawState;
+std::vector<AnimationDrawSchedule> animationScheduleState;
+std::vector<std::array<u32,2>> multiplayerVisualOwners;
+namespace {
+// 45dfa0 installs wrappers that invoke4611d0 for each registered layer.
+constexpr int LayerPriority[32] = {4,  6,  8,  9,  11, 13, 16, 17, 18, 19, 20, 23, 25, 26, 28, 30,
+                                   34, 36, 38, 41, 42, 50, 51, 52, 63, 64, -1, -1, 14, 39, 66, 65};
+int drawPriority(const anm_logic::Node& node) {
+  if (node.membership == anm_logic::Membership::Embedded) {
+    if (node.owner == 0xfffe0200u)
+      return 59; //41d322 installs41f8e0/41efb0 after the full-window frame draw.
+    if (node.owner>=0xffff0000u && node.owner<=0xffff0200u && (node.owner&0xffu)==0)
+      return 24; // 435be3 registers437670;437600 draws Player+14 directly.
+    if ((node.owner & 0xffff0000u) == 0xfffe0000u)
+      return 44; // 41f450 draws stock VMs inside HUD's41f040 callback.
+    if ((node.owner & 0xf0000000u) == 0x10000000u)
+      return 31; // 4095f9 registers40a220, irrespective of Bullet VM.layer.
+    if ((node.owner & 0xf0000000u) == 0x20000000u || (node.owner & 0xf0000000u) == 0x30000000u)
+      return 27; // 4259d4 registers4273c0; bodies/offscreen arrows.
+  }
+  if (node.vm.state().flags & 0x10000000u)
+    return -1; // 4611d0 skips registered VMs owned by a custom renderer.
+  if (node.membership == anm_logic::Membership::Secondary)
+    return node.vm.state().layer == 31 ? 65 : 66; // 4610d0 rebuilds only30/31.
+  const int layer = node.vm.state().layer;
+  return layer >= 0 && layer < 32 ? LayerPriority[layer] : -1;
+}
+} // namespace
+AnimationTransform resolveAnimationTransform(const anm_logic::Node& node, int depth) {
+  const auto& s = node.vm.state();
+  AnimationTransform result{s.x + s.engineX + s.offsetX,
+                            s.y + s.engineY + s.offsetY,
+                            s.z + s.engineZ + s.offsetZ,
+                            s.sx,
+                            s.sy,
+                            s.rotation};
+  if (node.parent && depth < 16) {
+    auto found = animationScene.nodes().find(node.parent);
+    if (found != animationScene.nodes().end()) {
+      const auto parent = resolveAnimationTransform(*found->second, depth + 1);
+      result.x += parent.x;
+      result.y += parent.y;
+      result.z += parent.z;
+      const auto& immediate = found->second->vm.state();
+      result.sx *= immediate.sx;
+      result.sy *= immediate.sy;
+      if (s.mode == 1 || s.mode == 3 || s.mode >= 14)
+        result.rotation += immediate.rotation;
+    }
+  }
+  return result;
+}
+void captureAnimationDraw() {
+  animationDrawState.clear();
+  animationScheduleState.clear();
+  multiplayerVisualOwners.clear();
+  static std::vector<const anm_logic::Node*> nodes;
+  nodes.clear();
+  nodes.reserve(animationScene.nodes().size());
+  // 460fe0 rebuilds layer lists in registered chain order, including head
+  // insertion. A node id sort would silently discard that ordering.
+  for (const auto membership : {anm_logic::Membership::Primary, anm_logic::Membership::Secondary,
+                                anm_logic::Membership::Embedded}) {
+    animationScene.appendChain(membership, nodes);
+  }
+  u32 order = 0;
+  struct HostileDraw {
+    u32 owner;
+    const Projectile* bullet;
+    u32 order;
+  };
+  static std::vector<HostileDraw> hostileDraw;
+  hostileDraw.clear();hostileDraw.reserve(bullets.size());
+  // 40a020 appends surviving physical slots in ascending order to six
+  // appearance groups;40a220 draws group0..5, not allocation/id order.
+  for (const auto& bullet : bullets)
+    if (!bullet.friendly && bullet.active && bullet.physicalSlot >= 0 && bullet.enemy.type >= 0 &&
+        bullet.enemy.type < int(bullet_visuals::appearances.size())) {
+      hostileDraw.push_back({0x10000000u + bullet.entityId,
+          &bullet,
+          u32(bullet_visuals::appearances[bullet.enemy.type].group * bullet_pool::Slots::capacity +
+              bullet.physicalSlot)});
+    }
+  std::stable_sort(hostileDraw.begin(),hostileDraw.end(),[](const auto& a,const auto& b){return a.owner<b.owner;});
+  for (const auto* pointer : nodes) {
+    const auto& node = *pointer;
+    if(multiplayer::active && ((node.owner>>16)==0xffffu ||
+       (node.owner>>28)==5u || (node.owner>>28)==10u ||
+       ((node.owner>>28)==1u && node.vm.state().spriteBank>=4 && node.vm.state().spriteBank<=6)))
+      multiplayerVisualOwners.push_back({node.owner,node.seat});
+    multiplayer::Scope owner(node.seat);
+    const bool leafGeometry =
+        node.customGeometry &&
+        std::any_of(pilot().playerBomb.leaves.begin(), pilot().playerBomb.leaves.end(), [&](const pw::Leaf& leaf) {
+          return leaf.active && node.key == 0x600000000ull + leaf.id;
+        });
+    if (node.customGeometry && !ufoEffects.owns(node.id) && !leafGeometry &&
+        !stageBackgroundEffect.owns(node.key))
+      continue;
+    const u32 id = node.id;
+    const auto& s = node.vm.state();
+    const int priority = drawPriority(node);
+    u32 drawOrder = order++;
+    const HostileDraw* hostile = nullptr;
+    if (priority == 31)
+      if (const auto at = std::upper_bound(hostileDraw.begin(),hostileDraw.end(),node.owner,
+          [](u32 owner,const auto& entry){return owner<entry.owner;}); at != hostileDraw.begin()&&std::prev(at)->owner==node.owner) {
+        hostile = &*std::prev(at);
+        drawOrder = hostile->order;
+      }
+    // 460c90 selects camera2 at layer4; the battle callbacks and HUD44
+    // inherit it. Layer21 switches to full1; secondary31 uses camera0.
+    const u32 clip = node.membership == anm_logic::Membership::Secondary && s.layer == 31 ? 1u
+                     : priority < 43 || priority == 44                                    ? 2u
+                                                                                          : 0u;
+    animationScheduleState.push_back({id, priority, drawOrder, clip});
+    if (node.customGeometry)
+      continue;
+    if (s.mode == 9 || s.mode == 13)
+      continue;
+    auto transform = resolveAnimationTransform(node);
+    if (hostile && (s.flags & 0x20000000u)) {
+        // 40a1a2 computes the embedded VM heading at draw time. Opcode82
+        // supplies this flag even when no ETEX rotation command was present.
+        transform.rotation =
+            anm_logic::normalized(float(double(hostile->bullet->enemy.angle) + 1.5707963705062866));
+    }
+    animationDrawState.push_back({transform.x + node.viewportX,
+                                  transform.y + node.viewportY,
+                                  transform.z,
+                                  s.rx,
+                                  s.ry,
+                                  transform.rotation,
+                                  transform.sx,
+                                  transform.sy,
+                                  s.u,
+                                  s.v,
+                                  s.uvScaleX,
+                                  s.uvScaleY,
+                                  s.geometryRadius,
+                                  s.geometryWidth,
+                                  s.primary,
+                                  s.secondary,
+                                  s.spriteBank,
+                                  s.sprite,
+                                  s.layer,
+                                  s.mode,
+                                  s.anchorX,
+                                  s.anchorY,
+                                  s.blend,
+                                  s.geometryCount,
+                                  s.flags,
+                                  s.flags2,
+                                  id,
+                                  node.owner,
+                                  1});
+    auto& output = animationDrawState.back();
+    output.reserved[0] = asbits(s.spriteWidth);
+    output.reserved[1] = asbits(s.spriteHeight);
+    output.reserved[2] = 1;
+  }
+}
+
+} // namespace th12

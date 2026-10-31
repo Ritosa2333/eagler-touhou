@@ -1,4 +1,10 @@
 // Public aggregates only. Never persist client IDs, room codes or error text.
+export function publicIdentity(config) {
+  const id=config.publicId??config.id,label=config.publicLabel??config.label;
+  if(!/^[a-z0-9-]{1,40}$/.test(id)||typeof label!=='string'||!label||label.length>80)
+    throw Error('Invalid public status identity');
+  return {id,label};
+}
 export const metricLimits = Object.freeze({rttMs:60000,jitterMs:60000,connectMs:300000,
   configuredDelay:120,actualDelay:120,rollback:1e9,resimulated:1e9,frameGap:100000,
   loadMs:600000});

@@ -103,6 +103,28 @@ function fixture(config = {}) {
 }
 
 {
+    const f = fixture(); await f.advance(50);
+    assert(f.routes[0].snapshot().supported);
+    assert(!f.routes[0].snapshot().standbyReady, 'a negotiated peer need not have a ready standby');
+    const dc = f.paths[0].controlDc, send = dc.send.bind(dc);
+    let refused = false;
+    dc.send = data => {
+        if (typeof data !== 'string' && !refused) { refused = true; throw Error('temporary SCTP send failure'); }
+        send(data);
+    };
+    assert(f.routes[0].send(new Uint8Array([41]), true), 'the reliable queue accepts the refused packet');
+    assert.equal(f.routes[0].send(new Uint8Array([42]), true), false, 'later controls wait behind the unsent sequence');
+    await f.advance(1000);
+    assert.deepEqual(f.deliveries[1], [[41]], 'timer retry delivers over the same healthy primary path');
+    assert(f.routes[0].send(new Uint8Array([42]), true));
+    await f.advance(12000);
+    assert.deepEqual(f.deliveries[1], [[41], [42]], 'the receiver has no permanent reliable-sequence gap');
+    assert.equal(f.routes[0].snapshot().pendingControl, 0);
+    assert.equal(f.routes[0].snapshot().selected, 'primary');
+    assert.equal(f.errors.length, 0);
+    f.close();
+}
+{
     const f = fixture(); await f.advance(6000); f.hold();
     for (const pc of f.pcs.values()) for (const dc of pc.channels) if (dc.label.endsWith('control')) {
         const send = dc.send.bind(dc);

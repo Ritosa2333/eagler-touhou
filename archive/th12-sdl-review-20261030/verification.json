@@ -1,0 +1,530 @@
+{
+  "schema": "eagler-touhou/th12-sdl-review/1",
+  "date": "2026-10-30",
+  "pullRequest": 163,
+  "source": {
+    "reviewedHead": "2010c70ffd72be121af88c656ea0f4d6d91aedd6",
+    "integratedMain": "73c192244290e721c81d7294f6564f1cda004d64",
+    "repairs": "96919d3fe003a177e738ef96d1bde02cd40193d5",
+    "documentation": "b0adee3faa9477c1f21465f20cd81c233fadab57"
+  },
+  "environment": {
+    "platform": "Windows x64",
+    "webToolchain": "Emscripten 6.0.6-git / clang 24",
+    "ciToolchain": "Emscripten 6.0.9",
+    "nativeCompiler": "MSVC",
+    "fixtureCompiler": "clang++ with MSVC libraries",
+    "browser": "Chromium 145.0.7632.6",
+    "privateInputs": "Locally supplied original th12 assets and DATA, OGG and shared fonts"
+  },
+  "runtime": {
+    "normal": {
+      "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+      "program": "1550eb52cbf0ecba07a922d932de8edbe7ecf7a86ccc1aa768f618f9d7b65f8b",
+      "module": "cb5273dc0b42ef5e35a41cbca7fd3c12e4234c7619ba3d5c27777b484632321f",
+      "wasm": "9058027952af7e580212d563fd19d73439f8dff934ed05f3d9d2306d6817213a"
+    },
+    "multiplayer": {
+      "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+      "program": "8f158e4b61d129b6f610a8c96e116f004aa3d03b517b6ab33319e84cc26f1525",
+      "module": "9ce565422be6e9953c0d5d140d47f02757be607961d63d58aa93d1ffcd6fdda8",
+      "wasm": "30363cffa0e543466fb488dbf6fd1112a7eb08a42398e540b52f355b9255a092"
+    },
+    "dataSha256": "bedf5456e7aa7a1db673dfca410aa97f35fbefefcd08997b3d64fa62e736fcc4"
+  },
+  "unit": {
+    "normal": {
+      "tests": 25,
+      "passed": 25,
+      "failed": 0
+    },
+    "multiplayer": {
+      "tests": 41,
+      "passed": 41,
+      "failed": 0
+    },
+    "nativeMultiplayer": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0
+    },
+    "launcherCore": {
+      "passed": true
+    },
+    "desktopNormal": {
+      "compiled": true,
+      "linked": true,
+      "executed": false
+    },
+    "keyboardMapping": {
+      "required": 2,
+      "executed": 2,
+      "passed": 2,
+      "negativeControl": "passed"
+    }
+  },
+  "normalBrowser": {
+    "passed": true,
+    "deliveryVerified": true,
+    "modes": [
+      {
+        "mode": "stream",
+        "audioChecks": [
+          {
+            "action": "title",
+            "frames": 14336,
+            "peak": 0.9991068243980408
+          },
+          {
+            "action": "replay-pause",
+            "frames": 14336,
+            "peak": 0
+          },
+          {
+            "action": "replay-seek",
+            "frames": 14336,
+            "peak": 0
+          }
+        ]
+      },
+      {
+        "mode": "full",
+        "audioChecks": [
+          {
+            "action": "title",
+            "frames": 16384,
+            "peak": 1.0005208253860474
+          },
+          {
+            "action": "replay-pause",
+            "frames": 14336,
+            "peak": 0
+          },
+          {
+            "action": "replay-seek",
+            "frames": 16384,
+            "peak": 0
+          }
+        ]
+      }
+    ],
+    "commonDriver": {
+      "passed": true,
+      "coverage": {
+        "required": 1,
+        "executed": 1,
+        "passed": 1,
+        "missing": [],
+        "unexpected": [],
+        "duplicates": [],
+        "complete": true
+      },
+      "checks": [
+        {
+          "id": "runtime-input-identity",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "runtime-ready",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "configure-launch-first-frame",
+          "status": "passed",
+          "complete": true
+        },
+        {
+          "id": "reject-unknown-command",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "save-list-and-flush",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "physical-keyboard-path",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "native-gamepad-sampling",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "pause-and-restart",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "resize-and-continued-rendering",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "runtime-errors",
+          "status": "passed",
+          "complete": false
+        },
+        {
+          "id": "reload-storage-and-epoch",
+          "status": "passed",
+          "complete": false
+        }
+      ]
+    }
+  },
+  "multiplayerBrowser": {
+    "passed": true,
+    "inputLatencyMs": 25,
+    "music": "ogg",
+    "deliveryVerified": true,
+    "audioChecks": {
+      "spectator-seek": {
+        "samples": 9,
+        "minPeak": 0,
+        "maxPeak": 0
+      },
+      "spectator-play": {
+        "samples": 9,
+        "minPeak": 0.8032057881355286,
+        "maxPeak": 0.9716333746910095
+      },
+      "spectator-pause": {
+        "samples": 9,
+        "minPeak": 0,
+        "maxPeak": 0
+      }
+    },
+    "repeatedFinalProgram": [
+      {
+        "players": 2,
+        "mode": "delay",
+        "inputDelay": 0,
+        "automatic": false,
+        "restores": [
+          0,
+          0
+        ],
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title"
+          },
+          {
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title"
+          },
+          {
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title"
+          }
+        ]
+      },
+      {
+        "players": 2,
+        "mode": "delay",
+        "inputDelay": 0,
+        "automatic": false,
+        "restores": [
+          0,
+          0
+        ],
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title"
+          },
+          {
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title"
+          },
+          {
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title"
+          }
+        ]
+      },
+      {
+        "players": 2,
+        "mode": "rollback",
+        "inputDelay": 0,
+        "automatic": false,
+        "restores": [
+          18,
+          17
+        ],
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title"
+          },
+          {
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title"
+          },
+          {
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title"
+          }
+        ]
+      }
+    ],
+    "priorFiveScenarios": {
+      "wasmSha256": "30363cffa0e543466fb488dbf6fd1112a7eb08a42398e540b52f355b9255a092",
+      "cases": [
+        {
+          "players": 2,
+          "mode": "delay",
+          "inputDelay": 0,
+          "automatic": false,
+          "restores": [
+            0,
+            0
+          ],
+          "spectatorVerified": true,
+          "roomReturns": [
+            {
+              "launchSerial": 2,
+              "sameCore": true,
+              "scene": "title"
+            },
+            {
+              "launchSerial": 3,
+              "sameCore": true,
+              "scene": "title"
+            },
+            {
+              "launchSerial": 4,
+              "sameCore": true,
+              "scene": "title"
+            }
+          ]
+        },
+        {
+          "players": 2,
+          "mode": "rollback",
+          "inputDelay": 0,
+          "automatic": false,
+          "restores": [
+            20,
+            15
+          ],
+          "spectatorVerified": true,
+          "roomReturns": [
+            {
+              "launchSerial": 2,
+              "sameCore": true,
+              "scene": "title"
+            },
+            {
+              "launchSerial": 3,
+              "sameCore": true,
+              "scene": "title"
+            },
+            {
+              "launchSerial": 4,
+              "sameCore": true,
+              "scene": "title"
+            }
+          ]
+        },
+        {
+          "players": 3,
+          "mode": "rollback",
+          "inputDelay": 0,
+          "automatic": false,
+          "restores": [
+            19,
+            18,
+            30
+          ],
+          "spectatorVerified": false
+        },
+        {
+          "players": 3,
+          "mode": "delay",
+          "inputDelay": 3,
+          "automatic": false,
+          "restores": [
+            0,
+            0,
+            0
+          ],
+          "spectatorVerified": false
+        },
+        {
+          "players": 2,
+          "mode": "delay",
+          "inputDelay": 0,
+          "automatic": true,
+          "restores": [
+            0,
+            0
+          ],
+          "spectatorVerified": false
+        }
+      ]
+    }
+  },
+  "sharedMultiplayer": {
+    "rtcNormal": {
+      "passed": true,
+      "players": 2,
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "guest-pause-confirm-and-restart",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "restart-quick",
+        "restart-menu",
+        "late-join-after-recovery",
+        "normal-end-buffer-drain",
+        "screenshots"
+      ],
+      "restartGeneration": 3,
+      "pausedEnd": {
+        "position": 604,
+        "received": 4284,
+        "paused": true,
+        "ended": true
+      },
+      "nativeReplaySave": {
+        "bytes": 102992,
+        "valid": true
+      },
+      "peerExitLocalResult": {
+        "failed": false,
+        "scene": "name"
+      }
+    },
+    "relayChallenge": {
+      "passed": true,
+      "players": 3,
+      "websocketFallbackExplicit": true,
+      "steps": [
+        "runtime-identity",
+        "players-start",
+        "join-during-play",
+        "pause-seek-resume",
+        "upload-backpressure-recovery",
+        "sustained-playback",
+        "spectator-connection-recovery",
+        "late-join-after-recovery",
+        "screenshots",
+        "stream-failure-isolation"
+      ]
+    },
+    "coverage": [
+      {
+        "required": 1,
+        "executed": 1,
+        "passed": 1,
+        "missing": [],
+        "unexpected": [],
+        "duplicates": [],
+        "complete": true
+      },
+      {
+        "required": 1,
+        "executed": 1,
+        "passed": 1,
+        "missing": [],
+        "unexpected": [],
+        "duplicates": [],
+        "complete": true
+      }
+    ]
+  },
+  "sourceChecks": {
+    "passed": 19,
+    "total": 19,
+    "targets": [
+      "th06/multiplayer",
+      "th06/normal",
+      "th07/multiplayer",
+      "th07/normal",
+      "th075/multiplayer",
+      "th075/normal",
+      "th08/multiplayer",
+      "th08/normal",
+      "th09/multiplayer",
+      "th09/normal",
+      "th10/multiplayer",
+      "th10/normal",
+      "th11/multiplayer",
+      "th11/normal",
+      "th12/multiplayer",
+      "th12/normal",
+      "th15/multiplayer",
+      "th15/normal",
+      "th20/normal"
+    ],
+    "th12": [
+      {
+        "variant": "multiplayer",
+        "sourceDigest": "763718158abe47dea80ad220a82b1c3f40ce04869417425a6267d408523bebd8",
+        "translationUnits": 95
+      },
+      {
+        "variant": "normal",
+        "sourceDigest": "fe5d6ec4a20d9f3a046f28a55bc1a463302f883813b903d1ff7ce9d1e15fa221",
+        "translationUnits": 81
+      }
+    ],
+    "statusCurrent": true
+  },
+  "scope": {
+    "originalExecutableOracle": false,
+    "allStagePlaythrough": false,
+    "physicalTouchscreen": false,
+    "physicalGamepad": false,
+    "deviceSpeakerOutput": false,
+    "desktopExecution": false
+  },
+  "history": {
+    "writeback": "8621034654f7548afa85580e60bd8edafead5205",
+    "normalHead": "5e9ff1041339c37320f376d7b0c832efaa0e81e8",
+    "multiplayerHead": "ca8a59efc439165f1f0090a2d7ebd09b82d47983",
+    "normalIsAncestor": true,
+    "normalPending": 0,
+    "multiplayerAhead": 43,
+    "contentUnchanged": true,
+    "originalAncestorsPreserved": true,
+    "standardExport": {
+      "sourceAnchors": 13,
+      "subtrees": {
+        "ports/th12": "9d66747c77da1728ac98a2cb5c749006744bcc36",
+        "ports/th12-mp": "ca8a59efc439165f1f0090a2d7ebd09b82d47983",
+        "ports/th15-mp": "2ec7488734e343690e2580543f37520f98a0fe3a"
+      },
+      "checkedSourceHead": "8621034654f7548afa85580e60bd8edafead5205",
+      "currentSourceMatches": true
+    }
+  },
+  "documentation": {
+    "checked": 361,
+    "sourceDirectories": 16,
+    "passed": true
+  }
+}

@@ -16,7 +16,7 @@ const ownSources = ['tools/ports/check.mjs','tools/ports/inputs.mjs','tools/port
   'launcher/config/runtime-builds.json','launcher/config/workspace.json','launcher/src/contracts/runtime-protocol.mts',
   'common/contracts/product-catalog.mjs'].map(name => resolve(root, name));
 
-function commandCheck(id, files, checks, level, output, games) {
+function commandCheck(id, files, checks, level, output, games, complete=true) {
   const logs = [];
   let code = 0;
   for (const file of files) {
@@ -27,7 +27,7 @@ function commandCheck(id, files, checks, level, output, games) {
     if (result.error || result.status !== 0) code = 1;
   }
   writeFileSync(resolve(output, `${id}.log`), logs.join('\n'), 'utf8');
-  return {id, checks, level, files, complete:true, status:code ? 'failed' : 'passed',
+  return {id, checks, level, files, complete, status:code ? 'failed' : 'passed',
     ...(code ? {error:`Executable checks failed; see ${id}.log`} : {})};
 }
 
@@ -35,7 +35,7 @@ function evidenceSources(target) {
   const names = execFileSync('git', ['ls-files','--cached','--others','--exclude-standard','-z','--',
     target.directory,'launcher/app','launcher/src','launcher/lib','launcher/tests','launcher/package',
     'launcher/package.json','launcher/package-lock.json',
-    'launcher/config','common/include','common/contracts','common/testkit','tools/ports','tools/build','tools/browser'],
+    'launcher/config','common/include','common/contracts','common/testkit','tools/ports','tools/build','tools/browser','tools/testing'],
     {cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:16*1024*1024}).split('\0').filter(Boolean);
   return [...ownSources, ...names.filter(name=>/\.(?:mjs|mts|ts|tsx|jsx|cpp|c|h|hpp|inc|html|json)$/.test(name))
     .map(name=>resolve(root,name)).filter(existsSync)];
@@ -97,7 +97,7 @@ async function main(args) {
   const games = [...new Set(selected.map(target=>target.game))];
   const shared = sharedPlan.gates.filter(gate=>selected.some(target=>
     (!gate.games || gate.games.includes(target.game)) && (!gate.variants || gate.variants.includes(target.variant))))
-    .map(gate => ({...gate, ...commandCheck(gate.id, gate.files, gate.checks, gate.level, options.output, games)}));
+    .map(gate => ({...gate, ...commandCheck(gate.id, gate.files, gate.checks, gate.level, options.output, games, gate.complete!==false)}));
   const records = [];
   for (const target of selected) {
     const label = `${target.game}-${target.variant}`;

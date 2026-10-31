@@ -1,0 +1,415 @@
+{
+  "schema": "eagler-touhou/th12-sdl-invariants/1",
+  "date": "2026-10-30",
+  "pullRequest": 163,
+  "source": {
+    "integratedMain": "8b310587cd3c2184a7922cd8c432021cfb87bd5d",
+    "invariantsCommit": "608b1a1da",
+    "repairCommit": "b340ea9a35183afcf10b360f92a4197ea392e2fc"
+  },
+  "environment": {
+    "platform": "Windows x64",
+    "browser": "Chromium 145.0.7632.6",
+    "webCompiler": "Emscripten 6.0.6-git / clang 24",
+    "fixtureCompiler": "clang++ with MSVC libraries",
+    "privateInputs": "Original th12 assets, OGG and shared fonts supplied locally"
+  },
+  "unit": {
+    "normal": {
+      "passed": 27,
+      "failed": 0
+    },
+    "multiplayer": {
+      "passed": 43,
+      "failed": 0
+    }
+  },
+  "sourceChecks": {
+    "targets": 19,
+    "passed": 19,
+    "scope": "source identity and shared module gates"
+  },
+  "dataSha256": "bedf5456e7aa7a1db673dfca410aa97f35fbefefcd08997b3d64fa62e736fcc4",
+  "normal": {
+    "runtime": {
+      "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+      "program": "14fb1f7ccb4d3bd23dce6e28e00b502803fcb3cbbb8572f88c1a96f004f92e7e",
+      "module": "377dbd2765fc1c3d3104e85be1d6089d5f29d7fa579e8a6a4b74c4ee303efff8",
+      "wasm": "8263343575dfd0aed63c8b2ace0b6b689f0b87c068f20b88a67de3836b59509d"
+    },
+    "driverSha256": "98de6f360c1924accf404c6727537e7d80758646c1f0492eb259f2bd6681abf1",
+    "stream": [
+      {
+        "action": "corrupt-resource-recovery",
+        "failures": [
+          {
+            "protocol": "eagler-touhou/1",
+            "game": "th12",
+            "epoch": 1,
+            "event": "error",
+            "code": "audio-resource",
+            "error": "音乐加载失败：th12_01：cannot decode music resource"
+          }
+        ],
+        "silent": {
+          "frames": 14336,
+          "peak": 0
+        },
+        "recovered": {
+          "frames": 14336,
+          "peak": 0.8114882111549377
+        }
+      },
+      {
+        "action": "title",
+        "frames": 16384,
+        "peak": 0.7437598705291748
+      },
+      {
+        "action": "replay-pause",
+        "frames": 14336,
+        "peak": 0
+      },
+      {
+        "action": "replay-seek",
+        "frames": 14336,
+        "peak": 0
+      }
+    ],
+    "full": [
+      {
+        "action": "corrupt-resource-recovery",
+        "failures": [
+          {
+            "protocol": "eagler-touhou/1",
+            "game": "th12",
+            "epoch": 1,
+            "event": "error",
+            "code": "audio-resource",
+            "error": "音乐加载失败：th12_01：cannot decode music resource"
+          }
+        ],
+        "silent": {
+          "frames": 14336,
+          "peak": 0
+        },
+        "recovered": {
+          "frames": 16384,
+          "peak": 0.8237236142158508
+        }
+      },
+      {
+        "action": "title",
+        "frames": 16384,
+        "peak": 0.7435908317565918
+      },
+      {
+        "action": "replay-pause",
+        "frames": 14336,
+        "peak": 0
+      },
+      {
+        "action": "replay-seek",
+        "frames": 14336,
+        "peak": 0
+      }
+    ],
+    "pagehide": {
+      "keyboardAndTouchReleased": true,
+      "samePointerMoveIgnoredAfterReturn": true,
+      "freshKeyboardMoveAccepted": true,
+      "event": "synthetic pagehide/pageshow with persisted=true through the production entry"
+    }
+  },
+  "multiplayer": {
+    "runtime": {
+      "entry": "f8aaa69efa9f094ab640d9df3b6b1281707ce9f79c2ce21301bb8b475c1a33c2",
+      "program": "e945bcb55994c75871fa3c73d399d34457bf8421c79019f463bc101512aad063",
+      "module": "68e33be4c7e8ee5cf930aa1d13b068b68e07cb4b9cf7f2b52353295fd0502a02",
+      "wasm": "076244f738704615dfd68866433f1d71e0ec630f7f2842ba78a8bee984020e3c"
+    },
+    "driverSha256": "90a4581cfd7c42352c6f644eabf0a672e38fca61e45c6d9ef72dca86aee242d3",
+    "audio": [
+      {
+        "action": "corrupt-resource-recovery",
+        "failures": [
+          {
+            "protocol": "eagler-touhou/1",
+            "game": "th12",
+            "epoch": 1,
+            "event": "error",
+            "code": "audio-resource",
+            "error": "音乐加载失败：th12_01：cannot decode music resource"
+          },
+          {
+            "protocol": "eagler-touhou/1",
+            "game": "th12",
+            "epoch": 2,
+            "event": "error",
+            "code": "audio-resource",
+            "error": "音乐加载失败：th12_01：cannot decode music resource"
+          },
+          {
+            "protocol": "eagler-touhou/1",
+            "game": "th12",
+            "epoch": 3,
+            "event": "error",
+            "code": "audio-resource",
+            "error": "音乐加载失败：th12_01：cannot decode music resource"
+          }
+        ],
+        "silent": {
+          "frames": 14336,
+          "peak": 0
+        },
+        "recovered": {
+          "frames": 14336,
+          "peak": 0.8236939907073975
+        }
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-seek",
+        "frames": 18432,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-play",
+        "frames": 18432,
+        "peak": 0.926429271697998
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-pause",
+        "frames": 16384,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-seek",
+        "frames": 14336,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-play",
+        "frames": 16384,
+        "peak": 0.9718411564826965
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-pause",
+        "frames": 14336,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-seek",
+        "frames": 18432,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-play",
+        "frames": 18432,
+        "peak": 0.7783238887786865
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "action": "spectator-pause",
+        "frames": 16384,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-seek",
+        "frames": 18432,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-play",
+        "frames": 20480,
+        "peak": 0.9013471007347107
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-pause",
+        "frames": 16384,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-seek",
+        "frames": 18432,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-play",
+        "frames": 18432,
+        "peak": 0.7779857516288757
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-pause",
+        "frames": 18432,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-seek",
+        "frames": 20480,
+        "peak": 0
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-play",
+        "frames": 18432,
+        "peak": 0.7783688306808472
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "action": "spectator-pause",
+        "frames": 18432,
+        "peak": 0
+      }
+    ],
+    "reports": [
+      {
+        "count": 2,
+        "mode": 1,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          0,
+          0
+        ],
+        "slowPresentation": false,
+        "frames": 378,
+        "exactMatches": 196,
+        "hash": -705576962,
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "round": 0,
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title",
+            "age": 192,
+            "ready": true,
+            "selection": 0
+          },
+          {
+            "round": 1,
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title",
+            "age": 196,
+            "ready": true,
+            "selection": 0
+          },
+          {
+            "round": 2,
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title",
+            "age": 192,
+            "ready": true,
+            "selection": 0
+          }
+        ]
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "difficulty": 1,
+        "restores": [
+          20,
+          25
+        ],
+        "slowPresentation": false,
+        "frames": 439,
+        "exactMatches": 0,
+        "hash": 582428309,
+        "spectatorVerified": true,
+        "roomReturns": [
+          {
+            "round": 0,
+            "launchSerial": 2,
+            "sameCore": true,
+            "scene": "title",
+            "age": 196,
+            "ready": true,
+            "selection": 0
+          },
+          {
+            "round": 1,
+            "launchSerial": 3,
+            "sameCore": true,
+            "scene": "title",
+            "age": 192,
+            "ready": true,
+            "selection": 0
+          },
+          {
+            "round": 2,
+            "launchSerial": 4,
+            "sameCore": true,
+            "scene": "title",
+            "age": 192,
+            "ready": true,
+            "selection": 0
+          }
+        ]
+      }
+    ],
+    "pagehide": {
+      "heldMoveReleasedAtAllPeers": true,
+      "peersContinueWithoutLocalPause": true
+    }
+  },
+  "newInvariantAcceptance": {
+    "AUDIO-07": "pending per-title acceptance",
+    "TOUCH-09": "expanded scope pending per-title acceptance"
+  },
+  "history": {
+    "sourceAnchors": 13,
+    "subtrees": {
+      "ports/th12": "5eaa2f162f5911b954b19a277cfb0daf256e8c33",
+      "ports/th12-mp": "01016b9f892d156f25ba5b47da8e82bb71d6e2b0",
+      "ports/th15-mp": "c8070f97953e1c6ce41314580c26b795141608ea"
+    },
+    "head": "a304d443ec0d1fece26610a3f65c0a2e025b55ec",
+    "base": "8b310587cd3c2184a7922cd8c432021cfb87bd5d",
+    "normalProjection": "7103607dd7ff163d460387e2cb33e962da477e7d",
+    "multiplayerProjection": "01016b9f892d156f25ba5b47da8e82bb71d6e2b0",
+    "normalPending": 0,
+    "multiplayerAhead": 47,
+    "writeback": "b58daac14bb91df873ee4649ca26d5e4a94c4d70",
+    "reviewedTreePreserved": true
+  },
+  "launcherTypecheck": "passed"
+}

@@ -1,0 +1,26 @@
+{
+  "game": "th12",
+  "protocol": "eagler-touhou/1",
+  "adapter": "cpp-sdl3-gles",
+  "version": "0.5.0-sdl",
+  "product": "th12mp",
+  "variant": "multiplayer",
+  "profile": "multiplayer",
+  "completeAdapter": true,
+  "execution": {
+    "sha256": "c443400fff60845cc226ce76ec7cc7ec75b88420107c1352cfc270ec6e977d34"
+  },
+  "features": {
+    "multiplayer": true,
+    "thprac": false,
+    "languages": true,
+    "focusHitbox": false
+  },
+  "music": [
+    "ogg-stream",
+    "ogg-full",
+    "none"
+  ],
+  "touchReplay": true,
+  "sourceSha256": "6b065a5bb9743fbf7becbdcd3d77ad2cb4e8723115fb465af70c3b17451f5709"
+}

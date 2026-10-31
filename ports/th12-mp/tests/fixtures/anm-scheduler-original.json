@@ -1,0 +1,756 @@
+{
+  "schema": "th12-original-anm-scheduler-samples/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Actual4615a0/4621c0/461250 plus460fe0/4610d0 and child461720/461840; no logic hooks",
+  "wholeGameDeterminism": false,
+  "gpuExecuted": false,
+  "records": [
+    {
+      "childOpcode": 88,
+      "existingSuccessor": false,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ],
+          "secondary": []
+        }
+      ]
+    },
+    {
+      "childOpcode": 88,
+      "existingSuccessor": true,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            1661,
+            8
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.5476113557815552
+            }
+          ],
+          "secondary": []
+        }
+      ]
+    },
+    {
+      "childOpcode": 90,
+      "existingSuccessor": false,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            }
+          ]
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ]
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "childOpcode": 90,
+      "existingSuccessor": true,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            }
+          ]
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ]
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "childOpcode": 91,
+      "existingSuccessor": false,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            },
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            },
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            },
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": []
+        }
+      ]
+    },
+    {
+      "childOpcode": 91,
+      "existingSuccessor": true,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            },
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            },
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            },
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": []
+        }
+      ]
+    },
+    {
+      "childOpcode": 92,
+      "existingSuccessor": false,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            }
+          ]
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ]
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "childOpcode": 92,
+      "existingSuccessor": true,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            }
+          ]
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ]
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            }
+          ],
+          "secondary": [
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "childOpcode": 95,
+      "existingSuccessor": false,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            7814,
+            2
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.11989638954401016
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ],
+          "secondary": []
+        }
+      ]
+    },
+    {
+      "childOpcode": 95,
+      "existingSuccessor": true,
+      "frames": [
+        {
+          "frame": 0,
+          "gameSeedCounter": [
+            55718,
+            4
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.138240247964859
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 1,
+          "gameSeedCounter": [
+            26547,
+            6
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.9150978326797485
+            }
+          ],
+          "secondary": []
+        },
+        {
+          "frame": 2,
+          "gameSeedCounter": [
+            1661,
+            8
+          ],
+          "primary": [
+            {
+              "script": 0,
+              "clock": 1,
+              "float0": 0.0
+            },
+            {
+              "script": 2,
+              "clock": 0,
+              "float0": 0.0
+            },
+            {
+              "script": 1,
+              "clock": 0,
+              "float0": 0.5476113557815552
+            }
+          ],
+          "secondary": []
+        }
+      ]
+    }
+  ]
+}

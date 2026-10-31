@@ -4,6 +4,7 @@
 #include "../game/AnmOverlay.hpp"
 #include <bitset>
 #include <algorithm>
+#include <deque>
 #include <limits>
 #include <unordered_set>
 
@@ -46,10 +47,13 @@ struct AnimationState::Data {
     };
     // Retain high-water storage across captures; inactive pool payloads are not
     // cloned. Their allocation presence and exact free-list order are retained.
-    std::vector<Image> nodes;
+    // A cancellation burst can add thousands of roots to all 13 frame slots.
+    // Keep VM payloads in stable blocks: growing a contiguous vector otherwise
+    // doubles every full image and holds its old/new allocations simultaneously.
+    std::deque<Image> nodes;
     size_t count=0;
     struct RootImage {AnmVm vm;AnmVm* original=nullptr;};
-    std::vector<RootImage> roots;
+    std::deque<RootImage> roots;
     size_t root_count=0;
     std::bitset<0x1fff> present;
     std::vector<u32> free_slots,pending;
@@ -194,7 +198,7 @@ bool AnimationState::restore(AnmRegistry& registry,const RootResolver& roots,con
     registry.free_slots=s.free_slots;registry.generation=s.generation;registry.active_count=s.active_count;registry.error=s.error;AnmVm::presentation_counter=s.presentation_counter;return true;
 }
 size_t AnimationState::retained_bytes()const noexcept{
-    if(!saved_)return 0;const auto& s=*saved_;size_t bytes=sizeof(Data)+s.nodes.capacity()*sizeof(Data::Image)+s.roots.capacity()*sizeof(Data::RootImage)+s.free_slots.capacity()*sizeof(u32)+s.pending.capacity()*sizeof(u32);
+    if(!saved_)return 0;const auto& s=*saved_;size_t bytes=sizeof(Data)+s.nodes.size()*sizeof(Data::Image)+s.roots.size()*sizeof(Data::RootImage)+s.free_slots.capacity()*sizeof(u32)+s.pending.capacity()*sizeof(u32);
     for(const auto& image:s.nodes)bytes+=dynamic_bytes(image.vm)+image.children.capacity()*sizeof(u32);
     for(const auto& image:s.roots)bytes+=dynamic_bytes(image.vm);
     for(const auto& group:s.groups)bytes+=group.capacity()*sizeof(u32);

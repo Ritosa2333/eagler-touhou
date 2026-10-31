@@ -1,0 +1,25 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/Tweet-META/th12",
+  "branch": "eagler",
+  "commit": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+  "destination": "ports/th12-mp",
+  "sourceManifest": "../../ports/th12-mp/eagler-source.json",
+  "importedFiles": 906,
+  "monorepoBase": "f8874ee7ad8b52857de3ea3b7a66e110decfa29b",
+  "mode": "git-subtree",
+  "currentMode": "git-subtree",
+  "derivedFrom": {
+    "directory": "ports/th12",
+    "split": "4ecb649cf8184405acda80279dfb32e0dfe71f0a",
+    "directoryCopy": "6a75c5aad6268b7861269061ae423a04f313d860",
+    "implementation": "a29066df26ddb1238663dffe8db9eb0e6b58c32f"
+  },
+  "subtree": {
+    "upstreamCommit": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+    "initialJoin": "6a75c5aad6268b7861269061ae423a04f313d860",
+    "initialSplit": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
+    "latestJoin": "88f30a9a030ab3ae22fe8fd5633ecf47e025b46a",
+    "currentSplit": "d4632c0afb42f740741b5a33b6d3dd3538c60c24"
+  }
+}

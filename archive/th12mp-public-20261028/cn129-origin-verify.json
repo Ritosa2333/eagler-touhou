@@ -1,0 +1,82 @@
+{
+  "origin": "https://touhou.vip",
+  "root": "/var/www/eagler-touhou/releases/main-th12mp-0dde257ec-20261028",
+  "runtimeGeneration": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "type": "text/html",
+      "bytes": 50820,
+      "containsTh12Multiplayer": true
+    },
+    {
+      "path": "/site-manifest.json",
+      "status": 200,
+      "type": "application/json",
+      "bytes": 54421,
+      "matchesPublishedFile": true
+    },
+    {
+      "path": "/release-manifest.json",
+      "status": 200,
+      "type": "application/json",
+      "bytes": 1800648,
+      "matchesPublishedFile": true
+    },
+    {
+      "path": "/runtime-manifest.json",
+      "status": 200,
+      "type": "application/json",
+      "bytes": 159001,
+      "matchesPublishedFile": true
+    },
+    {
+      "path": "/app-shell-sw.js",
+      "status": 200,
+      "type": "application/javascript",
+      "bytes": 186447,
+      "matchesPublishedFile": true
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "type": "text/plain",
+      "bytes": 64,
+      "matchesPublishedFile": true
+    },
+    {
+      "path": "/site.webmanifest",
+      "status": 200,
+      "type": "application/manifest+json",
+      "bytes": 784,
+      "matchesPublishedFile": true
+    },
+    {
+      "path": "/uptime/summary",
+      "status": 200,
+      "type": "application/json; charset=utf-8",
+      "bytes": 25608
+    },
+    {
+      "path": "/missing-cn129-th12mp-1793172299",
+      "status": 404,
+      "type": "text/html",
+      "bytes": 146
+    },
+    {
+      "path": "/runtime/th12/multiplayer/b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496/manifest.json",
+      "status": 200,
+      "type": "application/json",
+      "bytes": 651,
+      "matchesPublishedFile": true
+    },
+    {
+      "path": "/runtime/th12/multiplayer/b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496/core.wasm",
+      "status": 200,
+      "type": "application/wasm",
+      "bytes": 807539,
+      "matchesPublishedFile": true
+    }
+  ]
+}

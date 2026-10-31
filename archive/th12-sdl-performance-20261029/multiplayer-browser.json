@@ -1,0 +1,87 @@
+{
+  "scope": "Original local TH12 assets, production WASM, browser Launcher RPC and ordered WebSocket relay with 25ms delay",
+  "reports": [
+    {
+      "count": 2,
+      "mode": 1,
+      "delay": 0,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        0,
+        0
+      ],
+      "slowPresentation": false,
+      "frames": 339,
+      "exactMatches": 219,
+      "hash": -1195588644,
+      "spectatorVerified": true
+    },
+    {
+      "count": 3,
+      "mode": 1,
+      "delay": 3,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        0,
+        0,
+        0
+      ],
+      "slowPresentation": false,
+      "frames": 379,
+      "exactMatches": 120,
+      "hash": 1770943350,
+      "spectatorVerified": false
+    },
+    {
+      "count": 2,
+      "mode": 0,
+      "delay": 0,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        22,
+        18
+      ],
+      "slowPresentation": false,
+      "frames": 414,
+      "exactMatches": 0,
+      "hash": -1529141875,
+      "spectatorVerified": true
+    },
+    {
+      "count": 3,
+      "mode": 0,
+      "delay": 0,
+      "automatic": false,
+      "difficulty": 1,
+      "restores": [
+        21,
+        22,
+        35
+      ],
+      "slowPresentation": false,
+      "frames": 434,
+      "exactMatches": 0,
+      "hash": -450945898,
+      "spectatorVerified": false
+    },
+    {
+      "count": 2,
+      "mode": 1,
+      "delay": 0,
+      "automatic": true,
+      "difficulty": 1,
+      "restores": [
+        0,
+        0
+      ],
+      "slowPresentation": false,
+      "frames": 337,
+      "exactMatches": 223,
+      "hash": 1699628707,
+      "spectatorVerified": false
+    }
+  ]
+}

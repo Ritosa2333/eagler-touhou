@@ -1,0 +1,283 @@
+{
+  "schema": "th12-native-ecl-polar-normalization/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "acceptedReplayGolden": false,
+  "gpuExecuted": false,
+  "boundary": "Actual467170 ECL81,468880 normalize call,4646e0 and469270 using literal operands in constructed context. No math/operand/normalization helpers replaced. Original combat host presentation fixtures are installed but not invoked by this math-only code.",
+  "records": [
+    {
+      "name": "retail-MBoss-at2",
+      "input": {
+        "angle": -5.595968723297119,
+        "length": 64.0
+      },
+      "output": [
+        49.472938537597656,
+        40.6008415222168
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "ordinary",
+      "input": {
+        "angle": 0.699999988079071,
+        "length": 64.0
+      },
+      "output": [
+        48.94990158081055,
+        41.22993087768555
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "zero",
+      "input": {
+        "angle": 0.0,
+        "length": 64.0
+      },
+      "output": [
+        64.0,
+        0.0
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "positive-pi",
+      "input": {
+        "angle": 3.1415927410125732,
+        "length": 64.0
+      },
+      "output": [
+        -64.0,
+        -5.595057700702455e-06
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "negative-pi",
+      "input": {
+        "angle": -3.1415927410125732,
+        "length": 64.0
+      },
+      "output": [
+        -64.0,
+        5.595057700702455e-06
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "pi-next-float",
+      "input": {
+        "angle": 3.1415929794311523,
+        "length": 64.0
+      },
+      "output": [
+        -64.0,
+        -9.663731361797545e-06
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "negative-pi-next-float",
+      "input": {
+        "angle": -3.1415929794311523,
+        "length": 64.0
+      },
+      "output": [
+        -64.0,
+        9.663731361797545e-06
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "positive-tau",
+      "input": {
+        "angle": 6.2831854820251465,
+        "length": 48.0
+      },
+      "output": [
+        48.0,
+        0.0
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "negative-tau",
+      "input": {
+        "angle": -6.2831854820251465,
+        "length": 48.0
+      },
+      "output": [
+        48.0,
+        0.0
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "positive-two-wraps",
+      "input": {
+        "angle": 12.916370391845703,
+        "length": 64.0
+      },
+      "output": [
+        60.11986541748047,
+        21.945425033569336
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "negative-two-wraps",
+      "input": {
+        "angle": -12.916370391845703,
+        "length": 64.0
+      },
+      "output": [
+        60.11986541748047,
+        -21.945425033569336
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "negative-length",
+      "input": {
+        "angle": -5.595968723297119,
+        "length": -64.0
+      },
+      "output": [
+        -49.472938537597656,
+        -40.6008415222168
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    },
+    {
+      "name": "zero-length",
+      "input": {
+        "angle": -5.595968723297119,
+        "length": 0.0
+      },
+      "output": [
+        0.0,
+        0.0
+      ],
+      "trace": [
+        {
+          "entry": "0x468880",
+          "kind": "normalize"
+        },
+        {
+          "entry": "0x469270",
+          "kind": "polar"
+        }
+      ]
+    }
+  ]
+}

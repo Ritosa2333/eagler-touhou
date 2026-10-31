@@ -1,0 +1,177 @@
+{
+  "schema": "th12-original-spell-wall-time/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Actual40dd50,4508b0 QPC seconds and CRT quantization/encoding, plus41d0b0 decode. Only platform QueryPerformanceCounter is a deterministic host. Spell active/serial and presentation timestamps are controlled inputs, not a full application scheduler or pause oracle.",
+  "roundingSeconds": 0.0167,
+  "midpointSeconds": 0.00835,
+  "cases": [
+    {
+      "milliseconds": 0,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 2206633,
+      "decoded": [
+        0,
+        0
+      ],
+      "flagsAfter": 2,
+      "recorded": 2206633
+    },
+    {
+      "milliseconds": 8,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 2206633,
+      "decoded": [
+        0,
+        0
+      ],
+      "flagsAfter": 2,
+      "recorded": 2206633
+    },
+    {
+      "milliseconds": 8.35,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 2306634,
+      "decoded": [
+        0,
+        1
+      ],
+      "flagsAfter": 2,
+      "recorded": 2306634
+    },
+    {
+      "milliseconds": 8.36,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 2306634,
+      "decoded": [
+        0,
+        1
+      ],
+      "flagsAfter": 2,
+      "recorded": 2306634
+    },
+    {
+      "milliseconds": 16.7,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 2306634,
+      "decoded": [
+        0,
+        1
+      ],
+      "flagsAfter": 2,
+      "recorded": 2306634
+    },
+    {
+      "milliseconds": 25.05,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 2506636,
+      "decoded": [
+        0,
+        3
+      ],
+      "flagsAfter": 2,
+      "recorded": 2506636
+    },
+    {
+      "milliseconds": 1000,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 2306733,
+      "decoded": [
+        1,
+        0
+      ],
+      "flagsAfter": 2,
+      "recorded": 2306733
+    },
+    {
+      "milliseconds": 2345,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 5706866,
+      "decoded": [
+        2,
+        33
+      ],
+      "flagsAfter": 2,
+      "recorded": 5706866
+    },
+    {
+      "milliseconds": 58345,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 11412467,
+      "decoded": [
+        58,
+        34
+      ],
+      "flagsAfter": 2,
+      "recorded": 11412467
+    },
+    {
+      "milliseconds": 999999,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 112006532,
+      "decoded": [
+        999,
+        99
+      ],
+      "flagsAfter": 2,
+      "recorded": 112006532
+    },
+    {
+      "milliseconds": 1000000,
+      "startSeconds": 1.0,
+      "serialResult": 121,
+      "encoded": 112006532,
+      "decoded": [
+        999,
+        99
+      ],
+      "flagsAfter": 2,
+      "recorded": 112006532
+    }
+  ],
+  "pausedObservations": [
+    {
+      "milliseconds": 1000,
+      "active": true,
+      "applicationFlags": 0,
+      "startSeconds": 1.0,
+      "flags": 65,
+      "encoded": 0
+    },
+    {
+      "milliseconds": 2000,
+      "active": true,
+      "applicationFlags": 1,
+      "startSeconds": 1.0,
+      "flags": 65,
+      "encoded": 0
+    },
+    {
+      "milliseconds": 6000,
+      "active": true,
+      "applicationFlags": 1,
+      "startSeconds": 1.0,
+      "flags": 65,
+      "encoded": 0
+    },
+    {
+      "milliseconds": 7000,
+      "active": false,
+      "applicationFlags": 0,
+      "startSeconds": 1.0,
+      "flags": 0,
+      "encoded": 12607132
+    }
+  ]
+}

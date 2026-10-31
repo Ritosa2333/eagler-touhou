@@ -1,0 +1,313 @@
+{
+  "schema": "th12-original-bullet-collision-branch-audit/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "source": "Original4099e0 including40aa60 and437810; downstream438370 miss/4391c0 graze callbacks captured;455630 ANM tail no-op. Synthetic fields are explicit, no candidate-derived claim of full state.",
+  "rows": [
+    {
+      "case": "spawning-first-query-hit",
+      "initial": {
+        "phase": 2,
+        "x": 1,
+        "y": 120,
+        "vx": 4,
+        "age": 8,
+        "anmInt0": 1,
+        "word4": 0,
+        "extension200": false
+      },
+      "after": {
+        "phase": 3,
+        "position": [
+          3.0,
+          120.0
+        ],
+        "word4": 0,
+        "interrupt": 1
+      },
+      "missCallbacks": 1,
+      "grazeCallbacks": 0,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          3.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "miss",
+        "interrupt:1",
+        "anm-tail"
+      ]
+    },
+    {
+      "case": "spawning-first-query-ineligible",
+      "initial": {
+        "phase": 2,
+        "x": 1,
+        "y": 120,
+        "vx": 4,
+        "age": 7,
+        "anmInt0": 1,
+        "word4": 0,
+        "extension200": false
+      },
+      "after": {
+        "phase": 1,
+        "position": [
+          7.0,
+          120.0
+        ],
+        "word4": 0,
+        "interrupt": 0
+      },
+      "missCallbacks": 0,
+      "grazeCallbacks": 1,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          7.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "graze",
+        "anm-tail"
+      ]
+    },
+    {
+      "case": "spawning-two-query-graze",
+      "initial": {
+        "phase": 2,
+        "x": -12,
+        "y": 120,
+        "vx": 4,
+        "age": 8,
+        "anmInt0": 1,
+        "word4": 0,
+        "extension200": false
+      },
+      "after": {
+        "phase": 1,
+        "position": [
+          -6.0,
+          120.0
+        ],
+        "word4": 0,
+        "interrupt": 0
+      },
+      "missCallbacks": 0,
+      "grazeCallbacks": 1,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          -10.0,
+          120.0
+        ],
+        [
+          -6.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "graze",
+        "query",
+        "anm-tail"
+      ]
+    },
+    {
+      "case": "spawning-second-query-hit",
+      "initial": {
+        "phase": 2,
+        "x": -7,
+        "y": 120,
+        "vx": 4,
+        "age": 8,
+        "anmInt0": 1,
+        "word4": 0,
+        "extension200": false
+      },
+      "after": {
+        "phase": 3,
+        "position": [
+          -1.0,
+          120.0
+        ],
+        "word4": 0,
+        "interrupt": 1
+      },
+      "missCallbacks": 1,
+      "grazeCallbacks": 1,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          -5.0,
+          120.0
+        ],
+        [
+          -1.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "graze",
+        "query",
+        "miss",
+        "interrupt:1",
+        "anm-tail"
+      ]
+    },
+    {
+      "case": "alive-positive-delay-word",
+      "initial": {
+        "phase": 1,
+        "x": 0,
+        "y": 120,
+        "vx": 0,
+        "age": 100,
+        "anmInt0": 0,
+        "word4": 5,
+        "extension200": false
+      },
+      "after": {
+        "phase": 3,
+        "position": [
+          0.0,
+          120.0
+        ],
+        "word4": 4,
+        "interrupt": 1
+      },
+      "missCallbacks": 1,
+      "grazeCallbacks": 0,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          0.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "miss",
+        "interrupt:1",
+        "anm-tail"
+      ]
+    },
+    {
+      "case": "alive-extension200-positive-word",
+      "initial": {
+        "phase": 1,
+        "x": 0,
+        "y": 120,
+        "vx": 0,
+        "age": 100,
+        "anmInt0": 0,
+        "word4": 0,
+        "extension200": true
+      },
+      "after": {
+        "phase": 3,
+        "position": [
+          0.0,
+          120.0
+        ],
+        "word4": 4,
+        "interrupt": 1
+      },
+      "missCallbacks": 1,
+      "grazeCallbacks": 0,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          0.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "miss",
+        "interrupt:1",
+        "anm-tail"
+      ]
+    },
+    {
+      "case": "alive-negative-delay-word",
+      "initial": {
+        "phase": 1,
+        "x": 0,
+        "y": 120,
+        "vx": 0,
+        "age": 100,
+        "anmInt0": 0,
+        "word4": -5,
+        "extension200": false
+      },
+      "after": {
+        "phase": 3,
+        "position": [
+          0.0,
+          120.0
+        ],
+        "word4": -6,
+        "interrupt": 1
+      },
+      "missCallbacks": 1,
+      "grazeCallbacks": 0,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          0.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "miss",
+        "interrupt:1",
+        "anm-tail"
+      ]
+    },
+    {
+      "case": "alive-zero-delay-control",
+      "initial": {
+        "phase": 1,
+        "x": 0,
+        "y": 120,
+        "vx": 0,
+        "age": 100,
+        "anmInt0": 0,
+        "word4": 0,
+        "extension200": false
+      },
+      "after": {
+        "phase": 3,
+        "position": [
+          0.0,
+          120.0
+        ],
+        "word4": 0,
+        "interrupt": 1
+      },
+      "missCallbacks": 1,
+      "grazeCallbacks": 0,
+      "anmTailCalls": 1,
+      "queryPositions": [
+        [
+          0.0,
+          120.0
+        ]
+      ],
+      "events": [
+        "query",
+        "miss",
+        "interrupt:1",
+        "anm-tail"
+      ]
+    }
+  ]
+}

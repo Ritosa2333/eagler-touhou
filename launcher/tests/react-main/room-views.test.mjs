@@ -394,6 +394,28 @@ test('Measured rollback button routes through real room owner without overwritin
   await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]}); assert.equal(n('#mpInputTiming').hidden, false); assert.equal(n('#mpRollbackToggle').disabled, true);
 });
 
+test('TH09 rollback discards a remembered one-frame delay at start and restores it only in pure delay mode', async () => {
+  const f=await fixture({product:'th09mp'}).live();
+  await f.report({status:'ready',stage:'runtime',percent:100});
+  await act(()=>f.preparations[0].resolve());
+  await act(()=>{void f.service.toggleReady();});
+  await f.report({status:'ready',stage:'runtime',percent:100});
+  await act(()=>f.preparations.at(-1).resolve());
+  await act(()=>f.service.setRollbackEnabled(false));
+  await act(()=>f.service.setTimingChoice(1));
+  await act(()=>f.service.setRollbackEnabled(true));
+  await f.receive({seats:[{clientId:f.id,name:'Host',loadout:0,ready:true},{clientId:'peer12345',name:'Guest',loadout:1,ready:true}]});
+  assert.equal(f.service.getSnapshot().timingChoice,1);
+  await act(()=>f.service.start());
+  assert.equal(f.socket.sent.at(-1).type,'start');
+  assert.equal(f.socket.sent.at(-1).adonisMode,0);
+  assert.equal(f.socket.sent.at(-1).inputDelay,0);
+  await act(()=>f.service.setRollbackEnabled(false));
+  await act(()=>f.service.start());
+  assert.equal(f.socket.sent.at(-1).adonisMode,1);
+  assert.equal(f.socket.sent.at(-1).inputDelay,1);
+});
+
 test('seated players may enter the spectator lounge before start, never during a live run', async () => {
   const f = await fixture().live(); await mountRoom(f, {panel:{kind:'spectators'}});
   assert.equal(n('#mpSpectatorJoin').hidden, false); assert.equal(n('#mpSpectatorJoin').disabled, false);

@@ -1,0 +1,38 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/th15-mp-7004304ce-20261028",
+  "candidate": "/var/www/eagler-touhou/releases/th12-green-9249907f6-20261028",
+  "releaseId": "sha256-d95e533abfcf204253c619b4eac18e2426c45e718bc68579ac87be7cc5c04ef3",
+  "buildId": "be1c9f455136dd20da73",
+  "siteUrl": "https://touhou.vip/",
+  "files": 6843,
+  "revision": "9249907f6d7af3c161fb2d34ca816a9fd739191b",
+  "sourceRelease": "sha256-fe2c2dd947d7aee74d0be5f16ff86e45a1301e32514c494c632f9802a9450ae4",
+  "updates": [
+    {
+      "root": "runtime/th12/",
+      "previousGeneration": "bfcf985060e4c1c9934e67b145f9967230449de26bc2e9b6ab1874e2a1bea262",
+      "generation": "cc7ccce73a10fef65ff860dbaa002a498812e7dc9119dc191010cacb684fe908",
+      "files": 57,
+      "changes": [
+        {
+          "path": "renderer.mjs",
+          "before": "8e11953b4c711e4c0dcdad9ebdaf4efb59a513eaa3f6f94e376823f6f75e78a6",
+          "sha256": "930a6594f8b778ac9f71d66d327ad7a073fb06488b63c628c981b821efd258bf"
+        }
+      ]
+    },
+    {
+      "root": "runtime/th12/multiplayer/",
+      "previousGeneration": "b62e7ace8ca3fac984875ebc67f524be9b975d48e1295a9af84c5b015f2e7c95",
+      "generation": "204d0c9d67ed3a09b27c8e2d1d68ab995b99e58456032ed7701a5a15e86a9145",
+      "files": 64,
+      "changes": [
+        {
+          "path": "renderer.mjs",
+          "before": "0400793a4d37224ca844b0056007302b58cdab386d8279fdf4b3eb8054e6ffa4",
+          "sha256": "f5afaf46fa8f6699fcb065cb60c4860a247ef8afa362fb35a6637f648ac8dc7c"
+        }
+      ]
+    }
+  ]
+}

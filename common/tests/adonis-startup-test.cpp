@@ -413,7 +413,7 @@ void spectator_timing_identity(){
      const auto wire=rollback.Encode();AdonisSpectatorTiming decoded;assert(wire.size()==40&&AdonisSpectatorTiming::Decode(wire.data(),wire.size(),decoded)&&decoded.mode==0);
      rollback.delay=1;assert(rollback.Encode().empty());rollback.delay=0;rollback.samples=120;assert(rollback.Encode().empty());rollback.samples=0;rollback.game=11;assert(rollback.Encode().empty());}
 
-    for(const unsigned game:{8u,10u,11u,15u}){
+    for(const unsigned game:{8u,10u,11u,12u,15u}){
         AdonisSpectatorTiming timing;
         timing.game=game;timing.mode=1;timing.delay=1;timing.fullDelay=1;
         timing.sessionId=123;timing.gameplayAbi=456;timing.rttP95Us=32000;

@@ -1,0 +1,1999 @@
+{
+  "schema": "th12-original-replay-input-order/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "originalReplayLoaded": false,
+  "originalFilesModified": false,
+  "gpuExecuted": false,
+  "priorities": {
+    "stage": "42200a/42200f ->422bd0 priority10",
+    "input": "43b356/43b35b ->43c520 priority11",
+    "player": 16,
+    "enemy": 18
+  },
+  "provider": "Actual selected-stage43b1fb..43b31b restore segment,43b950/43c730/43c590 synthetic objects; actual412990/413840/413190 synthetic ECL with native Enemy bootstrap.",
+  "fixtureCallbacks": [
+    "Input-only432850 captures requested replay-end menu without executing UI.",
+    "Birth experiment inherits native-enemy-provider host allocator/resource/audio/passive damage boundaries."
+  ],
+  "limitations": [
+    "Manual known callback subset; full StageGame initialization, Player16, audio, draw, disk IO and whole scheduler excluded.",
+    "Synthetic input triples are not a user replay; no deleted replay bytes, copied stale replay, or accepted golden is read.",
+    "header+44 is actual graze4b0cdc, restored at selected-stage replay construction43b316; stage-transition43c730/43c590 alone keep the existing global value."
+  ],
+  "headerNativeGlobals": {
+    "offset56": "global4b0cc4 continue/score low digit; increment path not sampled",
+    "offset60": "global4b0cd8 score-extend threshold index",
+    "offset64": "Player+c598 focus",
+    "offset68": "global4b0cdc graze; selected-stage constructor restore"
+  },
+  "records": [
+    {
+      "name": "startup-zero-then-recorded-edges",
+      "triples": [
+        [
+          129,
+          129,
+          0
+        ],
+        [
+          64,
+          64,
+          129
+        ],
+        [
+          0,
+          0,
+          64
+        ]
+      ],
+      "restore": true,
+      "steps": [
+        {
+          "step": "selected-stage-constructor43b1fb",
+          "stageCursor": -1,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            64,
+            32,
+            305419896,
+            128,
+            16
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "restore43c730",
+          "stageCursor": -1,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            64,
+            32,
+            305419896,
+            128,
+            16
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "negative-cursor-before-stage0",
+          "stageCursor": -1,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            32,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "stage-ready43c590",
+          "stageCursor": 0,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            32,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 0,
+          "playerFixed": [
+            768,
+            49920
+          ],
+          "playerPosition": [
+            6.0,
+            390.0
+          ],
+          "focus": 1,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read0",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              0,
+              32,
+              305419896,
+              0,
+              0
+            ],
+            "fps": 0,
+            "playerFixed": [
+              768,
+              49920
+            ],
+            "playerPosition": [
+              6.0,
+              390.0
+            ],
+            "focus": 1,
+            "scorePowerPiv": [
+              1234567,
+              143,
+              12345000
+            ],
+            "lifeBomb": [
+              -1,
+              4,
+              2,
+              2
+            ],
+            "rank": 42,
+            "cc4ExtendGraze": [
+              314,
+              3,
+              9876
+            ],
+            "rngSeedCounter": [
+              13398,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 1,
+          "totalCursor": 1,
+          "inputByteOffset": 6,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            129,
+            0,
+            305419896,
+            129,
+            0
+          ],
+          "fps": 60,
+          "playerFixed": [
+            768,
+            49920
+          ],
+          "playerPosition": [
+            6.0,
+            390.0
+          ],
+          "focus": 1,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read1",
+          "before": {
+            "stageCursor": 1,
+            "totalCursor": 1,
+            "inputByteOffset": 6,
+            "fpsByteOffset": 1,
+            "heldPreviousRepeatPressedReleased": [
+              129,
+              0,
+              305419896,
+              129,
+              0
+            ],
+            "fps": 60,
+            "playerFixed": [
+              768,
+              49920
+            ],
+            "playerPosition": [
+              6.0,
+              390.0
+            ],
+            "focus": 1,
+            "scorePowerPiv": [
+              1234567,
+              143,
+              12345000
+            ],
+            "lifeBomb": [
+              -1,
+              4,
+              2,
+              2
+            ],
+            "rank": 42,
+            "cc4ExtendGraze": [
+              314,
+              3,
+              9876
+            ],
+            "rngSeedCounter": [
+              13398,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 2,
+          "totalCursor": 2,
+          "inputByteOffset": 12,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            64,
+            129,
+            305419896,
+            64,
+            129
+          ],
+          "fps": 59,
+          "playerFixed": [
+            768,
+            49920
+          ],
+          "playerPosition": [
+            6.0,
+            390.0
+          ],
+          "focus": 1,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read2",
+          "before": {
+            "stageCursor": 2,
+            "totalCursor": 2,
+            "inputByteOffset": 12,
+            "fpsByteOffset": 1,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              129,
+              305419896,
+              64,
+              129
+            ],
+            "fps": 59,
+            "playerFixed": [
+              768,
+              49920
+            ],
+            "playerPosition": [
+              6.0,
+              390.0
+            ],
+            "focus": 1,
+            "scorePowerPiv": [
+              1234567,
+              143,
+              12345000
+            ],
+            "lifeBomb": [
+              -1,
+              4,
+              2,
+              2
+            ],
+            "rank": 42,
+            "cc4ExtendGraze": [
+              314,
+              3,
+              9876
+            ],
+            "rngSeedCounter": [
+              13398,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 3,
+          "totalCursor": 3,
+          "inputByteOffset": 18,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            64,
+            305419896,
+            0,
+            64
+          ],
+          "fps": 59,
+          "playerFixed": [
+            768,
+            49920
+          ],
+          "playerPosition": [
+            6.0,
+            390.0
+          ],
+          "focus": 1,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read3",
+          "before": {
+            "stageCursor": 3,
+            "totalCursor": 3,
+            "inputByteOffset": 18,
+            "fpsByteOffset": 1,
+            "heldPreviousRepeatPressedReleased": [
+              0,
+              64,
+              305419896,
+              0,
+              64
+            ],
+            "fps": 59,
+            "playerFixed": [
+              768,
+              49920
+            ],
+            "playerPosition": [
+              6.0,
+              390.0
+            ],
+            "focus": 1,
+            "scorePowerPiv": [
+              1234567,
+              143,
+              12345000
+            ],
+            "lifeBomb": [
+              -1,
+              4,
+              2,
+              2
+            ],
+            "rank": 42,
+            "cc4ExtendGraze": [
+              314,
+              3,
+              9876
+            ],
+            "rngSeedCounter": [
+              13398,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 4,
+          "totalCursor": 4,
+          "inputByteOffset": 18,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            0,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 59,
+          "playerFixed": [
+            768,
+            49920
+          ],
+          "playerPosition": [
+            6.0,
+            390.0
+          ],
+          "focus": 1,
+          "scorePowerPiv": [
+            1234567,
+            143,
+            12345000
+          ],
+          "lifeBomb": [
+            -1,
+            4,
+            2,
+            2
+          ],
+          "rank": 42,
+          "cc4ExtendGraze": [
+            314,
+            3,
+            9876
+          ],
+          "rngSeedCounter": [
+            13398,
+            0
+          ],
+          "events": []
+        }
+      ]
+    },
+    {
+      "name": "only-held-ffff",
+      "triples": [
+        [
+          65535,
+          0,
+          0
+        ]
+      ],
+      "restore": false,
+      "steps": [
+        {
+          "step": "read0",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              32,
+              305419896,
+              128,
+              16
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 1,
+          "totalCursor": 1,
+          "inputByteOffset": 6,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            65535,
+            64,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 60,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read1",
+          "before": {
+            "stageCursor": 1,
+            "totalCursor": 1,
+            "inputByteOffset": 6,
+            "fpsByteOffset": 1,
+            "heldPreviousRepeatPressedReleased": [
+              65535,
+              64,
+              305419896,
+              0,
+              0
+            ],
+            "fps": 60,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 2,
+          "totalCursor": 2,
+          "inputByteOffset": 6,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            65535,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 60,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        }
+      ]
+    },
+    {
+      "name": "held-pressed-ffff",
+      "triples": [
+        [
+          65535,
+          65535,
+          0
+        ]
+      ],
+      "restore": false,
+      "steps": [
+        {
+          "step": "read0",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              32,
+              305419896,
+              128,
+              16
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 1,
+          "totalCursor": 1,
+          "inputByteOffset": 6,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            65535,
+            64,
+            305419896,
+            65535,
+            0
+          ],
+          "fps": 60,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read1",
+          "before": {
+            "stageCursor": 1,
+            "totalCursor": 1,
+            "inputByteOffset": 6,
+            "fpsByteOffset": 1,
+            "heldPreviousRepeatPressedReleased": [
+              65535,
+              64,
+              305419896,
+              65535,
+              0
+            ],
+            "fps": 60,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 2,
+          "totalCursor": 2,
+          "inputByteOffset": 6,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            65535,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 60,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        }
+      ]
+    },
+    {
+      "name": "pressed-released-ffff",
+      "triples": [
+        [
+          0,
+          65535,
+          65535
+        ]
+      ],
+      "restore": false,
+      "steps": [
+        {
+          "step": "read0",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              32,
+              305419896,
+              128,
+              16
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 1,
+          "totalCursor": 1,
+          "inputByteOffset": 6,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            64,
+            305419896,
+            65535,
+            65535
+          ],
+          "fps": 60,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read1",
+          "before": {
+            "stageCursor": 1,
+            "totalCursor": 1,
+            "inputByteOffset": 6,
+            "fpsByteOffset": 1,
+            "heldPreviousRepeatPressedReleased": [
+              0,
+              64,
+              305419896,
+              65535,
+              65535
+            ],
+            "fps": 60,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 2,
+          "totalCursor": 2,
+          "inputByteOffset": 6,
+          "fpsByteOffset": 1,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            0,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 60,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        }
+      ]
+    },
+    {
+      "name": "all-ffff",
+      "triples": [
+        [
+          65535,
+          65535,
+          65535
+        ]
+      ],
+      "restore": false,
+      "steps": [
+        {
+          "step": "read0",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              32,
+              305419896,
+              128,
+              16
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 0,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            64,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": [
+            "replay-end-menu"
+          ]
+        },
+        {
+          "step": "read1",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              0,
+              64,
+              305419896,
+              0,
+              0
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": [
+              "replay-end-menu"
+            ]
+          },
+          "stageCursor": 0,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            0,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": [
+            "replay-end-menu",
+            "replay-end-menu"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "negative-stage-cursor",
+      "triples": [
+        [
+          1,
+          1,
+          0
+        ]
+      ],
+      "restore": false,
+      "steps": [
+        {
+          "step": "read0",
+          "before": {
+            "stageCursor": -1,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              32,
+              305419896,
+              128,
+              16
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": -1,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            32,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read1",
+          "before": {
+            "stageCursor": -1,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              0,
+              32,
+              305419896,
+              0,
+              0
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": -1,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            0,
+            32,
+            305419896,
+            0,
+            0
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        }
+      ]
+    },
+    {
+      "name": "no-game-manager",
+      "triples": [
+        [
+          1,
+          1,
+          0
+        ]
+      ],
+      "restore": false,
+      "steps": [
+        {
+          "step": "read0",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              32,
+              305419896,
+              128,
+              16
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 0,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            64,
+            32,
+            305419896,
+            128,
+            16
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        },
+        {
+          "step": "read1",
+          "before": {
+            "stageCursor": 0,
+            "totalCursor": 0,
+            "inputByteOffset": 0,
+            "fpsByteOffset": 0,
+            "heldPreviousRepeatPressedReleased": [
+              64,
+              32,
+              305419896,
+              128,
+              16
+            ],
+            "fps": 0,
+            "playerFixed": [
+              0,
+              0
+            ],
+            "playerPosition": [
+              0.0,
+              0.0
+            ],
+            "focus": 0,
+            "scorePowerPiv": [
+              0,
+              0,
+              0
+            ],
+            "lifeBomb": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "rank": 0,
+            "cc4ExtendGraze": [
+              0,
+              0,
+              0
+            ],
+            "rngSeedCounter": [
+              0,
+              0
+            ],
+            "events": []
+          },
+          "stageCursor": 0,
+          "totalCursor": 0,
+          "inputByteOffset": 0,
+          "fpsByteOffset": 0,
+          "heldPreviousRepeatPressedReleased": [
+            64,
+            32,
+            305419896,
+            128,
+            16
+          ],
+          "fps": 0,
+          "playerFixed": [
+            0,
+            0
+          ],
+          "playerPosition": [
+            0.0,
+            0.0
+          ],
+          "focus": 0,
+          "scorePowerPiv": [
+            0,
+            0,
+            0
+          ],
+          "lifeBomb": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "rank": 0,
+          "cc4ExtendGraze": [
+            0,
+            0,
+            0
+          ],
+          "rngSeedCounter": [
+            0,
+            0
+          ],
+          "events": []
+        }
+      ]
+    }
+  ],
+  "startup": [
+    {
+      "step": "main-synchronous-birth",
+      "enemyId": 1,
+      "position": [
+        0.0,
+        100.0
+      ],
+      "age": 1,
+      "flags": 537034752,
+      "contextTime": 1.0,
+      "contextByteOffset": 24,
+      "input": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "inputCursor": 0,
+      "playerFixed": [
+        768,
+        49920
+      ],
+      "focus": 1,
+      "power": 143,
+      "rank": 42,
+      "rng": [
+        13398,
+        0
+      ]
+    },
+    {
+      "step": "input0-priority11",
+      "enemyId": 1,
+      "position": [
+        0.0,
+        100.0
+      ],
+      "age": 1,
+      "flags": 537034752,
+      "contextTime": 1.0,
+      "contextByteOffset": 24,
+      "input": [
+        129,
+        0,
+        0,
+        129,
+        0
+      ],
+      "inputCursor": 1,
+      "playerFixed": [
+        768,
+        49920
+      ],
+      "focus": 1,
+      "power": 143,
+      "rank": 42,
+      "rng": [
+        13398,
+        0
+      ]
+    },
+    {
+      "step": "enemy-priority18-after-input0",
+      "enemyId": 1,
+      "position": [
+        0.0,
+        100.0
+      ],
+      "age": 1,
+      "flags": 536903680,
+      "contextTime": 1.0,
+      "contextByteOffset": 24,
+      "input": [
+        129,
+        0,
+        0,
+        129,
+        0
+      ],
+      "inputCursor": 1,
+      "playerFixed": [
+        768,
+        49920
+      ],
+      "focus": 1,
+      "power": 143,
+      "rank": 42,
+      "rng": [
+        13398,
+        0
+      ]
+    },
+    {
+      "step": "input1-priority11",
+      "enemyId": 1,
+      "position": [
+        0.0,
+        100.0
+      ],
+      "age": 1,
+      "flags": 536903680,
+      "contextTime": 1.0,
+      "contextByteOffset": 24,
+      "input": [
+        64,
+        129,
+        0,
+        64,
+        129
+      ],
+      "inputCursor": 2,
+      "playerFixed": [
+        768,
+        49920
+      ],
+      "focus": 1,
+      "power": 143,
+      "rank": 42,
+      "rng": [
+        13398,
+        0
+      ]
+    },
+    {
+      "step": "enemy-priority18-after-input1",
+      "enemyId": 1,
+      "position": [
+        11.0,
+        100.0
+      ],
+      "age": 2,
+      "flags": 536903680,
+      "contextTime": 2.0,
+      "contextByteOffset": 48,
+      "input": [
+        64,
+        129,
+        0,
+        64,
+        129
+      ],
+      "inputCursor": 2,
+      "playerFixed": [
+        768,
+        49920
+      ],
+      "focus": 1,
+      "power": 143,
+      "rank": 42,
+      "rng": [
+        13398,
+        0
+      ]
+    },
+    {
+      "step": "input2-priority11",
+      "enemyId": 1,
+      "position": [
+        11.0,
+        100.0
+      ],
+      "age": 2,
+      "flags": 536903680,
+      "contextTime": 2.0,
+      "contextByteOffset": 48,
+      "input": [
+        0,
+        64,
+        0,
+        0,
+        64
+      ],
+      "inputCursor": 3,
+      "playerFixed": [
+        768,
+        49920
+      ],
+      "focus": 1,
+      "power": 143,
+      "rank": 42,
+      "rng": [
+        13398,
+        0
+      ]
+    },
+    {
+      "step": "enemy-priority18-after-input2",
+      "enemyId": 1,
+      "position": [
+        22.0,
+        100.0
+      ],
+      "age": 3,
+      "flags": 536903680,
+      "contextTime": -99997.0,
+      "contextByteOffset": 92,
+      "input": [
+        0,
+        64,
+        0,
+        0,
+        64
+      ],
+      "inputCursor": 3,
+      "playerFixed": [
+        768,
+        49920
+      ],
+      "focus": 1,
+      "power": 143,
+      "rank": 42,
+      "rng": [
+        13398,
+        0
+      ]
+    }
+  ]
+}

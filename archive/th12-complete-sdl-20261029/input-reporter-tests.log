@@ -1,0 +1,15 @@
+✔ abort preserves stderr, state, memory and stacks without calling crashed WASM (17.8472ms)
+✔ warnings stay nonfatal; unhandled rejection and native errors retain original causes (0.9402ms)
+✔ rolling history stays bounded and circular values serialize safely (1.9482ms)
+✔ TH12 native gameplay getters wait until a session exists (0.5283ms)
+✔ TH12 reports its eight-word rollback ABI independently of TH15 (0.7362ms)
+✔ managed keyboard release retires Shift pressed before a mapping bridge was available (2.0019ms)
+✔ SDL keyboard uses one managed owner and processes modifier releases while Alt is held (1.2576ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 121.9875

@@ -1,0 +1,40 @@
+{
+  "previous": "/var/www/eagler-touhou/releases/relay-session-d48252551-20261028",
+  "candidate": "/var/www/eagler-touhou/releases/th15-mp-7004304ce-20261028",
+  "releaseId": "sha256-fe2c2dd947d7aee74d0be5f16ff86e45a1301e32514c494c632f9802a9450ae4",
+  "buildId": "f8d0ccc3d23b64556eaf",
+  "siteUrl": "https://touhou.vip/",
+  "files": 6720,
+  "revision": "7004304cec3aa1e481b9081874e5249a8b5039bb",
+  "sourceRelease": "sha256-302c1b5846106b0a82502ee3f41e1c8045ba443aa531a253d57c44199864e64e",
+  "wasm": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c",
+  "previousGeneration": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+  "generation": "9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e",
+  "changes": [
+    {
+      "path": "crash-code-identities.json",
+      "before": "f33ffea1b23375faf8fcb9e259a2a987d4d98c04c48744e5f9a3a9d6a8aec13d",
+      "sha256": "ccb8e46ea0154abb80d8f81f92772f305af8aa0c230bd1df9907bc92942f14f5"
+    },
+    {
+      "path": "manifest.json",
+      "before": "14fa5c4ab42de0ab1b2299552cf708e3e6a745eef51881e2325e473808414da5",
+      "sha256": "b506c943efb717f9a06d9ed38b5d8012e4546dbe510dfed88613f73bdab1534f"
+    },
+    {
+      "path": "shell.mjs",
+      "before": "1e51ed3706f275d3dfe115534efd05974a6f4c76a42f22975869593a80a01776",
+      "sha256": "de299761481227b9c9b941d2ed75ac53c78e4f6e5cd73729d0cbd4d6a049ecde"
+    },
+    {
+      "path": "th15.mjs",
+      "before": "0791e348230b93f84dacdfecabd5f2d66a52ea940a5eb9ada060dd5d2bf50d57",
+      "sha256": "12682ed6cd81331729b8395a6dc86bf8f57a2ab34c56b4314a3ca33a6bb0de94"
+    },
+    {
+      "path": "th15.wasm",
+      "before": "5d956d0d0e6987f99f9bd0231135e51b760116fa2aafad33bf59c67425c7468a",
+      "sha256": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c"
+    }
+  ]
+}

@@ -55,7 +55,7 @@ struct BulletScene::Slot final:BulletFrameHost,BulletContactHost {
     void recycle()override{scene.manager.recycle(index);}
 };
 BulletScene::BulletScene(BulletSceneHost& services,Rng& game,Rng& visual):host(services),game_random(game),visual_random(visual),manager(*this){
-    manager.random=&game_random;slots.reserve(BulletManager::capacity);for(u32 i=0;i<BulletManager::capacity;i++)slots.push_back(std::make_unique<Slot>(*this,i,*manager.state(i)));
+    manager.random=&game_random;slots.reserve(BulletManager::capacity);for(u32 i=0;i<BulletManager::capacity;i++)slots.push_back(std::make_unique<Slot>(*this,i,manager.slots[i].state));
 }
 BulletScene::~BulletScene()=default;
 BulletFrameHost& BulletScene::bullet(u32 index){auto& slot=*slots[index];slot.visual.rate=manager.context.rate;return slot;}

@@ -30,7 +30,7 @@
 | RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
 | RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 不适用 | normal：本作未声明判定点显示 |
+| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
 | PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
@@ -57,7 +57,7 @@
 | TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [Deathbomb 与移动保持](../../docs/adaptation/input.md#touch-09) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| TOUCH-09 | [暂时禁移与触点连续性](../../docs/adaptation/input.md#touch-09) | 待核对 | normal：[held-touch-continuity](../../docs/adaptation/status.json) |
 | TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
@@ -87,6 +87,7 @@
 | AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
 | AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| AUDIO-07 | [音效即时输出](../../docs/adaptation/presentation.md#audio-07) | 待核对 | normal：[immediate-sfx-routing](../../docs/adaptation/status.json) |
 | MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | normal：本作使用 OGG 音乐 |
 | MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | normal：本作使用 OGG 音乐 |
 | MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | normal：本作使用 OGG 音乐 |
@@ -169,100 +170,38 @@
 
 <!-- manual-verification -->
 
+SDL 启动画面在原作社团署名下方叠加公共 `EAGLER ☯ TOUHOU Developers` 图案，随原版启动淡入淡出；普通关卡加载继续使用原作画面。图案由浏览器入口生成并交给 GLES 绘制，保持原作素材与署名。
+
+手柄左摇杆的本作输入默认使用每轴 50% 的方形死区，普通版与多人版、SDL 原生入口与旧网页入口保持一致。边界、斜向、十字键和启动器映射所有权由 `tests/sdl-gamepad.test.mjs` 检查；主站输入继续采用启动器的手柄配置。
+
 ## 运行验收记录
 
-2026-10-28 normal：高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。
+当前正式构建入口为 SDL3／GLES 普通版，代码包沿用 `th12.html`、目录 Runtime 协议和 `/savesth12`。初版构建身份保留在 [#161 构建记录](../../archive/th12-sdl-completion-20261029/README.md)。当前正式清单登记完整 SDL 入口，浏览器实测与构建证据见 [完整迁移验证](../../archive/th12-complete-sdl-20261029/README.md)。
 
-按检查编号附[验证记录](../../docs/adaptation/record-template.md)，写明源码身份、模式、环境、操作与结果。自动更新保留本节内容。
+既有 JavaScript 前端的运行记录已归入 [历史验收](../../archive/th12-web-acceptance-20261022/README.md)，覆盖当时的开局、菜单、关卡衔接、语言、触控和录像。该记录不作为新 SDL 程序的运行通过记录。
 
-### 2026-10-20：normal / Chromium / 日文 1.00b
+当前人工确认入口：主站选择星莲船，或作品预览的 `adapter-preview.html?runtime=sdl`。优先检查：练习选择与左右键、自定义分段保存并重播、触控录制重播、整曲／流式音乐的暂停与切曲、录像定位后声音，以及退出重开后的存档。
 
-- RUNTIME-01/02：验证受管理的 88,852,083 字节 DATA、共享字体、标题及第一关启动。
-- INPUT/THPrac：实际 Wasm 与共用 ImGui 检查覆盖作弊门控、数值编辑、弹出菜单取消、移动端折叠重开和指针归属；日文游戏场景显示紫版高级选项。
-- BUILD：普通 Wasm、前端构建、TypeScript、文档和端口 8 项自动检查通过。源码来源为 `Tweet-META/th12` 的 `eagler` 分支 `c322e8ad`，紫版参考为 2.2.2.7。
-- test 发布日文 DATA 与音乐；中文本地化采用后续 thcrap 接入路径。
+## SDL3 共用应用
 
-### 2026-10-20：鼠标、飞碟拾取与标题音频回归
+桌面与 Web 的资源、流程、绘制、练习、普通录像及 Web 扩展录像统一由 [SDL3 运行层](portable/sdl/README.md) 管理。普通版主站构建使用该应用层；多人版同样使用 SDL 应用，继续链接现有 C++ 确认与回滚会话。音乐提供流式与整曲解码，触控与练习录像沿用版本化扩展。
 
-- INPUT：画布鼠标保持可见，点击画面可解锁浏览器音频，标题场景保持不变。
-- PRESENTATION：使用原版 ANM 的7项 Wasm 检查通过，覆盖三个飞碟槽的15帧移动、库存轮转、提示动画和大 UFO 呈现。
-- AUDIO：7项音乐传输检查通过。Chromium 使用无共享 AudioContext 的宿主，完整解码与流式 OGG 在标题停留期间均已播放，无需菜单按键。
-- BUILD：普通 Runtime 构建、端口8项检查和文档检查通过。
+SDL 入口已接上重开与常显判定点、触控位移录制及确认按下信号、练习元数据与伤害源恢复、录像定位音频处理、普通倍速录像插值和录制帧率显示。实现对应 [平台代码](portable/sdl/README.md)、[浏览器边界](site/game-sdl.mjs) 与 [开发指南](docs/DEVELOPMENT.md)。上表的状态由检查报告生成；本段源码范围与本次构建清单共同供人工验收使用。
 
-### 2026-10-20：换面与暂停呈现回归
+## SDL 入口审核记录
 
-- PRESENTATION：6项流程与呈现检查通过，覆盖六面衔接、通关奖励等待、30帧淡出／淡入、跨面资源继承、Practice／Continue及日文原版暂停选项的连续高亮。
-- DISPLAY/THPrac：暂停与确认页保留状态栏和监视显示，F1–F7／U及复选框在暂停与确认页保持可用，快捷键由THPrac消费；Replay保持只读，快速重开按游戏运行状态判定。实际Wasm／ImGui检查入口为`tools/ports/th12-practice-browser.mjs`。
+[2026-10-30 验证记录](../../archive/th12-sdl-review-20261030/README.md)登记本轮正式 Runtime 身份和检查范围。
 
-### 2026-10-20：奖励显示与计分声音
+| 编号 | 本轮操作与结果 |
+| --- | --- |
+| RUNTIME-01、RUNTIME-02、RUNTIME-03 | 共用真实 Runtime 驱动检查协议、首帧及命令；异步取消和错误字段由浏览器边界夹具验证。 |
+| RUNTIME-04、RUNTIME-06 | 检查退出重进、暂停与重开；实际设备后台恢复和判定点视觉按专项验收。 |
+| INPUT、TOUCH、THPRAC | 正式 Wasm 下检查虚拟手柄、触控移动、练习界面与原生 Replay；两侧改键浏览器检查通过。 |
+| AUDIO、DISPLAY | 流式与整曲 OGG 均采集实际 PCM，Replay 暂停及定位输出为静音；60 Hz 呈现限制使用原生时钟回归。 |
+| STORE、REPLAY | 共用驱动检查用户文件及重新启动，作品浏览器检查原生录像保存与播放控制。 |
 
-- SC Bonus分隔符、满火力提示、跨面飞碟轮转槽位由完整C++运行库与原版ANM验证；入口为`tests/reward-feedback.test.mjs`。
-- 通关计分音乐与保存录像音效的场景请求由`tests/reward-menu-audio.test.mjs`核对，覆盖普通通关、Extra和辅助局。
+RUNTIME-04、INPUT-06、TOUCH-16 与 AUDIO-05 的页面隐藏清理、损坏音乐提示和替换恢复见[SDL 输入与音乐错误验证](../../archive/th12-sdl-invariants-20261030/README.md)。
 
-### 2026-10-20：thcrap 简体中文与英文本地化
+TOUCH-09、AUDIO-07 的组件与接线结果见[全作核对记录](../../archive/shared-input-audio-20261030/README.md)。按作品、模式读取检查范围及实际 Runtime 结果。
 
-- LANGUAGE：与 TH10、TH11 共用 thpatch 依赖解析、CRC 校验、静态包和 Host 安装流程；输入为日文 1.00b DAT。准备命令见 [本地化](docs/LOCALIZATION.md)。
-- MESSAGE：实际 MSG Wasm 对两种语言逐条检查42个文件、108个入口，正常确认与 Ctrl 跳过均与日文控制指令及完成帧数一致；简体2272行、英文2341行，覆盖6组自动剧情。翻译中同一时间点普通文字最多两行，注音使用独立槽位。
-- PRESENTATION：Chromium 使用生产 WebGL renderer、零售 atlas 与安装的 Unifont 验证音乐室、居中提醒、双行剧情、长符卡和日文回退；113个符卡、17首音乐评论及12个结局数据通过检查。
-- SCOPE：本记录覆盖本地化编译、MSG 行为和上述渲染场景，整局通关及实际设备输入另按对应项目验收。
-
-### 2026-10-20：thcrap 标题菜单贴图
-
-- TEXTURE：语言编译按 thcrap 的 sprite 透明度规则合成 PNG，保留翻译图中全透明的原版菜单 sprite；支持裁剪、共享纹理偏移和跨纹理边界的 sprite。
-- CHECK：无零售资源的 Python 回归覆盖全透明 sprite 保留、非空 sprite 覆盖及其透明像素清除；简体与英文使用生产 renderer 检查标题菜单及音乐室。
-
-### 2026-10-20：Practice 面板触控确认与返回
-
-- INPUT：Practice 窗口外的单指轻触开始练习、双指轻触返回机体选择，沿用 TH10 的窗口命中与触摸归属规则；窗口内控件和弹出菜单继续由 ImGui 消费。
-- CHECK：`tools/ports/th12-practice-browser.mjs` 使用真实 Wasm、共享字体和 Chromium 触控事件，覆盖单指开始、双指返回、控件点击、弹出菜单关闭与触摸取消，同时运行已有键盘、暂停和工具面板检查。
-
-### 2026-10-20：Practice 重新开始
-
-- RETRY：暂停、快捷重开及结果菜单重开使用本局原始练习参数，保留关卡、章节、阶段、难度和初始资源；暂停结果的布尔练习标记不覆盖参数对象。
-- CHECK：9项回归覆盖四面原版练习、五面自定义章节及 Extra，在暂停确认、快捷重开和结果菜单三条路径核对重开参数。
-
-### 2026-10-20：切换型低速跨 Miss 保持
-
-- TOUCH：复活更换玩家实例时，切换型低速保留用户已选择的开关状态；旧拖动坐标、触点及待发 Bomb 手势仍按实例边界清理。
-- CHECK：7项回归覆盖连续复活、后续关闭低速、新拖动的低速倍率、菜单和 Replay 切换、显式取消、禁用触控及其他低速模式。
-
-### 2026-10-20：换面资源等待保留 UI
-
-- PRESENTATION：换面等待资源期间使用上一逻辑帧的呈现快照，保持外围 HUD 和练习工具，只遮黑原版384×448游戏区域；下一关就绪后恢复正常呈现。
-- CHECK：加载画面回归覆盖快照基底、等待结束释放和游戏区域遮罩边界；原计分显示检查通过。
-
-### 2026-10-20：过关回调、HUD 连续性与录像播放
-
-- FLOW：按原版4227dc的120帧等待与422839的30帧游戏区域淡出执行换面；Stage Clear继续运行Player16、Enemy18、Bullet21、Item22和HUD/MSG25，保留移动、弹幕、道具及消息尾部时序。
-- PRESENTATION：MSG文本动画退出后以逻辑VM可见性为准；外围front0动画使用整局连续时钟，下一关游戏区域独立淡入。
-- REPLAY：暂停菜单“再次播放录像”重新打开原文件及所选起始关卡；Z四倍快进、Shift慢放，紫版Ctrl/Shift帧率选项继续生效。启动器录像工作区启用THPrac回放核心，交互式面板保持关闭。
-- CHECK：完整C++运行库检查六关继承、Continue、练习和旧入口；真实日文过关MSG核对消息结束、自机移动与弹幕运动。Chromium使用生产Wasm、零售ANM/STD和WebGL renderer检查Stage Clear、下一关构造及0/15/30帧淡入，外围HUD保持显示。
-- REPLAY CHECK：生产Runtime从THPrac练习实局生成并保存Web录像，在工作区打开、定位到第60帧；游戏内暂停菜单重播同一录像，回到记录的起始关卡第0帧。
-
-### 2026-10-20：全屏 Esc 与统一播放器一致
-
-- INPUT：进入播放器全屏时立即锁定 Esc，覆盖 DATA、字体及 Runtime 初始化等待；短按保留暂停/返回输入，长按由浏览器退出全屏。加载取消和退出全屏释放键盘锁。
-- CHECK：实际 BrowserLauncher 挂载检查在原生 Ready 延迟时已请求 Escape 锁，并验证取消加载后的释放。
-
-### 2026-10-20：紫版无敌撞弹音效
-
-- THPRAC：无敌撞弹保留原版453d90的掉残音效和6帧碰撞保护，自机保持正常状态，残机、火力、Bomb及Miss记录保持不变；回放不施加实时无敌。
-- CHECK：完整C++运行库验证音效ID2、6帧保护、再次撞弹、资源与随机数状态，以及回放隔离。
-
-### 2026-10-20：手机高级状态信息与通关排行
-
-- UI：手机高级状态信息按完整窗口高度贴底，折叠与展开均保留5逻辑像素边距；触控复用TH15的只读面板点击／滑动分流，补发原始按下坐标。
-- FLOW：不参与排行的Story及Extra通关也展示Score Ranking，保留成绩写入规则及后续Replay／结果菜单。
-- CHECK：[验证入口与行为边界](../../docs/adaptation/th12-mobile-information-20261020.md)。
-
-### 2026-10-22：第一关开场收点线
-
-- PRESENTATION：按原版41d8ea..41d91e的HUD初始化条件创建front51及49／50子动画，使用原资源的展开、闪烁和退出时序；第一关非录像且续关计数为0时显示。
-- CHECK：Stage Flow的零售ANM回归覆盖首次进入、动画退出、第二关、续关、普通录像、THPrac录像和第一关Practice。
-- RENDER：生产Wasm与WebGL渲染器核对第0／65／76／200帧，收点线和两侧子动画位于原版y=144，展开完成后显示，退出后清除。
-
-### 2026-10-22：对话动画回收与暂停保存录像
-
-- MSG：对话对象统一持有立绘、对话框及文字动画；退出指令释放公开句柄后，退出动画仍归该对话所有。MSG 结束和下一段对话开始时回收整组动画，Ctrl 连续跳过时不会把立绘带入切关。
-- REPLAY：暂停菜单的保存录像操作封存当前输入后直接进入游戏画面内的保存页，沿用暂停背景，不经过疮痍、排行榜或续关流程。
-- CHECK：零售 ANM 与生产 Wasm 覆盖普通等待、Ctrl 跳过及同时间点退出／结束指令；菜单回归覆盖保存分流和既有录像重播／加速行为。
+旧浏览器呈现路径的高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。

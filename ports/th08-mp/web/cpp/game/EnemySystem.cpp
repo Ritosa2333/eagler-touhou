@@ -2,7 +2,14 @@
 #include "Presentation.hpp"
 namespace th08 {
 EnemySystem::EnemySystem(EclProgram& program,EclExecutor& executor,const FrameTiming& timing,Rng& random,GameGlobals& numbers,GameValues& values,GameRank& rank,GameGauge& gauge,PlayerSimulation& player,EffectSystem& effects,ItemSystem& items,BulletManagerState& bullets,AsciiManager& ascii,AsciiContext& ascii_context,AnmRenderer& renderer,EnemySystemActions& actions)
-    :population(executor,program),globals(executor.game_state()),numbers(numbers),values(values),player(player),effects(effects),items(items),projectiles(bullets),ascii(ascii),ascii_context(ascii_context),actions(actions),simulation(state,input,population,program,executor,timing,random,numbers,values,rank,gauge,player.status().shots.regions,player.status().frame,*this),drawing(renderer){globals.values=&numbers;globals.ascii=&ascii.state;globals.scene_actions=this;}
+    :population(executor,program),globals(executor.game_state()),numbers(numbers),values(values),player(player),effects(effects),items(items),projectiles(bullets),ascii(ascii),ascii_context(ascii_context),actions(actions),simulation(state,input,population,program,executor,timing,random,numbers,values,rank,gauge,player.status().shots.regions,player.status().frame,*this),drawing(renderer){globals.values=&numbers;globals.ascii=&ascii.state;globals.scene_actions=this;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    globals.aim_context=this;globals.aim_target=[](void* context,const Vec3& origin){
+        auto& owner=*static_cast<EnemySystem*>(context);
+        return owner.roster?owner.roster->target(origin):owner.player.status().motion.movement.position;
+    };
+#endif
+}
 void EnemySystem::read_player(){
     auto& p=player.status();globals.player=p.motion.movement.position;globals.player_state=p.life.state;globals.player_state_timer=p.life.timer;
     globals.paused=p.context.pause!=0;globals.game_flags=p.context.game_flags;globals.youkai=p.motion.form.youkai;globals.shot=p.context.character;

@@ -1,0 +1,23 @@
+{
+  "sourceHead": "4c09680c9f407564688ae0abb0dedb1b868227a1",
+  "method": "unmodified git subtree split --prefix=<directory> --quiet HEAD; exact directory trees and retained source ancestors checked",
+  "subtrees": {
+    "ports/th12": {
+      "split": "d861b8fcd45b07197e0883f4aa1eb9cd4a5c0bbf",
+      "treeMatches": true,
+      "originalAncestor": true,
+      "priorSourceAncestor": true,
+      "registeredUpstreamAncestor": true,
+      "registeredSplitAncestor": true
+    },
+    "ports/th12-mp": {
+      "split": "e9fe2e7bc84bd170061fc8cfef90207b87612785",
+      "treeMatches": true,
+      "originalAncestor": true,
+      "priorSourceAncestor": true,
+      "registeredUpstreamAncestor": true,
+      "registeredSplitAncestor": true
+    }
+  },
+  "normalAcceptedIntoMultiplayer": true
+}

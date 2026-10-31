@@ -1,0 +1,146 @@
+{
+  "schema": "eagler-touhou/th12-hud-renderer/1",
+  "baselineCommit": "a2bd40233110a8c035d5b80695ee48bd4621abe8",
+  "cases": [
+    {
+      "label": "settled-hud-boss",
+      "configuration": {
+        "frames": 600,
+        "bomb": false,
+        "stage": 6,
+        "section": 45,
+        "cpuRate": 1,
+        "browser": "153.0.8010.12",
+        "paired": true,
+        "baselineCommit": "a2bd40233110a8c035d5b80695ee48bd4621abe8"
+      },
+      "stats": {
+        "baseline": {
+          "capture": {
+            "mean": 0.5787500011424224,
+            "p50": 0.5,
+            "p95": 0.9000000357627869,
+            "max": 3.199999988079071
+          },
+          "render": {
+            "mean": 0.34229166582226755,
+            "p50": 0.30000001192092896,
+            "p95": 0.5,
+            "max": 0.7000000476837158
+          }
+        },
+        "optimized": {
+          "capture": {
+            "mean": 0.5310416671137015,
+            "p50": 0.5,
+            "p95": 0.800000011920929,
+            "max": 1.800000011920929
+          },
+          "render": {
+            "mean": 0.33354166770974797,
+            "p50": 0.30000001192092896,
+            "p95": 0.5999999642372131,
+            "max": 1
+          }
+        }
+      },
+      "checks": [
+        {
+          "frame": 150,
+          "poses": 110,
+          "records": 5,
+          "differences": 0
+        },
+        {
+          "frame": 300,
+          "poses": 758,
+          "records": 683,
+          "differences": 0
+        },
+        {
+          "frame": 450,
+          "poses": 864,
+          "records": 780,
+          "differences": 0
+        },
+        {
+          "frame": 600,
+          "poses": 756,
+          "records": 681,
+          "differences": 0
+        }
+      ],
+      "errors": []
+    },
+    {
+      "label": "settled-hud-bomb",
+      "configuration": {
+        "frames": 600,
+        "bomb": true,
+        "stage": 6,
+        "section": 45,
+        "cpuRate": 1,
+        "browser": "153.0.8010.12",
+        "paired": true,
+        "baselineCommit": "a2bd40233110a8c035d5b80695ee48bd4621abe8"
+      },
+      "stats": {
+        "baseline": {
+          "capture": {
+            "mean": 0.7408333331346512,
+            "p50": 0.699999988079071,
+            "p95": 1.399999976158142,
+            "max": 4
+          },
+          "render": {
+            "mean": 0.46291666564842066,
+            "p50": 0.5,
+            "p95": 0.800000011920929,
+            "max": 1.899999976158142
+          }
+        },
+        "optimized": {
+          "capture": {
+            "mean": 0.6866666674613953,
+            "p50": 0.699999988079071,
+            "p95": 1.199999988079071,
+            "max": 3.199999988079071
+          },
+          "render": {
+            "mean": 0.46062500203649204,
+            "p50": 0.40000003576278687,
+            "p95": 0.800000011920929,
+            "max": 2
+          }
+        }
+      },
+      "checks": [
+        {
+          "frame": 150,
+          "poses": 192,
+          "records": 41,
+          "differences": 0
+        },
+        {
+          "frame": 300,
+          "poses": 850,
+          "records": 729,
+          "differences": 0
+        },
+        {
+          "frame": 450,
+          "poses": 1022,
+          "records": 846,
+          "differences": 0
+        },
+        {
+          "frame": 600,
+          "poses": 462,
+          "records": 340,
+          "differences": 0
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

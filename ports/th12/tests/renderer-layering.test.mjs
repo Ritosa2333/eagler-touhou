@@ -110,3 +110,19 @@ test('Boss countdown and spell-result times are submitted inside HUD44 and remai
     const shown=texts.find(p=>p.text===text&&p.x===x&&p.y===y);assert.ok(shown,`${text} at${x},${y}`);assert.equal(shown.font,3);assert.equal(shown.clipped,true);
   }
 });
+
+
+test('draw records survive metadata memory growth and subsequent exports without retaining Wasm views',()=>{
+  const core=fixture(),renderer=Object.assign(Object.create(Renderer.prototype),{
+    stageBackgrounds:new Map([[1,{geometry:()=>({camera:{fog:[0,0,0]},triangles:[]})}]]),stageJobs:new Map(),atlases:{text:{sprites:{}}},lastFrame:-1,presentationEpoch:1,
+    animations:{beginFrame(){},endFrame(){},sampleAll(){return [];}}
+  });
+  const ufo=core._th12_ufo;let grows=0;
+  core._th12_ufo=()=>{const heap=new Uint8Array(core.HEAPU8.byteLength*2);heap.set(core.HEAPU8);core.HEAPU8=heap;grows++;return ufo();};
+  core._th12_draw=()=>{const v=new DataView(core.HEAPU8.buffer);v.setFloat32(512,123.5,true);v.setFloat32(516,234.5,true);v.setInt32(536,1,true);v.setUint32(548,0x10000001,true);return 1;};
+  core._th12_player_state=()=>{core.HEAPU8.fill(0,512,560);return 1;};
+  const a=renderer.capturePresentation(core,{presentationContinuity:false}),saved=structuredClone(a.records);
+  renderer.capturePresentation(core,{presentationContinuity:false});
+  assert.equal(grows,2);assert.equal(a.records[0].x,123.5);assert.equal(a.records[0].y,234.5);assert.equal(a.records[0].owner,0x10000001);
+  assert.deepEqual(a.records,saved);assert.equal(a.bulletCount,1);
+});

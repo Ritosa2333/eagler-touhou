@@ -1,0 +1,5490 @@
+{
+  "schema": "th12-original-spell-presentation/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "Actual40def0,454d10/455630 and460800->4606b0; retail resources, synthetic mapped Spell/Font/Stats objects.",
+  "wholeGameOracle": false,
+  "wholePresentationOracle": false,
+  "gdiExecuted": false,
+  "gpuExecuted": false,
+  "fixtureCallbacks": [
+    "461920 returns the fixture history VM or0; no actual registration chain lookup.",
+    "4015c0 captures native format, arguments, coordinates and FontManager fields; formatting is Python; glyph submission not executed.",
+    "46cad8 copies fixture literal CP932 title to formatter output; CRT format/locale startup excluded.",
+    "44e660 captures GDI wrapper arguments; GDI rasterization and D3D upload excluded."
+  ],
+  "limits": [
+    "Only three root ANM scripts, not the full ANM scheduler.",
+    "Display uses current loadout capture/attempt counters; persistent save history is not loaded by this probe.",
+    "Title source extent666x36 follows44e85b..44e882; actual font/outline pixels remain unverified."
+  ],
+  "fontDefaultEntry": "401026..401070 native constructor tail; white,scale1,align1",
+  "drawCallback": {
+    "entry": "40e050->40def0",
+    "priority": 10,
+    "bonusPosition": [
+      261,
+      51,
+      0
+    ],
+    "failurePosition": [
+      275,
+      51,
+      0
+    ],
+    "historyPosition": [
+      356,
+      51,
+      0
+    ],
+    "format": [
+      "%8d",
+      "$",
+      "%.2d/%.2d"
+    ],
+    "alphaSource": "ascii2 primaryARGB high byte"
+  },
+  "text": [
+    {
+      "name": "active-full",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 4000000,
+        "records": [
+          12,
+          3,
+          88,
+          77
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            4000000
+          ],
+          "text": " 4000000",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            3,
+            12
+          ],
+          "text": "03/12",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "active-short",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 123457,
+        "records": [
+          1,
+          0,
+          88,
+          77
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            123457
+          ],
+          "text": "  123457",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            0,
+            1
+          ],
+          "text": "00/01",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "failed",
+      "input": {
+        "flags": 1,
+        "bonusDisplayed": 4000000,
+        "records": [
+          12,
+          3,
+          88,
+          77
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "$",
+          "arguments": [],
+          "text": "$",
+          "font": 2,
+          "position": [
+            275.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            3,
+            12
+          ],
+          "text": "03/12",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "inactive",
+      "input": {
+        "flags": 0,
+        "bonusDisplayed": 4000000,
+        "records": [
+          12,
+          3,
+          88,
+          77
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [],
+      "rngUnchanged": true
+    },
+    {
+      "name": "no-history-handle",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 4000000,
+        "records": [
+          12,
+          3,
+          88,
+          77
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": false,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [],
+      "rngUnchanged": true
+    },
+    {
+      "name": "zero-alpha",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 4000000,
+        "records": [
+          12,
+          3,
+          88,
+          77
+        ],
+        "historyAlpha": 0,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            4000000
+          ],
+          "text": " 4000000",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 16777215,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            3,
+            12
+          ],
+          "text": "03/12",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 16777215,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "dim-alpha",
+      "input": {
+        "flags": 7,
+        "bonusDisplayed": 4000000,
+        "records": [
+          12,
+          3,
+          88,
+          77
+        ],
+        "historyAlpha": 32,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            4000000
+          ],
+          "text": " 4000000",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 553648127,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            3,
+            12
+          ],
+          "text": "03/12",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 553648127,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "partial-alpha",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 4000000,
+        "records": [
+          12,
+          3,
+          88,
+          77
+        ],
+        "historyAlpha": 128,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            4000000
+          ],
+          "text": " 4000000",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 2164260863,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            3,
+            12
+          ],
+          "text": "03/12",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 2164260863,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "large-history",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 1,
+        "records": [
+          99999,
+          99998,
+          111,
+          22
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            1
+          ],
+          "text": "       1",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            99998,
+            99999
+          ],
+          "text": "99998/99999",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "zero-bonus",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 0,
+        "records": [
+          0,
+          0,
+          88,
+          77
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            0
+          ],
+          "text": "       0",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            0,
+            0
+          ],
+          "text": "00/00",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "negative-bonus",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": -123457,
+        "records": [
+          7,
+          2,
+          88,
+          77
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 0,
+        "subtype": 0
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            -123457
+          ],
+          "text": " -123457",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            2,
+            7
+          ],
+          "text": "02/07",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "name": "loadout-selection",
+      "input": {
+        "flags": 3,
+        "bonusDisplayed": 90000000,
+        "records": [
+          31,
+          13,
+          99,
+          66
+        ],
+        "historyAlpha": 255,
+        "historyHandlePresent": true,
+        "player": 2,
+        "subtype": 1
+      },
+      "calls": [
+        {
+          "format": "%8d",
+          "arguments": [
+            90000000
+          ],
+          "text": "90000000",
+          "font": 2,
+          "position": [
+            261.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        },
+        {
+          "format": "%.2d/%.2d",
+          "arguments": [
+            13,
+            31
+          ],
+          "text": "13/31",
+          "font": 2,
+          "position": [
+            356.0,
+            51.0,
+            0.0
+          ],
+          "colorARGB": 4294967295,
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "alignment": [
+            1,
+            1
+          ],
+          "drawFlag": 1
+        }
+      ],
+      "rngUnchanged": true
+    }
+  ],
+  "animations": [
+    {
+      "bank": "ascii",
+      "script": 1,
+      "interrupt": null,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.9008333683013916,
+            3.9008333683013916
+          ],
+          "primary": 150994943,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 301989887,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            2.613333225250244,
+            2.613333225250244
+          ],
+          "primary": 2298478591,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.7008333206176758,
+            1.7008333206176758
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            416.0,
+            383.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            416.0,
+            356.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            416.0,
+            200.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            416.0,
+            182.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            416.0,
+            165.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            416.0,
+            34.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 1,
+      "interrupt": 3,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.9008333683013916,
+            3.9008333683013916
+          ],
+          "primary": 150994943,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 301989887,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            2.613333225250244,
+            2.613333225250244
+          ],
+          "primary": 2298478591,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.7008333206176758,
+            1.7008333206176758
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            416.0,
+            383.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            416.0,
+            356.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            416.0,
+            200.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            416.0,
+            182.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            416.0,
+            165.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            416.0,
+            34.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4261412863,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4160749567,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 3456106495,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 1,
+      "interrupt": 2,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.9008333683013916,
+            3.9008333683013916
+          ],
+          "primary": 150994943,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 301989887,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            2.613333225250244,
+            2.613333225250244
+          ],
+          "primary": 2298478591,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.7008333206176758,
+            1.7008333206176758
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            416.0,
+            383.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            416.0,
+            356.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            416.0,
+            200.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            416.0,
+            182.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            416.0,
+            165.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            416.0,
+            34.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 1,
+      "interrupt": 1,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.9008333683013916,
+            3.9008333683013916
+          ],
+          "primary": 150994943,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 301989887,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            2.613333225250244,
+            2.613333225250244
+          ],
+          "primary": 2298478591,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.7008333206176758,
+            1.7008333206176758
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            416.0,
+            384.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            416.0,
+            383.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            416.0,
+            356.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            416.0,
+            200.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            416.0,
+            182.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            416.0,
+            165.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            416.0,
+            34.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            416.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            432.7822265625,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            448.99554443359375,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            494.22222900390625,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            546.5599975585938,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            616.2489013671875,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            672.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            672.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145742,
+          "visible": false,
+          "ended": true
+        },
+        {
+          "tick": 165,
+          "position": [
+            672.0,
+            16.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 259,
+          "layer": 19,
+          "flags": 3145742,
+          "visible": false,
+          "ended": true
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 2,
+      "interrupt": null,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 150994943,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 301989887,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2298478591,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 2,
+      "interrupt": 3,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 150994943,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 301989887,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2298478591,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4227858431,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4060086271,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2818572287,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 553648127,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 553648127,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 553648127,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 553648127,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 553648127,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 2,
+      "interrupt": 2,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 150994943,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 301989887,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2298478591,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "ascii",
+      "script": 2,
+      "interrupt": 1,
+      "interruptTick": 130,
+      "resourceSha256": "770cd0fff8d278a98940ffeeb155e7daacda8b94545c25c3d51e046d1ebb099c",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 16777215,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 150994943,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 301989887,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2298478591,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            368.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3153927,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            387.92889404296875,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            407.1822204589844,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            460.8888854980469,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            523.0399780273438,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            605.7955322265625,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            672.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145735,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            672.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145734,
+          "visible": false,
+          "ended": true
+        },
+        {
+          "tick": 165,
+          "position": [
+            672.0,
+            51.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 261,
+          "layer": 17,
+          "flags": 3145734,
+          "visible": false,
+          "ended": true
+        }
+      ]
+    },
+    {
+      "bank": "text",
+      "script": 74,
+      "interrupt": null,
+      "interruptTick": 130,
+      "resourceSha256": "d152090dcbe1addca564981eaaf87af21f372a0366cb4d5e92bd447681e41cf3",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 150994943,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.613333225250244,
+            3.613333225250244
+          ],
+          "primary": 301989887,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.6533331871032715,
+            1.6533331871032715
+          ],
+          "primary": 2298478591,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            412.0,
+            399.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            412.0,
+            372.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            412.0,
+            216.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            412.0,
+            198.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            412.0,
+            181.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            412.0,
+            50.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "text",
+      "script": 74,
+      "interrupt": 3,
+      "interruptTick": 130,
+      "resourceSha256": "d152090dcbe1addca564981eaaf87af21f372a0366cb4d5e92bd447681e41cf3",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 150994943,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.613333225250244,
+            3.613333225250244
+          ],
+          "primary": 301989887,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.6533331871032715,
+            1.6533331871032715
+          ],
+          "primary": 2298478591,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            412.0,
+            399.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            412.0,
+            372.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            412.0,
+            216.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            412.0,
+            198.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            412.0,
+            181.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            412.0,
+            50.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4261412863,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4160749567,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 3456106495,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 2164260863,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "text",
+      "script": 74,
+      "interrupt": 2,
+      "interruptTick": 130,
+      "resourceSha256": "d152090dcbe1addca564981eaaf87af21f372a0366cb4d5e92bd447681e41cf3",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 150994943,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.613333225250244,
+            3.613333225250244
+          ],
+          "primary": 301989887,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.6533331871032715,
+            1.6533331871032715
+          ],
+          "primary": 2298478591,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            412.0,
+            399.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            412.0,
+            372.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            412.0,
+            216.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            412.0,
+            198.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            412.0,
+            181.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            412.0,
+            50.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 165,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        }
+      ]
+    },
+    {
+      "bank": "text",
+      "script": 74,
+      "interrupt": 1,
+      "interruptTick": 130,
+      "resourceSha256": "d152090dcbe1addca564981eaaf87af21f372a0366cb4d5e92bd447681e41cf3",
+      "frames": [
+        {
+          "tick": 0,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.803333282470703,
+            3.803333282470703
+          ],
+          "primary": 150994943,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 1,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            3.613333225250244,
+            3.613333225250244
+          ],
+          "primary": 301989887,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 15,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.6533331871032715,
+            1.6533331871032715
+          ],
+          "primary": 2298478591,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 30,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 59,
+          "position": [
+            412.0,
+            400.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 60,
+          "position": [
+            412.0,
+            399.9931945800781,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 75,
+          "position": [
+            412.0,
+            372.0865173339844,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 89,
+          "position": [
+            412.0,
+            216.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 90,
+          "position": [
+            412.0,
+            198.20652770996094,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 91,
+          "position": [
+            412.0,
+            181.59878540039062,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 105,
+          "position": [
+            412.0,
+            50.699859619140625,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 120,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 129,
+          "position": [
+            412.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3153935,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 130,
+          "position": [
+            429.3066711425781,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 131,
+          "position": [
+            446.02667236328125,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 134,
+          "position": [
+            492.6666564941406,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 138,
+          "position": [
+            546.6400146484375,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 145,
+          "position": [
+            618.5067138671875,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 159,
+          "position": [
+            676.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145743,
+          "visible": true,
+          "ended": false
+        },
+        {
+          "tick": 160,
+          "position": [
+            676.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145742,
+          "visible": false,
+          "ended": true
+        },
+        {
+          "tick": 165,
+          "position": [
+            676.0,
+            32.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "primary": 4294967295,
+          "sprite": 7,
+          "layer": 20,
+          "flags": 3145742,
+          "visible": false,
+          "ended": true
+        }
+      ]
+    }
+  ],
+  "titles": [
+    {
+      "title": "星蓮船",
+      "titleHex": "90af98409144",
+      "calls": [
+        {
+          "style": 0,
+          "textHex": "90af98409144",
+          "offset": 272,
+          "sourceRect": [
+            0,
+            0,
+            320,
+            17
+          ],
+          "fontHeight": 17,
+          "foregroundColor": 16777215,
+          "outlineColor": 0,
+          "spacing": 0
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "title": "宝塔「レイディアントトレジャー」",
+      "titleHex": "95f393838175838c8343836683428341839383678367838c83578383815b8176",
+      "calls": [
+        {
+          "style": 0,
+          "textHex": "95f393838175838c8343836683428341839383678367838c83578383815b8176",
+          "offset": 64,
+          "sourceRect": [
+            0,
+            0,
+            320,
+            17
+          ],
+          "fontHeight": 17,
+          "foregroundColor": 16777215,
+          "outlineColor": 0,
+          "spacing": 0
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "title": "ABCD",
+      "titleHex": "41424344",
+      "calls": [
+        {
+          "style": 0,
+          "textHex": "41424344",
+          "offset": 288,
+          "sourceRect": [
+            0,
+            0,
+            320,
+            17
+          ],
+          "fontHeight": 17,
+          "foregroundColor": 16777215,
+          "outlineColor": 0,
+          "spacing": 0
+        }
+      ],
+      "rngUnchanged": true
+    },
+    {
+      "title": "空",
+      "titleHex": "8bf3",
+      "calls": [
+        {
+          "style": 0,
+          "textHex": "8bf3",
+          "offset": 304,
+          "sourceRect": [
+            0,
+            0,
+            320,
+            17
+          ],
+          "fontHeight": 17,
+          "foregroundColor": 16777215,
+          "outlineColor": 0,
+          "spacing": 0
+        }
+      ],
+      "rngUnchanged": true
+    }
+  ]
+}

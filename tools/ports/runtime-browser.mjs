@@ -4,24 +4,30 @@ import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir,stat} from 'node:fs/promises';
 import {resolve,dirname,extname,relative} from 'node:path';
 import {execFileSync} from 'node:child_process';
-import {launchBrowser} from '../browser/launch.mjs';
+import {assertCliArguments} from '../testing/cli-options.mjs';
+import {runWithReport} from '../testing/cli-report.mjs';
+import {runtimeTestTargets,selectRuntimeInputs,resultCoverage,runtimeTargetKey} from './runtime-targets.mjs';
 import {PRODUCT_GAMES} from '../../common/contracts/product-catalog.mjs';
 import {gamepadProbeBundle,prepareVirtualGamepad,bindProtocolHostGamepad,probeNativeGamepad} from './gamepad-probe.mjs';
 
 const argument=name=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3);
-if(!argument('manifest')||!argument('output'))throw Error('Required: --manifest=private-inputs.json --output=directory');
-const config=JSON.parse(await readFile(resolve(argument('manifest')),'utf8'));
+if(!argument('output'))throw Error('Required: --manifest=private-inputs.json --output=directory');
 const output=resolve(argument('output'));
-const variant=argument('variant')??'normal',games=argument('game')?.split(',');
+const result=await runWithReport({output,schema:'eagler-touhou/runtime-browser/1'},async(report,save)=>{
+assertCliArguments(process.argv.slice(2),{values:['manifest','output','game','variant'],flags:['gamepad']});
+assert.ok(argument('manifest'),'Required: --manifest=private-inputs.json');
+const config=JSON.parse(await readFile(resolve(argument('manifest')),'utf8'));
+const variant=argument('variant')??'normal';
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
-assert.ok(['normal','multiplayer','all'].includes(variant),'Unknown variant');
-const targets=config.targets.filter(target=>(variant==='all'||target.variant===variant)&&(!games||games.includes(target.game)));
-assert.ok(targets.length,'No selected Runtime');
+const required=await runtimeTestTargets({game:argument('game'),variant});
+report.requiredTargets=required.map(runtimeTargetKey);
+const targets=selectRuntimeInputs(config,required);
+const {launchBrowser}=await import('../browser/launch.mjs');
 await mkdir(output,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const root=resolve(import.meta.dirname,'../..');
-const report={schema:'eagler-touhou/runtime-browser/1',commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
-  startedAt:new Date().toISOString(),scope:'Desktop Chromium, production Runtime, real private game DATA, protocol host; no physical-device or multiplayer-session claim',targets:[]};
+Object.assign(report,{commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),
+  scope:'Desktop Chromium, production Runtime, real private game DATA, protocol host; no physical-device or multiplayer-session claim',targets:[]});
 report.harnessSha256=hash(await readFile(new URL(import.meta.url)));
 if(gamepad){report.gamepadProbeSha256=hash(await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));report.gamepadBundleSha256=hash(gamepadBundle);await writeFile(resolve(output,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(output,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
 await writeFile(resolve(output,'harness.mjs'),await readFile(new URL(import.meta.url)));
@@ -32,6 +38,7 @@ for(const [name,file] of Object.entries(config.shared??{}))routes.set(`/shared/$
 const server=createServer(async(request,response)=>{
   try{
     const url=new URL(request.url,'http://localhost');
+    if(url.pathname==='/favicon.ico'){response.writeHead(204).end();return;}
     const selected=config.targets.find(target=>url.pathname===`/host/${target.id}`);
     if(selected){
       const epoch=Number(url.searchParams.get('epoch')??1);assert.ok(Number.isSafeInteger(epoch)&&epoch>0);
@@ -62,10 +69,10 @@ const server=createServer(async(request,response)=>{
   }catch(error){response.writeHead(404).end(error.message);}
 });
 await new Promise(done=>server.listen(0,'127.0.0.1',done));
-const browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
-report.browser=browser.version();
-const save=()=>writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2)+'\n');
+let browser;
 try{
+  browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+  report.browser=browser.version();
   for(const target of targets){
     const record={game:target.game,variant:target.variant,id:target.id,checks:[],errors:[],consoleErrors:[],httpErrors:[],observations:{}};
     report.targets.push(record);
@@ -170,7 +177,7 @@ try{
       await check('runtime-errors',[],async()=>{
         assert.deepEqual(record.errors,[]);
         const fatal=await page.evaluate(()=>events.filter(event=>['error','abort'].includes(event.event)));
-        assert.deepEqual(fatal,[]);assert.deepEqual(record.httpErrors,[]);return true;
+        assert.deepEqual(fatal,[]);assert.deepEqual(record.httpErrors,[]);assert.deepEqual(record.consoleErrors,[]);return true;
       });
       await check('reload-storage-and-epoch',['SAVE-03','SAVE-04','RUNTIME-01'],async()=>{
         await page.evaluate(()=>rpc('sync'));
@@ -195,9 +202,13 @@ try{
     }catch(error){record.failure=String(error.stack||error);await page.screenshot({path:resolve(output,target.id+'-failure.png')}).catch(()=>{});}
     finally{
       record.events=[...(record.priorSessionEvents??[]),...await page.evaluate(()=>window.events??[]).catch(()=>[])];
-      record.passed=!record.failure&&!record.checks.some(check=>check.status==='failed');await context.close();await save();
+      await context.close();
+      record.passed=!record.failure&&!record.errors.length&&!record.consoleErrors.length&&!record.httpErrors.length&&!record.events.some(event=>['error','abort'].includes(event.event))&&!record.checks.some(check=>check.status==='failed');await save();
       console.log(`${target.id}: ${record.passed?'PASS':'FAIL'} ${record.failure?.split('\n')[0]??''}`);
     }
   }
-}finally{await browser.close();await new Promise(done=>server.close(done));report.finishedAt=new Date().toISOString();await save();}
-if(report.targets.some(target=>!target.passed))process.exitCode=1;
+}finally{try{await browser?.close();}finally{await new Promise(done=>server.close(done));}}
+report.coverage=resultCoverage(targets.map(target=>target.id),report.targets);
+report.passed=report.coverage.complete;
+});
+if(!result.passed){console.error(result.failure??'Runtime cases failed');process.exitCode=1;}

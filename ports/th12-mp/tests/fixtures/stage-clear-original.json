@@ -1,0 +1,429 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "provider": "421350; isolated retail opcode21 final award branch plus421880/40e730",
+  "scope": "Stage award arithmetic only; no full MSG or next-stage execution",
+  "wholeGameOracle": false,
+  "hooks": [
+    "4615a0 records graphical binding only"
+  ],
+  "base": [
+    {
+      "stage": 1,
+      "scoreBefore": 0,
+      "scoreAfter": 100000,
+      "displayAward": 1000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 1,
+      "scoreBefore": 999950000,
+      "scoreAfter": 999999999,
+      "displayAward": 1000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 2,
+      "scoreBefore": 0,
+      "scoreAfter": 200000,
+      "displayAward": 2000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 2,
+      "scoreBefore": 999950000,
+      "scoreAfter": 999999999,
+      "displayAward": 2000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 3,
+      "scoreBefore": 0,
+      "scoreAfter": 300000,
+      "displayAward": 3000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 3,
+      "scoreBefore": 999950000,
+      "scoreAfter": 999999999,
+      "displayAward": 3000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 4,
+      "scoreBefore": 0,
+      "scoreAfter": 400000,
+      "displayAward": 4000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 4,
+      "scoreBefore": 999950000,
+      "scoreAfter": 999999999,
+      "displayAward": 4000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 5,
+      "scoreBefore": 0,
+      "scoreAfter": 500000,
+      "displayAward": 5000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 5,
+      "scoreBefore": 999950000,
+      "scoreAfter": 999999999,
+      "displayAward": 5000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 6,
+      "scoreBefore": 0,
+      "scoreAfter": 600000,
+      "displayAward": 6000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 6,
+      "scoreBefore": 999950000,
+      "scoreAfter": 999999999,
+      "displayAward": 6000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 7,
+      "scoreBefore": 0,
+      "scoreAfter": 700000,
+      "displayAward": 7000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    },
+    {
+      "stage": 7,
+      "scoreBefore": 999950000,
+      "scoreAfter": 999999999,
+      "displayAward": 7000000,
+      "flags": 512,
+      "bindings": [
+        {
+          "resource": 123,
+          "script": 85,
+          "layer": 23
+        }
+      ]
+    }
+  ],
+  "final": [
+    {
+      "stage": 6,
+      "difficulty": 0,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 675010,
+      "displayAward": 6750000
+    },
+    {
+      "stage": 6,
+      "difficulty": 0,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 285410,
+      "displayAward": 2854000
+    },
+    {
+      "stage": 6,
+      "difficulty": 1,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 850010,
+      "displayAward": 8500000
+    },
+    {
+      "stage": 6,
+      "difficulty": 1,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 310410,
+      "displayAward": 3104000
+    },
+    {
+      "stage": 6,
+      "difficulty": 2,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 1200010,
+      "displayAward": 12000000
+    },
+    {
+      "stage": 6,
+      "difficulty": 2,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 360410,
+      "displayAward": 3604000
+    },
+    {
+      "stage": 6,
+      "difficulty": 3,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 1550010,
+      "displayAward": 15500000
+    },
+    {
+      "stage": 6,
+      "difficulty": 3,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 410410,
+      "displayAward": 4104000
+    },
+    {
+      "stage": 6,
+      "difficulty": 4,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 24100010,
+      "displayAward": 241000000
+    },
+    {
+      "stage": 6,
+      "difficulty": 4,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 5603410,
+      "displayAward": 56034000
+    },
+    {
+      "stage": 7,
+      "difficulty": 0,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 1550010,
+      "displayAward": 15500000
+    },
+    {
+      "stage": 7,
+      "difficulty": 0,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 410410,
+      "displayAward": 4104000
+    },
+    {
+      "stage": 7,
+      "difficulty": 1,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 1550010,
+      "displayAward": 15500000
+    },
+    {
+      "stage": 7,
+      "difficulty": 1,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 410410,
+      "displayAward": 4104000
+    },
+    {
+      "stage": 7,
+      "difficulty": 2,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 1550010,
+      "displayAward": 15500000
+    },
+    {
+      "stage": 7,
+      "difficulty": 2,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 410410,
+      "displayAward": 4104000
+    },
+    {
+      "stage": 7,
+      "difficulty": 3,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 1550010,
+      "displayAward": 15500000
+    },
+    {
+      "stage": 7,
+      "difficulty": 3,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 410410,
+      "displayAward": 4104000
+    },
+    {
+      "stage": 7,
+      "difficulty": 4,
+      "power": 400,
+      "lives": 2,
+      "bombs": 3,
+      "pointValueStored": 1000000,
+      "scoreBefore": 10,
+      "scoreAfter": 1550010,
+      "displayAward": 15500000
+    },
+    {
+      "stage": 7,
+      "difficulty": 4,
+      "power": 137,
+      "lives": 0,
+      "bombs": 1,
+      "pointValueStored": 1234567,
+      "scoreBefore": 10,
+      "scoreAfter": 410410,
+      "displayAward": 4104000
+    }
+  ]
+}

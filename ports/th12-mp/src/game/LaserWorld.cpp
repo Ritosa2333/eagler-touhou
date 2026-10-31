@@ -1,0 +1,181 @@
+// Bridge the recovered native laser objects to the shared RNG, ANM and item world.
+#include "LaserWorld.hpp"
+#include "GameState.hpp"
+#include "LaserCollision.hpp"
+
+namespace th12 {
+laser::Manager laserManager;
+uint64_t laserAnimationKey(u32 serial, laser::Role role) {
+  return 0xe00000000ull + uint64_t(serial) * 2 + uint32_t(role);
+}
+
+class GameLaserWorld final : public laser::World {
+  uint8_t grazers_=0;
+public:
+  float gameRate() const override { return gameSpeed; }
+  laser::Vec3 playerPosition() const override { return {pilot().px / 128.f, pilot().py / 128.f, 0}; }
+  bool bossPosition(laser::Vec3& p) const override {
+    if (auto* boss = primaryBoss()) {
+      p = {boss->x, boss->y, 0};
+      return true;
+    }
+    return false;
+  }
+  laser::Collision lineCollision(const laser::Vec3& p, float angle, float halfWidth,
+                                 float length) override;
+  void graze(const laser::Vec3& position) override {
+    if(multiplayer::active){for(unsigned seat=0;seat<multiplayer::options.count;++seat)if(grazers_&(1u<<seat)){
+      multiplayer::Scope owner(seat);awardPlayerGraze(pilot().px/128.f,pilot().py/128.f,0);
+    }return;}
+    awardPlayerGraze(position.x, position.y, position.z);
+  }
+  void bindAnimation(laser::Laser& object, laser::Role role,
+                     const laser::AnimationBinding& b) override {
+    const auto key = laserAnimationKey(object.state.serialId, role);
+    std::function<int(int)> remap;
+    if (object.state.kind == laser::Kind::Curve && role == laser::Role::Main)
+      // Native42c3f0 installs42e6d0: every sprite bind uses480+signed color,
+      // independent of the literal sprite operand in the curve's ANM script.
+      remap = [color = b.color](int) { return 480 + int16_t(color); };
+    else if (b.typeColorAppearance)
+      remap = [type = b.type, color = b.color](int sprite) {
+        int resolved = 0;
+        if (bullet_visuals::resolve(type, color, sprite, resolved))
+          return resolved;
+        ++th12::unsupported[984];
+        return -1;
+      };
+    if (auto* node = animationScene.bind(key, 0xb0000000u + object.state.serialId, 0, b.script,
+                                         anm_logic::Membership::Embedded, 0, 0, remap, false,
+                                         nullptr, 224, 16))
+      node->customGeometry = true;
+  }
+  void finishAnimationBirth(laser::Laser& object, laser::Role role) override {
+    // Curve42c48d/42c51b force the same Main/Cap blend and mode as straight
+    // constructors; the custom strip only replaces their geometry generation.
+    if (auto* node = animationScene.find(laserAnimationKey(object.state.serialId, role))) {
+      auto& state = node->vm.control();
+      state.blend = 1;
+      state.mode = 1;
+      if (role == laser::Role::Main) {
+        state.anchorX = 0;
+        state.anchorY = 2;
+      }
+    }
+  }
+  void interruptAnimation(laser::Laser& object, laser::Role role, int code) override {
+    animationScene.interrupt(laserAnimationKey(object.state.serialId, role), code);
+  }
+  void blendControl(laser::Laser& object, int blend) override {
+    if (auto* node =
+            animationScene.find(laserAnimationKey(object.state.serialId, laser::Role::Main))) {
+      auto& pose = node->vm.control();
+      pose.flags = (pose.flags & ~0xe0u) | (u32(blend & 1) << 5);
+      pose.blend = blend & 1;
+    }
+  }
+  void updateAnimationGeometry(laser::Laser& object, laser::Role role,
+                               const laser::AnimationGeometry& g) override {
+    auto p = g.position;
+    if (role == laser::Role::Cap) {
+      if (object.state.kind == laser::Kind::Curve) {
+        // Native42cfd8 draws the initial cap at the oldest retained history
+        // point, while the traveling head advances independently.
+        if (!object.state.nodes.empty())
+          p = object.state.nodes.back().position;
+      } else {
+        p.x = float(double(p.x) + std::cos(double(g.angle)) * g.headOffset);
+        p.y = float(double(p.y) + std::sin(double(g.angle)) * g.headOffset);
+      }
+    }
+    animationScene.position(laserAnimationKey(object.state.serialId, role), p.x, p.y);
+    if (auto* node = animationScene.find(laserAnimationKey(object.state.serialId, role))) {
+      node->vm.control().engineZ = p.z;
+      if (role == laser::Role::Main)
+        node->vm.control().rotation = g.angle + pi / 2;
+      if (role == laser::Role::Main && object.state.kind != laser::Kind::Curve) {
+        auto& state = node->vm.control();
+        const auto bank = animationScene.registry.bank(state.spriteBank);
+        if (bank && state.sprite >= 0 && state.sprite < int(bank->sprites.size())) {
+          const auto& sprite = bank->sprites[state.sprite];
+          state.sx = g.width / sprite.width;
+          state.sy = g.length / sprite.height;
+          state.flags |= 8u;
+        }
+      }
+    }
+  }
+  bool tickAnimation(laser::Laser& object, laser::Role role) override {
+    const auto key = laserAnimationKey(object.state.serialId, role);
+    animationScene.tickEmbedded(key);
+    const auto* node = animationScene.find(key);
+    return !node || node->vm.state().ended;
+  }
+  void retireAnimation(laser::Laser& object, laser::Role role) override {
+    animationScene.remove(laserAnimationKey(object.state.serialId, role));
+  }
+  void sound(int id, float x) override {
+    sound_system::queue.play(id, x);
+    if (id >= 0)
+      eventBits |= 1;
+  }
+  // Recovered callback3/5 owns the emitter's single sound call after allocation.
+  void emitBullet(const eb::Emission& emission) override { emitHostileEmission(emission, false); }
+  uint32_t next32() override { return random.next32(); }
+  float unit() override { return random.unit(); }
+  void spawnCancelEffect(const laser::Vec3& p, int script, float, float) override {
+    // 42ba22/42a907: ordinary Primary-tail factory, initial layer23. The
+    //  cancellation burst retains the ANM script's rotation, not the beam angle.
+    const auto serial = nextDetachedAnimation++;
+    animationScene.bind(0x100000000ull + serial, 0, 0, script, anm_logic::Membership::Primary, p.x,
+                        p.y, {}, false, nullptr, 224, 16, 23, false, p.z);
+  }
+  void pointItem(const laser::Vec3& p, int type, float angle, float speed) override {
+    itemManager.spawn(type, {p.x, p.y}, angle, speed);
+  }
+  void unsupported(uint32_t code) override {
+    ++th12::unsupported[985];
+    recordRuntimeFault(1, code);
+  }
+};
+GameLaserWorld gameLaserWorld;
+laser::World& laserWorld = gameLaserWorld;
+laser::Collision GameLaserWorld::lineCollision(const laser::Vec3& p, float angle, float halfWidth,
+                                               float length) {
+  if (oracleFixtureFlags & 2)
+    return laser::Collision::None;
+  if(multiplayer::active) return multiplayer::laserCollision(p,angle,halfWidth,length,&grazers_);
+  laser::PlayerCollision player;
+  player.position = playerPosition();
+  player.hitWidth = player.hitHeight = eb::playerHitboxes[pilot().character] * .5f;
+  player.state = pilot().playerState;
+  player.invulnerability = pilot().invuln;
+  player.dialogue = dialogue > 0;
+  player.flags = pilot().playerFlags;
+  const auto result = laser::collidePlayerLine(p, angle, halfWidth, length, player);
+  if (result.beginMiss)
+    playerMissCollision();
+  return result.code;
+}
+
+int spawnLaser(Enemy& e, Shooter& shooter, laser::Kind kind, int lookupId) {
+  laser::FactoryInput input;
+  input.config = shooter.laserConfig;
+  input.offset = {shooter.x, shooter.y, 0};
+  input.origin = {shooter.originX, shooter.originY, 0};
+  input.fixedOrigin = shooter.fixedOrigin;
+  input.angle = shooter.angle;
+  input.speed = shooter.speed;
+  input.initialOffset = shooter.radius;
+  input.type = shooter.type;
+  input.color = shooter.color;
+  input.sound = shooter.fireSound;
+  input.transformSound = shooter.extensions.transformSound;
+  input.program = shooter.extensions;
+  const auto p = laser::makeParameters(kind, input, {e.x, e.y, 0}, lookupId);
+  return laserManager.spawn(kind, p, laserWorld);
+}
+void tickLasers() {
+  laserManager.tick(laserWorld);
+}
+} // namespace th12

@@ -43,6 +43,7 @@ export interface MultiplayerRuntimeOptionInput {
   chapterThreshold?: number;
   iceServers: unknown;
   preferTurn?: boolean;
+  allowWebsocketFallback?: boolean;
   loadouts: MultiplayerRuntimeLoadout[];
 }
 
@@ -70,6 +71,7 @@ export interface MultiplayerRuntimeOptions {
   netplayChapterThreshold?: number;
   netplayIceServers: unknown[];
   netplayPreferTurn?: boolean;
+  netplayAllowWebsocketFallback?: boolean;
   netplayLoadouts: MultiplayerRuntimeLoadout[];
 }
 
@@ -88,6 +90,8 @@ export function buildMultiplayerRuntimeOptions(
   }
 
   const roomProduct = (url.searchParams.get('room') || '').split('-')[0];
+  if (input.allowWebsocketFallback !== undefined && typeof input.allowWebsocketFallback !== 'boolean')
+    throw new Error('WebSocket 回退开关必须为布尔值');
   if (input.preferTurn !== undefined && typeof input.preferTurn !== 'boolean')
     throw new Error('TURN 偏好必须为布尔值');
   const product = multiplayerConfigForProduct(roomProduct) ?? constraints;
@@ -144,16 +148,16 @@ export function buildMultiplayerRuntimeOptions(
   });
   if (loadouts.length !== playerCount) throw new Error('LAN 机体配置数量不足');
 
-  const th11 = product === multiplayerConfigForProduct('th11mp');
+  const fixedRollbackTitle = product === multiplayerConfigForProduct('th11mp') || product === multiplayerConfigForProduct('th12mp');
   const th075 = roomProduct === 'th075mp';
   const th15 = roomProduct === 'th15mp';
-  const requestedMode = input.adonisMode ?? (th11 || th075 || product.inputTiming?.rollbackDefault === false ? 1 : 0);
+  const requestedMode = input.adonisMode ?? (fixedRollbackTitle || th075 || product.inputTiming?.rollbackDefault === false ? 1 : 0);
   const timingPolicy = multiplayerInputTimingPolicy(product);
   const rollback = timingPolicy.rollback && [0, 2].includes(requestedMode);
   const adonisMode = rollback ? 0 : requestedMode;
   const measuredTitle = timingPolicy.measuredStartup;
   if (
-    (th11 || roomProduct === "th15mp") &&
+    (fixedRollbackTitle || roomProduct === "th15mp") &&
     input.predictionLimit !== undefined &&
     input.predictionLimit !== timingPolicy.predictionLimit &&
     !(adonisMode === 1 && input.predictionLimit === 0)
@@ -182,7 +186,7 @@ export function buildMultiplayerRuntimeOptions(
   )
     throw new Error('该多人 Runtime 仅支持纯延迟时序，不能启用预测或回滚');
   if (
-    (requestedMode || timingPolicy.manualRollbackDelay && input.inputDelay !== undefined) &&
+    (requestedMode || input.inputDelay !== undefined) &&
     (!Number.isInteger(input.inputDelay) ||
       input.inputDelay! < 0 ||
       input.inputDelay! > timingPolicy.manualDelayLimit)
@@ -206,28 +210,28 @@ export function buildMultiplayerRuntimeOptions(
     ...(rollback || input.inputDelay !== undefined
       ? {
           netplayInputDelay:
-            rollback && !timingPolicy.manualRollbackDelay || input.inputDelayAuto
+            rollback || input.inputDelayAuto
               ? 0
               : typeof input.inputDelay === 'number' &&
                   Number.isInteger(input.inputDelay) &&
                   input.inputDelay >= 0 &&
-                  input.inputDelay <= (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8)
+                  input.inputDelay <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
                 ? input.inputDelay
                 : 0,
         }
       : {}),
-    ...(input.adonisMode !== undefined || th11 || th075 || th15 ? { netplayAdonisMode: adonisMode } : {}),
-    ...(((th11 || th15) && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
+    ...(input.adonisMode !== undefined || fixedRollbackTitle || th075 || th15 ? { netplayAdonisMode: adonisMode } : {}),
+    ...(((fixedRollbackTitle || th15) && rollback) || th075 ? { netplayInputDelayAuto: false } : {}),
     ...(measuredTitle && adonisMode
       ? {
           netplayInputDelayAuto: input.inputDelayAuto ?? false,
           netplayPredictionReserve: input.predictionReserve ?? 2,
         }
       : {}),
-    ...(!timingPolicy.rollback || input.predictionLimit !== undefined || th11 || th075 || th15
+    ...(!timingPolicy.rollback || input.predictionLimit !== undefined || fixedRollbackTitle || th075 || th15
       ? {
           netplayPredictionLimit:
-            !timingPolicy.rollback || ((th11 || th075 || th15) && adonisMode === 1)
+            !timingPolicy.rollback || ((fixedRollbackTitle || th075 || th15) && adonisMode === 1)
               ? 0
               : typeof input.predictionLimit === 'number' &&
                   Number.isInteger(input.predictionLimit) &&
@@ -247,6 +251,7 @@ export function buildMultiplayerRuntimeOptions(
     } : {}),
     netplayIceServers: Array.isArray(input.iceServers) ? input.iceServers : [],
     ...(input.preferTurn === true ? { netplayPreferTurn: true } : {}),
+    ...(input.allowWebsocketFallback === true ? {netplayAllowWebsocketFallback: true} : {}),
     netplayLoadouts: loadouts,
   };
 }

@@ -1,0 +1,1124 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "cfff78099a23bc45258f515f78d846d673f7cbf942c28d76e6211842c4161e24",
+  "wholeGameOracle": false,
+  "scope": "Actual Player16 respawn at normal/half/quarter rate, across six retail SHTs.\n\nControlled state/timer inputs; immutable original instructions execute the\ntransition and damage-source creation. No replay or GPU equivalence claim.\n",
+  "rows": [
+    {
+      "loadout": 0,
+      "rate": 1,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 121,
+          "invulnerability": 119,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 0,
+      "rate": 1,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 0,
+      "rate": 0.5,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.5,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.5
+        }
+      ]
+    },
+    {
+      "loadout": 0,
+      "rate": 0.5,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 0,
+      "rate": 0.25,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.25,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.25
+        }
+      ]
+    },
+    {
+      "loadout": 0,
+      "rate": 0.25,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 1,
+      "rate": 1,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 121,
+          "invulnerability": 119,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 1,
+      "rate": 1,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 1,
+      "rate": 0.5,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.5,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.5
+        }
+      ]
+    },
+    {
+      "loadout": 1,
+      "rate": 0.5,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 1,
+      "rate": 0.25,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.25,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.25
+        }
+      ]
+    },
+    {
+      "loadout": 1,
+      "rate": 0.25,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 2,
+      "rate": 1,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 121,
+          "invulnerability": 119,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 2,
+      "rate": 1,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 2,
+      "rate": 0.5,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.5,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.5
+        }
+      ]
+    },
+    {
+      "loadout": 2,
+      "rate": 0.5,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 2,
+      "rate": 0.25,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.25,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.25
+        }
+      ]
+    },
+    {
+      "loadout": 2,
+      "rate": 0.25,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 3,
+      "rate": 1,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 121,
+          "invulnerability": 119,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 3,
+      "rate": 1,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 3,
+      "rate": 0.5,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.5,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.5
+        }
+      ]
+    },
+    {
+      "loadout": 3,
+      "rate": 0.5,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 3,
+      "rate": 0.25,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.25,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.25
+        }
+      ]
+    },
+    {
+      "loadout": 3,
+      "rate": 0.25,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 4,
+      "rate": 1,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 121,
+          "invulnerability": 119,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 4,
+      "rate": 1,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 4,
+      "rate": 0.5,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.5,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.5
+        }
+      ]
+    },
+    {
+      "loadout": 4,
+      "rate": 0.5,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 4,
+      "rate": 0.25,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.25,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.25
+        }
+      ]
+    },
+    {
+      "loadout": 4,
+      "rate": 0.25,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 5,
+      "rate": 1,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 121,
+          "invulnerability": 119,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 5,
+      "rate": 1,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 1.0
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 5,
+      "rate": 0.5,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.5,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.5
+        }
+      ]
+    },
+    {
+      "loadout": 5,
+      "rate": 0.5,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.5
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    },
+    {
+      "loadout": 5,
+      "rate": 0.25,
+      "age": 29,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 29,
+          "stateTime": 29.25,
+          "totalAge": 120,
+          "invulnerability": 119,
+          "rate": 0.25
+        }
+      ]
+    },
+    {
+      "loadout": 5,
+      "rate": 0.25,
+      "age": 30,
+      "frames": [
+        {
+          "fixed": [
+            111,
+            38400
+          ],
+          "state": 2,
+          "stateAge": 30,
+          "stateTime": 30.0,
+          "totalAge": 120,
+          "invulnerability": 120,
+          "rate": 0.25
+        },
+        {
+          "fixed": [
+            0,
+            61440
+          ],
+          "state": 0,
+          "stateAge": 1,
+          "stateTime": 1.0,
+          "totalAge": 121,
+          "invulnerability": 279,
+          "rate": 1.0
+        }
+      ]
+    }
+  ]
+}

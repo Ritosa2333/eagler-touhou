@@ -45,3 +45,34 @@ test('dense layers retain native priority, insertion order and stable ties',()=>
   const fallback=poses.map((pose,index)=>({...pose,index})).sort((a,b)=>a.drawPriority-b.drawPriority||a.order-b.order||a.index-b.index);
   assert.deepEqual(orderPresentation(poses).map(p=>p.id),fallback.map(p=>p.id));
 });
+
+
+test('native scheduling on fresh wrappers preserves endpoints across VM births, retirement and changing clips',()=>{
+  const HEAPU8=new Uint8Array(256),view=new DataView(HEAPU8.buffer);let count=0;
+  const core={HEAPU8,_th12_anm_schedule_count:()=>count,_th12_anm_schedule_ptr:()=>16,_th12_anm_schedule_stride:()=>16};
+  const write=rows=>{count=rows.length;for(const [i,row]of rows.entries())row.forEach((n,j)=>view.setInt32(16+i*16+j*4,n,true));};
+  const buckets=[],make=ids=>ids.map(id=>({id,logical:true,a:{layer:0}}));
+  write([[1,31,10,2],[2,24,0,1]]);
+  const poses=make([1,2]),first=orderPresentation(poses,readCoreDrawSchedule(core,poses),{buckets,reusePoses:true});
+  const saved=structuredClone(first);
+  write([[1,69,0,0],[3,24,0,2]]);
+  const fresh=make([1,3]),next=orderPresentation(fresh,readCoreDrawSchedule(core,fresh),{buckets,reusePoses:true});
+  assert.deepEqual(next.map(p=>[p.id,p.clip]),[[3,2],[1,0]]);
+  assert.deepEqual(first,saved,'new captures and reused buckets cannot mutate published endpoints');
+  assert.deepEqual(next,orderPresentation(make([1,3]),readCoreDrawSchedule(core)));
+  // Schedule-only custom geometry and nonmatching producer order still use explicit ID lookup.
+  write([[2,31,9,2],[9,29,1,1],[1,24,0,0]]);
+  const mixed=make([1,2]);mixed.push({id:9,mesh:true,renderPass:0,a:{layer:0}});
+  const expected=orderPresentation(structuredClone(mixed),readCoreDrawSchedule(core));
+  assert.deepEqual(orderPresentation(mixed,readCoreDrawSchedule(core,mixed),{buckets,reusePoses:true}),expected);
+  write([[1,69,0,0],[1,24,0,2]]);assert.throws(()=>readCoreDrawSchedule(core,make([1])),/顺序字段/);
+});
+
+test('reused draw buckets clear both prior sort flags and fallback contents',()=>{
+  const buckets=[],run=poses=>orderPresentation(poses,new Map(),{buckets});
+  const old=run([{id:1,drawPriority:31,order:2},{id:2,drawPriority:31,order:1}]);
+  assert.deepEqual(old.map(p=>p.id),[2,1]);
+  assert.deepEqual(run([{id:3,drawPriority:31,order:0},{id:4,drawPriority:101,order:0}]).map(p=>p.id),[3,4]);
+  assert.deepEqual(run([{id:5,drawPriority:24,order:0}]).map(p=>p.id),[5]);
+  assert.deepEqual(run([]),[]);assert.deepEqual(old.map(p=>p.id),[2,1]);
+});

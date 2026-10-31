@@ -47,9 +47,39 @@ test('rolling history stays bounded and circular values serialize safely',()=>{
   assert.equal(report.logs.length,100);assert.equal(report.samples.length,30);
   assert.match(JSON.stringify(report),/circular/);
 });
+
+test('RTC failures retain explicit browser cause fields and channel queues without signaling secrets',()=>{
+  const {api,world}=fixture('th12',true);
+  world.__eaglerPeerTransport={route:'rtc',received:[],receivedHead:0,
+    channelEvents:[{peer:1,kind:'control',event:'error',error:{name:'OperationError',message:'User-Initiated Abort',
+      errorDetail:'sctp-failure',sctpCauseCode:12},channel:{readyState:'closing',bufferedAmount:8192}}],
+    peers:new Map([[1,{pc:{connectionState:'connected',iceConnectionState:'connected',sctp:{state:'closed'},
+      localDescription:{sdp:'private-sdp'},configuration:{iceServers:[{credential:'private-turn'}]}},
+      inputDc:{readyState:'open',bufferedAmount:0},controlDc:{readyState:'closing',bufferedAmount:8192},
+      adaptive:{snapshot:()=>({pendingControl:2,pendingBytes:160})}}]])};
+  api.fatal(new Error('RTC peer P2 control channel error'));
+  const report=api.report();
+  assert.equal(report.transport.channelEvents[0].error.sctpCauseCode,12);
+  assert.equal(report.transport.channelEvents[0].error.errorDetail,'sctp-failure');
+  assert.equal(report.transport.peers[0].sctpState,'closed');
+  assert.equal(report.transport.peers[0].control.bufferedAmount,8192);
+  assert.equal(report.transport.peers[0].route.pendingControl,2);
+  assert(!JSON.stringify(report).includes('private-sdp'));assert(!JSON.stringify(report).includes('private-turn'));
+});
 test('TH12 native gameplay getters wait until a session exists',()=>{
   const {api}=fixture('th12',false);let reads=0,session=null;
   const core={HEAPU8:new Uint8Array(1024),_th12_hud:()=>{++reads;return 0;}};
   api.bindCore(core,{context:()=>({session})});assert.equal(reads,0);
   session={stage:1};api.sample();assert.equal(reads,1);
+});
+test('TH12 reports its eight-word rollback ABI independently of TH15',()=>{
+  const {api}=fixture('th12',true),heap=new Uint8Array(256);
+  new Uint32Array(heap.buffer,16,8).set([1,7,42,120,1,118,130,1]);
+  api.bindCore({HEAPU8:heap,_th12_mp_rollback_status:()=>16});
+  api.fatal(new Error('report-only fixture'));
+  const state=api.report().samples.at(-1).rollback;
+  assert.equal(state.corrections,7);assert.equal(state.replayedFrames,42);
+  assert.equal(state.committedFrames,120);assert.equal(state.frontier,130);
+  assert.equal(state.requestedFrame,118);assert.equal(state.correcting,true);
+  assert(!Object.hasOwn(state,'presentationFps'));
 });

@@ -1,8 +1,34 @@
 # 验证与交付
 
-[适配流程](README.md) · [文档目录](../README.md)
+[适配流程](README.md) | [文档目录](../README.md)
 
 每条检查保存可重复的操作和结果，再更新本作适配表。
+
+## 共用测试范围
+
+以下命令从仓库根目录运行。测试结果按实际观察边界填写，游戏内行为按对应分项验收。
+
+| 分项 | 共用入口 | 观察范围与逐作验收 |
+| --- | --- | --- |
+| 启动器与共用模块 | `npm --prefix launcher run check`、`npm --prefix launcher test`；原生共用组件使用 [common CTest](../../common/tests/CMakeLists.txt) | 核心模块、生产前端组件、共用输入与网络组件及其夹具。真实设备与游戏效果使用专项入口。 |
+| 构建与打包 | `npm --prefix launcher run check` | 配方与发布包校验，包含文件集合和哈希错误的反例。正式编译、工具链及产物按 [BUILD](build.md) 分模式执行。 |
+| 启动、暂停、重开 | `npm run ports:runtime -- --manifest=/absolute/inputs.json --output=/absolute/results`；合作 MP 使用 `ports:mp` 的 `--lifecycle` | 使用私有 DATA 和真实 Runtime，执行驱动中的协议与生命周期断言。记录实际选择的作品、模式和动作。 |
+| 键盘与手柄映射 | `npm --prefix launcher run test:keyboard-mapping:browser` | 从产品、构建和源码目录配置枚举 STG 普通版与 MP，在 Chromium 中检查生产 JS 接收代码和键值记录端，包含虚拟手柄。角色移动、触屏和实体控制器按 [INPUT／TOUCH](input.md) 验收。th075 使用格斗输入，执行本作专项测试。 |
+| 射击、Bomb、决死 | [逐作自动检查与 STG 动作验收](input.md#stg-动作验收) | th11、th12、th15 等已有原生行为对照，按本作脚本准备输入并运行。Launcher 动作送达、原生效果和窗口边界分别记录。 |
+| 保持触点与禁移恢复 | `node --test tools/ports/touch-continuity.test.mjs` | 按构建目录枚举生产输入架构，检查触点、增量消费或格斗方向输入在暂时禁移后的连续性。th12 同时核对状态生成与输入接线。游戏内死亡、决死窗口与设备事件按 [INPUT／TOUCH](input.md) 验收。 |
+| 音乐与音效 | `node --test tools/ports/sfx-routing.test.mjs`、`npm --prefix launcher run test:audio-output:browser` | 前者逐构建核对生产音效接线与头文件输入，后者离线渲染生产 WebSfx 的双声道 PCM、音量、暂停恢复、停止、清空及音乐任务未完成时的输出，并校验延迟输出反例。各作曲目与设备输出按 [AUDIO／MIDI](presentation.md) 验收。 |
+
+根 CI 的 `shared-input-audio` 运行上述改键与 WebSfx 浏览器测试，以及已有的[浏览器程序交付身份检查](../../tools/browser/verified-runtime.test.mjs)。`port-adaptation` 遍历 `tools/ports/*.test.mjs` 与 `tools/testing/*.test.mjs`，包含 MP 打包归属、帧率统计与驱动覆盖校验。这些检查使用源码与合成输入；真实 DATA、房间及设备验收按各自输入另行执行。
+
+`Checks` 汇总启动器核心、界面、输入音频、适配工具及本次受影响的 common、Relay、TURN 任务；其中任一失败或取消都会阻止汇总通过。
+
+共用网络测试覆盖自适应选路、旁观会话恢复、Replay 传输与播放桥；[合作菜单输入测试](../../common/tests/cooperative-menu-input-test.cpp)验证多席位按键边沿和状态恢复。common CTest 自动发现 `tests/`、`browser/`、`testkit/` 中的 Node 测试，包含回放时钟、旁观时间轴和采集文件校验。Launcher 的旁观往返与角色切换场景按产品目录的联机能力生成，夹具沿用目录中的网络策略。这些测试随对应的 common 或前端 CI 执行。`shared-checks.json` 维护适配表编号与执行检查的映射，完整测试入口见[启动器测试](../../launcher/tests/README.md)及根 CI。
+
+改键命令可用 `-- --game=th08 --variant=all` 选择单作，模式可选 `normal`、`multiplayer`、`all`。未指定作品时检查全部适用作品；新增作品对应现有接收代码布局时随配置纳入，其他布局在浏览器夹具中接入其生产模块。
+
+`ports:runtime` 默认要求全部普通版，`--variant=all` 要求全部普通版与 MP。`ports:mp` 默认要求产品目录中的全部合作 MP，普通与挑战场景由 `--challenge` 选择。局部验收显式使用 `--game=th08`，清单缺少所选目标时直接失败；未知作品、重复目标或拼错参数也会失败。
+
+两个 Runtime 驱动启动时先将 `report.json` 标为运行中，结束后记录通过或失败。报告列出必测作品，成功执行后汇总必测、已执行和通过数量。浏览器异常、Console 错误、HTTP 错误与未执行的必测场景会阻止整轮通过。
 
 ## 准备
 

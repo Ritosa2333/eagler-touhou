@@ -1,0 +1,126 @@
+{
+  "schema": "eagler-th15-main-rollback-publication/1",
+  "revision": "7004304cec3aa1e481b9081874e5249a8b5039bb",
+  "branch": "fix/th15-mp-bomb-snapshot-memory",
+  "gitRemote": "origin",
+  "runtimeGeneration": "9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e",
+  "wasmSha256": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c",
+  "runtimeFiles": 15,
+  "scope": "TH15 multiplayer stage-transition capture pipeline and bounded animation snapshot growth",
+  "sites": {
+    "jp": {
+      "previous": "/var/www/eagler-touhou/releases/relay-session-d48252551-20261028",
+      "candidate": "/var/www/eagler-touhou/releases/th15-mp-7004304ce-20261028",
+      "releaseId": "sha256-a254a34ace74d6a8940367a699767669c1d872aaf2a02592249b220d22150fe9",
+      "buildId": "841557d07d69bf4eb54a",
+      "siteUrl": "https://touhouonline.com/",
+      "files": 6709,
+      "revision": "7004304cec3aa1e481b9081874e5249a8b5039bb",
+      "sourceRelease": "sha256-630416f08ba0d503bee373f22ef286d64cf0db2c53cba767fe9e8064b1a3636e",
+      "wasm": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c",
+      "previousGeneration": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+      "generation": "9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e",
+      "changes": [
+        {
+          "path": "crash-code-identities.json",
+          "before": "f33ffea1b23375faf8fcb9e259a2a987d4d98c04c48744e5f9a3a9d6a8aec13d",
+          "sha256": "ccb8e46ea0154abb80d8f81f92772f305af8aa0c230bd1df9907bc92942f14f5"
+        },
+        {
+          "path": "manifest.json",
+          "before": "14fa5c4ab42de0ab1b2299552cf708e3e6a745eef51881e2325e473808414da5",
+          "sha256": "b506c943efb717f9a06d9ed38b5d8012e4546dbe510dfed88613f73bdab1534f"
+        },
+        {
+          "path": "shell.mjs",
+          "before": "1e51ed3706f275d3dfe115534efd05974a6f4c76a42f22975869593a80a01776",
+          "sha256": "de299761481227b9c9b941d2ed75ac53c78e4f6e5cd73729d0cbd4d6a049ecde"
+        },
+        {
+          "path": "th15.mjs",
+          "before": "0791e348230b93f84dacdfecabd5f2d66a52ea940a5eb9ada060dd5d2bf50d57",
+          "sha256": "12682ed6cd81331729b8395a6dc86bf8f57a2ab34c56b4314a3ca33a6bb0de94"
+        },
+        {
+          "path": "th15.wasm",
+          "before": "5d956d0d0e6987f99f9bd0231135e51b760116fa2aafad33bf59c67425c7468a",
+          "sha256": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c"
+        }
+      ]
+    },
+    "cn129": {
+      "previous": "/var/www/eagler-touhou/releases/relay-session-d48252551-20261028",
+      "candidate": "/var/www/eagler-touhou/releases/th15-mp-7004304ce-20261028",
+      "releaseId": "sha256-fe2c2dd947d7aee74d0be5f16ff86e45a1301e32514c494c632f9802a9450ae4",
+      "buildId": "f8d0ccc3d23b64556eaf",
+      "siteUrl": "https://touhou.vip/",
+      "files": 6720,
+      "revision": "7004304cec3aa1e481b9081874e5249a8b5039bb",
+      "sourceRelease": "sha256-302c1b5846106b0a82502ee3f41e1c8045ba443aa531a253d57c44199864e64e",
+      "wasm": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c",
+      "previousGeneration": "146c88ade27537d561f35be0f145abc39c59844c3281d8e264bff9a9fc28102b",
+      "generation": "9bd11b7eb674a1fbbd10f411c83ec0a50f38d22fc2070080ab4cf7e5f567824e",
+      "changes": [
+        {
+          "path": "crash-code-identities.json",
+          "before": "f33ffea1b23375faf8fcb9e259a2a987d4d98c04c48744e5f9a3a9d6a8aec13d",
+          "sha256": "ccb8e46ea0154abb80d8f81f92772f305af8aa0c230bd1df9907bc92942f14f5"
+        },
+        {
+          "path": "manifest.json",
+          "before": "14fa5c4ab42de0ab1b2299552cf708e3e6a745eef51881e2325e473808414da5",
+          "sha256": "b506c943efb717f9a06d9ed38b5d8012e4546dbe510dfed88613f73bdab1534f"
+        },
+        {
+          "path": "shell.mjs",
+          "before": "1e51ed3706f275d3dfe115534efd05974a6f4c76a42f22975869593a80a01776",
+          "sha256": "de299761481227b9c9b941d2ed75ac53c78e4f6e5cd73729d0cbd4d6a049ecde"
+        },
+        {
+          "path": "th15.mjs",
+          "before": "0791e348230b93f84dacdfecabd5f2d66a52ea940a5eb9ada060dd5d2bf50d57",
+          "sha256": "12682ed6cd81331729b8395a6dc86bf8f57a2ab34c56b4314a3ca33a6bb0de94"
+        },
+        {
+          "path": "th15.wasm",
+          "before": "5d956d0d0e6987f99f9bd0231135e51b760116fa2aafad33bf59c67425c7468a",
+          "sha256": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c"
+        }
+      ]
+    }
+  },
+  "checks": {
+    "preparedPublicationFiles": {
+      "jp": 6709,
+      "cn129": 6720
+    },
+    "mainAndMirrorFileSets": 4,
+    "browserMainOrigins": 2,
+    "cloudflareWorkerPublications": 2,
+    "cloudflareProbeFileSets": 2,
+    "unrelatedRuntimeGenerationsPreserved": true,
+    "relayOrTurnRestarted": false
+  },
+  "networkVerification": {
+    "desktopMainAndMirrors": "Four origins, all 15 file hashes. Two main origins: real Chromium fetch and WebAssembly.compile.",
+    "cloudflare": "All 15 file hashes checked from each publisher over its configured public edge probe host, using browser resource-fetch headers.",
+    "desktopCloudflare": "HTTP 403 on this desktop route; raw client results retained separately."
+  },
+  "evidenceHashes": {
+    "assembled-jp.json": "de098b59de521608a6df8775cd7159fba067fdfcb0ca67ba1c4dc5560ad0208d",
+    "assembled-cn129.json": "43d4dfccd094c3ba90e8750d1ae59b0c918ea959497399805bffc04e6ee052ac",
+    "published-jp.json": "2140c185c88ab15371c33af8d269bdc55a30ad6ce8a8861fd7e68311f9b21252",
+    "published-cn129.json": "a73d868fdd08eb6582f52d6c704773fec1c44ef2709eb9e949346fa04341ea66",
+    "edge-jp.json": "d2ade1985fee9c909a2c2cc7c423bac4c395d78a73d7d87928d25e63868e79ee",
+    "edge-cn129.json": "2fda97cff1f0f61db435081562e24a0d0beb41c747c38a5432946f419b25de92",
+    "verify-jp.log": "a65d3adaa9a50e0437ae8968291413879f0d95d30ebe5fd9f6810b45cfac4088",
+    "verify-cn129.log": "fabf69c3e67a778acf6c2f7bf28e6e8465d1322745c8836d0464caa140ba5ea1",
+    "public-runtime.json": "deef4af3b03bb76fe0e1a0a04d9d423d55791122649be15e00ae8fbffc7908d3",
+    "browser-public.json": "39fa8d37eaeaaaf11a56c0bc26330b4107453422ca02d2323897a49be152c33b",
+    "cf-runtime-jp.json": "4828c05619343e31aa9a5f9fbd874d27449612e16b1dc62826631542c28f8d10",
+    "cf-runtime-cn129.json": "01078d6c58315409ac799d01c0f5a47d124986a15679142fd6aaea3b826e1782",
+    "public-edge-runtime.json": "366d3ce73aa4a163c01c6b2be4b199fc0ca818853929577cc164c16ea4c24896",
+    "browser-edge.json": "6ac2a22f228b02d3bd84bac9e78a8ead5aa3ad529fa39541b312da7081406153",
+    "source-sync-stamp-audit-cn129.json": "acde94e521dfb8d35787b7cb1f2b0518936a5f4b6683212799f533a5671c702a"
+  }
+}

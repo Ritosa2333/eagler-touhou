@@ -1,0 +1,209 @@
+{
+  "schema": "eagler-th15-bomb-snapshot-memory/1",
+  "base": "5a1feae00a84ed0fb4107cf9c18a67d896f6bc0a",
+  "report": {
+    "id": "20261028T083607059Z-9d1037",
+    "sha256": "d6fef5ac416d4bf7c9d3ff73cded64119d05a41007db85f8404084face171184",
+    "reportedWasmSha256": "5d956d0d0e6987f99f9bd0231135e51b760116fa2aafad33bf59c67425c7468a",
+    "downloadedWasmSha256": "5d956d0d0e6987f99f9bd0231135e51b760116fa2aafad33bf59c67425c7468a",
+    "sourceRevision": "5db7ef555002b00738a912cb73fcb84cd943c7ca",
+    "beforeCrashWasmMemoryBytes": 911540224,
+    "abortWasmMemoryBytes": 1073741824,
+    "userContext": "Extra boss fifth nonspell; bomb; 2P Sanae/Sanae in report",
+    "allocation": {
+      "wasmFunction": 2812,
+      "offset": "0x13c666",
+      "operatorNewFunction": 5499,
+      "abortFunction": 5311,
+      "elementStride": 1496,
+      "wasmSizeofAnmVm": 1488,
+      "wasmSizeofRootImage": 1496
+    }
+  },
+  "productionWasm": "ab11bc546c09c222f4a3ef8df80640220077422070b4abc42bcd32f523a220ed",
+  "kernelProfile": {
+    "snapshots": 13,
+    "scope": "Actual AnimationState with standalone unregistered VM roots. Retained payload storage and largest intercepted new request; excludes full application, audio and GPU.",
+    "wasmBefore": [
+      {
+        "roots": 2048,
+        "snapshots": 13,
+        "retainedPayloadBytes": 40863420,
+        "largestAllocation": 3063808
+      },
+      {
+        "roots": 2049,
+        "snapshots": 13,
+        "retainedPayloadBytes": 80906098,
+        "largestAllocation": 6127616
+      },
+      {
+        "roots": 4097,
+        "snapshots": 13,
+        "retainedPayloadBytes": 161363826,
+        "largestAllocation": 12255232
+      },
+      {
+        "roots": 8193,
+        "snapshots": 13,
+        "retainedPayloadBytes": 322279282,
+        "largestAllocation": 24510464
+      }
+    ],
+    "wasmAfter": [
+      {
+        "roots": 2048,
+        "snapshots": 13,
+        "retainedPayloadBytes": 40863732,
+        "largestAllocation": 32764
+      },
+      {
+        "roots": 2049,
+        "snapshots": 13,
+        "retainedPayloadBytes": 41096354,
+        "largestAllocation": 32768
+      },
+      {
+        "roots": 4097,
+        "snapshots": 13,
+        "retainedPayloadBytes": 81724578,
+        "largestAllocation": 65536
+      },
+      {
+        "roots": 8193,
+        "snapshots": 13,
+        "retainedPayloadBytes": 162981026,
+        "largestAllocation": 131072
+      }
+    ],
+    "nativeBefore": [
+      {
+        "roots": 2048,
+        "snapshots": 13,
+        "retainedPayloadBytes": 44166460,
+        "largestAllocation": 3276839
+      },
+      {
+        "roots": 2049,
+        "snapshots": 13,
+        "retainedPayloadBytes": 65572351,
+        "largestAllocation": 4915239
+      },
+      {
+        "roots": 4097,
+        "snapshots": 13,
+        "retainedPayloadBytes": 98703631,
+        "largestAllocation": 7372839
+      },
+      {
+        "roots": 8193,
+        "snapshots": 13,
+        "retainedPayloadBytes": 175845735,
+        "largestAllocation": 13108839
+      }
+    ],
+    "nativeAfter": [
+      {
+        "roots": 2048,
+        "snapshots": 13,
+        "retainedPayloadBytes": 44166876,
+        "largestAllocation": 38407
+      },
+      {
+        "roots": 2049,
+        "snapshots": 13,
+        "retainedPayloadBytes": 44294367,
+        "largestAllocation": 24615
+      },
+      {
+        "roots": 4097,
+        "snapshots": 13,
+        "retainedPayloadBytes": 88075247,
+        "largestAllocation": 86359
+      },
+      {
+        "roots": 8193,
+        "snapshots": 13,
+        "retainedPayloadBytes": 175846151,
+        "largestAllocation": 194247
+      }
+    ],
+    "profileSourceSha256": "4edae293ea87a4acfad62789de2bc3c90b0f6d4b7c0281fbf7c0881384f09d98"
+  },
+  "checks": {
+    "oldContiguousGrowthFailsNewBound": true,
+    "nativeAnimationOwnership": "PASS",
+    "nativeBattleExactResimulations": 432,
+    "wasmBattleExactResimulations": 432,
+    "battleCases": [
+      {
+        "players": 3,
+        "stage": 1,
+        "characters": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "players": 3,
+        "stage": 1,
+        "characters": [
+          3,
+          3,
+          0
+        ]
+      },
+      {
+        "players": 2,
+        "stage": 7,
+        "characters": [
+          2,
+          2
+        ]
+      }
+    ],
+    "battleScope": "Original assets; stage main entry, 720 forward frames per case with altered future bombs and exact 12-frame restoration; not a recording of the reported boss phase.",
+    "formalMultiplayerBuild": "PASS",
+    "independentMultiplayerBuild": "PASS"
+  },
+  "evidenceHashes": {
+    "abort-site.txt": "c873eb7d395940886668074dd106a342248d1a24a9bf29db2177119790a1d914",
+    "sizes.cpp": "0416c098e949d8a09376ff02c9f99710dc0886f81f8d36200e55661c6fc2a896",
+    "growth-baseline.log": "805ce4c39d1320dd550ff0fc66025632c1b880fc69c5707fa8a4c653319a5e33",
+    "growth-fixed.log": "241867e72cfc12732fdc1f3ab37f20786d2c68d9128c9607d4354b382b4d1d89",
+    "battle-fixed.log": "20c3181ddb468613a7fbbd53f5c1e98c992fd60a64dce8a40f3069d34e07f7fe",
+    "battle-wasm-fixed.log": "b2ee6f1f40267653a0265c1e24f208230e1cb4aa5bc985ea780eced0a103224f",
+    "build-fixed.log": "aba46ee6601629f20c3176919b01bc58070acad84d4a78dae9537f45f85eb505",
+    "build-independent.log": "e311fac8e26991df50d14262815e2029b600ed1ca3e6b1ab60e0bf627e7c057e"
+  },
+  "initialValidationBase": "333f0b202139d0cba4e3bc8e6d2cf60621b30573",
+  "initialProductionWasm": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c",
+  "delivery": {
+    "scope": "TH15 multiplayer animation snapshot memory only",
+    "includesStageTransitionFix": false,
+    "remote": "origin",
+    "branch": "fix/th15-mp-bomb-snapshot-memory"
+  },
+  "combinedDelivery": {
+    "remote": "origin",
+    "branch": "fix/th15-mp-bomb-snapshot-memory",
+    "includesStageTransitionFix": true,
+    "parents": {
+      "memory": "eeb15680ce50c7e4fb0cc2b3d25ee31232bf56e2",
+      "stageTransition": "333f0b202139d0cba4e3bc8e6d2cf60621b30573"
+    },
+    "productionWasm": "dfcb9969c623d71b905b4ac7e2b18d2e94752b31c72f66e8c28ec7db87e1223c",
+    "checks": {
+      "nativeRegressionSuites": "3/3 PASS",
+      "wasmNetworkAndStartup": "PASS",
+      "multiplayerAdaptation": "7/7 PASS"
+    },
+    "evidenceHashes": {
+      "combined-native-tests.log": "dcff65d62a175f47966d51fa1a5977fc69515f4218b19a1f7c86c17deffd014a",
+      "combined-wasm-network.log": "997b4f5d5894c2b4ac8fda498d2c2c879449c805d5a1e1789c745f4b6c933cec",
+      "adaptation-combined.log": "e33a7882c28cb62a159421fc371ddbd49a1c3abf3fb2a8b62c241b82d94812af",
+      "build-combined.log": "aba46ee6601629f20c3176919b01bc58070acad84d4a78dae9537f45f85eb505"
+    }
+  }
+}

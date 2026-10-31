@@ -1,0 +1,8 @@
+{
+  "candidate": "/var/www/eagler-touhou/releases/th12mp-public-0dde257ec-20261028",
+  "releaseId": "sha256-7c564562be7ea5864c80520f597deedb276e347a373cda75def357807396a9d9",
+  "buildId": "cd0df3fadea89e3db219",
+  "files": 6553,
+  "th12Multiplayer": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+  "testBuild": false
+}

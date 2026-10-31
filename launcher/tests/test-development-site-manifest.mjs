@@ -68,6 +68,7 @@ const multiplayerRuntimeOwners = {
   th09: "../ports/th09/web/build-eagler-multiplayer/th09.html",
   th10: "../ports/th10-mp/build-eagler-multiplayer/th10.html",
   th11: "../ports/th11-mp/build-eagler-multiplayer/th11.html",
+  th12: "../ports/th12-mp/build-eagler-multiplayer/th12.html",
   th15: "../ports/th15-mp/build-eagler-multiplayer/th15.html",
 };
 const multiplayerGames = Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].multiplayerRuntime);

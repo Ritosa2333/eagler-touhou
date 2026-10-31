@@ -297,6 +297,7 @@ bool World::restore_replay_checkpoint_bootstrap(){
         pilots[seat].game.reserved_power=checkpoint->reservedPower[seat];
         pilots[seat].game.pilot.challenge_deaths=checkpoint->challengeDeaths[seat];
     }
+    backgrounds.replay_stage4_entry=(checkpoint->label&255u)==4&&checkpoint->firstFrame!=0;
     engine.script_random=checkpoint->scriptRandom;
     engine.visual_random=checkpoint->visualRandom;
     state.input_lanes={};
@@ -415,6 +416,7 @@ bool World::prepare_spectator_checkpoint(const multiplayer::SpectatorStageState&
         actors.session->elapsed.current==-1&&state.current_stage&&backgrounds.current;
     if(actors.session&&!reuseFreshStage)stop_session();
     spectator_checkpoint_pending=saved;spectator_checkpoint_restore_pending=true;
+    backgrounds.replay_stage4_entry=stage==4&&checkpoint.firstFrame!=0;
     state.game.difficulty=state.multiplayer_session.difficulty;
     state.game.stage=i32(stage);state.game.reserved_040=i32(checkpoint.reservedStage);
     state.game.flags=checkpoint.pilots[0].flags&~0xbu;

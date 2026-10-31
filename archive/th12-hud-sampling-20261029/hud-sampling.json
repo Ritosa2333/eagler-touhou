@@ -1,0 +1,340 @@
+{
+  "schema": "eagler-touhou/th12-hud-sampling/1",
+  "baselineCommit": "a2bd40233110a8c035d5b80695ee48bd4621abe8",
+  "node": "v26.7.0",
+  "scope": "Retail atlas sampler only; cold HUD binding, stock/fragment interrupts and a full HUD reset",
+  "atlasesSha256": "f7e7055dab7211f04c28838d5ce4bb2a8e7aee950976e441b55616cfac3303f3",
+  "rounds": 5,
+  "cases": [
+    {
+      "variant": "th12",
+      "age": 18000,
+      "scenario": "frame-rebind",
+      "baseline": {
+        "mean": 72.24865999999997,
+        "p50": 69.54639999999995,
+        "max": 80.0461
+      },
+      "candidate": {
+        "mean": 0.5145400000000222,
+        "p50": 0.393600000000049,
+        "max": 0.869700000000023
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 18000,
+      "scenario": "bomb-stock-change",
+      "baseline": {
+        "mean": 4.231379999999968,
+        "p50": 3.805099999999925,
+        "max": 6.5697999999999865
+      },
+      "candidate": {
+        "mean": 0.03165999999998803,
+        "p50": 0.028700000000071668,
+        "max": 0.04499999999995907
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 18000,
+      "scenario": "life-fragment-change",
+      "baseline": {
+        "mean": 3.624479999999994,
+        "p50": 3.6089000000000624,
+        "max": 3.7584000000000515
+      },
+      "candidate": {
+        "mean": 0.023659999999995306,
+        "p50": 0.023799999999937427,
+        "max": 0.025700000000028922
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 18000,
+      "scenario": "ufo-slot-change",
+      "baseline": {
+        "mean": 3.8454600000000028,
+        "p50": 3.5,
+        "max": 5.474100000000021
+      },
+      "candidate": {
+        "mean": 0.04593999999999596,
+        "p50": 0.044399999999996,
+        "max": 0.05259999999998399
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 18000,
+      "scenario": "hud-reset",
+      "baseline": {
+        "mean": 161.35286000000002,
+        "p50": 155.5983000000001,
+        "max": 184.53599999999994
+      },
+      "candidate": {
+        "mean": 0.9895800000000463,
+        "p50": 0.9502999999999702,
+        "max": 1.1462000000001353
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 60000,
+      "scenario": "frame-rebind",
+      "baseline": {
+        "mean": 259.14642,
+        "p50": 259.797,
+        "max": 262.52289999999994
+      },
+      "candidate": {
+        "mean": 0.4124599999998736,
+        "p50": 0.4418000000000575,
+        "max": 0.44620000000008986
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 60000,
+      "scenario": "bomb-stock-change",
+      "baseline": {
+        "mean": 12.597480000000086,
+        "p50": 12.596199999999953,
+        "max": 12.682900000000245
+      },
+      "candidate": {
+        "mean": 0.02628000000013344,
+        "p50": 0.025900000000092405,
+        "max": 0.029099999999743886
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 60000,
+      "scenario": "life-fragment-change",
+      "baseline": {
+        "mean": 12.51969999999992,
+        "p50": 12.553800000000138,
+        "max": 12.835299999999734
+      },
+      "candidate": {
+        "mean": 0.02478000000000975,
+        "p50": 0.023999999999887223,
+        "max": 0.03000000000020009
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 60000,
+      "scenario": "ufo-slot-change",
+      "baseline": {
+        "mean": 12.719300000000022,
+        "p50": 12.671100000000024,
+        "max": 13.179000000000087
+      },
+      "candidate": {
+        "mean": 0.04985999999998967,
+        "p50": 0.04970000000002983,
+        "max": 0.05330000000003565
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12",
+      "age": 60000,
+      "scenario": "hud-reset",
+      "baseline": {
+        "mean": 502.5615199999999,
+        "p50": 507.2422999999999,
+        "max": 516.9462000000003
+      },
+      "candidate": {
+        "mean": 0.8179200000001401,
+        "p50": 0.7513999999996486,
+        "max": 0.9796000000005733
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 18000,
+      "scenario": "frame-rebind",
+      "baseline": {
+        "mean": 78.68113999999987,
+        "p50": 78.52599999999984,
+        "max": 83.87049999999999
+      },
+      "candidate": {
+        "mean": 0.5601999999998952,
+        "p50": 0.46450000000004366,
+        "max": 0.8258999999998196
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 18000,
+      "scenario": "bomb-stock-change",
+      "baseline": {
+        "mean": 4.1407400000001875,
+        "p50": 3.824700000000121,
+        "max": 5.569300000000112
+      },
+      "candidate": {
+        "mean": 0.02989999999972497,
+        "p50": 0.029799999999340798,
+        "max": 0.033800000000155705
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 18000,
+      "scenario": "life-fragment-change",
+      "baseline": {
+        "mean": 3.7247400000000197,
+        "p50": 3.7687999999998283,
+        "max": 3.861399999999776
+      },
+      "candidate": {
+        "mean": 0.025079999999979917,
+        "p50": 0.024999999999636202,
+        "max": 0.028400000000146974
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 18000,
+      "scenario": "ufo-slot-change",
+      "baseline": {
+        "mean": 4.546199999999954,
+        "p50": 4.125199999999495,
+        "max": 6.824200000000019
+      },
+      "candidate": {
+        "mean": 0.062200000000120784,
+        "p50": 0.058100000000194996,
+        "max": 0.08559999999943102
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 18000,
+      "scenario": "hud-reset",
+      "baseline": {
+        "mean": 146.68797999999987,
+        "p50": 147.73939999999948,
+        "max": 149.2582999999995
+      },
+      "candidate": {
+        "mean": 0.955160000000069,
+        "p50": 0.8600000000005821,
+        "max": 1.1719999999995707
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 60000,
+      "scenario": "frame-rebind",
+      "baseline": {
+        "mean": 259.43538000000007,
+        "p50": 261.07890000000043,
+        "max": 262.2981000000009
+      },
+      "candidate": {
+        "mean": 0.34819999999999707,
+        "p50": 0.31050000000050204,
+        "max": 0.5362999999997555
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 60000,
+      "scenario": "bomb-stock-change",
+      "baseline": {
+        "mean": 12.633979999999429,
+        "p50": 11.595799999999144,
+        "max": 16.6362999999983
+      },
+      "candidate": {
+        "mean": 0.018819999999323045,
+        "p50": 0.01959999999962747,
+        "max": 0.020599999999831198
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 60000,
+      "scenario": "life-fragment-change",
+      "baseline": {
+        "mean": 13.318439999999464,
+        "p50": 12.475399999999354,
+        "max": 16.790600000000268
+      },
+      "candidate": {
+        "mean": 0.02110000000029686,
+        "p50": 0.021000000000640284,
+        "max": 0.02510000000074797
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 60000,
+      "scenario": "ufo-slot-change",
+      "baseline": {
+        "mean": 13.003359999999521,
+        "p50": 12.518799999999828,
+        "max": 16.23699999999917
+      },
+      "candidate": {
+        "mean": 0.06078000000015891,
+        "p50": 0.053599999999278225,
+        "max": 0.07960000000093714
+      },
+      "identical": true
+    },
+    {
+      "variant": "th12-mp",
+      "age": 60000,
+      "scenario": "hud-reset",
+      "baseline": {
+        "mean": 496.3716400000001,
+        "p50": 495.78499999999985,
+        "max": 500.7910000000011
+      },
+      "candidate": {
+        "mean": 0.8815000000002329,
+        "p50": 0.8456999999998516,
+        "max": 1.060699999999997
+      },
+      "identical": true
+    }
+  ],
+  "sources": {
+    "th12": {
+      "baseline": "ecbbb47330c445742cb8512abe93c5b7ceb22d0aa60ed37be077873e28f14b44",
+      "candidate": "1610c2d8de10902f94a28f863f00d582e18a4e95387f7c24fdfe861d449dc9ed"
+    },
+    "th12-mp": {
+      "baseline": "ecbbb47330c445742cb8512abe93c5b7ceb22d0aa60ed37be077873e28f14b44",
+      "candidate": "1610c2d8de10902f94a28f863f00d582e18a4e95387f7c24fdfe861d449dc9ed"
+    }
+  }
+}

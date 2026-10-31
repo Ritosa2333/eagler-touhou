@@ -7,10 +7,12 @@ import {createHash} from 'node:crypto';
 import {existsSync} from 'node:fs';
 import {cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile} from 'node:fs/promises';
 import {createServer} from 'node:net';
-import {resolve, dirname} from 'node:path';
+import {resolve, dirname, basename} from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {preparePackageModuleFixture, runPackageModuleFixtureServer} from './package-module-fixture.mjs';
 import {browserModuleClosure} from '../../lib/browser-module-graph.mjs';
+import {buildLauncherStyleOutputs} from '../../lib/frontend-assets.mjs';
+import {buildStandalonePageOutputs} from '../../lib/standalone-page-build.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -22,6 +24,16 @@ before(async () => {
     'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json', 'scripts/serve-static.mjs', 'server/static-content-policy.mjs', 'tests/support/package-module-fixture.mjs',
     'public/faq.html', 'public/styles.css', 'public/about.css', 'public/assets/fonts', 'public/assets/launcher-background.webp']) {
     await mkdir(dirname(resolve(cold, path)), {recursive: true}); await cp(resolve(project, path), resolve(cold, path), {recursive: true});
+  }
+  // FAQ references production-generated CSS. Prepare those static inputs before
+  // isolating the Package contracts from the Launcher source and build caches.
+  const outputDirectory = resolve(work, 'page-assets');
+  const pageOutputs = [
+    ...await buildLauncherStyleOutputs({project, outputDirectory}),
+    ...await buildStandalonePageOutputs({project, outputDirectory}),
+  ];
+  for (const file of pageOutputs.filter(file => file.path.endsWith('.css'))) {
+    await writeFile(resolve(cold, 'public', basename(file.path)), file.contents);
   }
   await cp(resolve(project, '../common/contracts'), resolve(work, 'common/contracts'), {recursive: true});
   await symlink(resolve(project, 'node_modules'), resolve(cold, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
@@ -59,7 +71,9 @@ test('cold isolated source stages current canonical contracts and their module c
 });
 
 test('FAQ and its actual local styles/fonts are copied unchanged; absent optional artwork remains absent instead of fabricated', async () => {
-  for (const path of ['faq.html', 'styles.css', 'about.css', 'assets/fonts/yatra-one-latin.woff2', 'assets/fonts/chill-round-gothic-site-medium.woff2']) assert.deepEqual(await readFile(resolve(fixture.root, path)), await readFile(resolve(cold, 'public', path)));
+  for (const path of ['faq.html', 'styles.css', 'features.css', 'site-pages.css', 'about.css', 'assets/fonts/yatra-one-latin.woff2', 'assets/fonts/chill-round-gothic-site-medium.woff2', 'assets/fonts/chill-round-gothic-site-medium-critical.woff2']) assert.deepEqual(await readFile(resolve(fixture.root, path)), await readFile(resolve(cold, 'public', path)));
+  assert.equal(existsSync(resolve(cold, 'public/features.css')), true);
+  assert.equal(existsSync(resolve(project, 'public/features.css')), false, 'generated styles stay outside authored public inputs');
   assert.ok(fixture.optionalMissing.includes('assets/favicon.ico')); assert.equal(existsSync(resolve(fixture.root, 'assets/favicon.ico')), false);
 });
 

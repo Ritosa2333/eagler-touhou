@@ -55,6 +55,10 @@ node launcher/tests/test-peer-runtime-update.mjs
 
 控制重发按发送缓冲分批推进，缓冲释放后继续发送剩余消息；新控制消息等待既有重发批次完成。输入通道独立收发，可靠控制的排序不为输入通道增加等待。
 
+可靠控制包一旦进入发送队列，其序号与内容持续保留到累计确认。浏览器临时拒绝发送时，该包进入重发队列，由定时器在当前路径重试；备用路径就绪时沿既有交接流程重发。后续控制包等待这批重发完成，保持连续序号。
+
+主路径回调绑定具体玩家实例与通道实例。已被替换的通道所排队的打开、关闭、错误和消息事件不能改写新通道状态；路径交接接收窗内的旧主路径消息仍由选路模块判定。崩溃报告保存最近八条当前通道关闭／错误事件、浏览器 SCTP 错误字段、连接状态及有界队列快照，信令描述与 TURN 凭据不进入该记录。
+
 上一条路径保留五秒输入接收窗。备用协商和连接失败不会终止仍可用的当前路径。会话关闭同时释放探测定时器、备用连接、控制消息与统计历史。
 
 ## 验证职责
@@ -63,6 +67,7 @@ node launcher/tests/test-peer-runtime-update.mjs
 
 ```sh
 node common/tests/adaptive-peer-route.test.mjs
+node --test common/tests/browser-peer-channel-lifecycle.test.mjs
 node common/tools/sync-adaptive-peer-route.mjs --check
 python common/tests/adaptive-peer-route-browser.py --turn-origin https://your-launcher.example
 ```

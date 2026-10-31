@@ -1,0 +1,122 @@
+{
+  "date": "2026-10-24",
+  "product": "th12mp",
+  "branch": "feature/th12-multiplayer",
+  "implementation": "4ca354d48617f75e927cdcf0f9eeb0d5085a2b64",
+  "source": "02e3a62a7ff38ca5ec1f3ad2007c117534e9ba26",
+  "normalSource": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
+  "runtime": {
+    "executionSha256": "22b8d752efaa3aba7ea1e60f8a301e5b3e362da60ecc0a3a97d91430c4e9e553",
+    "sourceSha256": "8d80f2b9cdb3197a21daf9a2fd9efc7f9b18e613377ab25bc11a83db68d27c4b",
+    "multiplayer": true,
+    "thprac": false
+  },
+  "native": {
+    "testsPassed": 2,
+    "loadouts": 6,
+    "stages": [
+      1,
+      7
+    ],
+    "crossStageTransitions": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "rollbackFramesPerCase": 180,
+    "sharedUfoThreeCollectorsAndRollback": true
+  },
+  "browser": {
+    "scope": "Original local TH12 assets, production WASM, browser Launcher RPC and ordered WebSocket relay with 25ms delay",
+    "reports": [
+      {
+        "count": 2,
+        "mode": 1,
+        "delay": 0,
+        "automatic": false,
+        "frames": 227,
+        "exactMatches": 227,
+        "hash": -297107257,
+        "rollbackRestores": [
+          0,
+          0
+        ],
+        "spectatorVerified": true
+      },
+      {
+        "count": 3,
+        "mode": 1,
+        "delay": 3,
+        "automatic": false,
+        "frames": 294,
+        "exactMatches": 294,
+        "hash": -1431339746,
+        "rollbackRestores": [
+          0,
+          0,
+          0
+        ],
+        "spectatorVerified": false
+      },
+      {
+        "count": 2,
+        "mode": 0,
+        "delay": 0,
+        "automatic": false,
+        "frames": 266,
+        "exactMatches": 0,
+        "hash": -999016665,
+        "rollbackRestores": [
+          8,
+          8
+        ],
+        "spectatorVerified": true
+      },
+      {
+        "count": 2,
+        "mode": 1,
+        "delay": 0,
+        "automatic": true,
+        "frames": 277,
+        "exactMatches": 277,
+        "hash": 1503990793,
+        "rollbackRestores": [
+          0,
+          0
+        ],
+        "spectatorVerified": false
+      }
+    ]
+  },
+  "menus": {
+    "nativeYesNo": true,
+    "replaySlots": 25,
+    "savedSlot": 1,
+    "nameEntry": true
+  },
+  "contracts": {
+    "launcherTypecheck": true,
+    "launcherBuild": true,
+    "relaySpectatorStages": true,
+    "productPolicy": true,
+    "nativeSharedTimingAndRules": true,
+    "portChecks": "7/7"
+  },
+  "historyToolTests": {
+    "projection": 6,
+    "sourceValidation": 10
+  },
+  "projectedHistory": {
+    "scope": "temporary shared clone, source trees, ancestor merge, native tracking and writeback roundtrip",
+    "normal": "5e5081a1d2a434b2f8d785ebbd6b965f1058d828",
+    "multiplayer": "d9db2805b449cc5415b17ae1e76a75e684df6ba3",
+    "mergeBases": [
+      "5e5081a1d2a434b2f8d785ebbd6b965f1058d828"
+    ],
+    "aheadBehind": "0\t2",
+    "roundtrip": true,
+    "unrelatedChanges": []
+  }
+}

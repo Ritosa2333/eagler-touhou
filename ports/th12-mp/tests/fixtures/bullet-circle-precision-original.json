@@ -1,0 +1,1161 @@
+{
+  "schema": "th12-original-bullet-circle-precision/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "entry": "0x437980",
+  "wholeGameOracle": false,
+  "boundary": "Complete original437980 query without game instruction substitutions. Read-only4379b1 captures the distance store. Synthetic Player/SHT: state1, invulnerability1, flags0, no dialogue; original hit branch returns1 without calling downstream438370. Radius14 covers both effect2 types26/27; three original character hit radii2/3.5/3.",
+  "rows": [
+    {
+      "case": "hit2.0-hit-equality--1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        13.999999046325684,
+        122.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 199.99996948242188,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit2.0-hit-equality-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        14.0,
+        122.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 200.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-hit-equality-1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        14.000000953674316,
+        122.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 200.00003051757812,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-graze-equality--1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        41.999996185302734,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1959.9996337890625,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-graze-equality-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        42.0,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1960.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit2.0-graze-equality-1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        42.000003814697266,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1960.0003662109375,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit2.0-center-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        0.0,
+        120.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 0.0,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit2.0-outside-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        60.0,
+        180.0
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 7200.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.5-hit-equality--1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        13.999999046325684,
+        123.5
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.24996948242188,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.5-hit-equality-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        14.0,
+        123.5
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.25,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-hit-equality-1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        14.000000953674316,
+        123.5
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.25003051757812,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-equality--1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        43.499996185302734,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.249755859375,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-equality-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        43.5,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.5-graze-equality-1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        43.500003814697266,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.250244140625,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.5-center-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        0.0,
+        120.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 0.0,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.5-outside-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        60.0,
+        180.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 7200.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.0-hit-equality--1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        13.999999046325684,
+        123.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 204.99996948242188,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-hit-equality-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        14.0,
+        123.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-hit-equality-1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        14.000000953674316,
+        123.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.00003051757812,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-graze-equality--1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        42.999996185302734,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2044.9996337890625,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-graze-equality-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        43.0,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2045.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.0-graze-equality-1",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        43.000003814697266,
+        134.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2045.0003662109375,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.0-center-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        0.0,
+        120.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 0.0,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-outside-0",
+      "center": [
+        0.0,
+        120.0
+      ],
+      "player": [
+        60.0,
+        180.0
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 7200.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit2.0-hit-precision-0",
+      "center": [
+        19.44630241394043,
+        210.36898803710938
+      ],
+      "player": [
+        5.726672649383545,
+        206.93798828125
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 200.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit2.0-hit-precision-1",
+      "center": [
+        -13.036931037902832,
+        194.622802734375
+      ],
+      "player": [
+        1.0553382635116577,
+        195.8093719482422
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 200.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit2.0-hit-precision-2",
+      "center": [
+        -20.314617156982422,
+        62.204769134521484
+      ],
+      "player": [
+        -6.180881023406982,
+        61.717430114746094
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 200.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit2.0-hit-precision-3",
+      "center": [
+        6.879682540893555,
+        91.72765350341797
+      ],
+      "player": [
+        0.40124404430389404,
+        104.29864501953125
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 200.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit2.0-hit-precision-4",
+      "center": [
+        6.901932239532471,
+        82.1746826171875
+      ],
+      "player": [
+        19.83645248413086,
+        87.89291381835938
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 199.99998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-hit-precision-5",
+      "center": [
+        14.257416725158691,
+        99.782470703125
+      ],
+      "player": [
+        1.117632508277893,
+        94.5531234741211
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 200.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit2.0-hit-precision-6",
+      "center": [
+        -7.948390483856201,
+        171.1395263671875
+      ],
+      "player": [
+        4.302179336547852,
+        178.20518493652344
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 199.99998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-hit-precision-7",
+      "center": [
+        0.8253246545791626,
+        126.47785186767578
+      ],
+      "player": [
+        -12.990108489990234,
+        123.45563507080078
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 199.99998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-graze-precision-0",
+      "center": [
+        -7.860434532165527,
+        127.84725952148438
+      ],
+      "player": [
+        -51.959716796875,
+        123.94171142578125
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1960.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-graze-precision-1",
+      "center": [
+        2.205246686935425,
+        66.78394317626953
+      ],
+      "player": [
+        46.37083053588867,
+        63.71781921386719
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1959.9998779296875,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit2.0-graze-precision-2",
+      "center": [
+        -36.423831939697266,
+        143.3614044189453
+      ],
+      "player": [
+        7.779507160186768,
+        145.82408142089844
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1960.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-graze-precision-3",
+      "center": [
+        92.32415771484375,
+        51.94648742675781
+      ],
+      "player": [
+        101.0970458984375,
+        8.552519798278809
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1960.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-graze-precision-4",
+      "center": [
+        6.170743465423584,
+        362.6336364746094
+      ],
+      "player": [
+        48.023494720458984,
+        348.19940185546875
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1959.9998779296875,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit2.0-graze-precision-5",
+      "center": [
+        39.653404235839844,
+        266.4189147949219
+      ],
+      "player": [
+        -3.977330446243286,
+        273.9261779785156
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1960.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit2.0-graze-precision-6",
+      "center": [
+        42.44099426269531,
+        69.1803207397461
+      ],
+      "player": [
+        3.853001117706299,
+        90.88208770751953
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1959.9998779296875,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit2.0-graze-precision-7",
+      "center": [
+        -8.970105171203613,
+        246.87374877929688
+      ],
+      "player": [
+        -52.868324279785156,
+        252.61363220214844
+      ],
+      "radius": 14.0,
+      "playerHit": 2.0,
+      "distanceSquared": 1959.9998779296875,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.5-hit-precision-0",
+      "center": [
+        -4.510355472564697,
+        161.34190368652344
+      ],
+      "player": [
+        -18.863136291503906,
+        162.84112548828125
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.24998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-hit-precision-1",
+      "center": [
+        13.51740550994873,
+        56.10373306274414
+      ],
+      "player": [
+        1.0131585597991943,
+        48.89999771118164
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.25,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.5-hit-precision-2",
+      "center": [
+        6.572624683380127,
+        387.72344970703125
+      ],
+      "player": [
+        20.934072494506836,
+        389.1372375488281
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.24998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-hit-precision-3",
+      "center": [
+        2.529944896697998,
+        157.45863342285156
+      ],
+      "player": [
+        16.922128677368164,
+        158.51458740234375
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.25,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.5-hit-precision-4",
+      "center": [
+        20.565929412841797,
+        389.5552062988281
+      ],
+      "player": [
+        6.138638973236084,
+        389.8765869140625
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.25,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.5-hit-precision-5",
+      "center": [
+        -14.283597946166992,
+        67.5227279663086
+      ],
+      "player": [
+        0.10264132916927338,
+        68.65679931640625
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.25,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.5-hit-precision-6",
+      "center": [
+        2.8434512615203857,
+        266.01397705078125
+      ],
+      "player": [
+        17.27419090270996,
+        266.0752258300781
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.25,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.5-hit-precision-7",
+      "center": [
+        -3.289156675338745,
+        47.738529205322266
+      ],
+      "player": [
+        10.553635597229004,
+        43.66089630126953
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 208.24998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-0",
+      "center": [
+        12.57401180267334,
+        128.4579620361328
+      ],
+      "player": [
+        54.517147064208984,
+        110.31896209716797
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-1",
+      "center": [
+        -23.434375762939453,
+        130.32887268066406
+      ],
+      "player": [
+        19.457059860229492,
+        114.5626220703125
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-2",
+      "center": [
+        -45.954627990722656,
+        54.795570373535156
+      ],
+      "player": [
+        -4.566015243530273,
+        35.424644470214844
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-3",
+      "center": [
+        -19.482107162475586,
+        102.16890716552734
+      ],
+      "player": [
+        -63.485992431640625,
+        114.49400329589844
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-4",
+      "center": [
+        16.46840476989746,
+        100.61373138427734
+      ],
+      "player": [
+        58.491493225097656,
+        118.56672668457031
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-5",
+      "center": [
+        -27.904579162597656,
+        179.15869140625
+      ],
+      "player": [
+        0.7041823267936707,
+        214.79278564453125
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-6",
+      "center": [
+        -18.380720138549805,
+        257.9541320800781
+      ],
+      "player": [
+        27.255107879638672,
+        260.3250427246094
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.25,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.5-graze-precision-7",
+      "center": [
+        -7.704914093017578,
+        49.164939880371094
+      ],
+      "player": [
+        27.401071548461914,
+        78.4193344116211
+      ],
+      "radius": 14.0,
+      "playerHit": 3.5,
+      "distanceSquared": 2088.249755859375,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.0-hit-precision-0",
+      "center": [
+        -13.366255760192871,
+        49.003814697265625
+      ],
+      "player": [
+        -0.7696357369422913,
+        55.81007385253906
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-hit-precision-1",
+      "center": [
+        -0.021233325824141502,
+        100.37966918945312
+      ],
+      "player": [
+        -14.338820457458496,
+        100.46150207519531
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-hit-precision-2",
+      "center": [
+        -14.163311004638672,
+        162.60044860839844
+      ],
+      "player": [
+        0.002896960126236081,
+        160.5223388671875
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 204.99998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-hit-precision-3",
+      "center": [
+        -2.2862789630889893,
+        279.18804931640625
+      ],
+      "player": [
+        10.47192668914795,
+        285.6863708496094
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-hit-precision-4",
+      "center": [
+        13.160260200500488,
+        59.20917892456055
+      ],
+      "player": [
+        -1.1473886966705322,
+        58.6695671081543
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-hit-precision-5",
+      "center": [
+        -15.196859359741211,
+        80.31282806396484
+      ],
+      "player": [
+        -1.8582767248153687,
+        85.51688385009766
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 204.99998474121094,
+      "nativeReturn": 1,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-hit-precision-6",
+      "center": [
+        -7.110856533050537,
+        177.59786987304688
+      ],
+      "player": [
+        -21.31819725036621,
+        179.37310791015625
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-hit-precision-7",
+      "center": [
+        18.045560836791992,
+        234.0148162841797
+      ],
+      "player": [
+        5.317298412322998,
+        227.45803833007812
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 205.0,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 1
+    },
+    {
+      "case": "hit3.0-graze-precision-0",
+      "center": [
+        1.386235237121582,
+        282.01031494140625
+      ],
+      "player": [
+        46.07000732421875,
+        275.05615234375
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2044.9998779296875,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.0-graze-precision-1",
+      "center": [
+        39.17829895019531,
+        146.5536346435547
+      ],
+      "player": [
+        -5.920055866241455,
+        143.21621704101562
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2045.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-graze-precision-2",
+      "center": [
+        -37.617210388183594,
+        114.94581604003906
+      ],
+      "player": [
+        7.512887954711914,
+        112.06932067871094
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2045.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-graze-precision-3",
+      "center": [
+        52.748600006103516,
+        293.7621765136719
+      ],
+      "player": [
+        7.611947059631348,
+        290.9904479980469
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2044.9998779296875,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    },
+    {
+      "case": "hit3.0-graze-precision-4",
+      "center": [
+        56.41849899291992,
+        167.69996643066406
+      ],
+      "player": [
+        12.352350234985352,
+        177.85745239257812
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2045.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-graze-precision-5",
+      "center": [
+        26.877090454101562,
+        80.74549102783203
+      ],
+      "player": [
+        -12.66240119934082,
+        102.6915283203125
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2045.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-graze-precision-6",
+      "center": [
+        36.1920051574707,
+        152.27877807617188
+      ],
+      "player": [
+        -0.34954938292503357,
+        178.91925048828125
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2045.0,
+      "nativeReturn": 0,
+      "earlyRoundedReturn": 2
+    },
+    {
+      "case": "hit3.0-graze-precision-7",
+      "center": [
+        -9.821855545043945,
+        71.51121520996094
+      ],
+      "player": [
+        -48.24061584472656,
+        47.65752029418945
+      ],
+      "radius": 14.0,
+      "playerHit": 3.0,
+      "distanceSquared": 2044.9998779296875,
+      "nativeReturn": 2,
+      "earlyRoundedReturn": 0
+    }
+  ]
+}

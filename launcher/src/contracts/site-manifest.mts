@@ -84,6 +84,8 @@ export interface SiteManifestShared {
   vanillaFont?: string;
   unicodeFont?: string;
   netplayRelay?: string;
+  /** Ordered alternative entries to the same Relay process. */
+  netplayRelayFallbacks?: string[];
   netplayTelemetry?: string;
   gameDataFallback?: { url: string; hint?: string; [key: string]: unknown };
   originMigration?: { mode: "http-to-https" };
@@ -280,6 +282,13 @@ export function validateSiteManifest(value: unknown): SiteManifest {
   }
   if (!validOptionalUrl(value.shared.netplayRelay, new Set(["ws:", "wss:"]))) {
     throw new Error("invalid Site Manifest netplayRelay");
+  }
+  if (value.shared.netplayRelayFallbacks != null &&
+      (!Array.isArray(value.shared.netplayRelayFallbacks) ||
+       value.shared.netplayRelayFallbacks.length > 3 ||
+       value.shared.netplayRelayFallbacks.some(url => typeof url !== 'string' || !url ||
+         !validOptionalUrl(url, new Set(['ws:', 'wss:']))) || !value.shared.netplayRelay)) {
+    throw new Error('invalid Site Manifest netplayRelayFallbacks');
   }
   if (!validOptionalUrl(value.shared.netplayTelemetry, new Set(["http:", "https:"]))) {
     throw new Error("invalid Site Manifest netplayTelemetry");

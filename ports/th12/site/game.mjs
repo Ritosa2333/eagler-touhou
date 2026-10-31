@@ -78,7 +78,7 @@ function touchState(){
   const h=playing?hud():null,message=playing?readJSON('message'):null;
   const kind=playing?(session.replay?'replay':message?.active&&(message.flags&1||message.wait>0)?'dialogue':'game'):'menu';
   const instance=playing||paused?`${session.stage}:${core._th12_player_instance()}`:'';
-  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,paused,ready:!!playing&&core._th12_player_state()===1,
+  return {key:playing?`${kind}:${instance}`:`menu:${model?.state.serial??0}`,kind,instance,gestureScope:playing?`${session.stage}:${runtimeOptions.netplayPlayer??0}`:null,paused,ready:!!playing&&core._th12_player_state()===1,
     x:h?Math.round(h[1]*128):0,y:h?Math.round(h[2]*128):0,
     fast:playing?core._th12_player_speed(0):0,slow:playing?core._th12_player_speed(1):0,keyFocused:ready&&keyDown(profile.settings.keyMap.focus)};
 }
@@ -109,8 +109,9 @@ function padInput(){
   }
   const mapped=assets.managed?managedInput.pad():null;if(mapped!==null)return {value:mapped,capturing:false};
   if(!p)return {value:0,capturing:false};
-  let value=0;if(p.axes[0]<-.3||p.buttons[14]?.pressed)value|=64;if(p.axes[0]>.3||p.buttons[15]?.pressed)value|=128;
-  if(p.axes[1]<-.3||p.buttons[12]?.pressed)value|=16;if(p.axes[1]>.3||p.buttons[13]?.pressed)value|=32;
+  // Original square deadzone; managed mappings retain the Launcher's threshold.
+  let value=0;if(p.axes[0]<-.5||p.buttons[14]?.pressed)value|=64;if(p.axes[0]>.5||p.buttons[15]?.pressed)value|=128;
+  if(p.axes[1]<-.5||p.buttons[12]?.pressed)value|=16;if(p.axes[1]>.5||p.buttons[13]?.pressed)value|=32;
   for(const [name,bit]of Object.entries({shoot:1,bomb:2,focus:8,pause:256,skip:512}))if(p.buttons[profile.settings.joyButtons[name]]?.pressed)value|=bit;
   return {value,capturing:false};
 }

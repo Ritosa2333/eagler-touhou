@@ -1,0 +1,1494 @@
+{
+  "schema": "th12-original-presentation-samples/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholePresentationOracle": false,
+  "anm": [
+    {
+      "name": "transform_uv_flags",
+      "instructions": [
+        {
+          "op": 48,
+          "formats": "fff",
+          "values": [
+            12,
+            24,
+            4
+          ]
+        },
+        {
+          "op": 49,
+          "formats": "fff",
+          "values": [
+            0.1,
+            0.2,
+            0.3
+          ]
+        },
+        {
+          "op": 50,
+          "formats": "ff",
+          "values": [
+            1.25,
+            0.75
+          ]
+        },
+        {
+          "op": 53,
+          "formats": "fff",
+          "values": [
+            0.01,
+            0.02,
+            0.03
+          ]
+        },
+        {
+          "op": 70,
+          "formats": "f",
+          "values": [
+            -0.0005
+          ]
+        },
+        {
+          "op": 71,
+          "formats": "f",
+          "values": [
+            0.001
+          ]
+        },
+        {
+          "op": 65,
+          "formats": "I",
+          "values": [
+            65537
+          ]
+        },
+        {
+          "op": 66,
+          "formats": "i",
+          "values": [
+            1
+          ]
+        },
+        {
+          "op": 67,
+          "formats": "i",
+          "values": [
+            1
+          ]
+        },
+        {
+          "op": 89,
+          "formats": "i",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "rotation": [
+            0.10999999940395355,
+            0.2199999988079071,
+            0.33000001311302185
+          ],
+          "scale": [
+            1.25,
+            0.75
+          ],
+          "uv": [
+            0.9994999766349792,
+            0.0010000000474974513
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            12.0,
+            24.0,
+            4.0
+          ],
+          "flags": "0xa8202f",
+          "flags2": "0x3",
+          "clock": 0
+        },
+        {
+          "tick": 1,
+          "rotation": [
+            0.11999999731779099,
+            0.23999999463558197,
+            0.36000001430511475
+          ],
+          "scale": [
+            1.25,
+            0.75
+          ],
+          "uv": [
+            0.9989999532699585,
+            0.0020000000949949026
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            12.0,
+            24.0,
+            4.0
+          ],
+          "flags": "0xa8202f",
+          "flags2": "0x3",
+          "clock": 0
+        },
+        {
+          "tick": 2,
+          "rotation": [
+            0.12999999523162842,
+            0.25999999046325684,
+            0.39000001549720764
+          ],
+          "scale": [
+            1.25,
+            0.75
+          ],
+          "uv": [
+            0.9984999299049377,
+            0.003000000026077032
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            12.0,
+            24.0,
+            4.0
+          ],
+          "flags": "0xa8202f",
+          "flags2": "0x3",
+          "clock": 0
+        },
+        {
+          "tick": 3,
+          "rotation": [
+            0.14000000059604645,
+            0.2800000011920929,
+            0.42000001668930054
+          ],
+          "scale": [
+            1.25,
+            0.75
+          ],
+          "uv": [
+            0.997999906539917,
+            0.004000000189989805
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            12.0,
+            24.0,
+            4.0
+          ],
+          "flags": "0xa8202f",
+          "flags2": "0x3",
+          "clock": 0
+        }
+      ]
+    },
+    {
+      "name": "primary_secondary_color",
+      "instructions": [
+        {
+          "op": 51,
+          "formats": "i",
+          "values": [
+            133
+          ]
+        },
+        {
+          "op": 52,
+          "formats": "iii",
+          "values": [
+            120,
+            180,
+            240
+          ]
+        },
+        {
+          "op": 77,
+          "formats": "i",
+          "values": [
+            211
+          ]
+        },
+        {
+          "op": 76,
+          "formats": "iii",
+          "values": [
+            10,
+            20,
+            30
+          ]
+        },
+        {
+          "op": 80,
+          "formats": "i",
+          "values": [
+            1
+          ]
+        },
+        {
+          "op": 87,
+          "formats": "i",
+          "values": [
+            1
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x8578b4f0",
+          "secondary": "0xd30a141e",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x12003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 1,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x8578b4f0",
+          "secondary": "0xd30a141e",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x12003",
+          "flags2": "0x1",
+          "clock": 0
+        }
+      ]
+    },
+    {
+      "name": "color_interpolation",
+      "instructions": [
+        {
+          "op": 51,
+          "formats": "i",
+          "values": [
+            255
+          ]
+        },
+        {
+          "op": 52,
+          "formats": "iii",
+          "values": [
+            255,
+            128,
+            16
+          ]
+        },
+        {
+          "op": 58,
+          "formats": "iii",
+          "values": [
+            10,
+            0,
+            0
+          ]
+        },
+        {
+          "op": 57,
+          "formats": "iiiii",
+          "values": [
+            10,
+            0,
+            32,
+            64,
+            128
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xe5e97a1b",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 1,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xcbd37426",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 2,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xb2bd6d31",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 3,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x98a6673c",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 4,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x7f906048",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 5,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x657a5a53",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 6,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x4c63545e",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 7,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x324d4d69",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 8,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x19374774",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 9,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x204080",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 10,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x204080",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 11,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0x204080",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x2003",
+          "flags2": "0x1",
+          "clock": 0
+        }
+      ]
+    },
+    {
+      "name": "scale_interpolation",
+      "instructions": [
+        {
+          "op": 50,
+          "formats": "ff",
+          "values": [
+            0,
+            0
+          ]
+        },
+        {
+          "op": 60,
+          "formats": "iiff",
+          "values": [
+            10,
+            4,
+            1.4,
+            1.4
+          ]
+        }
+      ],
+      "frames": [
+        {
+          "tick": 0,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            0.26600000262260437,
+            0.26600000262260437
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 1,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            0.5040000081062317,
+            0.5040000081062317
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 2,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            0.7139999866485596,
+            0.7139999866485596
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 3,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            0.8959999680519104,
+            0.8959999680519104
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 4,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0499999523162842,
+            1.0499999523162842
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 5,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.1759999990463257,
+            1.1759999990463257
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 6,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.2739999294281006,
+            1.2739999294281006
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 7,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.343999981880188,
+            1.343999981880188
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 8,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.3860000371932983,
+            1.3860000371932983
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 9,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.399999976158142,
+            1.399999976158142
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 10,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.399999976158142,
+            1.399999976158142
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        },
+        {
+          "tick": 11,
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.399999976158142,
+            1.399999976158142
+          ],
+          "uv": [
+            0.0,
+            0.0
+          ],
+          "primary": "0xffffffff",
+          "secondary": "0xffffffff",
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "flags": "0x200b",
+          "flags2": "0x1",
+          "clock": 0
+        }
+      ]
+    }
+  ],
+  "camera": [
+    {
+      "frame": 0,
+      "scriptClock": 1,
+      "position": [
+        0.0,
+        0.011333022266626358,
+        -400.0018615722656
+      ],
+      "direction": [
+        19.94207191467285,
+        300.0,
+        200.3765411376953
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffeeeeff",
+      "fogRange": [
+        201.0,
+        1100.1666259765625
+      ]
+    },
+    {
+      "frame": 1,
+      "scriptClock": 2,
+      "position": [
+        0.0,
+        0.04529556259512901,
+        -400.0075378417969
+      ],
+      "direction": [
+        19.884225845336914,
+        300.0,
+        200.75253295898438
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffeeeeff",
+      "fogRange": [
+        202.0,
+        1100.3333740234375
+      ]
+    },
+    {
+      "frame": 2,
+      "scriptClock": 3,
+      "position": [
+        0.0,
+        0.10183282196521759,
+        -400.0169677734375
+      ],
+      "direction": [
+        19.826465606689453,
+        300.0,
+        201.1279754638672
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffeeeeff",
+      "fogRange": [
+        203.0,
+        1100.5
+      ]
+    },
+    {
+      "frame": 9,
+      "scriptClock": 10,
+      "position": [
+        0.0,
+        1.125083327293396,
+        -400.18719482421875
+      ],
+      "direction": [
+        19.424489974975586,
+        300.0,
+        203.74081420898438
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffeeeeff",
+      "fogRange": [
+        210.0,
+        1101.6666259765625
+      ]
+    },
+    {
+      "frame": 99,
+      "scriptClock": 100,
+      "position": [
+        0.0,
+        104.28936767578125,
+        -417.0771789550781
+      ],
+      "direction": [
+        14.622978210449219,
+        300.0,
+        234.9506378173828
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffe7e9ff",
+      "fogRange": [
+        300.0,
+        1116.6666259765625
+      ]
+    },
+    {
+      "frame": 299,
+      "scriptClock": 300,
+      "position": [
+        0.0,
+        774.225341796875,
+        -520.818603515625
+      ],
+      "direction": [
+        6.389413833618164,
+        300.0,
+        288.46881103515625
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffd7dfff",
+      "fogRange": [
+        500.0,
+        1150.0
+      ]
+    },
+    {
+      "frame": 599,
+      "scriptClock": 600,
+      "position": [
+        0.0,
+        2110.627197265625,
+        -686.01953125
+      ],
+      "direction": [
+        0.34026527404785156,
+        300.0,
+        327.78826904296875
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    },
+    {
+      "frame": 689,
+      "scriptClock": 690,
+      "position": [
+        0.0,
+        2400.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    },
+    {
+      "frame": 690,
+      "scriptClock": 691,
+      "position": [
+        0.0,
+        2402.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    },
+    {
+      "frame": 691,
+      "scriptClock": 692,
+      "position": [
+        0.0,
+        2404.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    },
+    {
+      "frame": 1201,
+      "scriptClock": 1202,
+      "position": [
+        0.0,
+        3424.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    },
+    {
+      "frame": 1202,
+      "scriptClock": 1203,
+      "position": [
+        0.0,
+        3426.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    },
+    {
+      "frame": 1203,
+      "scriptClock": 1204,
+      "position": [
+        0.0,
+        3428.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    },
+    {
+      "frame": 1500,
+      "scriptClock": 1501,
+      "position": [
+        0.0,
+        4022.0,
+        -700.0
+      ],
+      "direction": [
+        0.0,
+        300.0,
+        330.0
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 0.6283185482025146,
+      "fogArgb": "0xffc0d0ff",
+      "fogRange": [
+        800.0,
+        1200.0
+      ]
+    }
+  ],
+  "hud": [
+    {
+      "address": "0x401610",
+      "position": [
+        620.0,
+        48.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "font": 3,
+      "alignment": [
+        2,
+        1
+      ],
+      "groupedNumber": 123456780
+    },
+    {
+      "address": "0x401610",
+      "position": [
+        620.0,
+        72.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "font": 3,
+      "alignment": [
+        2,
+        1
+      ],
+      "groupedNumber": 98765430
+    },
+    {
+      "address": "0x4015c0",
+      "position": [
+        540.0,
+        152.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "font": 3,
+      "alignment": [
+        1,
+        1
+      ],
+      "format": "%d.",
+      "argument": 1
+    },
+    {
+      "address": "0x4015c0",
+      "position": [
+        560.0,
+        159.0,
+        0.0
+      ],
+      "scale": [
+        0.6000000238418579,
+        0.6000000238418579
+      ],
+      "font": 3,
+      "alignment": [
+        1,
+        1
+      ],
+      "format": "%.2d",
+      "argument": 43
+    },
+    {
+      "address": "0x4015c0",
+      "position": [
+        574.0,
+        152.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "font": 3,
+      "alignment": [
+        1,
+        1
+      ],
+      "format": "/%d.",
+      "argument": 4
+    },
+    {
+      "address": "0x4015c0",
+      "position": [
+        606.0,
+        159.0,
+        0.0
+      ],
+      "scale": [
+        0.6000000238418579,
+        0.6000000238418579
+      ],
+      "font": 3,
+      "alignment": [
+        1,
+        1
+      ],
+      "format": "00",
+      "argument": 4848980
+    },
+    {
+      "address": "0x401610",
+      "position": [
+        620.0,
+        176.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "font": 3,
+      "alignment": [
+        2,
+        1
+      ],
+      "groupedNumber": 123450
+    },
+    {
+      "address": "0x401610",
+      "position": [
+        620.0,
+        200.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "font": 3,
+      "alignment": [
+        2,
+        1
+      ],
+      "groupedNumber": 246
+    }
+  ]
+}

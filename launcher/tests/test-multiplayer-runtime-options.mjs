@@ -12,6 +12,7 @@ const th07 = {
   difficulties: PRODUCT_GAMES.th07.multiplayer.difficulties,
   loadouts: PRODUCT_GAMES.th07.multiplayer.loadouts,
 };
+const th12 = PRODUCT_GAMES.th12.multiplayer;
 const base = {
   url: "wss://relay.example.test/netplay?room=th06mp-1234&run=1&player=0",
   player: 0,
@@ -44,7 +45,16 @@ assert.deepEqual(buildMultiplayerRuntimeOptions(base, th06), {
   netplayLoadouts: base.loadouts.slice(0, 2),
 }, "Runtime options must use only the active player-count prefix of loadouts");
 const th08Timing=buildMultiplayerRuntimeOptions({ ...base, inputDelay: 4, predictionLimit: 2 }, th06);
-for (const product of ['th06mp','th07mp','th075mp','th08mp','th09mp','th10mp','th11mp','th15mp']) {
+for(const playerCount of [2,3]){
+  const input={...base,url:base.url.replace('th06mp','th12mp'),playerCount,difficulty:4,inputDelay:0,
+    loadouts:[{character:0,shot:0},{character:1,shot:1},{character:2,shot:1}]};
+  const direct=buildMultiplayerRuntimeOptions({...input,adonisMode:0},th12);
+  assert.equal(direct.netplayPredictionLimit,12);assert.equal(direct.netplayInputDelay,0);assert.equal(direct.netplayInputDelayAuto,false);
+  const automatic=buildMultiplayerRuntimeOptions({...input,adonisMode:1,inputDelayAuto:true},th12);
+  assert.equal(automatic.netplayPredictionLimit,0);assert.equal(automatic.netplayInputDelayAuto,true);
+  assert.equal(automatic.netplayLoadouts.length,playerCount);
+}
+for (const product of ['th06mp','th07mp','th075mp','th08mp','th09mp','th10mp','th11mp','th12mp','th15mp']) {
   const input = {...base, difficulty: 1, inputDelay: 0, ...(product === 'th15mp' ? {adonisMode: 1} : {}), url: base.url.replace('th06mp', product)};
   assert.equal(buildMultiplayerRuntimeOptions({...input, preferTurn: true}, th06).netplayPreferTurn, true, product);
   assert.equal(buildMultiplayerRuntimeOptions({...input, preferTurn: false}, th06).netplayPreferTurn, undefined, product);
@@ -61,13 +71,17 @@ const adonisBase={...base,url:base.url.replace('th06mp-','th09mp-'),inputDelay:9
 for(const product of ['th08mp','th09mp','th10mp'])for(const adonisMode of [1,2]){
   const options=buildMultiplayerRuntimeOptions({...adonisBase,url:adonisBase.url.replace('th09mp',product),adonisMode},th06);
   assert.equal(options.netplayAdonisMode,adonisMode===2?0:1);
-  assert.equal(options.netplayInputDelay,adonisMode===2&&product!=='th09mp'?0:9);
+  assert.equal(options.netplayInputDelay,adonisMode===2?0:9);
 }
 for(const inputDelay of [0,1,3,9]) {
   const value=buildMultiplayerRuntimeOptions({...adonisBase,adonisMode:0,inputDelay},th06);
-  assert.equal(value.netplayAdonisMode,0);assert.equal(value.netplayInputDelay,inputDelay);
+  assert.equal(value.netplayAdonisMode,0);assert.equal(value.netplayInputDelay,0);
 }
 for(const inputDelay of [-1,10,1.5,NaN])assert.throws(()=>buildMultiplayerRuntimeOptions({...adonisBase,adonisMode:0,inputDelay},th06),/输入延迟/);
+for(const product of ['th06mp','th07mp','th08mp','th09mp','th10mp','th11mp','th12mp','th15mp']) {
+  const options=buildMultiplayerRuntimeOptions({...base,url:base.url.replace('th06mp',product),adonisMode:0,inputDelay:1},th06);
+  assert.equal(options.netplayInputDelay,0,`${product} rollback cannot retain a hidden one-frame input delay`);
+}
 for(const product of ['th08mp','th10mp']) {
   const stable={...base,url:base.url.replace('th06mp',product),inputDelay:3};
   const options=buildMultiplayerRuntimeOptions(stable,th06);
@@ -132,3 +146,7 @@ console.log(JSON.stringify({
   productConstraints: ["playerCounts", "difficulties", "loadouts"],
   spectator: "explicit-role",
 }));
+
+assert.equal(buildMultiplayerRuntimeOptions({...base,allowWebsocketFallback:true},th06).netplayAllowWebsocketFallback,true);
+assert.equal(buildMultiplayerRuntimeOptions({...base,allowWebsocketFallback:false},th06).netplayAllowWebsocketFallback,undefined);
+assert.throws(()=>buildMultiplayerRuntimeOptions({...base,allowWebsocketFallback:'true'},th06),/WebSocket/);

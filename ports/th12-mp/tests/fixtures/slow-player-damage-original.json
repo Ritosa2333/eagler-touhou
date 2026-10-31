@@ -1,0 +1,4128 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "20d89a3fe23f5c4c1631c903722bf50b20025998da6ce9c305dcef1a444d1aaf",
+  "wholeGameOracle": false,
+  "scope": "Controlled protected main creates retail BossDead. Continuous actual Sanae B fire, original Player16/Enemy18/ANM/Spell callbacks. Host resource/heap/audio/text boundaries; not replay/GPU.",
+  "initial": {
+    "score": 0,
+    "power": 400,
+    "pointValue": 2000000,
+    "lives": 2,
+    "lifeFragments": 0,
+    "bombs": 2,
+    "bombFragments": 0,
+    "ufoColors": [
+      0,
+      0,
+      0
+    ],
+    "rank": 0,
+    "x": 10240,
+    "y": 51200,
+    "nativeGlobals": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "character": 2,
+  "shot": 1,
+  "difficulty": 3,
+  "seed": 1234,
+  "mainBase64": "U0NQVAEAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAARAAAALgAAABtYWluAEJvc3NEZWF0aEZpeHR1cmUAAABFQ0xIAAAAAAAAAAAAAAAAAAAAAJIBFAAAAD8BAAAAAKAAAAAAAAAAAAE8AAAAPwYAAAAAFAAAAEJvc3NEZWF0aEZpeHR1cmUAAAAAAAAAAAAAAEOQMwAAAAAAAAAAAAAAAAAAUwAUAAAAPwEAAAAAoIYBAEVDTEgAAAAAAAAAAAAAAAAAAAAAAgEUAAAAPwEAAAAAAgAAAAAAAAAGARgAAAA/AgAAAAAAAAAAAAAAAAAAAACQARgAAAA/AgAAAAAAAIBCAACAQgAAAACRARgAAAA/AgAAAAAAAIBCAACAQgAAAACbARQAAAA/AQAAAACQMwAAAAAAACwBGAAAAD8CAAAAAAAAAAAAAABDAAAAAKYBKAAAAD8EAAAAAGMAAAAgHAAAIKEHAAgAAABmaXh0dXJlAAAAAAALACAAAAA/AQAAAAAMAAAAQm9zc0RlYWQAAAAAAAAAAFMAFAAAAD8BAAAAAKCGAQA=",
+  "rows": [
+    {
+      "tick": -1,
+      "rng": [
+        60134,
+        2
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": -1,
+      "serialTicks": 1,
+      "spellAge": 0
+    },
+    {
+      "tick": 0,
+      "rng": [
+        16628,
+        10
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 0,
+      "serialTicks": 2,
+      "spellAge": 0
+    },
+    {
+      "tick": 1,
+      "rng": [
+        16628,
+        10
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 1,
+      "serialTicks": 3,
+      "spellAge": 1
+    },
+    {
+      "tick": 2,
+      "rng": [
+        16628,
+        10
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 1,
+      "serialTicks": 4,
+      "spellAge": 1
+    },
+    {
+      "tick": 3,
+      "rng": [
+        16628,
+        10
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 2,
+      "serialTicks": 5,
+      "spellAge": 2
+    },
+    {
+      "tick": 4,
+      "rng": [
+        31929,
+        18
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 2,
+      "serialTicks": 6,
+      "spellAge": 2
+    },
+    {
+      "tick": 5,
+      "rng": [
+        31929,
+        18
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 3,
+      "serialTicks": 7,
+      "spellAge": 3
+    },
+    {
+      "tick": 6,
+      "rng": [
+        31929,
+        18
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 3,
+      "serialTicks": 8,
+      "spellAge": 3
+    },
+    {
+      "tick": 7,
+      "rng": [
+        31929,
+        18
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 4,
+      "serialTicks": 9,
+      "spellAge": 4
+    },
+    {
+      "tick": 8,
+      "rng": [
+        58727,
+        26
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 4,
+      "serialTicks": 10,
+      "spellAge": 4
+    },
+    {
+      "tick": 9,
+      "rng": [
+        58727,
+        26
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 5,
+      "serialTicks": 11,
+      "spellAge": 5
+    },
+    {
+      "tick": 10,
+      "rng": [
+        58727,
+        26
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 5,
+      "serialTicks": 12,
+      "spellAge": 5
+    },
+    {
+      "tick": 11,
+      "rng": [
+        58727,
+        26
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 6,
+      "serialTicks": 13,
+      "spellAge": 6
+    },
+    {
+      "tick": 12,
+      "rng": [
+        13379,
+        34
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 6,
+      "serialTicks": 14,
+      "spellAge": 6
+    },
+    {
+      "tick": 13,
+      "rng": [
+        13379,
+        34
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 7,
+      "serialTicks": 15,
+      "spellAge": 7
+    },
+    {
+      "tick": 14,
+      "rng": [
+        13379,
+        34
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 7,
+      "serialTicks": 16,
+      "spellAge": 7
+    },
+    {
+      "tick": 15,
+      "rng": [
+        13379,
+        34
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 8,
+      "serialTicks": 17,
+      "spellAge": 8
+    },
+    {
+      "tick": 16,
+      "rng": [
+        10182,
+        42
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 8,
+      "serialTicks": 18,
+      "spellAge": 8
+    },
+    {
+      "tick": 17,
+      "rng": [
+        10182,
+        42
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 9,
+      "serialTicks": 19,
+      "spellAge": 9
+    },
+    {
+      "tick": 18,
+      "rng": [
+        10182,
+        42
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 9,
+      "serialTicks": 20,
+      "spellAge": 9
+    },
+    {
+      "tick": 19,
+      "rng": [
+        10182,
+        42
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 10,
+      "serialTicks": 21,
+      "spellAge": 10
+    },
+    {
+      "tick": 20,
+      "rng": [
+        9943,
+        50
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 10,
+      "serialTicks": 22,
+      "spellAge": 10
+    },
+    {
+      "tick": 21,
+      "rng": [
+        9943,
+        50
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 11,
+      "serialTicks": 23,
+      "spellAge": 11
+    },
+    {
+      "tick": 22,
+      "rng": [
+        9943,
+        50
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 11,
+      "serialTicks": 24,
+      "spellAge": 11
+    },
+    {
+      "tick": 23,
+      "rng": [
+        9943,
+        50
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 12,
+      "serialTicks": 25,
+      "spellAge": 12
+    },
+    {
+      "tick": 24,
+      "rng": [
+        51730,
+        58
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 12,
+      "serialTicks": 26,
+      "spellAge": 12
+    },
+    {
+      "tick": 25,
+      "rng": [
+        51730,
+        58
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 13,
+      "serialTicks": 27,
+      "spellAge": 13
+    },
+    {
+      "tick": 26,
+      "rng": [
+        51730,
+        58
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 13,
+      "serialTicks": 28,
+      "spellAge": 13
+    },
+    {
+      "tick": 27,
+      "rng": [
+        51730,
+        58
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 14,
+      "serialTicks": 29,
+      "spellAge": 14
+    },
+    {
+      "tick": 28,
+      "rng": [
+        7409,
+        66
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 7,
+      "serialTicks": 30,
+      "spellAge": 14
+    },
+    {
+      "tick": 29,
+      "rng": [
+        7409,
+        66
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 7,
+      "serialTicks": 31,
+      "spellAge": 15
+    },
+    {
+      "tick": 30,
+      "rng": [
+        7409,
+        66
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 8,
+      "serialTicks": 32,
+      "spellAge": 15
+    },
+    {
+      "tick": 31,
+      "rng": [
+        7409,
+        66
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 8,
+      "serialTicks": 33,
+      "spellAge": 16
+    },
+    {
+      "tick": 32,
+      "rng": [
+        20568,
+        74
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 9,
+      "serialTicks": 34,
+      "spellAge": 16
+    },
+    {
+      "tick": 33,
+      "rng": [
+        20568,
+        74
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 9,
+      "serialTicks": 35,
+      "spellAge": 17
+    },
+    {
+      "tick": 34,
+      "rng": [
+        20568,
+        74
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 10,
+      "serialTicks": 36,
+      "spellAge": 17
+    },
+    {
+      "tick": 35,
+      "rng": [
+        20568,
+        74
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 10,
+      "serialTicks": 37,
+      "spellAge": 18
+    },
+    {
+      "tick": 36,
+      "rng": [
+        3017,
+        82
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 11,
+      "serialTicks": 38,
+      "spellAge": 18
+    },
+    {
+      "tick": 37,
+      "rng": [
+        3017,
+        82
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 11,
+      "serialTicks": 39,
+      "spellAge": 19
+    },
+    {
+      "tick": 38,
+      "rng": [
+        3017,
+        82
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 12,
+      "serialTicks": 40,
+      "spellAge": 19
+    },
+    {
+      "tick": 39,
+      "rng": [
+        3017,
+        82
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 12,
+      "serialTicks": 41,
+      "spellAge": 20
+    },
+    {
+      "tick": 40,
+      "rng": [
+        25285,
+        90
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 13,
+      "serialTicks": 42,
+      "spellAge": 20
+    },
+    {
+      "tick": 41,
+      "rng": [
+        25285,
+        90
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 13,
+      "serialTicks": 43,
+      "spellAge": 21
+    },
+    {
+      "tick": 42,
+      "rng": [
+        25285,
+        90
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 14,
+      "serialTicks": 44,
+      "spellAge": 21
+    },
+    {
+      "tick": 43,
+      "rng": [
+        25285,
+        90
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 7,
+      "serialTicks": 45,
+      "spellAge": 22
+    },
+    {
+      "tick": 44,
+      "rng": [
+        46059,
+        98
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 7,
+      "serialTicks": 46,
+      "spellAge": 22
+    },
+    {
+      "tick": 45,
+      "rng": [
+        46059,
+        98
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 8,
+      "serialTicks": 47,
+      "spellAge": 23
+    },
+    {
+      "tick": 46,
+      "rng": [
+        46059,
+        98
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 8,
+      "serialTicks": 48,
+      "spellAge": 23
+    },
+    {
+      "tick": 47,
+      "rng": [
+        46059,
+        98
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 9,
+      "serialTicks": 49,
+      "spellAge": 24
+    },
+    {
+      "tick": 48,
+      "rng": [
+        36028,
+        106
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 9,
+      "serialTicks": 50,
+      "spellAge": 24
+    },
+    {
+      "tick": 49,
+      "rng": [
+        36028,
+        106
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 10,
+      "serialTicks": 51,
+      "spellAge": 25
+    },
+    {
+      "tick": 50,
+      "rng": [
+        36028,
+        106
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 10,
+      "serialTicks": 52,
+      "spellAge": 25
+    },
+    {
+      "tick": 51,
+      "rng": [
+        36028,
+        106
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 11,
+      "serialTicks": 53,
+      "spellAge": 26
+    },
+    {
+      "tick": 52,
+      "rng": [
+        21788,
+        114
+      ],
+      "rate": 0.5,
+      "score": 0,
+      "shotClock": 11,
+      "serialTicks": 54,
+      "spellAge": 26
+    },
+    {
+      "tick": 53,
+      "rng": [
+        61449,
+        116
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 12,
+      "serialTicks": 55,
+      "spellAge": 27
+    },
+    {
+      "tick": 54,
+      "rng": [
+        61449,
+        116
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 12,
+      "serialTicks": 56,
+      "spellAge": 27
+    },
+    {
+      "tick": 55,
+      "rng": [
+        61449,
+        116
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 13,
+      "serialTicks": 57,
+      "spellAge": 28
+    },
+    {
+      "tick": 56,
+      "rng": [
+        17029,
+        124
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 13,
+      "serialTicks": 58,
+      "spellAge": 28
+    },
+    {
+      "tick": 57,
+      "rng": [
+        17029,
+        124
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 14,
+      "serialTicks": 59,
+      "spellAge": 29
+    },
+    {
+      "tick": 58,
+      "rng": [
+        17029,
+        124
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 7,
+      "serialTicks": 60,
+      "spellAge": 29
+    },
+    {
+      "tick": 59,
+      "rng": [
+        17029,
+        124
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 7,
+      "serialTicks": 61,
+      "spellAge": 30
+    },
+    {
+      "tick": 60,
+      "rng": [
+        40471,
+        132
+      ],
+      "rate": 0.5,
+      "score": 1,
+      "shotClock": 8,
+      "serialTicks": 62,
+      "spellAge": 30
+    },
+    {
+      "tick": 61,
+      "rng": [
+        40471,
+        132
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 8,
+      "serialTicks": 63,
+      "spellAge": 31
+    },
+    {
+      "tick": 62,
+      "rng": [
+        40471,
+        132
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 9,
+      "serialTicks": 64,
+      "spellAge": 31
+    },
+    {
+      "tick": 63,
+      "rng": [
+        40471,
+        132
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 9,
+      "serialTicks": 65,
+      "spellAge": 32
+    },
+    {
+      "tick": 64,
+      "rng": [
+        34258,
+        140
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 10,
+      "serialTicks": 66,
+      "spellAge": 32
+    },
+    {
+      "tick": 65,
+      "rng": [
+        34258,
+        140
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 10,
+      "serialTicks": 67,
+      "spellAge": 33
+    },
+    {
+      "tick": 66,
+      "rng": [
+        34258,
+        140
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 11,
+      "serialTicks": 68,
+      "spellAge": 33
+    },
+    {
+      "tick": 67,
+      "rng": [
+        34258,
+        140
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 11,
+      "serialTicks": 69,
+      "spellAge": 34
+    },
+    {
+      "tick": 68,
+      "rng": [
+        22206,
+        148
+      ],
+      "rate": 0.5,
+      "score": 2,
+      "shotClock": 12,
+      "serialTicks": 70,
+      "spellAge": 34
+    },
+    {
+      "tick": 69,
+      "rng": [
+        22206,
+        148
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 12,
+      "serialTicks": 71,
+      "spellAge": 35
+    },
+    {
+      "tick": 70,
+      "rng": [
+        22206,
+        148
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 13,
+      "serialTicks": 72,
+      "spellAge": 35
+    },
+    {
+      "tick": 71,
+      "rng": [
+        22206,
+        148
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 13,
+      "serialTicks": 73,
+      "spellAge": 36
+    },
+    {
+      "tick": 72,
+      "rng": [
+        50031,
+        156
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 14,
+      "serialTicks": 74,
+      "spellAge": 36
+    },
+    {
+      "tick": 73,
+      "rng": [
+        50031,
+        156
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 7,
+      "serialTicks": 75,
+      "spellAge": 37
+    },
+    {
+      "tick": 74,
+      "rng": [
+        50031,
+        156
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 7,
+      "serialTicks": 76,
+      "spellAge": 37
+    },
+    {
+      "tick": 75,
+      "rng": [
+        50031,
+        156
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 8,
+      "serialTicks": 77,
+      "spellAge": 38
+    },
+    {
+      "tick": 76,
+      "rng": [
+        12866,
+        164
+      ],
+      "rate": 0.5,
+      "score": 3,
+      "shotClock": 8,
+      "serialTicks": 78,
+      "spellAge": 38
+    },
+    {
+      "tick": 77,
+      "rng": [
+        12866,
+        164
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 9,
+      "serialTicks": 79,
+      "spellAge": 39
+    },
+    {
+      "tick": 78,
+      "rng": [
+        12866,
+        164
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 9,
+      "serialTicks": 80,
+      "spellAge": 39
+    },
+    {
+      "tick": 79,
+      "rng": [
+        12866,
+        164
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 10,
+      "serialTicks": 81,
+      "spellAge": 40
+    },
+    {
+      "tick": 80,
+      "rng": [
+        25816,
+        172
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 10,
+      "serialTicks": 82,
+      "spellAge": 40
+    },
+    {
+      "tick": 81,
+      "rng": [
+        25816,
+        172
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 11,
+      "serialTicks": 83,
+      "spellAge": 41
+    },
+    {
+      "tick": 82,
+      "rng": [
+        25816,
+        172
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 11,
+      "serialTicks": 84,
+      "spellAge": 41
+    },
+    {
+      "tick": 83,
+      "rng": [
+        25816,
+        172
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 12,
+      "serialTicks": 85,
+      "spellAge": 42
+    },
+    {
+      "tick": 84,
+      "rng": [
+        59380,
+        180
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 12,
+      "serialTicks": 86,
+      "spellAge": 42
+    },
+    {
+      "tick": 85,
+      "rng": [
+        59380,
+        180
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 13,
+      "serialTicks": 87,
+      "spellAge": 43
+    },
+    {
+      "tick": 86,
+      "rng": [
+        59380,
+        180
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 13,
+      "serialTicks": 88,
+      "spellAge": 43
+    },
+    {
+      "tick": 87,
+      "rng": [
+        59380,
+        180
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 14,
+      "serialTicks": 89,
+      "spellAge": 44
+    },
+    {
+      "tick": 88,
+      "rng": [
+        15806,
+        188
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 7,
+      "serialTicks": 90,
+      "spellAge": 44
+    },
+    {
+      "tick": 89,
+      "rng": [
+        15806,
+        188
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 7,
+      "serialTicks": 91,
+      "spellAge": 45
+    },
+    {
+      "tick": 90,
+      "rng": [
+        15806,
+        188
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 8,
+      "serialTicks": 92,
+      "spellAge": 45
+    },
+    {
+      "tick": 91,
+      "rng": [
+        15806,
+        188
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 8,
+      "serialTicks": 93,
+      "spellAge": 46
+    },
+    {
+      "tick": 92,
+      "rng": [
+        3183,
+        196
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 9,
+      "serialTicks": 94,
+      "spellAge": 46
+    },
+    {
+      "tick": 93,
+      "rng": [
+        3183,
+        196
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 9,
+      "serialTicks": 95,
+      "spellAge": 47
+    },
+    {
+      "tick": 94,
+      "rng": [
+        3183,
+        196
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 10,
+      "serialTicks": 96,
+      "spellAge": 47
+    },
+    {
+      "tick": 95,
+      "rng": [
+        3183,
+        196
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 10,
+      "serialTicks": 97,
+      "spellAge": 48
+    },
+    {
+      "tick": 96,
+      "rng": [
+        54698,
+        204
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 11,
+      "serialTicks": 98,
+      "spellAge": 48
+    },
+    {
+      "tick": 97,
+      "rng": [
+        54698,
+        204
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 11,
+      "serialTicks": 99,
+      "spellAge": 49
+    },
+    {
+      "tick": 98,
+      "rng": [
+        54698,
+        204
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 12,
+      "serialTicks": 100,
+      "spellAge": 49
+    },
+    {
+      "tick": 99,
+      "rng": [
+        54698,
+        204
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 12,
+      "serialTicks": 101,
+      "spellAge": 50
+    },
+    {
+      "tick": 100,
+      "rng": [
+        17522,
+        212
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 13,
+      "serialTicks": 102,
+      "spellAge": 50
+    },
+    {
+      "tick": 101,
+      "rng": [
+        17522,
+        212
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 13,
+      "serialTicks": 103,
+      "spellAge": 51
+    },
+    {
+      "tick": 102,
+      "rng": [
+        17522,
+        212
+      ],
+      "rate": 0.5,
+      "score": 4,
+      "shotClock": 14,
+      "serialTicks": 104,
+      "spellAge": 51
+    },
+    {
+      "tick": 103,
+      "rng": [
+        17522,
+        212
+      ],
+      "rate": 0.5,
+      "score": 5,
+      "shotClock": 7,
+      "serialTicks": 105,
+      "spellAge": 52
+    },
+    {
+      "tick": 104,
+      "rng": [
+        37854,
+        220
+      ],
+      "rate": 0.5,
+      "score": 5,
+      "shotClock": 7,
+      "serialTicks": 106,
+      "spellAge": 52
+    },
+    {
+      "tick": 105,
+      "rng": [
+        37854,
+        220
+      ],
+      "rate": 0.5,
+      "score": 6,
+      "shotClock": 8,
+      "serialTicks": 107,
+      "spellAge": 53
+    },
+    {
+      "tick": 106,
+      "rng": [
+        37854,
+        220
+      ],
+      "rate": 0.5,
+      "score": 6,
+      "shotClock": 8,
+      "serialTicks": 108,
+      "spellAge": 53
+    },
+    {
+      "tick": 107,
+      "rng": [
+        37854,
+        220
+      ],
+      "rate": 0.5,
+      "score": 7,
+      "shotClock": 9,
+      "serialTicks": 109,
+      "spellAge": 54
+    },
+    {
+      "tick": 108,
+      "rng": [
+        27923,
+        228
+      ],
+      "rate": 0.5,
+      "score": 7,
+      "shotClock": 9,
+      "serialTicks": 110,
+      "spellAge": 54
+    },
+    {
+      "tick": 109,
+      "rng": [
+        27923,
+        228
+      ],
+      "rate": 0.5,
+      "score": 8,
+      "shotClock": 10,
+      "serialTicks": 111,
+      "spellAge": 55
+    },
+    {
+      "tick": 110,
+      "rng": [
+        27923,
+        228
+      ],
+      "rate": 0.5,
+      "score": 8,
+      "shotClock": 10,
+      "serialTicks": 112,
+      "spellAge": 55
+    },
+    {
+      "tick": 111,
+      "rng": [
+        27923,
+        228
+      ],
+      "rate": 0.5,
+      "score": 9,
+      "shotClock": 11,
+      "serialTicks": 113,
+      "spellAge": 56
+    },
+    {
+      "tick": 112,
+      "rng": [
+        49273,
+        236
+      ],
+      "rate": 0.5,
+      "score": 9,
+      "shotClock": 11,
+      "serialTicks": 114,
+      "spellAge": 56
+    },
+    {
+      "tick": 113,
+      "rng": [
+        49273,
+        236
+      ],
+      "rate": 0.5,
+      "score": 10,
+      "shotClock": 12,
+      "serialTicks": 115,
+      "spellAge": 57
+    },
+    {
+      "tick": 114,
+      "rng": [
+        49273,
+        236
+      ],
+      "rate": 0.5,
+      "score": 10,
+      "shotClock": 12,
+      "serialTicks": 116,
+      "spellAge": 57
+    },
+    {
+      "tick": 115,
+      "rng": [
+        49273,
+        236
+      ],
+      "rate": 0.5,
+      "score": 10,
+      "shotClock": 13,
+      "serialTicks": 117,
+      "spellAge": 58
+    },
+    {
+      "tick": 116,
+      "rng": [
+        12976,
+        244
+      ],
+      "rate": 0.5,
+      "score": 10,
+      "shotClock": 13,
+      "serialTicks": 118,
+      "spellAge": 58
+    },
+    {
+      "tick": 117,
+      "rng": [
+        12976,
+        244
+      ],
+      "rate": 0.5,
+      "score": 10,
+      "shotClock": 14,
+      "serialTicks": 119,
+      "spellAge": 59
+    },
+    {
+      "tick": 118,
+      "rng": [
+        12976,
+        244
+      ],
+      "rate": 0.5,
+      "score": 10,
+      "shotClock": 7,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 119,
+      "rng": [
+        12976,
+        244
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 7,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 120,
+      "rng": [
+        60805,
+        248
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 7,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 121,
+      "rng": [
+        26786,
+        252
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 122,
+      "rng": [
+        48236,
+        736
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 123,
+      "rng": [
+        3784,
+        740
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 124,
+      "rng": [
+        42307,
+        744
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 125,
+      "rng": [
+        10201,
+        748
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 126,
+      "rng": [
+        29764,
+        752
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 127,
+      "rng": [
+        10496,
+        756
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 128,
+      "rng": [
+        32105,
+        760
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 129,
+      "rng": [
+        50193,
+        764
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 130,
+      "rng": [
+        55780,
+        768
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 131,
+      "rng": [
+        18555,
+        772
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 132,
+      "rng": [
+        59979,
+        776
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 133,
+      "rng": [
+        64157,
+        780
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 134,
+      "rng": [
+        16527,
+        784
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 135,
+      "rng": [
+        13825,
+        788
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 136,
+      "rng": [
+        31882,
+        792
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 137,
+      "rng": [
+        25357,
+        796
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 138,
+      "rng": [
+        45078,
+        800
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 139,
+      "rng": [
+        46291,
+        804
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 140,
+      "rng": [
+        33205,
+        808
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 141,
+      "rng": [
+        22453,
+        812
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 142,
+      "rng": [
+        22631,
+        816
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 143,
+      "rng": [
+        3572,
+        820
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 144,
+      "rng": [
+        39233,
+        824
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 145,
+      "rng": [
+        48061,
+        828
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 146,
+      "rng": [
+        24027,
+        832
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 147,
+      "rng": [
+        19055,
+        836
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 148,
+      "rng": [
+        5630,
+        840
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 149,
+      "rng": [
+        40873,
+        844
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 150,
+      "rng": [
+        1071,
+        848
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 151,
+      "rng": [
+        54948,
+        852
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 152,
+      "rng": [
+        1770,
+        856
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 153,
+      "rng": [
+        17208,
+        860
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 154,
+      "rng": [
+        54519,
+        864
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 155,
+      "rng": [
+        37844,
+        868
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 156,
+      "rng": [
+        31024,
+        872
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 157,
+      "rng": [
+        27929,
+        876
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 158,
+      "rng": [
+        46108,
+        880
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 159,
+      "rng": [
+        49415,
+        884
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 160,
+      "rng": [
+        58752,
+        888
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 161,
+      "rng": [
+        64920,
+        892
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 162,
+      "rng": [
+        13714,
+        896
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 163,
+      "rng": [
+        19337,
+        900
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 164,
+      "rng": [
+        25672,
+        904
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 165,
+      "rng": [
+        9488,
+        908
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 166,
+      "rng": [
+        52549,
+        912
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 167,
+      "rng": [
+        10113,
+        916
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 168,
+      "rng": [
+        64598,
+        920
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 169,
+      "rng": [
+        63371,
+        924
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 170,
+      "rng": [
+        12228,
+        928
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 171,
+      "rng": [
+        43356,
+        932
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 172,
+      "rng": [
+        65260,
+        936
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 173,
+      "rng": [
+        37267,
+        940
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 174,
+      "rng": [
+        16934,
+        944
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 175,
+      "rng": [
+        34550,
+        948
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 176,
+      "rng": [
+        38586,
+        952
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 177,
+      "rng": [
+        21290,
+        956
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 178,
+      "rng": [
+        33639,
+        960
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 179,
+      "rng": [
+        3523,
+        964
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 180,
+      "rng": [
+        29246,
+        968
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 181,
+      "rng": [
+        57158,
+        972
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 182,
+      "rng": [
+        9455,
+        976
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 183,
+      "rng": [
+        38469,
+        980
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 184,
+      "rng": [
+        10282,
+        984
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 185,
+      "rng": [
+        33640,
+        988
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 186,
+      "rng": [
+        50371,
+        992
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 187,
+      "rng": [
+        42981,
+        996
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 188,
+      "rng": [
+        17861,
+        1000
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 189,
+      "rng": [
+        42998,
+        1004
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 190,
+      "rng": [
+        38103,
+        1008
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 191,
+      "rng": [
+        32277,
+        1012
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 192,
+      "rng": [
+        47109,
+        1016
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 193,
+      "rng": [
+        58843,
+        1020
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 194,
+      "rng": [
+        19095,
+        1024
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 195,
+      "rng": [
+        15871,
+        1028
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 196,
+      "rng": [
+        26194,
+        1032
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 197,
+      "rng": [
+        2842,
+        1036
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 198,
+      "rng": [
+        45886,
+        1040
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 199,
+      "rng": [
+        57095,
+        1044
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 200,
+      "rng": [
+        58354,
+        1048
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 201,
+      "rng": [
+        11168,
+        1052
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 202,
+      "rng": [
+        7531,
+        1056
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 203,
+      "rng": [
+        6833,
+        1060
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 204,
+      "rng": [
+        60589,
+        1064
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 205,
+      "rng": [
+        20632,
+        1068
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 206,
+      "rng": [
+        13681,
+        1072
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 207,
+      "rng": [
+        44084,
+        1076
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 208,
+      "rng": [
+        55004,
+        1080
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 209,
+      "rng": [
+        32491,
+        1084
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 210,
+      "rng": [
+        39443,
+        1088
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 211,
+      "rng": [
+        49713,
+        1092
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 212,
+      "rng": [
+        27510,
+        1096
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 213,
+      "rng": [
+        5918,
+        1100
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 214,
+      "rng": [
+        49066,
+        1104
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 215,
+      "rng": [
+        20687,
+        1108
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 216,
+      "rng": [
+        30321,
+        1112
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 217,
+      "rng": [
+        44109,
+        1116
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 218,
+      "rng": [
+        60891,
+        1120
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 219,
+      "rng": [
+        19103,
+        1124
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 220,
+      "rng": [
+        1534,
+        1128
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 221,
+      "rng": [
+        40761,
+        1132
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 222,
+      "rng": [
+        54323,
+        1136
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 223,
+      "rng": [
+        55252,
+        1140
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 224,
+      "rng": [
+        30420,
+        1144
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 225,
+      "rng": [
+        31051,
+        1148
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 226,
+      "rng": [
+        64028,
+        1152
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 227,
+      "rng": [
+        49553,
+        1156
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 228,
+      "rng": [
+        19317,
+        1160
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 229,
+      "rng": [
+        6142,
+        1164
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 230,
+      "rng": [
+        40871,
+        1168
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 231,
+      "rng": [
+        20015,
+        1172
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 232,
+      "rng": [
+        54786,
+        1176
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 233,
+      "rng": [
+        35050,
+        1180
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 234,
+      "rng": [
+        17162,
+        1184
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 235,
+      "rng": [
+        58102,
+        1188
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 236,
+      "rng": [
+        38806,
+        1192
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 237,
+      "rng": [
+        14116,
+        1196
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 238,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 239,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 240,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 241,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 242,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 243,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 244,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 245,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 246,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 247,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 248,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 249,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 250,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 251,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 252,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 253,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 254,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 255,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 256,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 257,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 258,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 259,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 260,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 261,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 262,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 263,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 264,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 265,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 266,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 267,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 268,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 269,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 270,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 271,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 272,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 273,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 274,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 275,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 276,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 277,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 0.25,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 278,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 279,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 280,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 0,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 281,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 1,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 282,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 2,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 283,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 3,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 284,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 4,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 285,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 5,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 286,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 6,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 287,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 7,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 288,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 289,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 290,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 291,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 292,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 293,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 294,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 295,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 0,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 296,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 1,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 297,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 2,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 298,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 3,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 299,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 4,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 300,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 5,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 301,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 6,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 302,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 7,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 303,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 304,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 305,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 306,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 307,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 308,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 309,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 310,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 0,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 311,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 1,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 312,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 2,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 313,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 3,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 314,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 4,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 315,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 5,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 316,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 6,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 317,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 7,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 318,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 319,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 320,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 321,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 322,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 323,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 324,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 325,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 0,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 326,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 1,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 327,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 2,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 328,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 3,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 329,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 4,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 330,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 5,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 331,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 6,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 332,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 7,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 333,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 8,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 334,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 9,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 335,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 10,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 336,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 11,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 337,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 12,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 338,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 13,
+      "serialTicks": 120,
+      "spellAge": 59
+    },
+    {
+      "tick": 339,
+      "rng": [
+        35211,
+        1200
+      ],
+      "rate": 1.0,
+      "score": 1800010,
+      "shotClock": 14,
+      "serialTicks": 120,
+      "spellAge": 59
+    }
+  ]
+}

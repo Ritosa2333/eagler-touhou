@@ -1,0 +1,54 @@
+[
+  {
+    "node": "jp",
+    "current": "/var/www/eagler-touhou/releases/th12mp-public-0dde257ec-20261028",
+    "releaseId": "sha256-7c564562be7ea5864c80520f597deedb276e347a373cda75def357807396a9d9",
+    "buildId": "cd0df3fadea89e3db219",
+    "runtimeGeneration": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+    "files": 64,
+    "languages": [
+      "lang_zh-hans",
+      "lang_en"
+    ],
+    "relay": "wss://relay.touhouonline.com/eagler-netplay-lifecycle-20261025/"
+  },
+  {
+    "node": "hk",
+    "current": "/var/www/eagler-touhou/releases/th12mp-public-0dde257ec-20261028-mirror-f8023c3b1994",
+    "releaseId": "sha256-7c564562be7ea5864c80520f597deedb276e347a373cda75def357807396a9d9",
+    "buildId": "cd0df3fadea89e3db219",
+    "runtimeGeneration": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+    "files": 64,
+    "languages": [
+      "lang_zh-hans",
+      "lang_en"
+    ],
+    "relay": "wss://relay.touhouonline.com/eagler-netplay-lifecycle-20261025/"
+  },
+  {
+    "node": "cn",
+    "current": "/var/www/eagler-touhou-online/releases/th12mp-public-0dde257ec-20261028-mirror-f8023c3b1994",
+    "releaseId": "sha256-7c564562be7ea5864c80520f597deedb276e347a373cda75def357807396a9d9",
+    "buildId": "cd0df3fadea89e3db219",
+    "runtimeGeneration": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+    "files": 64,
+    "languages": [
+      "lang_zh-hans",
+      "lang_en"
+    ],
+    "relay": "wss://relay.touhouonline.com/eagler-netplay-lifecycle-20261025/"
+  },
+  {
+    "node": "test",
+    "current": "/var/www/eagler-touhou-test/releases/th12mp-public-final-0dde257ec-20261028",
+    "releaseId": "sha256-c1e0869d72aad75251228fb6813802b1fa5b799ad6119a8c531454de22eb95ef",
+    "buildId": "41504c3074116adc48c6",
+    "runtimeGeneration": "b0e4d32065897df419584872ebc40deb7030f6a3f44e0181630414969d557496",
+    "files": 64,
+    "languages": [
+      "lang_zh-hans",
+      "lang_en"
+    ],
+    "relay": "wss://test.touhou.vip/eagler-netplay/"
+  }
+]

@@ -59,3 +59,7 @@ th08 普通版与 MP 的 `eagler_replay_audio_pump`、th10 普通版与 MP 的 `
 ## 源码入口
 
 [持久化桥](../../common/browser/save-sync.mjs) · [存储检查](../../launcher/docs/RUNTIME_STORAGE_TESTING.md)
+
+## th12 多人存储
+
+th12 普通版使用 `/savesth12` 数据库，多人版使用 `/savesth12mp` 数据库，两者均保留原生 `/savesth12/` 文件路径。多人编号、自动保存和导入录像使用 `th12_mp_` 前缀，启动器读取与跨源迁移共用同一数据库归属。多人版首次打开时按前缀复制旧共享库内的多人录像，已有目标文件保持原内容。CI 同时检出普通版与多人版存储模块，验证实际读写隔离、旧录像迁移及启动器读取。

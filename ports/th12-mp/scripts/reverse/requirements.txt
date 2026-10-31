@@ -1,0 +1,6 @@
+# Installed into a separate project tools directory with Python 3.12.
+angr==10.0.1.post1
+# Existing native probes use the separate tools/python directory.
+pefile==2024.8.26
+capstone==5.0.9
+unicorn==2.1.4

@@ -1,0 +1,20 @@
+{
+  "sourceHead": "1a5b7400d95bbe9e158921e08427b0c10b82956e",
+  "sourceAnchors": 13,
+  "subtrees": {
+    "ports/th12": {
+      "split": "eb4c52bdce00bb8ff67fb8f38013550c43379787",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "treeMatches": true
+    },
+    "ports/th12-mp": {
+      "split": "dde3b586b26874df1e3844cc856b2336d521de6d",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "treeMatches": true
+    }
+  },
+  "unmodifiedTh15MultiplayerSplit": "91fd1d173832868e3064d7b4fa03d4794a50d180",
+  "method": "standard git subtree split --prefix=<directory> --quiet <sourceHead>; upstream and recorded split ancestors, exact directory trees checked"
+}

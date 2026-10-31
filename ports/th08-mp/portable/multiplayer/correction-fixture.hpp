@@ -32,7 +32,7 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
     struct AudioCleanup {BrowserRuntime& runtime;~AudioCleanup(){runtime.bind_audio_events(nullptr);}} audio_cleanup{runtime};
     constexpr u32 frames=NetplayRuntime::MaxRollbackFrames;
     static_assert(frames==WorldJournal::History);
-    auto setup=session.multiplayer_session;setup.started=false;setup.session_id=0x800020260924ull;
+    auto setup=session.multiplayer_session;setup.started=false;setup.version=3;setup.session_id=0x800020260924ull;
     // This probe starts from the local v1 fixture envelope, which has no
     // Runtime identity. Give its synthetic peers the same diagnostic identity
     // so the current v3 admission gate can validate them.

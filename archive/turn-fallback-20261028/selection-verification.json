@@ -1,0 +1,46 @@
+{
+  "cn": {
+    "selected": "best-beijing",
+    "evaluatedAt": 1793160709.3689625,
+    "ageSeconds": 23.5,
+    "lastSuccess": null,
+    "tlsTarget": null,
+    "urls": [
+      "turn:39.106.121.158:3478?transport=udp",
+      "turn:39.106.121.158:3478?transport=tcp"
+    ],
+    "hasPrivateCredential": true
+  },
+  "jp": {
+    "selected": "best-beijing",
+    "evaluatedAt": 1793160709.3689625,
+    "ageSeconds": 23.9,
+    "lastSuccess": 1793160725.7984927,
+    "tlsTarget": "39.106.121.158:3478",
+    "urls": [
+      "turn:39.106.121.158:3478?transport=udp",
+      "turn:39.106.121.158:3478?transport=tcp",
+      "turns:relay.touhouonline.com:8443?transport=tcp"
+    ],
+    "hasPrivateCredential": true,
+    "unit": "Result=success\nExecMainStatus=0",
+    "timer": "active",
+    "recentRuns": "Starting eagler-turn-selection-sync.service - Publish the monitored TURN selection...\n{\"selected\": \"best-beijing\", \"ageSeconds\": 14.4, \"configurationChanged\": false, \"tlsReloaded\": false}\neagler-turn-selection-sync.service: Deactivated successfully.\nFinished eagler-turn-selection-sync.service - Publish the monitored TURN selection.\nStarting eagler-turn-selection-sync.service - Publish the monitored TURN selection...\n{\"selected\": \"best-beijing\", \"ageSeconds\": 0.4, \"configurationChanged\": false, \"tlsReloaded\": false}\neagler-turn-selection-sync.service: Deactivated successfully.\nFinished eagler-turn-selection-sync.service - Publish the monitored TURN selection.\nStarting eagler-turn-selection-sync.service - Publish the monitored TURN selection...\n{\"selected\": \"best-beijing\", \"ageSeconds\": 16.4, \"configurationChanged\": false, \"tlsReloaded\": false}\neagler-turn-selection-sync.service: Deactivated successfully.\nFinished eagler-turn-selection-sync.service - Publish the monitored TURN selection."
+  },
+  "hk": {
+    "selected": "best-beijing",
+    "evaluatedAt": 1793160709.3689625,
+    "ageSeconds": 25.3,
+    "lastSuccess": 1793160720.3758912,
+    "tlsTarget": "39.106.121.158:3478",
+    "urls": [
+      "turn:39.106.121.158:3478?transport=udp",
+      "turn:39.106.121.158:3478?transport=tcp",
+      "turns:relay.touhouonline.com:8443?transport=tcp"
+    ],
+    "hasPrivateCredential": true,
+    "unit": "Result=success\nExecMainStatus=0",
+    "timer": "active",
+    "recentRuns": "Starting eagler-turn-selection-sync.service - Publish the monitored TURN selection...\n{\"selected\": \"best-beijing\", \"ageSeconds\": 37.0, \"configurationChanged\": false, \"tlsReloaded\": false}\neagler-turn-selection-sync.service: Deactivated successfully.\nFinished eagler-turn-selection-sync.service - Publish the monitored TURN selection.\nStarting eagler-turn-selection-sync.service - Publish the monitored TURN selection...\n{\"selected\": \"best-beijing\", \"ageSeconds\": 24.2, \"configurationChanged\": false, \"tlsReloaded\": false}\neagler-turn-selection-sync.service: Deactivated successfully.\nFinished eagler-turn-selection-sync.service - Publish the monitored TURN selection.\nStarting eagler-turn-selection-sync.service - Publish the monitored TURN selection...\n{\"selected\": \"best-beijing\", \"ageSeconds\": 11.0, \"configurationChanged\": false, \"tlsReloaded\": false}\neagler-turn-selection-sync.service: Deactivated successfully.\nFinished eagler-turn-selection-sync.service - Publish the monitored TURN selection."
+  }
+}

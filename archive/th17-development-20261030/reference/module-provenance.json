@@ -1,0 +1,409 @@
+{
+  "date": "2026-10-23",
+  "sourceProject": "th15_web",
+  "modules": [
+    {
+      "file": "Types.hpp",
+      "source": "th15_web/cpp/game/Types.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "7018af49739652f326983272d280ffd0da400c9b6bd11cb6341b09a79b911b2b",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "ResourceCrypt.hpp",
+      "source": "th15_web/cpp/game/ResourceCrypt.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "318850dca835653a1c2e04e9d5801a90448ddbf78b1c4e5cf5ea21052df89f6c",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "ResourceCrypt.cpp",
+      "source": "th15_web/cpp/game/ResourceCrypt.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "9459e61b59b105a1d63257164fee0296927ca7bcd1a10df6688a5ac02660491f",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "Lzss.hpp",
+      "source": "th15_web/cpp/game/Lzss.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "67db978ae523abc7047b501c053c3a699d1bdf48f38cdd0bf8d4dd772250a451",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "Lzss.cpp",
+      "source": "th15_web/cpp/game/Lzss.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "dace3990a5d61e0c8d86e17e9457181dc62928122359251ff18904ad006c1bbf",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "Archive.hpp",
+      "source": "th15_web/cpp/game/Archive.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "75de58820c4beca3a82c684f454d1510d5c001ef2eed819985cc47c64e0bc91f",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "Archive.cpp",
+      "source": "th15_web/cpp/game/Archive.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "91b9291d103b149c502fc5f7bde89cec5bd8a50c4b4a090d0b62fe7dde972837",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmResource.hpp",
+      "source": "th15_web/cpp/game/AnmResource.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "7ea6afdacfbd242e9111236b026931ef3206a0110d7519462515217ea3e2e8d5",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmResource.cpp",
+      "source": "th15_web/cpp/game/AnmResource.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "edae6da79ca64e5760b9e2f0172b8437224aa49c3d9e5eabf1357b7a81df2612",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "EclResource.hpp",
+      "source": "th15_web/cpp/game/EclResource.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "4e4bb260caa6dad6de885a57a861bbdcf7e9ddc774f4fb7b529d918f7cd30201",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "EclResource.cpp",
+      "source": "th15_web/cpp/game/EclResource.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "8ff936fc3ec1df4455a16b97628e4c977c08618968308289d21e880f00d70dd0",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "StageResource.hpp",
+      "source": "th15_web/cpp/game/StageResource.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "8f6a2c9ee0f889829d2f8c7546a1b08de32b5f0cbf066836d268c01ab6b0be41",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "StageResource.cpp",
+      "source": "th15_web/cpp/game/StageResource.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "7f8da40d87c4587fd5f4da64ba2f667403ca93b92c11cbaed5503d0c5d7a5642",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmVm.hpp",
+      "source": "th15_web/cpp/game/AnmVm.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "71ad7ba5bd8a7a87184ceeb2a90d5ef643754649e8632dddb9fe3abfe07bfb1b",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmVariables.hpp",
+      "source": "th15_web/cpp/game/AnmVariables.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "7cc22ce4ecacbfa0b1a03640de6c4adc8d9b4dbd2241bbec056d01412eea9a42",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmVariables.cpp",
+      "source": "th15_web/cpp/game/AnmVariables.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "39ffd5989c5c2713844f1bb0af052a5e14a399f5eda3af8a9fe3ac048d3cdab4",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmVisualState.hpp",
+      "source": "th15_web/cpp/game/AnmVisualState.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "93c244bffc920e1c977d702800a2d407b604d4aeb33eda9767f2e5082ab2f897",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmVisualState.cpp",
+      "source": "th15_web/cpp/game/AnmVisualState.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "1306a2e77c98ce6634e33bba344b9e6a387b85530d314d9a442eb3ef97770dfd",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmEnvironment.hpp",
+      "source": "th15_web/cpp/game/AnmEnvironment.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "e38526e09a16ce6a26e7a4e61f5ff0f74513bc1248394a8eadc2844b0e65f530",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "Interpolation.hpp",
+      "source": "th15_web/cpp/game/Interpolation.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "341a74d74abffbaebce7244a92ae34f27fdb4cd4e717c55d30472b79e4ddecb2",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "Interpolation.cpp",
+      "source": "th15_web/cpp/game/Interpolation.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "38c690a78fc3ca2afd04e9a7e80d9a0515f6f3c71d93d9c23390f8ad07a3f6b2",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmInterpolators.hpp",
+      "source": "th15_web/cpp/game/AnmInterpolators.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "24b5bf7a1a934c3865790f292ce6ee7327ee096a1c3d7ccc510dad934ac10dba",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmInterpolators.cpp",
+      "source": "th15_web/cpp/game/AnmInterpolators.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "6d6e7512847dc1235abc60d31fee89fd8585add0f88f8336dfc02e7ab21bc9e9",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmGeometry.hpp",
+      "source": "th15_web/cpp/game/AnmGeometry.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "6b0c783abc1eab7b20cff18d47010955be9f662dfd0f2e9fa5dd7684a16dc3df",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmGeometry.cpp",
+      "source": "th15_web/cpp/game/AnmGeometry.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "38ade629c6a4522b6bbe5a6fec4b8c5071a6b810930d4255023af5be86ca10d7",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmTrail.cpp",
+      "source": "th15_web/cpp/game/AnmTrail.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "47bf0bd8bfe27518e43621c28d784bdbbd98df5a7de2d16828b7c11b6c34bcc1",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmOverlay.hpp",
+      "source": "th15_web/cpp/game/AnmOverlay.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "dfd3fd1733a3704abaaeceb20972642032dbff72c553b54dd66f9a4e2a0f1931",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmOverlay.cpp",
+      "source": "th15_web/cpp/game/AnmOverlay.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "3bbc11ba4ba03d8a74edbf761b72446fd8e99d57c7a3a55ce920d2b8e3e04827",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmInterpreter.cpp",
+      "source": "th15_web/cpp/game/AnmInterpreter.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "adeebc4b5b7ffbe313fd97ac009f70731fd9eeb27f8d6c7c9918908ca44085b7",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmUpdate.cpp",
+      "source": "th15_web/cpp/game/AnmUpdate.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "c615a6cf35f3687a6c08e399987c464f1c9cd06a6ef946f5a0605698843682b5",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmCoordinates.hpp",
+      "source": "th15_web/cpp/game/AnmCoordinates.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "af1c7ef16bc4c25de6f455c143b9e1cf134333bb51f9c90061416d32f0ee9ae7",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmCoordinates.cpp",
+      "source": "th15_web/cpp/game/AnmCoordinates.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "e47b488d079f3f4a5699ff3427f68f9786eec3e5a1cedcef8f28aaa7125d0530",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmStrip.hpp",
+      "source": "th15_web/cpp/game/AnmStrip.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "8789faaba22ce28766d9c1dd78891a98168624782f1ab48170da9a5c9a2f09fe",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmStrip.cpp",
+      "source": "th15_web/cpp/game/AnmStrip.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "79a7cfd3fe06f326badc53211452264df672b218ba1ac86aa1d9214521a82965",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmRegistry.hpp",
+      "source": "th15_web/cpp/game/AnmRegistry.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "5968704925d35c475a41a3315b7d0b78dcf8bb3abe65f8a05acf253ca44c62a4",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmRegistry.cpp",
+      "source": "th15_web/cpp/game/AnmRegistry.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "1fc9880b7047944535af065951e80201436bda52f7521bffdbddf6b80a7dae78",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmManager.hpp",
+      "source": "th15_web/cpp/game/AnmManager.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "21791df4d9e4629f203e508dbd7e9693ceda52e9632bd4d1b12e8d661d548ed9",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "AnmManager.cpp",
+      "source": "th15_web/cpp/game/AnmManager.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "e690f7da9776109cac3c2f680a236ca75884591dd6ed69d0b3a337efa20cf2de",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/AnmTransforms.hpp",
+      "source": "th15_web/cpp/game/AnmTransforms.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "fa24a5ebb44d4b3868c7e33d4a405d788bd8edd55c62460290cfcb3d924a4299",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/AnmTransforms.cpp",
+      "source": "th15_web/cpp/game/AnmTransforms.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "8c23455442e3f0584c1aa7441b98938ff37693949e3fa71be55cca25dc97d3e1",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/AnmCamera.hpp",
+      "source": "th15_web/cpp/game/AnmCamera.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "b043fed2cf7998fbc40650584887e114a9815ab13c8d43d590b6873d6f3ebc2f",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/AnmCamera.cpp",
+      "source": "th15_web/cpp/game/AnmCamera.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "874689678eba64a8c144adf230ad23b438f02e4299135c80091ad250ecfa66cc",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/ZunGraphics.hpp",
+      "source": "th15_web/cpp/game/ZunGraphics.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "ffdbcdfb118b6c0a148577fa5aa25938a8865da82a36d76364b2dd4be0aebe62",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/AnmRenderer.hpp",
+      "source": "th15_web/cpp/game/AnmRenderer.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "1de00cce9cdd17dbb7a68471fc4cdd5053e54bb38b291c202727ebfdbcff2feb",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/AnmRenderer.cpp",
+      "source": "th15_web/cpp/game/AnmRenderer.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "ce08e58717b990bda09c2759e85e035a8371afdced8ae7ee58b0dc2bc9da65e4",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/AnmOverlayRenderer.cpp",
+      "source": "th15_web/cpp/game/AnmOverlayRenderer.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "2c7cbf5960adec5565d6c12d99e2eec03bf1b77cb12eb195dd2b922a596714b4",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/TextureImage.hpp",
+      "source": "th15_web/cpp/game/TextureImage.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "521d471869f798ac9ed8597fd395868f15bd9381960d61e6eac506d318c3d3b1",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "game/TextureImage.cpp",
+      "source": "th15_web/cpp/game/TextureImage.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "c4ead7974d89e884e13a198a186c125757271f8f1bef9062af11a6eafe7d37ae",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "sdl/GraphicsDevice.hpp",
+      "source": "th15_web/cpp/sdl/GraphicsDevice.hpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "b8447e8bab58dfb880e6e3d357e4af82a5c1ec36e01259e0e1f4ecf19f438c96",
+      "evidence": "reference/release-acceptance.json"
+    },
+    {
+      "file": "sdl/GraphicsDevice.cpp",
+      "source": "th15_web/cpp/sdl/GraphicsDevice.cpp",
+      "accepted": true,
+      "reason": "Adapted source accepted within the native component and full-application samples indexed in reconstruction-status.json; initial source lineage is retained.",
+      "currentSha256": "3b84a561963020566d73200a88977c238fd41bdc819ac3f7f880ee0503f0c085",
+      "evidence": "reference/release-acceptance.json"
+    }
+  ],
+  "updated": "2026-10-27",
+  "componentReportIndex": "reference/reconstruction-status.json",
+  "acceptanceScope": "Acceptance is limited to the recorded native, application and production samples, not an assertion that adapted sources originated as recovered TH17 source."
+}

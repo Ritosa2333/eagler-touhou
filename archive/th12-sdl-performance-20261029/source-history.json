@@ -1,0 +1,64 @@
+{
+  "schema": "th12-sdl-performance-history/1",
+  "sourceHead": "e5517fab11ec3b67b7f559575c035b5b96868d9c",
+  "base": "34813aa457e9a04e0c3d713cd3e85b0274db0e16",
+  "git": "git version 2.47.3",
+  "checker": "tools/ports/check-history.py --repo . --head refs/heads/th12-sdl-performance-final --base refs/remotes/upstream/main",
+  "sourceAnchors": 13,
+  "subtrees": {
+    "ports/th12": {
+      "command": [
+        "git",
+        "subtree",
+        "split",
+        "--prefix=ports/th12",
+        "--quiet",
+        "refs/heads/th12-sdl-performance-final"
+      ],
+      "split": "ffaf5a8fc1f53639deda56ec1e517edbd7326e36",
+      "upstream": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+      "recordedSplit": "4ecb649cf8184405acda80279dfb32e0dfe71f0a",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTree": "e0e0ce841f1a765d7afb1ed2e5141e2bcc880914",
+      "exportedTree": "e0e0ce841f1a765d7afb1ed2e5141e2bcc880914",
+      "treeMatches": true
+    },
+    "ports/th12-mp": {
+      "command": [
+        "git",
+        "subtree",
+        "split",
+        "--prefix=ports/th12-mp",
+        "--quiet",
+        "refs/heads/th12-sdl-performance-final"
+      ],
+      "split": "4f7f376c230f9585a76f5550bb3b492719b02c44",
+      "upstream": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+      "recordedSplit": "5dc35be24a34df543e7093d3464521f79f6bdb73",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTree": "7c1077024232660e3139d0a4ab4501724ac57c4e",
+      "exportedTree": "7c1077024232660e3139d0a4ab4501724ac57c4e",
+      "treeMatches": true
+    },
+    "ports/th15-mp": {
+      "command": [
+        "git",
+        "subtree",
+        "split",
+        "--prefix=ports/th15-mp",
+        "--quiet",
+        "refs/heads/th12-sdl-performance-final"
+      ],
+      "split": "91fd1d173832868e3064d7b4fa03d4794a50d180",
+      "upstream": "a5cc4652d59d55f2559622da28e21cbbf52b75d3",
+      "recordedSplit": "e02e0266c453054d53d055d29d141eb83d736fdf",
+      "upstreamAncestor": true,
+      "recordedSplitAncestor": true,
+      "sourceTree": "9b206736b1fde3a39b31e3e6602b4b957bcd704e",
+      "exportedTree": "9b206736b1fde3a39b31e3e6602b4b957bcd704e",
+      "treeMatches": true
+    }
+  }
+}

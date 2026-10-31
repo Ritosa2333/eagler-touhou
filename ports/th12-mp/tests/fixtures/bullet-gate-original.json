@@ -1,0 +1,4586 @@
+{
+  "schema": "th12-original-bullet-gate/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "provider": "Original4067e0 and40c480 with Record.d0; no candidate/ANM/geometry hooks",
+  "rows": [
+    {
+      "duration": -2,
+      "rate": 0.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": -2,
+          "value": -2.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": -2,
+          "value": -2.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": -2,
+          "value": -2.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": -2,
+          "value": -2.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": -2,
+      "rate": 1.0,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": -3,
+          "value": -3.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": -3,
+          "value": -3.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": -3,
+          "value": -3.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": -3,
+          "value": -3.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": -2,
+      "rate": 1.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": -3,
+          "value": -3.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": -3,
+          "value": -3.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": -3,
+          "value": -3.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": -3,
+          "value": -3.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 0,
+      "rate": 0.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 0,
+      "rate": 1.0,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": -1,
+          "value": -1.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": -1,
+          "value": -1.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": -1,
+          "value": -1.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": -1,
+          "value": -1.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 0,
+      "rate": 1.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": -1,
+          "value": -1.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": -1,
+          "value": -1.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": -1,
+          "value": -1.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": -1,
+          "value": -1.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 1,
+      "rate": 0.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 1,
+      "rate": 1.0,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 1,
+      "rate": 1.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": -0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 2,
+      "rate": 0.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 1,
+          "value": 1.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 2,
+      "rate": 1.0,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 2,
+      "rate": 1.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 2,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 5,
+      "rate": 0.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 4,
+          "value": 4.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 4,
+          "value": 4.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 3,
+          "value": 3.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 2,
+          "value": 2.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 2,
+          "value": 2.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 1,
+          "value": 1.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 8,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 9,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 10,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 11,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 12,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 5,
+      "rate": 1.0,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 4,
+          "value": 4.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 2,
+          "value": 2.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 6,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 5,
+      "rate": 1.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 3,
+          "value": 3.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 2,
+          "value": 2.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 4,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 30,
+      "rate": 0.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 29,
+          "value": 29.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 29,
+          "value": 29.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 28,
+          "value": 28.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 28,
+          "value": 28.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 27,
+          "value": 27.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 27,
+          "value": 27.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 26,
+          "value": 26.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 8,
+          "remaining": 26,
+          "value": 26.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 9,
+          "remaining": 25,
+          "value": 25.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 10,
+          "remaining": 25,
+          "value": 25.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 11,
+          "remaining": 24,
+          "value": 24.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 12,
+          "remaining": 24,
+          "value": 24.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 13,
+          "remaining": 23,
+          "value": 23.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 14,
+          "remaining": 23,
+          "value": 23.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 15,
+          "remaining": 22,
+          "value": 22.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 16,
+          "remaining": 22,
+          "value": 22.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 17,
+          "remaining": 21,
+          "value": 21.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 18,
+          "remaining": 21,
+          "value": 21.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 19,
+          "remaining": 20,
+          "value": 20.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 20,
+          "remaining": 20,
+          "value": 20.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 21,
+          "remaining": 19,
+          "value": 19.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 22,
+          "remaining": 19,
+          "value": 19.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 23,
+          "remaining": 18,
+          "value": 18.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 24,
+          "remaining": 18,
+          "value": 18.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 25,
+          "remaining": 17,
+          "value": 17.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 26,
+          "remaining": 17,
+          "value": 17.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 27,
+          "remaining": 16,
+          "value": 16.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 28,
+          "remaining": 16,
+          "value": 16.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 29,
+          "remaining": 15,
+          "value": 15.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 30,
+          "remaining": 15,
+          "value": 15.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 31,
+          "remaining": 14,
+          "value": 14.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 32,
+          "remaining": 14,
+          "value": 14.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 33,
+          "remaining": 13,
+          "value": 13.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 34,
+          "remaining": 13,
+          "value": 13.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 35,
+          "remaining": 12,
+          "value": 12.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 36,
+          "remaining": 12,
+          "value": 12.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 37,
+          "remaining": 11,
+          "value": 11.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 38,
+          "remaining": 11,
+          "value": 11.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 39,
+          "remaining": 10,
+          "value": 10.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 40,
+          "remaining": 10,
+          "value": 10.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 41,
+          "remaining": 9,
+          "value": 9.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 42,
+          "remaining": 9,
+          "value": 9.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 43,
+          "remaining": 8,
+          "value": 8.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 44,
+          "remaining": 8,
+          "value": 8.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 45,
+          "remaining": 7,
+          "value": 7.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 46,
+          "remaining": 7,
+          "value": 7.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 47,
+          "remaining": 6,
+          "value": 6.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 48,
+          "remaining": 6,
+          "value": 6.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 49,
+          "remaining": 5,
+          "value": 5.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 50,
+          "remaining": 5,
+          "value": 5.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 51,
+          "remaining": 4,
+          "value": 4.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 52,
+          "remaining": 4,
+          "value": 4.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 53,
+          "remaining": 3,
+          "value": 3.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 54,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 55,
+          "remaining": 2,
+          "value": 2.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 56,
+          "remaining": 2,
+          "value": 2.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 57,
+          "remaining": 1,
+          "value": 1.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 58,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 59,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 60,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 61,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 62,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 30,
+      "rate": 1.0,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 29,
+          "value": 29.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 28,
+          "value": 28.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 27,
+          "value": 27.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 26,
+          "value": 26.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 25,
+          "value": 25.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 24,
+          "value": 24.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 23,
+          "value": 23.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 8,
+          "remaining": 22,
+          "value": 22.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 9,
+          "remaining": 21,
+          "value": 21.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 10,
+          "remaining": 20,
+          "value": 20.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 11,
+          "remaining": 19,
+          "value": 19.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 12,
+          "remaining": 18,
+          "value": 18.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 13,
+          "remaining": 17,
+          "value": 17.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 14,
+          "remaining": 16,
+          "value": 16.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 15,
+          "remaining": 15,
+          "value": 15.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 16,
+          "remaining": 14,
+          "value": 14.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 17,
+          "remaining": 13,
+          "value": 13.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 18,
+          "remaining": 12,
+          "value": 12.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 19,
+          "remaining": 11,
+          "value": 11.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 20,
+          "remaining": 10,
+          "value": 10.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 21,
+          "remaining": 9,
+          "value": 9.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 22,
+          "remaining": 8,
+          "value": 8.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 23,
+          "remaining": 7,
+          "value": 7.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 24,
+          "remaining": 6,
+          "value": 6.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 25,
+          "remaining": 5,
+          "value": 5.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 26,
+          "remaining": 4,
+          "value": 4.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 27,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 28,
+          "remaining": 2,
+          "value": 2.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 29,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 30,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 31,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 32,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 30,
+      "rate": 1.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 28,
+          "value": 28.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 27,
+          "value": 27.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 25,
+          "value": 25.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 24,
+          "value": 24.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 22,
+          "value": 22.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 21,
+          "value": 21.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 19,
+          "value": 19.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 8,
+          "remaining": 18,
+          "value": 18.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 9,
+          "remaining": 16,
+          "value": 16.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 10,
+          "remaining": 15,
+          "value": 15.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 11,
+          "remaining": 13,
+          "value": 13.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 12,
+          "remaining": 12,
+          "value": 12.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 13,
+          "remaining": 10,
+          "value": 10.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 14,
+          "remaining": 9,
+          "value": 9.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 15,
+          "remaining": 7,
+          "value": 7.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 16,
+          "remaining": 6,
+          "value": 6.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 17,
+          "remaining": 4,
+          "value": 4.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 18,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 19,
+          "remaining": 1,
+          "value": 1.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 20,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 21,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 22,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 120,
+      "rate": 0.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 119,
+          "value": 119.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 119,
+          "value": 119.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 118,
+          "value": 118.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 118,
+          "value": 118.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 117,
+          "value": 117.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 117,
+          "value": 117.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 116,
+          "value": 116.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 8,
+          "remaining": 116,
+          "value": 116.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 9,
+          "remaining": 115,
+          "value": 115.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 10,
+          "remaining": 115,
+          "value": 115.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 11,
+          "remaining": 114,
+          "value": 114.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 12,
+          "remaining": 114,
+          "value": 114.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 13,
+          "remaining": 113,
+          "value": 113.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 14,
+          "remaining": 113,
+          "value": 113.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 15,
+          "remaining": 112,
+          "value": 112.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 16,
+          "remaining": 112,
+          "value": 112.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 17,
+          "remaining": 111,
+          "value": 111.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 18,
+          "remaining": 111,
+          "value": 111.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 19,
+          "remaining": 110,
+          "value": 110.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 20,
+          "remaining": 110,
+          "value": 110.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 21,
+          "remaining": 109,
+          "value": 109.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 22,
+          "remaining": 109,
+          "value": 109.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 23,
+          "remaining": 108,
+          "value": 108.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 24,
+          "remaining": 108,
+          "value": 108.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 25,
+          "remaining": 107,
+          "value": 107.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 26,
+          "remaining": 107,
+          "value": 107.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 27,
+          "remaining": 106,
+          "value": 106.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 28,
+          "remaining": 106,
+          "value": 106.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 29,
+          "remaining": 105,
+          "value": 105.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 30,
+          "remaining": 105,
+          "value": 105.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 31,
+          "remaining": 104,
+          "value": 104.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 32,
+          "remaining": 104,
+          "value": 104.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 33,
+          "remaining": 103,
+          "value": 103.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 34,
+          "remaining": 103,
+          "value": 103.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 35,
+          "remaining": 102,
+          "value": 102.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 36,
+          "remaining": 102,
+          "value": 102.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 37,
+          "remaining": 101,
+          "value": 101.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 38,
+          "remaining": 101,
+          "value": 101.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 39,
+          "remaining": 100,
+          "value": 100.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 40,
+          "remaining": 100,
+          "value": 100.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 41,
+          "remaining": 99,
+          "value": 99.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 42,
+          "remaining": 99,
+          "value": 99.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 43,
+          "remaining": 98,
+          "value": 98.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 44,
+          "remaining": 98,
+          "value": 98.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 45,
+          "remaining": 97,
+          "value": 97.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 46,
+          "remaining": 97,
+          "value": 97.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 47,
+          "remaining": 96,
+          "value": 96.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 48,
+          "remaining": 96,
+          "value": 96.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 49,
+          "remaining": 95,
+          "value": 95.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 50,
+          "remaining": 95,
+          "value": 95.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 51,
+          "remaining": 94,
+          "value": 94.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 52,
+          "remaining": 94,
+          "value": 94.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 53,
+          "remaining": 93,
+          "value": 93.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 54,
+          "remaining": 93,
+          "value": 93.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 55,
+          "remaining": 92,
+          "value": 92.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 56,
+          "remaining": 92,
+          "value": 92.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 57,
+          "remaining": 91,
+          "value": 91.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 58,
+          "remaining": 91,
+          "value": 91.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 59,
+          "remaining": 90,
+          "value": 90.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 60,
+          "remaining": 90,
+          "value": 90.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 61,
+          "remaining": 89,
+          "value": 89.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 62,
+          "remaining": 89,
+          "value": 89.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 63,
+          "remaining": 88,
+          "value": 88.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 64,
+          "remaining": 88,
+          "value": 88.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 65,
+          "remaining": 87,
+          "value": 87.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 66,
+          "remaining": 87,
+          "value": 87.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 67,
+          "remaining": 86,
+          "value": 86.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 68,
+          "remaining": 86,
+          "value": 86.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 69,
+          "remaining": 85,
+          "value": 85.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 70,
+          "remaining": 85,
+          "value": 85.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 71,
+          "remaining": 84,
+          "value": 84.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 72,
+          "remaining": 84,
+          "value": 84.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 73,
+          "remaining": 83,
+          "value": 83.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 74,
+          "remaining": 83,
+          "value": 83.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 75,
+          "remaining": 82,
+          "value": 82.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 76,
+          "remaining": 82,
+          "value": 82.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 77,
+          "remaining": 81,
+          "value": 81.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 78,
+          "remaining": 81,
+          "value": 81.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 79,
+          "remaining": 80,
+          "value": 80.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 80,
+          "remaining": 80,
+          "value": 80.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 81,
+          "remaining": 79,
+          "value": 79.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 82,
+          "remaining": 79,
+          "value": 79.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 83,
+          "remaining": 78,
+          "value": 78.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 84,
+          "remaining": 78,
+          "value": 78.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 85,
+          "remaining": 77,
+          "value": 77.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 86,
+          "remaining": 77,
+          "value": 77.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 87,
+          "remaining": 76,
+          "value": 76.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 88,
+          "remaining": 76,
+          "value": 76.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 89,
+          "remaining": 75,
+          "value": 75.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 90,
+          "remaining": 75,
+          "value": 75.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 91,
+          "remaining": 74,
+          "value": 74.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 92,
+          "remaining": 74,
+          "value": 74.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 93,
+          "remaining": 73,
+          "value": 73.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 94,
+          "remaining": 73,
+          "value": 73.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 95,
+          "remaining": 72,
+          "value": 72.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 96,
+          "remaining": 72,
+          "value": 72.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 97,
+          "remaining": 71,
+          "value": 71.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 98,
+          "remaining": 71,
+          "value": 71.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 99,
+          "remaining": 70,
+          "value": 70.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 100,
+          "remaining": 70,
+          "value": 70.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 101,
+          "remaining": 69,
+          "value": 69.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 102,
+          "remaining": 69,
+          "value": 69.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 103,
+          "remaining": 68,
+          "value": 68.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 104,
+          "remaining": 68,
+          "value": 68.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 105,
+          "remaining": 67,
+          "value": 67.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 106,
+          "remaining": 67,
+          "value": 67.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 107,
+          "remaining": 66,
+          "value": 66.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 108,
+          "remaining": 66,
+          "value": 66.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 109,
+          "remaining": 65,
+          "value": 65.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 110,
+          "remaining": 65,
+          "value": 65.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 111,
+          "remaining": 64,
+          "value": 64.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 112,
+          "remaining": 64,
+          "value": 64.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 113,
+          "remaining": 63,
+          "value": 63.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 114,
+          "remaining": 63,
+          "value": 63.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 115,
+          "remaining": 62,
+          "value": 62.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 116,
+          "remaining": 62,
+          "value": 62.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 117,
+          "remaining": 61,
+          "value": 61.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 118,
+          "remaining": 61,
+          "value": 61.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 119,
+          "remaining": 60,
+          "value": 60.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 120,
+          "remaining": 60,
+          "value": 60.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 121,
+          "remaining": 59,
+          "value": 59.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 122,
+          "remaining": 59,
+          "value": 59.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 123,
+          "remaining": 58,
+          "value": 58.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 124,
+          "remaining": 58,
+          "value": 58.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 125,
+          "remaining": 57,
+          "value": 57.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 126,
+          "remaining": 57,
+          "value": 57.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 127,
+          "remaining": 56,
+          "value": 56.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 128,
+          "remaining": 56,
+          "value": 56.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 129,
+          "remaining": 55,
+          "value": 55.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 130,
+          "remaining": 55,
+          "value": 55.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 131,
+          "remaining": 54,
+          "value": 54.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 132,
+          "remaining": 54,
+          "value": 54.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 133,
+          "remaining": 53,
+          "value": 53.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 134,
+          "remaining": 53,
+          "value": 53.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 135,
+          "remaining": 52,
+          "value": 52.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 136,
+          "remaining": 52,
+          "value": 52.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 137,
+          "remaining": 51,
+          "value": 51.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 138,
+          "remaining": 51,
+          "value": 51.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 139,
+          "remaining": 50,
+          "value": 50.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 140,
+          "remaining": 50,
+          "value": 50.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 141,
+          "remaining": 49,
+          "value": 49.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 142,
+          "remaining": 49,
+          "value": 49.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 143,
+          "remaining": 48,
+          "value": 48.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 144,
+          "remaining": 48,
+          "value": 48.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 145,
+          "remaining": 47,
+          "value": 47.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 146,
+          "remaining": 47,
+          "value": 47.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 147,
+          "remaining": 46,
+          "value": 46.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 148,
+          "remaining": 46,
+          "value": 46.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 149,
+          "remaining": 45,
+          "value": 45.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 150,
+          "remaining": 45,
+          "value": 45.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 151,
+          "remaining": 44,
+          "value": 44.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 152,
+          "remaining": 44,
+          "value": 44.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 153,
+          "remaining": 43,
+          "value": 43.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 154,
+          "remaining": 43,
+          "value": 43.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 155,
+          "remaining": 42,
+          "value": 42.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 156,
+          "remaining": 42,
+          "value": 42.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 157,
+          "remaining": 41,
+          "value": 41.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 158,
+          "remaining": 41,
+          "value": 41.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 159,
+          "remaining": 40,
+          "value": 40.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 160,
+          "remaining": 40,
+          "value": 40.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 161,
+          "remaining": 39,
+          "value": 39.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 162,
+          "remaining": 39,
+          "value": 39.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 163,
+          "remaining": 38,
+          "value": 38.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 164,
+          "remaining": 38,
+          "value": 38.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 165,
+          "remaining": 37,
+          "value": 37.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 166,
+          "remaining": 37,
+          "value": 37.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 167,
+          "remaining": 36,
+          "value": 36.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 168,
+          "remaining": 36,
+          "value": 36.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 169,
+          "remaining": 35,
+          "value": 35.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 170,
+          "remaining": 35,
+          "value": 35.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 171,
+          "remaining": 34,
+          "value": 34.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 172,
+          "remaining": 34,
+          "value": 34.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 173,
+          "remaining": 33,
+          "value": 33.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 174,
+          "remaining": 33,
+          "value": 33.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 175,
+          "remaining": 32,
+          "value": 32.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 176,
+          "remaining": 32,
+          "value": 32.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 177,
+          "remaining": 31,
+          "value": 31.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 178,
+          "remaining": 31,
+          "value": 31.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 179,
+          "remaining": 30,
+          "value": 30.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 180,
+          "remaining": 30,
+          "value": 30.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 181,
+          "remaining": 29,
+          "value": 29.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 182,
+          "remaining": 29,
+          "value": 29.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 183,
+          "remaining": 28,
+          "value": 28.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 184,
+          "remaining": 28,
+          "value": 28.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 185,
+          "remaining": 27,
+          "value": 27.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 186,
+          "remaining": 27,
+          "value": 27.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 187,
+          "remaining": 26,
+          "value": 26.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 188,
+          "remaining": 26,
+          "value": 26.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 189,
+          "remaining": 25,
+          "value": 25.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 190,
+          "remaining": 25,
+          "value": 25.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 191,
+          "remaining": 24,
+          "value": 24.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 192,
+          "remaining": 24,
+          "value": 24.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 193,
+          "remaining": 23,
+          "value": 23.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 194,
+          "remaining": 23,
+          "value": 23.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 195,
+          "remaining": 22,
+          "value": 22.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 196,
+          "remaining": 22,
+          "value": 22.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 197,
+          "remaining": 21,
+          "value": 21.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 198,
+          "remaining": 21,
+          "value": 21.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 199,
+          "remaining": 20,
+          "value": 20.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 200,
+          "remaining": 20,
+          "value": 20.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 201,
+          "remaining": 19,
+          "value": 19.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 202,
+          "remaining": 19,
+          "value": 19.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 203,
+          "remaining": 18,
+          "value": 18.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 204,
+          "remaining": 18,
+          "value": 18.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 205,
+          "remaining": 17,
+          "value": 17.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 206,
+          "remaining": 17,
+          "value": 17.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 207,
+          "remaining": 16,
+          "value": 16.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 208,
+          "remaining": 16,
+          "value": 16.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 209,
+          "remaining": 15,
+          "value": 15.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 210,
+          "remaining": 15,
+          "value": 15.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 211,
+          "remaining": 14,
+          "value": 14.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 212,
+          "remaining": 14,
+          "value": 14.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 213,
+          "remaining": 13,
+          "value": 13.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 214,
+          "remaining": 13,
+          "value": 13.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 215,
+          "remaining": 12,
+          "value": 12.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 216,
+          "remaining": 12,
+          "value": 12.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 217,
+          "remaining": 11,
+          "value": 11.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 218,
+          "remaining": 11,
+          "value": 11.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 219,
+          "remaining": 10,
+          "value": 10.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 220,
+          "remaining": 10,
+          "value": 10.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 221,
+          "remaining": 9,
+          "value": 9.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 222,
+          "remaining": 9,
+          "value": 9.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 223,
+          "remaining": 8,
+          "value": 8.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 224,
+          "remaining": 8,
+          "value": 8.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 225,
+          "remaining": 7,
+          "value": 7.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 226,
+          "remaining": 7,
+          "value": 7.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 227,
+          "remaining": 6,
+          "value": 6.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 228,
+          "remaining": 6,
+          "value": 6.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 229,
+          "remaining": 5,
+          "value": 5.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 230,
+          "remaining": 5,
+          "value": 5.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 231,
+          "remaining": 4,
+          "value": 4.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 232,
+          "remaining": 4,
+          "value": 4.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 233,
+          "remaining": 3,
+          "value": 3.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 234,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 235,
+          "remaining": 2,
+          "value": 2.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 236,
+          "remaining": 2,
+          "value": 2.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 237,
+          "remaining": 1,
+          "value": 1.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 238,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 239,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 240,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 241,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 242,
+          "remaining": 0,
+          "value": 0.5,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 120,
+      "rate": 1.0,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 119,
+          "value": 119.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 118,
+          "value": 118.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 117,
+          "value": 117.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 116,
+          "value": 116.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 115,
+          "value": 115.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 114,
+          "value": 114.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 113,
+          "value": 113.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 8,
+          "remaining": 112,
+          "value": 112.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 9,
+          "remaining": 111,
+          "value": 111.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 10,
+          "remaining": 110,
+          "value": 110.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 11,
+          "remaining": 109,
+          "value": 109.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 12,
+          "remaining": 108,
+          "value": 108.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 13,
+          "remaining": 107,
+          "value": 107.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 14,
+          "remaining": 106,
+          "value": 106.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 15,
+          "remaining": 105,
+          "value": 105.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 16,
+          "remaining": 104,
+          "value": 104.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 17,
+          "remaining": 103,
+          "value": 103.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 18,
+          "remaining": 102,
+          "value": 102.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 19,
+          "remaining": 101,
+          "value": 101.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 20,
+          "remaining": 100,
+          "value": 100.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 21,
+          "remaining": 99,
+          "value": 99.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 22,
+          "remaining": 98,
+          "value": 98.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 23,
+          "remaining": 97,
+          "value": 97.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 24,
+          "remaining": 96,
+          "value": 96.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 25,
+          "remaining": 95,
+          "value": 95.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 26,
+          "remaining": 94,
+          "value": 94.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 27,
+          "remaining": 93,
+          "value": 93.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 28,
+          "remaining": 92,
+          "value": 92.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 29,
+          "remaining": 91,
+          "value": 91.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 30,
+          "remaining": 90,
+          "value": 90.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 31,
+          "remaining": 89,
+          "value": 89.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 32,
+          "remaining": 88,
+          "value": 88.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 33,
+          "remaining": 87,
+          "value": 87.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 34,
+          "remaining": 86,
+          "value": 86.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 35,
+          "remaining": 85,
+          "value": 85.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 36,
+          "remaining": 84,
+          "value": 84.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 37,
+          "remaining": 83,
+          "value": 83.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 38,
+          "remaining": 82,
+          "value": 82.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 39,
+          "remaining": 81,
+          "value": 81.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 40,
+          "remaining": 80,
+          "value": 80.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 41,
+          "remaining": 79,
+          "value": 79.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 42,
+          "remaining": 78,
+          "value": 78.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 43,
+          "remaining": 77,
+          "value": 77.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 44,
+          "remaining": 76,
+          "value": 76.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 45,
+          "remaining": 75,
+          "value": 75.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 46,
+          "remaining": 74,
+          "value": 74.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 47,
+          "remaining": 73,
+          "value": 73.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 48,
+          "remaining": 72,
+          "value": 72.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 49,
+          "remaining": 71,
+          "value": 71.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 50,
+          "remaining": 70,
+          "value": 70.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 51,
+          "remaining": 69,
+          "value": 69.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 52,
+          "remaining": 68,
+          "value": 68.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 53,
+          "remaining": 67,
+          "value": 67.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 54,
+          "remaining": 66,
+          "value": 66.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 55,
+          "remaining": 65,
+          "value": 65.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 56,
+          "remaining": 64,
+          "value": 64.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 57,
+          "remaining": 63,
+          "value": 63.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 58,
+          "remaining": 62,
+          "value": 62.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 59,
+          "remaining": 61,
+          "value": 61.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 60,
+          "remaining": 60,
+          "value": 60.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 61,
+          "remaining": 59,
+          "value": 59.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 62,
+          "remaining": 58,
+          "value": 58.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 63,
+          "remaining": 57,
+          "value": 57.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 64,
+          "remaining": 56,
+          "value": 56.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 65,
+          "remaining": 55,
+          "value": 55.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 66,
+          "remaining": 54,
+          "value": 54.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 67,
+          "remaining": 53,
+          "value": 53.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 68,
+          "remaining": 52,
+          "value": 52.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 69,
+          "remaining": 51,
+          "value": 51.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 70,
+          "remaining": 50,
+          "value": 50.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 71,
+          "remaining": 49,
+          "value": 49.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 72,
+          "remaining": 48,
+          "value": 48.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 73,
+          "remaining": 47,
+          "value": 47.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 74,
+          "remaining": 46,
+          "value": 46.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 75,
+          "remaining": 45,
+          "value": 45.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 76,
+          "remaining": 44,
+          "value": 44.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 77,
+          "remaining": 43,
+          "value": 43.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 78,
+          "remaining": 42,
+          "value": 42.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 79,
+          "remaining": 41,
+          "value": 41.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 80,
+          "remaining": 40,
+          "value": 40.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 81,
+          "remaining": 39,
+          "value": 39.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 82,
+          "remaining": 38,
+          "value": 38.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 83,
+          "remaining": 37,
+          "value": 37.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 84,
+          "remaining": 36,
+          "value": 36.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 85,
+          "remaining": 35,
+          "value": 35.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 86,
+          "remaining": 34,
+          "value": 34.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 87,
+          "remaining": 33,
+          "value": 33.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 88,
+          "remaining": 32,
+          "value": 32.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 89,
+          "remaining": 31,
+          "value": 31.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 90,
+          "remaining": 30,
+          "value": 30.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 91,
+          "remaining": 29,
+          "value": 29.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 92,
+          "remaining": 28,
+          "value": 28.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 93,
+          "remaining": 27,
+          "value": 27.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 94,
+          "remaining": 26,
+          "value": 26.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 95,
+          "remaining": 25,
+          "value": 25.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 96,
+          "remaining": 24,
+          "value": 24.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 97,
+          "remaining": 23,
+          "value": 23.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 98,
+          "remaining": 22,
+          "value": 22.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 99,
+          "remaining": 21,
+          "value": 21.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 100,
+          "remaining": 20,
+          "value": 20.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 101,
+          "remaining": 19,
+          "value": 19.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 102,
+          "remaining": 18,
+          "value": 18.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 103,
+          "remaining": 17,
+          "value": 17.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 104,
+          "remaining": 16,
+          "value": 16.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 105,
+          "remaining": 15,
+          "value": 15.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 106,
+          "remaining": 14,
+          "value": 14.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 107,
+          "remaining": 13,
+          "value": 13.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 108,
+          "remaining": 12,
+          "value": 12.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 109,
+          "remaining": 11,
+          "value": 11.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 110,
+          "remaining": 10,
+          "value": 10.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 111,
+          "remaining": 9,
+          "value": 9.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 112,
+          "remaining": 8,
+          "value": 8.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 113,
+          "remaining": 7,
+          "value": 7.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 114,
+          "remaining": 6,
+          "value": 6.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 115,
+          "remaining": 5,
+          "value": 5.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 116,
+          "remaining": 4,
+          "value": 4.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 117,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 118,
+          "remaining": 2,
+          "value": 2.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 119,
+          "remaining": 1,
+          "value": 1.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 120,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 121,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 122,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    },
+    {
+      "duration": 120,
+      "rate": 1.5,
+      "frames": [
+        {
+          "tick": 1,
+          "remaining": 118,
+          "value": 118.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 2,
+          "remaining": 117,
+          "value": 117.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 3,
+          "remaining": 115,
+          "value": 115.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 4,
+          "remaining": 114,
+          "value": 114.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 5,
+          "remaining": 112,
+          "value": 112.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 6,
+          "remaining": 111,
+          "value": 111.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 7,
+          "remaining": 109,
+          "value": 109.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 8,
+          "remaining": 108,
+          "value": 108.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 9,
+          "remaining": 106,
+          "value": 106.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 10,
+          "remaining": 105,
+          "value": 105.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 11,
+          "remaining": 103,
+          "value": 103.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 12,
+          "remaining": 102,
+          "value": 102.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 13,
+          "remaining": 100,
+          "value": 100.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 14,
+          "remaining": 99,
+          "value": 99.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 15,
+          "remaining": 97,
+          "value": 97.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 16,
+          "remaining": 96,
+          "value": 96.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 17,
+          "remaining": 94,
+          "value": 94.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 18,
+          "remaining": 93,
+          "value": 93.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 19,
+          "remaining": 91,
+          "value": 91.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 20,
+          "remaining": 90,
+          "value": 90.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 21,
+          "remaining": 88,
+          "value": 88.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 22,
+          "remaining": 87,
+          "value": 87.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 23,
+          "remaining": 85,
+          "value": 85.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 24,
+          "remaining": 84,
+          "value": 84.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 25,
+          "remaining": 82,
+          "value": 82.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 26,
+          "remaining": 81,
+          "value": 81.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 27,
+          "remaining": 79,
+          "value": 79.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 28,
+          "remaining": 78,
+          "value": 78.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 29,
+          "remaining": 76,
+          "value": 76.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 30,
+          "remaining": 75,
+          "value": 75.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 31,
+          "remaining": 73,
+          "value": 73.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 32,
+          "remaining": 72,
+          "value": 72.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 33,
+          "remaining": 70,
+          "value": 70.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 34,
+          "remaining": 69,
+          "value": 69.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 35,
+          "remaining": 67,
+          "value": 67.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 36,
+          "remaining": 66,
+          "value": 66.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 37,
+          "remaining": 64,
+          "value": 64.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 38,
+          "remaining": 63,
+          "value": 63.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 39,
+          "remaining": 61,
+          "value": 61.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 40,
+          "remaining": 60,
+          "value": 60.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 41,
+          "remaining": 58,
+          "value": 58.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 42,
+          "remaining": 57,
+          "value": 57.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 43,
+          "remaining": 55,
+          "value": 55.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 44,
+          "remaining": 54,
+          "value": 54.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 45,
+          "remaining": 52,
+          "value": 52.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 46,
+          "remaining": 51,
+          "value": 51.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 47,
+          "remaining": 49,
+          "value": 49.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 48,
+          "remaining": 48,
+          "value": 48.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 49,
+          "remaining": 46,
+          "value": 46.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 50,
+          "remaining": 45,
+          "value": 45.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 51,
+          "remaining": 43,
+          "value": 43.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 52,
+          "remaining": 42,
+          "value": 42.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 53,
+          "remaining": 40,
+          "value": 40.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 54,
+          "remaining": 39,
+          "value": 39.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 55,
+          "remaining": 37,
+          "value": 37.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 56,
+          "remaining": 36,
+          "value": 36.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 57,
+          "remaining": 34,
+          "value": 34.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 58,
+          "remaining": 33,
+          "value": 33.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 59,
+          "remaining": 31,
+          "value": 31.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 60,
+          "remaining": 30,
+          "value": 30.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 61,
+          "remaining": 28,
+          "value": 28.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 62,
+          "remaining": 27,
+          "value": 27.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 63,
+          "remaining": 25,
+          "value": 25.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 64,
+          "remaining": 24,
+          "value": 24.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 65,
+          "remaining": 22,
+          "value": 22.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 66,
+          "remaining": 21,
+          "value": 21.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 67,
+          "remaining": 19,
+          "value": 19.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 68,
+          "remaining": 18,
+          "value": 18.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 69,
+          "remaining": 16,
+          "value": 16.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 70,
+          "remaining": 15,
+          "value": 15.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 71,
+          "remaining": 13,
+          "value": 13.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 72,
+          "remaining": 12,
+          "value": 12.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 73,
+          "remaining": 10,
+          "value": 10.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 74,
+          "remaining": 9,
+          "value": 9.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 75,
+          "remaining": 7,
+          "value": 7.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 76,
+          "remaining": 6,
+          "value": 6.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 77,
+          "remaining": 4,
+          "value": 4.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 78,
+          "remaining": 3,
+          "value": 3.0,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 79,
+          "remaining": 1,
+          "value": 1.5,
+          "active": 1024,
+          "completed": 0
+        },
+        {
+          "tick": 80,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 1
+        },
+        {
+          "tick": 81,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        },
+        {
+          "tick": 82,
+          "remaining": 0,
+          "value": 0.0,
+          "active": 0,
+          "completed": 0
+        }
+      ]
+    }
+  ]
+}

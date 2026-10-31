@@ -276,6 +276,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     }
   }
 }
+const siteLanguagePacks = new Map();
 if (resourceMode === RESOURCE_MODE_HOSTED) {
   for (const key of ["vanillaFont", "unicodeFont"]) {
     if (typeof games.shared?.[key] !== "string" || !games.shared[key].includes("?v=")) throw new Error(`versioned shared ${key} missing`);
@@ -294,7 +295,17 @@ if (resourceMode === RESOURCE_MODE_HOSTED) {
     throw new Error("external manifest must not expose direct runtime font URLs");
   }
   const publishedPayloads = [...inventoryPaths].filter(path => path.startsWith("games/") || path.startsWith("shared/"));
-  if (publishedPayloads.length) throw new Error("external deployment must not bundle game/shared payloads");
+  for (const language of games.games.th075?.languages || []) {
+    const pack = language.pack;
+    const url = new URL(pack?.url || "", "https://eagler.invalid/");
+    const path = url.pathname.slice(1);
+    if (url.origin === "https://eagler.invalid" && /^games\/th075\/language\/[A-Za-z0-9_-]+\.zip$/.test(path)) {
+      const owned = deployment.files.find(file => file.path === path);
+      if (!owned || owned.bytes !== pack.bytes || owned.sha256 !== pack.sha256) throw new Error("site language pack inventory mismatch");
+      siteLanguagePacks.set(path, {...pack, fileId: `language:${language.id}`});
+    }
+  }
+  if (publishedPayloads.some(path => !siteLanguagePacks.has(path))) throw new Error("external deployment must not bundle game/shared payloads");
   if (Object.keys(releaseCatalog.games).sort().join(",") !== [...gameIds].sort().join(",")) {
     throw new Error("external deployment must publish every selected Package Descriptor");
   }
@@ -520,7 +531,11 @@ if (resourceMode === RESOURCE_MODE_EXTERNAL) {
       if (!/^(?:games|shared)\//.test(file.source)) {
         throw new Error(`${game}: external Package source is outside redirect-owned routes: ${fileId}`);
       }
-      if (inventoryPaths.has(file.source)) throw new Error(`${game}: external payload was bundled: ${fileId}`);
+      if (inventoryPaths.has(file.source)) {
+        const localLanguage = siteLanguagePacks.get(file.source);
+        if (game !== "th075" || localLanguage?.fileId !== fileId || localLanguage.bytes !== file.bytes ||
+            localLanguage.sha256.slice(0, 16) !== file.revision) throw new Error(`${game}: external payload was bundled: ${fileId}`);
+      }
       if (!Number.isSafeInteger(file.bytes) || file.bytes <= 0 || !/^[a-f0-9]{16}$/i.test(file.revision || "")) {
         throw new Error(`${game}: invalid external Package file identity: ${fileId}`);
       }

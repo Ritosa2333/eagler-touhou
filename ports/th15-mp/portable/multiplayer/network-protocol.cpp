@@ -116,19 +116,65 @@ void rollback_protocol(){
   std::array<NetplayRuntime,3> peers;for(unsigned seat=0;seat<count;++seat){auto config=setup(count,seat,0);config.mode=mode;CHECK(peers[seat].Reset(config));}
   link(peers,count);auto& runtime=peers[0];
   Netplay::FrameInput exact;CHECK(InputLanes::Capture(1|8|0x40,false,2,-12,310,exact));
-  CHECK(runtime.Capture(0,{}));for(unsigned seat=1;seat<count;++seat)CHECK(runtime.SubmitRemote(seat,0,exact)==Netplay::RemoteInputResult::Accepted);
-  auto decision=runtime.Prepare(0);CHECK(decision.canAdvance&&!decision.predictedMask&&runtime.MarkSimulated(0,decision));
-  for(unsigned frame=1;frame<=12;++frame){CHECK(runtime.NeedsCapture()&&runtime.Capture(frame,{}));decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&decision.predictedMask);CHECK(!(decision.inputs[1].buttons&2));CHECK(runtime.MarkSimulated(frame,decision));}
+  CHECK(runtime.Capture(0,input(0,0)));for(unsigned seat=1;seat<count;++seat)CHECK(runtime.SubmitRemote(seat,0,exact)==Netplay::RemoteInputResult::Accepted);
+  auto decision=runtime.Prepare(0);CHECK(decision.canAdvance&&!decision.predictedMask&&decision.inputs[0]==input(0,0)&&runtime.MarkSimulated(0,decision));
+  for(unsigned frame=1;frame<=12;++frame){CHECK(runtime.NeedsCapture()&&runtime.Capture(frame,input(frame,0)));decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&decision.predictedMask&&decision.inputs[0]==input(frame,0));CHECK(!(decision.inputs[1].buttons&2));CHECK(runtime.MarkSimulated(frame,decision));}
   CHECK(!runtime.Prepare(13).canAdvance);
   Netplay::FrameInput corrected;CHECK(InputLanes::Capture(0x80,false,0,0,0,corrected));
   for(unsigned seat=1;seat<count;++seat)for(unsigned frame=1;frame<=12;++frame){const auto result=runtime.SubmitRemote(seat,frame,corrected);CHECK(result==Netplay::RemoteInputResult::RollbackRequired||result==Netplay::RemoteInputResult::Accepted);}
   CHECK(runtime.HasCorrection()&&runtime.CorrectionFrame()==1);CHECK(runtime.Rewind(1));CHECK(!runtime.HasCorrection()&&runtime.NextFrame()==1);
-  for(unsigned frame=1;frame<=12;++frame){decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&!decision.predictedMask&&runtime.MarkSimulated(frame,decision));}
+  for(unsigned frame=1;frame<=12;++frame){decision=runtime.Prepare(frame);CHECK(decision.canAdvance&&!decision.predictedMask&&decision.inputs[0]==input(frame,0)&&runtime.MarkSimulated(frame,decision));}
   CHECK(runtime.NeedsCapture()&&runtime.Capture(13,{}));decision=runtime.Prepare(13);CHECK(decision.canAdvance&&runtime.MarkSimulated(13,decision));CHECK(runtime.NextFrame()==14);
  }
  std::puts("PASS TH15 rollback/hybrid actual correction, 12-frame horizon and fresh advancement");
 }
-int main(int argc,char** argv){rollback_protocol();
+void transition_capture_cadence(){
+ struct Delivery {unsigned due,destination,source,frame;Netplay::FrameInput value;};
+ for(unsigned count:{2u,3u})for(unsigned mode:{0u,2u})for(unsigned latency:{2u,4u,6u}){
+  std::array<unsigned,2> measured{};
+  for(unsigned pipeline=0;pipeline<2;++pipeline){
+   std::array<NetplayRuntime,3> peers;
+   for(unsigned seat=0;seat<count;++seat){auto config=setup(count,seat,0);config.mode=mode;CHECK(peers[seat].Reset(config));}
+   link(peers,count);std::vector<Delivery> wire;
+   // The world is at an actual scene-factory boundary: no predicted decision
+   // may execute. All peers still sample independently at 60 Hz and deliver
+   // immutable input messages after a fixed one-way network delay.
+   for(unsigned tick=0;tick<240;++tick){
+    for(unsigned seat=0;seat<count;++seat){auto& peer=peers[seat];
+     peer.SetCapturePhase(pipeline!=0,100'000+std::uint64_t(tick)*Netplay::ConfirmedInputClock::IntervalUs);
+     if(peer.NeedsCapture()){
+      const auto frame=peer.CaptureFrame();const auto value=input(frame,seat);CHECK(peer.Capture(frame,value));CHECK(!peer.NeedsCapture());
+      for(unsigned dst=0;dst<count;++dst)if(dst!=seat)wire.push_back({tick+latency,dst,seat,frame,value});
+     }
+     CHECK(peer.CaptureFrame()-peer.NextFrame()<=Netplay::ConfirmedInputClock::MaxLead);
+    }
+    auto at=wire.begin();while(at!=wire.end()){
+     if(at->due>tick){++at;continue;}
+     CHECK(peers[at->destination].SubmitRemote(at->source,at->frame,at->value)==Netplay::RemoteInputResult::Accepted);at=wire.erase(at);
+    }
+    for(unsigned seat=0;seat<count;++seat){auto& peer=peers[seat];const auto frame=peer.NextFrame();const auto decision=peer.Prepare(frame);
+     if(!decision.canAdvance||peer.Tentative(frame))continue;
+     CHECK(!decision.predictedMask);for(unsigned lane=0;lane<count;++lane)CHECK(decision.inputs[lane]==input(frame,lane));
+     CHECK(peer.MarkSimulated(frame,decision));CHECK(!peer.HasCorrection());if(tick>=60&&seat==0)++measured[pipeline];
+    }
+   }
+   if(pipeline){
+    // Resume combat without turning the transition's in-flight input tail
+    // into a permanent second input delay. No new samples while it drains.
+    const auto tail=peers[0].CaptureFrame();CHECK(tail>peers[0].NextFrame());
+    for(unsigned seat=0;seat<count;++seat)peers[seat].SetCapturePhase(false,10'000'000);
+    for(const auto& packet:wire)CHECK(peers[packet.destination].SubmitRemote(packet.source,packet.frame,packet.value)==Netplay::RemoteInputResult::Accepted);
+    for(unsigned seat=0;seat<count;++seat){auto& peer=peers[seat];
+     while(peer.NextFrame()<tail){CHECK(!peer.NeedsCapture());const auto frame=peer.NextFrame();const auto decision=peer.Prepare(frame);CHECK(decision.canAdvance&&!decision.predictedMask);CHECK(peer.MarkSimulated(frame,decision));}
+     CHECK(peer.CaptureFrame()==peer.NextFrame()&&peer.NeedsCapture());
+    }
+   }
+  }
+  CHECK(measured[0]<90&&measured[1]==180);
+  std::printf("PASS transition %uP mode=%u one-way=%uf: old=%u/180, pipeline=%u/180 confirmed ticks; bounded tail drains\n",count,mode,latency,measured[0],measured[1]);
+ }
+}
+int main(int argc,char** argv){rollback_protocol();transition_capture_cadence();
  legacy_replay_admission();
  for(unsigned count:{2u,3u}){
   std::array<NetplayRuntime,3> players;

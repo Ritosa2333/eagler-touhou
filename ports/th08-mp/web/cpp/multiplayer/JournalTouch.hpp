@@ -6,6 +6,27 @@
 #include <type_traits>
 
 namespace th08::multiplayer {
+#ifdef TH_MULTIPLAYER_FIXTURES
+inline bool batch_checkpoint_copies=true;
+#endif
+// Only synchronous BeginFrame inventory scans may defer copies. Close before
+// returning to any native Update/Draw or first-write hook, including failures.
+class CheckpointCapture {
+    Netplay::RollbackJournal& journal;
+    bool open=false,valid=true;
+public:
+    explicit CheckpointCapture(Netplay::RollbackJournal& value):journal(value){
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(!batch_checkpoint_copies)return;
+#endif
+        valid=journal.BeginReadOnlyCapture();open=valid;
+    }
+    ~CheckpointCapture(){if(open)journal.EndReadOnlyCapture();}
+    bool Valid()const{return valid;}
+    bool Finish(){if(!open)return valid;open=false;return journal.EndReadOnlyCapture();}
+    CheckpointCapture(const CheckpointCapture&)=delete;
+    CheckpointCapture& operator=(const CheckpointCapture&)=delete;
+};
 template<class T>bool touch(Netplay::RollbackJournal& journal,T& value){
     static_assert(std::is_trivially_copyable_v<T>,"Owning C++ objects need explicit lifetime restoration");
     return journal.Touch(&value,sizeof(value));

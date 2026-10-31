@@ -1,0 +1,137 @@
+[
+  {
+    "origin": "https://touhouonline.com",
+    "downloads": [
+      {
+        "id": "game-data",
+        "path": "games/th12/th12.data",
+        "status": 206,
+        "bytes": 64,
+        "verified": true,
+        "elapsedMs": 3387
+      },
+      {
+        "id": "shared-msgothic",
+        "path": "shared/msgothic.ttc",
+        "status": 200,
+        "bytes": 8990160,
+        "verified": true,
+        "elapsedMs": 8640
+      },
+      {
+        "id": "shared-unifont",
+        "path": "shared/unifont.otf",
+        "status": 200,
+        "bytes": 5105508,
+        "verified": true,
+        "elapsedMs": 8792
+      },
+      {
+        "id": "language:lang_zh-hans",
+        "path": "games/th12/language/lang_zh-hans.zip",
+        "status": 200,
+        "bytes": 2406449,
+        "verified": true,
+        "elapsedMs": 7389
+      },
+      {
+        "id": "language:lang_en",
+        "path": "games/th12/language/lang_en.zip",
+        "status": 200,
+        "bytes": 2556399,
+        "verified": true,
+        "elapsedMs": 6059
+      }
+    ]
+  },
+  {
+    "origin": "https://test.touhou.vip",
+    "downloads": [
+      {
+        "id": "game-data",
+        "path": "games/th12/th12.data",
+        "status": 206,
+        "bytes": 64,
+        "verified": true,
+        "elapsedMs": 787
+      },
+      {
+        "id": "shared-msgothic",
+        "path": "shared/msgothic.ttc",
+        "status": 200,
+        "bytes": 8990160,
+        "verified": true,
+        "elapsedMs": 2281
+      },
+      {
+        "id": "shared-unifont",
+        "path": "shared/unifont.otf",
+        "status": 200,
+        "bytes": 5105508,
+        "verified": true,
+        "elapsedMs": 2285
+      },
+      {
+        "id": "language:lang_zh-hans",
+        "path": "games/th12/language/lang_zh-hans.zip",
+        "status": 200,
+        "bytes": 2406449,
+        "verified": true,
+        "elapsedMs": 2574
+      },
+      {
+        "id": "language:lang_en",
+        "path": "games/th12/language/lang_en.zip",
+        "status": 200,
+        "bytes": 2556399,
+        "verified": true,
+        "elapsedMs": 2174
+      }
+    ]
+  },
+  {
+    "origin": "https://ritosa.cyou",
+    "downloads": [
+      {
+        "id": "game-data",
+        "path": "games/th12/th12.data",
+        "status": 206,
+        "bytes": 64,
+        "verified": true,
+        "elapsedMs": 1766
+      },
+      {
+        "id": "shared-msgothic",
+        "path": "shared/msgothic.ttc",
+        "status": 200,
+        "bytes": 8990160,
+        "verified": true,
+        "elapsedMs": 2547
+      },
+      {
+        "id": "shared-unifont",
+        "path": "shared/unifont.otf",
+        "status": 200,
+        "bytes": 5105508,
+        "verified": true,
+        "elapsedMs": 1911
+      },
+      {
+        "id": "language:lang_zh-hans",
+        "path": "games/th12/language/lang_zh-hans.zip",
+        "status": 200,
+        "bytes": 2406449,
+        "verified": true,
+        "elapsedMs": 2391
+      },
+      {
+        "id": "language:lang_en",
+        "path": "games/th12/language/lang_en.zip",
+        "status": 200,
+        "bytes": 2556399,
+        "verified": true,
+        "elapsedMs": 2236
+      }
+    ]
+  }
+]

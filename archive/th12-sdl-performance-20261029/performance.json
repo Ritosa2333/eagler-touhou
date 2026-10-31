@@ -1,0 +1,362 @@
+{
+  "schema": "th12-sdl-performance/1",
+  "sourceHead": "e5517fab11ec3b67b7f559575c035b5b96868d9c",
+  "baseline": "96815b816bea184affaf5c13008d2062bb19803a",
+  "sourceHashNormalization": "LF",
+  "toolchain": "MSVC 19.51 / Windows x64 /MD /O2 /fp:strict /std:c++20",
+  "measurement": "CPU component microbenchmarks; five alternating paired runs; no site FPS claim",
+  "summary": {
+    "animation-after": {
+      "outputHash": "1bcb50759f709017",
+      "steadyMs": 22.294,
+      "lateMs": 0.015,
+      "allocations": 0
+    },
+    "animation-before": {
+      "outputHash": "1bcb50759f709017",
+      "steadyMs": 49.728,
+      "lateMs": 13.385,
+      "allocations": 307200
+    },
+    "background-after": {
+      "outputHash": "fffe625f4b211fa4",
+      "captureMs": 20.999,
+      "allocations": 5280
+    },
+    "background-before": {
+      "outputHash": "fffe625f4b211fa4",
+      "captureMs": 106.311,
+      "allocations": 1864800
+    }
+  },
+  "runs": [
+    {
+      "iteration": 0,
+      "variant": "animation-before",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 50.746,
+        "steadyAllocations": 307200,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 13.385
+      }
+    },
+    {
+      "iteration": 0,
+      "variant": "animation-after",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 20.036,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.015
+      }
+    },
+    {
+      "iteration": 0,
+      "variant": "background-before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 106.311,
+        "allocations": 1864800
+      }
+    },
+    {
+      "iteration": 0,
+      "variant": "background-after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 18.568,
+        "allocations": 5280
+      }
+    },
+    {
+      "iteration": 1,
+      "variant": "animation-before",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 45.999,
+        "steadyAllocations": 307200,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 12.526
+      }
+    },
+    {
+      "iteration": 1,
+      "variant": "animation-after",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 19.173,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.014
+      }
+    },
+    {
+      "iteration": 1,
+      "variant": "background-before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 110.72,
+        "allocations": 1864800
+      }
+    },
+    {
+      "iteration": 1,
+      "variant": "background-after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 21.611,
+        "allocations": 5280
+      }
+    },
+    {
+      "iteration": 2,
+      "variant": "animation-before",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 54.575,
+        "steadyAllocations": 307200,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 13.311
+      }
+    },
+    {
+      "iteration": 2,
+      "variant": "animation-after",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 22.575,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.017
+      }
+    },
+    {
+      "iteration": 2,
+      "variant": "background-before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 110.294,
+        "allocations": 1864800
+      }
+    },
+    {
+      "iteration": 2,
+      "variant": "background-after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 19.883,
+        "allocations": 5280
+      }
+    },
+    {
+      "iteration": 3,
+      "variant": "animation-before",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 49.728,
+        "steadyAllocations": 307200,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 14.325
+      }
+    },
+    {
+      "iteration": 3,
+      "variant": "animation-after",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 22.294,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.013
+      }
+    },
+    {
+      "iteration": 3,
+      "variant": "background-before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 105.618,
+        "allocations": 1864800
+      }
+    },
+    {
+      "iteration": 3,
+      "variant": "background-after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 21.521,
+        "allocations": 5280
+      }
+    },
+    {
+      "iteration": 4,
+      "variant": "animation-before",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 48.429,
+        "steadyAllocations": 307200,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 14.331
+      }
+    },
+    {
+      "iteration": 4,
+      "variant": "animation-after",
+      "result": {
+        "files": 33,
+        "scripts": 1393,
+        "outputHash": "1bcb50759f709017",
+        "steadyFrames": 600,
+        "steadyTracks": 512,
+        "steadyMs": 24.59,
+        "steadyAllocations": 0,
+        "lateBindings": 60,
+        "lateAge": 10000,
+        "lateMs": 0.016
+      }
+    },
+    {
+      "iteration": 4,
+      "variant": "background-before",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 105.855,
+        "allocations": 1864800
+      }
+    },
+    {
+      "iteration": 4,
+      "variant": "background-after",
+      "result": {
+        "stages": 7,
+        "traceTriangles": 653,
+        "outputHash": "fffe625f4b211fa4",
+        "captures": 1680,
+        "captureMs": 20.999,
+        "allocations": 5280
+      }
+    }
+  ],
+  "sources": {
+    "ports/th12/portable/sdl/Animation.cpp": {
+      "baselineSha256": "c912602e0ba0d5af85d319455f1dfca1065c51b26cbdb87fc0338e0c076b545b",
+      "optimizedSha256": "380441a8b2d781e09c12894e8192a27583060a582f70f5d009541c9dfa43b9f0"
+    },
+    "ports/th12/portable/sdl/Animation.hpp": {
+      "baselineSha256": "995f6e2a5f2adc923fb58b8c18441f1f31e85a8264e919643e1efaa5d5f02136",
+      "optimizedSha256": "9af618b8a8693e36bc77fe3b4f5381339845f70c8b3fcc00314b24d5c3a2107c"
+    },
+    "ports/th12/portable/sdl/Scene.cpp": {
+      "baselineSha256": "fc0885ef10486bde6963944b3c761c1530fa7a471ab6049a2f501688cf5ea95f",
+      "optimizedSha256": "706e3d698232cb06a0d47b7d2cad9d08bedb84c4d8a4989e52dfb2eb1f7f693d"
+    },
+    "ports/th12-mp/portable/sdl/Animation.cpp": {
+      "baselineSha256": "c912602e0ba0d5af85d319455f1dfca1065c51b26cbdb87fc0338e0c076b545b",
+      "optimizedSha256": "380441a8b2d781e09c12894e8192a27583060a582f70f5d009541c9dfa43b9f0"
+    },
+    "ports/th12-mp/portable/sdl/Animation.hpp": {
+      "baselineSha256": "995f6e2a5f2adc923fb58b8c18441f1f31e85a8264e919643e1efaa5d5f02136",
+      "optimizedSha256": "9af618b8a8693e36bc77fe3b4f5381339845f70c8b3fcc00314b24d5c3a2107c"
+    },
+    "ports/th12-mp/portable/sdl/Scene.cpp": {
+      "baselineSha256": "fc0885ef10486bde6963944b3c761c1530fa7a471ab6049a2f501688cf5ea95f",
+      "optimizedSha256": "706e3d698232cb06a0d47b7d2cad9d08bedb84c4d8a4989e52dfb2eb1f7f693d"
+    }
+  },
+  "webBuilds": {
+    "th12": {
+      "touhou12.mjs": {
+        "bytes": 225323,
+        "sha256": "398638dcda4241242baa63fe592f543f2a421696cfa5266f1c3326bf60da41ed"
+      },
+      "touhou12.wasm": {
+        "bytes": 3235484,
+        "sha256": "e39c7fc614be443146cb4d7b4167052a3b8cba962f9b40707f4705eb06eaaf01"
+      }
+    },
+    "th12-mp": {
+      "touhou12.mjs": {
+        "bytes": 279137,
+        "sha256": "1a1ef48196cdf76e9ab7894f886a7f47c1d63860f36164f8d8b12ffe89d096b1"
+      },
+      "touhou12.wasm": {
+        "bytes": 3208681,
+        "sha256": "1b35a76d23acb6462c59df7e23fd35979d41c62d02764e485334e3c492522c56"
+      }
+    }
+  }
+}

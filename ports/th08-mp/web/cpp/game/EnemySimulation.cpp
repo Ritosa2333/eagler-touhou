@@ -102,7 +102,12 @@ JobResult EnemySimulation::update(){
 #else
                 const u32 damage_blockers=0x830u;
 #endif
-                if(!(enemy->flags&damage_blockers)&&(!(enemy->flags&0x80000000)||!input.familiar.bomb)){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                const bool bomb_protected=enemy_bomb_protected(*enemy,actions);
+#else
+                const bool bomb_protected=(enemy->flags&0x80000000)&&input.familiar.bomb;
+#endif
+                if(!(enemy->flags&damage_blockers)&&!bomb_protected){
                     if(!contact_enemy_and_trail(*enemy,input.familiar.character,actions)){failed=true;return JobResult::Error;}
                     // ECL may begin/end a spell during this enemy's update.
                     // Damage reduction must observe the current spell flags.

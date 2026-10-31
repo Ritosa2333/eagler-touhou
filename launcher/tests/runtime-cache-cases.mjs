@@ -80,7 +80,8 @@ function harness() {
             },
           }));
         }
-        return new Response(body??"missing",{status:body===undefined?404:200});
+        return new Response(body??"missing",{status:body===undefined?404:200,
+          ...(state.contentType?{headers:{'Content-Type':state.contentType}}:{})});
       },
     });
     vm.runInContext(source,context);
@@ -102,6 +103,22 @@ const streaming=harness(); streaming.state.streaming=true;
 const streamed=await streaming.launch(streaming.worker(undefined,100),"streaming");
 assert.equal(streamed.generation,streaming.a.generation,"cache preparation accepts continuous transfers longer than the idle timeout");
 assert.equal(await(await streaming.resource(streaming.worker(),streamed,"game.wasm")).text(),"wasm a");
+// Correct bytes can have stale/incorrect MIME headers from an origin or an old
+// snapshot. They must remain executable without deleting the user's cache.
+const mime=harness();mime.state.contentType='application/octet-stream';
+const mimeWorker=mime.worker(),mimeLaunch=await mime.launch(mimeWorker,'mime');
+for(const [name,type]of [['game.html','text/html'],['shell.mjs','text/javascript'],['worker.mjs','text/javascript'],['game.wasm','application/wasm']]){
+  const response=await mime.resource(mimeWorker,mimeLaunch,name);
+  assert.equal(response.headers.get('Content-Type'),type,'verified Runtime MIME: '+name);
+  assert.equal(await response.text(),mime.state.files[runtimeGenerationBase(root,mime.a.generation)+name]);
+}
+const mimeRequests=mime.requests.length;mime.state.outage=true;
+const mimeOffline=await mime.launch(mime.worker(),'mime-offline',{localOnly:true});
+assert.equal((await mime.resource(mime.worker(),mimeOffline,'shell.mjs')).headers.get('Content-Type'),'text/javascript');
+assert.equal(mime.requests.length,mimeRequests,'old binary MIME headers are repaired offline without redownloading bytes');
+const uncachedMime=harness();uncachedMime.state.contentType='application/octet-stream';
+assert.equal((await uncachedMime.resource(uncachedMime.worker(),{generation:uncachedMime.a.generation},'shell.mjs')).headers.get('Content-Type'),'text/javascript',
+  'a verified immutable HTTP fallback also supplies executable module MIME');
 const observed=harness(); observed.state.streaming=true;
 const progressA=[],progressB=[],observedWorker=observed.worker(undefined,100);
 await Promise.all([observedWorker.prepareLaunch(root+'game.html',{onProgress:value=>progressA.push(value)}),
@@ -129,6 +146,20 @@ assert.deepEqual(httpRepair.cacheModes.filter(value=>value.url.endsWith('game.wa
 assert.ok(repairProgress.some(value=>value.path.endsWith('game.wasm')&&value.phase==='failed'),'invalid HTTP-cache bytes are rejected before a fresh attempt');
 const h=harness();let sw=h.worker();
 const A=await h.launch(sw,"a");assert.match(A.body,/a$/);
+const modulePath=new URL(runtimeGenerationBase(root,A.generation)+'shell.mjs',h.scopeUrl).href;
+for(const cache of h.stores.values()) {
+  const module=await cache.match(modulePath);
+  if(module)await cache.put(modulePath,new Response(await module.arrayBuffer(),{headers:{'Content-Type':'application/octet-stream'}}));
+}
+h.state.outage=true;
+const beforeMimeRepair=h.requests.length;
+const cachedModule=await h.resource(sw,A,'shell.mjs');
+assert.equal(cachedModule.headers.get('Content-Type'),'text/javascript','cached module MIME is repaired after verified bytes');
+assert.equal(await cachedModule.text(),'shell a');
+assert.equal((await h.resource(sw,A,'game.wasm')).headers.get('Content-Type'),'application/wasm');
+assert.equal((await h.resource(sw,A,'game.html')).headers.get('Content-Type'),'text/html');
+assert.equal(h.requests.length,beforeMimeRepair,'MIME repair works offline and does not redownload Runtime bytes');
+h.state.outage=false;
 const beforeLocal=h.requests.length;
 const noEmbeddedCatalog=h.worker({schema:RUNTIME_MANIFEST_SCHEMA,protocol:RUNTIME_PROTOCOL,groups:[]});
 assert.equal((await noEmbeddedCatalog.prepareLaunch(root+'game.html',{localOnly:true})).generation,A.generation);

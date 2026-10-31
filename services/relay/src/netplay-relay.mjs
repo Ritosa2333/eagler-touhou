@@ -1317,7 +1317,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         invalidateLobbyReady(room);
         room.lobby.adonisMode = mode;
         room.lobby.timingChoice = choice;
-        room.lobby.inputDelay = choice === 'auto' || (message.rollbackEnabled && !timing.manualRollbackDelay) ? 0 : choice;
+        room.lobby.inputDelay = choice === 'auto' || message.rollbackEnabled ? 0 : choice;
         room.lobby.inputDelayAuto = !message.rollbackEnabled && timing.measuredStartup && choice === 'auto';
         room.lobby.timing = null;
         broadcastLobby(room);
@@ -1671,7 +1671,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
             (message.predictionLimit !== undefined && message.predictionLimit !== 0))) ||
         !Number.isInteger(inputDelay) ||
         inputDelay < 0 ||
-        inputDelay > (adonisMode || timingPolicy.manualRollbackDelay ? timingPolicy.manualDelayLimit : 8) ||
+        inputDelay > timingPolicy.manualDelayLimit ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
             predictionLimit < 1 ||
@@ -1681,7 +1681,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         return;
       }
       const rollback = !!room.multiplayer && timingPolicy.rollback && adonisMode !== 1;
-      room.lobby.inputDelay = rollback && !timingPolicy.manualRollbackDelay ? 0 : inputDelay;
+      room.lobby.inputDelay = rollback ? 0 : inputDelay;
       room.lobby.adonisMode = rollback ? 0 : adonisMode;
       room.lobby.inputDelayAuto = rollback ? false : inputDelayAuto;
       room.lobby.predictionReserve = predictionReserve;

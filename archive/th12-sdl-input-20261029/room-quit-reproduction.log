@@ -1,0 +1,89 @@
+BROWSER TH12 SDL3: data /game; saves /savesth12
+BROWSER th12.exe: prepared TH12 1.00b ()
+BROWSER graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))
+BROWSER text fonts: /game/unifont.otf
+BROWSER audio: using per-track OGG files
+BROWSER TH12 SDL3: data /game; saves /savesth12
+BROWSER th12.exe: prepared TH12 1.00b ()
+BROWSER graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))
+BROWSER text fonts: /game/unifont.otf
+BROWSER audio: using per-track OGG files
+BROWSER TH12 SDL3: data /game; saves /savesth12
+BROWSER th12.exe: prepared TH12 1.00b ()
+BROWSER graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))
+BROWSER text fonts: /game/unifont.otf
+BROWSER audio: using per-track OGG files
+ROOM_IDLE_TITLE_PASS [
+  { scene: 'title', age: 610, ready: true, selection: 0 },
+  { scene: 'title', age: 393, ready: true, selection: 0 }
+]
+TEST_FAILURE AssertionError [ERR_ASSERTION]: room input must not terminate the native application
++ actual - expected
+
++ [
++   {
++     epoch: 1,
++     event: 'error',
++     game: 'th12',
++     message: 'TH12 SDL3: data /game; saves /savesth12\n' +
++       'th12.exe: prepared TH12 1.00b ()\n' +
++       'graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n' +
++       'text fonts: /game/unifont.otf\n' +
++       'audio: using per-track OGG files',
++     protocol: 'eagler-touhou/1'
++   }
++ ]
+- []
+
+    at file:///C:/Users/w3051/Desktop/eagler/worktrees/th12-complete-sdl-migration/ports/th12-mp/scripts/check-sdl-multiplayer-browser.mjs:74:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [Array],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: room input must not terminate the native application
++ actual - expected
+
++ [
++   {
++     epoch: 1,
++     event: 'error',
++     game: 'th12',
++     message: 'TH12 SDL3: data /game; saves /savesth12\n' +
++       'th12.exe: prepared TH12 1.00b ()\n' +
++       'graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n' +
++       'text fonts: /game/unifont.otf\n' +
++       'audio: using per-track OGG files',
++     protocol: 'eagler-touhou/1'
++   }
++ ]
+- []
+
+    at file:///C:/Users/w3051/Desktop/eagler/worktrees/th12-complete-sdl-migration/ports/th12-mp/scripts/check-sdl-multiplayer-browser.mjs:74:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    {
+      protocol: 'eagler-touhou/1',
+      game: 'th12',
+      epoch: 1,
+      event: 'error',
+      message: 'TH12 SDL3: data /game; saves /savesth12\n' +
+        'th12.exe: prepared TH12 1.00b ()\n' +
+        'graphics: OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium))\n' +
+        'text fonts: /game/unifont.otf\n' +
+        'audio: using per-track OGG files'
+    }
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.7.0

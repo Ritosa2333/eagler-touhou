@@ -1,0 +1,334 @@
+{
+  "schema": "th12-original-ecl-context-delete/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "scope": "Actual Enemy412990/Enemy18 and ECL1/10/15 dispatch, using synthetic SCPT in research memory. No Player/ANM scheduler/GPU execution. No opcode disposition/manager deletion is intercepted.",
+  "records": [
+    {
+      "kind": "main-delete",
+      "syntheticEclHex": "5343505401000000000000000000000001000000000000000000000000000000000000003000000050726f626500000045434c48000000000000000000000000010000000100100000003f0000000000",
+      "frames": [
+        {
+          "inputTick": -1,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 0,
+                  "time": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 0,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 0,
+                  "time": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 1,
+          "enemies": []
+        },
+        {
+          "inputTick": 2,
+          "enemies": []
+        },
+        {
+          "inputTick": 3,
+          "enemies": []
+        },
+        {
+          "inputTick": 4,
+          "enemies": []
+        }
+      ]
+    },
+    {
+      "kind": "main-return",
+      "syntheticEclHex": "5343505401000000000000000000000001000000000000000000000000000000000000003000000050726f626500000045434c48000000000000000000000000010000000a00100000003f0000000000",
+      "frames": [
+        {
+          "inputTick": -1,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 0,
+                  "time": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 0,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 0,
+                  "time": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 1,
+          "enemies": []
+        },
+        {
+          "inputTick": 2,
+          "enemies": []
+        },
+        {
+          "inputTick": 3,
+          "enemies": []
+        },
+        {
+          "inputTick": 4,
+          "enemies": []
+        }
+      ]
+    },
+    {
+      "kind": "async-delete",
+      "syntheticEclHex": "5343505401000000000000000000000002000000000000000000000000000000000000003c0000007c00000050726f626500576f726b65720000000045434c48000000000000000000000000000000000f001c0000003f010000000007000000576f726b65720000000000005300140000003f0100000000a086010045434c48000000000000000000000000010000000100100000003f0000000000",
+      "frames": [
+        {
+          "inputTick": -1,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99999.0
+                },
+                {
+                  "routine": "Worker",
+                  "offset": 0,
+                  "time": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 0,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99999.0
+                },
+                {
+                  "routine": "Worker",
+                  "offset": 0,
+                  "time": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 1,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99998.0
+                },
+                {
+                  "routine": "Worker",
+                  "offset": 0,
+                  "time": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 2,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99997.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 3,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99996.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 4,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99995.0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "async-return",
+      "syntheticEclHex": "5343505401000000000000000000000002000000000000000000000000000000000000003c0000007c00000050726f626500576f726b65720000000045434c48000000000000000000000000000000000f001c0000003f010000000007000000576f726b65720000000000005300140000003f0100000000a086010045434c48000000000000000000000000010000000a00100000003f0000000000",
+      "frames": [
+        {
+          "inputTick": -1,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99999.0
+                },
+                {
+                  "routine": "Worker",
+                  "offset": 0,
+                  "time": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 0,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99999.0
+                },
+                {
+                  "routine": "Worker",
+                  "offset": 0,
+                  "time": 0.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 1,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99998.0
+                },
+                {
+                  "routine": "Worker",
+                  "offset": 0,
+                  "time": 1.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 2,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99997.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 3,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99996.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "inputTick": 4,
+          "enemies": [
+            {
+              "id": 1,
+              "contexts": [
+                {
+                  "routine": "Probe",
+                  "offset": 48,
+                  "time": -99995.0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

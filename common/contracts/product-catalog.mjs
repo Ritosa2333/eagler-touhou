@@ -54,6 +54,9 @@ const TH08_MULTIPLAYER_LOADOUTS = Object.freeze([
 ]);
 const TH10_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, REIMU_C, MARISA_A, MARISA_B, MARISA_C]);
 const TH11_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, REIMU_C, MARISA_A, MARISA_B, MARISA_C]);
+const TH12_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, MARISA_A, MARISA_B,
+    Object.freeze({ labelKey: "multiplayer.loadout.sanaeA", glyph: "早", character: 2, shot: 0 }),
+    Object.freeze({ labelKey: "multiplayer.loadout.sanaeB", glyph: "早", character: 2, shot: 1 })]);
 const TH15_MULTIPLAYER_LOADOUTS = Object.freeze(["reimu", "marisa", "sanae", "reisen"].map((name, character) => Object.freeze({ labelKey: `multiplayer.loadout.th15_${name}`, glyph: ["霊", "魔", "早", "鈴"][character], character, shot: 0 })));
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
@@ -294,7 +297,7 @@ export const PRODUCT_GAMES = Object.freeze({
             titleKey: "game.title.th09mp",
             gameplay: "versus",
             inGameSelection: true,
-            inputTiming: Object.freeze({ rollbackLimit: 8, measuredStartup: true, manualDelayLimit: 9, manualRollbackDelay: true }),
+            inputTiming: Object.freeze({ rollbackLimit: 8, measuredStartup: true, manualDelayLimit: 9 }),
             playerCounts: Object.freeze([2]),
             difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
             loadouts: TH09_MULTIPLAYER_LOADOUTS,
@@ -422,13 +425,12 @@ export const PRODUCT_GAMES = Object.freeze({
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
     th12: Object.freeze({
-        testOnly: true,
         number: "12", title: "東方星蓮船", subtitle: "Undefined Fantastic Object",
         cardArtwork: "th12-card.webp",
         storage: Object.freeze({saveRoot: "/savesth12", scoreFile: "scoreth12.dat", configFiles: Object.freeze(["th12.cfg"])}),
         runtime: "./runtime/th12/th12.html",
         runtimeFileLayout: "directory",
-        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "game.css", "game.mjs", "core.mjs", "core.wasm", "vorbis.mjs", "vorbis.wasm", "managed-data.mjs", "managed-shell.mjs", "storage.mjs", "replay-workspace.mjs"]),
+        runtimeAssets: Object.freeze(["th12.html", "manifest.json", "game.css", "game.mjs", "core.mjs", "core.wasm", "managed-data.mjs", "managed-shell.mjs", "storage.mjs"]),
         requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
         dataProvider: "retail-memory",
         runtimeResourceTransport: "resources",
@@ -439,6 +441,14 @@ export const PRODUCT_GAMES = Object.freeze({
         touchFire: TOGGLE_TOUCH_FIRE,
         support: Object.freeze({highRefreshRate: true, sourceRepository: "https://github.com/Tweet-META/th12", adaptationNotice: "early-test"}),
         replay: Object.freeze({prefix: "th12"}),
+        multiplayerRuntime: "./runtime/th12/multiplayer/th12.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.th12mp", gameplay: "cooperative",
+            inputTiming: Object.freeze({ rollbackLimit: 12, sendPredictionLimit: 12, measuredStartup: true, manualDelayLimit: 9 }),
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts: TH12_MULTIPLAYER_LOADOUTS, peerTransportGlobal: "__th12PeerTransport",
+            spectator: true, titleRoomEntry: false,
+        }),
         features: Object.freeze({thprac: true, languages: true, focusHitbox: false}),
     }),
     th15: Object.freeze({
@@ -498,6 +508,24 @@ export const PRODUCT_GAMES = Object.freeze({
         }),
         features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
     }),
+    th17: Object.freeze({
+        number: "17", title: "東方鬼形獣", subtitle: "Wily Beast and Weakest Creature", cardArtwork: "th17-card.webp",
+        storage: Object.freeze({saveRoot: "/savesth17", scoreFile: "scoreth17.dat", configFiles: Object.freeze(["th17.cfg"])}),
+        runtime: "./runtime/th17/th17.html",
+        musicCapabilities: Object.freeze({midi: false}),
+        musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection"}),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/eagler-touhou", adaptationNotice: "early-test"}),
+        runtimeFileLayout: "directory", requiredShared: Object.freeze([]),
+        runtimeAssets: Object.freeze(["th17.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs", "directory-keyboard.mjs", "gpu-timing.mjs", "th17.mjs", "th17.wasm", "resources.json",
+            ...Array.from({length: 8}, (_, index) => `fonts/font${index}.bin`), "fonts/cp932.bin", "fonts/blend4444.bin"]),
+        dataProvider: "retail-memory",
+        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th17.dat",
+            rawDataImport: Object.freeze({fileNames: Object.freeze(["th17.dat"])}),
+            musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
+        replay: Object.freeze({prefix: "th17"}),
+        features: Object.freeze({thprac: false, languages: false, focusHitbox: false}),
+    }),
     th20: Object.freeze({
         testOnly: true,
         number: "20",
@@ -553,7 +581,6 @@ export function multiplayerInputTimingPolicy(product) {
     return {
         measuredStartup,
         rollback,
-        manualRollbackDelay: rollback && timing?.manualRollbackDelay === true,
         manualDelayLimit: timing?.manualDelayLimit ?? (measuredStartup ? 9 : 8),
         predictionLimit: rollback ? timing?.sendPredictionLimit ?? 8 : 0,
     };

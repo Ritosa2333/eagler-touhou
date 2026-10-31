@@ -1,0 +1,360 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "5a41fb756349d91c5f4cf6698853664cd3aa21222eb3e32a333015a60bf2a5fa",
+  "wholeGameOracle": false,
+  "scope": "Actual ECL603 factory and direct Timed42b1d0 virtual rectangle clear/fragment constructor. Controlled parameter/location inputs and original ANM. Existing resource/heap/audio/item-request host boundaries; no replay/GPU.",
+  "rows": [
+    {
+      "axis": "x",
+      "target": -240,
+      "origin": [
+        -288,
+        128
+      ],
+      "center": [
+        -256,
+        128
+      ],
+      "angle": 0,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            -288.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            -240.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "x",
+      "target": -224,
+      "origin": [
+        -272,
+        128
+      ],
+      "center": [
+        -240,
+        128
+      ],
+      "angle": 0,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            -272.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            -224.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "x",
+      "target": 224,
+      "origin": [
+        176,
+        128
+      ],
+      "center": [
+        208,
+        128
+      ],
+      "angle": 0,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            176.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            224.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "x",
+      "target": 240,
+      "origin": [
+        192,
+        128
+      ],
+      "center": [
+        224,
+        128
+      ],
+      "angle": 0,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            192.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            240.0,
+            128.0,
+            0.0
+          ],
+          "geometry": [
+            0.0,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "y",
+      "target": -48,
+      "origin": [
+        0,
+        -96
+      ],
+      "center": [
+        0,
+        -64
+      ],
+      "angle": 1.5707963705062866,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            0.0,
+            -96.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            -2.098146524076583e-06,
+            -48.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "y",
+      "target": -32,
+      "origin": [
+        0,
+        -80
+      ],
+      "center": [
+        0,
+        -48
+      ],
+      "angle": 1.5707963705062866,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            0.0,
+            -80.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            -2.098146524076583e-06,
+            -32.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "y",
+      "target": 480,
+      "origin": [
+        0,
+        432
+      ],
+      "center": [
+        0,
+        464
+      ],
+      "angle": 1.5707963705062866,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            0.0,
+            432.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            -2.098146524076583e-06,
+            480.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    },
+    {
+      "axis": "y",
+      "target": 507,
+      "origin": [
+        0,
+        459
+      ],
+      "center": [
+        0,
+        491
+      ],
+      "angle": 1.5707963705062866,
+      "returned": 2,
+      "nodes": [
+        {
+          "kind": 1,
+          "position": [
+            0.0,
+            459.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            16.0,
+            2.0,
+            0.0
+          ]
+        },
+        {
+          "kind": 0,
+          "position": [
+            -2.098146524076583e-06,
+            507.0,
+            0.0
+          ],
+          "geometry": [
+            1.5707963705062866,
+            64.0,
+            2.0,
+            8.0
+          ]
+        }
+      ]
+    }
+  ]
+}
