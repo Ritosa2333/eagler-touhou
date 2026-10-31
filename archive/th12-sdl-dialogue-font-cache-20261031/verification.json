@@ -227,5 +227,14 @@
         "roomReturns": []
       }
     ]
+  },
+  "history": {
+    "passed": true,
+    "normalSplit": "eb84206ff6d12186a257bf466b90a0559841762a",
+    "multiplayerSplit": "f12b11b9e38a4b6d5d2872bbbc97bfac60d225cb",
+    "treesMatch": true,
+    "upstreamAncestors": true,
+    "normalAncestorOfMultiplayer": true,
+    "normalConnection": "37c6532c9085f315b41e6d3fc05d0a7cc7b390f4"
   }
 }
