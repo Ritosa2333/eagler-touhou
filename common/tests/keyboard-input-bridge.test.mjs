@@ -75,3 +75,28 @@ test('gamepad snapshots preserve native ownership until a matching frontend port
   f.setReady(true);bits=-1;assert.equal(bridge.sample(0),-1);assert.equal(bridge.owned(),false);
   bits=4096;assert.equal(bridge.sample(0),0,'invalid actions cannot leak into game bits');
 });
+
+
+test('hosted physical rejection never creates a raw keyboard owner',()=>{
+ for(const rejected of [{isComposing:true},{launcherOwnsFocus:true}])for(const code of ['ArrowUp','ShiftLeft','KeyZ']){
+  const f=fixture();let state=false;
+  f.target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,
+   supports:()=>true,map:(e,down)=>{if(down&&e.altKey)return null;state=down;return [{code:e.code,key:'',keyCode:0,location:0,down}];},clear:()=>[]};
+  assert.equal(f.keyboard.mapped(),true);
+  assert.equal(f.keyboard.event({code,...rejected,inputSource:'physical'},true,'hosted'),false);
+  assert.deepEqual(f.events,[],'rejected DOWN cannot be published through raw fallback');
+  f.keyboard.event({code},false,'hosted');assert.equal(state,false);assert.ok(f.events.every(([,down])=>!down));
+  f.keyboard.event({code},true,'hosted');f.keyboard.event({code},false,'hosted');
+  assert.deepEqual(f.events.slice(-2),[[code,true],[code,false]],'the next ordinary press and release still work');
+ }
+});
+
+test('bound but unavailable and unsupported mapped input never falls back to hosted raw keys',()=>{
+ const f=fixture();f.target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,
+  supports:()=>true,map:()=>null,clear:()=>[]};
+ assert.equal(f.keyboard.event({code:'KeyZ',altKey:true},true,'hosted'),false);assert.deepEqual(f.events,[]);
+ f.setReady(false);assert.equal(f.keyboard.event({code:'ArrowUp'},true,'hosted'),false);assert.deepEqual(f.events,[]);
+ delete f.target.__eaglerKeyboardMapping;assert.equal(f.keyboard.mapped(),false);
+ assert.equal(f.keyboard.event({code:'ArrowUp'},true,'hosted'),true);f.keyboard.event({code:'ArrowUp'},false,'hosted');
+ assert.deepEqual(f.events,[['ArrowUp',true],['ArrowUp',false]],'an absent mapper retains standalone/legacy input');
+});

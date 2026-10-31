@@ -60,9 +60,13 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{},hostC
   let input;
   const keyboard={
     get generation(){return generation;},
+    mapped(){return input?.active()===true;},
     mapNative(event,down){return input?.event(event,down)??false;},
     event(event,down,source='native'){
-      if(source==='hosted'&&input?.event(event,down,event.inputSource==='physical'?'physical':'virtual'))return true;
+      // A bound Launcher mapper owns both acceptance and rejection. Falling
+      // through after a rejected DOWN installs a second, raw owner whose UP
+      // will instead be consumed by the mapper and never release that key.
+      if(source==='hosted'&&input?.active())return input.event(event,down,event.inputSource==='physical'?'physical':'virtual');
       const code=runtimeKeyboardCode(event);if(!code||!accept(code))return false;
       let owners=sources.get(source);if(!owners){owners=new Map();sources.set(source,owners);}
       // Match releases using the actual event evidence, never the synthesized
