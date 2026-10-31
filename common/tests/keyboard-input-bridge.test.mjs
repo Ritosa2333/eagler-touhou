@@ -100,3 +100,40 @@ test('bound but unavailable and unsupported mapped input never falls back to hos
  assert.equal(f.keyboard.event({code:'ArrowUp'},true,'hosted'),true);f.keyboard.event({code:'ArrowUp'},false,'hosted');
  assert.deepEqual(f.events,[['ArrowUp',true],['ArrowUp',false]],'an absent mapper retains standalone/legacy input');
 });
+
+
+test('attaching a mapper retires raw native and hosted owners before the next mapped UP',()=>{
+ for(const source of ['native','hosted']){
+  const f=fixture(),code='ArrowUp';f.keyboard.event({code},true,source);assert.deepEqual(f.events,[[code,true]]);
+  f.target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,supports:()=>true,
+   map:(e,down)=>[{code:e.code,key:'',keyCode:0,location:0,down}],clear:()=>[]};
+  assert.equal(f.keyboard.mapped(),true);assert.deepEqual(f.events,[[code,true],[code,false]]);
+  assert.equal(f.keyboard.mapNative({code},false),true);assert.deepEqual(f.events,[[code,true],[code,false]]);
+ }
+});
+
+test('detach, stale identity and replacement retire the original mapped owner exactly once',()=>{
+ for(const change of ['detach','stale','replace']){
+  const f=fixture(),code='ShiftRight';let clears=0;
+  const previous={schema:'eagler-touhou/keyboard-input/1',...identity,supports:()=>true,
+   map:(e,down)=>[{code,key:'',keyCode:0,location:2,down}],clear:()=>{clears++;return [{code,key:'',keyCode:0,location:2,down:false}];}};
+  f.target.__eaglerKeyboardMapping=previous;f.keyboard.mapNative({code:'KeyL'},true);assert.deepEqual(f.events,[[code,true]]);
+  if(change==='detach')delete f.target.__eaglerKeyboardMapping;
+  if(change==='stale')f.target.__eaglerKeyboardMapping={...previous,epoch:identity.epoch+1};
+  if(change==='replace')f.target.__eaglerKeyboardMapping={...previous,map:(e,down)=>[{code:'KeyX',key:'x',keyCode:88,location:0,down}],clear:()=>[]};
+  f.keyboard.mapNative({code:'KeyL'},false);assert.equal(clears,1,change);assert.deepEqual(f.events,[[code,true],[code,false]],change);
+  f.keyboard.mapped();assert.equal(clears,1,'stable ownership does not repeat retirement');
+  assert.equal(f.target.__eaglerKeyboardInputBridge.keyDown(code),false);
+ }
+});
+
+test('a held mapped or virtual key survives unrelated input while the same mapper stays bound',()=>{
+ const f=fixture();let clears=0;
+ f.target.__eaglerKeyboardMapping={schema:'eagler-touhou/keyboard-input/1',...identity,supports:()=>true,
+  map:(e,down)=>[{code:e.code,key:'',keyCode:0,location:0,down}],clear:()=>{clears++;return [];}};
+ f.keyboard.mapNative({code:'KeyZ'},true);f.keyboard.event({code:'ShiftLeft'},true,'hosted');
+ for(let n=0;n<120;++n){f.keyboard.mapNative({code:'ArrowUp'},true);f.keyboard.mapNative({code:'ArrowUp'},false);f.keyboard.mapped();}
+ assert.equal(f.target.__eaglerKeyboardInputBridge.keyDown('KeyZ'),true);assert.equal(f.target.__eaglerKeyboardInputBridge.keyDown('ShiftLeft'),true);assert.equal(clears,0);
+ f.keyboard.mapNative({code:'KeyZ'},false);f.keyboard.event({code:'ShiftLeft'},false,'hosted');
+ assert.equal(f.target.__eaglerKeyboardInputBridge.keyDown('KeyZ'),false);assert.equal(f.target.__eaglerKeyboardInputBridge.keyDown('ShiftLeft'),false);
+});

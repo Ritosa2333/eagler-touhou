@@ -85,6 +85,7 @@ export function createBrowserKeyboard({send,accept=()=>true,onClear=()=>{},hostC
     }
   };
   if(hostContext)input=createKeyboardInputBridge({...hostContext,
+    onMappingChange(){++generation;sources.clear();publish();onClear();},
     dispatch:(event,down)=>keyboard.event(event,down,'mapped'),reset:()=>hostContext.reset?hostContext.reset():keyboard.clear()});
   return keyboard;
 }

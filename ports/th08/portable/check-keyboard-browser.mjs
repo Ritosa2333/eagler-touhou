@@ -50,7 +50,13 @@ for(const variant of ['normal','multiplayer'])for(const mode of ['baseline','pat
     core.sdl_keys_clear();for(let i=0;i<30;i++){key(code,true);if(!state(vk))throw Error('Swallowed fresh '+code);key(code,false);if(state(vk))throw Error('Stuck ordinary '+code);}
    }
    core.sdl_keys_clear();key('ArrowUp',true);state(38);window.dispatchEvent(new Event('blur'));if(state(38))throw Error('Blur left native input');key('ArrowUp',true,{repeat:true});if(state(38))throw Error('Old repeat rearmed after blur');key('ArrowUp',false);key('ArrowUp',true);if(!state(38))throw Error('Fresh input swallowed after blur');key('ArrowUp',false);core.sdl_keys_clear();key('ShiftLeft',true);key('ShiftRight',true);key('ShiftLeft',false);const otherShift=state(16);key('ShiftRight',false);const allShiftReleased=state(16);output.push({otherShift,allShiftReleased});
-   return output;
+   const mapping=window.__eaglerKeyboardMapping,handoffs=[];
+   // Keep the production Launcher port, but exercise attach/detach before UP.
+   core.sdl_keys_clear();delete window.__eaglerKeyboardMapping;key('ArrowUp',true);const rawDown=state(38);window.__eaglerKeyboardMapping=mapping;key('ArrowUp',false);const attachedUp=state(38);handoffs.push({change:'attach',down:rawDown,released:attachedUp});
+   core.sdl_keys_clear();key('ShiftLeft',true);const mappedDown=state(16);delete window.__eaglerKeyboardMapping;key('ShiftLeft',false);const detachedUp=state(16);handoffs.push({change:'detach',down:mappedDown,released:detachedUp});window.__eaglerKeyboardMapping=mapping;
+   core.sdl_keys_clear();key('KeyZ',true);const heldZ=state(90);window.__eaglerKeyboardMapping={...mapping,epoch:2};key('KeyZ',false);handoffs.push({change:'stale',down:heldZ,released:state(90)});window.__eaglerKeyboardMapping=mapping;
+   core.sdl_keys_clear();key('ArrowUp',true);const heldUp=state(38);window.__eaglerKeyboardMapping={...mapping,map(e,down,source,profile){return mapping.map({...e,code:e.code==='ArrowUp'?'ArrowRight':e.code},down,source,profile);}};key('ArrowUp',false);handoffs.push({change:'replace-remapping',down:heldUp,released:state(38)});window.__eaglerKeyboardMapping=mapping;core.sdl_keys_clear();
+   output.push({handoffs});return output;
   });
   await frame.locator('canvas').focus();
   const trusted=[];
@@ -60,7 +66,7 @@ for(const variant of ['normal','multiplayer'])for(const mode of ['baseline','pat
    assert.deepEqual([down,up],[128,0],variant+' trusted '+code);trusted.push({code,down,up});
   }
   for(const row of checks.filter(x=>x.code)){assert.equal(row.rejected,mode==='baseline'?128:0,variant+' '+mode+' rejected '+row.code);assert.equal(row.released,mode==='baseline'?128:0,variant+' '+mode+' release '+row.code);}
-  assert.deepEqual(checks.at(-1),{otherShift:128,allShiftReleased:0});assert.deepEqual(errors,[]);assert.equal(await frame.locator('#error').innerText(),'');
+  assert.deepEqual(checks.find(x=>'otherShift' in x),{otherShift:128,allShiftReleased:0});for(const handoff of checks.at(-1).handoffs){assert.equal(handoff.down,128,variant+' '+mode+' '+handoff.change);assert.equal(handoff.released,mode==='baseline'?128:0,variant+' '+mode+' '+handoff.change+' released');}assert.deepEqual(errors,[]);assert.equal(await frame.locator('#error').innerText(),'');
   const wasm=await readFile(resolve(code,variant,'th08-sdl.wasm'));reports.push({variant,mode,checks,ordinaryPressReleaseCycles:90,trustedBrowserKeys:trusted,wasmSha256:createHash('sha256').update(wasm).digest('hex'),errors});console.log('PASS '+variant+' '+mode+': '+(mode==='baseline'?'reproduced persistent IME-key hold':'native release clean, no swallowed fresh inputs'));
  }finally{await context.close();}
 }
