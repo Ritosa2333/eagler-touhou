@@ -1,6 +1,6 @@
 # 文档总表
 
-共 399 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 400 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -237,6 +237,7 @@
 | 历史记录 | [archive/th12-sdl-animation-storage-20261029/README.md](../archive/th12-sdl-animation-storage-20261029/README.md) | TH12 SDL 动画存储复用 |
 | 历史记录 | [archive/th12-sdl-background-cache-20261030/README.md](../archive/th12-sdl-background-cache-20261030/README.md) | TH12 SDL 背景图元复用 |
 | 历史记录 | [archive/th12-sdl-completion-20261029/README.md](../archive/th12-sdl-completion-20261029/README.md) | TH12 SDL3 应用构建身份 |
+| 历史记录 | [archive/th12-sdl-dialogue-font-cache-20261031/README.md](../archive/th12-sdl-dialogue-font-cache-20261031/README.md) | TH12 SDL 对话与字形缓存 |
 | 历史记录 | [archive/th12-sdl-input-20261029/README.md](../archive/th12-sdl-input-20261029/README.md) | TH12 SDL 输入、菜单与呈现 |
 | 历史记录 | [archive/th12-sdl-invariants-20261030/README.md](../archive/th12-sdl-invariants-20261030/README.md) | th12 SDL 输入与音乐错误验证 |
 | 历史记录 | [archive/th12-sdl-performance-20261029/README.md](../archive/th12-sdl-performance-20261029/README.md) | TH12 SDL 迁移版性能验证 |
