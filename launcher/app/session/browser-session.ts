@@ -838,7 +838,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     requiredNavigation().closeRoomPanel(); requiredNavigation().closeRoomSettings();
     publish({roomLaunchStage: cover ? 'runtime' : null});
     publish({spectatorViewer: context.snapshot.spectatorRequested});
-    await showRoomPlayer(context, mobile && !context.snapshot.spectatorRequested, context.snapshot.seat != null);
+    await showRoomPlayer(context, !context.snapshot.spectatorRequested, context.snapshot.seat != null);
     const owner = requiredRuntime(), preloaded = roomPreload;
     const current = owner.getSnapshot();
     if (current.phase === 'prepared' && current.epoch !== null &&
@@ -854,12 +854,6 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     else throw new Error(t('room.resourcesUnavailable'));
     if (!context.isCurrent()) throw new RuntimeSessionSupersededError();
     if (cover) {publish({roomLaunchStage: 'path'}); await gameplayNetwork!.waitForGameplayPath({isCurrent: context.isCurrent});}
-    // The room preview deliberately blocks trusted native keys and has no
-    // gameplay input owner. Desktop players must leave it once Start is ready,
-    // just as mobile players do when opening the fullscreen Player.
-    if (context.snapshot.seat != null && !snapshot.roomPlayerExpanded) {
-      navigation?.openRoomFullscreen?.(); publish({roomPlayerExpanded: true});
-    }
     publish({roomLaunchStage: null});
   }
   async function checkRoom(context: RoomOperationContext) {
@@ -1245,7 +1239,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       finally {playerOrientationPending = false; publish({});}
     },
     async togglePlayerFullscreen() {
-      if (nativeTouch.isFullscreen() || snapshot.roomPlayerExpanded) {
+      if (nativeTouch.isFullscreen()) {
         await exitRoomPlayerFullscreen();
         navigation?.closeRoomFullscreen?.();
         return;

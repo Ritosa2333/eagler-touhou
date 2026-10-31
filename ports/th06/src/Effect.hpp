@@ -4,6 +4,9 @@
 #include "ZunMath.hpp"
 #include "ZunTimer.hpp"
 #include "inttypes.hpp"
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/NetplaySideEffects.hpp"
+#endif
 
 enum EffectCallbackResult
 {
@@ -33,6 +36,9 @@ struct Effect
     i8 effectId;
     i8 unk_17a;
     i8 unk_17b;
+#ifdef TH_ENABLE_NETPLAY
+    Netplay::SideEffects::MissFrameTag missConfirmation;
+#endif
 };
 
 struct EffectInfo

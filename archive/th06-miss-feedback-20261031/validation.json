@@ -1,0 +1,86 @@
+{
+  "schema": "th06-confirmed-miss-validation/1",
+  "base": "a4c991564901e461277b424635f1b9d98e091548",
+  "scope": "TH06 multiplayer gameplay and presentation",
+  "gameplayAbi": {
+    "previous": 19,
+    "current": 20
+  },
+  "rules": {
+    "challengeMiss": "independent uint32 count committed after the deathbomb window; white fixed-scale screen-coordinate HUD text",
+    "rank": "existing per-player penalty divided by active player count; unchanged",
+    "deathFeedback": "particles and PICHUN are produced for a committed death; particle visibility and audio wait for input confirmation; corrections replace attempted events",
+    "particleRandomness": "generated in deterministic simulation, never from confirmation output",
+    "portrait": "native enemy spellcard portrait draw enabled in multiplayer"
+  },
+  "checks": {
+    "sideEffectJournal": "PASS: confirmed output once, corrected-away events, 12-frame false futures, generation reset, nested scopes and BGM regression",
+    "resources": "PASS: native per-player stock functions and rank division for 1/2/3 players",
+    "browser": {
+      "passed": true,
+      "productionObjects": true,
+      "reports": [
+        {
+          "count": 2,
+          "result": "PASS 2P: native speculative Miss revoked, confirmed Miss once, 34 death particles, Rank -1600, 2 independent visible Miss rows, stage 6 portrait sprite 1192"
+        },
+        {
+          "count": 3,
+          "result": "PASS 3P: native speculative Miss revoked, confirmed Miss once, 51 death particles, Rank -1599, 3 independent visible Miss rows, stage 6 portrait sprite 1192"
+        }
+      ]
+    },
+    "sourceContracts": {
+      "normal": "11/11",
+      "multiplayer": "10/10"
+    },
+    "ordinaryTranslationUnits": {
+      "passed": true,
+      "files": [
+        "Player.cpp",
+        "Gui.cpp",
+        "EffectManager.cpp"
+      ],
+      "multiplayerAndNetplayDefines": false
+    },
+    "presentationAndTextureSourceChecks": "PASS",
+    "historicalSourceAssertions": [
+      {
+        "check": "multiplayer-coop-feature-test.py",
+        "baselineResult": "FAIL",
+        "patchedResult": "FAIL",
+        "assertion": "legacy local hash helper name for contribution state",
+        "replacementEvidence": "real game rollback restores challenge Miss and death particles; authoritative contribution hash remains present"
+      },
+      {
+        "check": "netplay-rollback-owner-contract-test.py",
+        "baselineResult": "FAIL",
+        "patchedResult": "FAIL",
+        "assertion": "counts old IsSpeculative music guards",
+        "replacementEvidence": "current BGM reconciliation, ReplayMusicScope and confirmed Miss journal executable tests"
+      }
+    ]
+  },
+  "builds": {
+    "production": {
+      "wasmBytes": 2273785,
+      "sha256": "fe6fe62b463aae70c6ef4fbaea13b0637c00c7380373996fd446d4512cc64130"
+    },
+    "testFixture": {
+      "wasmBytes": 2277836,
+      "sha256": "d8d17f0a69b598d1d4926ecd8274076b3a3b1ac628d5516925b5e7153d2fd058",
+      "source": "ports/th06/tests/multiplayer-miss-feedback-browser.cpp",
+      "exportsOutsideProduction": true
+    }
+  },
+  "visualInspection": {
+    "passed": true,
+    "seats": 3,
+    "missValues": [
+      23,
+      24,
+      25
+    ],
+    "portrait": "native stage 6 Sakuya sprite 1192"
+  }
+}
