@@ -19,7 +19,8 @@ void Scene::capture_multiplayer_hud(int frame){
         add(BankFront,8,frame,0,y-102,0,1,std::nullopt,label,opacity,59,0);
         add(BankFront,10,frame,0,y+24-126,0,1,std::nullopt,label,opacity,59,0);
         add(BankFront,9,frame,0,y+48-150,0,1,std::nullopt,label,opacity,59,0);
-        for(int i=0;i<8;++i){SampleOptions s;s.entity=0x11000000+seat*32+i;s.interrupt=piece(i,std::max(0,r.lives),r.lifeFragments);add(BankFront,13+i,frame,0,y-102,0,1,std::nullopt,s,opacity,59,0);
+        if(options.challenge)text(std::to_string(p.misses),520,y,3);
+        for(int i=0;i<8;++i){SampleOptions s;s.entity=0x11000000+seat*32+i;s.interrupt=piece(i,std::max(0,r.lives),r.lifeFragments);if(!options.challenge)add(BankFront,13+i,frame,0,y-102,0,1,std::nullopt,s,opacity,59,0);
             s.entity+=8;s.interrupt=piece(i,r.bombs,r.bombFragments);add(BankFront,21+i,frame,0,y+24-126,0,1,std::nullopt,s,opacity,59,0);}
         const auto fraction=[](int n){const auto s=std::to_string(n%100);return s.size()<2?"0"+s:s;};
         text(std::to_string(r.power/100)+".",540,y+50,4,1,0xffff8030);text(fraction(r.power),560,y+57,4,1,0xffff8030,.6f);

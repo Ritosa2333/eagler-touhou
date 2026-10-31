@@ -32,7 +32,7 @@ bool Options::valid() const {
 const std::string& snapshot() {
   static std::string buffer;
   std::ostringstream out;
-  out << "{\"version\":1,\"frame\":" << tickNumber << ",\"stage\":" << stageNumber
+  out << "{\"version\":1,\"challenge\":" << options.challenge << ",\"frame\":" << tickNumber << ",\"stage\":" << stageNumber
       << ",\"paused\":" << paused << ",\"menuSelection\":" << menuSelection << ",\"menuConfirm\":" << menuConfirm
       << ",\"menuAction\":" << menuAction << ",\"returnRequested\":" << returnRequested << ",\"saveRequested\":" << saveRequested
       << ",\"menuInputReady\":" << (menuReadySeats!=0)
@@ -106,11 +106,11 @@ void resetPilot(unsigned s, bool carry) {
   p.px = carry?x:int((float(s) - float(options.count - 1) * .5f) * (options.count == 2 ? 48 : 56) * 128);
   if(carry){p.py=y;p.playerFocused=focused;}
   if (carry && ghost) { p.resources.lives = std::max(0, p.resources.lives); p.resources.power = p.resources.maxPower / 2; p.resources.bombs = std::max(2, p.resources.bombs); }
-  if (options.challenge) { p.resources.bombs = 0; p.resources.lives = 2; }
   if (pendingStageEntry) {
     p.resources=pendingStageEntry->resources[s]; p.graze=pendingStageEntry->graze[s]; p.misses=pendingStageEntry->misses[s];
     if(pendingStageEntry->version>=2){p.px=pendingStageEntry->x[s];p.py=pendingStageEntry->y[s];p.playerFocused=pendingStageEntry->focused[s]!=0;}
   }
+  if (options.challenge) p.resources.bombs = p.resources.bombFragments = 0;
   p.playerMotion.updateOptions(loadouts[options.selections[s]], p.resources.power, p.px, p.py, p.playerFocused, true);
   Scope owner(s); initializePlayerAnimation();
 }
@@ -351,6 +351,7 @@ int allPlayerDamage(const Enemy& e,float x,float y,float w,float h) {
 }
 void enemyCollision(Enemy& e) {for(unsigned s=0;s<options.count;++s)if(operable(s)){Scope owner(s);customEnemyCollision(e);}}
 void collectSharedPiece(int type) {
+  if(options.challenge&&type==5){const int before=pilot().resources.rank;pilot().resources.addRank(256);syncRank(before);return;}
   auto& count=type==4?lifeFragments:bombFragments;
   count+=type==4?(count?1:2):2;
   if(count>=5){count=0;for(unsigned s=0;s<options.count;++s){auto& r=pilots[s].resources;if(type==4)r.lives=std::min(8,r.lives+1);else if(!options.challenge)r.bombs=std::min(9,r.bombs+1);}sound_system::queue.play(type==4?18:48,0,false);}
