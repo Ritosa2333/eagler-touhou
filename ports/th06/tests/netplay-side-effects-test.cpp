@@ -48,6 +48,64 @@ int main()
     assert(Netplay::SideEffects::ConsumeCorrectedBgmPlay(path, sizeof(path)));
     assert(std::strcmp(path, "bgm/stage.mid") == 0);
 
-    std::cout << "TH06 rollback BGM reconciliation: PASS\n";
+    using namespace Netplay::SideEffects;
+    assert(!RecordCommittedMiss(0));
+    assert(MissFrameVisible(CurrentMissFrameTag()));
+    MissFrameTag tag;
+    {
+        SimulationFrameScope frame(71, 0, false);
+        MissScope miss;
+        tag = CurrentMissFrameTag();
+        assert(tag.deferred && RecordCommittedMiss(0));
+        assert(!RecordCommittedMiss(3));
+    }
+    assert(!MissFrameVisible(tag));
+    assert(ConsumeConfirmedMisses(71, 0xffffffffu) == 0);
+    assert(ConsumeConfirmedMisses(71, 0) == 1);
+    assert(MissFrameVisible(tag));
+    assert(ConsumeConfirmedMisses(71, 0) == 0);
+
+    // The original prediction commits two deaths. Corrections remove both,
+    // then reintroduce only P2. Neither sound nor particles are presented early.
+    for (unsigned attempt = 0; attempt < 6; ++attempt)
+    {
+        SimulationFrameScope frame(71, 5, attempt != 0);
+        MissScope miss;
+        tag = CurrentMissFrameTag();
+        if (attempt % 2 == 0) { assert(RecordCommittedMiss(0)); assert(RecordCommittedMiss(1)); }
+        assert(!MissFrameVisible(tag));
+    }
+    assert(ConsumeConfirmedMisses(71, 5) == 0);
+    {
+        SimulationFrameScope frame(71, 6, false);
+        MissScope miss;
+        tag = CurrentMissFrameTag();
+        assert(RecordCommittedMiss(1));
+    }
+    assert(ConsumeConfirmedMisses(71, 5) == 0 && !MissFrameVisible(tag));
+    assert(ConsumeConfirmedMisses(71, 6) == 2 && MissFrameVisible(tag));
+    for (unsigned attempt = 0; attempt < 4; ++attempt)
+    {
+        { SimulationFrameScope frame(71, 6, true); assert(RecordCommittedMiss(1)); }
+        assert(ConsumeConfirmedMisses(71, 6) == 0);
+    }
+    for (unsigned frame = 10; frame < 22; ++frame)
+    {
+        { SimulationFrameScope scope(71, frame, false); assert(RecordCommittedMiss(0)); }
+        { SimulationFrameScope scope(71, frame, true); }
+    }
+    assert(ConsumeConfirmedMisses(71, 21) == 0);
+    {
+        SimulationFrameScope frame(72, 0, false);
+        assert(!MissFrameVisible(tag));
+        assert(!CurrentMissFrameTag().deferred);
+        { MissScope a; MissScope b; assert(CurrentMissFrameTag().deferred); }
+        assert(!CurrentMissFrameTag().deferred);
+        assert(RecordCommittedMiss(0) && RecordCommittedMiss(2));
+    }
+    assert(ConsumeConfirmedMisses(71, 100) == 0);
+    assert(ConsumeConfirmedMisses(72, 0) == 5);
+    assert(ConsumeConfirmedMisses(72, 0) == 0);
+    std::cout << "TH06 rollback BGM and confirmed Miss presentation: PASS\n";
     return 0;
 }
