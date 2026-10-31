@@ -1,0 +1,153 @@
+{
+  "schema": "th12-th15-challenge-validation/1",
+  "references": [
+    "ports/th10-mp",
+    "ports/th11-mp"
+  ],
+  "rules": {
+    "bombs": "disabled including native start and Reisen shield setup",
+    "miss": "independent saturating uint32 counter per seat",
+    "deaths": "native death, Power drops and respawn without consuming hidden lives",
+    "life_stock": "retained for Extends and addressed life gifts",
+    "stage": "preserve per-seat stock and Miss",
+    "rollback": "restore Miss with the authoritative session",
+    "replay": "new gameplay contract and stage-entry Miss restore"
+  },
+  "checks": {
+    "th12_native": {
+      "passed": 3,
+      "seats": [
+        2,
+        3
+      ],
+      "loadouts": 6,
+      "consecutive_zero_stock_deaths": 12,
+      "unsigned_stage_counter": 4294967295
+    },
+    "th12_modules": {
+      "passed": 44
+    },
+    "th15_native": {
+      "passed": 17,
+      "seats": [
+        2,
+        3
+      ],
+      "loadouts": 4,
+      "consecutive_zero_stock_deaths": 12,
+      "direct_reisen_shield_blocked": true
+    },
+    "source_contracts": {
+      "th12_multiplayer": "9/9",
+      "th15_multiplayer": "9/9"
+    },
+    "browser_stage_restore": [
+      {
+        "count": 2,
+        "before": [
+          23,
+          0,
+          0,
+          1,
+          0,
+          24,
+          1,
+          0,
+          1,
+          0
+        ],
+        "after": [
+          23,
+          0,
+          0,
+          1,
+          0,
+          24,
+          1,
+          0,
+          1,
+          0
+        ],
+        "frame": 151,
+        "size": 1164,
+        "restored": [
+          23,
+          0,
+          0,
+          1,
+          0,
+          24,
+          1,
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "count": 3,
+        "before": [
+          23,
+          0,
+          0,
+          1,
+          0,
+          24,
+          1,
+          0,
+          1,
+          0,
+          25,
+          2,
+          0,
+          1,
+          0
+        ],
+        "after": [
+          23,
+          0,
+          0,
+          1,
+          0,
+          24,
+          1,
+          0,
+          1,
+          0,
+          25,
+          2,
+          0,
+          1,
+          0
+        ],
+        "frame": 151,
+        "size": 1732,
+        "restored": [
+          23,
+          0,
+          0,
+          1,
+          0,
+          24,
+          1,
+          0,
+          1,
+          0,
+          25,
+          2,
+          0,
+          1,
+          0
+        ]
+      }
+    ]
+  },
+  "browser_builds": {
+    "th12": {
+      "wasm_bytes": 3263741
+    },
+    "th15": {
+      "wasm_bytes": 3598321
+    }
+  },
+  "scope": "multiplayer source only; ordinary source trees unchanged"
+}

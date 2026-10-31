@@ -1,6 +1,6 @@
 # 文档总表
 
-共 404 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 405 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -248,6 +248,7 @@
 | 历史记录 | [archive/th12-sdl-review-20261030/README.md](../archive/th12-sdl-review-20261030/README.md) | th12 SDL 入口审核 ｜ 2026-10-30 |
 | 历史记录 | [archive/th12-sdl-runtime-repair-20261029/README.md](../archive/th12-sdl-runtime-repair-20261029/README.md) | TH12 SDL 多人启动与故障恢复 |
 | 历史记录 | [archive/th12-text-outline-20261028/README.md](../archive/th12-text-outline-20261028/README.md) | TH12 结局与对话文字描边 |
+| 历史记录 | [archive/th12-th15-challenge-20261031/README.md](../archive/th12-th15-challenge-20261031/README.md) | TH12 / TH15 多人挑战模式 |
 | 历史记录 | [archive/th12-web-acceptance-20261022/README.md](../archive/th12-web-acceptance-20261022/README.md) | 星莲船原 Web 前端验收记录 |
 | 历史记录 | [archive/th12-web-adaptation-20261020/README.md](../archive/th12-web-adaptation-20261020/README.md) | th12 旧网页前端接入记录 |
 | 历史记录 | [archive/th12mp-public-20261028/README.md](../archive/th12mp-public-20261028/README.md) | 星莲船正式发布 |

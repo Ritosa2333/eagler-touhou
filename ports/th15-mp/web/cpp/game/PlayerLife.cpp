@@ -9,7 +9,9 @@ bool PlayerLife::hit(){
 }
 bool PlayerLife::commit_death(){
     if(practice&&practice->enabled)practice->input.begin_retry(practice->active?practice->run.mode:0);
-    effects.tracked(28,motion.position);if(!effects.error.empty()){error=effects.error;return false;}if(!practice||!practice->preserve_life(session.extra_lives))session.extra_lives=wrapping_add(session.extra_lives,-1);
+    effects.tracked(28,motion.position);if(!effects.error.empty()){error=effects.error;return false;}
+    if(session.challenge){if(session.challenge_misses!=0xffffffffu)++session.challenge_misses;}
+    else if(!practice||!practice->preserve_life(session.extra_lives))session.extra_lives=wrapping_add(session.extra_lives,-1);
     if(practice&&practice->enabled)++practice->misses;
     if(session.extra_lives>=0&&(!life_hud||!life_hud(session.extra_lives,session.life_pieces))){error="Player life display unavailable";return false;}
     state=2;age.set(0);invulnerability.set(180);if(!visuals.pose(0)){error="Player death animation failed";return false;}

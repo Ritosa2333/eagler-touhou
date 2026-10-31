@@ -21,12 +21,12 @@ test('multiplayer keyboard, mapped gamepad and touch preserve Retry, Enter and m
  assert.equal(multiplayerHeldInput({},0,0x80000|16),0x1010);
 });
 
-test('replays using the former pause/retry rules require their original runtime',()=>{
+test('replays using the former pause/retry or partial challenge rules require their original runtime',()=>{
  const bytes=new Uint8Array(200),view=new DataView(bytes.buffer),u32=(offset,value)=>view.setUint32(offset,value,true);
  bytes.set(new TextEncoder().encode('EAGLRPY1'));bytes[20]=2;
- for(const [offset,value] of [[8,1],[12,12],[24,128],[28,1],[32,1],[40,0x4d323154],[44,1],[48,7],[80,6],[84,2],[136,1],[168,1]])u32(offset,value);
+ for(const [offset,value] of [[8,1],[12,12],[24,128],[28,1],[32,1],[40,0x4d323154],[44,1],[48,8],[80,6],[84,2],[136,1],[168,1]])u32(offset,value);
  assert.equal(inspectMultiplayerReplay(bytes,{validate:()=>true}).playerCount,2);
- u32(48,6);assert.throws(()=>inspectMultiplayerReplay(bytes,{validate:()=>true}),/录像版本/);
+ for(const version of [6,7]){u32(48,version);assert.throws(()=>inspectMultiplayerReplay(bytes,{validate:()=>true}),/录像版本/);}
 });
 
 function harness(world){

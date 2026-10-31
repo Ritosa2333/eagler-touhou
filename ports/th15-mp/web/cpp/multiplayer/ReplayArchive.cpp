@@ -37,7 +37,7 @@ bool ReplayArchive::CompatibleBuild(const std::array<std::uint32_t,4>& build)con
     // Baseline: b8040505, CI run 40085809634, th15 multiplayer release.
     // The named source build and explicit target version keep admission bounded.
     constexpr std::array<std::uint32_t,4> stage_flow_baseline{0x69cf52f0,0x644bdac4,0x784d5168,0xcab6de55};
-    return SessionSetup::GameplayVersion==23&&setup_.build==stage_flow_baseline;
+    return SessionSetup::GameplayVersion==24&&setup_.build==stage_flow_baseline;
 }
 bool ReplayArchive::Begin(const SessionSetup& setup,std::uint64_t timestamp){
     if(!setup.valid())return false;ReplayArchive next;next.setup_=setup;next.timestamp_=timestamp;

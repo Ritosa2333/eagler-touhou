@@ -10,7 +10,8 @@ struct StageEntry {
   bool continuation = false;
   std::array<int,4> nativeGlobals{};
   std::array<item_system::ResourceState, 3> resources{};
-  std::array<int, 3> graze{}, misses{};
+  std::array<int, 3> graze{};
+  std::array<uint32_t, 3> misses{};
   std::array<int, 3> x{},y{{51200,51200,51200}},focused{};
   ufo_system::Inventory inventory{};
 };

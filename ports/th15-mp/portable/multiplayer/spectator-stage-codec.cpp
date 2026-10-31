@@ -11,11 +11,11 @@ int main(){
    ItemScoreState score;score.point_value=1000000;EnemyWorldState enemies;PlayerMotion motion;
    motion.position_fixed={i32(i)*4096,51200};std::string music="stage.wav";
    ReplayRunState native{progress,player,score,enemies,motion,music};ReplayStageSnapshot header;
-   Rng seed{417,0,0};assert(header.create(native,seed)&&header.refresh(native));state.headers[i]=header.bytes();
+   Rng seed{417,0,0};assert(header.create(native,seed)&&header.refresh(native));state.headers[i]=header.bytes();state.challenge_misses[i]=123+i;
   }
   std::vector<u8> bytes;assert(EncodeSpectatorStageState(state,bytes));
-  assert(bytes.size()==16+count*0x238&&bytes.size()<=Netplay::SpectatorStageMaxStateBytes);
-  SpectatorStageState output;assert(DecodeSpectatorStageState(bytes,output));assert(output.headers==state.headers);
+  assert(bytes.size()==28+count*0x238&&bytes.size()<=Netplay::SpectatorStageMaxStateBytes);
+  SpectatorStageState output;assert(DecodeSpectatorStageState(bytes,output));assert(output.headers==state.headers&&output.challenge_misses==state.challenge_misses);
   for(std::size_t n=0;n<bytes.size();++n){auto shortData=std::vector<u8>(bytes.begin(),bytes.begin()+n);
    output.frame=123;assert(!DecodeSpectatorStageState(shortData,output)&&output.frame==123);
   }

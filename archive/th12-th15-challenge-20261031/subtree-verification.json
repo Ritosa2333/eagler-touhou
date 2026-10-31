@@ -1,0 +1,20 @@
+[
+  {
+    "game": "th12",
+    "split": "4f45d5d95c211e9ecb2e25f2d93a414df12f711c",
+    "upstream": "c322e8ad7a3fa1276dd6dc377c0b5184d4f834bd",
+    "upstreamAncestor": true,
+    "sourceTree": "cb15ca5eb0ddf551a2f1be2a74e366466e196353",
+    "exportTree": "cb15ca5eb0ddf551a2f1be2a74e366466e196353",
+    "treeMatches": true
+  },
+  {
+    "game": "th15",
+    "split": "efd3c141508c3509e1705c2ee83f66a26fc254f3",
+    "upstream": "a5cc4652d59d55f2559622da28e21cbbf52b75d3",
+    "upstreamAncestor": true,
+    "sourceTree": "01ea0822158664fa49ac753c15aebf684f206162",
+    "exportTree": "01ea0822158664fa49ac753c15aebf684f206162",
+    "treeMatches": true
+  }
+]

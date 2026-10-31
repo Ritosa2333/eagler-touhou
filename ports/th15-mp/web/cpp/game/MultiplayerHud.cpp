@@ -83,6 +83,7 @@ bool MultiplayerHud::prepare(AnmRenderer& renderer){
                 if(!battle.animations.interrupt(icons[i],label,true))return fail(battle.animations.error);
             }
         }
+        if(stock.challenge)for(auto id:lives[seat])if(auto* vm=battle.animations.registry.find(id))hidden.push_back(vm);
         displayed[seat]=next;
     }
     return true;
@@ -93,6 +94,7 @@ bool MultiplayerHud::queue_text(HudDrawServices& sink){
     for(unsigned seat=0;seat<battle.mp_options.seat_count;++seat){const auto& p=*battle.pilots[seat];const auto& stock=p.session;const float dy=top(seat)-96;
         style={};style.font=1;style.color=seat==battle.mp_options.local_seat?0xffffff80:0xffffffff;
         if(!put(battle.mp_options.seat_count==3?488.f:436.f,(battle.mp_options.seat_count==3?96.f:84.f)+dy,format("%uP",seat+1)))return false;
+        if(stock.challenge){style={};style.font=3;if(!put(520,104+dy,format("%u",stock.challenge_misses)))return false;}
         const i32 tier=seat?p.owned_life_piece_tier:battle.score.life_piece_tier,threshold=battle.score.difficulty==4?(tier<5?5:99999999):3;
         // Match GameHudDraw's native fragment and split Power typography.
         style={};style.font=4;style.scale={.6f,.6f};
