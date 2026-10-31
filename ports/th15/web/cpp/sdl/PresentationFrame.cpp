@@ -47,7 +47,7 @@ void PresentationFrame::clear(const touhou::sdl::State& state,u32 flags,u32 valu
  if(!recording)return;auto& c=next();c.state=state;c.clear=true;c.flags=flags;c.color=value;if(rect)c.rect.assign(rect,rect+4);
 }
 bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool frozen,bool background_interpolation){
- if(!ready||!std::isfinite(alpha)||alpha<0||alpha>1)return false;
+ if(!ready||!std::isfinite(alpha)||alpha<0||alpha>2)return false;
  if(negative_control)alpha=1;
  using namespace touhou::graphics;
  const auto saved=renderer.state;renderer.flush();sampled=0;last_alpha=alpha;

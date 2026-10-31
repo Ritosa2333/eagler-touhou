@@ -11,6 +11,8 @@ $('game').textContent=config.game.toUpperCase();
 $('heading').textContent=config.title||'帧间显微镜';
 $('dataLabel').firstChild.textContent=config.dataLabel||`选择自己的 ${config.game}.dat`;
 $('build').textContent=`WASM ${String(identity.wasm||'unknown').slice(0,16)}…`;
+const mode=()=>$('motionMode').value;
+const weight=phase=>mode()==='extrapolation'?1+phase:mode()==='current'?1:phase;
 const status=text=>{$('status').textContent=text;};
 const fail=error=>{console.error(error);status(String(error?.message||error));$('health').className='error';$('health').textContent=String(error?.message||error);};
 async function action(work){if(busy)return;busy=true;try{return await work();}catch(error){fail(error);}finally{busy=false;}}
@@ -51,6 +53,7 @@ window.addEventListener('message',async event=>{
     await config.configure(runtime);
     if(bootPending.replayBytes)await config.installReplay(runtime,bootPending.replayBytes);
     await runtime.launch();controller=config.createController(runtime,{...identity,runtimeEpoch:epoch});
+    if(!controller.capabilities.features.extrapolation){$('motionMode').querySelector('[value=extrapolation]').disabled=true;$('motionMode').value='interpolation';}
     setEnabled(true);status('已启动。可继续游玩，或冻结检查当前帧间窗口。');bootPending.resolve(controller);
   }catch(error){bootPending.reject(error);}
 });
@@ -68,22 +71,23 @@ function render(value){
   for(const object of (value.objects||[]).slice(0,250)){
     const row=document.createElement('tr'),name=document.createElement('td'),state=document.createElement('td'),fields=document.createElement('td');
     name.textContent=`${object.owner||object.ownerId} · ${object.object??object.key}`;state.textContent=object.status||'static';
-    fields.textContent=(object.fields||[]).filter(field=>field.status!=='static'&&field.status!=='interpolated').map(field=>`${field.label||field.id}: ${field.status}`).join('、')||'—';
+    fields.textContent=(object.fields||[]).filter(field=>field.status!=='static'&&field.status!=='interpolated'&&field.status!=='extrapolated').map(field=>`${field.label||field.id}: ${field.status}`).join('、')||'—';
     row.append(name,state,fields);row.onclick=()=>{$('detail').textContent=(object.fields||[]).map(field=>`${field.label||field.id} / ${field.status}\n前: ${valueText(field.previous)}\n后: ${valueText(field.current)}`).join('\n\n')||JSON.stringify(object.lifecycle||{},null,2);};body.append(row);
   }
   $('coverage').textContent=JSON.stringify(value.coverage||{},null,2);$('alpha').disabled=false;$('export').disabled=false;
 }
 
-async function inspect(){const value=checked().sweep();render(value);status(`已采样 ${value.objects?.length||0} 个绘制对象。`);return value;}
-async function markIncident(){const value=checked().mark();render(value);const response=await fetch('/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(checked().observer.compact(value))});if(!response.ok)throw Error('F8 报告保存失败：'+await response.text());status('F8 已锁定并保存当前事件证据。');return value;}
+async function inspect(){const value=checked().sweep({mode:mode()});render(value);status(`已采样 ${value.objects?.length||0} 个绘制对象。`);return value;}
+async function markIncident(){const value=checked().mark({mode:mode()});render(value);const response=await fetch('/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(checked().observer.compact(value))});if(!response.ok)throw Error('F8 报告保存失败：'+await response.text());status('F8 已锁定并保存当前事件证据。');return value;}
 
 $('boot').onclick=()=>void action(boot);
 $('play').onclick=()=>{try{checked().play();$('runtime').contentWindow.document.querySelector('canvas')?.focus();status('正在正常游玩。');}catch(error){fail(error);}};
 $('inspect').onclick=()=>void action(inspect);
 for(const [id,count] of [['step',1],['step10',10]])$(id).onclick=()=>void action(async()=>{checked().step(count);return inspect();});
-$('alpha').oninput=()=>{try{const alpha=Number($('alpha').value);$('alphaValue').textContent=alpha.toFixed(2);checked().preview(alpha);}catch(error){fail(error);}};
-$('scan').onclick=()=>void action(async()=>{status('正在进行有界扫描…');const scan=await checked().scan({onWindow:render});window.presentationLab.lastScan=scan;status(`完成 ${scan.windows} 个采样窗口。`);return scan;});
-$('frames').onclick=()=>void action(async()=>{const value=checked().sweep({images:true,label:'manual-mark'});render(value);download(checked().observer.compact(value),`${config.game}-presentation-${value.tick}.json`);});
+$('alpha').oninput=()=>{try{const phase=Number($('alpha').value),alpha=weight(phase);$('alphaValue').textContent=`${phase.toFixed(2)} · 权重 ${alpha.toFixed(2)}`;checked().preview(alpha);}catch(error){fail(error);}};
+$('motionMode').onchange=()=>void action(async()=>{await inspect();$('alpha').oninput();});
+$('scan').onclick=()=>void action(async()=>{status('正在进行有界扫描…');const scan=await checked().scan({mode:mode(),onWindow:render});window.presentationLab.lastScan=scan;status(`完成 ${scan.windows} 个采样窗口。`);return scan;});
+$('frames').onclick=()=>void action(async()=>{const value=checked().sweep({images:true,label:'manual-mark',mode:mode()});render(value);download(checked().observer.compact(value),`${config.game}-presentation-${value.tick}.json`);});
 $('export').onclick=()=>download(checked().export(),`${config.game}-presentation-session.json`);
 $('data').onchange=async()=>{const file=$('data').files?.[0];if(!file)return;if(file.size>128*1024*1024)throw Error('DATA 文件过大');dataBuffer=await file.arrayBuffer();status(`已选择 ${file.name}。`);};
 $('replay').onchange=()=>void action(async()=>{const file=$('replay').files?.[0];if(!file)return;if(!config.installReplay)throw Error('该作品尚未接入 Replay 导入');if(file.size>16*1024*1024)throw Error('Replay 文件过大');return boot({replayBytes:Array.from(new Uint8Array(await file.arrayBuffer()))});});

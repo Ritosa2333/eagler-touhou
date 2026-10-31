@@ -21,7 +21,7 @@ const app=read('web/cpp/sdl/Application.cpp');
 assert(app.includes('touhou::sdl::PresentationCadence presentation'));
 assert(app.includes('touhou::sdl::PresentationGate presentation_gate'));
 assert(app.includes('presentation_gate.advance(high,ticks!=0)'),'presentation gate must require a real tick');
-assert(app.includes('presentation_draw(cadence.interpolation_alpha()'),'display frames must draw with the residual alpha');
+assert(app.includes('presentation_draw(eagler::presentation::ExtrapolationWeight(cadence.interpolation_alpha())'),'display frames must predict forward from the latest completed tick');
 assert(app.includes('limitPresentationTo60'),'60 Hz presentation kill switch missing');
 assert(app.includes('bool interpolation_ready()'),'screen/freeze whitelist missing');
 assert(app.includes('presentation_fps')&&app.includes('frame_statistics.label(shown)'),'the readout must follow presented frames, not logic ticks');

@@ -155,8 +155,16 @@ function translatePose(p,offset){
 // Previous/current are explicit caller-owned endpoints, not implicit render
 // history. Repeating this function at one logical tick cannot advance them.
 export function interpolatePresentation(previous,current,alpha=1){
+  return samplePresentation(previous,current,clampAlpha(alpha));
+}
+
+export function extrapolatePresentation(previous,current,phase=0){
+  const weight=Number.isFinite(phase)?1+Math.max(0,Math.min(1,phase)):1;
+  return samplePresentation(previous,current,weight);
+}
+
+function samplePresentation(previous,current,alpha){
   if(!current)throw Error('缺少当前展示端点');
-  alpha=clampAlpha(alpha);
   if(alpha===1||!previous||previous===current||
     previous.epoch!==current.epoch||previous.stage!==current.stage||
     current.frame!==previous.frame+1)return current;
@@ -221,14 +229,14 @@ function nativeScalars(p,old,node,oldNode,alpha){
   if(!p.a||!old.a||!sameNode(oldNode,node))return p;
   const mask=node.mask|oldNode.mask;if(!(mask&62))return p;
   let a=null;
-  const fields=(keys,wrap=0)=>{for(const key of keys){const x=old.a[key],y=p.a[key];if(!Number.isFinite(x)||!Number.isFinite(y))continue;let delta=y-x;if(wrap)delta=((delta+wrap/2)%wrap+wrap)%wrap-wrap/2;const value=x+delta*alpha;if(value===y)continue;a??={...p.a};a[key]=value;}};
+  const fields=(keys,wrap=0,bounded=false)=>{for(const key of keys){const x=old.a[key],y=p.a[key];if(!Number.isFinite(x)||!Number.isFinite(y))continue;let delta=y-x;if(wrap)delta=((delta+wrap/2)%wrap+wrap)%wrap-wrap/2;let value=x+delta*alpha;if(bounded)value=Math.max(0,Math.min(1,value));if(value===y)continue;a??={...p.a};a[key]=value;}};
   if(mask&2)fields(['rx','ry','rotation'],Math.PI*2);
   if(mask&4)fields(['sx','sy']);
   if(mask&8)fields(['u','v'],1);
   if(mask&32)fields(['uvScaleX','uvScaleY']);
-  if(mask&16){fields(['r','g','b','alpha','r2','g2','b2','alpha2']);
+  if(mask&16){fields(['r','g','b','alpha','r2','g2','b2','alpha2'],0,true);
     if(Array.isArray(old.a.primaryColor)&&Array.isArray(p.a.primaryColor)&&old.a.primaryColor.some((v,i)=>v!==p.a.primaryColor[i])){
-      a??={...p.a};a.primaryColor=p.a.primaryColor.map((v,i)=>lerp(old.a.primaryColor[i],v,alpha));}}
+      a??={...p.a};a.primaryColor=p.a.primaryColor.map((v,i)=>Math.max(0,Math.min(1,lerp(old.a.primaryColor[i],v,alpha))));}}
   return a?copyMeshPose(p,{a}):p;
 }
 function nativePlan(previous,current){

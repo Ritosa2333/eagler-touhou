@@ -415,7 +415,7 @@ const entries = [
   ["settings.externalMidiConnected", "已连接 {count} 个 MIDI 输出设备，可在下方选择。", "Connected to {count} MIDI output device(s); choose one below."],
   ["settings.externalMidiDenied", "MIDI 权限被拒绝，本次仍使用内置合成器。", "MIDI permission was denied; the built-in synthesizer is still used."],
   ["settings.externalMidiFailed", "无法启用外部 MIDI 设备：{reason}", "Could not enable the external MIDI device: {reason}"],
-  ["settings.frameLimitHint", "允许在逻辑保持 60 Hz 的情况下，显示被插帧到 > 60 Hz 的游戏画面。(会造成 16.67ms 左右的输入延迟)", "Allows interpolated game visuals above 60 Hz while game logic stays at 60 Hz. (Adds about 16.67 ms of input latency)"],
+  ["settings.frameLimitHint", "允许在逻辑保持 60 Hz 的情况下，通过最多一帧的画面外推显示高刷画面，不再额外等待上一逻辑帧。", "Allows high-refresh visuals with up to one frame of visual extrapolation while game logic stays at 60 Hz, without waiting an extra logic frame."],
   ["settings.appleNotice", "(苹果用户注意)", "(Apple users: please read)"],
   ["settings.localPlayerVisibility", "增强本机玩家可见性", "Enhance local player visibility"],
   ["settings.localPlayerVisibilityHint", "在游戏区域中使用白色定位线标出本机玩家。", "Show the local player with a white guide line in the game area."],

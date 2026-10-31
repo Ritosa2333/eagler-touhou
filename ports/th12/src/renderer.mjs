@@ -9,7 +9,7 @@ import {stageClearText,stageTransitionPose} from './stage-clear-presentation.mjs
 import {readCoreDrawSchedule,orderPresentation,animationLayerPriority} from './draw-scheduler.mjs';
 import {localizedHex,localizedFontFamily} from './localization/loader.mjs';
 import {thcrapLayout} from './localization/layout.mjs';
-import {capturePresentationOwners,interpolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
+import {capturePresentationOwners,interpolatePresentation,extrapolatePresentation,readCorePresentationMotion} from './presentation-interpolation.mjs';
 import {VertexBatch} from './vertex-batch.mjs';
 import {copyMeshPose,meshVertexCount,meshCoordinate,translateMesh} from './mesh-vertices.mjs';
 export function readCoreHud(core,{highScore=0,scoreLowDigit=0}={}){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10+scoreLowDigit;if(size>40)exact[40]=Math.max(exact[3],Number.isSafeInteger(highScore)&&highScore>=0?highScore:0);return exact;}
@@ -527,7 +527,7 @@ export class Renderer {
     return this.renderPresentation(null,this.capturePresentation(core,{...fps,presentationContinuity:false}),1);
   }
   renderPresentation(previous,current,interpolationAlpha=1,live={}){
-    const endpoint=interpolatePresentation(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
+    const endpoint=(live.extrapolate?extrapolatePresentation:interpolatePresentation)(previous,current,interpolationAlpha),{hud:h,backgroundVisible,screenShake,hasStageSurface}=endpoint,
       source=this.stageBackgrounds.get(endpoint.stage),background=source&&endpoint.logicalBackground!==current.logicalBackground&&endpoint.logicalBackground?.loaded
         ?source.geometry(endpoint.logicalBackground.frame,endpoint.logicalBackground):endpoint.background;
     this.begin();const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);

@@ -38,3 +38,19 @@ test('sweep samples stable alpha endpoints without advancing simulation',()=>{
   const {controller,counts}=fixture();const report=controller.sweep({images:true});
   assert.equal(counts().ticks,0);assert.equal(counts().draws,8);assert.equal(report.images.length,5);
 });
+
+
+test('extrapolation sweep sends forward weights and never advances a tick',()=>{
+  const {controller,counts}=fixture(),weights=[];
+  controller.capabilities.features.extrapolation=true;
+  controller.driver.drawOnly=({alpha})=>{weights.push(alpha);return {status:'drawn'};};
+  const report=controller.sweep({mode:'extrapolation'});
+  assert.deepEqual(weights,[1,1.25,1.5,1.75,2,1.5,1.5,2]);
+  assert.equal(report.mode,'extrapolation');assert.equal(counts().ticks,0);
+  assert.throws(()=>controller.preview(2.01),/alpha/);
+});
+test('runtime must explicitly support forward weights',()=>{
+  const {controller}=fixture();
+  assert.throws(()=>controller.sweep({mode:'extrapolation'}),/does not support/);
+  assert.throws(()=>controller.preview(1.5),/alpha/);
+});

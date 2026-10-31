@@ -64,7 +64,7 @@ for(const method of ['IntervalScale','FrameLead']){
 }
 assert.doesNotMatch(networkExports,/\.(?:SimulationIntervalScale|EstimatedLead)\(/);
 assert.match(host,/sdl_defer\(1\)/);
-assert.match(host,/frame_alpha=interpolate\?float\(cadence\.interpolation_alpha\(\)\):1\.0f/);
+assert.match(host,/frame_alpha=interpolate\?eagler::presentation::ExtrapolationWeight\(cadence\.interpolation_alpha\(\)\):1\.0f/);
 assert.match(host,/application->presentation_draw\(frame_alpha,interpolate,!frozen\)/);
 assert.match(host,/session_flags&0x74/);
 assert.match(host,/screen==1\|\|screen==4\|\|screen==7\|\|screen==14/);

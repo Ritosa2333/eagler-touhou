@@ -62,7 +62,7 @@ export class Th11RuntimeDriver{
     if(!this.core?.memory?.buffer)throw Error('Wrong TH11 runtime');
     for(const name of TH11_PRESENTATION_LAB_EXPORTS)if(typeof this.core[name]!=='function')throw Error('Wrong TH11 diagnostic runtime: missing '+name);
   }
-  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th11',adapterVersion:'th11-presentation-lab/1',nativeAbi:TH11_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
+  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th11',adapterVersion:'th11-presentation-lab/1',nativeAbi:TH11_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,extrapolation:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
   phase(){return this.core.th11_phase();}
   sessionFrame(){return this.core.th11_frame();}
   freeze(){if(this.token)return this.token;const result=this.core.presentation_lab_freeze();if(result)throw Error('TH11 diagnostic freeze failed: '+result);this.token=Object.freeze({sessionEpoch:this.identity.runtimeEpoch??this.identity.wasm??'th11',generation:++this.generation});return this.token;}

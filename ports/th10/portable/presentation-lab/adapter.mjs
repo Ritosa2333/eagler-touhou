@@ -45,7 +45,7 @@ function markLifecycle(previous,current){
 
 export class Th10RuntimeDriver{
   constructor(runtime,identity){this.runtime=runtime;this.core=runtime.core;this.identity=identity;this.generation=0;this.token=null;if(!this.core?.memory?.buffer)throw Error('Wrong TH10 runtime');for(const name of TH10_PRESENTATION_LAB_EXPORTS)if(typeof this.core[name]!=='function')throw Error('Wrong TH10 diagnostic runtime: missing '+name);}
-  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th10',adapterVersion:'th10-presentation-lab/1',nativeAbi:TH10_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
+  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th10',adapterVersion:'th10-presentation-lab/1',nativeAbi:TH10_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,extrapolation:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
   freeze(){if(this.token)return this.token;const result=this.core.presentation_lab_freeze(this.runtime.app);if(result)throw Error('TH10 diagnostic freeze failed: '+result);this.token=Object.freeze({sessionEpoch:this.identity.runtimeEpoch??this.identity.wasm??'th10',generation:++this.generation});return this.token;}
   resume(token){if(token!==this.token)throw Error('Stale Presentation Lab freeze token');const result=this.core.presentation_lab_resume(this.runtime.app);if(result)throw Error('TH10 diagnostic resume failed: '+result);this.token=null;}
   advanceOneTick(){const result=this.core.presentation_lab_tick(this.runtime.app);return result?{status:TICK_STATUS.FINISHED,advancedTicks:0,detail:String(result)}:{status:TICK_STATUS.ADVANCED,advancedTicks:1};}

@@ -1,4 +1,5 @@
 #include "AnmManager.hpp"
+#include "AnmPresentation.hpp"
 #include <cstring>
 #include <cstdlib>
 namespace th11 {
@@ -45,12 +46,14 @@ AnmVm* AnmManager::create(AnmResource& file,i32 script,u16 file_id,u32 layer,boo
     else{vm->position=vm->script_position=vm->child_position={};vm->flags|=0x40000000;
     vm->rectangle_columns=vm->rectangle_rows=16;vm->script_index=i16(script);vm->file_index=file_id;vm->resource=&file;
     vm->script_begin=vm->instruction=reinterpret_cast<AnmInstruction*>(file.scripts[script].bytes.data());vm->flags&=~0x601u;vm->timer.set(0,&rate);}
+    presentation::note_spawn(*vm);
     ++spawn_depth;const int status=vm->update(*this);--spawn_depth;
     if(status<0){last_error=u32(u16(vm->instruction?vm->instruction->opcode:-1));destroy(*vm);return nullptr;}
     auto& node=vm->registry;node.value=vm;node.next=node.previous=nullptr;const u32 list=overlay?1:0;
     if(prepend){node.next=heads[list];if(heads[list])heads[list]->previous=&node;else tails[list]=&node;heads[list]=&node;}
     else{node.previous=tails[list];if(tails[list])tails[list]->next=&node;else heads[list]=&node;tails[list]=&node;}
     if(++next_id==0)++next_id;vm->id=next_id;active.emplace(next_id,vm);
+    presentation::note_spawn(*vm);
 #ifdef TH11_MULTIPLAYER
     rollback_registry_snapshot_.reset();
 #endif

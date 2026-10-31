@@ -71,3 +71,23 @@ test('uncertain lifecycle identity never receives an interpolation verdict',()=>
   const report=analyzeNormalizedWindow({previous,current,samples,stateBefore:evidence(),statesAfter:samples.map(()=>evidence())});
   assert.equal(report.objects[0].status,'identity-uncertain');
 });
+
+
+test('forward evidence is compared against current plus velocity, not past-frame interpolation',()=>{
+  const previous=frame(10,0),current=frame(11,10);
+  const samples=[1,1.25,1.5,1.75,2,1.5,1.5].map(alpha=>({...frame(11,10*alpha),alpha}));
+  const input={previous,current,samples,mode:'extrapolation',stateBefore:evidence(),statesAfter:samples.map(()=>evidence())};
+  const report=analyzeNormalizedWindow(input);
+  assert.equal(report.valid,true);assert.equal(report.mode,'extrapolation');
+  assert.equal(report.objects[0].status,'extrapolated');assert.equal(report.purityStatus,'pass');
+  samples[5]={...frame(11,17),alpha:1.5};
+  assert.equal(analyzeNormalizedWindow(input).objects[0].status,'non-idempotent');
+});
+
+
+test('current-frame comparison treats the deliberate hold as a reference, not a smoothing fault',()=>{
+ const previous=frame(10,0),current=frame(11,10);
+ const samples=[1,1,1,1].map(alpha=>({...frame(11,10),alpha}));
+ const report=analyzeNormalizedWindow({previous,current,samples,mode:'current',stateBefore:evidence(),statesAfter:samples.map(()=>evidence())});
+ assert.equal(report.valid,true);assert.equal(report.issueGroups.length,0);
+});

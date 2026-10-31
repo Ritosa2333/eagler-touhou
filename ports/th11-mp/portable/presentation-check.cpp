@@ -14,6 +14,13 @@ void setup(AnmVm& vm){
 }
 }
 int main(){
+    presentation::reset();AnmVm spawned;setup(spawned);
+    presentation::begin_tick();presentation::note_spawn(spawned);presentation::capture(spawned);
+    spawned.position={30,40,0};spawned.timer.current++;
+    high_refresh::begin(1.5f,true,true,true);AnmVm spawn_copy=spawned;Vec3 attached_spawn{};
+    assert(!presentation::present(spawn_copy,spawned));
+    assert(!presentation::present_position(spawned,attached_spawn));
+
     presentation::reset();
     AnmVm vm;setup(vm);
     presentation::begin_tick();
@@ -36,6 +43,17 @@ int main(){
     assert(std::fabs(before.position.x-10.f)<1e-4f);
     high_refresh::begin(1.f,true,true,true);AnmVm current=vm;assert(presentation::present(current,vm));
     assert(std::fabs(current.position.x-14.f)<1e-4f);
+    // Forward display samples start at current and predict at most one tick.
+    high_refresh::begin(1.5f,true,true,true);AnmVm predicted=vm;
+    assert(presentation::present(predicted,vm));
+    assert(std::fabs(predicted.position.x-16.f)<1e-4f);
+    assert(vm.position.x==14.f);
+    Vec3 attached{};assert(presentation::present_position(vm,attached));
+    assert(std::fabs(attached.x-16.f)<1e-4f);
+    high_refresh::begin(2.f,true,true,true);AnmVm horizon=vm;
+    assert(presentation::present(horizon,vm));assert(std::fabs(horizon.position.x-18.f)<1e-4f);
+    high_refresh::begin(1.5f,true,true,false);AnmVm frozen=vm;
+    assert(presentation::present(frozen,vm));assert(frozen.position.x==vm.position.x);
     // A teleport beyond the 128 px gate snaps.
     high_refresh::begin(.5f,true,true,true);AnmVm jumped=vm;jumped.position={400,400,0};AnmVm jumped_copy=jumped;
     presentation::present(jumped_copy,jumped); // teleport must not blend from 14

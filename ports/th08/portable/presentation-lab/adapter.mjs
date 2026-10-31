@@ -10,7 +10,7 @@ function validateCore(core){
 
 export class Th08RuntimeDriver{
   constructor(runtime,identity){this.runtime=runtime;this.core=runtime.core;this.identity=identity;this.generation=0;this.token=null;validateCore(this.core);}
-  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th08',adapterVersion:'th08-presentation-lab/1',nativeAbi:TH08_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
+  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th08',adapterVersion:'th08-presentation-lab/1',nativeAbi:TH08_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,extrapolation:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
   freeze(){
     if(this.token)return this.token;
     this.core.sdl_loop_stop();

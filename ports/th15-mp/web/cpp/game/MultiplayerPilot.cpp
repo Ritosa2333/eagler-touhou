@@ -22,7 +22,9 @@ bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
         if(!rebuild_bomb())return false;
         owned_collection=std::make_unique<ItemCollection>(session,score,player->motion,*this,character,&owned_life_piece_tier);collection=owned_collection.get();
     }else{player=world.player.get();bomb=world.bomb.get();collection=world.collection.get();}
+    session.challenge=world.mp_options.challenge&&!world.mp_options.replay_legacy_stage_flow;
     player->life.base_bombs=world.mp_options.challenge?0:2;session.bombs=player->life.base_bombs;
+    if(session.challenge)session.bomb_pieces=0;
     const float x=(float(seat)-float(world.mp_options.seat_count-1)*.5f)*48.f;
     player->motion.position={x,400,0};player->motion.position_fixed={i32(x*128),51200};player->motion.snap_options();
     return true;

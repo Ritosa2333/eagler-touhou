@@ -1,3 +1,4 @@
+#include <eagler/presentation/Extrapolation.hpp>
 #include "GameWindow.hpp"
 
 #include <SDL3/SDL.h>
@@ -439,7 +440,7 @@ RenderResult GameWindow::Render()
     }
 #endif
 
-    g_RenderAlpha = std::clamp((f32)(this->accumulator / targetDt), 0.0f, 1.0f);
+    g_RenderAlpha = eagler::presentation::ExtrapolationWeight(this->accumulator / targetDt);
 #ifdef __EMSCRIPTEN__
     // A 60 Hz presentation cap draws only on simulation ticks, so there is no
     // intermediate frame to interpolate. Using the residual accumulator alpha
@@ -495,7 +496,7 @@ RenderResult GameWindow::Render()
     if (g_AnmManager)
     {
         g_AnmManager->offset =
-            g_AnmManager->prevShakeOffset.Lerp(g_AnmManager->shakeOffset, g_RenderAlpha);
+            g_AnmManager->prevShakeOffset.Lerp(g_AnmManager->shakeOffset, std::min(g_RenderAlpha, 1.f));
     }
     g_Chain.RunDrawChain();
     g_SuppressAnmAdvance = false;

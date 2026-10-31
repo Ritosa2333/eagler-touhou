@@ -179,6 +179,8 @@ MP 在完整原生事务之间生成高刷画面，独立 SimulationCadence 保�
 
 ## 运行验收记录
 
+2026-10-28 multiplayer：高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。
+
 2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。
 
 2026-10-19 multiplayer：修复符卡结算显示 `999.99s`，改用同步逻辑帧并沿用原有时间编码；测试与发布身份见[符卡计时记录](../../docs/adaptation/th11-spell-time-20261019.md)。

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "ScreenEffect.hpp"
 #include "AnmManager.hpp"
 #include "ChainPriorities.hpp"
@@ -220,8 +221,8 @@ ChainCallbackResult ScreenEffect::DrawFadeIn(ScreenEffect *effect)
     g_Supervisor.viewport.height = GAME_WINDOW_HEIGHT;
     g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
     g_Supervisor.viewport.Set();
-    const i32 drawAlpha = static_cast<i32>(
-        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha);
+    const i32 drawAlpha = static_cast<i32>(std::clamp(
+        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha, 0.f, 255.f));
     ScreenEffect::DrawSquare(&fadeRect, (drawAlpha << 24) | effect->genericParam);
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
@@ -234,8 +235,8 @@ ChainCallbackResult ScreenEffect::DrawFadeOut(ScreenEffect *effect)
     fadeRect.top = 16.0f;
     fadeRect.right = 416.0f;
     fadeRect.bottom = 464.0f;
-    const i32 drawAlpha = static_cast<i32>(
-        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha);
+    const i32 drawAlpha = static_cast<i32>(std::clamp(
+        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha, 0.f, 255.f));
     ScreenEffect::DrawSquare(&fadeRect, (drawAlpha << 24) | effect->genericParam);
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }

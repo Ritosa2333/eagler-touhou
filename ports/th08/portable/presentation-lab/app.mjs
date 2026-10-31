@@ -1,3 +1,5 @@
+const motionMode=()=>document.getElementById('motionMode').value;
+const displayWeight=phase=>motionMode()==='extrapolation'?1+phase:motionMode()==='current'?1:phase;
 import {LabController} from './controller.mjs';
 import {OWNERS,STATUS,compactReport,keyOf} from './analyzer.mjs';
 import {SOURCE_PATHS} from './owners.mjs';
@@ -132,18 +134,19 @@ function drawBoxes(){
 }
 function download(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function checked(){if(!controller||readOnly)throw Error('请先启动隔离 Runtime');return controller;}
-async function inspect(){const value=checked().sweep({negativeControl:$('negative').checked});renderReport(value);status(`已采样 ${value.objects.length} 个绘制对象。`);return value;}
-async function markIncident(){const value=checked().mark();renderReport(value);const response=await fetch('/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(compactReport(value))});if(!response.ok)throw Error('F8 报告保存失败：'+await response.text());const saved=await response.json();status(`F8 已锁定：保存了异常前约 ${(value.timing.durationMs/1000).toFixed(1)} 秒的节奏与相机记录。告诉 agent「抓到了」即可。`);window.presentationLab.lastIncident={report:value,saved:saved.saved};return value;}
+async function inspect(){const value=checked().sweep({mode:motionMode(),negativeControl:$('negative').checked});renderReport(value);status(`已采样 ${value.objects.length} 个绘制对象。`);return value;}
+async function markIncident(){const value=checked().mark({mode:motionMode()});renderReport(value);const response=await fetch('/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(compactReport(value))});if(!response.ok)throw Error('F8 报告保存失败：'+await response.text());const saved=await response.json();status(`F8 已锁定：保存了异常前约 ${(value.timing.durationMs/1000).toFixed(1)} 秒的节奏与相机记录。告诉 agent「抓到了」即可。`);window.presentationLab.lastIncident={report:value,saved:saved.saved};return value;}
 $('boot').onclick=()=>void action(boot);
 $('play').onclick=()=>{try{checked().play();$('overlay').hidden=true;$('runtime').contentWindow.document.querySelector('canvas').focus();status('正在正常游玩；点「冻结并检查」标记当前场景。');}catch(e){failure(e);}};
 $('inspect').onclick=()=>void action(inspect);
 for(const [id,n] of [['step',1],['step10',10]])$(id).onclick=()=>void action(async()=>{checked().step(n);return inspect();});
 $('stage1').onclick=()=>void action(async()=>{const c=checked();if(c.core.status(c.runtime.app,0)!==1)throw Error('请在初始标题菜单使用；可重新启动实验。');for(let i=0;i<5;i++){c.press('KeyZ');await new Promise(r=>setTimeout(r,0));}c.step(241);return inspect();});
-$('alpha').oninput=()=>{if(busy)return;try{const a=Number($('alpha').value);if(readOnly){showSavedFrame(a);return;}if(!controller)return;$('alphaValue').textContent=a.toFixed(2);const sample=checked().preview(a,{negativeControl:$('negative').checked});displayBounds=new Map(sample.records.map(r=>[keyOf(r),r.values.slice(21,25)]));drawBoxes();}catch(e){failure(e);}};
-$('scan').onclick=()=>void action(async()=>{scanAbort=new AbortController();$('cancel').disabled=false;status('正在扫描；诊断耗时不代表正常游戏性能。');try{const scan=await checked().scan({signal:scanAbort.signal,negativeControl:$('negative').checked,onWindow:renderReport});window.presentationLab.lastScan=scan;status(scan.stoppedForPurity?'检测到状态变化，扫描已停止。':`完成 ${scan.reports.length} 个采样窗口。`);return scan;}finally{$('cancel').disabled=true;scanAbort=null;}});
+$('alpha').oninput=()=>{if(busy)return;try{const a=Number($('alpha').value);if(readOnly){showSavedFrame(a);return;}if(!controller)return;$('alphaValue').textContent=`${a.toFixed(2)} · 权重 ${displayWeight(a).toFixed(2)}`;const sample=checked().preview(displayWeight(a),{negativeControl:$('negative').checked});displayBounds=new Map(sample.records.map(r=>[keyOf(r),r.values.slice(21,25)]));drawBoxes();}catch(e){failure(e);}};
+$('motionMode').onchange=()=>void action(async()=>{await inspect();$('alpha').oninput();});
+$('scan').onclick=()=>void action(async()=>{scanAbort=new AbortController();$('cancel').disabled=false;status('正在扫描；诊断耗时不代表正常游戏性能。');try{const scan=await checked().scan({mode:motionMode(),signal:scanAbort.signal,negativeControl:$('negative').checked,onWindow:renderReport});window.presentationLab.lastScan=scan;status(scan.stoppedForPurity?'检测到状态变化，扫描已停止。':`完成 ${scan.reports.length} 个采样窗口。`);return scan;}finally{$('cancel').disabled=true;scanAbort=null;}});
 $('cancel').onclick=()=>scanAbort?.abort();
 $('export').onclick=()=>download(readOnly?report:{...checked().export(),scan:window.presentationLab.lastScan},`th08-presentation-${report?.tick||0}.json`);
-$('frames').onclick=()=>void action(async()=>{const value=checked().sweep({negativeControl:$('negative').checked,images:true,label:'manual-mark'});renderReport(value);download(compactReport(value),`th08-presentation-frames-${value.tick}.json`);});
+$('frames').onclick=()=>void action(async()=>{const value=checked().sweep({mode:motionMode(),negativeControl:$('negative').checked,images:true,label:'manual-mark'});renderReport(value);download(compactReport(value),`th08-presentation-frames-${value.tick}.json`);});
 for(const id of ['owner','level','search'])$(id).addEventListener('input',()=>{selected=selectedGroup=null;renderRows();drawBoxes();});$('boxes').onchange=drawBoxes;
 $('zoom').onchange=()=>{const zoom=Number($('zoom').value);$('stage').style.width=640*zoom+'px';$('stage').style.height=480*zoom+'px';};
 async function toggleFullscreen(){
@@ -194,7 +197,7 @@ async function loadCampaign({fixtureId,stage,seconds=0}){
   await new Promise(resolve=>setTimeout(resolve,0));
  }
  if(s[0]!==2||s[1]!==stage)throw Error('指定时间超过这份录像的关卡长度');
- const report=c.sweep({label:`${fixture.id}/${stageNames[stage]}/${s[4]}`});renderReport(report);
+ const report=c.sweep({mode:motionMode(),label:`${fixture.id}/${stageNames[stage]}/${s[4]}`});renderReport(report);
  status(`已定位：${fixture.listedPlayer} / ${stageNames[stage]} / ${(s[4]/60).toFixed(1)} 秒。点「继续游玩」看高刷。`);
  return report;
 }

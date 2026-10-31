@@ -9,7 +9,7 @@ namespace th08 {
 namespace {
 float add(float x,float delta){return Scalar::add(x,delta);}
 float angle(float before,float current){
-    if(presentation::alpha>=1)return current;if(presentation::alpha<=0)return before;
+    if(presentation::alpha==1)return current;if(presentation::alpha<=0)return before;
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-before;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(before+delta*presentation::alpha,0);
 }
 u8 channel(u8 before,u8 current){return u8(std::clamp(presentation::lerp(float(before),float(current)),0.0f,255.0f));}

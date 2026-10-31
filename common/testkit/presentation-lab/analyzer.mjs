@@ -49,16 +49,16 @@ function classifyField(previous,current,samples){
   if(policy!=='continuous')return {...evidence,variation,status:'responsive'};
   const delta=p.map((value,index)=>wrap(c[index]-value,period));
   const residual=Math.max(...observed.map(sample=>distance(sample.value,p.map((value,index)=>value+delta[index]*sample.alpha),period)));
-  return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?'interpolated':'responsive'};
+  return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?(observed.some(sample=>sample.alpha>1)?'extrapolated':'interpolated'):'responsive'};
 }
 
-export function analyzeNormalizedWindow({previous,current,samples,stateBefore,statesAfter=[],build={},label='',negativeControl=false}){
+export function analyzeNormalizedWindow({previous,current,samples,stateBefore,statesAfter=[],build={},label='',negativeControl=false,mode='interpolation'}){
   if(!previous||!current||!Array.isArray(samples)||samples.length<3)throw Error('Need two reference frames and at least three presentation samples');
-  if(samples.some(sample=>!Number.isFinite(sample.alpha)||sample.alpha<0||sample.alpha>1))throw Error('Invalid presentation alpha');
+  if(samples.some(sample=>!Number.isFinite(sample.alpha)||sample.alpha<(mode==='extrapolation'?1:0)||sample.alpha>(mode==='extrapolation'?2:1)))throw Error('Invalid presentation alpha');
   const before=indexRecords(previous.records),now=indexRecords(current.records),sampleMaps=samples.map(sample=>({...sample,...indexRecords(sample.records)}));
   const consecutive=Number.isInteger(previous.simulationTick)&&current.simulationTick===previous.simulationTick+1;
   const state=compareStateEvidence(stateBefore,statesAfter);
-  const report={schema:'presentation-lab/report/1',build,label,negativeControl,previousTick:previous.simulationTick,tick:current.simulationTick,
+  const report={schema:'presentation-lab/report/1',build,label,negativeControl,mode,previousTick:previous.simulationTick,tick:current.simulationTick,
     previousDrawSerial:previous.referenceDrawSerial,currentDrawSerial:current.referenceDrawSerial,consecutive,purityStatus:state.status,stateChanges:state.changes,
     objects:[],counts:{},coverage:{},dropped:(previous.dropped||0)+(current.dropped||0)+samples.reduce((total,sample)=>total+(sample.dropped||0),0),
     limitations:[...new Set([...(previous.limitations||[]),...(current.limitations||[])])]};
@@ -78,10 +78,10 @@ export function analyzeNormalizedWindow({previous,current,samples,stateBefore,st
       for(const [id,field] of currentFields){
         const previousField=previousFields.get(id),observed=sampleFields.map(sample=>({alpha:sample.alpha,field:sample.fields.get(id)}));
         if(!previousField||observed.some(sample=>!sample.field)){row.fields.push({id,label:field.label||id,status:'unobserved'});continue;}
-        row.fields.push({id,label:field.label||id,...classifyField(previousField,field,observed)});
+        row.fields.push({id,label:field.label||id,...classifyField(previousField,mode==='current'?{...field,interpolationPolicy:'snap-current'}:field,observed)});
       }
       row.status=row.fields.reduce((status,field)=>defaultSeverity(field.status)>defaultSeverity(status)?field.status:status,'static');
-      if(row.status==='static'&&row.fields.some(field=>field.status==='interpolated'))row.status='interpolated';
+      if(row.status==='static'&&row.fields.some(field=>['interpolated','extrapolated'].includes(field.status)))row.status=mode==='extrapolation'?'extrapolated':'interpolated';
     }
     row.severity=defaultSeverity(row.status);report.objects.push(row);report.counts[row.status]=(report.counts[row.status]||0)+1;
     const coverage=report.coverage[row.owner]??={observed:0,changing:0,issues:0,unresolved:0};coverage.observed++;
@@ -90,7 +90,7 @@ export function analyzeNormalizedWindow({previous,current,samples,stateBefore,st
     if(['unobserved','identity-uncertain','ambiguous','lifecycle'].includes(row.status))coverage.unresolved++;
   }
   report.objects.sort((a,b)=>b.severity-a.severity||String(a.ownerId).localeCompare(String(b.ownerId))||a.key.localeCompare(b.key));
-  report.valid=consecutive&&report.dropped===0&&samples.every(sample=>sample.simulationTick===undefined||sample.simulationTick===current.simulationTick)&&samples.some(sample=>sample.alpha===0)&&samples.some(sample=>sample.alpha===1)&&samples.filter(sample=>sample.alpha===.5).length>=2;
+  report.valid=consecutive&&report.dropped===0&&samples.every(sample=>sample.simulationTick===undefined||sample.simulationTick===current.simulationTick)&&(mode==='current'?samples.every(sample=>sample.alpha===1):samples.some(sample=>sample.alpha===(mode==='extrapolation'?1:0))&&samples.some(sample=>sample.alpha===(mode==='extrapolation'?2:1))&&samples.filter(sample=>sample.alpha===(mode==='extrapolation'?1.5:.5)).length>=2);
   report.issueGroups=groupFindings([report]);return report;
 }
 

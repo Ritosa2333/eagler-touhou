@@ -6,7 +6,7 @@
 namespace th11::presentation {
 namespace {
 constexpr float tau=6.2831854820251465f;
-struct Entry {std::uint64_t tick=0;Sample sample;};
+struct Entry {std::uint64_t tick=0;std::uint32_t spawn_tick=0;Sample sample;};
 struct Key {
     const float* clock;
     std::uint64_t identity;
@@ -83,6 +83,7 @@ void capture(const AnmVm& vm) noexcept {
     if(entry.tick==current_tick)return;
     entry.tick=current_tick;entry.sample=sample_of(vm);
 }
+void note_spawn(const AnmVm& vm) noexcept {samples[key(vm)].spawn_tick=std::uint32_t(current_tick);}
 void capture_if_needed(const AnmVm& vm) noexcept {
     auto& entry=samples[key(vm)];
     if(entry.tick==current_tick)return;
@@ -96,12 +97,13 @@ bool present_position(const AnmVm& current,Vec3& out) noexcept {
     if(!high_refresh::interpolating())return false;
     const auto found=samples.find(key(current));
     if(found==samples.end()||found->second.tick!=current_tick)return false;
+    if(found->second.spawn_tick==std::uint32_t(current_tick))return false;
     const auto& before=found->second.sample;
     if(before.id!=current.id||before.file!=current.resource||before.script!=current.script_index)return false;
     const bool visible=(current.flags&3u)==3u;
     if(before.visible!=visible||!visible)return false;
     if(current.timer.current<before.timer)return false;
-    if(high_refresh::alpha>=1.f){out=total(current.position,current.script_position,current.child_position);return true;}
+    if(high_refresh::alpha==1.f){out=total(current.position,current.script_position,current.child_position);return true;}
     Vec3 position=current.position;
     if(near(before.position,current.position))position=mix(before.position,current.position);
     Vec3 script=current.script_position;
@@ -119,6 +121,7 @@ bool present(AnmVm& destination,const AnmVm& current) noexcept {
     const auto found=samples.find(key(current));
     if(found==samples.end()){++stats[1];if(watched)++watch[1];return false;}
     const auto& entry=found->second;
+    if(entry.spawn_tick==std::uint32_t(current_tick))return false;
     // A sample older than this tick has no prev/current pair to blend.
     if(entry.tick!=current_tick){++stats[2];if(watched)++watch[2];return false;}
     const auto& before=entry.sample;
@@ -127,7 +130,7 @@ bool present(AnmVm& destination,const AnmVm& current) noexcept {
     const bool visible=(current.flags&3u)==3u;
     if(before.visible!=visible||!visible)return false;
     if(current.timer.current<before.timer)return false;
-    if(high_refresh::alpha>=1.f){destination=current;return true;}
+    if(high_refresh::alpha==1.f){destination=current;return true;}
     const u32 continuous=before.continuous|continuous_fields(current);
     bool applied=false;
     const bool position_near=near(before.position,current.position),script_near=near(before.script_position,current.script_position),child_near=near(before.child_position,current.child_position);

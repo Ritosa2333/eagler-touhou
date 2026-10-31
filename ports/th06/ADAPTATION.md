@@ -172,6 +172,8 @@
 
 ## 运行验收记录
 
+2026-10-28 normal／multiplayer：高刷使用当前帧外推，最多向前一个逻辑帧；原始逻辑与回放沿用 60 Hz 更新。构建、原生检查和 Presentation Lab 的验证范围见[外推记录](../../archive/motion-extrapolation-153-20261028/README.md)。
+
 2026-10-28 multiplayer：#148 灵梦 A 在命中前为各有效席位获取诱导目标，实际索敌片段的双人／三人及优先级检查通过。构建与验证范围见[修复验证记录](../../archive/th06-th08-multiplayer-bugs-20261028/README.md)。
 
 2026-10-25 multiplayer：共同菜单、局末本地结算、旁观原生保存与三人挑战恢复通过，见[多人生命周期记录](../../docs/adaptation/multiplayer-lifecycle-20261025.md)。

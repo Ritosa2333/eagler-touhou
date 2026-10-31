@@ -3,7 +3,7 @@
 namespace th15 {
 bool BombSanae::create(u32& handle,i32 script){handle=context.animations.create(context.player_resource,script,-1,0,position);if(!handle){error=context.animations.error;return false;}context.animations.registry.find(handle)->visual.inherited_color=0;return true;}
 bool BombSanae::interrupt(u32 handle,i32 label){if(context.animations.interrupt(handle,label))return true;error=context.animations.error;return false;}
-bool BombSanae::start(){position=context.motion.position;angle=-1.5707963705062866f;if(!context.world.sound(30,true)){error="Sanae bomb audio failed";return false;}if(!create(field,16)||!create(aura,20))return false;invalidate_spell();context.life.invulnerability.set(120);context.enemies.uses=wrapping_add(context.enemies.uses,1);if(!context.world.shake({3,60,240,30})){error="Sanae bomb shake failed";return false;}return true;}
+bool BombSanae::start(){if(context.session.challenge)return false;position=context.motion.position;angle=-1.5707963705062866f;if(!context.world.sound(30,true)){error="Sanae bomb audio failed";return false;}if(!create(field,16)||!create(aura,20))return false;invalidate_spell();context.life.invulnerability.set(120);context.enemies.uses=wrapping_add(context.enemies.uses,1);if(!context.world.shake({3,60,240,30})){error="Sanae bomb shake failed";return false;}return true;}
 bool BombSanae::frame(bool& finished){
     auto* vm=context.animations.registry.find(field);if(!vm)field=0;context.life.invulnerability.set(40);if(!vm){if(!interrupt(aura,1))return false;finished=true;return true;}
     if(age.current==180){if(!context.world.sound(6,true)||!context.world.shake({4,1,60,10})){error="Sanae bomb burst effect failed";return false;}}

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "Stage.hpp"
 #include "AnmIdx.hpp"
 #include "AnmManager.hpp"
@@ -45,7 +46,7 @@ static ZunColor LerpColor(ZunColor from, ZunColor to, f32 amount)
     {
         const f32 value = LerpFloat((f32)COLOR_GET_COMPONENT(from, component),
                                    (f32)COLOR_GET_COMPONENT(to, component), amount);
-        COLOR_SET_COMPONENT(result, component, (u8)value);
+        COLOR_SET_COMPONENT(result, component, (u8)std::clamp(value, 0.f, 255.f));
     }
     return result;
 }

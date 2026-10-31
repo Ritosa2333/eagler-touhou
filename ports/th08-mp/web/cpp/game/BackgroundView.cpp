@@ -6,7 +6,7 @@
 #include <algorithm>
 namespace th08 {
 namespace {
-float background_angle(float before,float current){if(presentation::world_alpha>=1)return current;if(presentation::world_alpha<=0)return before;constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-before;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(before+delta*presentation::world_alpha,0);}
+float background_angle(float before,float current){if(presentation::world_alpha==1)return current;if(presentation::world_alpha<=0)return before;constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-before;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(before+delta*presentation::world_alpha,0);}
 u8 background_channel(u8 before,u8 current){return u8(std::clamp(presentation::lerp_world(float(before),float(current)),0.0f,255.0f));}
 }
 void BackgroundView::snapshot_spell_presentation(){if(!presentation_marker.capture())return;for(u32 i=0;i<presentation_spell_vms.size();++i)presentation_spell_vms[i]=state.spell_vms[i];presentation_spell_valid=true;}

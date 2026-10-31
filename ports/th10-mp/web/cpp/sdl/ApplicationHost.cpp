@@ -1,3 +1,4 @@
+#include <eagler/presentation/Extrapolation.hpp>
 #include "../platform/Application.hpp"
 #include <SDL3/SDL.h>
 #include <emscripten.h>
@@ -492,7 +493,7 @@ EM_BOOL frame(double timestamp,void* epoch){
             }else if(high&&(!corrected||!budget_spent)){
                 const bool frozen=application->world&&application->world->actors.session&&
                     (application->world->actors.session->session_flags&0x74);
-                frame_alpha=interpolate?float(schedule_alpha):1.0f;
+                frame_alpha=interpolate?eagler::presentation::ExtrapolationWeight(schedule_alpha):1.0f;
                 // Optional attribution uses existing native commit counters;
                 // no extra clock, JS getter, sampling allocation or flush.
                 const auto* observed_renderer=tail_exception&&timing.active?touhou::sdl::current():nullptr;
@@ -516,7 +517,7 @@ EM_BOOL frame(double timestamp,void* epoch){
         if(!result&&high){
             const bool frozen=application->world&&application->world->actors.session&&
                 (application->world->actors.session->session_flags&0x74);
-            frame_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;
+            frame_alpha=interpolate?eagler::presentation::ExtrapolationWeight(cadence.interpolation_alpha()):1.0f;
             presented=application->presentation_draw(frame_alpha,interpolate,!frozen);
         }else presented=sdl_commit()!=0;
     }
@@ -778,7 +779,7 @@ __attribute__((export_name("presentation_lab_tick"))) int presentation_lab_tick(
     app->audio.advance(milliseconds);sdl_native_input(app);return app->step(true);
 }
 __attribute__((export_name("presentation_lab_draw"))) int presentation_lab_draw(th10::browser::Application* app,float alpha,th10::u32 world){
-    if(running||!app||application!=app||!interpolation_ready()||!std::isfinite(alpha)||alpha<0||alpha>1)return -1;
+    if(running||!app||application!=app||!interpolation_ready()||!std::isfinite(alpha)||alpha<0||alpha>2)return -1;
     return app->presentation_draw(presentation_lab_fault?1.0f:alpha,true,world!=0)?0:1;
 }
 __attribute__((export_name("presentation_lab_fault"))) void presentation_lab_set_fault(th10::u32 value){presentation_lab_fault=value!=0;}
