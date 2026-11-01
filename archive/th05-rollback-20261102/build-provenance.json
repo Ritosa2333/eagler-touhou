@@ -1,11 +1,11 @@
 {
   "builds": {
     "production": {
-      "builtAt": "2026-11-01T16:31:26.302Z",
+      "builtAt": "2026-11-01T16:43:20.165Z",
       "diagnostic": false,
       "variant": "multiplayer",
       "sha256": "865a73aff5141654f16c0901848d26e3118f78cfea2baeee7bba099079e856b1",
-      "sourceFilesSha256": "2fbadfd6b9c1bb1aa8bdceaaf3d56f79e6cc5ec7e62d84580ed1f56635a5e05c",
+      "sourceFilesSha256": "a9346ca6d4437d0b0dd2c898759f57f5edfbbb2051e361aad6031056d4a3224a",
       "sourceFiles": {
         "Game/Coop/Coop.cpp": "5debd8497735efdb32853c1d83d67d05a7ac5eee80db5c95cf284e9de7a06219",
         "Game/Coop/WorldRollback.cpp": "4ea50b11da354dc893433c3232e59a43c0ce9e457e99d068ed1827ce08fdbe3a",
@@ -273,7 +273,7 @@
         "web/input.mjs": "8887f08c8595284102b6cdaf62a89a1a0df87ee95e204b49c30e3bf7dd2cbe23",
         "web/managed-transport.mjs": "810a7d4090a0f864c1287c2412e5ce867a5a054e6bc2025f8a78976157a31b78",
         "web/managed.mjs": "697fe367f3f3009e2454d03f762a5e2f2ef4a7637f236497635bca8a4f628602",
-        "web/multiplayer.mjs": "9bc6d655c255ea31a4569261d2e45628bbf122ac223ef93f48b02d74db97c5ae",
+        "web/multiplayer.mjs": "43f2349a2cc19658563869d2d9ccf006c551aea86625d1d3f076c09f58621d32",
         "web/music-notes.mjs": "110bf3b10dc6058ba0806783af7db6ef27167e02b314a7c2615404f1e33f0935",
         "web/playback.mjs": "a17a117df30c1e20ddd26f932747a5db48b66be7a3bfc5bb5a6e5b707266ffc7",
         "web/pointer.mjs": "495eb7915270f9ded966c91da04e97f620ea2a76b57972460eab78b72f562bc6",
@@ -305,11 +305,11 @@
       }
     },
     "diagnostic": {
-      "builtAt": "2026-11-01T16:31:38.678Z",
+      "builtAt": "2026-11-01T16:43:29.315Z",
       "diagnostic": true,
       "variant": "multiplayer",
       "sha256": "e32f08ca388a8794972a673aca6e7584708f92328317a3664dc56fa7a25a46fb",
-      "sourceFilesSha256": "b1ffcd285b0d5352c7b4cc4ab5cb61bb46847c76aab16a7f8a36d6a2ab9fd22a",
+      "sourceFilesSha256": "63f538e4b5da34b2aaafed463238e3aad284e517a4d0fa586995a9253d96ce30",
       "sourceFiles": {
         "Game/Coop/Coop.cpp": "5debd8497735efdb32853c1d83d67d05a7ac5eee80db5c95cf284e9de7a06219",
         "Game/Coop/WorldRollback.cpp": "4ea50b11da354dc893433c3232e59a43c0ce9e457e99d068ed1827ce08fdbe3a",
@@ -578,7 +578,7 @@
         "web/input.mjs": "8887f08c8595284102b6cdaf62a89a1a0df87ee95e204b49c30e3bf7dd2cbe23",
         "web/managed-transport.mjs": "810a7d4090a0f864c1287c2412e5ce867a5a054e6bc2025f8a78976157a31b78",
         "web/managed.mjs": "697fe367f3f3009e2454d03f762a5e2f2ef4a7637f236497635bca8a4f628602",
-        "web/multiplayer.mjs": "9bc6d655c255ea31a4569261d2e45628bbf122ac223ef93f48b02d74db97c5ae",
+        "web/multiplayer.mjs": "43f2349a2cc19658563869d2d9ccf006c551aea86625d1d3f076c09f58621d32",
         "web/music-notes.mjs": "110bf3b10dc6058ba0806783af7db6ef27167e02b314a7c2615404f1e33f0935",
         "web/playback.mjs": "a17a117df30c1e20ddd26f932747a5db48b66be7a3bfc5bb5a6e5b707266ffc7",
         "web/pointer.mjs": "495eb7915270f9ded966c91da04e97f620ea2a76b57972460eab78b72f562bc6",
@@ -614,7 +614,7 @@
     "rollback-boundaries.mjs": "f5456fa4b705903449b7f4d70a1898215f5e577d279f2bd038f0ba4ffd0a9e6d",
     "rollback-native.mjs": "94ab5eed8f945370411bb48ca2132f99f808f15aaf10b971bf79ab86d5a5e6e4",
     "rollback-performance.mjs": "abc5fce1032319763aed75c2f01d5461fc498621816f76279a85334a371a4110",
-    "multiplayer-browser.mjs": "927312cc2a2551379f63f691f36c63afd6fc00b87b80aaeca217ef892c82e5bd"
+    "multiplayer-browser.mjs": "8c7367a4170c870ab36f9737566ea505634ee1e2b483daca711424b73dbcf515"
   },
   "checks": {
     "nativeUnits": 20,
@@ -629,5 +629,8 @@
       ],
       "passedAfterDependencyInstallAndWorkspaceTemp": true
     }
-  }
+  },
+  "rollbackSourceCommit": "4fd3ae0d992c4015d1a9ec8712f1f062a91f48fd",
+  "delayCapabilitySourceCommit": "377d30027e82119b76b848b06fa596a70f05a785",
+  "networkHarnessRollbackSha256": "927312cc2a2551379f63f691f36c63afd6fc00b87b80aaeca217ef892c82e5bd"
 }

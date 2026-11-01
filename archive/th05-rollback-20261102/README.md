@@ -8,6 +8,12 @@ TH05 多人版使用公共 `RollbackCore` 与 `RollbackJournal`，提供纯回�
 
 [双人直连](two-player-rtc.json)与[三人中继](three-player-relay.json)使用生产 Runtime 注入 30–124 ms 输入抖动，验证实际回滚、历史重演、短触控暂停、滑动、返回房间和再次开局。
 
+[纯延迟直连](two-player-delay.json)使用共享房间的 8 帧能力声明关闭预测，同样注入输入抖动；回滚与重模拟计数均为零，触控暂停和返回流程保持一致。
+
 [计算性能采样](performance.json)在桌面 Chromium CPU 四倍节流下，测量三／四面 Lunatic 三人 Boss 的模拟、检查点与纠正调用，分别注入 0／2／6 帧迟到。每次恢复最多重演 4 帧或约 4 ms 后交还浏览器。该采样的范围为 CPU 计算时间；手机帧交付使用设备实测记录。
 
 [构建身份](build-provenance.json)登记独立生产／诊断 Wasm、源码输入和测试脚本摘要。单人目录与单人 Runtime generation 保持当前发布身份，多人源码与目录历史独立维护。
+
+[发布身份](publication.json)与[公网文件校验](public-assets.json)登记 test 站的独立多人 generation，验证 144 个文件。单人 generation、正式站与 beta 站身份保持一致。[目录投影](project-history.json)核对源码树、原仓库祖先及普通版到多人版的接收关系。
+
+[公网启动器房间](public-rooms.json)通过真实房间设置切换回滚开关：双人直连的开启／关闭及三人中继的开启均连续运行至少 600 帧，关闭时使用纯确认输入且回滚计数为零。记录逐项登记 generation 和测试脚本摘要；两次发布使用相同原生 Wasm，后一次补齐纯延迟模式的房间能力声明。
