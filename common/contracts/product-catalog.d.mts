@@ -32,6 +32,8 @@ export declare const PRODUCT_GAMES: Readonly<{
     th05: Readonly<{
         testOnly: true; number: "05"; title: "東方怪綺談"; subtitle: "Mystic Square"; cardArtwork: "th05-card.webp";
         storage: Readonly<{saveRoot: "/savesth05"; scoreFile: "score.dat"; configFiles: readonly string[]}>;
+        multiplayerRuntime: "./runtime/th05/multiplayer/th05.html";
+        multiplayer: Readonly<MultiplayerProductConfig>;
         runtime: "./runtime/th05/th05.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
         requiredShared: readonly string[]; runtimeAssets: readonly string[];
         musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; sources: readonly ["original", "akyu"]}>;
@@ -968,6 +970,7 @@ export interface MultiplayerInputTimingConfig {
     manualDelayLimit?: number;
 }
 export interface MultiplayerProductConfig {
+    relaySourceEnvelope?: boolean;
     spectator?: boolean;
     titleRoomEntry?: boolean;
     loadoutFields?: readonly Readonly<{labelKey: string; dependsOn?: readonly number[]}>[];

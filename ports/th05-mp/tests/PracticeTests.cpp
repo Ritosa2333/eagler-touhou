@@ -784,7 +784,7 @@ struct PracticeTests {
   player.m_collisionAreaAlpha=100;stage->m_curGameKeyState=64;Frame(*stage);glReadPixels(x,y,20,20,GL_RGB,GL_UNSIGNED_BYTE,visible.data());Check(hidden==visible,"default PC98 display hides hitbox even at low speed");
   opts.showHitbox=true;Frame(*stage);glReadPixels(x,y,20,20,GL_RGB,GL_UNSIGNED_BYTE,visible.data());Check(hidden!=visible,"low-speed option shows hitbox during Shift");
   stage->m_curGameKeyState=0;Frame(*stage);glReadPixels(x,y,20,20,GL_RGB,GL_UNSIGNED_BYTE,visible.data());Check(hidden==visible,"low-speed option hides hitbox immediately after Shift release");
-  practice::ResetRun();Check(practice::Assisted(),"hitbox cheat marks the run assisted before stage entry");opts.showHitbox=false;practice::ResetRun();
+  practice::ResetRun();Frame(*stage);Check(!practice::Assisted(),"visual hitbox display preserves ordinary score and clear eligibility during rendering");opts.showHitbox=false;opts.alwaysHitbox=true;practice::ResetRun();Frame(*stage);Check(!practice::Assisted(),"always-visible hitbox also preserves ordinary score eligibility");opts.alwaysHitbox=false;practice::ResetRun();
   for(int i=0;i<56;i++)practice::RecordKey(5,0);
   practice::ClearKeyRecord();practice::g_record_key_aps=true;opts.showKeys=true;
   stage->StepFrame(1|32|64);Check(practice::GetKeyAPS().size()==1&&practice::GetKeyAPS().back()==3,"purple APS counts native key press edges once per simulation update");

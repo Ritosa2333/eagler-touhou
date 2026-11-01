@@ -14,6 +14,7 @@
 #include "StageResource.h"
 
 #include <math.h>
+#include "../Coop/Coop.h"
 
 #ifdef PI
 #undef PI
@@ -28,10 +29,90 @@
 #define STAGE_END_RESTART 6
 
 namespace th5w{
+class CChara;
+class CCharaReimu;
+class CCharaMarisa;
+class CCharaMima;
+class CCharaYuka;
+class CCharaBullet;
+class CEnemyBullet;
+class CGatherEffect;
+class CSparkEffect;
+class CPopupNumber;
+class CCircle;
+class CItem;
+class CFloatingText;
+class CBackground;
+class CEnemy;
+class CTextOverlay;
+class CDialogue;
+class CMidBoss;
+class CMidBossStage1;
+class CMidBossStage2;
+class CMidBossStage3;
+class CMidBossStage4;
+class CMidBossStage5;
+class CMidBossStageEx;
+class CBoss;
+class CBossStage1;
+class CBossStage2;
+class CBossStage3;
+class CBossStage4;
+class CBossStage4Mai;
+class CBossStage4Yuki;
+class CBossStage5;
+class CBossStage6;
+class CBossStageEx;
+class CLaser;
+class CSummary;
+class CStage2BG;
+class CCurvingBullet;
+class CLargeBullet;
+class CKnifeBullet;
+class CShinkiBullet;
+class CStageResource;
 
 class CStage : public CScheme
 {
 friend struct PracticeTests;
+ struct Seat {
+  CChara* player=nullptr; CCharaBullet* shots=nullptr; CStageResource* resources=nullptr;
+  coop::Stock stock;
+  unsigned short previous=0,current=0;
+  int rescue=0,rescueAge=0,rescueTarget=-1;
+ };
+ Seat m_seats[3];
+ int m_seatCount=1,m_boundSeat=0,m_bombOwner=0,m_hitSeats=0,m_pauseSelection=0;
+ unsigned short m_coopMenu=0,m_coopLastMenu=0,m_pauseHeld[3]{};
+ void InitCoop(); void SaveSeat(); void BindSeat(int seat);
+ void StepPlayers(); void StepPlayerBomb(); void DrawPlayers(int layer);
+ void StepRescue(); void ReviveSeat(int seat,int bombs); void SaveCoop();
+ void DrawCoopStatistics(); void StepCoopMenu();
+public:
+ bool Cooperative() const { return m_seatCount>1; }
+ int PlayerCount() const { return m_seatCount; }
+ int BoundSeat() const { return m_boundSeat; }
+ CChara* Player(int seat) const {return Cooperative()?m_seats[seat].player:m_pChara;}
+ int SeatValue(int seat,int field);
+ unsigned int CoopChecksum();
+ bool TestPlayerCrash(float x,float y,float w,float h);
+ void MarkPlayerMiss();
+ void MakeGhost();
+ void TeamLife(); void TeamBomb();
+ bool SharePower(float x,float y,unsigned char type);
+ bool CollectItem(float x,float y,unsigned char type);
+ void GrazePlayers(float x,float y,unsigned char& mask);
+ int ShotsDamage(float x,float y,float w,float h,bool boss,bool reflect=false);
+ void ProtectPlayers(int time); void DisablePlayerBombs();
+ int TargetSeat(float x,float y) const;
+ float AimAngle(float x,float y);
+ void PersistCoop(){SaveCoop();}
+ int m_bossDamageFraction[2]{};
+ void ChooseTarget(float x,float y);
+ void RestoreTarget(int seat) {BindSeat(seat);}
+ unsigned short CoopMenuInput();
+protected:
+
 	int StepFrame(unsigned short liveInput);
  bool m_practiceDialoguePending=false;
  int m_practiceSeekDamage=0;
@@ -217,6 +298,9 @@ public:
  void PracticeResume() { m_bPaused=false; }
 	void PracticeExit(int action) { SetQuit(action==3 ? STAGE_END_RESTART : action==1 ? STAGE_END_SAVE_EXIT : STAGE_END_PLAYER_QUIT); m_bPaused=false; }
 	void Initialize();
+ CChara* BrowserPlayer() const {return m_pChara;}
+ bool BrowserMenu() const {return m_bPaused||m_bContinueScr;}
+ bool BrowserDialogue() const;
 protected:
 	void DownloadVarFromGlobal();
 	void UploadVarToGlobal();

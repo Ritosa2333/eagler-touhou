@@ -37,7 +37,7 @@ function presentationStyle(product: Pick<LibraryProduct, 'presentation'>): CSSPr
 
 /** One original rail for the library and directory; no Router/history owner. */
 export function LibraryCards({products: managedProducts, externalProducts = [], selectedProduct, openedProduct, onSelect, onActivate, selectBeforeActivate = false, variant, lobbyLink, inert = false, interactive = true}: LibraryCardsProps) {
-  const products: readonly LibraryCard[] = [...externalProducts, ...managedProducts];
+  const products: readonly LibraryCard[] = [...managedProducts, ...externalProducts];
   const {t} = useLocale();
   const selectedCard = useOptionsTarget('selectedCard');
   const shelf = useRef<HTMLElement>(null), controller = useRef<ReturnType<typeof bindLibraryRail> | null>(null);

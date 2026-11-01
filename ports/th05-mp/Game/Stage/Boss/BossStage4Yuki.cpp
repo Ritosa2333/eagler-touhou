@@ -258,7 +258,7 @@ void CBossStage4Yuki::Phase5ShootType2()
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 		m_pStage->m_bPlaySound[15]=true;
 
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY);
 		m_largeBullet.AddBullet(m_curX,m_curY,216,angle,64,0,false,NULL);
 		m_largeBullet.AddBullet(m_curX,m_curY,216,angle-12.0f,64,0,false,NULL);
 		m_largeBullet.AddBullet(m_curX,m_curY,216,angle-24.0f,64,0,false,NULL);

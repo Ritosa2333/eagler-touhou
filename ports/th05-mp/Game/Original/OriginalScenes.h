@@ -11,7 +11,7 @@ namespace th5w {
 class COriginalEnd : public CScheme {
  friend struct PracticeTests;
 public:
- enum Mode {Staff,AllCast,VerdictOnly};
+ enum Mode {Staff,AllCast,VerdictOnly,Congratulations};
  explicit COriginalEnd(Mode mode);
  ~COriginalEnd();
  bool Initialize();
@@ -53,6 +53,8 @@ private:
  void DrawScores(int x,int y,int color);
  void DrawStaff();
  void DrawCast();
+ void LocalizeCongratulations();
+ void DrawCongratulations();
  void DrawCard(int slot,int age,int out,int cx,int cy);
  bool CreditTick(int slot,int target,int& age,int& out);
  void InitSpace();

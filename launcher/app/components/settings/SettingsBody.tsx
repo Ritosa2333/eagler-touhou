@@ -5,6 +5,7 @@ import {resolveMusicAvailability} from '../../../src/launcher/music-availability
 import type {GameSettingsModel} from '../../models/game-settings';
 import {useLocale} from '../../i18n';
 import {MainSelect} from '../launcher/MainSelect';
+import {Th05MultiplayerDisplay} from './Th05MultiplayerDisplay';
 import {OptionsGroup} from './OptionsGroup';
 import {InputSettings} from './InputSettings';
 import {OptionRow} from './OptionRow';
@@ -65,6 +66,7 @@ export function SettingsBody({model, actions, onOpenTouchLayout, multiplayerCont
     <OptionsGroup id={id('displayOptions')} title={t('options.display')} open={state.disclosure.display} onOpenChange={open => model.setDisclosure('display', open)} bodyClassName="options-advanced-body">
       <OptionRow className={item('option-frame-limit')} hidden={!product.support.highRefreshRate} label={t('settings.frameLimit')} hint={<><span id={id('frameLimitHintText')}>{t('settings.frameLimitHint')}</span> <button className="frame-limit-apple-note" id={id('frameLimitAppleNote')} type="button" onClick={actions.showAppleNotice}>{t('settings.appleNotice')}</button></>} hintId={id('frameLimitHint')} control={<OptionSwitch id={id('frameLimitToggle')} label={t('settings.frameLimit')} checked={product.support.highRefreshRate && !options.frameLimit60Enabled} disabled={!product.support.highRefreshRate} onChange={() => model.setOption('frameLimit60Enabled', !options.frameLimit60Enabled)}/>}/>
       <section className={item('feature-section feature-language')} id={id('languageOption')} hidden={!multiplayer && context.languages.length <= 1}><div className="itemtop"><span>{t('settings.language')}</span>{!multiplayer && <small id="languagePackSize">{packSize}</small>}</div><MainSelect className="option-select" id={id('languageSelect')} aria-label={t('settings.gameLanguage')} value={state.language} onChange={event => model.setLanguage(event.target.value)}>{context.languages.map(entry => <option key={entry.id} value={entry.id}>{entry.title || entry.id}</option>)}</MainSelect></section>
+      {multiplayer && state.gameId === 'th05' && <Th05MultiplayerDisplay model={model} state={state}/>}
       <OptionRow className={item('option-pixel-perfect')} label={t('settings.pixelPerfect')} control={<OptionSwitch id={id('pixelPerfectToggle')} label={t('settings.pixelPerfect')} checked={options.pixelPerfectEnabled} onChange={switchOption('pixelPerfectEnabled')}/>}/>
       <OptionRow className={item('option-focus-hitbox')} id={id('focusHitboxOption')} hidden={!productFeatureAvailable(state.gameId, 'focusHitbox', context.hostFeatures)} label={t('settings.focusHitbox')} control={<OptionSwitch id={id('focusHitboxToggle')} label={t('settings.focusHitbox')} checked={options.focusHitboxEnabled} onChange={switchOption('focusHitboxEnabled')}/>}/>
       <OptionRow className={item('option-focus-hitbox')} id={id('faithBarOption')} hidden={!hasFaith} label={t('settings.faithBar')} control={<OptionSwitch id={id('faithBarToggle')} label={t('settings.faithBar')} checked={options.faithBarEnabled} onChange={switchOption('faithBarEnabled')}/>}/>

@@ -78,6 +78,11 @@ CStage::CStage(void)
 
 CStage::~CStage(void)
 {
+ if(Cooperative()) {
+  SaveCoop();
+  for(int i=0;i<m_seatCount;i++) {delete m_seats[i].player;delete m_seats[i].shots;delete m_seats[i].resources;}
+  m_pChara=nullptr;m_pCharaBullet=nullptr;m_pStageRes=nullptr;
+ }
 	SAFE_DELETE(m_pChara);
 	SAFE_DELETE(m_pCharaBullet);
 	SAFE_DELETE(m_pEnemyBullet);
@@ -269,6 +274,7 @@ void CStage::Initialize()
  }
  GetPhaseTimeout();
  CGame::GVar().OnStageEnter();
+ InitCoop();
 }
 
 void CStage::ApplyPracticeWarp()
@@ -498,9 +504,10 @@ void CStage::CheckBoss()
 	}
 }
 
+bool CStage::BrowserDialogue() const {return m_pDialogue&&m_pDialogue->IsRunning();}
 int CStage::Step()
 {
-	return StepFrame(CCommonFunctionInput::GetAllKeyState());
+	return StepFrame(Cooperative()?CoopMenuInput():CCommonFunctionInput::GetAllKeyState());
 }
 
 int CStage::StepFrame(unsigned short liveInput)
@@ -658,8 +665,7 @@ int CStage::StepFrame(unsigned short liveInput)
 	m_pPopupNumber->Step();
 	m_pCircle->Step();
 	m_pSparkEffect->Step();
-	m_pChara->Step();
-	m_pCharaBullet->Step();
+	if(Cooperative())StepPlayers();else {m_pChara->Step();m_pCharaBullet->Step();}
 	m_pLaser->Step();
 	m_pEnemyBullet->Step();
 	m_pEnemy->Step();
@@ -684,8 +690,7 @@ int CStage::StepFrame(unsigned short liveInput)
  // Native stage_render runs after items/gather and before the bomb callback.
 	if (m_pStage2BG)
 		m_pStage2BG->Step();
-	if (m_bInCharaBomb)
-		m_pChara->StepBomb();
+	if(Cooperative())StepPlayerBomb();else if(m_bInCharaBomb)m_pChara->StepBomb();
  m_pLaser->FinishDemoFrame();
 	m_pTextOverlay->Step();
 	m_pFloatingText->Step();
@@ -727,8 +732,7 @@ void CStage::Draw()
 	else
 		m_pBoss->DrawBackground();
 
-	if (m_bInCharaBomb)
-		m_pChara->DrawBomb();
+	if(Cooperative())DrawPlayers(0);else if(m_bInCharaBomb)m_pChara->DrawBomb();
 
 	if (m_pBoss)
 		m_pBoss->Draw();
@@ -740,8 +744,7 @@ void CStage::Draw()
  // while player shots, bullets and lasers remain in front of the indicator.
  if(practice::Options().ringBar)DrawBossRings();
 
-	m_pCharaBullet->Draw();
-	m_pChara->Draw();
+	if(Cooperative())DrawPlayers(1);else {m_pCharaBullet->Draw();m_pChara->Draw();}
 	if (m_pBoss)
 		m_pBoss->DrawSpecialBullet();
 	m_pLaser->Draw();
@@ -751,7 +754,7 @@ void CStage::Draw()
 	m_pPopupNumber->Draw();
 	m_pEnemyBullet->Draw();
 	m_pCircle->Draw();
-	m_pChara->DrawCollisionArea();
+	if(Cooperative())DrawPlayers(2);else m_pChara->DrawCollisionArea();
 	m_pTextOverlay->Draw();
 	m_pDialogue->Draw();
 
@@ -766,12 +769,12 @@ void CStage::Draw()
 	m_pFloatingText->Draw();
 	m_pSummary->Draw();
 
-	DrawStatistics();
+	if(Cooperative())DrawCoopStatistics();else DrawStatistics();
 
 	if (m_bPaused)
 		DrawPause();
 
-	if (m_bContinueScr)
+	if (m_bContinueScr&&!Cooperative())
 		DrawContinue();
 
 	//CCommonFunctionGraphic::ScreenFade((float)m_curScrFade);
@@ -779,6 +782,7 @@ void CStage::Draw()
 
 void CStage::EnableContinueScreen()
 {
+ if(Cooperative()){MakeGhost();return;}
  if(original::DemoActive()){SetQuit(STAGE_END_PLAYER_QUIT);return;}
 	if (m_bContinueScr==false)
 	{
@@ -790,6 +794,7 @@ void CStage::EnableContinueScreen()
 
 void CStage::StepContinue()
 {
+ if(Cooperative()){StepCoopMenu();return;}
 	m_lastMenuKeyState=m_curMenuKeyState;
 	m_curMenuKeyState=CCommonFunctionInput::GetAllKeyState();
 	switch(m_continueScrCurPart)
@@ -958,11 +963,12 @@ void CStage::DrawLogo()
         PlayAreaFade((float)100-(16-m_logoFrame)*6);
 	if (m_logoFrame>=128)
 		PlayAreaFade((float)100-(m_logoFrame-128)*6);
-	DrawStatistics();
+	if(Cooperative())DrawCoopStatistics();else DrawStatistics();
 }
 
 void CStage::StepPause()
 {
+ if(Cooperative()){StepCoopMenu();return;}
  m_lastMenuKeyState=m_curMenuKeyState;
  m_curMenuKeyState=CCommonFunctionInput::GetAllKeyState();
  // Pause-menu input is handled by the thprac ImGui adapter.
@@ -970,7 +976,7 @@ void CStage::StepPause()
 
 void CStage::DrawPause()
 {
- if (m_bPaused) practice::DrawPause(*this);
+ if (m_bPaused&&!Cooperative()) practice::DrawPause(*this);
 }
 
 bool CStage::Pause()
@@ -978,6 +984,7 @@ bool CStage::Pause()
 	if (m_bCanPause)
 	{
 		m_bPaused=true;
+  if(Cooperative()){m_pauseSelection=0;for(int i=0;i<m_seatCount;i++)m_pauseHeld[i]=coop::Run().input[i].buttons;}
 		practice::FocusPause();
 		m_pauseCursorPos=0;
 		return true;
@@ -1200,6 +1207,18 @@ int CStage::GetDamageFromChara(float ctrX,float ctrY,float halfWidth,float halfH
    if(first==(selected->variant==1))return 0;
   }
   return 100000;
+ }
+ if(Cooperative()) {
+  const int seat=m_boundSeat;int damage=0;
+  for(int i=0;i<m_seatCount;i++){BindSeat(i);int d=m_pCharaBullet->GetDamage(ctrX,ctrY,halfWidth,halfHeight,isBoss);
+   if(m_bInCharaBomb&&m_bombOwner==i)d+=m_pChara->GetBombDamage(ctrX,ctrY,halfWidth,halfHeight,isBoss);
+   damage+=AdjustDamageFromChara(d,isBoss);
+  }
+  BindSeat(seat);AddScore(damage);
+  if(!isBoss)return damage;
+  const int target=m_pBoss&&ctrX==m_pBoss->m_curX&&ctrY==m_pBoss->m_curY?0:1;
+  const int scale=m_seatCount==2?15:22,total=damage*10+m_bossDamageFraction[target];
+  m_bossDamageFraction[target]=total%scale;return total/scale;
  }
 	int totalDmg=m_pCharaBullet->GetDamage(ctrX,ctrY,halfWidth,halfHeight,isBoss);
 	if (m_bInCharaBomb)

@@ -3,13 +3,18 @@
 namespace th5w{
 
 class CStage;
+class C2DImage;
 
 class CBackground
 {
 friend class CStage;
+friend struct PracticeTests;
 
 protected:
 	CStage *m_pStage;
+#ifdef __EMSCRIPTEN__
+ C2DImage* m_tileAtlas=nullptr;
+#endif
 
 protected:
 	unsigned char *m_mapTileIdxArray;

@@ -55,11 +55,11 @@ void CBoss::DrawHPGaugeAndExtStrEnemy(int fullHP)
 	if (m_lastDrawnHP>0)
 	{
 		int colorIdx=m_lastDrawnHP*4/fullHP;
-		m_pStage->m_pStageRes->DrawGauge(m_lastDrawnHP,fullHP,0x38*8,0x9*16+40,
+		m_pStage->m_pStageRes->DrawGauge(m_lastDrawnHP,fullHP,0x38*8,(m_pStage->Cooperative()?352:144)+40,
 							gaugeColor[colorIdx][0],gaugeColor[colorIdx][1],gaugeColor[colorIdx][2]);
-		m_pStage->m_pStageRes->DrawHPPhaseMarkers(m_lastDrawnHP,fullHP,0x38*8,0x9*16+40,false);
+		m_pStage->m_pStageRes->DrawHPPhaseMarkers(m_lastDrawnHP,fullHP,0x38*8,(m_pStage->Cooperative()?352:144)+40,false);
 		unsigned char extEnemy[]={0xea,0xeb,0xec,0};
-		CTh5ExtFont::DrawExtString(extEnemy,100,0x3d*8,0x8*16+40,1,1,0);
+		CTh5ExtFont::DrawExtString(extEnemy,100,0x3d*8,(m_pStage->Cooperative()?336:128)+40,1,1,0);
 	}
 }
 
@@ -69,8 +69,8 @@ int CBoss::GetDmgAndTestCrash(float dmgAreaHalfWidth,float dmgAreaHalfHeight,int
 	if (dmg!=0)
 		m_pStage->m_bPlaySound[soundIdx]=true;
 
-	if (m_pStage->m_pChara->TestCrash(m_curX,m_curY,16.0f*16.0f,16.0f*16.0f))
-		m_pStage->m_pChara->m_bMiss=true;
+	if (m_pStage->TestPlayerCrash(m_curX,m_curY,16.0f*16.0f,16.0f*16.0f))
+		m_pStage->MarkPlayerMiss();
 
 	return dmg;
 }
@@ -381,7 +381,7 @@ void CBoss::DeathSequence(int n1000)
 				AddDefeatScoreAndPopupNumbers(n1000);
 			m_curImage=4;
 			m_curPhaseFrame=0;
-			m_pStage->m_pChara->m_invulnerableTimeLeft=255;
+			m_pStage->ProtectPlayers(255);
 		}
 		m_pStage->m_bHomingEnemyExist=false;
 		return;
@@ -395,7 +395,7 @@ void CBoss::DeathSequence(int n1000)
 			{
 				m_curPhase++;
 				m_curPhaseFrame=0;
-				m_pStage->m_pChara->m_bBombDisabled=true;
+				m_pStage->DisablePlayerBombs();
 				m_bDrawBoss=false;
 			}
 		}

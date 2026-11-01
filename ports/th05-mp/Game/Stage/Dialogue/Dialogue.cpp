@@ -56,6 +56,9 @@ int CDialogue::StepScript()
 			CCommonFunctionGraphic::LoadBFTAllPatternFromDat(&m_pStage->m_pStageRes->m_patternArray,NULL,
 															 &CGame::s_pCurGame->m_th5Dat2,(char *)(m_pScript+1),
 															 0,m_pStage->m_pStageRes->m_palette);
+#ifdef __EMSCRIPTEN__
+ m_pStage->m_pStageRes->RefreshSpriteAtlas();
+#endif
 			m_pScript+=2+(int)strlen((char *)(m_pScript+1));
 		    break;
 		case 4:
@@ -74,6 +77,9 @@ int CDialogue::StepScript()
 			}
 			else
 				m_pStage->m_pStageRes->m_patternArray.UnloadRange(180);
+#ifdef __EMSCRIPTEN__
+ m_pStage->m_pStageRes->RefreshSpriteAtlas();
+#endif
 			m_pScript++;
 			break;
 		case 5:
@@ -135,7 +141,7 @@ int CDialogue::StepScript()
 				if (CCommonFunctionInput::ZPressed(m_pStage->m_curGameKeyState,m_pStage->m_lastGameKeyState)
 					||CCommonFunctionInput::LCtrlKey(m_pStage->m_curGameKeyState))
 				{
-					if (m_wordNChar[m_activeChara]<m_curWordTotalChar)
+					if (!m_pStage->Cooperative() && m_wordNChar[m_activeChara]<m_curWordTotalChar)
 						m_wordNChar[m_activeChara]=m_curWordTotalChar;
 					else
 					{

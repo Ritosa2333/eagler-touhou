@@ -135,6 +135,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
       ? {thpracEnabled: options.thpracEnabled, thpracLocale: thpracLocaleForLanguage(language)} : {}),
     ...(productFeatureAvailable(game, 'focusHitbox', features) ? {focusHitboxEnabled: options.focusHitboxEnabled} : {}),
     ...('display' in product && product.display.faithBar ? {faithBarEnabled: options.faithBarEnabled} : {}),
+    ...(game === 'th05' && isMultiplayer ? {th05MultiplayerDisplay: options.th05MultiplayerDisplay} : {}),
     ...(isMultiplayer ? {multiplayerLocalPlayerVisibility: options.multiplayerLocalPlayerVisibility,
       ...(multiplayer?.kind === 'replay' ? {replayViewer: true} : {}),
       ...(multiplayer?.kind === 'preflight' && 'multiplayer' in product && 'preflightWithoutRoom' in product.multiplayer ? {multiplayerPreflight: true} : {}),

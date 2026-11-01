@@ -48,6 +48,31 @@ test('TH05 settings expose the PR album, language and one thprac switch', async 
   assert.equal(restored.getSnapshot().music,'ogg-akyu');assert.equal(restored.getSnapshot().language,'lang_zh-hans');assert.equal(restored.getSnapshot().options.thpracEnabled,true);
 });
 
+test('TH05 multiplayer owns display controls, persists styles and leaves single-player controls separate', async () => {
+  const saved=new Map(),storage={getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)};
+  const model=owners.createGameSettingsModel({storage});
+  const context={productId:'th05mp',uiLocale:'zh-CN',languages:[{id:'ja',title:'日本語'}],musicAvailability:{audio:true,midiAvailable:false,importServer:false,remoteOggAdvertised:true},webMidiAvailable:false,mobile:false};
+  model.hydrate(context);model.setShareSingleplayerSettings(false);
+  const midi={enabled:false,granted:false,busy:false,supported:false,outputs:[],selectedId:'',hint:''};
+  const unexpected=()=>{throw Error('Unexpected action');};
+  const actions={confirm:unexpected,file:unexpected,showAppleNotice:unexpected,feedback(){},reportError:unexpected,externalMidi:{subscribe:()=>()=>{},getSnapshot:()=>midi,setEnabled:unexpected,selectOutput:unexpected}};
+  await render(React.createElement(owners.LocaleProvider,{locale:'zh-CN'},React.createElement(owners.SettingsBody,{model,actions,onOpenTouchLayout:unexpected})));
+  assert.equal(n('#mpTh05BossBarSelect').value,'native');
+  assert.equal(n('#mpTh05PhaseStarsToggle').disabled,true);
+  await act(()=>{const select=n('#mpTh05BossBarSelect');select.value='eosd';select.dispatchEvent(new env.window.Event('change',{bubbles:true}));});
+  assert.equal(n('#mpTh05PhaseTimeoutToggle').getAttribute('aria-checked'),'true');
+  assert.equal(n('#mpTh05PhaseTimeoutToggle').disabled,true);
+  await act(()=>n('#mpTh05PhaseStarsToggle').click());
+  const restored=owners.createGameSettingsModel({storage});restored.hydrate(context);
+  assert.equal(restored.getSnapshot().options.th05MultiplayerDisplay.bossBar,'eosd');
+  assert.equal(restored.getSnapshot().options.th05MultiplayerDisplay.phaseStars,true);
+  await act(()=>{const select=n('#mpTh05BossBarSelect');select.value='ring';select.dispatchEvent(new env.window.Event('change',{bubbles:true}));});
+  assert.equal(model.getSnapshot().options.th05MultiplayerDisplay.phaseStars,false);
+  await act(()=>model.hydrate({...context,productId:'th05'}));
+  assert.equal(env.document.querySelector('#mpTh05BossBarSelect'),null);
+  assert.equal(model.getSnapshot().options.th05MultiplayerDisplay.bossBar,'native');
+});
+
 test('third launch consumer shares shell/icon order and retains current intent, disabled and label ownership', async () => {
   const calls = []; let submits = 0;
   async function update(label, disabled = false) {

@@ -25,6 +25,20 @@
             "thprac": true
           },
           "cache": {}
+        },
+        "multiplayer": {
+          "features": {
+            "thcrap": true,
+            "thprac": false
+          },
+          "cache": {},
+          "sourceBuild": {
+            "kind": "node",
+            "build": [
+              "scripts/build-eagler.mjs"
+            ]
+          },
+          "workspaceRepository": "th05mp"
         }
       }
     },

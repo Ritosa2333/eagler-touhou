@@ -80,7 +80,17 @@ export type RuntimeConfigureOptionRequirement = "required" | "profile-required" 
 // Canonical Runtime-owned configuration. Launcher-only preferences such as the
 // touch layout editor, magnifier and Restart-button visibility do not belong on
 // this wire object. Compatibility aliases are listed separately below.
+export interface Th05MultiplayerDisplay {
+  bossBar: "native" | "eosd" | "ring";
+  phaseMarkers: boolean;
+  phaseStars: boolean;
+  phaseTimeout: boolean;
+  timeoutAsTime: boolean;
+  numericDream: boolean;
+  numericPower: boolean;
+}
 export interface RuntimeConfigureOptions {
+  th05MultiplayerDisplay?: Readonly<Th05MultiplayerDisplay>;
   thpracEnabled?: boolean;
   limitPresentationTo60?: boolean;
   touchEnabled?: boolean;
@@ -138,6 +148,7 @@ export interface RuntimeConfigureOptions {
  * aliases live in RUNTIME_CONFIGURE_LEGACY_OPTION_KEYS instead.
  */
 export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
+  th05MultiplayerDisplay: Object.freeze({requirement: "optional", capability: "multiplayer", when: "TH05 multiplayer local presentation"}),
   netplayAllowWebsocketFallback: Object.freeze({requirement: "optional", capability: "multiplayer", when: "server explicitly enables legacy WebSocket gameplay fallback"}),
   thpracEnabled: Object.freeze({ requirement: "optional", capability: "thprac", when: "product declares thprac" }),
   limitPresentationTo60: Object.freeze({ requirement: "required", capability: "presentation-cadence" }),

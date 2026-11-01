@@ -1,3 +1,6 @@
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Window.hpp"
+#else
 #pragma once
 #include <windows.h>
 #include "../Graphic/GLContext.h"
@@ -36,3 +39,4 @@ public:
 };
 
 }
+#endif

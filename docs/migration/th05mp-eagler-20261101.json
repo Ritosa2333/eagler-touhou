@@ -1,0 +1,21 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/Goan114/uth05win-vibe.git",
+  "branch": "multiplayer",
+  "commit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+  "destination": "ports/th05-mp",
+  "sourceManifest": "../../ports/th05-mp/source-import.json",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+    "initialJoin": "dac0b88cbefb27954d0a0cf8565d94aafa3203d6",
+    "initialSplit": "a719ae27c542c4bc15373ea1739d2ccee03cf8a8",
+    "latestJoin": "dac0b88cbefb27954d0a0cf8565d94aafa3203d6",
+    "currentSplit": "a719ae27c542c4bc15373ea1739d2ccee03cf8a8"
+  },
+  "reference": "https://github.com/Ritosa2333/eagler-touhou/pull/143",
+  "forkedFrom": {
+    "directory": "ports/th05",
+    "normalBaseline": "0ef3a2c187a7b88c51facc155a453111e76c9499"
+  }
+}

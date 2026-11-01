@@ -387,7 +387,7 @@ void CBossStage4Mai::Phase7ShootType1()
 			si.bulletImg=0;
 			si.nWay=3;
 			si.bulletSpeed=32;
-			float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+			float angle=m_pStage->AimAngle(m_curX,m_curY);
 			m_largeBullet.AddBullet(m_curX,m_curY,212,angle,48,24,true,&si);
 			m_largeBullet.AddBullet(m_curX,m_curY,212,angle-32,48,24,true,&si);
 			m_largeBullet.AddBullet(m_curX,m_curY,212,angle+32,48,24,true,&si);

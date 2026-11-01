@@ -262,6 +262,7 @@ export interface GameOptionClassification {
 // This closes a common ambiguity where a Launcher switch existed before anyone
 // decided whether the next Runtime had to implement it.
 export const GAME_OPTION_CLASSIFICATION = Object.freeze({
+  th05MultiplayerDisplay: {capability: "multiplayer", class: "optional", owner: "product"},
   thpracEnabled: { capability: "thprac", class: "optional", owner: "product" },
   thpracTouchControlsEnabled: { capability: "thprac-touch-bridge", class: "profile-required", owner: "launcher-runtime" },
   magnifierEnabled: { capability: "magnifier", class: "inherited", owner: "launcher" },

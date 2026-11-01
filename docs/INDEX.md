@@ -1,6 +1,6 @@
 # 文档总表
 
-共 418 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 426 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -32,6 +32,7 @@
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
+| 作品入口 | [ports/th05-mp/README.md](../ports/th05-mp/README.md) | 東方怪綺談 · 原生多人版 |
 | 作品入口 | [ports/th05/README.md](../ports/th05/README.md) | 東方怪綺談 · uth05win for Eagler |
 | 作品入口 | [ports/th06/README.md](../ports/th06/README.md) | 東方紅魔郷 TH06 |
 | 作品入口 | [ports/th07/README.md](../ports/th07/README.md) | 東方妖々夢 TH07 |
@@ -50,6 +51,7 @@
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
+| 作品适配表 | [ports/th05-mp/ADAPTATION.md](../ports/th05-mp/ADAPTATION.md) | th05 MP 适配检查 |
 | 作品适配表 | [ports/th05/ADAPTATION.md](../ports/th05/ADAPTATION.md) | th05 适配检查 |
 | 作品适配表 | [ports/th06/ADAPTATION.md](../ports/th06/ADAPTATION.md) | th06 适配检查 |
 | 作品适配表 | [ports/th07/ADAPTATION.md](../ports/th07/ADAPTATION.md) | th07 适配检查 |
@@ -68,6 +70,10 @@
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
+| 作品源码文档 | [ports/th05-mp/PRACTICE.md](../ports/th05-mp/PRACTICE.md) | uth05win Practice 工具 |
+| 作品源码文档 | [ports/th05-mp/README-UPSTREAM.md](../ports/th05-mp/README-UPSTREAM.md) | 这是被vibe coding魔改的uth05win |
+| 作品源码文档 | [ports/th05-mp/docs/DEVELOPMENT.md](../ports/th05-mp/docs/DEVELOPMENT.md) | TH05 多人版开发指南 |
+| 作品源码文档 | [ports/th05-mp/docs/MULTIPLAYER.md](../ports/th05-mp/docs/MULTIPLAYER.md) | TH05 原生合作模式 |
 | 作品源码文档 | [ports/th05/PRACTICE.md](../ports/th05/PRACTICE.md) | uth05win Practice 工具 |
 | 作品源码文档 | [ports/th05/README-UPSTREAM.md](../ports/th05/README-UPSTREAM.md) | 这是被vibe coding魔改的uth05win |
 | 作品源码文档 | [ports/th05/docs/DEVELOPMENT.md](../ports/th05/docs/DEVELOPMENT.md) | TH05 开发指南 |
@@ -321,6 +327,8 @@
 | 许可证与声明 | [launcher/public/assets/room-icons-LICENSE.txt](../launcher/public/assets/room-icons-LICENSE.txt) | MIT License |
 | 许可证与声明 | [launcher/public/vendor/fflate.LICENSE](../launcher/public/vendor/fflate.LICENSE) | fflate |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
+| 许可证与声明 | [ports/th05-mp/LICENSE](../ports/th05-mp/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th05-mp/third_party/imgui/LICENSE.txt](../ports/th05-mp/third_party/imgui/LICENSE.txt) | The MIT License (MIT) |
 | 许可证与声明 | [ports/th05/LICENSE](../ports/th05/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th05/third_party/imgui/LICENSE.txt](../ports/th05/third_party/imgui/LICENSE.txt) | The MIT License (MIT) |
 | 许可证与声明 | [ports/th06/LICENSE](../ports/th06/LICENSE) | LICENSE |

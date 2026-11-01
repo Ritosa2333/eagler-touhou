@@ -51,8 +51,8 @@ int CBossStage4::GetDmgAndTestCrash2(float dmgAreaHalfWidth,float dmgAreaHalfHei
 	if (dmg!=0)
 		m_pStage->m_bPlaySound[soundIdx]=true;
 
-	if (m_pStage->m_pChara->TestCrash(m_curX,m_curY,16.0f*16.0f,16.0f*16.0f))
-		m_pStage->m_pChara->m_bMiss=true;
+	if (m_pStage->TestPlayerCrash(m_curX,m_curY,16.0f*16.0f,16.0f*16.0f))
+		m_pStage->MarkPlayerMiss();
 
 	return dmg;
 }
@@ -158,7 +158,7 @@ void CBossStage4::DeathSequenceVerStage4()
 			m_pStage->m_pEnemyBullet->m_noEnemyBullet=m_bSuccessDefeat;
 			m_curPhaseFrame=0;
 			m_pStage->m_bPlaySound[12]=true;
-			m_pStage->m_pChara->m_invulnerableTimeLeft=255;
+			m_pStage->ProtectPlayers(255);
 		}
 		return;
 	}
@@ -363,7 +363,7 @@ int CBossStage4::MaiShootType1()
 	{
 		float color[]={m_pStage->m_pStageRes->m_palette[8*3]/255.0f,m_pStage->m_pStageRes->m_palette[8*3+1]/255.0f,
 					   m_pStage->m_pStageRes->m_palette[8*3+2]/255.0f};
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY);
 		m_pStage->m_pLaser->AddLaserFixed(0,m_curX,m_curY,color,8,angle);
 	}
 	if (m_curPhaseFrame==80)
@@ -371,7 +371,7 @@ int CBossStage4::MaiShootType1()
 	if (m_curPhaseFrame%4==0)
 		if (!(m_curPhaseFrame<80&&m_curPhaseFrame>=144&&m_curPhaseFrame%8!=0))
 		{
-			int deltaAngle=(int)(m_pStage->m_pLaser->LaserAngle(0)-m_pStage->m_pChara->AngleToChara(m_curX,m_curY));
+			int deltaAngle=(int)(m_pStage->m_pLaser->LaserAngle(0)-m_pStage->AimAngle(m_curX,m_curY));
 			while(deltaAngle<0)
 				deltaAngle+=256;
 			while(deltaAngle>=256)
@@ -397,7 +397,7 @@ int CBossStage4::MaiShootType2_1()
 	if (m_curPhaseFrame==48||m_curPhaseFrame==96)
 	{
 		float angle=m_curX<m_2curX?64.0f:-64.0f;
-		angle+=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		angle+=m_pStage->AimAngle(m_curX,m_curY);
 		m_curvingBullet.AddBullet(m_curX,m_curY,angle,32,9);
 		m_pStage->m_bPlaySound[15]=true;
 	}
@@ -626,7 +626,7 @@ int CBossStage4::YukiShootType2_1()
 	if (m_curPhaseFrame==48||m_curPhaseFrame==96)
 	{
 		float angle=m_2curX<m_curX?64.0f:-64.0f;
-		angle+=m_pStage->m_pChara->AngleToChara(m_2curX,m_2curY);
+		angle+=m_pStage->AimAngle(m_2curX,m_2curY);
 		m_curvingBullet.AddBullet(m_2curX,m_2curY,angle,32,11);
 		m_pStage->m_bPlaySound[15]=true;
 	}

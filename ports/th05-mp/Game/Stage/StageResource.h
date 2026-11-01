@@ -15,6 +15,10 @@ class CStageResource
 {
 public:
 	CStage *m_pStage;
+#ifdef __EMSCRIPTEN__
+ GLuint m_spriteAtlas=0;
+ void RefreshSpriteAtlas();
+#endif
 
 //images
 public:

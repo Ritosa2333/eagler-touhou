@@ -53,6 +53,7 @@ typedef struct strENEMY_BULLET{
 	unsigned char bulletType;
 	float curSpeed;
 	float curAngle;
+	unsigned char coopGrazeMask;
 	unsigned char bornStageAndGrazeFlag;
 	unsigned char dieStageAndMoveType;
 	unsigned char specialMoveType;

@@ -87,6 +87,14 @@ export const PRODUCT_GAMES = Object.freeze({
     th05: Object.freeze({
         testOnly: true, number: "05", title: "東方怪綺談", subtitle: "Mystic Square", cardArtwork: "th05-card.webp",
         storage: Object.freeze({saveRoot: "/savesth05", scoreFile: "score.dat", configFiles: Object.freeze(["game.cfg", "thprac-uth05.ini"])}),
+        multiplayerRuntime: "./runtime/th05/multiplayer/th05.html",
+        multiplayer: Object.freeze({
+            titleKey: "game.title.th05mp", gameplay: "cooperative",
+            playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+            loadouts: Object.freeze(["reimu","marisa","mima","yuuka"].map((name,character)=>Object.freeze({labelKey:`multiplayer.loadout.th05_${name}`,glyph:["霊","魔","魅","幽"][character],character,shot:0}))),
+            peerTransportGlobal: "__th05PeerTransport", relaySourceEnvelope: true, spectator: false, titleRoomEntry: false,
+            inputTiming: Object.freeze({rollbackLimit:0,sendPredictionLimit:0,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
+        }),
         runtime: "./runtime/th05/th05.html", runtimeFileLayout: "directory", dataProvider: "retail-memory", runtimeResourceTransport: "resources",
         requiredShared: Object.freeze(["/msgothic.ttc"]),
         runtimeAssets: Object.freeze(["th05.html", "th05.mjs", "th05.wasm", "shell.mjs", "managed.mjs", "data.mjs", "storage.mjs", "input.mjs", "pointer.mjs", "audio.mjs", "audio-layout.mjs", "music-notes.mjs", "sfx.mjs", "playback.mjs", "replay.mjs", "clock.mjs", "directory-keyboard.mjs", "keyboard-owners.mjs", "keyboard-input-bridge.mjs", "direct-input-bridge.mjs", "manifest.json"]),

@@ -1012,6 +1012,20 @@
           "note": "同步 SDL 对话资源与有界字形缓存；多人保留原始 MSG 并按入口和程序计数器读取本机翻译视图"
         }
       ]
+    },
+    "th05": {
+      "normal": "ports/th05",
+      "multiplayer": "ports/th05-mp",
+      "base": "0ef3a2c187a7b88c51facc155a453111e76c9499",
+      "history": [
+        {
+          "kind": "manual",
+          "source": "0ef3a2c187a7b88c51facc155a453111e76c9499",
+          "targetHead": "dac0b88cbefb27954d0a0cf8565d94aafa3203d6",
+          "integration": "working-tree",
+          "note": "独立 MP 在 uth05win 子树上接收当前普通版的移动触控、字体、音频与性能修复；合作规则、同步输入、多人侧栏和启动器显示配置由 th05-mp 独立维护。"
+        }
+      ]
     }
   }
 }

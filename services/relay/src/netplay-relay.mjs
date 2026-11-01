@@ -23,6 +23,7 @@ import {
   createRelayMessageGate,
   acceptRelayMessage,
   createBoundedRelaySender,
+  relayGameplayPayload,
   normalizeRelaySignal,
   clearSpectatorHistory,
   stopSpectatorStream,
@@ -1674,7 +1675,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         inputDelay > timingPolicy.manualDelayLimit ||
         (configurablePredictionLimit != null &&
           (!Number.isInteger(predictionLimit) ||
-            predictionLimit < 1 ||
+            predictionLimit < (timingPolicy.rollback ? 1 : 0) ||
             predictionLimit > configurablePredictionLimit))
       ) {
         sendLobby(socket, { type: 'error', error: 'invalid input timing' });
@@ -2237,7 +2238,7 @@ server.on('connection', (socket, request) => {
       if (dropEvery > 0 && sequence % dropEvery === 0) continue;
       const spread = jitterMs > 0 ? ((sequence * 17) % (jitterMs * 2 + 1)) - jitterMs : 0;
       const wait = Math.max(0, delayMs + spread);
-      sendBounded(target, forwardedPayload, { binary: true, delayMs: wait });
+      sendBounded(target, relayGameplayPayload(multiplayer,player,forwardedPayload), { binary: true, delayMs: wait });
     }
   });
 

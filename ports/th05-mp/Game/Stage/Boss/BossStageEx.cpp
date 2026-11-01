@@ -304,7 +304,7 @@ int CBossStageEx::Phase10ShootType1()
 	{
 		float c[]={m_pStage->m_pStageRes->m_palette[3*3]/255.0f,m_pStage->m_pStageRes->m_palette[3*3+1]/255.0f,
 				   m_pStage->m_pStageRes->m_palette[3*3+2]/255.0f};
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY);
 		if (m_curPhaseFrame%16==0)
 		{
 			m_pStage->m_pLaser->AddLaserFixed((m_curPhaseFrame-64)/8,m_curX,m_curY,c,8,angle+48,47,80);
@@ -371,7 +371,7 @@ int CBossStageEx::Phase14ShootType1()
 		m_pStage->m_pEnemyBullet->Shoot(&si);
 		if (m_curPhaseFrame%64==0)
 		{
-			float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+			float angle=m_pStage->AimAngle(m_curX,m_curY);
 			if (m_curPhaseFrame%128==0)
 				angle+=32;
 			else
@@ -387,7 +387,7 @@ int CBossStageEx::Phase14ShootType2()
 {
 	if (m_curPhaseFrame%8==0)
 	{
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY);
 		if (m_curPhaseFrame%16==0)
 			angle+=64;
 		else
@@ -442,7 +442,7 @@ int CBossStageEx::Phase4Shoot()
 			{
 				m_phase4AimX=m_curX+(float)(original::Random()%(96*16)-48*16);
 				m_phase4AimY=m_curY+(float)(original::Random()%(64*16)-32*16);
-				m_phase4AimAngle=m_pStage->m_pChara->AngleToChara(m_phase4AimX,m_phase4AimY);
+				m_phase4AimAngle=m_pStage->AimAngle(m_phase4AimX,m_phase4AimY);
     if(original::DemoActive())m_demoPatternState=static_cast<unsigned char>(int(m_phase4AimAngle));
 			}
 		}
@@ -983,7 +983,7 @@ void CBossStageEx::StepFireWave()
    for(int row=bottom&~15;row>=16&&angle<128;row-=16,angle+=8){
     if(row>=384||y<row||y>=row+16)continue;
     const int width=original::math::Y(angle,128);
-    if((i==0&&x<width-16)||(i==1&&x>400-width))m_pStage->m_pChara->m_bMiss=true;
+    if((i==0&&x<width-16)||(i==1&&x>400-width))m_pStage->MarkPlayerMiss();
    }
   }
   return;
@@ -1000,6 +1000,11 @@ void CBossStageEx::StepFireWave()
 			if (len<0) continue;
 			float yL=(float)(cur-8.0f)*16.0f;
 			float yH=(float)(cur+8.0f)*16.0f;
+   if(m_pStage->Cooperative()){
+    const float x=i==0?len/2:384.f*16-len/2;
+    if(m_pStage->TestPlayerCrash(x,(yL+yH)/2,len/2,(yH-yL)/2))m_pStage->MarkPlayerMiss();
+    continue;
+   }
 			float cX=m_pStage->m_pChara->GetCurX();
 			float cY=m_pStage->m_pChara->GetCurY();
 			if (cY>=yL&&cY<=yH)
@@ -1007,12 +1012,12 @@ void CBossStageEx::StepFireWave()
 				if (i==0)
 				{
 					if (cX<len)
-						m_pStage->m_pChara->m_bMiss=true;
+						m_pStage->MarkPlayerMiss();
 				}
 				else
 				{
 					if (cX>384.0f*16.0f-len)
-						m_pStage->m_pChara->m_bMiss=true;
+						m_pStage->MarkPlayerMiss();
 				}
 			}
 		}

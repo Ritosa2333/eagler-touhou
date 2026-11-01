@@ -6,6 +6,7 @@ import {
   persistStoredGamePreferences, touchMovementUsesJoystick,
   type GameOptions, type GamePreferenceStorage, type MusicMode,
 } from '../../src/launcher/game-preferences.mts';
+import {normalizeTh05MultiplayerDisplay} from '../../src/launcher/game-preferences.mts';
 import {gameIdForProduct, isMultiplayerProductId, PRODUCT_GAMES, productFeatureAvailable,
   type ProductId, type GameId} from '../../src/contracts/product-catalog.mts';
 import {createMultiplayerPreferenceStore} from '../../src/launcher/multiplayer-preferences.mts';
@@ -209,6 +210,7 @@ export function createGameSettingsModel({storage, onChange}: {
       if (state.options[name] === value) return;
       const options = {...state.options, [name]: value};
       if (name === 'touchMovementMode' && touchMovementUsesJoystick(value) && options.touchFocusMode === 'two-finger') options.touchFocusMode = 'hold-button';
+      if (name === 'th05MultiplayerDisplay') options.th05MultiplayerDisplay = normalizeTh05MultiplayerDisplay(value);
       if (name === 'touchSensitivity') options.touchSensitivity = Math.max(100, Math.min(300, Math.round(Number(value) || 100)));
       if (name === 'touchControlOpacity') options.touchControlOpacity = Math.max(20, Math.min(100, Math.round(Number(value) / 5) * 5 || 20));
       publish({...state, options}, 'option'); commitPreferences();

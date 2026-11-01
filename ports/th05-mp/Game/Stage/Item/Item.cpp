@@ -89,7 +89,9 @@ void CItem::Step()
 		if (m_pStage->m_bInCharaBombForItem)
 		{
 			m_item[i].bLastFrameInBomb=true;
-			float angle=m_pStage->m_pChara->AngleToChara(m_item[i].curX,m_item[i].curY);
+   const int seat=m_pStage->BoundSeat();m_pStage->ChooseTarget(m_item[i].curX,m_item[i].curY);
+			float angle=m_pStage->AimAngle(m_item[i].curX,m_item[i].curY);
+   m_pStage->RestoreTarget(seat);
 			m_item[i].velX=(float)cos(angle/256.0f*2*PI)*160;
 			m_item[i].velY=(float)sin(angle/256.0f*2*PI)*160;
    if(original::DemoActive()){m_item[i].velX=float(original::math::X(int(angle),160));m_item[i].velY=float(original::math::Y(int(angle),160));}
@@ -117,7 +119,9 @@ void CItem::Step()
 			m_item[i].curY=m_clipYLow;
 		if (m_item[i].velY>=0)
 			m_item[i].velX=0;
-		if (m_pStage->m_pChara->GetNextLifeComeTimeLeft()==0)
+  if(m_pStage->Cooperative()){
+   if(m_pStage->CollectItem(m_item[i].curX,m_item[i].curY,m_item[i].itemType)){m_pStage->m_bPlaySound[11]=true;m_item[i].flag=2;}
+  }else if (m_pStage->m_pChara->GetNextLifeComeTimeLeft()==0)
 		{
 			if (m_item[i].curX>=m_pStage->m_pChara->GetCurX()-24.0f*16.0f)
 				if (m_item[i].curX<=m_pStage->m_pChara->GetCurX()+24.0f*16.0f)

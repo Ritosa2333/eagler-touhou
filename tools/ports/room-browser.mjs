@@ -119,14 +119,24 @@ try{
         });
       }
       for(let seat=0;seat<players;seat++)await step(`P${seat+1}-ready`,async()=>{
+        const reload=pages[seat].locator('.room-resource-reload-confirm');
+        if(await reload.isVisible())await reload.click();
+        if(await pages[seat].locator('#mpRoomResourceRetry').isVisible())await pages[seat].locator('#mpRoomResourceRetry').click();
+        await pages[seat].waitForFunction(()=>document.querySelector('#decisionDialog')?.open||document.querySelector('#mpReady')?.disabled===false,null,{timeout:120000});
+        if(await pages[seat].locator('#decisionDialog[open]').count())await pages[seat].locator('#decisionConfirm').click();
         await pages[seat].locator('#mpReady').click();
         await pages[seat].waitForFunction(()=>document.querySelector('#mpReady')?.getAttribute('aria-pressed')==='true',null,{timeout:120000});
       });
+      // Joining/importing can finish a pending loadout or resource change after
+      // another seat first readies. Reconfirm against the final shared settings.
+      for(const page of pages)if(await page.locator('#mpReady').getAttribute('aria-pressed')!=='true'){
+        await page.locator('#mpReady').click();await page.waitForFunction(()=>document.querySelector('#mpReady')?.getAttribute('aria-pressed')==='true');
+      }
       record.ready=await Promise.all(pages.map(roomSnapshot));
       await step('synchronized-start',async()=>{
         await pages[0].waitForFunction(()=>!document.querySelector('#mpStartGame')?.disabled,null,{timeout:30000});
         await pages[0].locator('#mpStartGame').click();
-        for(const page of pages){
+        await Promise.all(pages.map(async page=>{
           await page.waitForFunction(()=>document.querySelector('#decisionDialog')?.open||
             window.acceptanceEvents?.some(event=>event.event==='first-frame'),null,{timeout:120000});
           if(await page.locator('#decisionDialog[open]').count()){
@@ -135,7 +145,7 @@ try{
             (record.launchConfirmations??=[]).push(message);
             await page.locator('#decisionConfirm').click();
           }
-        }
+        }));
         for(const page of pages)await page.waitForFunction(()=>window.acceptanceEvents?.some(event=>event.event==='first-frame'),null,{timeout:120000});
       });
       if(PRODUCT_GAMES[game].multiplayer.inGameSelection)await step('native-versus-selection',async()=>{

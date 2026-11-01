@@ -60,6 +60,7 @@ export const DEVELOPMENT_CONTENT = Object.freeze({
   games: Object.freeze({
     th05: Object.freeze({
       runtime: `${ws("th05", "artifacts", "runtime", "th05.html")}?hosted=1`,
+      multiplayerRuntime: `${ws("th05mp", "artifacts", "runtime", "th05.html")}?hosted=1`,
       ...(process.env.EAGLER_TH05_LANGUAGE_PACK_DIR?.trim() ? {languagePackDirectory: projectRelativePath(process.env.EAGLER_TH05_LANGUAGE_PACK_DIR.trim())} : {}),
       data: Object.freeze({source: th05ContentRoot ? projectRelativePath(resolve(th05ContentRoot,"th05.data")) : ws("th05","artifacts","content","th05.data"), layout: PRODUCT_CONTENT.th05.dataLayout}),
       music: availableMusic(th05ContentRoot ? {ogg: Object.freeze({base: `${projectRelativePath(resolve(th05ContentRoot,"music"))}/`, ...PRODUCT_CONTENT.th05.music.ogg})} : {}),

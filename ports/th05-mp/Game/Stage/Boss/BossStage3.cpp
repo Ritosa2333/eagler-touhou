@@ -291,8 +291,8 @@ void CBossStage3::StepPuppet()
 			else
 				m_puppet[i].shootAge++;
 		}
-		if (m_pStage->m_pChara->TestCrash(m_puppet[i].curX,m_puppet[i].curY,12.0f*16.0f,12.0f*16.0f))
-			m_pStage->m_pChara->m_bMiss=true;
+		if (m_pStage->TestPlayerCrash(m_puppet[i].curX,m_puppet[i].curY,12.0f*16.0f,12.0f*16.0f))
+			m_pStage->MarkPlayerMiss();
 		if (m_shieldState!=3)
 		{
 			int dmg=m_pStage->GetDamageFromChara(m_puppet[i].curX,m_puppet[i].curY,20.0f*16.0f,20.0f*16.0f,false);
@@ -538,7 +538,7 @@ void CBossStage3::Phase9ShootType2_12_1()
 	}
 	if (m_curPhaseFrame==64)
 	{
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY-8.0f*16.0f);
+		float angle=m_pStage->AimAngle(m_curX,m_curY-8.0f*16.0f);
 		float c[3]={m_pStage->m_pStageRes->m_palette[6*3]/255.0f,m_pStage->m_pStageRes->m_palette[6*3+1]/255.0f,
 					m_pStage->m_pStageRes->m_palette[6*3+2]/255.0f};
 		m_pStage->m_pLaser->AddLaserShootOut(m_curX,m_curY-8.0f*16.0f,c,angle,40,80);
@@ -722,12 +722,12 @@ void CBossStage3::StepShieldAndShoot()
 			m_shieldImg+=2;
 		return;
 	}
-	int dmg=m_pStage->m_pCharaBullet->GetDamage(m_puppet[0].curX+64.0f*16.0f,m_puppet[0].curY,
+	int dmg=m_pStage->ShotsDamage(m_puppet[0].curX+64.0f*16.0f,m_puppet[0].curY,
 												56.0f*16.0f,4.0f*16.0f,false,true);
 	if (dmg>0)
 		m_pStage->m_bPlaySound[9]=true;
-	if (m_pStage->m_pChara->TestCrash(m_puppet[0].curX+64.0f*16.0f,m_puppet[0].curY,64.0f*16.0f,4.0f*16.0f))
-		m_pStage->m_pChara->m_bMiss=true;
+	if (m_pStage->TestPlayerCrash(m_puppet[0].curX+64.0f*16.0f,m_puppet[0].curY,64.0f*16.0f,4.0f*16.0f))
+		m_pStage->MarkPlayerMiss();
 	if (m_curPhaseFrame%16==0)
 		if (m_curPhaseFrame%256<160+m_curPhase/3*32)
 		{

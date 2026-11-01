@@ -352,8 +352,8 @@ void CBossStage5::Phase4Shoot()
 	{
 		if (m_curPhaseFrame%64==0)
 		{
-			m_phase4ShootAngle[0]=m_pStage->m_pChara->AngleToChara(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f);
-			m_phase4ShootAngle[1]=m_pStage->m_pChara->AngleToChara(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f);
+			m_phase4ShootAngle[0]=m_pStage->AimAngle(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f);
+			m_phase4ShootAngle[1]=m_pStage->AimAngle(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f);
 		}
 		ENEMY_SHOOT_INFO si;
 		si.bulletBornType=18;
@@ -377,7 +377,7 @@ void CBossStage5::Phase4Shoot()
 	{
 		float origX=(float)(16*16+original::Random()%(352*16));
 		float origY=(float)(original::Random()%(96*16));
-		float angle=m_pStage->m_pChara->AngleToChara(origX,origY)+(float)(original::Random()%32-15);
+		float angle=m_pStage->AimAngle(origX,origY)+(float)(original::Random()%32-15);
 		m_knifeBullet.AddBullet(origX,origY,angle,76,32);
 	}
 	if (m_curHP<m_curPhaseEndHP+600&&m_phase4CrazyMode==false)
@@ -412,8 +412,8 @@ void CBossStage5::Phase7Shoot()
 	{
 		if (m_curPhaseFrame%64==0)
 		{
-			m_phase7ShootAngle[0]=m_pStage->m_pChara->AngleToChara(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f);
-			m_phase7ShootAngle[1]=m_pStage->m_pChara->AngleToChara(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f);
+			m_phase7ShootAngle[0]=m_pStage->AimAngle(m_curX-32.0f*16.0f,m_curY-16.0f*16.0f);
+			m_phase7ShootAngle[1]=m_pStage->AimAngle(m_curX+32.0f*16.0f,m_curY-16.0f*16.0f);
 		}
 		ENEMY_SHOOT_INFO si;
 		si.bulletBornType=18;
@@ -437,7 +437,7 @@ void CBossStage5::Phase7Shoot()
 	{
 		float laserX=(float)(64*16+original::Random()%256*16);
 		float laserY=32.0f*16.0f;
-		float laserAngle=m_pStage->m_pChara->AngleToChara(laserX,laserY);
+		float laserAngle=m_pStage->AimAngle(laserX,laserY);
 		float color[]={m_pStage->m_pStageRes->m_palette[8*3]/255.0f,m_pStage->m_pStageRes->m_palette[8*3+1]/255.0f,
 					   m_pStage->m_pStageRes->m_palette[8*3+2]/255.0f};
 		m_pStage->m_pLaser->AddLaserShootOut(laserX,laserY,color,laserAngle,28,100);
@@ -445,7 +445,7 @@ void CBossStage5::Phase7Shoot()
 		{
 			float origX=(float)(16*16+original::Random()%(352*16));
 			float origY=(float)(original::Random()%(96*16));
-			float angle=m_pStage->m_pChara->AngleToChara(origX,origY)+(float)(original::Random()%32-15);
+			float angle=m_pStage->AimAngle(origX,origY)+(float)(original::Random()%32-15);
 			m_knifeBullet.AddBullet(origX,origY,angle,76,32);
 		}
 	}
@@ -547,7 +547,7 @@ void CBossStage5::Phase8Shoot()
 					m_phase8KnifePart=true;
 					return;
 				}
-				m_phase8ShootPartAngle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+				m_phase8ShootPartAngle=m_pStage->AimAngle(m_curX,m_curY);
 			}
 			si.bulletSpeed=m_phase8ShootPartSpeed;
 			si.shootAngle=m_phase8ShootPartAngle;

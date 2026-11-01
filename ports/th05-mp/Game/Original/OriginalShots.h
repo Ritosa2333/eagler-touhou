@@ -10,7 +10,7 @@ struct Shot {struct {Point cur,velocity;} pos; unsigned char flag,age,patnum_bas
  void set_random_angle_forwards(unsigned char min=0xb8,unsigned char max=0xc8);
 };
 static Shot slots[65];static int cursor,shot_time,originX,originY;
-static unsigned char randring1_next8_ge_lt(unsigned char min,unsigned char max){return (min+(original::Random()&(unsigned char(max-min)-1)))&255;}
+static unsigned char randring1_next8_ge_lt(unsigned char min,unsigned char max){return (min+(original::Random()&(static_cast<unsigned char>(max-min)-1)))&255;}
 static void shot_velocity_set(Point* p,unsigned char angle){p->x.v=math::X(angle,192);p->y.v=math::Y(angle,192);for(int i=0;i<65;i++)if(p==&slots[i].pos.velocity){slots[i].angle=angle;break;}}
 inline void Shot::set_random_angle_forwards(unsigned char min,unsigned char max){shot_velocity_set(&pos.velocity,randring1_next8_ge_lt(min,max));}
 static Shot* shots_add(){while(cursor<64){int i=++cursor;if(slots[i].flag)continue;Shot& s=slots[i];s.flag=1;s.age=0;s.pos.cur.x.v=originX;s.pos.cur.y.v=originY;s.pos.velocity.x.v=0;s.pos.velocity.y.v=-192;s.patnum_base=20;s.type=0;s.angle=192;cursor=i+1;return &s;}return nullptr;}

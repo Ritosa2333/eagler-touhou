@@ -1,0 +1,40 @@
+{
+  "count": 2,
+  "route": "rtc",
+  "running": [
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    },
+    {
+      "frame": 251,
+      "route": "rtc",
+      "inputDelay": 2,
+      "saveRoot": "/savesth05mp"
+    }
+  ],
+  "positions": [
+    [
+      2560,
+      2496
+    ],
+    [
+      2560,
+      2496
+    ]
+  ],
+  "touchPause": true,
+  "touchMovement": {
+    "touchBefore": 2560,
+    "touchAfter": 3328
+  },
+  "returned": true,
+  "errors": [],
+  "runtimeErrors": [],
+  "secondStart": [
+    1,
+    1
+  ]
+}
