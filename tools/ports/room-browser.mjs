@@ -11,10 +11,14 @@ const option=(name,fallback)=>process.argv.find(value=>value.startsWith(`--${nam
 const base=option('url'),out=option('output'),route=option('route','rtc'),players=Number(option('players','2'));
 const disconnect=process.argv.includes('--disconnect');
 const rollback=process.argv.includes('--rollback');
+const delayOnly=process.argv.includes('--no-rollback');
+const frames=Number(option('frames','180'));
 const returningUser=process.argv.includes('--existing-user');
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
 assert.ok(base&&out,'Required: --url=local-launcher --output=private-directory');
 assert.ok(['rtc','relay'].includes(route));assert.ok([2,3].includes(players));
+assert.ok(Number.isSafeInteger(frames)&&frames>=180&&frames<=3600);
+assert.ok(!rollback||!delayOnly);
 const games=option('game',Object.keys(PRODUCT_GAMES).filter(game=>PRODUCT_GAMES[game].multiplayer).join(',')).split(',');
 const directory=resolve(out);await mkdir(directory,{recursive:true});
 const packages=option('packages')?JSON.parse(await readFile(resolve(option('packages')),'utf8')):{};
@@ -22,6 +26,8 @@ const report={schema:'eagler-touhou/room-browser/1',startedAt:new Date().toISOSt
   scope:'Real Launcher room controls, actual production Runtime and private installed DATA; desktop browser session acceptance',targets:[]};
 report.disconnectRequested=disconnect;report.returningUser=returningUser;
 report.rollbackRequested=rollback;
+report.delayOnlyRequested=delayOnly;
+report.targetFrames=frames;
 report.commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 if(gamepad){report.gamepadProbeSha256=createHash('sha256').update(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))).digest('hex');report.gamepadBundleSha256=createHash('sha256').update(gamepadBundle).digest('hex');await writeFile(resolve(directory,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(directory,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
@@ -58,7 +64,8 @@ async function nativeSnapshot(page){return page.evaluate(()=>{
     failed:r.__eaglerNetplayFailed??false,error:r.__eaglerNetplayError??'',native,
     transportState:{disconnected:r.__eaglerPeerTransport?.disconnected===true,recovering:r.__eaglerPeerTransport?.isRecovering?.()===true},
     state:runtime?.status?.()??null,gameplayStage:r.__eaglerNetplayGameplayStage??null,
-    options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,prediction:options.netplayPredictionLimit},
+    rollback:r.__eaglerNetplayLanRollback??null,resimulated:r.__eaglerNetplayLanResimulated??null,
+    options:{player:options.netplayPlayer,players:options.netplayPlayerCount,mode:options.netplayMode,adonisMode:options.netplayAdonisMode,prediction:options.netplayPredictionLimit},
     events:window.acceptanceEvents??[]};
 });}
 try{
@@ -129,12 +136,6 @@ try{
           }
         });
       }
-      if(rollback)await step('enable-rollback',async()=>{
-        const toggle=pages[0].locator('#mpRollbackToggle');
-        await toggle.waitFor({state:'visible'});
-        if(await toggle.getAttribute('aria-checked')!=='true')await toggle.click();
-        await pages[0].waitForFunction(()=>document.querySelector('#mpRollbackToggle')?.getAttribute('aria-checked')==='true');
-      });
       for(let seat=0;seat<players;seat++)await step(`P${seat+1}-ready`,async()=>{
         const reload=pages[seat].locator('.room-resource-reload-confirm');
         if(await reload.isVisible())await reload.click();
@@ -146,6 +147,15 @@ try{
       });
       // Joining/importing can finish a pending loadout or resource change after
       // another seat first readies. Reconfirm against the final shared settings.
+      if(rollback||delayOnly)await step(rollback?'enable-rollback':'disable-rollback',async()=>{
+        await pages[0].locator('#roomWorkspaceTab-game').click();
+        const toggle=pages[0].locator('#mpRollbackToggle');await toggle.waitFor({state:'visible'});
+        if(await toggle.getAttribute('aria-checked')==='true')await toggle.click();
+        await pages[0].waitForFunction(()=>document.querySelector('#mpRollbackToggle')?.getAttribute('aria-checked')==='false');
+        if(rollback){await toggle.click();
+          await pages[0].waitForFunction(()=>document.querySelector('#mpRollbackToggle')?.getAttribute('aria-checked')==='true');}
+        await pages[0].locator('#roomWorkspaceTab-chat').click();
+      });
       for(const page of pages)if(await page.locator('#mpReady').getAttribute('aria-pressed')!=='true'){
         await page.locator('#mpReady').click();await page.waitForFunction(()=>document.querySelector('#mpReady')?.getAttribute('aria-pressed')==='true');
       }
@@ -173,12 +183,12 @@ try{
         for(const page of pages)await page.keyboard.down('Control');
         await pages[0].waitForTimeout(1600);for(const page of pages)await page.keyboard.up('Control');
       });
-      await step('actual-native-frame-180',async()=>{
+      await step(`actual-native-frame-${frames}`,async()=>{
         const deadline=Date.now()+120000;
         while(true){record.native=await Promise.all(pages.map(nativeSnapshot));
-          if(record.native.every(state=>state?.active&&state.frame>=180))break;
+          if(record.native.every(state=>state?.active&&state.frame>=frames))break;
           if(record.native.some(state=>state?.failed||state?.error))throw Error('Native session failed: '+JSON.stringify(record.native));
-          if(Date.now()>deadline)throw Error('Native session did not reach frame 180: '+JSON.stringify(record.native));
+          if(Date.now()>deadline)throw Error(`Native session did not reach frame ${frames}: `+JSON.stringify(record.native));
           await pages[0].waitForTimeout(200);
         }
         for(let seat=0;seat<players;seat++){
@@ -188,7 +198,8 @@ try{
           await pages[seat].frameLocator('#gameFrame').locator('canvas').first().screenshot({path:resolve(directory,`${game}-${players}p-${route}-p${seat+1}-canvas.png`)});
         }
       });
-      if(rollback)assert.ok(record.native.every(state=>state.options.prediction===PRODUCT_GAMES[game].multiplayer.inputTiming.sendPredictionLimit),'Launcher must send rollback limits to every native seat');
+      if(rollback)assert.ok(record.native.every(state=>state.options.adonisMode!==1&&state.options.prediction===PRODUCT_GAMES[game].multiplayer.inputTiming.sendPredictionLimit),'Launcher must send rollback timing and limits to every native seat');
+      if(delayOnly)assert.ok(record.native.every(state=>state.options.adonisMode===1&&state.rollback===0),'Delay-only rooms must disable native prediction');
       if(gamepad)await step('native-gamepad-sampling',async()=>{
         record.gamepad=[];
         for(const page of pages){const frame=await(await page.locator('#gameFrame').elementHandle()).contentFrame();

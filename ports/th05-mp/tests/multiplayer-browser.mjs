@@ -18,12 +18,12 @@ try{
  await wait(()=>port,'relay startup');const clients=[];
  for(let seat=0;seat<count;seat++){const client=await lobby(seat);clients.push(client);client.send({type:'take-seat',seat,loadout:seat,name:'Native '+seat});await wait(()=>client.room()?.seats[seat],'seat');if(seat===0){client.send({type:'settings',playerCount:count,difficulty:1});await wait(()=>client.room()?.playerCount===count,'capacity');}}
  for(const client of clients)client.send({type:'set-ready',ready:true,runtimeGeneration:generation,movementMode:'touch'});
- await wait(()=>clients[0].room()?.seats.slice(0,count).every(s=>s?.ready),'ready');clients[0].send({type:'start',adonisMode:mode,inputDelay:0,inputDelayAuto:mode!==0,predictionLimit:mode===1?0:8});
+ await wait(()=>clients[0].room()?.seats.slice(0,count).every(s=>s?.ready),'ready');clients[0].send({type:'start',adonisMode:mode,inputDelay:0,inputDelayAuto:mode!==0,predictionLimit:8});
  await wait(()=>clients[0].messages.some(m=>m.type==='start'),'run');const serial=clients[0].messages.find(m=>m.type==='start').serial;
  site=await multiplayerFixture(count);browser=await launchBrowser();const page=await browser.newPage({viewport:{width:1320,height:1020}}),errors=[];
  if(route==='relay')await page.addInitScript(()=>{delete window.RTCPeerConnection;});
  page.on('pageerror',e=>errors.push(e.message));await page.goto(site.url);await page.waitForFunction(count=>events.filter(e=>e.event==='ready').length===count,count,{timeout:30000});
- const configure=async seat=>{const opts={netplayMode:'lan',netplayUrl:`ws://127.0.0.1:${port}/?${new URLSearchParams({room:roomId,run:String(serial),member:members[seat],runtimeGeneration:generation})}`,netplayPlayer:seat,netplayPlayerCount:count,netplaySeed:739,netplayDifficulty:1,netplayInputDelay:0,netplayInputDelayAuto:mode!==0,netplayAdonisMode:mode,netplayPredictionLimit:mode===1?0:8,netplayLoadouts:Array.from({length:count},(_,character)=>({character,shot:0})),touchEnabled:true,touchMovementMode:'touch-unlimited'};
+ const configure=async seat=>{const opts={netplayMode:'lan',netplayUrl:`ws://127.0.0.1:${port}/?${new URLSearchParams({room:roomId,run:String(serial),member:members[seat],runtimeGeneration:generation})}`,netplayPlayer:seat,netplayPlayerCount:count,netplaySeed:739,netplayDifficulty:1,netplayInputDelay:0,netplayInputDelayAuto:mode!==0,netplayAdonisMode:mode,netplayPredictionLimit:8,netplayLoadouts:Array.from({length:count},(_,character)=>({character,shot:0})),touchEnabled:true,touchMovementMode:'touch-unlimited'};
   const result=await page.evaluate(({seat,opts})=>command(seat,'configure',{music:'none',language:'ja',sharedResources:[{path:'/data/gothic.ttf',url:'/font'}],options:opts}),{seat,opts});assert.equal(result.ok,true,JSON.stringify(result));
   const preview=await page.evaluate(seat=>command(seat,'prepare-room'),seat);assert.equal(preview.presented,true,JSON.stringify(preview));};
  for(let seat=0;seat<count;seat++)await configure(seat);
@@ -43,7 +43,7 @@ try{
   for(let pulse=0;pulse<10;pulse++){await page.evaluate(async({count,pulse})=>{for(let seat=0;seat<count;seat++){await command(seat,'keyboard',{code:'KeyZ',down:pulse%2===0});await command(seat,'keyboard',{code:seat%2?'ArrowRight':'ArrowLeft',down:pulse%2===0});}},{count,pulse});await page.waitForTimeout(110);}
   await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].every(f=>f.contentWindow.__eaglerNetplayLanFrame>750),null,{timeout:30000});
   report.rollback=await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>({corrections:f.contentWindow.__eaglerNetplayRollback,replayed:f.contentWindow.__eaglerNetplayResimulated,delayed:f.contentWindow.__rollbackTestDelays,confirmed:f.contentWindow.__eaglerNetplayConfirmed,frame:f.contentWindow.__eaglerNetplayFrame})));
-  assert.ok(report.rollback.every(r=>r.corrections>0&&r.replayed>0&&r.delayed>0),JSON.stringify(report.rollback));
+  assert.ok(report.rollback.every(r=>r.delayed>0&&(mode===1?r.corrections===0&&r.replayed===0:r.corrections>0&&r.replayed>0)),JSON.stringify(report.rollback));
  }
  assert.ok(report.running.every(r=>r.route===route));assert.ok(report.running.every(r=>r.saveRoot==='/savesth05mp'));
  const beforeX=await page.evaluate(()=>document.querySelector('iframe').contentWindow.Module._th05_coop_value(1,5));

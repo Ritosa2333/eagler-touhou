@@ -10,6 +10,7 @@ test('native room configuration rejects absent identity and unsupported seats/mo
 });
 
 test('rollback and mixed timing use the common eight-frame ceiling',()=>{
+ assert.equal(multiplayerOptions({...options(2,0),netplayAdonisMode:1,netplayPredictionLimit:8}).netplayAdonisMode,1);
  for(const mode of [0,2])assert.equal(multiplayerOptions({...options(2,0),netplayAdonisMode:mode,netplayPredictionLimit:8}).netplayAdonisMode,mode);
  for(const reserve of [0,3,1.5])assert.throws(()=>multiplayerOptions({...options(2,0),netplayPredictionReserve:reserve}));
 });
