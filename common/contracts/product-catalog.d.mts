@@ -29,6 +29,18 @@ export type HostRuntimeFeatures = Readonly<Partial<Record<HostRuntimeFeatureId, 
 export declare function isHostRuntimeFeatureId(value: string): value is HostRuntimeFeatureId;
 export declare function languagePriority(id: string): number;
 export declare const PRODUCT_GAMES: Readonly<{
+    th05: Readonly<{
+        testOnly: true; number: "05"; title: "東方怪綺談"; subtitle: "Mystic Square"; cardArtwork: "th05-card.webp";
+        storage: Readonly<{saveRoot: "/savesth05"; scoreFile: "score.dat"; configFiles: readonly string[]}>;
+        runtime: "./runtime/th05/th05.html"; runtimeFileLayout: "directory"; dataProvider: "retail-memory"; runtimeResourceTransport: "resources";
+        requiredShared: readonly string[]; runtimeAssets: readonly string[];
+        musicCapabilities: Readonly<{midi: false}>; musicRuntime: Readonly<{localOggConfigureMode: "runtime-selection"; sources: readonly ["original", "akyu"]}>;
+        touchFire: Readonly<{mode: "toggle"; labelKey: "touch.tapToggle"}>;
+        support: Readonly<{highRefreshRate: false; sourceRepository: "https://github.com/Goan114/uth05win-vibe"; adaptationNotice: "early-test"}>;
+        package: Readonly<{dataFileId: "game-data"; dataTarget: "/th05.data"; rawDataImport: Readonly<{fileNames: readonly string[]}>;
+            musicSourceDirectories: Readonly<{ogg: "music"}>; musicMounts: Readonly<{ogg: "/music"}>}>;
+        replay: Readonly<{prefix: "th05"; slotPrefix: "replay"; slots: 100; extensions: readonly ["rpy"]}>; features: Readonly<{thprac: true; languages: true; focusHitbox: true}>;
+    }>;
     th06: Readonly<{
         cardArtwork: "th06-card.webp";
         number: "06";
@@ -1811,7 +1823,7 @@ export declare function createLocalProductManifest(): {
                 title: string;
                 pack: null;
             }[];
-        } | (typeof PRODUCT_GAMES.th12 & {
+        } | (typeof PRODUCT_GAMES.th05 & {music: {midi: {files: never[]; supported: boolean}};languageOptions: {id: string; title: string; pack: null}[];}) | (typeof PRODUCT_GAMES.th12 & {
             music: {midi: {files: never[]; supported: boolean}};
             languageOptions: {id: string; title: string; pack: null}[];
         }) | (typeof PRODUCT_GAMES.th13 & {

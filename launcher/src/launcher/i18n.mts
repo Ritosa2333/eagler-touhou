@@ -401,6 +401,7 @@ const entries = [
   ["gameLanguage.zhHant", "中文（繁體）", "Traditional Chinese"], ["gameLanguage.en", "English", "English"], ["gameLanguage.ru", "Русский", "Русский"],
   ["settings.musicMode", "音乐模式", "Music mode"],
   ["settings.music.oggStream", "ogg(流式解码，避免切歌时卡顿)", "OGG (streaming decode; avoids track-change stutter)"],
+  ["settings.music.akyu", "幺乐团专辑版", "Akyu’s Untouched Score"],
   ["settings.music.oggFull", "ogg(全量解码，避免音频卡顿)", "OGG (full decode; avoids audio stutter)"],
   ["settings.music.none", "无", "None"], ["settings.frameLimit", "高刷新率", "High refresh rate"],
   ["settings.pixelPerfect", "启用点对点显示", "Enable pixel-perfect display"],

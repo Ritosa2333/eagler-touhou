@@ -5,8 +5,16 @@ import {resolve} from 'node:path';
 import {targets,inspectInputs,root} from './inputs.mjs';
 
 // Source/build wiring complements the shared service's rendered PCM tests.
-for(const target of targets())test(`${target.game} ${target.variant} compiles its immediate SFX route`,()=>{
+const selected=process.env.EAGLER_PORT_CHECK_GAMES?JSON.parse(process.env.EAGLER_PORT_CHECK_GAMES):null;
+for(const target of targets().filter(target=>!selected||selected.includes(target.game)))test(`${target.game} ${target.variant} compiles its immediate SFX route`,()=>{
  const inputs=inspectInputs(target),owner=resolve(root,target.directory);
+ if(target.game==='th05'){
+  assert(inputs.translationUnits.includes('portable/Platform.cpp'));
+  assert.match(readFileSync(resolve(owner,'portable/Platform.cpp'),'utf8'),/void PlaySound\(int index\)\{EM_ASM\(\{Module\.eaglerAudio\?\.sound\(\$0\)/);
+  const audio=readFileSync(resolve(owner,'web/audio.mjs'),'utf8');
+  assert.match(audio,/sfx=createSfx\(ctx\(\),bytes\)/);assert.match(audio,/sound\(index\).*sfx\?\.trigger\(index\)/);
+  assert.match(audio,/pump\(\)\{sfx\?\.pump\(\)/);return;
+ }
  const routes=inputs.translationUnits.map(path=>resolve(owner,path))
   .map(path=>({path,source:readFileSync(path,'utf8')}))
   .filter(({source})=>source.includes('#include <eagler/audio/WebSfx.hpp>'));

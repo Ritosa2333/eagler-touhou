@@ -84,6 +84,22 @@ export const PRODUCT_GAMES = Object.freeze({
     // support.highRefreshRate describes currently implemented presentation for
     // Launcher UI. False keeps unfinished adapters honest; it does not waive
     // the required presentation-cadence acceptance gate.
+    th05: Object.freeze({
+        testOnly: true, number: "05", title: "東方怪綺談", subtitle: "Mystic Square", cardArtwork: "th05-card.webp",
+        storage: Object.freeze({saveRoot: "/savesth05", scoreFile: "score.dat", configFiles: Object.freeze(["game.cfg", "thprac-uth05.ini"])}),
+        runtime: "./runtime/th05/th05.html", runtimeFileLayout: "directory", dataProvider: "retail-memory", runtimeResourceTransport: "resources",
+        requiredShared: Object.freeze(["/msgothic.ttc"]),
+        runtimeAssets: Object.freeze(["th05.html", "th05.mjs", "th05.wasm", "shell.mjs", "managed.mjs", "data.mjs", "storage.mjs", "input.mjs", "audio.mjs", "audio-layout.mjs", "sfx.mjs", "playback.mjs", "replay.mjs", "clock.mjs", "directory-keyboard.mjs", "keyboard-owners.mjs", "keyboard-input-bridge.mjs", "direct-input-bridge.mjs", "manifest.json"]),
+        musicCapabilities: Object.freeze({midi: false}), musicRuntime: Object.freeze({localOggConfigureMode: "runtime-selection", sources: Object.freeze(["original", "akyu"])}),
+        touchFire: TOGGLE_TOUCH_FIRE,
+        support: Object.freeze({highRefreshRate: false, sourceRepository: "https://github.com/Goan114/uth05win-vibe", adaptationNotice: "early-test"}),
+        package: Object.freeze({dataFileId: "game-data", dataTarget: "/th05.data", rawDataImport: Object.freeze({fileNames: Object.freeze(["th05.data"])}),
+            musicSourceDirectories: Object.freeze({ogg: "music"}), musicMounts: Object.freeze({ogg: "/music"})}),
+        replay: Object.freeze({prefix: "th05", slotPrefix: "replay", slots: 100, extensions: Object.freeze(["rpy"])}), features: Object.freeze({thprac: true, languages: true, focusHitbox: true}),
+    }),
+    // support.highRefreshRate describes currently implemented presentation for
+    // Launcher UI. False keeps unfinished adapters honest; it does not waive
+    // the required presentation-cadence acceptance gate.
     th06: Object.freeze({
         cardArtwork: "th06-card.webp",
         number: "06",

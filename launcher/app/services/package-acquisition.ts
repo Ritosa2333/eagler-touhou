@@ -81,7 +81,7 @@ export function checkPreparationAbort(signal?: AbortSignal): void {
   if (signal?.aborted) throw signal.reason instanceof Error ? signal.reason : new DOMException('Aborted', 'AbortError');
 }
 export const preparationErrorText = (error: unknown) => error instanceof Error ? error.message : String(error);
-const isOgg = (music: MusicMode) => music === 'ogg-stream' || music === 'ogg-full';
+const isOgg = (music: MusicMode) => music === 'ogg-stream' || music === 'ogg-full' || music === 'ogg-akyu';
 function requiredShared(game: GameId) {const product = PRODUCT_GAMES[game]; return 'requiredShared' in product ? product.requiredShared : [];}
 
 /** Main app 3887–3978, 3980–4110, 5678–5953. Canonical Package Store and

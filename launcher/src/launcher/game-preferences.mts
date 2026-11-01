@@ -2,7 +2,7 @@ import { TOUCH_SENSITIVITY_MAX, TOUCH_SENSITIVITY_MIN } from "../contracts/runti
 
 export type TouchMovementMode = "touch" | "touch-unlimited" | "joystick" | "joystick-free";
 export type TouchFocusMode = "two-finger" | "hold-button" | "toggle-button";
-export type MusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
+export type MusicMode = "ogg-stream" | "ogg-full" | "ogg-akyu" | "midi" | "none";
 
 export interface GameOptions {
   thpracEnabled: boolean;
@@ -54,10 +54,10 @@ export const TOUCH_MOVEMENT_MODES = new Set<TouchMovementMode>([
 export const TOUCH_FOCUS_MODES = new Set<TouchFocusMode>([
   "two-finger", "hold-button", "toggle-button",
 ]);
-export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "midi", "none"]);
+export const MUSIC_MODES = new Set<MusicMode>(["ogg-stream", "ogg-full", "ogg-akyu", "midi", "none"]);
 
 export function isMusicMode(value: string): value is MusicMode {
-  return value === "ogg-stream" || value === "ogg-full" || value === "midi" || value === "none";
+  return value === "ogg-stream" || value === "ogg-full" || value === "ogg-akyu" || value === "midi" || value === "none";
 }
 
 export function isTouchMovementMode(value: string): value is TouchMovementMode {

@@ -4,6 +4,7 @@ import {useLocale} from '../../i18n';
 import {LibraryCards, type LibraryCardsProps} from './LibraryCards';
 import {AppLink} from './AppLink';
 import {ClassicsShelf} from './ClassicsShelf';
+import {createLibraryProducts} from './products';
 
 export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' | 'lobbyLink' | 'inert'> {
   masthead: ReactNode;
@@ -22,6 +23,7 @@ export interface LibrarySurfaceProps extends Omit<LibraryCardsProps, 'variant' |
 export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, roomUsersArtwork, optionsOpen, roomOpen = false, roomDrawer, classicsAssetUrl, onBack, children, ...rail}: LibrarySurfaceProps) {
   const {t} = useLocale();
   const Link = rail.interactive === false ? 'a' : AppLink;
+  const standalone = classicsAssetUrl ? [{...createLibraryProducts(['th05'], classicsAssetUrl, () => classicsAssetUrl('th05'))[0]!, id: 'th05-standalone', multiplayer: true, external: true as const}] : [];
   return <><div className="library-background" aria-hidden="true"/><div className="sheet">
     {masthead}
     <main className={`main library-layout${roomOpen ? ' mp-room-open' : ''}`} id="main">
@@ -29,7 +31,7 @@ export function LibrarySurface({masthead, footer, serverStatusNote, lobbyHref, r
       <div className="game-library" inert={optionsOpen}>
         <LibraryCards {...rail} products={rail.products.filter(p => !p.multiplayer)} variant="singleplayer"/>
         {classicsAssetUrl && <ClassicsShelf assetUrl={classicsAssetUrl}/>}
-        <LibraryCards {...rail} products={rail.products.filter(p => p.multiplayer)} variant="multiplayer" lobbyLink={<Link className="shelf-lobby-link" href={lobbyHref}><img src={roomUsersArtwork} alt="" width="18" height="18"/><span>{t('lobby.title')}</span></Link>}/>
+        <LibraryCards {...rail} products={rail.products.filter(p => p.multiplayer)} externalProducts={standalone} variant="multiplayer" lobbyLink={<Link className="shelf-lobby-link" href={lobbyHref}><img src={roomUsersArtwork} alt="" width="18" height="18"/><span>{t('lobby.title')}</span></Link>}/>
       </div>
       <OptionsBackdrop onBack={onBack}/>
       {children}

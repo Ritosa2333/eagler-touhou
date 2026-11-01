@@ -1,6 +1,6 @@
 # 文档总表
 
-共 405 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 414 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -32,6 +32,7 @@
 | 适配指南 | [docs/adaptation/th15-pointdevice-issue113-20261020.md](adaptation/th15-pointdevice-issue113-20261020.md) | TH15 无欠检查点与完整存档导出 |
 | 适配指南 | [docs/adaptation/validation.md](adaptation/validation.md) | 验证与交付 |
 | 作品入口 | [ports/README.md](../ports/README.md) | 选择游戏 |
+| 作品入口 | [ports/th05/README.md](../ports/th05/README.md) | 東方怪綺談 · uth05win for Eagler |
 | 作品入口 | [ports/th06/README.md](../ports/th06/README.md) | 東方紅魔郷 TH06 |
 | 作品入口 | [ports/th07/README.md](../ports/th07/README.md) | 東方妖々夢 TH07 |
 | 作品入口 | [ports/th075-mp/README.md](../ports/th075-mp/README.md) | 東方萃夢想 MP |
@@ -49,6 +50,7 @@
 | 作品入口 | [ports/th15/README.md](../ports/th15/README.md) | 東方紺珠伝 TH15 |
 | 作品入口 | [ports/th17/README.md](../ports/th17/README.md) | TH17 · 东方鬼形兽 |
 | 作品入口 | [ports/th20/README.md](../ports/th20/README.md) | TH20 · 东方锦上京 |
+| 作品适配表 | [ports/th05/ADAPTATION.md](../ports/th05/ADAPTATION.md) | th05 适配检查 |
 | 作品适配表 | [ports/th06/ADAPTATION.md](../ports/th06/ADAPTATION.md) | th06 适配检查 |
 | 作品适配表 | [ports/th07/ADAPTATION.md](../ports/th07/ADAPTATION.md) | th07 适配检查 |
 | 作品适配表 | [ports/th075-mp/ADAPTATION.md](../ports/th075-mp/ADAPTATION.md) | th075 MP 适配检查 |
@@ -66,6 +68,9 @@
 | 作品适配表 | [ports/th15/ADAPTATION.md](../ports/th15/ADAPTATION.md) | th15 适配检查 |
 | 作品适配表 | [ports/th17/ADAPTATION.md](../ports/th17/ADAPTATION.md) | th17 适配检查 |
 | 作品适配表 | [ports/th20/ADAPTATION.md](../ports/th20/ADAPTATION.md) | th20 适配检查 |
+| 作品源码文档 | [ports/th05/PRACTICE.md](../ports/th05/PRACTICE.md) | uth05win Practice 工具 |
+| 作品源码文档 | [ports/th05/README-UPSTREAM.md](../ports/th05/README-UPSTREAM.md) | 这是被vibe coding魔改的uth05win |
+| 作品源码文档 | [ports/th05/docs/DEVELOPMENT.md](../ports/th05/docs/DEVELOPMENT.md) | TH05 开发指南 |
 | 作品源码文档 | [ports/th06/docs/DEVELOPMENT.md](../ports/th06/docs/DEVELOPMENT.md) | TH06 开发指南 |
 | 作品源码文档 | [ports/th06/docs/records/2026-10-26-spectator-browser.md](../ports/th06/docs/records/2026-10-26-spectator-browser.md) | 合作旁观状态验收 |
 | 作品源码文档 | [ports/th07/docs/DEVELOPMENT.md](../ports/th07/docs/DEVELOPMENT.md) | TH07 开发指南 |
@@ -209,6 +214,8 @@
 | 历史记录 | [archive/rollback-zero-delay-th12-performance-20261028/README.md](../archive/rollback-zero-delay-th12-performance-20261028/README.md) | 回滚零输入延迟与 TH12 采集开销 |
 | 历史记录 | [archive/shared-input-audio-20261030/README.md](../archive/shared-input-audio-20261030/README.md) | 全作触点与音效核对 ｜ 2026-10-30 |
 | 历史记录 | [archive/site-recovery-20261028/README.md](../archive/site-recovery-20261028/README.md) | 网页入口回退发布 |
+| 历史记录 | [archive/th05-native-eagler-20261101/README.md](../archive/th05-native-eagler-20261101/README.md) | TH05 原生 Eagler 验收 |
+| 历史记录 | [archive/th05-test-deployment-20261101/README.md](../archive/th05-test-deployment-20261101/README.md) | TH05 原生测试站发布 |
 | 历史记录 | [archive/th06-miss-feedback-20261031/README.md](../archive/th06-miss-feedback-20261031/README.md) | TH06 多人 Miss 与符卡呈现 |
 | 历史记录 | [archive/th06-th08-multiplayer-bugs-20261028/README.md](../archive/th06-th08-multiplayer-bugs-20261028/README.md) | TH06／TH08 多人索敌与 Last Spell 修复验证 |
 | 历史记录 | [archive/th08-extra-last-spell-20261029/README.md](../archive/th08-extra-last-spell-20261029/README.md) | TH08 Extra 雷保护与 Last Spell 生命周期 |
@@ -310,6 +317,8 @@
 | 许可证与声明 | [launcher/public/assets/room-icons-LICENSE.txt](../launcher/public/assets/room-icons-LICENSE.txt) | MIT License |
 | 许可证与声明 | [launcher/public/vendor/fflate.LICENSE](../launcher/public/vendor/fflate.LICENSE) | fflate |
 | 许可证与声明 | [launcher/public/vendor/webaudio-tinysynth.LICENSE](../launcher/public/vendor/webaudio-tinysynth.LICENSE) | webaudio tinysynth |
+| 许可证与声明 | [ports/th05/LICENSE](../ports/th05/LICENSE) | LICENSE |
+| 许可证与声明 | [ports/th05/third_party/imgui/LICENSE.txt](../ports/th05/third_party/imgui/LICENSE.txt) | The MIT License (MIT) |
 | 许可证与声明 | [ports/th06/LICENSE](../ports/th06/LICENSE) | LICENSE |
 | 许可证与声明 | [ports/th06/portable/THPRAC-LICENSE.txt](../ports/th06/portable/THPRAC-LICENSE.txt) | MIT License |
 | 许可证与声明 | [ports/th06/src/thirdparty/STB_LICENSE](../ports/th06/src/thirdparty/STB_LICENSE) | STB_LICENSE |

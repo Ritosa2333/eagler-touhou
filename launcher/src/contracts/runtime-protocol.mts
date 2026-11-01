@@ -98,6 +98,7 @@ export interface RuntimeConfigureOptions {
   multiplayerPreflight?: boolean;
   thpracLocale?: string;
   oggDecodeMode?: RuntimeOggDecodeMode;
+  musicSource?: "original" | "akyu";
   debugHarness?: string | null;
   netplayMode?: "lan";
   netplayUrl?: string;
@@ -154,6 +155,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),
   thpracLocale: Object.freeze({ requirement: "profile-required", capability: "thprac", when: "thprac" }),
   oggDecodeMode: Object.freeze({ requirement: "required", capability: "normal-music-ogg" }),
+  musicSource: Object.freeze({ requirement: "optional", capability: "normal-music-ogg", when: "product declares musicRuntime.sources" }),
   debugHarness: Object.freeze({ requirement: "diagnostic", capability: "runtime-health-diagnostics", when: "explicit debug/test launch" }),
   netplayMode: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),
   netplayUrl: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer" }),

@@ -224,7 +224,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (change.reason === 'sharing') {const key = change.current.shareSingleplayerSettings ? 'status.shareSettings' : 'status.separateSettings'; feedback.translatedStatus(() => t(key));}
     if (!change.current.multiplayer && change.reason === 'music') {
       const mode = change.current.music;
-      feedback.status(t('status.musicMode', {music: mode === 'midi' ? 'midi' : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.none')}));
+      feedback.status(t('status.musicMode', {music: mode === 'midi' ? 'midi' : t(mode === 'ogg-stream' ? 'settings.music.oggStream' : mode === 'ogg-full' ? 'settings.music.oggFull' : mode === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.none')}));
     }
     if (!change.current.multiplayer && change.reason === 'language') {
       const entry = change.current.context.languages.find(value => value.id === change.current.language);
@@ -565,7 +565,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   function reportGameLoaded() {
     const selected = activeSettings ?? settings.getSnapshot();
     feedback.playerStatus(t('runtime.readyStatus'));
-    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}));
+    if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : selected.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}));
   }
   function attachFrame(element: HTMLIFrameElement | null) {
     if (!element || element === frame) return;
@@ -789,7 +789,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       operation.recoverDirectPreloadTimeout(error);
       if (intent.throwErrors) throw error;
       if (await gameData.handleLaunchFailure(error)) return;
-      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId.toUpperCase()} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
+      publish({startupError: error}); startupError.show(error, `${clickSettings.gameId.toUpperCase()} / ${clickSettings.music === 'midi' ? 'midi' : t(clickSettings.music === 'none' ? 'settings.music.none' : clickSettings.music === 'ogg-full' ? 'settings.music.oggFull' : clickSettings.music === 'ogg-akyu' ? 'settings.music.akyu' : 'settings.music.oggStream')}`); feedback.playerStatus(errorText(error)); feedback.toast(errorText(error));
     } finally {operation.finish();}
   }
   async function showRoomPlayer(context: RoomOperationContext, fullscreen: boolean, allowHelp = false) {

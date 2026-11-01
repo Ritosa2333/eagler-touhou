@@ -48,6 +48,36 @@ afterEach(async () => {for (const runtime of runtimeOwners.splice(0)) {await run
 after(async () => {if(abortAnyDescriptor)Object.defineProperty(AbortSignal,'any',abortAnyDescriptor);else delete AbortSignal.any;if (work) await rm(work, {recursive: true, force: true});});
 const t = (key, params) => api.translate('zh-CN', key, params);
 const flush = async () => {for (let index = 0; index < 30; index++) await Promise.resolve();};
+
+test('TH05 uses one runtime for vanilla/thprac and carries the album and language selection', () => {
+  const state=settingsFixture({productId:'th05'}), model=state.model;
+  model.setMusic('ogg-akyu');
+  assert.equal(model.getSnapshot().music,'ogg-akyu');
+  for(const enabled of [false,true,false]){
+    model.setOption('thpracEnabled',enabled);
+    const options=api.gameRuntimeOptions({productId:'th05',settings:model.getSnapshot()},'lang_zh-hans','ogg-akyu',null);
+    assert.equal(options.thpracEnabled,enabled);assert.equal(options.thpracLocale,'zh-CN');
+    assert.equal(options.musicSource,'akyu');assert.equal(options.oggDecodeMode,'stream');
+  }
+  const original=api.gameRuntimeOptions({productId:'th05',settings:model.getSnapshot()},'ja','ogg-full',null);
+  assert.equal(original.musicSource,'original');assert.equal(original.oggDecodeMode,'full');
+  const other=settingsFixture({productId:'th06'}).model;other.setMusic('ogg-akyu');assert.notEqual(other.getSnapshot().music,'ogg-akyu');
+});
+
+test('TH05 development install acquires both PR soundtrack entries for the album preference', async () => {
+ const declared=host().games.th06;
+ const development=api.validateSiteManifest({...host(),profile:'web-development',shared:{...host().shared,testBuild:true},games:{th05:{...declared,runtime:api.PRODUCT_GAMES.th05.runtime,
+  gameData:{...declared.gameData,path:'th05.data',source:'development/th05.data'},music:{midi:{files:[],supported:false},ogg:{base:'music/',mount:'/music',files:['op.ogg','akyu-01.ogg'],sizes:[bytes.length,bytes.length],sha256:[hash,hash],version:'sha256-'+hash}}}}});
+ let current=null;const downloaded=[];
+ const acquisition=api.createPackageAcquisition({baseUrl,translate:t,indexedDBAvailable:()=>true,metadata:{getSnapshot:()=>({siteManifest:development,releaseCatalog:null}),initialize:async()=>{}},
+  fetchImpl:async url=>{downloaded.push(new URL(url).pathname);return new Response(bytes);},dependencies:{readCurrent:async()=>({generation:current,installation:null}),installAcquired:async options=>{
+   assert.deepEqual(options.desiredFileIds,['game-data','ogg:op.ogg','ogg:akyu-01.ogg']);
+   for(const id of options.desiredFileIds)await options.acquire(id,options.descriptor.files[id]);
+   current={id:'dev-th05',game:'th05',descriptor:options.descriptor,files:Object.fromEntries(options.desiredFileIds.map(id=>[id,ref(id)]))};return {generation:current};
+  }}});
+ const result=await acquisition.acquire({productId:'th05',music:'ogg-akyu',language:'ja'});
+ assert.equal(result.generation,current);assert.deepEqual(downloaded,['/deploy/development/th05.data','/deploy/music/op.ogg','/deploy/music/akyu-01.ogg']);
+});
 const deferred = () => {let resolve, reject; const promise = new Promise((yes, no) => {resolve = yes; reject = no;}); return {promise, resolve, reject};};
 function snapshotWhen(runtime, predicate) {
   return new Promise((resolve, reject) => {

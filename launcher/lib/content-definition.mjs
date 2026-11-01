@@ -1,3 +1,4 @@
+import {TH05_DATA_LAYOUT,TH05_MUSIC_FILES} from "./th05-content-layout.mjs";
 import {TH17_MUSIC_FILES} from "./th17-content-layout.mjs";
 import { TH12_DATA_LAYOUT, TH12_MUSIC_FILES } from "./th12-content-layout.mjs";
 import { PRODUCT_GAMES } from "./contracts/product-catalog.mjs";
@@ -14,6 +15,25 @@ const TH06_ARCHIVES = Object.freeze([
 // Product content shape only. This file declares names and Runtime mounts, but
 // never points at a workstation build, asset directory, or generated identity.
 export const PRODUCT_CONTENT = Object.freeze({
+  th05: Object.freeze({
+    original: Object.freeze({files: Object.freeze(["kaiki1.dat", "kaiki2.dat", "zun.com"]), preparedAlternative: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th05.data"])})}),
+    dataLayout: TH05_DATA_LAYOUT,
+    music: Object.freeze({ogg: Object.freeze({mount: "/music", files: TH05_MUSIC_FILES})}),
+    hostPreparation: Object.freeze({
+      preparedContent: Object.freeze({directory: "assets-eagler", markerFiles: Object.freeze(["th05.data"]), script: "scripts/prepare-th05-content.mjs",
+        buildSources: Object.freeze([
+          Object.freeze({role: "managed-content-preparer", repository: "th05", source: "scripts/prepare-content.mjs", target: "host/content-preparers/th05/scripts/prepare-content.mjs"}),
+          Object.freeze({role: "dependency", repository: "th05", source: "scripts/prepare-artwork.py", target: "host/content-preparers/th05/scripts/prepare-artwork.py"}),
+          Object.freeze({role: "dependency", repository: "th05", source: "web/data.mjs", target: "host/content-preparers/th05/web/data.mjs"}),
+          Object.freeze({role: "dependency", repository: "th05", source: "web/audio-layout.mjs", target: "host/content-preparers/th05/web/audio-layout.mjs"}),
+          Object.freeze({role: "dependency", repository: "th05", source: "scripts/import-pr143-audio.mjs", target: "host/content-preparers/th05/scripts/import-pr143-audio.mjs"}),
+
+        ])}),
+      artwork: Object.freeze({kind: "prepared-content", directory: "artwork"}),
+      ogg: Object.freeze({kind: "prepared-content"}), dataAssets: Object.freeze({kind: "prepared-content"}),
+      languagePack: Object.freeze({kind: "retail-overlay-compiler", script: "scripts/prepare-th05-language-pack.mjs", optional: true, languages: Object.freeze(["lang_zh-hans"])}),
+    }),
+  }),
   th06: Object.freeze({
     original: Object.freeze({
       files: TH06_ARCHIVES,

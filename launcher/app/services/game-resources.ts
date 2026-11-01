@@ -12,7 +12,7 @@ import type {Translate} from '../i18n';
 import {GameDataAcquisitionError} from './game-data-acquisition';
 import {checkPreparationAbort, preparationErrorText, type PackageAcquisition, type PreparationProgress} from './package-acquisition';
 
-export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full';
+export const oggMusic = (mode: MusicMode) => mode === 'ogg-stream' || mode === 'ogg-full' || mode === 'ogg-akyu';
 export const musicTransport = (mode: MusicMode): 'ogg' | 'midi' | 'none' => oggMusic(mode) ? 'ogg' : mode === 'midi' ? 'midi' : 'none';
 
 /** Upgrade only a newly required shared dependency. Existing DATA and selected

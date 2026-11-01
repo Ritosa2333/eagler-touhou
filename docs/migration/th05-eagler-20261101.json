@@ -1,0 +1,26 @@
+{
+  "schema": "eagler-touhou/source-import/1",
+  "repository": "https://github.com/Goan114/uth05win-vibe.git",
+  "branch": "thprac",
+  "commit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+  "destination": "ports/th05",
+  "sourceManifest": "../../ports/th05/source-import.json",
+  "currentMode": "git-subtree",
+  "subtree": {
+    "upstreamCommit": "0c31261ea528db9747962e73b36c5105d2d41b78",
+    "initialJoin": "de4be28d85752d82dc3a89c54e09c60703a2b119",
+    "initialSplit": "339d39a8549e9cbe83e4161af4b94888731ea22c",
+    "latestJoin": "56b4e1edb470daaadc9dd84a4f2886f0ce0039dd",
+    "currentSplit": "a719ae27c542c4bc15373ea1739d2ccee03cf8a8"
+  },
+  "reference": "https://github.com/Ritosa2333/eagler-touhou/pull/143",
+  "audio": {
+    "repository": "https://github.com/IxinorTyan/th05-coop-lab",
+    "commit": "6eb46ed1d4f581f109ffa494ea0d21d54c8b38df",
+    "manifests": [
+      "../../ports/th05/resources/audio/original.json",
+      "../../ports/th05/resources/audio/akyu.json",
+      "../../ports/th05/resources/audio/sfx.json"
+    ]
+  }
+}
