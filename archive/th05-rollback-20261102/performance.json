@@ -1,0 +1,90 @@
+{
+  "cpuThrottle": 4,
+  "scope": "WASM simulation, checkpoint capture and correction; drawing measured separately by room tests",
+  "cases": [
+    {
+      "stage": 3,
+      "players": 3,
+      "frames": 600,
+      "lagFrames": 0,
+      "calls": 600,
+      "corrections": 0,
+      "replayed": 0,
+      "maxBytes": 0,
+      "p50Ms": 0.20000000018626451,
+      "p95Ms": 1.6000000005587935,
+      "maxCallMs": 6.599999999627471,
+      "amortizedMsPerNewFrame": 0.4101666666644936
+    },
+    {
+      "stage": 3,
+      "players": 3,
+      "frames": 600,
+      "lagFrames": 2,
+      "calls": 602,
+      "corrections": 20,
+      "replayed": 40,
+      "maxBytes": 345137,
+      "p50Ms": 0.30000000074505806,
+      "p95Ms": 1.2999999998137355,
+      "maxCallMs": 3.7000000001862645,
+      "amortizedMsPerNewFrame": 0.46650000000062086
+    },
+    {
+      "stage": 3,
+      "players": 3,
+      "frames": 600,
+      "lagFrames": 6,
+      "calls": 738,
+      "corrections": 200,
+      "replayed": 998,
+      "maxBytes": 345137,
+      "p50Ms": 1.099999999627471,
+      "p95Ms": 3.800000000745058,
+      "maxCallMs": 10.299999999813735,
+      "amortizedMsPerNewFrame": 1.75333333333799
+    },
+    {
+      "stage": 4,
+      "players": 3,
+      "frames": 600,
+      "lagFrames": 0,
+      "calls": 600,
+      "corrections": 0,
+      "replayed": 0,
+      "maxBytes": 0,
+      "p50Ms": 0.40000000037252903,
+      "p95Ms": 1.5,
+      "maxCallMs": 2.900000000372529,
+      "amortizedMsPerNewFrame": 0.5478333333383004
+    },
+    {
+      "stage": 4,
+      "players": 3,
+      "frames": 600,
+      "lagFrames": 2,
+      "calls": 602,
+      "corrections": 20,
+      "replayed": 40,
+      "maxBytes": 346501,
+      "p50Ms": 0.900000000372529,
+      "p95Ms": 2.7000000001862645,
+      "maxCallMs": 28.700000000186265,
+      "amortizedMsPerNewFrame": 1.2063333333345752
+    },
+    {
+      "stage": 4,
+      "players": 3,
+      "frames": 600,
+      "lagFrames": 6,
+      "calls": 794,
+      "corrections": 199,
+      "replayed": 985,
+      "maxBytes": 346501,
+      "p50Ms": 1.599999999627471,
+      "p95Ms": 5,
+      "maxCallMs": 9.200000000186265,
+      "amortizedMsPerNewFrame": 2.6414999999959643
+    }
+  ]
+}

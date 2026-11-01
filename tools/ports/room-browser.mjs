@@ -10,6 +10,7 @@ import {gamepadProbeBundle,prepareVirtualGamepad,probeNativeGamepad} from './gam
 const option=(name,fallback)=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const base=option('url'),out=option('output'),route=option('route','rtc'),players=Number(option('players','2'));
 const disconnect=process.argv.includes('--disconnect');
+const rollback=process.argv.includes('--rollback');
 const returningUser=process.argv.includes('--existing-user');
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
 assert.ok(base&&out,'Required: --url=local-launcher --output=private-directory');
@@ -20,6 +21,7 @@ const packages=option('packages')?JSON.parse(await readFile(resolve(option('pack
 const report={schema:'eagler-touhou/room-browser/1',startedAt:new Date().toISOString(),url:base,route,players,
   scope:'Real Launcher room controls, actual production Runtime and private installed DATA; desktop browser session acceptance',targets:[]};
 report.disconnectRequested=disconnect;report.returningUser=returningUser;
+report.rollbackRequested=rollback;
 report.commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 if(gamepad){report.gamepadProbeSha256=createHash('sha256').update(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))).digest('hex');report.gamepadBundleSha256=createHash('sha256').update(gamepadBundle).digest('hex');await writeFile(resolve(directory,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(directory,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
@@ -127,6 +129,12 @@ try{
           }
         });
       }
+      if(rollback)await step('enable-rollback',async()=>{
+        const toggle=pages[0].locator('#mpRollbackToggle');
+        await toggle.waitFor({state:'visible'});
+        if(await toggle.getAttribute('aria-checked')!=='true')await toggle.click();
+        await pages[0].waitForFunction(()=>document.querySelector('#mpRollbackToggle')?.getAttribute('aria-checked')==='true');
+      });
       for(let seat=0;seat<players;seat++)await step(`P${seat+1}-ready`,async()=>{
         const reload=pages[seat].locator('.room-resource-reload-confirm');
         if(await reload.isVisible())await reload.click();
@@ -180,6 +188,7 @@ try{
           await pages[seat].frameLocator('#gameFrame').locator('canvas').first().screenshot({path:resolve(directory,`${game}-${players}p-${route}-p${seat+1}-canvas.png`)});
         }
       });
+      if(rollback)assert.ok(record.native.every(state=>state.options.prediction===PRODUCT_GAMES[game].multiplayer.inputTiming.sendPredictionLimit),'Launcher must send rollback limits to every native seat');
       if(gamepad)await step('native-gamepad-sampling',async()=>{
         record.gamepad=[];
         for(const page of pages){const frame=await(await page.locator('#gameFrame').elementHandle()).contentFrame();

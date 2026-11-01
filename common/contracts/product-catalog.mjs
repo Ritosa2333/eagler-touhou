@@ -93,7 +93,7 @@ export const PRODUCT_GAMES = Object.freeze({
             playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS, difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
             loadouts: Object.freeze(["reimu","marisa","mima","yuuka"].map((name,character)=>Object.freeze({labelKey:`multiplayer.loadout.th05_${name}`,glyph:["霊","魔","魅","幽"][character],character,shot:0}))),
             peerTransportGlobal: "__th05PeerTransport", relaySourceEnvelope: true, spectator: false, titleRoomEntry: false,
-            inputTiming: Object.freeze({rollbackLimit:0,sendPredictionLimit:0,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
+            inputTiming: Object.freeze({rollbackLimit:8,sendPredictionLimit:8,rollbackDefault:false,measuredStartup:true,manualDelayLimit:9}),
         }),
         runtime: "./runtime/th05/th05.html", runtimeFileLayout: "directory", dataProvider: "retail-memory", runtimeResourceTransport: "resources",
         requiredShared: Object.freeze(["/msgothic.ttc"]),

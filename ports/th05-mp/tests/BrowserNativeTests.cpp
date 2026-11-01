@@ -7,10 +7,25 @@
 #include "../Game/Stage/StageResource.h"
 #include "../Game/Stage/Background/Background.h"
 #include "../Game/Stage/Boss/Boss.h"
+#include "../Game/Stage/Boss/BossStage4.h"
+#include "../Game/Stage/MidBoss/MidBoss.h"
 #include "../portable/Graphics.hpp"
 #include "../Game/Practice/Practice.h"
 #include <cmath>
 #include <stdexcept>
+#include <eagler/netplay/RollbackJournal.hpp>
+
+// A dense same-address oracle: restore the exact starting battle, execute the
+// delayed-input driver, and compare every captured world byte with the exact run.
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_rollback_checkpoint(int restore){
+ static Netplay::RollbackJournal oracle;
+ auto* game=th5w::CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
+ if(restore)return oracle.UndoTo(0);
+ Netplay::RollbackJournalConfig config;config.maxFrames=1;config.maxBytesPerFrame=1024*1024;config.maxBlocksPerFrame=64;
+ if(!oracle.Reset(config)||!oracle.BeginFrame(0))return 0;
+ struct Sink:th5w::coop::CaptureSink {Netplay::RollbackJournal& journal;explicit Sink(Netplay::RollbackJournal& j):journal(j){}void Bytes(void* p,unsigned n) override {if(!journal.Touch(p,n))throw std::runtime_error("Oracle capture failed");}} sink(oracle);
+ static_cast<th5w::CStage*>(game->m_pCurScheme)->CaptureRollback(sink);return oracle.EndFrame();
+}
 namespace th5w {
 struct PracticeTests {
  static int CoopProbe(int op,int seat,int value){
@@ -40,6 +55,8 @@ struct PracticeTests {
    case 9:s->m_totalNPointItem=value;break;
    case 10:s->m_pChara->DropBomb();break;
    case 14:p->m_nextLifeComeTimeLeft=0;p->m_cannotControlTimeLeft=0;p->m_invulnerableTimeLeft=0;p->m_bDraw=true;break;
+   case 15:{auto* boss=dynamic_cast<CBossStage4*>(s->m_pBoss);if(!boss)return 0;boss->m_whichDie=value;boss->m_curPhase=0xff;boss->m_curPhaseFrame=0;break;}
+   case 16:if(!s->m_pMidBoss)return 0;s->m_pMidBoss->m_curPhase=0xff;s->m_pMidBoss->m_curPhaseFrame=0;break;
    case 12:s->SetQuit(STAGE_END_CLEAR);s->m_nQuitFrameLeft=0;break;
    default:return 0;
   }
@@ -128,3 +145,12 @@ extern "C" EMSCRIPTEN_KEEPALIVE unsigned th05_native_demo_info(int field){return
 
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_coop_probe(int op,int seat,int value){return th5w::PracticeTests::CoopProbe(op,seat,value);}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_native_coop_stage(int stage,int warp){return th5w::PracticeTests::CoopStage(stage,warp);}
+
+extern "C" EMSCRIPTEN_KEEPALIVE unsigned th05_net_world_hash(){
+ auto* game=th5w::CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
+ struct Hash:th5w::coop::CaptureSink {
+  unsigned value=2166136261u;
+  void Bytes(void* address,unsigned size) override {auto* data=static_cast<unsigned char*>(address);for(unsigned i=0;i<size;i++)value=(value^data[i])*16777619u;}
+ } sink;
+ static_cast<th5w::CStage*>(game->m_pCurScheme)->CaptureRollback(sink);return sink.value;
+}

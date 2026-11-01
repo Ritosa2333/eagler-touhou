@@ -11,27 +11,30 @@ export function multiplayerOptions(value){
  if(!['ws:','wss:'].includes(url.protocol)||!['room','run','member'].every(key=>url.searchParams.get(key))||!localDevelopment&&!/^[a-f0-9]{64}$/.test(url.searchParams.get('runtimeGeneration')??''))throw Error('Missing TH05 room run identity');
  if(!integer(value.netplaySeed,0,65535)||!integer(value.netplayDifficulty,0,4))throw Error('Invalid TH05 multiplayer settings');
  if(!Array.isArray(value.netplayLoadouts)||value.netplayLoadouts.length!==count||value.netplayLoadouts.some(p=>!integer(p?.character,0,3)||p.shot!==0))throw Error('Invalid TH05 multiplayer characters');
- if(value.netplayAdonisMode!==undefined&&value.netplayAdonisMode!==1||value.netplayPredictionLimit!==undefined&&value.netplayPredictionLimit!==0)throw Error('TH05 native multiplayer requires confirmed inputs');
+ const mode=value.netplayAdonisMode??1;
+ if(!integer(mode,0,2)||value.netplayPredictionLimit!==undefined&&value.netplayPredictionLimit!==(mode===1?0:8))throw Error('Invalid TH05 rollback timing');
+ if(value.netplayPredictionReserve!==undefined&&!integer(value.netplayPredictionReserve,1,2))throw Error('Invalid TH05 prediction reserve');
  if(value.netplayChallengeMode!==undefined&&typeof value.netplayChallengeMode!=='boolean')throw Error('Invalid TH05 challenge mode');
  if(value.netplayInputDelay!==undefined&&!integer(value.netplayInputDelay,0,9))throw Error('Invalid TH05 input delay');
  if(value.netplayInputDelayAuto!==undefined&&typeof value.netplayInputDelayAuto!=='boolean')throw Error('Invalid TH05 measured timing');
  return value;
 }
 
-// PR #143's authenticated transport is retained independently of its former
-// emulator worker. This scheduler sends native button/motion inputs and never
-// advances a world frame until every seat has supplied that frame.
+// The authenticated transport carries immutable physical samples. The native
+// shared RollbackCore owns prediction, correction and confirmed output commits.
 export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()=>performance.now(),transportFactory=createManagedTransport,setTimer=setTimeout,clearTimer=clearTimeout}){
  multiplayerOptions(options);
  const count=options.netplayPlayerCount,local=options.netplayPlayer,url=new URL(options.netplayUrl);
- const identity=JSON.stringify({protocol:'th05-native-coop/1',run:url.searchParams.get('run'),generation:url.searchParams.get('runtimeGeneration'),count,challenge:options.netplayChallengeMode===true,seed:options.netplaySeed,difficulty:options.netplayDifficulty,characters:options.netplayLoadouts.map(p=>p.character)});
+ const mode=options.netplayAdonisMode??1,limit=mode===1?0:8;
+ const reserve=options.netplayPredictionReserve??2;
+ const identity=JSON.stringify({protocol:'th05-native-coop/2',mode,limit,run:url.searchParams.get('run'),generation:url.searchParams.get('runtimeGeneration'),count,challenge:options.netplayChallengeMode===true,seed:options.netplaySeed,difficulty:options.netplayDifficulty,characters:options.netplayLoadouts.map(p=>p.character)});
  const rows=Array.from({length:count},()=>new Map()),peers=new Map(),proposals=new Map(),acknowledged=new Set(),checks=new Map();
- let transport,started=false,closed=false,ending=false,frame=0,delay=0,lastProgress=now(),lastWarning=0,proposalTimer,deadline,probeTimer,resolveStart,rejectStart,endTask;
+ let transport,started=false,closed=false,ending=false,frame=0,delay=0,lastProgress=now(),lastWarning=0,proposalTimer,deadline,probeTimer,resolveStart,rejectStart,endTask,nextCheck=120;
  const startTask=new Promise((resolve,reject)=>{resolveStart=resolve;rejectStart=reject;});
  // A rejection can precede the caller awaiting start (e.g. early transport
  // failure); retain it without generating an unhandled rejection.
  startTask.catch(()=>{});
- const fatal=reason=>{if(closed)return;closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport?.close();rejectStart(reason);fail(reason);};
+ const fatal=reason=>{if(closed)return;closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport?.close();module._th05_net_close();rejectStart(reason);fail(reason);};
  const send=(peer,message)=>peer.channel.send(JSON.stringify(message));
  const broadcast=message=>{for(const peer of peers.values())send(peer,message);};
  const guarded=fn=>(...args)=>{if(closed)return;try{return fn(...args);}catch(error){fatal(error);}};
@@ -43,7 +46,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
   if(proposals.has(local)||[...peers.values()].some(p=>!p.hello))return;
   const rtt=Math.max(0,...[...peers.values()].map(p=>Math.max(0,...p.samples)));
   const measured=Math.min(9,Math.max(1,Math.ceil(rtt*56/1000)+1));
-  const requested=options.netplayInputDelayAuto===false?(options.netplayInputDelay??0):measured;
+  const requested=mode===0?0:options.netplayInputDelayAuto===false?(options.netplayInputDelay??0):mode===2?Math.max(0,measured-reserve):measured;
   proposals.set(local,requested);broadcast({type:'proposal',delay:requested});negotiate();
  }
  function maybeStart(){
@@ -55,7 +58,9 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
   const chars=options.netplayLoadouts.map(p=>p.character);while(chars.length<3)chars.push(0);
   if(!module._th05_coop_start(count,local,options.netplayDifficulty,options.netplaySeed,...chars,+(options.netplayChallengeMode===true),+(options.multiplayerLocalPlayerVisibility===true)))throw Error('TH05 cooperative world could not start');
   applyDisplay(module,options.th05MultiplayerDisplay);
+  if(!module._th05_net_reset(delay,limit))throw Error('TH05 rollback session could not start');
   for(let i=0;i<delay;i++)for(const row of rows)row.set(i,[0,0,0,0]);
+  for(let seat=0;seat<count;seat++)if(seat!==local)for(const [inputFrame,input] of rows[seat])if(inputFrame>=delay&&!module._th05_net_input(seat,inputFrame,...input))throw Error('TH05 bootstrap input rejected');
   started=true;clearTimer(deadline);clearTimer(probeTimer);lastProgress=now();
   globalThis.__eaglerNetplayLanActive=true;globalThis.__eaglerNetplayInputDelay=globalThis.__eaglerNetplayLanInputDelay=delay;
   globalThis.__eaglerNetplayRollback=globalThis.__eaglerNetplayLanRollback=0;globalThis.__eaglerNetplayResimulated=globalThis.__eaglerNetplayLanResimulated=0;
@@ -79,11 +84,12 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
    case 'timing-ack':if(local!==0||message.delay!==delay||acknowledged.has(peer.id))throw Error('Invalid timing acknowledgement');acknowledged.add(peer.id);maybeStart();break;
    case 'start':if(peer.id!==0||local===0||message.delay!==delay)throw Error('Invalid TH05 start');begin();break;
    case 'input':{
-    if(!integer(message.frame,Math.max(0,frame-1),frame+32)||!Array.isArray(message.input)||message.input.length!==4)throw Error('TH05 input is outside the frame window');
+    if(!integer(message.frame,Math.max(0,frame-64),frame+32)||!Array.isArray(message.input)||message.input.length!==4)throw Error('TH05 input is outside the frame window');
     const [buttons,x,y,unlimited]=message.input;
     if(!integer(buttons,0,65535)||![x,y].every(v=>Number.isFinite(v)&&Math.abs(v)<=8192&&Number.isInteger(v*256))||!integer(unlimited,0,3))throw Error('Invalid TH05 frame input');
     const row=rows[peer.id],old=row.get(message.frame);if(old&&JSON.stringify(old)!==JSON.stringify(message.input))throw Error('Conflicting TH05 frame input');
-    if(message.frame>=frame)row.set(message.frame,message.input);break;
+    row.set(message.frame,message.input);
+    if(started&&!module._th05_net_input(peer.id,message.frame,...message.input))throw Error('TH05 remote input rejected');break;
    }
    case 'check':{
     if(!integer(message.frame,Math.max(0,frame-480),frame+32)||message.frame%120||!integer(message.hash,0,0xffffffff))throw Error('Invalid TH05 state check');
@@ -108,7 +114,7 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
 
  function close(){
   if(closed)return;closed=true;clearTimer(deadline);clearTimer(proposalTimer);clearTimer(probeTimer);transport.close();
-  globalThis.__eaglerNetplayLanActive=false;for(const row of rows)row.clear();
+  module._th05_net_close();globalThis.__eaglerNetplayLanActive=false;for(const row of rows)row.clear();
  }
  transport=transportFactory(options,roles,fatal);
  for(let id=0;id<count;id++)if(id!==local){
@@ -123,21 +129,25 @@ export function createMultiplayer(options,{module,sample,emit=()=>{},fail,now=()
    const future=frame+delay;
    if(!rows[local].has(future)){
     const raw=sample(),input=[raw[0]&65535,...raw.slice(1,3).map(v=>Math.round(Math.max(-8192,Math.min(8192,v))*256)/256),integer(raw[3],0,3)?raw[3]:0];
-    rows[local].set(future,input);broadcast({type:'input',frame:future,input});
+    rows[local].set(future,input);if(!module._th05_net_input(local,future,...input))throw Error('TH05 local capture rejected');broadcast({type:'input',frame:future,input});
    }
-   if(rows.some(row=>!row.has(frame))){
+   const advanced=module._th05_net_advance();if(advanced<0)throw Error('TH05 rollback simulation failed');
+   const confirmed=module._th05_net_confirmed();
+   globalThis.__eaglerNetplayConfirmed=globalThis.__eaglerNetplayLanConfirmed=confirmed;
+   globalThis.__eaglerNetplayRollback=globalThis.__eaglerNetplayLanRollback=module._th05_net_stat(0);
+   globalThis.__eaglerNetplayResimulated=globalThis.__eaglerNetplayLanResimulated=module._th05_net_stat(1);
+   while(confirmed>=nextCheck-1&&frame+Number(!!advanced)>=nextCheck){
+    const hash=module._th05_net_hash(nextCheck)>>>0,record=checks.get(nextCheck)??new Map();record.set(local,hash);checks.set(nextCheck,record);checkState(record);broadcast({type:'check',frame:nextCheck,hash});nextCheck+=120;
+   }
+   for(const old of checks.keys())if(old<frame-480)checks.delete(old);
+   for(const row of rows)for(const old of row.keys())if(old<frame-64)row.delete(old);
+   if(!advanced){
     const wait=now()-lastProgress;if(wait>3000&&now()-lastWarning>1000){emit('netplay-status',{state:'waiting',frame,waitMs:wait});lastWarning=now();}
     if(wait>15000)fatal(Error('TH05 multiplayer input timed out'));return false;
    }
-   for(let i=0;i<count;i++){module._th05_coop_input(i,...rows[i].get(frame));rows[i].delete(frame);}
-   if(!module._th05_tick(0))throw Error('TH05 multiplayer frame failed');
-   ++frame;lastProgress=now();globalThis.__eaglerNetplayFrame=globalThis.__eaglerNetplayLanFrame=frame;globalThis.__eaglerNetplayConfirmed=globalThis.__eaglerNetplayLanConfirmed=frame-1;
-   if(frame%120===0&&module._th05_coop_checksum){
-    const hash=module._th05_coop_checksum()>>>0,record=checks.get(frame)??new Map();record.set(local,hash);checks.set(frame,record);checkState(record);broadcast({type:'check',frame,hash});
-    for(const old of checks.keys())if(old<frame-480)checks.delete(old);
-   }
+   ++frame;lastProgress=now();globalThis.__eaglerNetplayFrame=globalThis.__eaglerNetplayLanFrame=frame;
    if(module._th05_coop_finished())void end();return true;
   },
-  end,close,get frame(){return frame;},get delay(){return delay;},get active(){return started&&!closed&&!ending;},
+  end,close,get frame(){return frame;},get delay(){return delay;},get confirmed(){return module._th05_net_confirmed();},get recovering(){return module._th05_net_stat(5)<frame;},get active(){return started&&!closed&&!ending;},
  };
 }

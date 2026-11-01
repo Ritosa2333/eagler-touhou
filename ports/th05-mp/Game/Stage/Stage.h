@@ -15,6 +15,7 @@
 
 #include <math.h>
 #include "../Coop/Coop.h"
+#include "../Coop/Rollback.h"
 
 #ifdef PI
 #undef PI
@@ -96,6 +97,8 @@ public:
  CChara* Player(int seat) const {return Cooperative()?m_seats[seat].player:m_pChara;}
  int SeatValue(int seat,int field);
  unsigned int CoopChecksum();
+ bool RollbackPredictable() const;
+ void CaptureRollback(coop::CaptureSink& sink);
  bool TestPlayerCrash(float x,float y,float w,float h);
  void MarkPlayerMiss();
  void MakeGhost();
@@ -201,6 +204,7 @@ protected:
 //component that are created when needed
 protected:
 	CMidBoss *m_pMidBoss;
+ CMidBoss* m_retainedMidBoss=nullptr; // Stage-owned lease across predicted defeat.
 	void CheckMidBoss();
 
 	CBoss *m_pBoss;
