@@ -46,7 +46,7 @@ int Guard(const std::function<void()>& operation){try{operation();return 1;}catc
 }
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th05_initialize(){if(game)return 0;failed=false;return Guard([]{game=std::make_unique<th5w::CGame>();game->Run();if(!game->m_pCurScheme)throw std::runtime_error("TH05 initialization failed");});}
-EMSCRIPTEN_KEEPALIVE int th05_tick(int render){if(!game||failed||!game->m_pCurScheme)return 0;return Guard([render]{using namespace th5w;if(render)web::graphics::BeginFrame();practice::BeginFrame();original::BeginTimingFrame();lastStep=practice::AdvancedOpen()?0:game->m_pCurScheme->Step();if(render){game->m_pCurScheme->Draw();++renderVersion;}practice::DrawStatus();practice::EndFrame(render!=0);original::RenderTiming(false);++ticks;
+EMSCRIPTEN_KEEPALIVE int th05_tick(int render){if(!game||failed||!game->m_pCurScheme)return 0;return Guard([render]{using namespace th5w;if(render){web::graphics::BeginFrame();practice::BeginFrame();}original::BeginTimingFrame();lastStep=practice::AdvancedOpen()?0:game->m_pCurScheme->Step();if(render){game->m_pCurScheme->Draw();practice::DrawStatus();practice::EndFrame();++renderVersion;}original::RenderTiming(false);++ticks;
  if(lastStep){CScheme* next=nullptr;int id=0;if(CSchemeSwitcher::SwitchScheme(&next,&id,game->m_curSchemeID,lastStep)){delete game->m_pCurScheme;game->m_pCurScheme=next;game->m_curSchemeID=id;}}});}
 EMSCRIPTEN_KEEPALIVE int th05_step(){return th05_tick(1);}
 EMSCRIPTEN_KEEPALIVE double th05_frame_seconds(){return game?double(th5w::original::FrameDelay())/std::max(1.f,game->m_fpsLimit):1./56;}

@@ -6,7 +6,7 @@
       "game": "th05",
       "variant": "normal",
       "directory": "ports/th05",
-      "sourceDigest": "4f1e5aa2a25a992fea37c9f4408e031630675d155ce67327a07ff5c5bd3a213b",
+      "sourceDigest": "5089f590acd7a0adafe5e3d5fff6473099e31ddba29fe32b4902852a10e0f3da",
       "sourceSelection": "build-entrypoint",
       "dependencies": [],
       "translationUnits": 89,
