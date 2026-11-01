@@ -9,6 +9,7 @@
 #include "../game/ReplayEntityState.hpp"
 #include "../../../portable/sdl/FrameCadence.hpp"
 #include "../../../portable/input/TouchController.hpp"
+#include <eagler/input/BrowserGamepad.hpp>
 
 #include <SDL3/SDL.h>
 #include <GLES3/gl3.h>
@@ -201,8 +202,12 @@ bool sample_and_tick(float fps = 60.f) {
             if (key.scan == 28 || key.scan == 156) keys[13] = true;                    // Enter
         }
     }
+    // Launcher 手柄桥（PR159 审查定案）：浏览器映射经共享 bridge 注入虚键；
+    // 桥未接管（mapped_pad<0，如本地/测试构建）才回落 SDL 原生摇杆采样。
+    const int mapped_pad = eagler::input::BrowserGamepadState();
+    eagler::input::ApplyGamepadVirtualKeys(keys, mapped_pad);
     u32 raw_buttons = 0;
-    const u32 pad_keys = sample_controller(raw_buttons);
+    const u32 pad_keys = mapped_pad < 0 ? sample_controller(raw_buttons) : 0;
     app->raw_pad_buttons = raw_buttons;
     const auto touch = gestures.sample(touch_state(), SDL_GetTicks(), keys[16] || (pad_keys & 8),
         keys[37] || keys[38] || keys[39] || keys[40] || (pad_keys & 0xf0));
