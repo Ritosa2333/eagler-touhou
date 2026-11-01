@@ -64,8 +64,7 @@ struct TitleSceneResources {
                                   // 原版无独立光标 VM，行标签 7/17+cursor 驱动全部行。
     i32 difficulty_particle = 18; // 神霊粒子模板（ascii bank2 script18）
     i32 background_root = 89;     // 背景根（spawn 92,93,91,90；内建 110f/170f 时序）
-    i32 logo_root = 94;           // LOGO 首入场根（110f 延迟翻转，oracle g291 实证）
-    i32 logo_restore_root = 95;   // LOGO 复位根（自子菜单/对局返回，时机待 oracle）
+    i32 logo_root = 94;           // LOGO 根（boot 与返回路径同用 94，0x44cdb9 实证）
     i32 version_bar = 0;          // title_v script0 @(256,224) 层 26（30f 延迟淡入）
     i32 portrait_base = 125;      // 立绘 125+角色号（label 7/12/17/22+角色号）
     i32 weapon_base = 135;        // 通常武器图标 135+角色号（同上标签族）
@@ -93,29 +92,20 @@ class TitleMainMenu {
     bool interrupt(i32, i32, bool);
     bool child_interrupt(i32, i32, bool);
     bool sound(i32);
-    // [轮7] 选择交叉驱动（绘制侧 poke 序列）
-    i32 selection_step = 0, selection_item = 0, selection_previous = 0;
-    bool selection_active = false, selection_move = false;
-    bool version_bar_pending = false;  // [f388] ver 延 1 帧创建（oracle f389 首绘）
+    // [蓝图 §8.3/§8.9] 绘制侧层偏移由 apply_draw_layers 统一落码（VM 层保持
+    // 脚本 ins_304 真值；op 层 +1/+2 只在捕获钩子覆盖）。
     i32 pending_frame_gap = 0;
-    i32 menu_age = -1;  // [wf360] 单调屏龄（substate 切换重置 state.age 的规避）
-    void set_item_alpha(i32 item, i32 alpha, bool white = true);  // [轮7] 逐项 poke（white 白条/灰条）
-    void rearm_grey(i32 item);  // [f371] 灰条入场重挂（旧隐+新尾插，oracle 批序实证）
-    void boot_fade(i32 frame);                   // [wf360] 15 帧线性入场
-    void adopt_background_layers();  // [窗A] 背景半张层值按 oracle 实测（§8.3）
-    void fade_menu_alphas(i32 step);  // [解剖轮2] Z+10 起灰条透明度衰减 poke
+    i32 menu_age = -1;
     bool open_menu();     // g361 菜单展开（root0+版本条+全项入场+禁用黑化）
-    bool open_menu_version_bar();  // [f389] ver 延 1 帧创建体（挂起消费）
     bool select_entry();  // interrupt(0,7+cursor) 选中入场
     bool show_menu();     // 全项入场（真机 boot 全员可见，oracle 顶点色实证）
-    void dim_disabled();  // 禁用项黑化 alpha160（oracle 0xA0000000）
     void enter(i32 entry);
     bool extra_gate();  // Extra 行解锁门（宿主存档；0x44c570 case0 +0x5c40 bit1）
 
 public:
-    // [轮9] 交叉序列推进（绘制回调逐帧驱动——update 侧 poke 被 tick 插值
-    // 覆写，wasi trace 实证；TitleFrame draw 回调经 TitleScene 接线调用）。
-    void advance_selection();
+    // [§8.3/§8.9] 绘制侧层覆盖落码（TitleScene Draw 优先级 2 调用；只写
+    // DrawCapture 钩子的 op 层覆盖，不改 VM 层）。
+    void apply_draw_layers();
     std::function<bool(i32)> play_sound;
     // Extra 行解锁门数据源（原版 0x44c570 case0 读 +0x5c40 bit1；写点 =
     // 0x416130 通关落档链置 0x1b26b+char*2 bit0x10。宿主 FileStore 持久位，

@@ -134,7 +134,7 @@ MSVC RTTI：`[COL_ptr][方法…]`，COL+0x0c 直接是 TypeDescriptor 绝对 VA
 
 ## 七、验证记录（本机容器实测）
 
-命令均形如 `podman run --rm --userns=keep-id -v <workspace>:/work:Z -w /work localhost/th13-dev bash -lc 'python3 <探针>'`，探针脚本临时挂载 /tmp，未入库。关键输出：
+命令均形如 `podman run --rm --userns=keep-id -v /home/mystia/项目/th13:/work:Z -w /work localhost/th13-dev bash -lc 'python3 <探针>'`，探针脚本临时挂载 /tmp，未入库。关键输出：
 
 1. RNG（复验）：`[41, 18467, 6334, 26500]` ✓。
 2. xref 扫描：`th13.dat@0x4ab38c` → 唯一代码引用 0x439fa6（0x439f90）；`bullet.anm` 5 处；`../../data/*.ecl` → 0x4146d0/0x44b410（eclview 调试遗物）。

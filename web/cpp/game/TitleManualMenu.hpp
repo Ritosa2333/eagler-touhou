@@ -15,7 +15,7 @@
 
 #include "TitleState.hpp"
 
-#include <functional>
+#include <cstdio>
 #include <string>
 
 namespace th13 {
@@ -27,13 +27,16 @@ struct TitleManualPlatform {
     // 0x42d940+0x42d740：建查看器并载入首页。失败 false = 初始化中止
     //（原版 malloc/初始化失败即释放并停留在空屏语义，由调用方记录）。
     virtual bool open_manual() { return false; }
+    virtual bool update_manual(u32 pressed, u32 repeated) {
+        (void)pressed; (void)repeated; return true;
+    }
     // 查看器 +0x128 结束位（用户翻至末页退出/关闭）。
     virtual bool manual_finished() const { return false; }
     // 0x42d860 停止 + 0x4a7261 释放（页纹理/help.anm 帧回收归宿主）。
     virtual void close_manual() {}
     // 资源断言：页 page(0 基) 的页图名必须 "help_%.2d.png"（page+1）。
     virtual std::string help_page_name(i32 page) const {
-        char buffer[16];
+        char buffer[32];
         std::snprintf(buffer, sizeof buffer, "help_%02d.png", int(page) + 1);
         return buffer;
     }
@@ -42,7 +45,6 @@ struct TitleManualPlatform {
 class TitleManualMenu {
     TitleState& state;
     TitleManualPlatform& host;
-    i32 frames_ = 0;
     bool fail(const std::string& reason);
 
 public:

@@ -1,6 +1,32 @@
 #include "TitleSelectionMenu.hpp"
 
+#include <vector>
+
 namespace th13 {
+namespace {
+// [窗B 链序] 原版粒子经 0x46f4a0 头插（后建者先绘）；同层桶序由主链次序
+// 决定。头插后新粒子位于链首，而 oracle 的 L22 桶序是「背景(91/93) →
+// 粒子 → 左半 90 → 行条 83/84」，故把粒子整块移到背景之后（保持头插的
+// 相对次序 = 新→旧）：逐个头插粒子按链序 requeue_to_back 即得原相对序。
+// 只动绘制/步进链序，不改任何 VM 运行态；粒子在 create 的 initial_tick
+// 已抽完 RNG，链序不影响随机流。
+void requeue_particles_to_back(AnmManager& animations, i32 bank, i32 script) {
+    auto* resource = animations.resource(bank);
+    if (!resource) return;
+    std::vector<u32> handles;
+    for (u32 index = 0;; index++) {
+        const u32 handle = animations.registry.ordered_handle(false, index);
+        if (!handle) break;
+        AnmVm* vm = animations.registry.find(handle);
+        if (vm && vm->resource == resource && vm->source_script == script)
+            handles.push_back(handle);
+        if (index > 8191) break;  // 防御：池上限
+    }
+    for (const u32 handle : handles)
+        if (AnmVm* vm = animations.registry.find(handle))
+            animations.registry.requeue_to_back(*vm);
+}
+}  // namespace
 
 bool TitleDifficultyMenu::check(bool ok) {
     if (!ok && error.empty()) error = state.menu.error.empty() ? visuals.error : state.menu.error;
@@ -37,51 +63,95 @@ bool TitleDifficultyMenu::build_difficulty() {
     }
     if (!check(visuals.create(tree))) return false;
     if (!check(visuals.create(resources.difficulty_badge))) return false;
+    // [窗A f490 实证] 难度屏起背景左半 title00a 90 绘制层 L23→L22（oracle
+    // f489 [22,23] → f490 起 [22,22]）。VM 层保持脚本真值，偏移由
+    // TitleMainMenu::apply_draw_layers 按 screen 落绘制侧覆盖。
     auto* tree_vm = animations.registry.find(state.handles[tree]);
     if (!tree_vm) return check(false);
     if (!check(visuals.interrupt(tree, 3, true))) return false;
     return check(visuals.interrupt(tree, 17 + state.menu.cursor, false));
 }
 
-// [解剖轮2] 主菜单 Z+21 隐藏时间线（解剖 §③/⑥ + 顶点色）：
-//   非选中灰条 9 枚隐藏（visible=false，VM 留池）；选中项白化（rgb→255、
-//   alpha=204）续 -13/帧 衰减（advance_choreography 接力）至 Z+37 隐藏；
-//   白条 9 枚（items 1-9 的 13+k = script14-22）闪现 8 帧（alpha 64→0，
-//   -7/帧）后销毁——白条建后中和其 spawn 淡入插值（interpolators.alpha
-//   .duration=0，poke 才不被逐帧覆写；引擎语义差异补偿见蓝图 §8.2）。
+// [窗B 稳定字段实证 f490-497] 主菜单 Z+21 时间线（oracle title-b 顶点色）：
+//   非选中 9 行**不隐藏**——白条 13..22（除选中项）整批 L25（oracle f490 起
+//   L25 count18：Extra 行黑 0x3f000000、其余 8 行灰 0x65c0c0c0，alpha 续脚本
+//   label6 衰减，f498 归 0）。title.anm script13-22 的 ins_304 层值即 25
+//   （anm-list.txt title.anm 段脚本 13-22 首段；不是 26），故层无需改，仅
+//   选中项白条不绘；高亮由**灰条本体 3+k 留 L26 白化 0xcbffffff（203）
+//   承接**，续 -13/帧至 f505=0x0c、f506 隐藏（oracle f490 op15：L26 count2
+//   UV(0,0) 左半 0xcbffffff = 灰条 sprite0，不是白条 sprite1）。
+//   旧实现隐藏非选中行 + 建白条 14-22（0x40ffffff）是误读：oracle 窗口无白条
+//   op，L25 批本即非选中白条本体（count18=9 行×2 图元）。
+// [反证修正] 选中项由 state.confirmed_entry 决定（0=開始/2=練習/1=Extra）。
+// 非默认入口（confirmed_entry != 0）时 item 0 也是非选中行，必须与其余行
+// 同享 L25 批次与逐帧 alpha 序列——advance_choreography 的 poke 循环不得
+// 从 item=1 起跳（否则 item 0 白条停在 label6 淡出后的 α0，L25 批少 2 图元）。
 void TitleDifficultyMenu::finish_menu_hides() {
     auto* menu_root = animations.registry.find(state.handles[0]);
     if (!menu_root) return;
     for (i32 item = 0; item < kTitleMainEntries; item++) {
-        auto* child = animations.registry.find_child_script(*menu_root, item + 13, 0);
-        if (!child) continue;
-        if (item == state.confirmed_entry) {
-            child->visual.color = 0xccffffffu;  // 白化 @204（oracle f490 样本）
-            continue;
+        auto* white = animations.registry.find_child_script(*menu_root, item + 13, 0);
+        if (white) {
+            // alpha 由 advance_choreography 的逐帧序列落色；先中和脚本
+            // ins_409 插值（否则管理器 tick 在菜单 update 之后覆写 poke）。
+            white->interpolators.alpha.duration = 0;
+            if (item == state.confirmed_entry) {
+                // 选中项白条不绘：oracle L25 批只有 9 个非选中行。
+                white->visible = false;
+                white->visual.flags &= ~1u;
+            } else {
+                // 非选中行：脚本层即 25（ins_304(25)），此处显式落层只为
+                // 防御脚本改动；绘制侧 L25 批由脚本层直接成立。
+                white->visual.layer = 25;
+            }
         }
-        child->visible = false;
-        child->visual.flags &= ~1u;
-    }
-    for (i32 item = 1; item < kTitleMainEntries; item++) {
-        const i32 script = 13 + item;  // 白条 14-22（items 1-9；0 号白条=选中灰条本体）
-        if (!visuals.create(script)) continue;
-        auto* white = animations.registry.find(state.handles[script]);
-        if (!white) continue;
-        white->interpolators.alpha.duration = 0;
-        white->visual.color = 0x40ffffffu;  // alpha 64（oracle f490 L25 批本）
+        if (item == state.confirmed_entry) {
+            // 选中灰条 3+k：留 L26（脚本层），白化由本函数 + 逐帧序列落色。
+            auto* row = animations.registry.find_child_script(*menu_root, item + 3, 0);
+            if (!row) continue;
+            row->interpolators.alpha.duration = 0;
+            row->interpolators.color.duration = 0;
+            row->visual.color = 0xcbffffffu;  // 白化 @203（oracle f490 样本）
+            row->visual.secondary_color = 0xcbffffffu;
+        }
     }
 }
 
 // [解剖轮2] 神霊粒子：ascii bank2 script18 克隆（解剖「打字机不存在」纠偏）。
-// 脚本体经 RNG 槽 10010-10012（AnmVariables 映射游戏 RNG 流）自算全屏随机
-// 出生位与 300f 漂移目标（窗内不死灭 ✓ +300 自灭），逐帧几何在
-// title-draws.jsonl——节奏（f495 起 17@f500→55@f599，≈1/3 帧）先按
-// 「age5 突发 17 + 每 3 帧 1 枚」落码，出生次序/节奏待对拍校准。
+// 脚本体经 RNG 槽 10010-10012（AnmVariables 的 ANM 视觉流 0x4dc31c，与
+// 0x45ac90 的 256 步字体噪声共用；不是游戏流 0x4dc324）自算全屏随机出生位
+// 与 300f 漂移目标（窗内不死灭 ✓ +300 自灭）。
+// [窗B 插入实证] 粒子走 0x46f4a0 **头插**（ordering=2；oracle 插入 dump
+// f491 起 16 枚 'main' 18@L22，此后每 3 帧 1 枚至 f749 = 窗B 共 102 枚）。
+// 头插决定同层链序（后建者先绘）与 tick 次序；此前的尾插（0x46f3f0）与
+// 原版相反。RNG 抽签在 create 的 initial_tick 完成，与链序无关；生产侧
+// ApplicationState 先做 128 步视觉 RNG 字体噪声再装载银行，故 f491 的 RNG
+// 状态与 oracle 一致（tools/title_rng_probe.py 实证：f491 首抽前 seed=30195，
+// 与 oracle 0x4dc31c 相同）。
 void TitleDifficultyMenu::spawn_particles(i32 count) {
     for (i32 i = 0; i < count; i++) {
-        if (!animations.create(resources.ascii, resources.difficulty_particle, -1, 0)) {
+        if (!animations.create(resources.ascii, resources.difficulty_particle, -1, 2)) {
             check(false);
             return;
+        }
+    }
+}
+
+// [窗B f490-618 绘制序] 背景左半 90 与难度行条 83/84 重挂主链尾（原版
+// supervisor 在难度构建时把 90 的层 23→22 并重挂；移植侧用链尾重挂同构）。
+// 粒子为 0x46f4a0 头插，随后由 requeue_particles_to_back 整块移到背景之后，
+// 形成 oracle 的 L22 桶序：91/93 → 粒子（新→旧）→ 90 → 83/84。
+void TitleDifficultyMenu::reorder_difficulty_draws() {
+    if (auto* bg = animations.registry.find(state.handles[89])) {
+        if (auto* left = animations.registry.find_child_script(*bg, 90, 0))
+            animations.registry.requeue_to_back(*left);
+    }
+    const i32 tree = progress.difficulty >= 4 ? resources.difficulty_tree_extra
+                                              : resources.difficulty_tree;
+    if (auto* root = animations.registry.find(state.handles[tree])) {
+        for (const i32 script : {83, 84}) {
+            if (auto* shape = animations.registry.find_child_script(*root, script, 0))
+                animations.registry.requeue_to_back(*shape);
         }
     }
 }
@@ -101,58 +171,75 @@ void TitleDifficultyMenu::advance_choreography() {
     // ins_407 插值互相覆写（探针实证 interp_pos=15 活跃时 poke 无效）。
     // 白条衰减（64-7f/帧，f8 归零销毁；oracle f498=L25 批本消失）与选中白化
     // 衰减（204-13f，f16 归零隐藏；oracle f506=title01 全消）保留。
-    if (f <= 8) {
-        i32 alpha = 64 - 7 * f;
-        if (alpha < 0) alpha = 0;
-        for (i32 item = 1; item < kTitleMainEntries; item++) {
-            const i32 script = 13 + item;
-            auto* white = animations.registry.find(state.handles[script]);
-            if (!white) continue;
+    // [窗B 顶点色逐帧序列] 非选中行 alpha（oracle f490-f497）：
+    //   Extra 行（item1）63,56,48,40,31,23,16,8；其余 8 行 101,89,76,63,50,
+    //   38,25,12。选中行（f490-f505）203,191,178,165,152,140,127,114,101,89,
+    //   76,63,50,38,25,12。序列在 finish_menu_hides 已中和脚本插值后由本函数
+    //   逐帧落色（菜单 update 早于管理器 tick，必须关插值才不被覆写）。
+    // [反证修正] 循环覆盖全部 10 项并跳过选中项：confirmed_entry != 0
+    // （練習=2 / Extra=1）时 item 0 的白条也是 L25 批次成员，必须同享序列。
+    static constexpr u8 kExtraAlpha[8] = {63, 56, 48, 40, 31, 23, 16, 8};
+    static constexpr u8 kGreyAlpha[8] = {101, 89, 76, 63, 50, 38, 25, 12};
+    static constexpr u8 kSelectedAlpha[16] = {203, 191, 178, 165, 152, 140, 127,
+                                              114, 101, 89,  76,  63,  50,  38,
+                                              25,  12};
+    if (auto* menu_root = animations.registry.find(state.handles[0])) {
+        for (i32 item = 0; item < kTitleMainEntries && f <= 8; item++) {
+            if (item == state.confirmed_entry) continue;
+            auto* child = animations.registry.find_child_script(*menu_root, item + 13, 0);
+            if (!child) continue;
             if (f == 8) {
-                animations.retire(state.handles[script]);
+                // [窗B f498 汇合] 非选中行序列 f0-7 衰减到 8/12，f8 归零隐藏
+                // （oracle f498 起无 L25 批，仅选中 L26 0x65ffffff）。
+                child->visible = false;
+                child->visual.flags &= ~1u;
                 continue;
             }
-            white->visual.color = u32(alpha) << 24 | 0xffffffu;
+            const u32 alpha = item == 1 ? kExtraAlpha[f] : kGreyAlpha[f];
+            child->visual.color = alpha << 24 | (child->visual.color & 0xffffffu);
         }
-    }
-    if (auto* menu_root = animations.registry.find(state.handles[0])) {
+        // 选中高亮 = 灰条本体 3+k（L26，sprite0 左半）；白条 13+k 已在
+        // finish_menu_hides 隐藏。
         if (auto* selected =
-                animations.registry.find_child_script(*menu_root, state.confirmed_entry + 13, 0)) {
+                animations.registry.find_child_script(*menu_root, state.confirmed_entry + 3, 0)) {
             if (f < 16) {
-                i32 alpha = 204 - 13 * f;
-                if (alpha < 0) alpha = 0;
-                selected->visual.color = u32(alpha) << 24 | 0xffffffu;
+                selected->visual.color =
+                    u32(kSelectedAlpha[f]) << 24 | (selected->visual.color & 0xffffffu);
             } else if (f == 16) {
                 selected->visible = false;
                 selected->visual.flags &= ~1u;  // oracle f506：title01 全消
             }
         }
     }
-    // 粒子节奏（age5 突发 17 + 每 3 帧 1 枚；总数 17+34=51 vs oracle 55，待校）。
-    if (f == 5) spawn_particles(17);
-    else if (f > 5 && f % 3 == 0) spawn_particles(1);
+    // [窗B 插入帧实证 f490-f491] oracle 建面当帧（f0=Z+21）插入 16 枚、f491
+    // 首绘 16；此后每 3 帧 1 枚（f491,494,... = 难度帧 f1,4,...）。移植侧
+    // update 早于 manager tick，故 f1 落 burst 16（f0 不绘）、相位 f≡1 (mod 3)。
+    // 相位交给 TitleState::particle_clock 供角色屏接力（oracle 全窗不断，
+    // f749 仍插）。
+    if (f == 1) spawn_particles(16);
+    else if (f > 1 && (f - 1) % 3 == 0) spawn_particles(1);
+    state.particle_clock = u32(f + 1);
+    // 头插粒子先落到链首；再整块挪到背景 91/93 之后（保持新→旧相对序），
+    // 最后由 reorder_difficulty_draws 把 90/83/84 重挂链尾。
+    requeue_particles_to_back(animations, resources.ascii, resources.difficulty_particle);
+    reorder_difficulty_draws();
     // oracle f517（Z+48）：select00 右半自 L21 搬 L22（左半留 L21 = 层分裂）。
-    // 真机由 script118 承接右半；移植侧直接搬既有 93 VM 层（几何等价，VM
-    // 构成差异登记蓝图待裁）。
-    if (f == 27) {
-        if (auto* bg = animations.registry.find(state.handles[89]))
-            if (auto* right = animations.registry.find_child_script(*bg, 93, 0))
-                right->visual.layer = 22;
-    }
+    // VM 层保持脚本真值；绘制侧覆盖按 particle_clock（f=27 → clock 28）落
+    // 93 的 L22（TitleMainMenu::apply_draw_layers）。
 }
 
 void TitleDifficultyMenu::retire_difficulty() {
     // root123 的 label1 已在 Esc 按键帧 pending 并清根槽（0x451255-0x451263）；
-    // 此处不重发 root 退场，只收 Rank Select 徽记并做背景右半层复位
-    //（难度期 f517 起 L22；回主菜单推定复 L21，待 oracle）。
+    // 此处不重发 root 退场，只收 Rank Select 徽记。背景半张层偏移由
+    // apply_draw_layers 按 screen 复位（回主菜单 90=L23/93=L21）。
     visuals.retire(resources.difficulty_badge);
-    if (auto* bg = animations.registry.find(state.handles[89]))
-        if (auto* right = animations.registry.find_child_script(*bg, 93, 0))
-            right->visual.layer = 21;
 }
 
 void TitleDifficultyMenu::choose_character() noexcept {
     state.change_screen(TitleScreen::Character);
+    // [窗B 粒子相位] 转屏帧难度 update 已推进 particle_clock，但角色屏本帧
+    // 不 update——补一拍使 clock 与全局帧同步（否则角色屏粒子相位晚 1 帧）。
+    ++state.particle_clock;
     // LAB_00451363（0x450fb0 case3 收场）：be7c4<4 时才取光标为难度；
     // Extra(4) 保持 4（bb4d0 已被 0x44cd10 case1 置 4）。
     if (progress.difficulty < 4) {
@@ -162,7 +249,7 @@ void TitleDifficultyMenu::choose_character() noexcept {
     state.menu.push();
     state.menu.wrapping = true;
     state.menu.count = kTitleCharacterRows;
-    // 角色行 1-4 = 霊夢/魔理沙/早苗/妖夢（推定行位，蓝图 §1.4）。
+    // 0x451450 uses the cursor directly as the character index.
     state.menu.select(settings.preferred_character + kTitleCharacterFirst);
     progress.character = settings.preferred_character;
 }
@@ -293,26 +380,15 @@ bool TitleCharacterMenu::visual(bool ok) {
 // 旧立绘的退场 pending 覆盖，退场标签永不消费 → 上一角色立绘残留叠屏。
 // 传播面：原版 0x46fca0/fc30 把标签写到 root 全部直接子（125-128 立绘/
 // 135-138 武器/131-134 选择框，dump 实证三者标签集相同 7+c/12+c/17+c/22+c/3/6/1），
-// 未通关选择框靠 vm+0x18 bit1 游戏抑制位（0x470030）保持不绘——跳转只置
-// bit0（0x46265d）不清 bit1。port 引擎可见位与跳转共用 flags bit0（跳转即
-// visible=true），根广播会解除 r4-M clear-tag 隐藏；不改共享 core，按原版
-// 可见语义定向发送：仅当前角色三件套收标签（未通关选择框在原版被抑制，
-// 等价于不接收），root 自身无该标签本为 no-op。
+// 未通关选择框靠 vm+0x18 bit1 游戏抑制位（0x470030）保持不绘；
+// 中断仍传给所有子 VM，脚本状态照常推进。绘制器要求 flags 两低位均置位。
 bool TitleCharacterMenu::character_interrupt(i32 character, i32 label, bool immediate) {
     // 0x451450 case0：Extra 屏根 130，武器 139+（weapon_base_ex）；立绘/
     // 选择框标签族同号共用。
     const bool extra = progress.difficulty == 4;
     const i32 root = extra ? resources.char_menu_root_ex : resources.char_menu_root;
-    const i32 weapon_base = extra ? resources.weapon_base_ex : resources.weapon_base;
     const i32 full = label + character;  // 立绘/武器/选择框同号标签族
-    if (!visual(visuals.child_interrupt(root, resources.portrait_base + character, full, immediate)))
-        return false;
-    if (!visual(visuals.child_interrupt(root, weapon_base + character, full, immediate)))
-        return false;
-    if (host.character_cleared(character, progress.difficulty))
-        return visual(visuals.child_interrupt(root, resources.clear_tag_base + character,
-                                              full, immediate));
-    return true;
+    return visual(visuals.interrupt(root, full, immediate));
 }
 
 bool TitleCharacterMenu::exit_portrait(i32 character, i32 label) {
@@ -328,9 +404,10 @@ bool TitleCharacterMenu::enter_portrait(i32 character, i32 label) {
 void TitleCharacterMenu::return_difficulty() {
     // Player Select 标题条 102 退场（oracle：难度屏 101 在 f603-621 同款 20f
     // 滑出后自机屏建 102；本屏回退走 retire=label1 淡出，帧级时序待窗对拍）。
-    // 根 129/130 按难度一并回收（Extra 屏回退同样只回难度屏）。
+    // 0x451450 case4 sends label 1 to the active 129/130 root.
     visuals.retire(resources.difficulty_badge + 1);
-    visuals.retire(resources.char_menu_root_ex);
+    visuals.retire(progress.difficulty == 4 ? resources.char_menu_root_ex
+                                            : resources.char_menu_root);
     visuals.retire(resources.character_root);
     state.change_screen(TitleScreen::Difficulty);
     if (state.menu.cursor >= kTitleCharacterFirst && state.menu.cursor <= kTitleCharacterLast)
@@ -339,6 +416,19 @@ void TitleCharacterMenu::return_difficulty() {
 }
 
 bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
+    // [窗B 粒子接力] 神霊粒子在角色屏继续按 3 帧相位出生（oracle 主池
+    // 0x46f4a0 头插 #18@L22 从 f491 连续到 f749，窗B 共 102 枚；难度屏
+    // 停更后不得断流）。相位沿用难度屏 clock=f+1（难度帧 f≡1 mod 3 出生
+    // ⇔ clock≡2 mod 3）。ascii bank 未装载的隔离宿主（单模块 UI 测试）
+    // 跳过出生，不伪造资源。ordering=2 = 原版头插。
+    if (state.particle_clock % 3 == 2 && animations.resource(resources.ascii)) {
+        if (!animations.create(resources.ascii, resources.difficulty_particle, -1, 2))
+            return check(false, "Character particle spawn failed");
+        // 头插后把粒子整块移到角色屏既有 VM 之后（L22 桶序：背景 → 粒子）。
+        requeue_particles_to_back(animations, resources.ascii,
+                                  resources.difficulty_particle);
+    }
+    ++state.particle_clock;
     // 0x451450 case0：根动画 = (be7c4==4)+0x81 → 普通 129 / Extra 130
     //（EX 武器 139-142；TitleSceneResources.char_menu_root_ex）。
     const i32 root = progress.difficulty == 4 ? resources.char_menu_root_ex
@@ -371,8 +461,7 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
         // 行条 + 段位扇形量表 59-82）属 PlayerData 段位屏，自机页**不建**。
         // 旧 create(2)+interrupt(2,7+k) 是错建：名行条入场后以 title01
         // 行位图（家内安全..早苗行区）绘在自机页左下——stable 截图像素匹配
-        // 与 port draws L25×28/L26×12 双证。行为层光标仍按 7 行建模（menu
-        // count 不变），仅撤 VM 树。
+        // 与 port draws L25×28/L26×12 双证。光标按原版四个角色建模。
         if (state.handles[root]) visuals.retire(root);
         // 0x451450 case0：自机菜单根 = (be7c4==4)+0x81 → 129（普通）/130
         //（EX 武器 139-142）；root（character_root=2 名行树）只做上方清理。
@@ -380,6 +469,9 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
                                                        : resources.char_menu_root;
         if (!visual(visuals.retire(menu_root)) || !visual(visuals.create(menu_root)))
             return false;
+        // 45154a broadcasts label3 immediately to the newly created tree,
+        // before 45155d queues the selected character's label7+cursor.
+        if (!visual(visuals.interrupt(menu_root, 3, true))) return false;
         // Player Select 标题条（select01 sprite80，dump L24293 与 101 同体：
         // (-256,8)→(32,8) 20f 滑入）：自机屏独占（oracle 窗B f622 起实证，
         // 难度屏期间不建）。
@@ -387,12 +479,10 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
         // [r4-M] clear-tag 可见门（0x45145f-0x451734 四路展开判定：score_data
         // +0x56dc*c+0x7e4+DAT_004be7c4(当前难度)*4 == 0 → 00470030 递归清
         // script 0x83+c 子树可见位）。缺关（子不存在）原版为空指针 no-op。
-        // 原版清 vm+0x18 bit1；port 的可见位 = visual.flags bit0（tick 每帧
-        // 以 visible() 重算），故此处同清 flags bit0 + visible 才能跨帧持久。
+        // 00470030 clears bit1 while retaining script execution and bit0.
         if (AnmVm* menu = animations.registry.find(state.handles[menu_root])) {
             const std::function<void(AnmVm&)> hide_tree = [&](AnmVm& vm) {
-                vm.visual.flags &= ~1u;
-                vm.visible = false;
+                vm.visual.flags &= ~2u;
                 for (AnmVm* child : animations.registry.children(vm)) hide_tree(*child);
             };
             for (i32 c = 0; c < 4; c++) {
@@ -411,43 +501,26 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
         break;
     case 2: {
         state.menu.previous = state.menu.cursor;
-        const bool was_character = state.menu.cursor >= kTitleCharacterFirst &&
-                                   state.menu.cursor <= kTitleCharacterLast;
         if ((pressed | repeated) & 0x40) {  // ←：上一行
+            if (!check(host.sound(10), "Character navigation sound failed")) return false;
             // 0x4519c1：退场标签读活动选角（同帧 ←→ 时为中间值），非帧初快照。
-            if (was_character)
-                if (!exit_portrait(title_character_at(state.menu.cursor), 22)) return false;
+            if (!exit_portrait(title_character_at(state.menu.cursor), 22)) return false;
             state.menu.move(-1);
             if (!state.menu.error.empty()) return check(false, state.menu.error.c_str());
-            const bool now_character = state.menu.cursor >= kTitleCharacterFirst &&
-                                       state.menu.cursor <= kTitleCharacterLast;
-            if (now_character)
-                if (!enter_portrait(title_character_at(state.menu.cursor), 12)) return false;
+            if (!enter_portrait(title_character_at(state.menu.cursor), 12)) return false;
         }
         if ((pressed | repeated) & 0x80) {  // →：下一行
-            if (was_character)
-                if (!exit_portrait(title_character_at(state.menu.cursor), 17)) return false;
+            if (!check(host.sound(10), "Character navigation sound failed")) return false;
+            if (!exit_portrait(title_character_at(state.menu.cursor), 17)) return false;
             state.menu.move(1);
             if (!state.menu.error.empty()) return check(false, state.menu.error.c_str());
-            const bool now_character = state.menu.cursor >= kTitleCharacterFirst &&
-                                       state.menu.cursor <= kTitleCharacterLast;
-            if (now_character)
-                if (!enter_portrait(title_character_at(state.menu.cursor), 7)) return false;
+            if (!enter_portrait(title_character_at(state.menu.cursor), 7)) return false;
         }
         if (pressed & 0x102) {  // Esc/X：回难度菜单
             state.change_substate(4);
             return check(host.sound(9), "Character cancel sound failed");
         }
         if (pressed & 0x80001) {  // Z/Enter
-            if (state.menu.cursor == kTitleCharacterRows - 1) {  // やめる行
-                state.change_substate(4);
-                return check(host.sound(9), "Character cancel sound failed");
-            }
-            if (state.menu.cursor < kTitleCharacterFirst ||
-                state.menu.cursor > kTitleCharacterLast) {
-                // 0/5 行（EXTRA/LUNATIC 字条位）：语义待锚定，本轮确认音后不动作。
-                return check(host.sound(7), "Character confirm sound failed");
-            }
             // 确认：立绘/武器/选择框中央淡出（label 3）。名行树不建（构成定案，
             // 旧 interrupt(2,6) 名行闪灭随之废除）。
             if (!enter_portrait(title_character_at(state.menu.cursor), 3)) return false;
@@ -472,10 +545,10 @@ bool TitleCharacterMenu::update(u32 pressed, u32 repeated) {
                 state.change_screen(TitleScreen::Stage);
                 return true;
             }
+            // 00451450 case3 age10：FUN_00417370 只创建转场 VM（无 label 7
+            // 中断；effect.anm script1 无该标签）。
             if (!check(host.begin_transition(state.start_effect),
-                       "Game start transition unavailable") ||
-                !check(animations.interrupt(state.start_effect, 7),
-                       "Game start transition interrupt failed"))
+                       "Game start transition unavailable"))
                 return false;
         }
         if (state.age.current > 39) {
@@ -552,10 +625,9 @@ bool TitleStageMenu::update(u32 pressed, u32 repeated) {
         break;
     case 3:
         if (state.age.current == 10) {
+            // 00451cb0 case3 age10：同 00417370，仅创建（无 label 7）。
             if (!check(host.begin_transition(state.start_effect),
-                       "Practice start transition unavailable") ||
-                !check(animations.interrupt(state.start_effect, 7),
-                       "Practice start transition interrupt failed")) return false;
+                       "Practice start transition unavailable")) return false;
         }
         if (state.age.current > 39) {
             progress.stage = progress.starting_stage = state.menu.cursor + 1;

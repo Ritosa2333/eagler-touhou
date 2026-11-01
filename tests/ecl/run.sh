@@ -6,7 +6,8 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 port_dir="$(cd "$script_dir/../.." && pwd)"
-cd "${TH13_TEST_WORKSPACE:-$port_dir}"
+repo_root="$(cd "$port_dir/../../.." && pwd)"
+cd "$repo_root"
 
 flags="-O2 -Wall -Wextra"
 [[ "${1:-}" == "--debug" ]] && flags="-O0 -g"
@@ -15,14 +16,25 @@ out_dir="$port_dir/tests/ecl/build"
 mkdir -p "$out_dir"
 
 # 游戏源与套件均自动发现，使任意历史提交点可独立构建当时的测试。
-sources=("$port_dir"/web/cpp/game/*.cpp)
+sources=(eagler-touhou/ports/th13/web/cpp/game/*.cpp)
 
+object_dir="$(mktemp -d "$out_dir/objects.XXXXXX")"
+trap 'rm -rf -- "$object_dir"' EXIT
+objects=()
 status=0
+for source in "${sources[@]}"; do
+  object="$object_dir/$(basename "${source%.cpp}").o"
+  g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
+    -Ieagler-touhou/ports/th13/web/cpp -c "$source" -o "$object" || status=1
+  objects+=("$object")
+done
+(( status )) && exit 1
+
 for suite in "$script_dir"/ecl_*_test.cpp; do
   name="$(basename "$suite" .cpp)"
   g++ -std=c++17 $flags -fno-exceptions -fno-rtti -ffp-contract=off \
-    -I"$port_dir/web/cpp" -DTH13_TEST_PORT_DIR=\""$port_dir"\" \
-    "${sources[@]}" "$suite" \
+    -Ieagler-touhou/ports/th13/web/cpp \
+    "${objects[@]}" "$suite" \
     -o "$out_dir/$name" || status=1
 done
 (( status )) && exit 1

@@ -65,11 +65,28 @@ public:
           boss_hud(a, {front_bank, ascii_bank, 8}), spell_hud(a, {4}) {
         frame_age.set(0);
     }
+    // Bank 1 (sig.anm) is resident, so the opening signature VMs survive the
+    // per-run bank unload in ApplicationState::release_run; they must be
+    // retired with the HUD or they keep drawing into the title.
+    ~GameHud();
 
     bool initialize(const HudEntryContext&);
     bool life(i32 lives, i32 pieces);
     bool bombs(i32 bombs, i32 pieces);
+    // 开场签名条（sig.anm 槽 1 script0 左半层 23 + ins_500 子 script1 右半
+    // 层 26）：原版在加速战斗入口（回放 harness）保留全局帧 0 建的两条 VM，
+    // 正常标题流程已在开场 f180 卸载槽 1，故只在回放/调试直入路径重建。
+    u32 opening_signature = 0, opening_signature_right = 0;
+    bool begin_opening_signature();
+    void release_opening_signature();
+    // Independent per-stage logo ANM bank, injected by the run scene.
+    i32 stage_logo_bank = -1;
+    // ECL554 -> 0x42adc0: template index 0 = stXXlogo.anm script 0 (banner).
     bool stage_logo(i32 scene_destination);
+    // 0x425170:291-349 block D: stage-entry logo = template index 1 = script 1
+    // (the VM that draws front/logo/stXXlogo.png at layer 20 from frame 0).
+    bool stage_logo_title(i32 scene_destination);
+    bool stage_music_logo();
     bool update(const HudFrameContext&, HudFrameServices&);
     void update_score();
     bool draw(const HudDrawContext&, HudDrawServices&);

@@ -67,6 +67,9 @@ public:
     u32 ordering=0;
     void copy_checkpoint(const AnmVm& source){*this=source;timer.set(source.timer.current);age.set(source.age.current);rotation_parent=creation_parent=nullptr;}
     bool bind(AnmScript&);int tick(GameRandom&,float rate=1);
+private:
+    int tick_inner(GameRandom&,float rate);
+public:
     bool bind(AnmResource&,u32 script);bool select_sprite(i32 index)noexcept;
     void prepare_template()noexcept{timer.set(-1);age.set(-1);}
     void reset_runtime_timers()noexcept{timer.set(0);age.set(0);}

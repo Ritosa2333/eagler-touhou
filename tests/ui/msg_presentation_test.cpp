@@ -123,7 +123,7 @@ TEST(msg_side_portrait_and_nameplate_global_scripts) {
     CHECK(side != 0);
     CHECK_EQ(active_sprite_tag(f.manager, side), 10);  // st01enm 文件内 script10
     // opcode 20 名牌 → st01enm script15 → 全局 2+15。
-    CHECK(presentation.nameplate());
+    CHECK(presentation.nameplate(0));
     // 两 VM 并存：sprite 标记集 {10, 15}。
     std::vector<i32> tags;
     for (u32 i = 0; i < f.manager.registry.ordered_count(false); i++) {

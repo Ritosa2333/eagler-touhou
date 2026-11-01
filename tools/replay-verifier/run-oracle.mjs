@@ -52,7 +52,7 @@ for (const id of ids) {
   const fixture = corpus.cases.find(c => c.id === id);
   if (!fixture) throw Error('Unknown case ' + id);
   const target = resolve(output, id + '.candidate.jsonl');
-  // run-harness 的 WASI preopen '/' = 外层工作区根。
+  // run-harness 的 WASI preopen '/' = 外层工作区根（/home/mystia/项目/th13）。
   // 输出路径换算：宿主绝对路径 → 挂载内路径（去外层根前缀）。
   const outerRoot = resolve(project, '../../..');
   const mounted = target.startsWith(outerRoot)

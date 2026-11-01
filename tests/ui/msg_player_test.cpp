@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace th13;
@@ -79,10 +80,17 @@ std::vector<u8> build_msg(const std::vector<std::vector<u8>>& entries) {
 
 struct RecordHost final : MsgHost {
     std::vector<i32> bgm_calls, clears, boss_calls, interrupts, speakers, releases;
+    // 22/27 只调用 0x43af70（原版 0x428ae0 case 0x16/case 0x1b），
+    // 与 Boss 战设置无关；记录 (opcode, seconds) 以区分两条指令。
+    std::vector<std::pair<i32, float>> music_fades;
     i32 portraits = 0, blips = 0;
     void msg_bgm(i32 opcode) override { bgm_calls.push_back(opcode); }
     void msg_portrait_load() override { portraits++; }
     void msg_boss_battle() override { boss_calls.push_back(1); }
+    void msg_music_fade(i32 opcode) override { music_fades.emplace_back(opcode, -1.f); }
+    void msg_music_fade(i32 opcode, float seconds) override {
+        music_fades.emplace_back(opcode, seconds);
+    }
     void msg_stage_clear() override { clears.push_back(1); }
     void msg_advance_blip() override { blips++; }
     void msg_release(i32 opcode) override { releases.push_back(opcode); }
@@ -151,7 +159,7 @@ TEST(msg_opcode21_fires_at_scheduled_clock) {
     entry.text(0, "First line");
     entry.integer(10, 0x0b, 600);  // 11;600 等输入
     entry.add(30, 0x15);           // 21 ★关终了
-    entry.add(31, 0x16);           // 22 Boss 战设置
+    entry.add(31, 0x16);           // 22 音乐淡出（0x428ae0 case 0x16 → 0x43af70）
     entry.integer(40, 0x0a, 0);
     entry.end(50);
     const auto bytes = build_msg({entry.bytes});
@@ -171,15 +179,53 @@ TEST(msg_opcode21_fires_at_scheduled_clock) {
     CHECK_EQ(host.clears.size(), 0u);
     CHECK(player.step(false));
     CHECK_EQ(host.clears.size(), 1u);
-    CHECK_EQ(host.boss_calls.size(), 0u);  // 22 在 time=31，尚未到
+    CHECK_EQ(host.music_fades.size(), 0u);  // 22 在 time=31，尚未到
     CHECK(player.step(false));
-    CHECK_EQ(host.boss_calls.size(), 1u);
+    CHECK_EQ(host.music_fades.size(), 1u);  // 22 → 0x43af70 音乐淡出
+    if (host.music_fades.size() == 1u) {
+        CHECK_EQ(host.music_fades[0].first, 0x16);
+        CHECK_EQ(host.music_fades[0].second, 0.0f);  // case 0x16 无浮点参数
+    }
+    CHECK_EQ(host.boss_calls.size(), 0u);  // 0x428ae0 case 0x16 不调用 Boss 战设置
     // 终止指令（time=50）后 done 且不再活跃。
     while (player.step(false)) {
     }
     CHECK(!player.active());
     CHECK(player.done());
     CHECK_EQ(host.clears.size(), 1u);
+}
+
+TEST(msg_music_fade_opcodes_22_and_27_do_not_start_boss_battle) {
+    // 原版 0x428ae0：case 0x16 与 case 0x1b 都只调用 0x43af70（音乐淡出）。
+    // 22 无浮点参数；27 的淡出秒数取指令 f32 参数。二者均不进入 Boss 战设置。
+    std::vector<u8> seconds(4);
+    const float fade = 3.5f;
+    std::memcpy(seconds.data(), &fade, sizeof fade);
+    InstructionBuilder entry;
+    entry.add(0, 0x16);              // 22
+    entry.add(1, 0x1b, seconds);     // 27;3.5
+    entry.end(2);
+    const auto bytes = build_msg({entry.bytes});
+    MsgFile file;
+    std::string error;
+    CHECK(file.open(bytes.data(), u32(bytes.size()), error));
+    RecordHost host;
+    MsgPlayer player;
+    CHECK(player.open(file, 0, host, error));
+    CHECK(player.step(false));  // time=0：op22
+    CHECK_EQ(host.music_fades.size(), 1u);
+    if (host.music_fades.size() == 1u) {
+        CHECK_EQ(host.music_fades[0].first, 0x16);
+        CHECK_EQ(host.music_fades[0].second, 0.0f);
+    }
+    CHECK(player.step(false));  // time=1：op27
+    CHECK_EQ(host.music_fades.size(), 2u);
+    if (host.music_fades.size() == 2u) {
+        CHECK_EQ(host.music_fades[1].first, 0x1b);
+        CHECK_NEAR(host.music_fades[1].second, 3.5f, 1e-6);
+    }
+    CHECK(host.boss_calls.empty());  // 0x428ae0 case 0x16/0x1b 不调用 Boss 战设置
+    CHECK(host.clears.empty());      // 21 的 0x42cd40 未触发
 }
 
 TEST(msg_wait_blocks_until_z_or_auto) {

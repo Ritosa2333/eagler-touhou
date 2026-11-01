@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <unordered_map>
 #if TH13_DRAW_CAPTURE
 #include "DrawCapture.hpp"  // 语义绘制清单钩子（draw-contract.md；仅 harness 构建）
 #endif
@@ -11,6 +12,13 @@ namespace th13 {
 using namespace touhou::graphics;
 AnmDrawProbe anm_draw_probe;
 #if TH13_DRAW_CAPTURE
+namespace {
+// [§8.3/§8.9] 绘制侧层覆盖表（VM 指针 → op 层）。仅捕获构建的 sprite 钩子
+// 查询；每帧由标题场景 Draw 回调 clear + 重设，标题场景析构时清空。
+std::unordered_map<const AnmVm*, i32> draw_layer_overrides;
+}
+void set_draw_layer_override(const AnmVm& vm, i32 layer) { draw_layer_overrides[&vm] = layer; }
+void clear_draw_layer_overrides() { draw_layer_overrides.clear(); }
 // 提交语境钩子：每个精灵的顶点进入渲染批次时登记层号与九宫格锚点组（原版
 // 0x46f380 层 watch + startVertex 公式的移植侧同构物）。captures 为空（web 构建）
 // 时零开销。
@@ -21,9 +29,17 @@ AnmDrawProbe anm_draw_probe;
 // overlay 掩蔽矩形在 draw() 入口挂（其掩蔽 flush 保持历史行为，见 draw()）。
 #define TH13_DRAW_SPRITE(vm) \
     do { \
-        if (draw_capture) draw_capture->sprite((vm).visual.layer, (vm).visual.flags); \
+        if (draw_capture) { \
+            const auto override = draw_layer_overrides.find(&(vm)); \
+            draw_capture->sprite(override != draw_layer_overrides.end() ? override->second \
+                                                                        : (vm).visual.layer, \
+                                 (vm).visual.flags); \
+        } \
     } while (false)
 #else
+// web/普通构建：无捕获钩子，层覆盖为 no-op（零开销）。
+void set_draw_layer_override(const AnmVm&, i32) {}
+void clear_draw_layer_overrides() {}
 #define TH13_DRAW_SPRITE(vm) do { } while (false)  // web 构建：钩子编译出局
 #endif
 namespace {u32 multiply_color(u32 a,u32 b){u32 out=0;for(u32 shift=0;shift<32;shift+=8)out|=std::min(255u,(((a>>shift)&255)*((b>>shift)&255))>>7)<<shift;return out;}}
@@ -63,7 +79,7 @@ bool AnmRenderer::material(AnmVm& vm,bool textured){
     case 9:next.sourceBlend=BlendFactor::SourceAlpha;next.destinationBlend=BlendFactor::One;next.blendEquation=BlendEquation::Maximum;break;
     default:break;
     }
-    next.minFilter=next.magFilter=v.render_flags&0x800?Filter::Nearest:Filter::Linear;const u32 u=v.render_flags&3,w=v.flags>>30;
+    next.minFilter=next.magFilter=v.render_flags&0x400?Filter::Nearest:Filter::Linear;const u32 u=v.render_flags&3,w=v.flags>>30;
     if(u<3)next.addressU=u==0?Address::Repeat:u==1?Address::Clamp:Address::Mirror;if(w<3)next.addressV=w==0?Address::Repeat:w==1?Address::Clamp:Address::Mirror;
     next.textureTransform=false;next.color.operation=next.alpha.operation=ColorOperation::Multiply;next.color.first=next.alpha.first={ArgumentSource::Texture};next.color.second=next.alpha.second={ArgumentSource::Diffuse};
     if(!graphics.pipeline().compatible(next))flush();graphics.pipeline()=next;return true;
@@ -96,7 +112,7 @@ int AnmRenderer::draw_glyph(AnmVm& vm){
     // Preserve original atlas glyphs. At integer high-resolution scale, sample
     // their texels directly rather than blurring them a second time.
     const u32 flags=vm.visual.render_flags;
-    if(vm.environment&&vm.environment->raster_scale>1&&vm.visual.scale.x==1&&vm.visual.scale.y==1)vm.visual.render_flags|=0x800;
+    if(vm.environment&&vm.environment->raster_scale>1&&vm.visual.scale.x==1&&vm.visual.scale.y==1)vm.visual.render_flags|=0x400;
     const int result=quad(vm,true);vm.visual.render_flags=flags;return result;
 }
 int AnmRenderer::quad(AnmVm& vm,bool pixel){
@@ -131,11 +147,26 @@ int AnmRenderer::world_quad(AnmVm& vm){
     if(probe::enabled){static u32 wseen_count=0;const u64 key=(u64(v.layer)<<32)|u32(vm.source_script);static u64 wseen[256]={};bool dup=false;for(u32 i=0;i<wseen_count&&i<256;i++)if(wseen[i]==key){dup=true;break;}if(!dup&&wseen_count<256){wseen[wseen_count++]=key;std::printf("[probe-world] layer=%u script=%d rflags=%06x world12=%.3f world13=%.3f envoff2=%d\n",v.layer,vm.source_script,v.render_flags,double(world.m[12]),double(world.m[13]),vm.environment?vm.environment->screen_offsets[2]:-1);}}
 
     const u32 ax=v.flags>>21&3,ay=v.flags>>23&3;if(ax>2||ay>2){error="World animation anchor outside range";return -2;}
-    flush();if(!material(vm))return -2;TH13_DRAW_SPRITE(vm);auto& state=graphics.pipeline();state.depthWrite=!(v.flags&0x2000);state.textureTransform=true;state.color.second=state.alpha.second={ArgumentSource::Factor};state.textureFactor=tint_color(v.flags&0x60000?v.secondary_color:v.color);
+    // 0x402340/0x406d90/0x407310：world 图元（mode 8/18）与 wind 同族，在主池
+    // 绘制时继承 STD 舞台相机；web 调度在 scenery 趟末恢复 Fullscreen，故这里
+    // 显式选回 renderer.scenery_camera/scenery_viewport（同 wind 分支做法）。
+    // 相机继承只覆盖原版 STD 相机仍为当前态的层域：主池层 0..20 在 STD 趟之后、
+    // 0x46ef60（layer21 draw 回调，AnmDrawSchedule {21,54}）切 Fullscreen 之前
+    // 绘制；22+ 的副链/界面层（如 layer31 ascii/loading 世界 quad，原生
+    // view t=(-320,240,895.69) 全屏相机）必须保留调用方相机。
+    const bool inherit_stage_camera =
+        scenery_camera_ready && v.layer >= 0 && v.layer <= 20;
+    const auto saved_camera=camera;const auto saved_viewport=viewport;
+    if(inherit_stage_camera){set_viewport(scenery_viewport);set_camera(scenery_camera);}
+    flush();
+    if(!material(vm)){if(inherit_stage_camera){set_viewport(saved_viewport);set_camera(saved_camera);}return -2;}
+    TH13_DRAW_SPRITE(vm);auto& state=graphics.pipeline();state.depthWrite=!(v.flags&0x2000);state.textureTransform=true;state.color.second=state.alpha.second={ArgumentSource::Factor};state.textureFactor=tint_color(v.flags&0x60000?v.secondary_color:v.color);
     graphics.set_matrix(MatrixKind::World,world);graphics.set_matrix(MatrixKind::Texture,anm_texture_transform(vm));graphics.set_layout(VertexLayout::WorldUv);
     struct Vertex {Vec3 position;Vec2 uv;};constexpr float xs[3][2]={{-128,128},{0,256},{-256,0}},ys[3][2]={{-128,128},{0,256},{-256,0}};
     const Vertex data[]={{{xs[ax][0],ys[ay][0],0},{0,0}},{{xs[ax][1],ys[ay][0],0},{1,0}},{{xs[ax][0],ys[ay][1],0},{0,1}},{{xs[ax][1],ys[ay][1],0},{1,1}}};
-    const bool fog=state.fog;if(v.draw_mode()==15)state.fog=true;submit(vm,Topology::Strip,2,data,sizeof(Vertex));if(v.draw_mode()==15)state.fog=false;else state.fog=fog;return 0;
+    const bool fog=state.fog;if(v.draw_mode()==15)state.fog=true;submit(vm,Topology::Strip,2,data,sizeof(Vertex));if(v.draw_mode()==15)state.fog=false;else state.fog=fog;
+    if(inherit_stage_camera){set_viewport(saved_viewport);set_camera(saved_camera);}
+    return 0;
 }
 int AnmRenderer::mesh(AnmVm& vm){
     const i32 count=vm.geometry.wind?32:vm.geometry.ribbon?16:vm.variables.integers[0];if(count<1||(!vm.geometry.wind&&!vm.geometry.ribbon&&u32(count)>vm.geometry.world_vertices.size()/2)){error="World animation mesh buffer unavailable";return -2;}Matrix4 world;if(!anm_mesh_transform(vm,world)){error="World animation mesh transform unavailable";return -2;}

@@ -2,6 +2,7 @@
 // Covers all four character scripts; GPU/font output is checked in-browser.
 #include "../anm/anm_test_fixtures.hpp"
 #include "game/RunScene.hpp"
+#include <algorithm>
 #include <set>
 #include <cstdlib>
 
@@ -58,7 +59,9 @@ struct Host final : RunSceneServices {
     bool dialogue_line(i32,const MsgLine&,float,float)override{++lines;return true;}
 };
 
-void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1) {
+void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1,
+              bool score_gate_run=false,bool portrait_identity_run=false,
+              bool natural_stage3_run=false) {
     GameRandom rng{0};AnmEnvironment env;AnmManager animations{rng,env};
     Graphics graphics;AnmRenderer renderer{graphics};Host host{animations,graphics};
     CHECK(host.load(0,"text.anm"));
@@ -71,6 +74,7 @@ void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1) 
     CHECK(host.load(6,"pl0"+std::to_string(character)+".anm"));
     AnmResource merged;
     const std::string prefix="st0"+std::to_string(stage);
+    CHECK(host.load(26,prefix+"logo.anm"));
     std::vector<u8> ecl;CHECK(host.read_asset(prefix+".ecl",ecl));EclResource resource;
     CHECK(resource.open(ecl.data(),u32(ecl.size())));
     for(const auto& name:resource.animations) {
@@ -83,9 +87,153 @@ void dialogue(i32 character,bool bomb_run=false,bool hud_run=false,i32 stage=1) 
     RunScene scene{progress,player,score,animations,renderer,env,host,scheduler,
                    {4,5,6,8,9},3,2,7,prefix+".std"};
     scene.battle_sht="pl0"+std::to_string(character)+"a.sht";
+    scene.hud.stage_logo_bank=26;
     CHECK(scene.initialize());
     if(!scene.error.empty()){std::printf("initialize: %s\n",scene.error.c_str());return;}
     GameInput input;scene.controls(input);
+    if(score_gate_run) {
+        // 42c550:20-23: (scene_flags & 0x4010)==0x4010 returns before the :261
+        // score convergence; :263 freezes the battle frame for 0x10/0x20/0x40
+        // after convergence. Bit4 skips only score; its frame push is unproven.
+        env.paused=false;
+        struct GateCase{u32 flags;bool converges;bool frame_known;};
+        const GateCase gates[]={
+            {0x10,true,true},{0x20,true,true},{0x40,true,true},
+            {0x4010,false,true},{0x4020,true,true},{0x4040,true,true},
+            {4,false,false},
+        };
+        for(const auto& gate:gates) {
+            progress.scene_flags=gate.flags;
+            score.score=3200;scene.hud.displayed_score=0;
+            const auto frame=scene.battle.sim.frame;
+            CHECK(scene.update());
+            if(!scene.error.empty()){
+                std::printf("score gate %u: %s\n",gate.flags,scene.error.c_str());return;
+            }
+            // GameHud::update_score: change=3200>>5=100 -> clamp [1,578910] ->
+            // score_increment=100 -> displayed=0+100; 3200>100 keeps the step.
+            CHECK_EQ(scene.hud.displayed_score,gate.converges?100:0);
+            if(gate.frame_known)CHECK_EQ(scene.battle.sim.frame,frame);
+        }
+        return;
+    }
+    if(natural_stage3_run) {
+        bool saw_entry=false, saw_portrait=false, saw_name=false;
+        std::set<std::string> textures;
+        for(i32 frame=0;frame<4500&&!saw_entry;++frame) {
+            input.held=input.pressed=(frame%30==0)?1:0;
+            input.duration[0]=input.held?1:0;
+            if(!scene.update()) {
+                std::printf("natural stage3 frame %d: %s\n",frame,scene.error.c_str());
+                CHECK(false);return;
+            }
+            CHECK(animations.update());
+            if(!scene.dialog_active())continue;
+            saw_entry=true;
+            std::printf("natural stage3 dialogue frame=%d entry=%d\n",
+                        frame,scene.dialog_entry());
+            CHECK_EQ(scene.dialog_entry(),2);
+            for(i32 dialog_frame=0;dialog_frame<900&&scene.dialog_active();++dialog_frame) {
+                input.held=input.pressed=(dialog_frame%30==0)?1:0;
+                input.duration[0]=input.held?1:0;
+                if(!scene.update()) {
+                    std::printf("natural dialogue frame %d: %s\n",dialog_frame,scene.error.c_str());
+                    CHECK(false);return;
+                }
+                CHECK(animations.update());
+                for(u32 layer=0;layer<33;++layer)for(auto* vm:animations.registry.layer(layer)) {
+                    if(!vm->visible||!vm->texture_sprite()||!(vm->visual.color>>24))continue;
+                    const auto* source=vm->sprite_resource?vm->sprite_resource:vm->resource;
+                    const auto& name=source->textures[vm->texture_sprite()->texture].name;
+                    textures.insert(name);
+                    if(name.find("face/enemy3m/face03m")!=std::string::npos)saw_portrait=true;
+                    if(name=="face/enemy3m/ename01.png")saw_name=true;
+                    CHECK(renderer.draw(*vm)!=-2);
+                }
+                renderer.flush();
+            }
+            std::printf("natural stage3 ended active=%d portrait=%d name=%d\n",
+                        int(scene.dialog_active()),int(saw_portrait),int(saw_name));
+        }
+        CHECK(saw_entry);
+        CHECK(saw_portrait);
+        CHECK(saw_name);
+        return;
+    }
+    if(portrait_identity_run) {
+        // Stage 3 real .std: entry2 Kogasa (enemy3m), entry0/1 Yoshika
+        // (enemy3). Identity comes from the real ECL/ANM texture paths; the
+        // visible/alpha VM path is asserted, not a production-table copy.
+        CHECK_EQ(stage,3);
+        auto identity=[](i32 entry,const std::string& name){
+            if(entry==2)return name.find("face/enemy3m/face03m")!=std::string::npos;
+            return name.find("face/enemy3/face03")!=std::string::npos;
+        };
+        // Negative control: the predicate rejects the other family.
+        CHECK(!identity(0,"face/enemy3m/face03m01.png"));
+        CHECK(!identity(2,"face/enemy3/face0301.png"));
+        CHECK(identity(0,"face/enemy3/face0301.png"));
+        CHECK(identity(2,"face/enemy3m/face03m01.png"));
+        std::set<std::string> visible;
+        auto scan=[&](){
+            visible.clear();
+            for(u32 layer=0;layer<33;++layer)for(auto* vm:animations.registry.layer(layer)) {
+                if(!vm->visible||!vm->texture_sprite()||!(vm->visual.color>>24))continue;
+                const auto* source=vm->sprite_resource?vm->sprite_resource:vm->resource;
+                visible.insert(source->textures[vm->texture_sprite()->texture].name);
+                CHECK(renderer.draw(*vm)!=-2);
+            }
+            renderer.flush();
+        };
+        const i32 order[]={2,0,1};
+        for(i32 k=0;k<3;++k) {
+            const i32 entry=order[k];
+            scene.open_dialog(entry);
+            if(!scene.dialog_active()) {
+                std::printf("stage3 entry %d open: %s\n",entry,scene.error.c_str());
+                CHECK(false);return;
+            }
+            const int previous_lines=host.lines;
+            bool saw_portrait=false,saw_name=false;
+            for(int frame=0;frame<2400&&scene.dialog_active();++frame) {
+                input.held=input.pressed=frame%30==0?1:0;
+                input.duration[0]=input.held?1:0;
+                if(!scene.update()){
+                    if(!scene.error.empty()){
+                        std::printf("stage3 entry %d update: %s\n",entry,scene.error.c_str());
+                        CHECK(false);return;
+                    }
+                    break;
+                }
+                CHECK(animations.update());
+                scan();
+                bool expected=false;
+                for(const auto& name:visible) {
+                    const bool face=name.find("/face03")!=std::string::npos;
+                    if(face&&!identity(entry,name)) {
+                        std::printf("entry %d wrong portrait %s\n",entry,name.c_str());
+                        CHECK(false);return;
+                    }
+                    expected|=identity(entry,name);
+                }
+                saw_portrait|=expected;
+                for(const auto& name:visible)
+                    if(name=="face/enemy3/ename01.png"||name=="face/enemy3m/ename01.png")saw_name=true;
+            }
+            CHECK(!scene.dialog_active());
+            CHECK(host.lines>previous_lines);
+            CHECK(saw_portrait);
+            if(entry==0||entry==2)CHECK(saw_name);
+            // Old portrait must be gone once this entry has closed.
+            scan();
+            for(const auto& name:visible)
+                if(name.find("/face03")!=std::string::npos) {
+                    std::printf("entry %d portrait survived close: %s\n",entry,name.c_str());
+                    CHECK(false);
+                }
+        }
+        return;
+    }
     if(stage==4) {
         for(int frame=0;frame<400;++frame){
             CHECK(scene.update());CHECK(animations.update());
@@ -221,5 +369,13 @@ TEST(sanae_bomb_real_animation_lifecycle) {dialogue(2,true);}
 TEST(youmu_bomb_real_animation_lifecycle) {dialogue(3,true);}
 TEST(stage1_original_boss_scripts_drive_production_hud) {dialogue(0,false,true);}
 TEST(stage4_original_maple_enemy_creates_and_draws_wind_trails) {dialogue(0,false,false,4);}
+TEST(stage1_score_gate_freezes_0x4010_and_bit4) {dialogue(0,false,false,1,true);}
 }
+TEST(stage3_reimu_portrait_identity) {dialogue(0,false,false,3,false,true);}
+TEST(stage3_marisa_portrait_identity) {dialogue(1,false,false,3,false,true);}
+TEST(stage3_marisa_natural_midboss_dialogue_portrait_lifecycle) {
+    dialogue(1,false,false,3,false,false,true);
+}
+TEST(stage3_sanae_portrait_identity) {dialogue(2,false,false,3,false,true);}
+TEST(stage3_youmu_portrait_identity) {dialogue(3,false,false,3,false,true);}
 int main(){return th13test::run_all("stage1-boss-dialogue");}

@@ -10,7 +10,11 @@ namespace th13 {
 inline constexpr char kResultNameCharacters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ";
 
-enum class PauseScreen : i32 { Inactive = 0, Pause = 1, GameOver = 2, PracticeEnd = 3, ExtraEnd = 4 };
+// BGameOver = 0x43f570 mode≠0 入口（0x440960 态 0x18）：与 ExtraEnd 同用
+// 147 屏根/三项菜单，但默认光标落在重试（0x440960 态 0x18 的 0x15030(2)）。
+enum class PauseScreen : i32 {
+    Inactive = 0, Pause = 1, GameOver = 2, PracticeEnd = 3, ExtraEnd = 4, BGameOver = 5
+};
 
 struct PauseState {
     Timer age, selection_age;

@@ -2,6 +2,8 @@
 // browser entry points and the asset preparation command use this list.
 export const runtimeAssets = [
   'text.anm', 'sig.anm', 'ascii.anm', 'effect.anm', 'title.anm', 'title_v.anm', 'help.anm',
+  // Manual 查看器页图（0x42da10: sprintf("help_%.2d.png", page+1)；8 页）。
+  ...Array.from({length: 8}, (_, index) => `help_${String(index + 1).padStart(2, '0')}.png`),
   'front.anm', 'enemy.anm', 'bullet.anm', 'astral.anm', 'default.ecl', 'staff.msg',
   // Ending 场景（0x416130 家族）：结局 CG（e##.anm，op7 装载槽 20+idx）+
   // 滚屏脚本（e##.msg，名表 0x4bba20）+ 名单 CG（staff.anm，op12 接 staff.msg）。

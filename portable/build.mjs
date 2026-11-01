@@ -14,7 +14,6 @@ const builtAt = new Date().toISOString();
 const workspace = resolve(fileURLToPath(new URL('../', import.meta.url)));
 const game = 'th13';
 const root = resolve(workspace, 'web');
-const commonRoot = resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(workspace, '../../common'));
 // 捕获构建（TH13_WEB_CAPTURE=1）：-DTH13_DRAW_CAPTURE 开 AnmRenderer 精灵
 // 钩子，产物落 artifacts/sdl3-capture/（独立对象缓存；供 th13-debug.html
 // ?artifact= 指定加载，做 web 语义清单确定性导出）。
@@ -48,7 +47,7 @@ const common = ['-O2', '-g0', '-fno-strict-aliasing', '-ffp-contract=off',
   '-DTH_SDL3=1', '-DTH_NATIVE_PLATFORM=1', '--use-port=sdl3', '--use-port=sdl3_ttf',
   '-I' + resolve(root, 'cpp'),
   // 公共字体栅格头（eagler/text/RuntimeFontRaster.hpp；th15 同源约定）。
-  '-I' + resolve(commonRoot, 'include')];
+  '-I' + resolve(workspace, '../../common/include')];
 const flags = [...common, '-std=c++17', '-fno-exceptions', '-fno-rtti'];
 if (captureBuild) flags.push('-DTH13_DRAW_CAPTURE=1');
 
@@ -60,10 +59,10 @@ const sources = [
 ];
 
 const allHeaders = [
-  ...headerInputs(resolve(root, 'cpp'), resolve(workspace, 'portable')),
-  ...['include/eagler/text/RuntimeFontRaster.hpp', 'include/eagler/input/DialogueGesture.hpp',
-    'include/eagler/input/BrowserGamepad.hpp', 'browser/browser-gamepad-input.hpp']
-    .map(name => resolve(commonRoot, name)),
+  ...headerInputs(resolve(root, 'cpp'), resolve(workspace, 'portable/sdl'),
+                  resolve(workspace, 'portable/input'),
+                  resolve(workspace, '../../common/include/eagler/input')),
+  resolve(workspace, '../../common/include/eagler/text/RuntimeFontRaster.hpp'),
 ];
 await printRuntimeInputs({workspace, root, sources: sources.map(p => resolve(root, p)), headers: allHeaders, flags});
 const version = spawnSync(python, [emcc, '--version'], {cwd: root, env, encoding: 'utf8'});

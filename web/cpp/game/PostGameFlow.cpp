@@ -85,6 +85,10 @@ void PostGameFlow::on_stage_clear() {
 void PostGameFlow::on_game_over() {
     // 0x43f570 骨架：mode0 → 态 0xe（GameOver 展示）；mode≠0 → 0x18（结算B
     // GameOver 变体）；置 0x10、BGM th128_08、slow rate 记录 TODO。
+    // Live production routing is host-owned: RunScene calls
+    // RunSceneServices::request_game_over and Application opens
+    // PauseEntrance::GameOver/BGameOver. This method only mirrors the overlay
+    // state machine (tests/diagnostics) and does not drive the real menu.
     host_.bgm(7);  // 「th128_08」（0x43f570:58；音频接线 TODO，先记号）
     const u32 mode = (progress_.run_mode_flags >> 4) & 3;
     if (mode == 0) {

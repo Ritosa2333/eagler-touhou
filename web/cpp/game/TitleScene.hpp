@@ -11,6 +11,7 @@
 #include "TitleOptionsMenu.hpp"
 #include "TitleKeyConfigMenu.hpp"
 #include "TitleMusicRoomMenu.hpp"
+#include "TitleMusicRoomView.hpp"
 #include "TitleManualMenu.hpp"
 #include "TitleSpellPracticeMenu.hpp"
 #include "TitleSpellPracticeView.hpp"
@@ -64,6 +65,7 @@ private:
     TitleKeyConfigHost key_config_host;
     TitleKeyConfigMenu key_config;
     TitleMusicRoomMenu music_room;
+    std::unique_ptr<TitleMusicRoomView> music_room_view;
     TitleManualMenu manual;
     // PlayerData/SpellPractice 路由骨架：宿主数据平台由 TitleScenePlatform 聚合
     // 注入；菜单在每次进屏时新建（TitlePlayerDataMenu 收面把 substate 停在 3，
@@ -88,7 +90,6 @@ private:
     bool update_player_data(const TitleFrameInput&);
     bool update_spell_practice(const TitleFrameInput&);
     bool restore_practice_selection() override;
-    void advance_main_menu_selection() override;
     bool draw_title_replay_texts() override;
     bool draw_title_music_room_texts() override;
     // TitleMenuServices

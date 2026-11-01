@@ -120,8 +120,13 @@ TEST(summary_v1_through_v4_migration_archives_original_full_file_and_marks_gap) 
         CHECK(!files.ordinary_records[0].ranking[0][0].available);
         CHECK(files.record_run_start(0));
         CHECK(files.save());
-        const auto v5 = read(path);
-        CHECK_EQ(get32(v5.data()+8),5u);
+        const auto v6 = read(path);
+        // v6 布局（FileStore.cpp:1-16）：版本 6、END1、迁移结局历史未知、v1-v4 无 v5 前置档。
+        CHECK_EQ(get32(v6.data()+8),6u);
+        CHECK(v6.size() == kSaveBytes);
+        CHECK(std::memcmp(v6.data()+kV5SaveBytes,"END1",4) == 0);
+        CHECK_EQ(get32(v6.data()+kV5SaveBytes+4),0u);
+        CHECK_EQ(get32(v6.data()+kPreEndingSizeOffset),0u);
         FileStore restored;
         CHECK(restored.initialize()); CHECK(restored.loaded);
         CHECK(restored.migrated_save_bytes() == bytes);

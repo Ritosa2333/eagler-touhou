@@ -102,6 +102,21 @@ struct TitleSpellPracticeHost : TitleSpellPracticePlatform {
     }
 };
 
+// 0x442960 属原生 player update（0x443240 的移动分支）：environment.paused
+// 或 scene_flags&0x70 覆盖层帧不执行玩家更新，隐藏计数 player+0x1469c 不
+// 推进，计数 >0x1d 的 option 根 pending=1 也不触发。Application 的门计数
+// 与中断检查必须用同一条件；否则门内按 Esc/失焦暂停 >=30 帧会让 port 在
+// 暂停中提前触发 interrupt，恢复后 option 树比原版更早消失。
+// （抽成可测纯函数：tests/ui/transition_gate_pause_test.cpp。）
+inline bool transition_gate_player_update_runs(bool paused, u32 scene_flags) noexcept {
+    return !paused && (scene_flags & 0x70u) == 0;
+}
+
+inline bool transition_gate_should_interrupt(u32 frames, bool paused,
+                                             u32 scene_flags) noexcept {
+    return frames >= 29 && transition_gate_player_update_runs(paused, scene_flags);
+}
+
 }  // namespace th13::sdl
 
 // tests/ui/run.sh 只链接 game/*.cpp，不构建 SDL 设备层。该宏仅让宿主服务
@@ -118,6 +133,7 @@ struct TitleSpellPracticeHost : TitleSpellPracticePlatform {
 #include "../game/ReplaySession.hpp"
 #include "../game/ReplayRecorder.hpp"
 #include "../game/TitleScene.hpp"
+#include "../game/ManualViewer.hpp"
 #include "../game/TitleMusicRoomMenu.hpp"
 #include "../game/TitleOptionsMenu.hpp"
 #include "../game/DialogueText.hpp"
@@ -159,6 +175,8 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     AudioDevice audio_device;
     FileStore files;
     GameRandom visual;
+    u16 boot_seed = 0;
+    std::array<u8, 256> visual_font_noise_table{};
     AnmEnvironment environment;
     AnmManager animations{visual, environment};
     DialogueText dialogue_text;  // text.anm scripts0..3 四行 VM + texture0 动态正文
@@ -166,11 +184,41 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     ScreenViews views{renderer, environment};
     AsciiText captions{animations, environment};
     FrameScheduler scheduler;
-    GameRandom loading_random;
     AnmEnvironment loading_environment;
-    AnmManager loading_animations{loading_random, loading_environment};
+    AnmManager loading_animations{visual, loading_environment};
     bool platform_prepared = false;
     u32 loading_signature = 0, loading_prayer = 0;
+    // 00417370 creates this in the main manager on destination0xc
+    // (0042bfa0:0x42bffd/0x42c02e/0x42c061); 004172e0 -> 0046fc30 retires
+    // the whole caption tree at stage activation (0042c550:0x42c881/0x42c9fb).
+    u32 transition_prayer = 0;
+    // Next-stage STD scenery Load/Initialize is part of the loader gate, not
+    // the 0042bfa0 door: Stage 3's scenery ANM scripts read one visual RNG
+    // value per primitive at their first tick (st03wl scripts 11-16, 12 index
+    // units). The original consumes those draws at the gate's fade phase
+    // (native continuous th13_01: door input 27673 = 0 draws, start_transition
+    // 27793 = 6 draws); doing it at the door shifts visual_index for the whole
+    // gate. Keep the door teardown immediate and build the scenery when the
+    // ordinary start_transition trigger fires.
+    i32 transition_scenery_bank = -1;
+    std::string transition_scenery_std;
+    bool transition_scenery_pending = false;
+    // Debug replay boot handoff: the 00439ce0/00417370 loading caption is
+    // advanced by loader frames (native f0 create, f1 first ordinary update =
+    // 24 visual index units, f2/f3 no draws, battle f4). th13_debug_replay
+    // replays those three loader frames through this same primitive instead of
+    // carrying its own 24-unit compensation; production startup uses it from
+    // advance_loading(). The VM timer ends at f3 exactly like the original.
+    static constexpr unsigned kDebugLoadingFrames = 3;
+    // Battle-start handoff of the loading caption fore-pool (draw gate 2):
+    // native keeps the AsciiInf-bound manager's layer31 ascii/loading.png VMs
+    // alive and drawn for battle frames 0..9 while they fade (H evidence:
+    // artifacts/round-16/agent-h-draw/phase3/loading-op-ownership.json), then
+    // retires the tree (0x4172e0/0x46fc30). The port's loading_animations
+    // registers no scene draw callbacks, so this callback reproduces the
+    // fore-pool draw at the layer31 schedule position (Draw priority 72, after
+    // the main manager's layer31 at 71 and before the ASCII text at 78).
+    FrameCallback loading_battle_draw{};
     unsigned pending_load = 0, loading_frames = 0;
     bool loading_startup = false;
     double loading_debt = 0;
@@ -187,6 +235,7 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     GameRandom game_random;
     std::unique_ptr<SceneDisplay> display;
     std::array<FrameCallback, 2> animation_updates;
+    std::unique_ptr<ManualViewer> manual_viewer;
     std::unique_ptr<TitleScene> title;
     // 0042bfa0 keeps DAT_004c2190 on destination0xc. Its references point
     // to application-owned state, independently of the stage scene.
@@ -216,6 +265,14 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     ReplayRecorder recorder;
     bool stage_transition_loading = false, stage_transition_active = false;
     i32 stage_startup_age = -1;
+    // 0xc 换关门内帧计数（prepare_next_stage 当帧=0，门内每 step 尾 +1）。
+    // 原版门首 0x42bfa0 当帧由 0x42b6d0 下发 option 根 label3；0x442960
+    // 隐藏支路每帧对 player+0x1469c 计数，计数 29（门内第 30 帧，input
+    // 12214）时对 option 根置 label1 并清槽。计数只在原生 player update
+    // 会跑的帧推进（environment.paused / scene_flags&0x70 时跳过，见
+    // transition_gate_player_update_runs），activate_next_stage 清零。
+    u32 transition_gate_frames = 0;
+    bool transition_gate_active = false;
     i32 next_scenery_bank = 26;
     bool prepare_next_stage();
     bool activate_next_stage();
@@ -231,6 +288,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     // 0x449070 恢复（种子 + 22 dword）。正常开局/换关为空。
     const ReplayStage* pending_replay_stage = nullptr;
     u32 pending_replay_stage_index = 0;
+    // 换关装载帧的 0x449070 恢复延迟到该帧全部动画抽取之后执行（原版装载
+    // 器在帧内 ANM 更新之后触达 449070：连续参考 frame 12185 先消费 24 个
+    // index 单位的旧血缘抽取，随后 vs/gs 重打 stamp、gi 清零）。
+    bool pending_transition_restore = false;
     bool initialized = false, exiting = false;
     std::array<i32, 16> projected{};
     std::string failure;
@@ -240,6 +301,14 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool complete_loading();
     bool render_loading();
     bool advance_loading(double);
+    // One loader frame: 0x46f170 main chain + 0x46f240 secondary chain over
+    // the loading ANM manager. Shared by the production 180-frame startup
+    // (advance_loading) and the debug replay's three-frame boot handoff.
+    bool advance_loading_caption();
+    // Battle frames 0..9: tick+draw loading_animations' layer31 fore-pool
+    // (native caption handoff) and retire it at frame 10. Draw-phase only;
+    // the loader gate's own tick count and RNG draws are untouched.
+    bool draw_loading_battle();
     bool fail(const std::string&);
     bool prepare_platform();
     bool prepare_loading();
@@ -295,6 +364,10 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool start_spell_practice(const SpellPracticeCommand&) override;
     bool can_start_spell_practice(const SpellPracticeCommand&) const override;
     bool record_menu_views() const override { return true; }
+    bool open_manual() override;
+    bool update_manual(u32 pressed, u32 repeated) override;
+    bool manual_finished() const override;
+    void close_manual() override;
     bool rasterize_title_text(AnmVm&, u32, const std::string&,
                               AnmTextAlignment = AnmTextAlignment::Left) override;
     bool request_destination(i32 raw) override;  // supervisor 0x4dcc24 真值 → destination
@@ -417,6 +490,9 @@ struct ApplicationState final : TitleScenePlatform, RunSceneServices, RunPausePl
     bool rasterize_spell_name(SpellPresentation&) override;
     void spell_counts(i32, i32& captures, i32& attempts) const override;
     bool hud_sound(i32) override;
+    bool hud_sound(i32, float) override;
+    bool stop_sound(i32) override;
+    bool set_voice_pan(i32, float) override;
     // 对话正文 → text.anm texture0（0x4282b0 四 VM / 0x428ae0 行块）
     bool dialogue_line(i32 row, const MsgLine& line, float box_x, float box_y) override;
     bool dialogue_fade(i32 label) override;

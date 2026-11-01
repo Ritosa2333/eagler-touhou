@@ -53,6 +53,19 @@ struct TitleHost final : TitleScenePlatform {
 
 // title.anm 合成镜像：243 脚本槽位，根脚本按 dump spawn 序派生子脚本，
 // 其余一律 spawn 后停在 ins_3()（与真实灰态/白态字条停车形状一致）。
+// ins_304：真实 title.anm script90-93 的脚本层写入（dump L23938-24050：
+// 90=22、91=21、92=21、93=21），合成 bank 必须镜像，生产侧不落人工层值。
+AnmIns layer(i32 value) { return AnmIns{304, 0, {value}}; }
+// 真实 title.anm 白/亮字条（script13-22）的 alpha 脚本段（dump：
+// s13 0x42b4 ins_403(0) → 0x42d4 ins_409(15,0,255) → ins_3；
+// label3 0x43e8 ins_409(5,4,255)；label7/17 0x441c ins_409(5,4,0)）。
+// 合成 bank 必须镜像这些 label/opcode，否则白条停在 spawn 淡入 255，
+// 掩盖真机“ready 帧 label3→label17 淡出至 0”的选中高亮时序。
+AnmIns alpha_set(i32 value) { return AnmIns{403, 0, {value}}; }
+AnmIns alpha_interpolate(i32 frames, i32 easing, i32 target) {
+    return AnmIns{409, 0, {frames, easing, target}};
+}
+
 std::vector<u8> title_anm_fixture() {
     std::vector<std::vector<AnmIns>> scripts(243);
     for (auto& script : scripts) script = {wait(), stop()};
@@ -70,10 +83,32 @@ std::vector<u8> title_anm_fixture() {
         scripts[u32(3 + item)].push_back(label(7 + item));
         scripts[u32(3 + item)].push_back(wait());
         scripts[u32(3 + item)].push_back(stop());
+        // 白/亮条 script13-22：spawn 淡入 → label3 淡至 255 → label7/17 淡至 0。
+        // 选中项在 ready 帧收 label3+label17（0x44cd10 age>0xbe 分支），
+        // 非选中项随后收 label30/31 停在当前位置；两层合成即真机高亮交换。
+        scripts[u32(13 + item)].clear();
+        scripts[u32(13 + item)].push_back(alpha_set(0));
+        scripts[u32(13 + item)].push_back(AnmIns{404, 0, {0xc0, 0xc0, 0xc0}});
+        scripts[u32(13 + item)].push_back(alpha_interpolate(15, 0, 255));
+        scripts[u32(13 + item)].push_back(wait());
+        scripts[u32(13 + item)].push_back(label(3));
+        scripts[u32(13 + item)].push_back(alpha_interpolate(5, 4, 255));
+        scripts[u32(13 + item)].push_back(wait());
+        scripts[u32(13 + item)].push_back(label(7));
+        scripts[u32(13 + item)].push_back(label(17));
+        scripts[u32(13 + item)].push_back(alpha_interpolate(5, 4, 0));
+        scripts[u32(13 + item)].push_back(wait());
+        scripts[u32(13 + item)].push_back(stop());
     }
     spawn_range(1, 23, 48);     // 难度根 (70,312)：名行+数字行
     spawn_range(2, 49, 82);     // 角色根 (70,312)：名行+数字行
     scripts[89] = {spawn(92), spawn(93), spawn(91), spawn(90), wait(), stop()};  // 背景根
+    // 真实 script90-93 自带 ins_304（见 dump）；脚本层值即 VM 层值，
+    // 生产侧不得再用人工 poke 补偿 oracle 绘制捕获的 +1/+2 偏移。
+    scripts[90] = {layer(22), wait(), stop()};
+    scripts[91] = {layer(21), wait(), stop()};
+    scripts[92] = {layer(21), wait(), stop()};
+    scripts[93] = {layer(21), wait(), stop()};
     scripts[94] = {spawn(97), spawn(96), spawn(100), wait(), stop()};            // LOGO 首入场
     scripts[95] = {spawn(99), spawn(96), spawn(100), wait(), stop()};            // LOGO 复位
     // 129：立绘 125-128 + 选择框 131-134 + 武器 135-138（非连续！含 129/130 会自递归）。
@@ -147,8 +182,45 @@ struct TitleHarness {
         CHECK_EQ(int(scene->state.screen), int(TitleScreen::Main));
         CHECK_EQ(scene->state.substate, 2);
     }
+    // 主链上 ascii bank script18 粒子 VM 数（头插/尾插的链序不参与计数）。
+    int particle_count() {
+        const auto* resource = manager.resource(2);
+        int count = 0;
+        for (u32 index = 0;; index++) {
+            const u32 handle = manager.registry.ordered_handle(false, index);
+            if (!handle) break;
+            auto* vm = manager.registry.find(handle);
+            if (vm && vm->resource == resource && vm->source_script == 18) count++;
+            if (index > 8191) break;
+        }
+        return count;
+    }
 };
 }  // namespace
+
+TEST(title_selection_stays_highlighted_and_exits_on_confirmation) {
+    TitleHarness harness;
+    harness.reach_menu();
+    for (int i = 0; i < 20; ++i) {
+        harness.frame();
+        CHECK(harness.scheduler.draw() >= 0);
+    }
+    auto* root = harness.manager.registry.find(harness.scene->state.handles[0]);
+    CHECK(root != nullptr);
+    auto* selected = harness.manager.registry.find_child_script(*root, 3, 0);
+    auto* white = harness.manager.registry.find_child_script(*root, 13, 0);
+    CHECK(selected != nullptr);
+    CHECK(white != nullptr);
+    CHECK_EQ(selected->visual.color >> 24, 255u);
+    CHECK_EQ(white->visual.color >> 24, 0u);
+    // Run the menu update before the scheduler consumes the pending label.
+    TitleMainMenu menu(harness.scene->state, harness.progress, harness.selection,
+                       harness.manager, TitleSceneResources{});
+    menu.play_sound = [](i32) { return true; };
+    CHECK(menu.update(0x01, 0));
+    CHECK_EQ(selected->pending_interrupt, 6);
+    CHECK_EQ(white->pending_interrupt, 6);
+}
 
 // 真机时序锚：g181 建背景/LOGO（标题任务使能帧）、g361 建菜单+版本条、
 // g372 起可交互（oracle/title_oracle.py docstring + title-draws.jsonl 帧序）。
@@ -196,16 +268,16 @@ TEST(title_full_chain_start_game) {
     CHECK_EQ(harness.progress.difficulty, 2);
     CHECK(harness.scene->state.handles[2] == 0);    // [oracle 定案] 自机页不建名行树 script2（title-draws-b f650-749：属 PlayerData 段位屏）
     CHECK(harness.scene->state.handles[129] != 0);  // 立绘/武器根（script129）
-    // 角色：行 1-4 为角色（推定），→ 到魔理沙(行 2) 确认。
+    // 0x451450 case0：四角色直接使用 0..3 的光标。
     harness.advance(10);
     CHECK_EQ(harness.scene->state.substate, 2);
-    CHECK_EQ(harness.scene->state.menu.cursor, 1);  // 初始 = preferred(0)+1 = 霊夢行
+    CHECK_EQ(harness.scene->state.menu.cursor, 0);  // 霊夢
     harness.frame(0x80);                            // →
-    CHECK_EQ(harness.scene->state.menu.cursor, 2);
+    CHECK_EQ(harness.scene->state.menu.cursor, 1);
     harness.frame(0x01);  // 确认：转场 + age>39 → start_game
     harness.advance(45);
     CHECK_EQ(harness.host.start_stage, 1);
-    CHECK_EQ(harness.progress.character, 1);  // 行 2 → 角色 1（魔理沙）
+    CHECK_EQ(harness.progress.character, 1);  // 魔理沙
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::StartGame));
     CHECK(harness.scene->error.empty());
     CHECK_EQ(harness.host.exit_destination, -1);  // 开局排队后 Quit 分支不触发
@@ -310,8 +382,12 @@ TEST(title_character_escape_returns_to_difficulty) {
 }
 
 
-// [窗A 修正] 背景半张层值落码自证：substate 0 建根后 90→23 / 91→22 / 93→23，
-// 92 不动（合成 bank 子 VM 继承根层 0；真机 anm 侧由脚本 ins_304 预置 21/22）。
+// [窗A 修正，人工 poke 已撤销] 背景层值必须来自真实 ANM 脚本 ins_304：
+// title.anm script90=22 / 91=21 / 92=21 / 93=21（dump L23938-24050）。
+// 旧断言 90→23/91→22/93→23 及 age169 93→21 是为补偿 oracle 绘制捕获
+// +1/+2 偏移而写的人工 poke，生产侧已按原版 ANM 驱动撤销；本测试改为
+// 校验脚本层值在创建与 g350 时间点均保持，防止 poke 回潮。
+// （测试名保留旧名便于历史定位；当前语义 = 反 poke 回归。）
 TEST(title_background_layer_pokes_per_oracle) {
     TitleHarness harness;
     harness.advance(1);
@@ -321,69 +397,109 @@ TEST(title_background_layer_pokes_per_oracle) {
         auto* vm = harness.manager.registry.find_child_script(*root, script, 0);
         return vm ? vm->visual.layer : -1;
     };
-    CHECK_EQ(layer_of(90), 23);
-    CHECK_EQ(layer_of(91), 22);
-    CHECK_EQ(layer_of(93), 23);
-    // 92（select00 左半）不落码：合成 bank 继承根层 0（真机 anm 为脚本 21）。
-    CHECK_EQ(layer_of(92), 0);
-    // intro 期 age 169（g350）：select00 右半搬至 21。update #N 的 age=N-1，
-    // poke 在 update #170（age 169）——此前共 169 次 update。
-    harness.advance(168);  // 加首次共 169 次：age 仍未到 169
-    CHECK_EQ(layer_of(93), 23);
-    harness.frame();  // update #170：age 169 → 搬移
+    CHECK_EQ(layer_of(90), 22);  // script90 ins_304(22)
+    CHECK_EQ(layer_of(91), 21);  // script91 ins_304(21)
+    CHECK_EQ(layer_of(92), 21);  // script92 ins_304(21)
+    CHECK_EQ(layer_of(93), 21);  // script93 ins_304(21)
+    // intro 期 age 169（g350）：真实脚本不改层，生产侧也不得 poke。
+    // update #N 的 age=N-1——此前共 169 次 update。
+    harness.advance(168);
     CHECK_EQ(layer_of(93), 21);
-    CHECK_EQ(layer_of(90), 23);
-    CHECK_EQ(layer_of(91), 22);
+    harness.frame();  // update #170（age 169）
+    CHECK_EQ(layer_of(93), 21);
+    CHECK_EQ(layer_of(90), 22);
+    CHECK_EQ(layer_of(91), 21);
+    CHECK_EQ(layer_of(92), 21);
 }
 
 
-// [解剖轮2] Z 后隐藏时间线 + 难度屏构成自证（difficulty-menu-anatomy.md）：
-// 非选中灰条隐藏不销毁、选中白化 @204、白条 14-22 闪现、粒子（ascii18 克隆）
-// 自 age5 起累积、光标 119 缓动首/末值、f517（难度龄 27）背景右半层分裂。
-// [暂缓][轮6] 白条定案后隐藏序/闪场语义需按 scripts 13-22 重锚（下轮）。
+// [窗B 反证重锚] Z 后隐藏时间线 + 难度屏构成自证（difficulty-menu-anatomy.md
+// + oracle title-b 顶点色 f490-505）：
+//   - 非选中 9 行白条不隐藏、整批留脚本层 L25（title.anm script13-22 的
+//     ins_304 即 25），选中项白条（13+k）不绘；
+//   - 选中高亮 = 灰条本体 3+k 留 L26 白化 0xcbffffff（203），逐帧 -13/帧
+//     至 f16 隐藏（oracle f506）；
+//   - 非选中行 alpha 逐帧序列（Extra 63→8 / 其余 101→12），f8 归零隐藏；
+//   - 粒子头插（0x46f4a0）突发 16 枚 @难度龄1，此后每 3 帧 1 枚；
+//   - 93 的 L22 层分裂是捕获构建的绘制侧覆盖，VM 层保持脚本真值 21。
 TEST(title_difficulty_anatomy_choreography) {
-    return;  // TODO(轮7): 白条语义重锚
-
     TitleHarness harness;
     harness.reach_menu();
     harness.frame(0x01);   // Z（開始）
-    harness.advance(21);   // substate 4 age20 转屏 → 难度屏 age0 = Z+21 建面+隐藏序
+    harness.advance(21);   // substate 4 age20 转屏 → 难度屏首帧（f=0）
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Difficulty));
     auto& registry = harness.manager.registry;
     auto* menu_root = registry.find(harness.scene->state.handles[0]);
     CHECK(menu_root != nullptr);
-    auto item_state = [&](i32 item) {
-        auto* vm = registry.find_child_script(*menu_root, item + 3, 0);
-        return vm ? std::pair<bool, u32>(vm->visible, vm->visual.color) : std::pair<bool, u32>(false, 0);
-    };
-    // 注：UI 合成面不带动画 tick（label 中断不消费、visible 不置位）——可
-    // 见性机制由 harness 真机面覆盖，此处断言色值时间线（解剖顶点色）。
-    const auto selected = item_state(0);
-    CHECK_EQ(selected.second >> 24, 255u);  // 选中稳态 ff（Z 隐藏序由 substate4 接管）
-    CHECK_EQ(selected.second & 0xffu, 255u);  // rgb 白化（Z 序 label28 复灰在下帧）
-    const auto other = item_state(2);
-    CHECK_EQ(other.second >> 24, 255u);  // 非选中稳态（白条自带淡入至 ff，VM 留池）
-    // 白条 14-22（items 1-9）建齐。
+    CHECK_EQ(harness.scene->state.confirmed_entry, 0);
+    // 选中项白条 13 不绘；非选中 9 行（14-22）可见且留 L25。
+    auto* white0 = registry.find_child_script(*menu_root, 13, 0);
+    CHECK(white0 != nullptr);
+    CHECK(!white0->visible);
+    for (i32 script = 14; script <= 22; script++) {
+        auto* white = registry.find_child_script(*menu_root, script, 0);
+        CHECK(white != nullptr);
+        CHECK(white->visible);
+        CHECK_EQ(white->visual.layer, 25);
+    }
+    // 选中灰条 3+k 白化 @203（oracle f490 首帧）。
+    auto* selected = registry.find_child_script(*menu_root, 3, 0);
+    CHECK(selected != nullptr);
+    CHECK_EQ(selected->visual.color, 0xcbffffffu);
+    // 非选中行第一拍：Extra（item1）63、其余 101（oracle f490）。
+    CHECK_EQ(registry.find_child_script(*menu_root, 14, 0)->visual.color >> 24, 63u);
+    CHECK_EQ(registry.find_child_script(*menu_root, 15, 0)->visual.color >> 24, 101u);
+    // 难度龄 1：粒子突发 16（头插 0x46f4a0），选中 191、Extra 56、其余 89。
+    harness.advance(1);
+    CHECK_EQ(harness.particle_count(), 16);
+    CHECK_EQ(selected->visual.color >> 24, 191u);
+    CHECK_EQ(registry.find_child_script(*menu_root, 14, 0)->visual.color >> 24, 56u);
+    CHECK_EQ(registry.find_child_script(*menu_root, 15, 0)->visual.color >> 24, 89u);
+    // 难度龄 8：非选中行归零隐藏（oracle f498 起无 L25 批）。
+    harness.advance(7);
     for (i32 script = 14; script <= 22; script++)
-        CHECK(harness.scene->state.handles[script] != 0);
-    // 光标缓动（解剖 §② 首值；根 123 子相对系）：难度龄 0 = -202。
-    auto* tree = registry.find(harness.scene->state.handles[123]);
-    CHECK(tree != nullptr);
-    auto* cursor = registry.find_child_script(*tree, 119, 0);
-    CHECK(cursor != nullptr);
-    CHECK_EQ(cursor->visual.layer, 26);
-    CHECK_NEAR(cursor->visual.translation.x, float(-202 - 320), 1e-6);
-    const u32 before = registry.count();
-    harness.advance(5);  // 难度龄 5：粒子突发 17
-    CHECK(registry.count() >= before + 17);
-    harness.advance(13);  // 至缓动末（龄 18）
-    CHECK_NEAR(cursor->visual.translation.x, float(32 - 320), 1e-6);
-    // f517 层分裂（难度龄 27）：背景右半 93 → L22（左半不动——合成 bank 为 0）。
-    harness.advance(9);
+        CHECK(!registry.find_child_script(*menu_root, script, 0)->visible);
+    // 难度龄 16：选中灰条隐藏（oracle f506）。
+    harness.advance(8);
+    CHECK(!selected->visible);
+    // 难度龄 27（f517）：93 的 L22 是绘制侧覆盖，VM 层保持脚本真值 21。
+    harness.advance(11);
     auto* bg = registry.find(harness.scene->state.handles[89]);
     CHECK(bg != nullptr);
-    CHECK_EQ(registry.find_child_script(*bg, 93, 0)->visual.layer, 22);
-    CHECK_EQ(registry.find_child_script(*bg, 92, 0)->visual.layer, 0);
+    CHECK_EQ(registry.find_child_script(*bg, 93, 0)->visual.layer, 21);
+    CHECK_EQ(registry.find_child_script(*bg, 92, 0)->visual.layer, 21);
+    CHECK(harness.scene->error.empty());
+}
+
+// [反证 #1] confirmed_entry != 0（練習=2）时 item 0 也是非选中行：其白条
+// 13 必须留 L25 并参与逐帧 alpha 序列（101→89），而不是停在 label6 淡出后
+// 的 α0（否则 oracle 对称的 L25 count18 批只剩 count16）。
+TEST(title_difficulty_transition_item0_white_row_participates_when_not_selected) {
+    TitleHarness harness;
+    harness.reach_menu();
+    harness.frame(0x20);   // ↓：0 → 2（PracticeStart；禁用项 1 跳过）
+    CHECK_EQ(harness.scene->state.menu.cursor, 2);
+    harness.frame(0x01);   // Z：練習
+    harness.advance(21);   // 难度屏首帧（f=0）
+    CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Difficulty));
+    CHECK_EQ(harness.scene->state.confirmed_entry, 2);
+    auto& registry = harness.manager.registry;
+    auto* menu_root = registry.find(harness.scene->state.handles[0]);
+    CHECK(menu_root != nullptr);
+    auto* white0 = registry.find_child_script(*menu_root, 13, 0);
+    CHECK(white0 != nullptr);
+    CHECK(white0->visible);                  // item0 非选中：保留
+    CHECK_EQ(white0->visual.layer, 25);      // 参与 L25 批
+    CHECK_EQ(white0->visual.color >> 24, 101u);  // 非 Extra 行首拍
+    auto* white2 = registry.find_child_script(*menu_root, 15, 0);
+    CHECK(white2 != nullptr);
+    CHECK(!white2->visible);                 // 选中项（item2）白条不绘
+    auto* selected = registry.find_child_script(*menu_root, 5, 0);
+    CHECK(selected != nullptr);
+    CHECK_EQ(selected->visual.color, 0xcbffffffu);
+    harness.advance(1);    // 难度龄 1
+    CHECK_EQ(white0->visual.color >> 24, 89u);
+    CHECK_EQ(selected->visual.color >> 24, 191u);
     CHECK(harness.scene->error.empty());
 }
 
@@ -413,7 +529,7 @@ TEST(title_extra_entry_routes_through_single_row_rank_and_ex_character_root) {
     CHECK(harness.scene->state.handles[130] != 0);  // 0x451450 case0：(be7c4==4)+0x81
     harness.advance(10);
     CHECK_EQ(harness.scene->state.substate, 2);
-    CHECK_EQ(harness.scene->state.menu.cursor, 1);  // 霊夢行
+    CHECK_EQ(harness.scene->state.menu.cursor, 0);  // 霊夢
     harness.frame(0x01);  // 确认霊夢 → 转场 → 开局
     harness.advance(45);
     CHECK_EQ(harness.host.start_stage, 7);  // 0x451450 case4 尾：be81c=7
@@ -460,11 +576,11 @@ TEST(title_extra_character_selective_unlock_disables_locked_characters) {
     CHECK_EQ(int(harness.scene->state.screen), int(TitleScreen::Character));
     harness.advance(10);
     CHECK_EQ(harness.scene->state.substate, 2);
-    // 初始光标应跳过未解锁的霊夢（行 1），自动落入首个解锁角色魔理沙（行 2）
-    CHECK_EQ(harness.scene->state.menu.cursor, 2);
-    // 尝试向左移动（←），因霊夢被禁用，光标不应移到行 1
+    // 初始光标跳过未解锁的霊夢（0），落入魔理沙（1）。
+    CHECK_EQ(harness.scene->state.menu.cursor, 1);
+    // 只有魔理沙解锁，向左仍选中该角色。
     harness.frame(0x40);
-    CHECK(harness.scene->state.menu.cursor != 1);
+    CHECK_EQ(harness.scene->state.menu.cursor, 1);
     CHECK(harness.scene->error.empty());
 }
 

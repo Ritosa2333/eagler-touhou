@@ -39,8 +39,19 @@ private:
 // 返回 (A << 16) | B；伴随调用计数 +2（原版 [rng+4]，重放对齐用）。
 // 状态对象归属与种子初始化（敌人管理器侧）待 oracle 对照定域，此处先还原映射本身。
 // 浮点化见 0x472e10：以无符号解释乘 2^-31 再减 1，得 [-1, 1) 的对称单位随机。
+// 诊断计数器：按调用点分组统计本帧抽取次数（仅 TH13_DAMAGE_PROBE 打开时累加，
+// 不改变任何取值）。用于定位与原生 index 增量不一致的消费者。
+extern bool rng_probe_on;
+
 class GameRandom {
 public:
+    inline static uint32_t probe[20] = {};
+    static void tag(int i) { if (rng_probe_on && i >= 0 && i < 20) ++probe[i]; }
+    // 诊断抽取观测（默认 nullptr，仅浏览器探针臂接）：每次 next/step16 登记
+    // (before_index, after_index)，配合 AnmVm::tick 入口登记的当前 VM 上下文
+    // 定位与原版相位不一致的消费者。不改变任何取值。
+    using DrawObserver = void (*)(uint32_t before, uint32_t after);
+    inline static DrawObserver draw_observer = nullptr;
     explicit GameRandom(uint16_t seed = 0) : seed_(seed) {}
 
     void reseed(uint16_t seed) { seed_ = seed; }
@@ -54,6 +65,7 @@ public:
     }
 
     uint32_t next() {
+        if (draw_observer) draw_observer(index_, index_ + 2);
         const uint16_t a = static_cast<uint16_t>((seed_ ^ 0x9630u) - 0x6553u);
         const uint16_t step = static_cast<uint16_t>((a >> 14) + a * 4);
         const uint16_t b = static_cast<uint16_t>((step ^ 0x9630u) - 0x6553u);
@@ -65,6 +77,7 @@ public:
     // 0x472c20：单步 16 位变体（rand16）。与 next() 共用状态；计数 +1；
     // 返回旋转后的新种子。moveRand（412）象限掷币用（% 3 判定）。
     uint16_t step16() {
+        if (draw_observer) draw_observer(index_, index_ + 1);
         const uint16_t a = static_cast<uint16_t>((seed_ ^ 0x9630u) - 0x6553u);
         seed_ = static_cast<uint16_t>((a >> 14) + a * 4);
         index_ += 1;

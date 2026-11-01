@@ -1,7 +1,4 @@
 // H-LASER-ANM: 433260/433470/4337c0, real bullet.anm -> production renderer.
-#ifndef TH13_TEST_PORT_DIR
-#define TH13_TEST_PORT_DIR "."
-#endif
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "game/LaserPresentation.hpp"
 #include <vector>
@@ -123,7 +120,7 @@ TEST(split_line_has_independent_tip_and_retires_all_three_animations) {
 TEST(real_stage1_mboss_script_drives_two_independent_laser_animations) {
     Rig r;CHECK(r.init());
     CHECK(r.sim.load("artifacts/reference/raw",
-        TH13_TEST_PORT_DIR "/tests/ui/build/laser-script.jsonl"));
+        "eagler-touhou/ports/th13/tests/ui/build/laser-script.jsonl"));
     if(!r.sim.error().empty())return;
     // Isolated real-script integration, not natural full-stage completion.
     r.sim.spawn_enemy("MBossCard1At",96,144,1,nullptr,false);
@@ -150,7 +147,7 @@ TEST(real_stage1_mboss_script_drives_two_independent_laser_animations) {
 TEST(real_stage6_line_emitter_reaches_body_tip_and_production_draw) {
     Rig r;CHECK(r.init());
     CHECK(r.sim.load("artifacts/reference/raw",
-        TH13_TEST_PORT_DIR "/tests/ui/build/stage6-line-script.jsonl","st06.ecl"));
+        "eagler-touhou/ports/th13/tests/ui/build/stage6-line-script.jsonl","st06.ecl"));
     if(!r.sim.error().empty())return;
     r.sim.spawn_enemy("BossCard1_EtAt",0,320,1000,nullptr,false);
     CHECK(r.sim.error().empty());CHECK_EQ(r.sim.lasers.size(),1u);

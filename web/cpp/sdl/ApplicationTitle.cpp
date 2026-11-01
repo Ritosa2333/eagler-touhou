@@ -1,6 +1,11 @@
 // 标题期平台服务（th15 ApplicationTitle.cpp 裁剪：音乐请求先落桩）。
 #include "ApplicationState.hpp"
+#include "../game/AnmTextureDecode.hpp"
+
 #include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <vector>
 
 namespace th13::sdl {
 
@@ -280,6 +285,90 @@ bool ApplicationState::play_locked_response() {
 bool ApplicationState::resume_title_music() {
     // 0x43adc0(0,"th13_00")：退出收面回标题曲。
     return audio_device.queue_music(1, 0, "th13_00.wav") && audio_device.queue_music(2, 0, "");
+}
+
+// ---- TitleManualPlatform（0x455330 supervisor + 0x42d940/0x42d740/0x42da10）----
+
+namespace {
+constexpr i32 kHelpBank = 19;
+constexpr u32 kHelpPageTexture = 1;
+constexpr i32 kHelpPageCount = 8;  // 0x42da10: +0x30=8
+}  // namespace
+
+bool ApplicationState::open_manual() {
+    if (!manual_viewer) {
+        manual_viewer = std::make_unique<ManualViewer>(animations, kHelpBank);
+        manual_viewer->sound = [this](i32 id) { return sound(id); };
+        // 0x42da10 case1 Z：sprintf("help_%.2d.png", page+1) → 文件读取线程
+        // （0x42d6f0）→ case3 D3DX 载入 entry1 的 blank 纹理。网页同步完成
+        // 读取/解码/上传，再建 page VM；纹理内容在同一帧绘制前就绪。
+        manual_viewer->load_page = [this](i32 page) -> bool {
+            if (page < 0 || page >= kHelpPageCount)
+                return fail("Manual page index outside help.anm");
+            char name[16];
+            std::snprintf(name, sizeof name, "help_%02d.png", page + 1);
+            std::vector<u8> bytes;
+            if (!read(name, bytes, false) || bytes.empty())
+                return fail(std::string("Manual page asset unavailable: ") + name);
+            u32 width = 0, height = 0;
+            std::vector<u8> rgba;
+            if (!anm_decode_png(bytes.data(), u32(bytes.size()), width, height, rgba))
+                return fail(std::string("Manual page PNG decode failed: ") + name);
+            if (!width || !height || rgba.size() < size_t(width) * height * 4)
+                return fail(std::string("Manual page PNG has no pixels: ") + name);
+            auto* resource = animations.resource(kHelpBank);
+            if (!resource) return fail("Manual help.anm bank unavailable");
+            const u32 handle = graphics.texture(*resource, kHelpPageTexture);
+            TextureImage* target = handle ? graphics.pixels(handle) : nullptr;
+            if (!target || target->format != touhou::graphics::PixelFormat::Argb4444 ||
+                target->pitch != target->width * 2)
+                return fail("Manual help.anm blank texture unavailable");
+            // 目标 = help.anm entry1 的 384x512 ARGB4444 blank 纹理。原版
+            // D3DXLoadSurfaceFromFileInMemory 的 filter/缩放真值未取得；这里按
+            // 纹理左上角裁入（页内容 bbox <= 384x448），像素级保持 BLOCKED。
+            std::fill(target->pixels.begin(), target->pixels.end(), u8(0));
+            const u32 copy_width = std::min(width, target->width);
+            const u32 copy_height = std::min(height, target->height);
+            for (u32 y = 0; y < copy_height; ++y) {
+                auto* destination = target->pixels.data() + size_t(y) * target->pitch;
+                const u8* source = rgba.data() + size_t(y) * width * 4;
+                for (u32 x = 0; x < copy_width; ++x) {
+                    const u8* pixel = source + size_t(x) * 4;
+                    const u16 alpha = u16((u32(pixel[3]) * 15u + 127u) / 255u);
+                    const u16 red = u16((u32(pixel[0]) * 15u + 127u) / 255u);
+                    const u16 green = u16((u32(pixel[1]) * 15u + 127u) / 255u);
+                    const u16 blue = u16((u32(pixel[2]) * 15u + 127u) / 255u);
+                    const u16 value = u16((alpha << 12) | (red << 8) | (green << 4) | blue);
+                    std::memcpy(destination + size_t(x) * 2, &value, 2);
+                }
+            }
+            graphics.changed(handle, {0, 0, target->width, target->height});
+            return true;
+        };
+    }
+    if (!manual_viewer->open()) {
+        fail(manual_viewer->error.empty() ? "Title manual viewer unavailable"
+                                          : manual_viewer->error);
+        return false;
+    }
+    return true;
+}
+
+bool ApplicationState::update_manual(u32 pressed, u32 repeated) {
+    if (!manual_viewer) return fail("Title manual viewer unavailable");
+    if (!manual_viewer->update(pressed, repeated)) {
+        fail(manual_viewer->error.empty() ? "Title manual update failed" : manual_viewer->error);
+        return false;
+    }
+    return true;
+}
+
+bool ApplicationState::manual_finished() const {
+    return manual_viewer && manual_viewer->finished();
+}
+
+void ApplicationState::close_manual() {
+    if (manual_viewer) manual_viewer->close();
 }
 
 }  // namespace th13::sdl

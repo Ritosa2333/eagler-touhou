@@ -34,6 +34,27 @@ TEST(manual_trance_drains_one_point_per_frame_and_grants_exit_protection) {
  CHECK(battle.step(input));CHECK_EQ(battle.invulnerable,68);
  CHECK_EQ(h.music.size(),size_t(2));CHECK(!h.music.back());
 }
+TEST(marisa_trance_scales_movement_on_activation_frame_in_fixed_units) {
+ // 442960's character1/flag100 branch: Marisa replay f2321 y244.0859375
+ // becomes236.5859375 on the same frame that the trance key is pressed.
+ Provider p;Host h;SessionState s;HudPlayerState player;HudScoreState score;StageBattle battle;
+ p.names=&battle.sim.anim_list;s.character=1;
+ CHECK(battle.load(p,"test.ecl",2,h,s,player,score));battle.sim.enemies.clear();
+ // This ECL-only fixture skips SHT loading; supply the verified pl01a.sht
+ // fixed speeds (5 and3.535533905 before conversion to1/128 units).
+ battle.speed_orth=640;battle.speed_diag=452;
+ GameInput input;for(int i=0;i<30;++i)CHECK(battle.step(input));
+ battle.set_player_pos(-61.0234375f,244.0859375f);
+ s.ending_points=600;input.update(0xa10);CHECK(battle.step(input));
+ CHECK(trance_active(s));CHECK_EQ(battle.player_x,-61.0234375f);
+ CHECK_EQ(battle.player_y,236.5859375f);
+ input.update(0x50);CHECK(battle.step(input));
+ CHECK_EQ(battle.player_x,-66.3203125f);CHECK_EQ(battle.player_y,231.2890625f);
+ input.update(0x98);CHECK(battle.step(input));
+ CHECK_EQ(battle.player_x,-64.203125f);CHECK_EQ(battle.player_y,229.171875f);
+ CHECK(battle.end_trance());input.update(0x10);CHECK(battle.step(input));
+ CHECK_EQ(battle.player_y,224.171875f);
+}
 TEST(protective_trance_expiry_commits_death_without_a_second_deathbomb_window) {
  Provider p;Host h;SessionState s;HudPlayerState player;HudScoreState score;StageBattle battle;
  p.names=&battle.sim.anim_list;s.character=0;

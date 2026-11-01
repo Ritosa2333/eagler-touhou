@@ -226,7 +226,10 @@ struct StageEnemy {
     i32 body_invulnerable = 0;  // +0x3fe4; ECL 541
     Timer body_invulnerable_clock;
     i32 damage_function = 0; // +40f0: ECL633 table4bba18, 1=422cd0 ship.
-    i32 pending_damage = 0;  // +3fb0: consumed by419a90 after geometric queries.
+    // Boss inner +0x3fb0 pending damage. 00422cd0 writes it through the
+    // enemy-manager boss slot as outer +0x519c (0x519c - inner 0x11ec);
+    // 00419a90:112-114 consumes and clears it after the geometric query.
+    i32 pending_damage = 0;
     bool spell_active = false;  // +0x3f64 bit0
     i32 spell_base_life = 0, spell_life = 0;  // +0x3f50 / +0x3f58 (7x)
     i32 spell_id = -1;
@@ -307,6 +310,8 @@ struct StageEnemy {
 // op8 → 0x10 → 0x40 → 0x20000（未用）→ 0x80000（未用）→ 0x100（未用）→
 // wait 位内联块；全部在 pos += vel 之前。
 struct StageBullet {
+    // 40d170/40e840 physical pool slot, distinct from active-list order.
+    i32 pool_slot = -1;
     float x = 0, y = 0, z = 0, angle = 0, speed = 0;
     float vel[3] = {0, 0, 0};   // +0xB7C/+0xB80/+0xB84：每帧位移向量
     u32 sprite = 0, subtype = 0;  // etSprite 的 (类型, 颜色)（0x200 可改写）
@@ -393,6 +398,9 @@ struct StageBullet {
 };
 
 class StageSim;
+// 只读诊断（探针臂）：ECL etSprite(602) 实参观测（frame, enemy serial, slot, sprite, subtype）。
+using EclSpriteObserver = void (*)(i32, u32, i32, i32, i32);
+extern EclSpriteObserver ecl_sprite_observer;
 
 // 道具宿主接口（掉落/消弹转换的同步调用面；由 ItemManager 实现，StageBattle
 // 注入）。对应原版 0x42f020（普通/取消道具）与 0x438ec0（带分值道具，
@@ -407,6 +415,11 @@ struct StageItemHost {
     // （ECL 掉落 10..14 减 10），每次调用抽 signed_unit（象限角）+ unit
     // （速度 = unit*3.5 + base_speed）；pos 先按 x∈[-192,192]、y∈[0,384] 钳制。
     virtual void spawn_value_item(i32 kind, float x, float y, float z, float base_speed) = 0;
+    virtual void spawn_value_item(i32 kind, float x, float y, float z, float base_speed,
+                                  bool sound) {
+        (void)sound;
+        spawn_value_item(kind, x, y, z, base_speed);
+    }
     // 0x4302a0：616 etClear 的转换点登记（道具管理侧决定语义）。
     virtual void on_et_clear(float x, float y, float z) = 0;
 };
@@ -453,7 +466,9 @@ class StageSim {
 
 public:
     explicit StageSim(GameRandom* shared_random = nullptr)
-        : random(shared_random ? *shared_random : owned_random_) {}
+        : random(shared_random ? *shared_random : owned_random_) {
+        for (i32 slot = 0; slot < 2000; ++slot) bullet_free_slots_.push_back(slot);
+    }
     float time_rate() const;
     void set_time_rate(float rate);
     std::function<void(float)> time_rate_changed;
@@ -469,6 +484,9 @@ public:
     // 交互模式逐帧步进：start() 只做第 0 帧装载趟，此后每帧一次 step_frame()。
     bool start();
     bool step_frame();
+    // 只读诊断（探针臂）：全弹 etEx 队列 dump（generation/state/sprite/
+    // subtype/behavior_flags/ex_cursor/wait_time/wait_timer + 18 项队列）。
+    std::string debug_bullet_queue() const;
     const std::string& error() const { return error_; }
     u32 spawn_count() const { return spawned_; }
     u64 event_count() const { return sink.emitted(); }
@@ -484,6 +502,9 @@ public:
     std::vector<std::unique_ptr<StageEnemy>> enemies;
     std::vector<StageBullet> bullets;  // 交互模式弹体（直进；无头路径恒空）
     std::function<bool(StageBullet&, bool)> bullet_animation;
+    // 00461cb0 initialization is synchronous within40e840/etEx200, before
+    // queue continuation, collision/culling and the frame's final ANM tick.
+    std::function<bool(StageBullet&, i32)> bullet_animation_initialize;
     std::function<bool(i32, const Vec3&)> scene_effect;  // kind + 敌机VM+0x44（op334 41b7ac→415650 init 位置）
     std::function<bool(i32, i32, i32)> screen_shake;
     std::function<void(i32, i32, u32, float, float)> stage_fog;
@@ -491,6 +512,7 @@ public:
     // [stage+0x1c]）。交互模式由 RunScene 接 StageScenery::script.interrupt；
     // 无头契约路径不接（StageCommands case 630 显式报错）。
     std::function<bool(i32)> stage_script_interrupt;
+    std::function<bool()> stage_logo; // ECL554 ->0042adc0, stage ANM script0.
     // Original bullet manager+68/+6c, set by ECL560; positive values
     // override per-bullet reflection dimensions in410a80/4107f0..4109f0.
     float bullet_bounce_size[2] = {0,0};
@@ -503,6 +525,7 @@ public:
     std::function<bool(i32)> laser_sound;
     std::function<bool(i32, const Vec3&)> laser_cancel_effect;
     std::function<i32(const StageLaser&)> laser_collision;
+    std::function<void(StageBullet&)> bullet_player_collision;
     bool defer_laser_update = false; // RunScene schedules the laser manager at22.
     StageEnemy* current = nullptr;  // 正在步进的敌机（gvars/commands 用）
     u32 frame = 0;
@@ -514,15 +537,37 @@ public:
     std::array<std::array<BossMarker,4>,3> boss_markers{}; // stage+1bc + slot*54
     i32 boss_remaining_stars=0; // stage+15c, ECL540
     std::vector<std::string> anim_list;          // st01 的 ANIM 依赖清单（装载核验）
-    // ECL 307/308 特效 VM 创建请求（AnmEffectRequest；sync 每帧排空后清）。
+    // ECL 30x ANM 创建请求（AnmEffectRequest）。按 kind 分相位排空：
+    //   kind=1（303/306/313/316/318 槽位 VM）——原版 0x41fe80 / 0x41b7cc 在
+    //     ECL 解释器内同步建 VM（0x4243e0 模板拷贝→立即 tick→0x46f4a0 头插→
+    //     句柄写回敌机+0x120），宿主注入 flush_anm_slots 后在指令处立即冲刷；
+    //   kind=0（307/308 特效）——原版同样在指令处同步创建（见上方
+    //     ecl_effect_create 的 round-s15 证据；曾按"stage_script 任务后置"
+    //     旧模型推迟到表现 sync，是该轮全部视觉相位窗的根因）。宿主注入
+    //     ecl_effect_create 后 307/308 不再入队；队列仅保留无宿主路径与其余
+    //     直接入队者（激光 0x445900、StageBattle 1/100 等）。
     std::vector<AnmEffectRequest> anm_effects;
+    // kind=1 槽位请求的指令级同步冲刷（0x41fe80/0x41b7cc 语义）。空 = 无宿主
+    // （无头事件契约/单测路径），请求保持入队，由 sync 统一排空。
+    std::function<bool(StageEnemy*)> flush_anm_slots;
+    // ECL 307/308 特效的指令级同步创建（0x41b510 case4/5 → 0x4243e0：模板拷贝
+    // →立即 tick→头插，全部在敌机 ECL 相位内完成）。round-s15 首窗实证
+    // （artifacts/round-s15/w1-*：native 2385 帧序 [s91 特效×10 抽 → s167 死亡
+    // 取消粒子 1 抽 → 弹幕相位 s40]，s91 创建调用者 0x41b675 即敌机 ECL 307
+    // 处理器）：原版在指令处创建并立即首 tick。此前推迟到表现 sync 会使同帧
+    // 多消费者的视觉 RNG 帧内顺序颠倒——取消粒子抽到原本给特效的签，其
+    // op120/op6 随机回绕量错位（native 2 vs web 6），op500 子生成整体 +4 帧，
+    // 即全部"瞬态相位窗"的根因。空 = 无宿主（事件契约/单测），保持入队由
+    // sync 排空（与原行为一致）。
+    std::function<bool(i32, i32, const Vec3&)> ecl_effect_create;
     // 41ffb0 resolves a live slot before reading mutation arguments.
     std::function<AnmVm*(StageEnemy&, i32)> enemy_animation;
     std::function<bool(StageEnemy&,i32,i32)> enemy_animation_interrupt;
     std::function<bool(StageEnemy&,bool)> enemy_fog;
     std::function<bool(StageEnemy&)> enemy_absorb_spirits;
     std::function<bool(i32)> enemy_sound;
-    std::function<bool(i32)> enemy_hit_sound;
+    std::function<bool(i32, float)> enemy_position_sound;
+    std::function<bool(i32, float)> enemy_hit_sound;
     std::function<bool(i32,i32,const Vec3&,float)> enemy_death_effect;
     std::function<bool(i32,const Vec3&,i32)> player_effect;
     // 事件契约模式（stage1/replay 落盘）置 true：307/308 与 stage1 oracle 的
@@ -590,10 +635,24 @@ public:
     void update_enemy_feedback(StageEnemy& enemy); // 419a90 final ANM/sound branch
     bool invoke_enemy_function(StageEnemy&,i32 index);
     void clear_bullets(); //411df0: fade VM plus independent cancel particle.
-    bool cancel_bullet(StageBullet&); //411380, also shared by411df0.
+    // require_active=false 对应原版 0x411380 的调用面：FUN_00411380 只检查
+    // 取消脚本 >=0，不检查 state/alive；队列 op0x400/0x2000 的取消必须在
+    // state2/4 也生效（否则游标越过 0x400 但弹不消失，见 phase6 证据）。
+    bool cancel_bullet(StageBullet&, bool interpolate = true, bool set_delay = true,
+                       bool require_active = true);
     bool cancel_respawn_bullets(const Vec3& center, float radius); //411770 state4, no items
+    // 4114f0/411770/4119c0 shared tail: cancel callback, half-step, optional
+    // on-screen kind-9 item, then state 4. 4114f0 does not consult protection;
+    // 411770/4119c0 do. 4119c0 creates the item after the half-step.
+    bool cancel_bullet_state4(StageBullet&, bool spawn_cancel, bool item_after_half_step,
+                              bool respect_protection);
     std::function<bool(i32,const Vec3&)> stationary_cancel_effect;
     std::function<bool(i32,const Vec3&,const Vec3&)> bullet_cancel_effect;
+    // 0x445900 擦弹/得分特效：effect.anm script100，0x46f820 ordering=0
+    // （主链尾插，layer=-1、anmArg=0）。必须内联在碰撞处理当时创建，不能
+    // 走 ECL 307/308 的头插 flush 队列（否则该 VM 落到链首，使本帧新生
+    // 的 201 父成为链尾，其 op500 子体丢失第二趟 walk tick）。
+    std::function<bool(const Vec3&)> graze_effect;
     // ---- etEx 行为队列（0x40f030 / 0x40db10 / 0x40f79a / 0x4114f0）----
     // 消费弹体 ex 队列到首个阻塞项（op 0 / flags 门 / op 位已活跃）。
     // spawn_time=true 时为 0x40e840 尾的出生消费（事件窗 RNG 次序敏感）。
@@ -607,6 +666,13 @@ public:
     void cancel_bullets_radius(const StageEnemy& enemy, float radius, bool spawn_cancel);
     void cancel_bullets_radius(const Vec3& center, float radius, bool spawn_cancel,
                                bool respect_protection = false);
+    // 0x4119c0：旋转矩形 + 384x448 屏内矩形消弹（Marisa/Sanae/Youmu）。
+    // Explicit radius permits point geometry in diagnostics. Retail 4119c0
+    // uses each bullet's hit_scale * hit_size[0] for both rectangles.
+    void cancel_bullets_box(const Vec3& center, const Vec3& size, float angle,
+                            float bullet_radius, bool spawn_cancel,
+                            bool respect_protection = false,
+                            bool use_bullet_radius = false);
     // 0x40ffe0/0x40e840 的发射内核：按 et 视图逐 (way, idx) 产事件与弹体
     // （StageCommands::fire_et 与 etEx op 0x2000 子弹发射共用）。
     // slot = 事件口径的发射器号（601 的实参；0x2000 子发射按 oracle 的
@@ -646,8 +712,12 @@ private:
     void integrate(StageEnemy& enemy);   // 0x419450 + 0x419950 子集
     bool in_bounds(StageEnemy& enemy);   // 0x419450 出界自杀
     u32 spawned_ = 0;
-    u32 next_serial_ = 0;
+    // 00418d30 zeroes the manager, reserves serial 0, then sets +bc to 1.
+    u32 next_serial_ = 1;
     u32 next_bullet_generation_ = 0;
+    std::vector<i32> bullet_free_slots_;
+    std::vector<size_t> bullet_pool_order() const;
+    void release_bullet_slot(StageBullet& bullet);
 };
 
 }  // namespace th13

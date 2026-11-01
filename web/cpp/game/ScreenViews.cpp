@@ -19,7 +19,7 @@ ScreenView screen_view(const GraphicsViewport& viewport,float fov,Vec2 offset)no
  const float half=float(fov*.5f),distance=float(float(viewport.height>>1)/float(std::tan(double(half))));
  out.camera.view=scene_look_at({x,-y,-distance},{x,-y,0},{0,1,0});out.camera.projection=scene_perspective(fov,float(float(viewport.width)/float(viewport.height)),100,10000);return out;
 }
-void ScreenViews::configure(const AnmEnvironment& environment){const float scale=environment.resolution_scale;const auto scaled=[&](float value){return u32(truncate_int(float(value*scale)));};
+void ScreenViews::configure(const AnmEnvironment& environment){this->environment=&environment;const float scale=environment.resolution_scale;const auto scaled=[&](float value){return u32(truncate_int(float(value*scale)));};
  views[2]=screen_view({0,0,environment.screen_width,environment.screen_height,0,1},fov);
  // 0043bbc0: 4dc984={32,16,384,448}. This is the final-screen
  // interface viewport, NOT the centered crop of the intermediate @R texture.
@@ -30,7 +30,7 @@ void ScreenViews::configure(const AnmEnvironment& environment){const float scale
  // 0043be9b..0043beb9: {0x74,2,0x198,0x1dc} = {116,2,408,476}.
  views[3]=screen_view({u32(truncate_int(float(float(float(environment.screen_width)-408.f)*.5f))),u32(truncate_int(float(float(float(environment.screen_height)-476.f)*.5f))),408,476,0,1},fov);
 }
-bool ScreenViews::camera(DrawCamera index,bool refresh){auto& view=views[u32(index)];if(refresh)view=screen_view(view.viewport,fov,view.offset);renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);renderer.offset=view.offset;
+bool ScreenViews::camera(DrawCamera index,bool refresh){auto& view=views[u32(index)];if(refresh)view=screen_view(view.viewport,fov,view.offset);renderer.set_viewport(view.viewport);renderer.set_camera(view.camera);const Vec2 shake=environment?environment->screen_shake_offset:Vec2{};renderer.offset={float(view.offset.x+shake.x),float(view.offset.y+shake.y)};
 // 临时探针：相机切换取证（-96px 排查）
 if(probe::enabled&&cam_budget){--cam_budget;std::printf("[probe-cam] idx=%d vp={%u,%u,%u,%u} view12=%.6g view13=%.6g proj0=%.9g proj5=%.9g\n",int(index),view.viewport.x,view.viewport.y,view.viewport.width,view.viewport.height,double(view.camera.view.m[12]),double(view.camera.view.m[13]),double(view.camera.projection.m[0]),double(view.camera.projection.m[5]));}
 return true;}

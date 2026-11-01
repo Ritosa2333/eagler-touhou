@@ -3,8 +3,11 @@
 // 详见 artifacts/verification/r4/bomb/youmu-bomb-evidence.md）：
 //   BombYoumuInf vtable @ 0x4aa610：slot0 start=0x40c910（cursor 复位、主 ANM
 //   script 25、屏震任务），slot1 update=0x40cb50（本模块语义来源）。
-//   0x40cb50 每帧（age<0x105=261）：生成支路恰好一条斩击（ANM script 19 偶/
-//   20 奇，位置 x=0、y=lane 表 0x4bba54[cursor%11] + signed_unit×48），随后
+//   0x40cb50 每帧（age<0x105=261）走生成门：`cmp [edi+0xd9c],0 / jg` 未归零
+//   则不生成（battle-bomb-trace 实证 9843..9864 suppress 22→0，9865 再生成）。
+//   生成帧恰一条斩击（ANM script 19 偶/20 奇，位置 x=0、y=lane 表
+//   0x4bba54[cursor%11] + signed_unit×48），生成尾把 +0xd94（初值 25，>8 时
+//   每次减 2）装入 +0xd9c 作为下次生成的间隔（23/21/19…，≤8 后固定），随后
 //   60 槽循环（ctx+0x610 anm id 区，槽 0..59）：VM 死亡则清 id（scale 冻结）；
 //   存活则先注册旋转矩形（0x4457e0：全长 96 × scale×128，伤害 30，寿命 0=
 //   当帧一次性，flag|4），再用同矩形消弹（0x4119c0，弹还需在场内
@@ -61,7 +64,7 @@ public:
     // 每帧对每槽回填真实 pl03 VM 状态（step 之后、命中查询之前）。
     // alive=false：清槽（anm id 置 0；scale/counter 冻结——原版死槽不 tick）。
     // alive=true：以当前 scale 生成本帧矩形参数，随后 tick（scale += 1.0f）。
-    void set_vm(int slot, bool alive, float rotation_z);
+    void set_vm(int slot, bool alive, float rotation_z, float rate = 1.0f);
 
     // —— 只读视图（供 Combat 接线/对拍） ——
     bool active(int slot) const;
@@ -100,6 +103,13 @@ private:
     };
     std::array<Slot, kSlots> slots_{};
     int cursor_ = 0;
+    // 0x40cb50 生成门：`cmp dword ptr [edi+0xd9c],0 / jg 0x40cd45` 跳过生成；
+    // 该值在生成尾部由 0x4016c0 以 +0xd94 为初值装入并逐帧递减
+    // （battle-bomb-trace 实证：9842 生成后 9843 suppress=22 逐帧递减，
+    // 9865 归零才再生成，9865→9886 间隔 21）。+0xd94 初值 0x19=25，
+    // 每次生成后若 >8 则减 2，否则保持。
+    int cooldown_ = 0;     // +0xd9c
+    int slots_left_ = 25;  // +0xd94
 };
 
 }  // namespace th13

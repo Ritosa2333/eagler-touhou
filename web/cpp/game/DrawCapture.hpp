@@ -4,8 +4,8 @@
 // （矩阵/管线的混合与 TFACTOR/顶点布局/视口/纹理身份）在这里落影子，每当
 // 一批精灵提交（triangles()/primitives()）即按契约序列化一个 op。输出格式
 // 与 oracle/render_oracle.py 逐字段同构：JSONL、每帧一行、键序固定、浮点
-// %.9g（binary32 往返无损）、viewport 的 X/Y/W/H 按原版 D3DVIEWPORT9 捕获
-// 口径（DWORD 位型经 float 视图序列化）。
+// %.9g（binary32 往返无损）、viewport 的 X/Y/W/H 按 D3DVIEWPORT9 语义
+// （DWORD 像素转数值，对齐 oracle d3d_read_viewport；MinZ/MaxZ 为 float）。
 //
 // 激活：仅 TH13_DRAW_CAPTURE 构建（build-harness.mjs）下由 AnmRenderer 的
 // 提交钩子（draw_capture_sprite）喂数；web 构建编译本文件但全局指针恒空。
@@ -117,7 +117,8 @@ private:
     // -O2 跨函数内联成巨帧（emit_quad 内联 4×append_matrix×16 append_float
     // 曾在窗B 转场期粒子全量绘制时溢出 V8 栈并越过栈检查）。定点 noinline
     // 取代全局 -fno-inline-functions 旗语（emit_* 系互不内联，帧尺寸有界）。
-    __attribute__((noinline)) void emit_quad(u32 prim, u32 count);
+    __attribute__((noinline)) void emit_quad(u32 prim, u32 count, u32 stride,
+                                             const void* data);
     __attribute__((noinline)) void emit_up(u32 prim, u32 count, u32 stride, const void* data);
     __attribute__((noinline)) void append_tex(const Identity& identity);
     __attribute__((noinline)) void append_blend();

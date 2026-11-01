@@ -249,26 +249,8 @@ bool BossPresentation::update(const BossFrameInput& input,
                                ? target_ratio_
                                : displayed_ratio_ + 0.025f;
 
-    // ---- 玩家邻近隐藏（0x4265a0:484-516，迟滞 80/96）----
-    {
-        const float dx = boss->position[0] - input.player_x;
-        const float dy = boss->position[1] - input.player_y;
-        const float distance_squared = dx * dx + dy * dy;
-        if (!proximity_hidden_ && distance_squared < 6400.f) {
-            proximity_hidden_ = true;
-            retire_ring();
-            for (auto& handle : star_handles_) {
-                if (handle && !animations_.retire(handle)) fail("Boss star retire failed");
-                handle = 0;
-            }
-            stars_created_ = false;
-        } else if (proximity_hidden_ && distance_squared >= 9216.f) {
-            proximity_hidden_ = false;  // 本帧环段按常态重建
-        }
-    }
-
     // ---- 环根与跟随（0x4265a0:416-447 + 0x426f9e-0x427091 写入点）----
-    const bool life_ratio_ready = input.life_initial > 0 && !proximity_hidden_;
+    const bool life_ratio_ready = input.life_initial > 0;
     if (life_ratio_ready) {
         if (!create_ring()) return false;
         // 驱动：VM+0x18|=4、rotation.x = -displayed*2π（0x426fcc-0x426fd8）。
@@ -288,17 +270,35 @@ bool BossPresentation::update(const BossFrameInput& input,
     }
 
     // ---- 阶段星（0x4265a0:448-482）----
-    const bool markers_present = input.markers[0].ratio > 0 || input.markers[1].ratio > 0 ||
-                                 input.markers[2].ratio > 0 || input.markers[3].ratio > 0;
-    if (markers_present && !proximity_hidden_) {
+    if (life_ratio_ready) {
         if (!stars_created_ && !create_stars()) return false;
         for (i32 i = 0; i < 4; i++) write_star(star_handles_[u32(i)], input, i);
-    } else if (stars_created_ && (!markers_present || proximity_hidden_)) {
+    } else if (stars_created_) {
         for (auto& handle : star_handles_) {
             if (handle && !animations_.retire(handle)) fail("Boss star retire failed");
             handle = 0;
         }
         stars_created_ = false;
+    }
+
+    // 42721b/427296 send labels 2/3 to all seven existing VMs; the
+    // scripts animate the transition, so their handles and clocks survive.
+    if (life_ratio_ready) {
+        const float dx = boss->position[0] - input.player_x;
+        const float dy = boss->position[1] - input.player_y;
+        const float distance_squared = dx * dx + dy * dy;
+        const i32 label = !proximity_hidden_ && distance_squared < 6400.f ? 3 :
+                          proximity_hidden_ && distance_squared >= 9216.f ? 2 : 0;
+        if (label) {
+            for (u32 handle : {ring_arc_, ring_overlays_[0], ring_overlays_[1],
+                               star_handles_[0], star_handles_[1], star_handles_[2],
+                               star_handles_[3]})
+                if (!animations_.interrupt(handle, label, false)) {
+                    fail("Boss proximity interrupt failed");
+                    return false;
+                }
+            proximity_hidden_ = label == 3;
+        }
     }
 
 

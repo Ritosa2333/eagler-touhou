@@ -78,12 +78,19 @@ void check_hit(float ex, float ey, float ew, float eh,
     CHECK_EQ(score.score, expected ? 1 : 0);
     CHECK_EQ(enemy->life, expected ? 85.0f : 100.0f);
     CHECK_EQ(battle.frame_damage_total, expected ? 15.0f : 0.0f);
-    CHECK_EQ(battle.shots.front().alive, !expected);
+    // 原版 0x446c5a 在普通命中时写 shot+0x70=2，0x446c8d 清注册指针；
+    // 弹体并未在命中当帧失活，而是等 ANM 终止后由 0x446531 退休。
+    CHECK_EQ(battle.shots.front().alive, true);
+    CHECK_EQ(battle.shots.front().state, expected ? 2 : 1);
     if (expected) {
+        CHECK_EQ(battle.shots.front().registration_slot, -1);
         enemy->tick_gate = false;  // 已过出生空转帧；几何夹具没有 ECL 线程，仅观察伤害是否重复。
         CHECK(battle.step(idle));
         CHECK_EQ(enemy->life, 85.0f);
         CHECK_EQ(battle.frame_damage_total, 0.0f);
+        battle.shots.front().animation_finished = true;
+        CHECK(battle.step(idle));
+        CHECK(battle.shots.empty());
     }
 }
 

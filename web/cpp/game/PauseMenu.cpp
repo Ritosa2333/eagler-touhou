@@ -44,10 +44,13 @@ i32 PauseMenu::entry_script(i32 entry) const {
 
 bool PauseMenu::configure_entries() {
     auto& menu = state.menu;
-    if (state.screen == PauseScreen::ExtraEnd) {
+    // 0x440960 态 0x17/0x18 共用三项菜单（0x19）：0 标题 / 1 录像保存 /
+    // 2 重试。态 0x18（BGameOver）在 0x15030(0) 之后追加 0x15030(2)，默认
+    // 光标落重试；没有续关项，不能 Continue。
+    if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver) {
         menu.count=3; menu.wrapping=true; menu.disabled_count=0;
         if (!state.can_save_replay && !menu.disable(1)) return false;
-        menu.select(0);
+        menu.select(state.screen == PauseScreen::BGameOver ? 2 : 0);
         return true;
     }
     menu.count = 5;
@@ -96,8 +99,8 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         if (!navigate(pressed, repeated, 7)) return false;
         if (pressed & 0x80001) {
             if (!host.sound(7)) return false;
-            if (state.screen == PauseScreen::ExtraEnd) {
-                // 440960 state19: title, replay, retry.
+            if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::BGameOver) {
+                // 440960 state19: title, replay, retry (shared by 0x17/0x18).
                 state.selected_action = menu.cursor == 0 ? 1 : menu.cursor == 1 ? 2 : 4;
                 if (menu.cursor != 1 && !close()) return false;
                 phase(16); return true;
@@ -198,7 +201,9 @@ bool PauseMenu::update(u32 pressed, u32 repeated) {
         if ((pressed | repeated) & 0x20) state.replay_slot = state.replay_slot % 25 + 1;
         if (pressed & 0x80001) { state.replay_name.clear(); state.name_cursor=90; phase(18); }
         else if (pressed & 0x102) {
-            if (state.screen == PauseScreen::ExtraEnd || state.screen == PauseScreen::GameOver) {
+            if (state.screen == PauseScreen::ExtraEnd ||
+                state.screen == PauseScreen::BGameOver ||
+                state.screen == PauseScreen::GameOver) {
                 if (!interrupt(state.menu_animation,3,true) || !configure_entries()) return false;
                 phase(6); break;
             }

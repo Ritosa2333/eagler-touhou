@@ -22,6 +22,11 @@
 #include "LaserPresentation.hpp"
 
 namespace th13 {
+// 诊断用只读对话条目观察器（默认 nullptr，仅浏览器探针臂接）：RunScene::
+// open_dialog(entry) 每次调用登记条目号与当帧。不改变任何状态。
+using RunDialogObserver = void (*)(i32 entry);
+extern RunDialogObserver run_dialog_observer;
+
 
 struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices,
                           AnmDrawServices {
@@ -29,6 +34,7 @@ struct RunSceneServices : HudDrawServices, HudFrameServices, StageBattleServices
     // 语义同为「宿主播放 HUD 提示音」），多基类名查找二义。此处纯覆写合一：
     // 单一最终覆写（ApplicationState::hud_sound）同时覆盖两基类槽位。
     bool hud_sound(i32 id) override = 0;
+    bool hud_sound(i32 id, float x) override { (void)x; return hud_sound(id); }
     virtual bool request_pause() = 0;
     virtual bool request_practice_end() { return false; }
     virtual bool record_spell_event(const SpellEvent&) { return true; }
@@ -124,9 +130,12 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
         FrameCallback callback;
         ShakeCallback(RunScene& owner, i32 duration, i32 start, i32 end)
             : scene(owner), effect(duration,start,end) {}
+        ShakeCallback(RunScene& owner, ScreenShake value)
+            : scene(owner), effect(value) {}
     };
     std::vector<std::unique_ptr<ShakeCallback>> shakes;
     bool start_shake(i32 duration, i32 start, i32 end);
+    bool start_shake(ScreenShake effect);
     std::unique_ptr<LaserPresentation> laser_presentation;
     bool update_lasers();
     std::unique_ptr<SpellPresentation> spell_presentation;
@@ -149,6 +158,7 @@ class RunScene final : private StageDialogHost, private MsgHost, private PostGam
     // GameInput 实例（task 卡 stage1-replay-runtime 禁止 P3）。update 前未
     // controls() 过则消费零输入（仅测试直调路径）。
     const GameInput* input_frame = nullptr;
+    bool player_effect_activation_pending = true;
     // S3 对局终了链路：msg 播放器（Boss 前后对话）+ 对局内覆盖层骨架。
     MsgFile dialog_file;
     MsgPlayer dialog;
@@ -195,6 +205,9 @@ public:
     // Replay consumption belongs behind the gameplay freeze gate. Null
     // means the stream ended and its end overlay owns this update.
     std::function<const GameInput*()> playback_input;
+    // Cold replay restores its stage globals after the initial player VM tree
+    // exists, but before the stage ECL constructor runs.
+    std::function<bool()> restore_after_player_prepare;
     bool initialize(const HudEntryContext& = {});
     bool update();
     bool draw();
@@ -204,6 +217,7 @@ public:
     void request_game_over() { host.request_game_over(); }
     void open_dialog(i32 entry) override;
     bool dialog_active() const override { return dialog.active(); }
+    i32 dialog_entry() const { return dialog.state().entry; }
     bool dialog_wait_released() const override { return dialog.ecl_wait_released(); }
 
 private:

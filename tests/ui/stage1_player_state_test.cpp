@@ -1,9 +1,6 @@
 // Stage1 玩家生产状态：死亡灵力扣步长/底限，以及灵界激活时的 Bomb 共享门。
 // 夹具复用 P2 snapshot 已成功的真实资源装载路径（artifacts/reference/raw 的
 // st01.ecl + pl02a.sht）；不复制资产、不内嵌外部 artifact 源码、不跳过装载失败。
-#ifndef TH13_TEST_PORT_DIR
-#define TH13_TEST_PORT_DIR "."
-#endif
 #include "../ecl/ecl_test_fixtures.hpp"
 #include "../harness/test_framework.hpp"
 
@@ -19,7 +16,7 @@ using namespace th13;
 namespace {
 
 constexpr const char* kEventPath =
-    TH13_TEST_PORT_DIR "/tests/ui/build/stage1_player_state.events.jsonl";
+    "eagler-touhou/ports/th13/tests/ui/build/stage1_player_state.events.jsonl";
 
 // 与 P2 snapshot 的 Resources::read/animation 同路径：按相对仓库根读取
 // artifacts/reference/raw/<name>，ANIM 名单由真实 st01.ecl 驱动并登记。
@@ -494,6 +491,38 @@ TEST(bomb_normal_edge_still_consumes_one_stock) {
     CHECK(f.battle.bomb_timer > 0);
 }
 
+// 00443240 case1：Bomb 分派(0040a540)先于移动(00442960)，而 0xa2b4 的
+// 0.2 倍率由 Marisa Bomb 的逐帧更新(0040a860，param_1[7] < 0x12d)写入，
+// 并在 00443240 末尾复位 1.0f。因此按键当帧仍是常速，减速从下一帧起。
+TEST(marisa_bomb_slow_multiplier_starts_on_the_frame_after_the_press) {
+    Fixture f(nullptr, 2, 100, false, 99, 100, "pl02a.sht", 1);
+    CHECK(f.loaded);
+    if (!f.loaded) return;
+    for (int i = 0; i < 70; ++i) CHECK(f.step(0, 0));  // 00443240 case0 入场 60 帧
+    const i32 before_press = f.battle.pos_fx;
+    CHECK(f.step(0x80u, 0x02u));  // 同一帧按下 Bomb 并向右
+    const i32 press_frame = f.battle.pos_fx - before_press;
+    CHECK_EQ(press_frame, f.battle.speed_orth);
+    const i32 before_slow = f.battle.pos_fx;
+    CHECK(f.step(0x80u, 0));
+    const i32 slow_frame = f.battle.pos_fx - before_slow;
+    CHECK_EQ(slow_frame, i32(float(f.battle.speed_orth) * 0.2f));
+}
+
+// 反向对照：非 Marisa 不读 0xa2b4 的 0.2 倍率，Bomb 后下一帧仍常速。
+TEST(reimu_bomb_keeps_full_speed_on_the_frame_after_the_press) {
+    Fixture f(nullptr, 2, 100, false, 99, 100, "pl02a.sht", 0);
+    CHECK(f.loaded);
+    if (!f.loaded) return;
+    for (int i = 0; i < 70; ++i) CHECK(f.step(0, 0));
+    const i32 before_press = f.battle.pos_fx;
+    CHECK(f.step(0x80u, 0x02u));
+    CHECK_EQ(f.battle.pos_fx - before_press, f.battle.speed_orth);
+    const i32 before_next = f.battle.pos_fx;
+    CHECK(f.step(0x80u, 0));
+    CHECK_EQ(f.battle.pos_fx - before_next, f.battle.speed_orth);
+}
+
 TEST(bomb_zero_stock_rejected) {
     Fixture f(nullptr, 0);
     CHECK(f.loaded);
@@ -508,13 +537,15 @@ TEST(bomb_preserves_stage_controller) {
     Fixture f;
     CHECK(f.loaded);
     if (!f.loaded) return;
-    auto* root = f.enemy(0);
+    // 418d30 reserves serial 0 and 418f40 assigns serial 1 to the first
+    // controller. Keep this test's preservation check on that actual entity.
+    auto* root = f.enemy(1);
     CHECK(root != nullptr);
     if (!root) return;
     CHECK_EQ(root->routine, std::string("main"));
     CHECK_EQ(root->life, 0.0f);
     CHECK(f.step(0x02, 0x02));
-    root = f.enemy(0);
+    root = f.enemy(1);
     CHECK(root != nullptr);
     if (!root) return;
     CHECK(!root->dead);

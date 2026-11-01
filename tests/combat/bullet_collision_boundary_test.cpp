@@ -87,7 +87,10 @@ TEST(circle_hit_equality_falls_through_to_graze_not_hit) {
         CHECK_EQ(r.host.hits, 1);
         CHECK_EQ(r.session.graze, 0);
         CHECK(r.battle.player_phase == StageBattle::PlayerPhase::Deathbomb);
-        CHECK(!r.battle.sim.bullets[0].alive);
+        // 0040dd0c/0040dd17: hit enters the state3 ANM cancel tail; it is
+        // not an immediate unlink from the native bullet list.
+        CHECK(r.battle.sim.bullets[0].alive);
+        CHECK_EQ(r.battle.sim.bullets[0].state, 3);
     }
     {  // D=2 == p → 等号落擦弹（原版 0x4441a5 jp 仅 thr>D² 才命中）。
         Rig r;
@@ -159,9 +162,9 @@ TEST(rect_separation_equality_is_overlap_and_hits) {
     r.rect_bullet(97.0f, 300.0f);  // 弹右缘 99 == left 99 → 命中（原版 1）
     CHECK(r.step());
     CHECK_EQ(r.host.hits, 1);
-    CHECK_EQ(r.session.graze, 0);
-    CHECK(r.battle.player_phase == StageBattle::PlayerPhase::Deathbomb);
-    CHECK(!r.battle.sim.bullets[0].alive);
+    CHECK(r.battle.sim.bullets[0].alive);
+    CHECK_EQ(r.battle.sim.bullets[0].state, 3);
 }
+
 }  // namespace
 int main() { return th13test::run_all("bullet collision boundary"); }

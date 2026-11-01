@@ -23,8 +23,12 @@ void AnmWindTrail::initialize(GameRandom& random,const AnmEnvironment& env) {
     float ex=float(double(random.unit())*800);if(start.x>0)ex=-ex;
     end_tangent={ex,float(double(random.unit())*1000),float(double(tz)*10)};
     const float ey=random.unit();float z=start.z;
-    if(env.stage_difficulty>0)z=float(float(double(random.unit())*200)+800.f+z);
+    // 0x4019d0 cmp [0x4be824],1：读 chapter（ins_524），不是 rank。chapter
+    // 未绑定的单测夹具回落到 stage_difficulty。
+    const bool extra_depth=env.chapter?(*env.chapter>0):(env.stage_difficulty>0);
+    if(extra_depth)z=float(float(double(random.unit())*200)+800.f+z);
     end={float(double(start.x)*.25),float(float(double(ey)*1000)+2000.f+start.y),z};
+    GameRandom::tag(7);
     const u32 red=64+random.step16()%191,green=64+random.step16()%191,blue=64+random.step16()%191;
     color=0x80000000u|(red<<16)|(green<<8)|blue;
 }

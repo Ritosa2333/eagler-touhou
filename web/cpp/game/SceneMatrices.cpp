@@ -6,40 +6,77 @@
 
 namespace th13 {
 
+// D3DXVec3Normalize 语义（本地 d3dx9_43.dll = Wine builtin，导出 0x10025F10；
+// 反汇编 + Unicorn 实跑，见 artifacts/round-render-semantics-20261031/
+// scene-view-ulp/disasm/d3dx9_43.dll-10025f10.txt）：
+//   len2 = x*x + y*y + z*z        — x87 扩展精度（0x10025F2B..0x10025F3F）
+//   len  = sqrt(len2)             — fsqrt 扩展精度（0x10025F4B）
+//   len == 0  → 输出 (0,0,0)      — 0x10025F55 je 0x10025F80 零分支
+//   len 为 NaN → 走除法按 IEEE 传播 — 0x10025F55 jp 0x10025F59（不置零）
+//   其余：逐分量 x/len 除法（0x10025F59..0x10025F6C），每分量一次 f32 存储。
+// 旧实现（f32 平方和 + f32 倒数 + Newton 精化）与 D3DX 在 1 ULP 上分歧：
+// scene-view-ulp 报告归因 4/27 个元素（frame1/15 的 view[2]/view[8]）。
+// 证据边界：这是本机唯一可执行的 D3DX 二进制（Wine builtin）的语义；零售
+// EXE 实际加载的 Microsoft d3dx9_43.dll 不在本机，无法逐位复核（residualRisks）。
 Vec3 normalize_scene_vector(Vec3 v) noexcept {
-    const float squared =
-        static_cast<float>(static_cast<float>(v.x * v.x + v.y * v.y) + v.z * v.z);
-    if (!(squared >= 0x1p-46f)) return {};
-    const float inverse = static_cast<float>(1.f / static_cast<float>(std::sqrt(double(squared))));
-    const float refined = static_cast<float>(
-        static_cast<float>(.5f * inverse) *
-        static_cast<float>(3.f - static_cast<float>(squared * inverse * inverse)));
-    return {static_cast<float>(v.x * refined), static_cast<float>(v.y * refined),
-            static_cast<float>(v.z * refined)};
+    const double x = v.x;
+    const double y = v.y;
+    const double z = v.z;
+    const double length = std::sqrt(x * x + y * y + z * z);
+    if (length == 0.0) return {};
+    return {static_cast<float>(x / length), static_cast<float>(y / length),
+            static_cast<float>(z / length)};
 }
-
-namespace {
-Vec3 view_cross(Vec3 a, Vec3 b) {
-    return {static_cast<float>(double(a.y) * b.z - double(a.z) * b.y),
-            static_cast<float>(double(a.z) * b.x - double(a.x) * b.z),
-            static_cast<float>(double(a.x) * b.y - double(a.y) * b.x)};
-}
-}  // namespace
 
 Matrix4 scene_look_at(Vec3 eye, Vec3 target, Vec3 up) noexcept {
-    const Vec3 z = normalize_scene_vector({target.x - eye.x, target.y - eye.y, target.z - eye.z});
-    const Vec3 x = normalize_scene_vector(view_cross(up, z));
-    const Vec3 y = view_cross(z, x);
-    const Vec3 axes[] = {x, y, z};
+    // 原版 0x43BA20 以 stdcall 调 IAT 0x4A22D4 = d3dx9_43.dll!
+    // D3DXMatrixLookAtLH(out=camera+0x58, eye, at, up)（capstone:
+    // disasm/th13-0043ba20.txt 0x43BA98；decomp 0043ba20.c:27-37）。
+    //
+    // 【对齐对象与证据边界——必须如实理解】
+    // 零售 EXE 实际链接的 Microsoft d3dx9_43.dll 不在本环境（只有 Wine
+    // builtin），零售 D3DXMatrixLookAtLH 的逐位实现**无法用地址级证据裁决**。
+    // 本函数逐位对齐的是 oracle 比较器桩（oracle/render_oracle.py 的
+    // D3DXStubs.mat_LookAtLH）——独立原版 draw log 本身就是该桩产出，所以
+    // 桩是当前唯一可用的比较基准。桩语义（double 全程，只在写矩阵时 f32 化）：
+    //   z = (at-eye); z /= sqrt(z·z)          — 不回存 f32
+    //   x = cross(up,z); x /= sqrt(x·x)       — 不回存 f32
+    //   y = cross(z,x)                        — 不归一化
+    //   m30..32 = -(axis·eye)                 — double 点积
+    // 中间任何一步回存 f32 都会引入 1 ULP 偏差（scene-view-ulp 报告
+    // stubArtifactElements 的成因）。已验证：frame 1/3/4 与 native draw log
+    // **逐位一致**（C++ 直连产品 TU + Python 复刻双重验证）。
+    // 已知未决项：Wine builtin（0x1001AEA0）在该函数里多一次
+    // D3DXVec3Normalize(y,y)（0x1001af7e），Microsoft 发行版是否同样归一化 y
+    // 无法验证；frame 0 的 y 轴长度 1.000000015 不足以区分两种实现
+    // （1.47e-8 缩放小于 f32 半 ULP），不作论据。若未来取得 Microsoft DLL
+    // 并证明其归一化 y，本函数需同步修改并重采 native。
+    const double ex = eye.x, ey = eye.y, ez = eye.z;
+    const double ax = target.x, ay = target.y, az = target.z;
+    const double ux = up.x, uy = up.y, uz = up.z;
+    double zx = ax - ex, zy = ay - ey, zz = az - ez;
+    double zl = std::sqrt(zx * zx + zy * zy + zz * zz);
+    // 退化 |z|=0（eye==at）：沿用 oracle 桩语义（除 0 → IEEE NaN 传播）。
+    // 注意 Wine builtin 的 D3DXVec3Normalize 在 length==0 时输出零向量
+    // （0x10025F80-8D），与桩不同；该差异属上述未决项，端口与桩保持一致。
+    if (zl == 0.0) zl = std::nan("");
+    zx /= zl; zy /= zl; zz /= zl;
+    double xx = uy * zz - uz * zy, xy = uz * zx - ux * zz, xz = ux * zy - uy * zx;
+    double xl = std::sqrt(xx * xx + xy * xy + xz * xz);
+    if (xl == 0.0) xl = std::nan("");
+    xx /= xl; xy /= xl; xz /= xl;
+    const double yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
     Matrix4 out;
-    for (u32 c = 0; c < 3; ++c) {
-        const auto a = axes[c];
-        out.m[c] = a.x;
-        out.m[4 + c] = a.y;
-        out.m[8 + c] = a.z;
-        out.m[12 + c] =
-            -static_cast<float>((double(a.x) * eye.x + double(a.y) * eye.y) + double(a.z) * eye.z);
-    }
+    out.m[0] = static_cast<float>(xx); out.m[4] = static_cast<float>(xy);
+    out.m[8] = static_cast<float>(xz);
+    out.m[1] = static_cast<float>(yx); out.m[5] = static_cast<float>(yy);
+    out.m[9] = static_cast<float>(yz);
+    out.m[2] = static_cast<float>(zx); out.m[6] = static_cast<float>(zy);
+    out.m[10] = static_cast<float>(zz);
+    out.m[3] = out.m[7] = out.m[11] = 0;
+    out.m[12] = static_cast<float>(-(xx * ex + xy * ey + xz * ez));
+    out.m[13] = static_cast<float>(-(yx * ex + yy * ey + yz * ez));
+    out.m[14] = static_cast<float>(-(zx * ex + zy * ey + zz * ez));
     out.m[15] = 1;
     return out;
 }
@@ -93,6 +130,10 @@ AnmCamera stage_camera(const StageCamera& s, const GraphicsViewport& viewport) n
     // 0x404140 绘制遍历按相机组切换——组路由语义待 battle_oracle 捕获后裁决）。
     out.projection =
         scene_perspective(s.fov, float(float(viewport.width) / float(viewport.height)), 30, 1800);
+    // 原版 0x43BB2C..0x43BB7C：x87 算 cross(direction, up) 存 f32，再调
+    // IAT 0x4A22A0 = d3dx9_43.dll!D3DXVec3Normalize(edi+0x30, edi+0x30)
+    // （capstone: 0x43BB7C ff15a0224a00；decomp 0043ba20.c 尾部）；
+    // normalize 语义与 D3DX 对齐后此处 reference 才与原版同一位模式。
     out.reference = normalize_scene_vector(cross(s.direction, s.up));
     out.fog_near = s.fog.near_distance;
     out.fog_far = s.fog.far_distance;

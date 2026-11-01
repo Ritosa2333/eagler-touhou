@@ -6,6 +6,11 @@
 //   色 ffff8030（0x427910:203-229）
 //   maxPoint(620,238) ff40c0ff 右对齐（0x427910:230-238）
 //   Graze(620,260) ff808080 右对齐（0x427910:239-246）
+// 颜色语义（对 th13.exe 反汇编 + decomp 已核对）：原版每个字形顶点色 = AsciiInf 的当前文本色
+// DAT_004c2160+0x19160（AsciiInf 构造 0x4038A0 默认 0xFFFFFFFF，0x4038F2；
+// decomp 004038a0.c:18），经 0x403DF4/0x403DFA 复制到 text descriptor+0x10C，
+// 0x404A55 再进 drawer+0x53C，0x467A80 写入四个顶点色 dword。0x427910 对这些
+// 文本只写不透明常量（alpha=0xFF），不读任何动画 VM 的 alpha。
 #include "GameHud.hpp"
 
 #include <algorithm>
@@ -21,6 +26,9 @@ std::string format(const char* pattern, T... values) {
     return std::string(text);
 }
 
+// 仅 stage-clear 奖励文本使用：原版 0x42797C mov dl,[VM+0x52b] -> 0x427993
+// mov [AsciiInf+0x19163],dl 把 banner VM 的 alpha 字节写进文本色，随后
+// 0x4279D5 恢复 0xFF（decomp 00427910.c:41-51）。普通 HUD 文本不走此路径。
 u32 alpha(u32 color, u32 source) { return (color & 0xffffff) | (source & 0xff000000); }
 }  // namespace
 
@@ -102,19 +110,20 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
         error = "HUD text draw service failed";
         return false;
     };
-    const auto* root_vm = animations.registry.find(life_icons[0]);
-    if (!root_vm) {
-        error = "HUD life icon animation unavailable";
-        return false;
-    }
     (void)context;
     // hi-score / score：右对齐，尾位为 continues / hi_score_extra。
-    style.color = alpha(0xff808080, root_vm->visual.color);
+    // 0x427D35 mov [edi+0x19160],0xff808080（decomp 00427910.c:142）。
+    // 原版此处不读 life_icons[0]（front.anm script29）的 visual.color；该 VM 的
+    // alpha 由 script29 t=0 op403 置 0、t=20 op409 才淡入，只属于残机图标自身，
+    // 此前拿它做文本 alpha 掩码导致帧 0-15 整片 HUD 文本透明（web 帧 0 实测
+    // 32 个 HUD 四边形 alpha=0x00）。
+    style.color = 0xff808080;
     style.font = 4;
     style.alignment = 2;
     if (!text(620, 44, score_number(u32(progress.high_score), progress.high_score_extra)))
         return false;
-    style.color = alpha(0xffffffff, root_vm->visual.color);
+    // 0x427D87 mov [eax+0x19160],0xffffffff；残机/灵击沿用该色（decomp 00427910.c:151）。
+    style.color = 0xffffffff;
     if (!text(620, 66, score_number(u32(displayed_score), progress.continues))) return false;
     // 残机/灵击碎片：0x427910:156-194。残机分母 = 0x4bb994[be7fc]
     //（首命 8，0x43d330 每命递增）；灵击分母固定 8（0x427f02 push $8）。
@@ -138,7 +147,8 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
         error = "HUD power step is zero";
         return false;
     }
-    style.color = alpha(0xffff8030, root_vm->visual.color);
+    // 0x427F2E mov [esi+0x19160],0xffff8030（decomp 00427910.c:197）。
+    style.color = 0xffff8030;
     style.scale = {1, 1};
     if (!text(540, 216, format("%d.", player.power / player.power_step))) return false;
     style.scale = {.6f, .6f};
@@ -154,18 +164,21 @@ bool GameHud::draw(const HudDrawContext& context, HudDrawServices& services) {
     // 居中 1，Normal 开局 10,000 以 620 为中心溢出屏右缘（battle-f300 实证）。
     style.alignment = 2;
     style.scale = {1, 1};
-    style.color = alpha(0xff40c0ff, root_vm->visual.color);
+    // 0x42808D mov [eax+0x19160],0xff40c0ff（decomp 00427910.c:230）。
+    style.color = 0xff40c0ff;
     if (!text(620, 238,
               grouped_number(u32(progress.max_point / 100 - (progress.max_point / 100) % 10))))
         return false;
-    style.color = alpha(0xff808080, root_vm->visual.color);
+    // 0x428111 mov [edx+0x19160],0xff808080（decomp 00427910.c:241）。
+    style.color = 0xff808080;
     if (!text(620, 260, grouped_number(u32(progress.graze)))) return false;
     // Boss 计时文本（0x427910:253-274）：'.' 与百分秒锚定数字 VM 位置
     //（ascii script2/3 dump：208/220,39）+16/-7；'.' 字体 4、百分秒 0.6 缩放。
-    // 原版 0x42814f/0x428155 写 +0x19184/+0x19188=1（左/上对齐），
-    // 颜色整 dword 取数字 VM +0x528（含 alpha），不是 HUD 根 VM 的 alpha。
     if (boss_hud.timer_visible()) {
-        style.alignment = style.vertical_alignment = 1;
+        style.alignment = style.vertical_alignment = 0;
+        // 0x4281C8 mov eax,[eax+0x528] -> 0x4281D4 mov [esi+0x19160],eax：
+        // 原版把数字 VM 的完整 ARGB（含其自身 alpha）直接写入 AsciiInf 当前色
+        //（decomp 00427910.c:258）。不要再叠加任何其它 VM 的 alpha。
         style.color = boss_hud.timer_digit_color();
         style.font = 4;
         style.scale = {1, 1};

@@ -1,6 +1,6 @@
 // マニュアル屏单测（FUN_00455330 对合 + help 页名资源断言）：
 //   open 失败如实 fail 不假成功；成功 → substate1；结束位 → close + 回 Main；
-//   页名必须 help_%.2d.png（0x42da10:129 sprintf 实读）。
+//   页名必须 help_%.2d.png（0x42da10:129 sprintf 实读）；重入再次 open/close。
 #include "../harness/test_framework.hpp"
 
 #include "game/TitleManualMenu.hpp"
@@ -12,9 +12,10 @@ using namespace th13;
 namespace {
 
 struct ManualHost final : TitleManualPlatform {
-    bool open_ok = true, finished = false;
-    i32 opens = 0, closes = 0;
+    bool open_ok = true, update_ok = true, finished = false;
+    i32 opens = 0, closes = 0, updates = 0;
     bool open_manual() override { ++opens; return open_ok; }
+    bool update_manual(u32, u32) override { ++updates; return update_ok; }
     bool manual_finished() const override { return finished; }
     void close_manual() override { ++closes; }
 };
@@ -49,11 +50,48 @@ TEST(manual_lifecycle_to_main) {
     CHECK_EQ(host.opens, 1);
     CHECK(menu.update(0xffff, 0xffff));  // 本屏不消费任何输入
     CHECK_EQ(int(state.screen), kTitleScreenManual);
+    CHECK_EQ(host.updates, 1);
     host.finished = true;
     CHECK(menu.update(0, 0));
     CHECK_EQ(host.closes, 1);
     CHECK_EQ(int(state.screen), int(TitleScreen::Main));
     CHECK(menu.error.empty());
+}
+
+TEST(manual_update_failure_is_honest_and_keeps_viewer_open) {
+    TitleState state;
+    state.screen = TitleScreen(kTitleScreenManual);
+    ManualHost host;
+    TitleManualMenu menu{state, host};
+    CHECK(menu.update(0, 0));
+    host.update_ok = false;
+    CHECK(!menu.update(0, 0));
+    CHECK(!menu.error.empty());
+    CHECK_EQ(host.closes, 0);
+    CHECK_EQ(int(state.screen), kTitleScreenManual);
+}
+
+TEST(manual_reentry_opens_and_closes_again) {
+    TitleState state;
+    ManualHost host;
+    TitleManualMenu menu{state, host};
+    state.change_screen(TitleScreen(kTitleScreenManual));
+    CHECK(menu.update(0, 0));
+    CHECK_EQ(host.opens, 1);
+    host.finished = true;
+    CHECK(menu.update(0, 0));
+    CHECK_EQ(host.closes, 1);
+    CHECK_EQ(int(state.screen), int(TitleScreen::Main));
+    // 再次从主菜单进入：substate 由 change_screen 归 0，open/close 必须重走。
+    host.finished = false;
+    state.change_screen(TitleScreen(kTitleScreenManual));
+    CHECK(menu.update(0, 0));
+    CHECK_EQ(host.opens, 2);
+    CHECK_EQ(state.substate, 1);
+    host.finished = true;
+    CHECK(menu.update(0, 0));
+    CHECK_EQ(host.closes, 2);
+    CHECK_EQ(int(state.screen), int(TitleScreen::Main));
 }
 
 int main() {

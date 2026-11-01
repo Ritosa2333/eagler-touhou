@@ -1,5 +1,9 @@
 # th13_01 回放自机孪生模型分歧根因排查（S4 拦路虎分析报告）
 
+## 当前状态（2026-10-31）
+
+本文件是 2026-10-22 前后的孪生模型分歧报告，§3 的 `.sht` 弹型域语义仍被 `oracle/replay_model.py` 引用；报告中的旧 Replay（`th13_udSr01`）、HANDOFF 帧数和“待视频锚定”结论只作历史。当前活动 Replay、源码/构建身份与首差见 `docs/host-continuation-prompt-20261030.md` 和 `artifacts/space-maintenance-20261030/session-a60e2850-audit.md`。
+
 事实源：容器内实跑（命令与自证见 §1）+ `oracle/{replay_model,stage1_oracle,replayfmt}.py`
 + `ports/th13/{tests/harness/harness.cpp, web/cpp/game/StageBattle.*}` + 反汇编
 （0x442960/0x443e40/0x441dd0/0x446000/0x445c40/0x448200）+ `artifacts/reference/raw/pl00a.sht`

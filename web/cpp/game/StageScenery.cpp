@@ -9,8 +9,12 @@
 #include "SceneMatrices.hpp"
 namespace th13 {
 namespace {
-// 对象包围盒 16 顶点投影裁剪（视口矩形 + 8px 余量；th15 StageVisibility
-// 同族——顶点集含面心与边中点，覆盖薄壁/细长对象；th13 3D 取景为全屏）。
+// 对象包围盒 16 顶点投影裁剪（th13 原版 0x4076c0）：16 点（8 角点 + 面心/
+// 边中点）投影后取屏幕 x/y 聚合，与绝对矩形 [128,512]x[16,464] 做 overlap。
+// 窗口常量 0x4ae9e8=128、0x4aead8=512、0x4aea88=16、0x4aec48=464
+// （0x407c83/0x407c96/0x407ca9/0x407cbc）；聚合种子 520/120/472/8
+// （0x4aec98/0x4aec90/0x4aec94/0x4aea74）= origin+extent+8 / origin-8。
+// z 过滤为 0<=z<=1（0x407a69 比较 0.0、0x407a75 比较 1.0；NaN 剔除）。
 bool stage_visible(const StageObject& object, const Vec3& instance, const AnmCamera& camera,
                    const GraphicsViewport& viewport, Vec2 origin, Vec2 extent,
                    float distance_squared) noexcept {
@@ -126,7 +130,43 @@ bool StageScenery::initialize(AnmManager& animations, i32 bank) {
     if (!file.error.empty()) return fail(file.error);
     if (!animations.resource(bank)) return fail("Stage scenery animation bank unavailable");
     script.state.timer.set(0);
-    script.state.culling_distance_squared = 9999999.f;
+    // 原版 0x406120 场景创建先把全局 0x4dcaf4 块的 0x49 dword 拷入
+    // scene+0x409c（STD 相机块），再覆写前段字段（0x406165..0x406255 直读）：
+    //   0x409c..0x40a4 position = (0,0,-600)   [0x4af024=0xc4160000；0x409c/
+    //                                          0x40a0 由 fldz 残值清零]
+    //   0x40a8..0x40b0 direction = (0,300,600) [0x4af020=300, 0x4af01c=600]
+    //   0x40b4..0x40bc up = (0,1,0)            [fld1；两侧 fldz]
+    //   0x40d8..0x40e0 eye_offset = (0,0,0)    （六条 fldz 残值写）
+    //   0x40e4..0x40ec target_offset = (0,0,0)
+    // 其余 0x1069-0x106f（fov/雾）来自全局块初值 0（.data BSS，0x4b8000
+    // raw 0x9400 只覆盖到 0x4c1400）。0x2f2c = 9610000.0f（0x4af018）见下。
+    // 关键语义：op2 的首帧差分以该 position 为基线（00408390.c:74-82），
+    // st01.std off=100 的 (-80,0,900) 因此得到 delta.z=1500（native 实测）。
+    // 生产路径的 StageScenery 恒以默认零相机块构造（RunScene::initialize /
+    // prepare_transition 都在新对象上调用）；预置就绪的非零相机块（单测显式
+    // 装配的相机）不覆盖，保持 initialize 对调用方相机状态的不干扰。
+    auto& camera = script.state.camera;
+    const bool default_camera =
+        camera.position.x == 0.f && camera.position.y == 0.f && camera.position.z == 0.f &&
+        camera.direction.x == 0.f && camera.direction.y == 0.f && camera.direction.z == 0.f &&
+        camera.up.x == 0.f && camera.up.y == 0.f && camera.up.z == 0.f &&
+        camera.eye_offset.x == 0.f && camera.eye_offset.y == 0.f && camera.eye_offset.z == 0.f &&
+        camera.target_offset.x == 0.f && camera.target_offset.y == 0.f &&
+        camera.target_offset.z == 0.f && camera.fov == 0.f && camera.fog.color == 0;
+    if (default_camera) {
+        camera.position = {0.f, 0.f, -600.f};
+        camera.direction = {0.f, 300.f, 600.f};
+        camera.up = {0.f, 1.f, 0.f};
+        camera.eye_offset = {};
+        camera.target_offset = {};
+        camera.animation_delta = {};
+        camera.fov = 0;
+        camera.fog = {};
+    }
+    // 原版 0x406120 场景创建时写 scene+0x2f2c = 0x4b12a310 = 9610000.0f
+    // （3100^2；0x40622f fstp；0x40815b/0x408164 作为 0x4076c0 的距离门参数，
+    // 0x40779f..0x4077af fcompp + test ah,5/jnp：dist² > 阈值才裁，等值保留）。
+    script.state.culling_distance_squared = 9610000.f;
     script.background_command = [this, &animations, bank](i32 slot, i32 template_index) {
         auto& vm = background_slots[u32(slot)];
         if (template_index < 0) {
@@ -196,6 +236,10 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
                         i32 layer_first, i32 layer_last, const GraphicsViewport& viewport,
                         Vec2 cull_extent, Vec2 screen_shake) {
     (void)animations;
+    // cull_extent 仅为 RunScene 调用兼容保留：th13 裁剪窗是绝对屏幕矩形
+    // [128,512]x[16,464]（0x407c83/0x407c96/0x407ca9/0x407cbc），不是
+    // 视口原点/尺寸；viewport {116,2,408,476} 只是它内缩 12/14 px 的来源。
+    (void)cull_extent;
     if (!error.empty()) return false;
     if (!initialized) return fail("Stage scenery not initialized");
     if (retired() || !draw_geometry_enabled()) return true;
@@ -232,55 +276,61 @@ bool StageScenery::draw(AnmManager& animations, AnmRenderer& renderer, ZunGraphi
     // sets ANM manager+d0/d4. This is a projected/screen-quad offset,
     // not a displacement of the eye, world geometry, or culling volume.
     renderer.offset = screen_shake;
-    for (u32 i = 0; i < file.instances.size(); ++i) {
-        renderer.presentation_instance = i + 1;
-        const auto& instance = file.instances[i];
-        const auto& object = file.objects[u32(instance.object)];
-        const i32 layer = i32(object.layer);
-        if (layer < layer_first || layer > layer_last) continue;
-        if (!stage_visible(object, instance.position, camera, viewport, {}, cull_extent,
-                           script.state.culling_distance_squared)) {
+    // 原版按层分趟绘制：0x406d90 对 layer 0..7 逐个调用 0x4080b0(scene, layer)，
+    // 0x407310 对 8..11 同式；0x4080b0 内部按实例表顺序、仅处理
+    // object.layer==layer 的实例。故提交顺序是层主序（非实例主序），
+    // alpha 混合次序依赖于此（st01: layer0 obj1×3 → layer1 obj0×80 → layer2 obj2）。
+    for (i32 layer = layer_first; layer <= layer_last; ++layer) {
+        for (u32 i = 0; i < file.instances.size(); ++i) {
+            const auto& instance = file.instances[i];
+            const auto& object = file.objects[u32(instance.object)];
+            if (i32(object.layer) != layer) continue;
+            renderer.presentation_instance = i + 1;
+            if (!stage_visible(object, instance.position, camera, viewport, {128.f, 16.f},
+                               {384.f, 448.f}, script.state.culling_distance_squared)) {
+                object_flags[u32(instance.object)] |= 2;
+                instance_flags[i] = i16(instance.flags & ~1);
+                continue;
+            }
             object_flags[u32(instance.object)] |= 2;
-            instance_flags[i] = i16(instance.flags & ~1);
-            continue;
-        }
-        object_flags[u32(instance.object)] |= 2;
-        for (const auto& primitive : object.primitives) {
-            if (primitive.type != 0) continue;
-            auto& vm = primitives[primitive.animation];
-            auto& visual = vm.visual;
-            const u32 mode = visual.draw_mode();
-            if (mode >= 4) {
-                visual.translation = {float(primitive.position.x + instance.position.x),
-                                      float(primitive.position.y + instance.position.y),
-                                      float(primitive.position.z + instance.position.z)};
-                // STD 尺寸 → 精灵缩放（延迟的 ins_300 可能尚未选精灵：仅非零
-                // 尺寸查表，与原版 40f99c 行为一致）。
-                if (primitive.size.x != 0 || primitive.size.y != 0) {
-                    const auto* selected = vm.texture_sprite();
-                    if (!selected)
-                        return fail("Stage scenery primitive sprite unavailable");
-                    const auto& sprite = *selected;
-                    if (primitive.size.x != 0) {
-                        visual.scale.x = float(primitive.size.x / sprite.width);
-                        visual.flags |= 8;
-                    }
-                    if (primitive.size.y != 0) {
-                        visual.scale.y = float(primitive.size.y / sprite.height);
-                        visual.flags |= 8;
+            for (const auto& primitive : object.primitives) {
+                if (primitive.type != 0) continue;
+                auto& vm = primitives[primitive.animation];
+                auto& visual = vm.visual;
+                const u32 mode = visual.draw_mode();
+                if (mode >= 4) {
+                    visual.translation = {float(primitive.position.x + instance.position.x),
+                                          float(primitive.position.y + instance.position.y),
+                                          float(primitive.position.z + instance.position.z)};
+                    // STD 尺寸 → 精灵缩放（延迟的 ins_300 可能尚未选精灵：仅非零
+                    // 尺寸查表，与原版 40f99c 行为一致）。
+                    if (primitive.size.x != 0 || primitive.size.y != 0) {
+                        const auto* selected = vm.texture_sprite();
+                        if (!selected)
+                            return fail("Stage scenery primitive sprite unavailable");
+                        const auto& sprite = *selected;
+                        if (primitive.size.x != 0) {
+                            visual.scale.x = float(primitive.size.x / sprite.width);
+                            visual.flags |= 8;
+                        }
+                        if (primitive.size.y != 0) {
+                            visual.scale.y = float(primitive.size.y / sprite.height);
+                            visual.flags |= 8;
+                        }
                     }
                 }
+                const bool fog = mode == 8 || mode == 24,
+                           depth_write = (visual.flags & 0x2000) == 0;
+                if (graphics.pipeline().fog != fog || graphics.pipeline().depthWrite != depth_write)
+                    renderer.flush();
+                graphics.set_depth_mask(depth_write);
+                graphics.set_fog(fog);
+                graphics.set_fog_color(camera.fog_color);
+                graphics.set_fog_range(camera.fog_near, camera.fog_far);
+                if (renderer.draw(vm) == -2) return fail(renderer.error);
             }
-            const bool fog = mode == 8 || mode == 24, depth_write = (visual.flags & 0x2000) == 0;
-            if (graphics.pipeline().fog != fog || graphics.pipeline().depthWrite != depth_write)
-                renderer.flush();
-            graphics.set_depth_mask(depth_write);
-            graphics.set_fog(fog);
-            graphics.set_fog_color(camera.fog_color);
-            graphics.set_fog_range(camera.fog_near, camera.fog_far);
-            if (renderer.draw(vm) == -2) return fail(renderer.error);
+            instance_flags[i] = i16(instance.flags | 1);
         }
-        instance_flags[i] = i16(instance.flags | 1);
     }
     renderer.presentation_instance = 0;
     renderer.flush();

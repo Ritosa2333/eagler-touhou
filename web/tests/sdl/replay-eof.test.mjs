@@ -5,13 +5,12 @@ import {readFile} from 'node:fs/promises';
 import {dirname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
+import {replayFixture} from './replay-fixture.mjs';
 
 const port = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const workspace = resolve(port, '../../..');
 const runtime = join(port, 'web/sdl-runtime');
 const build = process.env.TH13_SDL3_BUILD_DIR ?? join(port, 'web/artifacts');
-const fixture = process.env.TH13_EOF_REPLAY ?? join(workspace,
-  'artifacts/verification/product-20261026/replay-end/eof-stage1.synthetic.rpy');
+const fixture = process.env.TH13_EOF_REPLAY;
 const require = createRequire(import.meta.url);
 let chromium;
 try { ({chromium} = require('playwright-core')); }
@@ -42,7 +41,7 @@ test('Replay EOF freezes gameplay and accepts physical title-menu input', {timeo
     await page.goto(`http://127.0.0.1:${server.address().port}/sdl-runtime/th13.html`,
       {waitUntil: 'domcontentloaded'});
     await page.waitForFunction(() => window.mod?._th13_frame() > 10, null, {timeout: 120000});
-    const bytes = [...new Uint8Array(await readFile(fixture))];
+    const bytes = [...(fixture ? await readFile(fixture) : replayFixture())];
     const result = await page.evaluate(bytes => {
       const mod = window.mod;
       mod._th13_loop_stop();

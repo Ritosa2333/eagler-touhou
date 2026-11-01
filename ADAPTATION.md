@@ -1,190 +1,77 @@
 # th13 适配检查
 
-[开发入口](README.md) · [检查方法](../../docs/adaptation/README.md) · [全部作品](../README.md)
+[开发入口](README.md) · [检查方法](../../docs/adaptation/README.md)（对齐 th15 体例）· [全部作品](../README.md)
 
-源码目录：`ports/th13`。构建模式：`normal`。
+源码目录：`ports/th13`。构建模式：`sdl3`（网页运行时）+ `wasi-harness`（oracle 对照专用，非可玩目标）。
 
-实现情况与实际验收分别记录。源码接口和模块检查通过后记为“已实现”；完成对应操作并附执行记录后记为“已验证”。
+实现情况与实际验收分别记录。源码接口和模块检查通过后记为"已实现"；完成对应操作并附执行记录后记为"已验证"。
 
 状态：`待核对`、`进行中`、`待验证`、`已实现`、`已验证`、`检查失败`、`不适用`。
 
-[自动检查结果与源码身份](../../docs/adaptation/status.json) · `npm run ports:check -- --game=th13 --variant=both`
+本轮（2026-10-23 整改）依据：行为/渲染一致性以 oracle 裁决（外层仓库 `oracle/`，AGENTS.md 方法论）；场景覆盖以 [coverage-matrix.md](docs/plans/coverage-matrix.md) 为 home。
 
 ## 源码与构建
 
-| 编号 | 检查项 | normal | 记录 |
+| 编号 | 检查项 | 状态 | 记录 |
 | --- | --- | --- | --- |
-| BUILD-01 | [源码目录与普通版／MP归属](../../docs/adaptation/build.md#build-01) | 已验证 | normal：[source-inputs](../../docs/adaptation/status.json) |
-| BUILD-02 | [工具链与外部依赖](../../docs/adaptation/build.md#build-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| BUILD-03 | [对应模式独立构建](../../docs/adaptation/build.md#build-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| BUILD-04 | [Runtime 文件与来源记录](../../docs/adaptation/build.md#build-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| BUILD-05 | [前端搭配单个游戏运行](../../docs/adaptation/build.md#build-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| BUILD-06 | [源码与素材来源](../../docs/adaptation/build.md#build-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| BUILD-01 | 源码目录与作品归属 | 已验证 | `ports/th13`（分支 `port/th13`）；sparse 检出 31% |
+| BUILD-02 | 工具链与外部依赖（容器化） | 已验证 | `container/Dockerfile` + 外层 Makefile（podman/CI 共用）；th13-dev 镜像（node 22 / emcc 6.0.9 / wasi-sdk / ghidra 12.1.3） |
+| BUILD-03 | 网页运行时构建 | 已验证 | `node portable/build.mjs` → `web/artifacts/sdl3/th13-sdl.mjs`（本轮实测 sha256 58234abb…，62 例单测后复跑通过） |
+| BUILD-04 | WASI 对照 harness 构建 | 已验证 | `node portable/build-harness.mjs` → `th13-harness.wasm`（全 game 层 wasm32-wasip1 同源；本轮实测通过） |
+| BUILD-05 | 前端搭配单个游戏运行 | 已验证 | `web/sdl-runtime/th13.html`（18 资产 MEMFS）；`th13-debug.html` 回放取帧宿主（确定性帧泵） |
+| BUILD-06 | 源码与素材来源 | 已验证 | 原版资产永不入库（外层 `games/`+`artifacts/` gitignored；红线 1） |
 
 ## 启动与资源
 
-| 编号 | 检查项 | normal | 记录 |
+| 编号 | 检查项 | 状态 | 记录 |
 | --- | --- | --- | --- |
-| RUNTIME-01 | [协议身份与会话代次](../../docs/adaptation/runtime.md#runtime-01) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
-| RUNTIME-02 | [就绪、配置、启动、首帧](../../docs/adaptation/runtime.md#runtime-02) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
-| RUNTIME-03 | [命令响应与错误信息](../../docs/adaptation/runtime.md#runtime-03) | 已实现 | normal：[runtime-protocol](../../docs/adaptation/status.json) |
-| RUNTIME-04 | [后台、恢复与退出清理](../../docs/adaptation/runtime.md#runtime-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-05 | [Runtime 与资源管理分工](../../docs/adaptation/runtime.md#runtime-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| RUNTIME-06 | [重开与常显判定点](../../docs/adaptation/runtime.md#runtime-06) | 不适用 | normal：本作未声明判定点显示 |
-| PACKAGE-01 | [共用游戏包存储](../../docs/adaptation/runtime.md#package-01) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-02 | [DATA 身份与挂载目标](../../docs/adaptation/runtime.md#package-02) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-03 | [完整更新后切换版本](../../docs/adaptation/runtime.md#package-03) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-04 | [本地导入与在线安装一致](../../docs/adaptation/runtime.md#package-04) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
-| PACKAGE-05 | [已安装游戏离线启动](../../docs/adaptation/runtime.md#package-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| PACKAGE-06 | [统一安装和更新入口](../../docs/adaptation/runtime.md#package-06) | 已实现 | normal：[package-store](../../docs/adaptation/status.json) |
+| RUNTIME-01 | destination 状态机与装载挡板 | 已验证 | `Application.cpp`（begin_title/begin_run/begin_replay_run/apply_destination + 180 帧 boot 幕） |
+| RUNTIME-02 | 键盘输入 | 已实现 | `portable/input/KeyboardMap.inc`（原版 32 位掩码；Z/X/Shift/方向 + 双 Shift 归一）；手机触控 = 用户令「按用户要求不做」，`不适用` |
+| RUNTIME-03 | 音频 | 进行中 | `AudioDevice` 桩（接口先立；音频接线分期） |
+| RUNTIME-04 | 存档/音乐室/练习 | 不适用（分期） | 菜单项已登记禁用（coverage-matrix ⛔ 有意偏差；功能补齐后销账） |
+| PACKAGE-01 | 资产清单完整性 | 已验证 | 24→41 项与 `prepare-assets.mjs` 对齐（st01.std/st01wl.anm/sht 四机体等曾漏已补，提交 833118aa） |
 
-## 键盘、手柄与触控
+## 行为一致性（oracle 裁决）
 
-| 编号 | 检查项 | normal | 记录 |
+| 编号 | 检查项 | 状态 | 记录 |
 | --- | --- | --- | --- |
-| INPUT-01 | [键盘逻辑输入](../../docs/adaptation/input.md#input-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| INPUT-02 | [启动器键盘改键](../../docs/adaptation/input.md#input-02) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
-| INPUT-03 | [启动器手柄映射](../../docs/adaptation/input.md#input-03) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
-| INPUT-04 | [手柄方向与按钮](../../docs/adaptation/input.md#input-04) | 已实现 | normal：[native-gamepad](../../docs/adaptation/status.json) |
-| INPUT-05 | [多种输入独立持有](../../docs/adaptation/input.md#input-05) | 已实现 | normal：[launcher-input-owners](../../docs/adaptation/status.json) |
-| INPUT-06 | [失焦与断开释放](../../docs/adaptation/input.md#input-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| INPUT-07 | [原作菜单与对话输入](../../docs/adaptation/input.md#input-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-01 | [限速滑动移动](../../docs/adaptation/input.md#touch-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-02 | [无限速滑动移动](../../docs/adaptation/input.md#touch-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-03 | [方向式虚拟摇杆](../../docs/adaptation/input.md#touch-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-04 | [自由方向虚拟摇杆](../../docs/adaptation/input.md#touch-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-05 | [按住低速](../../docs/adaptation/input.md#touch-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-06 | [切换低速](../../docs/adaptation/input.md#touch-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-07 | [双指低速](../../docs/adaptation/input.md#touch-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-08 | [射击、Bomb 与暂停](../../docs/adaptation/input.md#touch-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-09 | [Deathbomb 与移动保持](../../docs/adaptation/input.md#touch-09) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-10 | [无限速移动落率记录](../../docs/adaptation/input.md#touch-10) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-11 | [双击 Bomb](../../docs/adaptation/input.md#touch-11) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-12 | [菜单与对话手势](../../docs/adaptation/input.md#touch-12) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-13 | [确认键的新按下边沿](../../docs/adaptation/input.md#touch-13) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-14 | [100–300% 灵敏度](../../docs/adaptation/input.md#touch-14) | 已实现 | normal：[touch-sensitivity](../../docs/adaptation/status.json) |
-| TOUCH-15 | [触控与其他输入隔离](../../docs/adaptation/input.md#touch-15) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-16 | [触控取消与生命周期](../../docs/adaptation/input.md#touch-16) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| TOUCH-17 | [共用布局编辑器](../../docs/adaptation/input.md#touch-17) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
-| TOUCH-18 | [共用重开按钮](../../docs/adaptation/input.md#touch-18) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
-| TOUCH-19 | [共用双指放大镜](../../docs/adaptation/input.md#touch-19) | 已实现 | normal：[shared-touch-controls](../../docs/adaptation/status.json) |
+| VERIFY-01 | 事件流·无输入窗 | 已验证 | st01 3600 帧 / 10187 事件 `RESULT first_divergence_frame=none`（本轮整改后复跑） |
+| VERIFY-02 | 事件流·回放窗 | 进行中 | udSr01 st01 段当前 f122（基线勘误：旧登记 2652 已漂移，oracle 侧基线需重锚——见 HANDOFF）；th13_01 2625（引用前须复跑） |
+| VERIFY-03 | RNG 语义 | 已验证 | `0x47BBA2` MSVC CRT 序列 = C++ 镜像 = srand(1) 标准；ECL/ANM 双独立种子 0 流实证 |
+| VERIFY-04 | replay 格式 | 已验证 | t13r 双趟 XOR + LZ77 全解；udSr01 6 关 105476 帧差分零错（`docs/plans/replay.md`） |
+| VERIFY-05 | Boss 时序 | 已验证 | udSr01 Boss 1非帧两侧同 2380/5583（harness 实测登记） |
+
+## 渲染一致性（draws oracle 裁决）
+
+| 编号 | 检查项 | 状态 | 记录 |
+| --- | --- | --- | --- |
+| RENDER-01 | 语义绘制清单导出（两侧同构） | 已验证 | oracle `render_oracle.py`/`title_oracle.py` ↔ port `DrawCapture`（契约 draw-contract.md v1） |
+| RENDER-02 | 标题窗 A | 进行中 | f487/600（81%）；f487 起 ins_408 升级机制层工作面（微调冻结，AGENTS.md 机制层优先） |
+| RENDER-03 | 对局窗（无输入） | 进行中 | golden 锚 f0（tfactor）/f61（敌机行走位差）；replay-verifier BASELINE-HELD |
+| RENDER-04 | 对局窗（回放） | 进行中 | 同上两工作面（对局主线战役）；`--ignore tfactor` 唯一登记项（销账=装载趟残留态建模，draw-contract §3.5） |
+| RENDER-05 | 共享渲染基座零漂移 | 已验证 | Renderer/Shaders/RenderCommands/LegacyGraphics 与 th15 逐字节一致；**GraphicsState.hpp 已归一**（2026-10-23，语义下沉 GraphicsDevice/DrawCapture 配置点）；敌机句柄化默认路径（`enemies_from_ecl` + `retire_sink` 回收，0x41fe80/case3 同构） |
+| RENDER-06 | 渲染统计契约（浏览器实测） | 已验证 | `web/tests/sdl/graphics-stats.test.mjs`：无 glBufferSubData 流式 / glBufferData 整批替换 / quad 直通占比主导 / 布局缓存有界（th13-shot 真实 chromium 实测通过） |
+| RENDER-07 | draws golden 对跑 | 已验证 | `tools/replay-verifier/`（corpus + run-oracle + run-gate）：两案例 BASELINE-HELD，退化即 FAIL（golden 只升不降） |
+| RENDER-08 | HUD/暂停/结算/Boss/难度/角色窗 | 待验证 | 未建（coverage-matrix 📦——oracle 捕获面扩展前置；下一阶段消费） |
 
 ## 画面与声音
 
-| 编号 | 检查项 | normal | 记录 |
+| 编号 | 检查项 | 状态 | 记录 |
 | --- | --- | --- | --- |
-| DISPLAY-01 | [固定逻辑步进](../../docs/adaptation/presentation.md#display-01) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-02 | [跟随显示器刷新率](../../docs/adaptation/presentation.md#display-02) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-03 | [额外绘制无逻辑副作用](../../docs/adaptation/presentation.md#display-03) | 已实现 | normal：[normal-presentation](../../docs/adaptation/status.json) |
-| DISPLAY-04 | [连续视觉字段插值](../../docs/adaptation/presentation.md#display-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-05 | [出生、销毁和瞬移](../../docs/adaptation/presentation.md#display-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-06 | [暂停画面的表现](../../docs/adaptation/presentation.md#display-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-07 | [实际呈现后报告首帧](../../docs/adaptation/presentation.md#display-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| DISPLAY-08 | [限制到 60 Hz](../../docs/adaptation/presentation.md#display-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| AUDIO-01 | [正常 OGG 音乐](../../docs/adaptation/presentation.md#audio-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| AUDIO-02 | [无 BGM 模式](../../docs/adaptation/presentation.md#audio-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| AUDIO-03 | [切曲、渐变、暂停、停止](../../docs/adaptation/presentation.md#audio-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| AUDIO-04 | [返回前台后恢复声音](../../docs/adaptation/presentation.md#audio-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| AUDIO-05 | [音乐资源错误信息](../../docs/adaptation/presentation.md#audio-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| AUDIO-06 | [高刷新与音频事件分开](../../docs/adaptation/presentation.md#audio-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| MIDI-01 | [声明 MIDI 选项](../../docs/adaptation/presentation.md#midi-01) | 不适用 | normal：本作使用 OGG 音乐 |
-| MIDI-02 | [可听到的 MIDI 输出](../../docs/adaptation/presentation.md#midi-02) | 不适用 | normal：本作使用 OGG 音乐 |
-| MIDI-03 | [MIDI 生命周期](../../docs/adaptation/presentation.md#midi-03) | 不适用 | normal：本作使用 OGG 音乐 |
-| MIDI-04 | [MIDI 与 OGG 分开](../../docs/adaptation/presentation.md#midi-04) | 不适用 | normal：本作使用 OGG 音乐 |
-
-## 存档与 Replay
-
-| 编号 | 检查项 | normal | 记录 |
-| --- | --- | --- | --- |
-| REPLAY-01 | [导入原版 Replay](../../docs/adaptation/storage.md#replay-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| REPLAY-02 | [按原版格式导出可表达输入](../../docs/adaptation/storage.md#replay-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| REPLAY-03 | [记录实际生效输入](../../docs/adaptation/storage.md#replay-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| REPLAY-04 | [扩展格式与版本](../../docs/adaptation/storage.md#replay-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| REPLAY-05 | [Replay 文件管理](../../docs/adaptation/storage.md#replay-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| REPLAY-06 | [回放与实时输入隔离](../../docs/adaptation/storage.md#replay-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| REPLAY-07 | [回放独立于显示刷新率](../../docs/adaptation/storage.md#replay-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| SAVE-01 | [已声明的存储根](../../docs/adaptation/storage.md#save-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| SAVE-02 | [用户文件允许范围](../../docs/adaptation/storage.md#save-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| SAVE-03 | [明确持久化时机](../../docs/adaptation/storage.md#save-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| SAVE-04 | [退出重开后数据保留](../../docs/adaptation/storage.md#save-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| SAVE-05 | [离线读取已有数据](../../docs/adaptation/storage.md#save-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| SAVE-06 | [游戏包与用户数据分开](../../docs/adaptation/storage.md#save-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-
-## 语言与练习
-
-| 编号 | 检查项 | normal | 记录 |
-| --- | --- | --- | --- |
-| PRACTICE-01 | [发布包中的练习能力](../../docs/adaptation/localization.md#practice-01) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-02 | [开局前启用与语言](../../docs/adaptation/localization.md#practice-02) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-03 | [游戏内练习状态](../../docs/adaptation/localization.md#practice-03) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-04 | [关卡与资源参数](../../docs/adaptation/localization.md#practice-04) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-05 | [练习 Replay 元数据](../../docs/adaptation/localization.md#practice-05) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-06 | [触控功能键与指针](../../docs/adaptation/localization.md#practice-06) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-07 | [练习语言跟随设置](../../docs/adaptation/localization.md#practice-07) | 不适用 | normal：该构建未提供 thprac |
-| PRACTICE-08 | [练习界面的可用功能](../../docs/adaptation/localization.md#practice-08) | 不适用 | normal：该构建未提供 thprac |
-| LANG-01 | [内置日语原文](../../docs/adaptation/localization.md#lang-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| LANG-02 | [语言包身份与发布清单](../../docs/adaptation/localization.md#lang-02) | 不适用 | normal：本作使用内置原文 |
-| LANG-03 | [开局前挂载翻译与字体](../../docs/adaptation/localization.md#lang-03) | 不适用 | normal：本作使用内置原文 |
-| LANG-04 | [语言包失败时回到原文](../../docs/adaptation/localization.md#lang-04) | 不适用 | normal：本作使用内置原文 |
-| LANG-05 | [字体字符覆盖](../../docs/adaptation/localization.md#lang-05) | 不适用 | normal：本作使用内置原文 |
-| LANG-06 | [缺译资源使用原文](../../docs/adaptation/localization.md#lang-06) | 不适用 | normal：本作使用内置原文 |
-
-## 多人接入与规则
-
-| 编号 | 检查项 | normal | 记录 |
-| --- | --- | --- | --- |
-| MP-RULE-01 | [死亡、幽灵与救援](../../docs/adaptation/multiplayer.md#mp-rule-01) | 不适用 | normal：单人模式 |
-| MP-RULE-02 | [个人资源与团队资源](../../docs/adaptation/multiplayer.md#mp-rule-02) | 不适用 | normal：单人模式 |
-| MP-RULE-03 | [给予资源与反馈](../../docs/adaptation/multiplayer.md#mp-rule-03) | 不适用 | normal：单人模式 |
-| MP-RULE-04 | [对话、结算与全灭](../../docs/adaptation/multiplayer.md#mp-rule-04) | 不适用 | normal：单人模式 |
-| MP-RULE-05 | [自机可见性与多人HUD](../../docs/adaptation/multiplayer.md#mp-rule-05) | 不适用 | normal：单人模式 |
-| MP-01 | [独立 MP 产品变体](../../docs/adaptation/multiplayer.md#mp-01) | 不适用 | normal：单人模式 |
-| MP-02 | [房间人数、难度与机体](../../docs/adaptation/multiplayer.md#mp-02) | 不适用 | normal：单人模式 |
-| MP-03 | [所有席位准备并同步开局](../../docs/adaptation/multiplayer.md#mp-03) | 不适用 | normal：单人模式 |
-| MP-04 | [确定性输入与状态检查](../../docs/adaptation/multiplayer.md#mp-04) | 不适用 | normal：单人模式 |
-| MP-05 | [各席位输入归属](../../docs/adaptation/multiplayer.md#mp-05) | 不适用 | normal：单人模式 |
-| MP-06 | [旁观加入与输入隔离](../../docs/adaptation/multiplayer.md#mp-06) | 不适用 | normal：单人模式 |
-| MP-07 | [旁观只读取连续已确认历史](../../docs/adaptation/multiplayer.md#mp-07) | 不适用 | normal：单人模式 |
-| MP-08 | [慢旁观者与玩家隔离](../../docs/adaptation/multiplayer.md#mp-08) | 不适用 | normal：单人模式 |
-| MP-09 | [旁观尾帧与结束时机](../../docs/adaptation/multiplayer.md#mp-09) | 不适用 | normal：单人模式 |
-| MP-10 | [联机暂停与重开](../../docs/adaptation/multiplayer.md#mp-10) | 不适用 | normal：单人模式 |
-| MP-11 | [多人 Replay](../../docs/adaptation/multiplayer.md#mp-11) | 不适用 | normal：单人模式 |
-| MP-12 | [WebRTC 与 Relay 路径](../../docs/adaptation/multiplayer.md#mp-12) | 不适用 | normal：单人模式 |
-| MP-13 | [本地玩家可见性](../../docs/adaptation/multiplayer.md#mp-13) | 不适用 | normal：单人模式 |
-| MP-14 | [联机与回滚诊断](../../docs/adaptation/multiplayer.md#mp-14) | 不适用 | normal：单人模式 |
-| MP-15 | [游戏结束返回房间](../../docs/adaptation/multiplayer.md#mp-15) | 不适用 | normal：单人模式 |
+| DISPLAY-01 | 固定逻辑步进 | 已验证 | 60fps 逻辑帧；FrameCadence + `th13_debug_frame` 确定性帧泵（取帧自检两跑一致） |
+| DISPLAY-02 | 高刷插值 | 不适用（分期） | PresentationFrame stub；补件登记（ui-base.md「不做（后续分期）」→ S3 入场条件） |
+| DISPLAY-03 | 重复绘制无逻辑副作用 | 已实现 | 高刷插值未接入，当前单绘制帧天然成立；接入时按 AGENTS.md 性能检查单复验 |
 
 ## 验证与交付
 
-| 编号 | 检查项 | normal | 记录 |
+| 编号 | 检查项 | 状态 | 记录 |
 | --- | --- | --- | --- |
-| VERIFY-01 | [全部内置 Demo 对照](../../docs/adaptation/validation.md#verify-01) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| VERIFY-02 | [长 Replay 样本](../../docs/adaptation/validation.md#verify-02) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| VERIFY-03 | [原版基准与内容哈希](../../docs/adaptation/validation.md#verify-03) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| VERIFY-04 | [读取固定基准](../../docs/adaptation/validation.md#verify-04) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| VERIFY-05 | [单独维护原版基准](../../docs/adaptation/validation.md#verify-05) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| VERIFY-06 | [逐逻辑帧比较](../../docs/adaptation/validation.md#verify-06) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| VERIFY-07 | [诊断构建与正常构建](../../docs/adaptation/validation.md#verify-07) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
-| VERIFY-08 | [本作状态映射与结束条件](../../docs/adaptation/validation.md#verify-08) | 待核对 | normal：按本项步骤执行，结果写入验证记录 |
+| VERIFY-10 | 单测门禁集 | 已验证 | 容器四套 62 例全绿（anm/ecl/ui/replay——ui 套件本轮修复既有编译破损）+ `node --test tests/*.test.mjs` |
+| VERIFY-11 | 全链路验收口径 | 进行中 | 菜单→S1 过关→结算→S2 双一致（用户令）；当前 S2/S3 阶段推进中 |
+| VERIFY-12 | 视觉终审 | 待验证 | MCP 图像并列对比（v1 交付协议，HANDOFF）——逻辑+渲染语义全绿后执行 |
 
-<!-- manual-verification -->
+## 运行验收记录
 
-## 当前发布与验证范围
+历史逐轮战报（ECL 虚拟机 / UI 基座 / stage1 对拍 / 录像注入 / 弹型域 / STD 背景 / draws 导出器等 9 轮）已随本轮整改归档至外层仓库 `HANDOFF.md`「战役进展」与 `docs/rectification-2026-10-23.md` §2；本表只保留可复跑的编号验收项，战报叙事不再入本文件（AGENTS.md 汇报纪律：数字必须实测可复现，历史叙述去 HANDOFF）。
 
-- 初始导入保留标准 Git subtree 来源父链；后续 PR 修复位于 monorepo，当前目录不再等同初始导入树。合并时使用 Create a merge commit。
-- 运行时构建入口：`node portable/build-eagler.mjs`，输出代码型 `build-eagler/` 和 `runtime-files.json`。原版资产、字体、录像与编译产物不进入 Git。
-- Launcher 接入源码包含托管 epoch / origin 校验、configure/resources/launch/keyboard、scoreth13.dat 与现有 localStorage 存档桥。原版资源通过 TH13PK01 容器装入 /assets，音乐保留 thbgm.fmt + 单流 thbgm.ogg。
-- 定向命令 `node --test tests/rng.test.mjs tests/harness-paths.test.mjs tests/submission.test.mjs tools/run-child.test.mjs` 在新增接入前执行，20 项通过；不能证明后续修改。
-- 全量 UI 命令 `TH13_TEST_WORKSPACE=/work node --test tests/ui.test.mjs` 失败。静态定位：结局测试在 op7 让帧后访问空记录数组，另有输入、MSG22、Continue、通关公式和存档版本的旧期望及资源夹具缺件。未为变绿修改这些测试或生产语义。
-- 2026-10-29 修复计时文本左/上锚点及数字 VM 颜色、灵界槽邻近淡化；HUD 合成专项 5 项与旧 HUD 9 项通过。真实 WebGL 以原始录像输入验证灵界槽 f917 alpha255、f940 alpha32、f1082 alpha255，无页面异常。
-- 托管外壳已接入实际触控输入、Launcher 手柄状态与 SDL audio-health；触控原生专项 14 项、外壳执行专项 4 项、手柄桥专项 3 项通过。TOUCH-10 无限速移动落率记录尚未实现，不由 TOUCH-14 通过推断完整触控验收。
-- 生产 Emscripten 构建通过；计时专项继续经过 AsciiText 生成字形，断言小数点与百分秒的实际字形位置。没有把该局部验证升级为全游戏最终画面认证。
-- 实际 Launcher 启动、资源导入、键盘到开局、存档往返、Replay 和全游戏场景覆盖待验证；无独立原版 GPU 真值，最终输出认证保持 BLOCKED。
-
-## 资源准备
-
-在 monorepo 根目录使用 `node launcher/scripts/prepare-th13-content.mjs --raw=/path/to/extracted --original=/path/to/game --output=/path/to/assets-ogg`。提供合法的解包资源与完整连续 Vorbis 音乐流；支持 `thbgm.ogg` 或 `thbgmogg.dat`。标准 PCM thbgm.dat 不会被假装成 Vorbis。设置 `EAGLER_TH13_CONTENT_DIR` 指向输出目录。
-
-## 维护边界
-
-通过 `testOnly: true` 进入测试构建，不将未验证接入直接投入正式 Launcher 作品列表。PR 发布前按上游 CONTRIBUTING 的要求审阅标题与正文。
+- 2026-10-23 · 整改轮 · 方法论治理 + 基座归一 + 测试契约（`docs/rectification-2026-10-23.md`）：BUILD-03/04 复跑通过；VERIFY-01 复跑 none；RENDER-05/06/07 新落地并实测通过；VERIFY-10 62 例全绿（ui 既有破损顺手修复）。

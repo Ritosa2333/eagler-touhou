@@ -46,9 +46,10 @@ TEST(enemy_fog_production_submits_same_grid_after_anm_tick) {
     CHECK_EQ(r.enemy.fog->radius,18.f);
     CHECK(r.manager.update());const auto& layer=r.manager.registry.layer(29);CHECK_EQ(layer.size(),16u);
     for(size_t col=0;col<layer.size();++col){auto* vm=layer[col];CHECK_EQ(vm->source_script,82);CHECK_EQ(vm->visual.draw_mode(),12u);
-        // 0x43cac0 mask 0xd9ffffff|0x18000000 only replaces the draw mode and
-        // preserves script82's op303 blend field (3 = One/Zero opaque strip).
-        CHECK_EQ(vm->visual.blend_mode(),3u);
+        // 0x43cac0 mask 0xd9ffffff|0x18000000 only replaces the draw mode;
+        // 0x4159c0 then clears VM+0x18 bits 0x1e0, so script82's op303 blend 3
+        // does not survive and the strip renders with blend 0.
+        CHECK_EQ(vm->visual.blend_mode(),0u);
         CHECK_EQ(vm->visual.layer,29);
         CHECK_EQ(vm->geometry.screen_vertices.size(),34u);
         for(size_t row=0;row<17;++row){
@@ -92,8 +93,9 @@ TEST(enemy_fog_geometry_matches_original_grid_uv_and_playfield_clamps) {
     CHECK(std::fabs(south.uv.y-463.0f/480.0f)<1e-6f);
 }
 TEST(real_stage1_mboss_ecl_updates_fog_in_constructor_and_later_ticks) {
+    // StageSim.cpp:110 第二参数是 EventSink 输出路径；/tmp 自生成，真实 st01.ecl 驱动 MBoss。
     Rig r;CHECK(r.init());CHECK(r.sim.load("artifacts/reference/raw",
-        "artifacts/verification/enemy-fog-20261027/mboss-events.jsonl","st01.ecl"));
+        "/tmp/th13-enemy-fog-events.jsonl","st01.ecl"));
     auto* enemy=r.sim.spawn_enemy("MBoss",144,-16,40,nullptr,false);
     CHECK(enemy&&enemy->fog);if(!enemy||!enemy->fog)return;
     CHECK_EQ(enemy->fog->target,128.f);CHECK_EQ(enemy->fog->color,5181359u);

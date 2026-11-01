@@ -544,6 +544,26 @@ TEST(spirit_motion_quantizes_after_float_velocity_like_original) {
     }
 }
 
+TEST(spirit_right_edge_reflects_when_other_axis_is_outside) {
+    // Marisa replay f5147: x==192 while y<0. 40bb70 opens the bounce
+    // branch for y; 43878b–438798 includes the right-edge equality.
+    GameRandom random(3);
+    ItemManager mgr(&random);
+    Fixture fix(0.f, 300.f);
+    mgr.spawn_value_item(3, 0.f, 0.f, 0.f, 0.5f);
+    Spirit& spirit = mgr.spirits()[0];
+    spirit.x = 192.f; spirit.y = -0.59f;
+    spirit.angle = 0.f; spirit.move_speed = 0.1f;
+    mgr.update_spirits(fix.collector);
+    CHECK_EQ(spirit.x, 191.9f);
+
+    // At the same right edge inside the box, 40bb70 keeps the branch shut.
+    spirit.x = 192.f; spirit.y = 100.f;
+    spirit.angle = 0.f; spirit.move_speed = 0.1f;
+    mgr.update_spirits(fix.collector);
+    CHECK_EQ(spirit.x, 192.1f);
+}
+
 TEST(spirit_collect_kind0_common_trance_and_piece) {
     GameRandom random(3);
     ItemManager mgr(&random);
@@ -556,6 +576,29 @@ TEST(spirit_collect_kind0_common_trance_and_piece) {
     CHECK_EQ(fix.progress.ending_points, 2);   // 公共 trance +2
     CHECK_EQ(fix.hud.life_pieces, 1);          // kind0 → 残机碎片
     CHECK(has_event(mgr, ItemEvent::Kind::Collected, 10));
+}
+
+TEST(trance_born_life_spirit_adds_two_pieces_and_crosses_threshold_once) {
+    // 438d09 passes EAX=2 to43d330; ordinary-born 438b5d passes1. The
+    // decision follows the spirit's birth flag even after Trance has ended.
+    GameRandom random(3);
+    SessionState session; trance_begin(session);
+    ItemManager mgr(&random); mgr.bind_session(session);
+    Fixture fix(0, 200, 20);
+    fix.hud.extra_lives = 2; fix.hud.life_pieces = 7;
+    fix.score.score = 1234;
+    mgr.spawn_value_item(0, 0, 200, 0, .5f);
+    auto& spirit = mgr.spirits()[0];
+    CHECK(spirit.flags & 1u);
+    spirit.x = 5; spirit.y = 205;
+    trance_end(session, false);
+    mgr.update_spirits(fix.collector);
+    CHECK(!spirit.alive);
+    CHECK_EQ(fix.hud.extra_lives, 3);
+    CHECK_EQ(fix.hud.life_pieces, 1);
+    CHECK_EQ(fix.progress.life_piece_threshold_index, 1);
+    CHECK_EQ(fix.progress.ending_points, 0);
+    CHECK_EQ(fix.score.score, 1234);
 }
 
 TEST(spirit_collect_kind3_score_and_trance) {

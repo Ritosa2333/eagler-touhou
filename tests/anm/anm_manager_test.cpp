@@ -207,6 +207,51 @@ TEST(load_validation_and_template_tick) {
     CHECK(semantic.manager->error.find("template") != std::string::npos);
 }
 
+TEST(after_main_update_hook_contract) {
+    // 0x46f170 主链遍历完成后的收尾钩子（AnmManager::after_main_update）：
+    // update(false)/update() 恰一次；update(true) 副链不触发；false 传播为
+    // update 失败；注册表更新失败时不得触发。
+    Fixture fixture;
+    std::vector<th13::u8> script;
+    th13test::push_insn(script, 3, 0);  // 停等常驻
+    th13test::push_terminator(script);
+    CHECK(fixture.load(th13test::build_simple_anm({script})));
+
+    int calls = 0;
+    fixture.manager->after_main_update = [&calls] { ++calls; return true; };
+    CHECK(fixture.manager->update(true));   // 副链（Update 9）不触发
+    CHECK_EQ(calls, 0);
+    CHECK(fixture.manager->update(false));  // 主链（Update 34）恰一次
+    CHECK_EQ(calls, 1);
+    CHECK(fixture.manager->update());       // 双链完成后恰一次
+    CHECK_EQ(calls, 2);
+
+    // 失败传播：钩子返回 false → update 返回 false 且 error 置位。
+    fixture.manager->after_main_update = [&calls] { ++calls; return false; };
+    CHECK(!fixture.manager->update(false));
+    CHECK_EQ(calls, 3);
+    CHECK(fixture.manager->error.find("post-update") != std::string::npos);
+
+    // 钩子自身写入的具体错误（StagePresentation 的四角几何失败经此转写）
+    // 必须保留，不得被通用文案覆盖。
+    fixture.manager->error.clear();
+    fixture.manager->after_main_update = [&calls, &fixture] {
+        ++calls;
+        fixture.manager->error = "specific post-chain failure";
+        return false;
+    };
+    CHECK(!fixture.manager->update(false));
+    CHECK_EQ(calls, 4);
+    CHECK(fixture.manager->error.find("specific post-chain failure") != std::string::npos);
+
+    // 注册表更新失败（主链层 31 越界）时不触发钩子。
+    int failed_calls = 0;
+    fixture.manager->after_main_update = [&failed_calls] { ++failed_calls; return true; };
+    CHECK(fixture.manager->create(1, 0, 31, 0) != 0);
+    CHECK(!fixture.manager->update(false));
+    CHECK_EQ(failed_calls, 0);
+}
+
 }  // namespace
 
 int main() { return th13test::run_all("anm-manager"); }

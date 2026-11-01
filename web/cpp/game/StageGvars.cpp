@@ -27,15 +27,18 @@ bool StageGvars::integer(i32 id, i32& value) {
     StageEnemy* e = sim.current;
     switch (id) {
     case -10000:  // RAND（0x472c90 & 0x7fffffff）
+        GameRandom::tag(0);
         value = i32(sim.random.next() & 0x7fffffffu);
         return true;
     case -9999:  // RANDF 的 int 视图：ftol 截断（消耗一次抽取）
+        GameRandom::tag(1);
         value = i32(sim.random.unit());
         return true;
     case -9988:  // TIME int 视图（+0x14A8）
         value = i32(e ? e->age : 0);
         return true;
     case -9987:  // RANDF2 int 视图：0x472e10 → ftol
+        GameRandom::tag(2);
         value = i32(sim.random.signed_unit());
         return true;
     case -9986:  // 00420380: enemy+0x521c bit25, set by timeout interruption
@@ -158,12 +161,15 @@ bool StageGvars::floating(i32 id, float& value) {
     StageEnemy* e = sim.current;
     switch (id) {
     case -10000:
+        GameRandom::tag(3);
         value = float(sim.random.next() & 0x7fffffffu);
         return true;
     case -9999:  // RANDF（0x472de0）
+        GameRandom::tag(4);
         value = sim.random.unit();
         return true;
     case -9998:  // RANDRAD（0x472e10 × π）
+        GameRandom::tag(5);
         value = float(sim.random.signed_unit() * 3.1415927410125732);
         return true;
     case -9997:  // FINAL_X/Y（主位置 +0x1230）
@@ -200,6 +206,7 @@ bool StageGvars::floating(i32 id, float& value) {
         value = e ? e->age : 0.0f;
         return true;
     case -9987:
+        GameRandom::tag(6);
         value = sim.random.signed_unit();
         return true;
     case -9986:

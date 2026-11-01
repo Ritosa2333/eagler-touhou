@@ -1,42 +1,36 @@
-# 东方神灵庙 · th13
+# 东方神灵庙（th13）移植
 
-《东方神灵庙 ～ Ten Desires.》v1.00c 的 C++ / SDL3 / Emscripten 网页移植，面向 [eagler-touhou](https://github.com/Ritosa2333/eagler-touhou) Launcher 接入。
+C++ / SDL3 / Emscripten 网页实现，行为还原对齐原版 th13.exe（v1.00c）。
 
-本仓库根目录与 monorepo 的 `ports/th13/` 保持相同源码树。原版游戏数据、音乐、字体和录像由使用者合法提供，不随源码分发。
+- 开发流程：[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+- 适配验收记录：[ADAPTATION.md](ADAPTATION.md)
+- UI 基座方案：[docs/plans/ui-base.md](docs/plans/ui-base.md)
+- 原版资源由使用者本地提供，仓库不携带任何原版文件
 
-## 开发入口
-
-- [开发与构建](docs/DEVELOPMENT.md)
-- [适配表与验证范围](ADAPTATION.md)
-- [资源格式](docs/ASSETS.md)
-- [源码与第三方许可](NOTICE.md)
-
-实现包含标题菜单、角色与难度选择、练习与符卡练习、Player Data、Replay、ECL / ANM / STD、战斗、HUD、对话、音效与音乐。实现范围与通过认证的范围分别记录在适配表，不以功能存在推定全游戏保真。
-
-## 两种源码布局
-
-推荐在 monorepo 中构建，复用其 `common/`、`tools/build/` 和 Launcher：
+## 构建
 
 ```sh
-git clone https://github.com/AgentMystia/eagler-touhou.git
-cd eagler-touhou
-git switch feat/th13-port-20261028
-# 按 docs/DEVELOPMENT.md 在容器中执行以下命令
-node ports/th13/portable/build.mjs
+node portable/build.mjs            # 网页运行时（C++ / SDL3 / Emscripten）
+node portable/build-harness.mjs    # WASI 无头对照 harness（oracle 比对用）
 ```
 
-独立仓库用于维护作品源码与 Git 子树往返。可将此仓库检出到 monorepo 的 `ports/th13/` 位置，或通过 Git subtree 更新该目录；不需要复制共享库或 Launcher 到本仓库。WASI harness 是局部诊断目标，不替代实际网页验证。
+工具链要求见仓库 [docs/adaptation/build.md](../../docs/adaptation/build.md)；本项目提供统一容器环境（工作区 `container/Dockerfile`，本地 podman 与 CI 共用）。
 
-## 独立网页
+## 运行时
 
-`web/sdl-runtime/th13.html` 使用构建产物 `web/artifacts/sdl3/th13-sdl.mjs`，资源由 `prepare-assets.mjs` 从本地解包目录准备。键位为方向键、Z、X、Shift、Esc、Ctrl、Enter。部署应优先使用 Launcher 的正式资源与存档协议。
+`web/sdl-runtime/th13.html` 装载 `web/artifacts/sdl3/` 产物：装载挡板（sig+ascii）→
+七 bank 常驻装载 → 标题 →（主菜单 → 难度 → 角色 → 开局）→ 对局 → Esc 暂停。
+资源从 `/assets/<文件名>` 读取（`text/sig/ascii/effect/title/title_v/help.anm` 与
+对局期 `front.anm`，文件名与原版 dat 内一致）；键盘经 SDL3 键位态映射为
+原版 32 位输入掩码（Z/X/Shift/方向/小键盘/Esc/Ctrl/Enter）。
 
-## 来源历史与合并
+## 同帧取像（golden 对拍）
 
-该仓首次发布为当前开发源码的干净导出，排除本地分析工作区与编译产物。上游通过标准 `git subtree add --prefix=ports/th13` 保留本仓提交父链；后续可用 `git subtree split --prefix=ports/th13` 校验并回推。
-
-作品目录 PR 使用 **Create a merge commit**，不 squash、不 rebase，以保留来源历史。具体导入点及验证记录见上游 `docs/migration/`。
-
-## 许可
-
-实现源码采用 MIT，第三方文件保留各自许可。原版作品及素材归 Team Shanghai Alice / ZUN 及相关权利人所有；本项目为非官方移植。
+`web/sdl-runtime/th13-debug.html` 为回放取帧宿主页：`.rpy` 录像与移速源
+`plXXa/b.sht` 备入 `/assets` 后，`th13_debug_replay` 按录像头（难度/角色/关卡）
+直入对局，`th13_debug_frame` 以固定 1/60 步长逐帧推进（不经 rAF 帧钟），
+按**游戏帧号**跳帧（golden 换算 `video = game + 400`，见工作区
+`artifacts/reference/golden/README.md`）后经 `canvas.toDataURL` 导出 PNG。
+驱动入口 `tools/shot-frames.mjs`（th13-shot 镜像，chromium+playwright 无头）：
+对照 golden 帧号导出 `ours-frame-*.png`、双会话确定性自检、合成
+`side-by-side.png`，量测用 `scripts/visual_diff.py`。
