@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 
 using namespace th13;
 using namespace th13::test;
@@ -48,6 +49,76 @@ i32 pending(const AnmManager& manager, u32 handle) {
     return vm ? vm->pending_interrupt : -999;
 }
 }  // namespace
+
+TEST(stage_logo_uses_real_script_and_original_gates) {
+    HudHarness harness;
+    std::ifstream file("artifacts/reference/raw/st01logo.anm", std::ios::binary);
+    std::vector<u8> bytes{std::istreambuf_iterator<char>(file), {}};
+    CHECK(!bytes.empty());
+    CHECK(harness.manager.load(26, bytes.data(), u32(bytes.size())));
+    harness.hud.stage_logo_bank = 26;
+    const auto count = harness.manager.registry.count();
+    CHECK(harness.hud.stage_logo(8));
+    harness.progress.run_mode_flags |= 0x40;
+    CHECK(harness.hud.stage_logo(0));
+    CHECK_EQ(harness.manager.registry.count(), count);
+    harness.progress.run_mode_flags &= ~0x40u;
+    CHECK(harness.hud.stage_logo(0));
+    bool found = false;
+    for (u32 i = 0; i < harness.manager.registry.ordered_count(false); ++i) {
+        auto* vm = harness.manager.registry.find(harness.manager.registry.ordered_handle(false, i));
+        found |= vm && vm->resource == harness.manager.resource(26) && vm->source_script == 0;
+    }
+    CHECK(found);
+    CHECK(harness.hud.stage_music_logo());
+    found = false;
+    for (u32 i = 0; i < harness.manager.registry.ordered_count(false); ++i) {
+        auto* vm = harness.manager.registry.find(harness.manager.registry.ordered_handle(false, i));
+        found |= vm && vm->resource == harness.manager.resource(26) && vm->source_script == 2;
+    }
+    CHECK(found);
+}
+
+TEST(stage_logo_fails_when_bank_is_missing) {
+    HudHarness harness;
+    CHECK(!harness.hud.stage_logo(0));
+    CHECK(!harness.hud.error.empty());
+}
+
+TEST(real_trance_gauge_partial_follows_completed_segments) {
+    GameRandom random;
+    AnmEnvironment environment;
+    AnmManager manager{random, environment};
+    auto read = [](const char* path) {
+        std::ifstream f(path, std::ios::binary);
+        return std::vector<u8>{std::istreambuf_iterator<char>(f), {}};
+    };
+    const auto front = read("artifacts/reference/raw/front.anm");
+    const auto ascii = read("artifacts/reference/raw/ascii.anm");
+    CHECK(!front.empty() && !ascii.empty());
+    CHECK(manager.load(3, front.data(), u32(front.size())));
+    CHECK(manager.load(2, ascii.data(), u32(ascii.size())));
+    CHECK(manager.sprite_fallback(2));
+    SessionState progress;
+    HudPlayerState player;
+    HudScoreState score;
+    GameHud hud{manager, progress, player, score, 3, 2};
+    CHECK(hud.initialize({}));
+    auto* root = manager.registry.find(hud.gauge_main);
+    CHECK(root);
+    if (!root) return;
+    auto* filled = manager.registry.find_child_script(*root, 173, 0);
+    auto* partial = manager.registry.find_child_script(*root, 175, 0);
+    CHECK(filled && partial);
+    if (!filled || !partial) return;
+    for (const i32 value : {0, 100, 200, 300, 400, 600}) {
+        progress.ending_points = value;
+        CHECK(hud.update_trance());
+        CHECK_EQ(filled->visual.scale.x, float(value / 200) / 3.f);
+        CHECK_EQ(partial->visual.scale.x, float(value % 200) / 200.f);
+        CHECK_EQ(partial->visual.translation.x, float(value / 200) * 16.f);
+    }
+}
 
 TEST(hud_stock_rows_use_original_script_ranges) {
     HudHarness harness;

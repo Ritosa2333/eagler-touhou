@@ -24,6 +24,10 @@
 
 namespace th13 {
 
+// 诊断开关（不参与逻辑）：由 th13_debug_damage_probe() 打开，
+// 打印 0x446870/0x419a90 的每次注册项伤害贡献。
+extern bool damage_probe_enabled;
+
 struct StageBattleServices {
     virtual ~StageBattleServices() = default;
     virtual bool life_hud(i32 lives, i32 pieces) = 0;
@@ -33,6 +37,9 @@ struct StageBattleServices {
     // owns Replay mode; other callers of request_game_over keep their route.
     virtual bool request_player_game_over() { return request_game_over(); }
     virtual bool hud_sound(i32 id) = 0;
+    virtual bool hud_sound(i32 id, float x) { (void)x; return hud_sound(id); }
+    virtual bool stop_sound(i32 id) { (void)id; return true; }
+    virtual bool set_voice_pan(i32 id, float x) { (void)id; (void)x; return true; }
     virtual bool trance_music(bool active) { (void)active; return true; }
     // 敌机死亡回收钩（0x418e00 销毁支路的 ANM 侧）：宿主回收该敌机全部
     // 槽位 VM（enemies_from_ecl 路径句柄归零防泄漏）。默认空实现——
@@ -46,9 +53,14 @@ struct PlayerShot {
     float angle = -1.5707964f;  // 弹向（渲染旋转用；主弹恒 -π/2 直上）
     i32 script = -1;            // plXX.anm 弹型脚本（.sht 记录；-1 = 精灵直贴回退）
     bool alive = false;
+    i32 state = 1;              // 445c40 +70: 1 active, 2 hit fade, 0 retired.
+    bool animation_finished = false; // VM termination observed by presentation.
     float speed = 12.0f;       // 无 SHT 的旧回退；生产弹从 SHT +0x18 取值。
     float width = 8.0f, height = 8.0f;
+    float beam_visual_width = 0; // 446f20 writes VM before enemy hit shrinks width.
     i32 age = 0, behavior = 0, type = 0;
+    i32 anchor = 0, anchor_power = 0;
+    float target_angle = 0, damage_x = 0, damage_y = 0;
     Timer age_clock;
     //4457e0 registration+70..80;443240 decrements before firing new shots.
     Timer damage_clock{9999998, 9999999, 9999999.f, 0, 1};
@@ -57,6 +69,38 @@ struct PlayerShot {
     i32 hit_behavior = 0;
     bool sine_moving = false;
     StageMover sine_motion; // 447420 initializer; remains active after 4474b0 hit
+    // 445c40 installs one independent 4457e0 damage registration for every
+    // live shot.  The slot is an implementation handle only; the pool owns
+    // the geometry and timer, so vector compaction cannot retarget a hit.
+    i32 registration_slot = -1;
+    // 446f20/447230 latch beam contact across frames to interrupt its VM
+    // only on transitions into or out of enemy contact.
+    bool beam_contact = false, beam_contact_seen = false;
+    i32 beam_interrupt = 0;
+};
+
+// 4457e0/446870 registration record.  The retail player object reserves 256
+// records at +0xa9e4, each 0x9c bytes.  Only the fields consumed by the
+// collision path are represented here; presentation handles remain on the
+// PlayerShot/ANM side.
+struct DamageRegistration {
+    enum class Owner { Shot, Area };
+    bool active = false;
+    u32 flags = 0; // bit0 = enabled; bit1 = circular (unused by shot pool)
+    Owner owner = Owner::Shot;
+    i32 orb = -1;
+    float radius = 0, radius_growth = 0;
+    float center_x = 0, center_y = 0, center_z = 0;
+    // 4475b0 copies its projectile mover into the new circular area after
+    // setting speed2. Other4456e0/4457e0 allocations start stationary.
+    float travel_speed = 0, travel_angle = 0;
+    float width = 0, height = 0, angle = 0;
+    Timer clock{9999998, 9999999, 9999999.f, 0, 1};
+    i32 interval = 1;
+    float damage = 0;
+    i32 accumulated_damage = 0;
+    i32 threshold = 999999;
+    u32 generation = 0;
 };
 
 // Presentation-owned ANM geometry snapshot. StagePresentation computes these
@@ -84,6 +128,7 @@ struct PlayerBombOrb {
     float radius = 0, speed = 0;
     float velocity_x = 0, velocity_y = 0;
     float accumulated_damage = 0;
+    i32 registration_slot = -1;
     // 40ae30 owns the trajectory; caller supplies the current target, if any.
     void step(i32 age,i32 index,float player_x,float player_y,const StageEnemy* target);
 };
@@ -114,6 +159,7 @@ struct ShtShotRecord {
     float speed = 0;
     float width = 0, height = 0;
     i32 behavior = 0, type = 0;
+    i32 sound = -1; // SHT record +0x24, 445c40 positional shot sound.
     i32 initializer = 0, hit_behavior = 0;
     float motion_phase = 0;
 };
@@ -128,10 +174,17 @@ struct StagePlayerState {
     bool focus = false, dead = false;
     Phase phase = Phase::Active;
     i32 phase_frame = 0, invulnerable = 0;
-    Timer phase_clock, fire_clock, startup_clock;
-    Timer youmu_charge_clock;
-    Vec3 youmu_charge_origin{};
+    // 上一帧的 phase_frame（0x443240 蓝帧判据的 pre-increment 快照）：
+    // 原生 00443240.c:242-243 在 :283-300 存 prev/递增之前比较
+    // phase_frame != prev && phase_frame % 3 == 0；port 的 sync 在
+    // battle.step 之后读到的已是递增后的值（比原生早一帧），故表现层
+    // 用本快照还原原生相位。
+    i32 phase_frame_previous = 0;
+    Timer phase_clock, fire_clock, startup_clock, charge_clock;
+    Vec3 charge_origin{};
     std::vector<PlayerShot> shots;
+    std::array<DamageRegistration, 256> damage_registrations{};
+    i32 damage_registration_cursor = 0;
     std::vector<PlayerShotGeometrySnapshot> shot_geometry;
     u32 shot_generation = 0;
     std::array<PlayerOption, 8> options{};
@@ -177,6 +230,7 @@ public:
     using PlayerPhase = StagePlayerState::Phase;
     PlayerPhase& player_phase = player_state_.phase;
     i32& player_phase_frame = player_state_.phase_frame;
+    i32& player_phase_frame_previous = player_state_.phase_frame_previous;
     bool player_visible() const noexcept {
         return !player_dead && player_phase != PlayerPhase::Dying;
     }
@@ -186,6 +240,7 @@ public:
         float radius=0;
         Timer remaining;
         bool active=false;
+        i32 registration_slot=-1;
     } respawn_damage;
     Vec3 respawn_origin{}; // player+644: unrounded saved death position for entry laser clear
     i32 bomb_timer = 0;     // 炸弹作用剩余帧
@@ -202,7 +257,6 @@ public:
     std::array<PlayerOption, 8>& options = player_state_.options;
     i32& option_count = player_state_.option_count;
     i32 player_character() const noexcept { return character_; }
-    i32 youmu_charge() const noexcept { return player_state_.youmu_charge_clock.current; }
     i32 player_power() const noexcept { return player_ ? player_->power : 0; }
     i32 player_power_max() const noexcept { return player_ ? player_->max_power : 0; }
     i32 power_level() const noexcept {
@@ -212,6 +266,26 @@ public:
         return player_ && player_->power >= player_->max_power;
     }
     std::vector<PlayerShot>& shots = player_state_.shots;
+    // 447230 creates the hit effect synchronously during enemy collision,
+    // before later enemies/ANM instructions consume visual RNG.
+    std::function<bool(const Vec3&, const Vec3&, float)> beam_hit_effect;
+    std::function<bool(StageBattle&)> option_power_changed;
+    // 445c40 initializes the shot VM before its first4464d0 update; the
+    // later ANM manager pass is a separate tick, including on the birth frame.
+    std::function<bool(PlayerShot&, u32)> player_shot_birth;
+    // 40cb50 creates/reads slash VMs before registering their hitboxes.
+    std::function<bool(StageBattle&)> youmu_bomb_update;
+    // 4460d0's charge VM is created/retired synchronously during player update.
+    // action 0=create, 1=ready interrupt, 2=retire, 3=update position.
+    std::function<bool(i32, const Vec3&)> youmu_charge_effect;
+    // 45f8c0: independent priority-16 bomb shake, driven by game RNG.
+    std::function<bool(i32, i32, i32, i32)> bomb_screen_shake;
+    std::function<bool()> reimu_explosion_shake;
+    // 40b590 calls 40b1b0 per orb before the enemy/item update passes.
+    std::function<bool(StageBattle&, i32)> reimu_bomb_orb_birth;
+    std::array<DamageRegistration, 256>& damage_registrations =
+        player_state_.damage_registrations;
+    i32& damage_registration_cursor = player_state_.damage_registration_cursor;
 
     // 定点模型状态（§7.2）。
     i32& pos_fx = player_state_.fixed_x;
@@ -230,6 +304,8 @@ public:
     void restore_replay_player(i32 x,i32 y,bool initial_focus);
     i32 speed_orth = 576, speed_diag = 407;      // 非聚焦（pl02a.sht ×128）
     i32 speed_orth_focus = 256, speed_diag_focus = 181;
+    // Browser touch target in player coordinates; mode 0 disables it, 1 limits
+    // movement to the current speed, 2 moves directly to the clamped target.
     struct TouchMotion { int mode = 0; float x = 0, y = 0; } touch;
     u32 input_state = 0;                         // 当帧回放输入（player 事件用）
 
@@ -268,6 +344,9 @@ public:
               StageBattleServices& host, SessionState& progress, HudPlayerState& player,
               HudScoreState& score, const char* event_path = nullptr,
               const char* sht_name = nullptr);
+    // 441dd0/444df0 occur before 447900 restores a cold replay.
+    bool prepare_player(EclResourceProvider& provider, SessionState& progress,
+                        HudPlayerState& player, const char* sht_name, bool cold_entry);
     // 一帧逻辑：输入 → 自机/自机弹 → ECL 步进 → 碰撞 → 奖惩/HUD。
     // 事件落盘开启时：帧号自 1 起（0 = start() 装载趟），player 事件为本帧
     // 首条（§7.3）。
@@ -293,19 +372,30 @@ public:
     bool sht_shots_loaded = false;
 
 private:
-    void move_player(u32 held);
+    bool player_prepared_ = false;
+    void rebuild_options_for_power();
+    // bomb_slow = 本帧开始前 Bomb 已在运行（0x40a860 写的 0xa2b4 乘数），
+    // 不含本帧按键刚启动的 Bomb：00443240 在 00442960 之后才复位 1.0。
+    void move_player(u32 held, bool bomb_slow);
     void update_options(bool reset = false);
     void update_firing(bool held);
     void step_bomb();
-    float bomb_damage(StageEnemy& enemy, float width, float height);
     float query_enemy_damage(StageEnemy& enemy, float width, float height);
     void explode_orb(PlayerBombOrb& orb);
     void fire_shots(i32 frame);
     void step_shots();
+    i32 reserve_damage_registration();
+    i32 register_circle(Vec3 center, float radius, float growth, i32 lifetime,
+                        i32 damage, i32 interval = 1, i32 threshold = 999999,
+                        i32 orb = -1);
+    i32 register_box(Vec3 center, float width, float height, float angle, i32 damage);
+    i32 allocate_damage_registration(PlayerShot& shot);
+    void sync_damage_registrations();
+    void retire_damage_registration(PlayerShot& shot);
     void collide_shots(StageEnemy& enemy);
     void collide_enemy_body(StageEnemy& enemy);
     void consume_player_shot_geometry();
-    void collide_player();
+    void collide_player_bullet(StageBullet& bullet);
     i32 collide_laser(const StageLaser&);
     void reward_kill(StageEnemy& enemy);
     void update_item_side();    // 0x42e380/0x438730 玩家只读面装配 + 步进

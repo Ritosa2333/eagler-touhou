@@ -21,7 +21,7 @@ TEST(interrupt_deletion_does_not_repeat_death_drops_or_spirits) {
     e->invulnerable=0;e->drop_main=1;e->drop_extra[0]=2;
     e->interrupts[0].life=0;e->interrupts[0].health_label="Finish";
     int sounds=0,effects=0,retired=0;
-    sim.enemy_sound=[&](i32){++sounds;return true;};
+    sim.enemy_position_sound=[&](i32,float){++sounds;return true;};
     sim.enemy_death_effect=[&](i32,i32,const Vec3&,float){++effects;return true;};
     sim.retire_sink=[&](u32){++retired;};
     const u32 before=sim.random.index();sim.damage(*e,30);
@@ -64,7 +64,7 @@ TEST(kill_all_emits_effects_then_runs_death_script_with_cleared_drops) {
  e->drop_main=2;e->drop_extra[0]=7;
  auto immune=std::make_unique<StageEnemy>();immune->flags=32;sim.enemies.push_back(std::move(immune));
  std::vector<int> order;
- sim.enemy_sound=[&](i32 id){order.push_back(id);return true;};
+ sim.enemy_position_sound=[&](i32 id,float){order.push_back(id);return true;};
  sim.enemy_death_effect=[&](i32,i32 id,const Vec3&,float){order.push_back(id);return true;};
  sim.current=e;EclContext context;std::vector<u8> code;th13test::emit(code,0,525,0,255,0,{});
  context.instruction=reinterpret_cast<const EclInstruction*>(code.data());const auto before=sim.random.index();

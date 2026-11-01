@@ -12,6 +12,7 @@ void AnmGeometry::clear(){screen_vertices.clear();world_vertices.clear();distort
 void AnmCircle::initialize(const Vec3& position,float r){center=position;radius=r;angle=0;age=Timer{};age.set(0);rebuild();}
 void AnmCircle::rebuild(){vertices[0].position={center.x,center.y,0};vertices[0].reciprocal_w=1;vertices[0].color=color;for(u32 i=0;i<=32;++i){const float a=float(angle+6.2831853071795864769*double(i)/32.0);auto& v=vertices[i+1];v.position={float(center.x+std::cos(double(a))*double(radius)),float(center.y+std::sin(double(a))*double(radius)),0};v.reciprocal_w=1;v.color=rim_color;}}
 void AnmDistortion::initialize(const Vec3& position,const Vec3& translation,GameRandom& random){
+    GameRandom::tag(17);
     *this={};uv_speed.x=float(random.signed_unit()*.008333333767950535f);uv_speed.y=float(random.signed_unit()*.008333333767950535f);
     vertices[0].position={float(position.x+translation.x),float(position.y+translation.y),float(position.z+translation.z)};vertices[0].reciprocal_w=1;vertices[0].uv={.5f,.5f};
     float angle=-3.1415927410125732421875f,speed=float(random.signed_unit()*.066666670143604279f);

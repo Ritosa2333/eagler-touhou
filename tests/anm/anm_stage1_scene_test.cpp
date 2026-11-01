@@ -3,7 +3,11 @@
 // reference assets. It verifies source coverage, not GPU output equivalence.
 #include "anm_test_fixtures.hpp"
 
+#include "game/AnmDrawSchedule.hpp"
+#include "game/AnmManager.hpp"
 #include "game/AnmRenderer.hpp"
+#include "game/FrameScheduler.hpp"
+#include "game/ScreenViews.hpp"
 #include "game/StageResource.hpp"
 #include "game/StageScenery.hpp"
 #include "game/ZunGraphics.hpp"
@@ -212,6 +216,39 @@ TEST(stage_shake_moves_submitted_projected_vertices_without_changing_camera_or_c
         CHECK_EQ(plain.camera.view.m[i],shaken.camera.view.m[i]);
         CHECK_EQ(plain.camera.projection.m[i],shaken.camera.projection.m[i]);
     }
+}
+
+TEST(screen_views_keep_shake_until_layer20_clears_it) {
+    // 406d90/43ba20/43b900 copy the shared 4dcbe8/ec offset into the camera and
+    // ANM manager; every camera switch before 46ef30 must retain it. 46ef30
+    // (layer20/priority44) then clears both the shared value and manager offset.
+    GameRandom random{0};
+    AnmEnvironment environment;
+    RecordingGraphics graphics;
+    AnmRenderer renderer{graphics};
+    ScreenViews views{renderer, environment};
+    environment.screen_shake_offset = {4.0f, -3.0f};
+    CHECK(views.camera(DrawCamera::Playfield, false));
+    CHECK_EQ(renderer.offset.x, 4.0f);
+    CHECK_EQ(renderer.offset.y, -3.0f);
+    // layer3's restore / layer4's refresh are ordinary camera switches; neither
+    // may drop the shared offset before priority44.
+    CHECK(views.camera(DrawCamera::Fullscreen, false));
+    CHECK_EQ(renderer.offset.x, 4.0f);
+    CHECK_EQ(renderer.offset.y, -3.0f);
+    AnmManager animations{random, environment};
+    FrameScheduler scheduler;
+    AnmDrawSchedule schedule{scheduler, animations, renderer, graphics, views};
+    CHECK(schedule.error.empty());
+    scheduler.draw();
+    CHECK_EQ(environment.screen_shake_offset.x, 0.0f);
+    CHECK_EQ(environment.screen_shake_offset.y, 0.0f);
+    CHECK_EQ(renderer.offset.x, 0.0f);
+    CHECK_EQ(renderer.offset.y, 0.0f);
+    // Later camera selections cannot resurrect the cleared shared offset.
+    CHECK(views.camera(DrawCamera::Playfield, false));
+    CHECK_EQ(renderer.offset.x, 0.0f);
+    CHECK_EQ(renderer.offset.y, 0.0f);
 }
 
 int main() { return th13test::run_all("stage-asset-render-chain"); }

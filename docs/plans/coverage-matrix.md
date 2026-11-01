@@ -1,5 +1,9 @@
 # 场景覆盖矩阵（coverage matrix）
 
+## 当前状态（2026-10-31）
+
+本文件 2026-10-24 的矩阵、状态和数字只作历史记录，不是当前通过声明。当前入口见 `docs/host-continuation-prompt-20261030.md`、`docs/portrait-identity-incident-20261030.md`；当前审核事实见 `artifacts/space-maintenance-20261030/session-a60e2850-audit.md`。活动 Replay 已是灵梦 Normal、魔理沙 Easy、早苗 Hard、妖梦 Lunatic 四份，`th13_udSr01` 已归档；引用本文件任何状态前必须按当前源码/构建重跑。
+
 > 覆盖矩阵唯一 home（AGENTS.md「覆盖矩阵与交付门禁」§1）。每阶段交付前
 > 更新；**「未覆盖/销账条件」必须被下一阶段消费**，不得默认通过。
 > 形态：行 = 场景窗（用户会看到的每一类画面），列 = 两侧链路状态。

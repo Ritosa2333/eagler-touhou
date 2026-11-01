@@ -5,8 +5,8 @@
 //   敌机 ECL VM 主位置（port: StageEnemy.position），非玩家坐标、非常量；
 //   401000：seg0=(x+320,y+16)、angle=rand11*PI、Timer{last=0,idx=1,acc=1.0}、
 //   8 色 R=255-32i/G=0x80/B=0xFF/A=255（i≥4: A=255-16*(i-4)）；
-//   401190：idx>=8 → ret 1（退休）；seg[idx]=seg[idx-1]+(sin a·s, cos a·s)
-//   （401490 fsincos），s=unit()*5+4（472de0 先取），a+=rand11*PI/5（472e90
+//   401190：idx>=8 → ret 1（退休）；seg[idx]=seg[idx-1]+(cos a·s, sin a·s)
+//   （401490 fsincos 先 cos 后 sin），s=unit()*5+4（472de0 先取），a+=rand11*PI/5（472e90
 //   回卷，472e10 后取）——RNG 每帧消耗顺序 unit→signed_unit。
 #include "ui_test_fixtures.hpp"
 #include "../ecl/ecl_test_fixtures.hpp"
@@ -107,7 +107,7 @@ TEST(scene_effect_kind1_trail_init_tick_retire) {
     GameRandom probe{seed_before};
     CHECK_EQ(bits(trail.angle), bits(float(probe.signed_unit() * 3.1415927410125732f)));
     CHECK_EQ(random.index(), draws_before_spawn + 2);  // 单次消耗（0x472c90 每步计数 +2）
-    // 首帧 401190：idx=1≠last=0 → seg1=seg0+(sin a·s, cos a·s)，a+=rand11*PI/5
+    // 首帧 401190：idx=1≠last=0 → seg1=seg0+(cos a·s, sin a·s)，a+=rand11*PI/5
     const float angle0 = trail.angle;
     const u16 seed0 = random.seed();
     const u32 draws0 = random.index();
@@ -117,8 +117,8 @@ TEST(scene_effect_kind1_trail_init_tick_retire) {
     CHECK_EQ(trail.age.previous, 1);
     GameRandom probe2{seed0};
     const float speed = float(probe2.unit() * 5.f + 4.f);  // 472de0 在前
-    CHECK_EQ(bits(trail.points[1].x), bits(float(256.f + std::sin(double(angle0)) * double(speed))));
-    CHECK_EQ(bits(trail.points[1].y), bits(float(48.f + std::cos(double(angle0)) * double(speed))));
+    CHECK_EQ(bits(trail.points[1].x), bits(float(256.f + std::cos(double(angle0)) * double(speed))));
+    CHECK_EQ(bits(trail.points[1].y), bits(float(48.f + std::sin(double(angle0)) * double(speed))));
     const float delta = float(probe2.signed_unit() * 3.1415927410125732f / 5.f);
     CHECK_EQ(bits(trail.angle), bits(normalize_angle(float(angle0 + delta))));
     CHECK_EQ(trail.colors[0] >> 24, 239u);  // 已生成段 alpha −16

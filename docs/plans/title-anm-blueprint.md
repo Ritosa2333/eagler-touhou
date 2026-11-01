@@ -295,7 +295,7 @@ struct TitleSceneResources {
 | 7 | 难度/角色脚本号未锚 | TitleSelectionMenu.cpp:41-42/55-56/63（难度）与 114-115/126-135（角色）的 th15 标签算式→§四 值；根自身无 3/6/7 标签（L17290/17337 仅 1），靠子传播（§〇-1）生效 |
 | 8 | 角色选中态子脚本错 | TitleSelectionMenu.cpp:91-95 `126/147/80/81`→§4.2 确认序列 |
 | 9 | TitleFrame 缺 demo/音乐重播/return_reason/Quit | TitleFrame.cpp:34-49 `initialize()` 只分 reason 0/其他；`music_age`（TitleFrame.hpp:40）未消费；demo/重播分支无；**待办**：需 supervisor 反汇编锚 return_reason 值域与 demo 计时（锚点待登记 AddressMap.hpp，候选 0x44e600 对应物） |
-| 10 | TitleScene 缺屏 | TitleScene.cpp:49-61 仅 Main/Difficulty/Character；Quit 流（TitleFrame.cpp:62-67）已有雏形，Demo/音乐室等分期不做（ui-base.md §三） |
+| 10 | TitleScene 缺屏 | TitleScene.cpp:49-61 仅 Main/Difficulty/Character；Quit 流（TitleFrame.cpp:62-67）已有雏形，Demo/音乐室等分期不做（原 `ui-base.md` §三；该分期计划已删除，当前入口见外层 `docs/host-continuation-prompt-20261030.md`） |
 | 11 | Draw pass 占位 | TitleFrame.cpp:15-16 callbacks[1] 仅返回 enabled（TitleFrame.hpp:46 `drawing()`）；真实绘制回调体待主菜单对齐后接 ANM 渲染管线 |
 | 12 | 析构漏 bank19 | TitleScene.cpp:20 只 retire {title,portrait}→补 `retire_resource(help=19)`（bank 常驻表 Application.cpp:18） |
 | 13 | 测试用合成 ANM | tests/ui/ui_test_fixtures.hpp:32 `synthetic_anm`；主菜单落地后按本蓝图 §一 数值加真实 title.anm 脚本号回归（标签/锚点/层逐项断言） |

@@ -4,19 +4,22 @@
 //   家族）+ 读 th13.dat 的 musiccmt.txt（0x4724c0：'@' 分块 = 曲目，每块曲名
 //   + 8 行注释，0x42/0x40 步长表）→ 曲数 +0x30；age≥10 进 case1。
 //   case1：隔帧逐行显（+0x74c<8）；age>4 → case2。
-//   case2：↑↓ FUN_00473210 环绕（音10）；Z：选中曲未听过（score 数据块
-//   +0x1b27a+track 字节 == 0，0x4554f0:193/237 实读）→ 播锁定响应
-//   0x461830(3/4,0)（DAT_004dc8a8&0x10 分支），已听过 → 0x43adc0(0,曲名)
-//   播曲 + 0x461830(2,0) + 落档 score[0x1b27a]=1（任意播曲解锁 0 号曲）；
+//   case2：隔帧继续显影 + ↑↓ FUN_00473210 环绕（音10）；Z：选中曲未听过
+//   （score 数据块 +0x1b27a+track 字节 == 0，0x4554f0:193/237 实读）且
+//   +0x754==0 → 播锁定响应 0x461830(3/4,0)（DAT_004dc8a8&0x10 分支）并置
+//   +0x754=1；已听或 +0x754!=0 → 0x43adc0(0,曲名) 播曲 + 0x461830(2,0) +
+//   落档 score[0x1b27a]=1（任意播曲解锁 0 号曲）并清 +0x754。
 //   X（0x102）：音9 → case3。
 //   case3（>9 帧）：收面（+0x470/+0x690 VM 树 label1）→ change_screen(1)
 //   回主菜单 + 恢复标题曲 th13_00（0x43adc0）+ 0x43ae40(0,0) + 光标栈 pop。
 //   行显示：10 行窗口（0x4554f0:190 页顶+10 显隐门），行距 20.0（fadd 步长
 //   实读），选中行 x+4（±4 poke 对），未选中 pending label3 / 选中 label2；
-//   锁定曲名走 DAT_004ac930/PTR_004c0da0 占位（？？？）色 0x8080ff，已听
-//   曲名 0xffffff。绝对 origin 无本函数证据 → 沿用队列 (58,80) 起点待对拍。
-//   注释 8 行 = 选中曲块内文本，隔帧逐行显（原版同拍）；Z 后 +0x750=选中
-//   +0x74c=0 重置显影（注释查看路径）。
+//   锁定曲名 = sprintf("No.%2d ", track+1) + 11 个 CP932 全角「？」
+//   （0x4ac930），色恒 0xffffff（0x4558fc/0x45591c 对已听/未听都 push 白）。
+//   注释 8 行 = 选中曲块内文本；未听且 +0x754!=0 时用 0x4c0da0[line] 占位串
+//   色 0x8080ff，否则真实注释色 0xffffff（0x455a82/0x455b5a）。Z 后
+//   +0x750=选中 +0x74c=0 重置显影；导航分支只在 +0x74c>=8 时清 +0x754
+//   （0x455d76-0x455d86），不是 8 行无条件 timeout。
 // 持久化：曲目听过位 = 原版 score+0x1b27a 字节族 ↔ FileStore v1 保留字
 // reserved[0] 位掩（bit=曲号，无新存档框架；宿主 TitleMusicRoomPlatform
 // 转发）。锁定响应/播曲/恢复标题曲均宿主服务，默认实现显式失败不假成功。
@@ -26,6 +29,7 @@
 #include "TitleMainMenu.hpp"
 #include "HudDrawData.hpp"
 
+#include <cstdio>
 #include <functional>
 #include <string>
 
@@ -48,14 +52,49 @@ struct TitleMusicRoomPlatform {
     virtual bool play_locked_response() { return false; }
     // 退出收面恢复 th13_00（0x43adc0(0,"th13_00")）。
     virtual bool resume_title_music() { return false; }
-    virtual std::string locked_title() const { return "???"; }  // DAT_004ac930 占位族
+    // 0x4ac930：sprintf("No.%2d ", track+1) + 11 个 CP932 0x8148（全角？）。
+    virtual std::string locked_title(i32 track) const {
+        char prefix[16];
+        std::snprintf(prefix, sizeof prefix, "No.%2d ", int(track) + 1);
+        std::string text = prefix;
+        for (i32 i = 0; i < 11; ++i) text += "\x81\x48";
+        return text;
+    }
+    // 0x4c0da0[line]（8 条 CP932 占位注释；色 0x8080ff 由菜单/View 决定）。
+    virtual std::string locked_comment(i32 line) const {
+        static const char* const kLines[8] = {
+            "\x81\x40",
+            "\x81\x40\x81\x40\x81\x96\x81\x96\x91\x49\x91\xf0\x82\xb5\x82\xbd\x8b\xc8"
+            "\x82\xcd\x82\xdc\x82\xbe\x83\x51\x81\x5b\x83\x80\x92\x86\x82\xc5\x8d\xc4"
+            "\x90\xb6\x82\xb3\x82\xea\x82\xc4\x82\xa2\x82\xdc\x82\xb9\x82\xf1\x81\x96"
+            "\x81\x96",
+            "\x20",
+            "\x81\x40\x81\x40\x81\x40\x81\x40\x8b\xc8\x82\xcc\x83\x52\x83\x81\x83\x93"
+            "\x83\x67\x82\xaa\x83\x6c\x83\x5e\x83\x6f\x83\x8c\x82\xc9\x82\xc8\x82\xe9"
+            "\x8b\xb0\x82\xea\x82\xaa\x82\xa0\x82\xe8\x82\xdc\x82\xb7\x81\x42",
+            "\x81\x40\x81\x40\x81\x40\x81\x40\x81\x40\x81\x40\x81\x40\x81\x40\x81\x40"
+            "\x82\xbb\x82\xea\x82\xc5\x82\xe0\x8d\xc4\x90\xb6\x82\xb5\x82\xdc\x82\xb7"
+            "\x82\xa9\x81\x48",
+            "\x81\x40",
+            "\x81\x40\x81\x40\x81\x40\x8d\xc4\x90\xb6\x82\xb5\x82\xbd\x82\xa2\x95\xfb"
+            "\x82\xcd\x81\x41\x82\xe0\x82\xa4\x88\xea\x93\x78\x8c\x88\x92\xe8\x83\x7b"
+            "\x83\x5e\x83\x93\x82\xf0\x89\x9f\x82\xb5\x82\xc4\x82\xad\x82\xbe\x82\xb3"
+            "\x82\xa2\x81\x42",
+            "\x81\x40\x81\x40\x81\x40\x8d\xc4\x90\xb6\x82\xb5\x82\xbd\x82\xad\x82\xc8"
+            "\x82\xa2\x95\xfb\x82\xcd\x81\x41\x83\x4a\x81\x5b\x83\x5c\x83\x8b\x82\xf0"
+            "\x88\xda\x93\xae\x82\xb5\x82\xc4\x82\xad\x82\xbe\x82\xb3\x82\xa2\x81\x42",
+        };
+        return line >= 0 && line < 8 ? std::string(kLines[line]) : std::string{};
+    }
 };
 
 class TitleMusicRoomMenu {
     TitleState& state;
     TitleMusicRoomPlatform& host;
     i32 row_ = 0;               // +0x28 选中曲（0..count-1 环绕）
-    i32 reveal_lines_ = 0;      // +0x74c 注释/行显影计数（隔帧 +1，封 8）
+    i32 comment_track_ = 0;     // +0x750 当前注释块（Z 时 = row_）
+    i32 reveal_lines_ = 0;      // +0x74c 注释显影计数（隔帧 +1，封 8）
+    bool locked_armed_ = false; // +0x754 已播锁定响应、等待二次 Z
     i32 frames_ = 0;            // 子态屏龄（case0 age≥10 / case3 >9 门）
     bool fail(const std::string& reason);
     bool sound(i32 id);
@@ -68,9 +107,12 @@ public:
         : state(state_), host(host_) {}
     bool update(u32 pressed, u32 repeated);
     // 绘制侧逐帧入队（TitleFrame Draw 回调 → TitleScene → 此处；仅 substate
-    // 2 出列表+注释，对应 0x4554f0 case1/case2 文本队列值域）。
+    // 1/2 出列表+注释，对应 0x4554f0 case1/case2 文本队列值域）。
     bool draw_texts(HudDrawServices& draw);
     i32 row() const { return row_; }
+    i32 comment_track() const { return comment_track_; }
+    i32 revealed_lines() const { return reveal_lines_; }
+    bool locked_armed() const { return locked_armed_; }
 };
 
 }  // namespace th13

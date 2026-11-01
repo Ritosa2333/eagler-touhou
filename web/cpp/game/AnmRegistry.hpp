@@ -14,10 +14,15 @@
 #include <memory>
 #include <unordered_map>
 namespace th13 {
+class AnmRegistry;
+// 只读诊断（探针臂）：主链 walk 入口观测（alternate=false 时每帧一次），
+// 用于在链被本帧子体追加之前抓取成员序（帧后 dump 无法判定父是否链尾）。
+using ChainEntryObserver = void (*)(const AnmRegistry&, bool);
+extern ChainEntryObserver chain_entry_observer;
 class AnmRegistry {
     struct Node {
         AnmVm vm;AnmVm* borrowed=nullptr;u32 slot=0x1fff,handle=0;bool active=false,registered=false,alternate=false;
-        bool frozen_root=false,pending_collection=false;
+        bool frozen_root=false,queued_deletion=false;
         Node* parent=nullptr;std::list<Node*> children;
         std::list<Node*>::iterator position;
     };
@@ -58,6 +63,11 @@ public:
     u32 handle(const AnmVm&)const noexcept;
     u32 slot(const AnmVm&)const noexcept;
     u32 ordered_handle(bool alternate,u32 index)const noexcept;
+    // 绘制专用加入：不进入任何 tick 链，仅把已手动 tick 的 VM 放入本帧
+    // 绘制层桶（原版物品管理器的内嵌 VM：item+0x10/+0x5b4，由 0x42e380
+    // 直接 0x462450 步进，从不属于 0x46f170 链）。调用点必须在主链 update
+    // 重建层桶之后（after_main_update 钩子）。
+    void append_draw(AnmVm& vm);
     u32 ordered_count(bool alternate)const noexcept{return groups[alternate].size();}
     u32& generation_counter()noexcept{return generation;}
 };

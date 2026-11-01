@@ -41,5 +41,31 @@ TEST(curve_hit_callback_can_append_without_updating_new_tail_in_same_traversal) 
     r.sim.advance_lasers();CHECK(r.sim.error().empty());CHECK_EQ(r.sim.lasers.size(),2u);
     for(const auto& l:r.sim.lasers)if(l.generation!=0x10001u)CHECK(!l.has_updated);
 }
+TEST(curve_cancellation_item_gate_does_not_disable_laser_removal) {
+    struct Items final : StageItemHost {
+        int spawned = 0;
+        void spawn_item(float, float, float, i32 kind, float, float) override {
+            if (kind == 9) ++spawned;
+        }
+        void spawn_value_item(i32, float, float, float, float) override {}
+        void on_et_clear(float, float, float) override {}
+    } items;
+    Rig r;
+    r.sim.items = &items;
+    // 004372b1..004372cf reads the caller's spell-controlled flag only for
+    // type-9 production. A spell does not protect the laser from splitting.
+    r.sim.spell.begin(1, "test", 1000, 3, 0);
+    r.sim.split_laser(0, {-100, 128, 0}, {512, 512, 0}, 0, false,
+                      !r.sim.spell.state().active(), true);
+    CHECK(r.sim.lasers[0].pending_remove);
+    CHECK_EQ(items.spawned, 0);
+    r.sim.spell.end();
+    Rig other;
+    other.sim.items = &items;
+    other.sim.split_laser(0, {-100, 128, 0}, {512, 512, 0}, 0, false,
+                          !other.sim.spell.state().active(), true);
+    CHECK(other.sim.lasers[0].pending_remove);
+    CHECK(items.spawned > 0);
+}
 }
 int main(){return th13test::run_all("curve-cancel");}

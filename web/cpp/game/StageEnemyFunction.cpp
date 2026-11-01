@@ -1,5 +1,6 @@
 #include "StageSim.hpp"
 #include "StageMath.hpp"
+#include <algorithm>
 
 namespace th13 {
 namespace {

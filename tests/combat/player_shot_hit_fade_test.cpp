@@ -137,10 +137,17 @@ struct FadeFixture {
                th13::test::load_bank(manager, 5, empty) &&
                th13::test::load_bank(manager, 6, player_bank);
     }
-    // One presentation frame: sync, direct-draw pass 0, flush.
+    // One production frame: sync (Update 20) → main chain (Update 34,
+    // 0x46f170) → post-chain hook → draw schedule layers 11/13 (priorities
+    // 23/27). The shot/fade VM is a registered main-chain member now, so the
+    // direct pass-0 draw no longer submits it.
     bool frame() {
         graphics.fades.clear();
-        if (!presentation->sync(battle, 0) || !presentation->draw(0)) return false;
+        if (!presentation->sync(battle, 0)) return false;
+        if (!manager.update(false)) return false;
+        if (!presentation->draw(0)) return false;
+        if (!renderer.draw_layer(manager.registry.layer(11))) return false;
+        if (!renderer.draw_layer(manager.registry.layer(13))) return false;
         renderer.flush();
         return presentation->error().empty();
     }
@@ -186,7 +193,8 @@ TEST(hit_death_keeps_vm_fading_on_layer_thirteen_then_releases) {
 
     CHECK(fixture.battle.step(fixture.idle));  // move to 214, then enemy_hit
     CHECK_EQ(fixture.battle.shots.size(), size_t(1));  // compaction is next step
-    CHECK(!fixture.battle.shots[0].alive);
+    CHECK(fixture.battle.shots[0].alive);
+    CHECK_EQ(fixture.battle.shots[0].state, 2);
     CHECK(fixture.frame());  // hit frame: interrupt consumed -> layer 13
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
     if (fixture.graphics.fades.empty()) return;
@@ -234,7 +242,8 @@ TEST(birth_frame_hit_fades_without_prior_binding) {
     if (!enemy) return;
     fixture.battle.shots.push_back(fixture.shot(7, 190, 200, 0));
     CHECK(fixture.battle.step(fixture.idle));  // born, moved, hit in one step
-    CHECK(!fixture.battle.shots[0].alive);
+    CHECK(fixture.battle.shots[0].alive);
+    CHECK_EQ(fixture.battle.shots[0].state, 2);
     CHECK(fixture.frame());
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
     if (fixture.graphics.fades.empty()) return;
@@ -244,8 +253,8 @@ TEST(birth_frame_hit_fades_without_prior_binding) {
 }
 
 // 0x446bf0 writes the interrupt unconditionally, but a script without an
-// id-1 label has no fade tail; the port must not strand such a VM forever.
-TEST(hit_death_without_interrupt_label_releases_immediately) {
+// id-1 label has no fade tail; the VM continues its own script.
+TEST(hit_death_without_interrupt_label_keeps_vm_until_script_ends) {
     FadeFixture fixture;
     CHECK(fixture.init(false));
     auto* enemy = fixture.target(200, 200, 10000);
@@ -254,9 +263,10 @@ TEST(hit_death_without_interrupt_label_releases_immediately) {
     fixture.battle.shots.push_back(fixture.shot(1, 190, 200));
     CHECK(fixture.frame());
     CHECK(fixture.battle.step(fixture.idle));
-    CHECK(!fixture.battle.shots[0].alive);
+    CHECK(fixture.battle.shots[0].alive);
+    CHECK_EQ(fixture.battle.shots[0].state, 2);
     CHECK(fixture.frame());
-    CHECK(fixture.graphics.fades.empty());
+    CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
 }
 
 // Out-of-bounds death (0x470110 semantics via consume_player_shot_geometry)
@@ -276,6 +286,39 @@ TEST(out_of_bounds_death_releases_without_fade) {
     CHECK(fixture.graphics.fades.empty());
 }
 
+// Production step_shots compacts dead shots at the end of every step, so the
+// dead+fade branch is only observable when a caller still holds a dead entry.
+// Exercise it directly: the corpse pool must keep the registered handle as a
+// main-chain member (not an owned VM copy) and move it through that handle.
+TEST(dead_shot_visible_to_sync_enters_the_registered_corpse_pool) {
+    FadeFixture fixture;
+    CHECK(fixture.init());
+    fixture.battle.shots.push_back(fixture.shot(5, 190, 200));
+    CHECK(fixture.frame());  // bind + flight tick
+    const u32 handle = fixture.manager.registry.ordered_handle(false, 0);
+    CHECK(handle != 0);
+    // 0x446bf0 hit semantics: VM+0x4a0=1, death pose at the current position.
+    fixture.battle.shots[0].alive = false;
+    CHECK(fixture.frame());
+    CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
+    if (fixture.graphics.fades.empty()) return;
+    CHECK_EQ(fixture.graphics.fades[0].layer, 13);
+    CHECK_NEAR(fixture.graphics.fades[0].x, 190.0f, 0.001f);
+    CHECK(fixture.manager.registry.find(handle) != nullptr);
+    // Corpse drift writes through the registered handle: 24*0.125 = 3/frame.
+    CHECK(fixture.frame());
+    CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
+    if (fixture.graphics.fades.empty()) return;
+    CHECK_NEAR(fixture.graphics.fades[0].x, 193.0f, 0.001f);
+    CHECK(fixture.manager.registry.find(handle) != nullptr);
+    // op1 at label-relative time 22 self-destructs the VM on the 20th frame
+    // after the hit; the main chain reclaims it and the corpse pool drops the
+    // now-invalid handle (0x4464d0's 0x46fb90 lookup failure).
+    for (i32 frame = 0; frame < 19; ++frame) CHECK(fixture.frame());
+    CHECK(fixture.graphics.fades.empty());
+    CHECK(fixture.manager.registry.find(handle) == nullptr);
+}
+
 }  // namespace
 
 // The dead shot stays in battle.shots until the next step's compaction; a
@@ -290,13 +333,14 @@ TEST(double_sync_between_steps_does_not_duplicate_the_corpse) {
     fixture.battle.shots.push_back(fixture.shot(1, 190, 200));
     CHECK(fixture.frame());
     CHECK(fixture.battle.step(fixture.idle));
-    CHECK(!fixture.battle.shots[0].alive);
+    CHECK(fixture.battle.shots[0].alive);
+    CHECK_EQ(fixture.battle.shots[0].state, 2);
     CHECK(fixture.frame());  // first sync consumes the death
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
     CHECK(fixture.frame());  // second sync without a battle step
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));  // same single corpse
     CHECK(fixture.battle.step(fixture.idle));  // compaction happens now
-    CHECK(fixture.battle.shots.empty());
+    CHECK_EQ(fixture.battle.shots.size(), size_t(1));
     CHECK(fixture.frame());
     CHECK_EQ(fixture.graphics.fades.size(), size_t(1));
 }

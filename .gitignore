@@ -48,6 +48,3 @@ tests/replay/build/
 
 # 网页运行时资源（原版权材料，prepare-assets.mjs 从 raw 解包目录拷贝）
 web/sdl-runtime/assets/
-
-# Native test executables and intermediate objects
-tests/*/build/

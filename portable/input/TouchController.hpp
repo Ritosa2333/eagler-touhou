@@ -19,20 +19,21 @@ class TouchController {
         if(context==s.context)return;
         if((context==1||context==2)&&(s.context==1||s.context==2)){
             dialogue.clear();tap={};tap_armed=false;confirm_ticks=0;
-        }else {cancel();confirm_ticks=bomb_ticks=escape_ticks=0;}
+        }else {clear_gestures();confirm_ticks=bomb_ticks=escape_ticks=0;}
         context=s.context;
     }
 public:
     bool enabled=true,unlimited=false,fire=false,focus=false,two_finger=false,double_tap=false;
     float sensitivity=1,stick_x=0,stick_y=0;int mode=0;
     void clear_motion(){dragging=false;primary=instance=0;}
-    // Cancel only the touch gesture ownership. Launcher-held fire/focus/stick
-    // belong to the controls snapshot and are deliberately left for reset().
-    void cancel(){clear_motion();fingers.clear();menu={};dialogue.clear();tap={};tap_armed=false;
-        previous_x=previous_y=target_x=target_y=tap_x=tap_y=0;tap_time=0;}
-    // Lifecycle reset: drop every transient input, including launcher controls.
-    // Keep configuration (enabled/mode/unlimited/sensitivity/serials) intact.
-    void reset(){cancel();fire=false;focus=false;stick_x=stick_y=0;confirm_ticks=bomb_ticks=escape_ticks=0;}
+    // Cancellation drops transient gesture/control ownership, but fire is a
+    // document-level toggle and must survive blur, pause, and retry.
+    void clear_gestures(){clear_motion();fingers.clear();menu={};dialogue.clear();tap={};tap_armed=false;}
+    void cancel(){clear_gestures();
+        focus=false;stick_x=stick_y=0;confirm_ticks=bomb_ticks=escape_ticks=0;}
+    // A new session clears the toggle too. Serial values stay synchronized so
+    // replaying the last control snapshot cannot manufacture an action pulse.
+    void reset(){cancel();fire=false;context=-1;}
     void controls(bool shoot,bool slow,std::uint32_t bomb,std::uint32_t escape,float x,float y){fire=shoot;focus=slow;stick_x=std::clamp(x/32767.f,-1.f,1.f);stick_y=std::clamp(y/32767.f,-1.f,1.f);if(bomb!=bomb_serial){bomb_ticks=3;bomb_serial=bomb;}if(escape!=escape_serial){escape_ticks=3;escape_serial=escape;}}
     void pointer(int type,int id,float x,float y,std::uint64_t now,const TouchState& s,bool key_slow){
         if(!enabled)return;sync_context(s);const float px=x*640,py=y*480;
@@ -44,7 +45,7 @@ public:
             if(primary==id)clear_motion();return;
         }
         if(type==0){fingers.insert(id);if(s.context==2)dialogue.begin(id,px,py,now);if(s.context!=1&&s.context!=2){tap_armed=false;if(!menu.active)menu={true,id,1,px,py,px,py,now};else menu.count++;return;}
-            if(fingers.size()>=4){escape_ticks=3;cancel();return;}const float dx=px-tap_x,dy=py-tap_y;
+            if(fingers.size()>=4){clear_gestures();escape_ticks=3;return;}const float dx=px-tap_x,dy=py-tap_y;
             if(s.context==1&&double_tap&&tap_armed&&now-tap_time<=320&&dx*dx+dy*dy<=38.4f*38.4f){bomb_ticks=3;tap_armed=false;tap={};return;}
             tap_armed=false;if(s.context==1&&double_tap){tap={true,id,1,px,py,px,py,now};tap_moved=false;}
             if(!s.ready||mode>=2||dragging)return;dragging=true;primary=id;previous_x=x;previous_y=y;target_x=s.x;target_y=s.y;instance=s.instance;return;

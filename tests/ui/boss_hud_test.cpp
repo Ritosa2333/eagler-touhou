@@ -315,18 +315,24 @@ TEST(boss_proximity_hides_ring_with_hysteresis) {
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.ring_arc_handle() != 0);
     CHECK(!h.boss.proximity_hidden());
+    const u32 arc = h.boss.ring_arc_handle();
+    const auto stars = h.boss.star_handles();
     input.player_x = 40;
     input.player_y = 0;  // 距离 40 < 80 → 隐藏
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.proximity_hidden());
-    CHECK(h.boss.ring_arc_handle() == 0);
+    CHECK_EQ(h.boss.ring_arc_handle(), arc);
+    CHECK_EQ(h.vm(arc)->pending_interrupt, 3);
+    for (u32 star : stars) CHECK_EQ(h.vm(star)->pending_interrupt, 3);
     input.player_x = 90;  // 90 ∈ [80,96) → 迟滞保持隐藏
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(h.boss.proximity_hidden());
     input.player_x = 100;  // ≥96 → 复原
     CHECK(h.boss.update(input, [&](i32 id) { return sound.play(id); }));
     CHECK(!h.boss.proximity_hidden());
-    CHECK(h.boss.ring_arc_handle() != 0);
+    CHECK_EQ(h.boss.ring_arc_handle(), arc);
+    CHECK_EQ(h.vm(arc)->pending_interrupt, 2);
+    for (u32 star : stars) CHECK_EQ(h.vm(star)->pending_interrupt, 2);
 }
 
 TEST(boss_marker_glyph_tracks_horizontal_distance) {
@@ -488,6 +494,17 @@ TEST(real_resources_match_ring_and_digit_script_map) {
     CHECK(star != nullptr);
     CHECK_EQ(star->source_script, 243);
     CHECK_EQ(star->visual.sprite, 152);      // 3×6 星点
+    for (int frame = 0; frame < 30; ++frame) CHECK(manager.update());
+    const u32 visible_alpha = arc->visual.color >> 24;
+    input.player_y = 128;
+    CHECK(boss.update(input, {}));
+    for (int frame = 0; frame < 30; ++frame) CHECK(manager.update());
+    const u32 near_alpha = arc->visual.color >> 24;
+    CHECK(near_alpha < visible_alpha);
+    input.player_y = 300;
+    CHECK(boss.update(input, {}));
+    for (int frame = 0; frame < 30; ++frame) CHECK(manager.update());
+    CHECK((arc->visual.color >> 24) > near_alpha);
 }
 
 int main() { return th13test::run_all("Boss HUD"); }

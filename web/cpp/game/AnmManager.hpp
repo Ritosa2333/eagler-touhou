@@ -10,6 +10,11 @@
 #include <functional>
 #include <unordered_map>
 namespace th13 {
+// 诊断用只读生成观察器（默认 nullptr，仅浏览器探针臂接）：spawn_child 成功
+// 挂树后回调 (父 VM, 子脚本号, 子句柄)。不改变任何状态；用于按帧对拍
+// option 根/子体的 spawn 相位。
+using AnmSpawnObserver = void (*)(const AnmVm&, i32, u32);
+extern AnmSpawnObserver anm_spawn_observer;
 // 资源模板与活动 VM 共用同一指令引擎；图形存储属可移植渲染器，不归本管理器。
 class AnmManager final:public AnmObjectHost {
     struct Bank {AnmResource data;std::vector<AnmVm> templates;};
@@ -32,6 +37,18 @@ public:
     std::function<bool(AnmVm&,i32)> effect;
     std::function<i32(AnmVm&,float)> effect_update;
     std::function<bool(AnmVm&,i32,float)> effect_interrupt;
+    // 主链 0x46f170 遍历完成后的收尾钩子（update(false)/update() 成功后恰一次；
+    // update(true) 副链不触发）。表现层用它读取本帧 tick 之后的 VM 状态：
+    // 0x4464d0 的四角剔除在下一帧位姿写之前消费上一帧 post-tick 状态，钩子
+    // 必须晚于链遍历、早于下一帧。返回 false = 收尾失败：update 置 error 并
+    // 返回 false（由 Application 回调转成 FrameAction::Error），不得静默吞掉；
+    // 钩子已写入的具体 error 优先保留，不被通用文案覆盖。
+    std::function<bool()> after_main_update;
+    // 主链收尾钩子的当前属主。换关时旧 RunScene 在新 RunScene 之后析构
+    // （Application::begin_run 的 previous_run 局部变量），若无条件清空
+    // 会抹掉新 StagePresentation 刚安装的钩子，导致自机弹快照/出界判定
+    // 整段失效（S1→S2 后伤害注册池耗尽）。析构只清自己的钩子。
+    const void* after_main_update_owner = nullptr;
     AnmManager(GameRandom& random,AnmEnvironment& environment):random(random),environment(environment){}
     AnmEnvironment& scene_environment()noexcept{return environment;}
     void set_paused(bool paused)noexcept{environment.paused=paused;}

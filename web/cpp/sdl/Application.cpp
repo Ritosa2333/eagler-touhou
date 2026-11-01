@@ -3,13 +3,20 @@
 // apply_destination」，docs/plans/ui-base.md §四）。
 #include "ApplicationState.hpp"
 #include "game/TitleFrame.hpp"
+#include "game/VisualBootstrap.hpp"
 
 #include <SDL3/SDL.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
+namespace th13 { extern bool damage_probe_enabled; }
 namespace th13::sdl {
 
 namespace {
@@ -25,6 +32,7 @@ constexpr i32 kFrontBank = 3;
 // scenery = STD 引用 ANM（st01.std → st01wl.anm）。
 constexpr i32 kStageBank = 4, kBulletBank = 5, kPlayerBank = 6, kSceneryBank = 7;
 constexpr i32 kSpiritBank = 25; // 00405530: astral.anm.
+constexpr i32 kStageLogoBank = 27;
 }  // namespace
 
 Application::Application() : state(std::make_unique<ApplicationState>()) {}
@@ -64,6 +72,21 @@ bool ApplicationState::read(const std::string& name, std::vector<u8>& bytes, boo
 bool ApplicationState::prepare_platform() {
     if (platform_prepared) return true;
     if (!graphics.initialize()) return fail(graphics.error);
+    // 0043a040 seeds both RNGs from timeGetTime's low16 bits.
+#ifdef __EMSCRIPTEN__
+    // Deterministic same-seed capture support: the Web test harness may set
+    // window.__th13_boot_seed before module initialization.  When absent the
+    // production path still uses SDL_GetTicks().
+    const int override = EM_ASM_INT({ return window.__th13_boot_seed ?? -1; });
+    boot_seed = override >= 0 ? u16(override) : u16(SDL_GetTicks());
+#else
+    boot_seed = u16(SDL_GetTicks());
+#endif
+    visual.reseed(boot_seed);
+    game_random.reseed(boot_seed);
+    // 0046b7c4/0046b7ee load ECX=004dc324 before distortion random draws.
+    environment.shared_game_rng = &game_random;
+    loading_environment.shared_game_rng = &game_random;
     platform_prepared = true;
     return true;
 }
@@ -171,10 +194,15 @@ bool ApplicationState::prepare_loading() {
 bool ApplicationState::loading_waiting() const { return loading_startup || pending_load != 0; }
 
 bool ApplicationState::draw_loading(bool signature) {
-    // 真机 boot 开场（oracle 标题窗实证）：仅 sig.anm script0（自带 script1 右半
-    // spawn，两半 512×480 拼 640 宽）自黑场 10f 淡入，g1..g179 共 179 帧后卸载；
-    // 无 ascii 祷告/提示幕（旧 create(2,17) 为 th15 残留，已删）。180 帧挡板由
-    // advance_loading 计（g181 = 标题任务使能帧）。
+    // 真机 boot 开场：sig.anm script0（自带 script1 右半 spawn，两半 512×480
+    // 拼 640 宽）自黑场 10f 淡入，g1..g179 共 179 帧后卸载。**同时**原版在
+    // boot f0 就创建 ascii.anm script17 祈祷根（0x439ded/0x42bfa0；G 归因：
+    // artifacts/round-16/agent-g-menu/segment-attribution.json）：script17 每
+    // 4 帧 op503 生成 script16，每次 12 个变量读 = 24 visual index 单位；
+    // 原生签名幕 1..177 共 45 次 = 1080 单位（本文件旧注释「无 ascii 祷告幕」
+    // 与原生迹线矛盾，已按证据更正）。180 帧挡板由 advance_loading 计
+    // （g181 = 标题任务使能帧），两种 draw_loading 分支都必须建这棵树：
+    // signature=true 是生产启动幕，signature=false 是菜单/回放换场挡板。
     graphics.presentation.reset();
     if (!loading_animations.retire(loading_signature) ||
         !loading_animations.retire(loading_prayer))
@@ -190,6 +218,11 @@ bool ApplicationState::draw_loading(bool signature) {
             if (auto* right = loading_animations.registry.find_child_script(*boot, 1, 0))
                 right->visual.layer = 26;
     }
+    // 417370 /439ced create ASCII script17 at (480,392) while loading. The
+    // create only primes the root (no RNG draws); the loader's ordinary
+    // main+secondary passes drive the op501/op503/op200 loop from there.
+    loading_prayer = loading_animations.create(2, 17, -1, 0, {480,392,0});
+    if (!loading_prayer) return fail(loading_animations.error);
     loading_startup = signature;
     loading_frames = 0;
     loading_debt = 0;
@@ -224,17 +257,103 @@ bool ApplicationState::render_loading() {
     return true;
 }
 
+bool ApplicationState::advance_loading_caption() {
+    // 0x46f170 + 0x46f240 over the loading manager: one loader frame. The
+    // production startup drives its 180-frame gate with this; the debug replay
+    // entry uses the same primitive for the three loader frames the original
+    // runs between the ASCII script17 create (f0) and battle frame 0 (f4).
+    if (!loading_animations.update(false) || !loading_animations.update(true))
+        return fail(loading_animations.error);
+    return true;
+}
+
+bool ApplicationState::draw_loading_battle() {
+    if (!run || !loading_prayer) return true;
+    if (!loading_animations.registry.find(loading_prayer)) return true;
+    // progress.stage_frame is sampled after this frame's update: battle frame
+    // 0 -> 1, battle frame 9 -> 10. Native draws the fading loading sheet for
+    // battle frames 0..9 and retires the tree before frame 10 (H evidence:
+    // loading-op-ownership.json, last drawn frame 9).
+    const i32 battle_frame = progress.stage_frame - 1;
+    if (battle_frame < 0 || battle_frame > 10) return true;
+    if (battle_frame == 10) {
+        // 0x4172e0 -> 0x46fc30: retire the whole caption tree. Retirement only
+        // marks the tree; it draws nothing and consumes no RNG.
+        if (!loading_animations.retire(loading_prayer))
+            return fail(loading_animations.error);
+        return true;
+    }
+    // Battle frame 0: one fore-pool tick (layer 31/32 only) brings the caption
+    // VMs to the exact state the native draw logs at frame 0 (alpha 0x9F on
+    // the UP strip, 2-triangle strip). The layer26 script17 root is
+    // deliberately not ticked: its op200 loop would spawn script16 and draw
+    // visual RNG, which the original avoids by interrupting the root at battle
+    // start. The script14/15/16 children have no random opcodes left after
+    // their initial tick, so this tick adds no visual-RNG draw (b2-boot 300).
+    if (battle_frame == 0) {
+        if (!loading_animations.update(true)) return fail(loading_animations.error);
+    }
+    // Native fades the still-live loading sheet with the loader's 30-frame
+    // fade-out: the drawn vertex alpha is floor(base * (30 - f) / 30) with
+    // base 0x9F at battle frame 0, giving the measured 0x9F,0x99,0x94,0x8F,
+    // 0x89,0x84,0x7F,0x79,0x74,0x6F ramp (H loading-op-ownership.json). The
+    // port has no equivalent global loader-fade multiplier, so apply it to
+    // the fore-pool VM colors for this draw only and restore them afterwards;
+    // no Update phase, timer or RNG state is touched.
+    struct SavedColor {
+        AnmVm* vm;
+        u32 color;
+        u32 secondary;
+    };
+    std::vector<SavedColor> saved;
+    auto& fore = loading_animations.registry.layer(31);
+    saved.reserve(fore.size());
+    const u32 fade = u32(30 - battle_frame);
+    for (auto* vm : fore) {
+        saved.push_back({vm, vm->visual.color, vm->visual.secondary_color});
+        vm->visual.color = (vm->visual.color & 0x00ffffffu) |
+                           (u32(u8((vm->visual.color >> 24) * fade / 30u)) << 24);
+        vm->visual.secondary_color = (vm->visual.secondary_color & 0x00ffffffu) |
+                                     (u32(u8((vm->visual.secondary_color >> 24) * fade / 30u)) << 24);
+    }
+    // Same submission context as AnmDrawSchedule's layer31 entry
+    // ({31,71,2,false,true,true,true,false}): full-screen camera, fog off,
+    // depth write off/compare always, no presentation offset.
+    renderer.invalidate();
+    bool drawn = views.camera(DrawCamera::Fullscreen, false);
+    if (drawn) {
+        graphics.set_fog(false);
+        graphics.set_depth_mask(false);
+        graphics.set_depth_compare(touhou::graphics::Compare::Always);
+        renderer.offset = {};
+        drawn = renderer.draw_layer(fore);
+    }
+    for (const auto& item : saved) {
+        item.vm->visual.color = item.color;
+        item.vm->visual.secondary_color = item.secondary;
+    }
+    if (!drawn) return fail(renderer.error.empty() ? "Loading caption camera unavailable"
+                                                   : renderer.error);
+    return true;
+}
+
 bool ApplicationState::advance_loading(double delta) {
     // 启动保留 180 帧原生装载动画；仅推进隔离的装载 ANM 时钟（th15 同款）。
     loading_debt += std::clamp(delta, 0., .1);
     while (loading_debt + 1e-9 >= 1. / 60. && loading_frames < 180) {
         loading_debt = std::max(0., loading_debt - 1. / 60.);
-        if (!loading_animations.update(false) || !loading_animations.update(true))
-            return fail(loading_animations.error);
+        if (!advance_loading_caption()) return false;
         ++loading_frames;
     }
     if (!render_loading()) return false;
     if (loading_frames >= 180) {
+        // 0x4172e0 -> 0x46fc30 retires the caption tree when the harness gate
+        // ends (native trace: last prayer spawn at frame 177, none during the
+        // 181..480 title idle window). Retire both roots so no loading VM can
+        // survive into the title or be ticked by a later scene.
+        if (!loading_animations.retire(loading_signature) ||
+            !loading_animations.retire(loading_prayer))
+            return fail(loading_animations.error);
         loading_startup = false;
         loading_debt = 0;
     }
@@ -248,6 +367,10 @@ bool ApplicationState::initialize(bool device) {
     // 字体设备失败不终止启动（标题/HUD 文本走 ascii.anm 通道，不依赖字体），
     // 但显式记录：对话日文渲染保持 BLOCKED，随 projection[15] 暴露，不静默。
     if (!fonts.initialize()) fonts_failure = fonts.error;
+    // 0043a040 -> 0045ac90 builds DAT_004be8a0 with 256 visual RNG steps.
+    // The table is retained by the font/runtime owner; advancing the same
+    // visual RNG here preserves the ANM stream before title construction.
+    visual_font_noise_table = visual_font_noise(visual);
     if (!audio_device.initialize(device)) return fail(audio_device.error);
     environment.raster_scale = float(graphics.render_scale);
     environment.render_target_has_alpha = true;
@@ -298,7 +421,19 @@ bool ApplicationState::initialize(bool device) {
                              };
         if (scheduler.add(callback, FramePass::Update, index == 0 ? 9 : 34) < 0)
             return fail("Application animation callback registration failed");
-    }
+    }    // Draw gate 2: the loader's ascii script17 fore-pool is still drawn by the
+    // native manager for battle frames 0..9 (ascii/loading.png quad+UP with a
+    // 10-frame alpha fade, then retired). The port's isolated loading manager
+    // has no scene draw callbacks, so submit its layer31 at the layer31
+    // schedule slot: after the main manager's layer31 (priority 71) and before
+    // the ASCII text space0 pass (priority 78).
+    loading_battle_draw.owner = this;
+    loading_battle_draw.enabled = true;
+    loading_battle_draw.run = [](void* p) -> i32 {
+        return static_cast<ApplicationState*>(p)->draw_loading_battle() ? 1 : 5;
+    };
+    if (scheduler.add(loading_battle_draw, FramePass::Draw, 72) < 0)
+        return fail("Loading caption draw callback registration failed");
     initialized = true;
     return begin_title(0);
 }
@@ -311,6 +446,7 @@ ApplicationState::~ApplicationState() {
         ending.reset();
     }
     release_run();
+    scheduler.remove(loading_battle_draw);
     for (auto& callback : animation_updates) scheduler.remove(callback);
     display.reset();
     animations.resource_release = nullptr;
@@ -328,11 +464,23 @@ void ApplicationState::release_run(bool preserve_hud) {
     dialogue_text.release(animations);  // ~RunScene 已释放；幂等兜底
     // 对局 bank 卸载（unload 从 banks 摘除并落 retired 队列，供重开再装载）；
     // 常驻 bank（text/ascii/effect）只 retire 活动 VM，资源本体跨场景常驻。
-    for (const auto bank : {kFrontBank, kStageBank, kBulletBank, kPlayerBank, kSceneryBank, 26,
+    for (const auto bank : {kFrontBank, kStageBank, kBulletBank, kPlayerBank, kSceneryBank, 26, kStageLogoBank,
                             kSpiritBank})
         if (!preserve_hud || bank != kFrontBank) animations.unload(bank);
     if (!preserve_hud)
         for (const auto bank : {0, 2, 8}) animations.retire_resource(bank);
+    // 004172e0's caption slot must not outlive the run. preserve_hud keeps
+    // bank 2 loaded, so retire the tree explicitly instead of dropping the
+    // handle (an abandoned transition would otherwise keep spawning script16
+    // particles in the title/menu).
+    animations.retire(transition_prayer);
+    transition_prayer = 0;
+    // A pending next-stage scenery never materialized (title/quit before the
+    // loader gate's transition phase): drop the deferred request so a later
+    // stage cannot inherit it.
+    transition_scenery_pending = false;
+    transition_scenery_bank = -1;
+    transition_scenery_std.clear();
     animations.collect_resources();
     for (auto& callback : animation_updates) callback.enabled = true;
     environment.paused = false;
@@ -380,7 +528,13 @@ bool ApplicationState::begin_title(i32 reason) {
         ending.reset();
     }
     clear_ending_windows();
+    // Leaving a run (including a pause opened mid-transition) discards the
+    // prepared 0xc stage and any replay restore pointer; otherwise the next
+    // normal launch would be mistaken for a replay session.
     stage_transition_active = stage_transition_loading = false;
+    stage_startup_age = -1;
+    pending_replay_stage = nullptr;
+    pending_replay_stage_index = 0;
     title.reset();
     release_run();
     replay_active = false;
@@ -398,7 +552,10 @@ bool ApplicationState::begin_title(i32 reason) {
 bool ApplicationState::begin_run() {
     const bool new_run = progress.new_run;  // 关终 0xc 换关为延续对局（非新开）
     const bool preserve_hud = run && !new_run;
-    const bool continuing = stage_transition_active;
+    // 0xc continuation keeps the live HUD/banks; a fresh retry (0xa/0xb) is
+    // new_run and must take the release_run path even if a transition was
+    // pending when the pause menu opened.
+    const bool continuing = stage_transition_active && !new_run;
     std::unique_ptr<RunScene> previous_run;
     // 回放会话（0x42b990 恢复序挂点在下方消费 pending_replay_stage，先留存）：
     // 原版回放无 BGM（0x4dc8a8&0x10 时 0x43ae40/0x43af40 的曲命令退化为停曲）。
@@ -411,7 +568,7 @@ bool ApplicationState::begin_run() {
     if (continuing) {
         pause.reset();
         previous_run = std::move(run);
-        for (i32 bank : {kStageBank, kBulletBank, kSpiritBank}) animations.unload(bank);
+        for (i32 bank : {kStageBank, kBulletBank, kSpiritBank, kStageLogoBank}) animations.unload(bank);
         animations.collect_resources();
     } else {
         release_run(preserve_hud);
@@ -453,27 +610,7 @@ bool ApplicationState::begin_run() {
     progress.rate = 1;
     progress.new_run = false;  // 已入对局：下次 begin_run 即换关延续
     replay_active = replay_session;
-    // 回放恢复挂点（0x42b990 恢复序的 port 等价）：上文难度表点值/擦弹清零
-    //（:103-110 关首语义）之后、场景构造与 ECL 第 0 帧之前，执行
-    // 0x447900 case1 + 0x449070 的种子与 22-dword 恢复——最终值以 stage 头
-    // 为准（覆盖上文的表写与 HUD 默认）。正常开局/换关不进入。
-    if (pending_replay_stage && !continuing) {
-        const ReplayStage& stage = *pending_replay_stage;
-        pending_replay_stage = nullptr;
-        ReplayRestoreLog log;
-        std::string restore_error;
-        const ReplayRestoreTarget target{&progress, &selection_player, &selection_score,
-                                         &game_random, &visual};
-        if (!ReplaySession::restore_stage(replay_file, pending_replay_stage_index, target, log,
-                                          restore_error))
-            return fail(restore_error);
-        // 畸变侧环境内嵌 RNG（AnmEnvironment.game_rng，ins 302 消费）：原版
-        // 恢复只写 0x4dc31c 种子；port 该实例与 visual 分家（别名化需改
-        // AnmInterpreter 消费点，非本轮写集），此处同拍写入 stamp 保持种子
-        // 语义，计数独立——与原版流差异登记于 HANDOFF。
-        environment.game_rng.reseed(log.seed);
-        ReplaySession::emit_log(log);
-    }
+    const bool cold_replay = pending_replay_stage && !continuing;
     std::vector<u8> bytes;
     if (!animations.resource(kFrontBank) &&
         (!read("front.anm", bytes) ||
@@ -519,13 +656,20 @@ bool ApplicationState::begin_run() {
         !graphics.preload(*animations.resource(kPlayerBank))))
         return fail("Player ANM bank: " + animations.error + graphics.error);
     // 第 4 员 effect=8（kBanks 表 effect.anm 同值）：ECL 307/308 特效 VM 创建源。
-    StagePresentation::Banks banks{kStageBank, kBulletBank, kPlayerBank, 8, kSpiritBank};
+    StagePresentation::Banks banks{kStageBank, kBulletBank, kPlayerBank, 8, kSpiritBank,
+                                   kFrontBank};
     // STD 舞台背景资产名（0x4bb4f0 行 +0x4；Stage1 = st01.std → st01wl.anm）。
     char stage_std[16];
     std::snprintf(stage_std, sizeof stage_std, "st%02d.std", progress.stage);
     if (!run_hud)
         run_hud = std::make_unique<GameHud>(animations, progress, selection_player,
                                             selection_score, kFrontBank, 2);
+    // 42b990 loads stage-table +0x10's logo separately from ECL ANIM banks.
+    // ECL554 creates its script0 at the script's actual trigger frame.
+    char stage_logo[20];
+    std::snprintf(stage_logo, sizeof stage_logo, "st%02dlogo.anm", progress.stage);
+    if (!preload_scenery_animation(kStageLogoBank, stage_logo)) return false;
+    run_hud->stage_logo_bank = kStageLogoBank;
     if (!run_player) run_player = std::make_unique<StagePlayerState>();
     run = std::make_unique<RunScene>(progress, selection_player, selection_score, animations,
                                      renderer, environment, *this, scheduler, banks, kFrontBank,
@@ -537,6 +681,20 @@ bool ApplicationState::begin_run() {
     char sht[16];
     std::snprintf(sht, sizeof sht, "pl%02da.sht", character);
     run->battle_sht = sht;  // 移速/弹型源（§7.2；正常开局与回放同源）
+    if (cold_replay) {
+        pending_replay_stage = nullptr;
+        run->restore_after_player_prepare = [this] {
+            ReplayRestoreLog log;
+            std::string restore_error;
+            const ReplayRestoreTarget target{&progress, &selection_player, &selection_score,
+                                             &game_random, &visual};
+            if (!ReplaySession::restore_stage(replay_file, pending_replay_stage_index,
+                    target, log, restore_error, ReplayRestorePhase::Load))
+                return fail(restore_error);
+            ReplaySession::emit_log(log);
+            return true;
+        };
+    }
     if (previous_run) {
         run->preserve_presentation_from(*previous_run);
         previous_run.reset();
@@ -547,12 +705,22 @@ bool ApplicationState::begin_run() {
         if (!begin_record_stage()) return false;
     }
     if (!run->initialize(HudEntryContext{0, new_run})) return fail(run->error);
+    // 0042c550's activation branch (0x42c881 / 0x42c9fb) -> 004172e0 ->
+    // 0046fc30 retires the loading caption tree (root plus spawned
+    // script14/15/16 children). The script's label1 is a 10-frame fade, not
+    // the teardown; retire the whole tree so it cannot draw into stage 2.
+    if (continuing) {
+        if (!animations.retire(transition_prayer))
+            return fail("Next-stage loading caption release: " + animations.error);
+    }
     if (!replay_session) run->record_input = [this](const GameInput& input) {
         if (!recorder.record(input, 0)) fail("Replay input recording failed");
     };
     if (replay_session) {
-        run->playback_input = [this, restore_player=true]() mutable -> const GameInput* {
+        int restore_player_first = 1;
+        run->playback_input = [this, restore_player=true, restore_player_first]() mutable -> const GameInput* {
             if (replay_finished) return nullptr;
+
             if(restore_player) {
                 std::string error;
                 const auto* stage=replay_cursor?replay_cursor->stage():nullptr;
@@ -560,10 +728,15 @@ bool ApplicationState::begin_run() {
                     fail(error.empty()?"Replay starting stage unavailable":error);return nullptr;
                 }
                 restore_player=false;
+                restore_player_first = 1;
             }
             const u32 recorded = replay_take_input();
             if (replay_finished) return nullptr;
             replay_input.update(recorded);
+            if (::th13::damage_probe_enabled)
+                std::printf("PB stage=%d f=%d first=%d rec=%u\n", progress.stage,
+                            progress.stage_frame, int(restore_player_first), recorded);
+            restore_player_first = 0;
             return &replay_input;
         };
     }
@@ -625,23 +798,77 @@ bool ApplicationState::begin_record_stage() {
 
 bool ApplicationState::prepare_next_stage() {
     if (!run) return fail("Stage transition has no run");
+    // 42b990's DAT_004dcc30==0 continuation catches up the record before
+    // Replay restoration/loading. The loading gate skips HUD convergence.
+    if (progress.high_score < selection_score.score)
+        progress.high_score = selection_score.score;
     stage_transition_loading = false;
     stage_transition_active = true;
     stage_startup_age = -1;
+    // 0xc 换关门（0x42bfa0）：原版关终 0x42cd40 → 0x42b6d0 在 input 12184
+    // 置自机隐藏位、对 option 根 pending=3 并清隐藏计数 player+0x1469c；
+    // 本 port 在门首（input 12185）下发同一 label3（一帧代理成立条件见
+    // StagePresentation::hide_player_options 注释）。0x442960 隐藏支路在
+    // 门内每帧计数，第 30 帧（计数 29，input 12214）对 option 根 pending=1。
+    transition_gate_active = true;
+    transition_gate_frames = 0;
     progress.scene_flags |= 4u;
     if (!files.save_score()) return fail(files.error);
     run_hud->prepare_stage_assets();
+    // 0042bfa0's 0xc branch (0x42bffd/0x42c02e/0x42c061) calls 00417370
+    // before 00418b50/00438520 retire the old managers. 00417370 ->
+    // 0046f820 creates ASCII script17 in the main ANM manager; the create
+    // only performs the root's initial tick, and the scheduler's animation
+    // passes (priorities 9/34) advance it later in this same frame.
+    if (!transition_prayer) {
+        transition_prayer = animations.create(2, 17, -1, 0, {480,392,0});
+        if (!transition_prayer) return fail("Next-stage loading caption: " + animations.error);
+    }
+    char name[16]; std::snprintf(name, sizeof name, "st%02d.std", progress.stage);
+    const i32 bank = next_scenery_bank;
+    next_scenery_bank = bank == 7 ? 26 : 7;
+    // 0x42bfa0's 0xc branch retires the old battle managers on the door frame
+    // (0x418b50/0x414180 enemies, 0x412b00 bullets, 0x438520 items) but the
+    // next-stage STD scenery is built later by the loader gate. Stage 3's
+    // scenery ANM scripts read one visual RNG value at their first primitive
+    // tick (st03wl scripts 11-16 = 12 index units; probe:
+    // artifacts/round-16/agent-b-loading/probe/scenery_probe). The original
+    // consumes those draws at the gate's fade phase, not at the door: native
+    // continuous th13_01 shows the door frame (input 27673) carrying only the
+    // caption's 24-unit burst, with the extra 6 draws appearing at input
+    // 27793 when start_transition fires. Keep the door teardown here and
+    // defer the scenery load/initialize (and its RNG consumption) to the
+    // ordinary start_transition trigger in step(). RunScene::prepare_transition
+    // still owns both halves; this re-uses its teardown via the same public
+    // state it mutates.
+    for (auto& enemy : run->battle.sim.enemies)
+        if (run->battle.sim.retire_sink) run->battle.sim.retire_sink(enemy->serial);
+    run->battle.sim.enemies.clear();
+    run->battle.sim.bullets.clear();
+    run->battle.item_manager.reset_items();
+    // 00438520 destroys DAT_004c22a4, the same manager whose +0x14 pool
+    // 00438ec0 spawns spirits into; reset_items covers the item pools only.
+    for (auto& spirit : run->battle.item_manager.spirits()) spirit = Spirit{};
+    run->presentation->release_stage();
+    run->transition_wait = true;
+    transition_scenery_pending = true;
+    transition_scenery_bank = bank;
+    transition_scenery_std = name;
+    // 0x42b6d0 的 option 根 label3 中断（见上方门首注释）：句柄保留，
+    // deferred pending=3 使本帧主链 tick 不前进计时器，卫星出生顺延一帧。
+    // 0x42b6d0 已在 clear 帧（msg_stage_clear）下发；门只在尚未下发时兜底。
+    if (!run->presentation->options_hidden() &&
+        !run->presentation->hide_player_options())
+        return fail(run->presentation->error());
     if (replay_active) {
         const i32 index = ReplaySession::stage_index(replay_file, progress.stage);
         if (index < 0) return fail("Replay next stage missing");
         pending_replay_stage_index = u32(index);
         pending_replay_stage = &replay_file.stages[u32(index)];
-        ReplayRestoreLog log;
-        std::string error;
-        if (!ReplaySession::restore_stage(replay_file, u32(index),
-            {&progress, &selection_player, &selection_score, &game_random, &visual}, log, error))
-            return fail(error);
-        environment.game_rng.reseed(log.seed);
+        // 0x449070（装载器 0042b990 回放分支，DAT_004be830&2）在装载帧的
+        // 动画抽取之后触达：连续参考 frame 12185 先做 24 index 单位旧血缘
+        // 抽取，随后 gs/vs 重打 stamp、gi 清零。恢复延迟到本帧 step 尾部。
+        pending_transition_restore = true;
     } else {
         static constexpr i32 point_init[] = {5000,10000,15000,20000,20000,100000};
         progress.max_point = point_init[progress.difficulty] * 100;
@@ -649,10 +876,7 @@ bool ApplicationState::prepare_next_stage() {
         // 448ec0 creates the next recording slot at activation; the old slot
         // continues collecting inputs throughout the HUD/startup gates.
     }
-    char name[16]; std::snprintf(name, sizeof name, "st%02d.std", progress.stage);
-    const i32 bank = next_scenery_bank;
-    next_scenery_bank = bank == 7 ? 26 : 7;
-    return run->prepare_transition(bank, name) || fail(run->error);
+    return true;
 }
 
 bool ApplicationState::activate_next_stage() {
@@ -669,6 +893,8 @@ bool ApplicationState::activate_next_stage() {
     pending_replay_stage = nullptr;
     stage_transition_active = false;
     stage_startup_age = -1;
+    transition_gate_active = false;
+    transition_gate_frames = 0;
     return true;
 }
 
@@ -837,19 +1063,58 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
         if (!prepare_next_stage()) return false;
         loaded_transition = true;
     }
+    // 门内第 30 帧（门首=0，input 12214）：0x442960 隐藏支路 counter>0x1d，
+    // 对每个 option 根（0xa368/0xa36c 两组）置 pending=1 并清槽；每帧
+    // counter>0x1d 都会重入，故用 >= 且 interrupt_player_options 幂等。
+    // input 12210 的卫星已出生并绘制，12214 的出生被拦下，根按
+    // label1(t=4) → op1(t=8) 于 input 12218 回收。
+    // 0x442960 属原生 player update：environment.paused 或 scene_flags&0x70
+    // 的覆盖层帧不推进 player+0x1469c、也不触发 interrupt。门计数与触发
+    // 条件统一走 transition_gate_player_update_runs（原生可测函数），避免
+    // 门内暂停 >=30 帧让 port 在暂停中提前清掉 option 树。
+    const bool gate_player_update =
+        transition_gate_player_update_runs(environment.paused, progress.scene_flags);
+    if (transition_gate_active && stage_transition_active && !loaded_transition &&
+        transition_gate_should_interrupt(transition_gate_frames, environment.paused,
+                                         progress.scene_flags) &&
+        run && run->presentation) {
+        if (!run->presentation->interrupt_player_options())
+            return fail(run->presentation->error());
+    }
     if (stage_transition_active && !loaded_transition &&
         !environment.paused && !(progress.scene_flags & 0x70u)) {
         progress.scene_flags &= ~4u;
         if (stage_startup_age < 0) {
             if (!(run->hud.flags & 0x100u) || run->hud.clear_age.current >= 120) {
+                // Loader gate reached its transition phase: build the next STD
+                // scenery here (ordinary start_transition trigger), matching
+                // the original where the scenery ANM first ticks land on this
+                // frame rather than the 0042bfa0 door (see prepare_next_stage).
+                if (transition_scenery_pending) {
+                    if (!run->prepare_transition(transition_scenery_bank,
+                                                 transition_scenery_std))
+                        return fail(run->error);
+                    transition_scenery_pending = false;
+                }
                 if (!run->start_transition()) return false;
                 stage_startup_age = 0;
             }
         } else if (stage_startup_age == 30) {
+            // [妖梦 S2 相位取证] age==30 与原生同拍：ACT 帧打印（e24）实证
+            // activate_next_stage 发生在 step=12343（boot 偏移 8 → input
+            // 12335，S2 首帧），S2 两个 option 根首次 walk 入口 timer=1
+            // （e18/e27 chain-walk label0），与原生一致。曾试 age==31 延迟
+            // 一帧（e19/e21），反而把首次 walk 推到 timer=2（相位错位），
+            // 已回滚；26792 的 −1 漂移发生在 S2 中段（12335..26695），
+            // 与本激活帧无关。
             if (!activate_next_stage()) return false;
         }
         if (stage_transition_active && stage_startup_age >= 0) ++stage_startup_age;
     }
+    // 门内帧计数（prepare_next_stage 当帧=0）：只在原生 player update 会跑
+    // 的帧推进；暂停/覆盖层帧冻结计数。activate_next_stage 清零。
+    if (transition_gate_active && stage_transition_active && gate_player_update)
+        ++transition_gate_frames;
     if (title) {
         title->controls({input.held, input.pressed, input.repeated, 0});
         if (scheduler.update() < 0)
@@ -887,6 +1152,16 @@ bool ApplicationState::step(const GameInput& input, float fps, bool lost_focus) 
             return fail(graphics.error);
     } else {
         return fail("Application has no active scene");
+    }
+    // 换关装载帧的 0x449070 恢复点：本帧全部场景/动画更新（含旧血缘视觉
+    // 抽取）已完成、下一帧消费之前，执行种子/计数/22 dword 恢复。
+    if (pending_transition_restore) {
+        pending_transition_restore = false;
+        ReplayRestoreLog log;
+        std::string error;
+        if (!ReplaySession::restore_stage(replay_file, pending_replay_stage_index,
+            {&progress, &selection_player, &selection_score, &game_random, &visual}, log, error))
+            return fail(error);
     }
     ending_fades.erase(std::remove_if(ending_fades.begin(), ending_fades.end(),
         [this](const auto& fade) { return !scheduler.contains(fade->update); }), ending_fades.end());

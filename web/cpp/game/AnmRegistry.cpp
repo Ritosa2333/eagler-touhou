@@ -2,8 +2,9 @@
 #include "AnmOverlay.hpp"
 #include <algorithm>
 namespace th13 {
+ChainEntryObserver chain_entry_observer = nullptr;
 // 卸载资源时把绑定它的 VM 标待回收（0x46fea0 语义：render_flags |= 0x20）。
-void AnmRegistry::retire_resource(const AnmResource* resource)noexcept{if(!resource)return;for(auto& group:groups)for(auto* entry:group)if(entry->vm.resource==resource)entry->vm.visual.render_flags|=32u;}
+void AnmRegistry::retire_resource(const AnmResource* resource)noexcept{if(!resource)return;for(auto& group:groups)for(auto* entry:group)if(entry->vm.resource==resource)entry->vm.visual.render_flags=entry->vm.visual.render_flags|32u;}
 bool AnmRegistry::references_resource(const AnmResource* resource)const noexcept{
  if(!resource)return false;const auto uses=[&](auto&& self,const AnmVm& vm)->bool{if(vm.resource==resource||vm.sprite_resource==resource)return true;if(vm.geometry.overlay)for(const auto& panel:vm.geometry.overlay->panels)if(panel&&self(self,*panel))return true;return false;};
  for(const auto& entry:nodes)if(entry.second->active&&uses(uses,entry.second->vm))return true;
@@ -14,7 +15,7 @@ AnmRegistry::Node* AnmRegistry::node(AnmVm& vm)const noexcept{const auto it=node
 AnmVm* AnmRegistry::allocate(){
     Node* entry=nullptr;if(!free_slots.empty()){const u32 slot=free_slots.back();free_slots.pop_back();if(!pool[slot]){pool[slot]=std::make_unique<Node>();pool[slot]->slot=slot;nodes.emplace(&pool[slot]->vm,pool[slot].get());}entry=pool[slot].get();}
     else{auto extra=std::make_unique<Node>();entry=extra.get();nodes.emplace(&entry->vm,entry);overflow.emplace(entry,std::move(extra));}
-    entry->active=true;entry->registered=false;entry->pending_collection=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;active_count++;return &entry->vm;
+    entry->active=true;entry->queued_deletion=false;entry->registered=false;entry->handle=0;entry->parent=nullptr;entry->children.clear();entry->vm.rotation_parent=entry->vm.creation_parent=nullptr;active_count++;return &entry->vm;
 }
 u32 AnmRegistry::submit(AnmVm& vm,u32 ordering){
     auto* entry=node(vm);if(!entry||entry->borrowed||!entry->active||entry->registered){error="Animation instance cannot be registered";return 0;}
@@ -39,12 +40,13 @@ bool AnmRegistry::attach(AnmVm& child,AnmVm& parent){
     entry->parent=owner;owner->children.push_front(entry);return true;
 }
 void AnmRegistry::collect(Node& entry){
-    // ANM render_flags bit 6 belongs to ins424, not pool bookkeeping.
-    if(entry.pending_collection)return;
-    entry.pending_collection=true;
-    for(auto* child:entry.children)collect(*child);
+    // Host bookkeeping must not occupy native render bit6: ins424 writes it.
+    if (entry.queued_deletion) return;
+    entry.queued_deletion = true;
+    for (auto* child : entry.children) collect(*child);
     pending_deletion.push_back(&entry);
-    entry.vm.rotation_parent=entry.vm.creation_parent=nullptr;entry.vm.visual.render_flags|=32;
+    entry.vm.rotation_parent = entry.vm.creation_parent = nullptr;
+    entry.vm.visual.render_flags |= 0x20u;
 }
 void AnmRegistry::requeue_to_back(AnmVm& vm){
     // [f389 标题批序] 把已注册 VM 挪到其链表尾（不改变任何运行态；仅
@@ -65,8 +67,8 @@ void AnmRegistry::erase(Node& entry){
     if(entry.registered)groups[entry.alternate].erase(entry.position);
     if(entry.parent)entry.parent->children.remove(&entry);
     // 0x46f690：子链全体摘父指针并标待回收（0x20），下帧由链扫描回收。
-    for(auto* child:entry.children){child->parent=nullptr;child->vm.rotation_parent=child->vm.creation_parent=nullptr;child->vm.visual.render_flags|=32u;}entry.children.clear();
-    entry.vm.rotation_parent=entry.vm.creation_parent=nullptr;entry.vm.instruction_offset=-1;entry.active=entry.registered=false;entry.handle=0;active_count--;
+    for(auto* child:entry.children){child->parent=nullptr;child->vm.rotation_parent=child->vm.creation_parent=nullptr;child->vm.visual.render_flags=child->vm.visual.render_flags|32u;}entry.children.clear();
+    entry.vm.rotation_parent=entry.vm.creation_parent=nullptr;entry.vm.instruction_offset=-1;entry.active=entry.registered=entry.queued_deletion=false;entry.handle=0;active_count--;
     if(entry.slot<pool.size())free_slots.push_back(entry.slot);else{nodes.erase(&entry.vm);overflow.erase(&entry);}
 }
 bool AnmRegistry::discard(AnmVm& vm){auto* entry=node(vm);if(!entry||!entry->active)return true;if(!entry->children.empty()){error="Animation with children needs recursive deletion";return false;}pending_deletion.erase(std::remove(pending_deletion.begin(),pending_deletion.end(),entry),pending_deletion.end());erase(*entry);return true;}
@@ -77,15 +79,16 @@ bool AnmRegistry::preserve_embedded_children(AnmVm& vm){
     const auto remap=[&](auto&& self,Node& entry)->void{if(entry.vm.creation_parent==&vm)entry.vm.creation_parent=&owner->vm;if(entry.vm.rotation_parent==&vm)entry.vm.rotation_parent=&owner->vm;for(auto* child:entry.children)self(self,*child);};
     for(auto* child:owner->children)remap(remap,*child);const auto* key=owner->borrowed;external.emplace(const_cast<AnmVm*>(key),std::move(owner));return true;
 }
-void AnmRegistry::retire(Node& entry){entry.vm.visual.render_flags|=32;for(auto* child:entry.children)retire(*child);}
+void AnmRegistry::retire(Node& entry){entry.vm.visual.render_flags=entry.vm.visual.render_flags|32;for(auto* child:entry.children)retire(*child);}
 bool AnmRegistry::retire_children(AnmVm& vm){auto* entry=node(vm);if(!entry||!entry->active)return true;for(auto* child:entry->children)retire(*child);return true;}
 // 单条链一遍（0x46f170 主链 / 0x46f240 副链同构）：待回收(0x20)不 tick 直接
 // 回收；tick 非零回收；零则归桶。副链层 ∉{31,32} 钳到 31（0x46f240:31-33）。
 bool AnmRegistry::tick_chain(u32 alternate,GameRandom& random,float rate){
+    if(!alternate&&chain_entry_observer)chain_entry_observer(*this,false);
     auto next=groups[alternate].begin();while(next!=groups[alternate].end()){
         auto* entry=*next++;
-        if(entry->pending_collection)continue;
         if(entry->vm.visual.render_flags&0x20){collect(*entry);continue;}
+        if(entry->queued_deletion)continue;
         const int result=entry->vm.tick(random,rate);
         if(result<0){error=entry->vm.error;return false;}
         if(result){collect(*entry);continue;}
@@ -119,4 +122,5 @@ std::vector<AnmVm*> AnmRegistry::children(const AnmVm& vm)const{std::vector<AnmV
 AnmVm* AnmRegistry::find_child_script(AnmVm& vm,i32 script,i32 occurrence)const noexcept{auto* entry=node(vm);if(!entry||occurrence<0)return nullptr;for(auto* child:entry->children){if(child->vm.source_script==vm.local_script_index(script)||script==-1){if(occurrence==0)return &child->vm;occurrence--;}if(!child->children.empty())if(auto* found=find_child_script(child->vm,script,occurrence))return found;}return nullptr;}
 u32 AnmRegistry::slot(const AnmVm& vm)const noexcept{auto* entry=node(const_cast<AnmVm&>(vm));return entry?entry->slot:0x1fff;}
 u32 AnmRegistry::ordered_handle(bool alternate,u32 index)const noexcept{for(auto* entry:groups[alternate])if(index--==0)return entry->handle;return 0;}
+void AnmRegistry::append_draw(AnmVm& vm){i32 layer=vm.visual.layer;if(layer<0||layer>30)return;layers[u32(layer)].push_back(&vm);}
 }

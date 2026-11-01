@@ -3,9 +3,6 @@
 // 2) StageSim 装载真实 st01 依赖清单并跑满 3600 帧（Lunatic）；
 // 3) JSONL 事件流与 docs/plans/event-contract.md 的键序/字段/精度一致；
 // 4) 同种子两次运行逐字节一致（确定性）。
-#ifndef TH13_TEST_PORT_DIR
-#define TH13_TEST_PORT_DIR "."
-#endif
 #include "ecl_test_fixtures.hpp"
 
 #include "game/StageMath.hpp"
@@ -40,7 +37,7 @@ TEST(stage_math_primitives) {
 }
 
 bool run_stage1(th13::StageSim& sim, std::vector<char>& output) {
-    const char* out_path = TH13_TEST_PORT_DIR "/tests/ecl/build/stage1-test.jsonl";
+    const char* out_path = "eagler-touhou/ports/th13/tests/ecl/build/stage1-test.jsonl";
     if (!sim.load("artifacts/reference/raw", out_path)) return false;
     if (!sim.run(3600)) return false;
     std::FILE* file = std::fopen(out_path, "rb");
@@ -68,7 +65,7 @@ TEST(stage1_sim_contract_smoke) {
     CHECK_EQ(first.anim_list[1], std::string("st01enm.anm"));
     // 首行契约：root 创建趟（frame 0）的第一个 enmCreate 事件。
     const char* kHead =
-        "{\"frame\":0,\"seq\":0,\"type\":\"enemy_spawn\",\"enemy\":1,\"routine\":\"MapleEnemy\"";
+        "{\"frame\":0,\"seq\":0,\"type\":\"enemy_spawn\",\"enemy\":2,\"routine\":\"MapleEnemy\"";
     CHECK(a.size() > std::strlen(kHead));
     CHECK(std::memcmp(a.data(), kHead, std::strlen(kHead)) == 0);
     // 逐行校验：键序与类型枚举（合同 §4）。

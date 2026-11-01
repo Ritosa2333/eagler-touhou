@@ -50,13 +50,15 @@ TEST(score_formulas_byte_semantics) {
     // 0x42abf0：bonus = 关号×1,000,000（点值 /10 入账）。
     CHECK_EQ(stage_clear_bonus(1), 1000000);
     CHECK_EQ(stage_clear_bonus(6), 6000000);
-    // 0x42ce96-0x42ced0 四难度六面全通奖（残=3 灵=1 例）。
-    CHECK_EQ(all_clear_bonus(0, 3, 1), (3 + 1 * 4) * 250000);
-    CHECK_EQ(all_clear_bonus(1, 3, 1), (3 + 1 * 3) * 1000000);
-    CHECK_EQ(all_clear_bonus(2, 3, 1), 1 * 5000000 + 3 * 1500000);
-    CHECK_EQ(all_clear_bonus(3, 3, 1), (3 + 1 * 5) * 2000000);
-    // 0x42cfb3：Extra (残+灵×10)×4,000,000。
-    CHECK_EQ(extra_clear_bonus(2, 3), (2 + 3 * 10) * 4000000);
+    // 0x42cd40:43-53 四难度六面全通奖：残 = DAT_004be7f4、灵 = DAT_004be800。
+    // 0x444a10 在残机扣减后调 FUN_0042ae90(残 HUD)；0x40a3b0 在灵击扣减后
+    // 调 FUN_0042af60(灵 HUD)，故残=3、灵=1 例：case0 = (灵 + 残×4)。
+    CHECK_EQ(all_clear_bonus(0, 3, 1), (1 + 3 * 4) * 250000);
+    CHECK_EQ(all_clear_bonus(1, 3, 1), (1 + 3 * 3) * 1000000);
+    CHECK_EQ(all_clear_bonus(2, 3, 1), 3 * 5000000 + 1 * 1500000);
+    CHECK_EQ(all_clear_bonus(3, 3, 1), (1 + 3 * 5) * 2000000);
+    // 0x42cd40:76：Extra (灵 + 残×10)×4,000,000。
+    CHECK_EQ(extra_clear_bonus(2, 3), (3 + 2 * 10) * 4000000);
     // 点值制入账 + 封顶（0x3b9ac9ff，0x42cef3/0x42cfe7 比较语义）。
     CHECK_EQ(add_bonus_capped(0, 1000000), 100000u);
     CHECK_EQ(add_bonus_capped(999999999, 1000000), 999999999u);
@@ -130,10 +132,20 @@ TEST(stage6_all_clear_and_ending_sequence) {
     CHECK_EQ(harness.host.requests.size(), 1u);
     CHECK_EQ(harness.host.requests[0], 0xf);  // 请求结局
     CHECK(!harness.flow.clear_sequence());
-    // 残>=3 时资格计数置 3（0x42cd40:36-38）。
+    // 0x42cd40:36-38：`if (2 < DAT_004be800) good_endings = 3`。DAT_004be800
+    // 是灵击库存（0x40a3b0 扣减并调 FUN_0042af60 灵 HUD），不是残机。
+    // 残=3/灵=2 不满足 0x42cd40:37 的灵门。
+    FlowHarness lives_high;
+    lives_high.progress.stage = 6;
+    lives_high.player.extra_lives = 3;
+    lives_high.player.bombs = 2;
+    lives_high.flow.on_stage_clear();
+    CHECK_EQ(lives_high.progress.good_endings, 0);
+    // 灵=3 满足 0x42cd40:37。
     FlowHarness capped;
     capped.progress.stage = 6;
-    capped.player.extra_lives = 3;
+    capped.player.extra_lives = 0;
+    capped.player.bombs = 3;
     capped.flow.on_stage_clear();
     CHECK_EQ(capped.progress.good_endings, 3);
 }

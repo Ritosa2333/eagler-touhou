@@ -58,6 +58,13 @@ class TitleReplayMenu {
     i32 selected_stage_row = 0;  // +0x5aa4：选关行（0 基，关卡 = 行+1）
     i32 pages = 1;
     bool launch_queued = false;
+    // 0x452a75 -> 0x417370：case3 age==2 起在共享 ANM 管理器创建 ascii.anm
+    // script17 祈祷根（480,392）。原生迹线（agent-g segment attribution）：
+    // 标题 replay 启动等待 31 帧内 script16 出生 8 次 × 24 visual index 单位
+    // = 192；启动排队时 retire（0x42c550 激活序的 caption 树卸载）。
+    u32 launch_prayer = 0;
+    bool start_launch_prayer();
+    void stop_launch_prayer();
     bool fail(const std::string& reason);
     bool sound(i32 id);
     bool present(u32 handle) const;
@@ -79,6 +86,8 @@ public:
     TitleReplayMenu(TitleState& state_, AnmManager& animations_, TitleReplayPlatform& host,
                     TitleSceneResources bank)
         : state(state_), animations(animations_), replay_host(host), resources(bank) {}
+    // 场景提前析构（回放启动/退出）时闭合祈祷根，避免残留 VM 进入对局管理器。
+    ~TitleReplayMenu();
     bool update(u32 pressed, u32 repeated);
     // 绘制侧逐帧入队（TitleFrame Draw 回调 → TitleScene → 此处；仅 substate
     // 2/4 出字，与原版 0x452c30 的 screen 值域一致）。

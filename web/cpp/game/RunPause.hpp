@@ -10,7 +10,9 @@
 namespace th13 {
 struct HudDrawServices;
 
-enum class PauseEntrance { Pause, GameOver, PracticeEnd, ExtraEnd };
+// GameOver = 0x43f570 mode0（0x43fa90/142）；BGameOver = 0x43f570 mode≠0
+// （0x440960 态 0x18/147，三项：标题/录像/重试，无续关）。
+enum class PauseEntrance { Pause, GameOver, PracticeEnd, ExtraEnd, BGameOver };
 
 struct RunPausePlatform {
     virtual ~RunPausePlatform() = default;

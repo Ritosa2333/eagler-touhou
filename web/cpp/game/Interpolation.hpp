@@ -108,29 +108,13 @@ struct FloatInterpolation {
                     current[i] = static_cast<float>(static_cast<float>(static_cast<float>(p + q) + r) + s);
             }
         } else {
-            // [wf300 数值纪律·ANM 专属] oracle flip_probe 逐帧位级实证（wf289-302
-            // 14/14 帧命中）：ANM 插值（00462120 族）权重为**逐步 f32 链**——
-            // t→f32、u=1−t→f32、w=1−u·u→f32、diff×w→f32、+start→f32；与 ECL
-            // 0x473a40 的 double 链（f159 实证）不同源，不得共用。实测差异点
-            // 在 u=f32(1−t) 的先舍入（double 链漏 age12/13/8/2 四帧）。
-            const float t = static_cast<float>(timer.fractional / static_cast<float>(duration));
-            float weight;
-            if constexpr (N == 2) {
-                // 466812 calls473a40 for scale/UV-scale. Its polynomial
-                // intermediates remain in x87 registers until the final
-                // weight store; this differs from the vector3 path below.
-                weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));
-            } else if (mode >= 4 && mode <= 6) {
-                const float u = static_cast<float>(1 - t);
-                float w = u;
-                for (u32 k = 1; k < u32(mode - 2); k++) w = static_cast<float>(w * u);
-                weight = static_cast<float>(1 - w);
-            } else if (mode >= 1 && mode <= 3) {
-                weight = t;
-                for (u32 k = 1; k < u32(mode + 1); k++) weight = static_cast<float>(weight * t);
-            } else {
-                weight = interpolation_weight(mode, timer.fractional, static_cast<float>(duration));
-            }
+            // 00402420 (vec3) and 004665f0 (vec2) both call 00473a40.
+            // Its polynomial weight is rounded only after the x87 register
+            // calculation; the subsequent difference, product and sum each
+            // store to f32. The old vec3 f32 chain came from an oracle run
+            // whose x87 control word had not been initialized by the CRT.
+            const float weight = interpolation_weight(mode, timer.fractional,
+                                                       static_cast<float>(duration));
             for (u32 i = 0; i < N; i++) {
                 float difference = static_cast<float>(end[i] - start[i]);
                 if constexpr (Angle) {

@@ -133,7 +133,11 @@ struct SwitchHarness {
     }
 
     static bool drawn(const AnmVm* vm) {
-        return vm && vm->visible && (vm->visual.color >> 24) != 0;
+        // 原版绘制门（FUN_0046a150 / FUN_00469b10）要求 vm+0x18 bit0 与 bit1
+        // 同时置位；00470030 只清 bit1，bit0/visible 保留。旧检测只看
+        // visible+alpha，会把「脚本可见但绘制使能已清」误判为在绘。
+        return vm && vm->visible && (vm->visual.flags & 3u) == 3u &&
+               (vm->visual.color >> 24) != 0;
     }
 
     PortraitFrame observe(i32 character) {
@@ -262,18 +266,36 @@ TEST(character_switch_sequence_and_fast_alternation) {
     CHECK(h.menu->error.empty());
 }
 
-// 行边界：霊夢行 ← 到 0 行（EXTRA 字条位）只有退场无入场；→ 回霊夢行
-// 重新入场（7+0）。
-TEST(character_switch_row_boundary_exit_without_enter) {
+// Retail case0 uses four zero-based character slots and wraps across them.
+TEST(character_four_slots_wrap_and_remain_synchronized) {
+    SwitchHarness h;
+    h.enter_character_screen(0);
+    h.advance(25);
+    CHECK_EQ(h.state.menu.count, 4);
+    h.frame(0x40);
+    h.advance(25);
+    CHECK_EQ(h.state.menu.cursor, 3);
+    CHECK_EQ(h.drawn_portraits(), 1);
+    CHECK(SwitchHarness::drawn(h.portrait(3)));
+    h.frame(0x80);
+    h.advance(25);
+    CHECK_EQ(h.state.menu.cursor, 0);
+    CHECK_EQ(h.drawn_portraits(), 1);
+    CHECK(SwitchHarness::drawn(h.portrait(0)));
+}
+
+// 0x451450 case0 count=4：首尾循环均落在实际角色。
+TEST(character_switch_row_boundary_wraps) {
     SwitchHarness h;
     h.enter_character_screen(0);
     h.advance(25);
     CHECK_EQ(h.drawn_portraits(), 1);
     h.frame(0x40);
     h.advance(25);
-    CHECK_EQ(h.state.menu.cursor, 0);
-    CHECK_EQ(h.drawn_portraits(), 0);  // 退场完成且无新立绘
+    CHECK_EQ(h.state.menu.cursor, 3);
+    CHECK_EQ(h.drawn_portraits(), 1);
     CHECK_EQ(h.observe(0).alpha, 0u);
+    CHECK(SwitchHarness::drawn(h.portrait(3)));
     h.frame(0x80);
     h.advance(25);
     CHECK_EQ(h.state.menu.cursor, kTitleCharacterFirst);
@@ -294,6 +316,8 @@ TEST(character_switch_keeps_uncleared_tags_hidden) {
             AnmVm* tag = h.clear_tag(c);
             CHECK(tag != nullptr);
             CHECK(!SwitchHarness::drawn(tag));
+            CHECK(tag->visible);                    // 0x470030 保留 bit0
+            CHECK_EQ(tag->visual.flags & 2u, 0u);   // 绘制使能已清
             CHECK_EQ(tag->pending_interrupt, 0);
         }
     }

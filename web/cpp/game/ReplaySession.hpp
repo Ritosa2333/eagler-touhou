@@ -15,8 +15,8 @@
 //   0x4dc324 = game RNG（ECL gvars RAND 族 0x420380/0x420d00、敌机指令
 //     0x41ce10/0x417b10、弹幕出生 0x40e840/etEx 0x40f030、自机弹出膛
 //     0x445c40）；0x4dc31c = ANM 指令/畸变侧第二对象（0x401000 族、
-//     0x45f7c0、0x461f/0x462/0x463 族）。恢复时两者种子同置 stamp，仅
-//     0x4dc324 的调用计数清零。
+//     0x45f7c0、0x461f/0x462/0x463 族）。447900 冷加载只写游戏 RNG；
+//     449070 跨关恢复时两者种子同置 stamp，仅游戏 RNG 调用计数清零。
 #pragma once
 
 #include "ReplayFile.hpp"
@@ -27,6 +27,7 @@
 
 namespace th13 {
 class StageBattle;
+enum class ReplayRestorePhase { Load, Transition };
 
 // 恢复目标（Application 持有态；无推断字段——22 dword 中 port 无归属的
 // 保持未映射并原样记录在日志里，不伪造语义）。
@@ -40,7 +41,7 @@ struct ReplayRestoreTarget {
 
 // 恢复日志（逐位证据；fprintf 由调用方输出）。
 struct ReplayRestoreLog {
-    u16 seed = 0;            // stage 头 +0x02（= 恢复后两 RNG 种子）
+    u16 seed = 0;            // stage 头 +0x02（game RNG；跨关时亦写 visual RNG）
     u32 stage_number = 0;    // stage 头 +0x00
     i32 block[22] = {};      // 头 +0x14 起 22 dword 原样值（头内偏移 +0x14+4k）
     // 22 dword 中 port 无归属字段的头内偏移（+0x14+4k）：
@@ -61,7 +62,8 @@ public:
     // 语义由调用方 fail 承接，这里只报布尔）。
     static bool restore_stage(const ReplayFile& file, u32 stage_index,
                               const ReplayRestoreTarget& target, ReplayRestoreLog& log,
-                              std::string& error);
+                              std::string& error,
+                              ReplayRestorePhase phase = ReplayRestorePhase::Transition);
     // 日志行（native/web 共用 stderr 口径；oracle 侧对照值 = stamp）。
     static void emit_log(const ReplayRestoreLog& log) {
         std::fprintf(stderr,

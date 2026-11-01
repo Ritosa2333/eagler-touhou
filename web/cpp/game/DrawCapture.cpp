@@ -1,5 +1,5 @@
 // DrawCapture 实现：契约 JSONL 序列化细节全部在本文件（%.9g、键序、
-// viewport 位型口径），与 oracle/render_oracle.py 的 json.dumps 输出对齐。
+// viewport 的 DWORD/float 口径），与 oracle/render_oracle.py 的 json.dumps 输出对齐。
 #include "DrawCapture.hpp"
 
 #include <cmath>
@@ -26,6 +26,18 @@ u32 d3d_primitive(Topology kind) {
                                          : 6u;
 }
 
+// D3D 顶点数 = 图元参数 → 顶点数（D3DPT_* 口径；与 render_oracle.py 的
+// d3d_vertex_count 逐分支同式）。"count" 字段仍是图元数，verts 数组长度必须
+// 是顶点数。strip/fan 的 0 图元特例：oracle 返回 0（不是 +1/+2）——0 图元
+// 绘制不产生顶点，port 侧必须同语义（此前 count+1/count+2 与 oracle 不同）。
+u32 d3d_vertex_count(u32 prim, u32 count) {
+    return prim == 1u ? count
+           : prim == 2u ? count * 2u
+           : prim == 3u ? (count ? count + 1u : 0u)
+           : prim == 4u ? count * 3u
+                        : (count ? count + 2u : 0u);  // TRIANGLESTRIP / TRIANGLEFAN
+}
+
 u32 d3d_fvf(VertexLayout layout) {
     return layout == VertexLayout::WorldUv ? 0x102u
            : layout == VertexLayout::WorldColorUv ? 0x142u
@@ -39,6 +51,17 @@ u32 matrix_slot(MatrixKind kind) {
            : kind == MatrixKind::View ? 1u
            : kind == MatrixKind::Projection ? 2u
                                             : 3u;
+}
+
+// D3DVIEWPORT9 的 X/Y/W/H 是 DWORD 像素：oracle d3d_read_viewport 以
+// "%.9g" % float(dword) 序列化（Python float 即 double，精确表示 u32），
+// 这里同式，避免先压成 binary32 再格式化（像素值本身不是 f32 位型）。
+void append_pixel(std::string& out, u32 value) {
+    char buffer[32];
+    const int written = std::snprintf(buffer, sizeof buffer, "%.9g", double(value));
+    out.push_back('"');
+    out.append(buffer, size_t(written > 0 ? written : 0));
+    out.push_back('"');
 }
 
 void append_int(std::string& out, i64 value) {
@@ -133,16 +156,18 @@ bool DrawCapture::end_frame() {
     append_int(out, frame_);
     out += ",\"viewport\":";
     if (viewport_set_) {
-        // 原版捕获口径：D3DVIEWPORT9 的 X/Y/W/H 是 DWORD，oracle 按 6 float
-        // 解引用序列化——位型直读（640 → 8.96831017e-43）。
+        // D3DVIEWPORT9 口径：X/Y/W/H 是 DWORD 像素，oracle/render_oracle.py
+        // d3d_read_viewport 按 <6I 读取后把前四项转成数值（不是按 float 位型
+        // 解引用；旧口径会把 640 写成 denormal 8.96831017e-43）；MinZ/MaxZ
+        // 本就是 float。
         out.push_back('[');
-        append_float(out, float_from_bits(viewport_.x));
+        append_pixel(out, viewport_.x);
         out.push_back(',');
-        append_float(out, float_from_bits(viewport_.y));
+        append_pixel(out, viewport_.y);
         out.push_back(',');
-        append_float(out, float_from_bits(viewport_.width));
+        append_pixel(out, viewport_.width);
         out.push_back(',');
-        append_float(out, float_from_bits(viewport_.height));
+        append_pixel(out, viewport_.height);
         out.push_back(',');
         append_float(out, viewport_.near_depth);
         out.push_back(',');
@@ -227,7 +252,7 @@ void DrawCapture::append_matrix(const Matrix4& matrix) {
     line_ += "]";
 }
 
-void DrawCapture::emit_quad(u32 prim, u32 count) {
+void DrawCapture::emit_quad(u32 prim, u32 count, u32 stride, const void* data) {
     if (!out_) return;
     if (seq_) line_ += ",";
     line_ += "{\"seq\":";
@@ -259,7 +284,59 @@ void DrawCapture::emit_quad(u32 prim, u32 count) {
     append_matrix(matrices_[1]);
     line_ += ",\"proj\":";
     append_matrix(matrices_[2]);
-    line_ += "}";
+    line_ += ",\"verts\":[";
+    // [反证修正] 矩阵路径（静态 VB + DrawPrimitive）此前固定写空数组，而
+    // oracle render_oracle.py 的 _dev_draw_primitive 按 D3D 顶点口径读回
+    // vertex_count(topology,count) 个顶点——窗B 15k+ 个 ascii/loading 粒子
+    // quad 的首色因此 port=None vs oracle=0，strict draw_compare 不可能通过。
+    // 这里按 oracle _read_vertices 的 FVF 分支序列化：
+    //   WorldUv（FVF 0x102，x y z u v）→ [x,y,z,0,0,u,v]（w/color 为 int 0）
+    //   其余（WorldColorUv：position+diffuse+uv，无 rhw 字段）→
+    //     [x,y,z,0,color,u,v]（rhw 写 float 0，与 oracle 的 fmt_f 同型）
+    const auto attributes = touhou::graphics::attributes(layout_);
+    const u32 per = stride / 4;
+    const u8* bytes = static_cast<const u8*>(data);
+    const u32 vertices = d3d_vertex_count(prim, count);
+    const bool world_uv = layout_ == VertexLayout::WorldUv;
+    for (u32 vertex = 0; vertex < vertices; vertex++) {
+        if (vertex) line_ += ",";
+        const u8* at = bytes + size_t(vertex) * stride;
+        auto field = [&](u32 index) -> float {
+            float value = 0;
+            if (index < per) std::memcpy(&value, at + index * 4, 4);
+            return value;
+        };
+        u32 color = 0;
+        if (attributes.diffuse < stride)
+            std::memcpy(&color, at + attributes.diffuse, 4);
+        line_ += "[";
+        append_float(line_, field(0));
+        line_ += ",";
+        append_float(line_, field(1));
+        line_ += ",";
+        append_float(line_, field(2));
+        line_ += ",";
+        if (world_uv) {
+            line_ += "0,0,";
+            append_float(line_, field(3));
+            line_ += ",";
+            append_float(line_, field(4));
+        } else {
+            append_float(line_, 0.0f);  // rhw（port WorldColorUv 无该字段）
+            line_ += ",";
+            append_int(line_, color);
+            line_ += ",";
+            if (attributes.uv < stride) {
+                append_float(line_, field(attributes.uv / 4));
+                line_ += ",";
+                append_float(line_, field(attributes.uv / 4 + 1));
+            } else {
+                line_ += "0,0";
+            }
+        }
+        line_ += "]";
+    }
+    line_ += "]}";
     quads_++;
 }
 
@@ -288,11 +365,13 @@ void DrawCapture::emit_up(u32 prim, u32 count, u32 stride, const void* data) {
     line_ += ",\"fvf\":";
     append_int(line_, i64(d3d_fvf(layout_)));
     line_ += ",\"verts\":[";
-    // 契约 §2.2 序列化口径：C×顶点（C = 图元数参数，与 oracle 一致）。
+    // 契约 §2.2 序列化口径：顶点数 = vertex_count(topology, 图元数参数)，与
+    // oracle render_oracle.py 的 d3d_vertex_count 一致（count 字段仍存图元数）。
     const auto attributes = touhou::graphics::attributes(layout_);
     const u32 per = stride / 4;
     const u8* bytes = static_cast<const u8*>(data);
-    for (u32 vertex = 0; vertex < count; vertex++) {
+    const u32 vertices = d3d_vertex_count(prim, count);
+    for (u32 vertex = 0; vertex < vertices; vertex++) {
         if (vertex) line_ += ",";
         const u8* at = bytes + size_t(vertex) * stride;
         auto field = [&](u32 index) -> float {
@@ -340,7 +419,7 @@ void DrawCapture::primitives(Topology kind, u32 count, const void* data, u32 str
     const u32 prim = d3d_primitive(kind);
     if (layout_ == VertexLayout::WorldUv || layout_ == VertexLayout::WorldColorUv) {
         // 矩阵路径（原版 §2.1 静态 VB + DrawPrimitive）。
-        emit_quad(prim, count);
+        emit_quad(prim, count, stride, data);
         return;
     }
     // 预变换直交（原版 §2.2/§2.3 DrawPrimitiveUP 站点）。

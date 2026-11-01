@@ -51,6 +51,11 @@ struct TitleState {
     i32 return_reason = 1;
     i32 confirmed_entry = -1;  // Z 确认的主菜单项（转屏后隐藏时间线仍需定位该项）
     u32 start_effect = 0;
+    // [窗B 粒子节奏] 神霊粒子（ascii bank2 script18 克隆）的全局出生钟：
+    // oracle 0x46f4a0 头插实证 f491 突发 16 枚、此后每 3 帧 1 枚持续到角色屏/
+    // 转场（窗B f749 仍插；窗B 共 102 枚 = 16 + 86）。难度屏建面时归 0，
+    // 角色屏接力递增（跨屏相位不断）。
+    u32 particle_clock = 0;
     // [R3-M] Replay 屏（0x4525b0）状态：扁平选中序持久化（DAT_004dc674 语义，
     // 自 case0 恢复 row=%25 / page=/25、case3 启动拍写回）；网页导入完成槽位
     // 提示（宿主 import 成功 → 菜单 substate2 消费并选中）；ascii.anm s19 粒子

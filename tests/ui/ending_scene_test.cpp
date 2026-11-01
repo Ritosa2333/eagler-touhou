@@ -283,51 +283,68 @@ TEST(ending_interpreter_runs_full_script_to_end_request) {
         {3, 14, u32_payload(0x3c)},
         {4, 0, {}},
     });
-    // 帧 1：行 0 记录全执行；op5@1 在未来 → 行推进到 1。
+    // 0x417144..0x4171b5：op7 推进记录后 ret 4，同帧不解释 op8。
     h.frame();
     CHECK_EQ(h.host.anm_loads.size(), 1u);
-    CHECK_EQ(h.host.anm_loads[0].first, 20);  // 槽 0x14+idx
-    CHECK_EQ(h.host.anm_loads[0].second, std::string("e01.anm"));
+    if (h.host.anm_loads.size() == 1u) {
+        CHECK_EQ(h.host.anm_loads[0].first, 20);  // 槽 0x14+idx
+        CHECK_EQ(h.host.anm_loads[0].second, std::string("e01.anm"));
+    }
+    CHECK(h.host.anm_cues.empty());     // 0x4171b5 ret 4：op8 未执行
+    CHECK(h.host.music.empty());        // op10 未执行
+    CHECK(h.host.page_lines.empty());   // op3 未执行
+    CHECK_EQ(h.scene->line(), 0);       // 0x4170fa 行推进未发生
+    // 帧 2：行 0 其余记录（op8 cue/op10 音乐/op9 颜色/op3 文本）执行；
+    // 下一记录 op5@1 在未来 → 0x4170fa 行推进到 1。
+    h.frame();
     CHECK_EQ(h.host.anm_cues.size(), 1u);
-    CHECK_EQ(h.host.anm_cues[0].first, 20);
+    if (h.host.anm_cues.size() == 1u) CHECK_EQ(h.host.anm_cues[0].first, 20);
     CHECK_EQ(h.host.music.size(), 2u);  // th13_18 预载槽 0 + 播放
-    CHECK_EQ(std::get<0>(h.host.music[0]), 1);
-    CHECK_EQ(std::get<2>(h.host.music[0]), std::string("th13_18.wav"));
-    CHECK_EQ(std::get<0>(h.host.music[1]), 2);
+    if (h.host.music.size() == 2u) {
+        CHECK_EQ(std::get<0>(h.host.music[0]), 1);
+        CHECK_EQ(std::get<2>(h.host.music[0]), std::string("th13_18.wav"));
+        CHECK_EQ(std::get<0>(h.host.music[1]), 2);
+    }
     CHECK_EQ(h.host.page_lines.size(), 1u);
-    CHECK_EQ(h.host.page_lines[0].second, std::string("Hello ending"));
+    if (h.host.page_lines.size() == 1u)
+        CHECK_EQ(h.host.page_lines[0].second, std::string("Hello ending"));
     CHECK_EQ(h.host.page_color, 0x00604040u);  // op9 颜色先行
     CHECK_EQ(h.scene->line(), 1);
-    // 帧 2：op5 等待（无输入、首见封锁）。
+    // 帧 3：op5 等待（无输入、首见封锁）。
     h.frame();
     CHECK(!h.scene->finished());
     CHECK_EQ(h.host.advance_sounds, 0);
-    // 帧 3：Z 按下（0x4e49fc bit0）计声放行 → 第二行 + 淡出 + 接 staff.msg
+    // 帧 4：Z 按下（0x4e49fc bit0）计声放行 → 第二行 + 淡出 + 接 staff.msg
     //（同帧继续解释新流：th13_19 起 + 名单 VM cue；行重置后推进）。
     h.frame(0, 0x1);
     CHECK_EQ(h.host.advance_sounds, 1);
     CHECK_EQ(h.host.page_lines.size(), 2u);
-    CHECK_EQ(h.host.page_lines[1].second, std::string("Second line"));
+    if (h.host.page_lines.size() == 2u)
+        CHECK_EQ(h.host.page_lines[1].second, std::string("Second line"));
     CHECK_EQ(h.host.fade_frames, 180);  // 0x43af70(3.0f)
     // op12@2 在下一帧行推进到 2 后执行：同帧接读 staff.msg 并解释新流
     //（th13_19 起 + 名单 VM cue），行重置后推进。
     h.frame();
     CHECK_EQ(h.host.music.size(), 4u);  // + th13_19 预载/播放
-    CHECK_EQ(std::get<2>(h.host.music[2]), std::string("th13_19.wav"));
+    if (h.host.music.size() == 4u)
+        CHECK_EQ(std::get<2>(h.host.music[2]), std::string("th13_19.wav"));
     CHECK_EQ(h.host.anm_cues.size(), 2u);
-    CHECK_EQ(h.host.anm_cues[1].second, 5);
+    if (h.host.anm_cues.size() == 2u) CHECK_EQ(h.host.anm_cues[1].second, 5);
     // staff 尾段 op5 负参数：每帧重置 999（0x416bc2-0x416bcf 无 target 门），
     // 自然等待与 %6 持键节拍均不可达 → 仅 Z/Enter 按下放行 → op14 窗 → END。
     for (int i = 0; i < 120; i++) h.frame();
     CHECK(!h.scene->finished());
     h.frame(0, 0x1);  // 行 3 记录（op5 按下放行 + op14 窗）
     CHECK_EQ(h.host.windows.size(), 1u);
-    CHECK_EQ(h.host.windows[0].first, 5);
-    CHECK_EQ(h.host.windows[0].second, 0x3c);
+    if (h.host.windows.size() == 1u) {
+        CHECK_EQ(h.host.windows[0].first, 5);
+        CHECK_EQ(h.host.windows[0].second, 0x3c);
+    }
     h.frame();  // 行 4：END
     CHECK(h.scene->finished());
     CHECK_EQ(h.host.requests.size(), 1u);
-    CHECK_EQ(h.host.requests[0], 0x10);  // 0x416610 END 出口
+    if (h.host.requests.size() == 1u)
+        CHECK_EQ(h.host.requests[0], 0x10);  // 0x416610 END 出口
     CHECK_EQ(h.scene->line(), 4);
 }
 
@@ -435,7 +452,8 @@ TEST(ending_difficulty_gated_cues) {
             CHECK(h.host.anm_cues.empty());
         } else {
             CHECK_EQ(h.host.anm_cues.size(), 1u);
-            CHECK_EQ(h.host.anm_cues[0].second, difficulty);  // 脚本号 1/2/3
+            if (h.host.anm_cues.size() == 1u)
+                CHECK_EQ(h.host.anm_cues[0].second, difficulty);  // 脚本号 1/2/3
         }
     }
 }

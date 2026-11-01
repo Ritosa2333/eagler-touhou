@@ -64,7 +64,7 @@ TEST(ecl800_self_restart_remounts_and_skips_first_instruction) {
     CHECK_EQ(sim.program.attach(data.data(), u32(data.size())), 0);
     sim.commands.sim = &sim;
     sim.gvars.sim = &sim;
-    auto* dummy = sim.spawn_enemy("BossB", 0, 300, 100, nullptr, false);  // serial 0（id 0 不可寻址）
+    auto* dummy = sim.spawn_enemy("BossB", 0, 300, 100, nullptr, false);  // serial 1（0x418d30 保留 0）
     (void)dummy;
     auto* boss = sim.spawn_enemy("Trampoline", 0, 100, 1000, nullptr, false);
     CHECK(boss != nullptr);
@@ -140,7 +140,7 @@ TEST(ecl800_unknown_routine_ends_calling_thread_like_original) {
     CHECK_EQ(sim.program.attach(data.data(), u32(data.size())), 0);
     sim.commands.sim = &sim;
     sim.gvars.sim = &sim;
-    auto* dummy = sim.spawn_enemy("main", 0, 300, 100, nullptr, false);  // serial 0（id 0 不可寻址）
+    auto* dummy = sim.spawn_enemy("main", 0, 300, 100, nullptr, false);  // serial 1（0x418d30 保留 0）
     (void)dummy;
     auto* owner = sim.spawn_enemy("main", 0, 100, 100, nullptr, false);
     CHECK(owner != nullptr);

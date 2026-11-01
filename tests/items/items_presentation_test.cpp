@@ -124,10 +124,22 @@ TEST(spirit_vm_submit_layer8_and_follow) {
     CHECK(!vm->visible);
     CHECK_EQ(vm->visual.layer, 6);  // astral.anm script1 ins_304(6)
     CHECK_EQ(vm->visual.translation.y, 300.0f);
+    CHECK_NEAR(vm->visual.translation.x, 10.0f, 1e-5f);
+    // 真实精灵源：astral.anm 子脚本 2/3 的 30x30 sprite（不是旧 enemy.anm 32x32）。
+    bool saw_child_sprite = false;
+    for (u32 h = 1; h < 0x10000u; ++h)
+        if (auto* child = fx.manager.registry.find(h))
+            if (child->source_script == 2 || child->source_script == 3) {
+                saw_child_sprite = true;
+                CHECK(child->sprite != nullptr);
+                if (child->sprite) CHECK_EQ(child->sprite->width, 30.0f);
+            }
+    CHECK(saw_child_sprite);
     // 位移跟随（0x438730 尾 +0x574 回写）。
     s.y = 280.0f;
     CHECK(fx.presentation.sync(battle, 0));
     CHECK_NEAR(vm->visual.translation.y, 280.0f, 1e-5f);
+    CHECK_NEAR(vm->visual.translation.x, 10.0f, 1e-5f);
 }
 
 TEST(spirit_vm_kind1_and_trance_variant_script) {
@@ -259,16 +271,23 @@ TEST(item_vm_two_scripts_layer0_and_collect_retire) {
     battle.item_manager.spawn_item(10.0f, 205.0f, 0.0f, 1, -1.5707964f, 2.2f);
     CHECK(fx.presentation.sync(battle, 0));
     CHECK(fx.presentation.error().empty());
-    AnmVm* body = nullptr;
-    AnmVm* side = nullptr;
-    for (u32 h = 1; h < 0x10000u; ++h)
-        if (auto* candidate = fx.manager.registry.find(h)) {
-            if (!body && candidate->source_script == 90) body = candidate;
-            if (!side && candidate->source_script == 99) side = candidate;
-        }
+    // 契约更新裁决（e34 四路 coreEqual + native chain-dump 10202/10219/
+    // 10222：bank5 89..107 道具族不在 0x46f170 主链）：原版道具 VM 内嵌于
+    // 物品结构体（0x42f020:60-63 两次模板拷贝 + 0x42e380 每帧直步
+    // 0x462450），port 为自持槽位 VM，registry 链上不得出现道具族脚本。
+    const AnmVm* body = fx.presentation.item_body_vm(599);
+    const AnmVm* side = fx.presentation.item_side_vm(599);
     CHECK(body != nullptr);
     CHECK(side != nullptr);
+    bool chained_item_vm = false;
+    for (u32 h = 1; h < 0x10000u; ++h)
+        if (auto* candidate = fx.manager.registry.find(h))
+            if (candidate->source_script >= 89 && candidate->source_script <= 107)
+                chained_item_vm = true;
+    CHECK(!chained_item_vm);  // 旧 registry 实现 10213 帧曾 +642 主链成员
     if (body && side) {
+        CHECK_EQ(body->source_script, 90);
+        CHECK_EQ(side->source_script, 99);
         CHECK_EQ(body->visual.layer, 0);  // 模板层（运行时 +0x24 实证）
         CHECK_EQ(side->visual.layer, 0);
         CHECK_NEAR(body->visual.translation.x, 10.0f, 1e-4f);
@@ -282,14 +301,9 @@ TEST(item_vm_two_scripts_layer0_and_collect_retire) {
     CHECK_EQ(player.power, 101);
     CHECK(fx.presentation.sync(battle, 0));
     CHECK(fx.manager.update());
-    bool still90 = false, still99 = false;
-    for (u32 h = 1; h < 0x10000u; ++h)
-        if (auto* candidate = fx.manager.registry.find(h)) {
-            if (candidate->source_script == 90) still90 = true;
-            if (candidate->source_script == 99) still99 = true;
-        }
-    CHECK(!still90);
-    CHECK(!still99);
+    // 死亡 → 自持 VM 同帧释放（旧断言曾查 registry retire，链归属已改）。
+    CHECK(fx.presentation.item_body_vm(599) == nullptr);
+    CHECK(fx.presentation.item_side_vm(599) == nullptr);
 }
 
 // ---- 妖梦斩击池（YoumuBomb ↔ pl03 script 19/20 VM，r4/bomb 接线）----
@@ -330,6 +344,46 @@ TEST(youmu_slash_vm_script19_layer11_and_lifecycle) {
     }
     CHECK(!battle.youmu_bomb_.has_anm(0));
     CHECK(!battle.youmu_bomb_.active(0));
+}
+
+TEST(power_rebuild_creates_option_trees_with_deferred_translation) {
+    PresentationFixture fx("artifacts/reference/raw/pl03.anm");
+    StageBattle battle; SessionState progress; HudPlayerState player; HudScoreState score;
+    struct ShtProvider : EclResourceProvider {
+        std::vector<u8> sht;
+        bool read(const std::string&, std::vector<u8>& bytes) override { bytes = sht; return true; }
+        bool animation(u32, const std::string&) override { return true; }
+    } provider;
+    CHECK(read_file("artifacts/reference/raw/pl03a.sht", provider.sht));
+    progress.character = 3; progress.stage = 2;
+    CHECK(battle.prepare_player(provider, progress, player, "player.sht", true));
+    battle.restore_replay_player(0, 51200, false);
+    CHECK(fx.presentation.sync_player_options(battle));
+    player.power = 300;
+    battle.restore_replay_player(6400, 12800, false);
+    const u32 before = fx.random.index();
+    CHECK(fx.presentation.sync_player_options(battle, true));
+    CHECK_EQ(fx.random.index() - before, 12u);
+    int found = 0;
+    for (u32 i = 0; i < fx.manager.registry.ordered_count(false); ++i) {
+        auto* vm = fx.manager.registry.find(fx.manager.registry.ordered_handle(false, i));
+        if (!vm || vm->source_script != 15 || (vm->visual.render_flags & 0x20)) continue;
+        ++found;
+        CHECK_EQ(vm->visual.translation.x, 0.f);
+        CHECK_EQ(vm->visual.translation.y, -32.f);
+        CHECK_EQ(fx.manager.registry.children(*vm).size(), size_t(1));
+    }
+    CHECK_EQ(found, 3);
+    CHECK(fx.presentation.sync_player_options(battle)); // same frame sync
+    CHECK(fx.presentation.sync_player_options(battle)); // next frame
+    found = 0;
+    for (u32 i = 0; i < fx.manager.registry.ordered_count(false); ++i) {
+        auto* vm = fx.manager.registry.find(fx.manager.registry.ordered_handle(false, i));
+        if (!vm || vm->source_script != 15 || (vm->visual.render_flags & 0x20)) continue;
+        ++found; CHECK_EQ(vm->visual.translation.x, 50.f);
+        CHECK_EQ(vm->visual.translation.y, 100.f);
+    }
+    CHECK_EQ(found, 3);
 }
 
 int main() {
