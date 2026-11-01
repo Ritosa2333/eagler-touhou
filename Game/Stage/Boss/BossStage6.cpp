@@ -505,7 +505,7 @@ void CBossStage6::Phase9Shoot()
 	int interval[]={96,32,28,24};
 	if (m_curPhaseFrame%interval[CGame::GVar().m_playDifficulty]==0)
 	{
-		float angle=m_pStage->m_pChara->AngleToChara(m_curX,m_curY);
+		float angle=m_pStage->AimAngle(m_curX,m_curY);
 		m_shinkiBullet.AddBullet(m_curX,m_curY,201,angle,64);
 	}
 	if (m_curPhaseFrame%4==0)
@@ -645,7 +645,7 @@ void CBossStage6::Phase10Shoot()
 		{
 			float x=m_curX+(float)(original::Random()%(256*16)-128*16);
 			float y=m_curY+(float)(16*16-original::Random()%(64*16));
-			float angle=m_pStage->m_pChara->AngleToChara(x,y);
+			float angle=m_pStage->AimAngle(x,y);
 			m_shinkiBullet.AddBullet(x,y,201,angle,60);
 		}
 		m_pStage->m_bPlaySound[3]=true;

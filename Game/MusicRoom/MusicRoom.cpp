@@ -54,6 +54,9 @@ bool CMusicRoom::Play(int track){
  std::string name=musicFiles[m_game][track];int id=m_music.GetChildFileIndex((name+".M2").c_str());
  if(id<0)id=m_music.GetChildFileIndex((name+".M").c_str());
  if(id<0)return false;
+ #ifdef __EMSCRIPTEN__
+ web::MusicTrack((name+".M2").c_str());
+#endif
  if(!CPMDPlayer::LoadPMDData(m_music.GetChildFileContentPointer(id),m_music.GetChildFileLength(id))){m_playFailed=true;return false;}
  CPMDPlayer::SetVolume(100);CPMDPlayer::Play();m_playing=track;m_playFailed=false;
  for(int i=0;i<10;i++)m_comment[i]=Line(m_game,track,i);m_commentAge=0;return true;
@@ -67,6 +70,7 @@ void CMusicRoom::Input(unsigned short held){
  if(key&4096){m_quit=true;return;}
  const int count=musicTrackCounts[m_game];
  if(key&3){m_selection=(m_selection+((key&1)?count:1))%(count+1);}
+
  else if(pressed&12){m_game=(m_game+((pressed&4)?4:1))%5;m_selection=m_top=0;Play(0);}
  if(m_selection<m_top)m_top=m_selection;
  if(m_selection>=m_top+12)m_top=m_selection-11;

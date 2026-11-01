@@ -38,8 +38,12 @@ void CSelectReplayScreen::Initialize(bool bLoadMode,bool bSwitchMusic)
 {
 	//make sure replay sub directory exists
 	TCHAR subdir[1000];
-	wsprintf(subdir,_T("%S%S\\"),CGame::GVar().m_workingPath,
+#ifdef __EMSCRIPTEN__
+ snprintf(subdir,sizeof(subdir),"%s%s/",CGame::GVar().m_workingPath,CGame::GVar().m_replaySubDir);
+#else
+	wsprintf(subdir,_T("%S%S/"),CGame::GVar().m_workingPath,
 								 CGame::GVar().m_replaySubDir);
+#endif
 	if (::PathFileExists(subdir)==FALSE)
 		::CreateDirectory(subdir,NULL);
 
@@ -86,7 +90,7 @@ void CSelectReplayScreen::SwitchPage(int pageIdx)
 	{
 		int fileIdx=m_curPage*m_nFilePerPage+i;
 		char repFileName[1000];
-		sprintf(repFileName,"%s%s\\replay%02d.rpy",CGame::GVar().m_workingPath,
+		sprintf(repFileName,"%s%s/replay%02d.rpy",CGame::GVar().m_workingPath,
 												   CGame::GVar().m_replaySubDir,
 												   fileIdx);
 		m_bCurPageRepFileExist[i]=CReplay::GetRepFileInfo(&m_repInfo[i],repFileName);
@@ -138,7 +142,7 @@ void CSelectReplayScreen::StepEnterNameMode()
 		{
 			memcpy(CGame::GVar().m_replay.m_playerName,m_curEnterName,8);
 			char repFileName[1000];
-			sprintf(repFileName,"%s%s\\replay%02d.rpy",CGame::GVar().m_workingPath,
+			sprintf(repFileName,"%s%s/replay%02d.rpy",CGame::GVar().m_workingPath,
 													   CGame::GVar().m_replaySubDir,
 													   m_curPage*m_nFilePerPage+m_selectedSlot);
 			CGame::GVar().m_replay.SaveFile(repFileName);
@@ -263,7 +267,7 @@ int CSelectReplayScreen::Step()
 			{
 				int fileIdx=m_curPage*m_nFilePerPage+m_curCursorPos;
 				char repFileName[1000];
-				sprintf(repFileName,"%s%s\\replay%02d.rpy",CGame::GVar().m_workingPath,
+				sprintf(repFileName,"%s%s/replay%02d.rpy",CGame::GVar().m_workingPath,
 														   CGame::GVar().m_replaySubDir,
 														   fileIdx);
 				if (CGame::GVar().m_replay.LoadFile(repFileName))

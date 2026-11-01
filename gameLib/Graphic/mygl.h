@@ -1,7 +1,19 @@
 #pragma once
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Graphics.hpp"
+#else
 #include "include/glew.h"
+#endif
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Graphics.hpp"
+#else
 #include "include/wglew.h"
+#endif
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Graphics.hpp"
+#else
 #include <GL/gl.h>
+#endif
 
 namespace mh{
 	namespace gl{

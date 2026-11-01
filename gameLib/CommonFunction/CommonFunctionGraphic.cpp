@@ -3,7 +3,9 @@
 #include "../../Game/Game.h"
 #include <math.h>
 #include <tchar.h>
+#ifndef __EMSCRIPTEN__
 #include <atlimage.h>
+#endif
 
 
 namespace th5w{
@@ -166,6 +168,7 @@ bool CCommonFunctionGraphic::LoadBFTAllPatternFromDat(C2DImageArray *pOutImgArra
 	return true;
 }
 
+#ifndef __EMSCRIPTEN__
 bool CCommonFunctionGraphic::LoadBinaryImageFile(C2DImage **pRet,unsigned char transparentColor[3], const char *fileName)
 {
 	CImage img;
@@ -201,6 +204,8 @@ bool CCommonFunctionGraphic::LoadBinaryImageFile(C2DImage **pRet,unsigned char t
 
 	return true;
 }
+#endif
+
 
 void CCommonFunctionGraphic::ScreenFade(float fadeScale)
 {

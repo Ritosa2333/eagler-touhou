@@ -1,3 +1,6 @@
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Input.hpp"
+#else
 #pragma once
 
 #ifndef DIRECTINPUT_VERSION
@@ -32,3 +35,5 @@ public:
 };
 
 }
+
+#endif

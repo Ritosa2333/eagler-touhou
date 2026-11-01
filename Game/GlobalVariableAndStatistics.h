@@ -1,4 +1,9 @@
 #pragma once
+#ifdef __EMSCRIPTEN__
+#define TH05_SAVE(name) "/savesth05/" name
+#else
+#define TH05_SAVE(name) name
+#endif
 #include "Replay.h"
 #include <tchar.h>
 

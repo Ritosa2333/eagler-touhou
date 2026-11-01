@@ -32,6 +32,7 @@ void COriginalEnd::StartMusic(const char* name){auto* p=CGame::s_pCurGame->FindR
 bool COriginalEnd::Initialize(){
  auto* game=CGame::s_pCurGame;
  m_font=CPC98Font::LoadAuxiliaryAtlas("anex86.bmp");
+ if(m_mode==Congratulations){auto* pack=game->FindResource("CONG1.PI");m_ready=pack&&CCommonFunctionGraphic::LoadPIFromDat(&m_background,m_palette,pack,"CONG1.PI");if(m_ready)LocalizeCongratulations();return m_ready;}
  auto* p=game->FindResource("UDE.PI");
  if(m_mode==VerdictOnly){p=game->FindResource("UDE.PI");return m_ready=p&&CCommonFunctionGraphic::LoadPIFromDat(&m_background,m_palette,p,"UDE.PI");}
  if(m_mode==AllCast){LoadCastPicture();StartMusic("EXED.M2");return m_ready=m_background!=NULL;}
@@ -58,15 +59,20 @@ void COriginalEnd::Text(const char* text,int x,int y,int color,bool bold,bool tr
  // MAINE strings remain CP932 and must keep their own PC-98 font atlas.
  if(m_font&&!translated){CPC98Font::DrawStringFromAtlas(m_font,const_cast<char*>(text),int(strlen(text)),x,y+40,r,g,b);if(bold)CPC98Font::DrawStringFromAtlas(m_font,const_cast<char*>(text),int(strlen(text)),x+1,y+40,r,g,b);return;}
  std::string value=text;
+#ifndef __EMSCRIPTEN__
  if(!translated&&CGame::GVar().m_bUseSystemFont&&CGame::GVar().m_textCodePage!=932){
   const int n=MultiByteToWideChar(932,0,text,-1,NULL,0);std::vector<wchar_t> wide(n);MultiByteToWideChar(932,0,text,-1,wide.data(),n);
   const int bytes=WideCharToMultiByte(CGame::GVar().m_textCodePage,0,wide.data(),-1,NULL,0,NULL,NULL);value.resize(bytes);WideCharToMultiByte(CGame::GVar().m_textCodePage,0,wide.data(),-1,&value[0],bytes,NULL,NULL);
  }
+#endif
  CPC98Font::DrawString(&value[0],int(value.size()),x,y+40,r,g,b);if(bold)CPC98Font::DrawString(&value[0],int(value.size()),x+1,y+40,r,g,b);
 }
 C2DImage* COriginalEnd::ChineseImage(const wchar_t* text)
 {
  auto found=m_chineseText.find(text);if(found!=m_chineseText.end())return found->second;
+#ifdef __EMSCRIPTEN__
+ auto* image=web::WideText(text);if(image)m_chineseText[text]=image;return image;
+#else
  const int length=int(wcslen(text)),width=length*16;
  HDC dc=CreateCompatibleDC(NULL);if(!dc)return NULL;
  BITMAPINFO info={};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
@@ -89,6 +95,7 @@ C2DImage* COriginalEnd::ChineseImage(const wchar_t* text)
  image->UploadToTexture();
  if(font){SelectObject(dc,oldFont);DeleteObject(font);}SelectObject(dc,oldBitmap);
  DeleteObject(bitmap);DeleteDC(dc);m_chineseText[text]=image;return image;
+#endif
 }
 void COriginalEnd::Chinese(const wchar_t* text,int x,int y,int color){
  auto* image=ChineseImage(text);if(image)image->DrawColorScaled(float(x),float(y+40),m_palette[color*3]/255.f,m_palette[color*3+1]/255.f,m_palette[color*3+2]/255.f);
@@ -222,7 +229,22 @@ void COriginalEnd::DrawCast(){
  }
  if(m_castState==1)CCommonFunctionGraphic::ScreenFade(float((32-m_castAnim)*100/32));
 }
-void COriginalEnd::Draw(){glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);if(!m_ready)return;if(m_mode==Staff)DrawStaff();else if(m_mode==AllCast)DrawCast();else{m_background->Draw(0,40);if(m_age>=64)DrawVerdict(336,48,2,m_age>=128);CCommonFunctionGraphic::ScreenFade(float((std::min)(100,m_age*100/64)));}
+void COriginalEnd::LocalizeCongratulations(){
+ // Replace the baked lettering with matching blank background tiles; keep
+ // the character artwork and the original dithered palette untouched.
+ GLint width=0,height=0;glBindTexture(GL_TEXTURE_2D,m_background->GetTexID());glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&width);glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,&height);
+ std::vector<unsigned char> pixels(width*height*4);glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+ const int boxes[][4]={{328,296,624,368}};
+ for(const auto& box:boxes)for(int y=box[1];y<box[3];y++)for(int x=box[0];x<box[2];x++){
+  const int row=m_background->m_height-1-y;memcpy(&pixels[(row*width+x)*4],&pixels[(row*width+624+(x&7))*4],4);
+ }
+ glTexSubImage2D(GL_TEXTURE_2D,0,0,0,width,height,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+}
+void COriginalEnd::DrawCongratulations(){
+ auto* caption=ChineseImage(m_stats.stage==6?L"\u795d\u8d3a\u4f60\u901a\u5173 Extra Stage\uff01":L"\u795d\u8d3a\u4f60\u5168\u5173\u5361\u901a\u5173\uff01");if(caption)caption->DrawColorScaled(352,348,1.f,1.f,1.f);
+ auto* author=ChineseImage(L"\u4f5c\u8005\uff1a\uff3a\uff35\uff2e");if(author)author->DrawColorScaled(400,384,1.f,1.f,1.f);
+}
+void COriginalEnd::Draw(){glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);if(!m_ready)return;if(m_mode==Staff)DrawStaff();else if(m_mode==AllCast)DrawCast();else{m_background->Draw(0,40);if(m_mode==Congratulations)DrawCongratulations();else if(m_age>=64)DrawVerdict(336,48,2,m_age>=128);CCommonFunctionGraphic::ScreenFade(float((std::min)(100,m_age*100/64)));}
  if(m_mode==Staff&&m_age<100)CCommonFunctionGraphic::ScreenFade(float(m_age));if(m_fadeOut){const int duration=m_mode==Staff?100:m_mode==AllCast?64:32;CCommonFunctionGraphic::ScreenFade(100.f*(duration-m_fadeOut)/duration);}
 }
 }

@@ -201,7 +201,7 @@ int CEnemyBullet::FindFreeRecord(int *retIdxArray,int startIdx,int nIdx,int nNee
 
 void CEnemyBullet::FillRecordSpeedAndAngle(int *freeRecIdx,ENEMY_SHOOT_INFO *shootInfo)
 {
-	float angleToChara=m_pStage->m_pChara->AngleToChara(shootInfo->shootOrigX,shootInfo->shootOrigY);
+	float angleToChara=m_pStage->AimAngle(shootInfo->shootOrigX,shootInfo->shootOrigY);
  if(original::DemoActive()){
   const int type=shootInfo->shootType;int way=1,stack=1;
   if((type>=2&&type<=5)||(type>=8&&type<=13))way=shootInfo->nWay?shootInfo->nWay:1;
@@ -357,9 +357,9 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 	if (shootInfo->shootOrigX<=m_clipXLow||shootInfo->shootOrigX>=m_clipXHigh||
 		shootInfo->shootOrigY<=m_clipYLow||shootInfo->shootOrigY>=m_clipYHigh)
 		return;
-	if (m_pStage->m_pChara->TestCrash(shootInfo->shootOrigX,shootInfo->shootOrigY,4.0f*16.0f,4.0f*16.0f))
+	if (m_pStage->TestPlayerCrash(shootInfo->shootOrigX,shootInfo->shootOrigY,4.0f*16.0f,4.0f*16.0f))
 	{
-		m_pStage->m_pChara->m_bMiss=true;
+		m_pStage->MarkPlayerMiss();
 	}
 	//adjust speed
 	if (bAdjustSpeed)
@@ -398,6 +398,7 @@ void CEnemyBullet::Shoot(ENEMY_SHOOT_INFO *shootInfo,bool bSpecialBullet,bool bA
 		if (freeRecIdx[i]==-1)
 			break;
 		m_bullets[freeRecIdx[i]].flag=1;
+  m_bullets[freeRecIdx[i]].coopGrazeMask=0;
 		m_bullets[freeRecIdx[i]].bornStageAndGrazeFlag=bornStage;
 		m_bullets[freeRecIdx[i]].curX=shootInfo->shootOrigX;
 		m_bullets[freeRecIdx[i]].curY=shootInfo->shootOrigY;
@@ -455,7 +456,7 @@ void CEnemyBullet::SpecialMove(int recordIdx)
 		{
 			pBul.accumulator++;
 			if (bTurnToChara)
-				pBul.curAngle=m_pStage->m_pChara->AngleToChara(pBul.curX,pBul.curY);
+				pBul.curAngle=m_pStage->AimAngle(pBul.curX,pBul.curY);
 			else
 				pBul.curAngle+=pBul.delta;
 			pBul.imgIdx=AdjustBulletImageBasedOnAngle(pBul.imgIdx,pBul.curAngle);
@@ -673,6 +674,11 @@ void CEnemyBullet::Step()
 				}
 				if (m_clearEnemyBulletTimeLeft>0 || (original::DemoActive()&&m_pStage->m_pChara->m_invulnerableTimeLeft!=0))
 					continue;
+ if(m_pStage->Cooperative()) {
+  m_pStage->GrazePlayers(m_bullets[i].curX,m_bullets[i].curY,m_bullets[i].coopGrazeMask);
+  if(m_pStage->TestPlayerCrash(m_bullets[i].curX,m_bullets[i].curY,64,64)){m_pStage->MarkPlayerMiss();m_bullets[i].flag=2;}
+  continue;
+ }
 				float charaX=m_pStage->m_pChara->GetCurX();
 				float charaY=m_pStage->m_pChara->GetCurY();
 				if (m_bullets[i].bornStageAndGrazeFlag==0)		//test graze first
@@ -694,10 +700,10 @@ void CEnemyBullet::Step()
 				else
 				{
 					//test crash with chara, the PC98 ver assumes only grazed bullets can crash chara
-					if (m_pStage->m_pChara->TestCrash(m_bullets[i].curX,m_bullets[i].curY,4.0f*16.0f,4.0f*16.0f))
+					if (m_pStage->TestPlayerCrash(m_bullets[i].curX,m_bullets[i].curY,4.0f*16.0f,4.0f*16.0f))
 					{
 						m_bullets[i].flag=2;
-						m_pStage->m_pChara->m_bMiss=true;
+						m_pStage->MarkPlayerMiss();
 					}
 
 				}

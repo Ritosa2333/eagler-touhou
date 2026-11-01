@@ -13,9 +13,13 @@ namespace th5w{
 
 CGlobalVariableAndStatistics::CGlobalVariableAndStatistics(void)
 {
-	getcwd(m_workingPath,999);
+	#ifdef __EMSCRIPTEN__
+ strcpy(m_workingPath,"/savesth05/");
+#else
+ getcwd(m_workingPath,999);
 	if (m_workingPath[strlen(m_workingPath)-1]!='\\')
 		strcat(m_workingPath,"\\");
+#endif
 	strcpy(m_replaySubDir,"replay");
 	memset(m_modMD5,0,sizeof(m_modMD5));
 	m_gameVersion=1;
@@ -98,7 +102,7 @@ void CGlobalVariableAndStatistics::LoadConfig()
 
 	memset(m_bClear,0,sizeof(m_bClear));
 
-	FILE *fp=fopen("game.cfg","rb");
+	FILE *fp=fopen(TH05_SAVE("game.cfg"),"rb");
 	if (fp==NULL)
 		return;
 	fseek(fp,0,SEEK_END);
@@ -122,7 +126,7 @@ void CGlobalVariableAndStatistics::LoadConfig()
 
 void CGlobalVariableAndStatistics::SaveConfig()
 {
-	FILE *fp=fopen("game.cfg","wb");
+	FILE *fp=fopen(TH05_SAVE("game.cfg"),"wb");
 	if (fp==NULL)
 		return;
 	fwrite(&m_nInitLife,sizeof(int),1,fp);
@@ -151,7 +155,7 @@ void CGlobalVariableAndStatistics::LoadPracticeProgress()
  for(int c=0;c<4;c++) for(int d=0;d<4;d++)
   if(m_bClear[c][d]) m_practiceUnlocked[c][d]=63;
  // The extension follows the unchanged 52-byte native configuration prefix.
- FILE* f=fopen("game.cfg","rb");
+ FILE* f=fopen(TH05_SAVE("game.cfg"),"rb");
  unsigned char embedded[40];
  if(f) {
   fseek(f,52,SEEK_SET);const size_t n=fread(embedded,1,40,f);fclose(f);
@@ -161,7 +165,7 @@ void CGlobalVariableAndStatistics::LoadPracticeProgress()
   }
  }
  // Read the earlier sidecar only as an import; all new writes go to game.cfg.
- f=fopen("practice-progress.dat","rb"); if(!f) return;
+ f=fopen(TH05_SAVE("practice-progress.dat"),"rb"); if(!f) return;
  unsigned char data[40]; const size_t count=fread(data,1,sizeof(data),f);
  const int extra=fgetc(f); fclose(f);
  if(count!=sizeof(data)||extra!=EOF||memcmp(data,"TH5PRC1",8)||memcmp(data+8,m_modMD5,16)) return;
@@ -183,10 +187,10 @@ void CGlobalVariableAndStatistics::OnStageEnter()
 
 void CGlobalVariableAndStatistics::OnClear()
 {
-	if (original::DemoActive() || practice::Assisted() || m_bPracticeMode) return;
+	if (original::DemoActive() || m_bReplayMode || practice::Assisted() || m_bPracticeMode || m_nContinueUsed!=0) return;
 	m_bClear[m_playChara][m_playDifficulty]=true;
 	for (int i=0;i<4;i++)
-		for (int j=1;j<4;j++)
+		for (int j=0;j<4;j++)
 			if (m_bClear[i][j])
 				m_bExtraPlayable[i]=true;
 }
@@ -199,7 +203,7 @@ void CGlobalVariableAndStatistics::Initialize()
 
 	memset(m_bExtraPlayable,0,sizeof(m_bExtraPlayable));
 	for (int i=0;i<4;i++)
-		for (int j=1;j<4;j++)
+		for (int j=0;j<4;j++)
 			if (m_bClear[i][j])
 				m_bExtraPlayable[i]=true;
 
@@ -217,7 +221,7 @@ void CGlobalVariableAndStatistics::LoadHighScore()
 				m_highScoreFlag[i][j][k]=(j==4?1:6-k);
 			}
 
-	FILE *fp=fopen("score.dat","rb");
+	FILE *fp=fopen(TH05_SAVE("score.dat"),"rb");
 	if (fp==NULL)
 		return;
 	fseek(fp,0,SEEK_END);
@@ -240,7 +244,7 @@ void CGlobalVariableAndStatistics::LoadHighScore()
 
 void CGlobalVariableAndStatistics::SaveHighScore()
 {
-	FILE *fp=fopen("score.dat","wb");
+	FILE *fp=fopen(TH05_SAVE("score.dat"),"wb");
 	if (fp==NULL)
 		return;
 	for (int i=0;i<4;i++)

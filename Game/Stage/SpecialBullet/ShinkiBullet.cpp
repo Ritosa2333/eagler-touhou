@@ -79,9 +79,9 @@ void CShinkiBullet::Step()
 		}
 		else
 		{
-			if (m_pStage->m_pChara->TestCrash(m_bullet[i].curX,m_bullet[i].curY,8.0f*16.0f,8.0f*16.0f))
+			if (m_pStage->TestPlayerCrash(m_bullet[i].curX,m_bullet[i].curY,8.0f*16.0f,8.0f*16.0f))
 			{
-				m_pStage->m_pChara->m_bMiss=true;
+				m_pStage->MarkPlayerMiss();
 				m_bullet[i].flag=3;
 			}
 		}

@@ -63,11 +63,11 @@ void CMidBoss::DrawHPGaugeAndExtStrEnemy(int fullHP)
 	if (m_lastDrawnHP>0)
 	{
 		int colorIdx=m_lastDrawnHP*4/fullHP;
-		m_pStage->m_pStageRes->DrawGauge(m_lastDrawnHP,fullHP,0x38*8,0x9*16+40,
+		m_pStage->m_pStageRes->DrawGauge(m_lastDrawnHP,fullHP,0x38*8,(m_pStage->Cooperative()?352:144)+40,
 							gaugeColor[colorIdx][0],gaugeColor[colorIdx][1],gaugeColor[colorIdx][2]);
-		m_pStage->m_pStageRes->DrawHPPhaseMarkers(m_lastDrawnHP,fullHP,0x38*8,0x9*16+40,true);
+		m_pStage->m_pStageRes->DrawHPPhaseMarkers(m_lastDrawnHP,fullHP,0x38*8,(m_pStage->Cooperative()?352:144)+40,true);
 		unsigned char extEnemy[]={0xea,0xeb,0xec,0};
-		CTh5ExtFont::DrawExtString(extEnemy,100,0x3d*8,0x8*16+40,1,1,0);
+		CTh5ExtFont::DrawExtString(extEnemy,100,0x3d*8,(m_pStage->Cooperative()?336:128)+40,1,1,0);
 	}
 }
 

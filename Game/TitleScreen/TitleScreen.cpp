@@ -341,6 +341,9 @@ void CTitleScreen::DrawMainMenuItems()
 // Fixed Chinese hints use Unicode, independent of the mod's legacy font encoding.
 static C2DImage* CreateChineseDescription(const wchar_t* text)
 {
+#ifdef __EMSCRIPTEN__
+ return web::WideText(text);
+#else
  const int length=int(wcslen(text)),width=length*16;
  HDC dc=CreateCompatibleDC(NULL);if(!dc)return NULL;
  BITMAPINFO info={};info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
@@ -363,6 +366,7 @@ static C2DImage* CreateChineseDescription(const wchar_t* text)
  image->UploadToTexture();
  if(font){SelectObject(dc,oldFont);DeleteObject(font);}SelectObject(dc,oldBitmap);
  DeleteObject(bitmap);DeleteDC(dc);return image;
+#endif
 }
 void CTitleScreen::CreatePracticeDescription()
 {

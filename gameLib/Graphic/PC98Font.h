@@ -3,8 +3,16 @@
 */
 
 #pragma once
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Graphics.hpp"
+#else
 #include "../Graphic/include/glew.h"
+#endif
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Graphics.hpp"
+#else
 #include <gl/gl.h>
+#endif
 
 namespace th5w{
 

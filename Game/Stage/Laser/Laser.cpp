@@ -111,7 +111,7 @@ void CLaser::TestCrash(int laserIdx)
   do{
    const int testX=int(laser.srcX)+original::math::X(int(laser.angle),length);
    const int testY=int(laser.srcY)+original::math::Y(int(laser.angle),length);
-   if(testX>=x-96&&testX<x+96&&testY>=y-96&&testY<y+96){m_pStage->m_pChara->m_bMiss=true;return;}
+   if(testX>=x-96&&testX<x+96&&testY>=y-96&&testY<y+96){m_pStage->MarkPlayerMiss();return;}
    length-=256;
   }while(length>=int(laser.lenLower));
   return;
@@ -123,8 +123,8 @@ void CLaser::TestCrash(int laserIdx)
 		//PC98 ver uses 6.0f*16.0f as crash area
 		//this makes it possible for the player to go through the laser at certain positions.
 		//(adjacent centers are 16.0f*16.0f away. which is larger than 2*6.0f*16.0f)
-		if (m_pStage->m_pChara->TestCrash(testX,testY,8.0f*16.0f,8.0f*16.0f))
-			m_pStage->m_pChara->m_bMiss=true;
+		if (m_pStage->TestPlayerCrash(testX,testY,8.0f*16.0f,8.0f*16.0f))
+			m_pStage->MarkPlayerMiss();
 	}
 }
 

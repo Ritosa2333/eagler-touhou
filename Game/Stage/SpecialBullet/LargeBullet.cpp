@@ -68,8 +68,8 @@ void CLargeBullet::Step()
 			}
 			continue;
 		}
-		if (m_pStage->m_pChara->TestCrash(m_bullet[i].curX,m_bullet[i].curY,8.0f*16.0f,8.0f*16.0f))
-			m_pStage->m_pChara->m_bMiss=true;
+		if (m_pStage->TestPlayerCrash(m_bullet[i].curX,m_bullet[i].curY,8.0f*16.0f,8.0f*16.0f))
+			m_pStage->MarkPlayerMiss();
 
 		int dmg=m_pStage->GetDamageFromChara(m_bullet[i].curX,m_bullet[i].curY,8.0f*16.0f,8.0f*16.0f,false);
 		m_bullet[i].bHit=false;

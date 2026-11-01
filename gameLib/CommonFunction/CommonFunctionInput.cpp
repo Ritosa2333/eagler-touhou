@@ -1,5 +1,6 @@
 #include ".\commonfunctioninput.h"
 #include "../../Game/Game.h"
+#include "../../Game/Coop/Coop.h"
 
 namespace th5w{
 
@@ -11,7 +12,7 @@ CCommonFunctionInput::~CCommonFunctionInput(void)
 {
 }
 
-unsigned short CCommonFunctionInput::GetAllKeyState()
+unsigned short PhysicalKeys()
 {
 //key state map:
 //low byte bits:
@@ -38,6 +39,11 @@ unsigned short CCommonFunctionInput::GetAllKeyState()
 	ret|=((unsigned short)CGame::s_pCurGame->m_input.GetKeyState(DIK_Q))<<14;
 
 	return ret;
+}
+
+unsigned short CCommonFunctionInput::GetAllKeyState(){
+ if(coop::Run().count>1){unsigned short buttons=0;for(int i=0;i<coop::Run().count;i++)buttons|=coop::Run().input[i].buttons;return buttons;}
+ return PhysicalKeys();
 }
 
 }

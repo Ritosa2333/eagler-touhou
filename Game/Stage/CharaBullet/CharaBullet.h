@@ -5,7 +5,7 @@
 
 namespace th5w{
 
-#define CHARA_BULLET_N_RECORD 64
+#define CHARA_BULLET_N_RECORD 144
 #define HIT_CHARA_BULLET_N_RECORD 24
 #define CHARA_BULLET_TYPE_NORMAL 0
 #define CHARA_BULLET_TYPE_HOMING 1
@@ -54,6 +54,7 @@ friend class CCharaYuka;
 
 protected:
 	CStage *m_pStage;
+ int Capacity() const;
 	unsigned char m_originalHitCounter;
 	float m_clipXLow,m_clipXHigh,m_clipYLow,m_clipYHigh;
 

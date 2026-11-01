@@ -1,3 +1,6 @@
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Audio.hpp"
+#else
 /*
 	As the PMDWin.dll is NOT thread-safe, this class has all members static and constructor private.
 	construction/destruction is done via static functions Initialize/Finalize
@@ -70,3 +73,5 @@ private:
 };
 
 }
+
+#endif

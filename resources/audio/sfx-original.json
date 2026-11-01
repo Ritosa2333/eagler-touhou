@@ -1,0 +1,65 @@
+{
+  "source": "uth05win/SE",
+  "files": {
+    "s01.wav": {
+      "bytes": 21968,
+      "sha256": "ebae88cd6f62eb117e223cb1e842fd07a0b653b43d7b2f1c11c84114dafd0f37"
+    },
+    "s02.wav": {
+      "bytes": 78908,
+      "sha256": "38f3f87b6283faf1ef248e68f87188256b6fdbbb4832c56e40e455bef46fe31a"
+    },
+    "s03.wav": {
+      "bytes": 131444,
+      "sha256": "be74bddca117fb4d9bd7ee9896394870a569bacd8fe86eaacf1a3c37856501ad"
+    },
+    "s04.wav": {
+      "bytes": 32776,
+      "sha256": "d23bd85b4c2ada77d1cba3cd6a9cce7275e8ee9c95c096a383712b777a8edd29"
+    },
+    "s05.wav": {
+      "bytes": 160840,
+      "sha256": "fc7ed0b39e34b1390fd3cf48c3e90be7e0ccf46feb03dc2305f66f24cd53fd68"
+    },
+    "s06.wav": {
+      "bytes": 119672,
+      "sha256": "6b9422e7108aa13aa06f716114b3df201d80f5ac10686ebe6cca90b74323bf5d"
+    },
+    "s07.wav": {
+      "bytes": 218128,
+      "sha256": "b0d6755c60d9b8fa40ee4593604579cc06a810d5638cfc6a29f35fca2db6a39b"
+    },
+    "s08.wav": {
+      "bytes": 307784,
+      "sha256": "fc9edefdd61dcda5f352b60bd3c33fb177e051ed8bce996aeabf8ae3ed18da63"
+    },
+    "s09.wav": {
+      "bytes": 181368,
+      "sha256": "3306f6cc29337cecefb63a4589e6ede958c355f7040f1b2b915eb90109ba62a9"
+    },
+    "s10.wav": {
+      "bytes": 19400,
+      "sha256": "c6e9cc96476c3802a2de6087d447bafd877c197b8ed49e1d8fc6dd917b1dd72f"
+    },
+    "s11.wav": {
+      "bytes": 30308,
+      "sha256": "9504fdab3aa747f97bd787753ef8fc882e2fc04ae540b14d106393f8583de165"
+    },
+    "s12.wav": {
+      "bytes": 361664,
+      "sha256": "4ba67ee2af437fd5ff9a9f29aaa358b316fbe0869df0022d406eebdb975e2820"
+    },
+    "s13.wav": {
+      "bytes": 623188,
+      "sha256": "4a5f5f8544220bc78cd90aae3ee3fdf07e644c57f25eac545429e485bf6853f4"
+    },
+    "s14.wav": {
+      "bytes": 94868,
+      "sha256": "8057bd1ebc437145929f10f07cc036a6374de54709f48d2a984935452be39f24"
+    },
+    "s15.wav": {
+      "bytes": 41960,
+      "sha256": "dd28eb311873016202699854e5c41d94760c6db174ec07fe4b1ec6ddc6d10024"
+    }
+  }
+}

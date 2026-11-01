@@ -1,3 +1,6 @@
+#ifdef __EMSCRIPTEN__
+#include "../../portable/Window.hpp"
+#else
 #pragma once
 
 #include "mygl.h"
@@ -23,3 +26,4 @@ public:
 
 	}
 }
+#endif

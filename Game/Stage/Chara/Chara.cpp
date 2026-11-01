@@ -95,6 +95,22 @@ void CChara::MoveChara(unsigned short keyState)
 			m_collisionAreaAlpha=0;
 	}
 
+#ifdef __EMSCRIPTEN__
+ if(!original::DemoActive()&&!m_pStage->Cooperative()){
+  float x=0,y=0;
+  if(!CGame::GVar().m_bReplayMode)web::TouchMotion(x,y,m_moveSpeed*(CCommonFunctionInput::LShiftKey(keyState)?.5f:1.f));
+  CGame::GVar().m_replay.TouchMotion(x,y,CGame::GVar().m_bReplayMode);
+  deltaX+=x;deltaY+=y;
+ }
+#else
+ if(CGame::GVar().m_bReplayMode){float x=0,y=0;CGame::GVar().m_replay.TouchMotion(x,y,true);deltaX+=x;deltaY+=y;}
+#endif
+ if(m_pStage->Cooperative()) {
+  const auto& in=coop::Run().input[m_pStage->BoundSeat()];float x=in.x,y=in.y;
+  if(in.motionMode>=2){x-=m_curX;y-=m_curY;}
+  const float limit=m_moveSpeed*(CCommonFunctionInput::LShiftKey(keyState)?.5f:1.f),length=sqrtf(x*x+y*y);
+  if(!(in.motionMode&1)&&length>limit){x*=limit/length;y*=limit/length;}deltaX+=x;deltaY+=y;
+ }
 	m_deltaX=deltaX;
 	m_deltaY=deltaY;
 
@@ -110,6 +126,7 @@ void CChara::MoveChara(unsigned short keyState)
 
 void CChara::DropBomb()
 {
+ if(coop::Run().challenge)return;
 	if (m_pStage->m_bInCharaBomb)
 		return;
 	if (m_pStage->m_nCurBomb==0 && !practice::Enabled(practice::InfiniteBombs))
@@ -127,6 +144,7 @@ void CChara::DropBomb()
 		}
 	if (!practice::Enabled(practice::InfiniteBombs)) m_pStage->m_nCurBomb--;
 	m_pStage->m_bInCharaBomb=true;
+ m_pStage->m_bombOwner=m_pStage->BoundSeat();
 	m_bombTimer=0;
 	m_invulnerableTimeLeft=m_bombInvulnerableTime;
 	m_pStage->m_pEnemyBullet->SetClearBulletTimeLeft(m_bombClearEnemyBulletTime);
@@ -176,6 +194,11 @@ void CChara::OnMissDropItem()
 
 void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 {
+ if(m_pStage->Cooperative()) {
+  if(itemType==ITEM_1UP){m_pStage->TeamLife();return;}
+  if(itemType==ITEM_BOMB){m_pStage->TeamBomb();return;}
+  if(m_pStage->SharePower(itemX,itemY,itemType))return;
+ }
  original::ItemCollected(itemType==ITEM_POINT,itemType==ITEM_POINT&&(m_pStage->GetDream()>=128||itemY-m_pStage->GetDream()*24-896<=0));
 	const int powerOverflowBonus[]={1,1,2,3,4,5,6,7,8,9,
 									10,20,30,40,50,60,70,80,90,100,
@@ -242,7 +265,8 @@ void CChara::CaughtItem(float itemX,float itemY,unsigned char itemType)
 			if (m_pStage->m_totalNPointItem%100==0)
 			{
 				m_pStage->ChangePlayerPerformance(4);
-				if (m_pStage->m_nCurLife<99)
+				if(m_pStage->Cooperative())m_pStage->TeamLife();
+				else if (m_pStage->m_nCurLife<99)
 				{
 					m_pStage->m_nCurLife++;
 					m_pStage->m_pEnemyBullet->SetClearBulletTimeLeft(20);
@@ -395,7 +419,7 @@ void CChara::Step()
 				if (m_pStage->m_playerPerformance>38)
 					m_pStage->ChangePlayerPerformance(38-m_pStage->m_playerPerformance);
 				m_pStage->ChangePlayerPerformance(-4);
-				m_pStage->m_nMiss++;original::Miss();
+				m_pStage->m_nMiss++;if(m_pStage->Cooperative())++m_pStage->m_seats[m_pStage->m_boundSeat].stock.deaths;original::Miss();
 			}
 			if (m_pStage->GetDream()<=2)
 				m_pStage->SetDream(1);
@@ -414,14 +438,14 @@ void CChara::Step()
 				m_lastY=m_curY;
 				m_deltaX=0;
 				m_deltaY=-2.0f*16.0f;
-				if (m_pStage->m_nCurLife<=1 && !practice::Enabled(practice::InfiniteLives))
+				if (m_pStage->m_nCurLife<=1 && !coop::Run().challenge && !practice::Enabled(practice::InfiniteLives))
 				{
 					m_pStage->EnableContinueScreen();
 					DisableDraw();
 				}
 				else
 				{
-					if (practice::ConsumeLife(m_pStage->m_nCurLife)) m_pStage->m_nCurLife--;
+					if (!coop::Run().challenge && practice::ConsumeLife(m_pStage->m_nCurLife)) m_pStage->m_nCurLife--;
 					m_pStage->m_nCurBomb=m_pStage->m_nBombOnMiss;
 					m_pStage->m_pEnemyBullet->SetClearBulletTimeLeft(32);
 				}

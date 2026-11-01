@@ -1,0 +1,424 @@
+{
+  "collection": "Akyu Untouched Score",
+  "volume": 2,
+  "codec": "opus",
+  "bitrate": 64000,
+  "sampleRate": 48000,
+  "tracks": {
+    "ed00-m26": {
+      "url": "akyu/18.opus",
+      "title": "18. Shinto Shrine-opus64",
+      "audioSha256": "2526a51ffcc4043ae0343d2e17ac0a1df4aa56cb156eb1109e50bce6bec71751",
+      "bytes": 1017465,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 102.1665
+    },
+    "ed00-m86": {
+      "url": "akyu/18.opus",
+      "title": "18. Shinto Shrine-opus64",
+      "audioSha256": "2526a51ffcc4043ae0343d2e17ac0a1df4aa56cb156eb1109e50bce6bec71751",
+      "bytes": 1017465,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 102.1665
+    },
+    "ed01-m26": {
+      "url": "akyu/19.opus",
+      "title": "19. Endless-opus64",
+      "audioSha256": "76415b57bad9ca66c00e15f824ca2f705e8567a36298dde4dfaa8dd49a1155e0",
+      "bytes": 867360,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 87.219833
+    },
+    "ed01-m86": {
+      "url": "akyu/19.opus",
+      "title": "19. Endless-opus64",
+      "audioSha256": "76415b57bad9ca66c00e15f824ca2f705e8567a36298dde4dfaa8dd49a1155e0",
+      "bytes": 867360,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 87.219833
+    },
+    "name-m26": {
+      "url": "akyu/22.opus",
+      "title": "22. Soul's Resting Place-opus64",
+      "audioSha256": "f879f1d97f63e95ef43abbfc37285e1e0d8bd0997596d34c4b16bbcf329905dc",
+      "bytes": 917911,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 92.139833
+    },
+    "name-m86": {
+      "url": "akyu/22.opus",
+      "title": "22. Soul's Resting Place-opus64",
+      "audioSha256": "f879f1d97f63e95ef43abbfc37285e1e0d8bd0997596d34c4b16bbcf329905dc",
+      "bytes": 917911,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 92.139833
+    },
+    "op-m26": {
+      "url": "akyu/01.opus",
+      "title": "01. Bizarre Romantic Story ~ Mystic Square-opus64",
+      "audioSha256": "e87610aa473b5140d992aeb564a1c311c1cda0024808c9b2189ef9915b7f9c75",
+      "bytes": 1808643,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 180.9265
+    },
+    "op-m86": {
+      "url": "akyu/01.opus",
+      "title": "01. Bizarre Romantic Story ~ Mystic Square-opus64",
+      "audioSha256": "e87610aa473b5140d992aeb564a1c311c1cda0024808c9b2189ef9915b7f9c75",
+      "bytes": 1808643,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 180.9265
+    },
+    "st00-m26": {
+      "url": "akyu/02.opus",
+      "title": "02. Dream Express-opus64",
+      "audioSha256": "6f17b7abc6a1702caec7e828af5ee49d644e1549127a18f992f43c4f6f30cdcc",
+      "bytes": 3076982,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 308.179833
+    },
+    "st00-m86": {
+      "url": "akyu/02.opus",
+      "title": "02. Dream Express-opus64",
+      "audioSha256": "6f17b7abc6a1702caec7e828af5ee49d644e1549127a18f992f43c4f6f30cdcc",
+      "bytes": 3076982,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 308.179833
+    },
+    "st00b-m26": {
+      "url": "akyu/03.opus",
+      "title": "03. Magic Square ~ Magic Square-opus64",
+      "audioSha256": "f60a422ac3617aa6065fdf5daee3594fb8a848b97bb7fdca408d6f4521b27bf7",
+      "bytes": 1545064,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 150.833167
+    },
+    "st00b-m86": {
+      "url": "akyu/03.opus",
+      "title": "03. Magic Square ~ Magic Square-opus64",
+      "audioSha256": "f60a422ac3617aa6065fdf5daee3594fb8a848b97bb7fdca408d6f4521b27bf7",
+      "bytes": 1545064,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 150.833167
+    },
+    "st01-m26": {
+      "url": "akyu/04.opus",
+      "title": "04. Dimension of Reverie-opus64",
+      "audioSha256": "570f449fcfeebfce3803133e7a2c453436bb0ac27840e20f80553bf3a7e0faff",
+      "bytes": 1820724,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 176.0065
+    },
+    "st01-m86": {
+      "url": "akyu/04.opus",
+      "title": "04. Dimension of Reverie-opus64",
+      "audioSha256": "570f449fcfeebfce3803133e7a2c453436bb0ac27840e20f80553bf3a7e0faff",
+      "bytes": 1820724,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 176.0065
+    },
+    "st01b-m26": {
+      "url": "akyu/05.opus",
+      "title": "05. Spiritual Heaven ~ Spiritual Heaven-opus64",
+      "audioSha256": "9cc34082a4a6259e834c1fc1b653e92969b8cd1ef4f6d52291fad95470d1d9c3",
+      "bytes": 1197108,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 116.099833
+    },
+    "st01b-m86": {
+      "url": "akyu/05.opus",
+      "title": "05. Spiritual Heaven ~ Spiritual Heaven-opus64",
+      "audioSha256": "9cc34082a4a6259e834c1fc1b653e92969b8cd1ef4f6d52291fad95470d1d9c3",
+      "bytes": 1197108,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 116.099833
+    },
+    "st02-m26": {
+      "url": "akyu/06.opus",
+      "title": "06. Romantic Children-opus64",
+      "audioSha256": "14c1d799684afe943c11a6d1901325ea538ddcdcfc5f0d040dba4576c6c2863d",
+      "bytes": 3040758,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 311.3265
+    },
+    "st02-m86": {
+      "url": "akyu/06.opus",
+      "title": "06. Romantic Children-opus64",
+      "audioSha256": "14c1d799684afe943c11a6d1901325ea538ddcdcfc5f0d040dba4576c6c2863d",
+      "bytes": 3040758,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 311.3265
+    },
+    "st02b-m26": {
+      "url": "akyu/07.opus",
+      "title": "07. Plastic Mind-opus64",
+      "audioSha256": "4a262c6e471f171a132eb8ee01edf4da842048852539b64018262a917ec36a0c",
+      "bytes": 2190071,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 211.393167
+    },
+    "st02b-m86": {
+      "url": "akyu/07.opus",
+      "title": "07. Plastic Mind-opus64",
+      "audioSha256": "4a262c6e471f171a132eb8ee01edf4da842048852539b64018262a917ec36a0c",
+      "bytes": 2190071,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 211.393167
+    },
+    "st03-m26": {
+      "url": "akyu/08.opus",
+      "title": "08. Maple Wise-opus64",
+      "audioSha256": "64670bca54d6ecd91eab7eb015fc41f60f884d52297e4455f48fcd7aed452db4",
+      "bytes": 2253292,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 211.579833
+    },
+    "st03-m86": {
+      "url": "akyu/08.opus",
+      "title": "08. Maple Wise-opus64",
+      "audioSha256": "64670bca54d6ecd91eab7eb015fc41f60f884d52297e4455f48fcd7aed452db4",
+      "bytes": 2253292,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 211.579833
+    },
+    "st03b-m26": {
+      "url": "akyu/09.opus",
+      "title": "09. Forbidden Magic ~ Forbidden Magic-opus64",
+      "audioSha256": "b09f3a82a6705702f76eeffe8d127f99dfc4c98c86dcfce6257014bf1895e4a2",
+      "bytes": 2221503,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 211.019833
+    },
+    "st03b-m86": {
+      "url": "akyu/09.opus",
+      "title": "09. Forbidden Magic ~ Forbidden Magic-opus64",
+      "audioSha256": "b09f3a82a6705702f76eeffe8d127f99dfc4c98c86dcfce6257014bf1895e4a2",
+      "bytes": 2221503,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 211.019833
+    },
+    "st03c-m26": {
+      "url": "akyu/10.opus",
+      "title": "10. Crimson Maiden ~ Crimson Dead!!-opus64",
+      "audioSha256": "dd057595dfb9b44ef6c008bafef69e6b0b81daaf0d55c7b874a924eeccf5d476",
+      "bytes": 1589081,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 152.0465
+    },
+    "st03c-m86": {
+      "url": "akyu/10.opus",
+      "title": "10. Crimson Maiden ~ Crimson Dead!!-opus64",
+      "audioSha256": "dd057595dfb9b44ef6c008bafef69e6b0b81daaf0d55c7b874a924eeccf5d476",
+      "bytes": 1589081,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 152.0465
+    },
+    "st03d-m26": {
+      "url": "akyu/11.opus",
+      "title": "11. Treacherous Maiden ~ Judas Kiss-opus64",
+      "audioSha256": "9e97b79fb89e428ea4913824c22450b7e0a091dde07dd164dfe4e90ca9e3df0c",
+      "bytes": 1075237,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 106.1665
+    },
+    "st03d-m86": {
+      "url": "akyu/11.opus",
+      "title": "11. Treacherous Maiden ~ Judas Kiss-opus64",
+      "audioSha256": "9e97b79fb89e428ea4913824c22450b7e0a091dde07dd164dfe4e90ca9e3df0c",
+      "bytes": 1075237,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 106.1665
+    },
+    "st04-m26": {
+      "url": "akyu/12.opus",
+      "title": "12. the Last Judgement-opus64",
+      "audioSha256": "0ce5c574c45d788b38f66f5a4827707b5f7c2e384bd8326050351eb032b952d0",
+      "bytes": 2669972,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 262.5665
+    },
+    "st04-m86": {
+      "url": "akyu/12.opus",
+      "title": "12. the Last Judgement-opus64",
+      "audioSha256": "0ce5c574c45d788b38f66f5a4827707b5f7c2e384bd8326050351eb032b952d0",
+      "bytes": 2669972,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 262.5665
+    },
+    "st04b-m26": {
+      "url": "akyu/13.opus",
+      "title": "13. Doll of Misery ~ Doll of Misery-opus64",
+      "audioSha256": "7bb9aeeb69bd20cb40a4d95bbaf61f42d1d4f84724dd5888f2b827c99346761b",
+      "bytes": 2407597,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 231.459833
+    },
+    "st04b-m86": {
+      "url": "akyu/13.opus",
+      "title": "13. Doll of Misery ~ Doll of Misery-opus64",
+      "audioSha256": "7bb9aeeb69bd20cb40a4d95bbaf61f42d1d4f84724dd5888f2b827c99346761b",
+      "bytes": 2407597,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 231.459833
+    },
+    "st05-m26": {
+      "url": "akyu/14.opus",
+      "title": "14. End of the World ~ World's End-opus64",
+      "audioSha256": "d2439689423fe0fa5125952a56ef9533187ab53ada0d88a66da3d8352352502d",
+      "bytes": 982677,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 102.1665
+    },
+    "st05-m86": {
+      "url": "akyu/14.opus",
+      "title": "14. End of the World ~ World's End-opus64",
+      "audioSha256": "d2439689423fe0fa5125952a56ef9533187ab53ada0d88a66da3d8352352502d",
+      "bytes": 982677,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 102.1665
+    },
+    "st05b-m26": {
+      "url": "akyu/15.opus",
+      "title": "15. Legendary Illusion ~ Infinite Being-opus64",
+      "audioSha256": "ce174cbeb321c29f0eb36f1a2b1bea9e76eba7237242179907d1c5b091e75b61",
+      "bytes": 2862965,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 291.833167
+    },
+    "st05b-m86": {
+      "url": "akyu/15.opus",
+      "title": "15. Legendary Illusion ~ Infinite Being-opus64",
+      "audioSha256": "ce174cbeb321c29f0eb36f1a2b1bea9e76eba7237242179907d1c5b091e75b61",
+      "bytes": 2862965,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 291.833167
+    },
+    "st06-m26": {
+      "url": "akyu/16.opus",
+      "title": "16. Alice in Wonderland-opus64",
+      "audioSha256": "19ff027f2a82fe1ba77afb8ba69b57643ebb2e87a75a76e7cf801c17918bae8d",
+      "bytes": 2309914,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 221.8865
+    },
+    "st06-m86": {
+      "url": "akyu/16.opus",
+      "title": "16. Alice in Wonderland-opus64",
+      "audioSha256": "19ff027f2a82fe1ba77afb8ba69b57643ebb2e87a75a76e7cf801c17918bae8d",
+      "bytes": 2309914,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 221.8865
+    },
+    "st06b-m26": {
+      "url": "akyu/17.opus",
+      "title": "17. the Grimoire of Alice-opus64",
+      "audioSha256": "bf081bf8604a432999a81024ea4bef9838aeaa03f170a82f87a290b216bd70fa",
+      "bytes": 1795874,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 191.699833
+    },
+    "st06b-m86": {
+      "url": "akyu/17.opus",
+      "title": "17. the Grimoire of Alice-opus64",
+      "audioSha256": "bf081bf8604a432999a81024ea4bef9838aeaa03f170a82f87a290b216bd70fa",
+      "bytes": 1795874,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 191.699833
+    },
+    "staff-m26": {
+      "url": "akyu/21.opus",
+      "title": "21. Mystic Dream-opus64",
+      "audioSha256": "1a0a1833fb8fc8b710078039acb74635d21a5c42a693ba413497d6fedd6c61c0",
+      "bytes": 1716731,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 167.6465
+    },
+    "staff-m86": {
+      "url": "akyu/21.opus",
+      "title": "21. Mystic Dream-opus64",
+      "audioSha256": "1a0a1833fb8fc8b710078039acb74635d21a5c42a693ba413497d6fedd6c61c0",
+      "bytes": 1716731,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 167.6465
+    },
+    "exed-m86": {
+      "url": "akyu/23.opus",
+      "title": "23. Peaceful Romancer-opus64",
+      "audioSha256": "e56ab8d3a0fadf9a026c03487570900dab7be0e8ef98a1b3ba777f6d694cac05",
+      "bytes": 2168027,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 202.2865
+    },
+    "exed-m26": {
+      "url": "akyu/23.opus",
+      "title": "23. Peaceful Romancer-opus64",
+      "audioSha256": "e56ab8d3a0fadf9a026c03487570900dab7be0e8ef98a1b3ba777f6d694cac05",
+      "bytes": 2168027,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 202.2865
+    },
+    "ed02-m26": {
+      "url": "akyu/20.opus",
+      "title": "20. Eternal Paradise-opus64",
+      "audioSha256": "b514b9a161ced2f2d0a1a3b0fcb6db6c8c2eca049f82b7554bcff9f36e45fa55",
+      "bytes": 749623,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 66.499833
+    },
+    "ed02-m86": {
+      "url": "akyu/20.opus",
+      "title": "20. Eternal Paradise-opus64",
+      "audioSha256": "b514b9a161ced2f2d0a1a3b0fcb6db6c8c2eca049f82b7554bcff9f36e45fa55",
+      "bytes": 749623,
+      "fullLoop": true,
+      "loopStart": 0,
+      "loopEnd": 66.499833
+    }
+  },
+  "fallback": []
+}

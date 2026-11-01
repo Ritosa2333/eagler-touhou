@@ -291,7 +291,7 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 			return;
 		case 13:
 			pEnemy->curSpeed=ptr[2];
-			pEnemy->curAngle=m_pStage->m_pChara->AngleToChara(pEnemy->curX,pEnemy->curY)+ptr[1];
+			pEnemy->curAngle=m_pStage->AimAngle(pEnemy->curX,pEnemy->curY)+ptr[1];
 			UpdateVelXYFromSpeedAngle(pEnemy);
 			ptr+=3;
 			break;
@@ -517,7 +517,7 @@ void CEnemy::StepEnemyScript(ENEMY *pEnemy)
 			ptr+=2;
 			break;
 		case 58:
-			pEnemy->shootInfo.shootAngle=m_pStage->m_pChara->AngleToChara(pEnemy->curX+pEnemy->shootInfo.shootOrigX,
+			pEnemy->shootInfo.shootAngle=m_pStage->AimAngle(pEnemy->curX+pEnemy->shootInfo.shootOrigX,
 																		  pEnemy->curY+pEnemy->shootInfo.shootOrigY);
 			pEnemy->shootInfo.shootAngle+=*(char *)(ptr+1);
 			ptr+=2;
@@ -557,9 +557,9 @@ void CEnemy::Step()
   if(m_enemy[i].flag==2)original::EnemyGone(false);
 		//printf("\t%d %f %f %f %f\n",i,m_enemy[i].curX,m_enemy[i].curY,m_enemy[i].velX,m_enemy[i].velY);
 		if (m_enemy[i].bCrashChara)
-			if (m_pStage->m_pChara->TestCrash(m_enemy[i].curX,m_enemy[i].curY,12.0f*16.0f,12.0f*16.0f) && (!original::DemoActive()||(m_enemy[i].curX<m_pStage->m_pChara->GetCurX()+192&&m_enemy[i].curY<m_pStage->m_pChara->GetCurY()+192)))
+			if (m_pStage->TestPlayerCrash(m_enemy[i].curX,m_enemy[i].curY,12.0f*16.0f,12.0f*16.0f) && (!original::DemoActive()||(m_enemy[i].curX<m_pStage->m_pChara->GetCurX()+192&&m_enemy[i].curY<m_pStage->m_pChara->GetCurY()+192)))
 			{
-				m_pStage->m_pChara->m_bMiss=true;
+				m_pStage->MarkPlayerMiss();
 				EnemyDie(&m_enemy[i]);
 				continue;
 			}
@@ -606,7 +606,7 @@ void CEnemy::Step()
 					if (original::DemoActive() ?
 						(static_cast<unsigned short>(int(m_enemy[i].curX-m_pStage->m_pChara->GetCurX())+48*16)>=96*16 ||
 						 static_cast<unsigned short>(int(m_enemy[i].curY-m_pStage->m_pChara->GetCurY())+48*16)>=96*16) :
-						!m_pStage->m_pChara->TestCrash(m_enemy[i].curX,m_enemy[i].curY,48.0f*16.0f,48.0f*16.0f))
+						!m_pStage->TestPlayerCrash(m_enemy[i].curX,m_enemy[i].curY,48.0f*16.0f,48.0f*16.0f))
 					{
 						m_enemy[i].autoShootTimer=0;
 						ENEMY_SHOOT_INFO shootInfo;
