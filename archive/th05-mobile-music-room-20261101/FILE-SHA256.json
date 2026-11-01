@@ -31,9 +31,10 @@
   "public-vanilla-game.png": "fcbe3bf16e2166f08b61eee183c5c261d22e1ddb9f4bc45b911cb81fc5e491db",
   "public-vanilla-settings.png": "3b5be6d11effe070625688d0f30e32d39864524982401ffe51447bbf5804729f",
   "published.json": "2e2f04ec78e337b5ad99b159e2f6b0a7c223ffafc07b8d08027e4b119fad68c1",
-  "README.md": "661b33e764fe6c5d79bd06b66d3fed03f11b32393908f15015e4bb4c890316ce",
+  "README.md": "4a7e8e2a482142416e84936fae122889a6e77019921047c5f1288df4d82a6aa8",
   "runtime-files.json": "11925526efaa19e82183faa783cb715778e5a3d0b8dd5af2709f6f4bd7f139ca",
-  "typecheck.log": "2ca36a239dcc200ddcad4e5632a0c490801c89cc29e46016e9ffb5ac99c72d4f",
+  "source-history.json": "9c618a3711e783798040f430d0e1cc7ad7154d22a4515684494425768c919e51",
+  "typecheck.log": "59cfb3187ad1cbaf2c246889591d31ec469ba5f5a85e466c6cf263aaa772e332",
   "unit.log": "0b05d3a5d240a7c6ec29edc8fb82a2d2b3a376f4b1c928e82b9c6724652cb5e9",
   "verify-public.py": "ea5812f689c3440eac9c6bd73303480967927f22cbdaa123d0e2d48fb58e41c0"
 }

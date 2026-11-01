@@ -30,3 +30,5 @@
 [作弊面板](public-android-cheats.png) · [高级设置](public-ios-advanced.png)
 
 原版 SE 身份见[音效清单](../../ports/th05/resources/audio/sfx-original.json)，84 首编曲的来源和循环点见[Music Room 音频清单](../../ports/th05/resources/audio/music-room.json)。当前构建与操作说明见[开发指南](../../ports/th05/docs/DEVELOPMENT.md)。
+
+源码提交为 `a7a4d6745bf664f0655ee50a1bb47ef6af303f92`。[子树导出检查](source-history.json)核对原 uth05win 祖先和当前目录树一致。本作采用单人原生目录，旧多人入口继续连接独立站；双目录 MP 投影工具不适用于该布局。
