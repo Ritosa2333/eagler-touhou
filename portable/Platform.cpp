@@ -1,6 +1,7 @@
 #include "Platform.hpp"
 #include "Window.hpp"
 #include "Audio.hpp"
+#include "../Game/Coop/Rollback.h"
 #include "../Game/Game.h"
 #include "../Game/Practice/Practice.h"
 #include "../gameLib/CommonFunction/CommonFunctionSystem.h"
@@ -42,9 +43,9 @@ void SampleKeys(BYTE* scans){if(replayViewer){memset(scans,0,256);return;}BYTE k
  if(ImGui::GetCurrentContext()){auto& io=ImGui::GetIO();for(int i=0;i<256;i++)io.KeysDown[i]=keys[i]!=0;io.KeyShift=keys[VK_SHIFT]||keys[VK_LSHIFT]||keys[VK_RSHIFT];io.KeyCtrl=keys[VK_CONTROL]||keys[VK_LCONTROL]||keys[VK_RCONTROL];}
  memset(scans,0,256);scans[DIK_UP]=keys[VK_UP];scans[DIK_DOWN]=keys[VK_DOWN];scans[DIK_LEFT]=keys[VK_LEFT];scans[DIK_RIGHT]=keys[VK_RIGHT];scans[DIK_Z]=keys['Z'];scans[DIK_X]=keys['X'];scans[DIK_LSHIFT]=keys[VK_SHIFT]|keys[VK_LSHIFT]|keys[VK_RSHIFT];scans[DIK_LCONTROL]=keys[VK_CONTROL]|keys[VK_LCONTROL]|keys[VK_RCONTROL];scans[DIK_ESCAPE]=keys[VK_ESCAPE];scans[DIK_RETURN]=keys[VK_RETURN];scans[DIK_Q]=keys['Q'];
 }
-void MusicTrack(const char* name){EM_ASM({Module.eaglerAudio?.select(UTF8ToString($0));},name);}
-void MusicAction(int action,double value){EM_ASM({Module.eaglerAudio?.action($0,$1);},action,value);}
-void PlaySound(int index){EM_ASM({Module.eaglerAudio?.sound($0);},index);}
+void MusicTrack(const char* name){if(coop::QueueMusic(name))return;EM_ASM({Module.eaglerAudio?.select(UTF8ToString($0));},name);}
+void MusicAction(int action,double value){if(coop::QueueMusicAction(action,value))return;EM_ASM({Module.eaglerAudio?.action($0,$1);},action,value);}
+void PlaySound(int index){if(coop::QueueSound(index))return;EM_ASM({Module.eaglerAudio?.sound($0);},index);}
 void ReportError(const char* text){EM_ASM({Module.eaglerError?.(UTF8ToString($0));},text);}
 }}
 namespace {

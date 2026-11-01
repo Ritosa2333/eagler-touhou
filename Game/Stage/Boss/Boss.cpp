@@ -8,6 +8,7 @@ namespace th5w{
 
 CBoss::CBoss(void)
 {
+	m_curHP=0;m_curPhaseEndHP=0;m_HPLostThisFrame=0;
 	m_curPhase=0;
 	m_curMode=0;
 	m_nModeChange=0;

@@ -100,6 +100,7 @@ CStage::~CStage(void)
 	SAFE_DELETE(m_pSummary);
 	SAFE_DELETE(m_pStage2BG);
 
+ if(m_retainedMidBoss){delete m_retainedMidBoss;m_retainedMidBoss=nullptr;m_pMidBoss=nullptr;}
 	SAFE_DELETE(m_pMidBoss);
 	SAFE_DELETE(m_pBoss);
 	SAFE_DELETE(m_pStageRes);
@@ -123,7 +124,9 @@ void CStage::DownloadVarFromGlobal()
 {
 	//make sure that after creation of CStage, no original::Random() calls before this statement,
 	//otherwise, replays may work incorrectly!
-	srand(CGame::GVar().m_randomSeed[CGame::GVar().m_playStage]);original::ResetDemoSeed();
+	srand(CGame::GVar().m_randomSeed[CGame::GVar().m_playStage]);
+ if(Cooperative()||coop::Run().count>1)coop::Run().random=uint64_t(CGame::GVar().m_randomSeed[CGame::GVar().m_playStage])-1;
+ original::ResetDemoSeed();
 	//printf("------------------\n");
 	//printf("%d\n",CGame::GVar().m_randomSeed[CGame::GVar().m_playStage]);
 	//printf("------------------\n");
@@ -451,6 +454,7 @@ void CStage::CheckMidBoss()
 		}
 		if (m_pMidBoss!=NULL)
 		{
+   if(Cooperative()){if(m_retainedMidBoss)throw std::runtime_error("TH05 midboss lifetime crossed rollback boundary");m_retainedMidBoss=m_pMidBoss;}
 			m_pMidBoss->m_pStage=this;
 			m_pMidBoss->Initialize();
 			m_pEnemy->m_noAddEnemy=true;
@@ -626,7 +630,7 @@ int CStage::StepFrame(unsigned short liveInput)
 
 	if (CGame::GVar().m_bReplayMode==false&&!original::DemoActive()){
   m_curGameKeyState=practice::FilterGameplayInput(m_curGameKeyState,false);
-		CGame::GVar().m_replay.PutNextdata(m_curGameKeyState);
+  if(!Cooperative())CGame::GVar().m_replay.PutNextdata(m_curGameKeyState);
  }
 
 	if (CGame::GVar().m_bReplayMode)
@@ -673,7 +677,7 @@ int CStage::StepFrame(unsigned short liveInput)
 	if (m_pMidBoss)
 		if (m_pMidBoss->Step()!=0)
 		{
-			delete m_pMidBoss;
+   if(!Cooperative())delete m_pMidBoss;
 			m_pMidBoss=NULL;
 		}
 	if (m_pBoss)

@@ -7,6 +7,7 @@ namespace th5w{
 
 CMidBoss::CMidBoss(void)
 {
+	m_curHP=0;
 	m_curPhase=0;
 	m_curPhaseFrame=0;
 	m_lastDrawnHP=0;

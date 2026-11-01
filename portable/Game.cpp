@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <ctime>
 #include "Localization.hpp"
+#include "../Game/Coop/Rollback.h"
 #include <functional>
 #include <stdexcept>
 namespace th5w {
@@ -42,12 +43,12 @@ void CGame::OnGameEnd(){delete m_pCurScheme;m_pCurScheme=nullptr;practice::Shutd
 void CGame::OnPaintInactivate(){if(m_pCurScheme)m_pCurScheme->Draw();}
 }
 namespace {
-std::unique_ptr<th5w::CGame> game;bool failed=false;uint64_t ticks=0,renderVersion=0,presentVersion=0,coopDrawTick=0;double fpsStart=0;int freshFrames=0;int lastStep=0;
+std::unique_ptr<th5w::CGame> game;bool failed=false;uint64_t ticks=0,renderVersion=0,presentVersion=0,coopDrawTick=0,logicVersion=0;double fpsStart=0;int freshFrames=0;int lastStep=0;
 int Guard(const std::function<void()>& operation){try{operation();return 1;}catch(const std::exception& e){failed=true;th5w::web::ReportError(e.what());return 0;}catch(...){failed=true;th5w::web::ReportError("TH05 runtime exception");return 0;}}
 }
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th05_initialize(){if(game)return 0;failed=false;return Guard([]{game=std::make_unique<th5w::CGame>();game->Run();if(!game->m_pCurScheme)throw std::runtime_error("TH05 initialization failed");});}
-EMSCRIPTEN_KEEPALIVE int th05_tick(int render){if(!game||failed||!game->m_pCurScheme)return 0;return Guard([render]{using namespace th5w;if(render){web::graphics::BeginFrame();practice::BeginFrame();}original::BeginTimingFrame();lastStep=practice::AdvancedOpen()?0:game->m_pCurScheme->Step();if(render){game->m_pCurScheme->Draw();practice::DrawStatus();practice::EndFrame();++renderVersion;}original::RenderTiming(false);++ticks;
+EMSCRIPTEN_KEEPALIVE int th05_tick(int render){if(!game||failed||!game->m_pCurScheme)return 0;return Guard([render]{using namespace th5w;if(render){web::graphics::BeginFrame();practice::BeginFrame();}original::BeginTimingFrame();lastStep=practice::AdvancedOpen()?0:game->m_pCurScheme->Step();if(render){game->m_pCurScheme->Draw();practice::DrawStatus();practice::EndFrame();++renderVersion;}original::RenderTiming(false);++ticks;++logicVersion;
  if(lastStep&&coop::Run().count>1&&game->m_curSchemeID==4){
   auto& run=coop::Run();auto& g=CGame::GVar();static_cast<CStage*>(game->m_pCurScheme)->PersistCoop();
   if((lastStep==STAGE_END_CLEAR&&g.m_playStage<5)||lastStep==STAGE_END_RESTART){
@@ -121,7 +122,7 @@ EMSCRIPTEN_KEEPALIVE int th05_coop_finished(){return th5w::coop::Run().finished;
 EMSCRIPTEN_KEEPALIVE int th05_sample_buttons(){return game?th5w::PhysicalKeys():0;}
 }
 
-extern "C" EMSCRIPTEN_KEEPALIVE int th05_coop_draw(){if(!game||!game->m_pCurScheme)return 0;return Guard([]{th5w::web::graphics::BeginFrame();th5w::practice::BeginFrame();game->m_pCurScheme->Draw();th5w::practice::EndFrame();if(coopDrawTick!=ticks){++renderVersion;coopDrawTick=ticks;}});}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_coop_draw(){if(!game||!game->m_pCurScheme)return 0;return Guard([]{th5w::web::graphics::BeginFrame();th5w::practice::BeginFrame();game->m_pCurScheme->Draw();th5w::practice::EndFrame();if(coopDrawTick!=logicVersion){++renderVersion;coopDrawTick=logicVersion;}});}
 
 extern "C" EMSCRIPTEN_KEEPALIVE unsigned int th05_coop_checksum(){if(!game||game->m_curSchemeID!=4||th5w::coop::Run().count<2)return 0;return static_cast<th5w::CStage*>(game->m_pCurScheme)->CoopChecksum();}
 
@@ -136,3 +137,5 @@ extern "C" EMSCRIPTEN_KEEPALIVE void th05_coop_display(int style,int flags){
  display.phaseTimeout=style!=0||(flags&4);display.phaseTimeoutAsTime=flags&8;
  display.numericDream=flags&16;display.numericPower=flags&32;
 }
+
+namespace th5w { namespace coop {void CaptureRuntime(CaptureSink& sink){sink.Object(&ticks);sink.Object(&lastStep);}}}

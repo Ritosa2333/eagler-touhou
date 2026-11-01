@@ -8,6 +8,8 @@
 #include "../Stage/SparkEffect/SparkEffect.h"
 #include "../Stage/FloatingText/FloatingText.h"
 #include "../Stage/Item/Item.h"
+#include "../Stage/Enemy/Enemy.h"
+#include "../Stage/Laser/Laser.h"
 #include "../Game.h"
 #include "../../third_party/imgui/imgui.h"
 #include "../../portable/Localization.hpp"
@@ -264,8 +266,14 @@ int CStage::SeatValue(int seat,int field){
 unsigned int CStage::CoopChecksum(){
  SaveSeat();unsigned int hash=2166136261u;
  auto add=[&](int value){for(int n=0;n<4;n++){hash=(hash^static_cast<unsigned char>(value>>(n*8)))*16777619u;}};
+ add(int(coop::Run().random));add(int(coop::Run().random>>32));
  add(CGame::GVar().m_playStage);add(m_curFrame);add(m_curScore);add(m_curDream);add(m_totalNPointItem);add(m_curNGraze);add(m_playerPerformance);add(m_bPaused);add(m_bContinueScr);add(m_bInCharaBomb);add(m_bombOwner);
- for(int i=0;i<m_seatCount;i++){const auto& s=m_seats[i];add(s.stock.lives);add(s.stock.bombs);add(s.stock.ghost);add(s.stock.fraction);add(s.rescue);add(s.rescueTarget);add(s.player->GetPower());add(int(s.player->m_curX*256));add(int(s.player->m_curY*256));}
+ for(int i=0;i<m_seatCount;i++){const auto& s=m_seats[i];add(s.stock.lives);add(s.stock.bombs);add(s.stock.ghost);add(s.stock.fraction);add(s.stock.overflow);add(s.stock.deaths);add(s.previous);add(s.current);add(s.rescue);add(s.rescueAge);add(s.rescueTarget);add(s.player->GetPower());add(int(s.player->m_curX*256));add(int(s.player->m_curY*256));}
+ for(const auto& laser:m_pLaser->m_laser){add(laser.mode);if(laser.mode){add(int(laser.srcX*256));add(int(laser.srcY*256));add(int(laser.angle*256));add(int(laser.width*256));add(int(laser.lenLower*256));add(int(laser.lenUpper*256));add(laser.age);}}
+ for(const auto& enemy:m_pEnemy->m_enemy){add(enemy.flag);if(enemy.flag){add(enemy.age);add(enemy.life);add(int(enemy.curX*256));add(int(enemy.curY*256));add(int(enemy.curSpeed*256));add(int(enemy.curAngle*256));}}
+ for(int i=0;i<m_seatCount;i++)for(const auto& shot:m_seats[i].shots->m_bullets){add(shot.flag);if(shot.flag){add(shot.age);add(shot.damage);add(int(shot.curX*256));add(int(shot.curY*256));add(int(shot.velX*256));add(int(shot.velY*256));}}
+ if(m_pBoss){add(m_pBoss->m_curPhase);add(m_pBoss->m_curPhaseFrame);add(m_pBoss->m_curHP);add(int(m_pBoss->m_curX*256));add(int(m_pBoss->m_curY*256));}
+ if(m_pMidBoss){add(m_pMidBoss->m_curPhase);add(m_pMidBoss->m_curPhaseFrame);add(m_pMidBoss->m_curHP);add(int(m_pMidBoss->m_curX*256));add(int(m_pMidBoss->m_curY*256));}
  for(const auto& b:m_pEnemyBullet->m_bullets){add(b.flag);if(b.flag==1){add(int(b.curX*256));add(int(b.curY*256));add(int(b.curAngle*256));add(b.bornStageAndGrazeFlag);add(b.coopGrazeMask);}}
  return hash;
 }

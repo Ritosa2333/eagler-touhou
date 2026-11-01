@@ -30,7 +30,13 @@
 
 ## 时序与输入
 
-采用确认帧同步，支持 0–9 帧手动延迟和开局自动测量，不启用预测或回滚。每 120 帧交换游戏状态校验；输入缺失时冻结世界并报告等待，状态不同立即结束本局。
+启动器提供纯延迟、纯回滚和延迟＋回滚三种时序。回滚窗口为 8 帧，方向输入最多连续预测 2 帧；相对触控位移只消费一次，绝对触控保留场地目标。纯延迟使用全部确认输入，自动测量与 0–9 帧手动延迟继续可用；混合模式按测量结果预留 1／2 帧预测余量。
+
+`portable/Netplay.cpp` 使用公共 `RollbackCore` 保存不可变输入，使用 `RollbackJournal` 恢复 `Game/Coop/WorldRollback.cpp` 捕获的关卡、自机、射弹、敌人、激光、Boss、效果、全局统计与独立随机数。每个战斗检查点约 331–343 KiB，最多保留 8 个未确认帧；已确认帧直接执行并退休日志。纠正复用历史输入，不重复读取键盘、手柄或触控。
+
+音效、切曲与音量操作按帧暂存，纠正时作废被替换的未来，连续确认后顺序输出。暂停、对话、Boss 工厂、四面分支和换面经过确认边界；道中 Boss 对象保留到关卡结束，支持恢复到其退场前。每次纠正最多执行 4 帧或约 4 ms，然后将执行权交还浏览器；中间重演不提交画面，暂停 UI 与音频泵继续运行。
+
+每 120 帧交换已纠正、连续确认的游戏状态校验，覆盖随机数、团队与各席资源、敌人、自机射弹、激光及 Boss；超出预测窗口时等待真实输入。
 
 直连／中继传输和双通道输入修复沿用 [PR #143](https://github.com/Ritosa2333/eagler-touhou/pull/143) 的 `managed-transport.mjs` 与 `input-transport.js`，来源提交为 `659e65658d4cd1bcfee1670f4c5cc63d79d2819f`。中继从已认证连接添加席位来源，客户端不能用载荷选择发送者。公网开局固定 Runtime generation；本机 `ws://127.0.0.1` 开发服务可使用源码构建入口。
 
@@ -46,6 +52,9 @@ node --test ports/th05-mp/tests/*.test.mjs
 $env:TH05_BROWSER_TESTS='1'
 node ports/th05-mp/scripts/build-eagler.mjs
 node ports/th05-mp/tests/multiplayer-native.mjs
+node ports/th05-mp/tests/rollback-native.mjs
+node ports/th05-mp/tests/rollback-boundaries.mjs
+node ports/th05-mp/tests/rollback-performance.mjs
 node ports/th05-mp/tests/multiplayer-browser.mjs
 $env:TH05_MP_PLAYERS='3'
 $env:TH05_MP_ROUTE='relay'

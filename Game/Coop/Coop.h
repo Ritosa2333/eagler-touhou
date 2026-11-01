@@ -11,6 +11,7 @@ struct Stock {
 struct Input { unsigned short buttons=0; float x=0,y=0; int motionMode=0; };
 struct Session {
  int count=1,local=0,characters[3]{0,1,2},seed=0,difficulty=1;
+ uint64_t random=0;
  Input input[3]{};
  Stock carry[3]{};
  bool continuing=false,finished=false,challenge=false,localVisibility=false;
