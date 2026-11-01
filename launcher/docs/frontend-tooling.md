@@ -32,6 +32,35 @@ bun run test
 
 启动器服务冷编译会将 Paraglide 和 JSON 词库打包为共享翻译模块，并将消息文件纳入缓存身份。修改译文后，服务模块与 React 页面使用同一组编译消息。
 
+## Linux 构建机上的独立测试预算
+
+远程重负载测试和预期失败的对照测试通过 `tools/testing/linux-test-job.py` 启动。systemd 持久化任务并执行外层超时，JavaScript 事件循环阻塞也不会阻止任务结束；`KillMode=control-group` 和 `OOMPolicy=kill` 负责整组清理。工作进程使用指定的非 root 用户，资源预算与交互 SSH 所在的用户组独立。
+
+默认单任务硬内存上限为 4 GiB、swap 为 0、最长 45 分钟、终止宽限 5 秒。同入口的任务合计最多 8 GiB、2 核 CPU；Go 构建器默认 `GOMAXPROCS=2`。负向对照通常设置 60–120 秒。任务预算可在命令行显式指定，不会自动降低测试范围或改用未受保护的入口。
+
+在 Linux 系统管理入口执行，例如：
+
+```sh
+python3 tools/testing/linux-test-job.py \
+  --owner test-user \
+  --job-dir /var/tmp/touhou-tests/unique-task-id \
+  --cwd /path/to/eagler-touhou/launcher \
+  --timeout 120 \
+  --env PATH=/home/test-user/.bun/bin:/usr/local/bin:/usr/bin:/bin \
+  -- /home/test-user/.bun/bin/bun --bun run vitest run tests/react-main/browser-session-mounted.test.mjs
+```
+
+`--job-dir` 必须尚不存在。启动器返回 unit 和结果路径，任务不依赖 SSH 存活；已有目录必须先检查结果。`job.json` 保存主机、命令、工作目录和预算，`output.log` 保存输出，`result.json` 与 `exit` 保存最终结果。结果由 systemd 的 `SERVICE_RESULT` 和退出信息生成，超时与 OOM 分别映射为 124 和 137；终止处理即使返回 0，也不会将超时误记为成功。任务不能受限启动时明确失败，没有无保护降级。
+
+资源边界的真实集成验收需要 root system manager，在隔离的 Linux 构建机执行：
+
+```sh
+TOUHOU_TEST_JOB_INTEGRATION=1 TOUHOU_TEST_OWNER=test-user \
+  python3 tools/testing/test_linux_test_job.py
+```
+
+该入口用小内存合成负载检查成功退出、非零退出、OOM、超时、`setsid` 子进程清理、错误预算和防止重投。普通开发与 CI 的 Vitest 入口保持原有权限和执行方式。
+
 ## Biome 的边界
 
 `biome.json` 列出 React 前端、消息文件和本轮迁移工具的检查范围。生成的 Paraglide、缓存、构建产物、旧测试夹具和游戏源码不进入前端格式化；原站 `public/styles.css` 保留原文。
