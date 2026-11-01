@@ -1,7 +1,7 @@
 export const DATA_MAGIC='UTH05PK1';
 export const DATA_SCHEMA='eagler-touhou/uth05-content/1';
-export const DATA_LAYOUT_SPEC=Object.freeze({files:[{filename:'/data/kaiki1.dat'},{filename:'/data/kaiki2.dat'},{filename:'/data/zun.com'},{filename:'/data/sfx/effects.pcm'}]});
-const assets=/^(?:kaiki[12]\.dat|zun\.com|anex86\.bmp|practice\.bmp|replay\.bmp|chs\.dat|music\.dat|music-font\.bmp|sfx\/effects\.pcm)$/;
+export const DATA_LAYOUT_SPEC=Object.freeze({files:[{filename:'/data/kaiki1.dat'},{filename:'/data/kaiki2.dat'},{filename:'/data/zun.com'},...Array.from({length:15},(_,i)=>({filename:`/data/se/s${String(i+1).padStart(2,'0')}.wav`}))]});
+const assets=/^(?:kaiki[12]\.dat|zun\.com|anex86\.bmp|practice\.bmp|replay\.bmp|chs\.dat|music\.dat|music-font\.bmp|sfx\/effects\.pcm|se\/s(?:0[1-9]|1[0-5])\.wav)$/;
 export function assetPath(path){if(typeof path!=='string'||!assets.test(path))throw Error('Invalid TH05 content path');return path;}
 export const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
 export async function decodeContent(value){
@@ -13,7 +13,7 @@ export async function decodeContent(value){
  if(manifest.schema!==DATA_SCHEMA||manifest.game!=='th05'||!Array.isArray(manifest.files)||manifest.files.length>64)throw Error('Invalid TH05 content manifest');
  const result=new Map();let end=0;
  for(const file of manifest.files){const path=assetPath(file.path);if(result.has(path)||file.offset!==end||!Number.isSafeInteger(file.bytes)||file.bytes<=0||base+end+file.bytes>bytes.length||!/^[a-f0-9]{64}$/.test(file.sha256))throw Error('Invalid TH05 content entry');const data=bytes.slice(base+end,base+end+file.bytes);if(await digest(data)!==file.sha256)throw Error('TH05 content digest mismatch: '+path);result.set(path,data);end+=file.bytes;}
- if(base+end!==bytes.length||!['kaiki1.dat','kaiki2.dat','zun.com','sfx/effects.pcm'].every(path=>result.has(path)))throw Error('Incomplete TH05 content');
+ if(base+end!==bytes.length||!['kaiki1.dat','kaiki2.dat','zun.com'].every(path=>result.has(path))||(!result.has('sfx/effects.pcm')&&!Array.from({length:15},(_,i)=>`se/s${String(i+1).padStart(2,'0')}.wav`).every(path=>result.has(path))))throw Error('Incomplete TH05 content');
  return result;
 }
 export async function encodeContent(files){

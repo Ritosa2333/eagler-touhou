@@ -498,6 +498,7 @@ void CStage::CheckBoss()
 	}
 }
 
+bool CStage::BrowserDialogue() const {return m_pDialogue&&m_pDialogue->IsRunning();}
 int CStage::Step()
 {
 	return StepFrame(CCommonFunctionInput::GetAllKeyState());

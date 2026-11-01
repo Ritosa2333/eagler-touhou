@@ -4,7 +4,7 @@ uth05win 的原生 C++ 游戏逻辑直接运行于 WebAssembly／WebGL，接入�
 
 - 原版与 thprac 使用同一程序，由启动器的 thprac 按钮开启和关闭。
 - 日文／简体中文游戏语言，以及日文／英文／中文练习界面。
-- PR #143 的独立 FM 音效、原版 BGM 与“幺乐团专辑版”，关闭音乐保留音效。
+- uth05win 原版 SE 音效，PR #143 的原版 BGM 与“幺乐团专辑版”；Music Room 保留 TH01–05 的 107 首曲目。
 - 原生 Replay 和触控位移记录，支持启动器的录像工作区。
 
 [构建与开发](docs/DEVELOPMENT.md) · [适配表](ADAPTATION.md) · [上游说明](README-UPSTREAM.md) · [练习功能](PRACTICE.md)

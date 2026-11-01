@@ -172,6 +172,8 @@
 
 ## 运行验收记录
 
+测试站的手机输入、原生 thprac 面板、Music Room TH01–04 音频与原版 SE 验收见[手机与音频发布记录](../../archive/th05-mobile-music-room-20261101/README.md)。该记录分别列出设备模拟、文件身份和音频解码的验证范围。
+
 本作原生 Wasm 验收见 [TH05 原生 Eagler 验收](../../archive/th05-native-eagler-20261101/README.md)。记录包含生产与诊断程序 SHA-256、浏览器结果、启动器设置检查及源码子树身份。
 
 - BUILD-02～06、RUNTIME-01～03：Emscripten 源码构建、Runtime 文件校验和真实启动器启动闭环。

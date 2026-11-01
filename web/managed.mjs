@@ -29,6 +29,7 @@ export function commandHandler(api){let configured=false;return async message=>{
  case 'keyboard-clear':api.clearKeyboard();return {};
  case 'touch-cancel':api.cancelTouch();return {};
  case 'touch-controls':{
+  for(const key of ['thpracMobilePanelsEnabled','thpracMobilePanelsVisible'])if(message[key]!==undefined&&typeof message[key]!=='boolean')throw Error('Invalid practice panel controls');
   if(typeof message.fireEnabled!=='boolean'||typeof message.focusEnabled!=='boolean'||!['bombSerial','escapeSerial'].every(k=>Number.isSafeInteger(message[k])&&message[k]>=0)||!['joystickX','joystickY'].every(k=>Number.isFinite(message[k])&&Math.abs(message[k])<=32767))throw Error('Invalid touch controls');
   if(message.touchSensitivity!==undefined&&(!Number.isFinite(message.touchSensitivity)||message.touchSensitivity<100||message.touchSensitivity>300))throw Error('Invalid touch sensitivity');api.touch(message);return {};
  }

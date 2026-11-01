@@ -1,7 +1,7 @@
-import {ORIGINAL_BGM,AKYU_BGM,ORIGINAL_SFX,musicFileName} from './audio-layout.mjs';
+import {ORIGINAL_BGM,AKYU_BGM,MUSIC_ROOM_BGM,musicFileName} from './audio-layout.mjs';
 import {createSfx} from './sfx.mjs';
 import {digest} from './data.mjs';
-// BGM and FM effects are separate owners. Pausing or disabling music never
+// Original uth05win SE playback accompanies the selected BGM. Pausing or disabling music never
 // suspends the effect part; only visibility, Replay transport and retirement do.
 export function createAudio(module,emit,environment=globalThis){
  let mode='none',decodeMode='stream',musicSource='original',context,sfx,element,source,gain,elementURL,loopTimer;
@@ -10,7 +10,7 @@ export function createAudio(module,emit,environment=globalThis){
  const read=path=>{try{return module.FS.readFile(path);}catch{return null;}};
  const ctx=()=>context??=new environment.AudioContext({latencyHint:'interactive'});
  function report(error){if(!closed)emit('music-error',{failed:1,message:error.message});}
- function definition(name){const base=name.replace(/\.(?:m2|m)$/i,'').toLowerCase();if(base==='logo')return null;const tracks=musicSource==='akyu'?AKYU_BGM.tracks:ORIGINAL_BGM.tracks;const value=tracks[base+'-m86']??tracks[base+'-m26'];return value?{...value,path:'/music/'+musicFileName(value.url)}:null;}
+ function definition(name){const base=name.replace(/\.(?:m2|m)$/i,'').toLowerCase();if(base==='logo')return null;const tracks=musicSource==='akyu'?AKYU_BGM.tracks:ORIGINAL_BGM.tracks;const value=MUSIC_ROOM_BGM.tracks[base]??tracks[base+'-m86']??tracks[base+'-m26'];return value?{...value,path:'/music/'+musicFileName(value.url)}:null;}
  function stop(remember=false){
   if(remember&&source){position+=(ctx().currentTime-startedAt)*rate;const end=currentDefinition?.loopEnd??source.buffer.duration,start=currentDefinition?.loopStart??0;if(end>start&&position>=end)position=start+(position-end)%(end-start);}
   generation++;source?.stop();source=null;clearInterval(loopTimer);loopTimer=null;
@@ -34,7 +34,7 @@ export function createAudio(module,emit,environment=globalThis){
    element.addEventListener('timeupdate',loop);element.addEventListener('ended',()=>{if(item===element&&!closed&&!paused&&!hidden&&!gated){element.currentTime=def.loopStart;void element.play().catch(failure);}});element.addEventListener('error',()=>failure(Error('BGM decode failed: '+def.path)));if(!def.fullLoop)loopTimer=setInterval(loop,15);await element.play().catch(failure);
   }
  }
- async function initialize(){if(sfx||!environment.AudioContext)return;const bytes=read('/data/sfx/effects.pcm');if(!bytes||await digest(bytes)!==ORIGINAL_SFX.sha256)throw Error('Install the verified PR #143 FM effect bank');sfx=createSfx(ctx(),bytes);}
+ async function initialize(){if(sfx||!environment.AudioContext)return;const files=new Map();for(let id=1;id<16;id++){const name=`s${String(id).padStart(2,'0')}.wav`,bytes=read('/data/se/'+name);if(!bytes)throw Error('Install original uth05win SE/'+name);files.set(name,bytes);}sfx=createSfx(ctx(),files);}
  function resumeContext(){if(context&&!hidden&&!gated)void context.resume().catch(report);}
  return {
   initialize,

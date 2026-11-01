@@ -16,7 +16,7 @@ test('managed protocol: authenticate source, origin and navigation epoch; ordere
  send({...payload,request:'c'});await shell.idle();assert.equal(messages.at(-1).ok,false);shell.close();assert.equal(listeners.has('message'),false);
 });
 test('managed protocol: atomic content identity and file traversal boundaries',async()=>{
- const bytes=await encodeContent(new Map([['kaiki1.dat',new Uint8Array([1])],['kaiki2.dat',new Uint8Array([2])],['zun.com',new Uint8Array([3])],['sfx/effects.pcm',new Uint8Array([4])]]));assert.equal((await decodeContent(bytes.buffer)).size,4);bytes[bytes.length-1]^=1;await assert.rejects(decodeContent(bytes.buffer),/digest/);
+ const bytes=await encodeContent(new Map([['kaiki1.dat',new Uint8Array([1])],['kaiki2.dat',new Uint8Array([2])],['zun.com',new Uint8Array([3])],...Array.from({length:15},(_,i)=>[`se/s${String(i+1).padStart(2,'0')}.wav`,new Uint8Array([4])])]));assert.equal((await decodeContent(bytes.buffer)).size,18);bytes[bytes.length-1]^=1;await assert.rejects(decodeContent(bytes.buffer),/digest/);
  for(const path of ['../score.dat','/savesth06/score.dat','replay/../score.dat','replay/../../a.rpy','replay\\a.rpy','/data/kaiki1.dat','replay/a/b/c.rpy'])assert.throws(()=>userPath(path));assert.equal(userPath('/savesth05/replay/archive/replay00.rpy'),'replay/archive/replay00.rpy');
  const api=mock(),handle=commandHandler(api);await handle({command:'write',path:'score.dat',bytes:Array(1500).fill(0)});assert.equal((await handle({command:'read',path:'score.dat'})).bytes.length,1500);await assert.rejects(handle({command:'write',path:'score.dat',bytes:[0]}),/score/);await handle({command:'remove',path:'score.dat'});assert.deepEqual((await handle({command:'list'})).files,[]);
 });
