@@ -25,9 +25,9 @@ try{
   probe(2,2,4);result.teamBomb=[0,1,2].map(i=>value(i,1));
   probe(1,2,0);probe(2,0,5);result.teamRevive=[0,1,2].map(i=>[value(i,0),value(i,3)]);
   // P3's ghost requests a life from P1 with five fresh focus edges.
-  probe(1,2,0);probe(4,0,3000);probe(5,0,5000);probe(4,2,3000);probe(5,2,5000);probe(7,0,5);
+  probe(1,2,0);probe(4,0,4096);probe(5,0,5120);probe(4,2,4096);probe(5,2,5120);probe(7,0,5);
   m._th05_native_coop_stage(0,0); // Remove title-logo timing before edge tests.
-  probe(1,2,0);probe(4,0,3000);probe(5,0,5000);probe(4,2,3000);probe(5,2,5000);probe(7,0,5);
+  probe(1,2,0);probe(4,0,4096);probe(5,0,5120);probe(4,2,4096);probe(5,2,5120);probe(7,0,5);
   for(let n=0;n<10;n++){
    for(let i=0;i<3;i++)m._th05_coop_input(i,i===2&&n%2===0?64:0,0,0,0);
    m._th05_tick(0);

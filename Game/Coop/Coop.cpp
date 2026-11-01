@@ -19,7 +19,33 @@
 #include <limits>
 
 namespace th5w {
-namespace coop { Session& Run(){static Session run;return run;} void Reset(){Run()=Session();} }
+namespace coop {
+Session& Run(){static Session run;return run;} void Reset(){Run()=Session();}
+struct ArtFrame {unsigned offset;int width,height;};
+#include "PlayerArt.inc"
+int Variant(int seat){int occurrence=0;for(int i=0;i<seat;i++)if(Run().characters[i]==Run().characters[seat])++occurrence;return occurrence;}
+const unsigned char* ArtColor(int character,int variant){return kArtColors[character][variant];}
+C2DImage* ArtImage(int character,int variant,int frame){
+ const auto& source=kArtFrames[character][variant][frame];auto* image=C2DImage::Create2DImage(source.width,source.height);auto* out=image->GetDataPointer();
+ for(int n=0;n<source.width*source.height;n++)memcpy(out+n*4,kArtPalette[kArtPixels[source.offset+n]],4);
+ image->UploadToTexture();return image;
+}
+void ApplyArt(CStageResource& resources,int character,int variant){
+ for(int i=0;i<3;i++)resources.m_patternArray.ReplaceImage(i,ArtImage(character,variant,i));
+ for(int i=0;i<16;i++)resources.m_patternArray.ReplaceImage(20+i,ArtImage(character,variant,3+i));
+ if(resources.m_pCoopGhost)resources.m_pCoopGhost->Destroy();resources.m_pCoopGhost=ArtImage(character,variant,19);
+#ifdef __EMSCRIPTEN__
+ resources.RefreshSpriteAtlas();
+#endif
+}
+// Same view-only proximity curve as TH08/TH10 PlayerPresentation.hpp.
+float ProximityAlpha(float dx,float dy){
+ float distance=std::sqrt(dx*dx+dy*dy);if(distance>=100.f)return 128.f/255;
+ distance=std::max(50.f,distance);const float progress=(distance-50.f)/50.f;
+ return std::min(128,std::max(0,int(progress*(255-51))+51))/255.f;
+}
+}
+
 
 void CStage::SaveSeat(){
  if(!Cooperative())return;
@@ -49,7 +75,7 @@ void CStage::InitCoop(){
  m_pChara=m_seats[0].player;m_pCharaBullet=m_seats[0].shots;m_pStageRes=m_seats[0].resources;
  CGame::GVar().m_playChara=run.characters[0];
  for(int i=0;i<m_seatCount;i++){
-  BindSeat(i);auto& s=m_seats[i];
+  BindSeat(i);auto& s=m_seats[i];coop::ApplyArt(*s.resources,run.characters[i],coop::Variant(i));
   if(run.continuing){s.stock=run.carry[i];m_nCurLife=s.stock.lives;m_nCurBomb=s.stock.bombs;m_powerOverflowLevel=s.stock.overflow;m_pChara->m_power=s.stock.power;m_pChara->SetPower(s.stock.power);}
   m_pChara->m_curX=(192+(i*2-(m_seatCount-1))*32)*16.f;
   m_pChara->m_lastX=m_pChara->m_curX;m_pChara->m_lastY=m_pChara->m_curY;
@@ -65,7 +91,11 @@ void CStage::StepPlayers(){
  for(int i=0;i<m_seatCount;i++){
   BindSeat(i);auto& s=m_seats[i];s.previous=s.current;s.current=coop::Run().input[i].buttons;
   m_lastGameKeyState=s.previous;m_curGameKeyState=s.current;
-  if(s.stock.ghost){m_pChara->m_bMiss=false;m_pChara->MoveChara(s.stock.offline?0:s.current);}
+  if(s.stock.ghost){
+   m_pChara->m_bMiss=false;
+   m_pChara->m_curX=m_pChara->m_lastX=(192+(i*2-(m_seatCount-1))*32)*16.f;
+   m_pChara->m_curY=m_pChara->m_lastY=320*16.f;m_pChara->m_deltaX=m_pChara->m_deltaY=0;
+  }
   else m_pChara->Step();
   m_pCharaBullet->Step();
  }
@@ -172,7 +202,8 @@ void CStage::TeamBomb(){
 }
 void CStage::MakeGhost(){
  auto& s=m_seats[m_boundSeat];s.stock.ghost=true;m_nCurLife=0;m_nCurBomb=0;
- m_pChara->m_curY=320*16;m_pChara->m_deltaX=m_pChara->m_deltaY=0;SaveSeat();
+ m_pChara->m_curX=m_pChara->m_lastX=(192+(m_boundSeat*2-(m_seatCount-1))*32)*16.f;
+ m_pChara->m_curY=m_pChara->m_lastY=320*16;m_pChara->m_deltaX=m_pChara->m_deltaY=0;SaveSeat();
  bool alive=false;for(int i=0;i<m_seatCount;i++)alive|=!m_seats[i].stock.ghost&&!m_seats[i].stock.offline;
  if(!alive){m_bContinueScr=true;m_pauseSelection=0;for(int i=0;i<m_seatCount;i++)m_pauseHeld[i]=coop::Run().input[i].buttons;}
 }
@@ -228,7 +259,7 @@ void CStage::StepCoopMenu(){
 }
 int CStage::SeatValue(int seat,int field){
  if(seat<0||seat>=m_seatCount)return -1;SaveSeat();auto& s=m_seats[seat];
- switch(field){case 0:return s.stock.lives;case 1:return s.stock.bombs;case 2:return s.player->GetPower();case 3:return s.stock.ghost;case 4:return s.rescue;case 5:return int(s.player->m_curX);case 6:return int(s.player->m_curY);case 7:return m_curScore;case 8:return m_totalNPointItem;case 9:return s.stock.offline;case 10:return s.stock.deaths;default:return -1;}
+ switch(field){case 0:return s.stock.lives;case 1:return s.stock.bombs;case 2:return s.player->GetPower();case 3:return s.stock.ghost;case 4:return s.rescue;case 5:return int(s.player->m_curX);case 6:return int(s.player->m_curY);case 7:return m_curScore;case 8:return m_totalNPointItem;case 9:return s.stock.offline;case 10:return s.stock.deaths;case 11:return coop::Variant(seat);case 12:return int(PlayerOpacity(seat)*255+.5f);default:return -1;}
 }
 unsigned int CStage::CoopChecksum(){
  SaveSeat();unsigned int hash=2166136261u;
@@ -238,17 +269,32 @@ unsigned int CStage::CoopChecksum(){
  for(const auto& b:m_pEnemyBullet->m_bullets){add(b.flag);if(b.flag==1){add(int(b.curX*256));add(int(b.curY*256));add(int(b.curAngle*256));add(b.bornStageAndGrazeFlag);add(b.coopGrazeMask);}}
  return hash;
 }
+float CStage::PlayerOpacity(int seat) const {
+ const auto& s=m_seats[seat];float alpha=s.stock.ghost?80.f/255:1.f;
+ if(seat!=coop::Run().local){const auto* local=m_seats[coop::Run().local].player;
+  alpha=std::min(alpha,coop::ProximityAlpha((s.player->m_curX-local->m_curX)/16,(s.player->m_curY-local->m_curY)/16));
+ }
+ return alpha;
+}
 void CStage::DrawPlayers(int layer){
  const int saved=m_boundSeat;
  if(layer==0){if(m_bInCharaBomb){BindSeat(m_bombOwner);m_pChara->DrawBomb();}BindSeat(saved);return;}
- // Ghost markers are below living characters and options.
- if(layer==1)for(int i=0;i<m_seatCount;i++)if(m_seats[i].stock.ghost){
-  const auto* p=m_seats[i].player;auto* resources=m_seats[i].resources;resources->DrawStageObjectImageColorScaled(resources->m_patternArray.GetImagePtr(0),p->m_curX,p->m_curY,.4f,.6f,.8f);m_pStageRes->DrawCircle(p->m_curX,p->m_curY,160,.3f,.7f,1,false,.7f);
+ if(layer==1){
+  for(int i=0;i<m_seatCount;i++){BindSeat(i);m_pStageRes->m_playerOpacity=PlayerOpacity(i);m_pCharaBullet->Draw();m_pStageRes->m_playerOpacity=1;}
+ }else{
+  // All bodies follow bullets/effects; the local player's body is the last body.
+  for(int i=0;i<m_seatCount;i++)if(m_seats[i].stock.ghost){
+   BindSeat(i);m_pStageRes->m_playerOpacity=PlayerOpacity(i);
+   m_pStageRes->DrawStageObjectImage(m_pStageRes->m_pCoopGhost,m_pChara->m_curX,m_pChara->m_curY);m_pStageRes->m_playerOpacity=1;
+  }
+  for(int n=0;n<m_seatCount;n++){
+   const int i=n==m_seatCount-1?coop::Run().local:(n>=coop::Run().local?n+1:n);
+   BindSeat(i);if(m_seats[i].stock.ghost)continue;
+   m_pStageRes->m_playerOpacity=PlayerOpacity(i);m_pChara->Draw();m_pStageRes->m_playerOpacity=1;
+   if(i==coop::Run().local)m_pChara->DrawCollisionArea();
+  }
+  if(coop::Run().localVisibility){auto* p=m_seats[coop::Run().local].player;m_pStageRes->DrawCircle(p->m_curX,p->m_curY,80,1,1,1,false,.9f);}
  }
- for(int i=0;i<m_seatCount;i++){
-  BindSeat(i);if(layer==1){m_pCharaBullet->Draw();m_pChara->Draw();}else m_pChara->DrawCollisionArea();
- }
- if(layer==2&&coop::Run().localVisibility){auto* p=m_seats[coop::Run().local].player;m_pStageRes->DrawCircle(p->m_curX,p->m_curY,80,1,1,1,false,.9f);}
  BindSeat(saved);
 }
 void CStage::DrawCoopStatistics(){
@@ -260,14 +306,15 @@ void CStage::DrawCoopStatistics(){
  CTh5ExtFont::DrawExtString(score,3,496,120,1,1,0);
  m_pStageRes->DrawNumber(448,104,m_drawHighScore*10,8,true,false,1,1,1);
  m_pStageRes->DrawNumber(448,136,m_drawScore*10,8,true,false,1,1,1);
- const float colors[3][3]={{1,.4f,.4f},{.4f,.8f,1},{.4f,1,.4f}};
+
  auto text=[](const char* label,int x,int y,float red,float green,float blue,float scale=1.f){
   CPC98Font::DrawString(const_cast<char*>(label),100,x,y,red,green,blue,1,true,scale);
  };
  for(int i=0;i<m_seatCount;i++){
-  const auto& seat=m_seats[i];const auto* color=colors[i];const int y=168+i*32;
+  const auto& seat=m_seats[i];const auto* rgb=coop::ArtColor(coop::Run().characters[i],coop::Variant(i));const float color[]={rgb[0]/255.f,rgb[1]/255.f,rgb[2]/255.f};const int y=168+i*32;
   char label[20];snprintf(label,sizeof(label),"%dP",i+1);text(label,448,y,color[0],color[1],color[2]);
-  if(!m_bLogo)text(label,int(m_playAreaUpperLeftX+seat.player->m_curX/16)-4,int(m_playAreaUpperLeftY+seat.player->m_curY/16)-16,color[0],color[1],color[2],.5f);
+  seat.resources->m_patternArray.GetImagePtr(20)->Draw(464,y);
+  if(!m_bLogo)text(label,int(m_playAreaUpperLeftX+seat.player->m_curX/16)-4,int(m_playAreaUpperLeftY+seat.player->m_curY/16)-32,color[0],color[1],color[2],.5f);
   if(seat.stock.ghost){text(seat.stock.offline?"OFFLINE":"GHOST",480,y,.5f,.6f,.8f);}
   else if(coop::Run().challenge){text("MISS",480,y,1,1,1);m_pStageRes->DrawNumber(544,y,seat.stock.deaths,2,false,true,1,1,1);}
   else{

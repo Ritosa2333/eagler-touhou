@@ -15,6 +15,8 @@ class CStageResource
 {
 public:
 	CStage *m_pStage;
+ C2DImage* m_pCoopGhost=nullptr;
+ float m_playerOpacity=1.f;
 #ifdef __EMSCRIPTEN__
  GLuint m_spriteAtlas=0;
  void RefreshSpriteAtlas();

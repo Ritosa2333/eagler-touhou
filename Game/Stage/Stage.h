@@ -87,6 +87,7 @@ friend struct PracticeTests;
  void InitCoop(); void SaveSeat(); void BindSeat(int seat);
  void StepPlayers(); void StepPlayerBomb(); void DrawPlayers(int layer);
  void StepRescue(); void ReviveSeat(int seat,int bombs); void SaveCoop();
+ float PlayerOpacity(int seat) const;
  void DrawCoopStatistics(); void StepCoopMenu();
 public:
  bool Cooperative() const { return m_seatCount>1; }
