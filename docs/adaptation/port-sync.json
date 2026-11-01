@@ -1016,14 +1016,23 @@
     "th05": {
       "normal": "ports/th05",
       "multiplayer": "ports/th05-mp",
-      "base": "0ef3a2c187a7b88c51facc155a453111e76c9499",
+      "base": "69aac738aa2e61d191adfcaa4d35093d70096234",
       "history": [
         {
           "kind": "manual",
           "source": "0ef3a2c187a7b88c51facc155a453111e76c9499",
-          "targetHead": "dac0b88cbefb27954d0a0cf8565d94aafa3203d6",
-          "integration": "working-tree",
+          "targetHead": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "integration": "committed",
           "note": "独立 MP 在 uth05win 子树上接收当前普通版的移动触控、字体、音频与性能修复；合作规则、同步输入、多人侧栏和启动器显示配置由 th05-mp 独立维护。"
+        },
+        {
+          "kind": "git-merge",
+          "source": "69aac738aa2e61d191adfcaa4d35093d70096234",
+          "targetHead": "ad4898df32d757de232d30d86afa19b42b025c9a",
+          "normalHistory": "315e7a92dc06dc6bed6bfd59b21258578429d043",
+          "multiplayerHistory": "809747ec0e53c76942343fc21ac074b45ab99b0d",
+          "integration": "committed",
+          "note": "普通版完整目录历史已合入独立 MP，人工迁入的普通版修复得到真实合并祖先。合并树与已验证多人源码完全相同。"
         }
       ]
     }

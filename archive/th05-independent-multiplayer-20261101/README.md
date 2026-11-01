@@ -11,3 +11,5 @@
 测试范围为桌面 Chromium 的原生 WebGL／WebAssembly 流程。手机性能沿各作品的设备验收记录。
 
 [素材校验](player-art.json)覆盖四角色、三配色的 240 张实际纹理、队友距离淡出和幽灵固定位置。[自机图层像素校验](player-layer-pixels.json)将三位玩家重叠，12 个客户端画面的本机自机不透明像素均与对应审定 PNG 一致。
+
+[公网房间验收](public-rooms.json)覆盖 test 站双人直连与三人中继；[发布身份](publication.json)记录两套独立 Runtime generation，[公网文件校验](public-assets.json)验证 167 个发布文件。资源发现接口按站点配置返回 404 后，启动器使用本站 DATA／语言包直达下载，并完成完整性核验。

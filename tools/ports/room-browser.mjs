@@ -10,6 +10,7 @@ import {gamepadProbeBundle,prepareVirtualGamepad,probeNativeGamepad} from './gam
 const option=(name,fallback)=>process.argv.find(value=>value.startsWith(`--${name}=`))?.slice(name.length+3)??fallback;
 const base=option('url'),out=option('output'),route=option('route','rtc'),players=Number(option('players','2'));
 const disconnect=process.argv.includes('--disconnect');
+const returningUser=process.argv.includes('--existing-user');
 const gamepad=process.argv.includes('--gamepad'),gamepadBundle=gamepad?await gamepadProbeBundle():null;
 assert.ok(base&&out,'Required: --url=local-launcher --output=private-directory');
 assert.ok(['rtc','relay'].includes(route));assert.ok([2,3].includes(players));
@@ -18,7 +19,7 @@ const directory=resolve(out);await mkdir(directory,{recursive:true});
 const packages=option('packages')?JSON.parse(await readFile(resolve(option('packages')),'utf8')):{};
 const report={schema:'eagler-touhou/room-browser/1',startedAt:new Date().toISOString(),url:base,route,players,
   scope:'Real Launcher room controls, actual production Runtime and private installed DATA; desktop browser session acceptance',targets:[]};
-report.disconnectRequested=disconnect;
+report.disconnectRequested=disconnect;report.returningUser=returningUser;
 report.commit=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
 report.harnessSha256=createHash('sha256').update(await readFile(new URL(import.meta.url))).digest('hex');
 if(gamepad){report.gamepadProbeSha256=createHash('sha256').update(await readFile(new URL('./gamepad-probe.mjs',import.meta.url))).digest('hex');report.gamepadBundleSha256=createHash('sha256').update(gamepadBundle).digest('hex');await writeFile(resolve(directory,'gamepad-bundle.js'),gamepadBundle);await writeFile(resolve(directory,'gamepad-probe.mjs'),await readFile(new URL('./gamepad-probe.mjs',import.meta.url)));}
@@ -69,6 +70,7 @@ try{
     try{
       for(let seat=0;seat<players;seat++){
         const context=await browser.newContext({viewport:{width:1280,height:900}});contexts.push(context);
+        if(returningUser)await context.addInitScript(()=>localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1'));
         if(gamepad)await prepareVirtualGamepad(context,gamepadBundle);
         if(route==='relay')await context.addInitScript(()=>Object.defineProperty(window,'RTCPeerConnection',{value:undefined,configurable:true}));
         await context.addInitScript(()=>{window.acceptanceEvents=[];addEventListener('message',event=>{
@@ -94,9 +96,16 @@ try{
           else await page.locator('#roomCodeInput').fill(record.room);
           await page.locator('#submitRoom').click();await page.locator('#mpRoomCode').waitFor({state:'visible'});
           const me=page.locator(`[data-mp-seat-me="${seat}"]`);
-          await page.waitForFunction(seat=>document.querySelector(`[data-mp-seat-me="${seat}"]`)?.hidden===false||
-            document.querySelector(`[data-mp-seat-drop="${seat}"] button`)?.disabled===false,seat);
-          if(!(await me.evaluate(element=>element.hidden===false)))await page.locator(`[data-mp-seat-drop="${seat}"] button`).click();
+          await page.waitForFunction(seat=>{
+            const me=document.querySelector(`[data-mp-seat-me="${seat}"]`),drop=document.querySelector(`[data-mp-seat-drop="${seat}"] button`);
+            return me?.hidden===false||drop?.disabled===false&&drop.getClientRects().length>0;
+          },seat);
+          // Auto-assignment may hide the claim button between the wait and
+          // interaction. Check both controls atomically against the current DOM.
+          await page.evaluate(seat=>{
+            const me=document.querySelector(`[data-mp-seat-me="${seat}"]`),drop=document.querySelector(`[data-mp-seat-drop="${seat}"] button`);
+            if(me?.hidden!==false&&drop&&!drop.disabled&&drop.getClientRects().length)drop.click();
+          },seat);
           await page.waitForFunction(seat=>document.querySelector(`[data-mp-seat-me="${seat}"]`)?.hidden===false,seat);
           record.room=(await page.locator('#mpRoomCode').innerText()).trim();
           if(await page.locator('#mpMusicSelect').count())await page.locator('#mpMusicSelect').selectOption('none',{force:true});
@@ -202,11 +211,17 @@ try{
         }
       });
       assert.deepEqual(record.errors,[]);
-      const nonCardFailures=record.httpErrors.filter(failure=>!/\/assets\/th\d+-card\.(?:webp|png|jpe?g)$/.test(new URL(failure.url).pathname));
+      // Resource discovery explicitly falls back to the same-origin download
+      // on 404/405 (resource-download.mts). Retain discovery misses as evidence;
+      // actual DATA, language, Runtime and artwork responses must still succeed.
+      const discoveryUnavailable=failure=>[404,405].includes(failure.status)&&new URL(failure.url).pathname==='/_eagler/resource-routes';
+      record.discoveryMisses=record.httpErrors.filter(discoveryUnavailable);
+      const requiredFailures=record.httpErrors.filter(failure=>!discoveryUnavailable(failure));
+      const nonCardFailures=requiredFailures.filter(failure=>!/\/assets\/th\d+-card\.(?:webp|png|jpe?g)$/.test(new URL(failure.url).pathname));
       assert.deepEqual(nonCardFailures,[]);
       if(gamepad){record.stage='native-gamepad-sampling';assert.ok(record.gamepad.every(result=>result.passed),JSON.stringify(record.gamepad.filter(result=>!result.passed)));}
       record.runtimePassed=true;
-      record.stage='site-assets';assert.deepEqual(record.httpErrors,[]);record.passed=true;
+      record.stage='site-assets';assert.deepEqual(requiredFailures,[]);record.passed=true;
     }catch(error){record.passed=false;record.error=String(error.stack||error);record.failure=await Promise.all(pages.map(page=>roomSnapshot(page).catch(error=>({error:String(error)}))));
       for(let seat=0;seat<pages.length;seat++)await pages[seat].screenshot({path:resolve(directory,`${game}-failure-p${seat+1}.png`)}).catch(()=>{});
     }finally{try{for(const context of contexts)await context.close();}finally{await browser.close();}await save();console.log(`${game}: ${record.passed?'PASS':record.runtimePassed?'NATIVE PASS / SITE ASSETS FAIL':'FAIL'} at ${record.stage} ${record.error?.split('\n')[0]??''}`);}

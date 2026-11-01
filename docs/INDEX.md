@@ -1,6 +1,6 @@
 # 文档总表
 
-共 426 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
+共 427 份可读文档，包含贡献入口、适配说明、服务文档、生成报告、许可证和历史记录。由 `npm run docs:index` 更新。
 
 项目说明按当前目录重写；许可证保留原文，生成报告由各自工具更新。原有 498 份 Markdown 的逐篇去向见[旧文档去向](history/INDEX.md)。
 
@@ -222,6 +222,7 @@
 | 历史记录 | [archive/site-recovery-20261028/README.md](../archive/site-recovery-20261028/README.md) | 网页入口回退发布 |
 | 历史记录 | [archive/th05-boss-demo-20261101/README.md](../archive/th05-boss-demo-20261101/README.md) | TH05 Boss 小图合批与待机演示 |
 | 历史记录 | [archive/th05-frame-pacing-20261101/README.md](../archive/th05-frame-pacing-20261101/README.md) | TH05 原生帧调度、关卡背景与低帧率触控 |
+| 历史记录 | [archive/th05-independent-multiplayer-20261101/README.md](../archive/th05-independent-multiplayer-20261101/README.md) | TH05 独立多人版构建与验收 |
 | 历史记录 | [archive/th05-mobile-music-room-20261101/README.md](../archive/th05-mobile-music-room-20261101/README.md) | TH05 手机触控、Music Room 与原版音效 |
 | 历史记录 | [archive/th05-native-eagler-20261101/README.md](../archive/th05-native-eagler-20261101/README.md) | TH05 原生 Eagler 验收 |
 | 历史记录 | [archive/th05-render-input-20261101/README.md](../archive/th05-render-input-20261101/README.md) | TH05 渲染、冷启动输入与简体显示 |
