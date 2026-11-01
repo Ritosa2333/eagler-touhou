@@ -1557,7 +1557,9 @@ void StageBattle::collide_player_bullet(StageBullet& bullet) {
             error_ = sim.error();
             return;
         }
-        host_->hud_sound(42);
+        // 0x445900 尾 0x460c50（caller 0x44596b）：擦弹声与擦弹特效同点定位播
+        //（x=擦弹点），非全局 2D。se_graze 带左右声像。
+        host_->hud_sound(42, bullet.x);
     }
 }
 
@@ -1583,7 +1585,8 @@ i32 StageBattle::collide_laser(const StageLaser& laser) {
             error_ = sim.error();
             return contact;
         }
-        if (!host_->hud_sound(42)) error_ = "Laser graze sound failed";
+        // 0x431957 → 0x445900：激光擦弹声与特效同点定位播（声像随位置）。
+        if (!host_->hud_sound(42, player_x)) error_ = "Laser graze sound failed";
     }
     return contact;
 }
@@ -1638,7 +1641,8 @@ void StageBattle::collide_enemy_body(StageEnemy& enemy) {
             error_ = sim.error();
             return;
         }
-        if (!host_->hud_sound(42)) error_ = "Enemy body graze sound failed";
+        // 0x419a90 → 0x445900：敌身擦弹声定位播（同特效点）。
+        if (!host_->hud_sound(42, player_x)) error_ = "Enemy body graze sound failed";
     }
 }
 
@@ -1997,7 +2001,9 @@ bool StageBattle::update_trance(const GameInput& input) {
     if (bomb_timer > 0) return true;                       // 0x4c2170+0x40
     if (sim.dialog_host && sim.dialog_host->dialog_active()) return true;
     if ((progress_->run_mode_flags & 0x30) == 0x20) return true;  // 符卡练习
-    if (!host_->hud_sound(0x34)) { error_ = "Trance activation sound failed"; return false; }
+    // 0x4057f0 尾 0x40587f：0x460c50(0x34, param_2) 定位播——udN01 f3075
+    // 原生 x=-20.4375 即当帧自机 x（se_boon01 有声像）。
+    if (!host_->hud_sound(0x34, player_x)) { error_ = "Trance activation sound failed"; return false; }
     trance_begin(*progress_);
     item_manager.set_spirit_trance(true);
     if (!(progress_->stage == 6 && progress_->chapter >= 6) && !host_->trance_music(true)) {

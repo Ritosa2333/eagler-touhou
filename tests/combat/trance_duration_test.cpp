@@ -151,9 +151,14 @@ TEST(respawn_entry_clears_bullets_only_after_thirty_updates_without_cancel_items
  battle.sim.stationary_cancel_effect=[&](i32 script,const Vec3& pos){++effects;CHECK_EQ(script,139);CHECK_EQ(pos.x,102.f);return true;};
  GameInput input;CHECK(battle.step(input));CHECK_EQ(battle.sim.bullets[0].state,1);CHECK_EQ(effects,0);
  CHECK(battle.step(input));CHECK_EQ(battle.sim.bullets[0].state,4);CHECK_EQ(effects,1);
- CHECK_EQ(battle.sim.bullets[0].x,103.f);CHECK(!battle.sim.bullets[0].collision_ready);
+ CHECK_EQ(battle.sim.bullets[0].x,103.f);
+ // 契约更正（0x40db10 尾部门控，主会话裁决 2026-11-01）：碰撞的实际门是
+ // 每帧 collide_now（仅 state==1 的弹在 case1 尾按 +0x20 bit1 调
+ // 0x444140/0x443fd0）；collision_ready 是 state1/2 的簿记字段，state4
+ // 消费弹不参与任何帧的碰撞调用。废弹不碰撞的可观察证据 = 下述位移冻结
+ // （x 恒 103，state4 不再步进位移）。
  for(int i=0;i<3;++i)CHECK(battle.step(input));
- CHECK_EQ(battle.sim.bullets[0].x,103.f);CHECK_EQ(effects,1);
+ CHECK_EQ(battle.sim.bullets[0].x,103.f);CHECK_EQ(battle.sim.bullets[0].state,4);CHECK_EQ(effects,1);
  for(const auto& item:battle.item_manager.items())CHECK(!item.alive);
 }
 }

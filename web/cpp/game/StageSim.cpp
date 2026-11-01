@@ -748,6 +748,19 @@ bool StageSim::step_frame() {
 // 未实现的 op 显式报错，不静默跳过。
 void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
     (void)spawn_time;  // 0x40f030 的两种调用点共用同一消费语义
+    // LAB_0040f1b5-0x40f1dd（op 4/8/0x200000 的共同汇点）：非定位（0x460bc0）
+    // 播弹体 +0xbcc = slot+0x374（etNew 默认 38、etSound 第二参覆写，
+    // 0x40e840 0x40ee8c 拷入弹体）。门与原序一致：当前指令索引≠0 且
+    // id≠-1（0x40f1b5 test+jne / cmp+jle）。原生调用无失败返回；回调为空
+    // （场景拆除期）与死亡声同例静默跳过。
+    const auto appearance_sound = [&]() {
+        if (bullet.ex_cursor != 0 && bullet.transform_sound >= 0 && enemy_sound &&
+            !enemy_sound(bullet.transform_sound)) {
+            error_ = "Bullet appearance sound failed";
+            return false;
+        }
+        return true;
+    };
     while (bullet.ex_cursor < 18) {
         const StageEt::Ex& entry = bullet.ex[bullet.ex_cursor];
         if (entry.op == 0) return;
@@ -794,6 +807,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             bullet.steer[0] = std::cos(static_cast<double>(target)) * step;
             bullet.steer[1] = std::sin(static_cast<double>(target)) * step;
             bullet.steer[2] = 0;
+            if (!appearance_sound()) return;
             break;
         }
         case 8:  // 螺旋加速（0x40f1da：f94=args[0]、f98=args[1]、fb4=i4）
@@ -803,6 +817,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             bullet.ex8_duration = i4;
             bullet.ex8_timer = 0;
             bullet.ex8_time = 0;
+            if (!appearance_sound()) return;
             break;
         case 0x10: {  // 减停-转向循环（0x40f210：fe0 目标角按 f6 模式解析）
             bullet.behavior_flags |= 0x10;
@@ -952,7 +967,9 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             for (u32 n = 0; n < 18; ++n) temp.ex[n] = bullet.ex[n];  // 队列整块继承
             const float spawn[3] = {bullet.x, bullet.y, bullet.z};
             bullet.ex_cursor += 1;  // 0040f030:291 FUN_0040ffe0 发射前 +1
-            emit_et(temp, bullet.source_enemy, 0, spawn, 0.0f, u32(i4) & 0xffu);
+            // 子发射闩锁非常开：栈临时块 +0x36c = 下一表项 integer_arguments[1]
+            // （0x40f030 local_24），见 emit_et 注。
+            emit_et(temp, bullet.source_enemy, 0, spawn, 0.0f, u32(i4) & 0xffu, false);
             if (i4 < 0) {           // 0040f030:306：bit31=1 → FUN_00411380
                 bullet.ex_cursor += 1;  // 0040f030:305 发射后再 +1；break 后
                 if(!cancel_bullet(bullet, true, true, false))return;  // 公共尾块即 LAB_0040f483 尾部，净 +3
@@ -984,6 +1001,7 @@ void StageSim::process_bullet_queue(StageBullet& bullet, bool spawn_time) {
             polar_xy(angle,bullet.target_speed_step,bullet.target_speed_velocity[0],
                      bullet.target_speed_velocity[1]);
             bullet.target_speed_velocity[2]=0;
+            if (!appearance_sound()) return;
             break;
         }
         case 0x1000000: { // 40f030 -> 4183f0: spawn an ECL enemy at this bullet
@@ -1616,7 +1634,7 @@ void StageSim::cancel_bullets_box(const Vec3& center, const Vec3& size, float an
 
 // ---- 发射内核（0x40ffe0 外层 ways/count 循环 + 0x40e840 单弹出生）----
 void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const float spawn[3],
-                       float aim, u32 ex_seed) {
+                       float aim, u32 ex_seed, bool latch_sound) {
     const i32 ways = et.ways;
     const i32 count = et.count;
     const i32 mode = et.aim;
@@ -1832,6 +1850,19 @@ void StageSim::emit_et(const StageEt& et, u32 enemy_serial, u32 slot, const floa
                 if (bullet_animation && !bullet_animation(bullet, true)) return;
                 bullets.push_back(bullet);
             }
+        }
+    }
+    // 0x40ffe0 尾（0x41004c-0x410067，capstone 直读）：发射循环结束后按
+    // slot+0x36c bit0x20 以出生点 x（slot+8，0x410055 fld [esi+8]）播
+    // slot+0x370 的声音 id。0x41d5d1：etNew 恒写 0x23（bit0x20 置位），
+    // 全 .text 线性扫描无任何清除者；etSound 608 仅覆写 +0x370/+0x374。
+    // 故每次 etOn 必播一次（同帧多次 etOn 多次播，原生 f1431 双 id21 实证）。
+    // 子发射（op 0x2000）的栈临时块 +0x36c 实为下一表项 integer_arguments[1]
+    // （0x40f030 local_24），非常开语义，故该路径 latch_sound=false。
+    if (latch_sound && et.sound >= 0) {
+        if (enemy_position_sound && !enemy_position_sound(et.sound, spawn[0])) {
+            error_ = "Enemy fire sound failed";
+            return;
         }
     }
 }

@@ -144,7 +144,12 @@ TEST(constructor_resolves_lethal_shot_before_return_and_time_tick) {
     CHECK(enemy->dead);
     CHECK_EQ(enemy->age, 0.0f);
     CHECK_EQ(fixture.spirits(), 2);  // 00419f3c age0: (60-0)/60+1
-    CHECK(!fixture.battle.shots.front().alive);
+    // 契约更正（0x446c5a/0x446c8d/0x446531，同 player_shot_geometry 裁决）：
+    // 命中只写 shot+0x70=2 并清注册指针；弹体命中当帧不失活，等 ANM 终止
+    // 后由 0x446531 退休。
+    CHECK(fixture.battle.shots.front().alive);
+    CHECK_EQ(fixture.battle.shots.front().state, 2);
+    CHECK_EQ(fixture.battle.shots.front().registration_slot, -1);
 }
 
 TEST(earlier_enemy_death_rng_is_visible_to_later_enemy_ecl) {
