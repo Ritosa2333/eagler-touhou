@@ -10,3 +10,5 @@ uth05win 的原生 C++ 游戏逻辑直接运行于 WebAssembly／WebGL，接入�
 [构建与开发](docs/DEVELOPMENT.md) · [适配表](ADAPTATION.md) · [上游说明](README-UPSTREAM.md) · [练习功能](PRACTICE.md)
 
 源码来源为 [Goan114/uth05win-vibe](https://github.com/Goan114/uth05win-vibe)，音频与资源分离方案参考 [PR #143](https://github.com/Ritosa2333/eagler-touhou/pull/143)。GPL-3.0，详见 [LICENSE](LICENSE)。原版资源由使用者提供，制备结果与下载缓存写入被忽略的 `artifacts/`。
+
+[原生多人版](../th05-mp/README.md)在 `ports/th05-mp` 独立开发，普通版修复沿目录历史同步。
