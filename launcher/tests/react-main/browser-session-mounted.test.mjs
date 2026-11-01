@@ -2277,7 +2277,8 @@ test('room start binds the run to its native preload without a second navigation
   await React.act(async () => {socket.open(); socket.message({type: 'start', serial: 2, room});});
   await until(() => node('#decisionDialog').open, 'original music confirmation');
   await click('#decisionConfirm'); await until(() => session.getRuntime().getSnapshot().launched, 'preloaded engine launched');
-  assert.equal(f.fullscreen,node('#player'),'desktop Start requests browser fullscreen for the game');
+  // Keep failure diagnostics bounded: a mounted DOM node owns the React graph.
+  assert.equal(f.fullscreen === node('#player'),true,'desktop Start requests browser fullscreen for the game');
   assert.equal(node('#player').classList.contains('room-workspace'),false,'the fullscreen game is presented while waiting for the first frame/path');
   assert.equal(env.document.querySelector('#mpRoomView'),null,'startup has no second room renderer');
   assert.equal(session.getRuntime().getSnapshot().epoch, epoch);
@@ -2507,7 +2508,7 @@ for (const mobileDevice of [false,true]) for (const nativeFullscreen of [true,fa
  f.native[api.multiplayerConfigForProduct('th06mp').peerTransportGlobal]={peers:new Map(),relay:{readyState:1}};
  await React.act(async()=>f.native.emit('first-frame'));
  await until(()=>session.getSnapshot().roomLaunchStage===null,'player first frame and gameplay path settled');
- assert.equal(f.fullscreen,nativeFullscreen?node('#player'):null,'Start automatically requests real browser fullscreen on desktop and mobile');
+ assert.equal(f.fullscreen === (nativeFullscreen?node('#player'):null),true,'Start automatically requests real browser fullscreen on desktop and mobile');
  assert.equal(node('#fullscreenToggle').dataset.fullscreen,String(nativeFullscreen),'the fullscreen button reports the native browser state');
  if(!nativeFullscreen){
   env.window.HTMLElement.prototype.requestFullscreen=request;
