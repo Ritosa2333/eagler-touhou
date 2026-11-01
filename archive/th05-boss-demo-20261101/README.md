@@ -43,6 +43,7 @@ Boss 发弹、消弹与爆炸共用精灵图集，减少小图之间的 WebGL �
 - [browser-native-validation.json](browser-native-validation.json)：84 组角色／关卡／起点检查。
 - [unit.log](unit.log)：14 项协议、触控、原版 SE 和音乐索引检查；[presentation.log](presentation.log)：帧节奏与高刷屏幕上的原生画面交付。
 - [port-check.log](port-check.log)：11/11 接口检查。
+- [public-android.json](public-android.json)：公开启动器的冷启动单指／双指菜单、Music Room 简体显示、自机拖动及 8 个原生 thprac 工具开关。
 - `public-files.json`：公开文件身份校验；`source-history.json`：当前源码目录树与原 uth05win 祖先的子树核对。
 
 测试站入口验证使用 Chromium 手机配置。先前的背景图集、激光与低帧率原生 UI 证据见[关卡与帧调度记录](../th05-frame-pacing-20261101/README.md)。
