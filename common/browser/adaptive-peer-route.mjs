@@ -14,7 +14,7 @@ export function createAdaptivePeerRoute(options) {
     let sequence = 0, receivedSequence = 0, pendingBytes = 0, receivedBytes = 0;
     let replayQueue = [];
     let epoch = 0, proposal = null, verification = null, switchedAt = -Infinity;
-    let recoveryUntil = 0, lastNeed = -Infinity, verifyAfter = 0;
+    let recoveryUntil = 0, recoveryProbe = 0, lastNeed = -Infinity, verifyAfter = 0;
     let ackPending = false;
     const policy = Object.freeze({
         windowMs: 6000, probeTimeoutMs: 1000, primaryIntervalMs: 250,
@@ -27,6 +27,8 @@ export function createAdaptivePeerRoute(options) {
         path.samples = [];
         path.probeSequence = 0;
         path.lastProbe = -Infinity;
+        path.lastSuccessfulProbe = 0;
+        path.lastRoundTripAt = -Infinity;
         path.baseline = Infinity;
         return path;
     };
@@ -211,12 +213,26 @@ export function createAdaptivePeerRoute(options) {
         if (!started || !supported || !eligible()) return false;
         const other = active === primary ? backup : primary;
         if (!ready(other)) return false;
-        recoveryUntil ||= now() + 7000;
+        if (!recoveryUntil) {
+            recoveryUntil = now() + 7000;
+            recoveryProbe = active.probeSequence;
+        }
         verify(true);
         if (!controller && now() - lastNeed >= 1000) {
             lastNeed = now(); sendEverywhere({kind: 'need'});
         }
         return true;
+    }
+    function finishRecovery(path) {
+        // A fresh input round trip and acknowledgement of all queued controls
+        // prove progress. An open DataChannel or a pre-failure pong does not.
+        // Preserve accepted epochs until the reliable handoff completes.
+        if (!recoveryUntil || path !== active || !ready(path) || proposal ||
+            pendingControl.size || path.lastSuccessfulProbe <= recoveryProbe ||
+            now() - path.lastRoundTripAt > policy.probeTimeoutMs) return;
+        recoveryUntil = 0;
+        if (verification) verification.force = false;
+        diagnostic('recovered');
     }
     function receive(path, kind, data) {
         if (!alive() || path.closed) return true;
@@ -238,6 +254,9 @@ export function createAdaptivePeerRoute(options) {
                 if (sample && sample.rtt == null) {
                     sample.rtt = Math.max(0, now() - sample.at);
                     path.baseline = Math.min(path.baseline, sample.rtt);
+                    path.lastSuccessfulProbe = Math.max(path.lastSuccessfulProbe, sample.id);
+                    path.lastRoundTripAt = now();
+                    finishRecovery(path);
                 }
             } else if (supported && kind === 'control') {
                 if (m.kind === 'pause') suspend();
@@ -248,6 +267,7 @@ export function createAdaptivePeerRoute(options) {
                     for (const [id, packet] of pendingControl) {
                         if (id <= m.sequence) { pendingBytes -= packet.byteLength; pendingControl.delete(id); }
                     }
+                    finishRecovery(path);
                 } else if (m.kind === 'switch' && !controller && Number.isSafeInteger(m.epoch) && m.epoch === epoch + 1 &&
                     m.generation === generation && ['primary', 'turn'].includes(m.path)) {
                     const next = m.path === 'primary' ? primary : backup;
@@ -303,6 +323,12 @@ export function createAdaptivePeerRoute(options) {
     }
     function suspend() {
         quietUntil = now() + 2000;
+        if (recoveryUntil) {
+            // Hidden pages and scheduler gaps cannot spend the active recovery
+            // budget. Require new probes after the existing settling window.
+            recoveryUntil = quietUntil + 7000;
+            recoveryProbe = active.probeSequence;
+        }
         verification = null;
         // An accepted/committed epoch is a promise, not a quality sample.
         // Keep it across browser suspension so a delayed commit cannot leave

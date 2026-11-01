@@ -6,6 +6,7 @@ import {createAdaptivePeerRoute} from '../browser/adaptive-peer-route.mjs';
 function fixture(config = {}) {
     let time = 1, id = 0, nextPc = 0;
     const tasks = new Map(), pcs = new Map(), deliveries = [[], []], selected = [[], []], errors = [];
+    let blockNetwork = false;
     let dropPrimary = false, holdControl = false, visible = [true, true], running = true;
     let dropCommit = false, droppedCommit = 0;
     const held = [];
@@ -16,6 +17,7 @@ function fixture(config = {}) {
         constructor(label, path) { this.label = label; this.path = path; }
         send(data) {
             if (this.readyState !== 'open') throw Error('closed');
+            if (blockNetwork) return;
             const payload = typeof data === 'string' ? data : data.slice().buffer;
             if (dropCommit && typeof data === 'string' && data.startsWith('etr1:') &&
                 JSON.parse(data.slice(5)).kind === 'commit' && droppedCommit++ === 0) return;
@@ -81,6 +83,7 @@ function fixture(config = {}) {
     const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
     return {
         routes, paths, deliveries, selected, errors, tasks, pcs, later,
+        block(value = true) { blockNetwork = value; },
         drop(value = true) { dropPrimary = value; },
         dropFirstCommit() { dropCommit = true; },
         hold(value = true) { holdControl = value; },
@@ -250,5 +253,96 @@ function fixture(config = {}) {
     assert.equal(f.routes[0].send(new Uint8Array(1), true), false, 'unacknowledged reliable data is bounded');
     assert.equal(f.routes[0].snapshot().pendingControl, 256);
     f.close(); assert.equal(f.routes[0].snapshot().pendingBytes, 0);
+}
+{
+    const f = fixture(); await f.advance(6000);
+    assert(f.routes[0].recover());
+    await f.advance(9000);
+    assert.equal(f.routes[0].recovering(), false, 'fresh active round trips finish recovery without switching paths');
+    assert.equal(f.routes[0].snapshot().selected, 'primary');
+    assert.deepEqual(f.errors, [], 'a completed recovery must not retain a fatal deadline');
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000);
+    const dc = f.paths[0].controlDc, send = dc.send.bind(dc);
+    let refused = false;
+    dc.send = data => {
+        if (typeof data !== 'string' && !refused) { refused = true; throw Error('temporary SCTP send failure'); }
+        send(data);
+    };
+    assert(f.routes[0].send(new Uint8Array([81]), true));
+    assert(f.routes[0].recovering(), 'a ready standby arms recovery after the refused send');
+    await f.advance(9000);
+    assert.deepEqual(f.deliveries[1], [[81]]);
+    assert.equal(f.routes[0].snapshot().pendingControl, 0);
+    assert.equal(f.routes[0].recovering(), false);
+    assert.deepEqual(f.errors, [], 'successful retry and acknowledgement retire recovery');
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000);
+    f.paths[0].inputDc.close(); f.drop();
+    assert(f.routes[0].recover());
+    f.hide(0); await f.advance(10000); f.hide(0, false);
+    await f.advance(9000);
+    assert(f.routes.every(route => route.snapshot().selected === 'turn'), 'recovery has a fresh foreground budget after browser suspension');
+    assert.deepEqual(f.errors, []);
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000); f.hold();
+    assert(f.routes[0].send(new Uint8Array([82]), true));
+    assert(f.routes[0].recover()); await f.advance(8500);
+    assert(f.errors.includes('RTC route recovery exhausted'), 'healthy input probes cannot hide an unacknowledged reliable control');
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000); f.block();
+    assert(f.routes[0].recover()); await f.advance(8500);
+    assert(f.errors.includes('RTC route recovery exhausted'), 'open channel state alone cannot hide a real outage');
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000);
+    assert(f.routes[0].recover());
+    [...f.pcs.values()][0].close();
+    await f.advance(9000);
+    assert(!f.routes[0].snapshot().standbyReady);
+    assert.equal(f.routes[0].snapshot().selected, 'primary');
+    assert.equal(f.routes[0].recovering(), false);
+    assert.deepEqual(f.errors, [], 'retiring a failed standby cannot kill the recovered primary');
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000);
+    // A pending sample sent before recover() is not evidence of recovery.
+    const path = f.paths[0], dc = path.inputDc, send = dc.send.bind(dc);
+    let pending;
+    dc.send = data => {
+        if (typeof data === 'string' && data.startsWith('etr1:') && JSON.parse(data.slice(5)).kind === 'ping') {
+            pending = JSON.parse(data.slice(5)); return;
+        }
+        send(data);
+    };
+    await f.advance(300); assert(pending);
+    assert(f.routes[0].recover());
+    f.routes[0].receivePrimary('input', 'etr1:' + JSON.stringify({kind:'pong',id:pending.id}));
+    assert(f.routes[0].recovering(), 'a late pre-failure pong cannot cancel the deadline');
+    f.block(); await f.advance(8500);
+    assert(f.errors.includes('RTC route recovery exhausted'));
+    f.close();
+}
+{
+    const f = fixture(); await f.advance(6000); f.hold();
+    assert(f.routes[0].send(new Uint8Array([83]), true));
+    assert(f.routes[0].recover()); await f.advance(500);
+    [...f.pcs.values()][0].close(); f.drop(); await f.advance(1500);
+    f.release(); await f.advance(100);
+    assert.equal(f.routes[0].snapshot().pendingControl, 0);
+    assert(f.routes[0].recovering(), 'a delayed control acknowledgement cannot reuse stale input health');
+    f.block(); await f.advance(8000);
+    assert(f.errors.includes('RTC route recovery exhausted'));
+    f.close();
 }
 console.log('adaptive peer routing: loss-triggered dual-end switch | reliable replay | suspension | bounded recovery | cleanup');
