@@ -85,6 +85,6 @@ extern "C" EMSCRIPTEN_KEEPALIVE int th05_codepage(){return game?game->m_globalVa
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_replay_validate(const char* path){if(!game)return 0;th5w::CReplay parsed;return parsed.LoadFile(path);}
 extern "C" EMSCRIPTEN_KEEPALIVE int th05_draw(){if(!game||!game->m_pCurScheme)return 0;return Guard([]{th5w::web::graphics::BeginFrame();game->m_pCurScheme->Draw();});}
 
-extern "C" EMSCRIPTEN_KEEPALIVE int th05_input_scene(){if(game&&game->m_curSchemeID==4){auto* stage=static_cast<th5w::CStage*>(game->m_pCurScheme);if(stage->BrowserMenu())return 0;if(stage->BrowserDialogue())return 13;}return game?game->m_curSchemeID:0;}
+extern "C" EMSCRIPTEN_KEEPALIVE int th05_input_scene(){if(th5w::original::DemoActive())return 14;if(game&&game->m_curSchemeID==4){auto* stage=static_cast<th5w::CStage*>(game->m_pCurScheme);if(stage->BrowserMenu())return 0;if(stage->BrowserDialogue())return 13;}return game?game->m_curSchemeID:0;}
 
 extern "C" EMSCRIPTEN_KEEPALIVE double th05_display_fps(){return game?game->m_fps:0.;}

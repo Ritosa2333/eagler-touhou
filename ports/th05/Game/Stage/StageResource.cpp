@@ -34,6 +34,9 @@ CStageResource::CStageResource(CStage *pStage)
 
 CStageResource::~CStageResource(void)
 {
+#ifdef __EMSCRIPTEN__
+ if(m_spriteAtlas)glDeleteTextures(1,&m_spriteAtlas);
+#endif
 	SAFE_DELETE(m_pStageStd);
 
 	SAFE_DESTROY(m_pImgDotBullet);
@@ -367,6 +370,10 @@ void CStageResource::InitImages()
 	CCommonFunctionGraphic::LoadCD2CDGFromDat(&m_pImgLogo,&CGame::s_pCurGame->m_th5Dat2,"EYE.CDG",0,m_palette);
 
 	InitSpecificImages();
+#ifdef __EMSCRIPTEN__
+ RefreshSpriteAtlas();
+#endif
+
 }
 
 void CStageResource::DrawGauge(int curValue,int fullValue,int drawX,int drawY,float colorR,float colorG,float colorB)
@@ -625,3 +632,14 @@ void CStageResource::ClearPlayArea(float colorR,float colorG,float colorB)
 }
 
 }
+
+#ifdef __EMSCRIPTEN__
+void th5w::CStageResource::RefreshSpriteAtlas(){
+ if(m_spriteAtlas){glDeleteTextures(1,&m_spriteAtlas);m_spriteAtlas=0;}
+ std::vector<GLuint> sprites;
+ for(auto* images:{&m_patternArray,&m_spriteArray})for(int i=0;i<images->NImage();i++)if(auto* image=images->GetImagePtr(i))sprites.push_back(image->GetTexID());
+ sprites.push_back(m_pImgDotBullet->GetTexID());sprites.push_back(m_pImgDotBulletShadow->GetTexID());
+ for(auto* image:m_pImgSpark)sprites.push_back(image->GetTexID());for(auto* image:m_pImgNumber)sprites.push_back(image->GetTexID());
+ m_spriteAtlas=web::graphics::MakeSpriteAtlas(sprites.data(),int(sprites.size()));
+}
+#endif
