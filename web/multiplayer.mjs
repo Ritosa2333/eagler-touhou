@@ -12,7 +12,9 @@ export function multiplayerOptions(value){
  if(!integer(value.netplaySeed,0,65535)||!integer(value.netplayDifficulty,0,4))throw Error('Invalid TH05 multiplayer settings');
  if(!Array.isArray(value.netplayLoadouts)||value.netplayLoadouts.length!==count||value.netplayLoadouts.some(p=>!integer(p?.character,0,3)||p.shot!==0))throw Error('Invalid TH05 multiplayer characters');
  const mode=value.netplayAdonisMode??1;
- if(!integer(mode,0,2)||value.netplayPredictionLimit!==undefined&&value.netplayPredictionLimit!==(mode===1?0:8))throw Error('Invalid TH05 rollback timing');
+ // The room advertises the title's capacity even when prediction is disabled.
+ // Delay-only runs may also carry zero from older exact-input clients.
+ if(!integer(mode,0,2)||value.netplayPredictionLimit!==undefined&&!(mode===1?[0,8]:[8]).includes(value.netplayPredictionLimit))throw Error('Invalid TH05 rollback timing');
  if(value.netplayPredictionReserve!==undefined&&!integer(value.netplayPredictionReserve,1,2))throw Error('Invalid TH05 prediction reserve');
  if(value.netplayChallengeMode!==undefined&&typeof value.netplayChallengeMode!=='boolean')throw Error('Invalid TH05 challenge mode');
  if(value.netplayInputDelay!==undefined&&!integer(value.netplayInputDelay,0,9))throw Error('Invalid TH05 input delay');
