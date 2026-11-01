@@ -16,6 +16,7 @@ public:
 	void UnloadImage(int imgIdx);			//unload one image
 	void UnloadRange(int rangeStart);		//unload images from rangeStart to last image
 	void AddImage(C2DImage *pImage);
+ void ReplaceImage(int index,C2DImage* image);
 	void DrawMulti(int idxStart,int nImage,float drawX,float drawY,float fadeInScale=1.0,float drawScale=1.0,
 				   bool bUseAlpha=true,bool coordIsUpperLeft=true, bool bDepthTest=false,float drawDepth=0.0);
 

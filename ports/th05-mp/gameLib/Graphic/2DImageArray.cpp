@@ -31,6 +31,11 @@ void C2DImageArray::UnloadRange(int rangeStart)
 		UnloadImage(NImage()-1);
 }
 
+void C2DImageArray::ReplaceImage(int index,C2DImage* image){
+ if(index<0||index>=NImage()){image->Destroy();return;}
+ if(m_vp2DImage[index])m_vp2DImage[index]->Destroy();m_vp2DImage[index]=image;
+}
+
 void C2DImageArray::AddImage(C2DImage *pImage)
 {
 	m_vp2DImage.push_back(pImage);

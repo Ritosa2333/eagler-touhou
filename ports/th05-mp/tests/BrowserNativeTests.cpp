@@ -17,6 +17,16 @@ struct PracticeTests {
   auto* game=CGame::s_pCurGame;if(!game||game->m_curSchemeID!=4)return 0;
   auto* s=static_cast<CStage*>(game->m_pCurScheme);if(!s->Cooperative()||seat<0||seat>=s->m_seatCount)return 0;
   s->BindSeat(seat);auto* p=s->m_pChara;
+  if(op==13){
+   if(value<0||value>19)return 0;
+   auto* image=value==19?s->m_pStageRes->m_pCoopGhost:s->m_pStageRes->m_patternArray.GetImagePtr(value<3?value:20+value-3);
+   if(!image)return 0;
+   glBindTexture(GL_TEXTURE_2D,image->GetTexID());GLint width,height;
+   glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&width);glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,&height);
+   std::vector<unsigned char> pixels(width*height*4);glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+   unsigned hash=2166136261u;for(int y=0;y<image->m_height;y++)for(int x=0;x<image->m_width*4;x++)hash=(hash^pixels[y*width*4+x])*16777619u;
+   s->SaveSeat();s->BindSeat(0);return int(hash);
+  }
   switch(op){
    case 0:s->m_nCurLife=value;break;
    case 1:s->MakeGhost();p->m_bDraw=false;break;
@@ -29,6 +39,7 @@ struct PracticeTests {
    case 8:if(s->TestPlayerCrash(p->m_curX,p->m_curY,64,64))s->MarkPlayerMiss();break;
    case 9:s->m_totalNPointItem=value;break;
    case 10:s->m_pChara->DropBomb();break;
+   case 14:p->m_nextLifeComeTimeLeft=0;p->m_cannotControlTimeLeft=0;p->m_invulnerableTimeLeft=0;p->m_bDraw=true;break;
    case 12:s->SetQuit(STAGE_END_CLEAR);s->m_nQuitFrameLeft=0;break;
    default:return 0;
   }

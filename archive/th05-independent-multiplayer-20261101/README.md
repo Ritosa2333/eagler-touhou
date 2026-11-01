@@ -9,3 +9,5 @@
 - [启动器房间](launcher-two-player.json)：通过真正的选人、准备、启动、游戏和返回入口，使用独立生产多人构建。
 
 测试范围为桌面 Chromium 的原生 WebGL／WebAssembly 流程。手机性能沿各作品的设备验收记录。
+
+[素材校验](player-art.json)覆盖四角色、三配色的 240 张实际纹理、队友距离淡出和幽灵固定位置。[自机图层像素校验](player-layer-pixels.json)将三位玩家重叠，12 个客户端画面的本机自机不透明像素均与对应审定 PNG 一致。

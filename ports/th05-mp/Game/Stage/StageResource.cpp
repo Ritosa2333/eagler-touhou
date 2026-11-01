@@ -37,6 +37,7 @@ CStageResource::~CStageResource(void)
 #ifdef __EMSCRIPTEN__
  if(m_spriteAtlas)glDeleteTextures(1,&m_spriteAtlas);
 #endif
+	SAFE_DESTROY(m_pCoopGhost);
 	SAFE_DELETE(m_pStageStd);
 
 	SAFE_DESTROY(m_pImgDotBullet);
@@ -608,7 +609,7 @@ void CStageResource::DrawPlayAreaMask(unsigned char *pMask,float colorR,float co
 void CStageResource::DrawStageObjectImage(C2DImage *pImage,float gameCoordX,float gameCoordY)
 {
 	pImage->Draw(gameCoordX/16-pImage->m_width/2+m_pStage->m_playAreaUpperLeftX,
-				 gameCoordY/16-pImage->m_height/2+m_pStage->m_playAreaUpperLeftY);
+				 gameCoordY/16-pImage->m_height/2+m_pStage->m_playAreaUpperLeftY,m_playerOpacity);
 }
 void CStageResource::DrawStageObjectImageColorScaled(C2DImage *pImage,float gameCoordX,float gameCoordY,
 												   float colorR,float colorG,float colorB)
@@ -619,6 +620,7 @@ void CStageResource::DrawStageObjectImageColorScaled(C2DImage *pImage,float game
 }
 void CStageResource::DrawStageObjectImageWhiteMask(C2DImage *pImage,float gameCoordX,float gameCoordY)
 {
+ if(m_playerOpacity<1.f){DrawStageObjectImage(pImage,gameCoordX,gameCoordY);return;}
 	pImage->DrawWhiteMask(gameCoordX/16-pImage->m_width/2+m_pStage->m_playAreaUpperLeftX,
 						  gameCoordY/16-pImage->m_height/2+m_pStage->m_playAreaUpperLeftY);
 }
@@ -637,6 +639,7 @@ void CStageResource::ClearPlayArea(float colorR,float colorG,float colorB)
 void th5w::CStageResource::RefreshSpriteAtlas(){
  if(m_spriteAtlas){glDeleteTextures(1,&m_spriteAtlas);m_spriteAtlas=0;}
  std::vector<GLuint> sprites;
+ if(m_pCoopGhost)sprites.push_back(m_pCoopGhost->GetTexID());
  for(auto* images:{&m_patternArray,&m_spriteArray})for(int i=0;i<images->NImage();i++)if(auto* image=images->GetImagePtr(i))sprites.push_back(image->GetTexID());
  sprites.push_back(m_pImgDotBullet->GetTexID());sprites.push_back(m_pImgDotBulletShadow->GetTexID());
  for(auto* image:m_pImgSpark)sprites.push_back(image->GetTexID());for(auto* image:m_pImgNumber)sprites.push_back(image->GetTexID());

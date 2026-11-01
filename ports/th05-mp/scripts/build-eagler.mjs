@@ -22,6 +22,7 @@ const python=process.env.TH_PYTHON??'python',env={...process.env,EM_CONFIG:proce
 const run=(command,args)=>new Promise((done,reject)=>{const child=spawn(command,args,{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{log+=b;process.stdout.write(b);});child.on('error',reject);child.on('exit',code=>code?reject(Error(`${command} failed (${code})\n${log}`)):done());});
 mkdirSync(objects,{recursive:true});
 await run(python,[resolve(root,'scripts/generate-locales.py'),'--check']);
+await run(python,[resolve(root,'scripts/generate-player-art.py'),'--check']);
 await run(process.execPath,[resolve(root,'scripts/generate-audio-layout.mjs'),'--check']);
 await run(python,[resolve(root,'scripts/prepare-web-source.py'),'--out',stage]);
 const flags=['-O2','-g0','-std=c++17','-fexceptions','-fno-strict-aliasing','-ffp-contract=off','-Wno-writable-strings','-Wno-nontrivial-memcall','-Wno-microsoft-extra-qualification','-DIMGUI_DISABLE_WIN32_FUNCTIONS','-DIMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS','-I'+stage,'-I'+resolve(stage,'portable/shims'),'-I'+resolve(stage,'third_party/imgui'),'-I'+resolve(common,'include'),'-include',resolve(stage,'portable/Platform.hpp')];
