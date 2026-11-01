@@ -6,6 +6,7 @@
 namespace th5w::web::graphics {
 bool Initialize();
 void BeginFrame();void Present();void Flush();
+GLuint MakeSpriteAtlas(const GLuint*,int);void SpriteAtlasEnabled(bool);
 void Clear(GLbitfield);void Scissor(GLint,GLint,GLsizei,GLsizei);
 void Begin(GLenum);void End();void Vertex(float,float,float=0);void TexCoord(float,float);
 void Color(float,float,float,float=1);void MatrixMode(GLenum);void PushMatrix();void PopMatrix();

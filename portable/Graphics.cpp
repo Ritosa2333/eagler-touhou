@@ -6,12 +6,14 @@
 #include <map>
 #include <cstring>
 #include <stdexcept>
+#include <algorithm>
 namespace th5w::web::graphics {
 using Matrix=std::array<float,16>;
 Matrix Unit(){Matrix m{};m[0]=m[5]=m[10]=m[15]=1;return m;}
 Matrix Multiply(const Matrix& a,const Matrix& b){Matrix r{};for(int c=0;c<4;c++)for(int row=0;row<4;row++)for(int k=0;k<4;k++)r[c*4+row]+=a[k*4+row]*b[c*4+k];return r;}
 struct VertexData{float x,y,z,w,u,v,r,g,b,a;};
-struct Texture{int width=0,height=0;std::vector<unsigned char> rgba;};
+struct Texture{int width=0,height=0;std::vector<unsigned char> rgba;GLuint atlas=0;int x=0,y=0;bool page=false;};
+static bool spriteAtlases=true;
 struct State{bool textured=false,stipple=false,blend=false,depth=false,scissor=false;GLenum src=GL_ONE,dst=GL_ZERO,env=GL_MODULATE,polygon=GL_FILL;GLuint texture=0;std::array<GLboolean,4> mask{1,1,1,1};std::array<GLint,4> clip{0,0,640,480};};
 static State state;static std::vector<State> states;
 static Matrix projection=Unit(),model=Unit();static std::vector<Matrix> ps,ms;
@@ -24,7 +26,7 @@ static Matrix& Current(){return matrixMode==GL_PROJECTION?projection:model;}
 GLuint Shader(GLenum kind,const char* source){GLuint id=glCreateShader(kind);glShaderSource(id,1,&source,nullptr);glCompileShader(id);GLint ok=0;glGetShaderiv(id,GL_COMPILE_STATUS,&ok);if(!ok){char error[2048];glGetShaderInfoLog(id,sizeof(error),nullptr,error);throw std::runtime_error(error);}return id;}
 bool Initialize(){
  const char* vs="attribute vec4 position;attribute vec2 texcoord;attribute vec4 color;uniform mat4 transform;varying vec2 uv;varying vec4 tint;void main(){gl_Position=transform*position;uv=texcoord;tint=color;}";
- const char* fs="precision mediump float;uniform sampler2D image;uniform sampler2D maskImage;uniform bool useStipple;uniform bool replaceTexture;varying vec2 uv;varying vec4 tint;void main(){if(useStipple&&texture2D(maskImage,mod(floor(gl_FragCoord.xy),32.)/32.).a<.5)discard;vec4 pixel=texture2D(image,uv);gl_FragColor=replaceTexture?pixel:pixel*tint;}";
+ const char* fs="#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nuniform sampler2D image;uniform sampler2D maskImage;uniform bool useStipple;uniform bool replaceTexture;varying vec2 uv;varying vec4 tint;void main(){if(useStipple&&texture2D(maskImage,mod(floor(gl_FragCoord.xy),32.)/32.).a<.5)discard;vec4 pixel=texture2D(image,uv);gl_FragColor=replaceTexture?pixel:pixel*tint;}";
  GLuint a=Shader(GL_VERTEX_SHADER,vs),b=Shader(GL_FRAGMENT_SHADER,fs);program=glCreateProgram();glAttachShader(program,a);glAttachShader(program,b);
  glBindAttribLocation(program,0,"position");glBindAttribLocation(program,1,"texcoord");glBindAttribLocation(program,2,"color");glLinkProgram(program);glDeleteShader(a);glDeleteShader(b);GLint ok;glGetProgramiv(program,GL_LINK_STATUS,&ok);if(!ok)return false;
  maskUniform=glGetUniformLocation(program,"maskImage");transformUniform=glGetUniformLocation(program,"transform");textureUniform=glGetUniformLocation(program,"image");stippleUniform=glGetUniformLocation(program,"useStipple");envUniform=glGetUniformLocation(program,"replaceTexture");
@@ -47,12 +49,14 @@ void End(){
  else if(primitive==GL_TRIANGLE_STRIP){mode=GL_TRIANGLES;for(size_t i=0;i+2<vertices.size();i++)if(i&1)triangle(i+1,i,i+2);else triangle(i,i+1,i+2);}
  else triangles=vertices;
  if(mode==GL_LINE_LOOP){triangles.clear();for(size_t i=0;i<vertices.size();i++){triangles.push_back(vertices[i]);triangles.push_back(vertices[(i+1)%vertices.size()]);}mode=GL_LINES;}
+ State drawState=state;const Texture* region=nullptr;int atlasSize=1;
+ if(spriteAtlases&&state.textured){auto found=textures.find(state.texture);if(found!=textures.end()&&found->second.atlas&&std::all_of(triangles.begin(),triangles.end(),[](const VertexData& p){return p.u>=0&&p.u<=1&&p.v>=0&&p.v<=1;})){region=&found->second;drawState.texture=region->atlas;atlasSize=textures.at(region->atlas).width;}}
  const auto texture=[](const State& value){return value.textured&&value.texture?value.texture:white;};
- const bool matches=texture(state)==texture(batchState)&&state.stipple==batchState.stipple&&state.blend==batchState.blend&&state.depth==batchState.depth&&state.scissor==batchState.scissor&&state.src==batchState.src&&state.dst==batchState.dst&&state.env==batchState.env&&state.textured==batchState.textured&&state.mask==batchState.mask&&(!state.scissor||state.clip==batchState.clip)&&mode==batchMode;
+ const bool matches=texture(drawState)==texture(batchState)&&drawState.stipple==batchState.stipple&&drawState.blend==batchState.blend&&drawState.depth==batchState.depth&&drawState.scissor==batchState.scissor&&drawState.src==batchState.src&&drawState.dst==batchState.dst&&drawState.env==batchState.env&&drawState.textured==batchState.textured&&drawState.mask==batchState.mask&&(!drawState.scissor||drawState.clip==batchState.clip)&&mode==batchMode;
  if(!batch.empty()&&(!matches||batch.size()+triangles.size()>65536))Flush();
- if(batch.empty()){batchState=state;batchMode=mode;}
+ if(batch.empty()){batchState=drawState;batchMode=mode;}
  const Matrix transform=Multiply(projection,model);
- for(auto point:triangles){const float x=point.x,y=point.y,z=point.z;
+ for(auto point:triangles){if(region){point.u=(region->x+point.u*region->width)/atlasSize;point.v=(region->y+point.v*region->height)/atlasSize;}const float x=point.x,y=point.y,z=point.z;
   point.x=transform[0]*x+transform[4]*y+transform[8]*z+transform[12];point.y=transform[1]*x+transform[5]*y+transform[9]*z+transform[13];
   point.z=transform[2]*x+transform[6]*y+transform[10]*z+transform[14];point.w=transform[3]*x+transform[7]*y+transform[11]*z+transform[15];batch.push_back(point);
  }
@@ -81,15 +85,27 @@ void Enable(GLenum value){if(value==GL_TEXTURE_2D)state.textured=true;else if(va
 void Disable(GLenum value){if(value==GL_TEXTURE_2D)state.textured=false;else if(value==GL_POLYGON_STIPPLE)state.stipple=false;else{if(value==GL_BLEND)state.blend=false;if(value==GL_DEPTH_TEST)state.depth=false;if(value==GL_SCISSOR_TEST)state.scissor=false;}}
 void BindTexture(GLenum,GLuint id){state.texture=id;}
 void TexImage(GLenum target,GLint level,GLint,GLsizei w,GLsizei h,GLint border,GLenum format,GLenum type,const void* data){
- Flush();glBindTexture(target,state.texture);Texture& t=textures[state.texture];t.width=w;t.height=h;t.rgba.assign(w*h*4,0);const auto* p=static_cast<const unsigned char*>(data);if(data&&type!=GL_UNSIGNED_BYTE)throw std::runtime_error("Unsupported texture pixel type");
+ Flush();glBindTexture(target,state.texture);Texture& t=textures[state.texture];t.atlas=0;t.width=w;t.height=h;t.rgba.assign(w*h*4,0);const auto* p=static_cast<const unsigned char*>(data);if(data&&type!=GL_UNSIGNED_BYTE)throw std::runtime_error("Unsupported texture pixel type");
  if(p)for(int i=0;i<w*h;i++){auto* d=t.rgba.data()+i*4;if(format==GL_RGBA)memcpy(d,p+i*4,4);else if(format==GL_RGB){memcpy(d,p+i*3,3);d[3]=255;}else if(format==GL_LUMINANCE_ALPHA){d[0]=d[1]=d[2]=p[i*2];d[3]=p[i*2+1];}else if(format==GL_ALPHA){d[0]=d[1]=d[2]=255;d[3]=p[i];}else d[0]=d[1]=d[2]=d[3]=p[i];}
  glTexImage2D(target,level,GL_RGBA,w,h,border,GL_RGBA,GL_UNSIGNED_BYTE,t.rgba.data());
 }
-void TexSubImage(GLenum target,GLint level,GLint x,GLint y,GLsizei w,GLsizei h,GLenum format,GLenum type,const void* data){Flush();glBindTexture(target,state.texture);auto& t=textures[state.texture];if(format!=GL_RGBA||type!=GL_UNSIGNED_BYTE)throw std::runtime_error("Unsupported texture update");if(x<0||y<0||x+w>t.width||y+h>t.height)throw std::runtime_error("Texture update bounds");for(int row=0;row<h;row++)memcpy(t.rgba.data()+((y+row)*t.width+x)*4,static_cast<const unsigned char*>(data)+row*w*4,w*4);glTexSubImage2D(target,level,x,y,w,h,format,type,data);}
-void TexParameter(GLenum t,GLenum p,GLint v){Flush();glBindTexture(t,state.texture);glTexParameteri(t,p,v==GL_CLAMP?GL_CLAMP_TO_EDGE:v);}
+void TexSubImage(GLenum target,GLint level,GLint x,GLint y,GLsizei w,GLsizei h,GLenum format,GLenum type,const void* data){Flush();glBindTexture(target,state.texture);auto& t=textures[state.texture];t.atlas=0;if(format!=GL_RGBA||type!=GL_UNSIGNED_BYTE)throw std::runtime_error("Unsupported texture update");if(x<0||y<0||x+w>t.width||y+h>t.height)throw std::runtime_error("Texture update bounds");for(int row=0;row<h;row++)memcpy(t.rgba.data()+((y+row)*t.width+x)*4,static_cast<const unsigned char*>(data)+row*w*4,w*4);glTexSubImage2D(target,level,x,y,w,h,format,type,data);}
+void TexParameter(GLenum t,GLenum p,GLint v){Flush();auto found=textures.find(state.texture);if(found!=textures.end())found->second.atlas=0;glBindTexture(t,state.texture);glTexParameteri(t,p,v==GL_CLAMP?GL_CLAMP_TO_EDGE:v);}
 void TexLevel(GLenum,GLint,GLenum p,GLint* out){const auto& t=textures[state.texture];*out=p==GL_TEXTURE_WIDTH?t.width:t.height;}
 void GetTexImage(GLenum,GLint,GLenum format,GLenum type,void* out){if(format!=GL_RGBA||type!=GL_UNSIGNED_BYTE)throw std::runtime_error("Unsupported texture read");const auto& t=textures[state.texture];memcpy(out,t.rgba.data(),t.rgba.size());}
-void DeleteTextures(GLsizei n,const GLuint* ids){Flush();for(int i=0;i<n;i++)textures.erase(ids[i]);glDeleteTextures(n,ids);}
+void DeleteTextures(GLsizei n,const GLuint* ids){Flush();for(int i=0;i<n;i++){auto found=textures.find(ids[i]);if(found!=textures.end()&&found->second.page)for(auto& entry:textures)if(entry.second.atlas==ids[i])entry.second.atlas=0;textures.erase(ids[i]);}glDeleteTextures(n,ids);}
+void SpriteAtlasEnabled(bool enabled){Flush();spriteAtlases=enabled;}
+GLuint MakeSpriteAtlas(const GLuint* ids,int count){
+ Flush();std::vector<GLuint> items;
+ for(int i=0;i<count;i++){auto found=textures.find(ids[i]);if(found!=textures.end()&&found->second.width>0&&found->second.width<=128&&found->second.height>0&&found->second.height<=128)items.push_back(ids[i]);}
+ std::sort(items.begin(),items.end());items.erase(std::unique(items.begin(),items.end()),items.end());
+ std::stable_sort(items.begin(),items.end(),[](GLuint a,GLuint b){return textures[a].height>textures[b].height;});if(items.empty())return 0;
+ int size=256;std::vector<std::array<int,2>> positions;
+ for(;;){int x=0,y=0,row=0;positions.clear();for(auto id:items){const auto& t=textures.at(id);if(x+t.width>size){x=0;y+=row;row=0;}positions.push_back({x,y});x+=t.width;row=std::max(row,t.height);}if(y+row<=size)break;size*=2;if(size>2048)throw std::runtime_error("TH05 sprite atlas bounds");}
+ GLuint id;glGenTextures(1,&id);auto& atlas=textures[id];atlas.page=true;atlas.width=atlas.height=size;atlas.rgba.assign(size*size*4,0);
+ for(size_t i=0;i<items.size();i++){auto& t=textures.at(items[i]);t.atlas=id;t.x=positions[i][0];t.y=positions[i][1];for(int row=0;row<t.height;row++)memcpy(atlas.rgba.data()+((t.y+row)*size+t.x)*4,t.rgba.data()+row*t.width*4,t.width*4);}
+ glBindTexture(GL_TEXTURE_2D,id);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,size,size,0,GL_RGBA,GL_UNSIGNED_BYTE,atlas.rgba.data());glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);glBindTexture(GL_TEXTURE_2D,state.texture);return id;
+}
 void PolygonMode(GLenum,GLenum mode){state.polygon=mode;}
 void Stipple(const GLubyte* bits){Flush();std::array<unsigned char,32*32*4> data{};for(int y=0;y<32;y++)for(int x=0;x<32;x++)data[(y*32+x)*4+3]=(bits[y*4+x/8]&(128>>(x%8)))?255:0;glActiveTexture(GL_TEXTURE1);glBindTexture(GL_TEXTURE_2D,maskTexture);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,32,32,0,GL_RGBA,GL_UNSIGNED_BYTE,data.data());glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D,state.texture);}
 void PushAttrib(GLbitfield){states.push_back(state);}
